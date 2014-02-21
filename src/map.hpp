@@ -9,7 +9,8 @@
 #include "grid.hpp"
 #include "Particle.hpp"
 #include "Point.hpp"
-#include "memory.hpp"
+#include "memory_cpu.hpp"
+#include "memory_gpu.hpp"
 
 #ifndef MAP_HPP_
 #define MAP_HPP_
@@ -145,6 +146,12 @@ map_cpu<grid<grid<Point>>>
   }
 }*/
 
+template<unsigned int p>
+struct Point_type_prop
+{
+	  typedef typename boost::fusion::result_of::at<Point<float>::type,boost::mpl::int_<p> >::type type;
+};
+
 template<typename T, typename Mem>
 class layout_gpu<grid<Point<T>>,Mem>
 {
@@ -165,37 +172,38 @@ public:
 	  boost::fusion::at_c<5>(data).allocate(g1.size());
   }
 
-  template <unsigned int p>inline typename boost::fusion::result_of::at<Point<float>::type,boost::mpl::int_<p> >::type & get(grid_key<p> & v1)
+
+  template <unsigned int p>inline typename mem_reference<typename Point_type_prop<p>::type>::type get(grid_key<p> & v1)
   {
     return boost::fusion::at_c<p>(data).get(g1.LinId(v1.getId()));
   }
 
-  template <unsigned int p>inline typename boost::fusion::result_of::at<Point<float>::type,boost::mpl::int_<p> >::type & get(grid_key_1<p> & v1)
+  template <unsigned int p>inline typename mem_reference<typename Point_type_prop<p>::type >::type get(grid_key_1<p> & v1)
   {
     return boost::fusion::at_c<p>(data).get(g1.LinId(v1.k[0]));
   }
 
-  template <unsigned int p>inline typename boost::fusion::result_of::at<Point<float>::type,boost::mpl::int_<p> >::type & get(grid_key_2<p> & v1)
+  template <unsigned int p>inline typename mem_reference<typename Point_type_prop<p>::type >::type get(grid_key_2<p> & v1)
   {
     return boost::fusion::at_c<p>(data).get(g1.LinId(v1.k[1],v1.k[0]));
   }
 
-  template <unsigned int p>inline typename boost::fusion::result_of::at<Point<float>::type,boost::mpl::int_<p> >::type & get(grid_key_3<p> & v1)
+  template <unsigned int p>inline typename mem_reference<typename Point_type_prop<p>::type >::type get(grid_key_3<p> & v1)
   {
     return boost::fusion::at_c<p>(data).get(g1.LinId(v1.k[2],v1.k[1],v1.k[0]));
   }
 
-  template <unsigned int p>inline typename boost::fusion::result_of::at<Point<float>::type,boost::mpl::int_<p> >::type & get(grid_key_4<p> & v1)
+  template <unsigned int p>inline typename mem_reference<typename Point_type_prop<p>::type >::type get(grid_key_4<p> & v1)
   {
     return boost::fusion::at_c<p>(data).get(g1.LinId(v1.k[3],v1.k[2],v1.k[1],v1.k[0]));
   }
 
-  template <unsigned int p, unsigned int dim>inline typename boost::fusion::result_of::at<Point<float>::type,boost::mpl::int_<p> >::type & get(grid_key_d<dim,p> & v1)
+  template <unsigned int p, unsigned int dim>inline typename mem_reference<typename Point_type_prop<p>::type >::type get(grid_key_d<dim,p> & v1)
   {
     return boost::fusion::at_c<p>(data).get(g1.LinId(v1));
   }
 
-  template <unsigned int p, unsigned int dim>inline typename boost::fusion::result_of::at<Point<float>::type,boost::mpl::int_<p> >::type & get(grid_key_dx<dim> & v1)
+  template <unsigned int p, unsigned int dim>inline typename mem_reference<typename Point_type_prop<p>::type >::type get(grid_key_dx<dim> & v1)
   {
     return boost::fusion::at_c<p>(data).get(g1.LinId(v1));
   }

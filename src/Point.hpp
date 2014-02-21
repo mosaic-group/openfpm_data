@@ -7,6 +7,8 @@
 #include <boost/fusion/include/vector.hpp>
 #include <boost/fusion/container/vector/vector_fwd.hpp>
 #include <boost/fusion/include/vector_fwd.hpp>
+#include "boost/multi_array.hpp"
+#include "base_type.hpp"
 
 template<typename T> class Point_orig
 {
@@ -32,7 +34,7 @@ template<typename T> class Point
 {
 public:
   
-  typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3]> type;
+  typedef boost::fusion::vector<T,T,T,T,boost::multi_array_ref<T,1>,boost::multi_array_ref<T,2> > type;
 
   type data;
   

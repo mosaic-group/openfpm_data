@@ -1,5 +1,6 @@
 #include "map.hpp"
-#include "memory.hpp"
+#include "memory_cpu.hpp"
+#include "memory_gpu.hpp"
 #include "Particle.hpp"
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
@@ -8,8 +9,9 @@
 #include <test_3.hpp>
 #include <test_4.hpp>
 #include <test_5.hpp>
+#include "memory_gpu_thrust.hpp"
 
-float Wi(float dist_x)
+/*float Wi(float dist_x)
 {
   if (dist_x <= 1)
     return 1.5f*dist_x * dist_x * dist_x - 2.5f * dist_x * dist_x + 1.0f;
@@ -17,7 +19,7 @@ float Wi(float dist_x)
     return -0.5f*dist_x * dist_x * dist_x * dist_x + 2.5f * dist_x * dist_x - 4.0f * dist_x + 2.0f;
   else
     return 0.0;
-}
+}*/
 
 int main()
 {
@@ -29,23 +31,25 @@ int main()
   sz.push_back(GS_SIZE);
   sz.push_back(GS_SIZE);
   
-  layout_cpu< grid<Point<float>>, memory_cpu<memory_cpu_type<Point<float>>::type> > c3(sz);
+  layout_gpu< grid<Point<float>>, memory_gpu<memory_gpu_type<Point<float>>::type> > c3(sz);
 
   // cpu test
   
-  test1();
+//  test1();
   
 //  layout_cpu< Particles<Point<float>, memory_cpu<float> >, particle_key > p1;
    
-  test2(c3);
+//  test2(c3);
 
-  test3(c3);
+//  test3(c3);
    
-  test4(c3);
+//  test4(c3);
 
-  test5(c3);
+//  test5(c3);
 
-   
+  memory_gpu_thrust<float> mgt;
+
+
 //   k.set(2,2,2);
 //   c3.get(k).x = 6.0;
    
