@@ -11,6 +11,20 @@ typedef long int mem_id;
 
 #define STC_D(dv) (static_cast<thrust::device_vector<T> *>(dv))
 #define STC_H(dv) (static_cast<thrust::host_vector<T> *>(dv))
+#define STD_M(dv) ()
+
+#define CUDA_SAFE_CALL(call) {\
+	cudaError_t err = call;\
+	if (cudaSuccess != err) {\
+		std::cerr << "Cuda error in file "<< __FILE__ << " in line " << __LINE__ <<  ": " << cudaGetErrorString(err);\
+	}\
+}
+
+template<class T> memory_gpu_thrust<T>::memory_gpu_thrust()
+{
+	dv = NULL;
+	pdv = NULL;
+}
 
 template<class T> void memory_gpu_thrust<T>::load(memory_cpu_thrust<T> & h_vec)
 {
@@ -35,8 +49,11 @@ template<class T> void memory_gpu_thrust<T>::resize(size_t sz)
 	if (dv == NULL)
 	{dv = new thrust::device_vector<T>();}
 
+	if (pdv == NULL)
+	{CUDA_SAFE_CALL(cudaHostAlloc(&pdv,sz,cudaHostAllocMapped))}
+
 	// resize data vector
-	return STC_D(dv)->resize(sz);
+	STC_D(dv)->resize(sz);
 }
 
 template<class T> typename reduce_type<T>::type memory_gpu_thrust<T>::reduce()
@@ -49,7 +66,12 @@ template<class T> T* memory_gpu_thrust<T>::getPointer()
 {
 	// return the pointer to data
 
-	return thrust::raw_pointer_cast(&(*STC_D(dv))[0]);
+	if (ppdv != NULL)
+	{return static_cast<T *>(ppdv);}
+	else
+	{CUDA_SAFE_CALL(cudaHostGetDevicePointer(&ppdv,pdv,0));}
+
+	return static_cast<T *>(ppdv);
 }
 
 template<class T>  void * memory_gpu_thrust<T>::getThrustObj()

@@ -14,6 +14,11 @@ typedef long int mem_id;
 #define STC_D(dv) (static_cast<thrust::device_vector<T> *>(dv))
 #define STC_H(dv) (static_cast<thrust::host_vector<T> *>(dv))
 
+template<class T> memory_cpu_thrust<T>::memory_cpu_thrust()
+{
+	dv = NULL;
+}
+
 template<class T> void memory_cpu_thrust<T>::load(memory_gpu_thrust<T> & d_vec)
 {
 	// transfer data to the device

@@ -105,6 +105,36 @@ template<> struct mem_reference<double>
 	typedef double& type;
 };
 
+template<typename T> struct mem_reference<boost::multi_array_ref<T,1>>
+{
+	typedef typename boost::multi_array_ref<T,1>::reference type;
+};
+
+template<typename T> struct mem_reference<boost::multi_array_ref<T,2>>
+{
+	typedef typename boost::multi_array_ref<T,2>::reference type;
+};
+
+template<typename T> struct mem_reference<boost::multi_array_ref<T,3>>
+{
+	typedef typename boost::multi_array_ref<T,3>::reference type;
+};
+
+template<typename T> struct mem_reference<boost::multi_array_ref<T,1>&>
+{
+	typedef typename boost::multi_array_ref<T,1>::reference type;
+};
+
+template<typename T> struct mem_reference<boost::multi_array_ref<T,2>&>
+{
+	typedef typename boost::multi_array_ref<T,2>::reference type;
+};
+
+template<typename T> struct mem_reference<boost::multi_array_ref<T,3>&>
+{
+	typedef typename boost::multi_array_ref<T,3>::reference type;
+};
+
 template<typename T>
 class memory_gpu
 {
@@ -129,6 +159,7 @@ class memory_gpu
 	  inline bool allocate(size_t sz)
 	  {
 	    mem.resize(sz);
+	    mem_ptr = mem.getPointer();
 	    return true;
 	  }
 
@@ -152,16 +183,20 @@ template<typename T, unsigned int i, unsigned int j>
 class memory_gpu_array2D
 {
 	  memory_gpu_thrust<T> mem;
-	  boost::multi_array_ref<T,3> ma;
+	  boost::multi_array_ref<T,3> * ma;
 	  size_t sz;
 
 	public:
 
 	  typedef T type;
 
-	  typename boost::multi_array_ref<T,2> get(mem_id id)
+	  memory_gpu_array2D()
+	  : ma(NULL), sz(0)
+	  {}
+
+	  typename boost::multi_array_ref<T,3>::reference get(mem_id id)
 	  {
-	    return ma[id];
+	    return (*ma)[id];
 	  }
 
 	  inline void set(mem_id id, T m)
@@ -171,14 +206,15 @@ class memory_gpu_array2D
 
 	  inline bool allocate(size_t sz)
 	  {
-	    mem.dv.resize(sz);
+	    mem.resize(sz);
 
 	    // shape on ma
 
+	    bool ascending[] = {true,true,true};
 	    typename boost::multi_array_ref<T,3>::size_type xDim(i), yDim(j), zDim(sz);
 
 	    typename boost::multi_array<T,3>::size_type ordering[] = {2,1,0};
-	    ma = boost::multi_array_ref<T,3>(mem.getPointer(),boost::extents[xDim][yDim][zDim],ordering);
+	    ma = new boost::multi_array_ref<T,3>(mem.getPointer(),boost::extents[xDim][yDim][zDim],boost::general_storage_order<3>(ordering,ascending));
 
 	    return true;
 	  }
@@ -203,12 +239,57 @@ template<typename T, unsigned int i>
 class memory_gpu_array1D
 {
 	  memory_gpu_thrust<T> mem;
-	  boost::multi_array<T,1> ma;
+	  boost::multi_array_ref<T,2> * ma;
 	  size_t sz;
 
 	public:
 
+	  typedef T type;
 
+	  memory_gpu_array1D()
+	  : ma(NULL), sz(0)
+	  {}
+
+	  typename boost::multi_array_ref<T,2>::reference get(mem_id id)
+	  {
+	    return (*ma)[id];
+	  }
+
+	  inline void set(mem_id id, T m)
+	  {
+	    mem.dv[id] = m;
+	  }
+
+	  inline bool allocate(size_t sz)
+	  {
+	    mem.resize(sz);
+
+	    // shape array
+
+	    bool ascending[] = {true,true};
+
+	    typename boost::multi_array_ref<T,2>::size_type xDim(i), zDim(sz);
+
+	    typename boost::multi_array<T,2>::size_type ordering[] = {1,0};
+	    ma = new boost::multi_array_ref<T,2>(mem.getPointer(),boost::extents[xDim][zDim],boost::general_storage_order<2>(ordering,ascending));
+
+	    return true;
+	  }
+
+	  inline void destroy()
+	  {
+	  }
+
+	  inline bool copy(memory_gpu_array1D m)
+	  {
+		memory_gpu_thrust<T>::copy(mem.dv,m.mem.dv);
+	    return true;
+	  }
+
+	  inline size_t size()
+	  {
+	    return mem.dv.size();
+	  }
 };
 
 #endif
@@ -244,7 +325,10 @@ struct memory_gpu_type< Point<T> >
 	typedef typename boost::remove_reference<ptype_4>::type mt_4;
 	typedef typename boost::remove_reference<ptype_5>::type mt_5;
 
-	typedef boost::fusion::vector< memory_gpu<mt_0>,memory_gpu<mt_1>,memory_gpu<mt_2>,memory_gpu<mt_3>,memory_gpu<mt_4>,memory_gpu<mt_5> > type;
+	typedef typename mt_4::element mt_4ele;
+	typedef typename mt_5::element mt_5ele;
+
+	typedef boost::fusion::vector< memory_gpu<mt_0>,memory_gpu<mt_1>,memory_gpu<mt_2>,memory_gpu<mt_3>,memory_gpu_array1D<mt_4ele,3>,memory_gpu_array2D<mt_5ele,3,3> > type;
 };
 
 #endif

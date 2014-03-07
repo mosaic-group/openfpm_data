@@ -18,6 +18,8 @@ class memory_cpu_thrust
 
 	public:
 
+	  memory_cpu_thrust();
+
 	  void load(memory_gpu_thrust<T> & d_vec);
 	  void load(boost::shared_array<T> & mem);
 	  void sort();

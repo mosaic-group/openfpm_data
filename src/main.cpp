@@ -6,9 +6,9 @@
 #include <typeinfo>
 #include <test_1.hpp>
 #include <test_2.hpp>
-#include <test_3.hpp>
-#include <test_4.hpp>
-#include <test_5.hpp>
+//#include <test_3.hpp>
+//#include <test_4.hpp>
+//#include <test_5.hpp>
 #include "memory_gpu_thrust.hpp"
 
 /*float Wi(float dist_x)
@@ -35,19 +35,17 @@ int main()
 
   // cpu test
   
-//  test1();
+  test1();
   
 //  layout_cpu< Particles<Point<float>, memory_cpu<float> >, particle_key > p1;
    
-//  test2(c3);
+  test2(c3);
 
 //  test3(c3);
    
 //  test4(c3);
 
 //  test5(c3);
-
-  memory_gpu_thrust<float> mgt;
 
 
 //   k.set(2,2,2);

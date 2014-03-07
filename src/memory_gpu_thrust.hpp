@@ -19,15 +19,60 @@ class memory_gpu_thrust
     public:
 
 	  void * dv;
+	  void * pdv;
+	  void * ppdv;
 
 	public:
 
+	  memory_gpu_thrust();
+
+	  /**
+	   *
+	   * Create and load a memory block from memory_cpu_thrust
+	   *
+	   */
 	  void load(memory_cpu_thrust<T> & h_vec);
+
+	  /**
+	   *
+	   * Create and load a memory block from a boost::array
+	   *
+	   */
 	  void load(boost::shared_array<T> & mem);
+
+	  /**
+	   *
+	   * Sort all the member
+	   *
+	   */
 	  void sort();
+
+	  /**
+	   *
+	   * Resize the memory block
+	   *
+	   */
 	  void resize(size_t sz);
+
+	  /**
+	   *
+	   * Compute a reducion
+	   *
+	   */
 	  typename reduce_type<T>::type reduce();
+
+	  /**
+	   *
+	   * Get the internal memory pointer
+	   *
+	   */
 	  T* getPointer();
+
+	  /**
+	   *
+	   * Get the internal thrust object
+	   *
+	   */
 	  void * getThrustObj();
 //	  void foreach();
 //	  void test();
