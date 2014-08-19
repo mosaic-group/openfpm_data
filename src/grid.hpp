@@ -213,13 +213,13 @@ public:
   boost::shared_array<mem_id> id;
 };
 
-
-template<typename T>
+//#pragma openfpm create(layout)
+template<unsigned int N, typename T>
 class grid
 {
   size_t size_tot;
-  std::vector<size_t> sz;
-  std::vector<size_t> sz_s;
+  size_t sz[N];
+  size_t sz_s[N];
   
 public:
   
@@ -238,16 +238,18 @@ public:
   }
   
   grid(std::vector<size_t> & sz)
-  : size_tot(totalSize(sz)), sz(sz)
+  : size_tot(totalSize(sz))
   {
-    sz_s.resize(sz.size());
     sz_s[0] = sz[0];
+    this->sz[0] = sz[0];
     for (size_t i = 1 ;  i < sz.size() ; i++)
     {
       sz_s[i] = sz[i]*sz_s[i-1];
+      this->sz[i] = sz[i];
     }
-  };
+  }
   
+  #pragma openfpm layout(get)
   template<unsigned int dim> mem_id LinId(grid_key_dx<dim> & gk)
   {
     mem_id lid = gk.k[0];
@@ -259,6 +261,7 @@ public:
     return lid;
   }
   
+  #pragma openfpm layout(get)
   template<unsigned int p> mem_id LinId(grid_key_3<p> & gk)
   {
     mem_id lid = gk.k[0];
@@ -268,6 +271,7 @@ public:
     return lid;
   }
   
+  #pragma openfpm layout(get)
   template<unsigned int dim, unsigned int p> mem_id LinId(grid_key_d<dim,p> & gk)
   {
     mem_id lid = gk.k[0];
@@ -279,11 +283,12 @@ public:
     return lid;
   }
   
+  #pragma openfpm layout(get)
   mem_id LinId(mem_id * id)
   {
     mem_id lid = 0;
     lid += id[0];
-    for (mem_id i = 1 ; i < (mem_id)sz.size() ; i++)
+    for (mem_id i = 1 ; i < N ; i++)
     {
       lid += id[i] * sz_s[i-1];
     }
@@ -291,11 +296,13 @@ public:
     return lid;
   }
   
+  #pragma openfpm layout(get)
   mem_id LinId(mem_id i)
   {
     return i;
   }
   
+  #pragma openfpm layout(get)
   mem_id LinId(mem_id j, mem_id k)
   {
     mem_id lid = 0;
@@ -305,6 +312,7 @@ public:
     return lid;
   }
   
+  #pragma openfpm layout(get)
   mem_id LinId(mem_id i, mem_id j, mem_id k)
   {
     mem_id lid = 0;
@@ -315,6 +323,7 @@ public:
     return lid;
   }
   
+  #pragma openfpm layout(get)
   mem_id LinId(mem_id u, mem_id i, mem_id j, mem_id k)
   {
     mem_id lid = 0;
@@ -328,10 +337,75 @@ public:
   
   ~grid() {};
   
+  #pragma openfpm layout(size)
   size_t size()
   {
     return size_tot;
   };
+
+  /**
+   *
+   * Get the size of the grid on direction i
+   *
+   * @param i direction
+   *
+   */
+
+  size_t size(unsigned int i)
+  {
+	  return sz_s[i];
+  }
+};
+
+/**
+ *
+ * Grid key class iterator, iterate through the grid_key
+ *
+ */
+
+template<unsigned int dim>
+class grid_key_dx_iterator
+{
+	grid<dim,void> & grid_base;
+	template<typename T> grid_key_dx_iterator(grid<dim,T> & g)
+	: grid_base(g)
+	{}
+
+	grid_key_dx<dim> gk;
+
+	grid_key_dx<dim> next()
+	{
+		size_t id = gk.get(0);
+		gk.set(0,id+1);
+		for (int i = 0 ; i < dim ; i++)
+		{
+			size_t id = gk.get(i);
+			if (id == grid_base.size(i))
+			{
+				gk.set(i,0);
+				id = gk.get(i+1);
+				gk.set(i+1,id+1);
+			}
+			else
+			{
+				break;
+			}
+		}
+		return gk++;
+	}
+
+	bool hasNext()
+	{
+		for (int i = dim-1 ; i >= 0 ; i--)
+		{
+			if (gk.get(i) < grid_base.size(i))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
 };
 
 template<unsigned int s1, unsigned int s2, unsigned int s3>

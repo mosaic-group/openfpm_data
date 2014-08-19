@@ -1,3 +1,5 @@
+#define BOOST_DISABLE_ASSERTS
+
 #include "map.hpp"
 #include "memory_cpu.hpp"
 #include "memory_gpu.hpp"
@@ -30,16 +32,17 @@ int main()
   sz.push_back(GS_SIZE);
   sz.push_back(GS_SIZE);
   sz.push_back(GS_SIZE);
-  
-  layout_gpu< grid<Point<float>>, memory_gpu<memory_gpu_type<Point<float>>::type> > c3(sz);
+
+
+  grid_gpu<3, Point<float>, memory_gpu<memory_gpu_type<Point<float>>::type> > c3(sz);
 
   // cpu test
   
   test1();
   
 //  layout_cpu< Particles<Point<float>, memory_cpu<float> >, particle_key > p1;
-   
-  test2(c3);
+
+  test_layout_grid3d(c3);
 
 //  test3(c3);
    

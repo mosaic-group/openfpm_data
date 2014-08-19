@@ -34,7 +34,7 @@ template<typename T> class Point
 {
 public:
   
-  typedef boost::fusion::vector<T,T,T,T,boost::multi_array_ref<T,1+1>,boost::multi_array_ref<T,2+1>> type;
+  typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3]> type;
 
   type data;
   
