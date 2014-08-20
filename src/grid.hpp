@@ -1,8 +1,6 @@
 #include <iostream>
 #include <boost/shared_array.hpp>
 #include <vector>
-#include "memory_cpu.hpp"
-#include "memory_gpu.hpp"
 #include <initializer_list>
 #include <array>
 

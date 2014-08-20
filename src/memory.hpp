@@ -61,6 +61,14 @@ class memory
 
 	virtual size_t size() = 0;
 
+	/*! \brief return a data pointer
+	 *
+	 * return readable pointer with the data stored
+	 *
+	 */
+
+	virtual void * getPointer() = 0;
+
 	/*! \ brief destructor
 	 *
 	 * destructor
@@ -68,5 +76,3 @@ class memory
 	 */
 	~memory() {};
 };
-
-
