@@ -11,12 +11,17 @@
  *
  */
 
+#ifndef MEMORY_HPP_
+#define MEMORY_HPP_
+
 typedef long int mem_id;
 
 #include <stddef.h>
 
 class memory
 {
+	public:
+
 	/*! \brief allocate on device a buffer of
 	 *
 	 * Allocate on the device a buffer of memory
@@ -76,3 +81,5 @@ class memory
 	 */
 	~memory() {};
 };
+
+#endif

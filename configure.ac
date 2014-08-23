@@ -23,6 +23,7 @@ m4_ifdef([AX_CUDA],,[m4_include([m4/ax_cuda.m4])])
 
 CXXFLAGS+=" --std=c++11 "
 NVCCFLAGS=" "
+INCLUDES_PATH=" "
 
 # Checks for programs.
 AC_PROG_CXX
@@ -59,6 +60,10 @@ else
 	CXXFLAGS="$CXXFLAGS -Wall -O3 -g3 "
 	NVCCFLAGS+="$NVCCFLAGS -O3 "
 fi
+
+####### include OpenFPM_devices include path
+
+INCLUDES_PATH+="-I. -I../../OpenFPM_devices/src"
 
 ####### Checking for GPU support
 
@@ -105,6 +110,7 @@ AX_CHECK_COMPILER_FLAGS([-mmmx],[CXXFLAGS="$CXXFLAGS -mmmx"],[no_mmx=yes])
 AX_CHECK_COMPILER_FLAGS([-Wno-unused-but-set-variable],[CXXFLAGS="$CXXFLAGS -Wno-unused-but-set-variable"],[])
 
 AC_SUBST(NVCCFLAGS)
+AC_SUBST(INCLUDES_PATH)
 
 # Checks for typedefs, structures, and compiler characteristics.
 

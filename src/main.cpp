@@ -1,17 +1,17 @@
 #define BOOST_DISABLE_ASSERTS
 
 #include "map.hpp"
-#include "memory_cpu.hpp"
-#include "memory_gpu.hpp"
 #include "Particle.hpp"
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
 #include <test_1.hpp>
 #include <test_2.hpp>
+#include <ct_array.hpp>
+#include "memory/CudaMemory.cuh"
+
 //#include <test_3.hpp>
 //#include <test_4.hpp>
 //#include <test_5.hpp>
-#include "memory_gpu_thrust.hpp"
 
 /*float Wi(float dist_x)
 {
@@ -23,6 +23,7 @@
     return 0.0;
 }*/
 
+
 int main()
 {
 /*  tensor<int,3,3,3> c;
@@ -33,8 +34,8 @@ int main()
   sz.push_back(GS_SIZE);
   sz.push_back(GS_SIZE);
 
-
-  grid_gpu<3, Point<float>, memory_gpu<memory_gpu_type<Point<float>>::type> > c3(sz);
+  grid_gpu<3, Point<float>, memory_gpu_type<Point<float>>::type > c3(sz);
+  c3.setMemory<CudaMemory>();
 
   // cpu test
   

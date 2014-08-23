@@ -3,6 +3,7 @@
 #include <vector>
 #include <initializer_list>
 #include <array>
+#include "memory.hpp"
 
 #define HARDWARE 1
 

@@ -5,6 +5,8 @@
  *      Author: Pietro Incardona
  */
 
+#include <memory.hpp>
+
 /*!
  *
  * \brief This class give a representation to a chunk or memory
@@ -15,15 +17,11 @@
  *
  */
 
-#include <memory.hpp>
-
 template<typename T>
 class memory_array
 {
+	//! Internal pointer
 	T * ptr;
-	memory_array(void * ptr)
-	: ptr(ptr)
-	{};
 
 	//! return the i element
 	T get(mem_id i)
@@ -31,11 +29,27 @@ class memory_array
 		return ptr[i];
 	}
 
+	public:
+
 	//! Set the internal pointer to the indicated chunk of memory
 	void set_pointer(void * ptr_)
 	{
-		ptr = ptr_;
+		ptr = static_cast<T *>(ptr_);
 	}
+
+	//! operator[]
+	T & operator[](mem_id i)
+	{
+		return ptr[i];
+	}
+
+	//! Default constructor
+	memory_array()	{};
+
+	//! Constructor
+	memory_array(void * ptr)
+	: ptr(static_cast<T *>(ptr))
+	{};
 };
 
 
