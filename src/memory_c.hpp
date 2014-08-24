@@ -175,6 +175,19 @@ class memory_c<multi_array<T>, memory>
 	    enum { value = (N-index) % N };
 	};
 
+	/*! \brief In combination with generate_array is used to produce array at compile-time
+	 *
+	 * In combination with generate_array is used to produce at compile-time
+	 * arrays like {true,true,.........true} used in boost::multi_array to
+	 * define ascending order
+	 *
+	 */
+
+	template<size_t index,size_t N> struct ascending
+	{
+	    enum { value = true };
+	};
+
 	public:
 
 	/*! \brief This function set the object that allocate memory
@@ -204,36 +217,24 @@ class memory_c<multi_array<T>, memory>
 	    mem->resize( sz*mult<T,size_p::value-1>::value*sizeof(base) );
 
 	    // We create an array dims from the boost::mpl::vector
-	    typedef typename generate_array_dims<T>::result dims;
+	    typedef typename generate_array_vector<size_type,T>::result dims;
 
-	    //! we define the dimension of the full multi_array buffer
-	    boost::array<size_type ,size_p::value> dimensions = {sz,{dims::data}};
+	    //! buffer to store the dimensions of the full multi_array buffer
+	    std::array<size_type ,size_p::value> dimensions;
 
-	    std::cout << "Dimensions \n";
-
-	    for (int i = 0; i < size_p::value ; i++)
-	    {
-	    	std::cout << dimensions[i] << "    ";
-	    }
+	    // fill runtime, and the other dimensions
+	    dimensions[0] = sz;
+	    for (int i = 0 ; i < size_p::value-1 ; i++)
+	    {dimensions[i+1] = dims::data[i];}
 
 	    //! we generate the ordering buffer ord::data = {0,N-1 ...... 1 }
-	    typedef typename generate_array<size_p::value, ordering>::result ord;
+	    typedef typename generate_array<typename boost::multi_array<T,size_p::value>::size_type,size_p::value, ordering>::result ord;
 
-	    //! we define the index ordering
-	    const typename boost::multi_array<T,size_p::value>::size_type ordering[size_p::value] = {*ord::data};
-
-	    std::cout << "Ordering \n";
-
-	    for (int i = 0; i < size_p::value ; i++)
-	    {
-	    	std::cout << dimensions[i] << "    ";
-	    }
-
-	    //! we define the ascending order
-	    bool ascending[] = {true,true,true,true,true,true};
+	    // we generate the ascending buffer
+	    typedef typename generate_array<bool,size_p::value, ascending>::result asc;
 
 	    //! we create the representation for this buffer
-	    mem_r = new boost::multi_array_ref<base,size_p::value>(static_cast<base *>(mem->getPointer()),dimensions,boost::general_storage_order<size_p::value>(ordering,ascending));
+	    mem_r = new boost::multi_array_ref<base,size_p::value>(static_cast<base *>(mem->getPointer()),dimensions,boost::general_storage_order<size_p::value>(ord::data,asc::data));
 
 	    return true;
 	}

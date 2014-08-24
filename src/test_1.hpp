@@ -1,4 +1,4 @@
-#define GS_SIZE 128
+#define GS_SIZE 256
 
 
 void test1()
