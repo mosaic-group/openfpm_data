@@ -13,6 +13,9 @@
 #include "Point.hpp"
 #include "memory_c.hpp"
 #include "to_variadic.hpp"
+#include <boost/fusion/include/end.hpp>
+#include <boost/fusion/include/begin.hpp>
+#include "t_to_memory_c.hpp"
 
 template<typename T>
 struct memory_cpu_type
@@ -79,19 +82,29 @@ struct memory_gpu_type< Point<T> >
 template<typename Seq>
 struct inter_memc
 {
-	to_variadic
+	typedef to_variadic<t_to_memory_c,typename boost::fusion::result_of::begin<Seq>::type ,typename boost::fusion::result_of::end<Seq>::type > type;
 };
 
-#include "t_to_memory_c.hpp"
+/*! \brief Transform the boost::fusion::vector into memory specification (memory_traits)
+ *
+ * Transform the boost::fusion::vector into memory specification (memory_traits).
+ * In this implementation we interleave each property of the base type with memory_c
+ *
+ * We basically create a buffer for each property
+ *
+ * \param T base type (T::type must define a boost::mpl::vector )
+ *
+ *
+ */
 
 template<typename T>
-struct memory
+struct memory_traits_inte
 {
 	//! we define the type structure as ptype, eapected to be a boost::mpl/fusion::vector
 	typedef typename T::type ptype;
 
-	//! for each element in the vector
-	boost::fusion::vector<  >;
+	//! for each element in the vector interleave memory_c
+	typedef typename inter_memc<ptype>::type type;
 };
 
 #endif /* MEMORY_CONFIG_H_ */
