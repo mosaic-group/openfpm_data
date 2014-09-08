@@ -6,15 +6,19 @@
  */
 
 
+
 /*! \brief These set of classes generate an array definition at compile-time
  *
-
+ * These set of classes generate an array definition at compile-time
  *
+ * \see generate_array
  *
  */
 
 #ifndef CT_ARRAY_HPP_
 #define CT_ARRAY_HPP_
+
+#include <boost/fusion/mpl.hpp>
 
 //! the array itself
 template<class T, unsigned long... args> struct ArrayHolder {

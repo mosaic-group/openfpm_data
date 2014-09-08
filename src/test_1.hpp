@@ -1,5 +1,6 @@
 #define GS_SIZE 128
 
+#include "Point.hpp"
 
 void test1()
 {

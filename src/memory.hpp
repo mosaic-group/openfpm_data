@@ -79,7 +79,7 @@ class memory
 	 * destructor
 	 *
 	 */
-	~memory() {};
+	virtual ~memory() {};
 };
 
 #endif

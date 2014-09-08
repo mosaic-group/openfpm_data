@@ -7,47 +7,48 @@
 
 #define HARDWARE 1
 
-template<typename T, unsigned int s1, unsigned int s2, unsigned int s3>
-class tensor
-{
-  T g_mem[s1][s2][s3];
- 
-public:
-  tensor() {};
-  ~tensor() {};
-  
-  size_t size()
-  {
-    return s1*s2*s3*g_mem[0][0][0].size();
-  };
-};
-
+/*! \brief grid_key_dx is the key to access any element in the grid
+ *
+ * grid_key_dx is the key to access any element in the grid
+ *
+ * \param dim dimensionality of the grid
+ *
+ */
 
 template<unsigned int dim>
 class grid_key_dx
 {
 public:
   
+  //! Constructor
   grid_key_dx()
-  {
-  }
+  {}
   
+  //! Construct a grid key from a list of numbers
   template<typename a, typename ...T>grid_key_dx(a v,T...t)
   {
     k[dim-1] = v;
     invert_assign(t...);
   }
   
+  //! set the grid key from a list of numbers
   template<typename a, typename ...T>void set(a v, T...t)
   {
     k[dim-1] = v;
     invert_assign(t...);
   }
   
-  mem_id k[dim];  
+  //! get the i index
+  mem_id get(size_t i)
+  {
+	  return k[i];
+  }
   
+  //! structure that store all the index
+  mem_id k[dim];
+
 private:
-  
+
   template<typename a, typename ...T>void invert_assign(a v,T...t)
   {
     k[sizeof...(T)] = v;
@@ -60,6 +61,16 @@ private:
   }
 
 };
+
+
+/*! \brief grid_key_d is the key to access any element in the grid
+ *
+ * grid_key_d is the key to access any element in the grid
+ *
+ * \param dim dimensionality of the grid
+ * \param p object property to get from the element of the grid
+ *
+ */
 
 template<unsigned int dim, unsigned int p>
 class grid_key_d
@@ -87,76 +98,14 @@ public:
   mem_id k[dim];
 };
 
-template<unsigned int p>
-class grid_key_1
-{
-public:
-  
-  grid_key_1(int i_)
-  {
-    k[0] = i_;
-  }
-  
-  mem_id k[1];
-};
 
-template<unsigned int p>
-class grid_key_2
-{
-public:
-  
-  grid_key_2(int i_, int j_)
-  {
-    k[0] = j_;
-    k[1] = i_;
-  }
-  
-  mem_id k[2];
-};
-
-template<unsigned int p>
-class grid_key_c3
-{
-public:
-  
-  grid_key_c3(mem_id i_, mem_id j_, mem_id k_)
-  :k{{k_,j_,i_}}
-  {
-  }
-  
-  const std::array<mem_id,3> k;
-};
-
-template<unsigned int p>
-class grid_key_3
-{
-public:
-  
-  grid_key_3(mem_id i_, mem_id j_, mem_id k_)
-  {
-    k[0] = k_;
-    k[1] = j_;
-    k[2] = i_;
-  }
-  
-  mem_id k[3];
-};
-
-template<unsigned int p>
-class grid_key_4
-{
-public:
-  
-  grid_key_4(mem_id u_, mem_id i_, mem_id j_, mem_id k_)
-  {
-    k[0] = k_;
-    k[1] = j_;
-    k[2] = i_;
-    k[3] = u_;
-  }
-  
-  mem_id k[4];
-};
+/*! \brief grid_key is the key to access any element in the grid
+ *
+ * grid_key is the key to access any element in the grid
+ *
+ * \param p dimensionality of the grid
+ *
+ */
 
 template<unsigned int p>
 class grid_key
@@ -213,6 +162,16 @@ public:
 };
 
 //#pragma openfpm create(layout)
+
+/*! \brief class that store the information at runtime of the grid plus define the linearization
+ *
+ * class that store the information at runtime of the grid plus define the linearization
+ *
+ * \param N dimensionality
+ * \param T type of object is going to store the grid
+ *
+ */
+
 template<unsigned int N, typename T>
 class grid
 {
@@ -256,16 +215,6 @@ public:
     {
       lid += gk.k[i] * sz_s[i-1];
     }
-    
-    return lid;
-  }
-  
-  #pragma openfpm layout(get)
-  template<unsigned int p> mem_id LinId(grid_key_3<p> & gk)
-  {
-    mem_id lid = gk.k[0];
-    lid += gk.k[1]*sz_s[0];
-    lid += gk.k[2]*sz_s[1];
     
     return lid;
   }
@@ -334,8 +283,17 @@ public:
     return lid;
   }
   
+  //! Destructor
   ~grid() {};
   
+  /*! \brief Return the size of the grid
+   *
+   * Return the size of the grid
+   *
+   * \return the size of the grid
+   *
+   */
+
   #pragma openfpm layout(size)
   size_t size()
   {
@@ -358,7 +316,12 @@ public:
 
 /**
  *
- * Grid key class iterator, iterate through the grid_key
+ * Grid key class iterator, iterate through the grid element
+ *
+ * \param dim dimensionality of the grid
+ *
+ * Usage: In general you never create object directly, but you get it from a grid_cpu or grid_gpu with
+ *        getIterator()
  *
  */
 
@@ -366,11 +329,29 @@ template<unsigned int dim>
 class grid_key_dx_iterator
 {
 	grid<dim,void> & grid_base;
+
+	grid_key_dx<dim> gk;
+
+public:
+
+	/*! \brief Constructor require a grid
+	 *
+	 * Constructor require a grid<dim,T>
+	 *
+	 * \param T type of object that the grid store
+	 *
+	 */
 	template<typename T> grid_key_dx_iterator(grid<dim,T> & g)
 	: grid_base(g)
 	{}
 
-	grid_key_dx<dim> gk;
+	/*! \brief Get the next element
+	 *
+	 * Get the next element
+	 *
+	 * \return the next grid_key
+	 *
+	 */
 
 	grid_key_dx<dim> next()
 	{
@@ -390,8 +371,16 @@ class grid_key_dx_iterator
 				break;
 			}
 		}
-		return gk++;
+		return gk;
 	}
+
+	/*! \brief Check if there is the next element
+	 *
+	 * Check if there is the next element
+	 *
+	 * \return true if there is the next, false otherwise
+	 *
+	 */
 
 	bool hasNext()
 	{
@@ -406,20 +395,6 @@ class grid_key_dx_iterator
 		return true;
 	}
 };
-
-template<unsigned int s1, unsigned int s2, unsigned int s3>
-class tensor<int,s1,s2,s3>
-{
-  
-public:
-  size_t size()
-  {
-    return s1*s2*s3;
-  }
-};
-
-
-
 
 
 

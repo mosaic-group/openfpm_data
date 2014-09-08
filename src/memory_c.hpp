@@ -5,9 +5,15 @@
  *      Author: Pietro Incardona
  */
 
+#include <boost/shared_ptr.hpp>
 #include <boost/multi_array.hpp>
+#include <boost/fusion/mpl.hpp>
+#include <boost/fusion/include/mpl.hpp>
+#include <boost/mpl/vector.hpp>
 #include <array>
 #include "ct_array.hpp"
+#include "memory_array.hpp"
+#include "memory.hpp"
 
 #ifndef MEMORY_C_HPP_
 #define MEMORY_C_HPP_
@@ -36,6 +42,9 @@ class memory_c
 	//! define a reference to T
 	typedef T& reference;
 
+	//! define T
+	typedef T vtype;
+
 	//! compile time specialization object that allocate memory
 	D * mem;
 
@@ -46,7 +55,7 @@ class memory_c
 	 *
 	 * This object set the object that allocate memory
 	 *
-	 * \param the memory object
+	 * \param the memory object (do not reuse the passed object this class is going to deallocate this object)
 	 *
 	 */
 
@@ -76,6 +85,9 @@ class memory_c
 
 	//! constructor
 	memory_c(){}
+
+	//! destructor
+	~memory_c(){delete(mem);}
 };
 
 /*! \brief This class is a trick to indicate the compiler a specific
@@ -253,17 +265,15 @@ class memory_c<multi_array<T>, memory>
 	memory_c()
 	{}
 
+	//! destructor
+	~memory_c(){delete(mem);}
+
 	//! set the device memory interface, the object that allocate memory
 	void set_mem(memory & mem)
 	{
-		mem = new boost::shared_ptr<memory>(&mem);
+		mem = &mem;
 	}
 };
-
-
-// Compile based specialization ( Should be automated at some point )
-
-#include "memory_config.h"
 
 #endif
 

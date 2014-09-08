@@ -5,6 +5,9 @@
  *      Author: Pietro Incardona
  */
 
+#ifndef MEMORY_ARRAY_HPP_
+#define MEMORY_ARRAY_HPP_
+
 #include <memory.hpp>
 
 /*!
@@ -53,4 +56,4 @@ class memory_array
 };
 
 
-
+#endif

@@ -10,19 +10,27 @@
 #include "boost/multi_array.hpp"
 #include "base_type.hpp"
 
+/*! \brief Definition of a class Point in plain C++ and boost::vector for testing purpose
+ *
+ * Definition of a class Point in plain C++ and boost::vector for testing purpose
+ *
+ *	\param T base type of all the fields
+ *
+ */
+
 template<typename T> class Point_orig
 {
 public:
-  
+
   T x;
   T y;
   T z;
-  
+
   T s;
-  
+
   T v[3];
   T t[3][3];
-  
+
   inline void setx(T x_)	{x = x_;};
   inline void sety(T y_)	{y = y_;};
   inline void setz(T z_)	{z = z_;};
@@ -35,6 +43,8 @@ template<typename T> class Point
 public:
   
   typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3]> type;
+  typedef typename memory_traits_inte<type>::type memory_int;
+  typedef typename memory_traits_lin<type>::type memory_lin;
 
   type data;
   

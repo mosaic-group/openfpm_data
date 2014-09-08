@@ -77,11 +77,11 @@ struct seq_traits_impl
 * S<F<float>::type,F<float>::type,F<float[3]>::type
 *
 * \param H metafunction (is a structure with typedef type)
-* \param L boost::mpl::vector
+* \param L boost::fusion::vector
 *
 */
 
-template<template<typename> class H, typename F,typename L>
+template<template<typename> class H,typename L>
 struct to_variadic
 {
 	//! reverse the sequence
@@ -96,8 +96,8 @@ struct to_variadic
 	//! calculate the exit condition
 	typedef typename exit_impl<first,last>::type exit_;
 
-	//! generate the boost::fusion::vector apply F on each term
-	typedef to_variadic_impl<H,first,last,exit_::value > type;
+	//! generate the boost::fusion::vector apply H on each term
+	typedef typename to_variadic_impl<H,first,last,exit_::value >::type type;
 };
 
 

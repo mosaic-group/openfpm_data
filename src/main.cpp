@@ -1,13 +1,19 @@
 #define BOOST_DISABLE_ASSERTS
 
-#include "map.hpp"
+#include <iostream>
 #include "Particle.hpp"
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
-#include <test_1.hpp>
-#include <test_2.hpp>
 #include <ct_array.hpp>
 #include "memory/CudaMemory.cuh"
+#include "memory/HeapMemory.hpp"
+#include "memory_conf.hpp"
+#include "map_grid.hpp"
+
+// Include tests
+
+#include <test_1.hpp>
+#include <test_2.hpp>
 
 //#include <test_3.hpp>
 //#include <test_4.hpp>
@@ -34,16 +40,51 @@ int main()
   sz.push_back(GS_SIZE);
   sz.push_back(GS_SIZE);
 
-  grid_gpu<3, Point<float>, memory_gpu_type<Point<float>>::type > c3(sz);
-  c3.setMemory<CudaMemory>();
-
-  // cpu test
+  // This is an ordinary test simple 3D with plain C array
   
   test1();
-  
-//  layout_cpu< Particles<Point<float>, memory_cpu<float> >, particle_key > p1;
 
-  test_layout_grid3d(c3);
+  // test
+
+  sz.clear();
+  sz.push_back(GS_SIZE);
+  sz.push_back(GS_SIZE);
+  sz.push_back(GS_SIZE);
+
+  {grid_gpu<3, Point<float> > c3(sz);
+  c3.setMemory<CudaMemory>();
+  test_layout_gridNd<3>(c3,GS_SIZE);}
+
+  // Test the 3d gpu grid with Cudamemory and HeapMemory with different size
+
+/*  for (int i = 2 ; i <= GS_SIZE ; i++)
+  {
+	  sz.clear();
+	  sz.push_back(i);
+	  sz.push_back(i);
+	  sz.push_back(i);
+
+	  {grid_gpu<3, Point<float> > c3(sz);
+	  c3.setMemory<CudaMemory>();
+	  test_layout_grid3d(c3,i);}
+
+	  {grid_gpu<3, Point<float> > c3(sz);
+	  c3.setMemory<HeapMemory>();
+	  test_layout_grid3d(c3,i);}
+
+	  // Test the 3d cpu grid with Cudamemory and HeapMemory
+
+	  {grid_cpu<3, Point<float> > c3(sz);
+	  c3.setMemory<CudaMemory>();
+	  test_layout_grid3d(c3,i);}
+
+	  {grid_cpu<3, Point<float> > c3(sz);
+	  c3.setMemory<HeapMemory>();
+	  test_layout_grid3d(c3,i);}
+
+  }*/
+
+  // Test another grid
 
 //  test3(c3);
    

@@ -1,8 +1,8 @@
 #include <time.h>
 #include <typeinfo>
+#include "Point.hpp"
 
-
-template<typename g> void test_layout_grid3d(g & c3)
+template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 {
 	  std::cout << "3D Array with grid_key (without redundant dimension): " << "\n";
 
@@ -14,11 +14,11 @@ template<typename g> void test_layout_grid3d(g & c3)
 
 	  grid_key_dx<3> kk;
 
-	  for (int i = 0 ; i < GS_SIZE ; i++)
+	  for (int i = 0 ; i < sz ; i++)
 	  {
-	    for (int j = 0 ; j < GS_SIZE ; j++)
+	    for (int j = 0 ; j < sz ; j++)
 	    {
-	      for (int k = 0 ; k < GS_SIZE ; k++)
+	      for (int k = 0 ; k < sz ; k++)
 	      {
 
 		kk.set(i,j,k);
@@ -50,17 +50,17 @@ template<typename g> void test_layout_grid3d(g & c3)
 	  clock_gettime(CLOCK_REALTIME, &end_time); // Works on Linux
 	   float time_dif =(float)( end_time.tv_sec - ts_start.tv_sec  + (double)(end_time.tv_nsec - ts_start.tv_nsec)/1000000000.0 );
 
-	   std::cout << "End : " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024 << " MB " << "  Bandwidth: " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024/time_dif << " MB/s  ";
+	   std::cout << "End : " << sz*sz*sz*16*4 << " Byte " << "  Bandwidth: " << sz*sz*sz*16*4/1024/1024/time_dif << " MB/s  ";
 
 	   /////////////////////////////////// MEM CHECK ////////////////////////////////////////////////////////
 
 	   bool passed = true;
 
-	   for (int i = 0 ; i < GS_SIZE ; i++)
+	   for (int i = 0 ; i < sz ; i++)
 	   {
-	     for (int j = 0 ; j < GS_SIZE ; j++)
+	     for (int j = 0 ; j < sz ; j++)
 	     {
-	       for (int k = 0 ; k < GS_SIZE ; k++)
+	       for (int k = 0 ; k < sz ; k++)
 	       {
 	    	   kk.set(i,j,k);
 
@@ -86,11 +86,11 @@ template<typename g> void test_layout_grid3d(g & c3)
 	     }
 	   }
 
-	   for (int i = 0 ; i < GS_SIZE ; i++)
+	   for (int i = 0 ; i < sz ; i++)
 	   {
-	     for (int j = 0 ; j < GS_SIZE ; j++)
+	     for (int j = 0 ; j < sz ; j++)
 	     {
-	       for (int k = 0 ; k < GS_SIZE ; k++)
+	       for (int k = 0 ; k < sz ; k++)
 	       {
 	    	   kk.set(i,j,k);
 
@@ -122,7 +122,7 @@ template<typename g> void test_layout_grid3d(g & c3)
 		   std::cout << "FAILED"  << "\n";
 }
 
-template<unsigned int dim, typename g> void test_layout_gridNd(g & c3)
+template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz)
 {
 	  std::cout << dim << "D Array with grid_key (without redundant dimension): " << "\n";
 
@@ -132,13 +132,11 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3)
 	   // clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
 	   clock_gettime(CLOCK_REALTIME, &ts_start); // Works on Linux
 
-	  grid_key_dx<dim> kk;
-
-	  grid_key_dx_iterator<dim> key_it;
+	  grid_key_dx_iterator<dim> key_it = c3.getIterator();
 
 	  while (key_it.hasNext())
 	  {
-		grid_key_dx<dim> & kk = key_it.next();
+		grid_key_dx<dim> kk = key_it.next();
 
 		c3.template get<P::x>(kk) = 1.1f;
 		c3.template get<P::y>(kk) = 1.2f;
@@ -165,17 +163,17 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3)
 	  clock_gettime(CLOCK_REALTIME, &end_time); // Works on Linux
 	   float time_dif =(float)( end_time.tv_sec - ts_start.tv_sec  + (double)(end_time.tv_nsec - ts_start.tv_nsec)/1000000000.0 );
 
-	   std::cout << "End : " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024 << " MB " << "  Bandwidth: " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024/time_dif << " MB/s  ";
+	   std::cout << "End : " << sz*sz*sz*16*4/1024/1024 << " MB " << "  Bandwidth: " << sz*sz*sz*16*4/1024/1024/time_dif << " MB/s  ";
 
 	   /////////////////////////////////// MEM CHECK ////////////////////////////////////////////////////////
 
-	   bool passed = true;
+/*	   bool passed = true;
 
-	   for (int i = 0 ; i < GS_SIZE ; i++)
+	   for (int i = 0 ; i < sz ; i++)
 	   {
-	     for (int j = 0 ; j < GS_SIZE ; j++)
+	     for (int j = 0 ; j < sz ; j++)
 	     {
-	       for (int k = 0 ; k < GS_SIZE ; k++)
+	       for (int k = 0 ; k < sz ; k++)
 	       {
 	    	   kk.set(i,j,k);
 
@@ -201,11 +199,11 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3)
 	     }
 	   }
 
-	   for (int i = 0 ; i < GS_SIZE ; i++)
+	   for (int i = 0 ; i < sz ; i++)
 	   {
-	     for (int j = 0 ; j < GS_SIZE ; j++)
+	     for (int j = 0 ; j < sz ; j++)
 	     {
-	       for (int k = 0 ; k < GS_SIZE ; k++)
+	       for (int k = 0 ; k < sz ; k++)
 	       {
 	    	   kk.set(i,j,k);
 
@@ -234,5 +232,5 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3)
 	   if (passed == true)
 		   std::cout << "PASSED"  << "\n";
 	   else
-		   std::cout << "FAILED"  << "\n";
+		   std::cout << "FAILED"  << "\n";*/
 }

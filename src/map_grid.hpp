@@ -107,7 +107,7 @@ struct mem_reference
 template<unsigned int p>
 struct Point_type_cpu_prop
 {
-	typedef typename boost::fusion::result_of::at<Point<float>::memory_lin::itype,boost::mpl::int_<p> >::type type;
+	typedef typename boost::fusion::result_of::at<Point<float>::memory_lin::vtype,boost::mpl::int_<p> >::type type;
 };
 
 /*!
@@ -234,9 +234,26 @@ class grid_cpu
     		for_each(T::type,cp);
 		}
 
+		/*! \brief return the size of the grid
+		 *
+		 * Return the size of the grid
+		 *
+		 */
+
 		inline size_t size()
 		{
 			return g1.size();
+		}
+
+		/*! \brief Return a grid iterator
+		 *
+		 * Return a grid iterator, to iterate through the grid
+		 *
+		 */
+
+		inline grid_key_dx_iterator<dim> getIterator()
+		{
+			return grid_key_dx_iterator<dim>(g1);
 		}
 };
 
@@ -350,6 +367,17 @@ class grid_gpu
 		void set_memory(memory & mem)
 		{
 			data.mem.set_memory(mem);
+		}
+
+		/*! \brief Return a grid iterator
+		 *
+		 * Return a grid iterator, to iterate through the grid
+		 *
+		 */
+
+		inline grid_key_dx_iterator<dim> getIterator()
+		{
+			return grid_key_dx_iterator<dim>(g1);
 		}
 };
 

@@ -31,17 +31,19 @@
 template<typename Seq>
 struct inter_memc
 {
-	typedef typename to_variadic<t_to_memory_c,Seq,typename boost::mpl::begin<Seq>::type ,typename boost::mpl::end<Seq>::type >::type type;
+	typedef typename to_variadic<t_to_memory_c,Seq>::type type;
 };
 
 /*! \brief Transform the boost::fusion::vector into memory specification (memory_traits)
  *
- * Transform the boost::fusion::vector into memory specification (memory_traits).
+ * Transform the boost::fusion::vector into memory_traits.
  * In this implementation we interleave each property of the base type with memory_c
  *
  * We basically create a buffer for each property
  *
- * \param T base type (T::type must define a boost::mpl::vector )
+ * \see see inter_mem_c for detail
+ *
+ * \param T base type (T::type must define a boost::fusion::vector )
  *
  *
  */
@@ -60,7 +62,7 @@ struct memory_traits_inte
  *
  * We basically create a buffer for each property
  *
- * \param T base type (T::type must define a boost::mpl::vector )
+ * \param T base type (T::type must define a boost::fusion::vector )
  *
  *
  */
@@ -69,7 +71,7 @@ template<typename T>
 struct memory_traits_lin
 {
 	//! for each element in the vector interleave memory_c
-	typedef memory_c<boost::fusion::vector<float, float, float, float, float [3], float [3][3]>> type;
+	typedef memory_c<T> type;
 };
 
 #endif
