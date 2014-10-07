@@ -22,10 +22,22 @@ namespace openfpm
 	 */
 
 	template<typename T>
-	struct device_v
+	struct device_cpu
 	{
 		//! cpu
 		typedef grid_cpu<1,T> cpu;
+	};
+
+
+	/*! device selector struct
+	 *
+	 * device selector struct, it return the correct data type for each device
+	 *
+	 */
+
+	template<typename T>
+	struct device_gpu
+	{
 		//! gpu
 		typedef grid_gpu<1,T> gpu;
 	};
@@ -34,13 +46,67 @@ namespace openfpm
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
 	 * Implementation of 1-D std::vector like structure, empty structure
-	 * when I do not know how to specialize
+	 * when I do not know how to specialize, should be never selected by the
+	 * compiler
 	 *
 	 */
 
-	template<typename T, typename device=device_v<T>::cpu>
+	template<typename T, typename device=device_cpu<T>>
 	class vector
 	{
+	};
+
+	/*! \brief Implementation of 1-D std::vector like structure
+	 *
+	 * this implementation is just a wrapper for the std::vector in the case
+	 * of the primitive size_t
+	 *
+	 * \param T base type
+	 *
+	 */
+
+	template<>
+	class vector<size_t,device_cpu<size_t>>
+	{
+		//! Indicate if reallocation is needed on cpu is always false;
+		bool need_reallocation;
+
+		//! Actual size of the vector, warning: it is not the space allocated in grid
+		//! grid size increase by a fixed amount every time we need a vector bigger than
+		//! the actually allocated space
+		size_t v_size;
+
+		//! 1-D static grid
+		std::vector<size_t> base;
+
+		//! return the size of the vector
+		size_t size()
+		{
+			return base.size();
+		}
+
+		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
+		 *
+		 * It insert a new object on the vector, eventually it reallocate the grid
+		 *
+		 * \warning It is not thread safe should not be used in multi-thread environment
+		 *          reallocation, work only on cpu
+		 *
+		 *
+		 */
+		void push_back(size_t & v)
+		{
+			base.push_back(v);
+		}
+
+	public:
+
+		//! Constructor, vector of size 0
+		vector() {}
+
+		//! Constructor, vector of size sz
+		vector(size_t sz):base(sz) {}
+
 	};
 
 	/*! \brief Implementation of 1-D std::vector like structure
@@ -53,8 +119,11 @@ namespace openfpm
 	 */
 
 	template<typename T>
-	class vector<T,device_v<T>::cpu>
+	class vector<T,device_cpu<T>>
 	{
+		//! Indicate if reallocation is needed on cpu is always false;
+		bool need_reallocation;
+
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
 		//! the actually allocated space
@@ -80,19 +149,45 @@ namespace openfpm
 		 */
 		void push_back(T & v)
 		{
-			//! Here we are doing computation, reallocation is not permitted
+			//! Check if we have enough space
 
 			if (v_size >= base.size())
 			{
-				//! Resize the memory
+				//! Resize the memory of PAGE_ALLOC elements
 				std::vector<size_t> sz;
 				sz.push_back(PAGE_ALLOC);
 				base.resize(sz);
 			}
 
-			// copy the element
+			//! copy the element
 			base.set(v_size,v);
 		}
+
+		/*! \brief Get 1D grid vector
+		 *
+		 * Get 1D grid vector
+		 *
+		 * \param size_t sizeof the vector
+		 *
+		 */
+
+		std::vector<size_t> & getV(size_t sz)
+		{
+			std::vector<size_t> tmp;
+
+			tmp.push_back(sz);
+
+			return tmp;
+		}
+
+	public:
+
+		//! Constructor, vector of size 0
+		vector():base(getV(0)) {}
+
+		//! Constructor, vector of size sz
+		vector(size_t sz):base(getV(sz)) {}
+
 	};
 
 	/*! \brief Implementation of 1-D std::vector like structure
@@ -113,7 +208,7 @@ namespace openfpm
 	 */
 
 	template<typename T>
-	class vector<T,device_v<T>::gpu>
+	class vector<T,device_gpu<T>>
 	{
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
@@ -140,7 +235,7 @@ namespace openfpm
 		 */
 		void push_back(T & v)
 		{
-			//! Here we are doing computation, reallocation is not permitted
+			//! Check if we have enough space
 
 			if (v_size >= base.size())
 			{

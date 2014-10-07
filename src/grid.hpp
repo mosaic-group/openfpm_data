@@ -38,12 +38,33 @@ public:
     invert_assign(t...);
   }
   
-  //! get the i index
+  /*! \brief get the i index
+   *
+   * Get the i index
+   *
+   * \param i index to get
+   *
+   * \return the index value
+   *
+   */
   mem_id get(size_t i)
   {
 	  return k[i];
   }
   
+  /*! \brief Set the i index
+   *
+   * Set the i index
+   *
+   * \param i index to set
+   * \param id value to set
+   *
+   */
+  void set_d(size_t i, mem_id id)
+  {
+	  k[i] = id;
+  }
+
   //! structure that store all the index
   mem_id k[dim];
 
@@ -175,12 +196,33 @@ public:
 template<unsigned int N, typename T>
 class grid
 {
+	//! total number of the elements in the grid
   size_t size_tot;
+
+  //! size of the grid
   size_t sz[N];
+
+  //! size of the grid on each stride (used for linearization)
   size_t sz_s[N];
   
 public:
   
+  /*! \brief construct a grid from another grid
+   *
+   * construct a grid from another grid, type can be different
+   *
+   */
+
+  template<typename S> grid(grid<N,S> g)
+  {
+	  // copy all the members
+
+	  size_tot = g.size_tot;
+
+	  for (int i = 0 ; i < N ; i++)
+	  {sz[i] = g.sz[i]; sz_s[i] = g.sz_s[i];}
+  }
+
   // Static element to calculate total size
 
   size_t totalSize(std::vector<size_t> & sz)
@@ -194,7 +236,15 @@ public:
     
     return tSz;
   }
-  
+
+  /*! \brief Construct a grid of a specified size
+   *
+   * Construct a grid of a specified size
+   *
+   * \param sz is an std::vector that contain the size of the grid on each dimension
+   *
+   */
+
   grid(std::vector<size_t> & sz)
   : size_tot(totalSize(sz))
   {
@@ -207,6 +257,15 @@ public:
     }
   }
   
+  /*! \brief Linearization of the grid_key_dx
+   *
+   * Linearization of the grid_key_dx given a key, it spit out a number that is just the 1D linearization
+   * of the key. In this case is the linearization of N index
+   *
+   * \param grid_key_dx<dim> grid key to access the element on a key
+   *
+   */
+
   #pragma openfpm layout(get)
   template<unsigned int dim> mem_id LinId(grid_key_dx<dim> & gk)
   {
@@ -219,6 +278,15 @@ public:
     return lid;
   }
   
+  /*! \brief Linearization of the grid_key_d
+   *
+   * Linearization of the grid_key_d given a key, it spit out a number that is just the 1D linearization
+   * of the key. In this case is the linearization of N index
+   *
+   * \param grid_key_d<dim,p> grid key to access the element on a key
+   *
+   */
+
   #pragma openfpm layout(get)
   template<unsigned int dim, unsigned int p> mem_id LinId(grid_key_d<dim,p> & gk)
   {
@@ -231,6 +299,15 @@ public:
     return lid;
   }
   
+  /*! \brief Linearization of an array of mem_id (long int)
+   *
+   * Linearization of an array of mem_id, it spit out a number that is just the 1D linearization
+   * of the key. In this case is the linearization of N index
+   *
+   * \param id an array of mem_id index
+   *
+   */
+
   #pragma openfpm layout(get)
   mem_id LinId(mem_id * id)
   {
@@ -240,45 +317,6 @@ public:
     {
       lid += id[i] * sz_s[i-1];
     }
-    
-    return lid;
-  }
-  
-  #pragma openfpm layout(get)
-  mem_id LinId(mem_id i)
-  {
-    return i;
-  }
-  
-  #pragma openfpm layout(get)
-  mem_id LinId(mem_id j, mem_id k)
-  {
-    mem_id lid = 0;
-    lid += k;
-    lid += j*sz_s[0];
-    
-    return lid;
-  }
-  
-  #pragma openfpm layout(get)
-  mem_id LinId(mem_id i, mem_id j, mem_id k)
-  {
-    mem_id lid = 0;
-    lid += k;
-    lid += j*sz_s[0];
-    lid += i*sz_s[1];
-    
-    return lid;
-  }
-  
-  #pragma openfpm layout(get)
-  mem_id LinId(mem_id u, mem_id i, mem_id j, mem_id k)
-  {
-    mem_id lid = 0;
-    lid += k;
-    lid += j*sz_s[0];
-    lid += i*sz_s[1];
-    lid += u*sz_s[2];
     
     return lid;
   }
@@ -302,16 +340,20 @@ public:
 
   /**
    *
-   * Get the size of the grid on direction i
+   * Get the size of the grid on the direction i
    *
-   * @param i direction
+   * \param i direction
+   * \return the size on the direction i
    *
    */
 
   size_t size(unsigned int i)
   {
-	  return sz_s[i];
+	  return sz[i];
   }
+
+  //!  It simply mean that all the classes grid are friend of all its specialization
+  template <unsigned int,typename> friend class grid;
 };
 
 /**
@@ -328,7 +370,7 @@ public:
 template<unsigned int dim>
 class grid_key_dx_iterator
 {
-	grid<dim,void> & grid_base;
+	grid<dim,void> grid_base;
 
 	grid_key_dx<dim> gk;
 
@@ -343,7 +385,12 @@ public:
 	 */
 	template<typename T> grid_key_dx_iterator(grid<dim,T> & g)
 	: grid_base(g)
-	{}
+	{
+		//! Initialize to 0 the index
+
+		for (int i = 0 ; i < dim ; i++)
+		{gk.set_d(i,0);}
+	}
 
 	/*! \brief Get the next element
 	 *
@@ -353,25 +400,34 @@ public:
 	 *
 	 */
 
-	grid_key_dx<dim> next()
+	grid_key_dx_iterator<dim> operator++()
 	{
+		//! increment the first index
+
 		size_t id = gk.get(0);
-		gk.set(0,id+1);
-		for (int i = 0 ; i < dim ; i++)
+		gk.set_d(0,id+1);
+
+		//! check the overflow of all the index with exception of the last dimensionality
+
+		int i = 0;
+		for ( ; i < dim-1 ; i++)
 		{
 			size_t id = gk.get(i);
-			if (id == grid_base.size(i))
+			if (id >= grid_base.size(i))
 			{
-				gk.set(i,0);
+				// ! overflow, increment the next index
+
+				gk.set_d(i,0);
 				id = gk.get(i+1);
-				gk.set(i+1,id+1);
+				gk.set_d(i+1,id+1);
 			}
 			else
 			{
 				break;
 			}
 		}
-		return gk;
+
+		return *this;
 	}
 
 	/*! \brief Check if there is the next element
@@ -382,17 +438,29 @@ public:
 	 *
 	 */
 
-	bool hasNext()
+	bool isEnd()
 	{
-		for (int i = dim-1 ; i >= 0 ; i--)
+		if (gk.get(dim-1) < grid_base.size(dim-1))
 		{
-			if (gk.get(i) < grid_base.size(i))
-			{
-				return false;
-			}
+			//! we did not reach the end of the grid
+
+			return true;
 		}
 
-		return true;
+		//! we reach the end of the grid
+		return false;
+	}
+
+	/*! \brief Get the actual key
+	 *
+	 * Get the actual key
+	 *
+	 * \return the actual key
+	 *
+	 */
+	grid_key_dx<dim> get()
+	{
+		return gk;
 	}
 };
 

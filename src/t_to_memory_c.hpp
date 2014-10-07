@@ -29,10 +29,10 @@
  *
  */
 
-// First thing the metafunction has to do is to remove eventually reference and const attribute
-
 #include <boost/type_traits/remove_reference.hpp>
 #include <boost/type_traits/remove_const.hpp>
+
+// First thing the metafunction has to do, is to remove eventually reference and const attribute
 
 template<typename T>
 struct remove_attributes_const_ref

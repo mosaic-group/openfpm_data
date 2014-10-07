@@ -1,7 +1,6 @@
 #define BOOST_DISABLE_ASSERTS
 
 #include <iostream>
-#include "Particle.hpp"
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
 #include <ct_array.hpp>
@@ -9,25 +8,43 @@
 #include "memory/HeapMemory.hpp"
 #include "memory_conf.hpp"
 #include "map_grid.hpp"
+#include "map_vector.hpp"
 
 // Include tests
 
 #include <test_1.hpp>
 #include <test_2.hpp>
 
-//#include <test_3.hpp>
-//#include <test_4.hpp>
-//#include <test_5.hpp>
+/*! \brief Test all grid with dimensionality dim and size sz on all dimensions
+ *
+ * Test all grid with dimensionality dim and size sz on all dimensions
+ *
+ */
 
-/*float Wi(float dist_x)
+template<unsigned int dim> void test_all_grid(size_t sz)
 {
-  if (dist_x <= 1)
-    return 1.5f*dist_x * dist_x * dist_x - 2.5f * dist_x * dist_x + 1.0f;
-  else if (dist_x <= 2)
-    return -0.5f*dist_x * dist_x * dist_x * dist_x + 2.5f * dist_x * dist_x - 4.0f * dist_x + 2.0f;
-  else
-    return 0.0;
-}*/
+	std::vector<size_t> szz;
+	szz.clear();
+
+	for (int i = 0 ; i < dim ; i++)
+	{szz.push_back(sz);}
+
+	{grid_cpu<dim, Point<float> > c3(szz);
+	c3.template setMemory<CudaMemory>();
+	test_layout_gridNd<dim>(c3,sz);}
+
+	{grid_cpu<dim, Point<float> > c3(szz);
+	c3.template setMemory<HeapMemory>();
+	test_layout_gridNd<dim>(c3,sz);}
+
+	{grid_gpu<dim, Point<float> > c3(szz);
+	c3.template setMemory<CudaMemory>();
+	test_layout_gridNd<dim>(c3,sz);}
+
+	{grid_gpu<dim, Point<float> > c3(szz);
+	c3.template setMemory<HeapMemory>();
+	test_layout_gridNd<dim>(c3,sz);}
+}
 
 
 int main()
@@ -44,20 +61,22 @@ int main()
   
   test1();
 
-  // test
+  // test the grid from dimensionality 1 to 8 with several size non multiple of two
 
-  sz.clear();
-  sz.push_back(GS_SIZE);
-  sz.push_back(GS_SIZE);
-  sz.push_back(GS_SIZE);
+  // Dimension 8-1
 
-  {grid_gpu<3, Point<float> > c3(sz);
-  c3.setMemory<CudaMemory>();
-  test_layout_gridNd<3>(c3,GS_SIZE);}
+  test_all_grid<8>(4);
+  test_all_grid<7>(8);
+  test_all_grid<6>(9);
+  test_all_grid<5>(18);
+  test_all_grid<4>(37);
+  test_all_grid<3>(126);
+  test_all_grid<2>(1414);
+  test_all_grid<1>(2000000);
 
-  // Test the 3d gpu grid with Cudamemory and HeapMemory with different size
+   // Test the 3d gpu grid with Cudamemory and HeapMemory with different size
 
-/*  for (int i = 2 ; i <= GS_SIZE ; i++)
+  for (int i = 2 ; i <= GS_SIZE ; i++)
   {
 	  sz.clear();
 	  sz.push_back(i);
@@ -82,7 +101,11 @@ int main()
 	  c3.setMemory<HeapMemory>();
 	  test_layout_grid3d(c3,i);}
 
-  }*/
+  }
+
+  // Test openfpm vector
+
+  openfpm::vector<Point<float>> ofv;
 
   // Test another grid
 

@@ -13,10 +13,9 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include <boost/type_traits.hpp>
 #include <boost/fusion/include/for_each.hpp>
+#include "memory_conf.hpp"
 
 #include "grid.hpp"
-#include "Particle.hpp"
-#include "Point.hpp"
 #include "memory_array.hpp"
 #include "memory_c.hpp"
 
@@ -104,10 +103,28 @@ struct mem_reference
 	typedef T& type;
 };
 
-template<unsigned int p>
+/*template<unsigned int p>
 struct Point_type_cpu_prop
 {
 	typedef typename boost::fusion::result_of::at<Point<float>::memory_lin::vtype,boost::mpl::int_<p> >::type type;
+};*/
+
+/*! \brief This class is an helper to get the return type for get method for each property
+ *
+ * This class is an helper to get the return type for get method for each property
+ *
+ * \param p id of the property
+ * \param T original boost fusion vector, T is suppose to be a boost::fusion::vector<memory_c<...>,.....>
+ *
+ */
+
+template<unsigned int p,typename T>
+struct type_cpu_prop
+{
+	//! return a boost::fusion::vector<memory_c<....>....>
+	typedef typename T::memory_lin::vtype vtype;
+	//! return a memory_c<...>
+	typedef typename boost::fusion::result_of::at< vtype,boost::mpl::int_<p> >::type type;
 };
 
 /*!
@@ -140,6 +157,19 @@ class grid_cpu
 		{
 		}
 
+		/*! \brief Return the internal grid information
+		 *
+		 * Return the internal grid information
+		 *
+		 * \return the internal grid
+		 *
+		 */
+
+		grid<dim,T> getGrid()
+		{
+			return g1;
+		}
+
 		/*! \brief Create the object that provide memory
 		 *
 		 * Create the object that provide memory
@@ -157,18 +187,31 @@ class grid_cpu
 	        data.allocate(g1.size());
 		}
 
-		template <unsigned int p>inline typename Point_type_cpu_prop<p>::type & get(grid_key<p> & v1)
+		/*! \brief Return a plain pointer to the internal data
+		 *
+		 * Return a plain pointer to the internal data
+		 *
+		 * \return plain data pointer
+		 *
+		 */
+
+		void * getPointer()
+		{
+			return data.mem->getPointer();
+		}
+
+		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key<p> & v1)
 		{
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1.getId())));
 		}
   
-		template <unsigned int p>inline typename Point_type_cpu_prop<p>::type & get(grid_key_d<dim,p> & v1)
+		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key_d<dim,p> & v1)
 		{
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}
   
   
-		template <unsigned int p>inline typename Point_type_cpu_prop<p>::type & get(grid_key_dx<dim> & v1)
+		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key_dx<dim> & v1)
 		{
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}
@@ -327,6 +370,19 @@ class grid_gpu
 		grid_gpu(std::vector<size_t> & sz)
 		:g1(sz)
 		{
+		}
+
+		/*! \brief Return the internal grid information
+		 *
+		 * Return the internal grid information
+		 *
+		 * \return the internal grid
+		 *
+		 */
+
+		grid<dim,void> getGrid()
+		{
+			return g1;
 		}
 
 		/*! \brief Create the object that provide memory
