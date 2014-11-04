@@ -1,6 +1,46 @@
-#include <time.h>
-#include <typeinfo>
+#ifndef GRID_UNIT_TEST_HPP
+#define GRID_UNIT_TEST_HPP
+
+#include "map_grid.hpp"
 #include "Point.hpp"
+
+#define GS_SIZE 128
+
+template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz);
+template<typename g> void test_layout_grid3d(g & c3, size_t sz);
+
+/*! \brief Test all grid with dimensionality dim and size sz on all dimensions
+ *
+ * Test all grid with dimensionality dim and size sz on all dimensions
+ *
+ */
+
+template<unsigned int dim> void test_all_grid(size_t sz)
+{
+	std::vector<size_t> szz;
+	szz.clear();
+
+	for (int i = 0 ; i < dim ; i++)
+	{szz.push_back(sz);}
+
+	{grid_cpu<dim, Point<float> > c3(szz);
+	c3.template setMemory<CudaMemory>();
+	test_layout_gridNd<dim>(c3,sz);}
+
+	{grid_cpu<dim, Point<float> > c3(szz);
+	c3.template setMemory<HeapMemory>();
+	test_layout_gridNd<dim>(c3,sz);}
+
+	{grid_gpu<dim, Point<float> > c3(szz);
+	c3.template setMemory<CudaMemory>();
+	test_layout_gridNd<dim>(c3,sz);}
+
+	{grid_gpu<dim, Point<float> > c3(szz);
+	c3.template setMemory<HeapMemory>();
+	test_layout_gridNd<dim>(c3,sz);}
+}
+
+
 
 template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 {
@@ -116,10 +156,7 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 	     }
 	   }
 
-	   if (passed == true)
-		   std::cout << "PASSED"  << "\n";
-	   else
-		   std::cout << "FAILED"  << "\n";
+	   BOOST_REQUIRE_EQUAL(passed,true);
 }
 
 template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz)
@@ -228,8 +265,118 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 		   ++key_it;
 	   }
 
-	   if (passed == true)
-		   std::cout << "PASSED"  << "\n";
-	   else
-		   std::cout << "FAILED"  << "\n";
+	   BOOST_REQUIRE_EQUAL(passed,true);
 }
+
+BOOST_AUTO_TEST_SUITE( grid_test )
+
+BOOST_AUTO_TEST_CASE( grid_use)
+{
+	/*  tensor<int,3,3,3> c;
+	  tensor<tensor<int,3,3,3>,3,3,3> c2;*/
+
+	  std::vector<size_t> sz;
+	  sz.push_back(GS_SIZE);
+	  sz.push_back(GS_SIZE);
+	  sz.push_back(GS_SIZE);
+
+	  // test the grid from dimensionality 1 to 8 with several size non multiple of two
+
+	  // Dimension 8-1
+
+	  test_all_grid<8>(4);
+	  test_all_grid<7>(8);
+	  test_all_grid<6>(9);
+	  test_all_grid<5>(18);
+	  test_all_grid<4>(37);
+	  test_all_grid<3>(126);
+	  test_all_grid<2>(1414);
+	  test_all_grid<1>(2000000);
+
+	   // Test the 3d gpu grid with Cudamemory and HeapMemory with different size
+
+	  for (int i = 2 ; i <= GS_SIZE ; i++)
+	  {
+		  sz.clear();
+		  sz.push_back(i);
+		  sz.push_back(i);
+		  sz.push_back(i);
+
+		  {grid_gpu<3, Point<float> > c3(sz);
+		  c3.setMemory<CudaMemory>();
+		  test_layout_grid3d(c3,i);}
+
+		  {grid_gpu<3, Point<float> > c3(sz);
+		  c3.setMemory<HeapMemory>();
+		  test_layout_grid3d(c3,i);}
+
+		  // Test the 3d cpu grid with Cudamemory and HeapMemory
+
+		  {grid_cpu<3, Point<float> > c3(sz);
+		  c3.setMemory<CudaMemory>();
+		  test_layout_grid3d(c3,i);}
+
+		  {grid_cpu<3, Point<float> > c3(sz);
+		  c3.setMemory<HeapMemory>();
+		  test_layout_grid3d(c3,i);}
+
+	  }
+}
+
+/* \brief This is an ordinary test simple 3D with plain C array
+ *
+ * This is an ordinary test simple 3D with plain C array
+ *
+ */
+
+BOOST_AUTO_TEST_CASE( C_array_test )
+{
+	// Testing the grids
+
+	std::cout << "Grid size known at runtime" << "\n";
+	std::cout << "1D Array with index calculation: " << "\n";
+
+	Point_orig<float> * pA = new Point_orig<float>[GS_SIZE*GS_SIZE*GS_SIZE];
+
+	int gs_sq = GS_SIZE*GS_SIZE;
+	int gs = GS_SIZE;
+
+	clock_t begin_time = clock();
+
+	for (int i = 0 ; i < GS_SIZE ; i++)
+	{
+		for (int j = 0 ; j < GS_SIZE ; j++)
+		{
+	      for (int k = 0 ; k < GS_SIZE ; k++)
+	      {
+	    	  pA[i*gs_sq+j*gs+k].x = 1.1f;
+	    	  pA[i*gs_sq+j*gs+k].y = 1.2f;
+	    	  pA[i*gs_sq+j*gs+k].z = 1.3f;
+	    	  pA[i*gs_sq+j*gs+k].s = 1.0f;
+
+	    	  pA[i*gs_sq+j*gs+k].v[0] = 1.0f;
+	    	  pA[i*gs_sq+j*gs+k].v[1] = 2.0f;
+	    	  pA[i*gs_sq+j*gs+k].v[2] = 3.0f;
+
+	    	  pA[i*gs_sq+j*gs+k].t[0][0] = 1.0f;
+	    	  pA[i*gs_sq+j*gs+k].t[0][1] = 2.0f;
+	    	  pA[i*gs_sq+j*gs+k].t[0][2] = 3.0f;
+	    	  pA[i*gs_sq+j*gs+k].t[1][0] = 4.0f;
+	    	  pA[i*gs_sq+j*gs+k].t[1][1] = 5.0f;
+	    	  pA[i*gs_sq+j*gs+k].t[1][2] = 6.0f;
+	    	  pA[i*gs_sq+j*gs+k].t[2][0] = 7.0f;
+	    	  pA[i*gs_sq+j*gs+k].t[2][1] = 8.0f;
+	    	  pA[i*gs_sq+j*gs+k].t[2][2] = 9.0f;
+	      }
+	    }
+	   }
+
+	   clock_t end_time = clock ();
+	   float time_dif =(float)( end_time - begin_time ) / (float) CLOCKS_PER_SEC;
+
+	   std::cout << "End : " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024 << " MB " << "  Bandwidth: " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024/time_dif << " MB/s  \n";
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+#endif

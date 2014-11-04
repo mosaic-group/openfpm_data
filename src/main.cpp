@@ -1,5 +1,9 @@
 #define BOOST_DISABLE_ASSERTS
 
+
+#define BOOST_TEST_MODULE "C++ test module for OpenFPM_data project"
+#include <boost/test/included/unit_test.hpp>
+
 #include <iostream>
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
@@ -12,47 +16,15 @@
 
 // Include tests
 
-#include <test_1.hpp>
-#include <test_2.hpp>
+#include "grid_unit_tests.hpp"
+#include "vector_unit_tests.hpp"
 
-/*! \brief Test all grid with dimensionality dim and size sz on all dimensions
- *
- * Test all grid with dimensionality dim and size sz on all dimensions
- *
- */
-
-template<unsigned int dim> void test_all_grid(size_t sz)
-{
-	std::vector<size_t> szz;
-	szz.clear();
-
-	for (int i = 0 ; i < dim ; i++)
-	{szz.push_back(sz);}
-
-	{grid_cpu<dim, Point<float> > c3(szz);
-	c3.template setMemory<CudaMemory>();
-	test_layout_gridNd<dim>(c3,sz);}
-
-	{grid_cpu<dim, Point<float> > c3(szz);
-	c3.template setMemory<HeapMemory>();
-	test_layout_gridNd<dim>(c3,sz);}
-
-	{grid_gpu<dim, Point<float> > c3(szz);
-	c3.template setMemory<CudaMemory>();
-	test_layout_gridNd<dim>(c3,sz);}
-
-	{grid_gpu<dim, Point<float> > c3(szz);
-	c3.template setMemory<HeapMemory>();
-	test_layout_gridNd<dim>(c3,sz);}
-}
-
-
-int main()
-{
+//int main()
+//{
 /*  tensor<int,3,3,3> c;
   tensor<tensor<int,3,3,3>,3,3,3> c2;*/
   
-  std::vector<size_t> sz;
+/*  std::vector<size_t> sz;
   sz.push_back(GS_SIZE);
   sz.push_back(GS_SIZE);
   sz.push_back(GS_SIZE);
@@ -101,11 +73,11 @@ int main()
 	  c3.setMemory<HeapMemory>();
 	  test_layout_grid3d(c3,i);}
 
-  }
+  }*/
 
   // Test openfpm vector
 
-  openfpm::vector<Point<float>> ofv;
+//  openfpm::vector<Point<float>> ofv;
 
   // Test another grid
 
@@ -189,4 +161,4 @@ int main()
 
   
 
-}
+//}

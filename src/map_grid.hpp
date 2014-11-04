@@ -151,6 +151,17 @@ class grid_cpu
 
 	public:
   
+		//! Default constructor
+		grid_cpu()
+	    {
+	    }
+
+		//! Set the grid dimensions
+		void setDimensions(std::vector<size_t> & sz)
+		{
+			g1.setDimension(sz);
+		}
+
 		//! Constructor allocate memory and give them a representation
 		grid_cpu(std::vector<size_t> & sz)
 		:g1(sz)
@@ -298,6 +309,21 @@ class grid_cpu
 		{
 			return grid_key_dx_iterator<dim>(g1);
 		}
+
+		/*! \brief Return a grid iterator over all the point with the exception
+		 *   of the ghost part
+		 *
+		 * Return a grid iterator over all the point with the exception of the
+		 * ghost part
+		 *
+		 */
+
+		inline grid_key_dx_iterator_sub<dim> getIteratorDomain()
+		{
+			// get the starting point and the end point of the real domain
+
+			return grid_key_dx_iterator_sub<dim>(g1.getDomainStart(),g1.getDomainStop());
+		}
 };
 
 /*! \brief This class is an helper to get the return type of get for each property
@@ -365,6 +391,17 @@ class grid_gpu
 		Mem data;
 
 	public:
+
+		//! Default constructor
+		grid_gpu()
+	    {
+	    }
+
+		//! Set the grid dimensions
+		void setDimensions(std::vector<size_t> & sz)
+		{
+			g1.setDimension(sz);
+		}
 
 		//! Constructor it initialize the memory and give representation
 		grid_gpu(std::vector<size_t> & sz)

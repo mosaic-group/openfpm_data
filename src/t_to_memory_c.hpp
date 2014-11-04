@@ -177,4 +177,5 @@ struct t_to_memory_c
 	typedef typename t_to_memory_c_impl<typename remove_attributes_const_ref<T>::type>::type type;
 };
 
+
 #endif /* T_TO_MEMORY_C_HPP_ */
