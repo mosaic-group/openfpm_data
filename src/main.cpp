@@ -16,8 +16,8 @@
 
 // Include tests
 
-#include "grid_unit_tests.hpp"
 #include "vector_unit_tests.hpp"
+#include "grid_unit_tests.hpp"
 
 //int main()
 //{

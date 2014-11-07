@@ -51,7 +51,7 @@ namespace openfpm
 	 *
 	 */
 
-	template<typename T, typename device=device_cpu<T>>
+	template<typename T, typename device=device_cpu<T>, typename Memory=HeapMemory>
 	class vector
 	{
 	};
@@ -65,8 +65,8 @@ namespace openfpm
 	 *
 	 */
 
-	template<>
-	class vector<size_t,device_cpu<size_t>>
+	template<typename Memory>
+	class vector<size_t,device_cpu<size_t>,Memory>
 	{
 		//! Indicate if reallocation is needed on cpu is always false;
 		bool need_reallocation;
@@ -118,8 +118,8 @@ namespace openfpm
 	 *
 	 */
 
-	template<typename T>
-	class vector<T,device_cpu<T>>
+	template<typename T,typename Memory>
+	class vector<T,device_cpu<T>, Memory>
 	{
 		//! Indicate if reallocation is needed on cpu is always false;
 		bool need_reallocation;
@@ -137,6 +137,26 @@ namespace openfpm
 		{
 			return v_size;
 		}
+
+
+		/*! \brief Get 1D vector to create the grid in the constructor
+		 *
+		 * Get 1D vector to create the grid in the constructor
+		 *
+		 * \param size_t sizeof the vector
+		 *
+		 */
+
+		std::vector<size_t> getV(size_t sz)
+		{
+			std::vector<size_t> tmp;
+
+			tmp.push_back(sz);
+
+			return tmp;
+		}
+
+	public:
 
 		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 		 *
@@ -156,37 +176,25 @@ namespace openfpm
 				//! Resize the memory of PAGE_ALLOC elements
 				std::vector<size_t> sz;
 				sz.push_back(PAGE_ALLOC);
-				base.resize(sz);
+				base.template resize<Memory>(sz);
 			}
 
 			//! copy the element
 			base.set(v_size,v);
 		}
 
-		/*! \brief Get 1D grid vector
-		 *
-		 * Get 1D grid vector
-		 *
-		 * \param size_t sizeof the vector
-		 *
-		 */
-
-		std::vector<size_t> & getV(size_t sz)
+		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(size_t id)
 		{
-			std::vector<size_t> tmp;
+			grid_key_dx<1> key(id);
 
-			tmp.push_back(sz);
-
-			return tmp;
+			return base.template get<p>(key);
 		}
 
-	public:
-
 		//! Constructor, vector of size 0
-		vector():base(getV(0)) {}
+		vector():v_size(0),base(getV(0)) {}
 
 		//! Constructor, vector of size sz
-		vector(size_t sz):base(getV(sz)) {}
+		vector(size_t sz):v_size(sz),base(getV(sz)) {}
 
 	};
 
@@ -207,8 +215,8 @@ namespace openfpm
 	 *
 	 */
 
-	template<typename T>
-	class vector<T,device_gpu<T>>
+	template<typename T,typename Memory>
+	class vector<T,device_gpu<T>,Memory>
 	{
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than

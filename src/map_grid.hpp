@@ -13,20 +13,25 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include <boost/type_traits.hpp>
 #include <boost/fusion/include/for_each.hpp>
+#include <boost/mpl/range_c.hpp>
 #include "memory_conf.hpp"
+#include "meta_copy.hpp"
 
 #include "grid.hpp"
 #include "memory_array.hpp"
 #include "memory_c.hpp"
+#include <vector>
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
- * element of the boost::vector the operator() is called to copy
- * all the properties from the source grid to the destination
- * grid
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one object into one target
+ * grid  element in a generic way for a
+ * generic object T with variable number of property
  *
- * \param S
+ * \param dim Dimensionality
+ * \param S type of grid
  *
  */
 
@@ -42,29 +47,48 @@ struct copy_cpu
 	//! type of the object we have to set
 	typedef typename S::type obj_type;
 
-	//! onject we have to store
-	obj_type obj;
+	//! type of the object boost::sequence
+	typedef typename S::type::type ov_seq;
 
-	//! constructor it fix the size
-	copy_cpu(grid_key_dx<dim> & key, S grid_src, obj_type obj)
-	:grid_src(grid_src),key(key),obj(obj){};
+	//! object we have to store
+	obj_type & obj;
 
-	//! It call the copy function for each member
+	/*! \brief constructor
+	 *
+	 * It define the copy parameters.
+	 *
+	 * \param key which element we are modifying
+	 * \param grid_src grid we are updating
+	 * \param obj object we have to set in grid_src
+	 *
+	 */
+	copy_cpu(grid_key_dx<dim> & key, S grid_src, obj_type & obj)
+	:key(key),grid_src(grid_src),obj(obj){};
+
+	//! It call the copy function for each property
     template<typename T>
     void operator()(T& t) const
     {
-    	t = boost::fusion::at_c<T::value>(obj);
+    	// This is the type of the object we have to copy
+    	typedef typename boost::fusion::result_of::at_c<ov_seq,T::value>::type copy_type;
+
+    	// Remove the reference from the type to copy
+    	typedef typename boost::remove_reference<copy_type>::type copy_rtype;
+
+    	meta_copy<copy_rtype> cp(grid_src.template get<T::value>(key),boost::fusion::at_c<T::value>(obj.data));
     }
 };
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
- * element of the boost::vector the operator() is called to copy
- * all the properties from the source grid to the destination
- * grid
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one source grid element into one target
+ * grid element in a generic way for an object T with variable
+ * number of property
  *
- * \param S
+ * \param dim Dimensionality
+ * \param S grid type
  *
  */
 
@@ -74,17 +98,30 @@ struct copy_cpu_sd
 	//! size to allocate
 	grid_key_dx<dim> & key;
 
+	//! Source grid
 	S & grid_src;
+
+	//! Destination grid
+	S & grid_dst;
+
+	//! type of the object boost::sequence
+	typedef typename S::type::type ov_seq;
 
 	//! constructor it fix the size
 	copy_cpu_sd(grid_key_dx<dim> & key, S grid_src, S grid_dst)
-	:grid_src(grid_src),key(key){};
+	:key(key),grid_src(grid_src),grid_dst(grid_dst){};
 
 	//! It call the copy function for each member
     template<typename T>
     void operator()(T& t) const
     {
-    	t = grid_src.template get<T::value>(key);
+    	// This is the type of the object we have to copy
+    	typedef typename boost::fusion::result_of::at_c<ov_seq,T::value>::type copy_type;
+
+    	// Remove the reference from the type to copy
+    	typedef typename boost::remove_reference<copy_type>::type copy_rtype;
+
+    	meta_copy<copy_rtype> cp(grid_dst.template get<T::value>(key),grid_src.template get<T::value>(key));
     }
 };
 
@@ -142,6 +179,8 @@ struct type_cpu_prop
 template<unsigned int dim, typename T, typename Mem = typename memory_traits_lin< typename T::type >::type >
 class grid_cpu
 {
+	typedef typename T::type T_type;
+
 		//! This is an header that store all information related to the grid
 		grid<dim,T> g1;
 
@@ -149,10 +188,32 @@ class grid_cpu
 		//! and give also a representation to the allocated memory
 		Mem data;
 
+		/*! \brief Get 1D vector with the
+		 *
+		 * Get std::vector with element 0 to dim set to 0
+		 *
+		 */
+
+		std::vector<size_t> getV()
+		{
+			std::vector<size_t> tmp;
+
+			for (unsigned int i = 0 ; i < dim ; i++)
+			{
+				tmp.push_back(0);
+			}
+
+			return tmp;
+		}
+
 	public:
-  
+
+		// The object type the grid is storing
+		typedef T type;
+
 		//! Default constructor
 		grid_cpu()
+		:g1(getV())
 	    {
 	    }
 
@@ -164,6 +225,12 @@ class grid_cpu
 
 		//! Constructor allocate memory and give them a representation
 		grid_cpu(std::vector<size_t> & sz)
+		:g1(sz)
+		{
+		}
+
+		//! Constructor allocate memory and give them a representation
+		grid_cpu(std::vector<size_t> && sz)
 		:g1(sz)
 		{
 		}
@@ -227,6 +294,11 @@ class grid_cpu
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}
   
+		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & getBoostVector(grid_key_dx<dim> & v1)
+		{
+			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
+		}
+
 		/*! \brief Resize the space
 		 *
 		 * Resize the space to a new grid, the element are retained on the new grid,
@@ -235,17 +307,20 @@ class grid_cpu
 		 *
 		 */
 
-		void resize(std::vector<size_t> & sz)
+		template<typename S> void resize(std::vector<size_t> & sz)
 		{
 			//! Create a completely new grid with sz
 
-			grid_cpu<dim,T,Mem> grid_new;
+			grid_cpu<dim,T,Mem> grid_new(sz);
+
+			//! Set the allocator and allocate the memory
+			grid_new.template setMemory<S>();
 
 	        // We know that, if it is 1D we can safely copy the memory
 	        if (dim == 1)
 	        {
-	        	//! 1-D copy (This case is simple we use raw memory copy because the fastest option)
-	        	grid_new.data.mem.copy(data.mem);
+	        	//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
+	        	grid_new.data.mem->copy(*data.mem);
 	        }
 	        else
 	        {
@@ -254,18 +329,20 @@ class grid_cpu
 	        	//! create a source grid iterator
 	        	grid_key_dx_iterator<dim> it(g1);
 
-	        	while(it.hasNext())
+	        	while(it.isEnd())
 	        	{
 	        		// get the grid key
-	        		grid_key_dx<dim> key = it.next();
+	        		grid_key_dx<dim> key = it.get();
 
 	        		// create a copy element
 
 	        		copy_cpu_sd<dim,grid_cpu<dim,T,Mem>> cp(key,*this,grid_new);
 
-	        		// copy each property
+	        		// copy each property for each point of the grid
 
-	        		for_each(T::type,cp);
+	        		boost::mpl::for_each< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+	        		++it;
 	        	}
 	        }
 		}
@@ -282,10 +359,10 @@ class grid_cpu
 		inline void set(grid_key_dx<dim> dx, T & obj)
 		{
 			// create the object to copy the properties
-    		copy_cpu<dim,grid_cpu<dim,grid_cpu<dim,T,Mem> >> cp(dx,*this);
+    		copy_cpu<dim,grid_cpu<dim,T,Mem>> cp(dx,*this,obj);
 
     		// copy each property
-    		for_each(T::type,cp);
+    		boost::mpl::for_each< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 		}
 
 		/*! \brief return the size of the grid
@@ -391,6 +468,9 @@ class grid_gpu
 		Mem data;
 
 	public:
+
+		// The object type the grid is storing
+		typedef T type;
 
 		//! Default constructor
 		grid_gpu()

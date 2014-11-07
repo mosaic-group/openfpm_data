@@ -54,6 +54,7 @@ public:
   static const unsigned int s = 3;
   static const unsigned int v = 4;
   static const unsigned int t = 5;
+  static const unsigned int max_prop = 6;
   
   inline void setx(T x_)	{boost::fusion::at_c<0>(data) = x_;};
   inline void sety(T y_)	{boost::fusion::at_c<1>(data) = y_;};

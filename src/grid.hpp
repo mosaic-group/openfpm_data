@@ -70,6 +70,11 @@ public:
 
 private:
 
+  /*! \brief Recursively invert the assignment
+   *
+   * Recursively invert the assignment at compile-time
+   *
+   */
   template<typename a, typename ...T>void invert_assign(a v,T...t)
   {
     k[sizeof...(T)] = v;
@@ -79,6 +84,10 @@ private:
   template<typename a, typename ...T>void invert_assign(a v)
   {
     k[0] = v;
+  }
+
+  void invert_assign()
+  {
   }
 
 };
@@ -365,6 +374,26 @@ public:
     }
   }
   
+  /*! \brief Construct a grid of a specified size
+   *
+   * Construct a grid of a specified size
+   *
+   * \param sz is an std::vector that contain the size of the grid on each dimension
+   *
+   */
+
+  grid(std::vector<size_t> && sz)
+  : size_tot(totalSize(sz))
+  {
+    sz_s[0] = sz[0];
+    this->sz[0] = sz[0];
+    for (size_t i = 1 ;  i < sz.size() ; i++)
+    {
+      sz_s[i] = sz[i]*sz_s[i-1];
+      this->sz[i] = sz[i];
+    }
+  }
+
   /*! \brief Linearization of the grid_key_dx
    *
    * Linearization of the grid_key_dx given a key, it spit out a number that is just the 1D linearization
