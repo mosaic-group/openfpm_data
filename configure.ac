@@ -61,6 +61,25 @@ else
 	NVCCFLAGS+="$NVCCFLAGS -O3 "
 fi
 
+###### Check for memleak check compilation
+
+AC_MSG_CHECKING(whether to build with memory check)
+mem_check=no
+AC_ARG_ENABLE(memorycheck,
+	AC_HELP_STRING(
+	    [--enable-memorycheck],
+	    [enable memory checking (def=no)]
+	),
+  	mem_check="$enableval"
+)
+
+
+
+AC_MSG_RESULT($mem_check)
+if test x"$mem_check" = x"yes"; then
+	AC_DEFINE([MEMLEAK_CHECK],[],[Memory check])
+fi
+
 ####### include OpenFPM_devices include path
 
 INCLUDES_PATH+="-I. -I../../OpenFPM_devices/src"
@@ -169,10 +188,15 @@ if [ test x"$debuger" = x"yes" ]; then
 else
   echo "*    debug: no                    *"
 fi
-if [ test x"$no_64" = x"no" ]; then
+if [ test x"$no_64" = x"yes" ]; then
   echo "*    64 bit: yes                  *"
 else
   echo "*    64 bit: no                   *"
+fi
+if [ test x"$mem_check" = x"yes" ]; then
+  echo "*    memory check: yes            *"
+else
+  echo "*    memory check: no             *"
 fi
 if [ test x"$gpu_support" = x"no" ]; then
   echo "*    gpu: no                      *"

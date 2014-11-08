@@ -1,4 +1,7 @@
-#include <iostream>
+#ifndef GRID_HPP
+#define GRID_HPP
+
+#include "config.h"
 #include <boost/shared_array.hpp>
 #include <vector>
 #include <initializer_list>
@@ -834,3 +837,5 @@ public:
 	}
 
 };
+
+#endif

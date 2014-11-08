@@ -191,10 +191,16 @@ namespace openfpm
 		}
 
 		//! Constructor, vector of size 0
-		vector():v_size(0),base(getV(0)) {}
+		vector():v_size(0),base(getV(0))
+		{
+			base.template setMemory<Memory>();
+		}
 
 		//! Constructor, vector of size sz
-		vector(size_t sz):v_size(sz),base(getV(sz)) {}
+		vector(size_t sz):v_size(sz),base(getV(sz))
+		{
+			base.template setMemory<Memory>();
+		}
 
 	};
 

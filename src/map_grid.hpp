@@ -278,24 +278,65 @@ class grid_cpu
 			return data.mem->getPointer();
 		}
 
+		/*! \brief Get the reference of the selected element
+		 *
+		 * Get the reference of the selected element
+		 *
+		 * \param p property to get (is an integer)
+		 * \param v1 grid_key that identify the element in the grid
+		 *
+		 */
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key<p> & v1)
 		{
+#ifdef MEMLEAK_CHECK
+			check_valid(boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1.getId()))));
+#endif
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1.getId())));
 		}
   
+		/*! \brief Get the reference of the selected element
+		 *
+		 * Get the reference of the selected element
+		 *
+		 * \param v1 grid_key that identify the element in the grid
+		 *
+		 */
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key_d<dim,p> & v1)
 		{
+#ifdef MEMLEAK_CHECK
+			check_valid(boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
+#endif
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}
   
-  
+		/*! \brief Get the reference of the selected element
+		 *
+		 * Get the reference of the selected element
+		 *
+		 * \param v1 grid_key that identify the element in the grid
+		 *
+		 */
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key_dx<dim> & v1)
 		{
+#ifdef MEMLEACK_CHECK
+			check_valid(boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
+#endif
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}
   
+		/*! \brief Get the reference of the selected element
+		 *
+		 * Get the reference of the selected element
+		 *
+		 * \param p property to get (is an integer)
+		 * \param v1 grid_key that identify the element in the grid
+		 *
+		 */
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & getBoostVector(grid_key_dx<dim> & v1)
 		{
+#ifdef MEMLEACK_CHECK
+			check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))))
+#endif
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}
 
@@ -345,6 +386,30 @@ class grid_cpu
 	        		++it;
 	        	}
 	        }
+
+	        // copy grid_new to the base
+
+	        this->move_copy(grid_new);
+		}
+
+		/*! \brief It move the allocated object from one grid to another
+		 *
+		 * It move the allocated object from one grid to another, after this
+		 * call the argument grid is no longer valid
+		 *
+		 * \param grid to move/copy
+		 *
+		 */
+
+		void move_copy(grid_cpu<dim,T,Mem> & grid)
+		{
+			// move the data
+			data.move_copy(grid.data);
+
+			// move the grid info
+			g1 = grid.g1;
+
+			//
 		}
 
 		/*! \brief set/copy an element of the grid

@@ -83,8 +83,31 @@ class memory_c
 	    return true;
 	}
 
+	/*! \brief It move the allocated objects from one to another
+	 *
+	 * It move the allocated objects from one to another
+	 *
+	 * \param mem_c Memory object
+	 *
+	 */
+
+	void move_copy(memory_c & mem_c)
+	{
+		// move the pointer
+		mem = mem_c.mem;
+
+		// Null the pointer to avoid double deallocation
+		mem_c.mem = NULL;
+
+		// move the pointer
+		mem_r = mem_c.mem_r;
+
+		// Null the pointer to avoid double deallocation
+		mem_c.mem_r = NULL;
+	}
+
 	//! constructor
-	memory_c(){}
+	memory_c():mem(NULL),mem_r(NULL){}
 
 	//! destructor
 	~memory_c(){delete(mem);}

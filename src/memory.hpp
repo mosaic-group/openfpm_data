@@ -16,6 +16,7 @@
 
 typedef long int mem_id;
 
+#include "config.h"
 #include <stddef.h>
 
 class memory
