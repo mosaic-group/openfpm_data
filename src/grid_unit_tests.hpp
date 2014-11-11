@@ -2,7 +2,7 @@
 #define GRID_UNIT_TEST_HPP
 
 #include "map_grid.hpp"
-#include "Point.hpp"
+#include "Point_test.hpp"
 
 #define GS_SIZE 128
 
@@ -23,19 +23,19 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 	for (int i = 0 ; i < dim ; i++)
 	{szz.push_back(sz);}
 
-	{grid_cpu<dim, Point<float> > c3(szz);
+	{grid_cpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory<CudaMemory>();
 	test_layout_gridNd<dim>(c3,sz);}
 
-	{grid_cpu<dim, Point<float> > c3(szz);
+	{grid_cpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory<HeapMemory>();
 	test_layout_gridNd<dim>(c3,sz);}
 
-	{grid_gpu<dim, Point<float> > c3(szz);
+	{grid_gpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory<CudaMemory>();
 	test_layout_gridNd<dim>(c3,sz);}
 
-	{grid_gpu<dim, Point<float> > c3(szz);
+	{grid_gpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory<HeapMemory>();
 	test_layout_gridNd<dim>(c3,sz);}
 }
@@ -46,7 +46,7 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 {
 	  std::cout << "3D Array with grid_key (without redundant dimension): " << "\n";
 
-	  typedef Point<float> P;
+	  typedef Point_test<float> P;
 
 	   timespec ts_start;
 	   // clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
@@ -163,7 +163,7 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 {
 	  std::cout << dim << "D Array with grid_key (without redundant dimension): " << "\n";
 
-	  typedef Point<float> P;
+	  typedef Point_test<float> P;
 
 	   timespec ts_start;
 	   // clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
@@ -302,21 +302,21 @@ BOOST_AUTO_TEST_CASE( grid_use)
 		  sz.push_back(i);
 		  sz.push_back(i);
 
-		  {grid_gpu<3, Point<float> > c3(sz);
+		  {grid_gpu<3, Point_test<float> > c3(sz);
 		  c3.setMemory<CudaMemory>();
 		  test_layout_grid3d(c3,i);}
 
-		  {grid_gpu<3, Point<float> > c3(sz);
+		  {grid_gpu<3, Point_test<float> > c3(sz);
 		  c3.setMemory<HeapMemory>();
 		  test_layout_grid3d(c3,i);}
 
 		  // Test the 3d cpu grid with Cudamemory and HeapMemory
 
-		  {grid_cpu<3, Point<float> > c3(sz);
+		  {grid_cpu<3, Point_test<float> > c3(sz);
 		  c3.setMemory<CudaMemory>();
 		  test_layout_grid3d(c3,i);}
 
-		  {grid_cpu<3, Point<float> > c3(sz);
+		  {grid_cpu<3, Point_test<float> > c3(sz);
 		  c3.setMemory<HeapMemory>();
 		  test_layout_grid3d(c3,i);}
 

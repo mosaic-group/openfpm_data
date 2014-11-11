@@ -7,4 +7,4 @@ size_t new_data;
 size_t delete_data;
 
 // structure that store all the active pointer
-std::map<void *, size_t> active_ptr;
+std::map<byte_ptr, size_t> active_ptr;

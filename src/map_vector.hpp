@@ -9,6 +9,7 @@
 #define MAP_VECTOR_HPP
 
 #include "map_grid.hpp"
+#include "memory/HeapMemory.hpp"
 
 #define PAGE_ALLOC 1024
 
@@ -48,6 +49,10 @@ namespace openfpm
 	 * Implementation of 1-D std::vector like structure, empty structure
 	 * when I do not know how to specialize, should be never selected by the
 	 * compiler
+	 *
+	 * \param T type of structure the vector has to store
+	 * \param device type of layout to use
+	 * \param Memory allocator to use
 	 *
 	 */
 
@@ -114,7 +119,9 @@ namespace openfpm
 	 * Implementation of 1-D std::vector like structure, the memory allocated
 	 * increase by PAGE_ALLOC constant every time we need more space
 	 *
-	 * \param T base type
+	 * \param T type of structure the vector has to store
+	 * \param device type of layout to use
+	 * \param Memory allocator to use
 	 *
 	 */
 
@@ -173,14 +180,17 @@ namespace openfpm
 
 			if (v_size >= base.size())
 			{
-				//! Resize the memory of PAGE_ALLOC elements
+				//! Resize the memory, double up the actual memory allocated for the vector
 				std::vector<size_t> sz;
-				sz.push_back(PAGE_ALLOC);
+				sz.push_back(2*base.size());
 				base.template resize<Memory>(sz);
 			}
 
 			//! copy the element
 			base.set(v_size,v);
+
+			//! increase the vector size
+			v_size++;
 		}
 
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(size_t id)
@@ -191,13 +201,13 @@ namespace openfpm
 		}
 
 		//! Constructor, vector of size 0
-		vector():v_size(0),base(getV(0))
+		vector():v_size(0),base(getV(PAGE_ALLOC))
 		{
 			base.template setMemory<Memory>();
 		}
 
 		//! Constructor, vector of size sz
-		vector(size_t sz):v_size(sz),base(getV(sz))
+		vector(size_t sz):v_size(sz),base(getV(PAGE_ALLOC))
 		{
 			base.template setMemory<Memory>();
 		}
@@ -218,6 +228,10 @@ namespace openfpm
 	 *    a potential need for reallocation is signaled with an overflow
 	 * 2) push_back is not thread safe so each thread on gpu should operate on a different
 	 *    vector, or a thread at time should operate on the vector
+	 *
+	 * \param T type of structure the vector has to store
+	 * \param device type of layout to use
+	 * \param Memory allocator to use
 	 *
 	 */
 

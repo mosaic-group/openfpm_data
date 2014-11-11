@@ -406,7 +406,7 @@ public:
    *
    */
 
-  #pragma openfpm layout(get)
+  //#pragma openfpm layout(get)
   template<unsigned int dim> mem_id LinId(grid_key_dx<dim> & gk)
   {
     mem_id lid = gk.k[0];
@@ -425,7 +425,7 @@ public:
    *
    */
 
-  #pragma openfpm layout(get)
+  //#pragma openfpm layout(get)
   template<unsigned int dim> grid_key_dx<dim> InvLinId(mem_id id)
   {
     // Inversion of linearize
@@ -450,7 +450,7 @@ public:
    *
    */
 
-  #pragma openfpm layout(get)
+  //#pragma openfpm layout(get)
   template<unsigned int dim, unsigned int p> mem_id LinId(grid_key_d<dim,p> & gk)
   {
     mem_id lid = gk.k[0];
@@ -471,7 +471,7 @@ public:
    *
    */
 
-  #pragma openfpm layout(get)
+  //#pragma openfpm layout(get)
   mem_id LinId(mem_id * id)
   {
     mem_id lid = 0;
@@ -495,7 +495,7 @@ public:
    *
    */
 
-  #pragma openfpm layout(size)
+  //#pragma openfpm layout(size)
   size_t size()
   {
     return size_tot;

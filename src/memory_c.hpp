@@ -93,6 +93,14 @@ class memory_c
 
 	void move_copy(memory_c & mem_c)
 	{
+		//if mem is already allocated, deallocate it
+		if (mem != NULL)
+			delete(mem);
+
+		// if mem_r is allocated delete it
+		if (mem_r != NULL)
+			delete(mem_r);
+
 		// move the pointer
 		mem = mem_c.mem;
 
@@ -110,7 +118,7 @@ class memory_c
 	memory_c():mem(NULL),mem_r(NULL){}
 
 	//! destructor
-	~memory_c(){delete(mem);}
+	~memory_c(){delete(mem);delete(mem_r);}
 };
 
 /*! \brief This class is a trick to indicate the compiler a specific
@@ -268,7 +276,7 @@ class memory_c<multi_array<T>, memory>
 	    // we generate the ascending buffer
 	    typedef typename generate_array<bool,size_p::value, ascending>::result asc;
 
-	    //! we create the representation for this buffer
+	    //! we create the representation for the memory buffer
 	    mem_r = new boost::multi_array_ref<base,size_p::value>(static_cast<base *>(mem->getPointer()),dimensions,boost::general_storage_order<size_p::value>(ord::data,asc::data));
 
 	    return true;
@@ -289,7 +297,7 @@ class memory_c<multi_array<T>, memory>
 	{}
 
 	//! destructor
-	~memory_c(){delete(mem);}
+	~memory_c(){delete(mem);delete(mem_r);}
 
 	//! set the device memory interface, the object that allocate memory
 	void set_mem(memory & mem)

@@ -3,6 +3,7 @@
 
 //! Warning: apparently you cannot used nested boost::mpl with boost::fusion
 //! can create template circularity, this include avoid the problem
+#include "config.h"
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/fusion/sequence/intrinsic/at_c.hpp>
 #include <boost/fusion/include/at_c.hpp>
@@ -14,8 +15,10 @@
 #include <boost/type_traits.hpp>
 #include <boost/fusion/include/for_each.hpp>
 #include <boost/mpl/range_c.hpp>
+#include <boost/mpl/for_each.hpp>
 #include "memory_conf.hpp"
 #include "meta_copy.hpp"
+#include "Memleak_check.hpp"
 
 #include "grid.hpp"
 #include "memory_array.hpp"
@@ -62,7 +65,7 @@ struct copy_cpu
 	 * \param obj object we have to set in grid_src
 	 *
 	 */
-	copy_cpu(grid_key_dx<dim> & key, S grid_src, obj_type & obj)
+	copy_cpu(grid_key_dx<dim> & key, S & grid_src, obj_type & obj)
 	:key(key),grid_src(grid_src),obj(obj){};
 
 	//! It call the copy function for each property
@@ -206,6 +209,10 @@ class grid_cpu
 			return tmp;
 		}
 
+   private:
+		// Disable copy constructor
+		grid_cpu(const grid_cpu & g);
+
 	public:
 
 		// The object type the grid is storing
@@ -289,7 +296,7 @@ class grid_cpu
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key<p> & v1)
 		{
 #ifdef MEMLEAK_CHECK
-			check_valid(boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1.getId()))));
+			check_valid(&boost::fusion::at_c<p>(&data.mem_r->operator[](g1.LinId(v1.getId()))));
 #endif
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1.getId())));
 		}
@@ -304,7 +311,7 @@ class grid_cpu
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key_d<dim,p> & v1)
 		{
 #ifdef MEMLEAK_CHECK
-			check_valid(boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
+			check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
 #endif
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}
@@ -318,8 +325,8 @@ class grid_cpu
 		 */
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key_dx<dim> & v1)
 		{
-#ifdef MEMLEACK_CHECK
-			check_valid(boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
+#ifdef MEMLEAK_CHECK
+			check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,T>::type));
 #endif
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}
@@ -334,8 +341,8 @@ class grid_cpu
 		 */
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & getBoostVector(grid_key_dx<dim> & v1)
 		{
-#ifdef MEMLEACK_CHECK
-			check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))))
+#ifdef MEMLEAK_CHECK
+			check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
 #endif
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}

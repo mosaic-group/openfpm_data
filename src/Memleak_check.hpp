@@ -1,12 +1,14 @@
 #include <iostream>
 #include <map>
 
+typedef unsigned char * byte_ptr;
+
 #ifdef MEMLEAK_CHECK
 
 extern size_t new_data;
 extern size_t delete_data;
 
-extern std::map<void *,size_t> active_ptr;
+extern std::map<byte_ptr,size_t> active_ptr;
 
 /*! \brief Check and remove the active pointer
  *
@@ -18,7 +20,7 @@ extern std::map<void *,size_t> active_ptr;
 static void remove_ptr(void * ptr)
 {
 	// Check if the pointer exist
-	std::map<void *, size_t>::iterator it = active_ptr.find(ptr);
+	std::map<byte_ptr, size_t>::iterator it = active_ptr.find((byte_ptr)ptr);
 
 	// if the element does not exist, print that something wrong happened and return
 	if ( it == active_ptr.end() )
@@ -28,7 +30,7 @@ static void remove_ptr(void * ptr)
 	}
 
 	// erase the pointer
-	active_ptr.erase(ptr);
+	active_ptr.erase((byte_ptr)ptr);
 }
 
 /*! \brief Print all active pointer
@@ -38,7 +40,7 @@ static void remove_ptr(void * ptr)
  */
 static void print_unalloc()
 {
-	for (std::map<void *,size_t>::iterator it = active_ptr.begin(); it != active_ptr.end(); ++it)
+	for (std::map<byte_ptr,size_t>::iterator it = active_ptr.begin(); it != active_ptr.end(); ++it)
 	{
 		std::cout << "Unallocated memory " << it->first << "     size " << it->second << "\n";
 	}
@@ -57,7 +59,7 @@ static void check_new(void * data, size_t sz)
 {
 	// Add a new pointer
 	new_data++;
-	active_ptr[data] = sz;
+	active_ptr[(byte_ptr)data] = sz;
 	std::cout << "New data: " << new_data << "   " << data << "\n";
 }
 
@@ -88,19 +90,23 @@ static void check_valid(void * ptr, size_t size_access)
 {
 	// get the lower bound
 
-	std::map<void *, size_t>::iterator l_b = active_ptr.lower_bound(ptr);
+	std::map<byte_ptr, size_t>::iterator l_b = active_ptr.upper_bound((byte_ptr)ptr);
+
+	//! subtract one
+	l_b--;
 
 	// if where is not memory that satisfy the request
 	if (l_b == active_ptr.end())
 	{
 		std::cout << "Error invalid pointer: " << ptr << "\n";
+		return;
 	}
 
 	// check if ptr is in the range
 
 	size_t sz = l_b->second;
 
-	if (l_b->first + sz + size_access > ptr)
+	if (((unsigned char *)l_b->first) + sz < ((unsigned char *)ptr) + size_access)
 	{
 		std::cout << "Error invalid pointer: " << ptr << "\n";
 	}
