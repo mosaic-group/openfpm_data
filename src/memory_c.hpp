@@ -119,6 +119,29 @@ class memory_c
 
 	//! destructor
 	~memory_c(){delete(mem);delete(mem_r);}
+
+	/*! \brief swap the memory
+	 *
+	 * swap the memory beetween objects
+	 *
+	 */
+
+	void swap(memory_c & mem_obj)
+	{
+		// Save on temporal
+
+		void * mem_tmp = static_cast<void*>(mem);
+		void * mem_r_tmp = static_cast<void*>(mem_r);
+
+		// swap the memory between objects
+
+		mem = mem_obj.mem;
+		mem_r = mem_obj.mem_r;
+
+		mem_obj.mem = static_cast<D*>(mem_tmp);
+		mem_obj.mem_r = static_cast<memory_array<T>*>(mem_r_tmp);
+	}
+
 };
 
 /*! \brief This class is a trick to indicate the compiler a specific

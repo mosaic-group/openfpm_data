@@ -10,6 +10,52 @@
 
 #define HARDWARE 1
 
+/*! \brief Class to check if the edge can be created or not
+ *
+ * Class to check if the edge can be created or not, in this case no check is implemented
+ *
+ */
+
+class NoCheck
+{
+public:
+	/*! \brief No check is performed
+	 *
+	 * No check is performed
+	 *
+	 * \param v_id Vertex id
+	 * \param sz Size limit for the vertex id
+	 *
+	 */
+	static bool valid(size_t v_id, size_t sz)
+	{
+		return true;
+	}
+};
+
+/*! \brief Class to check if the edge can be created or not
+ *
+ * Class to check if the edge can be created or not, in this case no check is implemented
+ *
+ */
+
+class CheckExistence
+{
+public:
+	/*! \brief Check is performed
+	 *
+	 * Check is performed
+	 *
+	 * \param v_id Vertex id
+	 * \param sz Size limit for the vertex id
+	 *
+	 */
+	static bool valid(size_t v_id, size_t sz)
+	{
+		return v_id < sz;
+	}
+};
+
 /*! \brief grid_key_dx is the key to access any element in the grid
  *
  * grid_key_dx is the key to access any element in the grid
@@ -205,7 +251,8 @@ public:
 
 //#pragma openfpm create(layout)
 
-/*! \brief class that store the information at runtime of the grid plus define the linearization
+/*! \brief class that store the information at runtime of the grid and define the index linearization
+ * by stride
  *
  * class that store the information at runtime of the grid plus define the linearization
  *
@@ -229,8 +276,56 @@ class grid
   //! ghost margin, how far from the margin is the ghost layer bound
   size_t mrgs[N];
 
+  /*! \brief It multiplicate two number and return the result
+   *
+   * It multiplicate two number and return the result, mainly used for LinId
+   *
+   * \param a operand 1
+   * \param b operand 2
+   *
+   */
+
+  inline size_t mulLin(size_t a, size_t b)
+  {
+	  return a*b;
+  }
+
+  /*! \brief Initialize the basic structure
+   *
+   * Initialize the basic structure
+   *
+   * \param sz vector that store the size of the grid on each
+   *           dimensions
+   *
+   */
+
+  void Initialize(std::vector<size_t> & sz)
+  {
+	  //! Initialize the basic structure for each dimension
+	  sz_s[0] = sz[0];
+	  this->sz[0] = sz[0];
+	  for (size_t i = 1 ;  i < sz.size() ; i++)
+	  {
+		  sz_s[i] = sz[i]*sz_s[i-1];
+	      this->sz[i] = sz[i];
+	  }
+  }
+
 public:
   
+
+  /*! \brief Reset the dimension of the grid
+   *
+   * \param std::vector that store on each dimension the size of the grid
+   *
+   */
+
+  void setDimension(std::vector<size_t> & dims)
+  {
+
+	  Initialize(dims);
+  }
+
   /*! \brief Set the ghost layer margins
    *
    * Set the ghost layer margins
@@ -368,13 +463,7 @@ public:
   grid(std::vector<size_t> & sz)
   : size_tot(totalSize(sz))
   {
-    sz_s[0] = sz[0];
-    this->sz[0] = sz[0];
-    for (size_t i = 1 ;  i < sz.size() ; i++)
-    {
-      sz_s[i] = sz[i]*sz_s[i-1];
-      this->sz[i] = sz[i];
-    }
+	  Initialize(sz);
   }
   
   /*! \brief Construct a grid of a specified size
@@ -399,6 +488,36 @@ public:
 
   /*! \brief Linearization of the grid_key_dx
    *
+   * Linearization of a shifted grid_key_dx
+   *
+   * \param grid_key_dx to linearize
+   * \param shift of the grid key
+   *
+   */
+
+  template<unsigned int dim, typename check=NoCheck> mem_id LinId(grid_key_dx<dim> & gk, size_t sum_id[dim])
+  {
+	  // Check the sum produce a valid key
+
+	  if (check::check(gk.k[0] + sum_id[0],gk.size(0)) == true)
+		  return -1;
+
+	  mem_id lid = gk.k[0] + sum_id[0];
+	  for (mem_id i = 1 ; i < dim ; i++)
+	  {
+		  // Check the sum produce a valid key
+
+		  if (check::check(gk.k[i] + sum_id[i],gk.size(i)) == true)
+			  return -1;
+
+		  lid += (gk.k[i] + sum_id[i]) * sz_s[i-1];
+	  }
+
+	  return lid;
+  }
+
+  /*! \brief Linearization of the grid_key_dx
+   *
    * Linearization of the grid_key_dx given a key, it spit out a number that is just the 1D linearization
    * of the key. In this case is the linearization of N index
    *
@@ -418,6 +537,31 @@ public:
     return lid;
   }
   
+  /*! \brief linearize an arbitrary set of index
+   *
+   * linearize an arbitrary set of index
+   *
+   */
+  template<typename a, typename ...lT>mem_id LinId(a v,lT...t)
+  {
+#ifdef DEBUG
+	  if (sizeof...(t)+1 > N)
+	  {
+		  std::cerr << "Error incorrect grid cannot linearize more index than its dimensionality" << "\n";
+	  }
+#endif
+
+	  return v*sz_s[sizeof...(t)-1] + LinId(t...);
+  }
+
+  //! Linearize a set of index
+  template<typename a>mem_id LinId(a v)
+  {
+	  return v;
+  }
+
+  //! Construct
+
   /*! \brief inversion of the linearization of the grid_key_dx
    *
    * \param mem_id id of the object
@@ -619,7 +763,7 @@ public:
 	 *
 	 */
 
-	bool isEnd()
+	bool isNext()
 	{
 		if (gk.get(dim-1) < grid_base.size(dim-1))
 		{
@@ -703,7 +847,7 @@ public:
 	 *
 	 */
 
-	bool isEnd()
+	bool isNext()
 	{
 		//! for all dimensions
 		for (int i = dim-1 ; i >= 0 ; i++ )
@@ -834,6 +978,276 @@ public:
 		}
 
 		return *this;
+	}
+
+};
+
+
+/*! \brief Emulate grid_key_dx with runtime dimensionality
+ *
+ * Emulate grid_key_dx with runtime dimensionality
+ *
+ */
+
+class grid_key_dx_r
+{
+	size_t dim;
+
+public:
+
+	/*! \brief Get the dimensionality of the key
+	 *
+	 * Get the dimensionality of the key
+	 *
+	 */
+
+	size_t getDim()
+	{
+		return dim;
+	}
+
+	  /*! \brief constructor
+	   *
+	   * constructor
+	   *
+	   * \param dim Dimensionality
+	   *
+	   */
+	  grid_key_dx_r(grid_key_dx_r & key)
+	  :dim(key.dim)
+	  {
+		  // Allocate the key
+		  k = new mem_id[dim];
+
+		  // Copy the key
+		  for(int i = 0 ; i < dim ; i++)
+		  {
+			  k[i] = key.k[i];
+		  }
+	  }
+
+  /*! \brief constructor
+   *
+   * constructor
+   *
+   * \param dim Dimensionality
+   *
+   */
+  grid_key_dx_r(size_t dim)
+  :dim(dim)
+  {
+	  // Allocate the key
+	  k = new mem_id[dim];
+  }
+
+  ~grid_key_dx_r()
+  {
+	  delete [] k;
+  }
+
+  //! set the grid key from a list of numbers
+  template<typename a, typename ...T>void set(a v, T...t)
+  {
+    k[dim-1] = v;
+    invert_assign(t...);
+  }
+
+  /*! \brief get the i index
+   *
+   * Get the i index
+   *
+   * \param i index to get
+   *
+   * \return the index value
+   *
+   */
+  mem_id get(size_t i)
+  {
+	  return k[i];
+  }
+
+  /*! \brief Set the i index
+   *
+   * Set the i index
+   *
+   * \param i index to set
+   * \param id value to set
+   *
+   */
+  void set_d(size_t i, mem_id id)
+  {
+	  k[i] = id;
+  }
+
+  //! structure that store all the index
+  mem_id * k;
+
+private:
+
+  /*! \brief Recursively invert the assignment
+   *
+   * Recursively invert the assignment at compile-time
+   *
+   */
+  template<typename a, typename ...T>void invert_assign(a v,T...t)
+  {
+    k[sizeof...(T)] = v;
+    invert_assign(t...);
+  }
+
+  template<typename a, typename ...T>void invert_assign(a v)
+  {
+    k[0] = v;
+  }
+
+  void invert_assign()
+  {
+  }
+
+};
+
+
+/**
+ *
+ * Iterate through the elements (i1,i2,....,in) with i1 ... in unsigned integers
+ * with the following constrain (i1>i2>......>in)
+ *
+ */
+
+class Iterator_g_const
+{
+	size_t dim;
+
+	//! size of the grid (the grid is assumed a square so equal on each dimension)
+	size_t sz;
+
+	// Actual grid_key position
+	grid_key_dx_r gk;
+
+public:
+
+	/*! \brief Get the dimensionality of the iterator
+	 *
+	 * Get the dimensionality of the iterator
+	 *
+	 */
+
+	size_t getDim()
+	{
+		return dim;
+	}
+
+	/*! \brief Constructor require a grid
+	 *
+	 * Constructor require a grid<dim,T>
+	 *
+	 * It construct an iterator over an hyper-cube defined by start and stop,
+	 *
+	 * \param dim Dimensionality
+	 * \param sz Size of the grid on all dimensions
+	 *
+	 */
+
+	Iterator_g_const(size_t dim, size_t sz)
+	:dim(dim),sz(sz),gk(dim)
+	{
+		// fill gk with the first grid element that satisfied the constrain: 0,1,2,3... dim
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			gk.set_d(i,dim-i-1);
+		}
+	}
+
+	/*! \brief Get the next element
+	 *
+	 * Get the next element
+	 *
+	 * \return the next grid_key
+	 *
+	 */
+
+	Iterator_g_const & operator++()
+	{
+		//! increment the first index
+
+		gk.set_d(0,gk.get(0)+1);
+
+		//! check the overflow of all the index with exception of the last dimensionality
+
+		int i = 0;
+		for ( ; i < dim-1 ; i++)
+		{
+			size_t id = gk.get(i);
+			if (id >= sz)
+			{
+				// ! overflow, increment the next index
+
+				id = gk.get(i+1);
+				if (id+i+2 >= sz)
+				{
+					// there is no-way to produce a valid key
+					// there is not need to check the previous index
+					// overflow i+1
+
+					gk.set_d(i+1,sz);
+				}
+				else
+				{
+
+					// reinitialize the previous index
+
+					for (int s = 0 ; s <= i+1 ; s++)
+					{
+						gk.set_d(i+1-s,id+1+s);
+					}
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		return *this;
+	}
+
+	/*! \brief Check if there is the next element
+	 *
+	 * Check if there is the next element
+	 *
+	 * \return true if there is the next, false otherwise
+	 *
+	 */
+
+	bool isNext()
+	{
+		// If dimensionless return immediately
+		if (dim == 0)
+			return false;
+
+		if (gk.get(dim-1) < sz-dim+1)
+		{
+			//! we did not reach the end of the grid
+
+			return true;
+		}
+
+		//! we reach the end of the grid
+		return false;
+	}
+
+	/*! brief Return the actual key
+	 *
+	 * Return the actual key
+	 *
+	 * \return The actual key that identify with the set of index
+	 *
+	 */
+
+	grid_key_dx_r & get()
+	{
+		return gk;
 	}
 
 };

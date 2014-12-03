@@ -26,7 +26,7 @@ namespace openfpm
 	struct device_cpu
 	{
 		//! cpu
-		typedef grid_cpu<1,T> cpu;
+		typedef grid_cpu<1,T> type;
 	};
 
 
@@ -40,7 +40,7 @@ namespace openfpm
 	struct device_gpu
 	{
 		//! gpu
-		typedef grid_gpu<1,T> gpu;
+		typedef grid_gpu<1,T> type;
 	};
 
 
@@ -90,6 +90,21 @@ namespace openfpm
 			return base.size();
 		}
 
+	public:
+
+		/*! \ brief Resize the vector
+		 *
+		 * Resize the vector
+		 *
+		 * \param how many slot to reserve
+		 *
+		 */
+
+		void resize(size_t slot)
+		{
+			base.resize(slot);
+		}
+
 		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 		 *
 		 * It insert a new object on the vector, eventually it reallocate the grid
@@ -99,12 +114,42 @@ namespace openfpm
 		 *
 		 *
 		 */
-		void push_back(size_t & v)
+		void add(size_t & v)
 		{
 			base.push_back(v);
 		}
 
-	public:
+		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
+		 *
+		 * It insert a new object on the vector, eventually it reallocate the grid
+		 *
+		 * \warning It is not thread safe should not be used in multi-thread environment
+		 *          reallocation, work only on cpu
+		 *
+		 *
+		 */
+		void add(size_t v)
+		{
+			base.push_back(v);
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \param id Element to get
+		 * \param p Property to get
+		 *
+		 */
+		template <unsigned int p>inline size_t & get(size_t id)
+		{
+#ifdef DEBUG
+			if (p != 0)
+			{std::cerr << "Error the property does not exist" << "\n";}
+#endif
+
+			return base[id];
+		}
 
 		//! Constructor, vector of size 0
 		vector() {}
@@ -139,12 +184,6 @@ namespace openfpm
 		//! 1-D static grid
 		grid_cpu<1,T> base;
 
-		//! return the size of the vector
-		size_t size()
-		{
-			return v_size;
-		}
-
 
 		/*! \brief Get 1D vector to create the grid in the constructor
 		 *
@@ -165,6 +204,61 @@ namespace openfpm
 
 	public:
 
+		/*! \brief Return the size of the vector
+		 *
+		 * Return the size of the vector
+		 *
+		 */
+		size_t size()
+		{
+			return v_size;
+		}
+
+		/*! \brief Reserve slots in the vector to avoid reallocation
+		 *
+		 * Reserve slots in the vector to avoid reallocation
+		 *
+		 * \param sp number of slot to reserve
+		 *
+		 */
+
+		void reserve(size_t sp)
+		{
+			if (sp > base.size())
+			{
+				//! Resize the memory
+				std::vector<size_t> sz;
+				sz.push_back(sp);
+				base.template resize<Memory>(sz);
+			}
+		}
+
+		/*! \brief Resize the vector
+		 *
+		 * Resize the vector and allocate n slot
+		 *
+		 * \param resize the vector of n-slot
+		 *
+		 */
+		void resize(size_t slot)
+		{
+			// If we need more space than what we allocated, allocate new memory
+
+			if (slot > base.size())
+			{
+				//! Resize the memory
+				std::vector<size_t> sz;
+				sz.push_back(slot);
+				base.template resize<Memory>(sz);
+			}
+
+			// update the vector size
+			v_size = slot;
+		}
+
+		// Access key for the vector
+		typedef size_t access_key;
+
 		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 		 *
 		 * It insert a new object on the vector, eventually it reallocate the grid
@@ -174,7 +268,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		void push_back(T & v)
+		void add(T & v)
 		{
 			//! Check if we have enough space
 
@@ -192,6 +286,15 @@ namespace openfpm
 			//! increase the vector size
 			v_size++;
 		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \param id Element to get
+		 * \param p Property to get
+		 *
+		 */
 
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(size_t id)
 		{
@@ -212,6 +315,37 @@ namespace openfpm
 			base.template setMemory<Memory>();
 		}
 
+		/*! \brief Set the object
+		 *
+		 * Set the object id to obj
+		 *
+		 */
+		void set(size_t id, T & obj)
+		{
+			//! copy the element
+			base.set(id,obj);
+		}
+
+		/* \brief Set the element of the vector v from another element of another vector
+		 *
+		 * Set the element of the vector v from another element of another vector
+		 */
+
+		void set(size_t id, vector<T,device_cpu<T>,Memory> & v, size_t src)
+		{
+			base.set(id,v.base,src);
+		}
+
+
+		/*! \brief Swap the memory of another vector
+		 *
+		 * Swap the memory of another vector
+		 *
+		 */
+		void swap(openfpm::vector<T,device_cpu<T>,Memory> & v)
+		{
+			base.swap(v.base);
+		}
 	};
 
 	/*! \brief Implementation of 1-D std::vector like structure
@@ -224,9 +358,9 @@ namespace openfpm
 	 * \warning this implementation work on cpu and gpu, but on gpu its functionality
 	 * is limited:
 	 *
-	 * 1) push_back is limited because reallocation cannot be handled on gpu,
+	 * 1) add is limited because reallocation cannot be handled on gpu,
 	 *    a potential need for reallocation is signaled with an overflow
-	 * 2) push_back is not thread safe so each thread on gpu should operate on a different
+	 * 2) add is not thread safe so each thread on gpu should operate on a different
 	 *    vector, or a thread at time should operate on the vector
 	 *
 	 * \param T type of structure the vector has to store
@@ -252,6 +386,50 @@ namespace openfpm
 			return v_size;
 		}
 
+		/*! \brief Reserve slots in the vector to avoid reallocation
+		 *
+		 * Reserve slots in the vector to avoid reallocation
+		 *
+		 * \param sp number of slot to reserve
+		 *
+		 */
+
+		void reserve(size_t sp)
+		{
+			// If we need more space than what we allocated allocate new memory
+
+			if (sp > base.size())
+			{
+				//! Resize the memory
+				std::vector<size_t> sz;
+				sz.push_back(sp);
+				base.resize(sz);
+			}
+		}
+
+		/*! \brief Resize the vector
+		 *
+		 * Resize the vector and allocate n slot
+		 *
+		 * \param resize the vector of n-slot
+		 *
+		 */
+		void resize(size_t slot)
+		{
+			// If we need more space than what we allocated, allocate new memory
+
+			if (slot > base.size())
+			{
+				//! Resize the memory
+				std::vector<size_t> sz;
+				sz.push_back(slot);
+				base.resize(sz);
+			}
+
+			// update the vector size
+			v_size = slot;
+		}
+
 		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 		 *
 		 * It insert a new object on the vector, eventually it reallocate the grid
@@ -261,7 +439,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		void push_back(T & v)
+		void add(T & v)
 		{
 			//! Check if we have enough space
 
@@ -269,12 +447,33 @@ namespace openfpm
 			{
 				//! Resize the memory
 				std::vector<size_t> sz;
-				sz.push_back(PAGE_ALLOC);
+				sz.push_back(base.size()*2);
 				base.resize(sz);
 			}
 
 			// copy the element
 			base.set(v_size,v);
+		}
+
+		/*! \brief Set the object
+		 *
+		 * Set the object id to obj
+		 *
+		 */
+		void set(size_t id, T & obj)
+		{
+			//! copy the element
+			base.set(id,obj);
+		}
+
+		/* \brief Set the element of the vector v from another element of another vector
+		 *
+		 * Set the element of the vector v from another element of another vector
+		 */
+
+		void set(size_t id, vector<T,device_gpu<T>,Memory> & v, size_t src)
+		{
+			base.set(id,v.base,src);
 		}
 	};
 }
