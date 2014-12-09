@@ -490,24 +490,26 @@ public:
    *
    * Linearization of a shifted grid_key_dx
    *
+   * \tparam class that check the linearization, if this check the function return -1
    * \param grid_key_dx to linearize
    * \param shift of the grid key
    *
+   * \return The linearization of the gk key shifted by c, or -1 if the check fail
    */
 
-  template<unsigned int dim, typename check=NoCheck> mem_id LinId(grid_key_dx<dim> & gk, size_t sum_id[dim])
+  template<typename check=NoCheck> mem_id LinId(const grid_key_dx<N> & gk, char sum_id[N])
   {
 	  // Check the sum produce a valid key
 
-	  if (check::check(gk.k[0] + sum_id[0],gk.size(0)) == true)
+	  if (check::valid(gk.k[0] + sum_id[0],sz[0]) == false)
 		  return -1;
 
 	  mem_id lid = gk.k[0] + sum_id[0];
-	  for (mem_id i = 1 ; i < dim ; i++)
+	  for (mem_id i = 1 ; i < N ; i++)
 	  {
 		  // Check the sum produce a valid key
 
-		  if (check::check(gk.k[i] + sum_id[i],gk.size(i)) == true)
+		  if (check::valid(gk.k[i] + sum_id[i],sz[i]) == false)
 			  return -1;
 
 		  lid += (gk.k[i] + sum_id[i]) * sz_s[i-1];
@@ -526,7 +528,7 @@ public:
    */
 
   //#pragma openfpm layout(get)
-  template<unsigned int dim> mem_id LinId(grid_key_dx<dim> & gk)
+  template<unsigned int dim> mem_id LinId(const grid_key_dx<dim> & gk)
   {
     mem_id lid = gk.k[0];
     for (mem_id i = 1 ; i < dim ; i++)
@@ -595,7 +597,7 @@ public:
    */
 
   //#pragma openfpm layout(get)
-  template<unsigned int dim, unsigned int p> mem_id LinId(grid_key_d<dim,p> & gk)
+  template<unsigned int dim, unsigned int p> mem_id LinId(const grid_key_d<dim,p> & gk)
   {
     mem_id lid = gk.k[0];
     for (mem_id i = 1 ; i < dim ; i++)

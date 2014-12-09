@@ -92,6 +92,8 @@ namespace openfpm
 
 	public:
 
+
+
 		/*! \ brief Resize the vector
 		 *
 		 * Resize the vector
@@ -151,12 +153,25 @@ namespace openfpm
 			return base[id];
 		}
 
+		/*! \brief it fill all the memory of fl patterns
+		 *
+		 * WARNING does not assign a value to each element but it fill the memory
+		 * Useful to fast set the memory to zero
+		 *
+		 * \param fl byte to fill
+		 *
+		 */
+
+		void fill(unsigned char fl)
+		{
+			memset(&base[0],0,base.size());
+		}
+
 		//! Constructor, vector of size 0
 		vector() {}
 
 		//! Constructor, vector of size sz
 		vector(size_t sz):base(sz) {}
-
 	};
 
 	/*! \brief Implementation of 1-D std::vector like structure
@@ -203,6 +218,10 @@ namespace openfpm
 		}
 
 	public:
+
+		//! Object container for T, it is the return type of get_o it return a object type trough
+		// you can access all the properties of T
+		typedef typename grid_cpu<1,T>::container container;
 
 		/*! \brief Return the size of the vector
 		 *
@@ -298,9 +317,33 @@ namespace openfpm
 
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(size_t id)
 		{
+#ifdef DEBUG
+			if (id >= v_size)
+			{std::cerr << "Error " << __FILE__ << "  " << __LINE__ << " id overflow your vector file" <<  "\n";}
+#endif
 			grid_key_dx<1> key(id);
 
 			return base.template get<p>(key);
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \param id Element to get
+		 * \param p Property to get
+		 *
+		 */
+
+		inline auto get(size_t id) -> decltype(base.template get_o(grid_key_dx<1>()))
+		{
+#ifdef DEBUG
+			if (id >= v_size)
+			{std::cerr << "Error "  << __FILE__ << "  " << __LINE__ << " vector overflow" << "\n";}
+#endif
+			grid_key_dx<1> key(id);
+
+			return base.get_o(key);
 		}
 
 		//! Constructor, vector of size 0
@@ -322,6 +365,10 @@ namespace openfpm
 		 */
 		void set(size_t id, T & obj)
 		{
+#ifdef DEBUG
+			if (id >= v_size)
+			{std::cerr << "Error " << __FILE__ << "  " << __LINE__ << " id overflow your vector" << "\n";}
+#endif
 			//! copy the element
 			base.set(id,obj);
 		}
@@ -333,6 +380,10 @@ namespace openfpm
 
 		void set(size_t id, vector<T,device_cpu<T>,Memory> & v, size_t src)
 		{
+#ifdef DEBUG
+			if (id >= v_size)
+			{std::cerr << "Error " << __FILE__ << "  " << __LINE__ << " id overflow your vector" << "\n";}
+#endif
 			base.set(id,v.base,src);
 		}
 
@@ -345,6 +396,19 @@ namespace openfpm
 		void swap(openfpm::vector<T,device_cpu<T>,Memory> & v)
 		{
 			base.swap(v.base);
+		}
+
+		/*! \brief Get the vector elements iterator
+		 *
+		 * Get the vector elements iterator
+		 *
+		 * \return an iterator to iterate through all the elements of the vector
+		 *
+		 */
+
+		auto getIterator() -> decltype(base.getIterator())
+		{
+			return base.getIterator();
 		}
 	};
 
@@ -462,6 +526,11 @@ namespace openfpm
 		 */
 		void set(size_t id, T & obj)
 		{
+#ifdef DEBUG
+			if (id >= v_size)
+			{std::cerr << "Error "  << __FILE__ << "  " << __LINE__ << " id overflow your vector" << "\n";}
+#endif
+
 			//! copy the element
 			base.set(id,obj);
 		}
@@ -473,8 +542,26 @@ namespace openfpm
 
 		void set(size_t id, vector<T,device_gpu<T>,Memory> & v, size_t src)
 		{
+#ifdef DEBUG
+			if (id >= v_size)
+			{std::cerr << "Error "  << __FILE__ << "  " << __LINE__ <<  " id overflow your vector" << "\n";}
+#endif
 			base.set(id,v.base,src);
 		}
+
+		/*! \brief Get the vector elements iterator
+		 *
+		 * Get the vector elements iterator
+		 *
+		 * \return an iterator to iterate through all the elements of the vector
+		 *
+		 */
+
+		auto getIterator() -> decltype(base.getIterator())
+		{
+			return base.getIterator();
+		}
+
 	};
 }
 

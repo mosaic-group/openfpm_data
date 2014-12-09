@@ -250,6 +250,40 @@ public:
 #endif
 			return boost::fusion::at_c<p>(data);
 	}
+
+	// access the data
+	template <unsigned int p> void set(typename type_cpu_prop<p,T>::type & ele)
+	{
+#ifdef MEMLEAK_CHECK
+			check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
+#endif
+			return boost::fusion::at_c<p>(data) = ele;
+	}
+};
+
+/*! \brief this structure specialize the class for a void object or null
+ *
+ * \param dim Dimensionality of the grid
+ * \param Mem suppose to be a boost::fusion::vector of arrays
+ *
+ */
+
+template<unsigned int dim,typename Mem>
+class encapc<dim,void,Mem>
+{
+public:
+
+	// constructor require a key and a memory data
+	encapc()
+	{}
+
+	// access the data
+	template <unsigned int p> void get()
+	{}
+
+	// access the data
+	template <unsigned int p, typename S> void set(S & ele)
+	{}
 };
 
 /*!
@@ -303,6 +337,10 @@ class grid_cpu
 		grid_cpu(const grid_cpu & g);
 
 	public:
+
+		//! Object container for T, it is the return type of get_o it return a object type trough
+		// you can access all the properties of T
+		typedef encapc<dim,T,Mem> container;
 
 		// The object type the grid is storing
 		typedef T type;
@@ -428,8 +466,11 @@ class grid_cpu
 		 * \param v1 grid_key that identify the element in the grid
 		 *
 		 */
-		inline encapc<dim,T,Mem> get_o(grid_key_dx<dim> & v1)
+		inline encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1)
 		{
+#ifdef MEMLEAK_CHECK
+			check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(typename type_cpu_prop<p,T>::type));
+#endif
 			return encapc<dim,T,Mem>(data.mem_r->operator[](g1.LinId(v1)));
 		}
 
@@ -710,6 +751,10 @@ class grid_gpu
 	Mem data;
 
 public:
+
+	//! Object container for T, it is the return type of get_o it return a object type trough
+	// you can access all the properties of T
+	typedef encapg<dim,T,Mem> container;
 
 	// The object type the grid is storing
 	typedef T type;
