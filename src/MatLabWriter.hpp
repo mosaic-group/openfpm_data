@@ -13,7 +13,7 @@
  */
 
 template<unsigned int dim, typename T>
-class TiffWriter
+class MatLabWriter
 {
 	/*! \brief Save grid into tiff files
 	 *
@@ -21,7 +21,7 @@ class TiffWriter
 	 *
 	 */
 
-	template<typename grid, typename Mem> int write(grid data, std::string file)
+	template<typename grid, typename Mem> int operator<<(grid data, std::string file)
 	{
 		// Grid can have several properties we can save only scalar fields
 		// for each properties save one scalar fields
