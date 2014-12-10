@@ -7,6 +7,16 @@
 #include <boost/fusion/include/for_each.hpp>
 #include <fstream>
 
+namespace std
+{
+	// We need the definition of std::to_string that work on string
+
+	std::string to_string(std::string s)
+	{
+		return s;
+	}
+}
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -68,23 +78,23 @@ struct vertex_prop
     	if (cnt < n_attr)
     	{
     		// if it is a yFile extension property name, does not process it
-    		if (attributes_names[t] == "x" || attributes_names[t] == "y"
-    			|| attributes_names[t] == "z" || attributes_names[t] == "shape" )
+    		if (attributes_names[cnt] == "x" || attributes_names[cnt] == "y"
+    			|| attributes_names[cnt] == "z" || attributes_names[cnt] == "shape" )
     		{cnt++; return ;}
 
     		// Create a property string based on the type of the property
     		if (typeid(T) == typeid(float))
-    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"float\"/>";
+    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"float\"/>";
     		else if (typeid(T) == typeid(double))
-    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"double\"/>";
+    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"double\"/>";
     		else if (typeid(T) == typeid(int))
-    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"int\"/>";
+    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"int\"/>";
     		else if (typeid(T) == typeid(long int))
-    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"long\"/>";
+    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"long\"/>";
     		else if (typeid(T) == typeid(bool))
-    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"boolean\"/>";
+    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"boolean\"/>";
     		else if (typeid(T) == typeid(std::string))
-    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"string\"/>";
+    			v_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"string\"/>";
     	}
 
     	cnt++;
@@ -275,7 +285,7 @@ struct edge_prop
 	 * \param n_prop number of properties
 	 *
 	 */
-	edge_prop(std::string & v_prop)
+	edge_prop(std::string & e_prop)
 	:e_prop(e_prop),attributes_names(NULL)
 	{
 	};
@@ -288,23 +298,23 @@ struct edge_prop
     	if (cnt < n_attr)
     	{
     		// if it is a yFile extension property name, does not process it
-    		if (attributes_names[t] == "x" || attributes_names[t] == "y"
-    			|| attributes_names[t] == "z" || attributes_names[t] == "shape" )
+    		if (attributes_names[cnt] == "x" || attributes_names[cnt] == "y"
+    			|| attributes_names[cnt] == "z" || attributes_names[cnt] == "shape" )
     		{cnt++; return ;}
 
     		// Create a property string based on the type of the property
     		if (typeid(T) == typeid(float))
-    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"float\"/>";
+    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"float\"/>";
     		else if (typeid(T) == typeid(double))
-    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"double\"/>";
+    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"double\"/>";
     		else if (typeid(T) == typeid(int))
-    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"int\"/>";
+    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"int\"/>";
     		else if (typeid(T) == typeid(long int))
-    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"long\"/>";
+    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"long\"/>";
     		else if (typeid(T) == typeid(bool))
-    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"boolean\"/>";
+    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"boolean\"/>";
     		else if (typeid(T) == typeid(std::string))
-    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[t] + " attr.type=\"string\"/>";
+    			e_prop += "<key id=\"v" + std::to_string(cnt) + "\" for=\"node\" attr.name=" + attributes_names[cnt] + " attr.type=\"string\"/>";
     	}
 
     	cnt++;
@@ -373,7 +383,7 @@ struct edge_node
 	 * \param n_prop number of properties
 	 *
 	 */
-	edge_node(std::string & v_node, const typename G::V_container & n_obj)
+	edge_node(std::string & v_node, const typename G::E_container & n_obj)
 	:vo(n_obj),e_node(e_node),attributes_names(NULL)
 	{
 	};
@@ -406,7 +416,7 @@ struct edge_node
 	void end_node()
 	{
 		// close a node
-		v_node += "</node>";
+		e_node += "</node>";
 	}
 
 	//! It call the functor for each member
@@ -429,17 +439,17 @@ struct edge_node
     		{
     			// Create a property string based on the type of the property
     			if (typeid(decltype(vo.template get<T::value>())) == typeid(float))
-    				v_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
+    				e_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
     			else if (typeid(decltype(vo.template get<T::value>())) == typeid(double))
-    				v_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
+    				e_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
     			else if (typeid(decltype(vo.template get<T::value>())) == typeid(int))
-    				v_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
+    				e_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
     			else if (typeid(decltype(vo.template get<T::value>())) == typeid(long int))
-    				v_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
+    				e_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
     			else if (typeid(decltype(vo.template get<T::value>())) == typeid(bool))
-    				v_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
+    				e_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
     			else if (typeid(decltype(vo.template get<T::value>())) == typeid(std::string))
-    				v_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
+    				e_node += "<data key=\"key" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</>";
     		}
     	}
 
@@ -496,16 +506,16 @@ class GraphMLWriter
 	std::string get_edge_properties_list()
 	{
 		//! edge property output string
-		std::string v_out;
+		std::string e_out(" ");
 
 		// create a vertex property functor
-		edge_prop<Graph> vp(v_out);
+		edge_prop<Graph> ep(e_out);
 
 		// Iterate through all the vertex and create the vertex list
-		boost::mpl::for_each< typename Graph::E_type::type >(vp);
+		boost::mpl::for_each< typename Graph::E_type::type >(ep);
 
 		// return the edge properties string
-		return v_out;
+		return e_out;
 	}
 
 	std::string get_vertex_list()
@@ -523,7 +533,7 @@ class GraphMLWriter
 			vertex_node<Graph> vn(v_out,g.vertex(it.get()));
 
 			// Iterate through all the vertex and create the vertex list
-			boost::mpl::for_each< typename Graph::V_type::type >(vn);
+			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::V_type::max_prop-1> >(vn);
 
 			// increment the operator
 			++it;
@@ -545,10 +555,10 @@ class GraphMLWriter
 		while (it.isNext())
 		{
 			// create an edge list functor
-			edge_node<Graph> en(v_out,g.edge(it));
+			edge_node<Graph> en(v_out,g.edge(it.get()));
 
 			// Iterate through all the vertex and create the vertex list
-			boost::mpl::for_each< typename Graph::E_type::type >(en);
+			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::V_type::max_prop-1> >(en);
 
 			// increment the operator
 			++it;
