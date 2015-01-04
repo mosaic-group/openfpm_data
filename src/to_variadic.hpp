@@ -19,6 +19,7 @@
 
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/reverse.hpp>
+#include <boost/mpl/vector.hpp>
 
 /*! \brief Exit condition
  *
@@ -100,5 +101,45 @@ struct to_variadic
 	typedef typename to_variadic_impl<H,first,last,exit_::value >::type type;
 };
 
+/*!
+*
+* It convert a variadic template into a boost::mpl::vector
+*
+* usage:
+*
+* to_boost_mpl<3,4,7,10>::type is converted into
+*
+* boost::mpl::vector<int<3>,int<4>,int<7>,int<10>>
+*
+*
+*/
+
+template <int a, int... id>
+struct to_boost_mpl_impl
+{
+	//! push in front the next number
+	typedef typename boost::mpl::push_front<typename to_boost_mpl_impl<id...>::type,boost::mpl::int_<a>>::type type;
+};
+
+//! terminator for to_boost_mpl with last parameter
+template <int a>
+struct to_boost_mpl_impl<a>
+{
+	typedef boost::mpl::vector<boost::mpl::int_<a>> type;
+};
+
+//! terminator for to_boost_mpl with last parameter
+template <int... id>
+struct to_boost_mpl
+{
+	typedef typename to_boost_mpl_impl<id...>::type type;
+};
+
+//! terminator for to_boost_mpl with last parameter
+template <>
+struct to_boost_mpl<>
+{
+	typedef typename boost::mpl::vector<>::type type;
+};
 
 #endif

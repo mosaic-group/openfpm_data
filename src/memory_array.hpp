@@ -50,9 +50,13 @@ class memory_array
 	memory_array()	{};
 
 	//! Constructor
-	memory_array(void * ptr)
+	memory_array(void * ptr, size_t sz)
 	: ptr(static_cast<T *>(ptr))
-	{};
+	{
+		// Initialize the constructors
+		new (ptr)T[sz];
+
+	};
 };
 
 

@@ -301,10 +301,34 @@ class grid
 
   void Initialize(std::vector<size_t> & sz)
   {
+	  // Convert the vector to an array
+	  size_t sz_a[N];
+
+	  // Copy
+	  for(int i = 0 ; i < N ; i++)
+	  {
+		  sz_a[i] = sz[i];
+	  }
+
+	  // Initialize
+	  Initialize(sz_a);
+  }
+
+  /*! \brief Initialize the basic structure
+   *
+   * Initialize the basic structure
+   *
+   * \param sz vector that store the size of the grid on each
+   *           dimensions
+   *
+   */
+
+  void Initialize(size_t (& sz)[N])
+  {
 	  //! Initialize the basic structure for each dimension
 	  sz_s[0] = sz[0];
 	  this->sz[0] = sz[0];
-	  for (size_t i = 1 ;  i < sz.size() ; i++)
+	  for (size_t i = 1 ;  i < N ; i++)
 	  {
 		  sz_s[i] = sz[i]*sz_s[i-1];
 	      this->sz[i] = sz[i];
@@ -440,16 +464,32 @@ public:
 
   // Static element to calculate total size
 
-  size_t totalSize(std::vector<size_t> & sz)
+  size_t totalSize(size_t (& sz)[N])
   {
     size_t tSz = 1;
-    
-    for (size_t i = 0 ;  i < sz.size() ; i++)
+
+    for (size_t i = 0 ;  i < N ; i++)
     {
       tSz *= sz[i];
     }
-    
+
     return tSz;
+  }
+
+  // Static element to calculate total size
+
+  size_t totalSize(std::vector<size_t> & sz)
+  {
+	  // Convert the vector to an array
+	  size_t sz_a[N];
+
+	  // Copy
+	  for(int i = 0 ; i < N ; i++)
+	  {
+		  sz_a[i] = sz[i];
+	  }
+    
+	  return totalSize(sz_a);
   }
 
   /*! \brief Construct a grid of a specified size
@@ -466,6 +506,20 @@ public:
 	  Initialize(sz);
   }
   
+  /*! \brief Construct a grid of a specified size
+   *
+   * Construct a grid of a specified size
+   *
+   * \param sz is an array that contain the size of the grid on each dimension
+   *
+   */
+
+  grid(size_t (& sz)[N])
+  : size_tot(totalSize(sz))
+  {
+	  Initialize(sz);
+  }
+
   /*! \brief Construct a grid of a specified size
    *
    * Construct a grid of a specified size
@@ -712,7 +766,7 @@ public:
 	 *
 	 */
 
-	grid_key_dx_iterator<dim> operator++()
+	grid_key_dx_iterator<dim> & operator++()
 	{
 		//! increment the first index
 
@@ -952,7 +1006,7 @@ public:
 	 *
 	 */
 
-	grid_key_dx_iterator<dim> operator++()
+	grid_key_dx_iterator<dim> & operator++()
 	{
 		//! increment the first index
 
@@ -1022,7 +1076,7 @@ public:
 		  k = new mem_id[dim];
 
 		  // Copy the key
-		  for(int i = 0 ; i < dim ; i++)
+		  for(unsigned int i = 0 ; i < dim ; i++)
 		  {
 			  k[i] = key.k[i];
 		  }
@@ -1177,7 +1231,7 @@ public:
 
 		//! check the overflow of all the index with exception of the last dimensionality
 
-		int i = 0;
+		unsigned int i = 0;
 		for ( ; i < dim-1 ; i++)
 		{
 			size_t id = gk.get(i);
@@ -1199,7 +1253,7 @@ public:
 
 					// reinitialize the previous index
 
-					for (int s = 0 ; s <= i+1 ; s++)
+					for (unsigned int s = 0 ; s <= i+1 ; s++)
 					{
 						gk.set_d(i+1-s,id+1+s);
 					}
@@ -1228,7 +1282,7 @@ public:
 		if (dim == 0)
 			return false;
 
-		if (gk.get(dim-1) < sz-dim+1)
+		if (gk.get(dim-1) < static_cast<mem_id>(sz-dim+1))
 		{
 			//! we did not reach the end of the grid
 

@@ -15,8 +15,145 @@
 
 namespace openfpm
 {
+	/*! \brief Grow policy define how the vector should grow every time we exceed the size
+	 *
+	 * In this case it double up the size
+	 *
+	 */
 
-	/*! device selector struct
+	class grow_policy_double
+	{
+	public:
+
+		/*! \brief It say how much the vector must grow
+		 *
+		 * \param original size
+		 * \param requested size
+		 *
+		 * \return how much to grow
+		 *
+		 */
+		static size_t grow(size_t original, size_t requested)
+		{
+			size_t grow = original;
+			while (grow < requested)	{grow *= 2;}
+			return grow;
+		}
+	};
+
+	/*! \brief Grow policy define how the vector should grow every time we exceed the size
+	 *
+	 * In this case it increase of 4096 elements
+	 *
+	 */
+
+	class grow_policy_page
+	{
+	public:
+
+		/*! \brief It say how much the vector must grow
+		 *
+		 * \param original size
+		 * \param requested size
+		 *
+		 * \return how much to grow
+		 *
+		 */
+		static size_t grow(size_t original, size_t requested)
+		{
+			return (requested / PAGE_ALLOC) * PAGE_ALLOC + PAGE_ALLOC;
+		}
+	};
+
+	/*! \brief Vector iterator
+	 *
+	 */
+
+	class vector_key_iterator
+	{
+		size_t end;
+
+	protected:
+
+		size_t gk;
+
+	public:
+
+		/*! \brief Constructor require the size of the vector
+		 *
+		 * \param end size of the vector
+		 */
+		vector_key_iterator(size_t end)
+		: end(end),gk(0)
+		{}
+
+		/*! \brief Get the next element
+		 *
+		 * Get the next element
+		 *
+		 * \return the next grid_key
+		 *
+		 */
+
+		vector_key_iterator operator++()
+		{
+			//! increment the first index
+
+			gk++;
+
+			return *this;
+		}
+
+		/*! \brief Set the dimension
+		 *
+		 * Set the dimension
+		 *
+		 * \param dim is the dimension
+		 * \param sz set the counter to sz
+		 *
+		 */
+		void set(int d, size_t sz)
+		{
+			// set the counter dim to sz
+
+			gk = sz;
+		}
+
+		/*! \brief Check if there is the next element
+		 *
+		 * Check if there is the next element
+		 *
+		 * \return true if there is the next, false otherwise
+		 *
+		 */
+
+		bool isNext()
+		{
+			if (gk < end)
+			{
+				//! we did not reach the end of the grid
+
+				return true;
+			}
+
+			//! we reach the end of the grid
+			return false;
+		}
+
+		/*! \brief Get the actual key
+		 *
+		 * Get the actual key
+		 *
+		 * \return the actual key
+		 *
+		 */
+		size_t get()
+		{
+			return gk;
+		}
+	};
+
+	/*! \brief device selector struct
 	 *
 	 * device selector struct, it return the correct data type for each device
 	 *
@@ -53,10 +190,11 @@ namespace openfpm
 	 * \param T type of structure the vector has to store
 	 * \param device type of layout to use
 	 * \param Memory allocator to use
+	 * \param grow_p grow policy, how this vector should grow
 	 *
 	 */
 
-	template<typename T, typename device=device_cpu<T>, typename Memory=HeapMemory>
+	template<typename T, typename device=device_cpu<T>, typename Memory=HeapMemory, typename grow_p=grow_policy_double>
 	class vector
 	{
 	};
@@ -73,9 +211,6 @@ namespace openfpm
 	template<typename Memory>
 	class vector<size_t,device_cpu<size_t>,Memory>
 	{
-		//! Indicate if reallocation is needed on cpu is always false;
-		bool need_reallocation;
-
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
 		//! the actually allocated space
@@ -84,14 +219,16 @@ namespace openfpm
 		//! 1-D static grid
 		std::vector<size_t> base;
 
+	public:
+
+		// iterator for the vector
+		typedef vector_key_iterator iterator_key;
+
 		//! return the size of the vector
 		size_t size()
 		{
 			return base.size();
 		}
-
-	public:
-
 
 
 		/*! \ brief Resize the vector
@@ -182,15 +319,13 @@ namespace openfpm
 	 * \param T type of structure the vector has to store
 	 * \param device type of layout to use
 	 * \param Memory allocator to use
+	 * \param grow_p grow policy for vector
 	 *
 	 */
 
-	template<typename T,typename Memory>
-	class vector<T,device_cpu<T>, Memory>
+	template<typename T,typename Memory, typename grow_p>
+	class vector<T,device_cpu<T>, Memory,grow_p>
 	{
-		//! Indicate if reallocation is needed on cpu is always false;
-		bool need_reallocation;
-
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
 		//! the actually allocated space
@@ -219,6 +354,9 @@ namespace openfpm
 
 	public:
 
+		// iterator for the vector
+		typedef vector_key_iterator iterator_key;
+
 		//! Object container for T, it is the return type of get_o it return a object type trough
 		// you can access all the properties of T
 		typedef typename grid_cpu<1,T>::container container;
@@ -246,8 +384,7 @@ namespace openfpm
 			if (sp > base.size())
 			{
 				//! Resize the memory
-				std::vector<size_t> sz;
-				sz.push_back(sp);
+				size_t sz[1] = {sp};
 				base.template resize<Memory>(sz);
 			}
 		}
@@ -265,9 +402,10 @@ namespace openfpm
 
 			if (slot > base.size())
 			{
+				size_t gr = grow_p::grow(base.size(),slot);
+
 				//! Resize the memory
-				std::vector<size_t> sz;
-				sz.push_back(slot);
+				size_t sz[1] = {gr};
 				base.template resize<Memory>(sz);
 			}
 
@@ -406,9 +544,9 @@ namespace openfpm
 		 *
 		 */
 
-		auto getIterator() -> decltype(base.getIterator())
+		vector_key_iterator getIterator()
 		{
-			return base.getIterator();
+			return vector_key_iterator(v_size);
 		}
 	};
 
@@ -443,6 +581,11 @@ namespace openfpm
 
 		//! 1-D static grid
 		grid_gpu<1,T> base;
+
+	public:
+
+		// iterator for the vector
+		typedef vector_key_iterator iterator_key;
 
 		//! return the size of the vector
 		size_t size()

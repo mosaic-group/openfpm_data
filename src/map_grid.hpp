@@ -242,13 +242,30 @@ public:
 	:data(data)
 	{}
 
-	// access the data
+	/*! \brief access the data
+	 *
+	 * \return the reference
+	 *
+	 */
 	template <unsigned int p> typename type_cpu_prop<p,T>::type get()
 	{
 #ifdef MEMLEAK_CHECK
-			check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
+		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
 #endif
-			return boost::fusion::at_c<p>(data);
+		return boost::fusion::at_c<p>(data);
+	}
+
+	/*! \brief Get the data
+	 *
+	 * \return the data
+	 *
+	 */
+	template <unsigned int p> typename boost::remove_reference<typename type_cpu_prop<p,T>::type>::type get() const
+	{
+#ifdef MEMLEAK_CHECK
+		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
+#endif
+		return boost::fusion::at_c<p>(data);
 	}
 
 	// access the data
@@ -369,6 +386,12 @@ class grid_cpu
 		{
 		}
 
+		//! Constructor allocate memory and give them a representation
+		grid_cpu(size_t (& sz)[dim])
+		:g1(sz)
+		{
+		}
+
 		/*! \brief Return the internal grid information
 		 *
 		 * Return the internal grid information
@@ -474,15 +497,18 @@ class grid_cpu
 			return encapc<dim,T,Mem>(data.mem_r->operator[](g1.LinId(v1)));
 		}
 
+
 		/*! \brief Resize the space
 		 *
 		 * Resize the space to a new grid, the element are retained on the new grid,
 		 * if the new grid is bigger the new element are now initialized, if is smaller
 		 * the data are cropped
 		 *
+		 * \param sz reference to an array of dimension dim
+		 *
 		 */
 
-		template<typename S> void resize(std::vector<size_t> & sz)
+		template<typename S> void resize(size_t (& sz)[dim])
 		{
 			//! Create a completely new grid with sz
 
@@ -524,6 +550,27 @@ class grid_cpu
 	        // copy grid_new to the base
 
 	        this->move_copy(grid_new);
+		}
+
+		/*! \brief Resize the space
+		 *
+		 * Resize the space to a new grid, the element are retained on the new grid,
+		 * if the new grid is bigger the new element are now initialized, if is smaller
+		 * the data are cropped
+		 *
+		 */
+
+		template<typename S> void resize(std::vector<size_t> & sz)
+		{
+			// array containing the size of the grid
+			size_t sz_a[dim];
+
+			// fill the array
+			for (int i = 0 ; i < dim ; i++)
+			{sz_a[i] = sz[i];}
+
+			// resize
+			resize<S>(sz_a);
 		}
 
 		/*! \brief It move the allocated object from one grid to another
