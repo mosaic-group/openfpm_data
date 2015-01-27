@@ -655,6 +655,17 @@ class grid_cpu
 			return g1.size();
 		}
 
+		/*! \brief Return a sub-grid iterator
+		 *
+		 * Return a sub-grid iterator, to iterate through the grid
+		 *
+		 */
+
+		inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop)
+		{
+			return grid_key_dx_iterator_sub<dim>(g1,start,stop);
+		}
+
 		/*! \brief Return a grid iterator
 		 *
 		 * Return a grid iterator, to iterate through the grid
@@ -897,6 +908,18 @@ public:
 	inline grid_key_dx_iterator<dim> getIterator()
 	{
 		return grid_key_dx_iterator<dim>(g1);
+	}
+
+
+	/*! \brief Return a sub-grid iterator
+	 *
+	 * Return a sub-grid iterator, to iterate through the grid
+	 *
+	 */
+
+	inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop)
+	{
+		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
 	}
 
 	/*! \brief Swap the memory of another grid

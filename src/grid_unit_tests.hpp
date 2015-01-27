@@ -3,6 +3,7 @@
 
 #include "map_grid.hpp"
 #include "Point_test.hpp"
+#include "Space/Shape/HyperCube.hpp"
 
 #define GS_SIZE 128
 
@@ -410,6 +411,111 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 	   }
 
 	   BOOST_REQUIRE_EQUAL(passed,true);
+
+	   // Check sub iterator
+
+	   /*
+	    * Basically we first fill the interior part of the grid than the borders
+	    * creating sub iterator always of smaller dimension
+	    *
+	    * Example:
+	    *
+	    * 2D
+	    *
+	    * if we have a square grid 16x16 we first will with 1 the interior 14x14 grid
+	    *
+	    * than the 4 line borders 14x1 with one
+	    * than the 4 point borders 1x1
+	    *
+	    * We check that
+	    *
+	    * 1) The number of points for each sub-grid correspond
+	    * 2) No point is filled more than one time
+	    * 3) All point are filled
+	    *
+	    * we use the property x of c3
+	    *
+	    */
+
+	   // Erase the property x
+
+	   key_it = c3.getIterator();
+
+	   while (key_it.isNext())
+	   {
+		   grid_key_dx<dim> kk = key_it.get();
+
+		   c3.template get<P::x>(kk) = 0.0;
+
+		   ++key_it;
+	   }
+
+	   for(int i = 0 ; i <= dim ; i++)
+	   {
+		   // get the combination of dimension dim-i
+		   std::vector<comb<dim>> combs = HyperCube<dim>::getCombinations_R(dim-i);
+
+		   // For each combination create a sub iterator
+
+		   for (int j = 0 ; j < combs.size() ; j++)
+		   {
+			   // Grid key of the sub-iterator
+
+			   grid_key_dx<dim> start;
+			   grid_key_dx<dim> stop;
+
+			   // sub iterator
+
+			   for (int k = 0 ; k < dim ; k++)
+			   {
+				   // if combination is 0 the hyper-cube
+
+				   if (combs[j].c[k] == -1)
+				   {
+					   start.set_d(k,0);
+					   stop.set_d(k,0);
+				   }
+				   else if (combs[j].c[k] == 1)
+				   {
+					   start.set_d(k,c3.getGrid().size(k)-1);
+					   stop.set_d(k,c3.getGrid().size(k)-1);
+				   }
+				   else
+				   {
+					   start.set_d(k,1);
+					   stop.set_d(k,c3.getGrid().size(k)-2);
+				   }
+			   }
+
+			   grid_key_dx<8> key_debug(3,1,1,1,1,1,1,1);
+
+			   auto key_it = c3.getSubIterator(start,stop);
+
+			   while (key_it.isNext())
+			   {
+				   grid_key_dx<dim> kk = key_it.get();
+
+				   BOOST_REQUIRE_EQUAL(c3.template get<P::x>(kk),0.0);
+
+				   c3.template get<P::x>(kk) = 1.0;
+
+				   ++key_it;
+			   }
+		   }
+	   }
+
+	   // Check that everything is 1.0
+
+	   key_it = c3.getIterator();
+
+	   while (key_it.isNext())
+	   {
+		   grid_key_dx<dim> kk = key_it.get();
+
+		   BOOST_REQUIRE_EQUAL(c3.template get<P::x>(kk),1.0);
+
+		   ++key_it;
+	   }
 }
 
 BOOST_AUTO_TEST_SUITE( grid_test )
@@ -439,7 +545,7 @@ BOOST_AUTO_TEST_CASE( grid_use)
 	  test_all_grid<2>(1414);
 	  test_all_grid<1>(2000000);
 
-	   // Test the 3d gpu grid with Cudamemory and HeapMemory with different size
+	   // Test the 3d gpu grid with CudaMemory and HeapMemory with different size
 
 	  for (int i = 2 ; i <= GS_SIZE ; i++)
 	  {

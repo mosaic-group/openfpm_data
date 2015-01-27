@@ -166,6 +166,13 @@ namespace openfpm
 		typedef grid_cpu<1,T> type;
 	};
 
+	/*! \brief specialization for size_t
+	 *
+	 */
+
+	template<>
+	struct device_cpu<size_t>
+	{};
 
 	/*! device selector struct
 	 *
@@ -225,7 +232,7 @@ namespace openfpm
 		typedef vector_key_iterator iterator_key;
 
 		//! return the size of the vector
-		size_t size()
+		inline size_t size()
 		{
 			return base.size();
 		}
@@ -239,7 +246,7 @@ namespace openfpm
 		 *
 		 */
 
-		void resize(size_t slot)
+		inline void resize(size_t slot)
 		{
 			base.resize(slot);
 		}
@@ -253,7 +260,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		void add(size_t & v)
+		inline void add(const size_t & v)
 		{
 			base.push_back(v);
 		}
@@ -267,14 +274,16 @@ namespace openfpm
 		 *
 		 *
 		 */
-		void add(size_t v)
+/*		inline void add(const size_t v)
 		{
 			base.push_back(v);
-		}
+		}*/
 
 		/*! \brief Get an element of the vector
 		 *
 		 * Get an element of the vector
+		 *
+		 * \tparam must be 0
 		 *
 		 * \param id Element to get
 		 * \param p Property to get
@@ -290,6 +299,19 @@ namespace openfpm
 			return base[id];
 		}
 
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \param id Element to get
+		 * \param p Property to get
+		 *
+		 */
+		inline size_t & get(size_t id)
+		{
+			return base[id];
+		}
+
 		/*! \brief it fill all the memory of fl patterns
 		 *
 		 * WARNING does not assign a value to each element but it fill the memory
@@ -299,9 +321,20 @@ namespace openfpm
 		 *
 		 */
 
-		void fill(unsigned char fl)
+		inline void fill(unsigned char fl)
 		{
 			memset(&base[0],0,base.size());
+		}
+
+		/*! \brief reserve a memory space in advance to avoid reallocation
+		 *
+		 * \param ns number of element the memory has to store
+		 *
+		 */
+
+		inline void reserve(size_t ns)
+		{
+			base.reserve(ns);
 		}
 
 		//! Constructor, vector of size 0
@@ -309,6 +342,17 @@ namespace openfpm
 
 		//! Constructor, vector of size sz
 		vector(size_t sz):base(sz) {}
+
+		/*! swap the content of the vector
+		 *
+		 * \param vector to be swapped with
+		 *
+		 */
+
+		void swap(openfpm::vector<size_t,device_cpu<size_t>,Memory> & v)
+		{
+			base.swap(v.base);
+		}
 	};
 
 	/*! \brief Implementation of 1-D std::vector like structure
@@ -482,6 +526,33 @@ namespace openfpm
 			grid_key_dx<1> key(id);
 
 			return base.get_o(key);
+		}
+
+		/*! \brief It duplicate the vector
+		 *
+		 * \return a duplicated vector
+		 *
+		 */
+		vector<T,device_cpu<T>, Memory,grow_p> duplicate()
+		{
+			vector<T,device_cpu<T>, Memory,grow_p> dup;
+
+			dup.v_size = v_size;
+			dup.base = base.duplicate();
+
+			return dup;
+		}
+
+		/*! \brief Constructor for a temporal object
+		 *
+		 * \param the temporal object
+		 *
+		 */
+
+		vector(vector<T,device_cpu<T>, Memory,grow_p> && v)
+		:v_size(v.v_size),base(v.base)
+		{
+
 		}
 
 		//! Constructor, vector of size 0

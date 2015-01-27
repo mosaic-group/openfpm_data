@@ -73,6 +73,13 @@ public:
   grid_key_dx()
   {}
   
+  //! Construct a grid key from a buffer
+  grid_key_dx(size_t k[dim])
+  {
+    for (int i = 0 ; i < dim ; i++)
+    	this->k[i] = k[i];
+  }
+
   //! Construct a grid key from a list of numbers
   template<typename a, typename ...T>grid_key_dx(a v,T...t)
   {
@@ -80,6 +87,35 @@ public:
     invert_assign(t...);
   }
   
+  /* \brief Check if two key are the same
+   *
+   * \param key_t key to check
+   *
+   * \return true if the two key are identical
+   *
+   */
+
+  template<unsigned int dim_t> bool operator==(grid_key_dx<dim_t> & key_t)
+  {
+	  if (dim != dim_t)
+	  {
+		  return false;
+	  }
+
+	  // Check the two key index by index
+
+	  for (int i = 0 ; i < dim ; i++)
+	  {
+		  if (k[i] != key_t.k[i])
+		  {
+			  return false;
+		  }
+	  }
+
+	  // identical key
+	  return true;
+  }
+
   //! set the grid key from a list of numbers
   template<typename a, typename ...T>void set(a v, T...t)
   {
@@ -111,6 +147,12 @@ public:
    */
   void set_d(size_t i, mem_id id)
   {
+#ifdef DEBUG
+
+	  if (i >= dim)
+		  std::cerr << "grid_key_dx error: " << __FILE__ << " " << __LINE__ << " try to access dimension " << i << " on a grid_key_dx of size " << dim << "\n";
+
+#endif
 	  k[i] = id;
   }
 
@@ -715,6 +757,23 @@ public:
 	  return sz[i];
   }
 
+  /*! \brief Return the size of the grid as an std::vector
+   *
+   * \return get the size of the grid as an std::vector
+   *
+   */
+  std::vector<size_t> getVectorSize()
+  {
+	  std::vector<size_t> vect_sz;
+
+	  for (int i = 0 ; i < N ; i++)
+	  {
+		  vect_sz.push_back(sz[i]);
+	  }
+
+	  return vect_sz;
+  }
+
   //!  It simply mean that all the classes grid are friend of all its specialization
   template <unsigned int,typename> friend class grid;
 };
@@ -839,7 +898,7 @@ public:
 	 * \return the actual key
 	 *
 	 */
-	grid_key_dx<dim> get()
+	const grid_key_dx<dim> & get()
 	{
 		return gk;
 	}
@@ -942,12 +1001,6 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 	//! grid base where we are iterating
 	grid<dim,void> grid_base;
 
-	//! Linearized start point
-	mem_id start;
-
-	//! Linearized stop point
-	mem_id stop;
-
 	//! start point
 	grid_key_dx<dim> gk_start;
 
@@ -955,6 +1008,57 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 	grid_key_dx<dim> gk_stop;
 
 public:
+
+	/*! \brief Constructor require a grid
+	 *
+	 * Constructor require a grid<dim,T>
+	 *
+	 * It construct an iterator over an hyper-cube defined by start and stop,
+	 * \WARNING if start and stop are outside the domain defined by g the intersection
+	 * will be considered
+	 *
+	 * \param T type of object that the grid store
+	 *
+	 * \param g Grid on which iterate
+	 * \param start starting point
+	 * \param stop end point
+	 *
+	 */
+	template<typename T> grid_key_dx_iterator_sub(grid<dim,T> & g, const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
+	: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
+	{
+#ifdef DEBUG
+		//! If we are on debug check that the stop grid_key id bigger than the start
+		//! grid_key
+
+		for (unsigned int i = 0 ; i < dim ; i++)
+		{
+			if (gk_start.get(i) > gk_stop.get(i))
+			{
+				std::cerr << "Error grid_key_dx_iterator : the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
+			}
+		}
+#endif
+
+		// Check that start and stop are inside the domain otherwise crop them
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			// if start smaller than 0
+			if (gk_start.get(i) < 0)
+				gk_start.set_d(i,0);
+
+			// if stop bigger than the domain
+			if (gk_stop.get(i) >= g.size(i))
+				gk_stop.set_d(i,g.size(i));
+		}
+
+		//! Initialize gk
+		for (unsigned int i = 0 ; i < dim ; i++)
+		{
+			this->gk.set_d(i,gk_start.get(i));
+		}
+	}
 
 	/*! \brief Constructor require a grid
 	 *
@@ -969,8 +1073,8 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	template<typename T> grid_key_dx_iterator_sub(grid<dim,T> & g, grid_key_dx<dim> & start, grid_key_dx<dim> & stop)
-	: grid_base(g), start(0),stop(0),gk_start(start), gk_stop(stop)
+	template<typename T> grid_key_dx_iterator_sub(grid<dim,T> & g, size_t start[dim], size_t stop[dim])
+	: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
 	{
 #ifndef DEBUG
 		//! If we are on debug check that the stop grid_key id bigger than the start
@@ -978,7 +1082,7 @@ public:
 
 		for (unsigned int i = 0 ; i < dim ; i++)
 		{
-			if (start.get(i) > stop.get(i))
+			if (start[i] > stop[i])
 			{
 				std::cerr << "Error grid_key_dx_iterator : the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
 			}
@@ -988,13 +1092,10 @@ public:
 		//! If the linearize operation is additive
 		//! LinId(key1 + key2) = LinId(key1) + LinId(key2)
 
-		if (grid_base.isLinearizeLinear() == true)
+		//! Initialize gk
+		for (unsigned int i = 0 ; i < dim ; i++)
 		{
-			//! Linearize the starting point
-			start = g.LinId(start);
-
-			//! Linearize the last point
-			stop = g.LinId(stop);
+			this->gk.set_d(i,gk_start.get(i));
 		}
 	}
 
@@ -1019,7 +1120,7 @@ public:
 		for ( ; i < dim-1 ; i++)
 		{
 			size_t id = this->gk.get(i);
-			if (id >= gk_stop.get(i))
+			if (id > gk_stop.get(i))
 			{
 				// ! overflow, increment the next index
 
@@ -1034,6 +1135,27 @@ public:
 		}
 
 		return *this;
+	}
+
+	/*! \brief Check if there is the next element
+	 *
+	 * Check if there is the next element
+	 *
+	 * \return true if there is the next, false otherwise
+	 *
+	 */
+
+	bool isNext()
+	{
+		if (this->gk.get(dim-1) <= gk_stop.get(dim-1))
+		{
+			//! we did not reach the end of the grid
+
+			return true;
+		}
+
+		//! we reach the end of the grid
+		return false;
 	}
 
 };
@@ -1193,19 +1315,15 @@ public:
 		return dim;
 	}
 
-	/*! \brief Constructor require a grid
+	/*! \brief Constructor
 	 *
-	 * Constructor require a grid<dim,T>
-	 *
-	 * It construct an iterator over an hyper-cube defined by start and stop,
-	 *
-	 * \param dim Dimensionality
-	 * \param sz Size of the grid on all dimensions
+	 * \param n Dimensionality (how many i1 ... in you have)
+	 * \param sz Size of the grid on all dimensions range of the value i1 ... in can assume
 	 *
 	 */
 
-	Iterator_g_const(size_t dim, size_t sz)
-	:dim(dim),sz(sz),gk(dim)
+	Iterator_g_const(size_t n, size_t sz)
+	:dim(n),sz(sz),gk(n)
 	{
 		// fill gk with the first grid element that satisfied the constrain: 0,1,2,3... dim
 
