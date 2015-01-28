@@ -611,7 +611,13 @@ namespace openfpm
 		 */
 		void swap(openfpm::vector<T,device_cpu<T>,Memory> & v)
 		{
+			size_t sz_sp = v_size;
+
+			// swap the v_size
+			v_size = v.v_size;
+
 			base.swap(v.base);
+			v.v_size = sz_sp;
 		}
 
 		/*! \brief Swap the memory of another vector
@@ -621,7 +627,13 @@ namespace openfpm
 		 */
 		void swap(openfpm::vector<T,device_cpu<T>,Memory> && v)
 		{
+			size_t sz_sp = v_size;
+
+			// swap the v_size
+			v_size = v.v_size;
+
 			base.swap(v.base);
+			v.v_size = sz_sp;
 		}
 
 		/*! \brief Get the vector elements iterator
