@@ -8,7 +8,7 @@
 #ifndef MAP_VECTOR_HPP
 #define MAP_VECTOR_HPP
 
-#include "map_grid.hpp"
+#include "Grid/map_grid.hpp"
 #include "memory/HeapMemory.hpp"
 
 #define PAGE_ALLOC 1024
@@ -265,19 +265,28 @@ namespace openfpm
 			base.push_back(v);
 		}
 
-		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
+		/*! \brief Duplicate the vector
 		 *
-		 * It insert a new object on the vector, eventually it reallocate the grid
-		 *
-		 * \warning It is not thread safe should not be used in multi-thread environment
-		 *          reallocation, work only on cpu
-		 *
+		 * \return the duplicated vector
 		 *
 		 */
-/*		inline void add(const size_t v)
+
+		std::vector<size_t> duplicate()
 		{
-			base.push_back(v);
-		}*/
+			return base;
+		}
+
+		/*! \brief swap the memory between the two vector
+		 *
+		 * \param vector to swap
+		 *
+		 */
+
+		void swap(std::vector<size_t> && v)
+		{
+			base.swap(v);
+		}
+
 
 		/*! \brief Get an element of the vector
 		 *
@@ -538,7 +547,7 @@ namespace openfpm
 			vector<T,device_cpu<T>, Memory,grow_p> dup;
 
 			dup.v_size = v_size;
-			dup.base = base.duplicate();
+			dup.base.swap(base.template duplicate<Memory>());
 
 			return dup;
 		}
@@ -551,9 +560,7 @@ namespace openfpm
 
 		vector(vector<T,device_cpu<T>, Memory,grow_p> && v)
 		:v_size(v.v_size),base(v.base)
-		{
-
-		}
+		{}
 
 		//! Constructor, vector of size 0
 		vector():v_size(0),base(getV(PAGE_ALLOC))
@@ -603,6 +610,16 @@ namespace openfpm
 		 *
 		 */
 		void swap(openfpm::vector<T,device_cpu<T>,Memory> & v)
+		{
+			base.swap(v.base);
+		}
+
+		/*! \brief Swap the memory of another vector
+		 *
+		 * Swap the memory of another vector
+		 *
+		 */
+		void swap(openfpm::vector<T,device_cpu<T>,Memory> && v)
 		{
 			base.swap(v.base);
 		}

@@ -11,7 +11,7 @@
 #include "memory/CudaMemory.cuh"
 #include "memory/HeapMemory.hpp"
 #include "memory_conf.hpp"
-#include "map_grid.hpp"
+#include "Grid/map_grid.hpp"
 #include "map_vector.hpp"
 #include "map_graph.hpp"
 
@@ -19,7 +19,7 @@
 
 #include "graph_unit_tests.hpp"
 #include "vector_unit_tests.hpp"
-#include "grid_unit_tests.hpp"
+#include "Grid/grid_unit_tests.hpp"
 
 //int main()
 //{

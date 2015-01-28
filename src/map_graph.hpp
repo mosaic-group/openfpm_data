@@ -399,11 +399,12 @@ public:
 		dup.v_slot = v_slot;
 
 		//! duplicate all the structures
-		dup.v = v.duplicate();
-		dup.v_l = v_l.duplicate();
-		dup.e = e.duplicate();
-		dup.e_l = e_l.duplicate();
-		dup.e_invalid.resize(1);
+
+		dup.v.swap(v.duplicate());
+		dup.v_l.swap(v_l.duplicate());
+		dup.e.swap(e.duplicate());
+		dup.e_l.swap(e_l.duplicate());
+		dup.e_invalid.swap(e_invalid.duplicate());
 
 		return dup;
 	}

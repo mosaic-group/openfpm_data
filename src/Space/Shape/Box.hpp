@@ -4,7 +4,7 @@
 
 #include "Space/Shape/Sphere.hpp"
 #include <boost/fusion/sequence/intrinsic/at_c.hpp>
-#include "HyperCube.hpp"
+#include "Grid/grid_key.hpp"
 
 /*! \brief It define if we want the upper base or the down base (Lower or upper)
  * extreme of the interval
@@ -137,7 +137,7 @@ public:
 	 *
 	 */
 
-	Box<dim,T> & operator=(Box<dim,T> & box)
+	Box<dim,T> & operator=(const Box<dim,T> & box)
 	{
 	    for(size_t i = 0 ; i < dim ; i++)
 	    {setLow(i,box.getLow(i));i++;}
@@ -282,7 +282,7 @@ public:
 	 * \return i-coordinate
 	 *
 	 */
-	inline T getLow(int i)
+	inline T getLow(int i) const
 	{
 		return boost::fusion::at_c<p1>(data)[i];
 	}
@@ -293,7 +293,7 @@ public:
 	 * \return i coordinate of the high interval
 	 *
 	 */
-	inline T getHigh(int i)
+	inline T getHigh(int i) const
 	{
 		return boost::fusion::at_c<p2>(data)[i];
 	}
@@ -327,7 +327,7 @@ public:
 	 *
 	 */
 
-	grid_key_dx<dim> getKP1()
+	grid_key_dx<dim> getKP1() const
 	{
 		// grid key to return
 		grid_key_dx<dim> ret(boost::fusion::at_c<p1>(data));
@@ -341,7 +341,7 @@ public:
 	 *
 	 */
 
-	grid_key_dx<dim> getKP2()
+	grid_key_dx<dim> getKP2() const
 	{
 		// grid key to return
 		grid_key_dx<dim> ret(boost::fusion::at_c<p2>(data));

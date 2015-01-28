@@ -2,7 +2,7 @@
 #define HYPERCUBE_HPP
 
 #include "mathutil.hpp"
-#include "grid.hpp"
+#include "Grid/grid.hpp"
 
 template<unsigned int dim, unsigned int subdim> class SubHyperCube;
 

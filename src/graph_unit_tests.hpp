@@ -91,6 +91,36 @@ BOOST_AUTO_TEST_CASE( graph_use)
 		}
 	}
 
+	// Test if duplicate work
+
+	Graph_CSR<V,E> g_dup = g.duplicate();
+
+	// check if the two graph matches
+
+	for (size_t i = 0 ; i < g.getNVertex() ; i++)
+	{
+		float f1 = g.vertex(i).template get<V::x>();
+		float f2 = g_dup.vertex(i).template get<V::x>();
+
+		BOOST_REQUIRE_EQUAL(g.vertex(i).template get<V::x>(),g_dup.vertex(i).template get<V::x>());
+		BOOST_REQUIRE_EQUAL(g.vertex(i).template get<V::y>(),g_dup.vertex(i).template get<V::y>());
+		BOOST_REQUIRE_EQUAL(g.vertex(i).template get<V::z>(),g_dup.vertex(i).template get<V::z>());
+		BOOST_REQUIRE_EQUAL(g.vertex(i).template get<V::s>(),g_dup.vertex(i).template get<V::s>());
+
+		for (int j = 0 ; j < 3 ; j++)
+		{
+			BOOST_REQUIRE_EQUAL(g.vertex(i).template get<V::v>()[j],g_dup.vertex(i).template get<V::v>()[j]);
+		}
+
+		for (int j = 0 ; j < 3 ; j++)
+		{
+			for (int k = 0 ; k < 3 ; k++)
+			{
+				BOOST_REQUIRE_EQUAL(g.vertex(i).template get<V::t>()[j][k],g_dup.vertex(i).template get<V::t>()[j][k]);
+			}
+		}
+	}
+
 	std::cout << "Graph unit test end" << "\n";
 }
 
