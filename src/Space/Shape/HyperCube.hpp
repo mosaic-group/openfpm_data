@@ -265,6 +265,30 @@ public:
 	{
 		return (d % 2) == 0;
 	}
+
+	/*! \brief return the combination of the positive face on direction d
+	 *
+	 * \param d direction
+	 *
+	 * \return id of the combination
+	 *
+	 */
+	static int positiveFace(int d)
+	{
+		return d * 2;
+	}
+
+	/*! \brief return the combination of the negative face on direction d
+	 *
+	 * \param d direction
+	 *
+	 * \return id of the combination
+	 *
+	 */
+	static int negativeFace(int d)
+	{
+		return d * 2 + 1;
+	}
 };
 
 /*! \brief This class calculate at runtime and compile time elements of the hyper-cube
@@ -294,10 +318,10 @@ public:
 
 	static std::vector<comb<dim>> getCombinations_R(comb<dim> c, int d)
 	{
-#ifndef DEBUG
-		if (c.n_zero < d)
+#ifdef DEBUG
+		if (c.n_zero() < d)
 		{
-			std::cerr << "Error SubHyperCube: " << __FILE__ << " " << __LINE__ << " the hyper-cube selected must have dimensionality bigger than the dimensionality of the requested combinations, or the numner of zero in c must me bigger than d" << "\n";
+			std::cerr << "Error SubHyperCube: " << __FILE__ << " " << __LINE__ << " the hyper-cube selected must have dimensionality bigger than the dimensionality of the requested combinations, or the number of zero in c must me bigger than d" << "\n";
 		}
 #endif
 

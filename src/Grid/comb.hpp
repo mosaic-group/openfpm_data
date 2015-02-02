@@ -145,6 +145,25 @@ struct comb
 	{
 		return c[i];
 	}
+
+
+	/* \brief It return the number of zero in the combination
+	 *
+	 * \return number of zero
+	 *
+	 */
+	inline int n_zero()
+	{
+		int zero = 0;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			if (c[i] == 0) zero++;
+		}
+
+		return zero;
+	}
+
 };
 
 #endif

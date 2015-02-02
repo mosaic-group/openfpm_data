@@ -160,7 +160,7 @@ public:
 			ek.pos_e = 0;
 
 			// skip every vertex without edges
-			while (g.getNChilds(ek.pos) == 0)
+			while (ek.pos < g.getNVertex() && g.getNChilds(ek.pos) == 0)
 			{ek.pos++;}
 		}
 		else

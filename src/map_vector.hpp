@@ -41,6 +41,9 @@ namespace openfpm
 		}
 	};
 
+	// default grow policy
+	typedef grow_policy_double vector_grow_policy_default;
+
 	/*! \brief Grow policy define how the vector should grow every time we exceed the size
 	 *
 	 * In this case it increase of 4096 elements
@@ -248,6 +251,8 @@ namespace openfpm
 
 		inline void resize(size_t slot)
 		{
+			v_size = slot;
+
 			base.resize(slot);
 		}
 
@@ -303,6 +308,11 @@ namespace openfpm
 #ifdef DEBUG
 			if (p != 0)
 			{std::cerr << "Error the property does not exist" << "\n";}
+
+			if (id >= base.size())
+			{
+				std::cerr << "Error vector: " << __FILE__ << "  " << __LINE__ << " overflow id: " << id << "\n";
+			}
 #endif
 
 			return base[id];
@@ -476,9 +486,36 @@ namespace openfpm
 		 * \warning It is not thread safe should not be used in multi-thread environment
 		 *          reallocation, work only on cpu
 		 *
-		 *
 		 */
 		void add(T & v)
+		{
+			//! Check if we have enough space
+
+			if (v_size >= base.size())
+			{
+				//! Resize the memory, double up the actual memory allocated for the vector
+				std::vector<size_t> sz;
+				sz.push_back(2*base.size());
+				base.template resize<Memory>(sz);
+			}
+
+			//! copy the element
+			base.set(v_size,v);
+
+			//! increase the vector size
+			v_size++;
+		}
+
+		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
+		 *
+		 * It insert a new object on the vector, eventually it reallocate the grid
+		 *
+		 * \warning It is not thread safe should not be used in multi-thread environment
+		 *          reallocation, work only on cpu
+		 *
+		 *
+		 */
+		void add(typename grid_cpu<1,T>::container & v)
 		{
 			//! Check if we have enough space
 

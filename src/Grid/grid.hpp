@@ -415,10 +415,10 @@ public:
    */
 
   //#pragma openfpm layout(get)
-  template<unsigned int dim> mem_id LinId(const grid_key_dx<dim> & gk)
+  mem_id LinId(const grid_key_dx<N> & gk)
   {
     mem_id lid = gk.k[0];
-    for (mem_id i = 1 ; i < dim ; i++)
+    for (mem_id i = 1 ; i < N ; i++)
     {
       lid += gk.k[i] * sz_s[i-1];
     }
@@ -459,16 +459,16 @@ public:
    */
 
   //#pragma openfpm layout(get)
-  template<unsigned int dim> grid_key_dx<dim> InvLinId(mem_id id)
+  grid_key_dx<N> InvLinId(mem_id id)
   {
     // Inversion of linearize
 
-	grid_key_dx<dim> gk;
+	grid_key_dx<N> gk;
 
-	for (mem_id i = 0 ; i < dim ; i++)
+	for (mem_id i = 0 ; i < N ; i++)
 	{
-      gk.set_d(i,id % sz_s[i]);
-      id /= sz_s[i];
+      gk.set_d(i,id % sz[i]);
+      id /= sz[i];
 	}
 
     return gk;
@@ -892,11 +892,29 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 		{
 			// if start smaller than 0
 			if (gk_start.get(i) < 0)
-				gk_start.set_d(i,0);
+			{
+				if (gk_start.get(i) < gk_stop.get(i))
+					gk_start.set_d(i,0);
+				else
+				{
+					// No points are available
+					gk_start.set_d(dim-1,gk_stop.get(dim-1)+1);
+					break;
+				}
+			}
 
 			// if stop bigger than the domain
 			if (gk_stop.get(i) >= grid_base.size(i))
-				gk_stop.set_d(i,grid_base.size(i));
+			{
+				if (gk_start.get(i) < grid_base.size(i))
+					gk_stop.set_d(i,grid_base.size(i)-1);
+				else
+				{
+					// No point are available
+					gk_start.set_d(dim-1,gk_stop.get(dim-1)+1);
+					break;
+				}
+			}
 		}
 
 		//! Initialize gk

@@ -5,6 +5,7 @@
 #include "Shape/Point.hpp"
 #include "Shape/Box.hpp"
 #include <boost/fusion/include/vector.hpp>
+#include "Grid/Encap.hpp"
 
 /** \brief This class represent an N-dimensional box
  *
@@ -80,7 +81,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	SpaceBox<dim,T>(Box<dim,T> & b)
+	SpaceBox(Box<dim,T> & b)
 	{
 		// for each dimension set high and low
 
@@ -89,6 +90,17 @@ class SpaceBox : public Box<dim,T>
 
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setHigh(d,b.getHigh(d));}
+	}
+
+	template<unsigned int dim_s,typename Mem>SpaceBox(const encapc<dim_s,Box<dim,T>,Mem> & box)
+	{
+		// for each dimension set high and low
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,box.template get<Box<dim,T>::p1>()[d]);}
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,box.template get<Box<dim,T>::p2>()[d]);}
 	}
 
 	//! Default constructor

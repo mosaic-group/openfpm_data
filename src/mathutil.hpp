@@ -35,6 +35,26 @@ static size_t C(size_t n, size_t k)
 	return factorial(n)/(factorial(k)*factorial(n-k));
 }
 
+/*! \brief Round to the nearest bigger power of 2 number
+ *
+ * \param number
+ *
+ * \return nearest bigger power of 2 number
+ *
+ */
+
+static size_t round_big_2(size_t n)
+{
+	n--;
+	n |= n >> 1;   // Divide by 2^k for consecutive doublings of k up to 32,
+	n |= n >> 2;   // and then or the results.
+	n |= n >> 4;
+	n |= n >> 8;
+	n |= n >> 16;
+	n++;
+
+	return n;
+}
 
 
 #endif

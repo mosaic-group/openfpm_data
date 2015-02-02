@@ -140,10 +140,10 @@ public:
 	Box<dim,T> & operator=(const Box<dim,T> & box)
 	{
 	    for(size_t i = 0 ; i < dim ; i++)
-	    {setLow(i,box.getLow(i));i++;}
+	    {setLow(i,box.getLow(i));}
 
 	    for(size_t i = 0 ; i < dim ; i++)
-	    {setHigh(i,box.getHigh(i));i++;}
+	    {setHigh(i,box.getHigh(i));}
 
 		// return itself
 		return *this;

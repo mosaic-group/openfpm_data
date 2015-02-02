@@ -17,6 +17,7 @@
 
 // Include tests
 
+#include "hypercube_unit_test.hpp"
 #include "graph_unit_tests.hpp"
 #include "vector_unit_tests.hpp"
 #include "Grid/grid_unit_tests.hpp"
