@@ -92,15 +92,81 @@ class SpaceBox : public Box<dim,T>
 		{this->setHigh(d,b.getHigh(d));}
 	}
 
-	template<unsigned int dim_s,typename Mem>SpaceBox(const encapc<dim_s,Box<dim,T>,Mem> & box)
+	/*! \brief Constructor from a Box
+	 *
+	 * \param Box
+	 *
+	 */
+
+	template<unsigned int dim_s,typename Mem, typename S>SpaceBox(const encapc<dim_s,Box<dim,S>,Mem> & box)
 	{
 		// for each dimension set high and low
 
 		for (size_t d = 0 ; d < dim ; d++)
-		{this->setLow(d,box.template get<Box<dim,T>::p1>()[d]);}
+		{this->setLow(d,box.template get<Box<dim,S>::p1>()[d]);}
 
 		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,box.template get<Box<dim,T>::p2>()[d]);}
+		{this->setHigh(d,box.template get<Box<dim,S>::p2>()[d]);}
+	}
+
+	/*! \brief Re-scale the space box with the coefficient defined in sp
+	 *
+	 * \param sp
+	 *
+	 */
+
+	void mul(float (& sp)[dim])
+	{
+		for (int i = 0  ; i < dim ; i++)
+		{
+			for (size_t d = 0 ; d < dim ; d++)
+			{this->setLow(d,this->getLow(d) * sp[i]);}
+
+			for (size_t d = 0 ; d < dim ; d++)
+			{this->setHigh(d,this->getHigh(d) * sp[i]);}
+		}
+	}
+
+	/*! \brief Re-scale the space box with the coefficient defined in sp
+	 *
+	 * \param sp
+	 *
+	 */
+
+	void mul(size_t (& sp)[dim])
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,this->getLow(d) * sp[d]);}
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,this->getHigh(d) * sp[d]);}
+	}
+
+	/*! \brief Re-scale the space box with the spacing defined in sp
+	 *
+	 * \param sp spacing
+	 * \param s_sp sub-domain size
+	 *
+	 */
+
+	void spacing(float (& sp)[dim])
+	{
+		mul(sp);
+	}
+
+	/*! \brief Re-scale the space box with the spacing defined in sp
+	 *
+	 * \param sp spacing
+	 *
+	 */
+
+	void spacing(size_t (& sp)[dim])
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,this->getLow(d) * sp[d]);}
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,((this->getHigh(d)+1) * sp[d])-1);}
 	}
 
 	//! Default constructor

@@ -52,10 +52,22 @@ public:
 
 	//! Construct a grid key from a list of numbers
 	template<typename ...T>grid_key_dx(const size_t v,const T...t)
-		  {
+	{
 		k[dim-1] = v;
 		invert_assign(t...);
-		  }
+	}
+
+	/* \brief Set to zero the key
+	 *
+	 *
+	 */
+	inline void zero()
+	{
+		for (int i = 0 ; i < dim ; i++)
+		{
+			k[i] = 0;
+		}
+	}
 
 
 	/* \brief sum an a combination to the grid_key
@@ -65,7 +77,6 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-
 	inline grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> operator+(comb<dim> & cmb) const
 	{
 		grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> exp_sum(*this,cmb);

@@ -622,11 +622,27 @@ class grid_cpu
 		 *
 		 * Return a sub-grid iterator, to iterate through the grid
 		 *
+		 * \param start start point
+		 * \param stop stop point
+		 *
 		 */
 
 		inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop)
 		{
 			return grid_key_dx_iterator_sub<dim>(g1,start,stop);
+		}
+
+		/*! \brief Return a sub-grid iterator
+		 *
+		 * Return a sub-grid iterator, to iterate through the grid
+		 *
+		 * \param m Margin
+		 *
+		 */
+
+		inline grid_key_dx_iterator_sub<dim> getSubIterator(size_t m)
+		{
+			return grid_key_dx_iterator_sub<dim>(g1,m);
 		}
 
 		/*! \brief Return a grid iterator
@@ -648,11 +664,39 @@ class grid_cpu
 		 *
 		 */
 
-		inline grid_key_dx_iterator_sub<dim> getIteratorDomain()
+		inline grid_key_dx_iterator_sub<dim> getDomainIterator()
 		{
 			// get the starting point and the end point of the real domain
 
-			return grid_key_dx_iterator_sub<dim>(g1.getDomainStart(),g1.getDomainStop());
+			return grid_key_dx_iterator_sub<dim>(g1,g1.getDomainStart(),g1.getDomainStop());
+		}
+
+		/*! \brief Return the size of the message needed to pack this object
+		 *
+		 * TODO They just return 0 for now
+		 *
+		 * \return The size of the object to pack this object
+		 *
+		 *
+		 */
+
+		size_t packObjectSize()
+		{
+			return 0;
+		}
+
+		/*! \brief It fill the message packet
+		 *
+		 * TODO They just return 0 doing nothing
+		 *
+		 * \return The packet size
+		 *
+		 *
+		 */
+
+		size_t packObject(void * mem)
+		{
+			return 0;
 		}
 };
 

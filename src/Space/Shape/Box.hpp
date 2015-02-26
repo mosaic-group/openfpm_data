@@ -232,6 +232,22 @@ public:
 		}
 	}
 
+	/*! \brief Box constructor from an array reference
+	 *
+	 * \param array from which to construct the box
+	 *
+	 */
+	Box(T (& box_data)[dim])
+	{
+		// we copy the data
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			boost::fusion::at_c<p1>(data)[i] = 0;
+			boost::fusion::at_c<p2>(data)[i] = box_data[i];
+		}
+	}
+
 	/*! \brief Box constructor from vector::fusion of higher dimension
 	 *
 	 * \param box_data fusion vector from which to construct the vector

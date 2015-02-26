@@ -90,8 +90,11 @@ class grid
   //! size of the grid on each stride (used for linearization)
   size_t sz_s[N];
   
-  //! ghost margin, how far from the margin is the ghost layer bound
-  size_t mrgs[N];
+  //! ghost margin, how far from the margin is the ghost layer bound (High bound)
+  size_t mrgsH[N];
+
+  //! ghost margin, how far from the margin is the ghost layer bound (Low bound)
+  size_t mrgsL[N];
 
   /*! \brief It multiplicate two number and return the result
    *
@@ -149,6 +152,8 @@ class grid
 	  // set the box
       box.setHigh(0,sz[0]);
       box.setLow(0,0);
+      mrgsH[0] = 0;
+      mrgsL[0] = 0;
 
 	  for (size_t i = 1 ;  i < N ; i++)
 	  {
@@ -158,6 +163,43 @@ class grid
 	      // set the box
 	      box.setHigh(i,sz[i]);
 	      box.setLow(i,0);
+
+	      // High margin, Low margin
+	      mrgsH[i] = 0;
+	      mrgsL[i] = 0;
+	  }
+  }
+
+  /*! \brief Initialize the basic structure
+   *
+   * Produce a grid of size 0 on each dimension
+   *
+   */
+
+  void Initialize()
+  {
+	  //! Initialize the basic structure for each dimension
+	  sz_s[0] = 0;
+	  this->sz[0] = 0;
+
+	  // set the box
+      box.setHigh(0,0);
+      box.setLow(0,0);
+      mrgsH[0] = 0;
+      mrgsL[0] = 0;
+
+	  for (size_t i = 1 ;  i < N ; i++)
+	  {
+		  sz_s[i] = sz[i]*sz_s[i-1];
+	      this->sz[i] = sz[i];
+
+	      // set the box
+	      box.setHigh(i,sz[i]);
+	      box.setLow(i,0);
+
+	      // High margin, Low margin
+	      mrgsH[i] = 0;
+	      mrgsL[i] = 0;
 	  }
   }
 
@@ -183,19 +225,31 @@ public:
 	  Initialize(dims);
   }
 
-  /*! \brief Set the ghost layer margins
-   *
-   * Set the ghost layer margins
+  /*! \brief Set the ghost layer margins High bound
    *
    * \param margin border
    *
    */
 
-  void setGhost(size_t margin[])
+  void setGhostH(size_t margin[])
   {
 	  for (size_t s = 0; s < N ; s++)
 	  {
-		  mrgs[s] = margin[s];
+		  mrgsH[s] = margin[s];
+	  }
+  }
+
+  /*! \brief Set the ghost layer margins Low bound
+   *
+   * \param margin border
+   *
+   */
+
+  void setGhostL(size_t margin[])
+  {
+	  for (size_t s = 0; s < N ; s++)
+	  {
+		  mrgsL[s] = margin[s];
 	  }
   }
 
@@ -214,7 +268,7 @@ public:
 
 	  for (unsigned int i = 0 ; i < N ; i++)
 	  {
-		  key_start.set_d(i,mrgs[i]);
+		  key_start.set_d(i,mrgsL[i]);
 	  }
 
 	  return key_start;
@@ -235,7 +289,7 @@ public:
 	  for (unsigned int i = 0 ; i < N ; i++)
 	  {
 		  // Calculate the ending point
-		  key_stop.set_d(i,sz[i]-mrgs[i]);
+		  key_stop.set_d(i,sz[i]-mrgsH[i]);
 	  }
 
 	  return key_stop;
@@ -258,10 +312,10 @@ public:
 	  for (unsigned int i = 0 ; i < N ; i++)
 	  {
 		  // Calculate the starting point
-		  start.set_d(i,mrgs[i]);
+		  start.set_d(i,mrgsL[i]);
 
 		  // Calculate the ending point
-		  stop.set_d(i,sz[i]-mrgs[i]);
+		  stop.set_d(i,sz[i]-mrgsH[i]);
 	  }
   }
 
@@ -279,6 +333,17 @@ public:
 	  return true;
   }
 
+  /*! \brief Default constructor
+   *
+   * It produce a grid of size 0 on each dimension
+   *
+   */
+
+  grid()
+  {
+	  Initialize();
+  }
+
   /*! \brief construct a grid from another grid
    *
    * construct a grid from another grid, type can be different
@@ -292,7 +357,7 @@ public:
 	  size_tot = g.size_tot;
 
 	  for (int i = 0 ; i < N ; i++)
-	  {sz[i] = g.sz[i]; sz_s[i] = g.sz_s[i];}
+	  {sz[i] = g.sz[i]; sz_s[i] = g.sz_s[i]; mrgsL[i] = g.mrgsL[i] ; mrgsH[i] = g.mrgsH[i];}
   }
 
   // Static element to calculate total size
@@ -370,6 +435,9 @@ public:
     {
       sz_s[i] = sz[i]*sz_s[i-1];
       this->sz[i] = sz[i];
+
+      mrgsL[i] = 0;
+      mrgsH[i] = 0;
     }
   }
 
@@ -549,7 +617,8 @@ public:
 	  {
 		  sz[i] = g.sz[i];
 		  sz_s[i] = g.sz_s[i];
-		  mrgs[i] = g.mrgs[i];
+		  mrgsH[i] = g.mrgsH[i];
+		  mrgsL[i] = g.mrgsL[i];
 	  }
 
 	  return *this;
@@ -564,7 +633,7 @@ public:
    *
    */
 
-  size_t size(unsigned int i)
+  size_t size(unsigned int i) const
   {
 	  return sz[i];
   }
@@ -614,6 +683,12 @@ public:
 template<unsigned int dim>
 class grid_key_dx_iterator
 {
+#ifdef DEBUG
+	// Actual status of the iterator, when the iterator is not initialized cannot be used
+	// and reinitialize must be called
+	bool initialized = false;
+#endif
+
 	grid<dim,void> grid_base;
 
 	/*! \brief return the index i of the gk key
@@ -635,6 +710,19 @@ protected:
 
 public:
 
+	/*! \brief Default constructor
+	 *
+	 * \WARNING entremly unsafe
+	 * Before use the iterator you have call reinitialize
+	 *
+	 */
+	grid_key_dx_iterator()
+	{
+#ifdef DEBUG
+		initialized = false;
+#endif
+	}
+
 	/*! \brief Constructor require a grid
 	 *
 	 * Constructor require a grid<dim,T>
@@ -652,6 +740,10 @@ public:
 		{
 			gk.set_d(i,g_it.get_gk(i));
 		}
+
+#ifdef DEBUG
+		initialized = true;
+#endif
 	}
 
 	/*! \brief Constructor require a grid
@@ -669,6 +761,10 @@ public:
 
 		for (int i = 0 ; i < dim ; i++)
 		{gk.set_d(i,0);}
+
+#ifdef DEBUG
+		initialized = true;
+#endif
 	}
 
 	/*! \brief Constructor require a grid
@@ -776,6 +872,16 @@ public:
 	{
 		return gk;
 	}
+
+	/*! \brief Reinitialize the grid_key_dx_iterator
+	 *
+	 * \param key form
+	 *
+	 */
+	void reinitialize(const grid_key_dx_iterator<dim> & key)
+	{
+
+	}
 };
 
 
@@ -872,6 +978,10 @@ public:
 template<unsigned int dim>
 class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 {
+#ifdef DEBUG
+	bool initialized = false;
+#endif
+
 	//! grid base where we are iterating
 	grid<dim,void> grid_base;
 
@@ -922,9 +1032,22 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 		{
 			this->gk.set_d(i,gk_start.get(i));
 		}
+
+#ifdef DEBUG
+		initialized = true;
+#endif
 	}
 
 public:
+
+	/*! \brief Default constructor
+	 *
+	 * WARNING: extremly unsafe
+	 * If you use this constructor before use the iterator you should call reinitialize first
+	 *
+	 */
+	grid_key_dx_iterator_sub()
+	{}
 
 	/*! \brief Constructor require a grid
 	 *
@@ -980,6 +1103,35 @@ public:
 		Initialize();
 	}
 
+
+	/*! \brief Constructor require a grid
+	 *
+	 * Constructor require a grid<dim,T>
+	 *
+	 * It construct an iterator over an hyper-cube defined by start and stop,
+	 * \WARNING if start and stop are outside the domain defined by g the intersection
+	 * will be considered
+	 *
+	 * \param T type of object that the grid store
+	 *
+	 * \param g grid info we are iterating
+	 * \param m Margin of the domain
+	 *
+	 */
+	template<typename T> grid_key_dx_iterator_sub(const grid<dim,T> & g, const size_t m)
+	: grid_key_dx_iterator<dim>(g),grid_base(g)
+	{
+		// Initialize the start and stop point
+		for (unsigned int i = 0 ; i < dim ; i++)
+		{
+			gk_start.set(i,m);
+			gk_stop.set(i,g.size(i)-m);
+		}
+
+		//
+		Initialize();
+	}
+
 	/*! \brief Constructor require a grid
 	 *
 	 * Constructor require a grid<dim,T>
@@ -1022,6 +1174,11 @@ public:
 
 	grid_key_dx_iterator<dim> & operator++()
 	{
+#ifdef DEBUG
+		if (initialized == false)
+		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
+#endif
+
 		//! increment the first index
 
 		size_t id = this->gk.get(0);
@@ -1060,6 +1217,11 @@ public:
 
 	bool isNext()
 	{
+#ifdef DEBUG
+		if (initialized == false)
+		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
+#endif
+
 		if (this->gk.get(dim-1) <= gk_stop.get(dim-1))
 		{
 			//! we did not reach the end of the grid
@@ -1071,6 +1233,54 @@ public:
 		return false;
 	}
 
+	/*! \brief Return the actual grid key iterator
+	 *
+	 */
+	grid_key_dx<dim> get()
+	{
+#ifdef DEBUG
+		if (initialized == false)
+		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
+#endif
+
+		return grid_key_dx_iterator<dim>::get();
+	}
+
+	/*! \brief Reinitialize the iterator
+	 *
+	 * it reinitialize the iterator with the passed grid_key_dx_iterator_sub, it became like a clone
+	 *
+	 * \param grid_key_dx_iterator_sub
+	 *
+	 */
+
+	void reinitialize(const grid_key_dx_iterator_sub<dim> & g_s_it)
+	{
+		// Reinitialize the iterator
+
+		grid_key_dx_iterator<dim>::reinitialize(g_s_it);
+		grid_base = g_s_it.grid_base;
+		gk_start = g_s_it.gk_start;
+		gk_stop = g_s_it.gk_stop;
+
+
+		#ifdef DEBUG
+			//! If we are on debug check that the stop grid_key id bigger than the start
+			//! grid_key
+
+			for (unsigned int i = 0 ; i < dim ; i++)
+			{
+				if (gk_start.get(i) > gk_stop.get(i))
+				{
+					std::cerr << "Error grid_key_dx_iterator : the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
+				}
+			}
+
+			initialized = true;
+		#endif
+
+		Initialize();
+	}
 };
 
 
