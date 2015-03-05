@@ -12,14 +12,14 @@
 #include "memory/HeapMemory.hpp"
 #include "memory_conf.hpp"
 #include "Grid/map_grid.hpp"
-#include "map_vector.hpp"
-#include "map_graph.hpp"
+#include "Vector/map_vector.hpp"
+#include "Graph/map_graph.hpp"
 
 // Include tests
 
 #include "hypercube_unit_test.hpp"
-#include "graph_unit_tests.hpp"
-#include "vector_unit_tests.hpp"
+#include "Graph/graph_unit_tests.hpp"
+#include "Vector/vector_unit_tests.hpp"
 #include "Grid/grid_unit_tests.hpp"
 
 //int main()

@@ -69,6 +69,17 @@ public:
 		}
 	}
 
+	/* \brief Set to invalid the key
+	 *
+	 *
+	 */
+	inline void invalid()
+	{
+		for (int i = 0 ; i < dim ; i++)
+		{
+			k[i] = -1;
+		}
+	}
 
 	/* \brief sum an a combination to the grid_key
 	 *

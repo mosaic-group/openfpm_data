@@ -108,6 +108,8 @@ fi
 
 # Set this conditional if cuda is wanted
 
+#
+
 AM_CONDITIONAL(BUILDCUDA, test ! x$NVCC = x"no")
 
 ###########################
