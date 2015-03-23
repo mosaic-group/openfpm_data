@@ -15,7 +15,7 @@
 #include <mpi.h>
 #endif
 
-#define PAGE_ALLOC 1024
+#define PAGE_ALLOC 1
 
 namespace openfpm
 {
