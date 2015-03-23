@@ -50,7 +50,24 @@
 
 #define NO_EDGE -1
 
-template<typename V, typename E,template<typename> class device,template<typename, typename,typename,typename> class VertexList, template<typename,typename,typename,typename> class EdgeList, typename Memory, typename grow_p>
+/*! \brief class with no edge
+ *
+ *
+ *
+ */
+class no_edge
+{
+public:
+	typedef boost::fusion::vector<> type;
+	typedef typename memory_traits_inte<type>::type memory_int;
+	typedef typename memory_traits_lin<type>::type memory_lin;
+
+	type data;
+
+	static const unsigned int max_prop = 0;
+};
+
+template<typename V, typename E,template<typename> class device,template<typename, typename,typename,typename, unsigned int> class VertexList, template<typename,typename,typename,typename, unsigned int> class EdgeList, typename Memory, typename grow_p>
 class Graph_CSR;
 
 /*! \brief Structure used inside GraphCSR an edge
@@ -250,7 +267,7 @@ public:
  *
  */
 
-template<typename V, typename E,template<typename> class device=openfpm::device_cpu,template<typename, typename,typename, typename> class VertexList=openfpm::vector, template<typename,typename,typename,typename> class EdgeList=openfpm::vector, typename Memory=HeapMemory, typename grow_p=openfpm::grow_policy_double>
+template<typename V, typename E=no_edge,template<typename> class device=openfpm::device_cpu,template<typename, typename,typename, typename, unsigned int> class VertexList=openfpm::vector, template<typename,typename,typename,typename, unsigned int> class EdgeList=openfpm::vector, typename Memory=HeapMemory, typename grow_p=openfpm::grow_policy_double>
 class Graph_CSR
 {
 	//! number of slot per vertex
@@ -269,19 +286,19 @@ class Graph_CSR
 	typedef device<e_map> dev_emap_sel;
 
 	//! Structure that store the vertex properties
-	VertexList<V,dev_V_sel,Memory,grow_p> v;
+	VertexList<V,dev_V_sel,Memory,grow_p,openfpm::vect_isel<V>::value> v;
 
-	//! Structure that store the number of adjacent vertex in e_l
-	VertexList<size_t,dev_S_sel,Memory,grow_p> v_l;
+	//! Structure that store the number of adjacent vertex in e_l for each vertex
+	VertexList<size_t,dev_S_sel,Memory,grow_p,openfpm::vect_isel<size_t>::value> v_l;
 
 	//! Structure that store the edge properties
-	EdgeList<E,dev_E_sel,Memory,grow_p> e;
+	EdgeList<E,dev_E_sel,Memory,grow_p,openfpm::vect_isel<E>::value> e;
 
-	//! Structure that store the vertex id and edge id in the adjacency list
-	EdgeList<e_map,dev_emap_sel,Memory,grow_p> e_l;
+	//! Structure that store for each vertex the adjacent the vertex id and edge id (for property into e)
+	EdgeList<e_map,dev_emap_sel,Memory,grow_p,openfpm::vect_isel<e_map>::value> e_l;
 
 	//! invalid edge element, when a function try to create an in valid edge this object is returned
-	EdgeList<E,dev_E_sel,Memory,grow_p> e_invalid;
+	EdgeList<E,dev_E_sel,Memory,grow_p,openfpm::vect_isel<E>::value> e_invalid;
 
 	/*! \brief add edge on the graph
 	 *
@@ -348,7 +365,7 @@ class Graph_CSR
 		}
 
 		// Here we are sure than v and e has enough slots to store a new edge
-		// Check that e and e_l has enough space to store new edge
+		// Check that e_l has enough space to store new edge
 		// should be always e.size == e_l.size
 
 		if (id_x_end >= e_l.size())
@@ -381,10 +398,10 @@ public:
 	typedef E E_type;
 
 	//! Object container for the vertex, for example can be encap<...> (map_grid or openfpm::vector)
-	typedef typename VertexList<V,dev_V_sel,Memory,grow_p>::container V_container;
+	typedef typename VertexList<V,dev_V_sel,Memory,grow_p,openfpm::vect_isel<V>::value>::container V_container;
 
 	//! Object container for the edge, for example can be encap<...> (map_grid or openfpm::vector)
-	typedef typename EdgeList<E,dev_E_sel,Memory,grow_p>::container E_container;
+	typedef typename EdgeList<E,dev_E_sel,Memory,grow_p,openfpm::vect_isel<E>::value>::container E_container;
 
 	/*! \brief It duplicate the graph
 	 *
@@ -605,7 +622,7 @@ public:
 	 *
 	 */
 
-	inline size_t getNChilds(typename VertexList<V,dev_V_sel,Memory,grow_p>::iterator_key & c)
+	inline size_t getNChilds(typename VertexList<V,dev_V_sel,Memory,grow_p,openfpm::vect_isel<V>::value>::iterator_key & c)
 	{
 		// Get the number of childs
 
@@ -673,7 +690,7 @@ public:
 	 *
 	 */
 
-	inline size_t getChild(typename VertexList<V,dev_V_sel,Memory,grow_p>::iterator_key & v, size_t i)
+	inline size_t getChild(typename VertexList<V,dev_V_sel,Memory,grow_p,openfpm::vect_isel<V>::value>::iterator_key & v, size_t i)
 	{
 #ifdef DEBUG
 		if (i >= v_l.template get<0>(v.get()) )
@@ -693,8 +710,6 @@ public:
 
 	/*! \brief add vertex
 	 *
-	 * add a vertex
-	 *
 	 * \param vrt Vertex properties
 	 *
 	 */
@@ -706,6 +721,27 @@ public:
 		// Set the number of adjacent vertex for this vertex to 0
 
 		v_l.add(0ul);
+
+		// Add a slot for the vertex adjacency list
+
+		e_l.resize(e_l.size() + v_slot);
+	}
+
+	/*! \brief add an empty vertex
+	 *
+	 */
+
+	inline void addVertex()
+	{
+		v.add();
+
+		// Set the number of adjacent vertex for this vertex to 0
+
+		v_l.add(0ul);
+
+		// Add a slot for the vertex adjacency list
+
+		e_l.resize(e_l.size() + v_slot);
 	}
 
 	/*! \brief add edge on the graph
@@ -816,6 +852,35 @@ public:
 	}
 };
 
+/*! \brief Simplified implementation of Graph_CSR
+ *
+ * Used when Graph_CSR is used as a default template argument to avoid 7 arguments
+ *
+ * [Example]
+ *
+ * template<template<typename,typename> class T=Graph_CSR_s>
+ * class cool_structure
+ * {
+ * 		T<Vertex,Edge> graph
+ * }
+ *
+ * only 2 parameter are needed, if you use Graph_CSR you have to define 7 regardless that
+ * Graph_CSR has some default template
+ *
+ * template<template<typename,typename> class T=Graph_CSR>
+ * class cool_structure
+ * {
+ * 		T<Vertex,Edge> graph
+ * }
+ *
+ * THIS DO NOT COMPILE
+ *
+ */
+template<typename V, typename E>
+class Graph_CSR_s: public Graph_CSR<V,E>
+{
+
+};
 
 
 #endif /* MAP_GRAPH_HPP_ */

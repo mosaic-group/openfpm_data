@@ -10,6 +10,7 @@
 
 #include "Grid/map_grid.hpp"
 #include "memory/HeapMemory.hpp"
+#include "vect_isel.hpp"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
@@ -159,6 +160,30 @@ namespace openfpm
 		}
 	};
 
+	/*! \brief Select the correct implementation based on the type checking
+	 *
+	 * case OPENFPM native
+	 *
+	 */
+
+	template<typename T, unsigned int impl>
+	struct device_cpu_impl
+	{
+		typedef grid_cpu<1,T> type;
+	};
+
+	/*! \brief Select the correct implementation based on the type checking
+	 *
+	 * case STD_VECTOR native
+	 *
+	 */
+
+	template<typename T>
+	struct device_cpu_impl<T,STD_VECTOR>
+	{
+		typedef void type;
+	};
+
 	/*! \brief device selector struct
 	 *
 	 * device selector struct, it return the correct data type for each device
@@ -169,16 +194,8 @@ namespace openfpm
 	struct device_cpu
 	{
 		//! cpu
-		typedef grid_cpu<1,T> type;
+		typedef typename device_cpu_impl<T,vect_isel<T>::value>::type type;
 	};
-
-	/*! \brief specialization for size_t
-	 *
-	 */
-
-	template<>
-	struct device_cpu<size_t>
-	{};
 
 	/*! device selector struct
 	 *
@@ -207,176 +224,13 @@ namespace openfpm
 	 *
 	 */
 
-	template<typename T, typename device=device_cpu<T>, typename Memory=HeapMemory, typename grow_p=grow_policy_double>
+	template<typename T, typename device=device_cpu<T>, typename Memory=HeapMemory, typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value>
 	class vector
 	{
 	};
 
-	#include "map_vector_MPI.hpp"
+	#include "map_vector_std.hpp"
 
-	/*! \brief Implementation of 1-D std::vector like structure
-	 *
-	 * this implementation is just a wrapper for the std::vector in the case
-	 * of the primitive size_t
-	 *
-	 * \param T base type
-	 *
-	 */
-
-	template<typename Memory>
-	class vector<size_t,device_cpu<size_t>,Memory>
-	{
-		//! Actual size of the vector, warning: it is not the space allocated in grid
-		//! grid size increase by a fixed amount every time we need a vector bigger than
-		//! the actually allocated space
-		size_t v_size;
-
-		//! 1-D static grid
-		std::vector<size_t> base;
-
-	public:
-
-		// iterator for the vector
-		typedef vector_key_iterator iterator_key;
-
-		//! return the size of the vector
-		inline size_t size()
-		{
-			return base.size();
-		}
-
-
-		/*! \ brief Resize the vector
-		 *
-		 * Resize the vector
-		 *
-		 * \param how many slot to reserve
-		 *
-		 */
-
-		inline void resize(size_t slot)
-		{
-			v_size = slot;
-
-			base.resize(slot);
-		}
-
-		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
-		 *
-		 * It insert a new object on the vector, eventually it reallocate the grid
-		 *
-		 * \warning It is not thread safe should not be used in multi-thread environment
-		 *          reallocation, work only on cpu
-		 *
-		 *
-		 */
-		inline void add(const size_t & v)
-		{
-			base.push_back(v);
-		}
-
-		/*! \brief Duplicate the vector
-		 *
-		 * \return the duplicated vector
-		 *
-		 */
-
-		std::vector<size_t> duplicate()
-		{
-			return base;
-		}
-
-		/*! \brief swap the memory between the two vector
-		 *
-		 * \param vector to swap
-		 *
-		 */
-
-		void swap(std::vector<size_t> && v)
-		{
-			base.swap(v);
-		}
-
-		/*! \brief Get an element of the vector
-		 *
-		 * Get an element of the vector
-		 *
-		 * \tparam must be 0
-		 *
-		 * \param id Element to get
-		 * \param p Property to get
-		 *
-		 */
-		template <unsigned int p>inline size_t & get(size_t id)
-		{
-#ifdef DEBUG
-			if (p != 0)
-			{std::cerr << "Error the property does not exist" << "\n";}
-
-			if (id >= base.size())
-			{
-				std::cerr << "Error vector: " << __FILE__ << "  " << __LINE__ << " overflow id: " << id << "\n";
-			}
-#endif
-
-			return base[id];
-		}
-
-		/*! \brief Get an element of the vector
-		 *
-		 * Get an element of the vector
-		 *
-		 * \param id Element to get
-		 * \param p Property to get
-		 *
-		 */
-		inline size_t & get(size_t id)
-		{
-			return base[id];
-		}
-
-		/*! \brief it fill all the memory of fl patterns
-		 *
-		 * WARNING does not assign a value to each element but it fill the memory
-		 * Useful to fast set the memory to zero
-		 *
-		 * \param fl byte to fill
-		 *
-		 */
-
-		inline void fill(unsigned char fl)
-		{
-			memset(&base[0],0,base.size());
-		}
-
-		/*! \brief reserve a memory space in advance to avoid reallocation
-		 *
-		 * \param ns number of element the memory has to store
-		 *
-		 */
-
-		inline void reserve(size_t ns)
-		{
-			base.reserve(ns);
-		}
-
-		//! Constructor, vector of size 0
-		vector() {}
-
-		//! Constructor, vector of size sz
-		vector(size_t sz):base(sz) {}
-
-		/*! swap the content of the vector
-		 *
-		 * \param vector to be swapped with
-		 *
-		 */
-
-		void swap(openfpm::vector<size_t,device_cpu<size_t>,Memory> & v)
-		{
-			base.swap(v.base);
-		}
-	};
 
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
@@ -391,7 +245,7 @@ namespace openfpm
 	 */
 
 	template<typename T,typename Memory, typename grow_p>
-	class vector<T,device_cpu<T>, Memory,grow_p>
+	class vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE>
 	{
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
@@ -483,6 +337,27 @@ namespace openfpm
 		// Access key for the vector
 		typedef size_t access_key;
 
+		/*! \brief It insert a new emtpy object on the vector, eventually it reallocate the grid
+		 *
+		 * \warning It is not thread safe should not be used in multi-thread environment
+		 *          reallocation, work only on cpu
+		 *
+		 */
+		void add()
+		{
+			//! Check if we have enough space
+
+			if (v_size >= base.size())
+			{
+				//! Resize the memory, double up the actual memory allocated for the vector
+				size_t sz[1] = {2*base.size()};
+				base.template resize<Memory>(sz);
+			}
+
+			//! increase the vector size
+			v_size++;
+		}
+
 		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 		 *
 		 * It insert a new object on the vector, eventually it reallocate the grid
@@ -498,8 +373,7 @@ namespace openfpm
 			if (v_size >= base.size())
 			{
 				//! Resize the memory, double up the actual memory allocated for the vector
-				std::vector<size_t> sz;
-				sz.push_back(2*base.size());
+				size_t sz[1] = {2*base.size()};
 				base.template resize<Memory>(sz);
 			}
 
@@ -526,8 +400,7 @@ namespace openfpm
 			if (v_size >= base.size())
 			{
 				//! Resize the memory, double up the actual memory allocated for the vector
-				std::vector<size_t> sz;
-				sz.push_back(2*base.size());
+				size_t sz[1] = {2*base.size()};
 				base.template resize<Memory>(sz);
 			}
 
@@ -551,7 +424,7 @@ namespace openfpm
 		{
 #ifdef DEBUG
 			if (id >= v_size)
-			{std::cerr << "Error " << __FILE__ << "  " << __LINE__ << " id overflow your vector file" <<  "\n";}
+			{std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " overflow" <<  "\n";}
 #endif
 			grid_key_dx<1> key(id);
 
@@ -578,14 +451,25 @@ namespace openfpm
 			return base.get_o(key);
 		}
 
+		/* \brief Constructor from vector
+		 *
+		 * \param mv vector
+		 *
+		 */
+
+		vector(vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> && mv)
+		:v_size(mv.v_size),base(mv.base)
+		{
+		}
+
 		/*! \brief It duplicate the vector
 		 *
 		 * \return a duplicated vector
 		 *
 		 */
-		vector<T,device_cpu<T>, Memory,grow_p> duplicate()
+		vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> duplicate()
 		{
-			vector<T,device_cpu<T>, Memory,grow_p> dup;
+			vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> dup;
 
 			dup.v_size = v_size;
 			dup.base.swap(base.template duplicate<Memory>());
@@ -599,7 +483,7 @@ namespace openfpm
 		 *
 		 */
 
-		vector(vector<T,device_cpu<T>, Memory,grow_p> && v)
+		vector(const vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> & v)
 		:v_size(v.v_size),base(v.base)
 		{}
 
@@ -635,7 +519,7 @@ namespace openfpm
 		 * Set the element of the vector v from another element of another vector
 		 */
 
-		void set(size_t id, vector<T,device_cpu<T>,Memory> & v, size_t src)
+		void set(size_t id, vector<T,device_cpu<T>,Memory,grow_p,OPENFPM_NATIVE> & v, size_t src)
 		{
 #ifdef DEBUG
 			if (id >= v_size)
@@ -644,13 +528,56 @@ namespace openfpm
 			base.set(id,v.base,src);
 		}
 
+		/* \brief operator=
+		 *
+		 * move semantic movement operator=
+		 *
+		 * \param mv Vector operator
+		 *
+		 * \return itself
+		 *
+		 */
+
+		vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> operator=(vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> && mv)
+		{
+			v_size = mv.v_size;
+			base.swap(mv.base);
+
+			return *this;
+		}
+
+		/* \brief operator=
+		 *
+		 * Real copy
+		 *
+		 * \param mv Vector operator
+		 *
+		 * \return itself
+		 *
+		 */
+
+		vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> operator=(const vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> & mv)
+		{
+			v_size = mv.v_size;
+			size_t rsz[1] = {v_size};
+			base.template resize<Memory>(rsz);
+
+			// copy the object
+			for (size_t i = 0 ; i < v_size ; i++ )
+			{
+				grid_key_dx<1> key(i);
+				base.set(key,mv.base,key);
+			}
+
+			return *this;
+		}
 
 		/*! \brief Swap the memory of another vector
 		 *
 		 * Swap the memory of another vector
 		 *
 		 */
-		void swap(openfpm::vector<T,device_cpu<T>,Memory> & v)
+		void swap(openfpm::vector<T,device_cpu<T>,Memory,grow_p,OPENFPM_NATIVE> & v)
 		{
 			size_t sz_sp = v_size;
 
@@ -666,7 +593,7 @@ namespace openfpm
 		 * Swap the memory of another vector
 		 *
 		 */
-		void swap(openfpm::vector<T,device_cpu<T>,Memory> && v)
+		void swap(openfpm::vector<T,device_cpu<T>,Memory,grow_p,OPENFPM_NATIVE> && v)
 		{
 			size_t sz_sp = v_size;
 
@@ -689,6 +616,28 @@ namespace openfpm
 		{
 			return vector_key_iterator(v_size);
 		}
+
+		/*! \brief Return the size of the message needed to pack this object
+		 *
+		 * \return The size of the object to pack this object
+		 *
+		 */
+
+		size_t packObjectSize()
+		{
+			return base.packObjectSize();
+		}
+
+		/*! \brief Return the size of the message needed to pack this object
+		 *
+		 * \return The size of the object to pack this object
+		 *
+		 */
+
+		size_t packObject(void * mem)
+		{
+			return base.packObject(mem);
+		}
 	};
 
 	/*! \brief Implementation of 1-D std::vector like structure
@@ -709,11 +658,12 @@ namespace openfpm
 	 * \param T type of structure the vector has to store
 	 * \param device type of layout to use
 	 * \param Memory allocator to use
+	 * \param grow_p Grow policy of the vector
 	 *
 	 */
 
-	template<typename T,typename Memory>
-	class vector<T,device_gpu<T>,Memory>
+	template<typename T,typename Memory,typename grow_p>
+	class vector<T,device_gpu<T>,Memory,grow_p,OPENFPM_NATIVE>
 	{
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
@@ -794,8 +744,7 @@ namespace openfpm
 			if (v_size >= base.size())
 			{
 				//! Resize the memory
-				std::vector<size_t> sz;
-				sz.push_back(base.size()*2);
+				size_t sz[1] = {2*base.size()};
 				base.resize(sz);
 			}
 
@@ -824,7 +773,7 @@ namespace openfpm
 		 * Set the element of the vector v from another element of another vector
 		 */
 
-		void set(size_t id, vector<T,device_gpu<T>,Memory> & v, size_t src)
+		void set(size_t id, vector<T,device_gpu<T>,Memory,grow_p,OPENFPM_NATIVE> & v, size_t src)
 		{
 #ifdef DEBUG
 			if (id >= v_size)

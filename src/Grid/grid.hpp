@@ -452,7 +452,7 @@ public:
    * \return The linearization of the gk key shifted by c, or -1 if the check fail
    */
 
-  template<typename check=NoCheck> mem_id LinId(const grid_key_dx<N> & gk, char sum_id[N])
+  template<typename check=NoCheck> mem_id LinId(const grid_key_dx<N> & gk, char sum_id[N]) const
   {
 	  // Check the sum produce a valid key
 
@@ -483,7 +483,7 @@ public:
    */
 
   //#pragma openfpm layout(get)
-  mem_id LinId(const grid_key_dx<N> & gk)
+  mem_id LinId(const grid_key_dx<N> & gk) const
   {
     mem_id lid = gk.k[0];
     for (mem_id i = 1 ; i < N ; i++)
@@ -499,7 +499,7 @@ public:
    * linearize an arbitrary set of index
    *
    */
-  template<typename a, typename ...lT>mem_id LinId(a v,lT...t)
+  template<typename a, typename ...lT>mem_id LinId(a v,lT...t) const
   {
 #ifdef DEBUG
 	  if (sizeof...(t)+1 > N)
@@ -512,7 +512,7 @@ public:
   }
 
   //! Linearize a set of index
-  template<typename a>mem_id LinId(a v)
+  template<typename a>mem_id LinId(a v) const
   {
 	  return v;
   }
@@ -527,7 +527,7 @@ public:
    */
 
   //#pragma openfpm layout(get)
-  grid_key_dx<N> InvLinId(mem_id id)
+  grid_key_dx<N> InvLinId(mem_id id) const
   {
     // Inversion of linearize
 
@@ -552,7 +552,7 @@ public:
    */
 
   //#pragma openfpm layout(get)
-  template<unsigned int dim, unsigned int p> mem_id LinId(const grid_key_d<dim,p> & gk)
+  template<unsigned int dim, unsigned int p> mem_id LinId(const grid_key_d<dim,p> & gk) const
   {
     mem_id lid = gk.k[0];
     for (mem_id i = 1 ; i < dim ; i++)
@@ -573,7 +573,7 @@ public:
    */
 
   //#pragma openfpm layout(get)
-  mem_id LinId(mem_id * id)
+  mem_id LinId(mem_id * id) const
   {
     mem_id lid = 0;
     lid += id[0];

@@ -34,6 +34,7 @@ public:
   inline void setx(T x_)	{x = x_;};
   inline void sety(T y_)	{y = y_;};
   inline void setz(T z_)	{z = z_;};
+  inline void sets(T s_)	{s = s_;};
 };
 
 // tranformed

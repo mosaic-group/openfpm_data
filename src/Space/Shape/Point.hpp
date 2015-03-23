@@ -25,7 +25,7 @@ template<unsigned int dim ,typename T> class Point
 	public:
 
 	//! boost fusion that store the point
-	typedef boost::fusion::vector<T[3]> type;
+	typedef boost::fusion::vector<T[dim]> type;
 	//! layout that interleave the properties
 	typedef typename memory_traits_inte<type>::type memory_int;
 	//! layout with linear properties
@@ -48,6 +48,9 @@ template<unsigned int dim ,typename T> class Point
 	{
 		return boost::fusion::at_c<x>(data)[i];
 	}
+
+	static const unsigned int max_prop = 1;
+	static const unsigned int dims = dim;
 };
 
 

@@ -118,6 +118,75 @@ BOOST_AUTO_TEST_CASE( graph_use)
 		}
 	}
 
+	// Test the no edge case
+
+	Graph_CSR<V> g_no_edge;
+
+	// Create a tree
+
+	// root
+	g_no_edge.addVertex(p);
+
+	// 2 leaf
+
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(0,1);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(0,2);
+
+	// 4 leaf
+
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(1,3);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(1,4);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(2,5);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(2,6);
+
+	// 8 leaf
+
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(3,7);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(3,8);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(4,9);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(4,10);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(5,11);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(5,12);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(6,13);
+	g_no_edge.addVertex(p);
+	g_no_edge.addEdge(6,14);
+
+	// Check that each vertex has 2 child
+
+	size_t start = 0;
+
+	for (size_t i = 0 ; i < g_no_edge.getNVertex() ; i++)
+	{
+		if (g_no_edge.getNChilds(i) == 0)
+			continue;
+
+		size_t s1 = g_no_edge.getChild(i,0);
+		size_t s2 = g_no_edge.getChild(i,1);
+
+		BOOST_REQUIRE_EQUAL(s1+1,s2);
+
+		size_t a = log2(i + 1);
+		size_t start = (a == 0)?1:(2 << (a-1));
+		start -= 1;
+		size_t start_p = 2 << a;
+		start_p -= 1;
+
+		BOOST_REQUIRE_EQUAL(s1,start_p + (i - start)*2);
+	}
+
 	std::cout << "Graph unit test end" << "\n";
 }
 

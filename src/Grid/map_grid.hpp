@@ -48,7 +48,7 @@ struct copy_cpu
 	grid_key_dx<dim> & key;
 
 	//! grid where we have to store the data
-	S & grid_src;
+	S & grid_dst;
 
 	//! type of the object we have to set
 	typedef typename S::type obj_type;
@@ -68,8 +68,8 @@ struct copy_cpu
 	 * \param obj object we have to set in grid_src
 	 *
 	 */
-	copy_cpu(grid_key_dx<dim> & key, S & grid_src, obj_type & obj)
-	:key(key),grid_src(grid_src),obj(obj){};
+	copy_cpu(grid_key_dx<dim> & key, S & grid_dst, obj_type & obj)
+	:key(key),grid_dst(grid_dst),obj(obj){};
 
 	//! It call the copy function for each property
     template<typename T>
@@ -81,7 +81,7 @@ struct copy_cpu
     	// Remove the reference from the type to copy
     	typedef typename boost::remove_reference<copy_type>::type copy_rtype;
 
-    	meta_copy<copy_rtype> cp(grid_src.template get<T::value>(key),boost::fusion::at_c<T::value>(obj.data));
+    	meta_copy<copy_rtype> cp(boost::fusion::at_c<T::value>(obj.data),grid_dst.template get<T::value>(key));
     }
 };
 
@@ -105,7 +105,7 @@ struct copy_cpu_sd
 	grid_key_dx<dim> & key;
 
 	//! Source grid
-	S & grid_src;
+	const S & grid_src;
 
 	//! Destination grid
 	S & grid_dst;
@@ -113,8 +113,8 @@ struct copy_cpu_sd
 	//! type of the object boost::sequence
 	typedef typename S::type::type ov_seq;
 
-	//! constructor it fix the size
-	copy_cpu_sd(grid_key_dx<dim> & key, S grid_src, S grid_dst)
+	//! constructor
+	copy_cpu_sd(grid_key_dx<dim> & key, const S grid_src, S grid_dst)
 	:key(key),grid_src(grid_src),grid_dst(grid_dst){};
 
 	//! It call the copy function for each member
@@ -127,7 +127,7 @@ struct copy_cpu_sd
     	// Remove the reference from the type to copy
     	typedef typename boost::remove_reference<copy_type>::type copy_rtype;
 
-    	meta_copy<copy_rtype> cp(grid_dst.template get<T::value>(key),grid_src.template get<T::value>(key));
+    	meta_copy<copy_rtype> cp(grid_src.template get<T::value>(key),grid_dst.template get<T::value>(key));
     }
 };
 
@@ -155,7 +155,7 @@ struct copy_cpu_sd_k
 	grid_key_dx<dim> & key_d;
 
 	//! Source grid
-	S & grid_src;
+	const S & grid_src;
 
 	//! Destination grid
 	S & grid_dst;
@@ -163,8 +163,8 @@ struct copy_cpu_sd_k
 	//! type of the object boost::sequence
 	typedef typename S::type::type ov_seq;
 
-	//! constructor it fix the size
-	copy_cpu_sd_k(grid_key_dx<dim> & key_s, grid_key_dx<dim> & key_d, S & grid_src, S & grid_dst)
+	//! constructor
+	copy_cpu_sd_k(grid_key_dx<dim> & key_s, grid_key_dx<dim> & key_d, const S & grid_src, S & grid_dst)
 	:key_s(key_s),key_d(key_d),grid_src(grid_src),grid_dst(grid_dst){};
 
 	//! It call the copy function for each member
@@ -177,7 +177,7 @@ struct copy_cpu_sd_k
     	// Remove the reference from the type to copy
     	typedef typename boost::remove_reference<copy_type>::type copy_rtype;
 
-    	meta_copy<copy_rtype> cp(grid_dst.template get<T::value>(key_s),grid_src.template get<T::value>(key_d));
+    	meta_copy<copy_rtype> cp(grid_src.template get<T::value>(key_s),grid_dst.template get<T::value>(key_d));
     }
 };
 
@@ -388,10 +388,10 @@ class grid_cpu
 
 		/*! \brief Get the reference of the selected element
 		 *
-		 * Get the reference of the selected element
-		 *
 		 * \param p property to get (is an integer)
 		 * \param v1 grid_key that identify the element in the grid
+		 *
+		 * \return a reference to the element
 		 *
 		 */
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key<p> & v1)
@@ -401,12 +401,28 @@ class grid_cpu
 #endif
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1.getId())));
 		}
-  
+
+		/*! \brief Get the const reference of the selected element
+		 *
+		 * \param p property to get (is an integer)
+		 * \param v1 grid_key that identify the element in the grid
+		 *
+		 * \return a const reference to the element
+		 *
+		 */
+		template <unsigned int p>inline const typename type_cpu_prop<p,T>::type & get(grid_key<p> & v1) const
+		{
+#ifdef MEMLEAK_CHECK
+			check_valid(&boost::fusion::at_c<p>(&data.mem_r->operator[](g1.LinId(v1.getId()))));
+#endif
+			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1.getId())));
+		}
+
 		/*! \brief Get the reference of the selected element
 		 *
-		 * Get the reference of the selected element
-		 *
 		 * \param v1 grid_key that identify the element in the grid
+		 *
+		 * \return the reference to the element
 		 *
 		 */
 		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key_d<dim,p> & v1)
@@ -417,14 +433,29 @@ class grid_cpu
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}
   
-		/*! \brief Get the reference of the selected element
-		 *
-		 * Get the reference of the selected element
+		/*! \brief Get the const reference of the selected element
 		 *
 		 * \param v1 grid_key that identify the element in the grid
 		 *
+		 * \return the const reference to the element
+		 *
 		 */
-		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(grid_key_dx<dim> & v1)
+		template <unsigned int p>inline const typename type_cpu_prop<p,T>::type & get(grid_key_d<dim,p> & v1) const
+		{
+#ifdef MEMLEAK_CHECK
+			check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
+#endif
+			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
+		}
+
+		/*! \brief Get the reference of the selected element
+		 *
+		 * \param v1 grid_key that identify the element in the grid
+		 *
+		 * \return the reference of the element
+		 *
+		 */
+		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(const grid_key_dx<dim> & v1)
 		{
 #ifdef MEMLEAK_CHECK
 			check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,T>::type));
@@ -432,6 +463,20 @@ class grid_cpu
 			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 		}
 
+		/*! \brief Get the const reference of the selected element
+		 *
+		 * \param v1 grid_key that identify the element in the grid
+		 *
+		 * \return the const reference of the element
+		 *
+		 */
+		template <unsigned int p>inline const typename type_cpu_prop<p,T>::type & get(const grid_key_dx<dim> & v1) const
+		{
+#ifdef MEMLEAK_CHECK
+			check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,T>::type));
+#endif
+			return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
+		}
 
 		/*! \brief Get the of the selected element as a boost::fusion::vector
 		 *
@@ -536,7 +581,7 @@ class grid_cpu
 		void swap(grid_cpu<dim,T,Mem> & grid)
 		{
 			// move the data
-			data.move_copy(grid.data);
+			data.swap(grid.data);
 
 			// move the grid info
 			g1 = grid.g1;
@@ -596,10 +641,10 @@ class grid_cpu
 		 *
 		 */
 
-		inline void set(grid_key_dx<dim> key1, grid_cpu<dim,T,Mem> & g, grid_key_dx<dim> key2)
+		inline void set(grid_key_dx<dim> key1,const grid_cpu<dim,T,Mem> & g, grid_key_dx<dim> key2)
 		{
 			//create the object to copy the properties
-    		copy_cpu_sd_k<dim,grid_cpu<dim,T,Mem>> cp(key1,key2,*this,g);
+    		copy_cpu_sd_k<dim,grid_cpu<dim,T,Mem>> cp(key1,key2,g,*this);
 
     		// copy each property for each point of the grid
 
