@@ -20,6 +20,7 @@
 #include "memory_conf.hpp"
 #include "meta_copy.hpp"
 #include "Memleak_check.hpp"
+#include "for_each_ref.hpp"
 
 
 #include "grid.hpp"
@@ -332,7 +333,7 @@ class grid_cpu
 
 	        		// copy each property for each point of the grid
 
-	        		boost::mpl::for_each< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+	        		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 
 	        		++it;
 	        	}
@@ -537,7 +538,7 @@ class grid_cpu
 
 	        		// copy each property for each point of the grid
 
-	        		boost::mpl::for_each< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+	        		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 
 	        		++it;
 	        	}
@@ -628,7 +629,7 @@ class grid_cpu
     		copy_cpu<dim,grid_cpu<dim,T,Mem>> cp(dx,*this,obj);
 
     		// copy each property
-    		boost::mpl::for_each< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+    		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 		}
 
 		/*! \brief set an element of the grid
@@ -648,7 +649,7 @@ class grid_cpu
 
     		// copy each property for each point of the grid
 
-    		boost::mpl::for_each< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+    		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 
 		}
 

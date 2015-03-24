@@ -58,7 +58,7 @@ std::vector<Point_orig<float>> allocate_stl()
 	clock_gettime(CLOCK_REALTIME, &end_time); // Works on Linux
 	float time_dif =(float)( end_time.tv_sec - ts_start.tv_sec  + (double)(end_time.tv_nsec - ts_start.tv_nsec)/1000000000.0 );
 
-	std::cout << "OPENFPM STL : " << FIRST_PUSH << " add " << "  Time: " << time_dif << " s  " << "\n";
+	std::cout << "STL : " << FIRST_PUSH << " add " << "  Time: " << time_dif << " s  " << "\n";
 	#endif
 
 	return v_stl_test;
@@ -111,7 +111,7 @@ openfpm::vector<Point_test<float>> allocate_openfpm()
 	clock_gettime(CLOCK_REALTIME, &end_time); // Works on Linux
 	float time_dif =(float)( end_time.tv_sec - ts_start.tv_sec  + (double)(end_time.tv_nsec - ts_start.tv_nsec)/1000000000.0 );
 
-	std::cout << "OPENFPM End : " << FIRST_PUSH << " add " << "  Time: " << time_dif << " s  " << "\n";
+	std::cout << "OPENFPM : " << FIRST_PUSH << " add " << "  Time: " << time_dif << " s  " << "\n";
 	#endif
 
 	return v_ofp_test;
