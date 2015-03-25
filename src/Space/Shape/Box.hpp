@@ -364,6 +364,34 @@ public:
 
 		return ret;
 	}
+
+	/* \brief Get the point 1
+	 *
+	 * \return the point 1
+	 *
+	 */
+
+	inline Point<dim,T> getP1() const
+	{
+		// grid key to return
+		Point<dim,T> ret(boost::fusion::at_c<p1>(data));
+
+		return ret;
+	}
+
+	/* \brief Get the point 2
+	 *
+	 * \return the point 2
+	 *
+	 */
+
+	inline Point<dim,T> getP2() const
+	{
+		// grid key to return
+		Point<dim,T> ret(boost::fusion::at_c<p2>(data));
+
+		return ret;
+	}
 };
 
 #endif

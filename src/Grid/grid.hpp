@@ -882,6 +882,17 @@ public:
 	{
 
 	}
+
+	/*! \brief Reset the counter
+	 *
+	 */
+	void reset()
+	{
+		//! Initialize to 0 the index
+
+		for (int i = 0 ; i < dim ; i++)
+		{gk.set_d(i,0);}
+	}
 };
 
 

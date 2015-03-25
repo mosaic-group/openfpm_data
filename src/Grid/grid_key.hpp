@@ -36,6 +36,13 @@ public:
 	grid_key_dx()
 	{}
 
+	//! Constructor from buffer reference
+	grid_key_dx(size_t (&k)[dim])
+	{
+		for (int i = 0 ; i < dim ; i++)
+			this->k[i] = k[i];
+	}
+
 	//! Constructor from buffer
 	grid_key_dx(size_t k[dim])
 	{

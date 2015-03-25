@@ -33,6 +33,8 @@ public:
 
 	// iterator for the vector
 	typedef vector_key_iterator iterator_key;
+	//! Type of the value the vector is storing
+	typedef T value_type;
 
 	//! return the size of the vector
 	inline size_t size()

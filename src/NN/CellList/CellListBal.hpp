@@ -29,7 +29,7 @@
  *
  */
 template<unsigned int dim, typename T, typename base>
-class CellList<dim,T,base,BALANCED>
+class CellList<dim,T,BALANCED,base>
 {
 	// each cell has a pointer to a dynamic structure
 	// that store the elements in the cell
@@ -54,20 +54,19 @@ public:
 	 *
 	 */
 	CellList(SpaceBox<dim,T> & box, size_t div[dim], Point<dim,T> org)
-	:slot(16),box(box),gr_cell(div)
+	:box(box),gr_cell(div)
 	{
 	}
 
-	/*! \brief Add an element in the cell list
+	/*
+	 * ! \brief Add an element in the cell list
 	 *
 	 * \param pos array that contain the
 	 * \param ele element to store
 	 *
 	 */
-	void addElement(T (& pos)[dim], base::element ele)
+	void addElement(T (& pos)[dim], typename base::value_type ele)
 	{
-		typedef SpaceBox<dim,T> sb;
-
 		// calculate the Cell id
 
 		size_t cell_id = getCell(pos);
@@ -92,11 +91,13 @@ public:
 	 */
 	size_t getCell(T (& pos)[dim])
 	{
+		typedef SpaceBox<dim,T> sb;
+
 		size_t cell_id = 0;
 
 		for (size_t s = 0 ; s < dim ; s++)
 		{
-			ele_id += box_unit.template get<sb::p2>()[s] * gr_cell.size(s);
+			cell_id += box_unit.template get<sb::p2>()[s] * gr_cell.size(s);
 		}
 
 		return cell_id;
@@ -120,7 +121,7 @@ public:
 	 * \param ele element id
 	 *
 	 */
-	base::element getElement(size_t cell, size_t ele)
+	typename base::element getElement(size_t cell, size_t ele)
 	{
 		return cl_base.get(cell)->get(ele);
 	}

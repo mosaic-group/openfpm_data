@@ -8,7 +8,7 @@
 #ifndef CELLLISTSTANDARD_HPP_
 #define CELLLISTSTANDARD_HPP_
 
-
+#include "Space/SpaceBox.hpp"
 
 /*! \brief Class for STANDARD cell list implementation
  *
@@ -28,7 +28,7 @@
  *
  */
 template<unsigned int dim, typename T, typename base>
-class CellList<dim,T,base,FAST>
+class CellList<dim,T,FAST,base>
 {
 	// Number of slot for each cell
 	size_t slot;
@@ -49,6 +49,30 @@ class CellList<dim,T,base,FAST>
 	// Grid structure of the Cell list
 	grid<dim,void> gr_cell;
 
+	//Origin point
+	Point<dim,T> orig;
+
+	void realloc()
+	{
+		// we do not have enough slots reallocate the basic structure with more
+		// slots
+
+		// Create a cell-list with double of the slots
+
+		CellList cl_tmp(box,gr_cell.getSize(),orig,slot*2);
+
+		// copy cl_base
+
+		for (size_t i = 0 ; i < cl_n.size() ; i++)
+		{
+			for (size_t j = 0 ; j < cl_n.get(i) ; j++)
+				cl_tmp.cl_base.get(i*slot + j) = cl_base.get(2*slot * i + j);
+		}
+
+		// swap the memory
+		swap(cl_tmp);
+	}
+
 public:
 
 	/*! \brief Cell list
@@ -58,21 +82,19 @@ public:
 	 * \param div grid size on each dimension
 	 *
 	 */
-	CellList(SpaceBox<dim,T> & box, size_t div[dim], Point<dim,T> org)
-	:slot(16),box(box),gr_cell(div)
+	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
+	:slot(slot),box(box),gr_cell(div),orig(orig)
 	{
 	}
 
 	/*! \brief Add an element in the cell list
 	 *
-	 * \param pos array that contain the
+	 * \param pos array that contain the coordinate
 	 * \param ele element to store
 	 *
 	 */
-	void addElement(T (& pos)[dim], base::element ele)
+	void addElement(const T (& pos)[dim], typename base::value_type ele)
 	{
-		typedef SpaceBox<dim,T> sb;
-
 		// calculate the Cell id
 
 		size_t cell_id = getCell(pos);
@@ -83,29 +105,64 @@ public:
 
 		if (nl + 1 >= slot)
 		{
-			// we do not have enough slots reallocate the basic structure with more
-			// slots
-
-			// Create a cell-list with double of the slots
-
-			CellList cl_tmp(slot*2);
-
-			// copy cl_base
-
-			for (size_t i = 0 ; i < cl_n.size() ; i++)
-			{
-				for (size_t j = 0 ; j < cl_n.get(i) ; j++)
-					cl_tmp.cl_base.get(i*slot + j) = cl_base.get(2*slot * i + j);
-			}
-
-			// swap the memory
-			cl.swap(cl_tmp);
+			realloc();
 		}
 
 		// we have enough slot to store another neighbor element
 
-		cl_base.get(slot * ele_id + cl_n.get(ele_id)) = ele;
-		cl_n.get(ele_id)++;
+		cl_base.get(slot * cell_id + cl_n.get(cell_id)) = ele;
+		cl_n.get(cell_id)++;
+	}
+
+	/*! \brief Add an element in the cell list
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	void addElement(const Point<dim,T> & pos, typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = getCell(pos);
+
+		// Get the number of element the cell is storing
+
+		size_t nl = getNelements(cell_id);
+
+		if (nl + 1 >= slot)
+		{
+			realloc();
+		}
+
+		// we have enough slot to store another neighbor element
+
+		cl_base.get(slot * cell_id + cl_n.get(cell_id)) = ele;
+		cl_n.get(cell_id)++;
+	}
+
+
+	/*! \brief Get the cell-id
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	size_t getCell(const T (& pos)[dim])
+	{
+		typedef SpaceBox<dim,T> sb;
+
+		size_t cell_id = 0;
+
+		for (size_t s = 0 ; s < dim ; s++)
+		{
+			cell_id += gr_cell.size(s) * (pos[s] / box_unit.getHigh(s));
+		}
+
+		return cell_id;
 	}
 
 	/*! \brief Get the cell-id
@@ -117,13 +174,15 @@ public:
 	 * \return the cell-id
 	 *
 	 */
-	size_t getCell(T (& pos)[dim])
+	size_t getCell(const Point<dim,T> & pos)
 	{
+		typedef SpaceBox<dim,T> sb;
+
 		size_t cell_id = 0;
 
 		for (size_t s = 0 ; s < dim ; s++)
 		{
-			ele_id += box_unit.template get<sb::p2>()[s] * gr_cell.size(s);
+			cell_id += gr_cell.size(s) * (pos.get(s) / box_unit.getHigh(s));
 		}
 
 		return cell_id;
@@ -147,9 +206,20 @@ public:
 	 * \param ele element id
 	 *
 	 */
-	base::element getElement(size_t cell, size_t ele)
+	typename base::value_type getElement(size_t cell, size_t ele)
 	{
 		return cl_base.get(cell * slot + ele);
+	}
+
+	/*! \brief Swap the memory
+	 *
+	 * \param cl Cell list with witch you swap the memory
+	 *
+	 */
+	void swap(CellList<dim,T,FAST,base> & cl)
+	{
+		cl_n.swap(cl.cl_n);
+		cl_base.swap(cl.cl_base);
 	}
 };
 

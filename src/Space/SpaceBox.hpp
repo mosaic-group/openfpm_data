@@ -73,6 +73,25 @@ class SpaceBox : public Box<dim,T>
 		return *this;
 	}
 
+	/*! \brief constructor from a SpaceBox
+	 *
+	 * constructor from a SpaceBox
+	 *
+	 * \param b is the SpaceBox
+	 *
+	 */
+
+	SpaceBox(SpaceBox<dim,T> & b)
+	{
+		// for each dimension set high and low
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,b.getLow(d));}
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,b.getHigh(d));}
+	}
+
 	/*! \brief constructor from a box
 	 *
 	 * constructor from a box
@@ -107,6 +126,28 @@ class SpaceBox : public Box<dim,T>
 
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setHigh(d,box.template get<Box<dim,S>::p2>()[d]);}
+	}
+
+	/*! \brief Constructor from initializer list
+	 *
+	 * Constructor from initializer list
+	 *
+	 * \param p1 Low point, initialize as a list example {0.0,0.0,0.0}
+	 * \param p2 High point, initialized as a list example {1.0,1.0,1.0}
+	 *
+	 */
+
+	SpaceBox(std::initializer_list<T> p1, std::initializer_list<T> p2)
+	{
+		// for each dimension set high and low
+
+		size_t i = 0;
+	    for(T x : p1)
+	    {this->setLow(i,x);i++;}
+
+	    i = 0;
+	    for(T x : p2)
+	    {this->setHigh(i,x);i++;}
 	}
 
 	/*! \brief Re-scale the space box with the coefficient defined in sp

@@ -275,12 +275,15 @@ namespace openfpm
 
 	public:
 
-		// iterator for the vector
+		//! iterator for the vector
 		typedef vector_key_iterator iterator_key;
 
 		//! Object container for T, it is the return type of get_o it return a object type trough
 		// you can access all the properties of T
 		typedef typename grid_cpu<1,T>::container container;
+
+		//! Type of the value the vector is storing
+		typedef T value_type;
 
 		/*! \brief Return the size of the vector
 		 *

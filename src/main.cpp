@@ -17,6 +17,7 @@
 
 // Include tests
 
+#include "NN/CellList/CellList_test.hpp"
 #include "Vector/vector_unit_tests.hpp"
 #include "hypercube_unit_test.hpp"
 #include "Graph/graph_unit_tests.hpp"

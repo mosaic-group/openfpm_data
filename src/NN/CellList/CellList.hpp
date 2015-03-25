@@ -8,6 +8,8 @@
 #ifndef CELLLIST_HPP_
 #define CELLLIST_HPP_
 
+#include "Vector/map_vector.hpp"
+
 /* NOTE all the implementations
  *
  * has complexity O(1) in getting the cell id and the elements in a cell
@@ -25,11 +27,13 @@
 #include "Vector/map_vector.hpp"
 
 // Stub implementation
-template<unsigned int dim, typename T, typename base=openfpm::vector<size_t>, unsigned int impl>
+template<unsigned int dim, typename T,  unsigned int impl=FAST, typename base=openfpm::vector<size_t>>
 class CellList
 {
 };
 
 #include "CellListFast.hpp"
+//#include "CellListBal.hpp"
+//#include "CellListMem.hpp"
 
 #endif /* CELLLIST_HPP_ */
