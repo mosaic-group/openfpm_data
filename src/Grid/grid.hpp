@@ -626,6 +626,22 @@ public:
 
   /**
    *
+   * Get the stride-size of the grid on the direction i
+   *
+   * [Example] on a grid 16*16*16 it return 16,256
+   *
+   * \param i direction
+   * \return the size on the direction i
+   *
+   */
+
+  size_t size_s(unsigned int i) const
+  {
+	  return sz_s[i];
+  }
+
+  /**
+   *
    * Get the size of the grid on the direction i
    *
    * \param i direction

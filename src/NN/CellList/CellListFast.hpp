@@ -9,6 +9,25 @@
 #define CELLLISTSTANDARD_HPP_
 
 #include "Space/SpaceBox.hpp"
+#include "mathutil.hpp"
+#include "CellNNIterator.hpp"
+#include "Space/Shape/HyperCube.hpp"
+
+// Compile time array functor needed to generate array at compile-time of type
+// {0,0,0,0,0,.....}
+// {3,3,3,3,3,3,.....}
+
+ template<size_t index, size_t N> struct Fill_three {
+    enum { value = 3 };
+ };
+
+ template<size_t index, size_t N> struct Fill_zero {
+    enum { value = 0 };
+ };
+
+ template<size_t index, size_t N> struct Fill_two {
+    enum { value = 2 };
+ };
 
 /*! \brief Class for STANDARD cell list implementation
  *
@@ -30,6 +49,18 @@
 template<unsigned int dim, typename T, typename base>
 class CellList<dim,T,FAST,base>
 {
+	// The array contain the neighborhood of the cell-id
+	size_t (& NNc_full)[openfpm::math::pow(3,dim)];
+
+	// The array contain the neighborhood of the cell-id
+	size_t (& NNc_sym)[openfpm::math::pow(3,dim)];
+
+	// The array contain the neighborhood of the cell-id
+	size_t (& NNc_cr)[openfpm::math::pow(2,dim)];
+
+	// Total number of cell
+	size_t tot_n_cell;
+
 	// Number of slot for each cell
 	size_t slot;
 
@@ -85,6 +116,82 @@ public:
 	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
 	:slot(slot),box(box),gr_cell(div),orig(orig)
 	{
+		tot_n_cell = 1;
+
+		// Total number of cells and calculate the unt cell size
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			tot_n_cell *= div[i];
+			box_unit.setHigh(i,box.getHigh(i) / div[i]);
+		}
+
+		// create the array that store the number of particle on each cell and se it to 0
+
+		cl_n.resize(tot_n_cell);
+		cl_n.fill(0);
+
+		// create the array that store the cell id
+
+		cl_base.resize(tot_n_cell * slot);
+
+		// Calculate the NNc_full array, it is a structure to get the neighborhood array
+
+		// compile-time array {0,0,0,....} and {3,3,3,...}
+
+		typedef generate_array<size_t,dim, Fill_zero>::result NNzero;
+		typedef generate_array<size_t,dim, Fill_three>::result NNthree;
+		typedef generate_array<size_t,dim, Fill_two>::result NNtwo;
+
+		// Generate the sub-grid iterator
+
+		grid_key_dx_iterator_sub<dim> gr_sub3(gr_cell,NNzero,NNthree);
+
+		// Calculate the NNc array
+
+		size_t i = 0;
+		while (gr_sub3.isNext())
+		{
+			NNc_full[i] = gr_cell.LinId(gr_sub.get()) - openfpm::math::pow(3,dim) / 2;
+
+			++gr_sub3;
+			i++;
+		}
+
+		// Calculate the NNc_sym array
+
+		size_t i = 0;
+		while (gr_sub3.isNext())
+		{
+			auto key = gr_sub3.get();
+
+			size_t lin = gr_cell.LinId(key);
+
+			// Only the first half is considered
+			if (lin > openfpm::math::pow(3,dim) / 2)
+				break;
+
+			NNc_sym[i] = lin;
+
+			++gr_sub3;
+			i++;
+		}
+
+		// Calculate the NNc_cross array
+
+		grid_key_dx_iterator_sub<dim> gr_sub2(gr_cell,NNzero,NNtwo);
+
+		while (gr_sub2.isNext())
+		{
+			auto key = gr_sub2.get();
+
+			size_t lin = gr_cell.LinId(key);
+
+			NNc_cr[i] = lin - openfpm::math::pow(3,dim) / 2;
+
+			++gr_sub2;
+			i++;
+		}
 	}
 
 	/*! \brief Add an element in the cell list
@@ -141,6 +248,16 @@ public:
 		cl_n.get(cell_id)++;
 	}
 
+	/*! \brief remove an element from the cell
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 */
+	void removeElement(size_t cell, size_t ele)
+	{
+		cl_n.get(cell_id)--;
+	}
 
 	/*! \brief Get the cell-id
 	 *
@@ -155,11 +272,11 @@ public:
 	{
 		typedef SpaceBox<dim,T> sb;
 
-		size_t cell_id = 0;
+		size_t cell_id = pos.get(0) / box_unit.getHigh(0);
 
-		for (size_t s = 0 ; s < dim ; s++)
+		for (size_t s = 1 ; s < dim ; s++)
 		{
-			cell_id += gr_cell.size(s) * (pos[s] / box_unit.getHigh(s));
+			cell_id += gr_cell.size(s) * (size_t)(pos[s] / box_unit.getHigh(s));
 		}
 
 		return cell_id;
@@ -178,11 +295,11 @@ public:
 	{
 		typedef SpaceBox<dim,T> sb;
 
-		size_t cell_id = 0;
+		size_t cell_id = pos.get(0) / box_unit.getHigh(0);
 
-		for (size_t s = 0 ; s < dim ; s++)
+		for (size_t s = 1 ; s < dim ; s++)
 		{
-			cell_id += gr_cell.size(s) * (pos.get(s) / box_unit.getHigh(s));
+			cell_id += gr_cell.size_s(s-1) * (size_t)(pos.get(s) / box_unit.getHigh(s));
 		}
 
 		return cell_id;
@@ -220,6 +337,28 @@ public:
 	{
 		cl_n.swap(cl.cl_n);
 		cl_base.swap(cl.cl_base);
+	}
+
+	/*! \brief Get the Nearest Neighborhood iterator
+	 *
+	 * \param cell cell id
+	 *
+	 */
+	CellNNIteratorFull<dim,CellList<dim,T,FAST,base>> getNNIterator(size_t cell)
+	{
+
+
+		return CellNNIteratorFull(cell,NNc,offset);
+	}
+
+	CellNNIteratorSym<dim,CellList<dim,T,FAST,base>> getNNIteratorSym()
+	{
+
+	}
+
+	CellNNIteratorCross<dim,CellList<dim,T,FAST,base>> getNNIteratorCross()
+	{
+
 	}
 };
 

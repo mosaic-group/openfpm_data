@@ -88,6 +88,23 @@ template<unsigned int dim ,typename T> class Point
 		return *this;
 	}
 
+	/*! \brief Multiply each components
+	 *
+	 * \param p Point
+	 *
+	 */
+	template<typename aT> inline Point<dim,T> operator*(Point<dim,aT> & p)
+	{
+		Point<dim,T> result;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			result.get(i) = get(i) * p.get(i);
+		}
+
+		return result;
+	}
+
 	/*! \brief Sum each components
 	 *
 	 * \param p Point
@@ -103,19 +120,38 @@ template<unsigned int dim ,typename T> class Point
 		return *this;
 	}
 
+	/*! \brief Sum each components
+	 *
+	 * \param p Point
+	 *
+	 */
+	template<typename aT> inline Point<dim,T> operator+(Point<dim,aT> & p)
+	{
+		Point<dim,T> result;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			result.get(i) = get(i) + p.get(i);
+		}
+
+		return result;
+	}
+
 	/*! \brief divide each component
 	 *
 	 * \param ar Component wise division
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> & operator/(aT (&ar)[dim])
+	template<typename aT> inline Point<dim,T> operator/(aT (&ar)[dim])
 	{
+		Point<dim,T> result;
+
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			get(i) /= ar[i];
+			result.get(i) = get(i) / ar[i];
 		}
 
-		return *this;
+		return result;
 	}
 
 	/*! \brief divide each component
@@ -123,14 +159,16 @@ template<unsigned int dim ,typename T> class Point
 	 * \param c Component wise division
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> & operator/(aT c)
+	template<typename aT> inline Point<dim,T> operator/(aT c)
 	{
+		Point<dim,T> result;
+
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			get(i) /= c;
+			result.get(i) = get(i) / c;
 		}
 
-		return *this;
+		return result;
 	}
 
 	/*! \brief Point constructor from point
@@ -174,7 +212,7 @@ template<unsigned int dim ,typename T> class Point
 	Point(grid_key_dx<dim> key)
 	{
 	    for(size_t i = 0 ; i < dim ; i++)
-	    {get(i) = key.k[i];i++;}
+	    {get(i) = key.k[i];}
 	}
 
 	/*! \brief Constructor from a list
@@ -188,6 +226,10 @@ template<unsigned int dim ,typename T> class Point
 	    for(T x : p1)
 	    {get(i) = x;i++;}
 	}
+
+	//! Default contructor
+	Point()
+	{}
 
 	static const unsigned int max_prop = 1;
 	static const unsigned int dims = dim;

@@ -36,15 +36,17 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 	// Iterate through each element
 	// Add 1 element for each cell
 
+	// Usefull definition of points
 	Point<3,double> end = box.getP2();
 	Point<3,double> middle = end / div / 2.0;
+	Point<3,double> spacing = end / div;
 
 	Point<3,double> offset[3] = {middle,middle,middle};
 
 	// Create offset shift vectors
-	offset[0].get(0) += 1.0 / div[0] / 8.0;
-	offset[1].get(1) += 1.0 / div[1] / 8.0;
-	offset[2].get(2) += 1.0 / div[2] / 8.0;
+	offset[0].get(0) += (1.0 / div[0]) / 8.0;
+	offset[1].get(1) += (1.0 / div[1]) / 8.0;
+	offset[2].get(2) += (1.0 / div[2]) / 8.0;
 
 	size_t id = 0;
 
@@ -53,22 +55,23 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 		// Add 2 particles on each cell
 
 		Point<3,double> key = g_it.get();
-		key += offset[0];
+		key = key * spacing + offset[0];
 
 		cl1.addElement(key,id);
+		++id;
 
 		key = g_it.get();
-		key += offset[1];
+		key = key * spacing + offset[1];
 
 		cl1.addElement(key,id);
+		++id;
 
 		++g_it;
-		++id;
 	}
 
 	// check the cell are correctly filled
 
-	// Create a grid iterator
+	// reset iterator
 	g_it.reset();
 
 	while (g_it.isNext())
@@ -76,7 +79,7 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 		// Add 2 particles on each cell
 
 		Point<3,double> key = g_it.get();
-		key += offset[2];
+		key = key * spacing + offset[2];
 
 		size_t cell = cl1.getCell(key);
 		size_t n_ele = cl1.getNelements(cell);
@@ -85,8 +88,76 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 		BOOST_REQUIRE_EQUAL(cl1.getElement(cell,1) - cl1.getElement(cell,0),1);
 
 		++g_it;
-		++id;
 	}
+
+	// reset itarator
+	g_it.reset();
+
+	// remove one particle from each cell
+
+	while (g_it.isNext())
+	{
+		// remove 1 particle on each cell
+
+		Point<3,double> key = g_it.get();
+		key = key * spacing + offset[0];
+
+		auto cell = cl1.getCell(key);
+
+		// Remove the first particle in the cell
+		cl1.remove(cell,0);
+		++g_it;
+	}
+
+	// Check we have 1 object per cell
+	g_it.reset();
+
+	while (g_it.isNext())
+	{
+		// remove 1 particle on each cell
+
+		Point<3,double> key = g_it.get();
+		key = key * spacing + offset[0];
+
+		auto cell = cl1.getCell(key);
+		size_t n_ele = cl1.getNelements(cell);
+
+		BOOST_REQUIRE_EQUAL(n_ele,1);
+		++g_it;
+	}
+
+
+	// Check the neighborhood iterator
+
+	// Check we have 1 object per cell
+	g_it.reset();
+
+	while (g_it.isNext())
+	{
+		// remove 1 particle on each cell
+
+		Point<3,double> key = g_it.get();
+		key = key * spacing + offset[0];
+
+		auto NN = cl1.getNNIterator();
+		size_t total = 0;
+
+		while(NN.isNext())
+		{
+			size_t id = NN.get();
+
+			// total
+
+			total++;
+
+			++NN;
+		}
+
+		BOOST_REQUIRE_EQUAL(total,openfpm::math::pow(3,dim));
+		++g_it;
+	}
+
+	// Test the cell list
 }
 
 BOOST_AUTO_TEST_SUITE_END()
