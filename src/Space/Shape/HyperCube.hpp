@@ -2,8 +2,9 @@
 #define HYPERCUBE_HPP
 
 #include "mathutil.hpp"
-#include "Grid/grid.hpp"
+#include "Grid/grid_sm.hpp"
 #include "Grid/comb.hpp"
+#include "mathutil.hpp"
 
 template<unsigned int dim, unsigned int subdim> class SubHyperCube;
 
@@ -51,7 +52,7 @@ public:
 		//
 		// 2^(dim-d) * C(dim,d) with C(dim,d) = dim!/(d!(dim-d)!)
 
-		return pow(2,dim-d) * C(dim,d);
+		return pow(2,dim-d) * openfpm::math::C(dim,d);
 	}
 
 	/*! \brief Get the sum of the number of elements from d to d_t (included)
@@ -227,7 +228,7 @@ public:
 			{
 				// C is not safe check the limit
 				if (dim-cum_val-j-1 >= 0 && i > 0 && dim-cum_val-j >= i)
-					lin_id += C(dim-cum_val-j-1,i);
+					lin_id += openfpm::math::C(dim-cum_val-j-1,i);
 				else
 					lin_id += 1;
 			}

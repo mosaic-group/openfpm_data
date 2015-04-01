@@ -8,7 +8,7 @@
 #ifndef ENCAP_HPP_
 #define ENCAP_HPP_
 
-#include "grid.hpp"
+#include "grid_sm.hpp"
 
 /*! \brief This class is an helper to get the return type for get method for each property
  *
@@ -168,14 +168,14 @@ class encapg
 	// constructor require a key
 	Mem & data;
 	grid_key_dx<dim> & k;
-	grid<dim,void> & g1;
+	grid_sm<dim,void> & g1;
 
 public:
 
 	typedef T T_type;
 
 	// constructor require a key and a memory data
-	encapg(Mem & data, grid_key_dx<dim> & k, grid<dim,void> & g1)
+	encapg(Mem & data, grid_key_dx<dim> & k, grid_sm<dim,void> & g1)
 	:data(data),k(k),g1(g1)
 	{}
 

@@ -37,28 +37,14 @@ public:
 	{}
 
 	//! Constructor from buffer reference
-	grid_key_dx(size_t (&k)[dim])
-	{
-		for (int i = 0 ; i < dim ; i++)
-			this->k[i] = k[i];
-	}
-
-	//! Constructor from buffer
-	grid_key_dx(size_t k[dim])
-	{
-		for (int i = 0 ; i < dim ; i++)
-			this->k[i] = k[i];
-	}
-
-	//! Constructor from buffer
-	grid_key_dx(const size_t k[dim])
+	grid_key_dx(const size_t (&k)[dim])
 	{
 		for (int i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
 	}
 
 	//! Construct a grid key from a list of numbers
-	template<typename ...T>grid_key_dx(const size_t v,const T...t)
+	template<typename ...T> grid_key_dx(const size_t v,const T...t)
 	{
 		k[dim-1] = v;
 		invert_assign(t...);

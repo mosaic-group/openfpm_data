@@ -5,12 +5,19 @@
  *      Author: i-bird
  */
 
-#ifndef CELLNNITERATOR_HPP_
-#define CELLNNITERATOR_HPP_
+#ifndef CELLNNITERATOR_FULL_HPP_
+#define CELLNNITERATOR_FULL_HPP_
 
 #include "mathutil.hpp"
 
-template<unsigned int dim, typename Cell> class CellNNIterator
+#define FULL openfpm::math::pow(3,dim)
+#define SYM  openfpm::math::pow(3,dim)/2
+#define CRS openfpm::math::pow(2,dim)
+
+#define NO_CHECK 1
+#define SAFE 2
+
+template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int impl> class CellNNIterator
 {
 	// Cell list
 	Cell & cl;
@@ -18,15 +25,19 @@ template<unsigned int dim, typename Cell> class CellNNIterator
 	// Actual NNc_id;
 	size_t NNc_id;
 
-	// actual cell id = NNc[NNc_id] stored for performance reason
+	// actual cell id = NNc[NNc_id]+cell stored for performance reason
 	size_t cell_id;
 
 	// actual element id
 	size_t ele_id;
 
 	// NN cell id
-	size_t & NNc[openfpm::math::pow(3,dim)];
+	long int (& NNc)[NNc_size];
 
+	// Center cell, or cell for witch we are searching the NN-cell
+	long int cell;
+
+public:
 
 	/*! \brief
 	 *
@@ -36,8 +47,8 @@ template<unsigned int dim, typename Cell> class CellNNIterator
 	 * \param NNc Cell NN id
 	 *
 	 */
-	CellNNIterator(size_t cell, size_t (&NNc)[openfpm::math::pow(3,dim)])
-	:NNc_id(0),cell_id(NNc[NNc_id]),ele_id(0),NNc(NNc)
+	CellNNIterator(size_t cell, long int (&NNc)[NNc_size], Cell & cl)
+	:cl(cl),NNc_id(0),cell_id(NNc[NNc_id] + cell),ele_id(0),NNc(NNc),cell(cell)
 	{
 	}
 
@@ -48,7 +59,7 @@ template<unsigned int dim, typename Cell> class CellNNIterator
 	 */
 	bool isNext()
 	{
-		if (cell_id >= openfpm::math::pow(3,dim))
+		if (NNc_id >= NNc_size)
 			return false;
 		return true;
 	}
@@ -60,9 +71,15 @@ template<unsigned int dim, typename Cell> class CellNNIterator
 	{
 		ele_id++;
 
-		if (ele_id > cl.getNelements(cell_id))
+		if (ele_id >= cl.getNelements(cell_id))
 		{
 			NNc_id++;
+
+			// No more Cell
+			if (NNc_id >= NNc_size) return * this;
+
+			cell_id = NNc[NNc_id] + cell;
+
 			ele_id = 0;
 		}
 
@@ -71,14 +88,14 @@ template<unsigned int dim, typename Cell> class CellNNIterator
 
 	/*! \brief Get the value of the cell
 	 *
-	 * \return  the nect element object
+	 * \return  the next element object
 	 *
 	 */
-	Cell::value_type & get()
+	typename Cell::value_type & get()
 	{
 		return cl.get(cell_id,ele_id);
 	}
 };
 
 
-#endif /* CELLNNITERATOR_HPP_ */
+#endif /* CELLNNITERATOR_FULL_HPP_ */

@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( graph_use)
 	gs.push_back(GS_SIZE);
 	gs.push_back(GS_SIZE);
 
-	grid<2,void> g2(gs);
+	grid_sm<2,void> g2(gs);
 
 	// Create the edge 4 for each vertex
 

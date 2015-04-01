@@ -29,6 +29,10 @@
     enum { value = 2 };
  };
 
+ template<size_t index, size_t N> struct Fill_one {
+    enum { value = 1 };
+ };
+
 /*! \brief Class for STANDARD cell list implementation
  *
  * This class implement the STANDARD cell list, fast but memory
@@ -49,14 +53,27 @@
 template<unsigned int dim, typename T, typename base>
 class CellList<dim,T,FAST,base>
 {
-	// The array contain the neighborhood of the cell-id
-	size_t (& NNc_full)[openfpm::math::pow(3,dim)];
+	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
+	//
+	//    * * *
+	//    * x *
+	//    * * *
 
-	// The array contain the neighborhood of the cell-id
-	size_t (& NNc_sym)[openfpm::math::pow(3,dim)];
+	long int NNc_full[openfpm::math::pow(3,dim)];
 
-	// The array contain the neighborhood of the cell-id
-	size_t (& NNc_cr)[openfpm::math::pow(2,dim)];
+	// The array contain the neighborhood of the cell-id in case of symmetric interaction
+	//
+	//   * * *
+	//     x *
+	//
+	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
+
+	// The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
+	//
+	//   * *
+	//   x *
+	//
+	long int NNc_cr[openfpm::math::pow(2,dim)];
 
 	// Total number of cell
 	size_t tot_n_cell;
@@ -78,7 +95,7 @@ class CellList<dim,T,FAST,base>
 	SpaceBox<dim,T> box_unit;
 
 	// Grid structure of the Cell list
-	grid<dim,void> gr_cell;
+	grid_sm<dim,void> gr_cell;
 
 	//Origin point
 	Point<dim,T> orig;
@@ -105,6 +122,9 @@ class CellList<dim,T,FAST,base>
 	}
 
 public:
+
+	// Object type that the structure store
+	typedef T value_type;
 
 	/*! \brief Cell list
 	 *
@@ -139,20 +159,21 @@ public:
 
 		// compile-time array {0,0,0,....} and {3,3,3,...}
 
-		typedef generate_array<size_t,dim, Fill_zero>::result NNzero;
-		typedef generate_array<size_t,dim, Fill_three>::result NNthree;
-		typedef generate_array<size_t,dim, Fill_two>::result NNtwo;
+		typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
+		typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
+		typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 		// Generate the sub-grid iterator
 
-		grid_key_dx_iterator_sub<dim> gr_sub3(gr_cell,NNzero,NNthree);
+		grid_key_dx_iterator_sub<dim> gr_sub3(gr_cell,NNzero::data,NNtwo::data);
 
 		// Calculate the NNc array
 
+		size_t middle = gr_cell.LinId(NNone::data);
 		size_t i = 0;
 		while (gr_sub3.isNext())
 		{
-			NNc_full[i] = gr_cell.LinId(gr_sub.get()) - openfpm::math::pow(3,dim) / 2;
+			NNc_full[i] = (long int)gr_cell.LinId(gr_sub3.get()) - middle;
 
 			++gr_sub3;
 			i++;
@@ -160,7 +181,8 @@ public:
 
 		// Calculate the NNc_sym array
 
-		size_t i = 0;
+		i = 0;
+		gr_sub3.reset();
 		while (gr_sub3.isNext())
 		{
 			auto key = gr_sub3.get();
@@ -168,10 +190,13 @@ public:
 			size_t lin = gr_cell.LinId(key);
 
 			// Only the first half is considered
-			if (lin > openfpm::math::pow(3,dim) / 2)
-				break;
+			if (lin < middle)
+			{
+				++gr_sub3;
+				continue;
+			}
 
-			NNc_sym[i] = lin;
+			NNc_sym[i] = lin - middle;
 
 			++gr_sub3;
 			i++;
@@ -179,15 +204,14 @@ public:
 
 		// Calculate the NNc_cross array
 
-		grid_key_dx_iterator_sub<dim> gr_sub2(gr_cell,NNzero,NNtwo);
+		i = 0;
+		grid_key_dx_iterator_sub<dim> gr_sub2(gr_cell,NNzero::data,NNone::data);
 
 		while (gr_sub2.isNext())
 		{
 			auto key = gr_sub2.get();
 
-			size_t lin = gr_cell.LinId(key);
-
-			NNc_cr[i] = lin - openfpm::math::pow(3,dim) / 2;
+			NNc_cr[i] = (long int)gr_cell.LinId(key);
 
 			++gr_sub2;
 			i++;
@@ -200,7 +224,7 @@ public:
 	 * \param ele element to store
 	 *
 	 */
-	void addElement(const T (& pos)[dim], typename base::value_type ele)
+	void add(const T (& pos)[dim], typename base::value_type ele)
 	{
 		// calculate the Cell id
 
@@ -227,7 +251,7 @@ public:
 	 * \param ele element to store
 	 *
 	 */
-	void addElement(const Point<dim,T> & pos, typename base::value_type ele)
+	void add(const Point<dim,T> & pos, typename base::value_type ele)
 	{
 		// calculate the Cell id
 
@@ -254,9 +278,9 @@ public:
 	 * \param ele element id
 	 *
 	 */
-	void removeElement(size_t cell, size_t ele)
+	void remove(size_t cell, size_t ele)
 	{
-		cl_n.get(cell_id)--;
+		cl_n.get(cell)--;
 	}
 
 	/*! \brief Get the cell-id
@@ -319,13 +343,32 @@ public:
 
 	/*! \brief Get an element in the cell
 	 *
+	 * \tparam i property to get
+	 *
 	 * \param cell cell id
 	 * \param ele element id
 	 *
+	 * \return The element value
+	 *
 	 */
-	typename base::value_type getElement(size_t cell, size_t ele)
+	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele))
 	{
 		return cl_base.get(cell * slot + ele);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	template<unsigned int i> auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele))
+	{
+		return cl_base.template get<i>(cell * slot + ele);
 	}
 
 	/*! \brief Swap the memory
@@ -344,21 +387,25 @@ public:
 	 * \param cell cell id
 	 *
 	 */
-	CellNNIteratorFull<dim,CellList<dim,T,FAST,base>> getNNIterator(size_t cell)
+	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,FAST,base>,FULL,impl> getNNIterator(size_t cell)
 	{
+		CellNNIterator<dim,CellList<dim,T,FAST,base>,FULL,impl> cln(cell,NNc_full,*this);
 
-
-		return CellNNIteratorFull(cell,NNc,offset);
+		return cln;
 	}
 
-	CellNNIteratorSym<dim,CellList<dim,T,FAST,base>> getNNIteratorSym()
+	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,FAST,base>,SYM,impl> getNNIteratorSym(size_t cell)
 	{
+		CellNNIterator<dim,CellList<dim,T,FAST,base>,SYM,impl> cln(cell,NNc_sym,*this);
 
+		return cln;
 	}
 
-	CellNNIteratorCross<dim,CellList<dim,T,FAST,base>> getNNIteratorCross()
+	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,FAST,base>,CRS,impl> getNNIteratorCross(size_t cell)
 	{
+		CellNNIterator<dim,CellList<dim,T,FAST,base>,CRS,impl> cln(cell,NNc_cr,*this);
 
+		return cln;
 	}
 };
 

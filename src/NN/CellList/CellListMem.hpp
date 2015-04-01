@@ -43,7 +43,7 @@ class CellList<dim,T,MEMORY,base>
 	SpaceBox<dim,T> box_unit;
 
 	// Grid structure of the Cell list
-	grid<dim,void> gr_cell;
+	grid_sm<dim,void> gr_cell;
 
 public:
 

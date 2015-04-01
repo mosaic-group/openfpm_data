@@ -81,7 +81,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	SpaceBox(SpaceBox<dim,T> & b)
+	SpaceBox(const SpaceBox<dim,T> & b)
 	{
 		// for each dimension set high and low
 

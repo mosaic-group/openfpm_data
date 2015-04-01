@@ -23,7 +23,7 @@
 #include "for_each_ref.hpp"
 
 
-#include "grid.hpp"
+#include "grid_sm.hpp"
 #include "Encap.hpp"
 #include "memory_array.hpp"
 #include "memory_c.hpp"
@@ -219,7 +219,7 @@ class grid_cpu
 		typedef typename T::type T_type;
 
 		//! This is an header that store all information related to the grid
-		grid<dim,T> g1;
+		grid_sm<dim,T> g1;
 
 		//! This is the interface to allocate an resize memory
 		//! and give also a representation to the allocated memory
@@ -352,7 +352,7 @@ class grid_cpu
 		 *
 		 */
 
-		grid<dim,T> getGrid()
+		grid_sm<dim,T> getGrid()
 		{
 			return g1;
 		}
@@ -785,7 +785,7 @@ class grid_gpu
 	typedef grid_key_dx<dim> access_key;
 
 	//! It store all the information regarding the grid
-	grid<dim,void> g1;
+	grid_sm<dim,void> g1;
 
 	//! This is the interface to allocate,resize ... memory
 	//! and give also a representation to the allocated memory
@@ -828,7 +828,7 @@ public:
 	 *
 	 */
 
-	grid<dim,void> getGrid()
+	grid_sm<dim,void> getGrid()
 	{
 		return g1;
 	}
