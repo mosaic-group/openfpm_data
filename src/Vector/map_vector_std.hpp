@@ -200,6 +200,44 @@ public:
 	{
 		base.swap(v.base);
 	}
+
+	/*! \brief Get iterator
+	 *
+	 * \return an iterator
+	 *
+	 */
+
+	vector_key_iterator getIterator()
+	{
+		return vector_key_iterator(base.size());
+	}
+
+	/*! \brief Calculate the memory size required to allocate n elements
+	 *
+	 * Calculate the total size required to store n-elements in a vector
+	 *
+	 * \param n number of elements
+	 * \param e unused
+	 *
+	 * \return the size of the allocation number e
+	 *
+	 */
+	inline static size_t calculateMem(size_t n, size_t e)
+	{
+		return n*sizeof(T);
+	}
+
+	/*! \brief How many allocation are required to create n-elements
+	 *
+	 * \param n number of elements
+	 *
+	 * \return the number of allocations
+	 *
+	 */
+	inline static size_t calculateNMem(size_t n)
+	{
+		return 1;
+	}
 };
 
 

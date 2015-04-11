@@ -19,59 +19,6 @@
 
 namespace openfpm
 {
-	/*! \brief Grow policy define how the vector should grow every time we exceed the size
-	 *
-	 * In this case it double up the size
-	 *
-	 */
-
-	class grow_policy_double
-	{
-	public:
-
-		/*! \brief It say how much the vector must grow
-		 *
-		 * \param original size
-		 * \param requested size
-		 *
-		 * \return how much to grow
-		 *
-		 */
-		static size_t grow(size_t original, size_t requested)
-		{
-			size_t grow = original;
-			while (grow < requested)	{grow *= 2;}
-			return grow;
-		}
-	};
-
-	// default grow policy
-	typedef grow_policy_double vector_grow_policy_default;
-
-	/*! \brief Grow policy define how the vector should grow every time we exceed the size
-	 *
-	 * In this case it increase of 4096 elements
-	 *
-	 */
-
-	class grow_policy_page
-	{
-	public:
-
-		/*! \brief It say how much the vector must grow
-		 *
-		 * \param original size
-		 * \param requested size
-		 *
-		 * \return how much to grow
-		 *
-		 */
-		static size_t grow(size_t original, size_t requested)
-		{
-			return (requested / PAGE_ALLOC) * PAGE_ALLOC + PAGE_ALLOC;
-		}
-	};
-
 	/*! \brief Vector iterator
 	 *
 	 */
@@ -157,6 +104,59 @@ namespace openfpm
 		size_t get()
 		{
 			return gk;
+		}
+	};
+
+	/*! \brief Grow policy define how the vector should grow every time we exceed the size
+	 *
+	 * In this case it double up the size
+	 *
+	 */
+
+	class grow_policy_double
+	{
+	public:
+
+		/*! \brief It say how much the vector must grow
+		 *
+		 * \param original size
+		 * \param requested size
+		 *
+		 * \return how much to grow
+		 *
+		 */
+		static size_t grow(size_t original, size_t requested)
+		{
+			size_t grow = (original == 0)?1:original;
+			while (grow < requested)	{grow *= 2;}
+			return grow;
+		}
+	};
+
+	// default grow policy
+	typedef grow_policy_double vector_grow_policy_default;
+
+	/*! \brief Grow policy define how the vector should grow every time we exceed the size
+	 *
+	 * In this case it increase of 4096 elements
+	 *
+	 */
+
+	class grow_policy_page
+	{
+	public:
+
+		/*! \brief It say how much the vector must grow
+		 *
+		 * \param original size
+		 * \param requested size
+		 *
+		 * \return how much to grow
+		 *
+		 */
+		static size_t grow(size_t original, size_t requested)
+		{
+			return (requested / PAGE_ALLOC) * PAGE_ALLOC + PAGE_ALLOC;
 		}
 	};
 
@@ -376,7 +376,11 @@ namespace openfpm
 			if (v_size >= base.size())
 			{
 				//! Resize the memory, double up the actual memory allocated for the vector
-				size_t sz[1] = {2*base.size()};
+				size_t sz[1];
+				if (base.size() == 0)
+				{sz[0] = 1;}
+				else
+				{sz[0] = 2*base.size();}
 				base.template resize<Memory>(sz);
 			}
 
@@ -491,13 +495,13 @@ namespace openfpm
 		{}
 
 		//! Constructor, vector of size 0
-		vector():v_size(0),base(getV(PAGE_ALLOC))
+		vector():v_size(0),base(getV(0))
 		{
 			base.template setMemory<Memory>();
 		}
 
 		//! Constructor, vector of size sz
-		vector(size_t sz):v_size(sz),base(getV(PAGE_ALLOC))
+		vector(size_t sz):v_size(sz),base(getV(sz))
 		{
 			base.template setMemory<Memory>();
 		}
@@ -505,6 +509,27 @@ namespace openfpm
 		/*! \brief Set the object
 		 *
 		 * Set the object id to obj
+		 *
+		 * \param id
+		 * \param object (encapsulated)
+		 *
+		 */
+		void set(size_t id, const typename grid_cpu<1,T>::container & obj)
+		{
+#ifdef DEBUG
+			if (id >= v_size)
+			{std::cerr << "Error " << __FILE__ << "  " << __LINE__ << " id overflow your vector" << "\n";}
+#endif
+			//! copy the element
+			base.set(id,obj);
+		}
+
+		/*! \brief Set the object
+		 *
+		 * Set the object id to obj
+		 *
+		 * \param id
+		 * \param object
 		 *
 		 */
 		void set(size_t id, T & obj)
@@ -640,6 +665,43 @@ namespace openfpm
 		size_t packObject(void * mem)
 		{
 			return base.packObject(mem);
+		}
+
+		/*! \brief Calculate the memory size required to allocate n elements
+		 *
+		 * Calculate the total size required to store n-elements in a vector
+		 *
+		 * \param n number of elements
+		 * \param e unused
+		 *
+		 * \return the size of the allocation number e
+		 *
+		 */
+		inline static size_t calculateMem(size_t n, size_t e)
+		{
+			return n*sizeof(T);
+		}
+
+		/*! \brief How many allocation are required to create n-elements
+		 *
+		 * \param n number of elements
+		 *
+		 * \return the number of allocations
+		 *
+		 */
+		inline static size_t calculateNMem(size_t n)
+		{
+			return 1;
+		}
+
+		/*! \brief Set the memory of the base structure using an object
+		 *
+		 * \param mem Memory object to use for allocation
+		 *
+		 */
+		void setMemory(Memory & mem)
+		{
+			base.template setMemory<Memory>(mem);
 		}
 	};
 
@@ -798,6 +860,42 @@ namespace openfpm
 			return base.getIterator();
 		}
 
+		/*! \brief Calculate the memory size required to allocate n elements
+		 *
+		 * Calculate the total size required to store n-elements in a vector
+		 *
+		 * \param n number of elements
+		 * \param e unused
+		 *
+		 * \return the size of the allocation number e
+		 *
+		 */
+		inline static size_t calculateMem(size_t n, size_t e)
+		{
+			return n*sizeof(T);
+		}
+
+		/*! \brief How many allocation are required to create n-elements
+		 *
+		 * \param n number of elements
+		 *
+		 * \return the number of allocations
+		 *
+		 */
+		inline static size_t calculateNMem(size_t n)
+		{
+			return 1;
+		}
+
+		/*! \brief Set the memory of the base structure using an object
+		 *
+		 * \param mem Memory object to use for allocation
+		 *
+		 */
+		void setMemory(Memory & mem)
+		{
+			base.template setMemory<Memory>(mem);
+		}
 	};
 }
 

@@ -166,8 +166,6 @@ BOOST_AUTO_TEST_CASE( graph_use)
 
 	// Check that each vertex has 2 child
 
-	size_t start = 0;
-
 	for (size_t i = 0 ; i < g_no_edge.getNVertex() ; i++)
 	{
 		if (g_no_edge.getNChilds(i) == 0)

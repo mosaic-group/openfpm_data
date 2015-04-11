@@ -8,6 +8,7 @@
 #ifndef CELLLISTSTANDARD_HPP_
 #define CELLLISTSTANDARD_HPP_
 
+#include "CellDecomposer.hpp"
 #include "Space/SpaceBox.hpp"
 #include "mathutil.hpp"
 #include "CellNNIterator.hpp"
@@ -51,7 +52,7 @@
  *
  */
 template<unsigned int dim, typename T, typename base>
-class CellList<dim,T,FAST,base>
+class CellList<dim,T,FAST,base> : public CellDecomposer_sm<dim,T>
 {
 	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
 	//
@@ -75,9 +76,6 @@ class CellList<dim,T,FAST,base>
 	//
 	long int NNc_cr[openfpm::math::pow(2,dim)];
 
-	// Total number of cell
-	size_t tot_n_cell;
-
 	// Number of slot for each cell
 	size_t slot;
 
@@ -87,15 +85,6 @@ class CellList<dim,T,FAST,base>
 	// elements that each cell store (each cell can store a number
 	// of elements == slot )
 	base cl_base;
-
-	// Domain of the cell list
-	SpaceBox<dim,T> box;
-
-	// Unit box of the Cell list
-	SpaceBox<dim,T> box_unit;
-
-	// Grid structure of the Cell list
-	grid_sm<dim,void> gr_cell;
 
 	//Origin point
 	Point<dim,T> orig;
@@ -107,7 +96,7 @@ class CellList<dim,T,FAST,base>
 
 		// Create a cell-list with double of the slots
 
-		CellList cl_tmp(box,gr_cell.getSize(),orig,slot*2);
+		CellList cl_tmp(this->box,this->gr_cell.getSize(),orig,slot*2);
 
 		// copy cl_base
 
@@ -134,26 +123,16 @@ public:
 	 *
 	 */
 	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
-	:slot(slot),box(box),gr_cell(div),orig(orig)
+	:CellDecomposer_sm<dim,T>(box,div),slot(slot),orig(orig)
 	{
-		tot_n_cell = 1;
-
-		// Total number of cells and calculate the unt cell size
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			tot_n_cell *= div[i];
-			box_unit.setHigh(i,box.getHigh(i) / div[i]);
-		}
-
 		// create the array that store the number of particle on each cell and se it to 0
 
-		cl_n.resize(tot_n_cell);
+		cl_n.resize(this->tot_n_cell);
 		cl_n.fill(0);
 
 		// create the array that store the cell id
 
-		cl_base.resize(tot_n_cell * slot);
+		cl_base.resize(this->tot_n_cell * slot);
 
 		// Calculate the NNc_full array, it is a structure to get the neighborhood array
 
@@ -165,15 +144,15 @@ public:
 
 		// Generate the sub-grid iterator
 
-		grid_key_dx_iterator_sub<dim> gr_sub3(gr_cell,NNzero::data,NNtwo::data);
+		grid_key_dx_iterator_sub<dim> gr_sub3(this->gr_cell,NNzero::data,NNtwo::data);
 
 		// Calculate the NNc array
 
-		size_t middle = gr_cell.LinId(NNone::data);
+		size_t middle = this->gr_cell.LinId(NNone::data);
 		size_t i = 0;
 		while (gr_sub3.isNext())
 		{
-			NNc_full[i] = (long int)gr_cell.LinId(gr_sub3.get()) - middle;
+			NNc_full[i] = (long int)this->gr_cell.LinId(gr_sub3.get()) - middle;
 
 			++gr_sub3;
 			i++;
@@ -187,7 +166,7 @@ public:
 		{
 			auto key = gr_sub3.get();
 
-			size_t lin = gr_cell.LinId(key);
+			size_t lin = this->gr_cell.LinId(key);
 
 			// Only the first half is considered
 			if (lin < middle)
@@ -205,13 +184,13 @@ public:
 		// Calculate the NNc_cross array
 
 		i = 0;
-		grid_key_dx_iterator_sub<dim> gr_sub2(gr_cell,NNzero::data,NNone::data);
+		grid_key_dx_iterator_sub<dim> gr_sub2(this->gr_cell,NNzero::data,NNone::data);
 
 		while (gr_sub2.isNext())
 		{
 			auto key = gr_sub2.get();
 
-			NNc_cr[i] = (long int)gr_cell.LinId(key);
+			NNc_cr[i] = (long int)this->gr_cell.LinId(key);
 
 			++gr_sub2;
 			i++;
@@ -228,7 +207,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = getCell(pos);
+		size_t cell_id = this->getCell(pos);
 
 		// Get the number of element the cell is storing
 
@@ -255,7 +234,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = getCell(pos);
+		size_t cell_id = this->getCell(pos);
 
 		// Get the number of element the cell is storing
 
@@ -281,52 +260,6 @@ public:
 	void remove(size_t cell, size_t ele)
 	{
 		cl_n.get(cell)--;
-	}
-
-	/*! \brief Get the cell-id
-	 *
-	 * Convert the point coordinates into the cell id
-	 *
-	 * \param pos Point position
-	 *
-	 * \return the cell-id
-	 *
-	 */
-	size_t getCell(const T (& pos)[dim])
-	{
-		typedef SpaceBox<dim,T> sb;
-
-		size_t cell_id = pos.get(0) / box_unit.getHigh(0);
-
-		for (size_t s = 1 ; s < dim ; s++)
-		{
-			cell_id += gr_cell.size(s) * (size_t)(pos[s] / box_unit.getHigh(s));
-		}
-
-		return cell_id;
-	}
-
-	/*! \brief Get the cell-id
-	 *
-	 * Convert the point coordinates into the cell id
-	 *
-	 * \param pos Point position
-	 *
-	 * \return the cell-id
-	 *
-	 */
-	size_t getCell(const Point<dim,T> & pos)
-	{
-		typedef SpaceBox<dim,T> sb;
-
-		size_t cell_id = pos.get(0) / box_unit.getHigh(0);
-
-		for (size_t s = 1 ; s < dim ; s++)
-		{
-			cell_id += gr_cell.size_s(s-1) * (size_t)(pos.get(s) / box_unit.getHigh(s));
-		}
-
-		return cell_id;
 	}
 
 	/*! \brief Return the number of element in the cell

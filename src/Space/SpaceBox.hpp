@@ -64,11 +64,15 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	SpaceBox<dim,T> & operator=(Box<dim,T> & b)
+	SpaceBox<dim,T> & operator=(const Box<dim,T> & b)
 	{
-		// Copy the element of the box to this box
+		// for each dimension set high and low
 
-		this->data = b.data;
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,b.getLow(d));}
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,b.getHigh(d));}
 
 		return *this;
 	}

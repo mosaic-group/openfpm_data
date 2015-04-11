@@ -153,8 +153,6 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 
 		while(NN.isNext())
 		{
-			size_t id = NN.get();
-
 			// total
 
 			total++;

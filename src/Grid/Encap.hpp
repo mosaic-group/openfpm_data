@@ -77,6 +77,16 @@ public:
 	:data(data)
 	{}
 
+	/*! \brief Return the address of the base
+	 *
+	 * \return the address of the data encapsulated
+	 *
+	 */
+	type * operator&()
+	{
+		return &data;
+	}
+
 	/*! \brief access the data
 	 *
 	 * \return the reference
@@ -96,19 +106,6 @@ public:
 	 *
 	 */
 	template <unsigned int p> const typename type_cpu_prop<p,T>::type get() const
-	{
-#ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
-#endif
-		return boost::fusion::at_c<p>(data);
-	}
-
-	/*! \brief Get the data
-	 *
-	 * \return the data
-	 *
-	 */
-	template <unsigned int p> typename boost::remove_reference<typename type_cpu_prop<p,T>::type>::type get() const
 	{
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
@@ -182,9 +179,6 @@ public:
 	// access the data
 	template <unsigned int p> typename type_gpu_prop<p,T>::type::reference get()
 	{
-#ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(k))));
-#endif
 		return boost::fusion::at_c<p>(data).mem_r->operator[](g1.LinId(k));
 	}
 };

@@ -37,6 +37,64 @@
  * grid  element in a generic way for a
  * generic object T with variable number of property
  *
+ * \tparam dim Dimensionality
+ * \tparam S type of grid
+ * \tparam Memory type of memory needed for encap
+ *
+ */
+
+template<unsigned int dim, typename S, typename Memory>
+struct copy_cpu_encap
+{
+	//! size to allocate
+	grid_key_dx<dim> & key;
+
+	//! grid where we have to store the data
+	S & grid_dst;
+
+	//! type of the object we have to set
+	typedef typename S::type obj_type;
+
+	//! type of the object boost::sequence
+	typedef typename S::type::type ov_seq;
+
+	//! object we have to store
+	const encapc<1,obj_type,Memory> & obj;
+
+	/*! \brief constructor
+	 *
+	 * It define the copy parameters.
+	 *
+	 * \param key which element we are modifying
+	 * \param grid_src grid we are updating
+	 * \param obj object we have to set in grid_src
+	 *
+	 */
+	copy_cpu_encap(grid_key_dx<dim> & key, S & grid_dst, const encapc<1,obj_type,Memory> & obj)
+	:key(key),grid_dst(grid_dst),obj(obj){};
+
+	//! It call the copy function for each property
+    template<typename T>
+    void operator()(T& t) const
+    {
+    	// This is the type of the object we have to copy
+    	typedef typename boost::fusion::result_of::at_c<ov_seq,T::value>::type copy_type;
+
+    	// Remove the reference from the type to copy
+    	typedef typename boost::remove_reference<copy_type>::type copy_rtype;
+
+    	meta_copy<copy_rtype> cp(obj.template get<T::value>(),grid_dst.template get<T::value>(key));
+    }
+};
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one object into one target
+ * grid  element in a generic way for a
+ * generic object T with variable number of property
+ *
  * \param dim Dimensionality
  * \param S type of grid
  *
@@ -221,8 +279,7 @@ class grid_cpu
 		//! This is an header that store all information related to the grid
 		grid_sm<dim,T> g1;
 
-		//! This is the interface to allocate an resize memory
-		//! and give also a representation to the allocated memory
+		//! Memory layout specification + memory chunk pointer
 		Mem data;
 
 		/*! \brief Get 1D vector with the
@@ -361,7 +418,7 @@ class grid_cpu
 		 *
 		 * Create the object that provide memory
 		 *
-		 * \param T memory
+		 * \tparam S memory type to allocate
 		 *
 		 */
 
@@ -369,6 +426,25 @@ class grid_cpu
 		{
 	    	//! Create and set the memory allocator
 	    	data.setMemory(*new S());
+
+	    	//! Allocate the memory and create the reppresentation
+	        data.allocate(g1.size());
+		}
+
+		/*! \brief Get the object that provide memory
+		 *
+		 * Create the object that provide memory
+		 *
+		 * \tparam S memory type
+		 *
+		 * \param m external memory allocator
+		 *
+		 */
+
+		template<typename S> void setMemory(S & m)
+		{
+	    	//! Create and set the memory allocator
+	    	data.setMemory(m);
 
 	    	//! Allocate the memory and create the reppresentation
 	        data.allocate(g1.size());
@@ -489,7 +565,7 @@ class grid_cpu
 		inline encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1)
 		{
 #ifdef MEMLEAK_CHECK
-			check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(typename type_cpu_prop<p,T>::type));
+			check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(T));
 #endif
 			return encapc<dim,T,Mem>(data.mem_r->operator[](g1.LinId(v1)));
 		}
@@ -611,6 +687,36 @@ class grid_cpu
 		 *
 		 */
 
+		template<typename Memory> inline void set(grid_key_dx<dim> dx, const encapc<1,T,Memory> & obj)
+		{
+#ifdef DEBUG
+			// Check that the element exist
+
+			for (int i = 0 ; i < dim ; i++)
+			{
+				if (dx.get(i) >= g1.size(i))
+				{
+					std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " out of bound" << "\n";
+				}
+			}
+#endif
+
+			// create the object to copy the properties
+    		copy_cpu_encap<dim,grid_cpu<dim,T,Mem>,Mem> cp(dx,*this,obj);
+
+    		// copy each property
+    		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+		}
+
+		/*! \brief set an element of the grid
+		 *
+		 * set an element of the grid
+		 *
+		 * \param dx is the grid key or the position to set
+		 * \param obj value to set
+		 *
+		 */
+
 		inline void set(grid_key_dx<dim> dx, T & obj)
 		{
 #ifdef DEBUG
@@ -620,7 +726,7 @@ class grid_cpu
 			{
 				if (dx.get(i) >= g1.size(i))
 				{
-					std::cerr << "Error map_grid.hpp: out of bound" << "\n";
+					std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " out of bound" << "\n";
 				}
 			}
 #endif

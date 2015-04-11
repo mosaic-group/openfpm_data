@@ -486,9 +486,7 @@ public:
 		return v.template get<i>(id);
 	}
 
-	/*! \brief operator to access the vertex
-	 *
-	 * operator to access the vertex
+	/*! \brief Function to access the vertexes
 	 *
 	 *
 	 * \param i property to access
@@ -500,9 +498,7 @@ public:
 		return v.template get<i>(id);
 	}
 
-	/*! \brief operator to access the vertex
-	 *
-	 * operator to access the vertex
+	/*! \brief Function to access the vertexes
 	 *
 	 * \param id of the vertex to access
 	 *
