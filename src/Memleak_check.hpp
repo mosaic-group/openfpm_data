@@ -26,7 +26,7 @@ static void remove_ptr(void * ptr)
 	// if the element does not exist, print that something wrong happened and return
 	if ( it == active_ptr.end() )
 	{
-		std::cout << "ERROR POINTER NOT FOUND " << ptr << "\n";
+		std::cout << "Error pointer not found " << ptr << "\n";
 		return;
 	}
 
@@ -73,6 +73,7 @@ static void check_new(void * data, size_t sz)
  */
 static void check_delete(void * data)
 {
+	if (data == NULL)	return;
 	// Delete the pointer
 	delete_data++;
 	remove_ptr(data);

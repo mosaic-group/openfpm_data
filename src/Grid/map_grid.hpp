@@ -282,6 +282,9 @@ class grid_cpu
 		//! Memory layout specification + memory chunk pointer
 		Mem data;
 
+		//! The memory allocator is not internally created
+		bool isExternal;
+
 		/*! \brief Get 1D vector with the
 		 *
 		 * Get std::vector with element 0 to dim set to 0
@@ -314,7 +317,7 @@ class grid_cpu
 
 		//! Default constructor
 		grid_cpu()
-		:g1(getV())
+		:g1(getV()),isExternal(false)
 	    {
 	    }
 
@@ -331,25 +334,26 @@ class grid_cpu
 		 *
 		 */
 		template<typename S> grid_cpu(const grid_cpu & g, S & mem)
+		:isExternal(false)
 		{
 			swap(g.duplicate<S>());
 		}
 
 		//! Constructor allocate memory and give them a representation
 		grid_cpu(std::vector<size_t> & sz)
-		:g1(sz)
+		:g1(sz),isExternal(false)
 		{
 		}
 
 		//! Constructor allocate memory and give them a representation
 		grid_cpu(std::vector<size_t> && sz)
-		:g1(sz)
+		:g1(sz),isExternal(false)
 		{
 		}
 
 		//! Constructor allocate memory and give them a representation
 		grid_cpu(size_t (& sz)[dim])
-		:g1(sz)
+		:g1(sz),isExternal(false)
 		{
 		}
 
@@ -364,7 +368,10 @@ class grid_cpu
 			grid_cpu<dim,T,Mem> grid_new(g1.getSize());
 
 			//! Set the allocator and allocate the memory
-			grid_new.template setMemory<S>();
+			if (isExternal == true)
+				grid_new.template setMemory<S>(static_cast<S&>(data.getMemory()));
+			else
+				grid_new.template setMemory<S>();
 
 	        // We know that, if it is 1D we can safely copy the memory
 	        if (dim == 1)
@@ -424,16 +431,19 @@ class grid_cpu
 
 		template<typename S> void setMemory()
 		{
-	    	//! Create and set the memory allocator
-	    	data.setMemory(*new S());
+			S * mem = new S();
 
-	    	//! Allocate the memory and create the reppresentation
-	        data.allocate(g1.size());
+	    	//! Create and set the memory allocator
+	    	data.setMemory(*mem);
+
+	    	//! Allocate the memory and create the representation
+	        if (g1.size() != 0) data.allocate(g1.size());
 		}
 
 		/*! \brief Get the object that provide memory
 		 *
-		 * Create the object that provide memory
+		 * An external allocator is useful with allocator like PreAllocHeapMem
+		 * to have contiguous in memory vectors.
 		 *
 		 * \tparam S memory type
 		 *
@@ -443,11 +453,16 @@ class grid_cpu
 
 		template<typename S> void setMemory(S & m)
 		{
+			//! Is external
+			isExternal = true;
+
+			m.incRef();
+
 	    	//! Create and set the memory allocator
 	    	data.setMemory(m);
 
 	    	//! Allocate the memory and create the reppresentation
-	        data.allocate(g1.size());
+	    	if (g1.size() != 0) data.allocate(g1.size());
 		}
 
 		/*! \brief Return a plain pointer to the internal data
@@ -460,7 +475,7 @@ class grid_cpu
 
 		void * getPointer()
 		{
-			return data.mem->getPointer();
+			return data.mem_r->get_pointer();
 		}
 
 		/*! \brief Get the reference of the selected element
@@ -588,7 +603,17 @@ class grid_cpu
 			grid_cpu<dim,T,Mem> grid_new(sz);
 
 			//! Set the allocator and allocate the memory
-			grid_new.template setMemory<S>();
+			if (isExternal == true)
+			{
+				grid_new.template setMemory<S>(static_cast<S&>(data.getMemory()));
+
+				// Create an empty memory allocator for the actual structure
+
+				setMemory<S>();
+			}
+			else
+				grid_new.template setMemory<S>();
+
 
 	        // We know that, if it is 1D we can safely copy the memory
 	        if (dim == 1)

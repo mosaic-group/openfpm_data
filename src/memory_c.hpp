@@ -53,15 +53,25 @@ class memory_c
 
 	/*! \brief This function set the object that allocate memory
 	 *
-	 * This object set the object that allocate memory
-	 *
-	 * \param the memory object (do not reuse the passed object this class is going to deallocate this object)
+	 * \param the memory object
 	 *
 	 */
 
 	void setMemory(memory & mem)
 	{
+		mem.incRef();
 		this->mem = &mem;
+	}
+
+	/*! \brief This function get the object that allocate memory
+	 *
+	 * \return memory object to allocate memory
+	 *
+	 */
+
+	memory& getMemory()
+	{
+		return *this->mem;
 	}
 
 	/*! \brief This function allocate memory and associate the representation to mem_r
@@ -118,7 +128,16 @@ class memory_c
 	memory_c():mem(NULL),mem_r(NULL){}
 
 	//! destructor
-	~memory_c(){delete(mem);delete(mem_r);}
+	~memory_c()
+	{
+		if (mem != NULL)
+		{
+			mem->decRef();
+			if (mem->ref() == 0)
+				delete(mem);
+		}
+		delete(mem_r);
+	}
 
 	/*! \brief swap the memory
 	 *
@@ -258,15 +277,25 @@ class memory_c<multi_array<T>, memory>
 
 	/*! \brief This function set the object that allocate memory
 	 *
-	 * This object set the object that allocate memory
-	 *
 	 * \param the memory object
 	 *
 	 */
 
 	void setMemory(memory & mem)
 	{
+		mem.incRef();
 		this->mem = &mem;
+	}
+
+	/*! \brief This function get the object that allocate memory
+	 *
+	 * \return memory object to allocate memory
+	 *
+	 */
+
+	memory& getMemory()
+	{
+		return *this->mem;
 	}
 
 	/*! \brief This function allocate memory and associate the representation to mem_r
@@ -320,7 +349,16 @@ class memory_c<multi_array<T>, memory>
 	{}
 
 	//! destructor
-	~memory_c(){delete(mem);delete(mem_r);}
+	~memory_c()
+	{
+		if (mem != NULL)
+		{
+			mem->decRef();
+			if (mem->ref() == 0)
+				delete(mem);
+		}
+		delete(mem_r);
+	}
 
 	//! set the device memory interface, the object that allocate memory
 	void set_mem(memory & mem)

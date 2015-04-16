@@ -40,6 +40,12 @@ class memory_array
 		ptr = static_cast<T *>(ptr_);
 	}
 
+	//! Return the pointer
+	void * get_pointer()
+	{
+		return ptr;
+	}
+
 	//! operator[]
 	T & operator[](mem_id i)
 	{
@@ -54,7 +60,7 @@ class memory_array
 	: ptr(static_cast<T *>(ptr))
 	{
 		// Initialize the constructors
-		new (ptr)T[sz];
+//		new (ptr)T[sz];
 
 	};
 };

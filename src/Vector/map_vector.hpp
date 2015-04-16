@@ -109,6 +109,30 @@ namespace openfpm
 
 	/*! \brief Grow policy define how the vector should grow every time we exceed the size
 	 *
+	 * In this case it return the requested size
+	 *
+	 */
+
+	class grow_policy_identity
+	{
+	public:
+
+		/*! \brief It say how much the vector must grow
+		 *
+		 * \param original size
+		 * \param requested size
+		 *
+		 * \return how much to grow
+		 *
+		 */
+		static size_t grow(size_t original, size_t requested)
+		{
+			return requested;
+		}
+	};
+
+	/*! \brief Grow policy define how the vector should grow every time we exceed the size
+	 *
 	 * In this case it double up the size
 	 *
 	 */
@@ -702,6 +726,16 @@ namespace openfpm
 		void setMemory(Memory & mem)
 		{
 			base.template setMemory<Memory>(mem);
+		}
+
+		/*! \brief Return the pointer that store the data
+		 *
+		 * \return the pointer that store the data
+		 *
+		 */
+		void * getPointer()
+		{
+			return base.getPointer();
 		}
 	};
 

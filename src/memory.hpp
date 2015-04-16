@@ -81,6 +81,26 @@ class memory
 	 *
 	 */
 	virtual ~memory() {};
+
+	/*! \brief Increment the internal reference counter
+	 *
+	 *
+	 */
+	virtual void incRef() = 0;
+
+	/*! \brief Decrement the internal reference counter
+	 *
+	 *
+	 */
+	virtual void decRef() = 0;
+
+	/*! \brief Return the actual reference counter
+	 *
+	 * \return the reference counter
+	 *
+	 */
+	virtual long int ref() = 0;
+
 };
 
 #endif
