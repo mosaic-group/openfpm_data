@@ -456,8 +456,6 @@ class grid_cpu
 			//! Is external
 			isExternal = true;
 
-			m.incRef();
-
 	    	//! Create and set the memory allocator
 	    	data.setMemory(m);
 
@@ -648,6 +646,25 @@ class grid_cpu
 	        // copy grid_new to the base
 
 	        this->swap(grid_new);
+		}
+
+		/*! \brief Remove one element valid only on 1D
+		 *
+		 *
+		 */
+		void remove(size_t key)
+		{
+			if (dim != 1)
+			{
+#ifdef DEBUG
+				std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " trying to remove " << "\n";
+#endif
+				return;
+			}
+
+			// It is safe to a memory copy
+
+			data.move(&get<0>());
 		}
 
 		/*! \brief Resize the space

@@ -59,6 +59,14 @@ class memory_c
 
 	void setMemory(memory & mem)
 	{
+		if (this->mem != NULL)
+		{
+			this->mem->decRef();
+
+			if (this->mem->ref() == 0)
+				delete(this->mem);
+		}
+//			this->mem->decRef();
 		mem.incRef();
 		this->mem = &mem;
 	}
@@ -133,6 +141,7 @@ class memory_c
 		if (mem != NULL)
 		{
 			mem->decRef();
+
 			if (mem->ref() == 0)
 				delete(mem);
 		}
@@ -227,8 +236,8 @@ struct mult<T,1>
  *
  */
 
-template<typename T>
-class memory_c<multi_array<T>, memory>
+template<typename T, typename D>
+class memory_c<multi_array<T>, D>
 {
 	//! define T
 //	typedef T type;
@@ -283,6 +292,13 @@ class memory_c<multi_array<T>, memory>
 
 	void setMemory(memory & mem)
 	{
+		if (this->mem != NULL)
+		{
+			this->mem->decRef();
+
+			if (this->mem->ref() == 0)
+				delete(this->mem);
+		}
 		mem.incRef();
 		this->mem = &mem;
 	}
@@ -338,15 +354,14 @@ class memory_c<multi_array<T>, memory>
 	//! basically we remove the index 0 of the multi_array
 	typedef boost::multi_array<base,size_p::value> type;
 
+	//! Reference to an object to allocate memory
+	D * mem;
+
 	//! object that represent the memory as an multi-dimensional array of objects T
 	boost::multi_array_ref<base,boost::mpl::size<T>::value> * mem_r;
 
-	//! Reference to an object to allocate memory
-	memory * mem;
-
 	//! constructor
-	memory_c()
-	{}
+	memory_c():mem(NULL),mem_r(NULL){}
 
 	//! destructor
 	~memory_c()

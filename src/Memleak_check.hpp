@@ -2,6 +2,9 @@
 #include <iostream>
 #include <map>
 
+#ifndef MEMLEAK_CHECK_HPP
+#define MEMLEAK_CHECK_HPP
+
 typedef unsigned char * byte_ptr;
 
 #ifdef MEMLEAK_CHECK
@@ -10,6 +13,9 @@ extern size_t new_data;
 extern size_t delete_data;
 
 extern std::map<byte_ptr,size_t> active_ptr;
+
+extern size_t process_v_cl;
+extern long int process_to_print;
 
 /*! \brief Check and remove the active pointer
  *
@@ -61,7 +67,8 @@ static void check_new(void * data, size_t sz)
 	// Add a new pointer
 	new_data++;
 	active_ptr[(byte_ptr)data] = sz;
-	std::cout << "New data: " << new_data << "   " << data << "\n";
+	if (process_to_print < 0 || process_to_print == process_v_cl)
+		std::cout << "New data: " << new_data << "   " << data << "\n";
 }
 
 /*! \brief check and delete a pointer
@@ -77,7 +84,8 @@ static void check_delete(void * data)
 	// Delete the pointer
 	delete_data++;
 	remove_ptr(data);
-	std::cout << "Delete data: " << delete_data << "   " << data << "\n";
+	if (process_to_print < 0 || process_to_print == process_v_cl)
+		std::cout << "Delete data: " << delete_data << "   " << data << "\n";
 }
 
 /*! \brief check if the access is valid
@@ -100,7 +108,8 @@ static void check_valid(void * ptr, size_t size_access)
 	// if there is no memory that satisfy the request
 	if (l_b == active_ptr.end())
 	{
-		std::cout << "Error invalid pointer: " << __FILE__ << " " << __LINE__ << "  " << ptr << "\n";
+		if (process_to_print < 0 || process_to_print == process_v_cl)
+			std::cout << "Error invalid pointer: " << __FILE__ << " " << __LINE__ << "  " << ptr << "\n";
 		return;
 	}
 
@@ -110,7 +119,8 @@ static void check_valid(void * ptr, size_t size_access)
 
 	if (((unsigned char *)l_b->first) + sz < ((unsigned char *)ptr) + size_access)
 	{
-		std::cout << "Error invalid pointer: " << __FILE__ << " " << __LINE__ << "  "  << ptr << "\n";
+		if (process_to_print < 0 || process_to_print == process_v_cl)
+			std::cout << "Error invalid pointer: " << __FILE__ << " " << __LINE__ << "  "  << ptr << "\n";
 	}
 }
 
@@ -118,4 +128,5 @@ static void check_valid(void * ptr, size_t size_access)
 
 
 
+#endif
 #endif

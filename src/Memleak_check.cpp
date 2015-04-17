@@ -12,4 +12,10 @@ size_t delete_data;
 // structure that store all the active pointer
 std::map<byte_ptr, size_t> active_ptr;
 
+// Running process id
+size_t process_v_cl;
+
+// Process to print
+long int process_to_print = 0;
+
 #endif
