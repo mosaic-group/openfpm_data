@@ -8,7 +8,6 @@ AC_CANONICAL_SYSTEM
 AC_CONFIG_SRCDIR([src/main.cpp])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([src/config/config.h])
-m4_ifdef([MYSQL_FOUND],,[m4_include([m4/ax_lib_mysql.m4])])
 m4_ifdef([AX_CHECK_COMPILER_FLAGS],,[m4_include([m4/ax_check_compiler_flags.m4])])
 m4_ifdef([ACX_PTHREAD],,[m4_include([m4/acx_pthread.m4])])
 m4_ifdef([AX_CHECK_CL],,[m4_include([m4/ax_opencl.m4])])
