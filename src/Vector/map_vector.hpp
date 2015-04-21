@@ -444,6 +444,29 @@ namespace openfpm
 
 		/*! \brief Remove one entry from the vector
 		 *
+		 * \param key element to remove
+		 *
+		 */
+		void remove(size_t key)
+		{
+			size_t d_k = key;
+			size_t s_k = key + 1;
+
+			// keys
+			while (s_k < size())
+			{
+				set(d_k,get(s_k));
+				d_k++;
+				s_k++;
+			}
+
+			// re-calculate the vector size
+
+			v_size--;
+		}
+
+		/*! \brief Remove several entries from the vector
+		 *
 		 * \param keys objects id to remove
 		 * \param start key starting point
 		 *

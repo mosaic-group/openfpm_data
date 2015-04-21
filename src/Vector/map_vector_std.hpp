@@ -89,6 +89,16 @@ public:
 		base.resize(base.size() + 1);
 	}
 
+	/*! \brief Remove one entry from the vector
+	 *
+	 * \param keys element to remove
+	 *
+	 */
+	void remove(size_t key)
+	{
+		base.erase(base.begin() + key);
+	}
+
 	/*! \brief Get the last element
 	 *
 	 * \return the last element

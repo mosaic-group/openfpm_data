@@ -30,8 +30,30 @@
  *
  */
 template<unsigned int dim, typename T, typename base>
-class CellList<dim,T,MEMORY,base>
+class CellList<dim,T,MEMORY,base> : public CellDecomposer_sm<dim,T>
 {
+	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
+	//
+	//    * * *
+	//    * x *
+	//    * * *
+
+	long int NNc_full[openfpm::math::pow(3,dim)];
+
+	// The array contain the neighborhood of the cell-id in case of symmetric interaction
+	//
+	//   * * *
+	//     x *
+	//
+	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
+
+	// The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
+	//
+	//   * *
+	//   x *
+	//
+	long int NNc_cr[openfpm::math::pow(2,dim)];
+
 	// each cell has a pointer to a dynamic structure
 	// that store the elements in the cell
 	std::unordered_map<size_t,base *> cl_base;
@@ -47,6 +69,9 @@ class CellList<dim,T,MEMORY,base>
 
 public:
 
+	// Object type that the structure store
+	typedef T value_type;
+
 	/*! \brief Cell list
 	 *
 	 * \param box Domain where this cell list is living
@@ -54,7 +79,7 @@ public:
 	 * \param div grid size on each dimension
 	 *
 	 */
-	CellList(SpaceBox<dim,T> & box, size_t div[dim], Point<dim,T> org)
+	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & org)
 	:box(box),gr_cell(div)
 	{
 	}
@@ -65,7 +90,7 @@ public:
 	 * \param ele element to store
 	 *
 	 */
-	void addElement(T (& pos)[dim], typename base::value_type ele)
+	void add(T (& pos)[dim], typename base::value_type ele)
 	{
 		// calculate the Cell id
 
@@ -73,30 +98,24 @@ public:
 
 		// Get the number of element the cell is storing
 
-		cl_base[cell_id].add(ele);
+		cl_base[cell_id]->add(ele);
 	}
 
-	/*! \brief Get the cell-id
+	/*! \brief Add an element in the cell list
 	 *
-	 * Convert the point coordinates into the cell id
-	 *
-	 * \param pos Point position
-	 *
-	 * \return the cell-id
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
 	 *
 	 */
-	size_t getCell(T (& pos)[dim])
+	void add(const Point<dim,T> & pos, typename base::value_type ele)
 	{
-		typedef SpaceBox<dim,T> sb;
+		// calculate the Cell id
 
-		size_t cell_id = 0;
+		size_t cell_id = this->getCell(pos);
 
-		for (size_t s = 0 ; s < dim ; s++)
-		{
-			cell_id += box_unit.template get<sb::p2>()[s] * gr_cell.size(s);
-		}
+		// add a new element
 
-		return cell_id;
+		cl_base[cell_id]->add(ele);
 	}
 
 	/*! \brief Return the number of element in the cell
@@ -108,7 +127,18 @@ public:
 	 */
 	size_t getNelements(size_t cell_id)
 	{
-		return cl_base.get(cell_id)->size();
+		return cl_base[cell_id]->size();
+	}
+
+	/*! \brief remove an element from the cell
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 */
+	void remove(size_t cell, size_t ele)
+	{
+		cl_base[cell]->remove(ele);
 	}
 
 	/*! \brief Get an element in the cell
@@ -117,9 +147,35 @@ public:
 	 * \param ele element id
 	 *
 	 */
-	typename base::value_type getElement(size_t cell, size_t ele)
+	auto get(size_t cell, size_t ele) -> decltype(cl_base[cell]->get(ele))
 	{
-		return cl_base.get(cell)->get(ele);
+		return cl_base[cell]->get(ele);
+	}
+
+	/*! \brief Get the Nearest Neighborhood iterator
+	 *
+	 * \param cell cell id
+	 *
+	 */
+	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,base>,FULL,impl> getNNIterator(size_t cell)
+	{
+		CellNNIterator<dim,CellList<dim,T,MEMORY,base>,FULL,impl> cln(cell,NNc_full,*this);
+
+		return cln;
+	}
+
+	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,base>,SYM,impl> getNNIteratorSym(size_t cell)
+	{
+		CellNNIterator<dim,CellList<dim,T,MEMORY,base>,SYM,impl> cln(cell,NNc_sym,*this);
+
+		return cln;
+	}
+
+	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,BALANCED,base>,CRS,impl> getNNIteratorCross(size_t cell)
+	{
+		CellNNIterator<dim,CellList<dim,T,MEMORY,base>,CRS,impl> cln(cell,NNc_cr,*this);
+
+		return cln;
 	}
 };
 

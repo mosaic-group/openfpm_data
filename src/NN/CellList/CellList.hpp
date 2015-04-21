@@ -33,7 +33,7 @@ class CellList
 };
 
 #include "CellListFast.hpp"
-//#include "CellListBal.hpp"
-//#include "CellListMem.hpp"
+#include "CellListBal.hpp"
+#include "CellListMem.hpp"
 
 #endif /* CELLLIST_HPP_ */

@@ -14,7 +14,7 @@ extern size_t delete_data;
 
 extern std::map<byte_ptr,size_t> active_ptr;
 
-extern size_t process_v_cl;
+extern long int process_v_cl;
 extern long int process_to_print;
 
 /*! \brief Check and remove the active pointer
