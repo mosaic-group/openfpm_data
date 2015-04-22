@@ -25,6 +25,8 @@ template<unsigned int dim ,typename T> class Point
 {
 	public:
 
+	typedef T coord_type;
+
 	//! boost fusion that store the point
 	typedef boost::fusion::vector<T[dim]> type;
 	//! layout that interleave the properties

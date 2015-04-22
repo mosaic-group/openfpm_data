@@ -89,6 +89,17 @@ public:
 		base.resize(base.size() + 1);
 	}
 
+	/*! \brief Erase the elements from start to end
+	 *
+	 * \param start element
+	 * \param end element
+	 *
+	 */
+	void erase(typename std::vector<T>::iterator start, typename std::vector<T>::iterator end)
+	{
+		base.erase(start,end);
+	}
+
 	/*! \brief Remove one entry from the vector
 	 *
 	 * \param keys element to remove
@@ -97,6 +108,26 @@ public:
 	void remove(size_t key)
 	{
 		base.erase(base.begin() + key);
+	}
+
+	/*! \brief Return an std compatible iterator to the first element
+	 *
+	 * \return an iterator to the first element
+	 *
+	 */
+	inline auto begin() -> decltype(base.begin())
+	{
+		return base.begin();
+	}
+
+	/*! \brief Return an std compatible iterator to the last element
+	 *
+	 * \return an iterator to the last element
+	 *
+	 */
+	inline auto end() -> decltype(base.begin())
+	{
+		return base.end();
 	}
 
 	/*! \brief Get the last element
@@ -247,6 +278,16 @@ public:
 	inline static size_t calculateNMem(size_t n)
 	{
 		return 1;
+	}
+
+	/*! \brief Return the pointer to the chunk of memory
+	 *
+	 * \return the pointer to the chunk of memory
+	 *
+	 */
+	void * getPointer()
+	{
+		return &base[0];
 	}
 };
 

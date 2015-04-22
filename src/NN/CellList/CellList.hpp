@@ -27,7 +27,7 @@
 #include "Vector/map_vector.hpp"
 
 // Stub implementation
-template<unsigned int dim, typename T,  unsigned int impl=FAST, typename base=openfpm::vector<T>>
+template<unsigned int dim, typename T,  unsigned int impl=FAST, typename base=openfpm::vector<size_t>>
 class CellList
 {
 };
