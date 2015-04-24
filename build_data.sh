@@ -19,4 +19,5 @@ sh ./autogen.sh
 sh ./configure
 make
 
+./src/mem_map
 
