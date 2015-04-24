@@ -115,6 +115,13 @@ public:
 	// Object type that the structure store
 	typedef T value_type;
 
+	/*! \brief Default constructor
+	 *
+	 */
+	CellList()
+	{
+	}
+
 	/*! \brief Cell list
 	 *
 	 * \param box Domain where this cell list is living
