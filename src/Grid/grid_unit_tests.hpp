@@ -25,24 +25,32 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 	for (int i = 0 ; i < dim ; i++)
 	{szz.push_back(sz);}
 
+#ifdef CUDA_GPU
+
 	{grid_cpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory<CudaMemory>();
 	test_layout_gridNd<dim>(c3,sz);}
+
+	{grid_cpu<dim, Point_test<float> > c3(szz);
+	c3.template setMemory<CudaMemory>();
+	test_layout_gridObjNd<dim>(c3,sz);}
+
+	{grid_gpu<dim, Point_test<float> > c3(szz);
+	c3.template setMemory<CudaMemory>();
+	test_layout_gridNd<dim>(c3,sz);}
+
+	{grid_gpu<dim, Point_test<float> > c3(szz);
+	c3.template setMemory<CudaMemory>();
+	test_layout_gridObjNd<dim>(c3,sz);}
+
+#endif
 
 	{grid_cpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory<HeapMemory>();
 	test_layout_gridObjNd<dim>(c3,sz);}
 
 	{grid_cpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory<CudaMemory>();
-	test_layout_gridObjNd<dim>(c3,sz);}
-
-	{grid_cpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory<HeapMemory>();
-	test_layout_gridNd<dim>(c3,sz);}
-
-	{grid_gpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory<CudaMemory>();
 	test_layout_gridNd<dim>(c3,sz);}
 
 	{grid_gpu<dim, Point_test<float> > c3(szz);
@@ -51,10 +59,6 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 
 	{grid_gpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory<HeapMemory>();
-	test_layout_gridObjNd<dim>(c3,sz);}
-
-	{grid_gpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory<CudaMemory>();
 	test_layout_gridObjNd<dim>(c3,sz);}
 }
 
@@ -551,19 +555,23 @@ BOOST_AUTO_TEST_CASE( grid_use)
 		sz.push_back(i);
 		sz.push_back(i);
 
+#ifdef CUDA_GPU
+
 		{grid_gpu<3, Point_test<float> > c3(sz);
 		c3.setMemory<CudaMemory>();
 		test_layout_grid3d(c3,i);}
+
+		{grid_cpu<3, Point_test<float> > c3(sz);
+		c3.setMemory<CudaMemory>();
+		test_layout_grid3d(c3,i);}
+
+#endif
 
 		{grid_gpu<3, Point_test<float> > c3(sz);
 		c3.setMemory<HeapMemory>();
 		test_layout_grid3d(c3,i);}
 
 		// Test the 3d cpu grid with Cudamemory and HeapMemory
-
-		{grid_cpu<3, Point_test<float> > c3(sz);
-		c3.setMemory<CudaMemory>();
-		test_layout_grid3d(c3,i);}
 
 		{grid_cpu<3, Point_test<float> > c3(sz);
 		c3.setMemory<HeapMemory>();

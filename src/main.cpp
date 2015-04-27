@@ -1,6 +1,6 @@
 #define BOOST_DISABLE_ASSERTS
 
-
+#include "config.h"
 #define BOOST_TEST_MODULE "C++ test module for OpenFPM_data project"
 #include <boost/test/included/unit_test.hpp>
 
@@ -8,7 +8,9 @@
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
 #include <ct_array.hpp>
+#ifdef CUDA_GPU
 #include "memory/CudaMemory.cuh"
+#endif
 #include "memory/HeapMemory.hpp"
 #include "memory_conf.hpp"
 #include "Grid/map_grid.hpp"

@@ -49,7 +49,7 @@ if test x"$debuger" = x"yes"; then
 	CXXFLAGS="$CXXFLAGS -g3  -Wall -O0 "
 	NVCCFLAGS+="$NVCCFLAGS -g -O0 "
 else
-	CXXFLAGS="$CXXFLAGS -Wall -O3 -g3 -flto -funroll-loops "
+	CXXFLAGS="$CXXFLAGS -Wall -O3 -g3 -funroll-loops "
 	NVCCFLAGS+="$NVCCFLAGS -O3 "
 fi
 
@@ -93,7 +93,7 @@ if test x"$NVCC_EXIST" = x"yes"; then
 
   AC_MSG_RESULT($gpu_support)
   if test x"$gpu_support" = x"yes"; then
-        AC_DEFINE([GPU],[],[GPU support])
+        AC_DEFINE([CUDA_GPU],[],[CUDA GPU support])
   fi
 else
   gpu_support=no
@@ -104,7 +104,7 @@ fi
 
 #
 
-AM_CONDITIONAL(BUILDCUDA, test ! x$NVCC = x"no")
+AM_CONDITIONAL(BUILDCUDA, test x$gpu_support = x"yes")
 
 ###########################
 

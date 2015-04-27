@@ -16,7 +16,7 @@ git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_devices.git OpenFPM_devices
 cd "$1/OpenFPM_data"
 
 sh ./autogen.sh
-sh ./configure
+sh ./configure --disable-gpu
 make
 
 ./src/mem_map
