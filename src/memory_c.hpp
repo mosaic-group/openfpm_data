@@ -378,7 +378,7 @@ class memory_c<multi_array<T>, D>
 	//! set the device memory interface, the object that allocate memory
 	void set_mem(memory & mem)
 	{
-		mem = &mem;
+		this->mem = &mem;
 	}
 };
 

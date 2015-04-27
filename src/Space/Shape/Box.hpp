@@ -80,7 +80,7 @@ public:
 		distance dist;
 
 		// Get the nearest point of the box from the center of the sphere
-		typename distance::ResultType distance = 0;
+		typename distance::ResultType distance_r = 0;
 
 		for (int i = 0 ; i < dim ; i++)
 		{
@@ -91,17 +91,17 @@ public:
 			if (boost::fusion::at_c<p1>(data)[i] < sphere.center(i))
 			{
 				// accumulate the distance from p1
-				distance += dist.accum_dist(sphere.center(i),boost::fusion::at_c<p1>(data)[i],i);
+				distance_r += dist.accum_dist(sphere.center(i),boost::fusion::at_c<p1>(data)[i],i);
 			}
 			else if ( boost::fusion::at_c<p2>(data)[i] <= sphere.center(i))
 			{
 				// accumulate the distance from p2
-				distance += dist.accum_dist(sphere.center(i),boost::fusion::at_c<p2>(data)[i],i);
+				distance_r += dist.accum_dist(sphere.center(i),boost::fusion::at_c<p2>(data)[i],i);
 			}
 		}
 
 		// return if there is intersection
-		return distance < sphere.radius();
+		return distance_r < sphere.radius();
 	}
 
 	/*! \brief Get the coordinate of the bounding point
