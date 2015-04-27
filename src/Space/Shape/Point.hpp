@@ -173,6 +173,18 @@ template<unsigned int dim ,typename T> class Point
 		return result;
 	}
 
+	/*! \brief Set to zero the point coordinate
+	 *
+	 *
+	 */
+	void zero()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			get(i) = 0;
+		}
+	}
+
 	/*! \brief Point constructor from point
 	 *
 	 * \param p the point

@@ -36,7 +36,6 @@
 #
 AC_DEFUN([AX_CUDA],
 [AC_REQUIRE([AC_CANONICAL_HOST])dnl
-AC_REQUIRE([AC_PATH_PROG])dnl
 
 # Search nvcc compiler
 AC_CHECK_PROG([NVCC_EXIST],[nvcc],["yes"],["no"])

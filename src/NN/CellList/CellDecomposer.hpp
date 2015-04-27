@@ -126,6 +126,7 @@ public:
 	{
 		this->box = box;
 		this->gr_cell.setDimensions(div);
+		Initialize();
 	}
 
 	/*! \brief Set the domain to decompose

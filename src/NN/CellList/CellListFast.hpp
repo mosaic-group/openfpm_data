@@ -115,23 +115,32 @@ public:
 	// Object type that the structure store
 	typedef T value_type;
 
-	/*! \brief Default constructor
-	 *
-	 */
-	CellList()
-	{
-	}
-
-	/*! \brief Cell list
+	/*! Initialize the cell list
 	 *
 	 * \param box Domain where this cell list is living
 	 * \param origin of the Cell list
 	 * \param div grid size on each dimension
 	 *
 	 */
-	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
-	:CellDecomposer_sm<dim,T>(box,div),slot(slot),orig(orig)
+	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
 	{
+		SpaceBox<dim,T> sbox;
+		Initialize(sbox,div,orig,slot);
+	}
+
+	/*! Initialize the cell list
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param origin of the Cell list
+	 * \param div grid size on each dimension
+	 *
+	 */
+	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
+	{
+		CellDecomposer_sm<dim,T>::setDimensions(box,div);
+		this->slot = slot;
+		this->orig = orig;
+
 		// create the array that store the number of particle on each cell and se it to 0
 
 		cl_n.resize(this->tot_n_cell);
@@ -202,6 +211,39 @@ public:
 			++gr_sub2;
 			i++;
 		}
+	}
+
+	/*! \brief Default constructor
+	 *
+	 */
+	CellList()
+	{
+	}
+
+
+	/*! \brief Cell list
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param origin of the Cell list
+	 * \param div grid size on each dimension
+	 *
+	 */
+	CellList(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
+	{
+		SpaceBox<dim,T> sbox(box);
+		Initialize(sbox,div,orig,slot);
+	}
+
+	/*! \brief Cell list
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param origin of the Cell list
+	 * \param div grid size on each dimension
+	 *
+	 */
+	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
+	{
+		Initialize(box,div,orig,slot);
 	}
 
 	/*! \brief Add an element in the cell list
