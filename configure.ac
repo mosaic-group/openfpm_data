@@ -118,7 +118,6 @@ AC_SUBST(INCLUDES_PATH)
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT
 echo ""
-echo ""
 echo   "***********************************"
 echo   "*                                 *"
 if [ test x"$profiler" = x"yes" ]; then
