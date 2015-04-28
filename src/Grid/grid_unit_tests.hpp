@@ -4,6 +4,7 @@
 #include "map_grid.hpp"
 #include "Point_test.hpp"
 #include "Space/Shape/HyperCube.hpp"
+#include "timer.hpp"
 
 #define GS_SIZE 128
 
@@ -73,9 +74,8 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 
 	typedef Point_test<float> P;
 
-	timespec ts_start;
-	// clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
-	clock_gettime(CLOCK_REALTIME, &ts_start); // Works on Linux
+	timer t;
+	t.start();
 
 	grid_key_dx<3> kk;
 
@@ -112,11 +112,9 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 	}
 
 #ifdef VERBOSE_TEST
-	timespec end_time;
-	clock_gettime(CLOCK_REALTIME, &end_time); // Works on Linux
-	float time_dif =(float)( end_time.tv_sec - ts_start.tv_sec  + (double)(end_time.tv_nsec - ts_start.tv_nsec)/1000000000.0 );
+	t.stop();
 
-	std::cout << "End : " << sz*sz*sz*16*4 << " Byte " << "  Bandwidth: " << sz*sz*sz*16*4/1024/1024/time_dif << " MB/s  ";
+	std::cout << "End : " << sz*sz*sz*16*4 << " Byte " << "  Bandwidth: " << sz*sz*sz*16*4/1024/1024/t.getwct() << " MB/s  ";
 #endif
 
 	/////////////////////////////////// MEM CHECK ////////////////////////////////////////////////////////
@@ -191,9 +189,8 @@ template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t
 #ifdef VERBOSE_TEST
 	std::cout << dim << "D Array with grid_key (without redundant dimension): " << "\n";
 
-	timespec ts_start;
-	// clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
-	clock_gettime(CLOCK_REALTIME, &ts_start); // Works on Linux
+	timer t;
+	t.start();
 #endif
 
 	typedef Point_test<float> P;
@@ -231,11 +228,9 @@ template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t
 
 
 #ifdef VERBOSE_TEST
-	timespec end_time;
-	clock_gettime(CLOCK_REALTIME, &end_time); // Works on Linux
-	float time_dif =(float)( end_time.tv_sec - ts_start.tv_sec  + (double)(end_time.tv_nsec - ts_start.tv_nsec)/1000000000.0 );
+	t.stop();
 
-	std::cout << "End : " << pow(sz,dim)*16*4/1024/1024 << " MB " << "  Bandwidth: " << pow(sz,dim)*16*4/1024/1024/time_dif << " MB/s  " << "\n";
+	std::cout << "End : " << pow(sz,dim)*16*4/1024/1024 << " MB " << "  Bandwidth: " << pow(sz,dim)*16*4/1024/1024/t.getect() << " MB/s  " << "\n";
 #endif
 
 	/////////////////////////////////// MEM CHECK ////////////////////////////////////////////////////////
@@ -307,9 +302,8 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 #ifdef VERBOSE_TEST
 	std::cout << dim << "D Array with grid_key (without redundant dimension): " << "\n";
 
-	timespec ts_start;
-	// clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
-	clock_gettime(CLOCK_REALTIME, &ts_start); // Works on Linux
+	timer t;
+	t.start();
 #endif
 
 	typedef Point_test<float> P;
@@ -345,11 +339,9 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 
 
 #ifdef VERBOSE_TEST
-	timespec end_time;
-	clock_gettime(CLOCK_REALTIME, &end_time); // Works on Linux
-	float time_dif =(float)( end_time.tv_sec - ts_start.tv_sec  + (double)(end_time.tv_nsec - ts_start.tv_nsec)/1000000000.0 );
+	t.stop();
 
-	std::cout << "End : " << pow(sz,dim)*16*4/1024/1024 << " MB " << "  Bandwidth: " << pow(sz,dim)*16*4/1024/1024/time_dif << " MB/s  " << "\n";
+	std::cout << "End : " << pow(sz,dim)*16*4/1024/1024 << " MB " << "  Bandwidth: " << pow(sz,dim)*16*4/1024/1024/t.getwct() << " MB/s  " << "\n";
 #endif
 
 	/////////////////////////////////// MEM CHECK ////////////////////////////////////////////////////////
@@ -603,7 +595,8 @@ BOOST_AUTO_TEST_CASE( C_array_test )
 	int gs = GS_SIZE;
 
 #ifdef VERBOSE_TEST
-	clock_t begin_time = clock();
+	timer t;
+	t.start();
 #endif
 
 	for (int i = 0 ; i < GS_SIZE ; i++)
@@ -635,11 +628,9 @@ BOOST_AUTO_TEST_CASE( C_array_test )
 	}
 
 #ifdef VERBOSE_TEST
+	t.stop();
 
-clock_t end_time = clock ();
-float time_dif =(float)( end_time - begin_time ) / (float) CLOCKS_PER_SEC;
-
-std::cout << "End : " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024 << " MB " << "  Bandwidth: " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024/time_dif << " MB/s  \n";
+	std::cout << "End : " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024 << " MB " << "  Bandwidth: " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024/t.getcputime() << " MB/s  \n";
 #endif
 }
 
