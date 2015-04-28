@@ -173,7 +173,7 @@ struct copy_cpu_sd
 	typedef typename S::type::type ov_seq;
 
 	//! constructor
-	copy_cpu_sd(grid_key_dx<dim> & key, const S grid_src, S grid_dst)
+	copy_cpu_sd(grid_key_dx<dim> & key, const S & grid_src, S & grid_dst)
 	:key(key),grid_src(grid_src),grid_dst(grid_dst){};
 
 	//! It call the copy function for each member
