@@ -104,7 +104,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	SpaceBox(Box<dim,T> & b)
+	SpaceBox(const Box<dim,T> & b)
 	{
 		// for each dimension set high and low
 
@@ -122,6 +122,23 @@ class SpaceBox : public Box<dim,T>
 	 */
 
 	template<unsigned int dim_s,typename Mem, typename S>SpaceBox(const encapc<dim_s,Box<dim,S>,Mem> & box)
+	{
+		// for each dimension set high and low
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,box.template get<Box<dim,S>::p1>()[d]);}
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,box.template get<Box<dim,S>::p2>()[d]);}
+	}
+
+	/*! \brief Constructor from a Box
+	 *
+	 * \param Box
+	 *
+	 */
+
+	template<unsigned int dim_s,typename Mem, typename S>SpaceBox(const encapc<dim_s,SpaceBox<dim,S>,Mem> & box)
 	{
 		// for each dimension set high and low
 

@@ -393,7 +393,7 @@ namespace openfpm
 		 *          reallocation, work only on cpu
 		 *
 		 */
-		void add(T & v)
+		void add(const T & v)
 		{
 			//! Check if we have enough space
 
@@ -424,7 +424,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		void add(typename grid_cpu<1,T>::container & v)
+		void add(const typename grid_cpu<1,T>::container & v)
 		{
 			//! Check if we have enough space
 

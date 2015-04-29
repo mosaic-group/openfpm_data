@@ -116,7 +116,7 @@ struct copy_cpu
 	typedef typename S::type::type ov_seq;
 
 	//! object we have to store
-	obj_type & obj;
+	const obj_type & obj;
 
 	/*! \brief constructor
 	 *
@@ -127,7 +127,7 @@ struct copy_cpu
 	 * \param obj object we have to set in grid_src
 	 *
 	 */
-	copy_cpu(grid_key_dx<dim> & key, S & grid_dst, obj_type & obj)
+	copy_cpu(grid_key_dx<dim> & key, S & grid_dst, const obj_type & obj)
 	:key(key),grid_dst(grid_dst),obj(obj){};
 
 	//! It call the copy function for each property
@@ -759,7 +759,7 @@ class grid_cpu
 		 *
 		 */
 
-		inline void set(grid_key_dx<dim> dx, T & obj)
+		inline void set(grid_key_dx<dim> dx, const T & obj)
 		{
 #ifdef DEBUG
 			// Check that the element exist
@@ -1017,7 +1017,7 @@ public:
 	 */
 	inline encapg<dim,T,Mem> get_o(grid_key_dx<dim> & v1)
 	{
-		return encapg<dim,T,Mem>(data,v1,g1);
+		return encapg<dim,T,Mem>(data,g1.LinId(v1));
 	}
 
 	inline size_t size()

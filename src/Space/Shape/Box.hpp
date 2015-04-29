@@ -5,6 +5,7 @@
 #include "Space/Shape/Sphere.hpp"
 #include <boost/fusion/sequence/intrinsic/at_c.hpp>
 #include "Grid/grid_key.hpp"
+#include "Grid/Encap.hpp"
 
 /*! \brief It define if we want the upper base or the down base (Lower or upper)
  * extreme of the interval
@@ -47,6 +48,53 @@ public:
 	static const unsigned int p2 = 1;
 	//! Maximum number of properties
 	static const unsigned int max_prop = 2;
+
+	/*! \brief Intersect
+	 *
+	 * Intersect two boxes and return the result boxes, if the boxes does not intersect, return false
+	 *
+	 * \param b box to intersect with
+	 * \param b_out box result of the intersection
+	 *
+	 * \return true if they intersect
+	 *
+	 */
+	bool Intersect(const Box<dim,T> & b, Box<dim,T> & b_out)
+	{
+		// check if p1 of b is smaller than
+
+		for (size_t i ; i < dim ; i++)
+		{
+			if (getLow(i) < b.getLow(i))
+			{
+				b_out.setLow(i,b.getLow(i));
+			}
+			else if (getLow(i) < b.getHigh(i))
+			{
+				b_out.setLow(i,getLow(i));
+			}
+			else
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/*! \brief Intersect
+	 *
+	 * Intersect two boxes and return the result boxes, if the boxes does not intersect, return false
+	 *
+	 * \param e_b encapsulator box to intersect with
+	 * \param b_out box result of the intersection
+	 *
+	 * \return true if they intersect
+	 *
+	 */
+	template<typename Mem> bool Intersect(const encapc<1,Box<dim,T>,Mem> & e_b, Box<dim,T> & b_out)
+	{
+		return Intersect(e_b,b_out);
+	}
 
 	/*!
 	 *
