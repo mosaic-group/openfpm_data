@@ -51,6 +51,16 @@ protected:
 
 public:
 
+	/*! \brief Return the underlying grid information of the cell list
+	 *
+	 * \return the grid infos
+	 *
+	 */
+	grid_sm<dim,void> & getGrid()
+	{
+		return gr_cell;
+	}
+
 	/*! \brief Get the cell-id
 	 *
 	 * Convert the point coordinates into the cell id

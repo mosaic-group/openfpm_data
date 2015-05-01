@@ -63,7 +63,7 @@ public:
 	{
 		// check if p1 of b is smaller than
 
-		for (size_t i ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (getLow(i) < b.getLow(i))
 			{
@@ -310,6 +310,23 @@ public:
 		{
 			boost::fusion::at_c<p1>(data)[i] = boost::fusion::at_c<p1>(box_data)[i];
 			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(box_data)[i];
+		}
+	}
+
+	/*! \brief Box constructor from ecapsulated box
+	 *
+	 * \param box_data fusion vector from which to construct the vector
+	 *
+	 */
+
+	template<typename Mem> Box(const encapc<1,Box<dim,T>,Mem> & b)
+	{
+		// we copy the data
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			boost::fusion::at_c<p1>(data)[i] = b.template get<p1>()[i];
+			boost::fusion::at_c<p2>(data)[i] = b.template get<p2>()[i];
 		}
 	}
 

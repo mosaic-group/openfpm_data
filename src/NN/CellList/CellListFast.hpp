@@ -115,6 +115,16 @@ public:
 	// Object type that the structure store
 	typedef T value_type;
 
+	/*! \brief Return the underlying grid information of the cell list
+	 *
+	 * \return the grid infos
+	 *
+	 */
+	grid_sm<dim,void> & getGrid()
+	{
+		CellDecomposer_sm<dim,T>::getGrid();
+	}
+
 	/*! Initialize the cell list
 	 *
 	 * \param box Domain where this cell list is living
@@ -246,18 +256,15 @@ public:
 		Initialize(box,div,orig,slot);
 	}
 
-	/*! \brief Add an element in the cell list
+
+	/*! \brief Add to the cell
 	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
+	 * \param cell_id Cell id where to add
+	 * \param ele element to add
 	 *
 	 */
-	void add(const T (& pos)[dim], typename base::value_type ele)
+	inline void addCell(size_t cell_id, typename base::value_type ele)
 	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCell(pos);
-
 		// Get the number of element the cell is storing
 
 		size_t nl = getNelements(cell_id);
@@ -279,25 +286,32 @@ public:
 	 * \param ele element to store
 	 *
 	 */
-	void add(const Point<dim,T> & pos, typename base::value_type ele)
+	inline void add(const T (& pos)[dim], typename base::value_type ele)
 	{
 		// calculate the Cell id
 
 		size_t cell_id = this->getCell(pos);
 
-		// Get the number of element the cell is storing
+		// add the element to the cell
 
-		size_t nl = getNelements(cell_id);
+		addCell(cell_id,ele);
+	}
 
-		if (nl + 1 >= slot)
-		{
-			realloc();
-		}
+	/*! \brief Add an element in the cell list
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void add(const Point<dim,T> & pos, typename base::value_type ele)
+	{
+		// calculate the Cell id
 
-		// we have enough slot to store another neighbor element
+		size_t cell_id = this->getCell(pos);
 
-		cl_base.get(slot * cell_id + cl_n.get(cell_id)) = ele;
-		cl_n.get(cell_id)++;
+		// add the element to the cell
+
+		addCell(cell_id,ele);
 	}
 
 	/*! \brief remove an element from the cell
@@ -306,7 +320,7 @@ public:
 	 * \param ele element id
 	 *
 	 */
-	void remove(size_t cell, size_t ele)
+	inline void remove(size_t cell, size_t ele)
 	{
 		cl_n.get(cell)--;
 	}
@@ -318,7 +332,7 @@ public:
 	 * \return number of elements in the cell
 	 *
 	 */
-	size_t getNelements(size_t cell_id)
+	inline size_t getNelements(size_t cell_id)
 	{
 		return cl_n.get(cell_id);
 	}
@@ -333,7 +347,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele))
+	inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele))
 	{
 		return cl_base.get(cell * slot + ele);
 	}
@@ -348,7 +362,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	template<unsigned int i> auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele))
+	template<unsigned int i> inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele))
 	{
 		return cl_base.template get<i>(cell * slot + ele);
 	}
@@ -358,7 +372,7 @@ public:
 	 * \param cl Cell list with witch you swap the memory
 	 *
 	 */
-	void swap(CellList<dim,T,FAST,base> & cl)
+	inline void swap(CellList<dim,T,FAST,base> & cl)
 	{
 		cl_n.swap(cl.cl_n);
 		cl_base.swap(cl.cl_base);
@@ -369,21 +383,21 @@ public:
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,FAST,base>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,base>,FULL,impl> getNNIterator(size_t cell)
 	{
 		CellNNIterator<dim,CellList<dim,T,FAST,base>,FULL,impl> cln(cell,NNc_full,*this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,FAST,base>,SYM,impl> getNNIteratorSym(size_t cell)
+	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,base>,SYM,impl> getNNIteratorSym(size_t cell)
 	{
 		CellNNIterator<dim,CellList<dim,T,FAST,base>,SYM,impl> cln(cell,NNc_sym,*this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,FAST,base>,CRS,impl> getNNIteratorCross(size_t cell)
+	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,base>,CRS,impl> getNNIteratorCross(size_t cell)
 	{
 		CellNNIterator<dim,CellList<dim,T,FAST,base>,CRS,impl> cln(cell,NNc_cr,*this);
 

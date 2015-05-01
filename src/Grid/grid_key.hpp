@@ -36,8 +36,21 @@ public:
 	grid_key_dx()
 	{}
 
+	//! Constructor from an other key
+	grid_key_dx(const grid_key_dx<dim> & key)
+	:grid_key_dx(key.k)
+	{
+	}
+
 	//! Constructor from buffer reference
 	grid_key_dx(const size_t (&k)[dim])
+	{
+		for (int i = 0 ; i < dim ; i++)
+			this->k[i] = k[i];
+	}
+
+	//! Constructor from buffer reference
+	grid_key_dx(const long int (&k)[dim])
 	{
 		for (int i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
