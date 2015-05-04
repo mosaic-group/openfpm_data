@@ -17,7 +17,7 @@ m4_ifdef([ACX_MPI],,[m4_include([m4/acx_mpi.m4])])
 m4_ifdef([AX_OPENMP],,[m4_include([m4/ax_openmp.m4])])
 m4_ifdef([AX_CUDA],,[m4_include([m4/ax_cuda.m4])])
 
-CXXFLAGS+=" --std=c++11 -march=native -mtune=native "
+CXXFLAGS+=" --std=c++11 -march=native -mtune=native -Wno-signed-compare -Wno-unused-local-typedefs "
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
