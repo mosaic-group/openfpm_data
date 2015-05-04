@@ -117,14 +117,14 @@ struct is_typedef_and_data_same<false,T>
  *
  */
 
-template<unsigned int N, typename v>
+/*template<unsigned int N, typename v>
 struct el_size
 {
 	//! total_size
 	size_t total_size;
 
 	//! List of properties
-	const size_t (& prp)[N];
+	const size_t (& prp)[N];*/
 
 	/*! \brief constructor
 	 *
@@ -135,7 +135,7 @@ struct el_size
 	 * \param obj object we have to set in grid_src
 	 *
 	 */
-	el_size(const size_t (& prp)[N])
+/*	el_size(const size_t (& prp)[N])
 	:total_size(0),prp(prp)
 	{};
 
@@ -143,20 +143,20 @@ struct el_size
     template<typename T>
     void operator()(T& t) const
     {
-    	total_size += boost::fusion::result_of::at< v,boost::mpl::int_<prp[T::value]> >::type;
+//    	total_size += boost::fusion::result_of::at< v,boost::mpl::int_<prp[T::value]> >::type;
     }
 
     size_t size()
     {return total_size;}
-};
+};*/
 
-template<unsigned int N,typename v> size_t ele_size(const size_t (& prp)[N])
+/*template<unsigned int N,typename v> size_t ele_size(const size_t (& prp)[N])
 {
 	el_size<N,v> sz(prp);
 
 	boost::mpl::for_each_ref< boost::mpl::range_c<int,0,N> >(sz);
 
 	return sz.size();
-}
+}*/
 
 #endif
