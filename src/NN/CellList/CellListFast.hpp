@@ -46,9 +46,9 @@
  *
  * \warning Not not use for high asymmetric distribution
  *
- * \tparam dim Dimansionality of the space
+ * \tparam dim Dimensionality of the space
  * \tparam T type of the space float, double, complex
- * \tparam base Base structure that store the information
+ * \tparam base basic object
  *
  */
 template<unsigned int dim, typename T, typename base>
@@ -257,7 +257,7 @@ public:
 	}
 
 
-	/*! \brief Add to the cell
+	/*! \brief Add to the cell an element
 	 *
 	 * \param cell_id Cell id where to add
 	 * \param ele element to add
@@ -338,8 +338,6 @@ public:
 	}
 
 	/*! \brief Get an element in the cell
-	 *
-	 * \tparam i property to get
 	 *
 	 * \param cell cell id
 	 * \param ele element id

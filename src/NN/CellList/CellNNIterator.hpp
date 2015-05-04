@@ -86,9 +86,9 @@ public:
 		return *this;
 	}
 
-	/*! \brief Get the value of the cell
+	/*! \brief Get the actual element
 	 *
-	 * \return  the next element object
+	 * \return  the actual element
 	 *
 	 */
 	typename Cell::value_type & get()

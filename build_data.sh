@@ -2,8 +2,8 @@
 
 # Make a directory in /tmp/OpenFPM_data
 
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda-6.5/lib64"
-export PATH="$PATH:/usr/local/cuda-6.5/bin"
+#export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda-6.5/lib64"
+#export PATH="$PATH:/usr/local/cuda-6.5/bin"
 
 mkdir /tmp/openfpm_data
 mv * .[^.]* /tmp/openfpm_data
