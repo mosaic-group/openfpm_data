@@ -297,6 +297,20 @@ namespace openfpm
 			return tmp;
 		}
 
+		/*! \brief If the argument is zero return 1 otherwise return the argument
+		 *
+		 * \param sz[1] output
+		 * \param argument
+		 *
+		 */
+		void non_zero_one(size_t sz[1], size_t arg)
+		{
+			if (arg == 0)
+			{sz[0] = 1;}
+			else
+			{sz[0] = 2*arg;}
+		}
+
 	public:
 
 		//! iterator for the vector
@@ -377,7 +391,8 @@ namespace openfpm
 			if (v_size >= base.size())
 			{
 				//! Resize the memory, double up the actual memory allocated for the vector
-				size_t sz[1] = {2*base.size()};
+				size_t sz[1];
+				non_zero_one(sz,2*base.size());
 				base.template resize<Memory>(sz);
 			}
 
@@ -401,10 +416,7 @@ namespace openfpm
 			{
 				//! Resize the memory, double up the actual memory allocated for the vector
 				size_t sz[1];
-				if (base.size() == 0)
-				{sz[0] = 1;}
-				else
-				{sz[0] = 2*base.size();}
+				non_zero_one(sz,2*base.size());
 				base.template resize<Memory>(sz);
 			}
 
@@ -431,7 +443,8 @@ namespace openfpm
 			if (v_size >= base.size())
 			{
 				//! Resize the memory, double up the actual memory allocated for the vector
-				size_t sz[1] = {2*base.size()};
+				size_t sz[1];
+				non_zero_one(sz,2*base.size());
 				base.template resize<Memory>(sz);
 			}
 
