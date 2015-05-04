@@ -176,7 +176,7 @@ template<>
 struct comb<0>
 {
 	//! FIX
-	char c[1];
+	char c[0];
 
 	/*! \brief check if it is a valid combination
 	 *
