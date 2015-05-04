@@ -168,7 +168,6 @@ struct comb
 
 /*! brief specialization of comb in case of dim 0
  *
- * It seem that GCC 4.9.2 is not able to handle structure with size 0
  *
  */
 
