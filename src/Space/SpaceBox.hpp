@@ -177,6 +177,32 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
+	void rescale(float (& sp)[dim])
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,this->getLow(d) + (this->getHigh(d) -this->getLow(d)) * sp[d]);}
+	}
+
+	/*! \brief Re-scale the space box with the coefficient defined in sp
+	 *
+	 * \param sp
+	 *
+	 */
+
+	void rescale(size_t (& sp)[dim])
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,this->getLow(d) + (this->getHigh(d) -this->getLow(d)) * sp[d]);}
+	}
+
+	/*! \brief multiply the space box with the coefficient defined in sp
+	 *
+	 * It rescale the domain where the space box live
+	 *
+	 * \param sp coefficents
+	 *
+	 */
+
 	void mul(float (& sp)[dim])
 	{
 		for (int i = 0  ; i < dim ; i++)
@@ -189,9 +215,11 @@ class SpaceBox : public Box<dim,T>
 		}
 	}
 
-	/*! \brief Re-scale the space box with the coefficient defined in sp
+	/*! \brief multiply the space box with the coefficient defined in sp
 	 *
-	 * \param sp
+	 * It rescale the domain where the space box live
+	 *
+	 * \param sp coefficents
 	 *
 	 */
 
@@ -202,33 +230,6 @@ class SpaceBox : public Box<dim,T>
 
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setHigh(d,this->getHigh(d) * sp[d]);}
-	}
-
-	/*! \brief Re-scale the space box with the spacing defined in sp
-	 *
-	 * \param sp spacing
-	 * \param s_sp sub-domain size
-	 *
-	 */
-
-	void spacing(float (& sp)[dim])
-	{
-		mul(sp);
-	}
-
-	/*! \brief Re-scale the space box with the spacing defined in sp
-	 *
-	 * \param sp spacing
-	 *
-	 */
-
-	void spacing(size_t (& sp)[dim])
-	{
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setLow(d,this->getLow(d) * sp[d]);}
-
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,((this->getHigh(d)+1) * sp[d])-1);}
 	}
 
 	//! Default constructor

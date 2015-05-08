@@ -461,6 +461,19 @@ public:
 
 		return ret;
 	}
+
+	/* \brief expand expand the box by a vector
+	 *
+	 * \param vector
+	 *
+	 */
+	inline void expand(T (& exp)[dim])
+	{
+		for (int i = 0 ; i < dim ; i++)
+		{
+			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(data)[i] + exp[i];
+		}
+	}
 };
 
 #endif

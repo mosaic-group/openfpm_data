@@ -19,6 +19,8 @@
 
 // Include tests
 
+#include "Space/SpaceBox_unit_tests.hpp"
+#include "Space/Shape/Box_unit_tests.hpp"
 #include "NN/CellList/CellList_test.hpp"
 #include "Vector/vector_unit_tests.hpp"
 #include "hypercube_unit_test.hpp"
