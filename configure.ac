@@ -9,10 +9,7 @@ AC_CONFIG_SRCDIR([src/main.cpp])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([src/config/config.h])
 m4_ifdef([ACX_PTHREAD],,[m4_include([m4/acx_pthread.m4])])
-m4_ifdef([AX_CHECK_CL],,[m4_include([m4/ax_opencl.m4])])
-m4_ifdef([AX_BOOST_BASE],,[m4_include([m4/ax_boost_base.m4])])
-m4_ifdef([AX_BOOST_PROGRAM_OPTIONS],,[m4_include([m4/ax_boost_program_options.m4])])
-m4_ifdef([AX_BOOST_THREAD],,[m4_include([m4/ax_boost_thread.m4])])
+m4_ifdef([AX_BOOST],,[m4_include([m4/ax_boost.m4])])
 m4_ifdef([ACX_MPI],,[m4_include([m4/acx_mpi.m4])])
 m4_ifdef([AX_OPENMP],,[m4_include([m4/ax_openmp.m4])])
 m4_ifdef([AX_CUDA],,[m4_include([m4/ax_cuda.m4])])
@@ -53,6 +50,10 @@ else
 	NVCCFLAGS+="$NVCCFLAGS -O3 "
 fi
 
+####### include OpenFPM_devices include path
+
+INCLUDES_PATH+="-I. -Iconfig -I../../OpenFPM_devices/src"
+
 ###### Check for memleak check compilation
 
 AC_MSG_CHECKING(whether to build with memory check)
@@ -72,9 +73,9 @@ if test x"$mem_check" = x"yes"; then
 	AC_DEFINE([MEMLEAK_CHECK],[],[Memory check])
 fi
 
-####### include OpenFPM_devices include path
+##### CHECK FOR BOOST ##############
 
-INCLUDES_PATH+="-I. -Iconfig -I../../OpenFPM_devices/src"
+AX_BOOST([1.52],[],[])
 
 ####### Checking for GPU support
 
@@ -106,7 +107,11 @@ fi
 
 AM_CONDITIONAL(BUILDCUDA, test x$gpu_support = x"yes")
 
-###########################
+##### CHECK FOR BOOST ###
+
+AX_BOOST([1.52],[],[])
+
+##########################
 
 AC_SUBST(NVCCFLAGS)
 AC_SUBST(INCLUDES_PATH)

@@ -308,7 +308,7 @@ namespace openfpm
 			if (arg == 0)
 			{sz[0] = 1;}
 			else
-			{sz[0] = 2*arg;}
+			{sz[0] = arg;}
 		}
 
 	public:

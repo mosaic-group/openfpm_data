@@ -96,7 +96,7 @@ class memory_c
 	    mem->resize( sz*sizeof(T) );
 
 	    //! we create the representation for this buffer
-	    mem_r = new memory_array<T>(mem->getPointer(),sz);
+	    mem_r = new memory_array<T>(mem->getPointer(),sz,mem->isInitialized());
 
 	    return true;
 	}

@@ -185,6 +185,24 @@ template<unsigned int dim ,typename T> class Point
 		}
 	}
 
+	/*! \brief Return the string with the point coordinate
+	 *
+	 * \return the string
+	 *
+	 */
+	std::string toString()
+	{
+		std::string str;
+
+		for (size_t i = 0 ; i < dim - 1 ; i++)
+		{
+			str += std::to_string(get(i)) + " ";
+		}
+		str += std::to_string(get(dim-1));
+
+		return str;
+	}
+
 	/*! \brief Point constructor from point
 	 *
 	 * \param p the point

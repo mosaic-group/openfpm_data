@@ -710,7 +710,7 @@ public:
 	 *
 	 */
 
-	inline void addVertex(V & vrt)
+	inline void addVertex(const V & vrt)
 	{
 		v.add(vrt);
 

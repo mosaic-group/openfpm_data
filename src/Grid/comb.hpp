@@ -288,4 +288,39 @@ struct comb<0>
 
 };
 
+// create a specialization of std::vector<comb<0>>
+
+namespace std
+{
+	// On compiler previous 4.9.2 the code compile, and provide trivial functionality,
+    // (complex operations produce crash at runtime)
+	//
+	// On 4.9.2 does not even compile
+    // So we create a particular case that pass compilation give basic functionality, and
+    // crash in case of complex usage
+    //
+    //
+
+	template<>
+	class vector<comb<0>>
+	{
+		comb<0> * ptr;
+
+	public:
+		size_t size()
+		{
+			return 0;
+		}
+
+		comb<0> & operator[](size_t i)
+		{
+			return ptr[i];
+		}
+
+		void push_back(comb<0> & obj)
+		{
+		}
+	};
+}
+
 #endif

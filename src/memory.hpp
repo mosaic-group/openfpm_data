@@ -101,6 +101,14 @@ class memory
 	 */
 	virtual long int ref() = 0;
 
+	/*! \brief Return if the actual memory that is going to be allocated is already initialized
+	 *
+	 * \return true if already initialized
+	 *
+	 */
+	virtual bool isInitialized() = 0;
+
+
 };
 
 #endif

@@ -34,6 +34,8 @@ public:
 
 	//! boost fusion that store the point
 	typedef boost::fusion::vector<T[dim],T[dim]> type;
+	//! type of the box
+	typedef T btype;
 	//! layout that interleave the properties
 	typedef typename memory_traits_inte<type>::type memory_int;
 	//! layout with linear properties
@@ -48,6 +50,8 @@ public:
 	static const unsigned int p2 = 1;
 	//! Maximum number of properties
 	static const unsigned int max_prop = 2;
+
+	static const unsigned int dims = dim;
 
 	/*! \brief Intersect
 	 *

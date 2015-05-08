@@ -55,13 +55,20 @@ class memory_array
 	//! Default constructor
 	memory_array()	{};
 
-	//! Constructor
-	memory_array(void * ptr, size_t sz)
+	/*! \brief Memory array constructor
+	 *
+	 * \param ptr Memory pointer
+	 * \param sz size
+	 * \param init specify if the pointer is initialized
+	 *
+	 */
+	memory_array(void * ptr, size_t sz, bool init)
 	: ptr(static_cast<T *>(ptr))
 	{
 		// Initialize the constructors
-//		new (ptr)T[sz];
 
+		if (init == false)
+			new (ptr)T[sz];
 	};
 };
 
