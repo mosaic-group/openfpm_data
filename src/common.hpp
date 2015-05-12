@@ -150,13 +150,15 @@ struct el_size
     {return total_size;}
 };*/
 
-template<unsigned int N,typename v> size_t ele_size(const size_t (& prp)[N])
+/*template<unsigned int N,typename v> size_t ele_size(const size_t (& prp)[N])
 {
 	el_size<N,v> sz(prp);
 
 	boost::mpl::for_each_ref< boost::mpl::range_c<int,0,N> >(sz);
 
 	return sz.size();
-}
+}*/
+
+/**/
 
 #endif
