@@ -117,14 +117,14 @@ struct is_typedef_and_data_same<false,T>
  *
  */
 
-template<unsigned int N, typename v>
+/*template<unsigned int N, typename v>
 struct el_size
 {
 	//! total_size
 	size_t total_size;
 
 	//! List of properties
-	const size_t (& prp)[N];
+	const size_t (& prp)[N];*/
 
 	/*! \brief constructor
 	 *
@@ -135,7 +135,7 @@ struct el_size
 	 * \param obj object we have to set in grid_src
 	 *
 	 */
-	el_size(const size_t (& prp)[N])
+/*	el_size(const size_t (& prp)[N])
 	:total_size(0),prp(prp)
 	{};
 
@@ -148,7 +148,7 @@ struct el_size
 
     size_t size()
     {return total_size;}
-};
+};*/
 
 template<unsigned int N,typename v> size_t ele_size(const size_t (& prp)[N])
 {
