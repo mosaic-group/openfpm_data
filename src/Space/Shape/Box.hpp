@@ -502,8 +502,8 @@ public:
 
 		for (size_t j = 0 ; j < dim ; j++)
 		{
-			this->template setLow(j,this->template getBase<g::p1>(j) + gh.template getBase<g::p1>(j));
-			this->template setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j));
+			this->setLow(j,this->template getBase<g::p1>(j) + gh.template getBase<g::p1>(j));
+			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j));
 		}
 	}
 };
