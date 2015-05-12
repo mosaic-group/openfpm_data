@@ -69,18 +69,19 @@ public:
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			if (getLow(i) < b.getLow(i))
-			{
+			if (getLow(i) <= b.getLow(i))
 				b_out.setLow(i,b.getLow(i));
-			}
-			else if (getLow(i) < b.getHigh(i))
-			{
+			else if (getLow(i) <= b.getHigh(i))
 				b_out.setLow(i,getLow(i));
-			}
 			else
-			{
 				return false;
-			}
+
+			if (getHigh(i) >= b.getHigh(i))
+				b_out.setHigh(i,b.getHigh(i));
+			else if (getHigh(i) >= b.getLow(i))
+				b_out.setHigh(i,getHigh(i));
+			else
+				return false;
 		}
 		return true;
 	}
@@ -218,13 +219,7 @@ public:
 
 	Box(std::initializer_list<T> p1, std::initializer_list<T> p2)
 	{
-		size_t i = 0;
-	    for(T x : p1)
-	    {setLow(i,x);i++;}
-
-	    i = 0;
-	    for(T x : p2)
-	    {setHigh(i,x);i++;}
+		set(p1,p2);
 	}
 
 	/*! \brief Box constructor from a box
@@ -235,7 +230,7 @@ public:
 	 * \param low array indicating the coordinates of the high point
 	 *
 	 */
-	Box(T * high, T * low)
+	inline Box(T * high, T * low)
 	{
 		// copy all the data
 
@@ -255,7 +250,7 @@ public:
 	 * \param box from which to construct
 	 *
 	 */
-	Box(const Box<dim,T> & box)
+	inline Box(const Box<dim,T> & box)
 	{
 		// we copy the data
 
@@ -273,7 +268,7 @@ public:
 	 * \param box_data from which to construct
 	 *
 	 */
-	Box(type box_data)
+	inline Box(type box_data)
 	{
 		// we copy the data
 
@@ -289,7 +284,7 @@ public:
 	 * \param array from which to construct the box
 	 *
 	 */
-	Box(T (& box_data)[dim])
+	inline Box(T (& box_data)[dim])
 	{
 		// we copy the data
 
@@ -306,7 +301,7 @@ public:
 	 *
 	 */
 
-	template<unsigned int dimS> Box(boost::fusion::vector<T[dimS],T[dimS]> & box_data)
+	template<unsigned int dimS> inline Box(boost::fusion::vector<T[dimS],T[dimS]> & box_data)
 	{
 		// we copy the data
 
@@ -323,7 +318,7 @@ public:
 	 *
 	 */
 
-	template<typename Mem> Box(const encapc<1,Box<dim,T>,Mem> & b)
+	template<typename Mem> inline Box(const encapc<1,Box<dim,T>,Mem> & b)
 	{
 		// we copy the data
 
@@ -332,6 +327,26 @@ public:
 			boost::fusion::at_c<p1>(data)[i] = b.template get<p1>()[i];
 			boost::fusion::at_c<p2>(data)[i] = b.template get<p2>()[i];
 		}
+	}
+
+	/*! \brief Constructor from initializer list
+	 *
+	 * Constructor from initializer list
+	 *
+	 * \param p1 Low point, initialize as a list example {0.0,0.0,0.0}
+	 * \param p2 High point, initialized as a list example {1.0,1.0,1.0}
+	 *
+	 */
+
+	inline void set(std::initializer_list<T> p1, std::initializer_list<T> p2)
+	{
+		size_t i = 0;
+	    for(T x : p1)
+	    {setLow(i,x);i++;}
+
+	    i = 0;
+	    for(T x : p2)
+	    {setHigh(i,x);i++;}
 	}
 
 	/*! \brief set the low interval of the box
@@ -472,6 +487,23 @@ public:
 		for (int i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(data)[i] + exp[i];
+		}
+	}
+
+	/*! \brief Enlarge the ghost domain
+	 *
+	 * \param the box
+	 * \param gh spacing of the margin to enlarge
+	 *
+	 */
+	void enlarge(Box<dim,T> & gh)
+	{
+		typedef ::Box<dim,T> g;
+
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->template setLow(j,this->template getBase<g::p1>(j) + gh.template getBase<g::p1>(j));
+			this->template setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j));
 		}
 	}
 };

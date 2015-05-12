@@ -211,7 +211,7 @@ public:
 
 	inline void fill(unsigned char fl)
 	{
-		memset(&base[0],0,base.size());
+		memset(&base[0],fl,base.size() * sizeof(T));
 	}
 
 	/*! \brief reserve a memory space in advance to avoid reallocation

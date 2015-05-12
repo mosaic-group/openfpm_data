@@ -583,6 +583,15 @@ class grid_cpu
 			return encapc<dim,T,Mem>(data.mem_r->operator[](g1.LinId(v1)));
 		}
 
+		/*! \brief Fill the memory with the selected byte
+		 *
+		 * \param fl byte pattern to fill
+		 *
+		 */
+		void fill(unsigned char fl)
+		{
+			memset(getPointer(),fl,size() * sizeof(T));
+		}
 
 		/*! \brief Resize the space
 		 *

@@ -184,6 +184,25 @@ struct pre_test
 	openfpm::vector<Point_test<float>,openfpm::device_cpu<Point_test<float>>,PreAllocHeapMemory<2>,openfpm::grow_policy_identity> prp;
 };
 
+BOOST_AUTO_TEST_CASE( vector_std_utility )
+{
+	openfpm::vector<size_t> pb(16);
+
+	// fill pb with garbage
+	for (size_t i = 0 ;  i < 16 ; i++)
+	{
+		pb.get(i) = i+1;
+	}
+
+	pb.fill(0);
+
+	// Check is zero
+	for (size_t i = 0 ;  i < 16 ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(pb.get(i),0);
+	}
+
+}
 
 BOOST_AUTO_TEST_CASE( vector_prealloc )
 {

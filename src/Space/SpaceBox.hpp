@@ -6,6 +6,7 @@
 #include "Shape/Box.hpp"
 #include <boost/fusion/include/vector.hpp>
 #include "Grid/Encap.hpp"
+#include "Ghost.hpp"
 
 /** \brief This class represent an N-dimensional box
  *
@@ -205,14 +206,11 @@ class SpaceBox : public Box<dim,T>
 
 	void mul(float (& sp)[dim])
 	{
-		for (int i = 0  ; i < dim ; i++)
-		{
-			for (size_t d = 0 ; d < dim ; d++)
-			{this->setLow(d,this->getLow(d) * sp[i]);}
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,this->getLow(d) * sp[d]);}
 
-			for (size_t d = 0 ; d < dim ; d++)
-			{this->setHigh(d,this->getHigh(d) * sp[i]);}
-		}
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,this->getHigh(d) * sp[d]);}
 	}
 
 	/*! \brief multiply the space box with the coefficient defined in sp
