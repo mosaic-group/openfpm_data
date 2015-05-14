@@ -8,6 +8,17 @@
 #ifndef ADAPTIVECELLLIST_HPP_
 #define ADAPTIVECELLLIST_HPP_
 
+#include "../CellList/CellList.hpp"
+#include "../CellList/CellDecomposer.hpp"
+#include "AdaptiveCellListNNIterator.hpp"
+#include "Space/SpaceBox.hpp"
+
+
+// Stub implementation
+template<unsigned int dim, typename T,  unsigned int impl=BALANCED, typename base=openfpm::vector<size_t>>
+class AdaptiveCellList
+{
+};
 
 /*! \brief Class for Adaptive cell list implementation
  *
@@ -19,9 +30,39 @@
  *
  */
 template<unsigned int dim, typename T, typename base>
-class AdaptiveCellList<dim,T,FAST,base> : public CellDecomposer_sm<dim,T>
+class AdaptiveCellList<dim,T,BALANCED,base> : public CellDecomposer_sm<dim,T>
 {
-	// In case you have to store something consider the possibility to re-use openfpm structures
+	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
+	//
+	//    * * *
+	//    * x *
+	//    * * *
+
+	long int NNc_full[openfpm::math::pow(3,dim)];
+
+	// The array contain the neighborhood of the cell-id in case of symmetric interaction
+	//
+	//   * * *
+	//     x *
+	//
+	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
+
+	// The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
+	//
+	//   * *
+	//   x *
+	//
+	long int NNc_cr[openfpm::math::pow(2,dim)];
+
+	// Number of slot for each cell
+	size_t slot;
+
+	// number of particle in each cell list
+	openfpm::vector<size_t> cl_n;
+
+	// elements that each cell store (each cell can store a number
+	// of elements == slot )
+	base cl_base;
 
 	//A point
 	Point<dim,T> orig;
@@ -31,13 +72,18 @@ public:
 	// Object type that the structure store
 	typedef T value_type;
 
-	/*! Initialize the adaptive cell list
+	/*! Initialize the cell list
 	 *
-	 * \param ...
+	 * \param box Domain where this cell list is living
+	 * \param origin of the Cell list
+	 * \param div grid size on each dimension
 	 *
 	 */
-	void Initialize(/* Initialize the structure */)
+	void Initialize(SpaceBox<dim,T> & sbox, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
 	{
+		CellDecomposer_sm<dim,T>::setDimensions(sbox,div);
+		this->slot = slot;
+		this->orig = orig;
 	}
 
 	/*! \brief Default constructor
@@ -92,11 +138,13 @@ public:
 
 	/*! \brief remove an element from the cell
 	 *
-	 * \param ...
+	 * \param cell cell id
+	 * \param ele element id
 	 *
 	 */
-	inline void remove(/* Arguments */)
+	inline void remove(size_t cell, size_t ele)
 	{
+	  // i could change params later on
 	}
 
 	/*! \brief Return the number of element in the cell
@@ -144,7 +192,7 @@ public:
 	 * \param cl Cell list with witch you swap the memory
 	 *
 	 */
-	inline void swap(AdaptiveCellList<dim,T,FAST,base> & cl)
+	inline void swap(AdaptiveCellList<dim,T,BALANCED,base> & cl)
 	{
 		cl_n.swap(cl.cl_n);
 		cl_base.swap(cl.cl_base);
@@ -155,23 +203,23 @@ public:
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl> inline AdaptiveCellNNIterator getNNIterator(size_t cell)
+	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,base>,FULL,impl> getNNIterator(size_t cell)
 	{
-		AdaptiveCellNNIterator<dim,CellList<dim,T,FAST,base>,FULL,impl> cln(cell,NNc_full,*this);
+		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,base>,FULL,impl> cln(cell,NNc_full,*this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> inline AdaptiveCellNNIterator getNNIteratorSym(size_t cell)
+	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,base>,SYM,impl> getNNIteratorSym(size_t cell)
 	{
-		AdaptiveCellNNIterator<dim,CellList<dim,T,FAST,base>,SYM,impl> cln(cell,NNc_sym,*this);
+		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,base>,SYM,impl> cln(cell,NNc_sym,*this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> inline AdaptiveCellNNIterator getNNIteratorCross(size_t cell)
+	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,base>,CRS,impl> getNNIteratorCross(size_t cell)
 	{
-		AdaptiveCellNNIterator<dim,CellList<dim,T,FAST,base>,CRS,impl> cln(cell,NNc_cr,*this);
+		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,base>,CRS,impl> cln(cell,NNc_cr,*this);
 
 		return cln;
 	}

@@ -9,7 +9,7 @@
 #define ADAPTIVECELLLISTNNITERATOR_HPP_
 
 
-template<typename Cell> class AdaptiveCellNNIterator
+template<unsigned int dim, typename CellS, unsigned int NNc_size, unsigned int impl> class AdaptiveCellNNIterator
 {
 
 public:
@@ -23,6 +23,18 @@ public:
 	 *
 	 */
 	AdaptiveCellNNIterator()
+	{
+	}
+	
+	/*! \brief
+	 *
+	 * Cell NN iterator
+	 *
+	 * \param Cell id
+	 * \param NNc Cell NN id
+	 *
+	 */
+	AdaptiveCellNNIterator(size_t cell, long int (&NNc)[NNc_size], CellS & cl)
 	{
 	}
 
@@ -50,7 +62,7 @@ public:
 	 * \return  the actual element
 	 *
 	 */
-	typename Cell::value_type & get()
+	typename CellS::value_type & get()
 	{
 	}
 };
