@@ -10,6 +10,8 @@
 
 #include "SpaceBox.hpp"
 
+#define N_RANDOM_POINT 1024
+
 BOOST_AUTO_TEST_SUITE( spacebox_test )
 
 BOOST_AUTO_TEST_CASE( spacebox_use)
@@ -119,7 +121,16 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 	BOOST_REQUIRE_EQUAL(sp1.getHigh(1),1.5f);
 	}
 
+	// Create random point inside the SpaceBox
 
+	SpaceBox<3,float> sp_box;
+
+	for (int i = 0 ; i < N_RANDOM_POINT ; i++)
+	{
+		Point<3,float> p = sp_box.rnd();
+
+		BOOST_REQUIRE_EQUAL(sp_box.isInside(p),true);
+	}
 
 	std::cout << "SpaceBox unit test stop" << "\n";
 }

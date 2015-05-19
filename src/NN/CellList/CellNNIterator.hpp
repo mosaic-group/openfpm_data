@@ -32,10 +32,10 @@ template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int imp
 	size_t ele_id;
 
 	// NN cell id
-	long int (& NNc)[NNc_size];
+	const long int (& NNc)[NNc_size];
 
 	// Center cell, or cell for witch we are searching the NN-cell
-	long int cell;
+	const long int cell;
 
 public:
 
@@ -97,5 +97,66 @@ public:
 	}
 };
 
+/*! \brief it iterate through the elements of a cell
+ *
+ * \tparam Cell cell type
+ *
+ */
+
+template<typename Cell> class CellIterator
+{
+	// Cell list
+	const Cell & cl;
+
+	// actual element id inside the cell
+	size_t ele_id;
+
+	// selected cell
+	const long int cell;
+
+public:
+
+	/*! \brief
+	 *
+	 * Cell iterator
+	 *
+	 * \param Cell id
+	 *
+	 */
+	CellIterator(const size_t cell, const Cell & cl)
+	:cl(cl),ele_id(0),cell(cell)
+	{
+	}
+
+	/*! \brief
+	 *
+	 * Check if there is the next element
+	 *
+	 */
+	bool isNext()
+	{
+		return cl.getNElements() > ele_id;
+	}
+
+	/*! \brief take the next element
+	 *
+	 */
+	CellIterator & operator++()
+	{
+		ele_id++;
+
+		return *this;
+	}
+
+	/*! \brief Get the value of the cell
+	 *
+	 * \return  the next element object
+	 *
+	 */
+	typename Cell::value_type & get()
+	{
+		return cl.get(cell,ele_id);
+	}
+};
 
 #endif /* CELLNNITERATOR_FULL_HPP_ */

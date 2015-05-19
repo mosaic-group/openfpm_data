@@ -192,10 +192,21 @@ public:
 	 * Get an element of the vector
 	 *
 	 * \param id Element to get
-	 * \param p Property to get
 	 *
 	 */
 	inline T & get(size_t id)
+	{
+		return base[id];
+	}
+
+	/*! \brief Get an element of the vector
+	 *
+	 * Get an element of the vector
+	 *
+	 * \param id Element to get
+	 *
+	 */
+	inline T get(size_t id) const
 	{
 		return base[id];
 	}

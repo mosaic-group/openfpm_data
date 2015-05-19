@@ -332,7 +332,7 @@ public:
 	 * \return number of elements in the cell
 	 *
 	 */
-	inline size_t getNelements(size_t cell_id)
+	inline size_t getNelements(const size_t cell_id) const
 	{
 		return cl_n.get(cell_id);
 	}
@@ -376,6 +376,16 @@ public:
 	{
 		cl_n.swap(cl.cl_n);
 		cl_base.swap(cl.cl_base);
+	}
+
+	/*! \brief Get the Cell iterator
+	 *
+	 * \param return the iterator to the cell
+	 *
+	 */
+	CellIterator<CellList<dim,T,FAST,base>> getIterator(size_t cell)
+	{
+		return CellIterator<CellList<dim,T,FAST,base>>(cell,*this);
 	}
 
 	/*! \brief Get the Nearest Neighborhood iterator

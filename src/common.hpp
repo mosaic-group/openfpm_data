@@ -2,6 +2,7 @@
 #define COMMON_HPP
 
 #include <type_traits>
+#include <random>
 
 namespace std
 {

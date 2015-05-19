@@ -182,5 +182,4 @@ public:
 	}
 };
 
-
 #endif /* ENCAP_HPP_ */

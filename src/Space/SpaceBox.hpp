@@ -7,6 +7,7 @@
 #include <boost/fusion/include/vector.hpp>
 #include "Grid/Encap.hpp"
 #include "Ghost.hpp"
+#include <stdlib.h>     /* srand, rand */
 
 /** \brief This class represent an N-dimensional box
  *
@@ -34,7 +35,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	bool isBound(Point<dim,T> p)
+	bool isInside(Point<dim,T> p)
 	{
 		// check if bound
 
@@ -230,8 +231,39 @@ class SpaceBox : public Box<dim,T>
 		{this->setHigh(d,this->getHigh(d) * sp[d]);}
 	}
 
+	/*! \brief Generate a random point inside the box
+	 *
+	 * \return a random point inside the box
+	 *
+	 */
+	Point<dim,T> rnd()
+	{
+		Point<dim,T> p;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			p.get(i) = rand()/RAND_MAX * (this->getHigh(i) - this->getLow(i)) + this->getLow(i);
+
+		return p;
+	}
+
 	//! Default constructor
 	SpaceBox<dim,T>()	{}
+};
+
+#include "memory_c.hpp"
+
+/*! \brief It make explicit the inheritance of SpaceBox to Box
+ * for encap
+ *
+ * \param dim Dimensionality of the grid
+ * \param T type of object the grid store
+ * \param Mem suppose to be a boost::fusion::vector of arrays
+ *
+ */
+
+template<unsigned int dim,typename T,typename Mem>
+class encapc<dim,SpaceBox<dim,T>,Mem> : encapc<dim,Box<dim,T>,Mem>
+{
 };
 
 #endif
