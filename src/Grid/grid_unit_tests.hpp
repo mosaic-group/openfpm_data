@@ -23,7 +23,7 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 	std::vector<size_t> szz;
 	szz.clear();
 
-	for (int i = 0 ; i < dim ; i++)
+	for (size_t i = 0 ; i < dim ; i++)
 	{szz.push_back(sz);}
 
 #ifdef CUDA_GPU
@@ -79,11 +79,11 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 
 	grid_key_dx<3> kk;
 
-	for (int i = 0 ; i < sz ; i++)
+	for (size_t i = 0 ; i < sz ; i++)
 	{
-		for (int j = 0 ; j < sz ; j++)
+		for (size_t j = 0 ; j < sz ; j++)
 		{
-			for (int k = 0 ; k < sz ; k++)
+			for (size_t k = 0 ; k < sz ; k++)
 			{
 
 				kk.set(i,j,k);
@@ -121,11 +121,11 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 
 	bool passed = true;
 
-	for (int i = 0 ; i < sz ; i++)
+	for (size_t i = 0 ; i < sz ; i++)
 	{
-		for (int j = 0 ; j < sz ; j++)
+		for (size_t j = 0 ; j < sz ; j++)
 		{
-			for (int k = 0 ; k < sz ; k++)
+			for (size_t k = 0 ; k < sz ; k++)
 			{
 				kk.set(i,j,k);
 
@@ -151,11 +151,11 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 		}
 	}
 
-	for (int i = 0 ; i < sz ; i++)
+	for (size_t i = 0 ; i < sz ; i++)
 	{
-		for (int j = 0 ; j < sz ; j++)
+		for (size_t j = 0 ; j < sz ; j++)
 		{
-			for (int k = 0 ; k < sz ; k++)
+			for (size_t k = 0 ; k < sz ; k++)
 			{
 				kk.set(i,j,k);
 
@@ -445,14 +445,14 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 		++key_it;
 	}
 
-	for(int i = 0 ; i <= dim ; i++)
+	for(size_t i = 0 ; i <= dim ; i++)
 	{
 		// get the combination of dimension dim-i
 		std::vector<comb<dim>> combs = HyperCube<dim>::getCombinations_R(dim-i);
 
 		// For each combination create a sub iterator
 
-		for (int j = 0 ; j < combs.size() ; j++)
+		for (size_t j = 0 ; j < combs.size() ; j++)
 		{
 			// Grid key of the sub-iterator
 
@@ -461,7 +461,7 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 
 			// sub iterator
 
-			for (int k = 0 ; k < dim ; k++)
+			for (size_t k = 0 ; k < dim ; k++)
 			{
 				// if combination is 0 the hyper-cube
 

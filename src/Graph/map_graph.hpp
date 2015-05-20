@@ -748,7 +748,7 @@ public:
 
 	template<typename CheckPolicy=NoCheck> inline auto addEdge(size_t v1, size_t v2, E & ed) -> decltype(e.get(0))
 	{
-		size_t id_x_end = addEdge_<CheckPolicy>(v1,v2);
+		long int id_x_end = addEdge_<CheckPolicy>(v1,v2);
 
 		// If there is not edge return an invalid edge, is a kind of stub object
 		if (id_x_end == NO_EDGE)
@@ -772,7 +772,7 @@ public:
 	template<typename CheckPolicy=NoCheck> inline auto addEdge(size_t v1, size_t v2) -> decltype(e.get(0))
 	{
 		//! add an edge
-		size_t id_x_end = addEdge_<CheckPolicy>(v1,v2);
+		long int id_x_end = addEdge_<CheckPolicy>(v1,v2);
 		// If there is not edge return an invalid edge, is a kind of stub object
 		if (id_x_end == NO_EDGE)
 			return e_invalid.get(0);

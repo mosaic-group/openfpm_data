@@ -48,7 +48,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	Point<dim,T> offset[dim] = {middle,middle,middle};
 
 	// Create offset shift vectors
-	for (int i = 0 ; i < dim ; i++)
+	for (size_t i = 0 ; i < dim ; i++)
 	{
 		offset[i].get(i) += (1.0 / div[i]) / 8.0;
 	}

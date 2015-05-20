@@ -13,7 +13,7 @@
 template<unsigned int dim> void check_lin(std::vector<comb<dim>> cmb)
 {
 	// Check the linearization
-	for (int i = 0 ; i < cmb.size() ; i++)
+	for (size_t i = 0 ; i < cmb.size() ; i++)
 	{
 		BOOST_REQUIRE_EQUAL(HyperCube<dim>::LinId(cmb[i]),i);
 	}
@@ -29,9 +29,9 @@ template<unsigned int dim> bool isDinstict(std::vector<comb<dim>> combs)
 {
 	// Check if the combination are dinstinct
 
-	for (int i = 0 ; i < combs.size() ; i++)
+	for (size_t i = 0 ; i < combs.size() ; i++)
 	{
-		for (int j = i+1 ; j < combs.size() ; j++)
+		for (size_t j = i+1 ; j < combs.size() ; j++)
 		{
 			if (combs[i] == combs[j])
 				return false;
@@ -51,7 +51,7 @@ template<unsigned int dim> bool isDinstict(std::vector<comb<dim>> combs)
 
 template<unsigned int dim> bool isSubdecomposition(std::vector<comb<dim>> combs, comb<dim> c)
 {
-	for (int i = 0 ; i < combs.size() ; i++)
+	for (size_t i = 0 ; i < combs.size() ; i++)
 	{
 		if (c.isSub(combs[i]) == false)
 			return false;
@@ -64,7 +64,7 @@ template<unsigned int dim> bool isValid(std::vector<comb<dim>> combs)
 {
 	// Check if the combinations are valid
 
-	for (int i = 0 ; i < combs.size() ; i++)
+	for (size_t i = 0 ; i < combs.size() ; i++)
 	{
 		if (combs[i].isValid() == false)
 			return false;

@@ -125,7 +125,7 @@ class grid_sm
 	  size_t sz_a[N];
 
 	  // Copy
-	  for(int i = 0 ; i < N ; i++)
+	  for(size_t i = 0 ; i < N ; i++)
 	  {
 		  sz_a[i] = sz[i];
 	  }
@@ -368,7 +368,7 @@ public:
 
 	  size_tot = g.size_tot;
 
-	  for (int i = 0 ; i < N ; i++)
+	  for (size_t i = 0 ; i < N ; i++)
 	  {sz[i] = g.sz[i]; sz_s[i] = g.sz_s[i]; mrgsL[i] = g.mrgsL[i] ; mrgsH[i] = g.mrgsH[i];}
   }
 
@@ -394,7 +394,7 @@ public:
 	  size_t sz_a[N];
 
 	  // Copy
-	  for(int i = 0 ; i < N ; i++)
+	  for(size_t i = 0 ; i < N ; i++)
 	  {
 		  sz_a[i] = sz[i];
 	  }
@@ -664,7 +664,7 @@ public:
 	  box = g.box;
 	  size_tot = g.size_tot;
 
-	  for (int i = 0 ; i < N ; i++)
+	  for (size_t i = 0 ; i < N ; i++)
 	  {
 		  sz[i] = g.sz[i];
 		  sz_s[i] = g.sz_s[i];
@@ -803,7 +803,7 @@ public:
 	{
 		//! Initialize to 0 the index
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			gk.set_d(i,g_it.get_gk(i));
 		}
@@ -826,7 +826,7 @@ public:
 	{
 		//! Initialize to 0 the index
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{gk.set_d(i,0);}
 
 #ifdef DEBUG
@@ -848,7 +848,7 @@ public:
 
 		//! Initialize the index using key_it
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{gk.set_d(i,key_it.get_gk(i));}
 
 		return *this;
@@ -871,7 +871,7 @@ public:
 
 		//! check the overflow of all the index with exception of the last dimensionality
 
-		int i = 0;
+		size_t i = 0;
 		for ( ; i < dim-1 ; i++)
 		{
 			size_t id = gk.get(i);
@@ -917,7 +917,7 @@ public:
 
 	bool isNext()
 	{
-		if (gk.get(dim-1) < grid_base.size(dim-1))
+		if (gk.get(dim-1) < (long int)grid_base.size(dim-1))
 		{
 			//! we did not reach the end of the grid
 
@@ -957,7 +957,7 @@ public:
 	{
 		//! Initialize to 0 the index
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{gk.set_d(i,0);}
 	}
 };
@@ -1076,7 +1076,7 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 	{
 		// Check that start and stop are inside the domain otherwise crop them
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			// if start smaller than 0
 			if (gk_start.get(i) < 0)
@@ -1092,9 +1092,9 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 			}
 
 			// if stop bigger than the domain
-			if (gk_stop.get(i) >= grid_base.size(i))
+			if (gk_stop.get(i) >= (long int)grid_base.size(i))
 			{
-				if (gk_start.get(i) < grid_base.size(i))
+				if (gk_start.get(i) < (long int)grid_base.size(i))
 					gk_stop.set_d(i,grid_base.size(i)-1);
 				else
 				{
@@ -1264,11 +1264,11 @@ public:
 
 		//! check the overflow of all the index with exception of the last dimensionality
 
-		int i = 0;
+		size_t i = 0;
 		for ( ; i < dim-1 ; i++)
 		{
 			size_t id = this->gk.get(i);
-			if (id > gk_stop.get(i))
+			if ((long int)id > gk_stop.get(i))
 			{
 				// ! overflow, increment the next index
 
