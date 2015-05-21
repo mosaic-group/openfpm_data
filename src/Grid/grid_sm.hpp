@@ -494,7 +494,7 @@ public:
    *
    */
 
-  mem_id LinId(size_t * k) const
+  mem_id LinIdPtr(size_t * k) const
   {
     mem_id lid = k[0];
     for (mem_id i = 1 ; i < N ; i++)
@@ -550,7 +550,7 @@ public:
    * linearize an arbitrary set of index
    *
    */
-  template<typename a, typename ...lT>mem_id LinId(a v,lT...t) const
+  template<typename a, typename ...lT>mem_id Lin(a v,lT...t) const
   {
 #ifdef DEBUG
 	  if (sizeof...(t)+1 > N)
@@ -559,11 +559,11 @@ public:
 	  }
 #endif
 
-	  return v*sz_s[sizeof...(t)-1] + LinId(t...);
+	  return v*sz_s[sizeof...(t)-1] + Lin(t...);
   }
 
   //! Linearize a set of index
-  template<typename a>mem_id LinId(a v) const
+  template<typename a>mem_id Lin(a v) const
   {
 	  return v;
   }

@@ -102,8 +102,9 @@ class CellList<dim,T,FAST,base> : public CellDecomposer_sm<dim,T>
 
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
 		{
+			cl_tmp.cl_n.get(i) = cl_n.get(i);
 			for (size_t j = 0 ; j < cl_n.get(i) ; j++)
-				cl_tmp.cl_base.get(i*slot + j) = cl_base.get(2*slot * i + j);
+				cl_tmp.cl_base.get(2*i*slot + j) = cl_base.get(slot * i + j);
 		}
 
 		// swap the memory
@@ -147,7 +148,12 @@ public:
 	 */
 	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
 	{
-		CellDecomposer_sm<dim,T>::setDimensions(box,div);
+		// Add padding
+		size_t div_pad[dim];
+		for (size_t i = 0 ; i < dim ; i++)
+			div_pad[i] = div[i] + 2;
+
+		CellDecomposer_sm<dim,T>::setDimensions(box,div_pad);
 		this->slot = slot;
 		this->orig = orig;
 
@@ -290,7 +296,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos);
+		size_t cell_id = this->getCell(pos,1);
 
 		// add the element to the cell
 

@@ -33,6 +33,9 @@ protected:
 	// Grid structure of the Cell list
 	grid_sm<dim,void> gr_cell;
 
+	// Cell padding
+	size_t padding;
+
 	/*! \brief Initialize
 	 *
 	 */
@@ -40,13 +43,21 @@ protected:
 	{
 		tot_n_cell = 1;
 
-		// Total number of cells and calculate the unt cell size
+		// Total number of cells and calculate the unit cell size
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			tot_n_cell *= gr_cell.size(i);
-			box_unit.setHigh(i,box.getHigh(i) / gr_cell.size(i));
+
+			// Cell are padded by 1
+			box_unit.setHigh(i,box.getHigh(i) / (gr_cell.size(i)-2));
 		}
+
+		size_t off[dim];
+		for (size_t i = 0; i < dim ; i++)
+			off[i] = 1;
+
+		padding = gr_cell.LinId(off);
 	}
 
 public:
@@ -76,10 +87,10 @@ public:
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-			cell_id += gr_cell.size(s) * (size_t)(pos[s] / box_unit.getHigh(s));
+			cell_id += gr_cell.size(s) * ((size_t)(pos[s] / box_unit.getHigh(s)));
 		}
 
-		return cell_id;
+		return cell_id + padding;
 	}
 
 	/*! \brief Get the cell-id
@@ -97,7 +108,7 @@ public:
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-			cell_id += gr_cell.size_s(s-1) * (size_t)(pos.get(s) / box_unit.getHigh(s));
+			cell_id += gr_cell.size_s(s-1) * ((size_t)(pos.get(s) / box_unit.getHigh(s)));
 		}
 
 		return cell_id;
@@ -112,7 +123,7 @@ public:
 	 * \return the cell-id
 	 *
 	 */
-	template<typename Mem> size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos)
+	template<typename Mem> size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos, const size_t pad = 0)
 	{
 		typedef Point<dim,T> p;
 
@@ -120,7 +131,7 @@ public:
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-			cell_id += gr_cell.size_s(s-1) * (size_t)(pos.template get<p::x>()[s] / box_unit.getHigh(s));
+			cell_id += gr_cell.size_s(s-1) * (size_t)(pos.template get<p::x>()[s] / box_unit.getHigh(s) + pad);
 		}
 
 		return cell_id;
@@ -152,6 +163,32 @@ public:
 		Initialize();
 	}
 
+	/*! \brief Constructor
+	 *
+	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
+	 * \param div Reference array to the number of divisions on each dimensions
+	 * \pad cell padding
+	 *
+	 *  Example for div = {7,7} and pad = 1
+	 *
+	 * +-----------------------+
+     * |p |p |p |p |p |p |p |p |
+     * +-----------------------+
+     * |p |  |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |  |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |  |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |9 |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |p |p |p |p |p |p |p |
+     * +-----------------------+
+	 *
+	 * Cell with p are padding cell cell that are around but external the box, the cell number 9 that
+	 * is at the origin of the box is identified with 9
+	 *
+	 */
 	CellDecomposer_sm(SpaceBox<dim,T> & box, size_t (&div)[dim])
 	:box(box),gr_cell(div)
 	{
