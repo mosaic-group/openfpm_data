@@ -135,6 +135,20 @@ public:
 	 * \param padding cell
 	 * \param slot maximum number of slot
 	 *
+	 * +-----------------------+
+	 * |p |p |p |p |p |p |p |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |9 |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |p |p |p |p |p |p |p |
+	 * +-----------------------+
+	 *
 	 */
 	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
@@ -264,6 +278,20 @@ public:
 	 * \param pad Cell padding
 	 * \param slot maximum number of slot
 	 *
+	 * +-----------------------+
+	 * |p |p |p |p |p |p |p |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |9 |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |p |p |p |p |p |p |p |
+	 * +-----------------------+
+	 *
 	 */
 	CellList(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
@@ -278,6 +306,21 @@ public:
 	 * \param div grid size on each dimension
 	 * \param pad Cell padding
 	 * \param slot maximum number of slot
+	 *
+	 * +-----------------------+
+	 * |p |p |p |p |p |p |p |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |9 |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |p |p |p |p |p |p |p |
+	 * +-----------------------+
+	 *
 	 */
 	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
