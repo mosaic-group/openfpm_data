@@ -12,7 +12,8 @@
 
 /*! \brief Decompose a cell into space
  *
- * It is a convenient class for cell cell decomposition and index linearization
+ * It is a convenient class for cell decomposition and index linearization
+ * with getCell
  *
  */
 
@@ -36,10 +37,10 @@ protected:
 	// Cell padding
 	size_t padding;
 
-	/*! \brief Initialize
+	/*! \brief Initialize all the structures
 	 *
 	 */
-	void Initialize()
+	void Initialize(const size_t pad)
 	{
 		tot_n_cell = 1;
 
@@ -50,7 +51,7 @@ protected:
 			tot_n_cell *= gr_cell.size(i);
 
 			// Cell are padded by 1
-			box_unit.setHigh(i,box.getHigh(i) / (gr_cell.size(i)-2));
+			box_unit.setHigh(i,box.getHigh(i) / (gr_cell.size(i)-2*pad));
 		}
 
 		size_t off[dim];
@@ -123,7 +124,7 @@ public:
 	 * \return the cell-id
 	 *
 	 */
-	template<typename Mem> size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos, const size_t pad = 0)
+	template<typename Mem> size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos)
 	{
 		typedef Point<dim,T> p;
 
@@ -131,7 +132,7 @@ public:
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-			cell_id += gr_cell.size_s(s-1) * (size_t)(pos.template get<p::x>()[s] / box_unit.getHigh(s) + pad);
+			cell_id += gr_cell.size_s(s-1) * (size_t)(pos.template get<p::x>()[s] / box_unit.getHigh(s));
 		}
 
 		return cell_id;
@@ -141,26 +142,28 @@ public:
 	 *
 	 * \param box Domain to decompose
 	 * \param div array with the number of cells on each dimensions
+	 * \param pad padding cell
 	 *
 	 */
-	void setDimensions(SpaceBox<dim,T> & box, const size_t (&div)[dim])
+	void setDimensions(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad)
 	{
 		this->box = box;
 		this->gr_cell.setDimensions(div);
-		Initialize();
+		Initialize(pad);
 	}
 
 	/*! \brief Set the domain to decompose
 	 *
 	 * \param box Domain to decompose
 	 * \param div array with the number of cells on each dimensions
+	 * \param pad padding cell
 	 *
 	 */
-	void setDimensions(Box<dim,T> & box, const size_t (&div)[dim])
+	void setDimensions(Box<dim,T> & box, const size_t (&div)[dim], const size_t pad)
 	{
 		this->box = box;
 		this->gr_cell.setDimensions(div);
-		Initialize();
+		Initialize(pad);
 	}
 
 	/*! \brief Constructor
@@ -189,10 +192,10 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(SpaceBox<dim,T> & box, size_t (&div)[dim])
+	CellDecomposer_sm(SpaceBox<dim,T> & box, size_t (&div)[dim], const size_t pad)
 	:box(box),gr_cell(div)
 	{
-		Initialize();
+		Initialize(pad);
 	}
 
 

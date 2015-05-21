@@ -50,6 +50,7 @@
  * \tparam T type of the space float, double, complex
  * \tparam base Base structure that store the information
  *
+ *
  */
 template<unsigned int dim, typename T, typename base>
 class CellList<dim,T,FAST,base> : public CellDecomposer_sm<dim,T>
@@ -129,11 +130,13 @@ public:
 	/*! Initialize the cell list
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list
 	 * \param div grid size on each dimension
+	 * \param origin of the Cell list (UNUSED)
+	 * \param padding cell
+	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
+	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
 		SpaceBox<dim,T> sbox;
 		Initialize(sbox,div,orig,slot);
@@ -142,18 +145,34 @@ public:
 	/*! Initialize the cell list
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list
 	 * \param div grid size on each dimension
+	 * \param origin of the Cell list (UNUSED)
+	 * \param padding cell
+	 * \param slot maximum number of slot
+	 *
+	 * +-----------------------+
+	 * |p |p |p |p |p |p |p |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |9 |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |p |p |p |p |p |p |p |
+	 * +-----------------------+
 	 *
 	 */
-	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
+	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
 		// Add padding
 		size_t div_pad[dim];
 		for (size_t i = 0 ; i < dim ; i++)
 			div_pad[i] = div[i] + 2;
 
-		CellDecomposer_sm<dim,T>::setDimensions(box,div_pad);
+		CellDecomposer_sm<dim,T>::setDimensions(box,div_pad, pad);
 		this->slot = slot;
 		this->orig = orig;
 
@@ -240,26 +259,29 @@ public:
 	/*! \brief Cell list
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list
+	 * \param origin of the Cell list (UNUSED)
 	 * \param div grid size on each dimension
+	 * \param pad Cell padding
+	 * \param slot maximum number of slot
 	 *
 	 */
-	CellList(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
+	CellList(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
 		SpaceBox<dim,T> sbox(box);
-		Initialize(sbox,div,orig,slot);
+		Initialize(sbox,div,orig,pad,slot);
 	}
 
 	/*! \brief Cell list
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list
+	 * \param origin of the Cell list (UNUSED)
 	 * \param div grid size on each dimension
-	 *
+	 * \param pad Cell padding
+	 * \param slot maximum number of slot
 	 */
-	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, size_t slot=16)
+	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
-		Initialize(box,div,orig,slot);
+		Initialize(box,div,orig,pad,slot);
 	}
 
 
