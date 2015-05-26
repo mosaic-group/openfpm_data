@@ -228,6 +228,67 @@ BOOST_AUTO_TEST_CASE( vector_prealloc )
 	}
 }
 
+#define V_REM_PUSH 1024
+
+BOOST_AUTO_TEST_CASE(vector_remove )
+{
+	typedef Point_test<float> p;
+
+	openfpm::vector<Point_test<float>> v1;
+
+	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
+	{
+		// Point
+		Point_test<float> p;
+		p.setx(i);
+
+		v1.add(p);
+	}
+
+	{
+	openfpm::vector<size_t> rem;
+	rem.add(0);
+	rem.add(1);
+	rem.add(2);
+	rem.add(3);
+
+	v1.remove(rem);
+	}
+
+	BOOST_REQUIRE_EQUAL(v1.size(),1020);
+	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(0),4);
+
+	{
+	openfpm::vector<size_t> rem;
+	rem.add(v1.size()-3);
+	rem.add(v1.size()-2);
+	rem.add(v1.size()-1);
+	rem.add(v1.size());
+
+	v1.remove(rem);
+	}
+
+	BOOST_REQUIRE_EQUAL(v1.size(),1016);
+	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(v1.size()-1),1019);
+
+	{
+	openfpm::vector<size_t> rem;
+	for (size_t i = 0 ; i < (V_REM_PUSH - 8) / 2 ; i++)
+		rem.add(i * 2);
+
+	// remove all the even number
+	v1.remove(rem);
+	}
+
+	BOOST_REQUIRE_EQUAL(v1.size(),508);
+
+	// Check only odd
+	for (size_t i = 0 ; i < v1.size() ; i++)
+	{
+		BOOST_REQUIRE_EQUAL((size_t)v1.template get<p::x>(v1.size()-1) % 2, 1);
+	}
+}
+
 BOOST_AUTO_TEST_CASE( vector_memory_repr )
 {
 	// create a vector

@@ -484,7 +484,7 @@ namespace openfpm
 		 * \param start key starting point
 		 *
 		 */
-		void remove(openfpm::vector<size_t> keys, size_t start)
+		void remove(openfpm::vector<size_t> keys, size_t start = 0)
 		{
 			// Nothing to remove return
 			if (keys.size() <= start )
@@ -498,7 +498,7 @@ namespace openfpm
 			while (s_k < size())
 			{
 				// s_k should always point to a key that is not going to be deleted
-				while (a_key < keys.size() && s_k == keys.get(a_key+1))
+				while (a_key+1 < keys.size() && s_k == keys.get(a_key+1))
 				{
 					a_key++;
 					s_k = keys.get(a_key) + 1;
@@ -547,7 +547,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline auto get(size_t id) -> decltype(base.template get_o(grid_key_dx<1>()))
+		inline auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>()))
 		{
 #ifdef DEBUG
 			if (id >= v_size)

@@ -56,7 +56,7 @@ protected:
 
 		size_t off[dim];
 		for (size_t i = 0; i < dim ; i++)
-			off[i] = 1;
+			off[i] = pad;
 
 		padding = gr_cell.LinId(off);
 	}
