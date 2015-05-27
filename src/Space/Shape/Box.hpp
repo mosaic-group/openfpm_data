@@ -490,7 +490,7 @@ public:
 		}
 	}
 
-	/*! \brief Enlarge the ghost domain
+	/*! \brief Enlarge the box with ghost margin
 	 *
 	 * \param the box
 	 * \param gh spacing of the margin to enlarge
@@ -504,6 +504,42 @@ public:
 		{
 			this->setLow(j,this->template getBase<g::p1>(j) + gh.template getBase<g::p1>(j));
 			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j));
+		}
+	}
+
+	/*! \brief Refine the box to enclose the given box and itself
+	 *
+	 * \param en Box to enclose
+	 *
+	 */
+	inline void enclose(Box<dim,T> & en)
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			if (getLow(j) > en.getLow(j))
+				this->setLow(j,en.getLow(j));
+
+			if (getHigh(j) < en.getHigh(j))
+				this->setHigh(j,en.getHigh(j));
+		}
+	}
+
+	/*! \brief Refine the box to be contained in the given box and itself
+	 *
+	 * All the boxes are considered centered at p1, so it only count its relative size
+	 *
+	 * \param en Box to be contained
+	 *
+	 */
+	inline void contained(Box<dim,T> & en, const bool reset_p1 = true)
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			if (getHigh(j) > (en.getHigh(j) - en.getLow(j)))
+				setHigh(j,en.getHigh(j) - en.getLow(j));
+
+			if (reset_p1 == true)
+				setLow(j,0);
 		}
 	}
 };

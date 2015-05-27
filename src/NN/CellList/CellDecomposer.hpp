@@ -73,6 +73,46 @@ public:
 		return gr_cell;
 	}
 
+	/*! \brief Get the cell-ids
+	 *
+	 * Convert the point coordinates into the cell ids
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-ids ad a grid_key_dx<dim>
+	 *
+	 */
+	grid_key_dx<dim> getCellGrid(const T (& pos)[dim])
+	{
+		grid_key_dx<dim> key;
+		key.set_d(0,pos[0] / box_unit.getHigh(0));
+
+		for (size_t s = 1 ; s < dim ; s++)
+			key.set_d(s,(size_t)(pos[s] / box_unit.getHigh(s)));
+
+		return key;
+	}
+
+	/*! \brief Get the cell-ids
+	 *
+	 * Convert the point coordinates into the cell ids
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-ids ad a grid_key_dx<dim>
+	 *
+	 */
+	grid_key_dx<dim> getCellGrid(const Point<dim,T> pos)
+	{
+		grid_key_dx<dim> key;
+		key.set_d(0,pos.get(0) / box_unit.getHigh(0));
+
+		for (size_t s = 1 ; s < dim ; s++)
+			key.set_d(s,(size_t)(pos.get(s) / box_unit.getHigh(s)));
+
+		return key;
+	}
+
 	/*! \brief Get the cell-id
 	 *
 	 * Convert the point coordinates into the cell id

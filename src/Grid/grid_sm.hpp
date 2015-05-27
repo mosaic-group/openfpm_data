@@ -1173,7 +1173,7 @@ public:
 		{
 			if (gk_start.get(i) > gk_stop.get(i))
 			{
-				std::cerr << "Error grid_key_dx_iterator : the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
+				std::cerr << "Error grid_key_dx_iterator: " << __FILE__ << " " << __LINE__ << " the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
 			}
 		}
 #endif
