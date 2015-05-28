@@ -542,6 +542,18 @@ public:
 				setLow(j,0);
 		}
 	}
+
+	/*! \brief Set p1 and p2 to 0
+	 *
+	 */
+	void zero()
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			setHigh(j,0);
+			setLow(j,0);
+		}
+	}
 };
 
 #endif
