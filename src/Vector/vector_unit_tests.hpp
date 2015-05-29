@@ -7,6 +7,7 @@
 #include "memory/PtrMemory.hpp"
 #include <cstring>
 #include "Space/Shape/Point.hpp"
+#include "util/vector_creator.hpp"
 
 #define FIRST_PUSH 1000000
 #define SECOND_PUSH 1000000
@@ -222,10 +223,18 @@ BOOST_AUTO_TEST_CASE( vector_prealloc )
 		pb.get(i).pos.setMemory(*mem);
 		pb.get(i).prp.setMemory(*mem);
 
-		// set the size and allocate, using mem warant that pos and prp is contiguous
+		// set the size and allocate, using mem warrant that pos and prp is contiguous
 		pb.get(i).pos.resize(1024);
 		pb.get(i).prp.resize(1024);
 	}
+}
+
+
+BOOST_AUTO_TEST_CASE( vector_test_creator )
+{
+	bool tst = std::is_same< typename vector_creator<Point_test<float>::type,0,1,5>::type, typename boost::fusion::vector3<float,float,float[3][3]> >::value;
+
+	BOOST_REQUIRE_EQUAL(tst , true);
 }
 
 #define V_REM_PUSH 1024
