@@ -328,7 +328,7 @@ namespace openfpm
 		 * Return the size of the vector
 		 *
 		 */
-		size_t size()
+		size_t size() const
 		{
 			return v_size;
 		}

@@ -7,7 +7,7 @@
 #include "memory/PtrMemory.hpp"
 #include <cstring>
 #include "Space/Shape/Point.hpp"
-#include "util/vector_creator.hpp"
+#include "util/object_creator.hpp"
 
 #define FIRST_PUSH 1000000
 #define SECOND_PUSH 1000000
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE( vector_prealloc )
 
 BOOST_AUTO_TEST_CASE( vector_test_creator )
 {
-	bool tst = std::is_same< typename vector_creator<Point_test<float>::type,0,1,5>::type, typename boost::fusion::vector3<float,float,float[3][3]> >::value;
+	bool tst = std::is_same< typename object_creator<Point_test<float>::type,0,1,5>::type, typename boost::fusion::vector3<float,float,float[3][3]> >::value;
 
 	BOOST_REQUIRE_EQUAL(tst , true);
 }

@@ -18,9 +18,9 @@
 #include <boost/mpl/range_c.hpp>
 #include <boost/mpl/for_each.hpp>
 #include "memory_conf.hpp"
-#include "meta_copy.hpp"
+#include "util/meta_copy.hpp"
 #include "Memleak_check.hpp"
-#include "for_each_ref.hpp"
+#include "util/for_each_ref.hpp"
 
 
 #include "grid_sm.hpp"

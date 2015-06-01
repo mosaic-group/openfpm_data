@@ -8,7 +8,7 @@
 #ifndef MEMORY_CONF_HPP_
 #define MEMORY_CONF_HPP_
 
-#include "to_variadic.hpp"
+#include "util/variadic_to_vmpl.hpp"
 #include "t_to_memory_c.hpp"
 
 /*! \brief This class convert a boost::mpl::fusion/vector to a boost::mpl::fusion/vector with memory_c interleaved
@@ -31,7 +31,7 @@
 template<typename Seq>
 struct inter_memc
 {
-	typedef typename to_variadic<t_to_memory_c,Seq>::type type;
+	typedef typename v_transform<t_to_memory_c,Seq>::type type;
 };
 
 /*! \brief Transform the boost::fusion::vector into memory specification (memory_traits)

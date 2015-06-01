@@ -37,7 +37,7 @@ public:
 	typedef T value_type;
 
 	//! return the size of the vector
-	inline size_t size()
+	inline size_t size() const
 	{
 		return base.size();
 	}
