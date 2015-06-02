@@ -44,8 +44,6 @@ template<typename T> class Point_test
 public:
   
   typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3]> type;
-  typedef typename memory_traits_inte<type>::type memory_int;
-  typedef typename memory_traits_lin<type>::type memory_lin;
 
   type data;
   

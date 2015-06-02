@@ -271,6 +271,9 @@ namespace openfpm
 	template<typename T,typename Memory, typename grow_p>
 	class vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE>
 	{
+		//! This structure use this layout
+		typedef typename grid_cpu<1,T>::memory_lin memory_lin;
+
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
 		//! the actually allocated space
@@ -278,7 +281,6 @@ namespace openfpm
 
 		//! 1-D static grid
 		grid_cpu<1,T> base;
-
 
 		/*! \brief Get 1D vector to create the grid in the constructor
 		 *
@@ -312,6 +314,9 @@ namespace openfpm
 		}
 
 	public:
+
+		// Type of the encapsulation memory parameter
+		typedef typename grid_cpu<1,T>::memory_t memory_t;
 
 		//! iterator for the vector
 		typedef vector_key_iterator iterator_key;
@@ -527,7 +532,7 @@ namespace openfpm
 		 *
 		 */
 
-		template <unsigned int p>inline typename type_cpu_prop<p,T>::type & get(size_t id)
+		template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(size_t id)
 		{
 #ifdef DEBUG
 			if (id >= v_size)
@@ -849,6 +854,9 @@ namespace openfpm
 		grid_gpu<1,T> base;
 
 	public:
+
+		// Type of the encapsulation memory parameter
+		typedef typename grid_gpu<1,T>::memory_t memory_t;
 
 		// iterator for the vector
 		typedef vector_key_iterator iterator_key;

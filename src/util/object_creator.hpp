@@ -5,7 +5,24 @@
 #include <boost/mpl/push_back.hpp>
  #include <boost/type_traits/remove_reference.hpp>
 
+/*! \brief This is a container for the sending buffers
+ *
+ * It is used in ghost_get to create a particular object with the properties selected
+ *
+ * \tparam Is a boost::fusion::vector with the properties selected
+ *
+ *
+ */
+template<typename v>
+struct object
+{
+	typedef v type;
+	typedef typename boost::fusion::result_of::size<v>::type size_tpy;
 
+	type data;
+
+	static const int max_prop = size_tpy::value;
+};
 
 /*! \brief Implementation of vector creator
  *
