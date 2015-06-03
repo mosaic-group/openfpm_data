@@ -551,7 +551,7 @@ public:
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1)
 	{
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,T>::type));
+		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
 #endif
 		return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 	}
@@ -566,7 +566,7 @@ public:
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1) const
 	{
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,T>::type));
+		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
 #endif
 		return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
 	}

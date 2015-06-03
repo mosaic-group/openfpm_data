@@ -784,7 +784,7 @@ namespace openfpm
 		 */
 		inline static size_t calculateMem(size_t n, size_t e)
 		{
-			return n*sizeof(T);
+			return grow_p::grow(0,n) * sizeof(T);
 		}
 
 		/*! \brief How many allocation are required to create n-elements

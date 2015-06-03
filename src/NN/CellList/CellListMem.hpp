@@ -14,7 +14,7 @@
  *
  * This class implement the BALANCED cell list is fast (not best)
  * the memory allocation is small (not best).
- * The memory allocation is (in byte) Size = M*16 + N*sizeof(ele)
+ * The memory allocation is (in byte) Size = O(N*sizeof(ele))
  *
  * Where
  *

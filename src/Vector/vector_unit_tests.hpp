@@ -4,6 +4,7 @@
 #include "map_vector.hpp"
 #include "Point_test.hpp"
 #include "memory/PreAllocHeapMemory.hpp"
+#include "memory/ExtPreAlloc.hpp"
 #include "memory/PtrMemory.hpp"
 #include <cstring>
 #include "Space/Shape/Point.hpp"
@@ -203,6 +204,97 @@ BOOST_AUTO_TEST_CASE( vector_std_utility )
 		BOOST_REQUIRE_EQUAL(pb.get(i),0);
 	}
 
+}
+
+size_t alloc[] = {235,345,520};
+size_t n_alloc = sizeof(alloc)/sizeof(size_t);
+
+BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
+{
+	// Memory for the ghost sending buffer
+	HeapMemory mem;
+
+	// Total number of elements
+	size_t n_ele = 0;
+
+	// sequence of pre-allocation pattern
+	std::vector<size_t> pap;
+
+	size_t total = 0;
+
+	// Calculate the total size required for the sending buffer
+	for (size_t i = 0 ; i < n_alloc ; i++)
+	{
+		size_t alloc_ele = openfpm::vector<Point_test<float>>::calculateMem(alloc[i],0);
+		pap.push_back(alloc_ele);
+		total += alloc_ele;
+	}
+
+	// Create an object of preallocated memory
+	ExtPreAlloc<HeapMemory> * prAlloc = new ExtPreAlloc<HeapMemory>(pap,mem);
+
+	typedef openfpm::vector<Point_test<float>,openfpm::device_cpu<Point_test<float>>,ExtPreAlloc<HeapMemory>> send_vector;
+
+	// create a vector of send_vector (ExtPreAlloc warrant that all the created vector are contiguous)
+	openfpm::vector<send_vector> g_send;
+
+	// resize
+	g_send.resize(n_alloc);
+
+	// Number of allocation
+	for (size_t i = 0 ; i < n_alloc ; i++)
+	{
+		// set the preallocated memory to ensure contiguity
+		g_send.get(i).setMemory(*prAlloc);
+
+		// resize the sending vector (No allocation is produced)
+		g_send.get(i).resize(alloc[i]);
+	}
+
+	// Fill the send buffer with one
+	for (size_t i = 0 ; i < n_alloc ; i++)
+	{
+		auto it = g_send.get(i).getIterator();
+		auto & v = g_send.get(i);
+
+		while(it.isNext())
+		{
+			auto kk = it.get();
+
+			v.template get<P::x>(kk) = 1.0f;
+			v.template get<P::y>(kk) = 1.0f;
+			v.template get<P::z>(kk) = 1.0f;
+			v.template get<P::s>(kk) = 1.0f;
+
+			v.template get<P::v>(kk)[0] = 1.0f;
+			v.template get<P::v>(kk)[1] = 1.0f;
+			v.template get<P::v>(kk)[2] = 1.0f;
+
+			v.template get<P::t>(kk)[0][0] = 1.0f;
+			v.template get<P::t>(kk)[0][1] = 1.0f;
+			v.template get<P::t>(kk)[0][2] = 1.0f;
+			v.template get<P::t>(kk)[1][0] = 1.0f;
+			v.template get<P::t>(kk)[1][1] = 1.0f;
+			v.template get<P::t>(kk)[1][2] = 1.0f;
+			v.template get<P::t>(kk)[2][0] = 1.0f;
+			v.template get<P::t>(kk)[2][1] = 1.0f;
+			v.template get<P::t>(kk)[2][2] = 1.0f;
+
+			++it;
+		}
+	}
+
+	// check that HeapMemory contain ones in the right position
+	float * ptr = (float *) mem.getPointer();
+	size_t offset = 0;
+
+	for (size_t i = 0 ; i < n_alloc ; i++)
+	{
+		for (size_t j = 0 ; j < alloc[i] ; j++)
+			BOOST_REQUIRE_EQUAL(ptr[j + offset/sizeof(float)],1.0f);
+
+		offset += pap[i];
+	}
 }
 
 BOOST_AUTO_TEST_CASE( vector_prealloc )

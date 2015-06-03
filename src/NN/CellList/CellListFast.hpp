@@ -124,7 +124,7 @@ public:
 	 */
 	grid_sm<dim,void> & getGrid()
 	{
-		CellDecomposer_sm<dim,T>::getGrid();
+		return CellDecomposer_sm<dim,T>::getGrid();
 	}
 
 	/*! Initialize the cell list

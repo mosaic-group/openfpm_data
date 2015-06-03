@@ -106,7 +106,7 @@ public:
 template<typename Cell> class CellIterator
 {
 	// Cell list
-	const Cell & cl;
+	Cell & cl;
 
 	// actual element id inside the cell
 	size_t ele_id;
@@ -123,7 +123,7 @@ public:
 	 * \param Cell id
 	 *
 	 */
-	CellIterator(const size_t cell, const Cell & cl)
+	CellIterator(const size_t cell, Cell & cl)
 	:cl(cl),ele_id(0),cell(cell)
 	{
 	}
@@ -135,7 +135,7 @@ public:
 	 */
 	bool isNext()
 	{
-		return cl.getNElements() > ele_id;
+		return cl.getNelements(cell) > ele_id;
 	}
 
 	/*! \brief take the next element

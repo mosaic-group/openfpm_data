@@ -70,6 +70,11 @@ public:
 	 */
 	grid_sm<dim,void> & getGrid()
 	{
+#ifdef DEBUG
+		if (total_ncell == 0)
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+#endif
+
 		return gr_cell;
 	}
 
@@ -84,6 +89,11 @@ public:
 	 */
 	grid_key_dx<dim> getCellGrid(const T (& pos)[dim])
 	{
+#ifdef DEBUG
+		if (total_ncell == 0)
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+#endif
+
 		grid_key_dx<dim> key;
 		key.set_d(0,pos[0] / box_unit.getHigh(0));
 
@@ -104,6 +114,11 @@ public:
 	 */
 	grid_key_dx<dim> getCellGrid(const Point<dim,T> pos)
 	{
+#ifdef DEBUG
+		if (total_ncell == 0)
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+#endif
+
 		grid_key_dx<dim> key;
 		key.set_d(0,pos.get(0) / box_unit.getHigh(0));
 
@@ -124,6 +139,11 @@ public:
 	 */
 	size_t getCell(const T (& pos)[dim])
 	{
+#ifdef DEBUG
+		if (total_ncell == 0)
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+#endif
+
 		size_t cell_id = pos[0] / box_unit.getHigh(0);
 
 		for (size_t s = 1 ; s < dim ; s++)
@@ -145,6 +165,11 @@ public:
 	 */
 	size_t getCell(const Point<dim,T> & pos)
 	{
+#ifdef DEBUG
+		if (total_ncell == 0)
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+#endif
+
 		size_t cell_id = pos.get(0) / box_unit.getHigh(0);
 
 		for (size_t s = 1 ; s < dim ; s++)
@@ -166,6 +191,11 @@ public:
 	 */
 	template<typename Mem> size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos)
 	{
+
+#ifdef DEBUG
+		if (total_ncell == 0)
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+#endif
 		typedef Point<dim,T> p;
 
 		size_t cell_id = pos.template get<p::x>()[0] / box_unit.getHigh(0);
@@ -241,6 +271,7 @@ public:
 
 	//! default constructor
 	CellDecomposer_sm()
+	:tot_n_cell(0)
 	{
 
 	}

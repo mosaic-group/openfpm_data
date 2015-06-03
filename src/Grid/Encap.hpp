@@ -100,7 +100,7 @@ public:
 	template <unsigned int p> typename type_cpu_prop<p,Mem>::type get()
 	{
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
+		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,Mem>::type));
 #endif
 		return boost::fusion::at_c<p>(data);
 	}
@@ -113,7 +113,7 @@ public:
 	template <unsigned int p> const typename type_cpu_prop<p,Mem>::type get() const
 	{
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
+		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,Mem>::type));
 #endif
 		return boost::fusion::at_c<p>(data);
 	}
