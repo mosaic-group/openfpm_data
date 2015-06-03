@@ -71,7 +71,7 @@ public:
 	grid_sm<dim,void> & getGrid()
 	{
 #ifdef DEBUG
-		if (total_ncell == 0)
+		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
@@ -90,7 +90,7 @@ public:
 	grid_key_dx<dim> getCellGrid(const T (& pos)[dim])
 	{
 #ifdef DEBUG
-		if (total_ncell == 0)
+		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
@@ -115,7 +115,7 @@ public:
 	grid_key_dx<dim> getCellGrid(const Point<dim,T> pos)
 	{
 #ifdef DEBUG
-		if (total_ncell == 0)
+		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
@@ -140,7 +140,7 @@ public:
 	size_t getCell(const T (& pos)[dim])
 	{
 #ifdef DEBUG
-		if (total_ncell == 0)
+		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
@@ -166,7 +166,7 @@ public:
 	size_t getCell(const Point<dim,T> & pos)
 	{
 #ifdef DEBUG
-		if (total_ncell == 0)
+		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
@@ -193,7 +193,7 @@ public:
 	{
 
 #ifdef DEBUG
-		if (total_ncell == 0)
+		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 		typedef Point<dim,T> p;
