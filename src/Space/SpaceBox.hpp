@@ -76,35 +76,29 @@ class SpaceBox : public Box<dim,T>
 	SpaceBox(const Box<dim,T> & b)
 	:Box<dim,T>(b)
 	{
-		// for each dimension set high and low
-
-/*		for (size_t d = 0 ; d < dim ; d++)
-		{this->setLow(d,b.getLow(d));}
-
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,b.getHigh(d));}*/
 	}
 
 	/*! \brief Constructor from a Box
 	 *
-	 * \param Box
+	 * \param box Box (Encapsulated)
 	 *
 	 */
 
 	template<unsigned int dim_s,typename Mem, typename S>SpaceBox(const encapc<dim_s,Box<dim,S>,Mem> & box)
+	:Box<dim,T>(box)
 	{
 		// for each dimension set high and low
 
-		for (size_t d = 0 ; d < dim ; d++)
+/*		for (size_t d = 0 ; d < dim ; d++)
 		{this->setLow(d,box.template get<Box<dim,S>::p1>()[d]);}
 
 		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,box.template get<Box<dim,S>::p2>()[d]);}
+		{this->setHigh(d,box.template get<Box<dim,S>::p2>()[d]);}*/
 	}
 
 	/*! \brief Constructor from a Box
 	 *
-	 * \param Box
+	 * \param box box (Encapsulated)
 	 *
 	 */
 

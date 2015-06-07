@@ -34,9 +34,9 @@
     enum { value = 1 };
  };
 
-/*! \brief Class for STANDARD cell list implementation
+/*! \brief Class for FAST cell list implementation
  *
- * This class implement the STANDARD cell list, fast but memory
+ * This class implement the FAST cell list, fast but memory
  * expensive. The memory allocation is (M * N_cell_max)*sizeof(ele) + M*8
  *
  * M = number of cells

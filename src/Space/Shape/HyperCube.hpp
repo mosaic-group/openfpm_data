@@ -10,7 +10,7 @@ template<unsigned int dim, unsigned int subdim> class SubHyperCube;
 
 /*! \brief output stream overload for printing
  *
- * \param ostream
+ * \param str ostream
  * \param c combination to print
  *
  */
@@ -25,13 +25,26 @@ template<unsigned int dim> std::ostream& operator<<(std::ostream& str, const com
     return str;
 }
 
-/*! \brief This class calculate at runtime and compile time elements of the hyper-cube
+/*! \brief This class calculate elements of the hyper-cube
  *
- * This class calculate at compile time elements of the hyper-cube like
+ * This class give you a set of utility functions for the hyper-cube like getting
  * number of faces, number of edge, number of vertex, or in general number of elements
  * of dimension d, position of each element
  *
- * static method calculate it at runtime
+ * * 0d Hyper-cube vertex
+ * * 1d Hypercube segment
+ * * 2d Hypercube square
+ * * 3d Hypercube Cube
+ * ...
+ *
+ * \tparam dim dimensionality of the Hyper-cube
+ *
+ * ### Get vertex and edge on a line
+ * \snippet hypercube_unit_test.hpp Get vertex and edge on a line
+ * ### Get vertex edge and surfaces of a square
+ * \snippet hypercube_unit_test.hpp  Get vertex edge and surfaces of a square
+ * ### Get vertex edge surfaces and volumes of a cube
+ * \snippet hypercube_unit_test.hpp Get vertex edge surfaces and volumes of a cube
  *
  */
 
@@ -125,14 +138,11 @@ public:
 	 *
 	 * Example
 	 *
-	 * if getDim is 2
+	 * if getDim() is 2
 	 *
 	 * it produce 4 configuration
 	 *
-	 * 1 1
-	 * 1 -1
-	 * -1 1
-	 * -1 -1
+	 * (1,1) (1,-1) (-1,1) (-1,-1)
 	 *
 	 * and fill the number in the position indicated by Iterator_g_const
 	 *
@@ -279,7 +289,7 @@ public:
 		return d * 2;
 	}
 
-	/*! \brief return the combination of the negative face on direction d
+	/*! \brief Return the combination of the negative face on direction d
 	 *
 	 * \param d direction
 	 *
@@ -292,15 +302,19 @@ public:
 	}
 };
 
-/*! \brief This class calculate at runtime and compile time elements of the hyper-cube
+/*! \brief This represent a sub-hyper-cube of an hyper-cube like a face or an edge of a cube
  *
- * This class calculate at compile time elements of the hyper-cube like
- * number of faces, number of edge, number of vertex, or in general number of elements
- * of dimension d, position of each element
+ * It give a set of utility function to work with sub-hyper-cubes like the hyper-cube
  *
- * static method calculate it at runtime
+ * \tparam dimensionality of the hyper-cube
+ * \tparam dimensionality of the sub-hyper-cube
  *
- * \WARNING Completely untested
+ * ### Getting the surfaces of the cube
+ * \snippet hypercube_unit_test.hpp Getting the surfaces of the cube
+ * ### Getting the vertices of the surfaces of the cube
+ * \snippet hypercube_unit_test.hpp Getting the vertices of the surfaces of the cube
+ * ### Getting the edges of the surfaces of the cube
+ * \snippet hypercube_unit_test.hpp Getting the edges of the surfaces of the cube
  *
  */
 
@@ -309,14 +323,13 @@ class SubHyperCube : public HyperCube<subdim>
 {
 public:
 
-	/*! brief Calculate the position (combinations) of all the elements of size d
+	/*! brief Calculate the position (combinations) of all the elements of size d in the sub-hyper-cube
 	 *
-	 * \param comb identify the position of the sub-hyper-cube in the hypercube
-	 * \param d dimensionality of sub-hyper-cube to take
+	 * \param c identify the position of the sub-hyper-cube in the hypercube
+	 * \param d dimensionality of the objects
 	 * \return all the combinations
 	 *
 	 */
-
 	static std::vector<comb<dim>> getCombinations_R(comb<dim> c, int d)
 	{
 #ifdef DEBUG

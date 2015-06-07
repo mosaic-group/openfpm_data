@@ -62,13 +62,8 @@ public:
 };
 
 
-
-//#pragma openfpm create(layout)
-
-/*! \brief class that store the information at runtime of the grid and define the index linearization
+/*! \brief class that store the information of the grid like number of point on each direction and define the index linearization
  * by stride
- *
- * class that store the information at runtime of the grid plus define the linearization
  *
  * \param N dimensionality
  * \param T type of object is going to store the grid
@@ -215,7 +210,7 @@ public:
 
   /*! \brief Reset the dimension of the grid
    *
-   * \param std::vector that store on each dimension the size of the grid
+   * \param dims std::vector that store on each dimension the size of the grid
    *
    */
 
@@ -227,10 +222,9 @@ public:
 
   /*! \brief Reset the dimension of the grid
    *
-   * \param std::vector that store on each dimension the size of the grid
+   * \param dims store on each dimension the size of the grid
    *
    */
-
   void setDimensions(const size_t  (& dims)[N])
   {
 	  Initialize(dims);
@@ -453,13 +447,11 @@ public:
     }
   }
 
-  /*! \brief Linearization of the grid_key_dx
+  /*! \brief Linearization of the grid_key_dx with a specified shift
    *
-   * Linearization of a shifted grid_key_dx
-   *
-   * \tparam class that check the linearization, if this check the function return -1
-   * \param grid_key_dx to linearize
-   * \param shift of the grid key
+   * \tparam check class that check the linearization, if this check fail the function return -1
+   * \param gk grid_key_dx to linearize
+   * \param sum_id shift on each dimension
    *
    * \return The linearization of the gk key shifted by c, or -1 if the check fail
    */
@@ -510,7 +502,7 @@ public:
    * Linearization of the grid_key_dx given a key, it spit out a number that is just the 1D linearization
    * of the key. In this case is the linearization of N index
    *
-   * \param grid_key_dx<dim> grid key to access the element on a key
+   * \param k grid key to access the element on the grid
    *
    */
 
@@ -530,7 +522,7 @@ public:
    * Linearization of the grid_key_dx given a key, it spit out a number that is just the 1D linearization
    * of the key. In this case is the linearization of N index
    *
-   * \param grid_key_dx<dim> grid key to access the element on a key
+   * \param gk grid key to access the element of the grid
    *
    */
 
@@ -572,12 +564,10 @@ public:
 
   /*! \brief inversion of the linearization of the grid_key_dx
    *
-   * \param mem_id id of the object
-   * \param grid_key, key of the grid that id identify
+   * \param id of the object
+   * \return key of the grid that id identify
    *
    */
-
-  //#pragma openfpm layout(get)
   grid_key_dx<N> InvLinId(mem_id id) const
   {
     // Inversion of linearize
@@ -598,7 +588,8 @@ public:
    * Linearization of the grid_key_d given a key, it spit out a number that is just the 1D linearization
    * of the key. In this case is the linearization of N index
    *
-   * \param grid_key_d<dim,p> grid key to access the element on a key
+   * \param gk grid key to access the element on a key
+   * \return index of the memory
    *
    */
 
@@ -779,7 +770,7 @@ public:
 
 	/*! \brief Default constructor
 	 *
-	 * \WARNING entremly unsafe
+	 * \warning entremly unsafe
 	 * Before use the iterator you have call reinitialize
 	 *
 	 */
@@ -790,13 +781,9 @@ public:
 #endif
 	}
 
-	/*! \brief Constructor require a grid
+	/*! \brief Constructor from a grid_key_dx_iterator<dim>
 	 *
-	 * Constructor require a grid<dim,T>
-	 *
-	 * \param T type of object that the grid store
-	 *
-	 * \param g Grid on which iterate
+	 * \param g_it grid_key_dx_iterator<dim>
 	 */
 	grid_key_dx_iterator(const grid_key_dx_iterator<dim> & g_it)
 	: grid_base(g_it.grid_base)
@@ -813,13 +800,9 @@ public:
 #endif
 	}
 
-	/*! \brief Constructor require a grid
+	/*! \brief Constructor require a grid_sm<dim,T>
 	 *
-	 * Constructor require a grid<dim,T>
-	 *
-	 * \param T type of object that the grid store
-	 *
-	 * \param g Grid on which iterate
+	 * \param g info of the grid on which iterate
 	 */
 	template<typename T> grid_key_dx_iterator(const grid_sm<dim,T> & g)
 	: grid_base(g)
@@ -834,13 +817,9 @@ public:
 #endif
 	}
 
-	/*! \brief Constructor require a grid
+	/*! \brief Constructor from another grid_key_dx_iterator
 	 *
-	 * Constructor require a grid<dim,T>
-	 *
-	 * \param T type of object that the grid store
-	 *
-	 * \param g Grid on which iterate
+	 * \param key_it grid_key_dx_iterator
 	 */
 	grid_key_dx_iterator<dim> operator=(const grid_key_dx_iterator<dim> & key_it)
 	{
@@ -855,8 +834,6 @@ public:
 	}
 
 	/*! \brief Get the next element
-	 *
-	 * Get the next element
 	 *
 	 * \return the next grid_key
 	 *
@@ -896,7 +873,7 @@ public:
 	 *
 	 * Set the dimension
 	 *
-	 * \param dim is the dimension
+	 * \param d is the dimension
 	 * \param sz set the counter to sz
 	 *
 	 */
@@ -986,16 +963,14 @@ class grid_key_dx_iterator_sp : public grid_key_dx_iterator<dim>
 
 public:
 
-	/*! \brief Constructor require a grid
-	 *
-	 * Constructor require a grid<dim,T>
+	/*! \brief Constructor require a grid grid<dim,T>
 	 *
 	 * It construct an iterator from one index to another, in particular
 	 * if linearize is the function that linearize all the grid_key, it
 	 * create an iterator that pass through Linearize^(-1)(start)
 	 * Linearize^(-1)(start+1) ....... Linearize^(-1)(stop)
 	 *
-	 * \param T type of object that the grid store
+	 * \tparam T type of object that the grid store
 	 *
 	 * \param g Grid on which iterate
 	 * \param from starting point
@@ -1120,26 +1095,20 @@ public:
 
 	/*! \brief Default constructor
 	 *
-	 * WARNING: extremly unsafe
+	 * \warning extremely unsafe
 	 * If you use this constructor before use the iterator you should call reinitialize first
 	 *
 	 */
 	grid_key_dx_iterator_sub()
 	{}
 
-	/*! \brief Constructor require a grid
-	 *
-	 * Constructor require a grid<dim,T>
+	/*! \brief Constructor from another grid_key_dx_iterator_sub
 	 *
 	 * It construct an iterator over an hyper-cube defined by start and stop,
-	 * \WARNING if start and stop are outside the domain defined by g the intersection
+	 * \warning if start and stop are outside the domain defined by g the intersection
 	 * will be considered
 	 *
-	 * \param T type of object that the grid store
-	 *
-	 * \param g Grid on which iterate
-	 * \param start starting point
-	 * \param stop end point
+	 * \param g_s_it grid_key_dx_iterator_sub
 	 *
 	 */
 	grid_key_dx_iterator_sub(const grid_key_dx_iterator_sub<dim> & g_s_it)
@@ -1147,15 +1116,13 @@ public:
 	{}
 
 
-	/*! \brief Constructor require a grid
-	 *
-	 * Constructor require a grid<dim,T>
+	/*! \brief Constructor require a grid grid<dim,T>
 	 *
 	 * It construct an iterator over an hyper-cube defined by start and stop,
-	 * \WARNING if start and stop are outside the domain defined by g the intersection
+	 * \warning if start and stop are outside the domain defined by g the intersection
 	 * will be considered
 	 *
-	 * \param T type of object that the grid store
+	 * \tparam T type of object that the grid store
 	 *
 	 * \param g Grid on which iterate
 	 * \param start starting point
@@ -1182,17 +1149,15 @@ public:
 	}
 
 
-	/*! \brief Constructor require a grid
-	 *
-	 * Constructor require a grid<dim,T>
+	/*! \brief Constructor require a grid grid<dim,T>
 	 *
 	 * It construct an iterator over an hyper-cube defined by start and stop,
-	 * \WARNING if start and stop are outside the domain defined by g the intersection
+	 * \warning if start and stop are outside the domain defined by g the intersection
 	 * will be considered
 	 *
-	 * \param T type of object that the grid store
+	 * \tparam T type of object that the grid store
 	 *
-	 * \param g grid info we are iterating
+	 * \param g info of the grid where we are iterating
 	 * \param m Margin of the domain
 	 *
 	 */
@@ -1210,13 +1175,11 @@ public:
 		Initialize();
 	}
 
-	/*! \brief Constructor require a grid
-	 *
-	 * Constructor require a grid<dim,T>
+	/*! \brief Constructor require a grid grid<dim,T>
 	 *
 	 * It construct an iterator over an hyper-cube defined by start and stop,
 	 *
-	 * \param T type of object that the grid store
+	 * \tparam T type of object that the grid store
 	 *
 	 * \param g Grid on which iterate
 	 * \param start starting point
@@ -1326,9 +1289,10 @@ public:
 
 	/*! \brief Reinitialize the iterator
 	 *
-	 * it reinitialize the iterator with the passed grid_key_dx_iterator_sub, it became like a clone
+	 * it re-initialize the iterator with the passed grid_key_dx_iterator_sub
+	 * the actual position of the grid_key_dx_iterator_sub is ignored
 	 *
-	 * \param grid_key_dx_iterator_sub
+	 * \param g_s_it grid_key_dx_iterator_sub
 	 *
 	 */
 
@@ -1385,11 +1349,9 @@ public:
 		return dim;
 	}
 
-	  /*! \brief constructor
+	  /*! \brief constructor from another key
 	   *
-	   * constructor
-	   *
-	   * \param dim Dimensionality
+	   * \param key
 	   *
 	   */
 	  grid_key_dx_r(grid_key_dx_r & key)

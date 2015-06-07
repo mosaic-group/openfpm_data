@@ -4,22 +4,16 @@
 #include "Grid/comb.hpp"
 #include "Grid/grid_key_expression.hpp"
 
-/*! \brief In this header file the main grid accessor are defined
- *
- * Given a grid a in general a set of indexes define one element in the grid
- * In this header file several classes that encapsulate this information are
- * defined
- *
- */
 
 /*! \brief grid_key_dx is the key to access any element in the grid
  *
- * grid_key_dx is the key to access any element in the grid
+ * Given a grid in general a set of indexes define one element in the grid
+ * For example 2 indexes identify one element on a two dimensional grid,
+ * 3 indexes on a 3 dimensional grid ...
  *
- * \param dim dimensionality of the grid
+ * \tparam dim dimensionality of the grid
  *
  */
-
 template<unsigned int dim>
 class grid_key_dx
 {
@@ -97,7 +91,6 @@ public:
 	inline grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> operator+(comb<dim> & cmb) const
 	{
 		grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> exp_sum(*this,cmb);
-//		grid_key_dx_expression<dim,grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>>> exp(exp_sum);
 
 		return exp_sum;
 	}

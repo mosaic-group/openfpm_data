@@ -12,12 +12,14 @@
 /*! \brief Implementation of 1-D std::vector like structure
  *
  * this implementation is just a wrapper for the std::vector in the case
- * of the primitive size_t
+ * of data where the members cannot be parsed see openFPM_data wiki for more information
+ *
+ * ### Create add and access the elements
+ * \snippet vector_unit_tests.hpp Create add and access stl
  *
  * \param T base type
  *
  */
-
 template<typename T>
 class vector<T,device_cpu<T>,HeapMemory,grow_policy_double,STD_VECTOR>
 {
@@ -43,14 +45,11 @@ public:
 	}
 
 
-	/*! \ brief Resize the vector
+	/*! \ brief Resize the vector to contain n elements
 	 *
-	 * Resize the vector
-	 *
-	 * \param how many slot to reserve
+	 * \param slot number of elements
 	 *
 	 */
-
 	inline void resize(size_t slot)
 	{
 		v_size = slot;
@@ -102,7 +101,7 @@ public:
 
 	/*! \brief Remove one entry from the vector
 	 *
-	 * \param keys element to remove
+	 * \param key element to remove
 	 *
 	 */
 	void remove(size_t key)
@@ -159,10 +158,9 @@ public:
 
 	/*! \brief swap the memory between the two vector
 	 *
-	 * \param vector to swap
+	 * \param v vector to swap
 	 *
 	 */
-
 	void swap(std::vector<T> && v)
 	{
 		base.swap(v);
@@ -170,12 +168,9 @@ public:
 
 	/*! \brief Get an element of the vector
 	 *
-	 * Get an element of the vector
-	 *
-	 * \tparam must be 0
+	 * \tparam p must be 0
 	 *
 	 * \param id Element to get
-	 * \param p Property to get
 	 *
 	 */
 	template <unsigned int p>inline size_t & get(size_t id)
@@ -262,10 +257,9 @@ public:
 
 	/*! swap the content of the vector
 	 *
-	 * \param vector to be swapped with
+	 * \param v vector to be swapped with
 	 *
 	 */
-
 	void swap(openfpm::vector<T,device_cpu<T>,HeapMemory,grow_policy_double,STD_VECTOR> & v)
 	{
 		base.swap(v.base);

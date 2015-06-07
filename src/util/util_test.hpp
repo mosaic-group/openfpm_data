@@ -15,17 +15,15 @@ BOOST_AUTO_TEST_SUITE( util_test )
 
 BOOST_AUTO_TEST_CASE( object_prop_copy )
 {
+	//! [object copy example]
 	typedef Point_test<float> p;
 	typedef Point_test<float>::type vboost;
 	typedef object_creator<Point_test<float>::type,0,1,4>::type vboost_red;
 
-	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_t> encap_src;
-	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_t> encap_dst;
-
 	object<vboost> src;
 	object<vboost_red> dst;
 
-	// fill the source 0,1,4 with data
+	// fill the source properties x,y,v = 0,1,4 with data
 
 	boost::fusion::at_c<p::x>(src.data) = 1.0;
 	boost::fusion::at_c<p::y>(src.data) = 2.0;
@@ -33,13 +31,22 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 	for (size_t i = 0 ; i < 3 ;  i++)
 		boost::fusion::at_c<p::v>(src.data)[i] = i + 5.0;
 
+	// copy from src to dst
 	object_copy<object<vboost>,object<vboost_red>,NORMAL,0,1,4>(src,dst);
 
+	// Check the result
 	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<0>(dst.data),1.0);
 	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<1>(dst.data),2.0);
 
 	for (size_t i = 0 ; i < 3 ;  i++)
 		BOOST_REQUIRE_EQUAL(boost::fusion::at_c<2>(dst.data)[i],i + 5.0);
+
+	//! [object copy example]
+
+	//! [object copy encap example]
+
+	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_t> encap_src;
+	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_t> encap_dst;
 
 	openfpm::vector<p> v_point;
 	openfpm::vector<object<vboost_red>> v_point_red;
@@ -64,6 +71,7 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 	for (size_t i = 0 ; i < 3 ;  i++)
 		BOOST_REQUIRE_EQUAL(v_point_red.get(0).template get<2>()[i],i + 5.0);
 
+	//! [object copy encap example]
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -37,10 +37,8 @@ struct object_copy_e
 
 	/*! \brief Constructor
 	 *
-	 * Create a vertex properties list
-	 *
-	 * \param v_node std::string that is filled with the graph properties in the GraphML format
-	 * \param n_obj object container to access its properties for example encapc<...>
+	 * \param src source object
+	 * \param dst destination object
 	 *
 	 */
 	object_copy_e(v_src & src, v_dst & dst)
@@ -84,10 +82,8 @@ struct object_copy_f
 
 	/*! \brief Constructor
 	 *
-	 * Create a vertex properties list
-	 *
-	 * \param v_node std::string that is filled with the graph properties in the GraphML format
-	 * \param n_obj object container to access its properties for example encapc<...>
+	 * \param src source object
+	 * \param dst destination object
 	 *
 	 */
 	object_copy_f(v_src & src, v_dst & dst)
@@ -108,6 +104,14 @@ struct object_copy_f
 #define ENCAP 1
 #define NORMAL 2
 
+/*! \brief It copy the properties from one object to another
+ *
+ * Stub object
+ *
+ * \see object_copy<v_src,v_dst,NORMAL,prp...> object_copy<v_src,v_dst,ENCAP,prp...>
+ *
+ *
+ */
 template<typename v_src, typename v_dst,int type_copy, int... prp>
 struct object_copy
 {
@@ -122,13 +126,8 @@ struct object_copy
  * Given a set of properties for the source (0,1,3) it copy that property to the destination properties
  * (0,1,2)
  *
- * [Example]
- *
- * boost::fusion::vector<float,double,int,float[3]> src;
- *
- * boost::fusion::vector<float,float[3]> dst;
- *
- * object_copy<0,1,3>(src,dst)
+ * ### Object copy example
+ * \snippet util_test.hpp object copy example
  *
  */
 template<typename v_src, typename v_dst, int... prp>
@@ -147,6 +146,15 @@ struct object_copy<v_src,v_dst,NORMAL,prp...>
 	}
 };
 
+/*! \brief It copy the properties from one object to another
+ *
+ * Given a set of properties for the source (0,1,3) it copy that property to the destination properties
+ * (0,1,2)
+ *
+ * ### Object copy example
+ * \snippet util_test.hpp object copy encap example
+ *
+ */
 template<typename v_src, typename v_dst, int... prp>
 struct object_copy<v_src,v_dst,ENCAP,prp...>
 {

@@ -66,8 +66,8 @@ struct copy_cpu_encap
 	 * It define the copy parameters.
 	 *
 	 * \param key which element we are modifying
-	 * \param grid_src grid we are updating
-	 * \param obj object we have to set in grid_src
+	 * \param grid_dst grid we are updating
+	 * \param obj object we have to set in grid_dst (encapsulated)
 	 *
 	 */
 	copy_cpu_encap(grid_key_dx<dim> & key, S & grid_dst, const encapc<1,obj_type,Memory> & obj)
@@ -123,8 +123,8 @@ struct copy_cpu
 	 * It define the copy parameters.
 	 *
 	 * \param key which element we are modifying
-	 * \param grid_src grid we are updating
-	 * \param obj object we have to set in grid_src
+	 * \param grid_dst grid we are updating
+	 * \param obj object we have to set in grid_dst
 	 *
 	 */
 	copy_cpu(grid_key_dx<dim> & key, S & grid_dst, const obj_type & obj)
@@ -257,22 +257,26 @@ struct mem_reference
 
 /*!
  *
- * \brief This is an N-dimensional grid or an N-dimensional array working on CPU
+ * \brief This is an N-dimensional grid or an N-dimensional array with memory_traits_lin layout
  *
- * This is an N-Dimensional grid or an N-dimensional array working on CPU
+ * it is basically an N-dimensional Cartesian grid
  *
- * A grid it is basically a Cartesian grid
+ *	\tparam dim Dimensionality of the grid
+ *	\tparam T type of object the grid store
+ *	\tparam Mem memory layout
  *
- *	\param dim Dimensionality of the grid
- *	\param T type of object the grid store
- *	\param Mem interface used to allocate memory
+ * ### Definition and allocation of a 3D grid on CPU memory
+ * \snippet grid_unit_tests.hpp Definition and allocation of a 3D grid on CPU memory
+ * ### Access a grid c3 of size sz on each direction
+ * \snippet grid_unit_tests.hpp Access a grid c3 of size sz on each direction
+ * ### Access to an N-dimensional grid with an iterator
+ * \snippet grid_unit_tests.hpp Access to an N-dimensional grid with an iterator
  *
  */
-
 template<unsigned int dim, typename T, typename Mem = typename memory_traits_lin< typename T::type >::type >
 class grid_cpu
 {
-	//! Access the key
+	//! Access key
 	typedef grid_key_dx<dim> access_key;
 
 	//! boost::vector that describe the data type
@@ -334,15 +338,17 @@ public:
 
 	/*! \brief create a grid from another grid
 	 *
-	 * \param the grid to copy
-	 * \param S memory type, used for template deduction
+	 * \tparam S memory type for allocation
+	 *
+	 * \param g the grid to copy
+	 * \param mem memory object (only used for template deduction)
 	 *
 	 */
 	template<typename S> grid_cpu(const grid_cpu & g, S & mem)
-				:isExternal(false)
-				 {
+	:isExternal(false)
+	{
 		swap(g.duplicate<S>());
-				 }
+	}
 
 	//! Constructor allocate memory and give them a representation
 	grid_cpu(std::vector<size_t> & sz)
@@ -483,7 +489,7 @@ public:
 
 	/*! \brief Get the reference of the selected element
 	 *
-	 * \param p property to get (is an integer)
+	 * \tparam p property to get (is an integer)
 	 * \param v1 grid_key that identify the element in the grid
 	 *
 	 * \return a reference to the element
@@ -499,7 +505,7 @@ public:
 
 	/*! \brief Get the const reference of the selected element
 	 *
-	 * \param p property to get (is an integer)
+	 * \tparam p property to get (is an integer)
 	 * \param v1 grid_key that identify the element in the grid
 	 *
 	 * \return a const reference to the element
@@ -794,13 +800,11 @@ public:
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 	}
 
-	/*! \brief set an element of the grid
-	 *
-	 * set an element of the grid from another element of another grid
+	/*! \brief Set an element of the grid from another element of another grid
 	 *
 	 * \param key1 element of the grid to set
 	 * \param g source grid
-	 * \param element of the source grid to copy
+	 * \param key2 element of the source grid to copy
 	 *
 	 */
 
@@ -939,7 +943,22 @@ struct allocate
 	}
 };
 
-
+/*! \brief This is an N-dimensional grid or an N-dimensional array with memory_traits_inte layout
+ *
+ * it is basically an N-dimensional Cartesian grid
+ *
+ *	\tparam dim Dimensionality of the grid
+ *	\tparam T type of object the grid store
+ *	\tparam Mem memory layout
+ *
+ * ### Definition and allocation of a 3D grid on GPU memory
+ * \snippet grid_unit_tests.hpp Definition and allocation of a 3D grid on GPU memory
+ * ### Access a grid c3 of size sz on each direction
+ * \snippet grid_unit_tests.hpp Access a grid c3 of size sz on each direction
+ * ### Access to an N-dimensional grid with an iterator
+ * \snippet grid_unit_tests.hpp Access to an N-dimensional grid with an iterator
+ *
+ */
 template<unsigned int dim, typename T, typename Mem = typename memory_traits_inte< typename T::type >::type >
 class grid_gpu
 {
@@ -987,9 +1006,7 @@ public:
 
 	/*! \brief Return the internal grid information
 	 *
-	 * Return the internal grid information
-	 *
-	 * \return the internal grid
+	 * \return the internal grid information
 	 *
 	 */
 
@@ -1000,9 +1017,7 @@ public:
 
 	/*! \brief Create the object that provide memory
 	 *
-	 * Create the object that provide memory
-	 *
-	 * \param T memory
+	 * \tparam S memory object type
 	 *
 	 */
 
@@ -1077,7 +1092,7 @@ public:
 	 *
 	 * Swap the memory of another grid
 	 *
-	 * \obj Memory to swap with
+	 * \param obj Memory to swap with
 	 *
 	 */
 	void swap(grid_gpu<dim,T,Mem> & obj)

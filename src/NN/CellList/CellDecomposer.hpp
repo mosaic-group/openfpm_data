@@ -45,8 +45,8 @@ public:
 
 	/*! \brief Set the transformation Matrix and shift
 	 *
-	 * \mat Matrix transformation
-	 * \orig origin point
+	 * \param mat Matrix transformation
+	 * \param orig origin point
 	 *
 	 */
 	inline void setTransform(Matrix<dim,T> & mat, Point<dim,T> & orig)
@@ -72,7 +72,7 @@ public:
 	{
 	}
 
-	/*! \brief Shift the point transformation
+	/*! \brief Shift the point
 	 *
 	 * \param s source point
 	 * \param i coordinate
@@ -99,16 +99,25 @@ public:
 };
 
 
-/*! \brief Decompose a cell into space
+/*! \brief Decompose a space into cells
  *
- * It is a convenient class for cell decomposition of an N dimensional cells
- *  and index linearization with getCell, transform is used to shift the space
- *  where the cell list is defined. It basically apply a transformation to the
- *  point every time we call getCell of getCellGrid
+ * It is a convenient class for cell decomposition of an N dimensional space into cells
+ *  and index linearization with getCell. Transform parameter is used to shift the space
+ *  from the origin where the cell list is defined. It basically apply a transformation to the
+ *  point every time we call getCell of getCellGrid. The shift is given by the starting point (p1)
+ *  of the box that define where the Cell decomposition live
  *
  * \tparam dim dimension of the space divided by the cell
  * \tparam T information the cell contain
- * \tparam transform type of transformation (no_transformation shift ... )
+ * \tparam transform type of transformation (no_transformation shift ... ), carefully if p1 it different from {0, ... 0}
+ *         shift class must be used
+ *
+ * ### Cell decomposer without shift
+ * \snippet CellList_test.hpp Cell decomposer use without shift
+ * ### Cell decomposer with padding
+ * \snippet CellList_test.hpp Test Cell decomposer with padding
+ * ### Cell decomposer with shift
+ * \snippet CellList_test.hpp Test Cell decomposer with shift
  *
  */
 template<unsigned int dim,typename T, typename transform = no_transform<dim,T>>
@@ -400,6 +409,7 @@ public:
 	 *
 	 *  Example for div = {7,7} and pad = 1
 	 *
+	 * \verbatim
 	 * +-----------------------+
      * |p |p |p |p |p |p |p |p |
      * +-----------------------+
@@ -413,6 +423,7 @@ public:
      * +-----------------------+
      * |p |p |p |p |p |p |p |p |
      * +-----------------------+
+	 * \endverbatim
 	 *
 	 * Cell with p are padding cell cell that are around but external the box, the cell number 9 that
 	 * is at the origin of the box is identified with 9
@@ -433,6 +444,7 @@ public:
 	 *
 	 *  Example for div = {7,7} and pad = 1
 	 *
+	 * \verbatim
 	 * +-----------------------+
      * |p |p |p |p |p |p |p |p |
      * +-----------------------+
@@ -446,6 +458,8 @@ public:
      * +-----------------------+
      * |p |p |p |p |p |p |p |p |
      * +-----------------------+
+	 *
+	 * \endverbatim
 	 *
 	 * Cell with p are padding cell cell that are around but external the box, the cell number 9 that
 	 * is at the origin of the box is identified with 9
@@ -465,6 +479,7 @@ public:
 	 *
 	 *  Example for div = {7,7} and pad = 1
 	 *
+	 * \verbatim
 	 * +-----------------------+
      * |p |p |p |p |p |p |p |p |
      * +-----------------------+
@@ -478,6 +493,7 @@ public:
      * +-----------------------+
      * |p |p |p |p |p |p |p |p |
      * +-----------------------+
+	 * \endverbatim
 	 *
 	 * Cell with p are padding cell cell that are around but external the box, the cell number 9 that
 	 * is at the origin of the box is identified with 9

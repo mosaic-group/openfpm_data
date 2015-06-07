@@ -90,11 +90,11 @@ struct generate_array_vector_impl<T,1, F, args...> {
  *
  * Usage:
  *
- * boost::mpl::vector<float,int_<4>,int<4>,......> v
+ * boost::mpl::vector<int_<4>,int<4>,......> v
  *
  * typdef generate_array_vector<size_t,v>::result B;
  *
- * B is an array or size_t {4,4}
+ * B is an array or size_t of two element {4,4}
  *
  * \param T type of the output buffer
  * \param F boost::mpl::vector

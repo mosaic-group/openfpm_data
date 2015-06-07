@@ -72,6 +72,7 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 	std::cout << "3D Array with grid_key (without redundant dimension): " << "\n";
 #endif
 
+	//! [Access a grid c3 of size sz on each direction]
 	typedef Point_test<float> P;
 
 	timer t;
@@ -110,6 +111,8 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 			}
 		}
 	}
+
+	//! [Access a grid c3 of size sz on each direction]
 
 #ifdef VERBOSE_TEST
 	t.stop();
@@ -306,6 +309,7 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 	t.start();
 #endif
 
+	//! [Access to an N-dimensional grid with an iterator]
 	typedef Point_test<float> P;
 
 	grid_key_dx_iterator<dim> key_it = c3.getIterator();
@@ -336,7 +340,7 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 		++key_it;
 
 	}
-
+	//! [Access to an N-dimensional grid with an iterator]
 
 #ifdef VERBOSE_TEST
 	t.stop();
@@ -549,9 +553,13 @@ BOOST_AUTO_TEST_CASE( grid_use)
 
 #ifdef CUDA_GPU
 
-		{grid_gpu<3, Point_test<float> > c3(sz);
+		{
+		//! [Definition and allocation of a 3D grid on GPU memory]
+		grid_gpu<3, Point_test<float> > c3(sz);
 		c3.setMemory<CudaMemory>();
-		test_layout_grid3d(c3,i);}
+		//! [Definition and allocation of a 3D grid on GPU memory]
+		test_layout_grid3d(c3,i);
+		}
 
 		{grid_cpu<3, Point_test<float> > c3(sz);
 		c3.setMemory<CudaMemory>();
@@ -559,8 +567,11 @@ BOOST_AUTO_TEST_CASE( grid_use)
 
 #endif
 
-		{grid_gpu<3, Point_test<float> > c3(sz);
+		{
+		//! [Definition and allocation of a 3D grid on CPU memory]
+		grid_cpu<3, Point_test<float> > c3(sz);
 		c3.setMemory<HeapMemory>();
+		//! [Definition and allocation of a 3D grid on CPU memory]
 		test_layout_grid3d(c3,i);}
 
 		// Test the 3d cpu grid with Cudamemory and HeapMemory

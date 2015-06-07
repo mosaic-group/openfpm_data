@@ -17,6 +17,14 @@
 #define NO_CHECK 1
 #define SAFE 2
 
+/*! \brief Iterator for the neighborhood of the cell structures
+ *
+ * \tparam dim dimensionality of the space where the cell live
+ * \tparam Cell cell type on which the iterator is working
+ * \tparam NNc_size neighborhood size
+ * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
+ *
+ */
 template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int impl> class CellNNIterator
 {
 	// Cell list
@@ -43,8 +51,9 @@ public:
 	 *
 	 * Cell NN iterator
 	 *
-	 * \param Cell id
-	 * \param NNc Cell NN id
+	 * \param cell Cell id
+	 * \param NNc Cell neighborhood indexes (relative)
+	 * \param cl Cell structure
 	 *
 	 */
 	CellNNIterator(size_t cell, long int (&NNc)[NNc_size], Cell & cl)

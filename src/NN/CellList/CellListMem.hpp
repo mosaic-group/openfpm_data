@@ -75,7 +75,7 @@ public:
 	/*! \brief Cell list
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list
+	 * \param org of the Cell list
 	 * \param div grid size on each dimension
 	 *
 	 */

@@ -9,36 +9,27 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
 #include "base_type.hpp"
+#include "Point_orig.hpp"
 
-/*! \brief Definition of a class Point in plain C++ and boost::vector for testing purpose
+/*! \brief Test structure used for several test
  *
- * Definition of a class Point in plain C++ and boost::vector for testing purpose
+ * It is a test structure used for several test it contain 4 scalar "x,y,z,s"
+ * one vector property v[3] and one tensor or rank 2 t[3][3]
  *
- *	\param T base type of all the fields
+ * It is the format for type parsing of in the openfpm structures see openFPM_data wiki
+ * for more information
+ *
+ * ### Declaration of a point
+ * \snippet vector_unit_tests.hpp Point declaration
+ *
+ * ### Create a type definition
+ *
+ * \snippet vector_unit_tests.hpp typedef point
+ *
+ * ### Access the members
+ * \snippet vector_unit_tests.hpp Point usage
  *
  */
-
-template<typename T> class Point_orig
-{
-public:
-
-  T x;
-  T y;
-  T z;
-
-  T s;
-
-  T v[3];
-  T t[3][3];
-
-  inline void setx(T x_)	{x = x_;};
-  inline void sety(T y_)	{y = y_;};
-  inline void setz(T z_)	{z = z_;};
-  inline void sets(T s_)	{s = s_;};
-};
-
-// tranformed
-
 template<typename T> class Point_test
 {
 public:

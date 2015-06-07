@@ -15,13 +15,15 @@
 
 BOOST_AUTO_TEST_SUITE( vector_test )
 
+//! [typedef point]
 typedef Point_test<float> P;
+//! [typedef point]
 
 std::vector<Point_orig<float>> allocate_stl()
 {
 	std::vector<Point_orig<float>> v_stl_test;
 
-	// Now fill the STL vector
+	// Now fill the vector
 
 	#ifdef VERBOSE_TEST
 	timespec ts_start;
@@ -71,16 +73,19 @@ std::vector<Point_orig<float>> allocate_stl()
 
 openfpm::vector<Point_test<float>> allocate_openfpm()
 {
-	openfpm::vector<Point_test<float>> v_ofp_test;
-
 	#ifdef VERBOSE_TEST
 	timespec ts_start;
 	// clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
 	clock_gettime(CLOCK_REALTIME, &ts_start); // Works on Linux
 	#endif
 
-	// Point
+	//! [Create add and access]
+	openfpm::vector<Point_test<float>> v_ofp_test;
+
+	//! [Point declaration]
 	Point_test<float> p;
+	//! [Point declaration]
+
 	p.setx(1.0);
 	p.sety(2.0);
 	p.setz(3.0);
@@ -88,10 +93,11 @@ openfpm::vector<Point_test<float>> allocate_openfpm()
 
 	// push objects
 
-	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
+	for (size_t i = 0 ; i < FIRST_PUSH / 2 ; i++)
 	{
-		// Modify p
+		// Modify the point
 
+		//! [Point usage]
 		p.get<P::v>()[0] = 1.0 + i;
 		p.get<P::v>()[1] = 2.0 + i;
 		p.get<P::v>()[2] = 7.0 + i;
@@ -105,11 +111,37 @@ openfpm::vector<Point_test<float>> allocate_openfpm()
 		p.get<P::t>()[2][0] = 4.0 + i;
 		p.get<P::t>()[2][1] = 3.0 + i;
 		p.get<P::t>()[2][2] = 11.0 + i;
+		//! [Point usage]
 
 		// add p
 
 		v_ofp_test.add(p);
 	}
+
+	for (size_t i = FIRST_PUSH / 2 ; i < FIRST_PUSH ; i++)
+	{
+		v_ofp_test.add();
+
+		size_t last = v_ofp_test.size()-1;
+
+		// Modify the point
+
+		v_ofp_test.get<P::v>(last)[0] = 1.0 + i;
+		v_ofp_test.get<P::v>(last)[1] = 2.0 + i;
+		v_ofp_test.get<P::v>(last)[2] = 7.0 + i;
+
+		v_ofp_test.get<P::t>(last)[0][0] = 10.0 + i;
+		v_ofp_test.get<P::t>(last)[0][1] = 13.0 + i;
+		v_ofp_test.get<P::t>(last)[0][2] = 8.0 + i;
+		v_ofp_test.get<P::t>(last)[1][0] = 19.0 + i;
+		v_ofp_test.get<P::t>(last)[1][1] = 23.0 + i;
+		v_ofp_test.get<P::t>(last)[1][2] = 5.0 + i;
+		v_ofp_test.get<P::t>(last)[2][0] = 4.0 + i;
+		v_ofp_test.get<P::t>(last)[2][1] = 3.0 + i;
+		v_ofp_test.get<P::t>(last)[2][2] = 11.0 + i;
+	}
+
+	//! [Create add and access]
 
 	#ifdef VERBOSE_TEST
 	timespec end_time;
@@ -132,7 +164,6 @@ BOOST_AUTO_TEST_CASE( vector_use)
 	openfpm::vector<Point_test<float>> v_ofp_test = allocate_openfpm();
 
 	// try to duplicate the vector
-
 	openfpm::vector<Point_test<float>> dv_ofp_test = v_ofp_test.duplicate();
 
 	// Check if the STL and openfpm match
@@ -188,13 +219,23 @@ struct pre_test
 
 BOOST_AUTO_TEST_CASE( vector_std_utility )
 {
-	openfpm::vector<size_t> pb(16);
+	//! [Create add and access stl]
 
-	// fill pb with garbage
+	// Create a vector with 13 element
+	openfpm::vector<size_t> pb(13);
+
+	// add at the end some othe element
+	pb.add(0);
+	pb.add(1);
+	pb.add(2);
+
+	// access the vector
 	for (size_t i = 0 ;  i < 16 ; i++)
 	{
 		pb.get(i) = i+1;
 	}
+
+	//! [Create add and access stl]
 
 	pb.fill(0);
 
@@ -319,7 +360,7 @@ BOOST_AUTO_TEST_CASE( vector_prealloc )
 }
 
 
-BOOST_AUTO_TEST_CASE( vector_test_creator )
+BOOST_AUTO_TEST_CASE( object_test_creator )
 {
 	bool tst = std::is_same< typename object_creator<Point_test<float>::type,0,1,5>::type, typename boost::fusion::vector3<float,float,float[3][3]> >::value;
 
@@ -331,6 +372,8 @@ BOOST_AUTO_TEST_CASE( vector_test_creator )
 BOOST_AUTO_TEST_CASE(vector_remove )
 {
 	typedef Point_test<float> p;
+
+	//! [Create push and multiple remove]
 
 	openfpm::vector<Point_test<float>> v1;
 
@@ -352,6 +395,8 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 
 	v1.remove(rem);
 	}
+
+	//! [Create push and multiple remove]
 
 	BOOST_REQUIRE_EQUAL(v1.size(),1020);
 	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(0),4);

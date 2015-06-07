@@ -52,8 +52,6 @@
 
 /*! \brief class with no edge
  *
- *
- *
  */
 class no_edge
 {
@@ -244,16 +242,13 @@ public:
 };
 
 
-/*! \brief Graph that store a CSR graph format
- *
- * Graph that store a CSR graph format
+/*! \brief Structure that store a graph in CSR format or basically in compressed adjacency matrix format
  *
  * \param V each vertex will encapsulate have this type
  * \param E each edge will encapsulate this type
  * \param device Type of device / basicaly it select the layout
  *        for device_cpu is (x_1, p1_1, p2_1, p3_1 ....), ... ( x_n, p1_1, p2_1, p3_1, ...)
  *        for device_gpu is (x_1, ... , x_n) ... (p1_n, ... pn_n)
- *
  *        where x_1 is the index where it end the list of the neighborhood list and pj_k is
  *        the property j for the vertex j. Basically in the first case one array will store
  *        index and property of each vertex, in the second case several array will store
@@ -262,8 +257,15 @@ public:
  * \param VertexList structure that store the list of Vertex
  * \param EdgeList structure that store the list of edge
  *
- * WARNING: This graph is suitable only when we know the graph structure and we build
+ * \warning This graph is suitable only when we know the graph structure and we build
  * the graph adding vertexes and edges, removing vertex and edge is EXTREMLY expensive
+ *
+ * ### Define vertex and edge of the graph
+ * \snippet graph_unit_tests.hpp Define vertex and edge of the graph
+ * ### Create a Cartesian graph
+ * \snippet graph_unit_tests.hpp Create a Cartesian graph
+ * ### Create a tree graph with no edge properties
+ * \snippet graph_unit_tests.hpp Create a tree graph with no edge properties
  *
  */
 
@@ -476,8 +478,7 @@ public:
 	 *
 	 * operator to access the vertex
 	 *
-	 *
-	 * \param i property to access
+	 * \tparam i property to access
 	 * \param id of the vertex to access
 	 *
 	 */
@@ -486,10 +487,9 @@ public:
 		return v.template get<i>(id);
 	}
 
-	/*! \brief Function to access the vertexes
+	/*! \brief Access the vertex
 	 *
-	 *
-	 * \param i property to access
+	 * \tparam i property to access
 	 * \param id of the vertex to access
 	 *
 	 */
@@ -532,12 +532,9 @@ public:
 		return v.template get(id.get());
 	}
 
-	/*! \brief operator to access the edge
+	/*! \brief Access the edge
 	 *
-	 * operator to access the edge
-	 *
-	 *
-	 * \param i property to access
+	 * \tparam i property to access
 	 * \param id of the edge to access
 	 *
 	 */
@@ -547,12 +544,9 @@ public:
 	}
 
 
-	/*! \brief operator to access the edge
+	/*! \brief Access the edge
 	 *
-	 * operator to access the edge
-	 *
-	 *
-	 * \param i property to access
+	 * \tparam i property to access
 	 * \param id of the edge to access
 	 *
 	 */
@@ -561,9 +555,7 @@ public:
 		return e.template get<i>(id);
 	}
 
-	/*! \brief operator to access the edge
-	 *
-	 * operator to access the edge
+	/*! \brief Access the edge
 	 *
 	 * \param id of the edge to access
 	 *
@@ -612,12 +604,11 @@ public:
 
 	/*! \brief Return the number of childs of a vertex
 	 *
-	 * \param c Child id
+	 * \param c child id
 	 *
 	 * \return the number of childs
 	 *
 	 */
-
 	inline size_t getNChilds(typename VertexList<V,dev_V_sel,Memory,grow_p,openfpm::vect_isel<V>::value>::iterator_key & c)
 	{
 		// Get the number of childs
@@ -625,13 +616,12 @@ public:
 		return v_l.template get<0>(c.get());
 	}
 
-	/*! \brief Get the child edge
+	/*! \brief Get the vertex edge
 	 *
-	 * \param c Child
-	 * \param e edge id within the child
+	 * \param v vertex
+	 * \param v_e edge id
 	 *
 	 */
-
 	inline auto getChildEdge(size_t v, size_t v_e) -> decltype(e.get(0))
 	{
 #ifdef DEBUG

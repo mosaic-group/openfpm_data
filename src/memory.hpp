@@ -52,16 +52,12 @@ class memory
 
 	/*! \brief Copy the memory from one device to another device
 	 *
-	 * copy the memory from one device to another device
-	 *
-	 * \param memory from where to copy
+	 * \param m from where to copy
 	 *
 	 */
 	virtual bool copy(memory & m) = 0;
 
 	/*! \brief get the size of the buffer
-	 *
-	 * get the size of the buffer
 	 *
 	 */
 
@@ -75,7 +71,7 @@ class memory
 
 	virtual void * getPointer() = 0;
 
-	/*! \ brief destructor
+	/*! \brief destructor
 	 *
 	 * destructor
 	 *

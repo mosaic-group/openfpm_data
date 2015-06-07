@@ -71,7 +71,7 @@ struct has_data<T, typename Void<decltype( T::data )>::type> : std::true_type
 {};
 
 
-/*! \brief check id typedef ... type and the member data has the same type
+/*! \brief check if T::type and T.data has the same type
  *
  * \tparam i when different from 0 a check is performed otherwise not, the reason of
  *           this is that the typedef and data could also not exist producing
@@ -80,14 +80,15 @@ struct has_data<T, typename Void<decltype( T::data )>::type> : std::true_type
  *
  * \tparam T
  *
- * [Example]
+ * ### Example
  *
+ * \code{.cpp}
  * is_typedef_and_data_same<has_data<T> && has_typedef<T>,T>::value
+ * \endcode
  *
  * return true if the type of T::data is the same of T::type, false otherwise
  *
  */
-
 template<bool cond, typename T>
 struct is_typedef_and_data_same
 {

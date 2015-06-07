@@ -24,10 +24,10 @@
  *
  * Be carefull when you allocate locally it take memory from the stack
  *
- * \param T type of the space
- * \param dim dimensionality
+ * \tparam dim dimensionality
+ * \tparam T type of the space
  *
- * \WARNING Matrix is untested so it remain as concept usage until test are not introduced
+ * \warning Matrix is untested so it remain as concept usage until test are not introduced
  *
  */
 
@@ -61,8 +61,9 @@ template<unsigned int dim ,typename T> class Matrix
 
 	/*! \brief Get coordinate
 	 *
-	 * \param i dimension
-	 * \return the i-coordinate of the point
+	 * \param i row
+	 * \param j colum
+	 * \return the value
 	 *
 	 */
 
@@ -71,9 +72,9 @@ template<unsigned int dim ,typename T> class Matrix
 		return boost::fusion::at_c<mat>(data)[i][j];
 	}
 
-	/*! \brief operator= between points
+	/*! \brief operator= between Matrix
 	 *
-	 * \param p Point
+	 * \param m Matrix
 	 *
 	 */
 	inline Matrix<dim,T> & operator=(const Matrix<dim,T> & m)

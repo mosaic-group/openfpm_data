@@ -177,6 +177,7 @@ BOOST_AUTO_TEST_SUITE( CellList_test )
 
 BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 {
+	//! [Cell decomposer use without shift]
 	SpaceBox<3,double> box({0,0,0},{1,1,1});
 	Point<3,double> p({0.5,0.5,0.5});
 
@@ -194,7 +195,9 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	BOOST_REQUIRE_EQUAL(key.get(2),8);
 	}
 
-	// Test Cell decomposer with padding
+	//! [Cell decomposer use without shift]
+
+	//! [Test Cell decomposer with padding]
 	{
 	CellDecomposer_sm<3,double> cd(box,div,1);
 	size_t cell = cd.getCell(p);
@@ -205,7 +208,9 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	BOOST_REQUIRE_EQUAL(key.get(2),9);
 	}
 
-	// Rest Cell decomposer with shift
+	//! [Test Cell decomposer with padding]
+
+	//! [Test Cell decomposer with shift]
 	{
 	Point<3,double> sht({1.0,2.0,3.0});
 	CellDecomposer_sm< 3,double,shift<3,double> > cd(box,div,sht,1);
@@ -216,6 +221,8 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	BOOST_REQUIRE_EQUAL(key.get(1),9);
 	BOOST_REQUIRE_EQUAL(key.get(2),9);
 	}
+
+	//! [Test Cell decomposer with shift]
 }
 
 BOOST_AUTO_TEST_CASE( CellList_use)

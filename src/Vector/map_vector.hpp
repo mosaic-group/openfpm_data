@@ -48,7 +48,6 @@ namespace openfpm
 		 * \return the next grid_key
 		 *
 		 */
-
 		vector_key_iterator operator++()
 		{
 			//! increment the first index
@@ -60,9 +59,7 @@ namespace openfpm
 
 		/*! \brief Set the dimension
 		 *
-		 * Set the dimension
-		 *
-		 * \param dim is the dimension
+		 * \param d is the dimension (IGNORED is by default 0)
 		 * \param sz set the counter to sz
 		 *
 		 */
@@ -80,7 +77,6 @@ namespace openfpm
 		 * \return true if there is the next, false otherwise
 		 *
 		 */
-
 		bool isNext()
 		{
 			if (gk < end)
@@ -213,7 +209,6 @@ namespace openfpm
 	 * device selector struct, it return the correct data type for each device
 	 *
 	 */
-
 	template<typename T>
 	struct device_cpu
 	{
@@ -226,7 +221,6 @@ namespace openfpm
 	 * device selector struct, it return the correct data type for each device
 	 *
 	 */
-
 	template<typename T>
 	struct device_gpu
 	{
@@ -237,17 +231,20 @@ namespace openfpm
 
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
-	 * Implementation of 1-D std::vector like structure, empty structure
-	 * when I do not know how to specialize, should be never selected by the
-	 * compiler
+	 * Stub object look at the various implementations
+	 *
+	 * \snippet vector_unit_tests.hpp Create add and access
 	 *
 	 * \param T type of structure the vector has to store
 	 * \param device type of layout to use
 	 * \param Memory allocator to use
 	 * \param grow_p grow policy, how this vector should grow
 	 *
+	 * \see vector<T,device_cpu<T>,HeapMemory,grow_policy_double,STD_VECTOR>
+	 * \see vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE>
+	 * \see vector<T,device_gpu<T>,Memory,grow_p,OPENFPM_NATIVE>
+	 *
 	 */
-
 	template<typename T, typename device=device_cpu<T>, typename Memory=HeapMemory, typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value>
 	class vector
 	{
@@ -258,16 +255,18 @@ namespace openfpm
 
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
-	 * Implementation of 1-D std::vector like structure, the memory allocated
-	 * increase by PAGE_ALLOC constant every time we need more space
+	 * ### Add and access elements
 	 *
-	 * \param T type of structure the vector has to store
-	 * \param device type of layout to use
-	 * \param Memory allocator to use
-	 * \param grow_p grow policy for vector
+	 * \snippet vector_unit_tests.hpp Create add and access
+	 *
+	 * \tparam T type of object the vector store
+	 * \tparam base memory layout to use
+	 * \tparam Memory allocator to use
+	 * \tparam grow_p grow policy for vector in case of reallocation
+	 *
+	 * OPENFPM_NATIVE implementation
 	 *
 	 */
-
 	template<typename T,typename Memory, typename grow_p>
 	class vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE>
 	{
@@ -282,14 +281,13 @@ namespace openfpm
 		//! 1-D static grid
 		grid_cpu<1,T> base;
 
-		/*! \brief Get 1D vector to create the grid in the constructor
+		/*! \brief Create a 1D vector that contain the vector size
 		 *
-		 * Get 1D vector to create the grid in the constructor
+		 * Used to construct the underline 1D-grid
 		 *
-		 * \param size_t sizeof the vector
+		 * \param sz size of the vector
 		 *
 		 */
-
 		std::vector<size_t> getV(size_t sz)
 		{
 			std::vector<size_t> tmp;
@@ -301,8 +299,8 @@ namespace openfpm
 
 		/*! \brief If the argument is zero return 1 otherwise return the argument
 		 *
-		 * \param sz[1] output
-		 * \param argument
+		 * \param sz output
+		 * \param arg argument
 		 *
 		 */
 		void non_zero_one(size_t sz[1], size_t arg)
@@ -358,9 +356,9 @@ namespace openfpm
 
 		/*! \brief Resize the vector
 		 *
-		 * Resize the vector and allocate n slot
+		 * Resize the vector and allocate n elements
 		 *
-		 * \param resize the vector of n-slot
+		 * \param slot number of elements
 		 *
 		 */
 		void resize(size_t slot)
@@ -528,7 +526,7 @@ namespace openfpm
 		 * Get an element of the vector
 		 *
 		 * \param id Element to get
-		 * \param p Property to get
+		 * \tparam p Property to get
 		 *
 		 */
 
@@ -548,7 +546,6 @@ namespace openfpm
 		 * Get an element of the vector
 		 *
 		 * \param id Element to get
-		 * \param p Property to get
 		 *
 		 */
 
@@ -589,9 +586,9 @@ namespace openfpm
 			return dup;
 		}
 
-		/*! \brief Constructor for a temporal object
+		/*! \brief Constructor from another vector
 		 *
-		 * \param the temporal object
+		 * \param v the vector
 		 *
 		 */
 
@@ -611,12 +608,10 @@ namespace openfpm
 			base.template setMemory<Memory>();
 		}
 
-		/*! \brief Set the object
+		/*! \brief Set the object id to obj
 		 *
-		 * Set the object id to obj
-		 *
-		 * \param id
-		 * \param object (encapsulated)
+		 * \param id element
+		 * \param obj object (encapsulated)
 		 *
 		 */
 		void set(size_t id, const typename grid_cpu<1,T>::container & obj)
@@ -634,7 +629,7 @@ namespace openfpm
 		 * Set the object id to obj
 		 *
 		 * \param id
-		 * \param object
+		 * \param obj
 		 *
 		 */
 		void set(size_t id, T & obj)
@@ -890,9 +885,9 @@ namespace openfpm
 
 		/*! \brief Resize the vector
 		 *
-		 * Resize the vector and allocate n slot
+		 * Resize the vector to the specified number of elements
 		 *
-		 * \param resize the vector of n-slot
+		 * \param slot number of elements
 		 *
 		 */
 		void resize(size_t slot)
