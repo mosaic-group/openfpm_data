@@ -52,8 +52,8 @@
  *
  *
  */
-template<unsigned int dim, typename T, typename base>
-class CellList<dim,T,FAST,base> : public CellDecomposer_sm<dim,T>
+template<unsigned int dim, typename T, typename transform, typename base>
+class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,transform>
 {
 	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
 	//
@@ -124,7 +124,7 @@ public:
 	 */
 	grid_sm<dim,void> & getGrid()
 	{
-		return CellDecomposer_sm<dim,T>::getGrid();
+		return CellDecomposer_sm<dim,T,transform>::getGrid();
 	}
 
 	/*! Initialize the cell list
@@ -152,8 +152,11 @@ public:
 	 */
 	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
-		SpaceBox<dim,T> sbox;
-		Initialize(sbox,div,orig,slot);
+		SpaceBox<dim,T> sbox(box);
+
+		// Initialize point transformation
+
+		Initialize(sbox,div,pad,slot);
 	}
 
 	/*! Initialize the cell list
@@ -179,14 +182,9 @@ public:
 	 * +-----------------------+
 	 *
 	 */
-	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], const size_t pad = 1, size_t slot=16)
 	{
-		// Add padding
-		size_t div_pad[dim];
-		for (size_t i = 0 ; i < dim ; i++)
-			div_pad[i] = div[i] + 2;
-
-		CellDecomposer_sm<dim,T>::setDimensions(box,div_pad, pad);
+		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, pad);
 		this->slot = slot;
 		this->orig = orig;
 
@@ -269,6 +267,37 @@ public:
 	{
 	}
 
+	/*! \brief Cell list
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param div grid size on each dimension
+	 * \param mat Matrix transformation
+	 * \param s shist
+	 * \param origin of the Cell list
+	 * \param pad Cell padding
+	 * \param slot maximum number of slot
+	 *
+	 * +-----------------------+
+	 * |p |p |p |p |p |p |p |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |  |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |9 |  |  |  |  |  |p |
+	 * +-----------------------+
+	 * |p |p |p |p |p |p |p |p |
+	 * +-----------------------+
+	 *
+	 */
+	CellList(Box<dim,T> & box, size_t (&div)[dim], Matrix<dim,T> mat, Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	:CellDecomposer_sm<dim,T,transform>(box,div,mat,orig,pad)
+	{
+		SpaceBox<dim,T> sbox(box);
+		Initialize(sbox,div,orig,pad,slot);
+	}
 
 	/*! \brief Cell list
 	 *
@@ -443,7 +472,7 @@ public:
 	 * \param cl Cell list with witch you swap the memory
 	 *
 	 */
-	inline void swap(CellList<dim,T,FAST,base> & cl)
+	inline void swap(CellList<dim,T,FAST,transform,base> & cl)
 	{
 		cl_n.swap(cl.cl_n);
 		cl_base.swap(cl.cl_base);
@@ -454,9 +483,9 @@ public:
 	 * \param return the iterator to the cell
 	 *
 	 */
-	CellIterator<CellList<dim,T,FAST,base>> getIterator(size_t cell)
+	CellIterator<CellList<dim,T,FAST,transform,base>> getIterator(size_t cell)
 	{
-		return CellIterator<CellList<dim,T,FAST,base>>(cell,*this);
+		return CellIterator<CellList<dim,T,FAST,transform,base>>(cell,*this);
 	}
 
 	/*! \brief Get the Nearest Neighborhood iterator
@@ -464,23 +493,23 @@ public:
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,base>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> getNNIterator(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,FAST,base>,FULL,impl> cln(cell,NNc_full,*this);
+		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> cln(cell,NNc_full,*this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,base>,SYM,impl> getNNIteratorSym(size_t cell)
+	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,FAST,base>,SYM,impl> cln(cell,NNc_sym,*this);
+		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,NNc_sym,*this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,base>,CRS,impl> getNNIteratorCross(size_t cell)
+	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> getNNIteratorCross(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,FAST,base>,CRS,impl> cln(cell,NNc_cr,*this);
+		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> cln(cell,NNc_cr,*this);
 
 		return cln;
 	}

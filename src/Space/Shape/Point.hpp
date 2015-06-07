@@ -177,12 +177,29 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 *
 	 */
-	void zero()
+	inline void zero()
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			get(i) = 0;
 		}
+	}
+
+	/*! \brief Create a point set to zero
+	 *
+	 * \return a point with all coorfinate set to 0
+	 *
+	 */
+	inline static Point<dim,T> zero_p()
+	{
+		Point<dim,T> p;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			p.get(i) = 0;
+		}
+
+		return p;
 	}
 
 	/*! \brief Return the string with the point coordinate

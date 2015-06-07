@@ -54,14 +54,15 @@ class SpaceBox : public Box<dim,T>
 	 */
 
 	SpaceBox(const SpaceBox<dim,T> & b)
+	:Box<dim,T>(b)
 	{
 		// for each dimension set high and low
 
-		for (size_t d = 0 ; d < dim ; d++)
+/*		for (size_t d = 0 ; d < dim ; d++)
 		{this->setLow(d,b.getLow(d));}
 
 		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,b.getHigh(d));}
+		{this->setHigh(d,b.getHigh(d));}*/
 	}
 
 	/*! \brief constructor from a box
@@ -73,14 +74,15 @@ class SpaceBox : public Box<dim,T>
 	 */
 
 	SpaceBox(const Box<dim,T> & b)
+	:Box<dim,T>(b)
 	{
 		// for each dimension set high and low
 
-		for (size_t d = 0 ; d < dim ; d++)
+/*		for (size_t d = 0 ; d < dim ; d++)
 		{this->setLow(d,b.getLow(d));}
 
 		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,b.getHigh(d));}
+		{this->setHigh(d,b.getHigh(d));}*/
 	}
 
 	/*! \brief Constructor from a Box

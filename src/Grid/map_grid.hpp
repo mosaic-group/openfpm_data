@@ -261,6 +261,8 @@ struct mem_reference
  *
  * This is an N-Dimensional grid or an N-dimensional array working on CPU
  *
+ * A grid it is basically a Cartesian grid
+ *
  *	\param dim Dimensionality of the grid
  *	\param T type of object the grid store
  *	\param Mem interface used to allocate memory

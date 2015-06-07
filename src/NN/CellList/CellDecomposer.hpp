@@ -9,17 +9,114 @@
 #define CELLDECOMPOSER_HPP_
 
 #include "Space/SpaceBox.hpp"
+#include "Space/Matrix.hpp"
+
+// Shift transformation
+template<unsigned int dim, typename T>
+class shift
+{
+	Point<dim,T> sh;
+
+public:
+
+	/*! \brief Constructor
+	 *
+	 * \param t Matrix transformation
+	 * \param s shift
+	 *
+	 */
+	shift(const Matrix<dim,T> & t, const Point<dim,T> & s)
+	:sh(s)
+	{
+	}
+
+	/*! \brief Shift the point transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the transformed coordinate
+	 *
+	 */
+	inline T transform(const Point<dim,T> & s, const size_t i)
+	{
+		return s.get(i) - sh.get(i);
+	}
+
+	/*! \brief Set the transformation Matrix and shift
+	 *
+	 * \mat Matrix transformation
+	 * \orig origin point
+	 *
+	 */
+	inline void setTransform(Matrix<dim,T> & mat, Point<dim,T> & orig)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			sh.get(i) = orig.get(i);
+	}
+};
+
+// No transformation
+template<unsigned int dim, typename T>
+class no_transform
+{
+public:
+
+	/*! \brief Constructor
+	 *
+	 * \param t Matrix transformation
+	 * \param s shift
+	 *
+	 */
+	no_transform(const Matrix<dim,T> & t, const Point<dim,T> & s)
+	{
+	}
+
+	/*! \brief Shift the point transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the transformed coordinate
+	 *
+	 */
+	inline T transform(const Point<dim,T> & s, const size_t i)
+	{
+		return s.get(i);
+	}
+
+	/*! \brief Set the transformation Matrix and shift
+	 *
+	 * \param mat Matrix transformation
+	 * \param orig origin point
+	 * \param crd coordinate
+	 *
+	 */
+	inline void setTransform(Matrix<dim,T> & mat, Point<dim,T> & orig, size_t crd)
+	{
+
+	}
+};
+
 
 /*! \brief Decompose a cell into space
  *
- * It is a convenient class for cell decomposition and index linearization
- * with getCell
+ * It is a convenient class for cell decomposition of an N dimensional cells
+ *  and index linearization with getCell, transform is used to shift the space
+ *  where the cell list is defined. It basically apply a transformation to the
+ *  point every time we call getCell of getCellGrid
+ *
+ * \tparam dim dimension of the space divided by the cell
+ * \tparam T information the cell contain
+ * \tparam transform type of transformation (no_transformation shift ... )
  *
  */
-
-template<unsigned int dim,typename T>
+template<unsigned int dim,typename T, typename transform = no_transform<dim,T>>
 class CellDecomposer_sm
 {
+	// Point transformation before get the Cell object (useful for example to shift the cell list)
+	transform t;
+
 protected:
 
 	// Total number of cell
@@ -34,14 +131,22 @@ protected:
 	// Grid structure of the Cell list
 	grid_sm<dim,void> gr_cell;
 
-	// Cell padding
-	size_t padding;
+	// cell padding on each dimension
+	size_t off[dim];
 
 	/*! \brief Initialize all the structures
 	 *
 	 */
-	void Initialize(const size_t pad)
+	void Initialize(const size_t pad, const size_t (& div)[dim])
 	{
+		// created a padded div
+		size_t div_p[dim];
+
+		for (size_t i = 0 ; i < dim ; i++)
+			div_p[i] = div[i] + 2*pad;
+
+		gr_cell.setDimensions(div_p);
+
 		tot_n_cell = 1;
 
 		// Total number of cells and calculate the unit cell size
@@ -50,15 +155,12 @@ protected:
 		{
 			tot_n_cell *= gr_cell.size(i);
 
-			// Cell are padded by 1
-			box_unit.setHigh(i,box.getHigh(i) / (gr_cell.size(i)-2*pad));
+			// Cell are padded by
+			box_unit.setHigh(i,box.getHigh(i) / (gr_cell.size(i)- 2*pad) );
 		}
 
-		size_t off[dim];
 		for (size_t i = 0; i < dim ; i++)
 			off[i] = pad;
-
-		padding = gr_cell.LinId(off);
 	}
 
 public:
@@ -87,18 +189,26 @@ public:
 	 * \return the cell-ids ad a grid_key_dx<dim>
 	 *
 	 */
-	grid_key_dx<dim> getCellGrid(const T (& pos)[dim])
+	inline grid_key_dx<dim> getCellGrid(const T (& pos)[dim])
 	{
 #ifdef DEBUG
 		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
+
+
 		grid_key_dx<dim> key;
-		key.set_d(0,pos[0] / box_unit.getHigh(0));
+		key.set_d(0,t.tranform(pos[0]) / box_unit.getHigh(0) + off[0]);
 
 		for (size_t s = 1 ; s < dim ; s++)
-			key.set_d(s,(size_t)(pos[s] / box_unit.getHigh(s)));
+		{
+#ifdef DEBUG
+			if ((size_t)(t.transform(pos[s]) / box_unit.getHigh(s)) + off[s] < 0)
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space";
+#endif
+			key.set_d(s,(size_t)(t.transform(pos[s]) / box_unit.getHigh(s)) + off[s]);
+		}
 
 		return key;
 	}
@@ -120,10 +230,16 @@ public:
 #endif
 
 		grid_key_dx<dim> key;
-		key.set_d(0,pos.get(0) / box_unit.getHigh(0));
+		key.set_d(0,t.transform(pos,0) / box_unit.getHigh(0) + off[0]);
 
 		for (size_t s = 1 ; s < dim ; s++)
-			key.set_d(s,(size_t)(pos.get(s) / box_unit.getHigh(s)));
+		{
+#ifdef DEBUG
+			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space";
+#endif
+			key.set_d(s,(size_t)(t.transform(pos,s) / box_unit.getHigh(s) + off[s]));
+		}
 
 		return key;
 	}
@@ -144,14 +260,18 @@ public:
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
-		size_t cell_id = pos[0] / box_unit.getHigh(0);
+		size_t cell_id = t.tranform(pos,0) / box_unit.getHigh(0) + off[0];
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-			cell_id += gr_cell.size(s) * ((size_t)(pos[s] / box_unit.getHigh(s)));
+#ifdef DEBUG
+			if (((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]) < 0)
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space";
+#endif
+			cell_id += gr_cell.size(s) * ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]);
 		}
 
-		return cell_id + padding;
+		return cell_id;
 	}
 
 	/*! \brief Get the cell-id
@@ -170,11 +290,15 @@ public:
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
-		size_t cell_id = pos.get(0) / box_unit.getHigh(0);
+		size_t cell_id = (size_t)(t.transform(pos,0) / box_unit.getHigh(0)) + off[0];
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-			cell_id += gr_cell.size_s(s-1) * ((size_t)(pos.get(s) / box_unit.getHigh(s)));
+#ifdef DEBUG
+			if (((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]) < 0)
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space";
+#endif
+			cell_id += gr_cell.size_s(s-1) * ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]);
 		}
 
 		return cell_id;
@@ -198,11 +322,11 @@ public:
 #endif
 		typedef Point<dim,T> p;
 
-		size_t cell_id = pos.template get<p::x>()[0] / box_unit.getHigh(0);
+		size_t cell_id = (size_t)(t.transform(pos.template get<p::x>()[0]) / box_unit.getHigh(0)) + off[0];
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-			cell_id += gr_cell.size_s(s-1) * (size_t)(pos.template get<p::x>()[s] / box_unit.getHigh(s));
+			cell_id += gr_cell.size_s(s-1) * ((size_t)(t.transform(pos.template get<p::x>()[s]) / box_unit.getHigh(s)) + off[s]);
 		}
 
 		return cell_id;
@@ -219,7 +343,7 @@ public:
 	{
 		this->box = box;
 		this->gr_cell.setDimensions(div);
-		Initialize(pad);
+		Initialize(pad,div);
 	}
 
 	/*! \brief Set the domain to decompose
@@ -233,7 +357,104 @@ public:
 	{
 		this->box = box;
 		this->gr_cell.setDimensions(div);
+		Initialize(pad,div);
+	}
+
+	/*! \brief Set the domain to decompose
+	 *
+	 * \param box Domain to decompose
+	 * \param div array with the number of cells on each dimensions
+	 * \param pad padding cell
+	 *
+	 */
+	void setDimensions(SpaceBox<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
+	{
+		t.setTransform(mat,orig);
+		this->box = box;
+		this->gr_cell.setDimensions(div);
 		Initialize(pad);
+	}
+
+	/*! \brief Set the domain to decompose
+	 *
+	 * \param box Domain to decompose
+	 * \param div array with the number of cells on each dimensions
+	 * \param pad padding cell
+	 *
+	 */
+	void setDimensions(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
+	{
+		t.setTransform(mat,orig);
+		this->box = box;
+		this->gr_cell.setDimensions(div);
+		Initialize(pad);
+	}
+
+	/*! \brief Constructor
+	 *
+	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
+	 * \param div Reference array to the number of divisions on each dimensions
+	 * \param mat Transformation matrix, the point is transformed as p' = mat * p
+	 * \param s point shift transformation
+	 * \pad cell padding
+	 *
+	 *  Example for div = {7,7} and pad = 1
+	 *
+	 * +-----------------------+
+     * |p |p |p |p |p |p |p |p |
+     * +-----------------------+
+     * |p |  |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |  |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |  |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |9 |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |p |p |p |p |p |p |p |
+     * +-----------------------+
+	 *
+	 * Cell with p are padding cell cell that are around but external the box, the cell number 9 that
+	 * is at the origin of the box is identified with 9
+	 *
+	 */
+	CellDecomposer_sm(SpaceBox<dim,T> & box, size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
+	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero()),box(box),gr_cell()
+	{
+		Initialize(pad);
+	}
+
+	/*! \brief Constructor
+	 *
+	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
+	 * \param div Reference array to the number of divisions on each dimensions
+	 * \param s point shift transformation
+	 * \pad cell padding
+	 *
+	 *  Example for div = {7,7} and pad = 1
+	 *
+	 * +-----------------------+
+     * |p |p |p |p |p |p |p |p |
+     * +-----------------------+
+     * |p |  |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |  |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |  |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |9 |  |  |  |  |  |p |
+     * +-----------------------+
+     * |p |p |p |p |p |p |p |p |
+     * +-----------------------+
+	 *
+	 * Cell with p are padding cell cell that are around but external the box, the cell number 9 that
+	 * is at the origin of the box is identified with 9
+	 *
+	 */
+	CellDecomposer_sm(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad)
+	:t(Matrix<dim,T>::identity(),orig),box(box),gr_cell(div)
+	{
+		Initialize(pad,div);
 	}
 
 	/*! \brief Constructor
@@ -263,15 +484,15 @@ public:
 	 *
 	 */
 	CellDecomposer_sm(SpaceBox<dim,T> & box, size_t (&div)[dim], const size_t pad)
-	:box(box),gr_cell(div)
+	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero_p()),box(box),gr_cell()
 	{
-		Initialize(pad);
+		Initialize(pad,div);
 	}
 
 
 	//! default constructor
 	CellDecomposer_sm()
-	:tot_n_cell(0)
+	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero_p()),tot_n_cell(0)
 	{
 
 	}

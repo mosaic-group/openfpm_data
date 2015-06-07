@@ -9,6 +9,7 @@
 #define CELLLIST_HPP_
 
 #include "Vector/map_vector.hpp"
+#include "CellDecomposer.hpp"
 
 /* NOTE all the implementations
  *
@@ -24,10 +25,9 @@
 // Memory wise of the Cell list
 #define MEMORY 3
 
-#include "Vector/map_vector.hpp"
 
 // Stub implementation
-template<unsigned int dim, typename T,  unsigned int impl=FAST, typename base=openfpm::vector<T>>
+template<unsigned int dim, typename T,  unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename base=openfpm::vector<T>>
 class CellList
 {
 };

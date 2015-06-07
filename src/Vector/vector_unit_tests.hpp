@@ -214,9 +214,6 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 	// Memory for the ghost sending buffer
 	HeapMemory mem;
 
-	// Total number of elements
-	size_t n_ele = 0;
-
 	// sequence of pre-allocation pattern
 	std::vector<size_t> pap;
 
