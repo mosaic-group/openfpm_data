@@ -14,50 +14,61 @@ namespace std
 	}
 }
 
+
+//! Void structure
+template<typename> struct Void
+{
+	//! define void type
+	typedef void type;
+};
+
+template<typename T, typename Sfinae = void>
+struct has_attributes: std::false_type {};
+
+
 /*! \brief has_attributes check if a type has defined an
  * internal structure with attributes
  *
- * [Example]
+ * ### Example
  *
+ * \code{.cpp}
  * has_attributes<Test>::value
+ * \endcode
  *
  * return true if T::attributes::name[0] is a valid expression
  * and produce a defined type
  *
  */
-
-template<typename> struct Void { typedef void type; };
-
-template<typename T, typename Sfinae = void>
-struct has_attributes: std::false_type {};
-
 template<typename T>
 struct has_attributes<T, typename Void<decltype( T::attributes::name[0] )>::type> : std::true_type
 {};
 
+template<typename T, typename Sfinae = void>
+struct has_typedef_type: std::false_type {};
+
 /*! \brief has_typedef_type check if a typedef ... type inside the structure is
  *         defined
  *
- * [Example]
+ * ### Example
  *
+ * \code{.cpp}
  * has_typedef_type<Test>::value
+ * \endcode
  *
  * return true if T::type is a valid type
  *
  */
-
-template<typename T, typename Sfinae = void>
-struct has_typedef_type: std::false_type {};
-
 template<typename T>
 struct has_typedef_type<T, typename Void< typename T::type>::type> : std::true_type
 {};
 
 /*! \brief has_data check if a type has defined a member data
  *
- * [Example]
+ * ### Example
  *
+ * \code{.cpp}
  * has_data<Test>::value
+ * \endcode
  *
  * return true if T::type is a valid type
  *

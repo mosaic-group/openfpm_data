@@ -733,8 +733,10 @@ public:
  *
  * \param dim dimensionality of the grid
  *
- * Usage: In general you never create object directly, but you get it from a grid_cpu or grid_gpu with
- *        getIterator()
+ * Often you never create this object directly, but you get it from a grid_cpu or grid_gpu with getIterator()
+ *
+ * ### Grid iterator declaration and usage
+ * \snippet grid_unit_tests.hpp Grid iterator test usage
  *
  */
 
@@ -942,8 +944,10 @@ public:
 
 /**
  *
- * Grid key class iterator, iterate through a starting grid element
- * to a stop grid element
+ * Grid key class iterator, iterate through a starting linearized grid element
+ * to a stop linearized grid element in particular if linearize is the function
+ *  that linearize all the grid_key_dx, it create an iterator that pass through
+ *  Linearize^(-1)(start) Linearize^(-1)(start+1) ....... Linearize^(-1)(stop)
  *
  * \param dim dimensionality of the grid
  *
@@ -1025,6 +1029,9 @@ public:
  *
  * Usage: In general you never create object directly, but you get it from a grid_cpu or grid_gpu with
  *        getIteratorSub()
+ *
+ * ### Sub grid iterator declaration and usage
+ * \snippet grid_unit_tests.hpp Sub-grid iterator test usage
  *
  */
 

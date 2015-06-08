@@ -19,6 +19,10 @@
 
 /*! \brief Iterator for the neighborhood of the cell structures
  *
+ * In general you never create it directly but you get it from the CellList structures
+ *
+ * It iterate across all the element of the selected cell and the near cells
+ *
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
  * \tparam NNc_size neighborhood size
@@ -108,10 +112,11 @@ public:
 
 /*! \brief it iterate through the elements of a cell
  *
+ * In general you do not create this object you get it from the CellList structures
+ *
  * \tparam Cell cell type
  *
  */
-
 template<typename Cell> class CellIterator
 {
 	// Cell list
@@ -125,11 +130,10 @@ template<typename Cell> class CellIterator
 
 public:
 
-	/*! \brief
+	/*! \brief Cell iterator
 	 *
-	 * Cell iterator
-	 *
-	 * \param Cell id
+	 * \param cell Cell id
+	 * \param cl Cell on which iterate
 	 *
 	 */
 	CellIterator(const size_t cell, Cell & cl)

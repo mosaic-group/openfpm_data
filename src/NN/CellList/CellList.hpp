@@ -26,7 +26,13 @@
 #define MEMORY 3
 
 
-// Stub implementation
+/*! \brief Cell list structure
+ *
+ * Stub object see spacialization
+ *
+ * \see CellList<dim,T,FAST,transform,base>
+ *
+ */
 template<unsigned int dim, typename T,  unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename base=openfpm::vector<T>>
 class CellList
 {

@@ -369,10 +369,12 @@ public:
 		Initialize(pad,div);
 	}
 
-	/*! \brief Set the domain to decompose
+	/*! \brief Set the cell decomposition parameters
 	 *
 	 * \param box Domain to decompose
 	 * \param div array with the number of cells on each dimensions
+	 * \param mat transformation matrix the cell space is transformed by p' = A * p
+	 * \param orig origin of the cell decomposition
 	 * \param pad padding cell
 	 *
 	 */
@@ -384,10 +386,12 @@ public:
 		Initialize(pad);
 	}
 
-	/*! \brief Set the domain to decompose
+	/*! \brief Set the cell decomposition parameters
 	 *
 	 * \param box Domain to decompose
 	 * \param div array with the number of cells on each dimensions
+	 * \param mat transformation matrix the cell space is transformed by p' = A * p
+	 * \param orig origin of the cell decomposition
 	 * \param pad padding cell
 	 *
 	 */
@@ -404,10 +408,10 @@ public:
 	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
 	 * \param div Reference array to the number of divisions on each dimensions
 	 * \param mat Transformation matrix, the point is transformed as p' = mat * p
-	 * \param s point shift transformation
-	 * \pad cell padding
+	 * \param orig origin of the cell decomposition
+	 * \param pad cell padding
 	 *
-	 *  Example for div = {7,7} and pad = 1
+	 *  Example for div = {6,6} and pad = 1
 	 *
 	 * \verbatim
 	 * +-----------------------+
@@ -439,8 +443,8 @@ public:
 	 *
 	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
 	 * \param div Reference array to the number of divisions on each dimensions
-	 * \param s point shift transformation
-	 * \pad cell padding
+	 * \param orig origin of the cell decomposition
+	 * \param pad cell padding
 	 *
 	 *  Example for div = {7,7} and pad = 1
 	 *
@@ -475,7 +479,7 @@ public:
 	 *
 	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
 	 * \param div Reference array to the number of divisions on each dimensions
-	 * \pad cell padding
+	 * \param pad cell padding
 	 *
 	 *  Example for div = {7,7} and pad = 1
 	 *

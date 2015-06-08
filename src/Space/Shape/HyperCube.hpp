@@ -46,6 +46,9 @@ template<unsigned int dim> std::ostream& operator<<(std::ostream& str, const com
  * ### Get vertex edge surfaces and volumes of a cube
  * \snippet hypercube_unit_test.hpp Get vertex edge surfaces and volumes of a cube
  *
+ * hyper-cube define only the features of an N-dimensional hyper-cube, does not define
+ * where is is located and its size, use Box for that purpose
+ *
  */
 
 template<unsigned int dim>

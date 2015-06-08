@@ -63,7 +63,6 @@ public:
 
 	/* \brief Set to zero the key
 	 *
-	 *
 	 */
 	inline void zero()
 	{
@@ -72,7 +71,6 @@ public:
 	}
 
 	/* \brief Set to invalid the key
-	 *
 	 *
 	 */
 	inline void invalid()
@@ -104,7 +102,7 @@ public:
 	 */
 
 	template<unsigned int dim_t> bool operator==(grid_key_dx<dim_t> & key_t)
-		  {
+	{
 		if (dim != dim_t)
 		{
 			return false;
@@ -122,7 +120,7 @@ public:
 
 		// identical key
 		return true;
-		  }
+	}
 
 	//! set the grid key from a list of numbers
 	template<typename a, typename ...T>void set(a v, T...t)
@@ -244,8 +242,6 @@ public:
 
 
 /*! \brief grid_key is the key to access any element in the grid
- *
- * grid_key is the key to access any element in the grid
  *
  * \param p dimensionality of the grid
  *

@@ -19,25 +19,29 @@
  */
 template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 {
+	//! [Declare a cell list]
 	//Space where is living the Cell list
 	SpaceBox<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 
 	// Subdivisions
 	size_t div[dim] = {16,16,16};
 
-	// grid info
-	grid_sm<dim,void> g_info(div);
-
 	// Origin
 	Point<dim,T> org({0.0,0.0,0.0});
 
 	// id Cell list
 	CellS cl2(box,div,org);
+	//! [Declare a cell list]
+
+	// grid info
+	grid_sm<dim,void> g_info(div);
 
 	// Test force reallocation in case of Cell list fast
 	for (int i = 0 ; i < 32 ; i++)
 		cl2.add(org,0);
 	BOOST_REQUIRE_EQUAL(cl2.getNelements(cl2.getCell(org)),32);
+
+	//! [Usage of cell list]
 
 	// id Cell list
 	CellS cl1(box,div,org);
@@ -82,6 +86,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 		++g_it;
 	}
 
+	//! [Usage of cell list]
+
 	// check the cell are correctly filled
 
 	// reset iterator
@@ -106,7 +112,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	// reset itarator
 	g_it.reset();
 
-	// remove one particle from each cell
+	//! [remove one particle from each cell]
 
 	while (g_it.isNext())
 	{
@@ -121,6 +127,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 		cl1.remove(cell,0);
 		++g_it;
 	}
+
+	//! [remove one particle from each cell]
 
 	// Check we have 1 object per cell
 	g_it.reset();
@@ -140,7 +148,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	}
 
 
-	// Check the neighborhood iterator on the internal grid (They do not wotk on external grid)
+	//! [Usage of the neighborhood iterator]
 
 	// Check we have 1 object per cell
 
@@ -171,6 +179,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 		BOOST_REQUIRE_EQUAL(total,openfpm::math::pow(3,dim));
 		++g_it_s;
 	}
+
+	//! [Usage of the neighborhood iterator]
 }
 
 BOOST_AUTO_TEST_SUITE( CellList_test )

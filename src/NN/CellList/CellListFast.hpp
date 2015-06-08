@@ -39,17 +39,46 @@
  * This class implement the FAST cell list, fast but memory
  * expensive. The memory allocation is (M * N_cell_max)*sizeof(ele) + M*8
  *
- * M = number of cells
- * N_cell_max = maximum number of elements in a cell
+ * * M = number of cells
+ * * N_cell_max = maximum number of elements in a cell
+ * * ele = element the structure is storing
  *
  * \note Because N_cell_max >= N/M then M * N_cell_max >= O(N)
  *
  * \warning Not not use for high asymmetric distribution
  *
+ * Example of a 2D Cell list 6x6 structure with padding 1 without shift, cell indicated with p are padding cell
+ * the origin of the cell or point (0,0) is marked with cell number 9
+ *
+ * \verbatim
+ * +-----------------------+
+ * |p |p |p |p |p |p |p |p |
+ * +-----------------------+
+ * |p |  |  |  |  |  |  |p |
+ * +-----------------------+
+ * |p |  |  |  |  |  |  |p |
+ * +-----------------------+
+ * |p |  |  |  |  |  |  |p |
+ * +-----------------------+
+ * |p |9 |  |  |  |  |  |p |
+ * +-----------------------+
+ * |p |p |p |p |p |p |p |p |
+ * +-----------------------+
+ * \endverbatim
+ *
+ *
  * \tparam dim Dimansionality of the space
  * \tparam T type of the space float, double, complex
  * \tparam base Base structure that store the information
  *
+ * ### Declaration of a cell list
+ * \snippet CellList_test.hpp Declare a cell list
+ * ### Usage of cell list [CellS == CellList<3,double,FAST>]
+ * \snippet CellList_test.hpp Usage of cell list
+ * ### Remove one particle from each cell
+ * \snippet CellList_test.hpp remove one particle from each cell
+ * ### Usage of the neighborhood iterator
+ * \snippet CellList_test.hpp Usage of the neighborhood iterator
  *
  */
 template<unsigned int dim, typename T, typename transform, typename base>
@@ -131,23 +160,9 @@ public:
 	 *
 	 * \param box Domain where this cell list is living
 	 * \param div grid size on each dimension
-	 * \param origin of the Cell list (UNUSED)
-	 * \param padding cell
+	 * \param orig origin of the Cell list
+	 * \param pad padding cell
 	 * \param slot maximum number of slot
-	 *
-	 * +-----------------------+
-	 * |p |p |p |p |p |p |p |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |9 |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |p |p |p |p |p |p |p |
-	 * +-----------------------+
 	 *
 	 */
 	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
@@ -159,27 +174,12 @@ public:
 		Initialize(sbox,div,pad,slot);
 	}
 
-	/*! Initialize the cell list
+	/*! Initialize the cell list constructor
 	 *
 	 * \param box Domain where this cell list is living
 	 * \param div grid size on each dimension
-	 * \param origin of the Cell list (UNUSED)
-	 * \param padding cell
+	 * \param pad padding cell
 	 * \param slot maximum number of slot
-	 *
-	 * +-----------------------+
-	 * |p |p |p |p |p |p |p |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |9 |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |p |p |p |p |p |p |p |
-	 * +-----------------------+
 	 *
 	 */
 	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], const size_t pad = 1, size_t slot=16)
@@ -267,29 +267,14 @@ public:
 	{
 	}
 
-	/*! \brief Cell list
+	/*! \brief Cell list constructor
 	 *
 	 * \param box Domain where this cell list is living
 	 * \param div grid size on each dimension
 	 * \param mat Matrix transformation
-	 * \param s shist
-	 * \param origin of the Cell list
+	 * \param orig origin of the Cell list
 	 * \param pad Cell padding
 	 * \param slot maximum number of slot
-	 *
-	 * +-----------------------+
-	 * |p |p |p |p |p |p |p |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |9 |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |p |p |p |p |p |p |p |
-	 * +-----------------------+
 	 *
 	 */
 	CellList(Box<dim,T> & box, size_t (&div)[dim], Matrix<dim,T> mat, Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
@@ -299,27 +284,13 @@ public:
 		Initialize(sbox,div,orig,pad,slot);
 	}
 
-	/*! \brief Cell list
+	/*! \brief Cell list constructor
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list (UNUSED)
+	 * \param orig origin of the Cell list
 	 * \param div grid size on each dimension
 	 * \param pad Cell padding
 	 * \param slot maximum number of slot
-	 *
-	 * +-----------------------+
-	 * |p |p |p |p |p |p |p |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |9 |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |p |p |p |p |p |p |p |
-	 * +-----------------------+
 	 *
 	 */
 	CellList(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
@@ -328,27 +299,13 @@ public:
 		Initialize(sbox,div,orig,pad,slot);
 	}
 
-	/*! \brief Cell list
+	/*! \brief Cell list constructor
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list (UNUSED)
+	 * \param orig origin of the Cell list
 	 * \param div grid size on each dimension
 	 * \param pad Cell padding
 	 * \param slot maximum number of slot
-	 *
-	 * +-----------------------+
-	 * |p |p |p |p |p |p |p |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |  |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |9 |  |  |  |  |  |p |
-	 * +-----------------------+
-	 * |p |p |p |p |p |p |p |p |
-	 * +-----------------------+
 	 *
 	 */
 	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
@@ -480,7 +437,9 @@ public:
 
 	/*! \brief Get the Cell iterator
 	 *
-	 * \param return the iterator to the cell
+	 * \param cell
+	 *
+	 * \return the iterator to the elements inside cell
 	 *
 	 */
 	CellIterator<CellList<dim,T,FAST,transform,base>> getIterator(size_t cell)
@@ -488,7 +447,20 @@ public:
 		return CellIterator<CellList<dim,T,FAST,transform,base>>(cell,*this);
 	}
 
-	/*! \brief Get the Nearest Neighborhood iterator
+	/*! \brief Get the Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
+
+	     * * *
+	     * x *
+	     * * *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
 	 *
 	 * \param cell cell id
 	 *
@@ -500,6 +472,24 @@ public:
 		return cln;
 	}
 
+
+	/*! \brief Get the Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
+
+	   * * *
+	     x *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
+	 *
+	 * \param cell cell id
+	 *
+	 */
 	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell)
 	{
 		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,NNc_sym,*this);
@@ -507,6 +497,24 @@ public:
 		return cln;
 	}
 
+
+	/*! \brief Get the Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
+
+	   * *
+	   x *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
+	 *
+	 * \param cell cell id
+	 *
+	 */
 	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> getNNIteratorCross(size_t cell)
 	{
 		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> cln(cell,NNc_cr,*this);

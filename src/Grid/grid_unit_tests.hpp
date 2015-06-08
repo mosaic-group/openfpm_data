@@ -517,6 +517,69 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 
 BOOST_AUTO_TEST_SUITE( grid_test )
 
+BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
+{
+	{
+	//! [Grid iterator test usage]
+	size_t count = 0;
+
+	// Subdivisions
+	size_t div[3] = {16,16,16};
+
+	// grid info
+	grid_sm<3,void> g_info(div);
+
+	// Create a grid iterator
+	grid_key_dx_iterator<3> g_it(g_info);
+
+	// Iterate on all the elements
+	while (g_it.isNext())
+	{
+		grid_key_dx<3> key = g_it.get();
+
+		count++;
+
+		++g_it;
+	}
+
+	BOOST_REQUIRE_EQUAL(count, 16*16*16);
+	}
+
+	{
+	//! [Grid iterator test usage]
+
+	size_t count = 0;
+	// Iterate only on the internal elements
+
+	//! [Sub-grid iterator test usage]
+	// Subdivisions
+	size_t div[3] = {16,16,16};
+
+	// grid info
+	grid_sm<3,void> g_info(div);
+
+	grid_key_dx<3> start(1,1,1);
+	grid_key_dx<3> stop(14,14,14);
+
+	// Create a grid iterator (start and stop included)
+	grid_key_dx_iterator_sub<3> g_it(g_info,start,stop);
+
+	// Iterate on all the elements
+	while (g_it.isNext())
+	{
+		grid_key_dx<3> key = g_it.get();
+
+		count++;
+
+		++g_it;
+	}
+
+	BOOST_REQUIRE_EQUAL(count, 14*14*14);
+
+	//! [Sub-grid iterator test usage]
+	}
+}
+
 BOOST_AUTO_TEST_CASE( grid_use)
 {
 	/*  tensor<int,3,3,3> c;

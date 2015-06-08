@@ -33,7 +33,7 @@ class vector<T,device_cpu<T>,HeapMemory,grow_policy_double,STD_VECTOR>
 
 public:
 
-	// iterator for the vector
+	//! iterator for the vector
 	typedef vector_key_iterator iterator_key;
 	//! Type of the value the vector is storing
 	typedef T value_type;
@@ -67,7 +67,7 @@ public:
 
 	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 	 *
-	 * It insert a new object on the vector, eventually it reallocate the grid
+	 * \param v element to add
 	 *
 	 * \warning It is not thread safe should not be used in multi-thread environment
 	 *          reallocation, work only on cpu
@@ -150,7 +150,6 @@ public:
 	 * \return the duplicated vector
 	 *
 	 */
-
 	std::vector<T> duplicate()
 	{
 		return base;
@@ -170,10 +169,12 @@ public:
 	 *
 	 * \tparam p must be 0
 	 *
-	 * \param id Element to get
+	 * \param id element to get
+	 *
+	 * \return the reference to the element
 	 *
 	 */
-	template <unsigned int p>inline size_t & get(size_t id)
+	template <unsigned int p>inline auto get(size_t id) -> decltype(base[id])
 	{
 #ifdef DEBUG
 		if (p != 0)
@@ -190,9 +191,9 @@ public:
 
 	/*! \brief Get an element of the vector
 	 *
-	 * Get an element of the vector
+	 * \param id element to get
 	 *
-	 * \param id Element to get
+	 * \return the element reference
 	 *
 	 */
 	inline T & get(size_t id)
@@ -208,9 +209,9 @@ public:
 
 	/*! \brief Get an element of the vector
 	 *
-	 * Get an element of the vector
+	 * \param id element to get
 	 *
-	 * \param id Element to get
+	 * \return the element value
 	 *
 	 */
 	inline T get(size_t id) const

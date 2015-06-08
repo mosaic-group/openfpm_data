@@ -25,10 +25,12 @@ namespace openfpm
 
 	class vector_key_iterator
 	{
+		//! Linearized end element
 		size_t end;
 
 	protected:
 
+		//! Actual key
 		size_t gk;
 
 	public:
@@ -153,7 +155,7 @@ namespace openfpm
 		}
 	};
 
-	// default grow policy
+	//! default grow policy
 	typedef grow_policy_double vector_grow_policy_default;
 
 	/*! \brief Grow policy define how the vector should grow every time we exceed the size
@@ -180,27 +182,31 @@ namespace openfpm
 		}
 	};
 
-	/*! \brief Select the correct implementation based on the type checking
+	/*! \brief Select the correct vector implementation based on the type checking
+	 *
+	 * \see device_cpu
 	 *
 	 * case OPENFPM native
 	 *
 	 */
-
 	template<typename T, unsigned int impl>
 	struct device_cpu_impl
 	{
+		//! grid
 		typedef grid_cpu<1,T> type;
 	};
 
-	/*! \brief Select the correct implementation based on the type checking
+	/*! \brief Select the correct vector implementation based on the type checking
+	 *
+	 * \see device_cpu
 	 *
 	 * case STD_VECTOR native
 	 *
 	 */
-
 	template<typename T>
 	struct device_cpu_impl<T,STD_VECTOR>
 	{
+		//! void
 		typedef void type;
 	};
 
@@ -255,8 +261,9 @@ namespace openfpm
 
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
-	 * ### Add and access elements
+	 * The layout is memory_traits_lin
 	 *
+	 * ### Add and access elements
 	 * \snippet vector_unit_tests.hpp Create add and access
 	 *
 	 * \tparam T type of object the vector store
@@ -287,6 +294,8 @@ namespace openfpm
 		 *
 		 * \param sz size of the vector
 		 *
+		 * \return a vector with one element
+		 *
 		 */
 		std::vector<size_t> getV(size_t sz)
 		{
@@ -313,7 +322,7 @@ namespace openfpm
 
 	public:
 
-		// Type of the encapsulation memory parameter
+		//! Type of the encapsulation memory parameter
 		typedef typename grid_cpu<1,T>::memory_t memory_t;
 
 		//! iterator for the vector
@@ -328,7 +337,7 @@ namespace openfpm
 
 		/*! \brief Return the size of the vector
 		 *
-		 * Return the size of the vector
+		 * \return the size
 		 *
 		 */
 		size_t size() const
@@ -378,7 +387,7 @@ namespace openfpm
 			v_size = slot;
 		}
 
-		// Access key for the vector
+		//! Access key for the vector
 		typedef size_t access_key;
 
 		/*! \brief It insert a new emtpy object on the vector, eventually it reallocate the grid
@@ -405,7 +414,7 @@ namespace openfpm
 
 		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 		 *
-		 * It insert a new object on the vector, eventually it reallocate the grid
+		 * \param v element to add
 		 *
 		 * \warning It is not thread safe should not be used in multi-thread environment
 		 *          reallocation, work only on cpu
@@ -430,9 +439,9 @@ namespace openfpm
 			v_size++;
 		}
 
-		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
+		/*! \brief It insert a new object on the vector, eventually it reallocate the vector
 		 *
-		 * It insert a new object on the vector, eventually it reallocate the grid
+		 * \param v object (encapsulated)
 		 *
 		 * \warning It is not thread safe should not be used in multi-thread environment
 		 *          reallocation, work only on cpu
@@ -525,8 +534,10 @@ namespace openfpm
 		 *
 		 * Get an element of the vector
 		 *
-		 * \param id Element to get
 		 * \tparam p Property to get
+		 * \param id Element to get
+		 *
+		 * \return the element value requested
 		 *
 		 */
 
@@ -547,6 +558,8 @@ namespace openfpm
 		 *
 		 * \param id Element to get
 		 *
+		 * \return the element (encapsulated)
+		 *
 		 */
 
 		inline auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>()))
@@ -560,12 +573,11 @@ namespace openfpm
 			return base.get_o(key);
 		}
 
-		/* \brief Constructor from vector
+		/*! \brief Constructor from vector
 		 *
 		 * \param mv vector
 		 *
 		 */
-
 		vector(vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> && mv)
 		:v_size(mv.v_size),base(mv.base)
 		{
@@ -624,9 +636,7 @@ namespace openfpm
 			base.set(id,obj);
 		}
 
-		/*! \brief Set the object
-		 *
-		 * Set the object id to obj
+		/*! \brief Set the object id to obj
 		 *
 		 * \param id
 		 * \param obj
@@ -642,11 +652,13 @@ namespace openfpm
 			base.set(id,obj);
 		}
 
-		/* \brief Set the element of the vector v from another element of another vector
+		/*! \brief Set the element of the vector v from another element of another vector
 		 *
-		 * Set the element of the vector v from another element of another vector
+		 * \param id element id
+		 * \param v vector source
+		 * \param src source element
+		 *
 		 */
-
 		void set(size_t id, vector<T,device_cpu<T>,Memory,grow_p,OPENFPM_NATIVE> & v, size_t src)
 		{
 #ifdef DEBUG
@@ -656,16 +668,15 @@ namespace openfpm
 			base.set(id,v.base,src);
 		}
 
-		/* \brief operator=
+		/*! \brief Assignment operator
 		 *
 		 * move semantic movement operator=
 		 *
-		 * \param mv Vector operator
+		 * \param mv vector
 		 *
 		 * \return itself
 		 *
 		 */
-
 		vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> operator=(vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> && mv)
 		{
 			v_size = mv.v_size;
@@ -674,16 +685,15 @@ namespace openfpm
 			return *this;
 		}
 
-		/* \brief operator=
+		/*! \brief Assignment operator
 		 *
-		 * Real copy
+		 * it copy
 		 *
-		 * \param mv Vector operator
+		 * \param mv vector
 		 *
 		 * \return itself
 		 *
 		 */
-
 		vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> operator=(const vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> & mv)
 		{
 			v_size = mv.v_size;
@@ -700,9 +710,9 @@ namespace openfpm
 			return *this;
 		}
 
-		/*! \brief Swap the memory of another vector
+		/*! \brief Swap the memory with another vector
 		 *
-		 * Swap the memory of another vector
+		 * \param v vector
 		 *
 		 */
 		void swap(openfpm::vector<T,device_cpu<T>,Memory,grow_p,OPENFPM_NATIVE> & v)
@@ -716,9 +726,9 @@ namespace openfpm
 			v.v_size = sz_sp;
 		}
 
-		/*! \brief Swap the memory of another vector
+		/*! \brief Swap the memory with another vector
 		 *
-		 * Swap the memory of another vector
+		 * \param v vector
 		 *
 		 */
 		void swap(openfpm::vector<T,device_cpu<T>,Memory,grow_p,OPENFPM_NATIVE> && v)
@@ -747,7 +757,7 @@ namespace openfpm
 
 		/*! \brief Return the size of the message needed to pack this object
 		 *
-		 * \return The size of the object to pack this object
+		 * \return The size
 		 *
 		 */
 
@@ -756,12 +766,13 @@ namespace openfpm
 			return base.packObjectSize();
 		}
 
-		/*! \brief Return the size of the message needed to pack this object
+		/*! \brief Pack the object into the given pointer
 		 *
-		 * \return The size of the object to pack this object
+		 * \param mem pointer
+		 *
+		 * \return the size of the packed message
 		 *
 		 */
-
 		size_t packObject(void * mem)
 		{
 			return base.packObject(mem);
@@ -815,28 +826,22 @@ namespace openfpm
 		}
 	};
 
+
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
-	 * Implementation of 1-D std::vector like structure, the memory allocated
-	 * increase by PAGE_ALLOC constant every time we need more space
+	 * The layout is memory_traits_inte
 	 *
-	 * \param T base type
+	 * ### Add and access elements
+	 * \snippet vector_unit_tests.hpp Create add and access
 	 *
-	 * \warning this implementation work on cpu and gpu, but on gpu its functionality
-	 * is limited:
+	 * \tparam T type of object the vector store
+	 * \tparam base memory layout to use
+	 * \tparam Memory allocator to use
+	 * \tparam grow_p grow policy for vector in case of reallocation
 	 *
-	 * 1) add is limited because reallocation cannot be handled on gpu,
-	 *    a potential need for reallocation is signaled with an overflow
-	 * 2) add is not thread safe so each thread on gpu should operate on a different
-	 *    vector, or a thread at time should operate on the vector
-	 *
-	 * \param T type of structure the vector has to store
-	 * \param device type of layout to use
-	 * \param Memory allocator to use
-	 * \param grow_p Grow policy of the vector
+	 * OPENFPM_NATIVE implementation
 	 *
 	 */
-
 	template<typename T,typename Memory,typename grow_p>
 	class vector<T,device_gpu<T>,Memory,grow_p,OPENFPM_NATIVE>
 	{
@@ -850,10 +855,10 @@ namespace openfpm
 
 	public:
 
-		// Type of the encapsulation memory parameter
+		//! Type of the encapsulation memory parameter
 		typedef typename grid_gpu<1,T>::memory_t memory_t;
 
-		// iterator for the vector
+		//! iterator for the vector
 		typedef vector_key_iterator iterator_key;
 
 		//! return the size of the vector
@@ -908,7 +913,7 @@ namespace openfpm
 
 		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 		 *
-		 * It insert a new object on the vector, eventually it reallocate the grid
+		 * \param v element to add
 		 *
 		 * \warning It is not thread safe should not be used in multi-thread environment
 		 *          reallocation, work only on cpu
@@ -930,9 +935,10 @@ namespace openfpm
 			base.set(v_size,v);
 		}
 
-		/*! \brief Set the object
+		/*! \brief Set the object id to obj
 		 *
-		 * Set the object id to obj
+		 * \param id element id
+		 * \param obj object
 		 *
 		 */
 		void set(size_t id, T & obj)
@@ -946,28 +952,27 @@ namespace openfpm
 			base.set(id,obj);
 		}
 
-		/* \brief Set the element of the vector v from another element of another vector
+		/*! \brief Set the element of the vector v from another element of another vector
 		 *
-		 * Set the element of the vector v from another element of another vector
+		 * \param id element
+		 * \param v source vector
+		 * \param s_id source element id
+		 *
 		 */
-
-		void set(size_t id, vector<T,device_gpu<T>,Memory,grow_p,OPENFPM_NATIVE> & v, size_t src)
+		void set(size_t id, vector<T,device_gpu<T>,Memory,grow_p,OPENFPM_NATIVE> & v, size_t s_id)
 		{
 #ifdef DEBUG
 			if (id >= v_size)
 			{std::cerr << "Error "  << __FILE__ << "  " << __LINE__ <<  " id overflow your vector" << "\n";}
 #endif
-			base.set(id,v.base,src);
+			base.set(id,v.base,s_id);
 		}
 
 		/*! \brief Get the vector elements iterator
 		 *
-		 * Get the vector elements iterator
-		 *
 		 * \return an iterator to iterate through all the elements of the vector
 		 *
 		 */
-
 		auto getIterator() -> decltype(base.getIterator())
 		{
 			return base.getIterator();

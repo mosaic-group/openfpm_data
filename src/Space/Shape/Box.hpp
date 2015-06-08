@@ -20,13 +20,28 @@ enum Base
 
 /** \brief This class represent an N-dimensional box
  *
- * This class represent an N-dimensional box
+ * The box is defined by two points p2 and p1
  *
- * \tparam dim dimansionality of the Box
- * \tparam T type of space ... Real Complex Integer
+  \verbatim
+
+					   +---------+ p2
+					   |         |
+					   |         |
+		               |         |
+					   |         |
+					   |         |
+			      p1   +---------+
+
+  \endverbatim
+ *
+ * \tparam dim dimensionality of the Box
+ * \tparam T type of space ... double float int size_t
+ *
+ * SpaceBox inherit all the functionality of Box see that structure for some example
+ *
+ * \see SpaceBox
  *
  */
-
 template<unsigned int dim , typename T>
 class Box
 {
@@ -281,7 +296,7 @@ public:
 
 	/*! \brief Box constructor from an array reference
 	 *
-	 * \param array from which to construct the box
+	 * \param box_data array from which to construct the box
 	 *
 	 */
 	inline Box(T (& box_data)[dim])
@@ -312,9 +327,9 @@ public:
 		}
 	}
 
-	/*! \brief Box constructor from ecapsulated box
+	/*! \brief Box constructor from encapsulated box
 	 *
-	 * \param box_data fusion vector from which to construct the vector
+	 * \param b box from which to construct the vector (encapsulated)
 	 *
 	 */
 
@@ -421,12 +436,11 @@ public:
 		return data;
 	}
 
-	/* \brief Get the key to the point 1
+	/* \brief Get the point p1 as grid_key_dx
 	 *
-	 * \return the key to the point 1
+	 * \return the key
 	 *
 	 */
-
 	grid_key_dx<dim> getKP1() const
 	{
 		// grid key to return
@@ -435,12 +449,11 @@ public:
 		return ret;
 	}
 
-	/* \brief Get the key to point 2
+	/* \brief Get the point p12 as grid_key_dx
 	 *
-	 * \return the key to the point 2
+	 * \return the key
 	 *
 	 */
-
 	grid_key_dx<dim> getKP2() const
 	{
 		// grid key to return
@@ -449,12 +462,11 @@ public:
 		return ret;
 	}
 
-	/* \brief Get the point 1
+	/* \brief Get the point p1
 	 *
-	 * \return the point 1
+	 * \return the point p1
 	 *
 	 */
-
 	inline Point<dim,T> getP1() const
 	{
 		// grid key to return
@@ -463,9 +475,9 @@ public:
 		return ret;
 	}
 
-	/* \brief Get the point 2
+	/* \brief Get the point p2
 	 *
-	 * \return the point 2
+	 * \return the point p2
 	 *
 	 */
 
@@ -492,8 +504,24 @@ public:
 
 	/*! \brief Enlarge the box with ghost margin
 	 *
-	 * \param the box
 	 * \param gh spacing of the margin to enlarge
+	 *
+	 *
+	 *\verbatim
+							^ gh.p2[1]
+							|
+							|
+					   +----+----+
+					   |         |
+					   |         |
+		 gh.p1[0]<-----+         +----> gh.p2[0]
+					   |         |
+					   |         |
+					   +----+----+
+							|
+							v  gh.p1[1]
+
+       \endverbatim
 	 *
 	 */
 	void enlarge(Box<dim,T> & gh)
@@ -529,6 +557,7 @@ public:
 	 * All the boxes are considered centered at p1, so it only count its relative size
 	 *
 	 * \param en Box to be contained
+	 * \param reset_p1 if true set p1 to 0
 	 *
 	 */
 	inline void contained(Box<dim,T> & en, const bool reset_p1 = true)

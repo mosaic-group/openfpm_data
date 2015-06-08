@@ -11,13 +11,17 @@
 
 /** \brief This class represent an N-dimensional box
  *
- * This class represent an N-dimensional box embedded in an N dimensional space
- *
- * \param T type of space ... Real Complex Integer
+ * \param T type of space ... double float int size_t
  * \param N dimensionality of the Box
  *
+ * ### Definition of a spacebox and rescale
+ * \snippet SpaceBox_unit_tests.hpp Definition of a spacebox and rescale
+ * ### Definition of a spaceboxes and intersection between them
+ * \snippet SpaceBox_unit_tests.hpp Definition of a spacebox and intersection between them
+ * ### Create random points inside the SpaceBox
+ * \snippet SpaceBox_unit_tests.hpp Create random points inside the SpaceBox
+ *
  */
-
 template<unsigned int dim, typename T>
 class SpaceBox : public Box<dim,T>
 {
