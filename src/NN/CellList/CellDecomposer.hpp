@@ -38,7 +38,33 @@ public:
 	 * \return the transformed coordinate
 	 *
 	 */
+	inline T transform(const T(&s)[dim], const size_t i)
+	{
+		return s.get(i) - sh.get(i);
+	}
+
+	/*! \brief Shift the point transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the transformed coordinate
+	 *
+	 */
 	inline T transform(const Point<dim,T> & s, const size_t i)
+	{
+		return s.get(i) - sh.get(i);
+	}
+
+	/*! \brief Shift the point transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the transformed coordinate
+	 *
+	 */
+	template<typename Mem> inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i)
 	{
 		return s.get(i) - sh.get(i);
 	}
@@ -72,7 +98,7 @@ public:
 	{
 	}
 
-	/*! \brief Shift the point
+	/*! \brief Shift the point transformation
 	 *
 	 * \param s source point
 	 * \param i coordinate
@@ -80,9 +106,35 @@ public:
 	 * \return the transformed coordinate
 	 *
 	 */
+	inline T transform(const T(&s)[dim], const size_t i)
+	{
+		return s[i];
+	}
+
+	/*! \brief No transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the source point coordinate
+	 *
+	 */
 	inline T transform(const Point<dim,T> & s, const size_t i)
 	{
 		return s.get(i);
+	}
+
+	/*! \brief No transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the point coordinate
+	 *
+	 */
+	template<typename Mem> inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i)
+	{
+		return s.template get<Point<dim,T>::x>()[i];
 	}
 
 	/*! \brief Set the transformation Matrix and shift
@@ -269,7 +321,7 @@ public:
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
-		size_t cell_id = t.tranform(pos,0) / box_unit.getHigh(0) + off[0];
+		size_t cell_id = t.transform(pos,0) / box_unit.getHigh(0) + off[0];
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
@@ -331,11 +383,11 @@ public:
 #endif
 		typedef Point<dim,T> p;
 
-		size_t cell_id = (size_t)(t.transform(pos.template get<p::x>()[0]) / box_unit.getHigh(0)) + off[0];
+		size_t cell_id = (size_t)(t.transform(pos,0) / box_unit.getHigh(0)) + off[0];
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-			cell_id += gr_cell.size_s(s-1) * ((size_t)(t.transform(pos.template get<p::x>()[s]) / box_unit.getHigh(s)) + off[s]);
+			cell_id += gr_cell.size_s(s-1) * ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]);
 		}
 
 		return cell_id;
