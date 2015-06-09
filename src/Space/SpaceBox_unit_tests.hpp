@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 
 	//! [Create random points inside the SpaceBox]
 
-	SpaceBox<3,float> sp_box;
+	SpaceBox<3,float> sp_box({0.0,0.0,0.0},{1.0,1.0,1.0});
 
 	for (int i = 0 ; i < N_RANDOM_POINT ; i++)
 	{
@@ -142,6 +142,17 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 	}
 
 	//! [Create random points inside the SpaceBox]
+
+	// Create random points outside the space box and check
+
+	SpaceBox<3,float> sp_box_out({1.1,1.1,1.1},{2.1,2.1,2.1});
+
+	for (int i = 0 ; i < N_RANDOM_POINT ; i++)
+	{
+		Point<3,float> p = sp_box_out.rnd();
+
+		BOOST_REQUIRE_EQUAL(sp_box.isInside(p),false);
+	}
 
 	std::cout << "SpaceBox unit test stop" << "\n";
 }

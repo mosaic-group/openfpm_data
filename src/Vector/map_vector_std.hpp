@@ -165,6 +165,16 @@ public:
 		base.swap(v);
 	}
 
+	/*! \brief It eliminate double entries
+	 *
+	 * \note The base object must have an operator== defined
+	 *
+	 */
+	void unique()
+	{
+		std::unique(base.begin(),base.end());
+	}
+
 	/*! \brief Get an element of the vector
 	 *
 	 * \tparam p must be 0

@@ -591,7 +591,7 @@ public:
 	 *
 	 */
 
-	bool isInside(Point<dim,T> p)
+	bool isInside(Point<dim,T> & p)
 	{
 		// check if bound
 
@@ -599,7 +599,7 @@ public:
 		{
 			// if outside the region return false
 			if (   boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
-			    && boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] < boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
+			    || boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] > boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
 			{
 				// Out of bound
 
@@ -620,7 +620,7 @@ public:
 	 *
 	 */
 
-	template <typename Mem> bool isInside(encapc<1,Point<dim,T>,Mem> p)
+	template <typename Mem> bool isInside(const encapc<1,Point<dim,T>,Mem> & p)
 	{
 		// check if bound
 
@@ -628,7 +628,7 @@ public:
 		{
 			// if outside the region return false
 			if (   p.template get<Point<dim,T>::x>()[i] < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
-			    && p.template get<Point<dim,T>::x>()[i] < boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
+			    || p.template get<Point<dim,T>::x>()[i] > boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
 			{
 				// Out of bound
 
