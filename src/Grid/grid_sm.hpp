@@ -733,7 +733,7 @@ public:
  *
  * \param dim dimensionality of the grid
  *
- * Often you never create this object directly, but you get it from a grid_cpu or grid_gpu with getIterator()
+ * \note if you have a grid you can get this object from getIterator()
  *
  * ### Grid iterator declaration and usage
  * \snippet grid_unit_tests.hpp Grid iterator test usage
@@ -1027,8 +1027,7 @@ public:
  *
  * \param dim dimensionality of the grid
  *
- * Usage: In general you never create object directly, but you get it from a grid_cpu or grid_gpu with
- *        getIteratorSub()
+ * \note if you have a grid you can get this object from getIteratorSub()
  *
  * ### Sub grid iterator declaration and usage
  * \snippet grid_unit_tests.hpp Sub-grid iterator test usage

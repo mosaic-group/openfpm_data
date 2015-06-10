@@ -54,6 +54,7 @@ struct generate_array_impl<T,0,orig_N, F, args...> {
  * const size_t count = 5;
  * typedef typename generate_array<int,count, MetaFunc>::result A;
  *
+ *+
  *  for (size_t i=0; i<count; ++i)
  *      std::cout << A::data[i] << "\n";
  * }

@@ -265,6 +265,11 @@ struct mem_reference
  *	\tparam T type of object the grid store
  *	\tparam Mem memory layout
  *
+ * ### Defining the grid size
+ * \code{.cpp}
+ *  size_t sz[3] = {16,16,16};
+ * \endcode
+ *
  * ### Definition and allocation of a 3D grid on CPU memory
  * \snippet grid_unit_tests.hpp Definition and allocation of a 3D grid on CPU memory
  * ### Access a grid c3 of size sz on each direction
