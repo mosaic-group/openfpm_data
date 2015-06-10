@@ -27,31 +27,31 @@ public:
 	}
 
 	//! Constructor
-	grid_key_dx()
+	inline grid_key_dx()
 	{}
 
 	//! Constructor from an other key
-	grid_key_dx(const grid_key_dx<dim> & key)
+	inline grid_key_dx(const grid_key_dx<dim> & key)
 	:grid_key_dx(key.k)
 	{
 	}
 
 	//! Constructor from buffer reference
-	grid_key_dx(const size_t (&k)[dim])
+	inline grid_key_dx(const size_t (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
 	}
 
 	//! Constructor from buffer reference
-	grid_key_dx(const long int (&k)[dim])
+	inline grid_key_dx(const long int (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
 	}
 
 	//! Construct a grid key from a list of numbers
-	template<typename ...T> grid_key_dx(const size_t v,const T...t)
+	template<typename ...T> inline grid_key_dx(const size_t v,const T...t)
 	{
 #ifdef DEBUG
 		if (sizeof...(t) != dim -1)

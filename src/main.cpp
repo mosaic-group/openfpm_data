@@ -7,7 +7,7 @@
 #include <iostream>
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
-#include <ct_array.hpp>
+#include "util/ct_array.hpp"
 #ifdef CUDA_GPU
 #include "memory/CudaMemory.cuh"
 #endif

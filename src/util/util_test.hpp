@@ -10,6 +10,7 @@
 
 #include "object_util.hpp"
 #include "Point_test.hpp"
+#include "util/ct_array.hpp"
 
 BOOST_AUTO_TEST_SUITE( util_test )
 
@@ -72,6 +73,46 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 		BOOST_REQUIRE_EQUAL(v_point_red.get(0).template get<2>()[i],i + 5.0);
 
 	//! [object copy encap example]
+}
+
+//! [Metafunction definition]
+
+template<size_t index, size_t N> struct MetaFunc {
+   enum { value = index + N };
+};
+
+//! [Metafunction definition]
+
+BOOST_AUTO_TEST_CASE( generate_array )
+{
+	{
+	//! [compile time array]
+	const size_t count = 5;
+	typedef typename ::generate_array<size_t,count, MetaFunc>::result ct_test;
+
+	// ct_test::data is equivalent to const size_t [5] = {5,6,7,8,9}
+
+	for (size_t i = 0 ; i < count; ++i)
+	{
+		const size_t ct_val = ct_test::data[i];
+		BOOST_REQUIRE_EQUAL(ct_val,count+i);
+	}
+	//! [compile time array]
+	}
+
+	// check constexpr compile time array as template parameters
+
+	{
+	//! [constexpr array]
+	const size_t count = 5;
+	typedef typename ::generate_array_constexpr<size_t,count, MetaFunc>::result ct_test_ce;
+
+	// ct_test_ce::data is equivalent to constexpr size_t [5] = {5,6,7,8,9}
+
+	const size_t ct_calc = MetaFunc<ct_test_ce::data[0],ct_test_ce::data[1]>::value;
+	BOOST_REQUIRE_EQUAL(ct_calc,11);
+	//! [constexpr array]
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

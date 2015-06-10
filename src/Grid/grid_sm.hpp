@@ -1192,7 +1192,7 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, size_t (& start)[dim], size_t (& stop)[dim])
+	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const size_t (& start)[dim], const size_t (& stop)[dim])
 	: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
 	{
 #ifndef DEBUG

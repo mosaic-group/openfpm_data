@@ -20,6 +20,52 @@
 
 #include <boost/fusion/mpl.hpp>
 
+///////////////////////////////////////////////////
+
+//! the array itself
+template<class T, unsigned long... args> struct ArrayHolder_constexpr {
+    static constexpr T data[sizeof...(args)] = { args... };
+};
+
+
+template<class T,size_t N, size_t orig_N, template<size_t,size_t> class F, unsigned... args>
+struct generate_array_constexpr_impl {
+    typedef typename generate_array_constexpr_impl<T,N-1,orig_N, F, F<N,orig_N>::value, args...>::result result;
+};
+
+//! terminator of the variadic template
+template<class T, size_t orig_N, template<size_t,size_t> class F, unsigned... args>
+struct generate_array_constexpr_impl<T,0,orig_N, F, args...> {
+    typedef ArrayHolder_constexpr<T,F<0,orig_N>::value, args...> result;
+};
+
+/*! \brief Main class to generate constexpr compile-time array
+ *
+ *
+ * A constexpr compile time array is for example
+ *
+ * \code{.cpp}
+ * constexpr size_t array[5] = {1,2,3,4,5}
+ * \endcode
+ *
+ *
+ * ### Metafunction definition
+ * \snippet util_test.hpp Metafunction definition
+ * ### Usage
+ * \snippet util_test.hpp constexpr array
+ *
+ * \param T is the type ot the output array
+ * \param N size of the sequence
+ * \param F Meta function it take two template arguments
+ *
+ */
+template<class T, size_t N, template<size_t,size_t> class F>
+struct generate_array_constexpr {
+    typedef typename generate_array_constexpr_impl<T,N-1, N, F>::result result;
+};
+
+//////////////////////////////////////////////////
+
 //! the array itself
 template<class T, unsigned long... args> struct ArrayHolder {
     static const T data[sizeof...(args)];
@@ -41,25 +87,18 @@ struct generate_array_impl<T,0,orig_N, F, args...> {
     typedef ArrayHolder<T,F<0,orig_N>::value, args...> result;
 };
 
-/*! \brief Main class to generate array
+/*! \brief Main class to generate compile-time array
  *
- * Main class to generate array
+ * A compile time array is for example
  *
- * Usage:
+ * \code{.cpp}
+ * const size_t array[5] = {1,2,3,4,5}
+ * \endcode
  *
- * template<size_t index, size_t N> struct MetaFunc {
- *   enum { value = index + N };
- * };
- *
- * const size_t count = 5;
- * typedef typename generate_array<int,count, MetaFunc>::result A;
- *
- *+
- *  for (size_t i=0; i<count; ++i)
- *      std::cout << A::data[i] << "\n";
- * }
- *
- * A::data is an array of int that go from 1 to 5
+ * ### Metafunction definition
+ * \snippet util_test.hpp Metafunction definition
+ * ### Usage
+ * \snippet util_test.hpp compile time array
  *
  * \param T is the type ot the output array
  * \param N size of the sequence

@@ -199,7 +199,7 @@ public:
 
 		// Calculate the NNc_full array, it is a structure to get the neighborhood array
 
-		// compile-time array {0,0,0,....} and {3,3,3,...}
+		// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
 
 		typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
 		typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;

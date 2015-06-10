@@ -11,7 +11,7 @@
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/mpl/vector.hpp>
 #include <array>
-#include "ct_array.hpp"
+#include "util/ct_array.hpp"
 #include "memory_array.hpp"
 #include "memory.hpp"
 
@@ -80,8 +80,6 @@ class memory_c
 	}
 
 	/*! \brief This function allocate memory
-	 *
-	 * This function allocate memory
 	 *
 	 */
 	bool allocate(const size_t sz)
