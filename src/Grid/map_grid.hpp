@@ -265,7 +265,8 @@ struct mem_reference
  *	\tparam T type of object the grid store
  *	\tparam Mem memory layout
  *
- * ### Defining the grid size
+ * ### Defining the grid size on each dimension
+ *
  * \code{.cpp}
  *  size_t sz[3] = {16,16,16};
  * \endcode
