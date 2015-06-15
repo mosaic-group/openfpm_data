@@ -24,13 +24,13 @@
  */
 
 template<typename v_src,typename v_dst, int... prp>
-struct object_copy_e
+struct object_si_d_e
 {
 	// Convert the packed properties into an MPL vector
 	typedef typename to_boost_vmpl<prp...>::type v_prp;
 
 	// Source object
-	v_src & src;
+	const v_src & src;
 
 	// Destination object
 	v_dst & dst;
@@ -41,7 +41,7 @@ struct object_copy_e
 	 * \param dst destination object
 	 *
 	 */
-	object_copy_e(v_src & src, v_dst & dst)
+	object_si_d_e(const v_src & src, v_dst & dst)
 	:src(src),dst(dst)
 	{
 	};
@@ -69,13 +69,13 @@ struct object_copy_e
  */
 
 template<typename v_src,typename v_dst, int... prp>
-struct object_copy_f
+struct object_si_d_f
 {
 	// Convert the packed properties into an MPL vector
 	typedef typename to_boost_vmpl<prp...>::type v_prp;
 
 	// Source object
-	v_src & src;
+	const v_src & src;
 
 	// Destination object
 	v_dst & dst;
@@ -86,7 +86,7 @@ struct object_copy_f
 	 * \param dst destination object
 	 *
 	 */
-	object_copy_f(v_src & src, v_dst & dst)
+	object_si_d_f(const v_src & src, v_dst & dst)
 	:src(src),dst(dst)
 	{
 	};
@@ -113,9 +113,9 @@ struct object_copy_f
  *
  */
 template<typename v_src, typename v_dst,int type_copy, int... prp>
-struct object_copy
+struct object_si_d
 {
-	inline object_copy(v_src & vs, v_dst & vd)
+	inline object_si_d(const v_src & vs, v_dst & vd)
 	{
 		std::cerr << "Error object_copy: " << __FILE__ << " " << __LINE__ << "\n";
 	};
@@ -131,17 +131,17 @@ struct object_copy
  *
  */
 template<typename v_src, typename v_dst, int... prp>
-struct object_copy<v_src,v_dst,NORMAL,prp...>
+struct object_si_d<v_src,v_dst,NORMAL,prp...>
 {
-	inline object_copy(v_src && vs, v_dst && vd)
+	inline object_si_d(const v_src && vs, v_dst && vd)
 	{
-		object_copy_f<v_src,v_dst,prp...> obj(vs,vd);
+		object_si_d_f<v_src,v_dst,prp...> obj(vs,vd);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_dst::max_prop> >(obj);
 	}
 
-	inline object_copy(v_src & vs, v_dst & vd)
+	inline object_si_d(const v_src & vs, v_dst & vd)
 	{
-		object_copy_f<v_src,v_dst,prp...> obj(vs,vd);
+		object_si_d_f<v_src,v_dst,prp...> obj(vs,vd);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_dst::max_prop> >(obj);
 	}
 };
@@ -156,19 +156,20 @@ struct object_copy<v_src,v_dst,NORMAL,prp...>
  *
  */
 template<typename v_src, typename v_dst, int... prp>
-struct object_copy<v_src,v_dst,ENCAP,prp...>
+struct object_si_d<v_src,v_dst,ENCAP,prp...>
 {
-	inline object_copy(v_src && vs, v_dst && vd)
+	inline object_si_d(const v_src && vs, v_dst && vd)
 	{
-		object_copy_e<v_src,v_dst,prp...> obj(vs,vd);
+		object_si_d_e<v_src,v_dst,prp...> obj(vs,vd);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_dst::max_prop> >(obj);
 	}
 
-	inline object_copy(v_src & vs, v_dst & vd)
+	inline object_si_d(const v_src & vs, v_dst & vd)
 	{
-		object_copy_e<v_src,v_dst,prp...> obj(vs,vd);
+		object_si_d_e<v_src,v_dst,prp...> obj(vs,vd);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_dst::max_prop> >(obj);
 	}
 };
+
 
 #endif /* VECTOR_PROP_COPY_HPP_ */

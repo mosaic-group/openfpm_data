@@ -10,6 +10,7 @@
 
 
 #include "object_creator.hpp"
-#include "object_copy.hpp"
+#include "object_s_di.hpp"
+#include "object_si_d.hpp"
 
 #endif /* VECTOR_UTIL_HPP_ */

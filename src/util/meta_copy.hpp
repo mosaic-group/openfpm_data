@@ -7,21 +7,14 @@
  *
  * Usage:
  *
+ * \code{.cpp}
+ *
  * float src[3];
  * float dst[3];
  *
- * meta_copy<T[3]> cp(src,dst);
+ * meta_copy<float[3]> cp(src,dst);
  *
- *
- */
-
-/*! \brief Scalar copy
- *
- * Scalar copy
- *
- * \param T type of element to copy
- *
- * This specialization pattern is chosen in case of scalar
+ * \endcode
  *
  */
 template<typename T>

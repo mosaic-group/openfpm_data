@@ -593,12 +593,27 @@ public:
 	 *
 	 */
 	inline encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1)
-				{
+	{
 #ifdef MEMLEAK_CHECK
 		check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(T));
 #endif
 		return encapc<dim,T,Mem>(data.mem_r->operator[](g1.LinId(v1)));
-				}
+	}
+
+	/*! \brief Get the of the selected element as a boost::fusion::vector
+	 *
+	 * Get the selected element as a boost::fusion::vector
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 */
+	inline const encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1) const
+	{
+#ifdef MEMLEAK_CHECK
+		check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(T));
+#endif
+		return encapc<dim,T,Mem>(data.mem_r->operator[](g1.LinId(v1)));
+	}
 
 	/*! \brief Fill the memory with the selected byte
 	 *
@@ -619,7 +634,6 @@ public:
 	 * \param sz reference to an array of dimension dim
 	 *
 	 */
-
 	template<typename S> void resize(size_t (& sz)[dim])
 	{
 		//! Create a completely new grid with sz
@@ -1054,6 +1068,18 @@ public:
 	 *
 	 */
 	inline encapg<dim,T,Mem> get_o(grid_key_dx<dim> & v1)
+	{
+		return encapg<dim,T,Mem>(data,g1.LinId(v1));
+	}
+
+	/*! \brief Get the of the selected element as a boost::fusion::vector
+	 *
+	 * Get the selected element as a boost::fusion::vector
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 */
+	inline const encapg<dim,T,Mem> get_o(grid_key_dx<dim> & v1) const
 	{
 		return encapg<dim,T,Mem>(data,g1.LinId(v1));
 	}

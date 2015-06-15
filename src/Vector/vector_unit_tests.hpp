@@ -8,7 +8,7 @@
 #include "memory/PtrMemory.hpp"
 #include <cstring>
 #include "Space/Shape/Point.hpp"
-#include "util/object_creator.hpp"
+#include "util/object_util.hpp"
 
 #define FIRST_PUSH 1000000
 #define SECOND_PUSH 1000000
@@ -498,6 +498,66 @@ BOOST_AUTO_TEST_CASE( vector_memory_repr )
 		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][0],v2.template get<P::t>(i)[2][0]);
 		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][1],v2.template get<P::t>(i)[2][1]);
 		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][2],v2.template get<P::t>(i)[2][2]);
+	}
+}
+
+BOOST_AUTO_TEST_CASE( vector_add_test_case )
+{
+	// create two vector
+	openfpm::vector<Point_test<float>> v1;
+
+	// Point
+	Point_test<float> p;
+	p.setx(1.0);
+	p.sety(2.0);
+	p.setz(3.0);
+	p.sets(4.0);
+
+	// push objects
+
+	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
+	{
+		// Modify p
+
+		p.get<P::v>()[0] = 1.0 + i;
+		p.get<P::v>()[1] = 2.0 + i;
+		p.get<P::v>()[2] = 7.0 + i;
+
+		p.get<P::t>()[0][0] = 10.0 + i;
+		p.get<P::t>()[0][1] = 13.0 + i;
+		p.get<P::t>()[0][2] = 8.0 + i;
+		p.get<P::t>()[1][0] = 19.0 + i;
+		p.get<P::t>()[1][1] = 23.0 + i;
+		p.get<P::t>()[1][2] = 5.0 + i;
+		p.get<P::t>()[2][0] = 4.0 + i;
+		p.get<P::t>()[2][1] = 3.0 + i;
+		p.get<P::t>()[2][2] = 11.0 + i;
+
+		// add p
+
+		v1.add(p);
+	}
+
+	// Duplicate the vector
+	openfpm::vector<Point_test<float>> v2 = v1.duplicate();
+
+	v1.template add<Point_test<float>,HeapMemory,typename openfpm::grow_policy_double,P::x,P::y,P::z,P::s,P::v,P::t>(v2);
+
+	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(v1.template get<P::v>(i)[0], v1.template get<P::v>(i+v2.size())[0]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::v>(i)[1], v1.template get<P::v>(i+v2.size())[1]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::v>(i)[2], v1.template get<P::v>(i+v2.size())[2]);
+
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[0][0], v1.template get<P::t>(i+v2.size())[0][0]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[0][1], v1.template get<P::t>(i+v2.size())[0][1]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[0][2], v1.template get<P::t>(i+v2.size())[0][2]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[1][0], v1.template get<P::t>(i+v2.size())[1][0]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[1][1], v1.template get<P::t>(i+v2.size())[1][1]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[1][2], v1.template get<P::t>(i+v2.size())[1][2]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][0], v1.template get<P::t>(i+v2.size())[2][0]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][1], v1.template get<P::t>(i+v2.size())[2][1]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][2], v1.template get<P::t>(i+v2.size())[2][2]);
 	}
 }
 

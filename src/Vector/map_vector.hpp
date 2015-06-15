@@ -11,6 +11,7 @@
 #include "Grid/map_grid.hpp"
 #include "memory/HeapMemory.hpp"
 #include "vect_isel.hpp"
+#include "util/object_s_di.hpp"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
@@ -467,6 +468,38 @@ namespace openfpm
 			v_size++;
 		}
 
+		/*! \brief It add the element of another vector to this vector
+		 *
+		 * \param v from where to take the vector
+		 *
+		 */
+		template <typename M, typename gp> void add(const vector<T,device_cpu<T>, Memory,gp,OPENFPM_NATIVE> & v)
+		{
+			//! Add the element of v
+			for (size_t i = 0 ; i < v.size() ; i++)
+				add(v.get(i));
+		}
+
+		/*! \brief It add the element of another vector to this vector
+		 *
+		 * \tparam args one or more number that define which property to set-up
+		 *
+		 * \param v from where to take the vector
+		 *
+		 */
+		template <typename S, typename M, typename gp, unsigned int ...args> void add(const vector<S,device_cpu<S>, M,gp,OPENFPM_NATIVE> & v)
+		{
+			//! Add the element of v
+			for (size_t i = 0 ; i < v.size() ; i++)
+			{
+				// Add a new element
+				add();
+
+				// write the object in the last element
+				object_s_di<decltype(get(size()-1)),decltype(v.get(i)),ENCAP,args...>(v.get(i),get(size()-1));
+			}
+		}
+
 		/*! \brief Remove one entry from the vector
 		 *
 		 * \param key element to remove
@@ -541,6 +574,49 @@ namespace openfpm
 		 *
 		 */
 
+		template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(size_t id) const
+		{
+#ifdef DEBUG
+			if (id >= v_size)
+			{std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " overflow" <<  "\n";}
+#endif
+			grid_key_dx<1> key(id);
+
+			return base.template get<p>(key);
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \param id Element to get
+		 *
+		 * \return the element (encapsulated)
+		 *
+		 */
+
+		inline const typename grid_cpu<1,T>::container get(size_t id) const
+		{
+#ifdef DEBUG
+			if (id >= v_size)
+			{std::cerr << "Error "  << __FILE__ << "  " << __LINE__ << " vector overflow" << "\n";}
+#endif
+			grid_key_dx<1> key(id);
+
+			return base.get_o(key);
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \tparam p Property to get
+		 * \param id Element to get
+		 *
+		 * \return the element value requested
+		 *
+		 */
+
 		template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(size_t id)
 		{
 #ifdef DEBUG
@@ -562,7 +638,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>()))
+		inline typename grid_cpu<1,T>::container get(size_t id)
 		{
 #ifdef DEBUG
 			if (id >= v_size)
