@@ -858,11 +858,10 @@ public:
 	 * \param stop stop point
 	 *
 	 */
-
 	inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop)
-				{
-		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
-				}
+	{
+		return g1.getSubIterator(start,stop);
+	}
 
 	/*! \brief Return a sub-grid iterator
 	 *
@@ -873,9 +872,9 @@ public:
 	 */
 
 	inline grid_key_dx_iterator_sub<dim> getSubIterator(size_t m)
-				{
+	{
 		return grid_key_dx_iterator_sub<dim>(g1,m);
-				}
+	}
 
 	/*! \brief Return a grid iterator
 	 *

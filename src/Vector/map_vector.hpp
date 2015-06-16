@@ -496,7 +496,7 @@ namespace openfpm
 				add();
 
 				// write the object in the last element
-				object_s_di<decltype(get(size()-1)),decltype(v.get(i)),ENCAP,args...>(v.get(i),get(size()-1));
+				object_s_di<decltype(v.get(i)),decltype(get(size()-1)),ENCAP,args...>(v.get(i),get(size()-1));
 			}
 		}
 

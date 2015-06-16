@@ -173,6 +173,25 @@ template<unsigned int dim ,typename T> class Point
 		return result;
 	}
 
+	/*! \brief Operator subtraction
+	 *
+	 *  it produce a point that is the subtraction of two points
+	 *
+	 * \param p Point
+	 *
+	 */
+	inline Point<dim,T> operator-(Point<dim,T> & p)
+	{
+		Point<dim,T> result;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			result.get(i) = get(i) - p.get(i);
+		}
+
+		return result;
+	}
+
 	/*! \brief Set to zero the point coordinate
 	 *
 	 *

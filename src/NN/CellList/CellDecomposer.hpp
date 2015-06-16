@@ -164,6 +164,25 @@ public:
  * \tparam transform type of transformation (no_transformation shift ... ), carefully if p1 it different from {0, ... 0}
  *         shift class must be used
  *
+ * Example of a 2D space decompised into Cells, 6x6 structure with padding 1 without shift, cell indicated with p are padding cell
+ * the origin of the cell or point (0,0) is marked with cell number 9
+ *
+ * \verbatim
+ * +-----------------------+
+ * |p |p |p |p |p |p |p |p |
+ * +-----------------------+
+ * |p |  |  |  |  |  |  |p |
+ * +-----------------------+
+ * |p |  |  |  |  |  |  |p |
+ * +-----------------------+
+ * |p |  |  |  |  |  |  |p |
+ * +-----------------------+
+ * |p |9 |  |  |  |  |  |p |
+ * +-----------------------+
+ * |p |p |p |p |p |p |p |p |
+ * +-----------------------+
+ * \endverbatim
+ *
  * ### Cell decomposer without shift
  * \snippet CellList_test.hpp Cell decomposer use without shift
  * ### Cell decomposer with padding
@@ -175,6 +194,25 @@ public:
 template<unsigned int dim,typename T, typename transform = no_transform<dim,T>>
 class CellDecomposer_sm
 {
+	// Point in the middle of a cell
+	//
+	// \verbatim
+	//
+	//         C (0.1,0.1)
+	// +-----+
+	// |     |
+	// |  .P |
+	// |     |
+	// +-----+
+    //
+	// \endverbatim
+	//
+	//    C is the cell and P is the point inside the middle of the cell
+	//    for example if the cell is (0.1,0.1) P is (0.05,0.05)
+	//
+	//
+	Point<dim,T> p_middle;
+
 	// Point transformation before get the Cell object (useful for example to shift the cell list)
 	transform t;
 
@@ -200,6 +238,9 @@ protected:
 	 */
 	void Initialize(const size_t pad, const size_t (& div)[dim])
 	{
+		// Space
+		typedef Point<dim,T> p;
+
 		// created a padded div
 		size_t div_p[dim];
 
@@ -222,6 +263,11 @@ protected:
 
 		for (size_t i = 0; i < dim ; i++)
 			off[i] = pad;
+
+		// Initialize p_middle
+
+		p_middle = box_unit.getP2();
+		p_middle = p_middle / 2;
 	}
 
 public:
@@ -391,6 +437,57 @@ public:
 		}
 
 		return cell_id;
+	}
+
+	/*! \brief Return the box smallest box containing the grid points
+	 *
+	 * Suppose a grid 5x5 defined on a Box<2,float> box({0.0,0.0},{1.0,1.0})
+	 * and a Box defined Box<2,float>({0.4,0.4},{0.8,0.8}), it will return
+	 * a Box<2,size_t> (2,2) and (4,4). A visualization of it is shown in the
+	 * picture below.
+	 *
+	 * \verbatim
+	 *
+	   	+----------+
+		|. . . . . |
+		|          |
+		|. . . . . |
+		|   +---+  |
+		|. .|. .|. |
+		|   |   |  |
+		|. .|. .|. |
+		|   +---+  |
+		|. . . . . |
+		+----------+
+
+		\endverbatim
+	 *
+	 *
+	 * \div grid size on each dimension
+	 * \box Small box in the picture
+	 *
+	 * The big box is given by the object itself
+	 *
+	 * \return the box containing the grid points
+	 *
+	 */
+	Box<dim,size_t> getGridPoints(Box<dim,T> & s_box)
+	{
+		// Box with inside grid
+		Box<dim,size_t> bx;
+
+		// Point p2
+		Point<dim,T> p2 = s_box.getP2();
+		p2 = p2 - p_middle;
+
+		// Point p1
+		Point<dim,T> p1 = s_box.getP1();
+		p1 = p1 - p_middle;
+
+		bx.setP2(getCellGrid(p2));
+		bx.setP1(getCellGrid(p1));
+
+		return bx;
 	}
 
 	/*! \brief Set the domain to decompose

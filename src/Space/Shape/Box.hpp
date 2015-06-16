@@ -413,6 +413,50 @@ public:
 		return boost::fusion::at_c<p2>(data)[i];
 	}
 
+	/*! \brief Set the point P1 of the box
+	 *
+	 * \param p1 point
+	 *
+	 */
+	inline void setP1(const grid_key_dx<dim> & p1)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			setLow(i,p1.get(i));
+	}
+
+	/*! \brief Set the point P2 of the box
+	 *
+	 * \param p2 point
+	 *
+	 */
+	inline void setP2(const grid_key_dx<dim> & p2)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			setHigh(i,p2.get(i));
+	}
+
+	/*! \brief Set the point P1 of the box
+	 *
+	 * \param p1 point
+	 *
+	 */
+	inline void setP1(const Point<dim,T> & p1)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			setLow(i,p1.get(i));
+	}
+
+	/*! \brief Set the point P2 of the box
+	 *
+	 * \param p2 point
+	 *
+	 */
+	inline void setP2(const Point<dim,T> & p2)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			setHigh(i,p2.get(i));
+	}
+
 	/*! \brief Get the box enclosing this Box
 	 *
 	 * basically return itself
@@ -640,6 +684,21 @@ public:
 		// In bound
 
 		return true;
+	}
+
+	/*! \brief Get the volume of the box
+	 *
+	 * \return The volume
+	 *
+	 */
+	T getVolume()
+	{
+		T vol = 1.0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			vol *= (getHigh(i) - getLow(i));
+
+		return vol;
 	}
 };
 

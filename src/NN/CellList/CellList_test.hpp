@@ -248,6 +248,39 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 	// Test the cell list
 }
 
+BOOST_AUTO_TEST_CASE( CellDecomposer_get_grid_points )
+{
+	// Cell decomposer
+	CellDecomposer_sm<3,float> cd;
+
+	// Box
+	Box<3,float> box({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	// Divisions
+	size_t div[] = {10,10,10};
+
+	// Set the dimensions of the decomposer
+	cd.setDimensions(box,div,1);
+
+	Box<3,float> box_small({0.2,0.3,0.4},{0.5,0.5,0.6});
+
+	// Get the grid points box
+	Box<3,size_t> gp = cd.getGridPoints(box_small);
+
+	BOOST_REQUIRE_EQUAL(gp.getLow(0),2);
+	BOOST_REQUIRE_EQUAL(gp.getLow(1),3);
+	BOOST_REQUIRE_EQUAL(gp.getLow(2),4);
+
+	BOOST_REQUIRE_EQUAL(gp.getHigh(0),5);
+	BOOST_REQUIRE_EQUAL(gp.getHigh(1),5);
+	BOOST_REQUIRE_EQUAL(gp.getHigh(2),6);
+
+	// Get the volume of the box
+	size_t vol = gp.getVolume();
+
+	BOOST_REQUIRE_EQUAL(vol,12);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* CELLLIST_TEST_HPP_ */
