@@ -135,7 +135,7 @@ public:
 		// Get the nearest point of the box from the center of the sphere
 		typename distance::ResultType distance_r = 0;
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 
 			// if the center of the sphere on dimension i is not in the i box interval
@@ -254,7 +254,7 @@ public:
 	{
 		// we copy the data
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p1>(data)[i] = boost::fusion::at_c<p1>(box.data)[i];
 			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(box.data)[i];
@@ -272,7 +272,7 @@ public:
 	{
 		// we copy the data
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p1>(data)[i] = boost::fusion::at_c<p1>(box_data)[i];
 			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(box_data)[i];
@@ -288,7 +288,7 @@ public:
 	{
 		// we copy the data
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p1>(data)[i] = 0;
 			boost::fusion::at_c<p2>(data)[i] = box_data[i];
@@ -305,7 +305,7 @@ public:
 	{
 		// we copy the data
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p1>(data)[i] = boost::fusion::at_c<p1>(box_data)[i];
 			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(box_data)[i];
@@ -322,7 +322,7 @@ public:
 	{
 		// we copy the data
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p1>(data)[i] = b.template get<p1>()[i];
 			boost::fusion::at_c<p2>(data)[i] = b.template get<p2>()[i];
@@ -484,7 +484,7 @@ public:
 	 */
 	inline void expand(T (& exp)[dim])
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(data)[i] + exp[i];
 		}

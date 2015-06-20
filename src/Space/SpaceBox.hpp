@@ -39,7 +39,7 @@ class SpaceBox : public Box<dim,T>
 	{
 		// check if bound
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			// if outside the region return false
 			if (   boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]

@@ -107,6 +107,12 @@ public:
 	 */
 	void remove(size_t key)
 	{
+#ifdef DEBUG
+		if (key >= base.size())
+		{
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << key << "\n";
+		}
+#endif
 		base.erase(base.begin() + key);
 	}
 
@@ -196,6 +202,12 @@ public:
 	 */
 	inline T & get(size_t id)
 	{
+#ifdef DEBUG
+		if (id >= base.size())
+		{
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
+		}
+#endif
 		return base[id];
 	}
 
@@ -208,6 +220,12 @@ public:
 	 */
 	inline T get(size_t id) const
 	{
+#ifdef DEBUG
+		if (id >= base.size())
+		{
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
+		}
+#endif
 		return base[id];
 	}
 

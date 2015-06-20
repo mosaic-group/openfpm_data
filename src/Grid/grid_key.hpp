@@ -45,14 +45,14 @@ public:
 	//! Constructor from buffer reference
 	grid_key_dx(const size_t (&k)[dim])
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
 	}
 
 	//! Constructor from buffer reference
 	grid_key_dx(const long int (&k)[dim])
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
 	}
 
@@ -69,10 +69,8 @@ public:
 	 */
 	inline void zero()
 	{
-		for (int i = 0 ; i < dim ; i++)
-		{
+		for (size_t i = 0 ; i < dim ; i++)
 			k[i] = 0;
-		}
 	}
 
 	/* \brief Set to invalid the key
@@ -81,10 +79,8 @@ public:
 	 */
 	inline void invalid()
 	{
-		for (int i = 0 ; i < dim ; i++)
-		{
+		for (size_t i = 0 ; i < dim ; i++)
 			k[i] = -1;
-		}
 	}
 
 	/* \brief sum an a combination to the grid_key
@@ -119,7 +115,7 @@ public:
 
 		// Check the two key index by index
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (k[i] != key_t.k[i])
 			{

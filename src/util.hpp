@@ -18,7 +18,7 @@
 template<typename T> void boost_check_array(const T * ptr1, const T * ptr2, size_t sz)
 {
 	// Check the array
-	for (int i = 0 ; i < sz ; i++)
+	for (size_t i = 0 ; i < sz ; i++)
 	{
 		BOOST_REQUIRE_EQUAL(ptr1[i],ptr2[i]);
 	}

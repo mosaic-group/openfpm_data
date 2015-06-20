@@ -84,10 +84,10 @@ BOOST_AUTO_TEST_CASE( graph_use)
 		{
 			// Add 4 edge
 
-			g.addEdge<CheckExistence>(g2.LinId(i,j),g2.LinId(i+1,j),p);
-			g.addEdge<CheckExistence>(g2.LinId(i,j),g2.LinId(i,j+1),p);
-			g.addEdge<CheckExistence>(g2.LinId(i,j),g2.LinId(i-1,j),p);
-			g.addEdge<CheckExistence>(g2.LinId(i,j),g2.LinId(i,j-1),p);
+			g.addEdge<CheckExistence>(g2.Lin(i,j),g2.Lin(i+1,j),p);
+			g.addEdge<CheckExistence>(g2.Lin(i,j),g2.Lin(i,j+1),p);
+			g.addEdge<CheckExistence>(g2.Lin(i,j),g2.Lin(i-1,j),p);
+			g.addEdge<CheckExistence>(g2.Lin(i,j),g2.Lin(i,j-1),p);
 		}
 	}
 

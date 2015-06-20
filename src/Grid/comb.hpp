@@ -28,7 +28,7 @@ struct comb
 
 	inline bool isValid()
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (c[i] != 1 && c[i] != -1 && c[i] != 0)
 			{
@@ -49,7 +49,7 @@ struct comb
 
 	inline bool isSub(comb<dim> cmb)
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (c[i] != 0 && c[i] != cmb.c[i])
 			{
@@ -66,7 +66,7 @@ struct comb
 
 	inline void zero()
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			c[i] = 0;
 		}
@@ -85,7 +85,7 @@ struct comb
 	{
 		// Check if the two combination match
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (c[i] != t.c[i])
 				return true;

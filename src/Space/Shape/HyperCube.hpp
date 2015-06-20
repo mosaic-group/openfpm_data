@@ -17,7 +17,7 @@ template<unsigned int dim, unsigned int subdim> class SubHyperCube;
 template<unsigned int dim> std::ostream& operator<<(std::ostream& str, const comb<dim> & c)
 {
 	// print the combination of ostream
-	for (int i = 0 ; i < dim-1 ; i++)
+	for (size_t i = 0 ; i < dim-1 ; i++)
 		str <<  c.c[i] << ";";
 
 	str << c.c[dim-1];
@@ -193,7 +193,7 @@ public:
 
 		size_t pos_n_zero[dim];
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (c.c[i] != 0)
 			{d++;}
@@ -201,7 +201,7 @@ public:
 
 		// Get the position of the non-zero
 		size_t pn_zero = 0;
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (c.c[i] != 0)
 			{
@@ -214,20 +214,20 @@ public:
 		size_t lin_id = 0;
 
 		// Cumulative value
-		size_t val = 0;
-		size_t cum_val = 0;
-		for(int i = d - 1; i >= 0 ; i--)
+		long int val = 0;
+		long int cum_val = 0;
+		for(long int i = d - 1; i >= 0 ; i--)
 		{
 			// check the out-of-bound, outside is assumed to be -1 so  (- pos_n_zero[i+1] - 1) = 0
-			if (i+1 < d)
+			if (i+1 < (long int)d)
 				val = pos_n_zero[i] - pos_n_zero[i+1] - 1;
 			else
 				val = pos_n_zero[i];
 
-			for (int j = 0 ; j < val; j++)
+			for (long int j = 0 ; j < (long int)val; j++)
 			{
 				// C is not safe check the limit
-				if (dim-cum_val-j-1 >= 0 && i > 0 && dim-cum_val-j >= i)
+				if (((long int)dim)-cum_val-j-1 >= 0 && i > 0 && ((long int)dim)-cum_val-j >= i)
 					lin_id += openfpm::math::C(dim-cum_val-j-1,i);
 				else
 					lin_id += 1;
@@ -242,7 +242,7 @@ public:
 		// calculate the permutation position
 		size_t id = 0;
 
-		for (int i = 0 ; i < d ; i++)
+		for (size_t i = 0 ; i < d ; i++)
 		{
 			if (c.c[pos_n_zero[i]] == -1)
 			{id = id | (1 << i);}
@@ -345,12 +345,12 @@ public:
 		std::vector<comb<dim>> vc(v.size());
 
 		// for each combination
-		for (int i = 0 ; i < v.size() ; i++)
+		for (size_t i = 0 ; i < v.size() ; i++)
 		{
 			// sub j counter
 			int sub_j = 0;
 			// for each zero (direction spanned by the sub-hyper-cube)
-			for (int j = 0 ; j < dim ; j++)
+			for (size_t j = 0 ; j < dim ; j++)
 			{
 				if (c.c[j] == 0)
 				{

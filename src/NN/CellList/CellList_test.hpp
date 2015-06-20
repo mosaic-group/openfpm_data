@@ -32,6 +32,14 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	Point<dim,T> org({0.0,0.0,0.0});
 
 	// id Cell list
+	CellS cl2(box,div,org);
+
+	// Test force reallocation in case of Cell list fast
+	for (int i = 0 ; i < 32 ; i++)
+		cl2.add(org,0);
+	BOOST_REQUIRE_EQUAL(cl2.getNelements(cl2.getCell(org)),32);
+
+	// id Cell list
 	CellS cl1(box,div,org);
 
 	// Create a grid iterator
@@ -48,7 +56,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	Point<dim,T> offset[dim] = {middle,middle,middle};
 
 	// Create offset shift vectors
-	for (int i = 0 ; i < dim ; i++)
+	for (size_t i = 0 ; i < dim ; i++)
 	{
 		offset[i].get(i) += (1.0 / div[i]) / 8.0;
 	}
