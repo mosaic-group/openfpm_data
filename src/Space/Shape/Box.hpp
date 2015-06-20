@@ -664,6 +664,35 @@ public:
 	 *
 	 */
 
+	bool isInside(T (&p)[dim])
+	{
+		// check if bound
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			// if outside the region return false
+			if (   p[i] < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
+			    || p[i] > boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
+			{
+				// Out of bound
+
+				return false;
+			}
+
+		}
+
+		// In bound
+
+		return true;
+	}
+
+	/*! \brief Check if the point is inside the region
+	 *
+	 * \param p point to check
+	 * \return true if the point is inside the space
+	 *
+	 */
+
 	template <typename Mem> bool isInside(const encapc<1,Point<dim,T>,Mem> & p)
 	{
 		// check if bound

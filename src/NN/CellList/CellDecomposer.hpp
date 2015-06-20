@@ -38,7 +38,7 @@ public:
 	 * \return the transformed coordinate
 	 *
 	 */
-	inline T transform(const T(&s)[dim], const size_t i)
+	inline T transform(const T(&s)[dim], const size_t i) const
 	{
 		return s.get(i) - sh.get(i);
 	}
@@ -51,7 +51,7 @@ public:
 	 * \return the transformed coordinate
 	 *
 	 */
-	inline T transform(const Point<dim,T> & s, const size_t i)
+	inline T transform(const Point<dim,T> & s, const size_t i) const
 	{
 		return s.get(i) - sh.get(i);
 	}
@@ -64,7 +64,7 @@ public:
 	 * \return the transformed coordinate
 	 *
 	 */
-	template<typename Mem> inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i)
+	template<typename Mem> inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i) const
 	{
 		return s.get(i) - sh.get(i);
 	}
@@ -106,7 +106,7 @@ public:
 	 * \return the transformed coordinate
 	 *
 	 */
-	inline T transform(const T(&s)[dim], const size_t i)
+	inline T transform(const T(&s)[dim], const size_t i) const
 	{
 		return s[i];
 	}
@@ -119,7 +119,7 @@ public:
 	 * \return the source point coordinate
 	 *
 	 */
-	inline T transform(const Point<dim,T> & s, const size_t i)
+	inline T transform(const Point<dim,T> & s, const size_t i) const
 	{
 		return s.get(i);
 	}
@@ -132,7 +132,7 @@ public:
 	 * \return the point coordinate
 	 *
 	 */
-	template<typename Mem> inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i)
+	template<typename Mem> inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i) const
 	{
 		return s.template get<Point<dim,T>::x>()[i];
 	}
@@ -296,7 +296,7 @@ public:
 	 * \return the cell-ids ad a grid_key_dx<dim>
 	 *
 	 */
-	inline grid_key_dx<dim> getCellGrid(const T (& pos)[dim])
+	inline grid_key_dx<dim> getCellGrid(const T (& pos)[dim]) const
 	{
 #ifdef DEBUG
 		if (tot_n_cell == 0)
@@ -329,7 +329,7 @@ public:
 	 * \return the cell-ids ad a grid_key_dx<dim>
 	 *
 	 */
-	grid_key_dx<dim> getCellGrid(const Point<dim,T> pos)
+	grid_key_dx<dim> getCellGrid(const Point<dim,T> pos) const
 	{
 #ifdef DEBUG
 		if (tot_n_cell == 0)
@@ -360,11 +360,14 @@ public:
 	 * \return the cell-id
 	 *
 	 */
-	size_t getCell(const T (& pos)[dim])
+	size_t getCell(const T (& pos)[dim]) const
 	{
 #ifdef DEBUG
 		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+
+		if (t.transform(pos,0) < box.getLow(0) || t.transform(pos,0) > box.getHigh(0))
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
 
 		size_t cell_id = t.transform(pos,0) / box_unit.getHigh(0) + off[0];
@@ -372,8 +375,8 @@ public:
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef DEBUG
-			if (((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]) < 0)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space";
+			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
 			cell_id += gr_cell.size(s) * ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]);
 		}
@@ -390,11 +393,14 @@ public:
 	 * \return the cell-id
 	 *
 	 */
-	size_t getCell(const Point<dim,T> & pos)
+	size_t getCell(const Point<dim,T> & pos) const
 	{
 #ifdef DEBUG
 		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+
+		if (t.transform(pos,0) < box.getLow(0) || t.transform(pos,0) > box.getHigh(0))
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
 #endif
 
 		size_t cell_id = (size_t)(t.transform(pos,0) / box_unit.getHigh(0)) + off[0];
@@ -402,8 +408,8 @@ public:
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef DEBUG
-			if (((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]) < 0)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space";
+			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
 #endif
 			cell_id += gr_cell.size_s(s-1) * ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]);
 		}
@@ -420,12 +426,15 @@ public:
 	 * \return the cell-id
 	 *
 	 */
-	template<typename Mem> size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos)
+	template<typename Mem> size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos) const
 	{
 
 #ifdef DEBUG
 		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+
+		if (t.transform(pos,0) < box.getLow(0) || t.transform(pos,0) > box.getHigh(0))
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
 		typedef Point<dim,T> p;
 
@@ -433,17 +442,21 @@ public:
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
+#ifdef DEBUG
+			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+#endif
 			cell_id += gr_cell.size_s(s-1) * ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]);
 		}
 
 		return cell_id;
 	}
 
-	/*! \brief Return the box smallest box containing the grid points
+	/*! \brief Return the smallest box containing the grid points
 	 *
 	 * Suppose a grid 5x5 defined on a Box<2,float> box({0.0,0.0},{1.0,1.0})
-	 * and a Box defined Box<2,float>({0.4,0.4},{0.8,0.8}), it will return
-	 * a Box<2,size_t> (2,2) and (4,4). A visualization of it is shown in the
+	 * and a feeding to the function a Box<2,float>({0.4,0.4},{0.8,0.8}), it will return
+	 * a Box<2,size_t> (2,2) and (4,4). A visualization it is shown in the
 	 * picture below.
 	 *
 	 * \verbatim
@@ -466,12 +479,12 @@ public:
 	 * \div grid size on each dimension
 	 * \box Small box in the picture
 	 *
-	 * The big box is given by the object itself
+	 * The big box is defined by "this" box
 	 *
 	 * \return the box containing the grid points
 	 *
 	 */
-	Box<dim,size_t> getGridPoints(Box<dim,T> & s_box)
+	Box<dim,size_t> getGridPoints(const Box<dim,T> & s_box) const
 	{
 		// Box with inside grid
 		Box<dim,size_t> bx;
@@ -582,7 +595,7 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(SpaceBox<dim,T> & box, size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
+	CellDecomposer_sm(const SpaceBox<dim,T> & box, size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
 	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero()),box(box),gr_cell()
 	{
 		Initialize(pad);
@@ -618,7 +631,7 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad)
+	CellDecomposer_sm(const SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad)
 	:t(Matrix<dim,T>::identity(),orig),box(box),gr_cell(div)
 	{
 		Initialize(pad,div);
@@ -652,7 +665,7 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(SpaceBox<dim,T> & box, size_t (&div)[dim], const size_t pad)
+	CellDecomposer_sm(const SpaceBox<dim,T> & box, size_t (&div)[dim], const size_t pad)
 	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero_p()),box(box),gr_cell()
 	{
 		Initialize(pad,div);

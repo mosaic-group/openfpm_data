@@ -24,10 +24,10 @@
  *
  * ### Create a type definition
  *
- * \snippet vector_unit_tests.hpp typedef point
+ * \snippet vector_test_util.hpp typedef point
  *
  * ### Access the members
- * \snippet vector_unit_tests.hpp Point usage
+ * \snippet vector_test_util.hpp Point usage
  *
  */
 template<typename T> class Point_test

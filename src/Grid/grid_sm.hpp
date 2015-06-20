@@ -1038,7 +1038,7 @@ public:
 
 /**
  *
- * Grid key class iterator, iterate through a subgrid defined by an hyper-cube
+ * Grid key class iterator, iterate through a sub-grid defined by an hyper-cube
  *
  * \param dim dimensionality of the grid
  *
@@ -1077,10 +1077,21 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 			// if start smaller than 0
 			if (gk_start.get(i) < 0)
 			{
+#ifdef DEBUG
+				std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " start with index smaller than zero x[" << i << "]=" << gk_start.get(i) << "\n";
+#endif
 				if (gk_start.get(i) < gk_stop.get(i))
+				{
+#ifdef DEBUG
+					std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " Cropping start point x[" << i << "]=" << gk_start.get(i) << " to x[" << i << "]=0 \n"  ;
+#endif
 					gk_start.set_d(i,0);
+				}
 				else
 				{
+#ifdef DEBUG
+					std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop with smaller index than start \n";
+#endif
 					// No points are available
 					gk_start.set_d(dim-1,gk_stop.get(dim-1)+1);
 					break;
@@ -1090,6 +1101,10 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 			// if stop bigger than the domain
 			if (gk_stop.get(i) >= (long int)grid_base.size(i))
 			{
+#ifdef DEBUG
+				std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop index bigger than cell domain x[" << i << "]=" << gk_stop.get(i) << " >= " << grid_base.size(i) << "\n";
+#endif
+
 				if (gk_start.get(i) < (long int)grid_base.size(i))
 					gk_stop.set_d(i,grid_base.size(i)-1);
 				else

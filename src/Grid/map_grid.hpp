@@ -490,6 +490,9 @@ public:
 
 	void * getPointer()
 	{
+		if (data.mem_r == NULL)
+			return NULL;
+
 		return data.mem_r->get_pointer();
 	}
 

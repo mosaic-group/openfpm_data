@@ -11,6 +11,7 @@
 #include "base_type.hpp"
 #include "memory_conf.hpp"
 #include "Grid/grid_key.hpp"
+#include "Grid/Encap.hpp"
 
 /*! \brief This class implement the point shape in an N-dimensional space
  *
@@ -180,7 +181,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p Point
 	 *
 	 */
-	inline Point<dim,T> operator-(Point<dim,T> & p)
+	inline Point<dim,T> operator-(const Point<dim,T> & p)
 	{
 		Point<dim,T> result;
 
@@ -221,12 +222,29 @@ template<unsigned int dim ,typename T> class Point
 		return p;
 	}
 
+	/*! \brief Convert the point into a string
+	 *
+	 * \return the string
+	 *
+	 */
+	std::string toPointString() const
+	{
+		std::stringstream ps;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			ps << "x[" << i << "]=" << get(i) << " ";
+
+		ps << "\n";
+
+		return ps.str();
+	}
+
 	/*! \brief Return the string with the point coordinate
 	 *
 	 * \return the string
 	 *
 	 */
-	std::string toString()
+	std::string toString() const
 	{
 		std::string str;
 
@@ -303,5 +321,42 @@ template<unsigned int dim ,typename T> class Point
 	static const unsigned int dims = dim;
 };
 
+/*! \brief Convert an array of point coordinate into string
+ *
+ * \param p coordinate on each dimension
+ *
+ * \return the string
+ *
+ */
+template <unsigned int N, typename T> std::string toPointString(const T (&p)[N] )
+{
+	std::stringstream ps;
+
+	for (size_t i = 0 ; i < N ; i++)
+		ps << "x[" << i << "]=" << p[i] << " ";
+
+	ps << "\n";
+
+	return ps.str();
+}
+
+/*! \brief Convert an encapsulated point into string
+ *
+ * \param p coordinate on each dimension
+ *
+ * \return the string
+ *
+ */
+template <unsigned int N, typename T, typename Mem> std::string toPointString(const encapc<1,Point<N,T>,Mem> & p )
+{
+	std::stringstream ps;
+
+	for (size_t i = 0 ; i < N ; i++)
+		ps << "x[" << i << "]=" << p.template get<Point<N,T>::x>()[i] << " ";
+
+	ps << "\n";
+
+	return ps.str();
+}
 
 #endif

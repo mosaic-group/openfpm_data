@@ -40,9 +40,10 @@ namespace openfpm
 		 *
 		 * \param end size of the vector
 		 */
-		vector_key_iterator(size_t end)
-		: end(end),gk(0)
+		vector_key_iterator(size_t end, size_t start = 0)
+		: end(end),gk(start)
 		{}
+
 
 		/*! \brief Get the next element
 		 *
@@ -240,7 +241,7 @@ namespace openfpm
 	 *
 	 * Stub object look at the various implementations
 	 *
-	 * \snippet vector_unit_tests.hpp Create add and access
+	 * \snippet vector_test_util.hpp Create add and access
 	 *
 	 * \param T type of structure the vector has to store
 	 * \param device type of layout to use
@@ -265,7 +266,7 @@ namespace openfpm
 	 * The layout is memory_traits_lin
 	 *
 	 * ### Add and access elements
-	 * \snippet vector_unit_tests.hpp Create add and access
+	 * \snippet vector_test_util.hpp Create add and access
 	 *
 	 * \tparam T type of object the vector store
 	 * \tparam base memory layout to use
@@ -473,7 +474,7 @@ namespace openfpm
 		 * \param v from where to take the vector
 		 *
 		 */
-		template <typename M, typename gp> void add(const vector<T,device_cpu<T>, Memory,gp,OPENFPM_NATIVE> & v)
+		template <typename M, typename gp> void add(const vector<T,device_cpu<T>, M,gp,OPENFPM_NATIVE> & v)
 		{
 			//! Add the element of v
 			for (size_t i = 0 ; i < v.size() ; i++)
@@ -818,9 +819,18 @@ namespace openfpm
 			v.v_size = sz_sp;
 		}
 
+		/*! \brief Get iterator over the particles from a particular index
+		 *
+		 * \return an iterator to iterate from a particular index
+		 *
+		 */
+		vector_key_iterator getIteratorFrom(size_t mark)
+		{
+			return vector_key_iterator(v_size,mark);
+		}
+
 		/*! \brief Get the vector elements iterator
 		 *
-		 * Get the vector elements iterator
 		 *
 		 * \return an iterator to iterate through all the elements of the vector
 		 *
@@ -866,7 +876,10 @@ namespace openfpm
 		 */
 		inline static size_t calculateMem(size_t n, size_t e)
 		{
-			return grow_p::grow(0,n) * sizeof(T);
+			if (n == 0)
+				return 0;
+			else
+				return grow_p::grow(0,n) * sizeof(T);
 		}
 
 		/*! \brief How many allocation are required to create n-elements
@@ -908,7 +921,7 @@ namespace openfpm
 	 * The layout is memory_traits_inte
 	 *
 	 * ### Add and access elements
-	 * \snippet vector_unit_tests.hpp Create add and access
+	 * \snippet vector_util_tests.hpp Create add and access
 	 *
 	 * \tparam T type of object the vector store
 	 * \tparam base memory layout to use

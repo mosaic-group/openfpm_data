@@ -15,7 +15,7 @@
  * of data where the members cannot be parsed see openFPM_data wiki for more information
  *
  * ### Create add and access the elements
- * \snippet vector_unit_tests.hpp Create add and access stl
+ * \snippet vector_test_util.hpp Create add and access stl
  *
  * \param T base type
  *
