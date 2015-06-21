@@ -19,6 +19,7 @@
 
 // Include tests
 
+#include "Point_test_unit_tests.hpp"
 #include "util/util_test.hpp"
 #include "Space/SpaceBox_unit_tests.hpp"
 #include "Space/Shape/Box_unit_tests.hpp"

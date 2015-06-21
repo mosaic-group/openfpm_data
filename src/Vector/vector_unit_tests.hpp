@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_SUITE( vector_test )
 
 BOOST_AUTO_TEST_CASE (vector_iterator_test)
 {
-	openfpm::vector<Point_test<float>> v_ofp_test = allocate_openfpm();
+	openfpm::vector<Point_test<float>> v_ofp_test = allocate_openfpm(FIRST_PUSH);
 
 	size_t count = 0;
 
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE( vector_use)
 	std::cout << "Vector unit test start" << "\n";
 
 	std::vector<Point_orig<float>> v_stl_test = allocate_stl();
-	openfpm::vector<Point_test<float>> v_ofp_test = allocate_openfpm();
+	openfpm::vector<Point_test<float>> v_ofp_test = allocate_openfpm(FIRST_PUSH);
 
 	// try to duplicate the vector
 	openfpm::vector<Point_test<float>> dv_ofp_test = v_ofp_test.duplicate();
@@ -432,7 +432,7 @@ BOOST_AUTO_TEST_CASE( vector_add_test_case )
 	// Duplicate the vector
 	openfpm::vector<Point_test<float>> v2 = v1.duplicate();
 
-	v1.template add<Point_test<float>,HeapMemory,typename openfpm::grow_policy_double,P::x,P::y,P::z,P::s,P::v,P::t>(v2);
+	v1.template add_prp<Point_test<float>,HeapMemory,typename openfpm::grow_policy_double,P::x,P::y,P::z,P::s,P::v,P::t>(v2);
 
 	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
 	{
@@ -453,7 +453,7 @@ BOOST_AUTO_TEST_CASE( vector_add_test_case )
 
 	// add homogeneous
 
-	v1.template add<Point_test<float>,HeapMemory,typename openfpm::grow_policy_double>(v2);
+	v1.template add(v2);
 
 	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
 	{

@@ -70,7 +70,7 @@ std::vector<Point_orig<float>> allocate_stl()
 	return v_stl_test;
 }
 
-openfpm::vector<Point_test<float>> allocate_openfpm()
+openfpm::vector<Point_test<float>> allocate_openfpm(size_t n_ele)
 {
 	#ifdef VERBOSE_TEST
 	timespec ts_start;
@@ -92,7 +92,7 @@ openfpm::vector<Point_test<float>> allocate_openfpm()
 
 	// push objects
 
-	for (size_t i = 0 ; i < FIRST_PUSH / 2 ; i++)
+	for (size_t i = 0 ; i < n_ele / 2 ; i++)
 	{
 		// Modify the point
 
@@ -117,7 +117,7 @@ openfpm::vector<Point_test<float>> allocate_openfpm()
 		v_ofp_test.add(p);
 	}
 
-	for (size_t i = FIRST_PUSH / 2 ; i < FIRST_PUSH ; i++)
+	for (size_t i = n_ele / 2 ; i < n_ele ; i++)
 	{
 		v_ofp_test.add();
 

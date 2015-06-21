@@ -481,14 +481,21 @@ namespace openfpm
 				add(v.get(i));
 		}
 
-		/*! \brief It add the element of another vector to this vector
+		/*! \brief It add the element of a source vector to this vector
 		 *
+		 * The number of properties in the source vector must be smaller than the destination
+		 * all the properties of S must be mapped so if S has 3 properties
+		 * 3 numbers for args are required
+		 *
+		 * \tparam S Base object of the source vector
+		 * \tparam M memory type of the source vector
+		 * \tparam gp Grow policy of the source vector
 		 * \tparam args one or more number that define which property to set-up
 		 *
-		 * \param v from where to take the vector
+		 * \param v source vector
 		 *
 		 */
-		template <typename S, typename M, typename gp, unsigned int ...args> void add(const vector<S,device_cpu<S>, M,gp,OPENFPM_NATIVE> & v)
+		template <typename S, typename M, typename gp, unsigned int ...args> void add_prp(const vector<S,device_cpu<S>, M,gp,OPENFPM_NATIVE> & v)
 		{
 			//! Add the element of v
 			for (size_t i = 0 ; i < v.size() ; i++)
