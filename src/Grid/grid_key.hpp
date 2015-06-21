@@ -20,7 +20,7 @@ class grid_key_dx
 public:
 
 	// Constructor from expression
-	template<typename exp1> grid_key_dx(const grid_key_dx_expression<exp1> & exp)
+	template<typename exp1> grid_key_dx(const grid_key_dx_expression<dim,exp1> & exp)
 	{
 		for (int i = 0 ; i < dim ; i++)
 			this->k[i] = exp.value(i);
@@ -86,9 +86,37 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> operator+(comb<dim> & cmb) const
+	inline grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> operator+(const comb<dim> & cmb) const
 	{
 		grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> exp_sum(*this,cmb);
+
+		return exp_sum;
+	}
+
+	/* \brief sum an a combination to the grid_key
+	 *
+	 * \param comb combination (or relative movement)
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
+	inline grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx<dim>> operator-(const grid_key_dx<dim> & cmb) const
+	{
+		grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx<dim>> exp_sum(*this,cmb);
+
+		return exp_sum;
+	}
+
+	/* \brief sum this key to another grid expression
+	 *
+	 * \param cmb expression
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
+	template <typename T> inline grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx_expression<dim,T>> operator-(const grid_key_dx_expression<dim,T> & cmb) const
+	{
+		grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx_expression<dim,T>> exp_sum(*this,cmb);
 
 		return exp_sum;
 	}

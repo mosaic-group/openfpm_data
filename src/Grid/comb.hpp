@@ -177,6 +177,22 @@ struct comb
 		return zero;
 	}
 
+	//! Default constructor
+	comb()
+	{}
+
+	/*! \brief Constructor from a list of numbers
+	 *
+	 * \param c list of numbers
+	 *
+	 */
+	comb(std::initializer_list<char> c)
+	{
+		size_t i = 0;
+	    for(char x : c)
+	    {this->c[c.size() - i - 1] = x;i++;}
+	}
+
 };
 
 /*! brief specialization of comb in case of dim 0
