@@ -420,7 +420,7 @@ public:
 	 *
 	 */
 
-	grid_sm(size_t (& sz)[N])
+	grid_sm(const size_t (& sz)[N])
 	: size_tot(totalSize(sz))
 	{
 		Initialize(sz);
@@ -720,7 +720,7 @@ public:
 	 * \return get the size of the grid as an array
 	 *
 	 */
-	size_t (& getSize())[N]
+	const size_t (& getSize() const)[N]
 	{
 		return sz;
 	}
@@ -1077,19 +1077,19 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 			// if start smaller than 0
 			if (gk_start.get(i) < 0)
 			{
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(NO_WARNING)
 				std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " start with index smaller than zero x[" << i << "]=" << gk_start.get(i) << "\n";
 #endif
 				if (gk_start.get(i) < gk_stop.get(i))
 				{
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(NO_WARNING)
 					std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " Cropping start point x[" << i << "]=" << gk_start.get(i) << " to x[" << i << "]=0 \n"  ;
 #endif
 					gk_start.set_d(i,0);
 				}
 				else
 				{
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(NO_WARNING)
 					std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop with smaller index than start \n";
 #endif
 					// No points are available
@@ -1101,7 +1101,7 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 			// if stop bigger than the domain
 			if (gk_stop.get(i) >= (long int)grid_base.size(i))
 			{
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(NO_WARNING)
 				std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop index bigger than cell domain x[" << i << "]=" << gk_stop.get(i) << " >= " << grid_base.size(i) << "\n";
 #endif
 

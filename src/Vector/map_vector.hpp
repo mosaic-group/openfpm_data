@@ -672,7 +672,7 @@ namespace openfpm
 		 * \return a duplicated vector
 		 *
 		 */
-		vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> duplicate()
+		vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> duplicate() const
 		{
 			vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> dup;
 
@@ -682,15 +682,25 @@ namespace openfpm
 			return dup;
 		}
 
-		/*! \brief Constructor from another vector
+		/*! \brief Constructor from another temporal vector
 		 *
 		 * \param v the vector
 		 *
 		 */
+		vector(const vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> && v)
+		{
+			swap(v);
+		}
 
+		/*! \brief Constructor from another constant vector
+		 *
+		 * \param v the vector
+		 *
+		 */
 		vector(const vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> & v)
-		:v_size(v.v_size),base(v.base)
-		{}
+		{
+			swap(v.duplicate());
+		}
 
 		//! Constructor, vector of size 0
 		vector():v_size(0),base(getV(0))
@@ -831,7 +841,7 @@ namespace openfpm
 		 * \return an iterator to iterate from a particular index
 		 *
 		 */
-		vector_key_iterator getIteratorFrom(size_t mark)
+		vector_key_iterator getIteratorFrom(size_t mark) const
 		{
 			return vector_key_iterator(v_size,mark);
 		}
@@ -843,7 +853,7 @@ namespace openfpm
 		 *
 		 */
 
-		vector_key_iterator getIterator()
+		vector_key_iterator getIterator() const
 		{
 			return vector_key_iterator(v_size);
 		}

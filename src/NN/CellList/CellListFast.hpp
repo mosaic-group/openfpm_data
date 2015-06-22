@@ -165,7 +165,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	void Initialize(Box<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
 		SpaceBox<dim,T> sbox(box);
 
@@ -182,7 +182,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], const size_t pad = 1, size_t slot=16)
+	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=16)
 	{
 		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, pad);
 		this->slot = slot;
@@ -277,7 +277,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	CellList(Box<dim,T> & box, size_t (&div)[dim], Matrix<dim,T> mat, Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	:CellDecomposer_sm<dim,T,transform>(box,div,mat,orig,pad)
 	{
 		SpaceBox<dim,T> sbox(box);
@@ -293,7 +293,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	CellList(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	CellList(Box<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
 		SpaceBox<dim,T> sbox(box);
 		Initialize(sbox,div,orig,pad,slot);
@@ -308,7 +308,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	CellList(SpaceBox<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
 		Initialize(box,div,orig,pad,slot);
 	}

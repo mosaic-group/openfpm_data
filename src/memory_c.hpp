@@ -79,6 +79,17 @@ class memory_c
 		return *this->mem;
 	}
 
+	/*! \brief This function get the object that allocate memory
+	 *
+	 * \return memory object to allocate memory
+	 *
+	 */
+
+	const memory& getMemory() const
+	{
+		return *this->mem;
+	}
+
 	/*! \brief This function allocate memory
 	 *
 	 */

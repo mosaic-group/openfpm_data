@@ -369,7 +369,7 @@ public:
 	}
 
 	//! Constructor allocate memory and give them a representation
-	grid_cpu(size_t (& sz)[dim])
+	grid_cpu(const size_t (& sz)[dim])
 	:g1(sz),isExternal(false)
 	{
 	}
@@ -378,17 +378,14 @@ public:
 	 *
 	 */
 
-	template<typename S> grid_cpu<dim,T,Mem> duplicate()
+	template<typename S> grid_cpu<dim,T,Mem> duplicate() const
 	{
 		//! Create a completely new grid with sz
 
 		grid_cpu<dim,T,Mem> grid_new(g1.getSize());
 
 		//! Set the allocator and allocate the memory
-		if (isExternal == true)
-			grid_new.template setMemory<S>(static_cast<S&>(data.getMemory()));
-		else
-			grid_new.template setMemory<S>();
+		grid_new.template setMemory<S>();
 
 		// We know that, if it is 1D we can safely copy the memory
 		if (dim == 1)
