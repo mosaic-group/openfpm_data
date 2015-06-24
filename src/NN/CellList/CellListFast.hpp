@@ -123,22 +123,20 @@ class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,trans
 	{
 		// we do not have enough slots reallocate the basic structure with more
 		// slots
-
-		// Create a cell-list with double of the slots
-
-		CellList cl_tmp(this->box,this->gr_cell.getSize(),orig,slot*2);
+		base cl_base_(2*slot * cl_n.size());
 
 		// copy cl_base
-
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
 		{
-			cl_tmp.cl_n.get(i) = cl_n.get(i);
 			for (size_t j = 0 ; j < cl_n.get(i) ; j++)
-				cl_tmp.cl_base.get(2*i*slot + j) = cl_base.get(slot * i + j);
+				cl_base_.get(2*i*slot + j) = cl_base.get(slot * i + j);
 		}
 
+		// Double the number of slots
+		slot *= 2;
+
 		// swap the memory
-		swap(cl_tmp);
+		cl_base.swap(cl_base_);
 	}
 
 public:

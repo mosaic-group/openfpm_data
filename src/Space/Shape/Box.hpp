@@ -725,7 +725,7 @@ public:
 		T vol = 1.0;
 
 		for (size_t i = 0 ; i < dim ; i++)
-			vol *= (getHigh(i) - getLow(i));
+			vol *= (getHigh(i) - getLow(i) + 1.0);
 
 		return vol;
 	}

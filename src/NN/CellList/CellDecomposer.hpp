@@ -322,7 +322,7 @@ public:
 
 	/*! \brief Get the cell-ids
 	 *
-	 * Convert the point coordinates into the cell ids
+	 * Convert the point coordinates into the cell ids (Careful it include padding)
 	 *
 	 * \param pos Point position
 	 *
@@ -456,7 +456,7 @@ public:
 	 *
 	 * Suppose a grid 5x5 defined on a Box<2,float> box({0.0,0.0},{1.0,1.0})
 	 * and a feeding to the function a Box<2,float>({0.4,0.4},{0.8,0.8}), it will return
-	 * a Box<2,size_t> (2,2) and (4,4). A visualization it is shown in the
+	 * a Box<2,size_t> (2,2) and (3,3). A visualization it is shown in the
 	 * picture below.
 	 *
 	 * \verbatim
@@ -495,7 +495,7 @@ public:
 
 		// Point p1
 		Point<dim,T> p1 = s_box.getP1();
-		p1 = p1 - p_middle;
+		p1 = p1 + p_middle;
 
 		bx.setP2(getCellGrid(p2));
 		bx.setP1(getCellGrid(p1));

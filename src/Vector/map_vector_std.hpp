@@ -172,7 +172,8 @@ public:
 	 */
 	void unique()
 	{
-		std::unique(base.begin(),base.end());
+		auto it = std::unique(base.begin(),base.end());
+		base.resize( std::distance(base.begin(),it) );
 	}
 
 	/*! \brief Get an element of the vector
@@ -224,7 +225,7 @@ public:
 	 * \return the element value
 	 *
 	 */
-	inline T get(size_t id) const
+	inline const T & get(size_t id) const
 	{
 #ifdef DEBUG
 		if (id >= base.size())

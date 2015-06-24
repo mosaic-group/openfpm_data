@@ -37,9 +37,17 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	grid_sm<dim,void> g_info(div);
 
 	// Test force reallocation in case of Cell list fast
-	for (int i = 0 ; i < 32 ; i++)
-		cl2.add(org,0);
-	BOOST_REQUIRE_EQUAL(cl2.getNelements(cl2.getCell(org)),32);
+	for (int i = 0 ; i < CELL_REALLOC * 3 ; i++)
+	{
+		cl2.add(org,i);
+	}
+
+	// Check the elements
+	BOOST_REQUIRE_EQUAL(cl2.getNelements(cl2.getCell(org)),CELL_REALLOC * 3);
+	for (int i = 0 ; i < CELL_REALLOC * 3 ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(cl2.get(cl2.getCell(org),i),i);
+	}
 
 	//! [Usage of cell list]
 
@@ -250,6 +258,7 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 
 BOOST_AUTO_TEST_CASE( CellDecomposer_get_grid_points )
 {
+	{
 	// Cell decomposer
 	CellDecomposer_sm<3,float> cd;
 
@@ -259,26 +268,67 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_get_grid_points )
 	// Divisions
 	size_t div[] = {10,10,10};
 
+	// padding
+	size_t padding = 1;
+
 	// Set the dimensions of the decomposer
-	cd.setDimensions(box,div,1);
+	cd.setDimensions(box,div,padding);
 
 	Box<3,float> box_small({0.2,0.3,0.4},{0.5,0.5,0.6});
 
 	// Get the grid points box
 	Box<3,size_t> gp = cd.getGridPoints(box_small);
 
-	BOOST_REQUIRE_EQUAL(gp.getLow(0),2);
-	BOOST_REQUIRE_EQUAL(gp.getLow(1),3);
-	BOOST_REQUIRE_EQUAL(gp.getLow(2),4);
+	BOOST_REQUIRE_EQUAL(gp.getLow(0),2+padding);
+	BOOST_REQUIRE_EQUAL(gp.getLow(1),3+padding);
+	BOOST_REQUIRE_EQUAL(gp.getLow(2),4+padding);
 
-	BOOST_REQUIRE_EQUAL(gp.getHigh(0),5);
-	BOOST_REQUIRE_EQUAL(gp.getHigh(1),5);
-	BOOST_REQUIRE_EQUAL(gp.getHigh(2),6);
+	BOOST_REQUIRE_EQUAL(gp.getHigh(0),5+padding-1);
+	BOOST_REQUIRE_EQUAL(gp.getHigh(1),5+padding-1);
+	BOOST_REQUIRE_EQUAL(gp.getHigh(2),6+padding-1);
 
 	// Get the volume of the box
 	size_t vol = gp.getVolume();
 
 	BOOST_REQUIRE_EQUAL(vol,12);
+	}
+
+	//////////////////////////
+	// 2D test
+	//////////////////////////
+
+	{
+	// Cell decomposer
+	CellDecomposer_sm<2,float> cd;
+
+	// Box
+	Box<2,float> box({0.0,0.0},{1.0,1.0});
+
+	// Divisions
+	size_t div[] = {5,5};
+
+	// padding
+	size_t padding = 1;
+
+	// Set the dimensions of the decomposer
+	cd.setDimensions(box,div,padding);
+
+	Box<2,float> box_small({0.4,0.4},{0.8,0.8});
+
+	// Get the grid points box
+	Box<2,size_t> gp = cd.getGridPoints(box_small);
+
+	BOOST_REQUIRE_EQUAL(gp.getLow(0),2+padding);
+	BOOST_REQUIRE_EQUAL(gp.getLow(1),2+padding);
+
+	BOOST_REQUIRE_EQUAL(gp.getHigh(0),3+padding);
+	BOOST_REQUIRE_EQUAL(gp.getHigh(1),3+padding);
+
+	// Get the volume of the box
+	size_t vol = gp.getVolume();
+
+	BOOST_REQUIRE_EQUAL(vol,4);
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

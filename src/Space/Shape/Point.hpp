@@ -96,7 +96,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p Point
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> operator*(Point<dim,aT> & p)
+	template<typename aT> inline Point<dim,T> operator*(const Point<dim,aT> & p)
 	{
 		Point<dim,T> result;
 
@@ -113,7 +113,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p Point
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> & operator+=(Point<dim,aT> & p)
+	template<typename aT> inline Point<dim,T> & operator+=(const Point<dim,aT> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -128,7 +128,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p Point
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> operator+(Point<dim,aT> & p)
+	template<typename aT> inline Point<dim,T> operator+(const Point<dim,aT> & p)
 	{
 		Point<dim,T> result;
 
@@ -145,7 +145,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param ar Component wise division
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> operator/(aT (&ar)[dim])
+	template<typename aT> inline Point<dim,T> operator/(const aT (&ar)[dim])
 	{
 		Point<dim,T> result;
 
@@ -162,7 +162,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param c Component wise division
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> operator/(aT c)
+	template<typename aT> inline Point<dim,T> operator/(const aT c)
 	{
 		Point<dim,T> result;
 
@@ -262,7 +262,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p the point
 	 *
 	 */
-	Point(const Point<dim,T> && p)
+	inline Point(const Point<dim,T> && p)
 	{
 	    for(size_t i = 0; i < dim ; i++)
 	    {get(i) = p.get(i);}
@@ -273,7 +273,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p the point
 	 *
 	 */
-	Point(const Point<dim,T> & p)
+	inline Point(const Point<dim,T> & p)
 	{
 	    for(size_t i = 0; i < dim ; i++)
 	    {get(i) = p.get(i);}
@@ -284,7 +284,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p array with the coordinate of the point
 	 *
 	 */
-	Point(const T (&p)[dim])
+	inline Point(const T (&p)[dim])
 	{
 	    for(size_t i = 0; i < dim ; i++)
 	    {get(i) = p[i];}
@@ -295,7 +295,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param key from where to initialize
 	 *
 	 */
-	Point(grid_key_dx<dim> key)
+	inline Point(grid_key_dx<dim> key)
 	{
 	    for(size_t i = 0 ; i < dim ; i++)
 	    {get(i) = key.k[i];}
@@ -306,7 +306,7 @@ template<unsigned int dim ,typename T> class Point
 	 * [Example] Point<3,float> p({0.0,0.0,1.0})
 	 *
 	 */
-	Point(std::initializer_list<T> p1)
+	inline Point(std::initializer_list<T> p1)
 	{
 		size_t i = 0;
 	    for(T x : p1)
@@ -314,7 +314,7 @@ template<unsigned int dim ,typename T> class Point
 	}
 
 	//! Default contructor
-	Point()
+	inline Point()
 	{}
 
 	static const unsigned int max_prop = 1;

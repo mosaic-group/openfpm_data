@@ -11,6 +11,9 @@
 #include "Vector/map_vector.hpp"
 #include "CellDecomposer.hpp"
 
+//! Point at witch the cell do a reallocation (it should the the maximum for all the implementations)
+#define CELL_REALLOC 16
+
 /* NOTE all the implementations
  *
  * has complexity O(1) in getting the cell id and the elements in a cell
