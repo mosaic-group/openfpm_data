@@ -2,7 +2,8 @@
  * CelListMem.hpp
  *
  *  Created on: Mar 22, 2015
- *      Author: Pietro Incardona
+ *  Last modified: June 25, 2015
+ *      Authors: Pietro Incardona, Yaroslav Zaluzhnyi
  */
 
 #ifndef CELLISTMEM_HPP_
@@ -10,11 +11,11 @@
 
 #include <unordered_map>
 
-/*! \brief Class for MEMORY WISE cell list implementation
+/*! \brief Class for MEMORY-WISE cell list implementation
  *
- * This class implement the BALANCED cell list is fast (not best)
- * the memory allocation is small (not best).
- * The memory allocation is (in byte) Size = M*16 + N*sizeof(ele)
+ * This class implement the MEMORY-WISE cell list
+ * The memory allocation is small.
+ * The memory allocation is (in byte) Size = O(N*size_of(ele))
  *
  * Where
  *
@@ -23,7 +24,7 @@
  * sizeof(ele) = the size of the element the cell list is storing, example if
  *               the cell list store the particle id (64bit) is 8 byte
  *
- * \warning Do not use for extremely fine cell list (M big)
+ * \note It is useful when M >> N
  *
  * \tparam dim Dimensionality of the space
  * \tparam T type of the space float, double, complex
@@ -221,7 +222,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos,1);
+		size_t cell_id = this->getCell(pos);
 
 		// Get the number of element the cell is storing
 

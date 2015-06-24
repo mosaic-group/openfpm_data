@@ -2,7 +2,8 @@
  * CellListBal.hpp
  *
  *  Created on: Mar 22, 2015
- *      Author: Pietro Incardona
+ *  Last modified: June 25, 2015
+ *      Authors: Pietro Incardona, Yaroslav Zaluzhnyi
  */
 
 #ifndef CELLLISTBAL_HPP_
@@ -17,7 +18,7 @@
 /*! \brief Class for BALANCED cell list implementation
  *
  * This class implement the BALANCED cell list is fast (not best)
- * the memory allocation is small (not best).
+ * The memory allocation is small (not best).
  * The memory allocation is (in byte) Size = M*16 + N*sizeof(ele)
  *
  * Where
@@ -118,7 +119,7 @@ public:
 
 		cl_base.resize(this->tot_n_cell);
 
-		//filling a vector with pointers to "base" structures
+		//filling a vector with pointers to base-structures
 		for (int i = 0; i < this->tot_n_cell; i++)
 			cl_base.get(i) =  new base;
 
@@ -229,7 +230,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos,1);
+		size_t cell_id = this->getCell(pos);
 
 		// add a new element
 
@@ -286,6 +287,8 @@ public:
 	{
 		return cl_base.get(cell)->get(ele);
 	}
+
+	//Three next functions are optional
 
 	/*! \brief Get an element in the cell
 	 *
