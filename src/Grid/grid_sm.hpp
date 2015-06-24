@@ -439,7 +439,7 @@ public:
 	{
 		sz_s[0] = sz[0];
 		this->sz[0] = sz[0];
-		for (size_t i = 1 ;  i < sz.size() ; i++)
+		for (size_t i = 1 ;  i < sz.size() && N > 1 ; i++)
 		{
 			sz_s[i] = sz[i]*sz_s[i-1];
 			this->sz[i] = sz[i];

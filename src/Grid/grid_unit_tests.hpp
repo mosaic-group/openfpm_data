@@ -537,6 +537,9 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 	{
 		grid_key_dx<3> key = g_it.get();
 
+		// set the grid key to zero without any reason ( to avoid warning compilations )
+		key.zero();
+
 		count++;
 
 		++g_it;
@@ -568,6 +571,9 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 	while (g_it.isNext())
 	{
 		grid_key_dx<3> key = g_it.get();
+
+		// set the grid key to zero without any reason ( to avoid warning compilations )
+		key.zero();
 
 		count++;
 

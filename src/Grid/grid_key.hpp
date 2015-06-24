@@ -20,9 +20,9 @@ class grid_key_dx
 public:
 
 	// Constructor from expression
-	template<typename exp1> grid_key_dx(const grid_key_dx_expression<dim,exp1> & exp)
+	template<typename exp1> inline grid_key_dx(const grid_key_dx_expression<dim,exp1> & exp)
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = exp.value(i);
 	}
 
