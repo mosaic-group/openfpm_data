@@ -3,7 +3,8 @@
  * CellListBal.hpp
  *
  *  Created on: Mar 22, 2015
- *      Author: Yaroslav ,Pietro Incardona
+ *  Last modified: June 25, 2015
+ *      Authors: Pietro Incardona, Yaroslav Zaluzhnyi
  */
 
 #ifndef CELLLISTBAL_HPP_
@@ -15,30 +16,10 @@
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
 
-// Compile time array functor needed to generate array at compile-time of type
-// {0,0,0,0,0,.....}
-// {3,3,3,3,3,3,.....}
-
- /*template<size_t index, size_t N> struct Fill_three {
-    enum { value = 3 };
- };
-
- template<size_t index, size_t N> struct Fill_zero {
-    enum { value = 0 };
- };
-
- template<size_t index, size_t N> struct Fill_two {
-    enum { value = 2 };
- };
-
- template<size_t index, size_t N> struct Fill_one {
-    enum { value = 1 };
- };*/
-
 /*! \brief Class for BALANCED cell list implementation
  *
  * This class implement the BALANCED cell list is fast (not best)
- * the memory allocation is small (not best).
+ * The memory allocation is small (not best).
  * The memory allocation is (in byte) Size = M*16 + N*sizeof(ele)
  *
  * Where
@@ -110,7 +91,7 @@ public:
 	 *
 	 */
 
-	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig)
+	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
 	{
 		SpaceBox<dim,T> sbox;
 		Initialize(sbox,div,orig);
@@ -124,9 +105,14 @@ public:
 	 *
 	 */
 
-	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig)
+	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
 	{
-		CellDecomposer_sm<dim,T>::setDimensions(box,div);
+		// Add padding
+		size_t div_pad[dim];
+		for (size_t i = 0 ; i < dim ; i++)
+			div_pad[i] = div[i] + 2;
+
+		CellDecomposer_sm<dim,T>::setDimensions(box,div_pad, pad);
 
 		this->orig = orig;
 
@@ -134,9 +120,9 @@ public:
 
 		cl_base.resize(this->tot_n_cell);
 
-		//filling a vector with pointers to "base" structures
-		for (int i=0; i < this->tot_n_cell; i++)
-		cl_base.get(i) =  new base;
+		//filling a vector with pointers to base-structures
+		for (int i = 0; i < this->tot_n_cell; i++)
+			cl_base.get(i) =  new base;
 
 
 		// Calculate the NNc-arrays (for neighborhood):
@@ -217,10 +203,10 @@ public:
 	 * \param div grid size on each dimension
 	 *
 	 */
-	CellList(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig)
+	CellList(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
 	{
 		SpaceBox<dim,T> sbox(box);
-		Initialize(sbox,div,orig);
+		Initialize(sbox,div,orig,pad);
 	}
 
 	/*! \brief Cell list
@@ -230,9 +216,9 @@ public:
 	 * \param div grid size on each dimension
 	 *
 	 */
-	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig)
+	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
 	{
-		Initialize(box,div,orig);
+		Initialize(box,div,orig,pad);
 	}
 
 	/*! \brief Add an element in the cell list
@@ -303,6 +289,23 @@ public:
 		return cl_base.get(cell)->get(ele);
 	}
 
+	//Three next functions are optional
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	template<unsigned int i> inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell)->get(ele))
+	{
+		return cl_base.template get<i>(cell)->get(ele);
+	}
+
 	/*! \brief Swap the memory
 	 *
 	 * \param cl Cell list with witch you swap the memory
@@ -319,9 +322,9 @@ public:
 	 * \param return the iterator to the cell
 	 *
 	 */
-	CellIterator<CellList<dim,T,FAST,base>> getIterator(size_t cell)
+	CellIterator<CellList<dim,T,BALANCED,base>> getIterator(size_t cell)
 	{
-		return CellIterator<CellList<dim,T,FAST,base>>(cell,*this);
+		return CellIterator<CellList<dim,T,BALANCED,base>>(cell,*this);
 	}
 
 	/*! \brief Get the Nearest Neighborhood iterator

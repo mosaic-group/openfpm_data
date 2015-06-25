@@ -678,6 +678,16 @@ public:
 	{
 
 	}
+
+	/*! \brief Return the box that represent the cell
+	 *
+	 * \return the box
+	 *
+	 */
+	const Box<dim,T> & getCellBox()
+	{
+		return box_unit;
+	}
 };
 
 
