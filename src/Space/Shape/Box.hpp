@@ -37,7 +37,16 @@ enum Base
  * \tparam dim dimensionality of the Box
  * \tparam T type of space ... double float int size_t
  *
- * SpaceBox inherit all the functionality of Box see that structure for some example
+ * ### Expand the box with some spacing
+ * \snippet Box_unit_tests.hpp expand the box with some spacing
+ * ### Create an enclosing box
+ * \snippet Box_unit_tests.hpp create an enclosing box
+ * ### Create the smallest boxes between several boxes
+ * \snippet Box_unit_tests.hpp Create the smallest boxes between several boxes
+ * ### Enlarge the box
+ * \snippet Box_unit_tests.hpp Enlarge the box
+ * ### Enlarge the box with fixed P1
+ * \snippet Box_unit_tests.hpp Enlarge the box with fixed P1
  *
  * \see SpaceBox
  *
@@ -225,8 +234,6 @@ public:
 
 	/*! \brief Constructor from initializer list
 	 *
-	 * Constructor from initializer list
-	 *
 	 * \param p1 Low point, initialize as a list example {0.0,0.0,0.0}
 	 * \param p2 High point, initialized as a list example {1.0,1.0,1.0}
 	 *
@@ -238,8 +245,6 @@ public:
 	}
 
 	/*! \brief Box constructor from a box
-	 *
-	 * Box constructor from a box
 	 *
 	 * \param high array indicating the coordinates of the low point
 	 * \param low array indicating the coordinates of the high point
@@ -260,8 +265,6 @@ public:
 
 	/*! \brief Box constructor from a box
 	 *
-	 * Box constructor from a box
-	 *
 	 * \param box from which to construct
 	 *
 	 */
@@ -277,8 +280,6 @@ public:
 	}
 
 	/*! \brief Box constructor from vector::fusion
-	 *
-	 * Box constructor from vector::fusion
 	 *
 	 * \param box_data from which to construct
 	 *
@@ -344,6 +345,24 @@ public:
 		}
 	}
 
+	/*! \brief Divide component wise each box points with a point
+	 *
+	 * \param p point
+	 *
+	 * \return itself
+	 *
+	 */
+	inline Box<dim,T> & operator/=(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setLow(i, getLow(i)/p.get(i));
+			setHigh(i, getHigh(i)/p.get(i));
+		}
+		return *this;
+	}
+
+
 	/*! \brief Constructor from initializer list
 	 *
 	 * Constructor from initializer list
@@ -366,8 +385,6 @@ public:
 
 	/*! \brief set the low interval of the box
 	 *
-	 * set the low interval of the box
-	 *
 	 * \param i dimension
 	 * \param val value to set
 	 *
@@ -378,8 +395,6 @@ public:
 	}
 
 	/*! \brief set the high interval of the box
-	 *
-	 * set the high interval of the box
 	 *
 	 * \param i dimension
 	 * \param val value to set
@@ -576,6 +591,38 @@ public:
 		{
 			this->setLow(j,this->template getBase<g::p1>(j) + gh.template getBase<g::p1>(j));
 			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j));
+		}
+	}
+
+	/*! \brief Enlarge the box with ghost margin keeping fix the point P1
+	 *
+	 * \param gh spacing of the margin to enlarge
+	 *
+	 *
+	 *\verbatim
+							^ gh.p2[1]
+							|
+							|
+					   +----+----+
+					   |         |
+					   |         |
+		 gh.p1[0]<-----+         +----> gh.p2[0]
+					   |         |
+					   |         |
+					   +----+----+
+							|
+							v  gh.p1[1]
+
+       \endverbatim
+	 *
+	 */
+	template<typename S> void enlarge_fix_P1(Box<dim,S> & gh)
+	{
+		typedef ::Box<dim,T> g;
+
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j) + gh.template getBase<g::p1>(j));
 		}
 	}
 

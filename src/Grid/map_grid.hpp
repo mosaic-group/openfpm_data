@@ -282,12 +282,17 @@ struct mem_reference
 template<unsigned int dim, typename T, typename Mem = typename memory_traits_lin< typename T::type >::type >
 class grid_cpu
 {
+public:
+	// expose the dimansionality as a static const
+	static constexpr unsigned int dims = dim;
+
 	//! Access key
 	typedef grid_key_dx<dim> access_key;
 
 	//! boost::vector that describe the data type
 	typedef typename T::type T_type;
 
+private:
 	//! This is an header that store all information related to the grid
 	grid_sm<dim,T> g1;
 
@@ -883,9 +888,9 @@ public:
 	 */
 
 	inline grid_key_dx_iterator<dim> getIterator()
-				{
+	{
 		return grid_key_dx_iterator<dim>(g1);
-				}
+	}
 
 	/*! \brief Return a grid iterator over all the point with the exception
 	 *   of the ghost part
@@ -895,12 +900,12 @@ public:
 	 *
 	 */
 
-	inline grid_key_dx_iterator_sub<dim> getDomainIterator()
-				{
+	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
+	{
 		// get the starting point and the end point of the real domain
 
-		return grid_key_dx_iterator_sub<dim>(g1,g1.getDomainStart(),g1.getDomainStop());
-				}
+		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
+	}
 
 	/*! \brief Return the size of the message needed to pack this object
 	 *

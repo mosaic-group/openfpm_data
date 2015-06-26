@@ -196,21 +196,19 @@ BOOST_AUTO_TEST_SUITE( CellList_test )
 BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 {
 	//! [Cell decomposer use without shift]
-	SpaceBox<3,double> box({0,0,0},{1,1,1});
+	//Space where is living the Cell list
+	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	Point<3,double> p({0.5,0.5,0.5});
 
 	std::cout << "Test cell list" << "\n";
 
 	Test_cell_s<3,double,CellList<3,double,FAST>>();
-	Test_cell_s<3,double,CellList<3,double,BALANCED>>();
-	Test_cell_s<3,double,CellList<3,double,MEMORY>>();
+//	Test_cell_s<3,double,CellList<3,double,BALANCED>>();
+//	Test_cell_s<3,double,CellList<3,double,MEMORY>>();
 
 	std::cout << "End cell list" << "\n";
 
-	//Space where is living the Cell list
-/*	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-
-	// Subdivisions
+	// Number of cell on each dimension
 	size_t div[3] = {16,16,16};
 
 	// grid info
@@ -218,9 +216,6 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 
 	// Origin
 	Point<3,double> org({0.0,0.0,0.0});
-
-	// Number of cell on each dimension
-	size_t div[] = {16,16,16};
 
 	// Test Cell decomposer
 	{

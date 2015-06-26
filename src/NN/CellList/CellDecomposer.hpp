@@ -238,9 +238,6 @@ protected:
 	 */
 	void Initialize(const size_t pad, const size_t (& div)[dim])
 	{
-		// Space
-		typedef Point<dim,T> p;
-
 		// created a padded div
 		size_t div_p[dim];
 
@@ -333,7 +330,7 @@ public:
 	{
 #ifdef DEBUG
 		if (tot_n_cell == 0)
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer\n";
 #endif
 
 		grid_key_dx<dim> key;
@@ -343,7 +340,7 @@ public:
 		{
 #ifdef DEBUG
 			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space";
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space\n";
 #endif
 			key.set_d(s,(size_t)(t.transform(pos,s) / box_unit.getHigh(s) + off[s]));
 		}
@@ -436,7 +433,6 @@ public:
 		if (t.transform(pos,0) < box.getLow(0) || t.transform(pos,0) > box.getHigh(0))
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
-		typedef Point<dim,T> p;
 
 		size_t cell_id = (size_t)(t.transform(pos,0) / box_unit.getHigh(0)) + off[0];
 
@@ -595,7 +591,7 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(const SpaceBox<dim,T> & box, size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
+	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
 	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero()),box(box),gr_cell()
 	{
 		Initialize(pad);
@@ -631,7 +627,7 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(const SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad)
+	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad)
 	:t(Matrix<dim,T>::identity(),orig),box(box),gr_cell(div)
 	{
 		Initialize(pad,div);
@@ -665,7 +661,7 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(const SpaceBox<dim,T> & box, size_t (&div)[dim], const size_t pad)
+	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad)
 	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero_p()),box(box),gr_cell()
 	{
 		Initialize(pad,div);

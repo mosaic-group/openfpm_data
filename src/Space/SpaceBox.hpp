@@ -36,7 +36,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	SpaceBox<dim,T> & operator=(const Box<dim,T> & b)
+	inline SpaceBox<dim,T> & operator=(const Box<dim,T> & b)
 	{
 		// for each dimension set high and low
 
@@ -56,17 +56,25 @@ class SpaceBox : public Box<dim,T>
 	 * \param b is the SpaceBox
 	 *
 	 */
-
-	SpaceBox(const SpaceBox<dim,T> & b)
-	:Box<dim,T>(b)
+	template <typename S> inline SpaceBox(const Box<dim,S> & b)
 	{
-		// for each dimension set high and low
-
-/*		for (size_t d = 0 ; d < dim ; d++)
+		for (size_t d = 0 ; d < dim ; d++)
 		{this->setLow(d,b.getLow(d));}
 
 		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,b.getHigh(d));}*/
+		{this->setHigh(d,b.getHigh(d));}
+	}
+
+	/*! \brief constructor from a SpaceBox
+	 *
+	 * constructor from a SpaceBox
+	 *
+	 * \param b is the SpaceBox
+	 *
+	 */
+	SpaceBox(const SpaceBox<dim,T> & b)
+	:Box<dim,T>(b)
+	{
 	}
 
 	/*! \brief constructor from a box

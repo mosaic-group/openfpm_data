@@ -87,12 +87,6 @@ class grid_sm
 	//! size of the grid on each stride (used for linearization)
 	size_t sz_s[N];
 
-	//! ghost margin, how far from the margin is the ghost layer bound (High bound)
-	size_t mrgsH[N];
-
-	//! ghost margin, how far from the margin is the ghost layer bound (Low bound)
-	size_t mrgsL[N];
-
 	/*! \brief It multiplicate two number and return the result
 	 *
 	 * It multiplicate two number and return the result, mainly used for LinId
@@ -149,8 +143,6 @@ class grid_sm
 		// set the box
 		box.setHigh(0,sz[0]);
 		box.setLow(0,0);
-		mrgsH[0] = 0;
-		mrgsL[0] = 0;
 
 		for (size_t i = 1 ;  i < N ; i++)
 		{
@@ -160,10 +152,6 @@ class grid_sm
 			// set the box
 			box.setHigh(i,sz[i]);
 			box.setLow(i,0);
-
-			// High margin, Low margin
-			mrgsH[i] = 0;
-			mrgsL[i] = 0;
 		}
 	}
 
@@ -182,8 +170,6 @@ class grid_sm
 		// set the box
 		box.setHigh(0,0);
 		box.setLow(0,0);
-		mrgsH[0] = 0;
-		mrgsL[0] = 0;
 
 		for (size_t i = 1 ;  i < N ; i++)
 		{
@@ -193,10 +179,6 @@ class grid_sm
 			// set the box
 			box.setHigh(i,sz[i]);
 			box.setLow(i,0);
-
-			// High margin, Low margin
-			mrgsH[i] = 0;
-			mrgsL[i] = 0;
 		}
 	}
 
@@ -231,100 +213,6 @@ public:
 	{
 		Initialize(dims);
 		size_tot = totalSize(dims);
-	}
-
-	/*! \brief Set the ghost layer margins High bound
-	 *
-	 * \param margin border
-	 *
-	 */
-
-	void setGhostH(size_t margin[])
-	{
-		for (size_t s = 0; s < N ; s++)
-		{
-			mrgsH[s] = margin[s];
-		}
-	}
-
-	/*! \brief Set the ghost layer margins Low bound
-	 *
-	 * \param margin border
-	 *
-	 */
-
-	void setGhostL(size_t margin[])
-	{
-		for (size_t s = 0; s < N ; s++)
-		{
-			mrgsL[s] = margin[s];
-		}
-	}
-
-	/*! \brief Return the point where the domain start
-	 *
-	 * Return the point where the domain start
-	 *
-	 */
-	grid_key_dx<N> getDomainStart()
-		  {
-		//! Start key
-
-		grid_key_dx<N> key_start;
-
-		// Calculate the starting point of the domain
-
-		for (unsigned int i = 0 ; i < N ; i++)
-		{
-			key_start.set_d(i,mrgsL[i]);
-		}
-
-		return key_start;
-		  }
-
-	/*! \brief Return the point where the domain stop
-	 *
-	 * Return the point where the domain stop
-	 *
-	 */
-
-	grid_key_dx<N> getDomainStop()
-		  {
-		//! Stop key
-
-		grid_key_dx<N> key_stop;
-
-		for (unsigned int i = 0 ; i < N ; i++)
-		{
-			// Calculate the ending point
-			key_stop.set_d(i,sz[i]-mrgsH[i]);
-		}
-
-		return key_stop;
-		  }
-
-	/*! \brief Return the point where the domain start and stop
-	 *
-	 * Return the point where the domain start and stop
-	 *
-	 * \param start point to set
-	 * \param stop point to set
-	 *
-	 */
-
-	void getDomainStartStop(grid_key_dx<N>& start, grid_key_dx<N> & stop)
-	{
-		// Iterate on all dimension and calculate the starting point and
-		// the ending point of the hyper-cube
-
-		for (unsigned int i = 0 ; i < N ; i++)
-		{
-			// Calculate the starting point
-			start.set_d(i,mrgsL[i]);
-
-			// Calculate the ending point
-			stop.set_d(i,sz[i]-mrgsH[i]);
-		}
 	}
 
 	/*! \brief Is linearize additive
@@ -365,7 +253,7 @@ public:
 		size_tot = g.size_tot;
 
 		for (size_t i = 0 ; i < N ; i++)
-		{sz[i] = g.sz[i]; sz_s[i] = g.sz_s[i]; mrgsL[i] = g.mrgsL[i] ; mrgsH[i] = g.mrgsH[i];}
+		{sz[i] = g.sz[i]; sz_s[i] = g.sz_s[i];}
 		  }
 
 	// Static element to calculate total size
@@ -443,9 +331,6 @@ public:
 		{
 			sz_s[i] = sz[i]*sz_s[i-1];
 			this->sz[i] = sz[i];
-
-			mrgsL[i] = 0;
-			mrgsH[i] = 0;
 		}
 	}
 
@@ -661,8 +546,6 @@ public:
 		{
 			sz[i] = g.sz[i];
 			sz_s[i] = g.sz_s[i];
-			mrgsH[i] = g.mrgsH[i];
-			mrgsL[i] = g.mrgsL[i];
 		}
 
 		return *this;
