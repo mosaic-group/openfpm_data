@@ -13,6 +13,7 @@
 #include "GraphMLWriter.hpp"
 #include "VTKWriter.hpp"
 #include "Graph/CartesianGraphFactory.hpp"
+#include "util.hpp"
 
 BOOST_AUTO_TEST_SUITE( graphml_writer_test )
 
@@ -81,34 +82,35 @@ BOOST_AUTO_TEST_CASE( graphml_writer_use)
 	g_csr2.addEdge(2,0);
 	g_csr2.addEdge(3,2);
 
-	VTKWriter<Graph_CSR<ne_cp,ne_cp>> gv2(g_csr2);
+	// Create a graph ML
+	GraphMLWriter<Graph_CSR<ne_cp,ne_cp>> gv2(g_csr2);
+	gv2.write("test_graph2.graphml");
 
-	gv2.write("test_graph2.vtk");
+	// check that match
+
+	bool test = compare("test_graph2.graphml","test_graph2_test.graphml");
+	BOOST_REQUIRE_EQUAL(true,test);
 
 	//! Create a graph
 
 	CartesianGraphFactory<3,Graph_CSR<ne_cp,ne_cp>> g_factory;
 
 	// Cartesian grid
-	std::vector<size_t> sz;
-	sz.push_back(GS_SIZE);
-	sz.push_back(GS_SIZE);
-	sz.push_back(GS_SIZE);
+	size_t sz[] = {GS_SIZE,GS_SIZE,GS_SIZE};
 
 	// Box
 	Box<3,float> box({0.0,0.0,0.0},{1.0,1.0,1.0});
 
 	Graph_CSR<ne_cp,ne_cp> g_csr = g_factory.construct<5,float,2,ne_cp::x,ne_cp::y,ne_cp::z>(sz,box);
 
+	// Create a graph ML
 	GraphMLWriter<Graph_CSR<ne_cp,ne_cp>> gw(g_csr);
+	gw.write("test_graph.graphml");
 
-//	std::cout << std::is_class<ne_cp::attributes>;
 
-	gw.write("test_graph.gml");
-
-	VTKWriter<Graph_CSR<ne_cp,ne_cp>> gv(g_csr);
-
-	gv.write("test_graph.vtk");
+	// check that match
+	test = compare("test_graph.graphml","test_graph_test.graphml");
+	BOOST_REQUIRE_EQUAL(true,test);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

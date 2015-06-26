@@ -1,10 +1,8 @@
 #ifndef GRAPHML_WRITER_HPP
 #define GRAPHML_WRITER_HPP
 
-#include "map_graph.hpp"
+#include "Graph/map_graph.hpp"
 #include <iostream>
-#include <boost/fusion/include/mpl.hpp>
-#include <boost/fusion/include/for_each.hpp>
 #include <fstream>
 #include "common.hpp"
 
@@ -425,7 +423,7 @@ struct edge_node
 	void end_node()
 	{
 		// close a node
-		e_node += "</node>\n";
+		e_node += "</edge>\n";
 	}
 
 	//! It call the functor for each member
@@ -478,7 +476,7 @@ class GraphMLWriter
 	std::string get_vertex_properties_list()
 	{
 		//! vertex property output string
-		std::string v_out("<key id=\"d0\" for=\"node\" yfiles.type=\"nodegraphics\"/>\n");
+		std::string v_out("");
 
 		// create a vertex property functor
 		vertex_prop<Graph> vp(v_out);
@@ -633,7 +631,7 @@ public:
 		     http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">\n";
 
 		// Graph header to define an header
-		graph_header = "<graph id=\"" + graph_name + "\" edgedefault=\"directed\">\n";
+		graph_header = "<graph id=\"" + graph_name + "\" edgedefault=\"undirected\">\n";
 		// Graph header end
 		graph_header_end =  "</graph>\n";
 
