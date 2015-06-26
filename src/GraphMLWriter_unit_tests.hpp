@@ -51,6 +51,21 @@ struct ne_cp
 	//! total number of properties boost::fusion::vector
 	static const unsigned int max_prop = 7;
 
+	//! get x
+	float & get_x()	{return boost::fusion::at_c<x>(data);}
+	//! get y
+	float & get_y()	{return boost::fusion::at_c<y>(data);}
+	//! get z
+	float & get_z()	{return boost::fusion::at_c<z>(data);}
+	//! get double number
+	double & get_dn()	{return boost::fusion::at_c<double_num>(data);}
+	//! get long number
+	long int & get_ln()	{return boost::fusion::at_c<long_num>(data);}
+	//! get integer
+	int & get_i()	{return boost::fusion::at_c<integer>(data);}
+	//! get string
+	std::string & get_str()	{return boost::fusion::at_c<string>(data);}
+
 	//! define attributes names
 	struct attributes
 	{
@@ -71,6 +86,13 @@ BOOST_AUTO_TEST_CASE( graphml_writer_use)
 	// Add 4 vertex and connect
 
 	struct ne_cp n1;
+	n1.get_x() = 0;
+	n1.get_y() = 0;
+	n1.get_z() = 0;
+	n1.get_dn() = 0;
+	n1.get_ln() = 0;
+	n1.get_i() = 0;
+	n1.get_str() = std::string("test");
 	g_csr2.addVertex(n1);
 	g_csr2.addVertex(n1);
 	g_csr2.addVertex(n1);
