@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+		<graphml xmlns="http://graphml.graphdrawing.org/xmlns"
+		    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		    xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
+		     http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+<graph id="Graph" edgedefault="undirected">
+<key id="vk3" for="node" attr.name="double_num" attr.type="double"/>
+<key id="vk4" for="node" attr.name="long_num" attr.type="long"/>
+<key id="vk5" for="node" attr.name="integer" attr.type="int"/>
+<key id="vk6" for="node" attr.name="string" attr.type="string"/>
+<key id="ek0" for="edge" attr.name="x" attr.type="float"/>
+<key id="ek1" for="edge" attr.name="y" attr.type="float"/>
+<key id="ek2" for="edge" attr.name="z" attr.type="float"/>
+<key id="ek3" for="edge" attr.name="double_num" attr.type="double"/>
+<key id="ek4" for="edge" attr.name="long_num" attr.type="long"/>
+<key id="ek5" for="edge" attr.name="integer" attr.type="int"/>
+<key id="ek6" for="edge" attr.name="string" attr.type="string"/>
+<node id="n0">
+  <data key="vk0">0.000000</data>
+  <data key="vk1">0.000000</data>
+  <data key="vk2">0.000000</data>
+  <data key="vk3">0.000000</data>
+  <data key="vk4">0</data>
+  <data key="vk5">0</data>
+</node>
+<node id="n1">
+  <data key="vk0">0.000000</data>
+  <data key="vk1">0.000000</data>
+  <data key="vk2">0.000000</data>
+  <data key="vk3">0.000000</data>
+  <data key="vk4">0</data>
+  <data key="vk5">0</data>
+</node>
+<node id="n2">
+  <data key="vk0">0.000000</data>
+  <data key="vk1">0.000000</data>
+  <data key="vk2">0.000000</data>
+  <data key="vk3">0.000000</data>
+  <data key="vk4">0</data>
+  <data key="vk5">0</data>
+</node>
+<node id="n3">
+  <data key="vk0">0.000000</data>
+  <data key="vk1">0.000000</data>
+  <data key="vk2">0.000000</data>
+  <data key="vk3">0.000000</data>
+  <data key="vk4">0</data>
+  <data key="vk5">0</data>
+</node>
+<edge id="e0" source="n0" target="n1">
+  <data key="ek0">0.000000</data>
+  <data key="ek1">0.000000</data>
+  <data key="ek2">0.000000</data>
+  <data key="ek3">0.000000</data>
+  <data key="ek4">0</data>
+  <data key="ek5">0</data>
+</edge>
+<edge id="e1" source="n2" target="n1">
+  <data key="ek0">0.000000</data>
+  <data key="ek1">0.000000</data>
+  <data key="ek2">0.000000</data>
+  <data key="ek3">0.000000</data>
+  <data key="ek4">0</data>
+  <data key="ek5">0</data>
+</edge>
+<edge id="e2" source="n2" target="n0">
+  <data key="ek0">0.000000</data>
+  <data key="ek1">0.000000</data>
+  <data key="ek2">0.000000</data>
+  <data key="ek3">0.000000</data>
+  <data key="ek4">0</data>
+  <data key="ek5">0</data>
+</edge>
+<edge id="e3" source="n3" target="n1">
+  <data key="ek0">0.000000</data>
+  <data key="ek1">0.000000</data>
+  <data key="ek2">0.000000</data>
+  <data key="ek3">0.000000</data>
+  <data key="ek4">0</data>
+  <data key="ek5">0</data>
+</edge>
+<edge id="e4" source="n3" target="n2">
+  <data key="ek0">0.000000</data>
+  <data key="ek1">0.000000</data>
+  <data key="ek2">0.000000</data>
+  <data key="ek3">0.000000</data>
+  <data key="ek4">0</data>
+  <data key="ek5">0</data>
+</edge>
+</graph>
+</graphml>
