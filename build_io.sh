@@ -17,6 +17,8 @@ cd ..
 
 cd "$1/OpenFPM_IO"
 
+echo "Compiling on $2"
+
 sh ./autogen.sh
 if [ "$2" == "master" ]
 then
