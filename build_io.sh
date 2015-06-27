@@ -21,7 +21,7 @@ sh ./autogen.sh
 if [ "$2" == "master" ]
 then
  sh ./configure --disable-gpu
-else if [ "$2" == "gin" ]
+elif [ "$2" == "gin" ]
 then
  sh ./configure --with-boost=/sw/apps/boost/1.54.0/
 else
