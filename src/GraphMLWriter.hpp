@@ -532,7 +532,7 @@ class GraphMLWriter
 			vn.new_node(nc);
 
 			// Iterate through all the vertex and create the vertex list
-			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::V_type::max_prop-1> >(vn);
+			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::V_type::max_prop> >(vn);
 
 			// end node
 			vn.end_node();
@@ -570,7 +570,7 @@ class GraphMLWriter
 			en.new_node(nc,it.source(),it.target());
 
 			// Iterate through all the vertex and create the vertex list
-			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::V_type::max_prop-1> >(en);
+			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::V_type::max_prop> >(en);
 
 			// end new node
 			en.end_node();

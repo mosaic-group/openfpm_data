@@ -86,23 +86,23 @@ BOOST_AUTO_TEST_CASE( graphml_writer_use)
 	// Add 4 vertex and connect
 
 	struct ne_cp n1;
-	n1.get_x() = 0;
-	n1.get_y() = 0;
-	n1.get_z() = 0;
-	n1.get_dn() = 0;
-	n1.get_ln() = 0;
-	n1.get_i() = 0;
+	n1.get_x() = 1.0;
+	n1.get_y() = 2.0;
+	n1.get_z() = 3.0;
+	n1.get_dn() = 4.0;
+	n1.get_ln() = 5.0;
+	n1.get_i() = 6.0;
 	n1.get_str() = std::string("test");
 	g_csr2.addVertex(n1);
 	g_csr2.addVertex(n1);
 	g_csr2.addVertex(n1);
 	g_csr2.addVertex(n1);
 
-	g_csr2.addEdge(0,1);
-	g_csr2.addEdge(2,1);
-	g_csr2.addEdge(3,1);
-	g_csr2.addEdge(2,0);
-	g_csr2.addEdge(3,2);
+	g_csr2.addEdge(0,1,n1);
+	g_csr2.addEdge(2,1,n1);
+	g_csr2.addEdge(3,1,n1);
+	g_csr2.addEdge(2,0,n1);
+	g_csr2.addEdge(3,2,n1);
 
 	// Create a graph ML
 	GraphMLWriter<Graph_CSR<ne_cp,ne_cp>> gv2(g_csr2);
