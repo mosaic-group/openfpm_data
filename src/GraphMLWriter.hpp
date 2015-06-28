@@ -168,12 +168,24 @@ struct vertex_node
 	 *        constructor is selected over the other one
 	 *
 	 */
-	vertex_node(std::string & v_node, const typename G::V_container & n_obj, typename G::V_type::attributes & a_name)
+	inline vertex_node(std::string & v_node, const typename G::V_container & n_obj, typename G::V_type::attributes & a_name)
 	:vo(n_obj),v_node(v_node),attributes_names(a_name.name)
 	{
 		// Calculate the number of attributes name
 		n_attr = sizeof(a_name.name)/sizeof(std::string);
 	};
+
+#ifdef DEBUG
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	inline vertex_node(std::string & v_node, const typename G::V_container && n_obj, typename G::V_type::attributes & a_name)
+	:vo(n_obj),v_node(v_node),attributes_names(a_name.name)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object\n";};
+#endif
 
 	/*! \brief Constructor
 	 *
@@ -183,7 +195,7 @@ struct vertex_node
 	 * \param n_obj object container to access its properties for example encapc<...>
 	 *
 	 */
-	vertex_node(std::string & v_node, const typename G::V_container & n_obj)
+	inline vertex_node(std::string & v_node, const typename G::V_container & n_obj)
 	:vo(n_obj),v_node(v_node),attributes_names(NULL)
 	{
 		// Calculate the number of attributes
@@ -195,6 +207,18 @@ struct vertex_node
 		// Create default property names
 		create_prop<typename G::V_type>(attributes_names);
 	};
+
+#ifdef DEBUG
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	inline vertex_node(std::string & v_node, const typename G::V_container && n_obj)
+	:vo(n_obj),v_node(v_node),attributes_names(NULL)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object\n";};
+#endif
 
 	/*! \brief Create a new node
 	 *
@@ -525,8 +549,10 @@ class GraphMLWriter
 		// if there is the next element
 		while (it.isNext())
 		{
+			auto v = g.vertex(it.get());
+
 			// create a vertex list functor
-			vertex_node<Graph> vn(v_out,g.vertex(it.get()));
+			vertex_node<Graph> vn(v_out,v);
 
 			// create new node
 			vn.new_node(nc);
