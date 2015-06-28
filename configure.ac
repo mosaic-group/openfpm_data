@@ -73,6 +73,8 @@ if test x"$mem_check" = x"yes"; then
 	AC_DEFINE([MEMLEAK_CHECK],[],[Memory check])
 fi
 
+AC_DEFINE([ON_IO_UNIT_TESTS],[],[IO unit tests])
+
 ##### CHECK FOR BOOST ##############
 
 AX_BOOST([1.52],[],[])

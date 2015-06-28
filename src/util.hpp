@@ -5,6 +5,8 @@
  *      Author: Pietro Incardona
  */
 
+#include "config.h"
+
 #ifndef UTIL_HPP_
 #define UTIL_HPP_
 
@@ -67,86 +69,80 @@ struct RGB getColor(int group, std::uniform_real_distribution<float> & d, std::d
 {
 	struct RGB col;
 
+	float s = d(g);
+
+#ifdef ON_IO_UNIT_TESTS
+	s = 0.5;
+#endif
+
 	if (group == 0)
 	{
-		float s = d(g);
 		col.R = s/2 + 0.5;
 		col.G = 0.0;
 		col.B = 0.0;
 	}
 	else if (group == 1)
 	{
-		float s = d(g);
 		col.R = 0.0;
 		col.G = s/2 + 0.5;
 		col.B = 0.0;
 	}
 	else if (group == 2)
 	{
-		float s = d(g);
 		col.R = 0.0;
 		col.G = 0.0;
 		col.B = s;
 	}
 	else if (group == 3)
 	{
-		float s = d(g);
 		col.R = s/2 + 0.5;
 		col.G = s/2 + 0.5;
 		col.B = 0.0;
 	}
 	else if (group == 4)
 	{
-		float s = d(g);
 		col.R = s/2 + 0.5;
 		col.G = 0.0;
 		col.B = s/2 + 0.5;
 	}
 	else if (group == 5)
 	{
-		float s = d(g);
 		col.R = 0.0;
 		col.G = s/2 + 0.5;
 		col.B = s/2 + 0.5;
 	}
 	else if (group == 6)
 	{
-		float s = d(g);
 		col.R = s/2 + 0.5;
 		col.G = s/4 + 0.5;
 		col.B = 0.0;
 	}
 	else if (group == 7)
 	{
-		float s = d(g);
 		col.R = s/4 + 0.5;
 		col.G = s/2 + 0.5;
 		col.B = 0.0;
 	}
 	else if (group == 8)
 	{
-		float s = d(g);
 		col.R = 0.0;
 		col.G = s/2 + 0.5;
 		col.B = s/4 + 0.5;
 	}
 	else if (group == 9)
 	{
-		float s = d(g);
 		col.R = 0.0;
 		col.G = s/4 + 0.5;
 		col.B = s/2 + 0.5;
 	}
 	else if (group == 10)
 	{
-		float s = d(g);
 		col.R = s/4 + 0.5;
 		col.G = 0.0;
 		col.B = s/2 + 0.5;
 	}
 	else if (group == 11)
 	{
-		float s = d(g);
 		col.R = s/2 + 0.5;
 		col.G = 0.0;
 		col.B = s/4 + 0.5;
