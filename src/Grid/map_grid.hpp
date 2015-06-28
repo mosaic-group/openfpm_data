@@ -73,6 +73,19 @@ struct copy_cpu_encap
 	copy_cpu_encap(grid_key_dx<dim> & key, S & grid_dst, const encapc<1,obj_type,Memory> & obj)
 	:key(key),grid_dst(grid_dst),obj(obj){};
 
+
+#ifdef DEBUG
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	copy_cpu_encap(grid_key_dx<dim> & key, S & grid_dst, const encapc<1,obj_type,Memory> && obj)
+	:key(key),grid_dst(grid_dst),obj(obj)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object";};
+#endif
+
 	//! It call the copy function for each property
 	template<typename T>
 	void operator()(T& t) const
@@ -129,6 +142,18 @@ struct copy_cpu
 	 */
 	copy_cpu(grid_key_dx<dim> & key, S & grid_dst, const obj_type & obj)
 	:key(key),grid_dst(grid_dst),obj(obj){};
+
+#ifdef DEBUG
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	copy_cpu(grid_key_dx<dim> & key, S & grid_dst, const obj_type && obj)
+	:key(key),grid_dst(grid_dst),obj(obj)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object\n";};
+#endif
 
 	//! It call the copy function for each property
 	template<typename T>

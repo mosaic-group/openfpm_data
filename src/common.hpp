@@ -119,59 +119,5 @@ struct is_typedef_and_data_same<false,T>
 	};
 };
 
-/*! \brief this class is a functor for "for_each" algorithm
- *
- * This class is a functor for "for_each" algorithm. For each
- * element the operator() is called. Used
- * to calculate the size of the selected elements
- *
- * \tparam N number of properties
- * \tparam v boost::fusion::vector
- *
- */
-
-/*template<unsigned int N, typename v>
-struct el_size
-{
-	//! total_size
-	size_t total_size;
-
-	//! List of properties
-	const size_t (& prp)[N];*/
-
-	/*! \brief constructor
-	 *
-	 * It define the copy parameters.
-	 *
-	 * \param key which element we are modifying
-	 * \param grid_src grid we are updating
-	 * \param obj object we have to set in grid_src
-	 *
-	 */
-/*	el_size(const size_t (& prp)[N])
-	:total_size(0),prp(prp)
-	{};
-
-	//! It call the copy function for each property
-    template<typename T>
-    void operator()(T& t) const
-    {
-    	total_size += boost::fusion::result_of::at< v,boost::mpl::int_<prp[T::value]> >::type;
-    }
-
-    size_t size()
-    {return total_size;}
-};*/
-
-/*template<unsigned int N,typename v> size_t ele_size(const size_t (& prp)[N])
-{
-	el_size<N,v> sz(prp);
-
-	boost::mpl::for_each_ref< boost::mpl::range_c<int,0,N> >(sz);
-
-	return sz.size();
-}*/
-
-/**/
 
 #endif

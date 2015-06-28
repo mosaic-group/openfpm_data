@@ -47,6 +47,18 @@ struct object_s_di_e
 	{
 	};
 
+#ifdef DEBUG
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	object_s_di_e(const v_src && src, v_dst & dst)
+	:src(src),dst(dst)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object\n";};
+#endif
+
 	//! It call the functor for each member
     template<typename T>
     void operator()(T& t)
@@ -91,6 +103,18 @@ struct object_s_di_f
 	:src(src),dst(dst)
 	{
 	};
+
+#ifdef DEBUG
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	object_s_di_f(const v_src && src, v_dst & dst)
+	:src(src),dst(dst)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object\n";};
+#endif
 
 	//! It call the functor for each member
     template<typename T>
