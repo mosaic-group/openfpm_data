@@ -505,7 +505,7 @@ public:
 	 */
 	auto vertex(size_t id) -> decltype( v.get(id) )
 	{
-		return v.template get(id);
+		return v.get(id);
 	}
 
 	/*! \brief operator to access the vertex
@@ -582,9 +582,9 @@ public:
 	 * \param id of the edge to access
 	 *
 	 */
-	auto edge(size_t id) -> decltype ( e.template get(id) )
+	auto edge(size_t id) -> decltype ( e.get(id) )
 	{
-		return e.template get(id);
+		return e.get(id);
 	}
 
 	/*! \brief Return the number of childs of a vertex
