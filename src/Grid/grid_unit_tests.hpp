@@ -6,7 +6,11 @@
 #include "Space/Shape/HyperCube.hpp"
 #include "timer.hpp"
 
+#ifdef TEST_COVERAGE_MODE
+#define GS_SIZE 8
+#else
 #define GS_SIZE 128
+#endif
 
 template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz);
 template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t sz);
@@ -599,9 +603,11 @@ BOOST_AUTO_TEST_CASE( grid_use)
 	sz.push_back(GS_SIZE);
 
 	// test the grid from dimensionality 1 to 8 with several size non multiple of two
-
 	// Dimension 8-1
 
+	// With test coverage reduce the test size
+
+#ifndef TEST_COVERAGE_MODE
 	test_all_grid<8>(4);
 	test_all_grid<7>(8);
 	test_all_grid<6>(9);
@@ -610,6 +616,12 @@ BOOST_AUTO_TEST_CASE( grid_use)
 	test_all_grid<3>(126);
 	test_all_grid<2>(1414);
 	test_all_grid<1>(2000000);
+#else
+	test_all_grid<4>(4);
+	test_all_grid<3>(8);
+	test_all_grid<2>(16);
+	test_all_grid<1>(256);
+#endif
 
 	// Test the 3d gpu grid with CudaMemory and HeapMemory with different size
 

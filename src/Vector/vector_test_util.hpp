@@ -15,8 +15,15 @@
 typedef Point_test<float> P;
 //! [typedef point]
 
+#ifdef TEST_COVERAGE_MODE
+#define FIRST_PUSH 1000
+#define SECOND_PUSH 1000
+#else
 #define FIRST_PUSH 1000000
 #define SECOND_PUSH 1000000
+#endif
+
+
 
 std::vector<Point_orig<float>> allocate_stl()
 {

@@ -8,10 +8,15 @@
 #ifndef GRAPH_UNIT_TEST_HPP_
 #define GRAPH_UNIT_TEST_HPP_
 
+#include "config.h"
 #include "map_graph.hpp"
 #include "Point_test.hpp"
 
+#ifdef TEST_COVERAGE_MODE
+#define GS_SIZE 8
+#else
 #define GS_SIZE 128
+#endif
 
 BOOST_AUTO_TEST_SUITE( graph_test )
 
