@@ -106,6 +106,45 @@ BOOST_AUTO_TEST_CASE( box_use)
 	//! [Enlarge the box with fixed P1]
 	}
 
+	{
+	//! [Translate a box]
+
+	Box<3,float> box1({0.1,0.5,0.6},{1.0,1.2,1.4});
+	Point<3,float> pnt({0.1,0.2,0.3});
+
+	box1 -= pnt;
+
+	BOOST_REQUIRE_CLOSE(box1.getLow(0),0.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(1),0.3,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(2),0.3,0.0001);
+
+	BOOST_REQUIRE_CLOSE(box1.getHigh(0),0.9,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(1),1.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(2),0.9,0.0001);
+
+	//! [Translate a box]
+
+	box1 -= box1.getP2();
+
+	BOOST_REQUIRE_CLOSE(box1.getLow(0),-0.9,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(1),-1.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(2),-0.9,0.0001);
+
+	BOOST_REQUIRE_CLOSE(box1.getHigh(0),0.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(1),0.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(2),0.0,0.0001);
+
+	box1 -= box1.getP1();
+
+	BOOST_REQUIRE_CLOSE(box1.getLow(0),0.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(1),0.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(2),0.0,0.0001);
+
+	BOOST_REQUIRE_CLOSE(box1.getHigh(0),0.9,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(1),1.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(2),0.9,0.0001);
+	}
+
 	std::cout << "Box unit test stop" << "\n";
 }
 

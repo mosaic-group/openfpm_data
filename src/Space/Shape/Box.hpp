@@ -548,6 +548,24 @@ public:
 		return ret;
 	}
 
+	/*! \brief Translate the box
+	 *
+	 * \p Point translation vector
+	 *
+	 * \return itself
+	 *
+	 */
+	inline Box<dim,T> & operator-=(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			boost::fusion::at_c<p2>(data)[i] -= p.get(i);
+			boost::fusion::at_c<p1>(data)[i] -= p.get(i);
+		}
+
+		return *this;
+	}
+
 	/* \brief expand expand the box by a vector
 	 *
 	 * \param vector

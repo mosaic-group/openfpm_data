@@ -1049,8 +1049,8 @@ public:
 	 *
 	 */
 	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
-			: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
-			  {
+	: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
+	{
 #if defined(DEBUG) && !defined(NO_WARNING)
 		//! If we are on debug check that the stop grid_key id bigger than the start
 		//! grid_key
@@ -1065,7 +1065,7 @@ public:
 #endif
 
 		Initialize();
-			  }
+	}
 
 
 	/*! \brief Constructor require a grid grid<dim,T>
@@ -1116,7 +1116,7 @@ public:
 		{
 			if (start[i] > stop[i])
 			{
-				std::cerr << "Error grid_key_dx_iterator : the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
+				std::cerr << "Error grid_key_dx_iterator : " << __FILE__ << ":" << __LINE__ << " the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
 			}
 		}
 #endif
@@ -1233,7 +1233,7 @@ public:
 		{
 			if (gk_start.get(i) > gk_stop.get(i))
 			{
-				std::cerr << "Error grid_key_dx_iterator : the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
+				std::cerr << "Error grid_key_dx_iterator : "  << __FILE__ << ":" << __LINE__ <<  " the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
 			}
 		}
 
