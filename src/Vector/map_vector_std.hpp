@@ -12,12 +12,14 @@
 /*! \brief Implementation of 1-D std::vector like structure
  *
  * this implementation is just a wrapper for the std::vector in the case
- * of the primitive size_t
+ * of data where the members cannot be parsed see openFPM_data wiki for more information
+ *
+ * ### Create add and access the elements
+ * \snippet vector_test_util.hpp Create add and access stl
  *
  * \param T base type
  *
  */
-
 template<typename T>
 class vector<T,device_cpu<T>,HeapMemory,grow_policy_double,STD_VECTOR>
 {
@@ -31,26 +33,23 @@ class vector<T,device_cpu<T>,HeapMemory,grow_policy_double,STD_VECTOR>
 
 public:
 
-	// iterator for the vector
+	//! iterator for the vector
 	typedef vector_key_iterator iterator_key;
 	//! Type of the value the vector is storing
 	typedef T value_type;
 
 	//! return the size of the vector
-	inline size_t size()
+	inline size_t size() const
 	{
 		return base.size();
 	}
 
 
-	/*! \ brief Resize the vector
+	/*! \ brief Resize the vector to contain n elements
 	 *
-	 * Resize the vector
-	 *
-	 * \param how many slot to reserve
+	 * \param slot number of elements
 	 *
 	 */
-
 	inline void resize(size_t slot)
 	{
 		v_size = slot;
@@ -68,7 +67,7 @@ public:
 
 	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 	 *
-	 * It insert a new object on the vector, eventually it reallocate the grid
+	 * \param v element to add
 	 *
 	 * \warning It is not thread safe should not be used in multi-thread environment
 	 *          reallocation, work only on cpu
@@ -102,11 +101,17 @@ public:
 
 	/*! \brief Remove one entry from the vector
 	 *
-	 * \param keys element to remove
+	 * \param key element to remove
 	 *
 	 */
 	void remove(size_t key)
 	{
+#ifdef DEBUG
+		if (key >= base.size())
+		{
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << key << "\n";
+		}
+#endif
 		base.erase(base.begin() + key);
 	}
 
@@ -145,7 +150,6 @@ public:
 	 * \return the duplicated vector
 	 *
 	 */
-
 	std::vector<T> duplicate()
 	{
 		return base;
@@ -153,26 +157,35 @@ public:
 
 	/*! \brief swap the memory between the two vector
 	 *
-	 * \param vector to swap
+	 * \param v vector to swap
 	 *
 	 */
-
 	void swap(std::vector<T> && v)
 	{
 		base.swap(v);
 	}
 
-	/*! \brief Get an element of the vector
+	/*! \brief It eliminate double entries
 	 *
-	 * Get an element of the vector
-	 *
-	 * \tparam must be 0
-	 *
-	 * \param id Element to get
-	 * \param p Property to get
+	 * \note The base object must have an operator== defined
 	 *
 	 */
-	template <unsigned int p>inline size_t & get(size_t id)
+	void unique()
+	{
+		auto it = std::unique(base.begin(),base.end());
+		base.resize( std::distance(base.begin(),it) );
+	}
+
+	/*! \brief Get an element of the vector
+	 *
+	 * \tparam p must be 0
+	 *
+	 * \param id element to get
+	 *
+	 * \return the reference to the element
+	 *
+	 */
+	template <unsigned int p>inline auto get(size_t id) -> decltype(base[id])
 	{
 #ifdef DEBUG
 		if (p != 0)
@@ -189,14 +202,37 @@ public:
 
 	/*! \brief Get an element of the vector
 	 *
-	 * Get an element of the vector
+	 * \param id element to get
 	 *
-	 * \param id Element to get
-	 * \param p Property to get
+	 * \return the element reference
 	 *
 	 */
 	inline T & get(size_t id)
 	{
+#ifdef DEBUG
+		if (id >= base.size())
+		{
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
+		}
+#endif
+		return base[id];
+	}
+
+	/*! \brief Get an element of the vector
+	 *
+	 * \param id element to get
+	 *
+	 * \return the element value
+	 *
+	 */
+	inline const T & get(size_t id) const
+	{
+#ifdef DEBUG
+		if (id >= base.size())
+		{
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
+		}
+#endif
 		return base[id];
 	}
 
@@ -211,7 +247,7 @@ public:
 
 	inline void fill(unsigned char fl)
 	{
-		memset(&base[0],0,base.size());
+		memset(&base[0],fl,base.size() * sizeof(T));
 	}
 
 	/*! \brief reserve a memory space in advance to avoid reallocation
@@ -233,10 +269,9 @@ public:
 
 	/*! swap the content of the vector
 	 *
-	 * \param vector to be swapped with
+	 * \param v vector to be swapped with
 	 *
 	 */
-
 	void swap(openfpm::vector<T,device_cpu<T>,HeapMemory,grow_policy_double,STD_VECTOR> & v)
 	{
 		base.swap(v.base);

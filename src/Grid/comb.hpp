@@ -2,18 +2,31 @@
 #define COMB_HPP
 
 
-/*! brief Position of the element of dimension d in the hyper-cube of dimension dim
+/*! \brief Position of the element of dimension d in the hyper-cube of dimension dim
  *
- * Position of the element of dimension d in the hyper-cube of dimension dim
+ * These objects are returned by the Hyper-cube static functions
+ * The number of non-zero d define the dimensionality of the object ( +1 or -1 its position in the hypercube)
+ *
+ * ## Example
+ *
+  \verbatim
+
+                           (0,1)
+				(-1,1)  +---------+ (1,1)
+					    |         |
+					    |         |
+		          (-1,0)|  (0,0)  | (1,0)
+					    |         |
+					    |         |
+			    (-1,-1) +---------+ (1,-1)
+			               (0,-1)
+  \endverbatim
+ *
  *
  * \tparam dim of the hyper-cube
  *
  *
- * hyper-cube define only the features of an N-dimensional hyper-cube, does not define
- * where is is located and its size, use Box for that purpose
- *
  */
-
 template<unsigned int dim>
 struct comb
 {
@@ -28,7 +41,7 @@ struct comb
 
 	inline bool isValid()
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (c[i] != 1 && c[i] != -1 && c[i] != 0)
 			{
@@ -49,7 +62,7 @@ struct comb
 
 	inline bool isSub(comb<dim> cmb)
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (c[i] != 0 && c[i] != cmb.c[i])
 			{
@@ -66,7 +79,7 @@ struct comb
 
 	inline void zero()
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			c[i] = 0;
 		}
@@ -85,7 +98,7 @@ struct comb
 	{
 		// Check if the two combination match
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (c[i] != t.c[i])
 				return true;
@@ -164,11 +177,26 @@ struct comb
 		return zero;
 	}
 
+	//! Default constructor
+	comb()
+	{}
+
+	/*! \brief Constructor from a list of numbers
+	 *
+	 * \param c list of numbers
+	 *
+	 */
+	comb(std::initializer_list<char> c)
+	{
+		size_t i = 0;
+	    for(char x : c)
+	    {this->c[c.size() - i - 1] = x;i++;}
+	}
+
 };
 
 /*! brief specialization of comb in case of dim 0
  *
- *	GCC 4.9.2 does not accept structures of size 0
  *
  */
 
@@ -176,7 +204,7 @@ template<>
 struct comb<0>
 {
 	//! FIX
-	char c[1];
+	char c[0];
 
 	/*! \brief check if it is a valid combination
 	 *
@@ -288,5 +316,61 @@ struct comb<0>
 	}
 
 };
+
+// create a specialization of std::vector<comb<0>>
+
+namespace std
+{
+	/*! \brief Stub vector specialization
+	 *
+	 *  On compiler previous 4.9.2 the code compile, and provide trivial functionality,
+     *(complex operations produce crash at runtime)
+	 *
+	 * On 4.9.2 does not even compile
+     * So we create a particular case that pass compilation give basic functionality, and
+     * crash in case of complex usage
+     *
+    */
+
+	template<>
+	class vector<comb<0>>
+	{
+		//! Pointer to nothing
+		comb<0> * ptr;
+
+	public:
+
+		/*! \brief Return 0
+		 *
+		 * \return 0
+		 *
+		 */
+		size_t size()
+		{
+			return 0;
+		}
+
+		/*! \brief Do nothing
+		 *
+		 * \param i ignored
+		 *
+		 * \return nothing
+		 *
+		 */
+		comb<0> & operator[](size_t i)
+		{
+			return ptr[i];
+		}
+
+		/*! \brief Do nothing
+		 *
+		 * \param obj ignored
+		 *
+		 */
+		void push_back(comb<0> & obj)
+		{
+		}
+	};
+}
 
 #endif

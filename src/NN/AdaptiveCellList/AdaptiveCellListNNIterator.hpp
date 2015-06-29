@@ -8,33 +8,23 @@
 #ifndef ADAPTIVECELLLISTNNITERATOR_HPP_
 #define ADAPTIVECELLLISTNNITERATOR_HPP_
 
+#include <iostream>
 
 template<unsigned int dim, typename CellS, unsigned int NNc_size, unsigned int impl> class AdaptiveCellNNIterator
 {
 
+    CellS & cl;
+    
+    size_t ele_id;
+    
 public:
-
-	/*! \brief
-	 *
-	 * Adaptive Cell NN iterator
-	 *
-	 * \param Cell id
-	 * \param NNc Cell NN id
-	 *
-	 */
-	AdaptiveCellNNIterator()
-	{
-	}
-	
 	/*! \brief
 	 *
 	 * Cell NN iterator
 	 *
-	 * \param Cell id
-	 * \param NNc Cell NN id
-	 *
 	 */
-	AdaptiveCellNNIterator(size_t cell, long int (&NNc)[NNc_size], CellS & cl)
+	AdaptiveCellNNIterator(CellS & cl)
+            :cl(cl), ele_id(0)
 	{
 	}
 
@@ -45,7 +35,7 @@ public:
 	 */
 	bool isNext()
 	{
-
+            return ele_id < cl.size();
 	}
 
 	/*! \brief take the next element
@@ -53,8 +43,8 @@ public:
 	 */
 	AdaptiveCellNNIterator & operator++()
 	{
-
-		return *this;
+            if(ele_id < cl.size()) ele_id++;
+            return *this;
 	}
 
 	/*! \brief Get actual element
@@ -64,6 +54,7 @@ public:
 	 */
 	typename CellS::value_type & get()
 	{
+            cl.get(ele_id);
 	}
 };
 

@@ -11,7 +11,7 @@
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/mpl/vector.hpp>
 #include <array>
-#include "ct_array.hpp"
+#include "util/ct_array.hpp"
 #include "memory_array.hpp"
 #include "memory.hpp"
 
@@ -19,15 +19,13 @@
 #define MEMORY_C_HPP_
 
 /*!
- * \brief This class is a container for the memory interface
+ * \brief This class is a container for the memory interface like HeapMemory CudaMemory
  *
- * This class is a container for the memory interface. It give the possibility
- * to have two specialization, one when the memory interface is full known
- * at compile time, and one when is not-known at compile time.
- * It internally store two objects
+ * It store the object used to allocate memory and a representation of this memory as an array of objects T
  *
- * mem is object used to allocate device/host/... memory
- * mem_r is a representation of this memory as an array of objects T
+ * It is mainly used by memory_conf to create the correct layout
+ *
+ * \see memory_traits_inte memory_traits_lin
  *
  */
 
@@ -45,7 +43,7 @@ class memory_c
 	//! define T
 	typedef T vtype;
 
-	//! compile time specialization object that allocate memory
+	//! object that allocate memory like HeapMemory or CudaMemory
 	D * mem;
 
 	//! object that represent the memory as an array of objects T
@@ -53,10 +51,9 @@ class memory_c
 
 	/*! \brief This function set the object that allocate memory
 	 *
-	 * \param the memory object
+	 * \param mem the memory object
 	 *
 	 */
-
 	void setMemory(memory & mem)
 	{
 		if (this->mem != NULL)
@@ -82,10 +79,18 @@ class memory_c
 		return *this->mem;
 	}
 
-	/*! \brief This function allocate memory and associate the representation to mem_r
+	/*! \brief This function get the object that allocate memory
 	 *
-	 * This function allocate memory and associate the representation of that chunk of
-	 * memory to mem_r
+	 * \return memory object to allocate memory
+	 *
+	 */
+
+	const memory& getMemory() const
+	{
+		return *this->mem;
+	}
+
+	/*! \brief This function allocate memory
 	 *
 	 */
 	bool allocate(const size_t sz)
@@ -96,19 +101,16 @@ class memory_c
 	    mem->resize( sz*sizeof(T) );
 
 	    //! we create the representation for this buffer
-	    mem_r = new memory_array<T>(mem->getPointer(),sz);
+	    mem_r = new memory_array<T>(mem->getPointer(),sz,mem->isInitialized());
 
 	    return true;
 	}
 
-	/*! \brief It move the allocated objects from one to another
-	 *
-	 * It move the allocated objects from one to another
+	/*! \brief It absorb the allocated object from another memory_c
 	 *
 	 * \param mem_c Memory object
 	 *
 	 */
-
 	void move_copy(memory_c & mem_c)
 	{
 		//if mem is already allocated, deallocate it
@@ -150,10 +152,9 @@ class memory_c
 
 	/*! \brief swap the memory
 	 *
-	 * swap the memory beetween objects
+	 * swap the memory between objects
 	 *
 	 */
-
 	void swap(memory_c & mem_obj)
 	{
 		// Save on temporal
@@ -175,14 +176,12 @@ class memory_c
 /*! \brief This class is a trick to indicate the compiler a specific
  *  specialization pattern
  *
- * This class is a trick to indicate the compiler a specific specialization
- * pattern, in particular it say that T is a multidimensional array and
+ * In particular it say that a multidimensional array has been found and
  * need a special treatment, T is suppose to be a boost::mpl::vector of
  * unsigned int indicating each dimension. T has to be a type of known size at
  * compile time
  *
  */
-
 template<typename T>
 class multi_array
 {
@@ -207,10 +206,7 @@ class key
 };
 
 
-/*! \brief this class multiply all the unsigned element in a boost::mpl::vector
- *
- * this class multiply all the unsigned element in a boost::mpl::vector excluding
- * the first element
+/*! \brief this class multiply all the elements in a boost::mpl::vector excluding the first element
  *
  * \param T expecting a boost::mpl::vector
  *
@@ -231,8 +227,14 @@ struct mult<T,1>
  *
  * Specialization of memory_c for multi_array
  *
- * \param T is suppose to be a boost::mpl::vector specifing at position 0 the type and at
+ * It is mainly used by memory_conf to create the correct layout
+ *
+ * \see memory_traits_inte memory_traits_lin
+ *
+ * \tparam T is suppose to be a boost::mpl::vector specifing at position 0 the type and at
  * position 1 to N the dimensions size of the multi_array
+ *
+ * \tparam D object that allocate memory
  *
  */
 
@@ -286,7 +288,7 @@ class memory_c<multi_array<T>, D>
 
 	/*! \brief This function set the object that allocate memory
 	 *
-	 * \param the memory object
+	 * \param mem the memory object
 	 *
 	 */
 

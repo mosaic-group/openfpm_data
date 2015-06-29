@@ -10,14 +10,14 @@ template<unsigned int dim, unsigned int subdim> class SubHyperCube;
 
 /*! \brief output stream overload for printing
  *
- * \param ostream
+ * \param str ostream
  * \param c combination to print
  *
  */
 template<unsigned int dim> std::ostream& operator<<(std::ostream& str, const comb<dim> & c)
 {
 	// print the combination of ostream
-	for (int i = 0 ; i < dim-1 ; i++)
+	for (size_t i = 0 ; i < dim-1 ; i++)
 		str <<  c.c[i] << ";";
 
 	str << c.c[dim-1];
@@ -25,13 +25,29 @@ template<unsigned int dim> std::ostream& operator<<(std::ostream& str, const com
     return str;
 }
 
-/*! \brief This class calculate at runtime and compile time elements of the hyper-cube
+/*! \brief This class calculate elements of the hyper-cube
  *
- * This class calculate at compile time elements of the hyper-cube like
+ * This class give you a set of utility functions for the hyper-cube like getting
  * number of faces, number of edge, number of vertex, or in general number of elements
  * of dimension d, position of each element
  *
- * static method calculate it at runtime
+ * * 0d Hyper-cube vertex
+ * * 1d Hypercube segment
+ * * 2d Hypercube square
+ * * 3d Hypercube Cube
+ * ...
+ *
+ * \tparam dim dimensionality of the Hyper-cube
+ *
+ * ### Get vertex and edge on a line
+ * \snippet hypercube_unit_test.hpp Get vertex and edge on a line
+ * ### Get vertex edge and surfaces of a square
+ * \snippet hypercube_unit_test.hpp  Get vertex edge and surfaces of a square
+ * ### Get vertex edge surfaces and volumes of a cube
+ * \snippet hypercube_unit_test.hpp Get vertex edge surfaces and volumes of a cube
+ *
+ * hyper-cube define only the features of an N-dimensional hyper-cube, does not define
+ * where is is located and its size, use Box for that purpose
  *
  */
 
@@ -125,14 +141,11 @@ public:
 	 *
 	 * Example
 	 *
-	 * if getDim is 2
+	 * if getDim() is 2
 	 *
 	 * it produce 4 configuration
 	 *
-	 * 1 1
-	 * 1 -1
-	 * -1 1
-	 * -1 -1
+	 * (1,1) (1,-1) (-1,1) (-1,-1)
 	 *
 	 * and fill the number in the position indicated by Iterator_g_const
 	 *
@@ -193,7 +206,7 @@ public:
 
 		size_t pos_n_zero[dim];
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (c.c[i] != 0)
 			{d++;}
@@ -201,7 +214,7 @@ public:
 
 		// Get the position of the non-zero
 		size_t pn_zero = 0;
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (c.c[i] != 0)
 			{
@@ -214,20 +227,20 @@ public:
 		size_t lin_id = 0;
 
 		// Cumulative value
-		size_t val = 0;
-		size_t cum_val = 0;
-		for(int i = d - 1; i >= 0 ; i--)
+		long int val = 0;
+		long int cum_val = 0;
+		for(long int i = d - 1; i >= 0 ; i--)
 		{
 			// check the out-of-bound, outside is assumed to be -1 so  (- pos_n_zero[i+1] - 1) = 0
-			if (i+1 < d)
+			if (i+1 < (long int)d)
 				val = pos_n_zero[i] - pos_n_zero[i+1] - 1;
 			else
 				val = pos_n_zero[i];
 
-			for (int j = 0 ; j < val; j++)
+			for (long int j = 0 ; j < (long int)val; j++)
 			{
 				// C is not safe check the limit
-				if (dim-cum_val-j-1 >= 0 && i > 0 && dim-cum_val-j >= i)
+				if (((long int)dim)-cum_val-j-1 >= 0 && i > 0 && ((long int)dim)-cum_val-j >= i)
 					lin_id += openfpm::math::C(dim-cum_val-j-1,i);
 				else
 					lin_id += 1;
@@ -242,7 +255,7 @@ public:
 		// calculate the permutation position
 		size_t id = 0;
 
-		for (int i = 0 ; i < d ; i++)
+		for (size_t i = 0 ; i < d ; i++)
 		{
 			if (c.c[pos_n_zero[i]] == -1)
 			{id = id | (1 << i);}
@@ -279,7 +292,7 @@ public:
 		return d * 2;
 	}
 
-	/*! \brief return the combination of the negative face on direction d
+	/*! \brief Return the combination of the negative face on direction d
 	 *
 	 * \param d direction
 	 *
@@ -292,15 +305,19 @@ public:
 	}
 };
 
-/*! \brief This class calculate at runtime and compile time elements of the hyper-cube
+/*! \brief This represent a sub-hyper-cube of an hyper-cube like a face or an edge of a cube
  *
- * This class calculate at compile time elements of the hyper-cube like
- * number of faces, number of edge, number of vertex, or in general number of elements
- * of dimension d, position of each element
+ * It give a set of utility function to work with sub-hyper-cubes like the hyper-cube
  *
- * static method calculate it at runtime
+ * \tparam dimensionality of the hyper-cube
+ * \tparam dimensionality of the sub-hyper-cube
  *
- * \WARNING Completely untested
+ * ### Getting the surfaces of the cube
+ * \snippet hypercube_unit_test.hpp Getting the surfaces of the cube
+ * ### Getting the vertices of the surfaces of the cube
+ * \snippet hypercube_unit_test.hpp Getting the vertices of the surfaces of the cube
+ * ### Getting the edges of the surfaces of the cube
+ * \snippet hypercube_unit_test.hpp Getting the edges of the surfaces of the cube
  *
  */
 
@@ -309,14 +326,13 @@ class SubHyperCube : public HyperCube<subdim>
 {
 public:
 
-	/*! brief Calculate the position (combinations) of all the elements of size d
+	/*! brief Calculate the position (combinations) of all the elements of size d in the sub-hyper-cube
 	 *
-	 * \param comb identify the position of the sub-hyper-cube in the hypercube
-	 * \param d dimensionality of sub-hyper-cube to take
+	 * \param c identify the position of the sub-hyper-cube in the hypercube
+	 * \param d dimensionality of the objects
 	 * \return all the combinations
 	 *
 	 */
-
 	static std::vector<comb<dim>> getCombinations_R(comb<dim> c, int d)
 	{
 #ifdef DEBUG
@@ -345,12 +361,12 @@ public:
 		std::vector<comb<dim>> vc(v.size());
 
 		// for each combination
-		for (int i = 0 ; i < v.size() ; i++)
+		for (size_t i = 0 ; i < v.size() ; i++)
 		{
 			// sub j counter
 			int sub_j = 0;
 			// for each zero (direction spanned by the sub-hyper-cube)
-			for (int j = 0 ; j < dim ; j++)
+			for (size_t j = 0 ; j < dim ; j++)
 			{
 				if (c.c[j] == 0)
 				{

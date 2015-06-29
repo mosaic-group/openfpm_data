@@ -6,54 +6,26 @@
 #include "Shape/Box.hpp"
 #include <boost/fusion/include/vector.hpp>
 #include "Grid/Encap.hpp"
+#include "Ghost.hpp"
+#include <stdlib.h>     /* srand, rand */
 
 /** \brief This class represent an N-dimensional box
  *
- * This class represent an N-dimensional box embedded in an N dimensional space
- *
- * \param T type of space ... Real Complex Integer
+ * \param T type of space ... double float int size_t
  * \param N dimensionality of the Box
  *
+ * ### Definition of a spacebox and rescale
+ * \snippet SpaceBox_unit_tests.hpp Definition of a spacebox and rescale
+ * ### Definition of a spaceboxes and intersection between them
+ * \snippet SpaceBox_unit_tests.hpp Definition of a spacebox and intersection between them
+ * ### Create random points inside the SpaceBox
+ * \snippet SpaceBox_unit_tests.hpp Create random points inside the SpaceBox
+ *
  */
-
 template<unsigned int dim, typename T>
 class SpaceBox : public Box<dim,T>
 {
 	public:
-
-	//! layout that interleave the properties
-	typedef typename Box<dim,T>::memory_int memory_int;
-	//! layout with linear properties
-	typedef typename Box<dim,T>::memory_lin memory_lin;
-
-	/*! \brief Check if the point is inside the region
-	 *
-	 * \param p point to check
-	 * \return true if the point is inside the space
-	 *
-	 */
-
-	bool isBound(Point<dim,T> p)
-	{
-		// check if bound
-
-		for (int i = 0 ; i < dim ; i++)
-		{
-			// if outside the region return false
-			if (   boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
-			    && boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] < boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
-			{
-				// Out of bound
-
-				return false;
-			}
-
-		}
-
-		// In bound
-
-		return true;
-	}
 
 	/*! \brief Define the box from a box shape
 	 *
@@ -64,7 +36,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	SpaceBox<dim,T> & operator=(const Box<dim,T> & b)
+	inline SpaceBox<dim,T> & operator=(const Box<dim,T> & b)
 	{
 		// for each dimension set high and low
 
@@ -84,16 +56,25 @@ class SpaceBox : public Box<dim,T>
 	 * \param b is the SpaceBox
 	 *
 	 */
-
-	SpaceBox(const SpaceBox<dim,T> & b)
+	template <typename S> inline SpaceBox(const Box<dim,S> & b)
 	{
-		// for each dimension set high and low
-
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setLow(d,b.getLow(d));}
 
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setHigh(d,b.getHigh(d));}
+	}
+
+	/*! \brief constructor from a SpaceBox
+	 *
+	 * constructor from a SpaceBox
+	 *
+	 * \param b is the SpaceBox
+	 *
+	 */
+	SpaceBox(const SpaceBox<dim,T> & b)
+	:Box<dim,T>(b)
+	{
 	}
 
 	/*! \brief constructor from a box
@@ -105,19 +86,13 @@ class SpaceBox : public Box<dim,T>
 	 */
 
 	SpaceBox(const Box<dim,T> & b)
+	:Box<dim,T>(b)
 	{
-		// for each dimension set high and low
-
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setLow(d,b.getLow(d));}
-
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,b.getHigh(d));}
 	}
 
 	/*! \brief Constructor from a Box
 	 *
-	 * \param Box
+	 * \param box Box (Encapsulated)
 	 *
 	 */
 
@@ -134,7 +109,7 @@ class SpaceBox : public Box<dim,T>
 
 	/*! \brief Constructor from a Box
 	 *
-	 * \param Box
+	 * \param box box (Encapsulated)
 	 *
 	 */
 
@@ -177,21 +152,46 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	void mul(float (& sp)[dim])
+	void rescale(float (& sp)[dim])
 	{
-		for (int i = 0  ; i < dim ; i++)
-		{
-			for (size_t d = 0 ; d < dim ; d++)
-			{this->setLow(d,this->getLow(d) * sp[i]);}
-
-			for (size_t d = 0 ; d < dim ; d++)
-			{this->setHigh(d,this->getHigh(d) * sp[i]);}
-		}
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,this->getLow(d) + (this->getHigh(d) -this->getLow(d)) * sp[d]);}
 	}
 
 	/*! \brief Re-scale the space box with the coefficient defined in sp
 	 *
 	 * \param sp
+	 *
+	 */
+
+	void rescale(size_t (& sp)[dim])
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,this->getLow(d) + (this->getHigh(d) -this->getLow(d)) * sp[d]);}
+	}
+
+	/*! \brief multiply the space box with the coefficient defined in sp
+	 *
+	 * It rescale the domain where the space box live
+	 *
+	 * \param sp coefficents
+	 *
+	 */
+
+	void mul(float (& sp)[dim])
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,this->getLow(d) * sp[d]);}
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,this->getHigh(d) * sp[d]);}
+	}
+
+	/*! \brief multiply the space box with the coefficient defined in sp
+	 *
+	 * It rescale the domain where the space box live
+	 *
+	 * \param sp coefficents
 	 *
 	 */
 
@@ -204,35 +204,39 @@ class SpaceBox : public Box<dim,T>
 		{this->setHigh(d,this->getHigh(d) * sp[d]);}
 	}
 
-	/*! \brief Re-scale the space box with the spacing defined in sp
+	/*! \brief Generate a random point inside the box
 	 *
-	 * \param sp spacing
-	 * \param s_sp sub-domain size
-	 *
-	 */
-
-	void spacing(float (& sp)[dim])
-	{
-		mul(sp);
-	}
-
-	/*! \brief Re-scale the space box with the spacing defined in sp
-	 *
-	 * \param sp spacing
+	 * \return a random point inside the box
 	 *
 	 */
-
-	void spacing(size_t (& sp)[dim])
+	Point<dim,T> rnd()
 	{
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setLow(d,this->getLow(d) * sp[d]);}
+		Point<dim,T> p;
 
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,((this->getHigh(d)+1) * sp[d])-1);}
+		for (size_t i = 0 ; i < dim ; i++)
+			p.get(i) = ((T)rand())/RAND_MAX * (this->getHigh(i) - this->getLow(i)) + this->getLow(i);
+
+		return p;
 	}
 
 	//! Default constructor
 	SpaceBox<dim,T>()	{}
+};
+
+#include "memory_c.hpp"
+
+/*! \brief It make explicit the inheritance of SpaceBox to Box
+ * for encap
+ *
+ * \param dim Dimensionality of the grid
+ * \param T type of object the grid store
+ * \param Mem suppose to be a boost::fusion::vector of arrays
+ *
+ */
+
+template<unsigned int dim,typename T,typename Mem>
+class encapc<dim,SpaceBox<dim,T>,Mem> : encapc<dim,Box<dim,T>,Mem>
+{
 };
 
 #endif

@@ -6,7 +6,11 @@
 #include "Space/Shape/HyperCube.hpp"
 #include "timer.hpp"
 
+#ifdef TEST_COVERAGE_MODE
+#define GS_SIZE 8
+#else
 #define GS_SIZE 128
+#endif
 
 template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz);
 template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t sz);
@@ -23,7 +27,7 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 	std::vector<size_t> szz;
 	szz.clear();
 
-	for (int i = 0 ; i < dim ; i++)
+	for (size_t i = 0 ; i < dim ; i++)
 	{szz.push_back(sz);}
 
 #ifdef CUDA_GPU
@@ -72,6 +76,7 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 	std::cout << "3D Array with grid_key (without redundant dimension): " << "\n";
 #endif
 
+	//! [Access a grid c3 of size sz on each direction]
 	typedef Point_test<float> P;
 
 	timer t;
@@ -79,11 +84,11 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 
 	grid_key_dx<3> kk;
 
-	for (int i = 0 ; i < sz ; i++)
+	for (size_t i = 0 ; i < sz ; i++)
 	{
-		for (int j = 0 ; j < sz ; j++)
+		for (size_t j = 0 ; j < sz ; j++)
 		{
-			for (int k = 0 ; k < sz ; k++)
+			for (size_t k = 0 ; k < sz ; k++)
 			{
 
 				kk.set(i,j,k);
@@ -111,6 +116,8 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 		}
 	}
 
+	//! [Access a grid c3 of size sz on each direction]
+
 #ifdef VERBOSE_TEST
 	t.stop();
 
@@ -121,11 +128,11 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 
 	bool passed = true;
 
-	for (int i = 0 ; i < sz ; i++)
+	for (size_t i = 0 ; i < sz ; i++)
 	{
-		for (int j = 0 ; j < sz ; j++)
+		for (size_t j = 0 ; j < sz ; j++)
 		{
-			for (int k = 0 ; k < sz ; k++)
+			for (size_t k = 0 ; k < sz ; k++)
 			{
 				kk.set(i,j,k);
 
@@ -151,11 +158,11 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz)
 		}
 	}
 
-	for (int i = 0 ; i < sz ; i++)
+	for (size_t i = 0 ; i < sz ; i++)
 	{
-		for (int j = 0 ; j < sz ; j++)
+		for (size_t j = 0 ; j < sz ; j++)
 		{
-			for (int k = 0 ; k < sz ; k++)
+			for (size_t k = 0 ; k < sz ; k++)
 			{
 				kk.set(i,j,k);
 
@@ -306,6 +313,7 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 	t.start();
 #endif
 
+	//! [Access to an N-dimensional grid with an iterator]
 	typedef Point_test<float> P;
 
 	grid_key_dx_iterator<dim> key_it = c3.getIterator();
@@ -336,7 +344,7 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 		++key_it;
 
 	}
-
+	//! [Access to an N-dimensional grid with an iterator]
 
 #ifdef VERBOSE_TEST
 	t.stop();
@@ -445,14 +453,14 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 		++key_it;
 	}
 
-	for(int i = 0 ; i <= dim ; i++)
+	for(size_t i = 0 ; i <= dim ; i++)
 	{
 		// get the combination of dimension dim-i
 		std::vector<comb<dim>> combs = HyperCube<dim>::getCombinations_R(dim-i);
 
 		// For each combination create a sub iterator
 
-		for (int j = 0 ; j < combs.size() ; j++)
+		for (size_t j = 0 ; j < combs.size() ; j++)
 		{
 			// Grid key of the sub-iterator
 
@@ -461,7 +469,7 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 
 			// sub iterator
 
-			for (int k = 0 ; k < dim ; k++)
+			for (size_t k = 0 ; k < dim ; k++)
 			{
 				// if combination is 0 the hyper-cube
 
@@ -513,6 +521,75 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 
 BOOST_AUTO_TEST_SUITE( grid_test )
 
+BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
+{
+	{
+	//! [Grid iterator test usage]
+	size_t count = 0;
+
+	// Subdivisions
+	size_t div[3] = {16,16,16};
+
+	// grid info
+	grid_sm<3,void> g_info(div);
+
+	// Create a grid iterator
+	grid_key_dx_iterator<3> g_it(g_info);
+
+	// Iterate on all the elements
+	while (g_it.isNext())
+	{
+		grid_key_dx<3> key = g_it.get();
+
+		// set the grid key to zero without any reason ( to avoid warning compilations )
+		key.zero();
+
+		count++;
+
+		++g_it;
+	}
+
+	BOOST_REQUIRE_EQUAL(count, 16*16*16);
+	}
+
+	{
+	//! [Grid iterator test usage]
+
+	size_t count = 0;
+	// Iterate only on the internal elements
+
+	//! [Sub-grid iterator test usage]
+	// Subdivisions
+	size_t div[3] = {16,16,16};
+
+	// grid info
+	grid_sm<3,void> g_info(div);
+
+	grid_key_dx<3> start(1,1,1);
+	grid_key_dx<3> stop(14,14,14);
+
+	// Create a grid iterator (start and stop included)
+	grid_key_dx_iterator_sub<3> g_it(g_info,start,stop);
+
+	// Iterate on all the elements
+	while (g_it.isNext())
+	{
+		grid_key_dx<3> key = g_it.get();
+
+		// set the grid key to zero without any reason ( to avoid warning compilations )
+		key.zero();
+
+		count++;
+
+		++g_it;
+	}
+
+	BOOST_REQUIRE_EQUAL(count, 14*14*14);
+
+	//! [Sub-grid iterator test usage]
+	}
+}
+
 BOOST_AUTO_TEST_CASE( grid_use)
 {
 	/*  tensor<int,3,3,3> c;
@@ -526,9 +603,11 @@ BOOST_AUTO_TEST_CASE( grid_use)
 	sz.push_back(GS_SIZE);
 
 	// test the grid from dimensionality 1 to 8 with several size non multiple of two
-
 	// Dimension 8-1
 
+	// With test coverage reduce the test size
+
+#ifndef TEST_COVERAGE_MODE
 	test_all_grid<8>(4);
 	test_all_grid<7>(8);
 	test_all_grid<6>(9);
@@ -537,6 +616,12 @@ BOOST_AUTO_TEST_CASE( grid_use)
 	test_all_grid<3>(126);
 	test_all_grid<2>(1414);
 	test_all_grid<1>(2000000);
+#else
+	test_all_grid<4>(4);
+	test_all_grid<3>(8);
+	test_all_grid<2>(16);
+	test_all_grid<1>(256);
+#endif
 
 	// Test the 3d gpu grid with CudaMemory and HeapMemory with different size
 
@@ -549,9 +634,13 @@ BOOST_AUTO_TEST_CASE( grid_use)
 
 #ifdef CUDA_GPU
 
-		{grid_gpu<3, Point_test<float> > c3(sz);
+		{
+		//! [Definition and allocation of a 3D grid on GPU memory]
+		grid_gpu<3, Point_test<float> > c3(sz);
 		c3.setMemory<CudaMemory>();
-		test_layout_grid3d(c3,i);}
+		//! [Definition and allocation of a 3D grid on GPU memory]
+		test_layout_grid3d(c3,i);
+		}
 
 		{grid_cpu<3, Point_test<float> > c3(sz);
 		c3.setMemory<CudaMemory>();
@@ -559,8 +648,11 @@ BOOST_AUTO_TEST_CASE( grid_use)
 
 #endif
 
-		{grid_gpu<3, Point_test<float> > c3(sz);
+		{
+		//! [Definition and allocation of a 3D grid on CPU memory]
+		grid_cpu<3, Point_test<float> > c3(sz);
 		c3.setMemory<HeapMemory>();
+		//! [Definition and allocation of a 3D grid on CPU memory]
 		test_layout_grid3d(c3,i);}
 
 		// Test the 3d cpu grid with Cudamemory and HeapMemory

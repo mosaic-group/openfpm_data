@@ -20,13 +20,37 @@ enum Base
 
 /** \brief This class represent an N-dimensional box
  *
- * This class represent an N-dimensional box
+ * The box is defined by two points p2 and p1
  *
- * \tparam dim dimansionality of the Box
- * \tparam T type of space ... Real Complex Integer
+  \verbatim
+
+					   +---------+ p2
+					   |         |
+					   |         |
+		               |         |
+					   |         |
+					   |         |
+			      p1   +---------+
+
+  \endverbatim
+ *
+ * \tparam dim dimensionality of the Box
+ * \tparam T type of space ... double float int size_t
+ *
+ * ### Expand the box with some spacing
+ * \snippet Box_unit_tests.hpp expand the box with some spacing
+ * ### Create an enclosing box
+ * \snippet Box_unit_tests.hpp create an enclosing box
+ * ### Create the smallest boxes between several boxes
+ * \snippet Box_unit_tests.hpp Create the smallest boxes between several boxes
+ * ### Enlarge the box
+ * \snippet Box_unit_tests.hpp Enlarge the box
+ * ### Enlarge the box with fixed P1
+ * \snippet Box_unit_tests.hpp Enlarge the box with fixed P1
+ *
+ * \see SpaceBox
  *
  */
-
 template<unsigned int dim , typename T>
 class Box
 {
@@ -34,6 +58,8 @@ public:
 
 	//! boost fusion that store the point
 	typedef boost::fusion::vector<T[dim],T[dim]> type;
+	//! type of the box
+	typedef T btype;
 	//! layout that interleave the properties
 	typedef typename memory_traits_inte<type>::type memory_int;
 	//! layout with linear properties
@@ -48,6 +74,8 @@ public:
 	static const unsigned int p2 = 1;
 	//! Maximum number of properties
 	static const unsigned int max_prop = 2;
+
+	static const unsigned int dims = dim;
 
 	/*! \brief Intersect
 	 *
@@ -65,18 +93,19 @@ public:
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			if (getLow(i) < b.getLow(i))
-			{
+			if (getLow(i) <= b.getLow(i))
 				b_out.setLow(i,b.getLow(i));
-			}
-			else if (getLow(i) < b.getHigh(i))
-			{
+			else if (getLow(i) <= b.getHigh(i))
 				b_out.setLow(i,getLow(i));
-			}
 			else
-			{
 				return false;
-			}
+
+			if (getHigh(i) >= b.getHigh(i))
+				b_out.setHigh(i,b.getHigh(i));
+			else if (getHigh(i) >= b.getLow(i))
+				b_out.setHigh(i,getHigh(i));
+			else
+				return false;
 		}
 		return true;
 	}
@@ -130,7 +159,7 @@ public:
 		// Get the nearest point of the box from the center of the sphere
 		typename distance::ResultType distance_r = 0;
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 
 			// if the center of the sphere on dimension i is not in the i box interval
@@ -205,8 +234,6 @@ public:
 
 	/*! \brief Constructor from initializer list
 	 *
-	 * Constructor from initializer list
-	 *
 	 * \param p1 Low point, initialize as a list example {0.0,0.0,0.0}
 	 * \param p2 High point, initialized as a list example {1.0,1.0,1.0}
 	 *
@@ -214,24 +241,16 @@ public:
 
 	Box(std::initializer_list<T> p1, std::initializer_list<T> p2)
 	{
-		size_t i = 0;
-	    for(T x : p1)
-	    {setLow(i,x);i++;}
-
-	    i = 0;
-	    for(T x : p2)
-	    {setHigh(i,x);i++;}
+		set(p1,p2);
 	}
 
 	/*! \brief Box constructor from a box
-	 *
-	 * Box constructor from a box
 	 *
 	 * \param high array indicating the coordinates of the low point
 	 * \param low array indicating the coordinates of the high point
 	 *
 	 */
-	Box(T * high, T * low)
+	inline Box(T * high, T * low)
 	{
 		// copy all the data
 
@@ -246,16 +265,14 @@ public:
 
 	/*! \brief Box constructor from a box
 	 *
-	 * Box constructor from a box
-	 *
 	 * \param box from which to construct
 	 *
 	 */
-	Box(const Box<dim,T> & box)
+	inline Box(const Box<dim,T> & box)
 	{
 		// we copy the data
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p1>(data)[i] = boost::fusion::at_c<p1>(box.data)[i];
 			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(box.data)[i];
@@ -264,16 +281,14 @@ public:
 
 	/*! \brief Box constructor from vector::fusion
 	 *
-	 * Box constructor from vector::fusion
-	 *
 	 * \param box_data from which to construct
 	 *
 	 */
-	Box(type box_data)
+	inline Box(type box_data)
 	{
 		// we copy the data
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p1>(data)[i] = boost::fusion::at_c<p1>(box_data)[i];
 			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(box_data)[i];
@@ -282,14 +297,14 @@ public:
 
 	/*! \brief Box constructor from an array reference
 	 *
-	 * \param array from which to construct the box
+	 * \param box_data array from which to construct the box
 	 *
 	 */
-	Box(T (& box_data)[dim])
+	inline Box(T (& box_data)[dim])
 	{
 		// we copy the data
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p1>(data)[i] = 0;
 			boost::fusion::at_c<p2>(data)[i] = box_data[i];
@@ -302,37 +317,73 @@ public:
 	 *
 	 */
 
-	template<unsigned int dimS> Box(boost::fusion::vector<T[dimS],T[dimS]> & box_data)
+	template<unsigned int dimS> inline Box(boost::fusion::vector<T[dimS],T[dimS]> & box_data)
 	{
 		// we copy the data
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p1>(data)[i] = boost::fusion::at_c<p1>(box_data)[i];
 			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(box_data)[i];
 		}
 	}
 
-	/*! \brief Box constructor from ecapsulated box
+	/*! \brief Box constructor from encapsulated box
 	 *
-	 * \param box_data fusion vector from which to construct the vector
+	 * \param b box from which to construct the vector (encapsulated)
 	 *
 	 */
 
-	template<typename Mem> Box(const encapc<1,Box<dim,T>,Mem> & b)
+	template<typename Mem> inline Box(const encapc<1,Box<dim,T>,Mem> & b)
 	{
 		// we copy the data
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
 			boost::fusion::at_c<p1>(data)[i] = b.template get<p1>()[i];
 			boost::fusion::at_c<p2>(data)[i] = b.template get<p2>()[i];
 		}
 	}
 
-	/*! \brief set the low interval of the box
+	/*! \brief Divide component wise each box points with a point
 	 *
-	 * set the low interval of the box
+	 * \param p point
+	 *
+	 * \return itself
+	 *
+	 */
+	inline Box<dim,T> & operator/=(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setLow(i, getLow(i)/p.get(i));
+			setHigh(i, getHigh(i)/p.get(i));
+		}
+		return *this;
+	}
+
+
+	/*! \brief Constructor from initializer list
+	 *
+	 * Constructor from initializer list
+	 *
+	 * \param p1 Low point, initialize as a list example {0.0,0.0,0.0}
+	 * \param p2 High point, initialized as a list example {1.0,1.0,1.0}
+	 *
+	 */
+
+	inline void set(std::initializer_list<T> p1, std::initializer_list<T> p2)
+	{
+		size_t i = 0;
+	    for(T x : p1)
+	    {setLow(i,x);i++;}
+
+	    i = 0;
+	    for(T x : p2)
+	    {setHigh(i,x);i++;}
+	}
+
+	/*! \brief set the low interval of the box
 	 *
 	 * \param i dimension
 	 * \param val value to set
@@ -344,8 +395,6 @@ public:
 	}
 
 	/*! \brief set the high interval of the box
-	 *
-	 * set the high interval of the box
 	 *
 	 * \param i dimension
 	 * \param val value to set
@@ -379,6 +428,50 @@ public:
 		return boost::fusion::at_c<p2>(data)[i];
 	}
 
+	/*! \brief Set the point P1 of the box
+	 *
+	 * \param p1 point
+	 *
+	 */
+	inline void setP1(const grid_key_dx<dim> & p1)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			setLow(i,p1.get(i));
+	}
+
+	/*! \brief Set the point P2 of the box
+	 *
+	 * \param p2 point
+	 *
+	 */
+	inline void setP2(const grid_key_dx<dim> & p2)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			setHigh(i,p2.get(i));
+	}
+
+	/*! \brief Set the point P1 of the box
+	 *
+	 * \param p1 point
+	 *
+	 */
+	inline void setP1(const Point<dim,T> & p1)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			setLow(i,p1.get(i));
+	}
+
+	/*! \brief Set the point P2 of the box
+	 *
+	 * \param p2 point
+	 *
+	 */
+	inline void setP2(const Point<dim,T> & p2)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			setHigh(i,p2.get(i));
+	}
+
 	/*! \brief Get the box enclosing this Box
 	 *
 	 * basically return itself
@@ -402,12 +495,11 @@ public:
 		return data;
 	}
 
-	/* \brief Get the key to the point 1
+	/* \brief Get the point p1 as grid_key_dx
 	 *
-	 * \return the key to the point 1
+	 * \return the key
 	 *
 	 */
-
 	grid_key_dx<dim> getKP1() const
 	{
 		// grid key to return
@@ -416,12 +508,11 @@ public:
 		return ret;
 	}
 
-	/* \brief Get the key to point 2
+	/* \brief Get the point p12 as grid_key_dx
 	 *
-	 * \return the key to the point 2
+	 * \return the key
 	 *
 	 */
-
 	grid_key_dx<dim> getKP2() const
 	{
 		// grid key to return
@@ -430,12 +521,11 @@ public:
 		return ret;
 	}
 
-	/* \brief Get the point 1
+	/* \brief Get the point p1
 	 *
-	 * \return the point 1
+	 * \return the point p1
 	 *
 	 */
-
 	inline Point<dim,T> getP1() const
 	{
 		// grid key to return
@@ -444,9 +534,9 @@ public:
 		return ret;
 	}
 
-	/* \brief Get the point 2
+	/* \brief Get the point p2
 	 *
-	 * \return the point 2
+	 * \return the point p2
 	 *
 	 */
 
@@ -456,6 +546,235 @@ public:
 		Point<dim,T> ret(boost::fusion::at_c<p2>(data));
 
 		return ret;
+	}
+
+	/* \brief expand expand the box by a vector
+	 *
+	 * \param vector
+	 *
+	 */
+	inline void expand(T (& exp)[dim])
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			boost::fusion::at_c<p2>(data)[i] = boost::fusion::at_c<p2>(data)[i] + exp[i];
+		}
+	}
+
+	/*! \brief Enlarge the box with ghost margin
+	 *
+	 * \param gh spacing of the margin to enlarge
+	 *
+	 *
+	 *\verbatim
+							^ gh.p2[1]
+							|
+							|
+					   +----+----+
+					   |         |
+					   |         |
+		 gh.p1[0]<-----+         +----> gh.p2[0]
+					   |         |
+					   |         |
+					   +----+----+
+							|
+							v  gh.p1[1]
+
+       \endverbatim
+	 *
+	 */
+	void enlarge(Box<dim,T> & gh)
+	{
+		typedef ::Box<dim,T> g;
+
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->setLow(j,this->template getBase<g::p1>(j) + gh.template getBase<g::p1>(j));
+			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j));
+		}
+	}
+
+	/*! \brief Enlarge the box with ghost margin keeping fix the point P1
+	 *
+	 * \param gh spacing of the margin to enlarge
+	 *
+	 *
+	 *\verbatim
+							^ gh.p2[1]
+							|
+							|
+					   +----+----+
+					   |         |
+					   |         |
+		 gh.p1[0]<-----+         +----> gh.p2[0]
+					   |         |
+					   |         |
+					   +----+----+
+							|
+							v  gh.p1[1]
+
+       \endverbatim
+	 *
+	 */
+	template<typename S> void enlarge_fix_P1(Box<dim,S> & gh)
+	{
+		typedef ::Box<dim,T> g;
+
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j) + gh.template getBase<g::p1>(j));
+		}
+	}
+
+	/*! \brief Refine the box to enclose the given box and itself
+	 *
+	 * \param en Box to enclose
+	 *
+	 */
+	inline void enclose(Box<dim,T> & en)
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			if (getLow(j) > en.getLow(j))
+				this->setLow(j,en.getLow(j));
+
+			if (getHigh(j) < en.getHigh(j))
+				this->setHigh(j,en.getHigh(j));
+		}
+	}
+
+	/*! \brief Refine the box to be contained in the given box and itself
+	 *
+	 * All the boxes are considered centered at p1, so it only count its relative size
+	 *
+	 * \param en Box to be contained
+	 * \param reset_p1 if true set p1 to 0
+	 *
+	 */
+	inline void contained(Box<dim,T> & en, const bool reset_p1 = true)
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			if (getHigh(j) > (en.getHigh(j) - en.getLow(j)))
+				setHigh(j,en.getHigh(j) - en.getLow(j));
+
+			if (reset_p1 == true)
+				setLow(j,0);
+		}
+	}
+
+	/*! \brief Set p1 and p2 to 0
+	 *
+	 */
+	void zero()
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			setHigh(j,0);
+			setLow(j,0);
+		}
+	}
+
+	/*! \brief Check if the point is inside the region
+	 *
+	 * \param p point to check
+	 * \return true if the point is inside the space
+	 *
+	 */
+
+	bool isInside(Point<dim,T> & p)
+	{
+		// check if bound
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			// if outside the region return false
+			if (   boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
+			    || boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] > boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
+			{
+				// Out of bound
+
+				return false;
+			}
+
+		}
+
+		// In bound
+
+		return true;
+	}
+
+	/*! \brief Check if the point is inside the region
+	 *
+	 * \param p point to check
+	 * \return true if the point is inside the space
+	 *
+	 */
+
+	bool isInside(T (&p)[dim])
+	{
+		// check if bound
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			// if outside the region return false
+			if (   p[i] < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
+			    || p[i] > boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
+			{
+				// Out of bound
+
+				return false;
+			}
+
+		}
+
+		// In bound
+
+		return true;
+	}
+
+	/*! \brief Check if the point is inside the region
+	 *
+	 * \param p point to check
+	 * \return true if the point is inside the space
+	 *
+	 */
+
+	template <typename Mem> bool isInside(const encapc<1,Point<dim,T>,Mem> & p)
+	{
+		// check if bound
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			// if outside the region return false
+			if (   p.template get<Point<dim,T>::x>()[i] < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
+			    || p.template get<Point<dim,T>::x>()[i] > boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
+			{
+				// Out of bound
+
+				return false;
+			}
+
+		}
+
+		// In bound
+
+		return true;
+	}
+
+	/*! \brief Get the volume of the box
+	 *
+	 * \return The volume
+	 *
+	 */
+	T getVolume()
+	{
+		T vol = 1.0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			vol *= (getHigh(i) - getLow(i) + 1.0);
+
+		return vol;
 	}
 };
 

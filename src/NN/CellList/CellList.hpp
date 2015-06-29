@@ -9,6 +9,10 @@
 #define CELLLIST_HPP_
 
 #include "Vector/map_vector.hpp"
+#include "CellDecomposer.hpp"
+
+//! Point at witch the cell do a reallocation (it should the the maximum for all the implementations)
+#define CELL_REALLOC 16
 
 /* NOTE all the implementations
  *
@@ -24,10 +28,15 @@
 // Memory wise of the Cell list
 #define MEMORY 3
 
-#include "Vector/map_vector.hpp"
 
-// Stub implementation
-template<unsigned int dim, typename T,  unsigned int impl=FAST, typename base=openfpm::vector<size_t>>
+/*! \brief Cell list structure
+ *
+ * Stub object see spacialization
+ *
+ * \see CellList<dim,T,FAST,transform,base>
+ *
+ */
+template<unsigned int dim, typename T,  unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename base=openfpm::vector<T>>
 class CellList
 {
 };

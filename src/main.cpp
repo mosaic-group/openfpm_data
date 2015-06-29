@@ -7,7 +7,7 @@
 #include <iostream>
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
-#include <ct_array.hpp>
+#include "util/ct_array.hpp"
 #ifdef CUDA_GPU
 #include "memory/CudaMemory.cuh"
 #endif
@@ -19,10 +19,14 @@
 
 // Include tests
 
-//#include "NN/CellList/CellList_test.hpp"
+#include "Grid/grid_key_dx_expression_unit_tests.hpp"
+#include "Point_test_unit_tests.hpp"
+#include "util/util_test.hpp"
+#include "Space/SpaceBox_unit_tests.hpp"
+#include "Space/Shape/Box_unit_tests.hpp"
+#include "NN/CellList/CellList_test.hpp"
 #include "NN/AdaptiveCellList/AdaptiveCellList_test.hpp"
-//#include "Vector/vector_unit_tests.hpp"
-//#include "hypercube_unit_test.hpp"
-//#include "Graph/graph_unit_tests.hpp"
-//#include "Grid/grid_unit_tests.hpp"
-
+#include "Vector/vector_unit_tests.hpp"
+#include "hypercube_unit_test.hpp"
+#include "Graph/graph_unit_tests.hpp"
+#include "Grid/grid_unit_tests.hpp"

@@ -52,8 +52,6 @@
 
 /*! \brief class with no edge
  *
- *
- *
  */
 class no_edge
 {
@@ -244,16 +242,13 @@ public:
 };
 
 
-/*! \brief Graph that store a CSR graph format
- *
- * Graph that store a CSR graph format
+/*! \brief Structure that store a graph in CSR format or basically in compressed adjacency matrix format
  *
  * \param V each vertex will encapsulate have this type
  * \param E each edge will encapsulate this type
  * \param device Type of device / basicaly it select the layout
  *        for device_cpu is (x_1, p1_1, p2_1, p3_1 ....), ... ( x_n, p1_1, p2_1, p3_1, ...)
  *        for device_gpu is (x_1, ... , x_n) ... (p1_n, ... pn_n)
- *
  *        where x_1 is the index where it end the list of the neighborhood list and pj_k is
  *        the property j for the vertex j. Basically in the first case one array will store
  *        index and property of each vertex, in the second case several array will store
@@ -262,8 +257,15 @@ public:
  * \param VertexList structure that store the list of Vertex
  * \param EdgeList structure that store the list of edge
  *
- * WARNING: This graph is suitable only when we know the graph structure and we build
+ * \warning This graph is suitable only when we know the graph structure and we build
  * the graph adding vertexes and edges, removing vertex and edge is EXTREMLY expensive
+ *
+ * ### Define vertex and edge of the graph
+ * \snippet graph_unit_tests.hpp Define vertex and edge of the graph
+ * ### Create a Cartesian graph
+ * \snippet graph_unit_tests.hpp Create a Cartesian graph
+ * ### Create a tree graph with no edge properties
+ * \snippet graph_unit_tests.hpp Create a tree graph with no edge properties
  *
  */
 
@@ -476,8 +478,7 @@ public:
 	 *
 	 * operator to access the vertex
 	 *
-	 *
-	 * \param i property to access
+	 * \tparam i property to access
 	 * \param id of the vertex to access
 	 *
 	 */
@@ -486,10 +487,9 @@ public:
 		return v.template get<i>(id);
 	}
 
-	/*! \brief Function to access the vertexes
+	/*! \brief Access the vertex
 	 *
-	 *
-	 * \param i property to access
+	 * \tparam i property to access
 	 * \param id of the vertex to access
 	 *
 	 */
@@ -503,9 +503,9 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(size_t id) -> decltype( v.template get(id) )
+	auto vertex(size_t id) -> decltype( v.get(id) )
 	{
-		return v.template get(id);
+		return v.get(id);
 	}
 
 	/*! \brief operator to access the vertex
@@ -515,9 +515,9 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(grid_key_dx<1> id) -> decltype( v.template get(id.get(0)) )
+	auto vertex(grid_key_dx<1> id) -> decltype( v.get(id.get(0)) )
 	{
-		return v.template get(id.get(0));
+		return v.get(id.get(0));
 	}
 
 	/*! \brief operator to access the vertex
@@ -527,17 +527,14 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(openfpm::vector_key_iterator id) -> decltype( v.template get(0) )
+	auto vertex(openfpm::vector_key_iterator id) -> decltype( v.get(0) )
 	{
-		return v.template get(id.get());
+		return v.get(id.get());
 	}
 
-	/*! \brief operator to access the edge
+	/*! \brief Access the edge
 	 *
-	 * operator to access the edge
-	 *
-	 *
-	 * \param i property to access
+	 * \tparam i property to access
 	 * \param id of the edge to access
 	 *
 	 */
@@ -547,12 +544,9 @@ public:
 	}
 
 
-	/*! \brief operator to access the edge
+	/*! \brief Access the edge
 	 *
-	 * operator to access the edge
-	 *
-	 *
-	 * \param i property to access
+	 * \tparam i property to access
 	 * \param id of the edge to access
 	 *
 	 */
@@ -561,16 +555,14 @@ public:
 		return e.template get<i>(id);
 	}
 
-	/*! \brief operator to access the edge
-	 *
-	 * operator to access the edge
+	/*! \brief Access the edge
 	 *
 	 * \param id of the edge to access
 	 *
 	 */
-	auto edge(grid_key_dx<1> id) -> decltype ( e.template get(id.get(0)) )
+	auto edge(grid_key_dx<1> id) -> decltype ( e.get(id.get(0)) )
 	{
-		return e.template get(id.get(0));
+		return e.get(id.get(0));
 	}
 
 	/*! \brief operator to access the edge
@@ -578,9 +570,9 @@ public:
 	 * \param ek key of the edge
 	 *
 	 */
-	auto edge(edge_key ek) -> decltype ( e.template get(0) )
+	auto edge(edge_key ek) -> decltype ( e.get(0) )
 	{
-		return e.template get(e_l.template get<e_map::eid>(ek.pos * v_slot + ek.pos_e));
+		return e.get(e_l.template get<e_map::eid>(ek.pos * v_slot + ek.pos_e));
 	}
 
 	/*! \brief operator to access the edge
@@ -590,9 +582,9 @@ public:
 	 * \param id of the edge to access
 	 *
 	 */
-	auto edge(size_t id) -> decltype ( e.template get(id) )
+	auto edge(size_t id) -> decltype ( e.get(id) )
 	{
-		return e.template get(id);
+		return e.get(id);
 	}
 
 	/*! \brief Return the number of childs of a vertex
@@ -612,12 +604,11 @@ public:
 
 	/*! \brief Return the number of childs of a vertex
 	 *
-	 * \param c Child id
+	 * \param c child id
 	 *
 	 * \return the number of childs
 	 *
 	 */
-
 	inline size_t getNChilds(typename VertexList<V,dev_V_sel,Memory,grow_p,openfpm::vect_isel<V>::value>::iterator_key & c)
 	{
 		// Get the number of childs
@@ -625,13 +616,12 @@ public:
 		return v_l.template get<0>(c.get());
 	}
 
-	/*! \brief Get the child edge
+	/*! \brief Get the vertex edge
 	 *
-	 * \param c Child
-	 * \param e edge id within the child
+	 * \param v vertex
+	 * \param v_e edge id
 	 *
 	 */
-
 	inline auto getChildEdge(size_t v, size_t v_e) -> decltype(e.get(0))
 	{
 #ifdef DEBUG
@@ -710,7 +700,7 @@ public:
 	 *
 	 */
 
-	inline void addVertex(V & vrt)
+	inline void addVertex(const V & vrt)
 	{
 		v.add(vrt);
 
@@ -748,7 +738,7 @@ public:
 
 	template<typename CheckPolicy=NoCheck> inline auto addEdge(size_t v1, size_t v2, E & ed) -> decltype(e.get(0))
 	{
-		size_t id_x_end = addEdge_<CheckPolicy>(v1,v2);
+		long int id_x_end = addEdge_<CheckPolicy>(v1,v2);
 
 		// If there is not edge return an invalid edge, is a kind of stub object
 		if (id_x_end == NO_EDGE)
@@ -772,7 +762,7 @@ public:
 	template<typename CheckPolicy=NoCheck> inline auto addEdge(size_t v1, size_t v2) -> decltype(e.get(0))
 	{
 		//! add an edge
-		size_t id_x_end = addEdge_<CheckPolicy>(v1,v2);
+		long int id_x_end = addEdge_<CheckPolicy>(v1,v2);
 		// If there is not edge return an invalid edge, is a kind of stub object
 		if (id_x_end == NO_EDGE)
 			return e_invalid.get(0);
