@@ -503,7 +503,7 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(size_t id) -> decltype( v.template get(id) )
+	auto vertex(size_t id) -> decltype( v.get(id) )
 	{
 		return v.template get(id);
 	}
@@ -515,9 +515,9 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(grid_key_dx<1> id) -> decltype( v.template get(id.get(0)) )
+	auto vertex(grid_key_dx<1> id) -> decltype( v.get(id.get(0)) )
 	{
-		return v.template get(id.get(0));
+		return v.get(id.get(0));
 	}
 
 	/*! \brief operator to access the vertex
@@ -527,9 +527,9 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(openfpm::vector_key_iterator id) -> decltype( v.template get(0) )
+	auto vertex(openfpm::vector_key_iterator id) -> decltype( v.get(0) )
 	{
-		return v.template get(id.get());
+		return v.get(id.get());
 	}
 
 	/*! \brief Access the edge
@@ -560,9 +560,9 @@ public:
 	 * \param id of the edge to access
 	 *
 	 */
-	auto edge(grid_key_dx<1> id) -> decltype ( e.template get(id.get(0)) )
+	auto edge(grid_key_dx<1> id) -> decltype ( e.get(id.get(0)) )
 	{
-		return e.template get(id.get(0));
+		return e.get(id.get(0));
 	}
 
 	/*! \brief operator to access the edge
@@ -570,7 +570,7 @@ public:
 	 * \param ek key of the edge
 	 *
 	 */
-	auto edge(edge_key ek) -> decltype ( e.template get(0) )
+	auto edge(edge_key ek) -> decltype ( e.get(0) )
 	{
 		return e.template get(e_l.template get<e_map::eid>(ek.pos * v_slot + ek.pos_e));
 	}
