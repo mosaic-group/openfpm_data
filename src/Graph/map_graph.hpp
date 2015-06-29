@@ -572,7 +572,7 @@ public:
 	 */
 	auto edge(edge_key ek) -> decltype ( e.get(0) )
 	{
-		return e.template get(e_l.template get<e_map::eid>(ek.pos * v_slot + ek.pos_e));
+		return e.get(e_l.template get<e_map::eid>(ek.pos * v_slot + ek.pos_e));
 	}
 
 	/*! \brief operator to access the edge
