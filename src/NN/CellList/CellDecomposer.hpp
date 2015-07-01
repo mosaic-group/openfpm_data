@@ -274,7 +274,7 @@ public:
 	 * \return the grid infos
 	 *
 	 */
-	grid_sm<dim,void> & getGrid()
+	const grid_sm<dim,void> & getGrid() const
 	{
 #ifdef DEBUG
 		if (tot_n_cell == 0)

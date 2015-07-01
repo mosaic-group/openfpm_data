@@ -49,11 +49,9 @@ class SpaceBox : public Box<dim,T>
 		return *this;
 	}
 
-	/*! \brief constructor from a SpaceBox
+	/*! \brief constructor from a Box of different type
 	 *
-	 * constructor from a SpaceBox
-	 *
-	 * \param b is the SpaceBox
+	 * \param b box
 	 *
 	 */
 	template <typename S> inline SpaceBox(const Box<dim,S> & b)

@@ -149,7 +149,7 @@ public:
 	 * \return the grid infos
 	 *
 	 */
-	grid_sm<dim,void> & getGrid()
+	const grid_sm<dim,void> & getGrid()
 	{
 		return CellDecomposer_sm<dim,T,transform>::getGrid();
 	}

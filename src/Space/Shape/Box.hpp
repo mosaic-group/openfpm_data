@@ -238,7 +238,6 @@ public:
 	 * \param p2 High point, initialized as a list example {1.0,1.0,1.0}
 	 *
 	 */
-
 	Box(std::initializer_list<T> p1, std::initializer_list<T> p2)
 	{
 		set(p1,p2);
@@ -316,7 +315,6 @@ public:
 	 * \param box_data fusion vector from which to construct the vector
 	 *
 	 */
-
 	template<unsigned int dimS> inline Box(boost::fusion::vector<T[dimS],T[dimS]> & box_data)
 	{
 		// we copy the data
@@ -333,7 +331,6 @@ public:
 	 * \param b box from which to construct the vector (encapsulated)
 	 *
 	 */
-
 	template<typename Mem> inline Box(const encapc<1,Box<dim,T>,Mem> & b)
 	{
 		// we copy the data
@@ -343,6 +340,20 @@ public:
 			boost::fusion::at_c<p1>(data)[i] = b.template get<p1>()[i];
 			boost::fusion::at_c<p2>(data)[i] = b.template get<p2>()[i];
 		}
+	}
+
+	/*! \brief constructor from a Box of different type
+	 *
+	 * \param b box
+	 *
+	 */
+	template <typename S> inline Box(const Box<dim,S> & b)
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,b.getLow(d));}
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,b.getHigh(d));}
 	}
 
 	/*! \brief Divide component wise each box points with a point
@@ -634,13 +645,25 @@ public:
        \endverbatim
 	 *
 	 */
-	template<typename S> void enlarge_fix_P1(Box<dim,S> & gh)
+	template<typename S> inline void enlarge_fix_P1(Box<dim,S> & gh)
 	{
 		typedef ::Box<dim,T> g;
 
 		for (size_t j = 0 ; j < dim ; j++)
 		{
-			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j) + gh.template getBase<g::p1>(j));
+			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j) - gh.template getBase<g::p1>(j));
+		}
+	}
+
+	/*! \brief Shrink moving p2 of sh quantity (on each direction)
+	 *
+	 *
+	 */
+	inline void shrinkP2(T sh)
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->setHigh(j,this->getHigh(j) - sh);
 		}
 	}
 

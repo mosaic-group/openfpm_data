@@ -137,7 +137,7 @@ public:
 
 	/*! \brief Get the last element
 	 *
-	 * \return the last element
+	 * \return the last element as reference
 	 *
 	 */
 	inline T & last()
