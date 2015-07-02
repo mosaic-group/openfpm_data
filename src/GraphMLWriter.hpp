@@ -4,7 +4,7 @@
 #include "Graph/map_graph.hpp"
 #include <iostream>
 #include <fstream>
-#include "common.hpp"
+#include "util/common.hpp"
 
 
 /*! \brief Create properties name starting from a type T

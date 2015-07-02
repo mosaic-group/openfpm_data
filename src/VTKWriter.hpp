@@ -13,7 +13,7 @@
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/fusion/include/for_each.hpp>
 #include <fstream>
-#include "common.hpp"
+#include "util/common.hpp"
 
 /*! \brief Get the type
  *

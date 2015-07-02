@@ -12,7 +12,7 @@
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/fusion/include/for_each.hpp>
 #include <fstream>
-#include "common.hpp"
+#include "util/common.hpp"
 #include <boost/mpl/range_c.hpp>
 #include <boost/mpl/for_each.hpp>
 #include "Point_test.hpp"
