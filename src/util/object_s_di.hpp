@@ -10,6 +10,8 @@
 
 
 #include "for_each_ref.hpp"
+#include "util/variadic_to_vmpl.hpp"
+#include "util/meta_copy.hpp"
 #include <boost/mpl/range_c.hpp>
 #include <boost/fusion/include/size.hpp>
 

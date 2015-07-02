@@ -7,15 +7,6 @@
 #include <iostream>
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
-#include "util/ct_array.hpp"
-#ifdef CUDA_GPU
-#include "memory/CudaMemory.cuh"
-#endif
-#include "memory/HeapMemory.hpp"
-#include "memory_conf.hpp"
-#include "Grid/map_grid.hpp"
-#include "Vector/map_vector.hpp"
-#include "Graph/map_graph.hpp"
 
 // Include tests
 

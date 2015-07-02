@@ -11,6 +11,7 @@
 #include "object_util.hpp"
 #include "Point_test.hpp"
 #include "util/ct_array.hpp"
+#include "Vector/map_vector.hpp"
 
 BOOST_AUTO_TEST_SUITE( util_test )
 

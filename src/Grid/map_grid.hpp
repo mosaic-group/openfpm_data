@@ -17,16 +17,18 @@
 #include <boost/fusion/include/for_each.hpp>
 #include <boost/mpl/range_c.hpp>
 #include <boost/mpl/for_each.hpp>
-#include "memory_conf.hpp"
+#include "memory_ly/memory_conf.hpp"
 #include "util/meta_copy.hpp"
 #include "Memleak_check.hpp"
 #include "util/for_each_ref.hpp"
 #include <utility>
-
+#ifdef CUDA_GPU
+#include "memory/CudaMemory.cuh"
+#endif
 #include "grid_sm.hpp"
 #include "Encap.hpp"
-#include "memory_array.hpp"
-#include "memory_c.hpp"
+#include "memory_ly/memory_array.hpp"
+#include "memory_ly/memory_c.hpp"
 #include <vector>
 
 /*! \brief this class is a functor for "for_each" algorithm

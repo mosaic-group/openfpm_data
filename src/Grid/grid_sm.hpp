@@ -6,7 +6,7 @@
 #include <vector>
 #include <initializer_list>
 #include <array>
-#include "memory.hpp"
+#include "memory/memory.hpp"
 #include "Space/Shape/Box.hpp"
 #include "grid_key.hpp"
 

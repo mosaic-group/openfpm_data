@@ -4,7 +4,6 @@
 #include "Grid/comb.hpp"
 #include "Grid/grid_key_expression.hpp"
 
-
 /*! \brief grid_key_dx is the key to access any element in the grid
  *
  * Given a grid in general a set of indexes define one element in the grid

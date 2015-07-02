@@ -8,7 +8,7 @@
 #ifndef CELLNNITERATOR_FULL_HPP_
 #define CELLNNITERATOR_FULL_HPP_
 
-#include "mathutil.hpp"
+#include "util/mathutil.hpp"
 
 #define FULL openfpm::math::pow(3,dim)
 #define SYM  openfpm::math::pow(3,dim)/2

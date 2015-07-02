@@ -221,7 +221,7 @@ class SpaceBox : public Box<dim,T>
 	SpaceBox<dim,T>()	{}
 };
 
-#include "memory_c.hpp"
+#include "Grid/Encap.hpp"
 
 /*! \brief It make explicit the inheritance of SpaceBox to Box
  * for encap

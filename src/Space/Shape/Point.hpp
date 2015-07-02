@@ -9,7 +9,6 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
 #include "base_type.hpp"
-#include "memory_conf.hpp"
 #include "Grid/grid_key.hpp"
 #include "Grid/Encap.hpp"
 
@@ -30,10 +29,6 @@ template<unsigned int dim ,typename T> class Point
 
 	//! boost fusion that store the point
 	typedef boost::fusion::vector<T[dim]> type;
-	//! layout that interleave the properties
-	typedef typename memory_traits_inte<type>::type memory_int;
-	//! layout with linear properties
-	typedef typename memory_traits_lin<type>::type memory_lin;
 
 	//! structure that store the data of the point
 	type data;

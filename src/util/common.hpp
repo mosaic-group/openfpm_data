@@ -3,6 +3,7 @@
 
 #include <type_traits>
 #include <random>
+#include "memory/memory.hpp"
 
 namespace std
 {
