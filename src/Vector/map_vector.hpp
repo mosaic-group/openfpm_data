@@ -325,7 +325,7 @@ namespace openfpm
 	public:
 
 		//! Type of the encapsulation memory parameter
-		typedef typename grid_cpu<1,T>::memory_t memory_t;
+		typedef typename grid_cpu<1,T>::memory_conf memory_conf;
 
 		//! iterator for the vector
 		typedef vector_key_iterator iterator_key;

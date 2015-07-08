@@ -54,6 +54,10 @@ public:
   inline void setz(T z_)	{boost::fusion::at_c<2>(data) = z_;};
   inline void sets(T s_)	{boost::fusion::at_c<3>(data) = s_;};
   
+  inline void setv(size_t i,T v_)	{boost::fusion::at_c<4>(data)[i] = v_;}
+  inline void sett(size_t i, size_t j,T t_)	{boost::fusion::at_c<5>(data)[i][j] = t_;}
+
+
   // getter method
 
   template<unsigned int i> inline typename boost::fusion::result_of::at<type, boost::mpl::int_<i> >::type get()	{return boost::fusion::at_c<i>(data);};

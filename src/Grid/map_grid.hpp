@@ -319,6 +319,8 @@ public:
 	//! boost::vector that describe the data type
 	typedef typename T::type T_type;
 
+	typedef Mem memory_conf;
+
 private:
 	//! This is an header that store all information related to the grid
 	grid_sm<dim,T> g1;
@@ -1029,7 +1031,7 @@ public:
 	typedef typename memory_traits_inte<typename T::type>::type memory_int;
 
 	//! Memory traits
-	typedef Mem memory_t;
+	typedef Mem memory_conf;
 
 	//! Object container for T, it is the return type of get_o it return a object type trough
 	// you can access all the properties of T

@@ -12,6 +12,26 @@
 #include "Point_test.hpp"
 #include "util/ct_array.hpp"
 #include "Vector/map_vector.hpp"
+#include "common.hpp"
+#include "check_no_pointers.hpp"
+
+//! [Declaration of struct with attributes and without]
+
+struct test_has_attributes
+{
+	struct attributes
+	{
+		static const std::string name[2];
+	};
+};
+
+const std::string test_has_attributes::attributes::name[]={"attributes1","attributes2"};
+
+struct test_no_attributes
+{
+};
+
+//! [Declaration of struct with attributes and without]
 
 BOOST_AUTO_TEST_SUITE( util_test )
 
@@ -48,8 +68,8 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 
 	//! [object copy encap example]
 
-	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_t> encap_src;
-	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_t> encap_dst;
+	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_conf> encap_src;
+	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_conf> encap_dst;
 
 	openfpm::vector<p> v_point;
 	openfpm::vector<object<vboost_red>> v_point_red;
@@ -110,8 +130,8 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 
 	//! [object write encap example]
 
-	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_t> encap_dst;
-	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_t> encap_src;
+	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_conf> encap_dst;
+	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_conf> encap_src;
 
 	openfpm::vector<p> v_point;
 	openfpm::vector<object<vboost_red>> v_point_red;
@@ -177,6 +197,136 @@ BOOST_AUTO_TEST_CASE( generate_array )
 	const size_t ct_calc = MetaFunc<ct_test_ce::data[0],ct_test_ce::data[1]>::value;
 	BOOST_REQUIRE_EQUAL(ct_calc,11);
 	//! [constexpr array]
+	}
+}
+
+BOOST_AUTO_TEST_CASE( check_templates_util_function )
+{
+	{
+		{
+		//! [Check no pointers]
+
+		struct test_no_ptr
+		{
+			static bool noPointers()	{return true;}
+		};
+
+		struct test_ptr
+		{
+			static bool noPointers()	{return false;}
+		};
+
+		struct test_unknown
+		{
+		};
+
+		BOOST_REQUIRE_EQUAL(has_noPointers<test_no_ptr>::type::value,true);
+		BOOST_REQUIRE_EQUAL(has_noPointers<test_ptr>::type::value,true);
+		BOOST_REQUIRE_EQUAL(has_noPointers<test_unknown>::type::value,false);
+
+		//! [Check no pointers]
+
+		}
+
+		{
+		//! [Check is_typedef_and_data_same]
+
+		struct test_typedef_same_data
+		{
+			typedef boost::fusion::vector<float,double,float[3]> type;
+
+			type data;
+		};
+
+		struct test_typedef_not_same_data
+		{
+			typedef boost::fusion::vector<float,double,float[3]> type;
+
+			boost::fusion::vector<float,double> data;
+		};
+
+		int val = is_typedef_and_data_same<true,test_typedef_same_data>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = is_typedef_and_data_same<true,test_typedef_not_same_data>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check is_typedef_and_data_same]
+		}
+
+		{
+		//! [Check has_data]
+
+		struct test_has_data
+		{
+			float data;
+		};
+
+		struct test_no_has_data
+		{
+		};
+
+		int val = has_data<test_has_data>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = has_data<test_no_has_data>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check has_data]
+		}
+
+		{
+		//! [Check has_typedef_type]
+
+		struct test_has_typedef
+		{
+			typedef float type;
+		};
+
+		struct test_no_has_data
+		{
+		};
+
+		int val = has_typedef_type<test_has_typedef>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = has_typedef_type<test_no_has_data>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check has_typedef_type]
+		}
+
+		{
+		//! [Check has_attributes]
+
+		int val = has_attributes<test_has_attributes>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = has_attributes<test_no_attributes>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check has_typedef_type]
+		}
+
+		//! [Check no pointers in structure]
+		struct test_no_ptr
+		{
+			static bool noPointers()	{return PNP::NO_POINTERS;}
+		};
+
+		struct test_ptr
+		{
+			static bool noPointers()	{return PNP::POINTERS;}
+		};
+
+		struct test_unknown
+		{
+		};
+
+		int val = check_no_pointers<test_no_ptr>::value();
+		BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
+		val = check_no_pointers<test_ptr>::value();
+		BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+		val = check_no_pointers_impl<test_unknown,false>::value();
+		BOOST_REQUIRE_EQUAL(val,PNP::UNKNOWN);
+
+		//! [Check no pointers in structure]
 	}
 }
 

@@ -60,7 +60,7 @@ class memory_c
 		{
 			this->mem->decRef();
 
-			if (this->mem->ref() == 0)
+			if (this->mem->ref() == 0 && &mem != this->mem)
 				delete(this->mem);
 		}
 //			this->mem->decRef();
@@ -298,7 +298,7 @@ class memory_c<multi_array<T>, D>
 		{
 			this->mem->decRef();
 
-			if (this->mem->ref() == 0)
+			if (this->mem->ref() == 0 && &mem != this->mem)
 				delete(this->mem);
 		}
 		mem.incRef();

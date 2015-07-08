@@ -31,10 +31,8 @@ struct has_attributes: std::false_type {};
  * internal structure with attributes
  *
  * ### Example
- *
- * \code{.cpp}
- * has_attributes<Test>::value
- * \endcode
+ * \snippet util.hpp Declaration of struct with attributes and without
+ * \snippet util.hpp Check has_attributes
  *
  * return true if T::attributes::name[0] is a valid expression
  * and produce a defined type
@@ -52,9 +50,7 @@ struct has_typedef_type: std::false_type {};
  *
  * ### Example
  *
- * \code{.cpp}
- * has_typedef_type<Test>::value
- * \endcode
+ * \snippet util.hpp Check has_typedef_type
  *
  * return true if T::type is a valid type
  *
@@ -67,9 +63,7 @@ struct has_typedef_type<T, typename Void< typename T::type>::type> : std::true_t
  *
  * ### Example
  *
- * \code{.cpp}
- * has_data<Test>::value
- * \endcode
+ * \snippet util.hpp Check has_data
  *
  * return true if T::type is a valid type
  *
@@ -94,9 +88,7 @@ struct has_data<T, typename Void<decltype( T::data )>::type> : std::true_type
  *
  * ### Example
  *
- * \code{.cpp}
- * is_typedef_and_data_same<has_data<T> && has_typedef<T>,T>::value
- * \endcode
+ * \snippet util.hpp Check is_typedef_and_data_same
  *
  * return true if the type of T::data is the same of T::type, false otherwise
  *
@@ -120,5 +112,24 @@ struct is_typedef_and_data_same<false,T>
 	};
 };
 
+
+template<typename T, typename Sfinae = void>
+struct has_noPointers: std::false_type {};
+
+
+/*! \brief has_noPointers check if a type has defined a
+ * method called noPointers
+ *
+ * ### Example
+ *
+ * \snippet util.hpp Check no pointers
+ *
+ * return true if T::noPointers() is a valid expression (function pointers)
+ * and produce a defined type
+ *
+ */
+template<typename T>
+struct has_noPointers<T, typename Void<decltype( T::noPointers() )>::type> : std::true_type
+{};
 
 #endif
