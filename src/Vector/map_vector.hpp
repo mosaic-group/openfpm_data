@@ -930,6 +930,16 @@ namespace openfpm
 		{
 			return base.getPointer();
 		}
+
+		/*! \brief This class has pointer inside
+		 *
+		 * \return false
+		 *
+		 */
+		static bool noPointers()
+		{
+			return false;
+		}
 	};
 
 
@@ -1119,6 +1129,16 @@ namespace openfpm
 		void setMemory(Memory & mem)
 		{
 			base.template setMemory<Memory>(mem);
+		}
+
+		/*! \brief This class has pointer inside
+		 *
+		 * \return false
+		 *
+		 */
+		static bool noPointers()
+		{
+			return false;
 		}
 	};
 }

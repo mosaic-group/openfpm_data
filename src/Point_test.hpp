@@ -127,6 +127,15 @@ public:
 
 	  return *this;
   }
+
+  /*! \brief noPointers function
+   *
+   * It notify that Point_test does not have any pointer and is safe to send
+   *
+   * \return true
+   *
+   */
+  static bool noPointers()	{return true;}
 };
 
 

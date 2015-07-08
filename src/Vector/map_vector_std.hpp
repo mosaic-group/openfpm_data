@@ -324,6 +324,16 @@ public:
 	{
 		return &base[0];
 	}
+
+	/*! \brief This class has pointer inside
+	 *
+	 * \return false
+	 *
+	 */
+	static bool noPointers()
+	{
+		return false;
+	}
 };
 
 
