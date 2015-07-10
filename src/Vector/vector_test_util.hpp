@@ -23,7 +23,7 @@ typedef Point_test<float> P;
 #define SECOND_PUSH 1000000
 #endif
 
-
+#include "timer.hpp"
 
 std::vector<Point_orig<float>> allocate_stl()
 {
@@ -32,9 +32,8 @@ std::vector<Point_orig<float>> allocate_stl()
 	// Now fill the vector
 
 	#ifdef VERBOSE_TEST
-	timespec ts_start;
-	// clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
-	clock_gettime(CLOCK_REALTIME, &ts_start); // Works on Linux
+	timer t;
+	t.start();
 	#endif
 
 	Point_orig<float> po;
@@ -67,11 +66,8 @@ std::vector<Point_orig<float>> allocate_stl()
 	}
 
 	#ifdef VERBOSE_TEST
-	timespec end_time;
-	clock_gettime(CLOCK_REALTIME, &end_time); // Works on Linux
-	float time_dif =(float)( end_time.tv_sec - ts_start.tv_sec  + (double)(end_time.tv_nsec - ts_start.tv_nsec)/1000000000.0 );
-
-	std::cout << "STL : " << FIRST_PUSH << " add " << "  Time: " << time_dif << " s  " << "\n";
+	t.stop();
+	std::cout << "STL : " << FIRST_PUSH << " add " << "  Time: " << t.getcputime() << " s  " << "\n";
 	#endif
 
 	return v_stl_test;
@@ -127,9 +123,8 @@ openfpm::vector<Point_test<float>> allocate_openfpm_fill(size_t n, size_t fill)
 openfpm::vector<Point_test<float>> allocate_openfpm(size_t n_ele)
 {
 	#ifdef VERBOSE_TEST
-	timespec ts_start;
-	// clock_gettime(CLOCK_MONOTONIC, &ts); // Works on FreeBSD
-	clock_gettime(CLOCK_REALTIME, &ts_start); // Works on Linux
+	timer t;
+	t.start();
 	#endif
 
 	//! [Create add and access]
@@ -197,11 +192,8 @@ openfpm::vector<Point_test<float>> allocate_openfpm(size_t n_ele)
 	//! [Create add and access]
 
 	#ifdef VERBOSE_TEST
-	timespec end_time;
-	clock_gettime(CLOCK_REALTIME, &end_time); // Works on Linux
-	float time_dif =(float)( end_time.tv_sec - ts_start.tv_sec  + (double)(end_time.tv_nsec - ts_start.tv_nsec)/1000000000.0 );
-
-	std::cout << "OPENFPM : " << FIRST_PUSH << " add " << "  Time: " << time_dif << " s  " << "\n";
+	t.stop();
+	std::cout << "OPENFPM : " << FIRST_PUSH << " add " << "  Time: " << t.getcputime() << " s  " << "\n";
 	#endif
 
 	return v_ofp_test;
