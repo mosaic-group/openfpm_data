@@ -77,6 +77,53 @@ std::vector<Point_orig<float>> allocate_stl()
 	return v_stl_test;
 }
 
+template <typename T>
+openfpm::vector<T> allocate_openfpm_primitive(size_t n, size_t fill)
+{
+	openfpm::vector<T> v;
+
+	for (size_t i = 0 ; i < n ; i++)
+		v.add(fill);
+
+	return v;
+}
+
+openfpm::vector<Point_test<float>> allocate_openfpm_fill(size_t n, size_t fill)
+{
+	// Test point
+	typedef Point_test<float> p;
+
+	Point_test<float> pt;
+	openfpm::vector<Point_test<float>> v_send;
+
+	pt.setx(fill);
+	pt.sety(fill);
+	pt.setz(fill);
+	pt.sets(fill);
+
+	pt.setv(0,fill);
+	pt.setv(1,fill);
+	pt.setv(2,fill);
+
+	pt.sett(0,0,fill);
+	pt.sett(0,1,fill);
+	pt.sett(0,2,fill);
+	pt.sett(1,0,fill);
+	pt.sett(1,1,fill);
+	pt.sett(1,2,fill);
+	pt.sett(2,0,fill);
+	pt.sett(2,1,fill);
+	pt.sett(2,2,fill);
+
+
+	// ADD n elements
+	for (size_t i = 0 ; i < n ; i++)
+		v_send.add(pt);
+
+	return v_send;
+}
+
+
 openfpm::vector<Point_test<float>> allocate_openfpm(size_t n_ele)
 {
 	#ifdef VERBOSE_TEST
@@ -159,8 +206,5 @@ openfpm::vector<Point_test<float>> allocate_openfpm(size_t n_ele)
 
 	return v_ofp_test;
 }
-
-
-
 
 #endif /* VECTOR_TEST_UTIL_HPP_ */
