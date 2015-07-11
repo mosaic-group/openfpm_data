@@ -10,6 +10,7 @@
 
 // Include tests
 
+#include "timer_util_test.hpp"
 #include "Grid/grid_key_dx_expression_unit_tests.hpp"
 #include "Point_test_unit_tests.hpp"
 #include "util/util_test.hpp"
