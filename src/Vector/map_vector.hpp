@@ -260,7 +260,6 @@ namespace openfpm
 
 	#include "map_vector_std.hpp"
 
-
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
 	 * The layout is memory_traits_lin
@@ -688,6 +687,7 @@ namespace openfpm
 		 *
 		 */
 		vector(const vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> && v)
+		:v_size(0)
 		{
 			swap(v);
 		}
@@ -698,6 +698,7 @@ namespace openfpm
 		 *
 		 */
 		vector(const vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> & v)
+		:v_size(0)
 		{
 			swap(v.duplicate());
 		}

@@ -60,10 +60,6 @@ public:
 	typedef boost::fusion::vector<T[dim],T[dim]> type;
 	//! type of the box
 	typedef T btype;
-	//! layout that interleave the properties
-	typedef typename memory_traits_inte<type>::type memory_int;
-	//! layout with linear properties
-	typedef typename memory_traits_lin<type>::type memory_lin;
 
 	//! It store the two point bounding the box
 	type data;

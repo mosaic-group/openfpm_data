@@ -736,9 +736,9 @@ public:
 			return;
 		}
 
-		// It is safe to a memory copy
+		// It is safe to do a memory copy
 
-		data.move(&get<0>());
+		data.move(&this->template get<0>());
 	}
 
 	/*! \brief Resize the space
