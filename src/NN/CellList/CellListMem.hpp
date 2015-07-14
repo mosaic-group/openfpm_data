@@ -55,9 +55,9 @@ class CellList<dim,T,MEMORY,base> : public CellDecomposer_sm<dim,T>
 	//
 	long int NNc_cr[openfpm::math::pow(2,dim)];
 
-	// each cell has a pointer to a dynamic structure
+	// each cell has a dynamic structure
 	// that store the elements in the cell
-	std::unordered_map<size_t,base *> cl_base;
+	std::unordered_map<size_t,base> cl_base;
 
 	//Origin point
 	Point<dim,T> orig;
@@ -110,9 +110,9 @@ public:
 
 		this->orig = orig;
 
-		//filling a map with pointers to "base" structures
+		//filling a map with "base" structures
 		for (int i = 0; i < this->tot_n_cell; i++)
-			cl_base[i] = new base;
+			cl_base[i] = base();
 
 
 		// Calculate the NNc-arrays (for neighborhood):
@@ -226,7 +226,7 @@ public:
 
 		// Get the number of element the cell is storing
 
-		cl_base[cell_id]->add(ele);
+		cl_base[cell_id].add(ele);
 	}
 
 	/*! \brief Add an element in the cell list
@@ -243,7 +243,7 @@ public:
 
 		// add a new element
 
-		cl_base[cell_id]->add(ele);
+		cl_base[cell_id].add(ele);
 	}
 
 
@@ -255,7 +255,7 @@ public:
 	 */
 	void remove(size_t cell, size_t ele)
 	{
-		cl_base[cell]->remove(ele);
+		cl_base[cell].remove(ele);
 	}
 
 	/*! \brief Return the number of element in the cell
@@ -267,7 +267,7 @@ public:
 	 */
 	size_t getNelements(size_t cell_id)
 	{
-		return cl_base[cell_id]->size();
+		return cl_base[cell_id].size();
 	}
 
 	/*! \brief Get an element in the cell
@@ -276,9 +276,9 @@ public:
 	 * \param ele element id
 	 *
 	 */
-	auto get(size_t cell, size_t ele) -> decltype(cl_base[cell]->get(ele))
+	auto get(size_t cell, size_t ele) -> decltype(cl_base[cell].get(ele))
 	{
-		return cl_base[cell]->get(ele);
+		return cl_base[cell].get(ele);
 	}
 	/*! \brief Swap the memory
 	 *
