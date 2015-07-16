@@ -8,6 +8,8 @@
 #ifndef SRC_VECTOR_UTIL_HPP_
 #define SRC_VECTOR_UTIL_HPP_
 
+#include "util/common.hpp"
+
 template<typename T, typename Sfinae = void>
 struct is_vector: std::false_type {};
 

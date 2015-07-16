@@ -8,6 +8,8 @@
 #ifndef SRC_GRID_UTIL_HPP_
 #define SRC_GRID_UTIL_HPP_
 
+#include "util/common.hpp"
+
 template<typename T, typename Sfinae = void>
 struct is_grid: std::false_type {};
 
