@@ -33,6 +33,9 @@ class vector<T,device_cpu<T>,HeapMemory,grow_policy_double,STD_VECTOR>
 
 public:
 
+	//! it define that it is a vector
+	typedef int yes_i_am_vector;
+
 	//! iterator for the vector
 	typedef vector_key_iterator iterator_key;
 	//! Type of the value the vector is storing

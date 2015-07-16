@@ -20,8 +20,6 @@ class scalar
 public:
 
   typedef boost::fusion::vector<T> type;
-  typedef typename memory_traits_inte<type>::type memory_int;
-  typedef typename memory_traits_lin<type>::type memory_lin;
 
   type data;
 

@@ -14,6 +14,8 @@
 #include "Vector/map_vector.hpp"
 #include "common.hpp"
 #include "check_no_pointers.hpp"
+#include "Grid/util.hpp"
+#include "data_type/scalar.hpp"
 
 //! [Declaration of struct with attributes and without]
 
@@ -327,6 +329,68 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		BOOST_REQUIRE_EQUAL(val,PNP::UNKNOWN);
 
 		//! [Check no pointers in structure]
+
+		{
+		//! [Check is_grid]
+
+		struct stub_object
+		{
+			float a;
+			double b;
+		};
+
+		bool val = is_grid< grid_cpu<2,scalar<float> > >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+		val = is_grid< grid_cpu<3,object< boost::fusion::vector<float,double> > > >::value;
+		BOOST_REQUIRE_EQUAL( val , true);
+		val = is_grid< grid_cpu<4,Point_test<float>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+
+		val = is_grid< grid_gpu<2,scalar<float> > >::value;
+		BOOST_REQUIRE_EQUAL(val ,true);
+		val = is_grid< grid_gpu<3,object< boost::fusion::vector<float,double>>> >::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = is_grid< grid_gpu<4,Point_test<float>> >::value;
+		BOOST_REQUIRE_EQUAL(val,true);
+
+		val = is_grid< float >::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+		val = is_grid< stub_object > ::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+
+		//! [Check is_grid]
+		}
+
+		{
+		//! [Check is_vector]
+
+		struct stub_object
+		{
+			float a;
+			double b;
+		};
+
+		bool val = is_vector< openfpm::vector<scalar<float> > >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+		val = is_vector< openfpm::vector<object< boost::fusion::vector<float,double> > > >::value;
+		BOOST_REQUIRE_EQUAL( val , true);
+		val = is_vector< openfpm::vector<Point_test<float>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+
+		val = is_vector< openfpm::vector<scalar<float> > >::value;
+		BOOST_REQUIRE_EQUAL(val ,true);
+		val = is_vector< openfpm::vector<object< boost::fusion::vector<float,double>>> >::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = is_vector< openfpm::vector<Point_test<float>> >::value;
+		BOOST_REQUIRE_EQUAL(val,true);
+
+		val = is_vector< float >::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+		val = is_vector< stub_object > ::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+
+		//! [Check is_vector]
+		}
 	}
 }
 

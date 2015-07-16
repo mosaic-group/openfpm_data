@@ -12,6 +12,7 @@
 #include "memory/HeapMemory.hpp"
 #include "vect_isel.hpp"
 #include "util/object_s_di.hpp"
+#include "util.hpp"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
@@ -322,6 +323,9 @@ namespace openfpm
 		}
 
 	public:
+
+		//! it define that it is a vector
+		typedef int yes_i_am_vector;
 
 		//! Type of the encapsulation memory parameter
 		typedef typename grid_cpu<1,T>::memory_conf memory_conf;

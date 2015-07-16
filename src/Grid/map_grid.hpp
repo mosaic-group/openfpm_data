@@ -21,6 +21,7 @@
 #include "util/meta_copy.hpp"
 #include "Memleak_check.hpp"
 #include "util/for_each_ref.hpp"
+#include "util.hpp"
 #include <utility>
 #ifdef CUDA_GPU
 #include "memory/CudaMemory.cuh"
@@ -350,6 +351,9 @@ private:
 				}
 
 public:
+
+	//! it define that it is a grid
+	typedef int yes_i_am_grid;
 
 	//! Definition of the layout
 	typedef typename memory_traits_lin<typename T::type>::type memory_lin;
@@ -808,9 +812,9 @@ public:
 #ifdef DEBUG
 		// Check that the element exist
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
-			if (dx.get(i) >= g1.size(i))
+			if (dx.get(i) >= (long int)g1.size(i))
 			{
 				std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " out of bound" << "\n";
 			}
@@ -838,9 +842,9 @@ public:
 #ifdef DEBUG
 		// Check that the element exist
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
-			if (dx.get(i) >= g1.size(i))
+			if (dx.get(i) >= (long int)g1.size(i))
 			{
 				std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " out of bound" << "\n";
 			}
@@ -1026,6 +1030,9 @@ class grid_gpu
 	Mem data;
 
 public:
+
+	//! it define that it is a grid
+	typedef int yes_i_am_grid;
 
 	//! Definition of the layout
 	typedef typename memory_traits_inte<typename T::type>::type memory_int;
