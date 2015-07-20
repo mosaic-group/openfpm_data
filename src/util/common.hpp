@@ -132,4 +132,5 @@ template<typename T>
 struct has_noPointers<T, typename Void<decltype( T::noPointers() )>::type> : std::true_type
 {};
 
+
 #endif

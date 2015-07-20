@@ -66,6 +66,28 @@ public:
   Point_test()
   {}
 
+  //! check if two point match
+  bool operator==(const Point_test<float> & p) const
+  {
+	  if (boost::fusion::at_c<0>(data) != boost::fusion::at_c<0>(p.data))	return false;
+	  if (boost::fusion::at_c<1>(data) != boost::fusion::at_c<1>(p.data))	return false;
+	  if (boost::fusion::at_c<2>(data) != boost::fusion::at_c<2>(p.data))	return false;
+	  if (boost::fusion::at_c<3>(data) != boost::fusion::at_c<3>(p.data))	return false;
+
+	  for (size_t i = 0 ; i < 3 ; i++)
+		  if (boost::fusion::at_c<4>(data)[i] != boost::fusion::at_c<4>(p.data)[i])	return false;
+
+	  for (size_t i = 0 ; i < 3 ; i++)
+	  {
+		  for (size_t j = 0 ; j < 3 ; j++)
+		  {
+			  if (boost::fusion::at_c<5>(data)[i][j] != boost::fusion::at_c<5>(p.data)[i][j])	return false;
+		  }
+	  }
+
+	  return true;
+  }
+
   //! constructor from encapc
   template <typename Mem> inline Point_test(const encapc<1,Point_test<T>,Mem> & p)
   {
@@ -136,6 +158,31 @@ public:
    *
    */
   static bool noPointers()	{return true;}
+
+  /*! \brief fill
+   *
+   * Fill the point with data
+   *
+   */
+  void fill()
+  {
+	  boost::fusion::at_c<0>(data) = 1;
+	  boost::fusion::at_c<1>(data) = 2;
+	  boost::fusion::at_c<2>(data) = 3;
+	  boost::fusion::at_c<3>(data) = 4;
+
+	  for (size_t i = 0 ; i < 3 ; i++)
+		  boost::fusion::at_c<4>(data)[i] = 5;
+
+	  for (size_t i = 0 ; i < 3 ; i++)
+	  {
+		  for (size_t j = 0 ; j < 3 ; j++)
+		  {
+			  boost::fusion::at_c<5>(data)[i][j] = 6;
+		  }
+	  }
+  }
+
 };
 
 

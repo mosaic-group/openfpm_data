@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_get_grid_points )
 	BOOST_REQUIRE_EQUAL(gp.getHigh(2),6+padding-1);
 
 	// Get the volume of the box
-	size_t vol = gp.getVolume();
+	size_t vol = gp.getVolumeKey();
 
 	BOOST_REQUIRE_EQUAL(vol,12);
 	}
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_get_grid_points )
 	BOOST_REQUIRE_EQUAL(gp.getHigh(1),3+padding);
 
 	// Get the volume of the box
-	size_t vol = gp.getVolume();
+	size_t vol = gp.getVolumeKey();
 
 	BOOST_REQUIRE_EQUAL(vol,4);
 	}

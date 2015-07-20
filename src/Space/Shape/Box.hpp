@@ -799,17 +799,37 @@ public:
 		return true;
 	}
 
-	/*! \brief Get the volume of the box
+	/*! \brief Get the volume spanned by the Box P1 and P2 interpreted as grid key
 	 *
 	 * \return The volume
 	 *
 	 */
-	T getVolume()
+	inline T getVolumeKey()
 	{
 		T vol = 1.0;
 
 		for (size_t i = 0 ; i < dim ; i++)
 			vol *= (getHigh(i) - getLow(i) + 1.0);
+
+		return vol;
+	}
+
+	/*! \brief Get the volume spanned by the Box as grid_key_dx_iterator_sub
+	 *
+	 * \warning Careful it is not the simple volume calculation there is a +1 on each dimension, consider the case of a subgrid iterator with
+	 *          P1 = {5,7} ; P2  = {5,7}, the sub-grid iterator has one point {5,7}, that mean Volume=1, so
+	 *          the volume formula is (5 - 5 + 1) * (7 - 7 + 1)
+	 *
+	 *
+	 * \return The volume
+	 *
+	 */
+	inline static T getVolumeKey(T (&p1)[dim], T(&p2)[dim])
+	{
+		T vol = 1.0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			vol *= (p2[i] - p1[i] + 1.0);
 
 		return vol;
 	}

@@ -73,6 +73,8 @@ private:
 
 public:
 
+	typedef int yes_i_am_encap;
+
 	typedef T T_type;
 
 	static const int max_prop = T::max_prop;
@@ -173,6 +175,8 @@ class encapg
 
 public:
 
+	typedef int yes_i_am_encap;
+
 	typedef T T_type;
 
 	// constructor require a key and a memory data
@@ -186,5 +190,24 @@ public:
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
 	}
 };
+
+#include "util/common.hpp"
+
+template<typename T, typename Sfinae = void>
+struct is_encap: std::false_type {};
+
+
+/*! \brief is_encap check if the type is an encap type
+ *
+ * ### Example
+ *
+ * \snippet util.hpp Check is_encap
+ *
+ * return true if T is an encap
+ *
+ */
+template<typename T>
+struct is_encap<T, typename Void< typename T::yes_i_am_encap>::type> : std::true_type
+{};
 
 #endif /* ENCAP_HPP_ */

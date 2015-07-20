@@ -5,6 +5,9 @@
  *      Author: Pietro Incardona
  */
 
+#ifndef UTIL_DEBUG_HPP
+#define UTIL_DEBUG_HPP
+
 /*! \brief check that two array match
  *
  * check that two array match
@@ -46,3 +49,5 @@ static std::string demangle(const char* name) {
 
     return (status==0) ? res.get() : name ;
 }
+
+#endif

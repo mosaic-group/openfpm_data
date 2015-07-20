@@ -391,6 +391,37 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 
 		//! [Check is_vector]
 		}
+
+		{
+		//! [Check is_encap]
+
+		struct stub_object
+		{
+			float a;
+			double b;
+		};
+
+		bool val = is_encap< encapc<2,scalar<float>,memory_traits_lin<scalar<float>>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+		val = is_encap< encapc<3,object<boost::fusion::vector<float,double> >,memory_traits_lin<object< boost::fusion::vector<float,double>>>>  >::value;
+		BOOST_REQUIRE_EQUAL( val , true);
+		val = is_encap< encapc<4,Point_test<float>,memory_traits_lin<Point_test<float>>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+
+		val = is_encap< encapg<2,scalar<float>,memory_traits_lin<scalar<float>>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+		val = is_encap< encapg<3,object<boost::fusion::vector<float,double> >,memory_traits_lin<object< boost::fusion::vector<float,double>>>>  >::value;
+		BOOST_REQUIRE_EQUAL( val , true);
+		val = is_encap< encapg<4,Point_test<float>,memory_traits_lin<Point_test<float>>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+
+		val = is_encap< float >::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+		val = is_encap< stub_object > ::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+
+		//! [Check is_vector]
+		}
 	}
 }
 

@@ -89,4 +89,11 @@ struct object_creator
 	typedef typename boost::fusion::result_of::as_vector<typename object_creator_impl<v,boost::mpl::vector<>,prp... >::type>::type type;
 };
 
+//! specialization when no properties are passed
+template<typename v>
+struct object_creator<v>
+{
+	typedef typename boost::fusion::vector<> type;
+};
+
 #endif

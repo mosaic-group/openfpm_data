@@ -1175,7 +1175,7 @@ public:
 	 *
 	 */
 
-	bool isNext()
+	inline bool isNext()
 	{
 #ifdef DEBUG
 		if (initialized == false)
@@ -1196,15 +1196,15 @@ public:
 	/*! \brief Return the actual grid key iterator
 	 *
 	 */
-	grid_key_dx<dim> get()
-			{
+	inline grid_key_dx<dim> get()
+	{
 #ifdef DEBUG
 		if (initialized == false)
 		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
 #endif
 
 		return grid_key_dx_iterator<dim>::get();
-			}
+	}
 
 	/*! \brief Reinitialize the iterator
 	 *
@@ -1241,6 +1241,16 @@ public:
 #endif
 
 		Initialize();
+	}
+
+	/*! \brief Get the volume spanned by this sub-grid iterator
+	 *
+	 * \return the volume
+	 *
+	 */
+	size_t getVolume()
+	{
+		return Box<dim,long int>::getVolumeKey(gk_start.k, gk_stop.k);
 	}
 };
 
