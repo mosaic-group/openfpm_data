@@ -827,7 +827,7 @@ public:
 
 	}
 
-	/*! \brief Reset the counter
+	/*! \brief Reset the iterator (it restart from the beginning)
 	 *
 	 */
 	void reset()
@@ -1251,6 +1251,18 @@ public:
 	size_t getVolume()
 	{
 		return Box<dim,long int>::getVolumeKey(gk_start.k, gk_stop.k);
+	}
+
+
+	/*! \brief Reset the iterator (it restart from the beginning)
+	 *
+	 */
+	void reset()
+	{
+		//! Initialize to 0 the index
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{this->gk.set_d(i,gk_start.get(i));}
 	}
 };
 

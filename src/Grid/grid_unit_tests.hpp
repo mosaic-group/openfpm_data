@@ -562,6 +562,14 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 	BOOST_REQUIRE_EQUAL(count, 14*14*14);
 
 	//! [Sub-grid iterator test usage]
+
+	// reset the iterator and check that it start from gk_start
+	g_it.reset();
+
+	bool val = g_it.get() == start;
+
+	BOOST_REQUIRE_EQUAL(val,true);
+
 	}
 }
 
