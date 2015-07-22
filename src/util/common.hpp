@@ -3,6 +3,7 @@
 
 #include <type_traits>
 #include <random>
+#include "memory/memory.hpp"
 
 namespace std
 {
@@ -14,50 +15,55 @@ namespace std
 	}
 }
 
+
+//! Void structure
+template<typename> struct Void
+{
+	//! define void type
+	typedef void type;
+};
+
+template<typename T, typename Sfinae = void>
+struct has_attributes: std::false_type {};
+
+
 /*! \brief has_attributes check if a type has defined an
  * internal structure with attributes
  *
- * [Example]
- *
- * has_attributes<Test>::value
+ * ### Example
+ * \snippet util.hpp Declaration of struct with attributes and without
+ * \snippet util.hpp Check has_attributes
  *
  * return true if T::attributes::name[0] is a valid expression
  * and produce a defined type
  *
  */
-
-template<typename> struct Void { typedef void type; };
-
-template<typename T, typename Sfinae = void>
-struct has_attributes: std::false_type {};
-
 template<typename T>
 struct has_attributes<T, typename Void<decltype( T::attributes::name[0] )>::type> : std::true_type
 {};
 
+template<typename T, typename Sfinae = void>
+struct has_typedef_type: std::false_type {};
+
 /*! \brief has_typedef_type check if a typedef ... type inside the structure is
  *         defined
  *
- * [Example]
+ * ### Example
  *
- * has_typedef_type<Test>::value
+ * \snippet util.hpp Check has_typedef_type
  *
  * return true if T::type is a valid type
  *
  */
-
-template<typename T, typename Sfinae = void>
-struct has_typedef_type: std::false_type {};
-
 template<typename T>
 struct has_typedef_type<T, typename Void< typename T::type>::type> : std::true_type
 {};
 
 /*! \brief has_data check if a type has defined a member data
  *
- * [Example]
+ * ### Example
  *
- * has_data<Test>::value
+ * \snippet util.hpp Check has_data
  *
  * return true if T::type is a valid type
  *
@@ -71,7 +77,7 @@ struct has_data<T, typename Void<decltype( T::data )>::type> : std::true_type
 {};
 
 
-/*! \brief check id typedef ... type and the member data has the same type
+/*! \brief check if T::type and T.data has the same type
  *
  * \tparam i when different from 0 a check is performed otherwise not, the reason of
  *           this is that the typedef and data could also not exist producing
@@ -80,14 +86,13 @@ struct has_data<T, typename Void<decltype( T::data )>::type> : std::true_type
  *
  * \tparam T
  *
- * [Example]
+ * ### Example
  *
- * is_typedef_and_data_same<has_data<T> && has_typedef<T>,T>::value
+ * \snippet util.hpp Check is_typedef_and_data_same
  *
  * return true if the type of T::data is the same of T::type, false otherwise
  *
  */
-
 template<bool cond, typename T>
 struct is_typedef_and_data_same
 {
@@ -107,59 +112,25 @@ struct is_typedef_and_data_same<false,T>
 	};
 };
 
-/*! \brief this class is a functor for "for_each" algorithm
+
+template<typename T, typename Sfinae = void>
+struct has_noPointers: std::false_type {};
+
+
+/*! \brief has_noPointers check if a type has defined a
+ * method called noPointers
  *
- * This class is a functor for "for_each" algorithm. For each
- * element the operator() is called. Used
- * to calculate the size of the selected elements
+ * ### Example
  *
- * \tparam N number of properties
- * \tparam v boost::fusion::vector
+ * \snippet util.hpp Check no pointers
+ *
+ * return true if T::noPointers() is a valid expression (function pointers)
+ * and produce a defined type
  *
  */
+template<typename T>
+struct has_noPointers<T, typename Void<decltype( T::noPointers() )>::type> : std::true_type
+{};
 
-/*template<unsigned int N, typename v>
-struct el_size
-{
-	//! total_size
-	size_t total_size;
-
-	//! List of properties
-	const size_t (& prp)[N];*/
-
-	/*! \brief constructor
-	 *
-	 * It define the copy parameters.
-	 *
-	 * \param key which element we are modifying
-	 * \param grid_src grid we are updating
-	 * \param obj object we have to set in grid_src
-	 *
-	 */
-/*	el_size(const size_t (& prp)[N])
-	:total_size(0),prp(prp)
-	{};
-
-	//! It call the copy function for each property
-    template<typename T>
-    void operator()(T& t) const
-    {
-    	total_size += boost::fusion::result_of::at< v,boost::mpl::int_<prp[T::value]> >::type;
-    }
-
-    size_t size()
-    {return total_size;}
-};*/
-
-/*template<unsigned int N,typename v> size_t ele_size(const size_t (& prp)[N])
-{
-	el_size<N,v> sz(prp);
-
-	boost::mpl::for_each_ref< boost::mpl::range_c<int,0,N> >(sz);
-
-	return sz.size();
-}*/
-
-/**/
 
 #endif

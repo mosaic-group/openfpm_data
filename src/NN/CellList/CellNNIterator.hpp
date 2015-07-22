@@ -8,7 +8,7 @@
 #ifndef CELLNNITERATOR_FULL_HPP_
 #define CELLNNITERATOR_FULL_HPP_
 
-#include "mathutil.hpp"
+#include "util/mathutil.hpp"
 
 #define FULL openfpm::math::pow(3,dim)
 #define SYM  openfpm::math::pow(3,dim)/2
@@ -17,6 +17,18 @@
 #define NO_CHECK 1
 #define SAFE 2
 
+/*! \brief Iterator for the neighborhood of the cell structures
+ *
+ * In general you never create it directly but you get it from the CellList structures
+ *
+ * It iterate across all the element of the selected cell and the near cells
+ *
+ * \tparam dim dimensionality of the space where the cell live
+ * \tparam Cell cell type on which the iterator is working
+ * \tparam NNc_size neighborhood size
+ * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
+ *
+ */
 template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int impl> class CellNNIterator
 {
 	// Cell list
@@ -43,8 +55,9 @@ public:
 	 *
 	 * Cell NN iterator
 	 *
-	 * \param Cell id
-	 * \param NNc Cell NN id
+	 * \param cell Cell id
+	 * \param NNc Cell neighborhood indexes (relative)
+	 * \param cl Cell structure
 	 *
 	 */
 	CellNNIterator(size_t cell, long int (&NNc)[NNc_size], Cell & cl)
@@ -99,14 +112,15 @@ public:
 
 /*! \brief it iterate through the elements of a cell
  *
+ * In general you do not create this object you get it from the CellList structures
+ *
  * \tparam Cell cell type
  *
  */
-
 template<typename Cell> class CellIterator
 {
 	// Cell list
-	const Cell & cl;
+	Cell & cl;
 
 	// actual element id inside the cell
 	size_t ele_id;
@@ -116,14 +130,13 @@ template<typename Cell> class CellIterator
 
 public:
 
-	/*! \brief
+	/*! \brief Cell iterator
 	 *
-	 * Cell iterator
-	 *
-	 * \param Cell id
+	 * \param cell Cell id
+	 * \param cl Cell on which iterate
 	 *
 	 */
-	CellIterator(const size_t cell, const Cell & cl)
+	CellIterator(const size_t cell, Cell & cl)
 	:cl(cl),ele_id(0),cell(cell)
 	{
 	}
@@ -135,7 +148,7 @@ public:
 	 */
 	bool isNext()
 	{
-		return cl.getNElements() > ele_id;
+		return cl.getNelements(cell) > ele_id;
 	}
 
 	/*! \brief take the next element

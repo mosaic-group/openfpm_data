@@ -7,27 +7,20 @@
  *
  * Usage:
  *
+ * \code{.cpp}
+ *
  * float src[3];
  * float dst[3];
  *
- * meta_copy<T[3]> cp(src,dst);
+ * meta_copy<float[3]> cp(src,dst);
  *
- *
- */
-
-/*! \brief Scalar copy
- *
- * Scalar copy
- *
- * \param T type of element to copy
- *
- * This specialization pattern is chosen in case of scalar
+ * \endcode
  *
  */
 template<typename T>
 struct meta_copy
 {
-	meta_copy(const T & src, T & dst)
+	inline meta_copy(const T & src, T & dst)
 	{
 		dst = src;
 	}
@@ -37,7 +30,7 @@ struct meta_copy
 template<typename T,size_t N1>
 struct meta_copy<T[N1]>
 {
-	meta_copy(const T src[N1], T dst[N1])
+	inline meta_copy(const T src[N1], T dst[N1])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -50,7 +43,7 @@ struct meta_copy<T[N1]>
 template<typename T,size_t N1,size_t N2>
 struct meta_copy<T[N1][N2]>
 {
-	meta_copy(const T src[N1][N2], T dst[N1][N2])
+	inline meta_copy(const T src[N1][N2], T dst[N1][N2])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -66,7 +59,7 @@ struct meta_copy<T[N1][N2]>
 template<typename T,size_t N1,size_t N2,size_t N3>
 struct meta_copy<T[N1][N2][N3]>
 {
-	meta_copy(const T src[N1][N2][N3], T dst[N1][N2][N3])
+	inline meta_copy(const T src[N1][N2][N3], T dst[N1][N2][N3])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -85,7 +78,7 @@ struct meta_copy<T[N1][N2][N3]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4>
 struct meta_copy<T[N1][N2][N3][N4]>
 {
-	meta_copy(const T src[N1][N2][N3][N4], T dst[N1][N2][N3][N4])
+	inline meta_copy(const T src[N1][N2][N3][N4], T dst[N1][N2][N3][N4])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -107,7 +100,7 @@ struct meta_copy<T[N1][N2][N3][N4]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5>
 struct meta_copy<T[N1][N2][N3][N4][N5]>
 {
-	meta_copy(const T src[N1][N2][N3][N4][N5], T dst[N1][N2][N3][N4][N5])
+	inline meta_copy(const T src[N1][N2][N3][N4][N5], T dst[N1][N2][N3][N4][N5])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -132,7 +125,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6>
 struct meta_copy<T[N1][N2][N3][N4][N5][N6]>
 {
-	meta_copy(const T src[N1][N2][N3][N4][N5][N6], T dst[N1][N2][N3][N4][N5][N6])
+	inline meta_copy(const T src[N1][N2][N3][N4][N5][N6], T dst[N1][N2][N3][N4][N5][N6])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -160,7 +153,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7>
 struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7]>
 {
-	meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7], T dst[N1][N2][N3][N4][N5][N6][N7])
+	inline meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7], T dst[N1][N2][N3][N4][N5][N6][N7])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -191,7 +184,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7, size_t N8>
 struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8]>
 {
-	meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7][N8], T dst[N1][N2][N3][N4][N5][N6][N7][N8])
+	inline meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7][N8], T dst[N1][N2][N3][N4][N5][N6][N7][N8])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -225,7 +218,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7, size_t N8, size_t N9>
 struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8][N9]>
 {
-	meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7][N8][N9], T dst[N1][N2][N3][N4][N5][N6][N7][N8][N9])
+	inline meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7][N8][N9], T dst[N1][N2][N3][N4][N5][N6][N7][N8][N9])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -262,7 +255,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8][N9]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7, size_t N8, size_t N9, size_t N10>
 struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10]>
 {
-	meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10], T dst[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10])
+	inline meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10], T dst[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{

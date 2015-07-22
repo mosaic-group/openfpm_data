@@ -1,19 +1,20 @@
 #ifndef MATHUTIL_HPP
 #define MATHUTIL_HPP
 
-/*! \brief calculate the factorial
- *
- * calculate the factorial of a number
- *
- * \param f number
- * \return the factorial
- *
- */
 
 namespace openfpm
 {
 	namespace math
 	{
+
+		/*! \brief calculate the factorial
+		 *
+		 * calculate the factorial of a number
+		 *
+		 * \param f number
+		 * \return the factorial
+		 *
+		 */
 		static size_t factorial(size_t f)
 		{
 			size_t fc = 1;
@@ -41,7 +42,7 @@ namespace openfpm
 
 		/*! \brief Round to the nearest bigger power of 2 number
 		 *
-		 * \param number
+		 * \param n number
 		 *
 		 * \return nearest bigger power of 2 number
 		 *

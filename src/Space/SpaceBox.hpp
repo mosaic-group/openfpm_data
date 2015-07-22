@@ -11,51 +11,21 @@
 
 /** \brief This class represent an N-dimensional box
  *
- * This class represent an N-dimensional box embedded in an N dimensional space
- *
- * \param T type of space ... Real Complex Integer
+ * \param T type of space ... double float int size_t
  * \param N dimensionality of the Box
  *
+ * ### Definition of a spacebox and rescale
+ * \snippet SpaceBox_unit_tests.hpp Definition of a spacebox and rescale
+ * ### Definition of a spaceboxes and intersection between them
+ * \snippet SpaceBox_unit_tests.hpp Definition of a spacebox and intersection between them
+ * ### Create random points inside the SpaceBox
+ * \snippet SpaceBox_unit_tests.hpp Create random points inside the SpaceBox
+ *
  */
-
 template<unsigned int dim, typename T>
 class SpaceBox : public Box<dim,T>
 {
 	public:
-
-	//! layout that interleave the properties
-	typedef typename Box<dim,T>::memory_int memory_int;
-	//! layout with linear properties
-	typedef typename Box<dim,T>::memory_lin memory_lin;
-
-	/*! \brief Check if the point is inside the region
-	 *
-	 * \param p point to check
-	 * \return true if the point is inside the space
-	 *
-	 */
-
-	bool isInside(Point<dim,T> p)
-	{
-		// check if bound
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			// if outside the region return false
-			if (   boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
-			    && boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] < boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
-			{
-				// Out of bound
-
-				return false;
-			}
-
-		}
-
-		// In bound
-
-		return true;
-	}
 
 	/*! \brief Define the box from a box shape
 	 *
@@ -66,7 +36,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	SpaceBox<dim,T> & operator=(const Box<dim,T> & b)
+	inline SpaceBox<dim,T> & operator=(const Box<dim,T> & b)
 	{
 		// for each dimension set high and low
 
@@ -79,6 +49,20 @@ class SpaceBox : public Box<dim,T>
 		return *this;
 	}
 
+	/*! \brief constructor from a Box of different type
+	 *
+	 * \param b box
+	 *
+	 */
+	template <typename S> inline SpaceBox(const Box<dim,S> & b)
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,b.getLow(d));}
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,b.getHigh(d));}
+	}
+
 	/*! \brief constructor from a SpaceBox
 	 *
 	 * constructor from a SpaceBox
@@ -86,16 +70,9 @@ class SpaceBox : public Box<dim,T>
 	 * \param b is the SpaceBox
 	 *
 	 */
-
 	SpaceBox(const SpaceBox<dim,T> & b)
+	:Box<dim,T>(b)
 	{
-		// for each dimension set high and low
-
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setLow(d,b.getLow(d));}
-
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,b.getHigh(d));}
 	}
 
 	/*! \brief constructor from a box
@@ -107,19 +84,13 @@ class SpaceBox : public Box<dim,T>
 	 */
 
 	SpaceBox(const Box<dim,T> & b)
+	:Box<dim,T>(b)
 	{
-		// for each dimension set high and low
-
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setLow(d,b.getLow(d));}
-
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,b.getHigh(d));}
 	}
 
 	/*! \brief Constructor from a Box
 	 *
-	 * \param Box
+	 * \param box Box (Encapsulated)
 	 *
 	 */
 
@@ -136,7 +107,7 @@ class SpaceBox : public Box<dim,T>
 
 	/*! \brief Constructor from a Box
 	 *
-	 * \param Box
+	 * \param box box (Encapsulated)
 	 *
 	 */
 
@@ -241,7 +212,7 @@ class SpaceBox : public Box<dim,T>
 		Point<dim,T> p;
 
 		for (size_t i = 0 ; i < dim ; i++)
-			p.get(i) = rand()/RAND_MAX * (this->getHigh(i) - this->getLow(i)) + this->getLow(i);
+			p.get(i) = ((T)rand())/RAND_MAX * (this->getHigh(i) - this->getLow(i)) + this->getLow(i);
 
 		return p;
 	}
@@ -250,7 +221,7 @@ class SpaceBox : public Box<dim,T>
 	SpaceBox<dim,T>()	{}
 };
 
-#include "memory_c.hpp"
+#include "Grid/Encap.hpp"
 
 /*! \brief It make explicit the inheritance of SpaceBox to Box
  * for encap

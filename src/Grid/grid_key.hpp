@@ -4,67 +4,63 @@
 #include "Grid/comb.hpp"
 #include "Grid/grid_key_expression.hpp"
 
-/*! \brief In this header file the main grid accessor are defined
- *
- * Given a grid a in general a set of indexes define one element in the grid
- * In this header file several classes that encapsulate this information are
- * defined
- *
- */
-
 /*! \brief grid_key_dx is the key to access any element in the grid
  *
- * grid_key_dx is the key to access any element in the grid
+ * Given a grid in general a set of indexes define one element in the grid
+ * For example 2 indexes identify one element on a two dimensional grid,
+ * 3 indexes on a 3 dimensional grid ...
  *
- * \param dim dimensionality of the grid
+ * \tparam dim dimensionality of the grid
  *
  */
-
 template<unsigned int dim>
 class grid_key_dx
 {
 public:
 
 	// Constructor from expression
-	template<typename exp1> grid_key_dx(const grid_key_dx_expression<exp1> & exp)
+	template<typename exp1> inline grid_key_dx(const grid_key_dx_expression<dim,exp1> & exp)
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = exp.value(i);
 	}
 
 	//! Constructor
-	grid_key_dx()
+	inline grid_key_dx()
 	{}
 
 	//! Constructor from an other key
-	grid_key_dx(const grid_key_dx<dim> & key)
+	inline grid_key_dx(const grid_key_dx<dim> & key)
 	:grid_key_dx(key.k)
 	{
 	}
 
 	//! Constructor from buffer reference
-	grid_key_dx(const size_t (&k)[dim])
+	inline grid_key_dx(const size_t (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
 	}
 
 	//! Constructor from buffer reference
-	grid_key_dx(const long int (&k)[dim])
+	inline grid_key_dx(const long int (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
 	}
 
 	//! Construct a grid key from a list of numbers
-	template<typename ...T> grid_key_dx(const size_t v,const T...t)
+	template<typename ...T> inline grid_key_dx(const size_t v,const T...t)
 	{
+#ifdef DEBUG
+		if (sizeof...(t) != dim -1)
+			std::cerr << "Error grid_key: " << __FILE__ << " " << __LINE__ << "creating a key of dimension " << dim << " require " << dim << " numbers " << sizeof...(t) + 1 << " provided" << "\n";
+#endif
 		k[dim-1] = v;
 		invert_assign(t...);
 	}
 
 	/* \brief Set to zero the key
-	 *
 	 *
 	 */
 	inline void zero()
@@ -74,7 +70,6 @@ public:
 	}
 
 	/* \brief Set to invalid the key
-	 *
 	 *
 	 */
 	inline void invalid()
@@ -90,10 +85,37 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> operator+(comb<dim> & cmb) const
+	inline grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> operator+(const comb<dim> & cmb) const
 	{
 		grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> exp_sum(*this,cmb);
-//		grid_key_dx_expression<dim,grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>>> exp(exp_sum);
+
+		return exp_sum;
+	}
+
+	/* \brief sum an a combination to the grid_key
+	 *
+	 * \param comb combination (or relative movement)
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
+	inline grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx<dim>> operator-(const grid_key_dx<dim> & cmb) const
+	{
+		grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx<dim>> exp_sum(*this,cmb);
+
+		return exp_sum;
+	}
+
+	/* \brief sum this key to another grid expression
+	 *
+	 * \param cmb expression
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
+	template <typename T> inline grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx_expression<dim,T>> operator-(const grid_key_dx_expression<dim,T> & cmb) const
+	{
+		grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx_expression<dim,T>> exp_sum(*this,cmb);
 
 		return exp_sum;
 	}
@@ -107,7 +129,7 @@ public:
 	 */
 
 	template<unsigned int dim_t> bool operator==(grid_key_dx<dim_t> & key_t)
-		  {
+	{
 		if (dim != dim_t)
 		{
 			return false;
@@ -125,11 +147,15 @@ public:
 
 		// identical key
 		return true;
-		  }
+	}
 
 	//! set the grid key from a list of numbers
 	template<typename a, typename ...T>void set(a v, T...t)
 	{
+#ifdef DEBUG
+		if (sizeof...(t) != dim -1)
+			std::cerr << "Error grid_key: " << __FILE__ << " " << __LINE__ << "setting a key of dimension " << dim << " require " << dim << " numbers " << sizeof...(t) + 1 << " provided" << "\n";
+#endif
 		k[dim-1] = v;
 		invert_assign(t...);
 	}
@@ -243,8 +269,6 @@ public:
 
 
 /*! \brief grid_key is the key to access any element in the grid
- *
- * grid_key is the key to access any element in the grid
  *
  * \param p dimensionality of the grid
  *

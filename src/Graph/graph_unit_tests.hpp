@@ -8,10 +8,15 @@
 #ifndef GRAPH_UNIT_TEST_HPP_
 #define GRAPH_UNIT_TEST_HPP_
 
+#include "config.h"
 #include "map_graph.hpp"
 #include "Point_test.hpp"
 
+#ifdef TEST_COVERAGE_MODE
+#define GS_SIZE 8
+#else
 #define GS_SIZE 128
+#endif
 
 BOOST_AUTO_TEST_SUITE( graph_test )
 
@@ -19,8 +24,10 @@ BOOST_AUTO_TEST_CASE( graph_use)
 {
 	std::cout << "Graph unit test start" << "\n";
 
+	//! [Define vertex and edge of the graph]
 	 typedef Point_test<float> V;
 	 typedef Point_test<float> E;
+	 //! [Define vertex and edge of the graph]
 
 	 // Point
 	 Point_test<float> p;
@@ -43,14 +50,12 @@ BOOST_AUTO_TEST_CASE( graph_use)
 	 p.get<V::t>()[2][1] = 3.0;
 	 p.get<V::t>()[2][2] = 11.0;
 
-	//! define a test graph where the vertex and edge store several scalar vectorial and tensorial quantities
+	 //! [Create a Cartesian graph]
 
+	//! define a test graph where the vertex and edge store several scalar vectorial and tensorial quantities
 	Graph_CSR<V,E> g;
 
-	//! Create a point
-
-	//! try to construct a 2D dimensional cartesian graph
-
+	//! construct a 2D dimensional Cartesian graph
 
 	// first create the vertex
 
@@ -91,6 +96,8 @@ BOOST_AUTO_TEST_CASE( graph_use)
 		}
 	}
 
+	//! [Create a Cartesian graph]
+
 	// Test if duplicate work
 
 	Graph_CSR<V,E> g_dup = g.duplicate();
@@ -120,6 +127,7 @@ BOOST_AUTO_TEST_CASE( graph_use)
 
 	// Test the no edge case
 
+	//! [Create a tree graph with no edge properties]
 	Graph_CSR<V> g_no_edge;
 
 	// Create a tree
@@ -163,6 +171,8 @@ BOOST_AUTO_TEST_CASE( graph_use)
 	g_no_edge.addEdge(6,13);
 	g_no_edge.addVertex(p);
 	g_no_edge.addEdge(6,14);
+
+	//! [Create a tree graph with no edge properties]
 
 	// Check that each vertex has 2 child
 

@@ -19,11 +19,11 @@
  *
  */
 
-template<unsigned int p,typename T>
+template<unsigned int p,typename mem>
 struct type_cpu_prop
 {
 	//! return a boost::fusion::vector<memory_c<....>....>
-	typedef typename T::memory_lin::vtype vtype;
+	typedef typename mem::vtype vtype;
 	//! return a memory_c<...>
 	typedef typename boost::fusion::result_of::at< vtype,boost::mpl::int_<p> >::type type;
 };
@@ -37,11 +37,11 @@ struct type_cpu_prop
  *
  */
 
-template<unsigned int p,typename T>
+template<unsigned int p,typename Mem>
 struct type_gpu_prop
 {
 	//! return a boost::fusion::vector<memory_c<....>....>
-	typedef typename T::memory_int vtype;
+	typedef Mem vtype;
 	//! return a memory_c<...>
 	typedef typename boost::fusion::result_of::at< vtype,boost::mpl::int_<p> >::type rtype;
 	//! remove the reference
@@ -64,13 +64,20 @@ struct type_gpu_prop
 template<unsigned int dim,typename T,typename Mem>
 class encapc
 {
+public:
 	typedef typename T::type type;
+
+private:
 
 	type & data;
 
 public:
 
+	typedef int yes_i_am_encap;
+
 	typedef T T_type;
+
+	static const int max_prop = T::max_prop;
 
 	// constructor require a key and a memory data
 	encapc(type & data)
@@ -92,10 +99,10 @@ public:
 	 * \return the reference
 	 *
 	 */
-	template <unsigned int p> typename type_cpu_prop<p,T>::type get()
+	template <unsigned int p> typename type_cpu_prop<p,Mem>::type get()
 	{
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
+		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,Mem>::type));
 #endif
 		return boost::fusion::at_c<p>(data);
 	}
@@ -105,16 +112,16 @@ public:
 	 * \return the reference
 	 *
 	 */
-	template <unsigned int p> const typename type_cpu_prop<p,T>::type get() const
+	template <unsigned int p> const typename type_cpu_prop<p,Mem>::type get() const
 	{
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
+		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,Mem>::type));
 #endif
 		return boost::fusion::at_c<p>(data);
 	}
 
 	// access the data
-	template <unsigned int p> void set(typename type_cpu_prop<p,T>::type & ele)
+	template <unsigned int p> void set(typename type_cpu_prop<p,Mem>::type & ele)
 	{
 #ifdef MEMLEAK_CHECK
 			check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
@@ -168,6 +175,8 @@ class encapg
 
 public:
 
+	typedef int yes_i_am_encap;
+
 	typedef T T_type;
 
 	// constructor require a key and a memory data
@@ -176,10 +185,29 @@ public:
 	{}
 
 	// access the data
-	template <unsigned int p> typename type_gpu_prop<p,T>::type::reference get()
+	template <unsigned int p> typename type_gpu_prop<p,Mem>::type::reference get()
 	{
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
 	}
 };
+
+#include "util/common.hpp"
+
+template<typename T, typename Sfinae = void>
+struct is_encap: std::false_type {};
+
+
+/*! \brief is_encap check if the type is an encap type
+ *
+ * ### Example
+ *
+ * \snippet util.hpp Check is_encap
+ *
+ * return true if T is an encap
+ *
+ */
+template<typename T>
+struct is_encap<T, typename Void< typename T::yes_i_am_encap>::type> : std::true_type
+{};
 
 #endif /* ENCAP_HPP_ */

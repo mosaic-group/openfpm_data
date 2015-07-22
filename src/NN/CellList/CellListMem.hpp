@@ -30,8 +30,8 @@
  * \tparam T type of the space float, double, complex
  *
  */
-template<unsigned int dim, typename T, typename base>
-class CellList<dim,T,MEMORY,base> : public CellDecomposer_sm<dim,T>
+template<unsigned int dim, typename T, typename transform, typename base>
+class CellList<dim,T,MEMORY,transform,base> : public CellDecomposer_sm<dim,T,transform>
 {
 	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
 	//
@@ -189,7 +189,7 @@ public:
 	/*! \brief Cell list
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list
+	 * \param org of the Cell list
 	 * \param div grid size on each dimension
 	 *
 	 */

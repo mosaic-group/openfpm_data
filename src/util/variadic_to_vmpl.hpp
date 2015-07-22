@@ -14,8 +14,8 @@
  *      Author: Pietro Incardona
  */
 
-#ifndef TO_VARIADIC_HPP
-#define TO_VARIADIC_HPP
+#ifndef V_TRANSFORM_HPP
+#define V_TRANSFORM_HPP
 
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/reverse.hpp>
@@ -34,7 +34,7 @@ template<typename F,typename L>
 struct exit_impl : boost::mpl::equal_to<typename boost::mpl::distance<F,L>::type,boost::mpl::int_<0>>
 {};
 
-/*! \brief Recursive specialization of to_variadic
+/*! \brief Recursive specialization of v_transform
  *
  * \param F suppose to be the original end of boost::mpl::vector
  * \param L suppose to be the actual position of the boost::mpl::vector
@@ -42,18 +42,18 @@ struct exit_impl : boost::mpl::equal_to<typename boost::mpl::distance<F,L>::type
  *
  */
 template<template<typename> class H, typename F,typename L, bool exit,typename ...Args>
-struct to_variadic_impl
+struct v_transform_impl
 {
    typedef typename boost::mpl::deref<F>::type front_;
    typedef typename boost::mpl::next<F>::type next_;
    typedef typename exit_impl<next_,L>::type exit_;
-   typedef typename to_variadic_impl<H,next_,L,exit_::value,typename H<front_>::type,Args...>::type type;
+   typedef typename v_transform_impl<H,next_,L,exit_::value,typename H<front_>::type,Args...>::type type;
 };
 
 
 //! Terminator of to_variadic
 template<template<typename> class H,typename F,typename L,typename ...Args>
-struct to_variadic_impl<H,F,L,true,Args...>
+struct v_transform_impl<H,F,L,true,Args...>
 {
    typedef boost::fusion::vector<Args...> type;
 };
@@ -68,7 +68,7 @@ struct seq_traits_impl
 
 /*!
 *
-* It convert from a boost::fusion::vector into another boost::fusion::vector
+* It transform a boost::fusion::vector to another boost::fusion::vector
 * applying a meta-function F on each element
 *
 * usage:
@@ -83,7 +83,7 @@ struct seq_traits_impl
 */
 
 template<template<typename> class H,typename L>
-struct to_variadic
+struct v_transform
 {
 	//! reverse the sequence
 	typedef typename boost::mpl::reverse<L>::type reversed_;
@@ -98,7 +98,22 @@ struct to_variadic
 	typedef typename exit_impl<first,last>::type exit_;
 
 	//! generate the boost::fusion::vector apply H on each term
-	typedef typename to_variadic_impl<H,first,last,exit_::value >::type type;
+	typedef typename v_transform_impl<H,first,last,exit_::value >::type type;
+};
+
+
+template <int a, int... id>
+struct to_boost_vmpl_impl
+{
+	//! push in front the next number
+	typedef typename boost::mpl::push_front<typename to_boost_vmpl_impl<id...>::type,boost::mpl::int_<a>>::type type;
+};
+
+//! terminator for to_boost_mpl with last parameter
+template <int a>
+struct to_boost_vmpl_impl<a>
+{
+	typedef boost::mpl::vector<boost::mpl::int_<a>> type;
 };
 
 /*!
@@ -113,31 +128,15 @@ struct to_variadic
 *
 *
 */
-
-template <int a, int... id>
-struct to_boost_mpl_impl
-{
-	//! push in front the next number
-	typedef typename boost::mpl::push_front<typename to_boost_mpl_impl<id...>::type,boost::mpl::int_<a>>::type type;
-};
-
-//! terminator for to_boost_mpl with last parameter
-template <int a>
-struct to_boost_mpl_impl<a>
-{
-	typedef boost::mpl::vector<boost::mpl::int_<a>> type;
-};
-
-//! terminator for to_boost_mpl with last parameter
 template <int... id>
-struct to_boost_mpl
+struct to_boost_vmpl
 {
-	typedef typename to_boost_mpl_impl<id...>::type type;
+	typedef typename to_boost_vmpl_impl<id...>::type type;
 };
 
 //! terminator for to_boost_mpl with last parameter
 template <>
-struct to_boost_mpl<>
+struct to_boost_vmpl<>
 {
 	typedef typename boost::mpl::vector<>::type type;
 };

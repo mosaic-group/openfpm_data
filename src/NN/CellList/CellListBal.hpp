@@ -1,3 +1,4 @@
+
 /*
  * CellListBal.hpp
  *
@@ -11,7 +12,7 @@
 
 #include "CellDecomposer.hpp"
 #include "Space/SpaceBox.hpp"
-#include "mathutil.hpp"
+#include "util/mathutil.hpp"
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
 

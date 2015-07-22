@@ -9,7 +9,7 @@
 #define T_TO_MEMORY_C_HPP_
 
 #include <boost/mpl/int.hpp>
-#include <memory_c.hpp>
+#include <memory_ly/memory_c.hpp>
 
 /*! \brief t_to_memory_c is a metafunction that given T it convert it into
  *

@@ -25,6 +25,26 @@ AC_PROG_CXX
 
 AC_CANONICAL_HOST
 
+###### Check for test coverage
+
+AC_MSG_CHECKING(whether to build with test coverage)
+test_cov=no
+AC_ARG_ENABLE(test-coverage,
+	AC_HELP_STRING(
+	    [--enable-test-coverage],
+	    [enable test coverage]
+	),
+  	test_cov="$enableval"
+)
+
+
+
+AC_MSG_RESULT($test_cov)
+if test x"$test_cov" = x"yes"; then
+	AC_DEFINE([TEST_COVERAGE_MODE],[],[Test coverage mode])
+	CXXFLAGS="$CXXFLAGS  -fprofile-arcs -ftest-coverage "
+fi
+
 ###### Check for debug compilation
 
 AC_MSG_CHECKING(whether to build with debug information)
@@ -134,6 +154,11 @@ if [ test x"$memcheck" = x"yes" ]; then
   echo "*    memcheck: yes                *"
 else
   echo "*    memcheck: no                 *"
+fi
+if [ test x"$test_cov" = x"yes" ]; then
+  echo "*    test coverage: yes           *"
+else
+  echo "*    test coverage: no            *"
 fi
 if [ test x"$debuger" = x"yes" ]; then
   echo "*    debug: yes                   *"

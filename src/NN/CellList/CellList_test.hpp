@@ -19,25 +19,37 @@
  */
 template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 {
+	//! [Declare a cell list]
 	//Space where is living the Cell list
 	SpaceBox<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 
 	// Subdivisions
 	size_t div[dim] = {16,16,16};
 
-	// grid info
-	grid_sm<dim,void> g_info(div);
-
 	// Origin
 	Point<dim,T> org({0.0,0.0,0.0});
 
 	// id Cell list
 	CellS cl2(box,div,org);
+	//! [Declare a cell list]
+
+	// grid info
+	grid_sm<dim,void> g_info(div);
 
 	// Test force reallocation in case of Cell list fast
-	for (int i = 0 ; i < 32 ; i++)
-		cl2.add(org,0);
-	BOOST_REQUIRE_EQUAL(cl2.getNelements(cl2.getCell(org)),32);
+	for (int i = 0 ; i < CELL_REALLOC * 3 ; i++)
+	{
+		cl2.add(org,i);
+	}
+
+	// Check the elements
+	BOOST_REQUIRE_EQUAL(cl2.getNelements(cl2.getCell(org)),CELL_REALLOC * 3);
+	for (int i = 0 ; i < CELL_REALLOC * 3 ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(cl2.get(cl2.getCell(org),i),i);
+	}
+
+	//! [Usage of cell list]
 
 	// id Cell list
 	CellS cl1(box,div,org);
@@ -82,6 +94,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 		++g_it;
 	}
 
+	//! [Usage of cell list]
+
 	// check the cell are correctly filled
 
 	// reset iterator
@@ -106,7 +120,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	// reset itarator
 	g_it.reset();
 
-	// remove one particle from each cell
+	//! [remove one particle from each cell]
 
 	while (g_it.isNext())
 	{
@@ -121,6 +135,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 		cl1.remove(cell,0);
 		++g_it;
 	}
+
+	//! [remove one particle from each cell]
 
 	// Check we have 1 object per cell
 	g_it.reset();
@@ -140,7 +156,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	}
 
 
-	// Check the neighborhood iterator on the internal grid (They do not wotk on external grid)
+	//! [Usage of the neighborhood iterator]
 
 	// Check we have 1 object per cell
 
@@ -171,24 +187,28 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 		BOOST_REQUIRE_EQUAL(total,openfpm::math::pow(3,dim));
 		++g_it_s;
 	}
+
+	//! [Usage of the neighborhood iterator]
 }
 
 BOOST_AUTO_TEST_SUITE( CellList_test )
 
-BOOST_AUTO_TEST_CASE( CellList_use)
+BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 {
+	//! [Cell decomposer use without shift]
+	//Space where is living the Cell list
+	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Point<3,double> p({0.5,0.5,0.5});
+
 	std::cout << "Test cell list" << "\n";
 
 	Test_cell_s<3,double,CellList<3,double,FAST>>();
-	Test_cell_s<3,double,CellList<3,double,BALANCED>>();
-	Test_cell_s<3,double,CellList<3,double,MEMORY>>();
+//	Test_cell_s<3,double,CellList<3,double,BALANCED>>();
+//	Test_cell_s<3,double,CellList<3,double,MEMORY>>();
 
 	std::cout << "End cell list" << "\n";
 
-	//Space where is living the Cell list
-/*	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-
-	// Subdivisions
+	// Number of cell on each dimension
 	size_t div[3] = {16,16,16};
 
 	// grid info
@@ -197,141 +217,133 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 	// Origin
 	Point<3,double> org({0.0,0.0,0.0});
 
-	// id Cell list
-	CellList<3,double> cl1(box,div,org);
-
-	// Create a grid iterator
-	grid_key_dx_iterator<3> g_it(g_info);
-
-	// Iterate through each element
-	// Add 1 element for each cell
-
-	// Usefull definition of points
-	Point<3,double> end = box.getP2();
-	Point<3,double> middle = end / div / 2.0;
-	Point<3,double> spacing = end / div;
-
-	Point<3,double> offset[3] = {middle,middle,middle};
-
-	// Create offset shift vectors
-	offset[0].get(0) += (1.0 / div[0]) / 8.0;
-	offset[1].get(1) += (1.0 / div[1]) / 8.0;
-	offset[2].get(2) += (1.0 / div[2]) / 8.0;
-
-	size_t id = 0;
-
-	while (g_it.isNext())
+	// Test Cell decomposer
 	{
-		// Add 2 particles on each cell
-
-		Point<3,double> key = g_it.get();
-		key = key * spacing + offset[0];
-
-		cl1.add(key,id);
-		++id;
-
-		key = g_it.get();
-		key = key * spacing + offset[1];
-
-		cl1.add(key,id);
-		++id;
-
-		++g_it;
+	CellDecomposer_sm<3,double> cd(box,div,0);
+	size_t cell = cd.getCell(p);
+	BOOST_REQUIRE_EQUAL(cell,8*16*16 + 8*16 + 8);
+	auto key = cd.getCellGrid(p);
+	BOOST_REQUIRE_EQUAL(key.get(0),8);
+	BOOST_REQUIRE_EQUAL(key.get(1),8);
+	BOOST_REQUIRE_EQUAL(key.get(2),8);
 	}
 
-	// check the cell are correctly filled
+	//! [Cell decomposer use without shift]
 
-	// reset iterator
-	g_it.reset();
-
-	while (g_it.isNext())
+	//! [Test Cell decomposer with padding]
 	{
-		// Add 2 particles on each cell
-
-		Point<3,double> key = g_it.get();
-		key = key * spacing + offset[2];
-
-		size_t cell = cl1.getCell(key);
-		size_t n_ele = cl1.getNelements(cell);
-
-		BOOST_REQUIRE_EQUAL(n_ele,2);
-		BOOST_REQUIRE_EQUAL(cl1.get(cell,1) - cl1.get(cell,0),1);
-
-		++g_it;
+	CellDecomposer_sm<3,double> cd(box,div,1);
+	size_t cell = cd.getCell(p);
+	BOOST_REQUIRE_EQUAL(cell,9*18*18 + 9*18 + 9);
+	auto key = cd.getCellGrid(p);
+	BOOST_REQUIRE_EQUAL(key.get(0),9);
+	BOOST_REQUIRE_EQUAL(key.get(1),9);
+	BOOST_REQUIRE_EQUAL(key.get(2),9);
 	}
 
-	// reset itarator
-	g_it.reset();
+	//! [Test Cell decomposer with padding]
 
-	// remove one particle from each cell
-
-	while (g_it.isNext())
+	//! [Test Cell decomposer with shift]
 	{
-		// remove 1 particle on each cell
-
-		Point<3,double> key = g_it.get();
-		key = key * spacing + offset[0];
-
-		auto cell = cl1.getCell(key);
-
-		// Remove the first particle in the cell
-		cl1.remove(cell,0);
-		++g_it;
+	Point<3,double> sht({1.0,2.0,3.0});
+	CellDecomposer_sm< 3,double,shift<3,double> > cd(box,div,sht,1);
+	size_t cell = cd.getCell(p + sht);
+	BOOST_REQUIRE_EQUAL(cell,9*18*18 + 9*18 + 9);
+	auto key = cd.getCellGrid(p + sht);
+	BOOST_REQUIRE_EQUAL(key.get(0),9);
+	BOOST_REQUIRE_EQUAL(key.get(1),9);
+	BOOST_REQUIRE_EQUAL(key.get(2),9);
 	}
 
-	// Check we have 1 object per cell
-	g_it.reset();
+	//! [Test Cell decomposer with shift]
+}
 
-	while (g_it.isNext())
-	{
-		// remove 1 particle on each cell
+BOOST_AUTO_TEST_CASE( CellList_use)
+{
+	std::cout << "Test cell list" << "\n";
 
-		Point<3,double> key = g_it.get();
-		key = key * spacing + offset[0];
+	Test_cell_s<3,double,CellList<3,double,FAST>>();
+//	Test_cell_s<3,double,CellList<3,double,BALANCED>>();
+//	Test_cell_s<3,double,CellList<3,double,MEMORY>>();
 
-		auto cell = cl1.getCell(key);
-		size_t n_ele = cl1.getNelements(cell);
-
-		BOOST_REQUIRE_EQUAL(n_ele,1);
-		++g_it;
-	}
-
-
-	// Check the neighborhood iterator on the internal grid (They do not wotk on external grid)
-
-	// Check we have 1 object per cell
-
-	// Create a grid iterator
-	grid_key_dx<3> p1(1,1,1);
-	grid_key_dx<3> p2(div[0]-1,div[1]-1,div[2]-1);
-	grid_key_dx_iterator_sub<3> g_it_s(g_info,p1,p2);
-
-	while (g_it_s.isNext())
-	{
-		// remove 1 particle on each cell
-
-		Point<3,double> key = g_it_s.get();
-		key = key * spacing + offset[0];
-
-		auto NN = cl1.template getNNIterator<NO_CHECK>(cl1.getCell(key));
-		size_t total = 0;
-
-		while(NN.isNext())
-		{
-			size_t id = NN.get();
-
-			// total
-
-			total++;
-
-			++NN;
-		}
-
-		BOOST_REQUIRE_EQUAL(total,openfpm::math::pow(3,3));
-		++g_it;
-	}*/
+	std::cout << "End cell list" << "\n";
 
 	// Test the cell list
+}
+
+BOOST_AUTO_TEST_CASE( CellDecomposer_get_grid_points )
+{
+	{
+	// Cell decomposer
+	CellDecomposer_sm<3,float> cd;
+
+	// Box
+	Box<3,float> box({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	// Divisions
+	size_t div[] = {10,10,10};
+
+	// padding
+	size_t padding = 1;
+
+	// Set the dimensions of the decomposer
+	cd.setDimensions(box,div,padding);
+
+	Box<3,float> box_small({0.2,0.3,0.4},{0.5,0.5,0.6});
+
+	// Get the grid points box
+	Box<3,size_t> gp = cd.getGridPoints(box_small);
+
+	BOOST_REQUIRE_EQUAL(gp.getLow(0),2+padding);
+	BOOST_REQUIRE_EQUAL(gp.getLow(1),3+padding);
+	BOOST_REQUIRE_EQUAL(gp.getLow(2),4+padding);
+
+	BOOST_REQUIRE_EQUAL(gp.getHigh(0),5+padding-1);
+	BOOST_REQUIRE_EQUAL(gp.getHigh(1),5+padding-1);
+	BOOST_REQUIRE_EQUAL(gp.getHigh(2),6+padding-1);
+
+	// Get the volume of the box
+	size_t vol = gp.getVolumeKey();
+
+	BOOST_REQUIRE_EQUAL(vol,12);
+	}
+
+	//////////////////////////
+	// 2D test
+	//////////////////////////
+
+	{
+	// Cell decomposer
+	CellDecomposer_sm<2,float> cd;
+
+	// Box
+	Box<2,float> box({0.0,0.0},{1.0,1.0});
+
+	// Divisions
+	size_t div[] = {5,5};
+
+	// padding
+	size_t padding = 1;
+
+	// Set the dimensions of the decomposer
+	cd.setDimensions(box,div,padding);
+
+	Box<2,float> box_small({0.4,0.4},{0.8,0.8});
+
+	// Get the grid points box
+	Box<2,size_t> gp = cd.getGridPoints(box_small);
+
+	BOOST_REQUIRE_EQUAL(gp.getLow(0),2+padding);
+	BOOST_REQUIRE_EQUAL(gp.getLow(1),2+padding);
+
+	BOOST_REQUIRE_EQUAL(gp.getHigh(0),3+padding);
+	BOOST_REQUIRE_EQUAL(gp.getHigh(1),3+padding);
+
+	// Get the volume of the box
+	size_t vol = gp.getVolumeKey();
+
+	BOOST_REQUIRE_EQUAL(vol,4);
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

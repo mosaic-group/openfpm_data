@@ -2,7 +2,7 @@
 #define HYPERCUBE_UNIT_TEST_HPP
 
 #include "Space/Shape/HyperCube.hpp"
-#include "util.hpp"
+#include "util/util_debug.hpp"
 
 /*! \brief Check if the linearization is correct
  *
@@ -44,8 +44,10 @@ template<unsigned int dim> bool isDinstict(std::vector<comb<dim>> combs)
 
 /*! \brief isSubdecomposition check if combs are elements that exist in c as sub-elements
  *
+ * Check if combs are lower dimensional elements of c
+ *
  * \param combs elements to check
- * \param element that must contain all the combs
+ * \param c element that must contain all the combs
  *
  */
 
@@ -82,23 +84,17 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 
 	size_t ele[8];
 
-	// Point
-//	ele[0] = HyperCube<0>::getNumberOfElements_R(0);
+	//! [Get vertex and edge on a line]
 
-	// Get combination for each dimensions
-//	std::vector<comb<0>> v_c0 = HyperCube<0>::getCombinations_R(0);
-
-	// Check
-//	BOOST_REQUIRE_EQUAL(ele[0],1);
-
-	// Line
-	// Number of vertex
+	// Get the number of vertex (elements of dimension 0) of a line (dimension 1)
 	ele[0] = HyperCube<1>::getNumberOfElements_R(0);
-	// Number of edge
+	// Get the number of edge (elements of dimension 1) of a line (dimension 1)
 	ele[1] = HyperCube<1>::getNumberOfElements_R(1);
 
 	// Get combination for each dimensions
 	std::vector<comb<1>> v_c1_0 = HyperCube<1>::getCombinations_R(0);
+
+	//! [Get vertex and edge on a line]
 
 	// Check
 	BOOST_REQUIRE_EQUAL(ele[0],2);
@@ -113,7 +109,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 
 	boost_check_array(&c[0],&v_c1_0[0],2);
 
-	// Square
+	//! [Get vertex edge and surfaces of a square]
 	// Number of vertex
 	ele[0] = HyperCube<2>::getNumberOfElements_R(0);
 	// Number of edge
@@ -121,9 +117,12 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	// Number of faces
 	ele[2] = HyperCube<2>::getNumberOfElements_R(2);
 
-	// Get combination for each dimensions
+	// Get combination for vertex (1,1) (-1,1) (-1,1) (-1,-1)
 	std::vector<comb<2>> v_c2_0 = HyperCube<2>::getCombinations_R(0);
+	// Get combination for edges  (1,0) (-1,0) (0,1) (0,-1)
 	std::vector<comb<2>> v_c2_1 = HyperCube<2>::getCombinations_R(1);
+
+	//! [Get vertex edge and surfaces of a square]
 
 	// Check
 	BOOST_REQUIRE_EQUAL(ele[0],4);
@@ -132,15 +131,15 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 
 	// Check combination
 
-	comb<2> c2_0[] = {{{1,1}},{{1,-1}},{{-1,1}},{{-1,-1}}};
-	comb<2> c2_1[] = {{{1,0}},{{-1,0}},{{0,1}},{{0,-1}}};
+	comb<2> c2_0[] = {{1,1},{-1,1},{1,-1},{-1,-1}};
+	comb<2> c2_1[] = {{0,1},{0,-1},{1,0},{-1,0}};
 	check_lin(v_c2_0);
 	check_lin(v_c2_1);
 
 	boost_check_array(&c2_0[0],&v_c2_0[0],4);
 	boost_check_array(&c2_1[0],&v_c2_1[0],4);
 
-	// Cube
+	//! [Get vertex edge surfaces and volumes of a cube]
 	// Number of vertex
 	ele[0] = HyperCube<3>::getNumberOfElements_R(0);
 	// Number of edge
@@ -150,10 +149,14 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	// Number of Cubes
 	ele[3] = HyperCube<3>::getNumberOfElements_R(3);
 
-	// Get combination for each dimensions
+	// Get combination for vertex
 	std::vector<comb<3>> v_c3_0 = HyperCube<3>::getCombinations_R(0);
+	// Get combinations for edge
 	std::vector<comb<3>> v_c3_1 = HyperCube<3>::getCombinations_R(1);
+	// Get combinations for surfaces
 	std::vector<comb<3>> v_c3_2 = HyperCube<3>::getCombinations_R(2);
+
+	//! [Get vertex edge surfaces and volumes of a cube]
 
 	// Check
 	BOOST_REQUIRE_EQUAL(ele[0],8);
@@ -163,9 +166,9 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 
 	// Check combination
 
-	comb<3> c3_0[] = {{{1,1,1}},{{1,1,-1}},{{1,-1,1}},{{1,-1,-1}},{{-1,1,1}},{{-1,1,-1}},{{-1,-1,1}},{{-1,-1,-1}}};
-	comb<3> c3_1[] = {{{1,1,0}},{{1,-1,0}},{{-1,1,0}},{{-1,-1,0}},{{1,0,1}},{{1,0,-1}},{{-1,0,1}},{{-1,0,-1}},{{0,1,1}},{{0,1,-1}},{{0,-1,1}},{{0,-1,-1}}};
-	comb<3> c3_2[] = {{{1,0,0}},{{-1,0,0}},{{0,1,0}},{{0,-1,0}},{{0,0,1}},{{0,0,-1}}};
+	comb<3> c3_0[] = {{1,1,1},{-1,1,1},{1,-1,1},{-1,-1,1},{1,1,-1},{-1,1,-1},{1,-1,-1},{-1,-1,-1}};
+	comb<3> c3_1[] = {{0,1,1},{0,-1,1},{0,1,-1},{0,-1,-1},{1,0,1},{-1,0,1},{1,0,-1},{-1,0,-1},{1,1,0},{-1,1,0},{1,-1,0},{-1,-1,0}};
+	comb<3> c3_2[] = {{{0,0,1}},{{0,0,-1}},{{0,1,0}},{{0,-1,0}},{{1,0,0}},{{-1,0,0}}};
 	check_lin(v_c3_0);
 	check_lin(v_c3_1);
 	check_lin(v_c3_2);
@@ -240,57 +243,76 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 
 	// Test SubHypercube 2D and 3D
 
+	//! [Get the vertices of a square]
 	std::vector<comb<2>> sc2_0 = HyperCube<2>::getCombinations_R(0);
+	//! [Get the vertices of a square]
 
 	for (size_t i = 0 ; i < sc2_0.size() ; i++)
 	{
 		// Expecting one element equal to c2[i]
+		//! [Getting the vertex as a sub-hypercube]
 		std::vector<comb<2>> combs = SubHyperCube<2,0>::getCombinations_R(sc2_0[i],0);
+		//! [Getting the vertex as a sub-hypercube]
 		BOOST_REQUIRE_EQUAL(combs.size(),1);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_0[i]),true);
 	}
 
+	//! [Getting the edge of a square]
 	std::vector<comb<2>> sc2_1 = HyperCube<2>::getCombinations_R(1);
+	//! [Getting the edge of a square]
 
 	for (size_t i = 0 ; i < sc2_1.size() ; i++)
 	{
 		// Expecting two elements, valid, distinct,  sub-decomposition of c2[i]
+
+		//! [Getting the vertex of the line of the original square]
 		std::vector<comb<2>> combs = SubHyperCube<2,1>::getCombinations_R(sc2_1[i],0);
+		//! [Getting the vertex of the line of the original square]
 		BOOST_REQUIRE_EQUAL(combs.size(),2);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_1[i]),true);
 
 		// Expecting one element, valid, distinct,  sub-decomposition of c2[i]
+		//! [Getting the edge(line) of the line of the original square]
 		combs = SubHyperCube<2,1>::getCombinations_R(sc2_1[i],1);
+		//! [Getting the edge(line) of the line of the original square]
 		BOOST_REQUIRE_EQUAL(combs.size(),1);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_1[i]),true);
 	}
 
+	//! [Getting the square of a square]
 	std::vector<comb<2>> sc2_2 = HyperCube<2>::getCombinations_R(2);
+	//! [Getting the square of a square]
 
 	for (size_t i = 0 ; i < sc2_2.size() ; i++)
 	{
 		// Expecting two elements, valid, distinct,  sub-decomposition of sc2_2[i]
+		//! [Getting the vertices of the square of the original square]
 		std::vector<comb<2>> combs = SubHyperCube<2,2>::getCombinations_R(sc2_2[i],0);
+		//! [Getting the vertices of the square of the original square]
 		BOOST_REQUIRE_EQUAL(combs.size(),4);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_2[i]),true);
 
 		// Expecting one element, valid, distinct,  sub-decomposition of c2[i]
+		//! [Getting the lines of the square of the original square]
 		combs = SubHyperCube<2,2>::getCombinations_R(sc2_2[i],1);
+		//! [Getting the lines of the square of the original square]
 		BOOST_REQUIRE_EQUAL(combs.size(),4);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_2[i]),true);
 
 		// Expecting one element, valid, distinct,  sub-decomposition of c2[i]
+		//! [Getting the square of the square of the original square]
 		combs = SubHyperCube<2,2>::getCombinations_R(sc2_2[i],2);
+		//! [Getting the square of the square of the original square]
 		BOOST_REQUIRE_EQUAL(combs.size(),1);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
@@ -299,57 +321,75 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 
 	////////////// 3D ////////////////
 
+	//! [Getting the vertices of the cube]
 	std::vector<comb<3>> sc3_0 = HyperCube<3>::getCombinations_R(0);
+	//! [Getting the vertices of the cube]
 
 	for (size_t i = 0 ; i < sc3_0.size() ; i++)
 	{
 		// Expecting one element equal to sc3[i]
+		//! [Getting the vertices of the vertices of the cube]
 		std::vector<comb<3>> combs = SubHyperCube<3,0>::getCombinations_R(sc3_0[i],0);
+		//! [Getting the vertices of the vertices of the cube]
 		BOOST_REQUIRE_EQUAL(combs.size(),1);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 //		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_0[i]),true);
 	}
 
+	//! [Getting the edges of the cube]
 	std::vector<comb<3>> sc3_1 = HyperCube<3>::getCombinations_R(1);
+	//! [Getting the edges of the cube]
 
 	for (size_t i = 0 ; i < sc3_1.size() ; i++)
 	{
 		// Expecting two elements, valid, distinct,  sub-decomposition of sc3[i]
+		//! [Getting the vertices of the edge of the cube]
 		std::vector<comb<3>> combs = SubHyperCube<3,1>::getCombinations_R(sc3_1[i],0);
+		//! [Getting the vertices of the vertices of the cube]
 		BOOST_REQUIRE_EQUAL(combs.size(),2);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_1[i]),true);
 
 		// Expecting one element, valid, distinct,  sub-decomposition of c2[i]
+		//! [Getting the edges of the edges of the cube]
 		combs = SubHyperCube<3,1>::getCombinations_R(sc3_1[i],1);
+		//! [Getting the edges of the edges of the cube]
 		BOOST_REQUIRE_EQUAL(combs.size(),1);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_1[i]),true);
 	}
 
+	//! [Getting the surfaces of the cube]
 	std::vector<comb<3>> sc3_2 = HyperCube<3>::getCombinations_R(2);
+	//! [Getting the surfaces of the cube]
 
 	for (size_t i = 0 ; i < sc3_2.size() ; i++)
 	{
 		// Expecting two elements, valid, distinct,  sub-decomposition of sc3_2[i]
+		//! [Getting the vertices of the surfaces of the cube]
 		std::vector<comb<3>> combs = SubHyperCube<3,2>::getCombinations_R(sc3_2[i],0);
+		//! [Getting the vertices of the surfaces of the cube]
 		BOOST_REQUIRE_EQUAL(combs.size(),4);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_2[i]),true);
 
 		// Expecting one element, valid, distinct,  sub-decomposition of c2[i]
+		//! [Getting the edges of the surfaces of the cube]
 		combs = SubHyperCube<3,2>::getCombinations_R(sc3_2[i],1);
+		//! [Getting the edges of the surfaces of the cube]
 		BOOST_REQUIRE_EQUAL(combs.size(),4);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_2[i]),true);
 
 		// Expecting one element, valid, distinct,  sub-decomposition of c2[i]
+		//! [Getting the surfaces of the surfaces of the cube]
 		combs = SubHyperCube<3,2>::getCombinations_R(sc3_2[i],2);
+		//! [Getting the surfaces of the surfaces of the cube]
 		BOOST_REQUIRE_EQUAL(combs.size(),1);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);

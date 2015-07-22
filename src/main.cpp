@@ -7,18 +7,13 @@
 #include <iostream>
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
-#include <ct_array.hpp>
-#ifdef CUDA_GPU
-#include "memory/CudaMemory.cuh"
-#endif
-#include "memory/HeapMemory.hpp"
-#include "memory_conf.hpp"
-#include "Grid/map_grid.hpp"
-#include "Vector/map_vector.hpp"
-#include "Graph/map_graph.hpp"
 
 // Include tests
 
+#include "timer_util_test.hpp"
+#include "Grid/grid_key_dx_expression_unit_tests.hpp"
+#include "Point_test_unit_tests.hpp"
+#include "util/util_test.hpp"
 #include "Space/SpaceBox_unit_tests.hpp"
 #include "Space/Shape/Box_unit_tests.hpp"
 #include "NN/CellList/CellList_test.hpp"
