@@ -312,6 +312,21 @@ template<unsigned int dim ,typename T> class Point
 	inline Point()
 	{}
 
+	/*! Convert the point from Point<dim,T> to Point<dim,A>
+	 *
+	 * \return the converted point
+	 *
+	 */
+	template<typename A> Point<dim,A> convertPoint() const
+	{
+		Point<dim,A> p;
+
+		for (size_t i = 0; i < dim ; i++)
+			p.get(i) = static_cast<A>(get(i));
+
+		return p;
+	}
+
 	static const unsigned int max_prop = 1;
 	static const unsigned int dims = dim;
 };

@@ -1253,7 +1253,6 @@ public:
 		return Box<dim,long int>::getVolumeKey(gk_start.k, gk_stop.k);
 	}
 
-
 	/*! \brief Reset the iterator (it restart from the beginning)
 	 *
 	 */

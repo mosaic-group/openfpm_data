@@ -8,6 +8,7 @@
 #ifndef VECTOR_TEST_UTIL_HPP_
 #define VECTOR_TEST_UTIL_HPP_
 
+#include "config.h"
 #include "Point_test.hpp"
 #include "Vector/map_vector.hpp"
 

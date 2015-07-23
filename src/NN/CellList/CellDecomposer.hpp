@@ -451,9 +451,15 @@ public:
 	/*! \brief Return the smallest box containing the grid points
 	 *
 	 * Suppose a grid 5x5 defined on a Box<2,float> box({0.0,0.0},{1.0,1.0})
+<<<<<<< HEAD
 	 * and feeding to the function a Box<2,float>({0.4,0.4},{0.8,0.8}), it will return
 	 * a Box<2,size_t> (2,2) and (3,3). A visualization it is shown in the
 	 * picture below. (the grid points are centered on each cell)
+=======
+	 * and a feeding to the function a Box<2,float>({0.4,0.4},{0.8,0.8}), it will return
+	 * a Box<2,size_t> (2,2) and (3,3). A visualization it is shown in the
+	 * picture below.
+>>>>>>> bab62b83a85f3185d869293695533e928c41aeed
 	 *
 	 * \verbatim
 	 *

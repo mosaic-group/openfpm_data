@@ -569,7 +569,6 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 	bool val = g_it.get() == start;
 
 	BOOST_REQUIRE_EQUAL(val,true);
-
 	}
 }
 
