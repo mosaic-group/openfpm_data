@@ -770,6 +770,43 @@ public:
 		return true;
 	}
 
+	/*! \brief Translate P1 of a given vector P1
+	 *
+	 * \param p1 vector
+	 *
+	 */
+	void ceilP1()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setLow(i,std::ceil(getLow(i)));
+		}
+	}
+
+	/*! \brief Translate P1 of a unit vector on all directions
+	 *
+	 * \param p1 vector
+	 *
+	 */
+	void ceilP2()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setHigh(i,std::ceil(getHigh(i)));
+		}
+	}
+
+	/*! \brief Shrink the point P2 by one
+	 *
+	 */
+	void shrinkP2(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setHigh(i,getHigh(i) - p.get(i));
+		}
+	}
+
 	/*! \brief Check if the point is inside the region
 	 *
 	 * \param p point to check
@@ -832,6 +869,12 @@ public:
 			vol *= (p2[i] - p1[i] + 1.0);
 
 		return vol;
+	}
+
+	//! This structure has no internal pointers
+	static bool noPointers()
+	{
+		return true;
 	}
 };
 

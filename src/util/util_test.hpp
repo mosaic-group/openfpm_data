@@ -160,6 +160,111 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 
 	//! [object write encap example]
 	}
+
+	{
+	//! [object creator check for no pointers]
+	struct no_method_pointer
+	{
+		float a;
+		int b;
+	};
+
+	struct no_pointer
+	{
+		double c;
+		int d;
+
+		static bool noPointers() {return true;}
+	};
+
+	struct with_pointer
+	{
+		double * c;
+		int d;
+
+		static bool noPointers() {return false;}
+	};
+
+	typedef boost::fusion::vector<int,float,double,no_method_pointer,no_pointer,with_pointer,no_method_pointer> v;
+
+	int val = boost::mpl::size< noPointers_sequence<v,0,2>::type >::value;
+	BOOST_REQUIRE_EQUAL(val,0);
+
+	val = boost::mpl::size< noPointers_sequence<v,0,2,4,5>::type >::value;
+	BOOST_REQUIRE_EQUAL(val,0);
+
+	val = boost::mpl::size< noPointers_sequence<v,0,1,2,3,4,5,6>::type >::value;
+	BOOST_REQUIRE_EQUAL(val,2);
+
+	typedef boost::fusion::vector<int *,float &,double *,no_method_pointer *,no_pointer &,with_pointer *,no_method_pointer &> vp;
+
+	val = boost::mpl::size< noPointers_sequence<vp,0,1,2,3,4,5,6>::type >::value;
+	BOOST_REQUIRE_EQUAL(val,2);
+
+	//! [object creator check for no pointers]
+	}
+
+	// Check the the object respect the noPointers construction
+	{
+
+	struct no_method_pointer
+	{
+		float a;
+		int b;
+	};
+
+	struct no_pointer
+	{
+		double c;
+		int d;
+
+		static bool noPointers() {return true;}
+	};
+
+	struct with_pointer
+	{
+		double * c;
+		int d;
+
+		static bool noPointers() {return false;}
+	};
+
+	typedef boost::fusion::vector<int,float,double> v;
+	int val = object<v>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer> va;
+	val = object<va>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,with_pointer> vb;
+	val = object<vb>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,double *> vc;
+	val = object<vc>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,double &> vd;
+	val = object<vd>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,double[3]> ve;
+	val = object<ve>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,no_pointer *> vf;
+	val = object<vf>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,no_pointer &> vg;
+	val = object<vg>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,no_pointer[3]> vh;
+	val = object<vh>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
+	}
 }
 
 //! [Metafunction definition]

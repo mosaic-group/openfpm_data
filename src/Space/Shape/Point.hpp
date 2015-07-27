@@ -327,6 +327,12 @@ template<unsigned int dim ,typename T> class Point
 		return p;
 	}
 
+	//! This structure has no internal pointers
+	static bool noPointers()
+	{
+		return true;
+	}
+
 	static const unsigned int max_prop = 1;
 	static const unsigned int dims = dim;
 };
