@@ -76,6 +76,17 @@ template<unsigned int dim ,typename T> class Point
 		return get(i);
 	}
 
+	/*! \brief Get the component i
+	 *
+	 * \return the i-component
+	 *
+	 */
+
+	inline const T operator[](size_t i) const
+	{
+		return get(i);
+	}
+
 	/*! \brief operator= between points
 	 *
 	 * \param p Point
@@ -181,7 +192,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p Point
 	 *
 	 */
-	inline Point<dim,T> operator-(const Point<dim,T> & p)
+	inline Point<dim,T> operator-(const Point<dim,T> & p) const
 	{
 		Point<dim,T> result;
 

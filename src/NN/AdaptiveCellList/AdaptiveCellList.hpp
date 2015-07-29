@@ -85,7 +85,7 @@ public:
 	 */
 	inline void add(const T (& pos)[dim+1], typename ele_container::value_type ele)
 	{
-                all_eles.add(ele);
+		all_eles.add(ele);
 	}
 
 	/*! \brief Add to the cell an element (from points coordinate)
@@ -96,7 +96,7 @@ public:
 	 */
 	inline void add(const Point<dim+1,T> & pos, typename ele_container::value_type ele)
 	{
-                all_eles.add(ele);
+		all_eles.add(ele);
 	}
 	
 	/*! \brief Swap the memory

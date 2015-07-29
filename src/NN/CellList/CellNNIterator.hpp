@@ -61,8 +61,9 @@ public:
 	 *
 	 */
 	CellNNIterator(size_t cell, long int (&NNc)[NNc_size], Cell & cl)
-	:cl(cl),NNc_id(0),cell_id(NNc[NNc_id] + cell),ele_id(0),NNc(NNc),cell(cell)
+	:cl(cl),NNc_id(0),cell_id(NNc[NNc_id] + cell),ele_id(-1),NNc(NNc),cell(cell)
 	{
+		++(*this); // init with -1, so its 0 now, BUT we also progress to the first cell with elements!
 	}
 
 	/*! \brief
@@ -84,7 +85,7 @@ public:
 	{
 		ele_id++;
 
-		if (ele_id >= cl.getNelements(cell_id))
+		while (ele_id >= cl.getNelements(cell_id))
 		{
 			NNc_id++;
 

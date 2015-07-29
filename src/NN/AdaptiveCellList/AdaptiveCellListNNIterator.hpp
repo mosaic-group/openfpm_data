@@ -13,10 +13,10 @@
 template<unsigned int dim, typename CellS, unsigned int NNc_size, unsigned int impl> class AdaptiveCellNNIterator
 {
 
-    CellS & cl;
-    
-    size_t ele_id;
-    
+	CellS & cl;
+
+	size_t ele_id;
+
 public:
 	/*! \brief
 	 *
@@ -24,7 +24,7 @@ public:
 	 *
 	 */
 	AdaptiveCellNNIterator(CellS & cl)
-            :cl(cl), ele_id(0)
+		:cl(cl), ele_id(0)
 	{
 	}
 
@@ -35,7 +35,7 @@ public:
 	 */
 	bool isNext()
 	{
-            return ele_id < cl.size();
+		return ele_id < cl.size();
 	}
 
 	/*! \brief take the next element
@@ -43,8 +43,8 @@ public:
 	 */
 	AdaptiveCellNNIterator & operator++()
 	{
-            if(ele_id < cl.size()) ele_id++;
-            return *this;
+		if(ele_id < cl.size()) ele_id++;
+		return *this;
 	}
 
 	/*! \brief Get actual element
@@ -52,9 +52,10 @@ public:
 	 * \return  the actual element
 	 *
 	 */
-	typename CellS::value_type & get()
+	typename CellS::value_type get() // this should return a reference but... later
 	{
-            cl.get(ele_id);
+		// cl.get(ele_id); // wait this doesnt make sense
+		return ele_id;
 	}
 };
 
