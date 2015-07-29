@@ -84,7 +84,7 @@ public:
 	{
 		ele_id++;
 
-		if (ele_id >= cl.getNelements(cell_id))
+		while (ele_id >= cl.getNelements(cell_id))
 		{
 			NNc_id++;
 
