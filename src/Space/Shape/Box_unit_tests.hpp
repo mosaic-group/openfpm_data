@@ -145,6 +145,24 @@ BOOST_AUTO_TEST_CASE( box_use)
 	BOOST_REQUIRE_CLOSE(box1.getHigh(2),0.8,0.0001);
 	}
 
+	{
+	Box<2,size_t> invalid1({5,7},{3,9});
+	Box<2,size_t> invalid2({5,11},{9,9});
+	Box<2,size_t> invalid3({12,11},{9,9});
+
+	Box<2,size_t> valid({1,5},{6,9});
+
+	bool val = invalid1.isValid();
+	BOOST_REQUIRE_EQUAL(val,false);
+	val = invalid2.isValid();
+	BOOST_REQUIRE_EQUAL(invalid2.isValid(),false);
+	val = invalid3.isValid();
+	BOOST_REQUIRE_EQUAL(invalid3.isValid(),false);
+	val = valid.isValid();
+	BOOST_REQUIRE_EQUAL(valid.isValid(),true);
+
+	}
+
 	std::cout << "Box unit test stop" << "\n";
 }
 

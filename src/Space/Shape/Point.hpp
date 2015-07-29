@@ -9,7 +9,7 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
 #include "base_type.hpp"
-#include "Grid/grid_key.hpp"
+//#include "Grid/grid_key.hpp"
 #include "Grid/Encap.hpp"
 
 /*! \brief This class implement the point shape in an N-dimensional space
@@ -285,16 +285,27 @@ template<unsigned int dim ,typename T> class Point
 	    {get(i) = p[i];}
 	}
 
+	/*! \brief Point constructor
+	 *
+	 * \param p Point
+	 *
+	 */
+	template <typename S> inline Point(const Point<dim,S> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			get(i) = static_cast<S>(p.get(i));
+	}
+
 	/*! \brief Constructor from a grid_key_dx<dim>
 	 *
 	 * \param key from where to initialize
 	 *
 	 */
-	inline Point(grid_key_dx<dim> key)
+/*	inline Point(grid_key_dx<dim> key)
 	{
 	    for(size_t i = 0 ; i < dim ; i++)
 	    {get(i) = key.k[i];}
-	}
+	}*/
 
 	/*! \brief Constructor from a list
 	 *
@@ -311,6 +322,26 @@ template<unsigned int dim ,typename T> class Point
 	//! Default contructor
 	inline Point()
 	{}
+
+	/*! \brief Return the value i
+	 *
+	 * \return the value i
+	 *
+	 */
+	T & value(size_t i)
+	{
+		return get(i);
+	}
+
+	/*! \brief Return the coordinate i
+	 *
+	 * \return the coordinate i
+	 *
+	 */
+	T value(size_t i) const
+	{
+		return get(i);
+	}
 
 	/*! Convert the point from Point<dim,T> to Point<dim,A>
 	 *

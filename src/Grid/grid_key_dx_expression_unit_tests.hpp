@@ -31,6 +31,14 @@ BOOST_AUTO_TEST_CASE( grid_expression_use)
 	BOOST_REQUIRE_EQUAL(res.get(0),0);
 	BOOST_REQUIRE_EQUAL(res.get(1),0);
 	BOOST_REQUIRE_EQUAL(res.get(2),0);
+
+	const Point<3,long int> p({1,2,3});
+
+	res = res + p;
+
+	BOOST_REQUIRE_EQUAL(res.get(0),1);
+	BOOST_REQUIRE_EQUAL(res.get(1),2);
+	BOOST_REQUIRE_EQUAL(res.get(2),3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -3,6 +3,7 @@
 
 #include "Grid/comb.hpp"
 #include "Grid/grid_key_expression.hpp"
+#include "Space/Shape/Point.hpp"
 
 /*! \brief grid_key_dx is the key to access any element in the grid
  *
@@ -85,6 +86,20 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
+	inline grid_key_dx_sum<dim,grid_key_dx<dim>,Point<dim,long int>> operator+(const Point<dim,long int> & p) const
+	{
+		grid_key_dx_sum<dim,grid_key_dx<dim>,Point<dim,long int>> exp_sum(*this,p);
+
+		return exp_sum;
+	}
+
+	/* \brief sum an a combination to the grid_key
+	 *
+	 * \param comb combination (or relative movement)
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
 	inline grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> operator+(const comb<dim> & cmb) const
 	{
 		grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> exp_sum(*this,cmb);
@@ -158,6 +173,40 @@ public:
 #endif
 		k[dim-1] = v;
 		invert_assign(t...);
+	}
+
+	/*! \brief Convert to a point the grid_key_dx
+	 *
+	 * \see toPoint
+	 *
+	 */
+	Point<dim,long int> toPointS() const
+	{
+		Point<dim,long int> p;
+
+		for (size_t i = 0; i < dim ; i++)
+		{
+			p.get(i) = get(i);
+		}
+
+		return p;
+	}
+
+	/*! \brief Convert to a point the grid_key_dx
+	 *
+	 * \see toPointS
+	 *
+	 */
+	Point<dim,size_t> toPoint() const
+	{
+		Point<dim,size_t> p;
+
+		for (size_t i = 0; i < dim ; i++)
+		{
+			p.get(i) = get(i);
+		}
+
+		return p;
 	}
 
 	/*! \brief Get the i index

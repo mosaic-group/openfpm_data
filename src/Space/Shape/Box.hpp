@@ -770,6 +770,22 @@ public:
 		return true;
 	}
 
+	/*! \brief Check if the Box is a valid box P2 > P1
+	 *
+	 * \return true if it is valid
+	 *
+	 */
+	bool isValid()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (getLow(i) >= getHigh(i))
+				return false;
+		}
+
+		return true;
+	}
+
 	/*! \brief Translate P1 of a given vector P1
 	 *
 	 * \param p1 vector

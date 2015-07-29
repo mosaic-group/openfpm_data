@@ -675,11 +675,11 @@ public:
 	 *
 	 */
 	grid_key_dx_iterator()
-{
+	{
 #ifdef DEBUG
 		initialized = false;
 #endif
-}
+	}
 
 	/*! \brief Constructor from a grid_key_dx_iterator<dim>
 	 *
@@ -705,17 +705,14 @@ public:
 	 * \param g info of the grid on which iterate
 	 */
 	template<typename T> grid_key_dx_iterator(const grid_sm<dim,T> & g)
-			: grid_base(g)
-			  {
-		//! Initialize to 0 the index
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{gk.set_d(i,0);}
+	: grid_base(g)
+	{
+		reset();
 
 #ifdef DEBUG
 		initialized = true;
 #endif
-			  }
+	}
 
 	/*! \brief Constructor from another grid_key_dx_iterator
 	 *
@@ -740,7 +737,7 @@ public:
 	 */
 
 	grid_key_dx_iterator<dim> & operator++()
-			{
+	{
 		//! increment the first index
 
 		size_t id = gk.get(0);
@@ -767,7 +764,7 @@ public:
 		}
 
 		return *this;
-			}
+	}
 
 	/*! \brief Set the dimension
 	 *
@@ -813,9 +810,9 @@ public:
 	 *
 	 */
 	const grid_key_dx<dim> & get()
-			{
+	{
 		return gk;
-			}
+	}
 
 	/*! \brief Reinitialize the grid_key_dx_iterator
 	 *
@@ -824,7 +821,7 @@ public:
 	 */
 	void reinitialize(const grid_key_dx_iterator<dim> & key)
 	{
-
+		reset();
 	}
 
 	/*! \brief Reset the iterator (it restart from the beginning)

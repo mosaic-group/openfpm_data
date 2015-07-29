@@ -653,7 +653,7 @@ namespace openfpm
 		{
 #ifdef DEBUG
 			if (id >= v_size)
-			{std::cerr << "Error "  << __FILE__ << "  " << __LINE__ << " vector overflow" << "\n";}
+			{std::cerr << "Error "  << __FILE__ << ":" << __LINE__ << " vector overflow" << "\n";}
 #endif
 			grid_key_dx<1> key(id);
 

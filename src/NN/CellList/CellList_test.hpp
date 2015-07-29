@@ -79,13 +79,13 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	{
 		// Add 2 particles on each cell
 
-		Point<dim,T> key = g_it.get();
+		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = key * spacing + offset[0];
 
 		cl1.add(key,id);
 		++id;
 
-		key = g_it.get();
+		key = Point<dim,T>(g_it.get().toPoint());
 		key = key * spacing + offset[1];
 
 		cl1.add(key,id);
@@ -105,7 +105,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	{
 		// Add 2 particles on each cell
 
-		Point<dim,T> key = g_it.get();
+		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = key * spacing + offset[2];
 
 		size_t cell = cl1.getCell(key);
@@ -126,7 +126,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	{
 		// remove 1 particle on each cell
 
-		Point<dim,T> key = g_it.get();
+		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = key * spacing + offset[0];
 
 		auto cell = cl1.getCell(key);
@@ -145,7 +145,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	{
 		// remove 1 particle on each cell
 
-		Point<dim,T> key = g_it.get();
+		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = key * spacing + offset[0];
 
 		auto cell = cl1.getCell(key);
@@ -169,7 +169,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	{
 		// remove 1 particle on each cell
 
-		Point<dim,T> key = g_it_s.get();
+		Point<dim,T> key = Point<dim,T>(g_it_s.get().toPoint());
 		key = key * spacing + offset[0];
 
 		auto NN = cl1.template getNNIterator<NO_CHECK>(cl1.getCell(key));
