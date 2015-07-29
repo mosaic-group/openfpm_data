@@ -2,7 +2,7 @@
  * CelListMem.hpp
  *
  *  Created on: Mar 22, 2015
- *  Last modified: June 25, 2015
+ *  Last modified: July 29, 2015
  *      Authors: Pietro Incardona, Yaroslav Zaluzhnyi
  */
 
@@ -74,7 +74,7 @@ public:
 	 */
 	grid_sm<dim,void> & getGrid()
 	{
-		CellDecomposer_sm<dim,T>::getGrid();
+		CellDecomposer_sm<dim,T,transform>::getGrid();
 	}
 
 	/*! Initialize the cell list
@@ -87,8 +87,8 @@ public:
 
 	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
 	{
-		SpaceBox<dim,T> sbox;
-		Initialize(sbox,div,orig);
+		SpaceBox<dim,T> sbox(box);
+		Initialize(sbox,div,orig,pad);
 	}
 
 	/*! Initialize the cell list
@@ -101,12 +101,13 @@ public:
 
 	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
 	{
-		// Add padding
+		/* Add padding
 		size_t div_pad[dim];
 		for (size_t i = 0 ; i < dim ; i++)
 			div_pad[i] = div[i] + 2;
+		*/
 
-		CellDecomposer_sm<dim,T>::setDimensions(box,div_pad, pad);
+		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div,pad);
 
 		this->orig = orig;
 
@@ -193,7 +194,7 @@ public:
 	 * \param div grid size on each dimension
 	 *
 	 */
-	CellList(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
+	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, Point<dim,T> & orig, const size_t pad = 1)
 	{
 		SpaceBox<dim,T> sbox(box);
 		Initialize(sbox,div,orig,pad);
@@ -222,7 +223,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos);
+		size_t cell_id = this->getCell(pos,1);
 
 		// Get the number of element the cell is storing
 
@@ -285,43 +286,90 @@ public:
 	 * \param cl Cell list with witch you swap the memory
 	 *
 	 */
-	void swap(CellList<dim,T,MEMORY,base> & cl)
+	void swap(CellList<dim,T,MEMORY,transform,base> & cl)
 	{
 		cl_base.swap(cl.cl_base);
 	}
 
-		/*! \brief Get the Cell iterator
+	/*! \brief Get the Cell iterator
 	 *
-	 * \param return the iterator to the cell
+	 * \param cell
+	 *
+	 * \return the iterator to the elements inside cell
 	 *
 	 */
-	CellIterator<CellList<dim,T,MEMORY,base>> getIterator(size_t cell)
+	CellIterator<CellList<dim,T,MEMORY,transform,base>> getIterator(size_t cell)
 	{
-		return CellIterator<CellList<dim,T,MEMORY,base>>(cell,*this);
+		return CellIterator<CellList<dim,T,MEMORY,transform,base>>(cell,*this);
 	}
 
-	/*! \brief Get the Nearest Neighborhood iterator
+	/*! \brief Get the Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
+
+	     * * *
+	     * x *
+	     * * *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
 	 *
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,base>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,transform,base>,FULL,impl> getNNIterator(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,MEMORY,base>,FULL,impl> cln(cell,NNc_full,*this);
+		CellNNIterator<dim,CellList<dim,T,MEMORY,transform,base>,FULL,impl> cln(cell,NNc_full,*this);
 
 		return cln;
 	}
+	/*! \brief Get the Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
 
-	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,base>,SYM,impl> getNNIteratorSym(size_t cell)
+	   * * *
+	     x *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
+	 *
+	 * \param cell cell id
+	 *
+	 */
+	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,transform,base>,SYM,impl> getNNIteratorSym(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,MEMORY,base>,SYM,impl> cln(cell,NNc_sym,*this);
+		CellNNIterator<dim,CellList<dim,T,MEMORY,transform,base>,SYM,impl> cln(cell,NNc_sym,*this);
 
 		return cln;
 	}
+	/*! \brief Get the Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
 
-	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,base>,CRS,impl> getNNIteratorCross(size_t cell)
+	   * *
+	   x *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
+	 *
+	 * \param cell cell id
+	 *
+	 */
+	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,transform,base>,CRS,impl> getNNIteratorCross(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,MEMORY,base>,CRS,impl> cln(cell,NNc_cr,*this);
+		CellNNIterator<dim,CellList<dim,T,MEMORY,transform,base>,CRS,impl> cln(cell,NNc_cr,*this);
 
 		return cln;
 	}

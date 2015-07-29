@@ -11,7 +11,6 @@ class weight_counter
     size_t weight(T & t, const Box<dim,St> & domain, Box<dim,St> & b)
     {     
       //error if T is not a grid or a vector
-      if (is_grid<T>::value == false && is_vector<T>::value == false)
           std::cerr << "Not implemented";
         return 0;
     }
@@ -34,8 +33,8 @@ class weight_counter<dim,T,St,IS_GRID>
         size_t k = a[i];
         size_t cur = 0;
         for (int j = 0; j < k; j++)
-          //check if the points on the sides of a grid are inside the box
-          if (b.getLow(i)*(k-1) <= j && j <= b.getHigh(i)*(k-1))
+          //check if the points on the sides of a grid are inside the box, excluding points on positive sides
+          if (b.getLow(i)*(k-1) <= j && j < b.getHigh(i)*(k-1))
             ++cur;
         //multiply points inside the box on each side
         res *= cur;
