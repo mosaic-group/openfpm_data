@@ -57,7 +57,7 @@ class weight_counter<dim,T,St,IS_VECTOR>
       //count points those are inside of a box
       for (int i = 0; i < size, i++) 
       {
-        if (b.isInside(t.get(i)))
+        if (b.isInsidePE(t.get(i)))
           count++;
       }
       return count;
