@@ -29,16 +29,18 @@ class weight_counter<dim,T,St,IS_GRID>
       size_t res = 1;
       //for each dimension
       for (int i = 0; i < dim; i++)
-      {
-        size_t k = a[i];
-        size_t cur = 0;
-        for (int j = 0; j < k; j++)
-          //check if the points on the sides of a grid are inside the box, excluding points on positive sides
-          if (b.getLow(i)*(k-1) <= j && j < b.getHigh(i)*(k-1))
-            ++cur;
-        //multiply points inside the box on each side
-        res *= cur;
-      }
+          size_t count = 0;
+          //rounding coordinates of Low and High up and down
+          int a1 = (int)(b.getLow(i));
+          int a2 = (int)(b.getHigh(i) + 0.9999999);
+          //counting points those get into a box, excluding borders
+          for (int j = a1+1; j < a2; j++)
+            count++;
+          //adding negative borders, if the number was integer
+          if (a1 == ceil(a1))
+            count++;
+          //multypling by all dimensions
+          res *= count;
       return res;
     }
 }
@@ -54,7 +56,7 @@ class weight_counter<dim,T,St,IS_VECTOR>
       //get size of a vector = number of points
       size_t size = t.size();
       int count = 0;
-      //count points those are inside of a box
+      //count points those are inside of a box, excluding positive borders
       for (int i = 0; i < size, i++) 
       {
         if (b.isInsidePE(t.get(i)))
