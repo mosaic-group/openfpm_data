@@ -821,6 +821,7 @@ public:
 	 */
 	void reinitialize(const grid_key_dx_iterator<dim> & key)
 	{
+		grid_base = key.grid_base;
 		reset();
 	}
 

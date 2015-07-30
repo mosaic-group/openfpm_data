@@ -1146,6 +1146,9 @@ namespace openfpm
 			return false;
 		}
 	};
+
+	template <typename T> using vector_std = vector<T, openfpm::device_cpu<T>, HeapMemory, openfpm::grow_policy_double, STD_VECTOR>;
+
 }
 
 #endif

@@ -209,6 +209,7 @@ public:
 		return p;
 	}
 
+
 	/*! \brief Get the i index
 	 *
 	 * \param i index to get

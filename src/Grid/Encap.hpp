@@ -8,7 +8,76 @@
 #ifndef ENCAP_HPP_
 #define ENCAP_HPP_
 
-//#include "grid_sm.hpp"
+#include "util/for_each_ref.hpp"
+#include "util/meta_copy.hpp"
+#include "boost/mpl/range_c.hpp"
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+
+template<typename e_src, typename e_dst>
+struct copy_cpu_encap_encap
+{
+	//! object we have to store
+	const e_src & src;
+	e_dst & dst;
+
+
+	/*! \brief constructor
+	 *
+	 * It define the copy parameters.
+	 *
+	 * \param key which element we are modifying
+	 * \param grid_dst grid we are updating
+	 * \param obj object we have to set in grid_dst (encapsulated)
+	 *
+	 */
+	copy_cpu_encap_encap(const e_src & src, e_dst & dst)
+	:src(src),dst(dst)
+	{
+#ifdef DEBUG
+		// e_src and e_dst must have the same number of properties
+
+		if (e_src::max_prop != e_dst::max_prop)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of properties between src and dst must match";
+#endif
+	};
+
+
+#ifdef DEBUG
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	copy_cpu_encap_encap(const e_src && src, const e_dst && dst)
+	:src(src),dst(dst)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object";};
+#endif
+
+	//! It call the copy function for each property
+	template<typename T>
+	void operator()(T& t) const
+	{
+		// This is the type of the object we have to copy
+		typedef typename boost::fusion::result_of::at_c<typename e_src::type,T::value>::type copy_type;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
+
+		meta_copy<copy_rtype> cp(src.template get<T::value>(),dst.template get<T::value>());
+	}
+};
+
 
 /*! \brief This class is an helper to get the return type for get method for each property
  *
@@ -80,7 +149,7 @@ public:
 	static const int max_prop = T::max_prop;
 
 	// constructor require a key and a memory data
-	encapc(type & data)
+	inline encapc(type & data)
 	:data(data)
 	{}
 
@@ -89,7 +158,7 @@ public:
 	 * \return the address of the data encapsulated
 	 *
 	 */
-	type * operator&()
+	inline type * operator&()
 	{
 		return &data;
 	}
@@ -99,7 +168,7 @@ public:
 	 * \return the reference
 	 *
 	 */
-	template <unsigned int p> typename type_cpu_prop<p,Mem>::type get()
+	template <unsigned int p> inline typename type_cpu_prop<p,Mem>::type get()
 	{
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,Mem>::type));
@@ -112,7 +181,7 @@ public:
 	 * \return the reference
 	 *
 	 */
-	template <unsigned int p> const typename type_cpu_prop<p,Mem>::type get() const
+	template <unsigned int p> inline const typename type_cpu_prop<p,Mem>::type get() const
 	{
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,Mem>::type));
@@ -121,12 +190,26 @@ public:
 	}
 
 	// access the data
-	template <unsigned int p> void set(typename type_cpu_prop<p,Mem>::type & ele)
+	template <unsigned int p> inline void set(typename type_cpu_prop<p,Mem>::type & ele)
 	{
 #ifdef MEMLEAK_CHECK
 			check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
 #endif
 			return boost::fusion::at_c<p>(data) = ele;
+	}
+
+	/*! \brief Assignment
+	 *
+	 * \param ec encapsulator
+	 *
+	 */
+	inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
+	{
+		copy_cpu_encap_encap<encapc<dim,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+		return *this;
 	}
 };
 
