@@ -263,8 +263,8 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 	std::cout << "Test cell list" << "\n";
 
 	Test_cell_s<3,double,CellList<3,double,FAST>>();
-//	Test_cell_s<3,double,CellList<3,double,BALANCED>>();
-//	Test_cell_s<3,double,CellList<3,double,MEMORY>>();
+	Test_cell_s<3,double,CellList<3,double,BALANCED>>();
+	Test_cell_s<3,double,CellList<3,double,MEMORY>>();
 
 	std::cout << "End cell list" << "\n";
 

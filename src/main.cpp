@@ -21,4 +21,5 @@
 #include "hypercube_unit_test.hpp"
 #include "Graph/graph_unit_tests.hpp"
 #include "Grid/grid_unit_tests.hpp"
+#include "util/weight_counter_tests.hpp"
 
