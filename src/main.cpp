@@ -140,9 +140,8 @@ BOOST_AUTO_TEST_CASE( celllist_realloc)
 	SpaceBox<2,float> box({0.0f,0.0f},{1.0f,1.0f});
 
 	// Subdivisions
-	//size_t div[2] = {16,16};
-	size_t div[2] = {4,4};
-
+	size_t div[2] = {16,16};
+	
 	// grid info
 	grid_sm<2,void> g_info(div);
 
@@ -159,8 +158,9 @@ BOOST_AUTO_TEST_CASE( celllist_realloc)
 	CellList<2, float> cl0(box,div,org,1);
 	for(float i=0.0f; i < 1.0; i += 0.05f)for(float j=0.0f; j < 1.0; j += 0.05f)
 	cl0.add(Point<2, float>({i,j}), 4711);
-	cl0.add(Point<2, float>({1.0,1.0}), 4711);
-	cl0.add(Point<2, float>({1.2,0.1}), 4711);
+	//cl0.add(Point<2, float>({1.0,1.0}), 4711);
+	//cl0.add(Point<2, float>({1.3,0.1}), 4711);
+	//cl0.add(Point<2, float>({2,2}), 4711);
 
 	// insert points
 	timestamp_t t0 = get_timestamp();
@@ -174,15 +174,15 @@ BOOST_AUTO_TEST_CASE( celllist_realloc)
 	timestamp_t t4 = get_timestamp();
 	
 	int sum1 = 0;
-	for (int i=0; i<div[0]+2; i++) for (int j=0; j<div[1]+2; j++) sum1 += cl1.getNelements(cl1.getGrid().LinId(grid_key_dx<2>(i, j)));
+	for (unsigned int i=0; i<div[0]+2; i++) for (unsigned int j=0; j<div[1]+2; j++) sum1 += cl1.getNelements(cl1.getGrid().LinId(grid_key_dx<2>(i, j)));
 	int sum2 = 0;
-	for (int i=0; i<div[0]+2; i++) for (int j=0; j<div[1]+2; j++) sum2 += cl2.getNelements(cl2.getGrid().LinId(grid_key_dx<2>(i, j)));
+	for (unsigned int i=0; i<div[0]+2; i++) for (unsigned int j=0; j<div[1]+2; j++) sum2 += cl2.getNelements(cl2.getGrid().LinId(grid_key_dx<2>(i, j)));
 	int sum3 = 0;
-	for (int i=0; i<div[0]+2; i++) for (int j=0; j<div[1]+2; j++) sum3 += cl3.getNelements(cl3.getGrid().LinId(grid_key_dx<2>(i, j)));
+	for (unsigned int i=0; i<div[0]+2; i++) for (unsigned int j=0; j<div[1]+2; j++) sum3 += cl3.getNelements(cl3.getGrid().LinId(grid_key_dx<2>(i, j)));
 	int sum4 = 0;
-	for (int i=0; i<div[0]+2; i++) for (int j=0; j<div[1]+2; j++) sum4 += cl4.getNelements(cl4.getGrid().LinId(grid_key_dx<2>(i, j)));
+	for (unsigned int i=0; i<div[0]+2; i++) for (unsigned int j=0; j<div[1]+2; j++) sum4 += cl4.getNelements(cl4.getGrid().LinId(grid_key_dx<2>(i, j)));
 
-
+	/*
 	for (int i=0; i<div[0]+2; i++) {
 		for (int j=0; j<div[1]+2; j++) {
 			::printf("%6d  ",cl0.getNelements(cl0.getGrid().LinId(grid_key_dx<2>(i, j))));
@@ -198,6 +198,7 @@ BOOST_AUTO_TEST_CASE( celllist_realloc)
 		std::cout << std::endl;
 	}
 	std::cout << std::endl;
+	*/
 	
 	size_t s = samplepoints2.size();
 	
@@ -225,34 +226,36 @@ inline bool is_in_radius(const Point<3, float> &p1, const Point<3, float> &p2) {
 
 BOOST_AUTO_TEST_CASE( get_all_interactions_classiccelllist)
 {
+	return;
+	
 	auto maxradiusiterator = std::max_element(samplepoints3.begin(), samplepoints3.end(), [](Point<3, float>& a, Point<3, float>& b){return a[2] < b[2];});
 	size_t gridsize = std::floor(1.0f / (*maxradiusiterator)[2]);
 	//gridsize = 7;
 	std::cout << "Please choose a gridsize < " << 1.0f / (*maxradiusiterator)[2] << ": " << gridsize << std::endl;
 	
 	const float epsilon = 0.0001f; // just a little bit bigger, so 1.0 is still inside.
+	//const float epsilon = 0.0f; // Iterating over padding cells crashes... due to missing boundary checks, I guess?
 	SpaceBox<2,float> box({0.0f,0.0f},{1.0f+epsilon,1.0f+epsilon});
 	size_t div[2] = {gridsize,gridsize};
 	grid_sm<2,void> g_info(div);
 	Point<2,float> org({0.0,0.0});
-	CellList<2, float> cl(box,div,org,1, 100000);
+	const float pad = 1;
+	CellList<2, float> cl(box,div,org,pad, 30000);
 	
 	insertIntoCl<2, CellList<2, float>>(cl, samplepoints2); // shares indices with ~3, so just use the 2d one for a simple celllist
 	
 	size_t interactions_count = 0, interaction_candidates = 0;
 	
-	size_t cell, nels, i1, i2;
+	size_t cell, i1, i2;
 	
 	std::cout << "ready lets go" << std::endl;
 	timestamp_t t0 = get_timestamp();
 	
-	for (int i=1; i<=div[0]; i++) {
-		for (int j=1; j<=div[1]; j++) {
+	for (int i=pad; i<div[0]+pad; i++) {
+		for (int j=pad; j<div[1]+pad; j++) {
 			cell = cl.getGrid().LinId(grid_key_dx<2>(i, j));
-			nels = cl.getNelements(cell);
 			//std::cout << "getting iterator for cell " << cell << " with elems: " << nels << std::endl;
 			auto iter = cl.getNNIterator<FAST>(cell); //full interactions
-			int x=0;
 			while (iter.isNext()) {
 				i2 = iter.get();
 				//std::cout << "Neighbor found: " << i2 << std::endl;
@@ -287,16 +290,17 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_arcelllist)
 	AdaptiveCellList<2, float> arcl(box,org);
 	
 	insertIntoCl<3, AdaptiveCellList<2, float>>(arcl, samplepoints3);
+	arcl.construct();
 	
 	size_t interactions_count = 0, interaction_candidates = 0;
 	
-	size_t cell, nels, i1, i2;
+	size_t i1, i2;
 	
 	std::cout << "ready lets go (adaptive)" << std::endl;
+	
 	timestamp_t t0 = get_timestamp();
 	
 	auto iter = arcl.getNNIterator<FAST>(4711); //full interactions
-	int x=0;
 	while (iter.isNext()) {
 		i2 = iter.get();
 		//std::cout << "Neighbor found: " << i2 << std::endl;
@@ -316,10 +320,13 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_arcelllist)
 	
 	timestamp_t t1 = get_timestamp();
 	std::cout << "that was easy (us): " << t1-t0 << std::endl;
-	std::cout << "found interactions: " << interactions_count
+	std::cout << "found interactions (should be 475560): " << interactions_count
 			<< " of " << interaction_candidates
 			<< " candidates (" << (static_cast<float>(interaction_candidates) / interactions_count)
 			<< "x)." << std::endl;
+	
+	//auto printresult = arcl.printTree(0,7,0,0);
+	//std::cout << printresult.first << printresult.second << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

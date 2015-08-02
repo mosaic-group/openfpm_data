@@ -52,10 +52,9 @@ public:
 	 * \return  the actual element
 	 *
 	 */
-	typename CellS::value_type get() // this should return a reference but... later
+	inline size_t& get()
 	{
-		// cl.get(ele_id); // wait this doesnt make sense
-		return ele_id;
+		return cl.get(ele_id);
 	}
 };
 

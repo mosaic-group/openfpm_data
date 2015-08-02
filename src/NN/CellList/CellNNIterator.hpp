@@ -105,7 +105,7 @@ public:
 	 * \return  the actual element
 	 *
 	 */
-	typename Cell::value_type & get()
+	size_t& get()
 	{
 		return cl.get(cell_id,ele_id);
 	}
@@ -167,7 +167,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	typename Cell::value_type & get()
+	size_t& get()
 	{
 		return cl.get(cell,ele_id);
 	}
