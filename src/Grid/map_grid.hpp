@@ -816,7 +816,7 @@ public:
 		{
 			if (dx.get(i) >= (long int)g1.size(i))
 			{
-				std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " out of bound" << "\n";
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
 			}
 		}
 #endif
@@ -846,7 +846,7 @@ public:
 		{
 			if (dx.get(i) >= (long int)g1.size(i))
 			{
-				std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " out of bound" << "\n";
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
 			}
 		}
 #endif
@@ -868,8 +868,28 @@ public:
 
 	inline void set(grid_key_dx<dim> key1,const grid_cpu<dim,T,Mem> & g, grid_key_dx<dim> key2)
 	{
+#ifdef DEBUG
+		// Check that the element exist
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (key1.get(i) >= (long int)g1.size(i) || key1.get(i) < 0)
+			{
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
+			}
+		}
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (key2.get(i) >= (long int)g.g1.size(i) || key2.get(i) < 0)
+			{
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
+			}
+		}
+#endif
+
 		//create the object to copy the properties
-		copy_cpu_sd_k<dim,grid_cpu<dim,T,Mem>> cp(key1,key2,g,*this);
+		copy_cpu_sd_k<dim,grid_cpu<dim,T,Mem>> cp(key2,key1,g,*this);
 
 		// copy each property for each point of the grid
 

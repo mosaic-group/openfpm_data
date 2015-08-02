@@ -1106,7 +1106,7 @@ public:
 	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const size_t (& start)[dim], const size_t (& stop)[dim])
 			: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
 			  {
-#ifndef DEBUG
+#ifdef DEBUG
 		//! If we are on debug check that the stop grid_key id bigger than the start
 		//! grid_key
 
@@ -1213,7 +1213,7 @@ public:
 	 *
 	 */
 
-	void reinitialize(const grid_key_dx_iterator_sub<dim> & g_s_it)
+	inline void reinitialize(const grid_key_dx_iterator_sub<dim> & g_s_it)
 	{
 		// Reinitialize the iterator
 
@@ -1246,7 +1246,7 @@ public:
 	 * \return the volume
 	 *
 	 */
-	size_t getVolume()
+	inline size_t getVolume()
 	{
 		return Box<dim,long int>::getVolumeKey(gk_start.k, gk_stop.k);
 	}
@@ -1254,7 +1254,7 @@ public:
 	/*! \brief Reset the iterator (it restart from the beginning)
 	 *
 	 */
-	void reset()
+	inline void reset()
 	{
 		//! Initialize to 0 the index
 

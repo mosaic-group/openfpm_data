@@ -216,6 +216,45 @@ class CellDecomposer_sm
 	// Point transformation before get the Cell object (useful for example to shift the cell list)
 	transform t;
 
+	/*! \brief Convert the coordinates into id
+	 *
+	 * \param x coordinate
+	 * \param s dimension
+	 *
+	 */
+	inline size_t ConvertToID(const T (&x)[dim] ,size_t s) const
+	{
+		size_t id = (size_t)(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
+		id = (id >= (gr_cell.size(s) + off[0]))?(gr_cell.size(s)-1):id;
+		return id;
+	}
+
+	/*! \brief Convert the coordinates into id
+	 *
+	 * \param x point
+	 * \param s dimension
+	 *
+	 */
+	inline size_t ConvertToID(const Point<dim,T> & x ,size_t s) const
+	{
+		size_t id = (size_t)(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
+		id = (id >= (gr_cell.size(s) + off[0]))?(gr_cell.size(s)-1):id;
+		return id;
+	}
+
+	/*! \brief Convert the coordinates into id
+	 *
+	 * \param x point
+	 * \param s dimension
+	 *
+	 */
+	template <typename Mem> inline size_t ConvertToID_(const encapc<1,Point<dim,T>,Mem> & x ,size_t s) const
+	{
+		size_t id = (size_t)(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
+		id = (id >= (gr_cell.size(s) + off[0]))?(gr_cell.size(s)-1):id;
+		return id;
+	}
+
 protected:
 
 	// Total number of cell
@@ -232,6 +271,7 @@ protected:
 
 	// cell padding on each dimension
 	size_t off[dim];
+
 
 	/*! \brief Initialize all the structures
 	 *
@@ -303,15 +343,17 @@ public:
 
 
 		grid_key_dx<dim> key;
-		key.set_d(0,t.tranform(pos[0]) / box_unit.getHigh(0) + off[0]);
+		key.set_d(0,ConvertToID(pos[0],0));
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef DEBUG
-			if ((size_t)(t.transform(pos[s]) / box_unit.getHigh(s)) + off[s] < 0)
+			if (ConvertToID(pos[s],s) < 0)
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space";
 #endif
-			key.set_d(s,(size_t)(t.transform(pos[s]) / box_unit.getHigh(s)) + off[s]);
+
+			key.set_d(s,ConvertToID(pos[s],s));
+
 		}
 
 		return key;
@@ -334,7 +376,7 @@ public:
 #endif
 
 		grid_key_dx<dim> key;
-		key.set_d(0,t.transform(pos,0) / box_unit.getHigh(0) + off[0]);
+		key.set_d(0,ConvertToID(pos,0));
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
@@ -342,7 +384,7 @@ public:
 			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space\n";
 #endif
-			key.set_d(s,(size_t)(t.transform(pos,s) / box_unit.getHigh(s) + off[s]));
+			key.set_d(s,ConvertToID(pos,s));
 		}
 
 		return key;
@@ -367,7 +409,7 @@ public:
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
 
-		size_t cell_id = t.transform(pos,0) / box_unit.getHigh(0) + off[0];
+		size_t cell_id = ConvertToID(pos,0);
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
@@ -375,7 +417,7 @@ public:
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
-			cell_id += gr_cell.size(s) * ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]);
+			cell_id += gr_cell.size(s) * ConvertToID(pos,s);
 		}
 
 		return cell_id;
@@ -400,7 +442,7 @@ public:
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
 #endif
 
-		size_t cell_id = (size_t)(t.transform(pos,0) / box_unit.getHigh(0)) + off[0];
+		size_t cell_id = ConvertToID(pos,0);
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
@@ -408,7 +450,7 @@ public:
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
 #endif
-			cell_id += gr_cell.size_s(s-1) * ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]);
+			cell_id += gr_cell.size_s(s-1) * ConvertToID(pos,s);
 		}
 
 		return cell_id;
@@ -434,7 +476,7 @@ public:
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
 
-		size_t cell_id = (size_t)(t.transform(pos,0) / box_unit.getHigh(0)) + off[0];
+		size_t cell_id = ConvertToID_(pos,0);
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
@@ -442,7 +484,7 @@ public:
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
-			cell_id += gr_cell.size_s(s-1) * ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s]);
+			cell_id += gr_cell.size_s(s-1) * ConvertToID_(pos,s);
 		}
 
 		return cell_id;

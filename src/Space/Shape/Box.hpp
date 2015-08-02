@@ -770,16 +770,16 @@ public:
 		return true;
 	}
 
-	/*! \brief Check if the Box is a valid box P2 > P1
+	/*! \brief Check if the Box is a valid box P2 >= P1
 	 *
 	 * \return true if it is valid
 	 *
 	 */
-	bool isValid()
+	bool isValid() const
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			if (getLow(i) >= getHigh(i))
+			if (getLow(i) > getHigh(i))
 				return false;
 		}
 
