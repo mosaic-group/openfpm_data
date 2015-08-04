@@ -154,42 +154,31 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 		BOOST_REQUIRE_EQUAL(sp_box.isInside(p),false);
 	}
 
+	// Create random points inside the space box and check (excluding positive borders)
 
-	// Create points on positive and negative borders and check
+	SpaceBox<3,float> sp_box_1({0.0,0.0,0.0},{1.0,1.0,1.0});
 
-	SpaceBox<3,float> sp_box_pos({0.0,0.0,0.0},{5.0,5.0,5.0});
-
+	for (int i = 0 ; i < N_RANDOM_POINT ; i++)
 	{
-	Point<3,float> p1({5.0,5.0,5.0});
-	Point<3,float> p2({3.0,5.0,5.0});
-	Point<3,float> p3({5.0,5.0,3.0});
-	Point<3,float> p4({5.0,3.0,5.0});
-	Point<3,float> p5({0.0,0.0,5.0});
-	Point<3,float> p6({0.0,5.0,0.0});
-	Point<3,float> p7({5.0,0.0,0.0});
+		Point<3,float> p = sp_box_1.rndPE();
+		Point<3,float> p1 ({0.0,0.0,0.0});
 
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p1),false);
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p2),false);
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p3),false);
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p4),false);
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p5),false);
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p6),false);
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p7),false);
+		BOOST_REQUIRE_EQUAL(sp_box_1.isInsidePE(p),true);
+		BOOST_REQUIRE_EQUAL(sp_box_1.isInsidePE(p1),true);
 
 	}
 
-	{
-	Point<3,float> p1({0.0,0.0,0.0});
-	Point<3,float> p2({0.0,0.0,3.0});
-	Point<3,float> p3({3.0,0.0,0.0});
-	Point<3,float> p4({0.0,3.0,3.0});
-	Point<3,float> p5({2.5,2.5,2.5});
+	// Create random points outside the space box and check (excluding positive borders)
 
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p1),true);
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p2),true);
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p3),true);
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p4),true);
-	BOOST_REQUIRE_EQUAL(sp_box_pos.isInsidePE(p5),true);
+	SpaceBox<3,float> sp_box_out_1({1.1,1.1,1.1},{2.1,2.1,2.1});
+
+	for (int i = 0 ; i < N_RANDOM_POINT ; i++)
+	{
+		Point<3,float> p = sp_box_out_1.rndPE();
+		Point<3,float> p1 ({1.0,1.0,1.0});
+
+		BOOST_REQUIRE_EQUAL(sp_box_1.isInsidePE(p),false);
+		BOOST_REQUIRE_EQUAL(sp_box_1.isInsidePE(p1),false);
 	}
 
 	std::cout << "SpaceBox unit test stop" << "\n";

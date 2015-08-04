@@ -217,6 +217,30 @@ class SpaceBox : public Box<dim,T>
 		return p;
 	}
 
+	/*! \brief Generate a random point inside the box, excluding positive borders
+	 *
+	 * \return a random point inside the box
+	 *
+	 */
+	Point<dim,T> rndPE()
+	{
+		Point<dim,T> p;
+
+		for (size_t i = 0 ; i < dim ; i++) {
+			int a = ((T)rand())/RAND_MAX;
+			//excluding positive sides
+			if (a == 1)
+				a = a/2;
+			/*{
+			--i;
+			continue;
+			}*/
+			p.get(i) = a * (this->getHigh(i) - this->getLow(i)) + this->getLow(i);
+		}
+
+		return p;
+	}
+
 	//! Default constructor
 	SpaceBox<dim,T>()	{}
 };
