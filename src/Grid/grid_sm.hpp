@@ -6,7 +6,7 @@
 #include <vector>
 #include <initializer_list>
 #include <array>
-#include "memory.hpp"
+#include "memory/memory.hpp"
 #include "Space/Shape/Box.hpp"
 #include "grid_key.hpp"
 
@@ -675,11 +675,11 @@ public:
 	 *
 	 */
 	grid_key_dx_iterator()
-{
+	{
 #ifdef DEBUG
 		initialized = false;
 #endif
-}
+	}
 
 	/*! \brief Constructor from a grid_key_dx_iterator<dim>
 	 *
@@ -705,17 +705,14 @@ public:
 	 * \param g info of the grid on which iterate
 	 */
 	template<typename T> grid_key_dx_iterator(const grid_sm<dim,T> & g)
-			: grid_base(g)
-			  {
-		//! Initialize to 0 the index
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{gk.set_d(i,0);}
+	: grid_base(g)
+	{
+		reset();
 
 #ifdef DEBUG
 		initialized = true;
 #endif
-			  }
+	}
 
 	/*! \brief Constructor from another grid_key_dx_iterator
 	 *
@@ -740,7 +737,7 @@ public:
 	 */
 
 	grid_key_dx_iterator<dim> & operator++()
-			{
+	{
 		//! increment the first index
 
 		size_t id = gk.get(0);
@@ -767,7 +764,7 @@ public:
 		}
 
 		return *this;
-			}
+	}
 
 	/*! \brief Set the dimension
 	 *
@@ -813,9 +810,9 @@ public:
 	 *
 	 */
 	const grid_key_dx<dim> & get()
-			{
+	{
 		return gk;
-			}
+	}
 
 	/*! \brief Reinitialize the grid_key_dx_iterator
 	 *
@@ -824,10 +821,11 @@ public:
 	 */
 	void reinitialize(const grid_key_dx_iterator<dim> & key)
 	{
-
+		grid_base = key.grid_base;
+		reset();
 	}
 
-	/*! \brief Reset the counter
+	/*! \brief Reset the iterator (it restart from the beginning)
 	 *
 	 */
 	void reset()
@@ -1049,8 +1047,8 @@ public:
 	 *
 	 */
 	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
-			: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
-			  {
+	: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
+	{
 #if defined(DEBUG) && !defined(NO_WARNING)
 		//! If we are on debug check that the stop grid_key id bigger than the start
 		//! grid_key
@@ -1065,7 +1063,7 @@ public:
 #endif
 
 		Initialize();
-			  }
+	}
 
 
 	/*! \brief Constructor require a grid grid<dim,T>
@@ -1108,7 +1106,7 @@ public:
 	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const size_t (& start)[dim], const size_t (& stop)[dim])
 			: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
 			  {
-#ifndef DEBUG
+#ifdef DEBUG
 		//! If we are on debug check that the stop grid_key id bigger than the start
 		//! grid_key
 
@@ -1116,7 +1114,7 @@ public:
 		{
 			if (start[i] > stop[i])
 			{
-				std::cerr << "Error grid_key_dx_iterator : the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
+				std::cerr << "Error grid_key_dx_iterator : " << __FILE__ << ":" << __LINE__ << " the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
 			}
 		}
 #endif
@@ -1175,7 +1173,7 @@ public:
 	 *
 	 */
 
-	bool isNext()
+	inline bool isNext()
 	{
 #ifdef DEBUG
 		if (initialized == false)
@@ -1196,15 +1194,15 @@ public:
 	/*! \brief Return the actual grid key iterator
 	 *
 	 */
-	grid_key_dx<dim> get()
-			{
+	inline grid_key_dx<dim> get()
+	{
 #ifdef DEBUG
 		if (initialized == false)
 		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
 #endif
 
 		return grid_key_dx_iterator<dim>::get();
-			}
+	}
 
 	/*! \brief Reinitialize the iterator
 	 *
@@ -1215,7 +1213,7 @@ public:
 	 *
 	 */
 
-	void reinitialize(const grid_key_dx_iterator_sub<dim> & g_s_it)
+	inline void reinitialize(const grid_key_dx_iterator_sub<dim> & g_s_it)
 	{
 		// Reinitialize the iterator
 
@@ -1233,7 +1231,7 @@ public:
 		{
 			if (gk_start.get(i) > gk_stop.get(i))
 			{
-				std::cerr << "Error grid_key_dx_iterator : the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
+				std::cerr << "Error grid_key_dx_iterator : "  << __FILE__ << ":" << __LINE__ <<  " the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
 			}
 		}
 
@@ -1241,6 +1239,27 @@ public:
 #endif
 
 		Initialize();
+	}
+
+	/*! \brief Get the volume spanned by this sub-grid iterator
+	 *
+	 * \return the volume
+	 *
+	 */
+	inline size_t getVolume()
+	{
+		return Box<dim,long int>::getVolumeKey(gk_start.k, gk_stop.k);
+	}
+
+	/*! \brief Reset the iterator (it restart from the beginning)
+	 *
+	 */
+	inline void reset()
+	{
+		//! Initialize to 0 the index
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{this->gk.set_d(i,gk_start.get(i));}
 	}
 };
 

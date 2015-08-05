@@ -9,8 +9,7 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
 #include "base_type.hpp"
-#include "memory_conf.hpp"
-#include "Grid/grid_key.hpp"
+//#include "Grid/grid_key.hpp"
 #include "Grid/Encap.hpp"
 
 /*! \brief This class implement the point shape in an N-dimensional space
@@ -30,10 +29,6 @@ template<unsigned int dim ,typename T> class Point
 
 	//! boost fusion that store the point
 	typedef boost::fusion::vector<T[dim]> type;
-	//! layout that interleave the properties
-	typedef typename memory_traits_inte<type>::type memory_int;
-	//! layout with linear properties
-	typedef typename memory_traits_lin<type>::type memory_lin;
 
 	//! structure that store the data of the point
 	type data;
@@ -319,16 +314,27 @@ template<unsigned int dim ,typename T> class Point
 	    {get(i) = p[i];}
 	}
 
+	/*! \brief Point constructor
+	 *
+	 * \param p Point
+	 *
+	 */
+	template <typename S> inline Point(const Point<dim,S> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			get(i) = static_cast<S>(p.get(i));
+	}
+
 	/*! \brief Constructor from a grid_key_dx<dim>
 	 *
 	 * \param key from where to initialize
 	 *
 	 */
-	inline Point(grid_key_dx<dim> key)
+/*	inline Point(grid_key_dx<dim> key)
 	{
 	    for(size_t i = 0 ; i < dim ; i++)
 	    {get(i) = key.k[i];}
-	}
+	}*/
 
 	/*! \brief Constructor from a list
 	 *
@@ -345,6 +351,47 @@ template<unsigned int dim ,typename T> class Point
 	//! Default contructor
 	inline Point()
 	{}
+
+	/*! \brief Return the value i
+	 *
+	 * \return the value i
+	 *
+	 */
+	T & value(size_t i)
+	{
+		return get(i);
+	}
+
+	/*! \brief Return the coordinate i
+	 *
+	 * \return the coordinate i
+	 *
+	 */
+	T value(size_t i) const
+	{
+		return get(i);
+	}
+
+	/*! Convert the point from Point<dim,T> to Point<dim,A>
+	 *
+	 * \return the converted point
+	 *
+	 */
+	template<typename A> Point<dim,A> convertPoint() const
+	{
+		Point<dim,A> p;
+
+		for (size_t i = 0; i < dim ; i++)
+			p.get(i) = static_cast<A>(get(i));
+
+		return p;
+	}
+
+	//! This structure has no internal pointers
+	static bool noPointers()
+	{
+		return true;
+	}
 
 	static const unsigned int max_prop = 1;
 	static const unsigned int dims = dim;

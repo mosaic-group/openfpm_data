@@ -17,16 +17,19 @@
 #include <boost/fusion/include/for_each.hpp>
 #include <boost/mpl/range_c.hpp>
 #include <boost/mpl/for_each.hpp>
-#include "memory_conf.hpp"
+#include "memory_ly/memory_conf.hpp"
 #include "util/meta_copy.hpp"
 #include "Memleak_check.hpp"
 #include "util/for_each_ref.hpp"
+#include "util.hpp"
 #include <utility>
-
+#ifdef CUDA_GPU
+#include "memory/CudaMemory.cuh"
+#endif
 #include "grid_sm.hpp"
 #include "Encap.hpp"
-#include "memory_array.hpp"
-#include "memory_c.hpp"
+#include "memory_ly/memory_array.hpp"
+#include "memory_ly/memory_c.hpp"
 #include <vector>
 
 /*! \brief this class is a functor for "for_each" algorithm
@@ -317,6 +320,8 @@ public:
 	//! boost::vector that describe the data type
 	typedef typename T::type T_type;
 
+	typedef Mem memory_conf;
+
 private:
 	//! This is an header that store all information related to the grid
 	grid_sm<dim,T> g1;
@@ -346,6 +351,9 @@ private:
 				}
 
 public:
+
+	//! it define that it is a grid
+	typedef int yes_i_am_grid;
 
 	//! Definition of the layout
 	typedef typename memory_traits_lin<typename T::type>::type memory_lin;
@@ -732,9 +740,9 @@ public:
 			return;
 		}
 
-		// It is safe to a memory copy
+		// It is safe to do a memory copy
 
-		data.move(&get<0>());
+		data.move(&this->template get<0>());
 	}
 
 	/*! \brief Resize the space
@@ -804,11 +812,11 @@ public:
 #ifdef DEBUG
 		// Check that the element exist
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
-			if (dx.get(i) >= g1.size(i))
+			if (dx.get(i) >= (long int)g1.size(i))
 			{
-				std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " out of bound" << "\n";
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
 			}
 		}
 #endif
@@ -834,11 +842,11 @@ public:
 #ifdef DEBUG
 		// Check that the element exist
 
-		for (int i = 0 ; i < dim ; i++)
+		for (size_t i = 0 ; i < dim ; i++)
 		{
-			if (dx.get(i) >= g1.size(i))
+			if (dx.get(i) >= (long int)g1.size(i))
 			{
-				std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " out of bound" << "\n";
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
 			}
 		}
 #endif
@@ -860,8 +868,28 @@ public:
 
 	inline void set(grid_key_dx<dim> key1,const grid_cpu<dim,T,Mem> & g, grid_key_dx<dim> key2)
 	{
+#ifdef DEBUG
+		// Check that the element exist
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (key1.get(i) >= (long int)g1.size(i) || key1.get(i) < 0)
+			{
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
+			}
+		}
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (key2.get(i) >= (long int)g.g1.size(i) || key2.get(i) < 0)
+			{
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
+			}
+		}
+#endif
+
 		//create the object to copy the properties
-		copy_cpu_sd_k<dim,grid_cpu<dim,T,Mem>> cp(key1,key2,g,*this);
+		copy_cpu_sd_k<dim,grid_cpu<dim,T,Mem>> cp(key2,key1,g,*this);
 
 		// copy each property for each point of the grid
 
@@ -1023,11 +1051,14 @@ class grid_gpu
 
 public:
 
+	//! it define that it is a grid
+	typedef int yes_i_am_grid;
+
 	//! Definition of the layout
 	typedef typename memory_traits_inte<typename T::type>::type memory_int;
 
 	//! Memory traits
-	typedef Mem memory_t;
+	typedef Mem memory_conf;
 
 	//! Object container for T, it is the return type of get_o it return a object type trough
 	// you can access all the properties of T

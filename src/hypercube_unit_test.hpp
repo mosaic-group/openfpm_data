@@ -2,7 +2,7 @@
 #define HYPERCUBE_UNIT_TEST_HPP
 
 #include "Space/Shape/HyperCube.hpp"
-#include "util.hpp"
+#include "util/util_debug.hpp"
 
 /*! \brief Check if the linearization is correct
  *

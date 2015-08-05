@@ -5,6 +5,9 @@
  *      Author: Pietro Incardona
  */
 
+#ifndef UTIL_DEBUG_HPP
+#define UTIL_DEBUG_HPP
+
 /*! \brief check that two array match
  *
  * check that two array match
@@ -28,7 +31,13 @@ template<typename T> void boost_check_array(const T * ptr1, const T * ptr2, size
 
 #include <cxxabi.h>
 
-std::string demangle(const char* name) {
+/*! \brief typeid().name return a mangled name this function demangle it creating a more readable type string
+ *
+ * \param mangle string
+ *
+ * \return demangled string
+ */
+static std::string demangle(const char* name) {
 
     int status = -4; // some arbitrary value to eliminate the compiler warning
 
@@ -40,3 +49,5 @@ std::string demangle(const char* name) {
 
     return (status==0) ? res.get() : name ;
 }
+
+#endif

@@ -9,7 +9,6 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
 #include "base_type.hpp"
-#include "memory_conf.hpp"
 #include "Point.hpp"
 #include <Space/Shape/Point.hpp>
 
@@ -28,10 +27,6 @@ template<unsigned int dim ,typename T> class Sphere
 
 	//! boost fusion that store the point
 	typedef boost::fusion::vector<T[3],T> type;
-	//! layout that interleave the properties
-	typedef typename memory_traits_inte<type>::type memory_int;
-	//! layout with linear properties
-	typedef typename memory_traits_lin<type>::type memory_lin;
 
 	//! Structure that store the data
 	type data;

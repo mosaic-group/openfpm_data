@@ -11,6 +11,29 @@
 #include "object_util.hpp"
 #include "Point_test.hpp"
 #include "util/ct_array.hpp"
+#include "Vector/map_vector.hpp"
+#include "common.hpp"
+#include "check_no_pointers.hpp"
+#include "Grid/util.hpp"
+#include "data_type/scalar.hpp"
+
+//! [Declaration of struct with attributes and without]
+
+struct test_has_attributes
+{
+	struct attributes
+	{
+		static const std::string name[2];
+	};
+};
+
+const std::string test_has_attributes::attributes::name[]={"attributes1","attributes2"};
+
+struct test_no_attributes
+{
+};
+
+//! [Declaration of struct with attributes and without]
 
 BOOST_AUTO_TEST_SUITE( util_test )
 
@@ -47,8 +70,8 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 
 	//! [object copy encap example]
 
-	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_t> encap_src;
-	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_t> encap_dst;
+	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_conf> encap_src;
+	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_conf> encap_dst;
 
 	openfpm::vector<p> v_point;
 	openfpm::vector<object<vboost_red>> v_point_red;
@@ -109,8 +132,8 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 
 	//! [object write encap example]
 
-	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_t> encap_dst;
-	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_t> encap_src;
+	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_conf> encap_dst;
+	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_conf> encap_src;
 
 	openfpm::vector<p> v_point;
 	openfpm::vector<object<vboost_red>> v_point_red;
@@ -136,6 +159,111 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 		BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::v>()[i],i + 15.0);
 
 	//! [object write encap example]
+	}
+
+	{
+	//! [object creator check for no pointers]
+	struct no_method_pointer
+	{
+		float a;
+		int b;
+	};
+
+	struct no_pointer
+	{
+		double c;
+		int d;
+
+		static bool noPointers() {return true;}
+	};
+
+	struct with_pointer
+	{
+		double * c;
+		int d;
+
+		static bool noPointers() {return false;}
+	};
+
+	typedef boost::fusion::vector<int,float,double,no_method_pointer,no_pointer,with_pointer,no_method_pointer> v;
+
+	int val = boost::mpl::size< noPointers_sequence<v,0,2>::type >::value;
+	BOOST_REQUIRE_EQUAL(val,0);
+
+	val = boost::mpl::size< noPointers_sequence<v,0,2,4,5>::type >::value;
+	BOOST_REQUIRE_EQUAL(val,0);
+
+	val = boost::mpl::size< noPointers_sequence<v,0,1,2,3,4,5,6>::type >::value;
+	BOOST_REQUIRE_EQUAL(val,2);
+
+	typedef boost::fusion::vector<int *,float &,double *,no_method_pointer *,no_pointer &,with_pointer *,no_method_pointer &> vp;
+
+	val = boost::mpl::size< noPointers_sequence<vp,0,1,2,3,4,5,6>::type >::value;
+	BOOST_REQUIRE_EQUAL(val,2);
+
+	//! [object creator check for no pointers]
+	}
+
+	// Check the the object respect the noPointers construction
+	{
+
+	struct no_method_pointer
+	{
+		float a;
+		int b;
+	};
+
+	struct no_pointer
+	{
+		double c;
+		int d;
+
+		static bool noPointers() {return true;}
+	};
+
+	struct with_pointer
+	{
+		double * c;
+		int d;
+
+		static bool noPointers() {return false;}
+	};
+
+	typedef boost::fusion::vector<int,float,double> v;
+	int val = object<v>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer> va;
+	val = object<va>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,with_pointer> vb;
+	val = object<vb>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,double *> vc;
+	val = object<vc>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,double &> vd;
+	val = object<vd>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,double[3]> ve;
+	val = object<ve>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,no_pointer *> vf;
+	val = object<vf>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,no_pointer &> vg;
+	val = object<vg>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+
+	typedef boost::fusion::vector<int,float,double,no_pointer,no_pointer[3]> vh;
+	val = object<vh>::noPointers();
+	BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
 	}
 }
 
@@ -176,6 +304,229 @@ BOOST_AUTO_TEST_CASE( generate_array )
 	const size_t ct_calc = MetaFunc<ct_test_ce::data[0],ct_test_ce::data[1]>::value;
 	BOOST_REQUIRE_EQUAL(ct_calc,11);
 	//! [constexpr array]
+	}
+}
+
+BOOST_AUTO_TEST_CASE( check_templates_util_function )
+{
+	{
+		{
+		//! [Check no pointers]
+
+		struct test_no_ptr
+		{
+			static bool noPointers()	{return true;}
+		};
+
+		struct test_ptr
+		{
+			static bool noPointers()	{return false;}
+		};
+
+		struct test_unknown
+		{
+		};
+
+		BOOST_REQUIRE_EQUAL(has_noPointers<test_no_ptr>::type::value,true);
+		BOOST_REQUIRE_EQUAL(has_noPointers<test_ptr>::type::value,true);
+		BOOST_REQUIRE_EQUAL(has_noPointers<test_unknown>::type::value,false);
+
+		//! [Check no pointers]
+
+		}
+
+		{
+		//! [Check is_typedef_and_data_same]
+
+		struct test_typedef_same_data
+		{
+			typedef boost::fusion::vector<float,double,float[3]> type;
+
+			type data;
+		};
+
+		struct test_typedef_not_same_data
+		{
+			typedef boost::fusion::vector<float,double,float[3]> type;
+
+			boost::fusion::vector<float,double> data;
+		};
+
+		int val = is_typedef_and_data_same<true,test_typedef_same_data>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = is_typedef_and_data_same<true,test_typedef_not_same_data>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check is_typedef_and_data_same]
+		}
+
+		{
+		//! [Check has_data]
+
+		struct test_has_data
+		{
+			float data;
+		};
+
+		struct test_no_has_data
+		{
+		};
+
+		int val = has_data<test_has_data>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = has_data<test_no_has_data>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check has_data]
+		}
+
+		{
+		//! [Check has_typedef_type]
+
+		struct test_has_typedef
+		{
+			typedef float type;
+		};
+
+		struct test_no_has_data
+		{
+		};
+
+		int val = has_typedef_type<test_has_typedef>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = has_typedef_type<test_no_has_data>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check has_typedef_type]
+		}
+
+		{
+		//! [Check has_attributes]
+
+		int val = has_attributes<test_has_attributes>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = has_attributes<test_no_attributes>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check has_typedef_type]
+		}
+
+		//! [Check no pointers in structure]
+		struct test_no_ptr
+		{
+			static bool noPointers()	{return PNP::NO_POINTERS;}
+		};
+
+		struct test_ptr
+		{
+			static bool noPointers()	{return PNP::POINTERS;}
+		};
+
+		struct test_unknown
+		{
+		};
+
+		int val = check_no_pointers<test_no_ptr>::value();
+		BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
+		val = check_no_pointers<test_ptr>::value();
+		BOOST_REQUIRE_EQUAL(val,PNP::POINTERS);
+		val = check_no_pointers_impl<test_unknown,false>::value();
+		BOOST_REQUIRE_EQUAL(val,PNP::UNKNOWN);
+
+		//! [Check no pointers in structure]
+
+		{
+		//! [Check is_grid]
+
+		struct stub_object
+		{
+			float a;
+			double b;
+		};
+
+		bool val = is_grid< grid_cpu<2,scalar<float> > >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+		val = is_grid< grid_cpu<3,object< boost::fusion::vector<float,double> > > >::value;
+		BOOST_REQUIRE_EQUAL( val , true);
+		val = is_grid< grid_cpu<4,Point_test<float>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+
+		val = is_grid< grid_gpu<2,scalar<float> > >::value;
+		BOOST_REQUIRE_EQUAL(val ,true);
+		val = is_grid< grid_gpu<3,object< boost::fusion::vector<float,double>>> >::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = is_grid< grid_gpu<4,Point_test<float>> >::value;
+		BOOST_REQUIRE_EQUAL(val,true);
+
+		val = is_grid< float >::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+		val = is_grid< stub_object > ::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+
+		//! [Check is_grid]
+		}
+
+		{
+		//! [Check is_vector]
+
+		struct stub_object
+		{
+			float a;
+			double b;
+		};
+
+		bool val = is_vector< openfpm::vector<scalar<float> > >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+		val = is_vector< openfpm::vector<object< boost::fusion::vector<float,double> > > >::value;
+		BOOST_REQUIRE_EQUAL( val , true);
+		val = is_vector< openfpm::vector<Point_test<float>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+
+		val = is_vector< openfpm::vector<scalar<float> > >::value;
+		BOOST_REQUIRE_EQUAL(val ,true);
+		val = is_vector< openfpm::vector<object< boost::fusion::vector<float,double>>> >::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = is_vector< openfpm::vector<Point_test<float>> >::value;
+		BOOST_REQUIRE_EQUAL(val,true);
+
+		val = is_vector< float >::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+		val = is_vector< stub_object > ::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+
+		//! [Check is_vector]
+		}
+
+		{
+		//! [Check is_encap]
+
+		struct stub_object
+		{
+			float a;
+			double b;
+		};
+
+		bool val = is_encap< encapc<2,scalar<float>,memory_traits_lin<scalar<float>>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+		val = is_encap< encapc<3,object<boost::fusion::vector<float,double> >,memory_traits_lin<object< boost::fusion::vector<float,double>>>>  >::value;
+		BOOST_REQUIRE_EQUAL( val , true);
+		val = is_encap< encapc<4,Point_test<float>,memory_traits_lin<Point_test<float>>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+
+		val = is_encap< encapg<2,scalar<float>,memory_traits_lin<scalar<float>>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+		val = is_encap< encapg<3,object<boost::fusion::vector<float,double> >,memory_traits_lin<object< boost::fusion::vector<float,double>>>>  >::value;
+		BOOST_REQUIRE_EQUAL( val , true);
+		val = is_encap< encapg<4,Point_test<float>,memory_traits_lin<Point_test<float>>> >::value;
+		BOOST_REQUIRE_EQUAL( val ,true);
+
+		val = is_encap< float >::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+		val = is_encap< stub_object > ::value;
+		BOOST_REQUIRE_EQUAL( val, false);
+
+		//! [Check is_vector]
+		}
 	}
 }
 

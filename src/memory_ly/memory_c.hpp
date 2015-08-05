@@ -13,7 +13,7 @@
 #include <array>
 #include "util/ct_array.hpp"
 #include "memory_array.hpp"
-#include "memory.hpp"
+#include "memory/memory.hpp"
 
 #ifndef MEMORY_C_HPP_
 #define MEMORY_C_HPP_
@@ -23,7 +23,7 @@
  *
  * It store the object used to allocate memory and a representation of this memory as an array of objects T
  *
- * It is mainly used by memory_conf to create the correct layout
+ * It is mainly used by memory_conf to create the correct memory layout
  *
  * \see memory_traits_inte memory_traits_lin
  *
@@ -60,7 +60,7 @@ class memory_c
 		{
 			this->mem->decRef();
 
-			if (this->mem->ref() == 0)
+			if (this->mem->ref() == 0 && &mem != this->mem)
 				delete(this->mem);
 		}
 //			this->mem->decRef();
@@ -298,7 +298,7 @@ class memory_c<multi_array<T>, D>
 		{
 			this->mem->decRef();
 
-			if (this->mem->ref() == 0)
+			if (this->mem->ref() == 0 && &mem != this->mem)
 				delete(this->mem);
 		}
 		mem.incRef();

@@ -12,7 +12,7 @@
 
 #include "CellDecomposer.hpp"
 #include "Space/SpaceBox.hpp"
-#include "mathutil.hpp"
+#include "util/mathutil.hpp"
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
 
@@ -63,7 +63,7 @@ class CellList<dim,T,BALANCED,base>: public CellDecomposer_sm<dim,T>
 
 	// each cell has a pointer to a dynamic structure
 	// that store the elements in the cell
-	openfpm::vector<base *> cl_base;
+	openfpm::vector<base> cl_base;
 
 	//Origin point
 	Point<dim,T> orig;
@@ -120,9 +120,10 @@ public:
 
 		cl_base.resize(this->tot_n_cell);
 
-		//filling a vector with pointers to base-structures
+		//filling a vector with "base" structures
 		for (int i = 0; i < this->tot_n_cell; i++)
-			cl_base.get(i) =  new base;
+			//cl_base.push_back(base());
+			cl_base.get(i) = base();
 
 
 		// Calculate the NNc-arrays (for neighborhood):
@@ -252,7 +253,7 @@ public:
 
 		// add a new element
 
-		cl_base.get(cell_id)->add(ele);
+		cl_base.get(cell_id).add(ele);
 	}
 
 	/*! \brief remove an element from the cell
@@ -263,7 +264,7 @@ public:
 	 */
 	void remove(size_t cell, size_t ele)
 	{
-		cl_base.get(cell)->remove(ele);
+		cl_base.get(cell).remove(ele);
 	}
 
 	/*! \brief Return the number of element in the cell
@@ -275,7 +276,7 @@ public:
 	 */
 	size_t getNelements(size_t cell_id)
 	{
-		return cl_base.get(cell_id)->size();
+		return cl_base.get(cell_id).size();
 	}
 
 	/*! \brief Get an element in the cell
@@ -284,9 +285,9 @@ public:
 	 * \param ele element id
 	 *
 	 */
-	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell)->get(ele))
+	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell).get(ele))
 	{
-		return cl_base.get(cell)->get(ele);
+		return cl_base.get(cell).get(ele);
 	}
 
 	//Three next functions are optional
@@ -301,7 +302,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	template<unsigned int i> inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell)->get(ele))
+	template<unsigned int i> inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell).get(ele))
 	{
 		return cl_base.template get<i>(cell)->get(ele);
 	}

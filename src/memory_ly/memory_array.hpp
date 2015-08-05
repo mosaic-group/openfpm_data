@@ -8,7 +8,7 @@
 #ifndef MEMORY_ARRAY_HPP_
 #define MEMORY_ARRAY_HPP_
 
-#include <memory.hpp>
+#include "memory/memory.hpp"
 
 /*!
  *

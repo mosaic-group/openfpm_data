@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE( box_use)
 	//! [Enlarge the box with fixed P1]
 
 	Box<3,float> box1({0.1,0.2,0.3},{1.0,1.1,1.3});
-	Box<3,float> box2({0.5,0.6,0.7},{0.5,0.6,0.7});
+	Box<3,float> box2({-0.5,-0.6,-0.7},{0.5,0.6,0.7});
 
 	box1.enlarge_fix_P1(box2);
 
@@ -104,6 +104,66 @@ BOOST_AUTO_TEST_CASE( box_use)
 	BOOST_REQUIRE_CLOSE(box1.getHigh(2),2.7,0.0001);
 
 	//! [Enlarge the box with fixed P1]
+	}
+
+	{
+	//! [Translate a box]
+
+	Box<3,float> box1({0.1,0.5,0.6},{1.0,1.2,1.4});
+	Point<3,float> pnt({0.1,0.2,0.3});
+
+	box1 -= pnt;
+
+	BOOST_REQUIRE_CLOSE(box1.getLow(0),0.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(1),0.3,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(2),0.3,0.0001);
+
+	BOOST_REQUIRE_CLOSE(box1.getHigh(0),0.9,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(1),1.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(2),1.1,0.0001);
+
+	//! [Translate a box]
+
+	box1 -= box1.getP2();
+
+	BOOST_REQUIRE_CLOSE(box1.getLow(0),-0.9,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(1),-0.7,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(2),-0.8,0.0001);
+
+	BOOST_REQUIRE_CLOSE(box1.getHigh(0),0.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(1),0.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(2),0.0,0.0001);
+
+	box1 -= box1.getP1();
+
+	BOOST_REQUIRE_CLOSE(box1.getLow(0),0.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(1),0.0,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(2),0.0,0.0001);
+
+	BOOST_REQUIRE_CLOSE(box1.getHigh(0),0.9,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(1),0.7,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(2),0.8,0.0001);
+	}
+
+	{
+	Box<2,size_t> invalid1({5,7},{3,9});
+	Box<2,size_t> invalid2({5,11},{9,9});
+	Box<2,size_t> invalid3({12,11},{9,9});
+
+	Box<2,size_t> valid1({1,5},{6,9});
+	Box<2,size_t> valid2({1,1},{1,1});
+
+	bool val = invalid1.isValid();
+	BOOST_REQUIRE_EQUAL(val,false);
+	val = invalid2.isValid();
+	BOOST_REQUIRE_EQUAL(invalid2.isValid(),false);
+	val = invalid3.isValid();
+	BOOST_REQUIRE_EQUAL(invalid3.isValid(),false);
+	val = valid1.isValid();
+	BOOST_REQUIRE_EQUAL(valid1.isValid(),true);
+	val = valid2.isValid();
+	BOOST_REQUIRE_EQUAL(valid2.isValid(),true);
+
 	}
 
 	std::cout << "Box unit test stop" << "\n";

@@ -17,7 +17,6 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
 #include "base_type.hpp"
-#include "memory_conf.hpp"
 #include "Grid/grid_key.hpp"
 
 /*! \brief This class implement an NxN (dense) matrix

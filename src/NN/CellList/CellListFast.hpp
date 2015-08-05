@@ -10,7 +10,7 @@
 
 #include "CellDecomposer.hpp"
 #include "Space/SpaceBox.hpp"
-#include "mathutil.hpp"
+#include "util/mathutil.hpp"
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
 
@@ -149,7 +149,7 @@ public:
 	 * \return the grid infos
 	 *
 	 */
-	grid_sm<dim,void> & getGrid()
+	const grid_sm<dim,void> & getGrid()
 	{
 		return CellDecomposer_sm<dim,T,transform>::getGrid();
 	}

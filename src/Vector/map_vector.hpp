@@ -12,6 +12,7 @@
 #include "memory/HeapMemory.hpp"
 #include "vect_isel.hpp"
 #include "util/object_s_di.hpp"
+#include "util.hpp"
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
@@ -260,7 +261,6 @@ namespace openfpm
 
 	#include "map_vector_std.hpp"
 
-
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
 	 * The layout is memory_traits_lin
@@ -324,8 +324,11 @@ namespace openfpm
 
 	public:
 
+		//! it define that it is a vector
+		typedef int yes_i_am_vector;
+
 		//! Type of the encapsulation memory parameter
-		typedef typename grid_cpu<1,T>::memory_t memory_t;
+		typedef typename grid_cpu<1,T>::memory_conf memory_conf;
 
 		//! iterator for the vector
 		typedef vector_key_iterator iterator_key;
@@ -607,7 +610,7 @@ namespace openfpm
 		{
 #ifdef DEBUG
 			if (id >= v_size)
-			{std::cerr << "Error "  << __FILE__ << "  " << __LINE__ << " vector overflow" << "\n";}
+			{std::cerr << "Error: "  << __FILE__ << ":" << __LINE__ << " vector overflow" << "\n";}
 #endif
 			grid_key_dx<1> key(id);
 
@@ -650,7 +653,7 @@ namespace openfpm
 		{
 #ifdef DEBUG
 			if (id >= v_size)
-			{std::cerr << "Error "  << __FILE__ << "  " << __LINE__ << " vector overflow" << "\n";}
+			{std::cerr << "Error "  << __FILE__ << ":" << __LINE__ << " vector overflow" << "\n";}
 #endif
 			grid_key_dx<1> key(id);
 
@@ -688,6 +691,7 @@ namespace openfpm
 		 *
 		 */
 		vector(const vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> && v)
+		:v_size(0)
 		{
 			swap(v);
 		}
@@ -698,6 +702,7 @@ namespace openfpm
 		 *
 		 */
 		vector(const vector<T,device_cpu<T>, Memory,grow_p,OPENFPM_NATIVE> & v)
+		:v_size(0)
 		{
 			swap(v.duplicate());
 		}
@@ -930,6 +935,16 @@ namespace openfpm
 		{
 			return base.getPointer();
 		}
+
+		/*! \brief This class has pointer inside
+		 *
+		 * \return false
+		 *
+		 */
+		static bool noPointers()
+		{
+			return false;
+		}
 	};
 
 
@@ -1120,7 +1135,20 @@ namespace openfpm
 		{
 			base.template setMemory<Memory>(mem);
 		}
+
+		/*! \brief This class has pointer inside
+		 *
+		 * \return false
+		 *
+		 */
+		static bool noPointers()
+		{
+			return false;
+		}
 	};
+
+	template <typename T> using vector_std = vector<T, openfpm::device_cpu<T>, HeapMemory, openfpm::grow_policy_double, STD_VECTOR>;
+
 }
 
 #endif

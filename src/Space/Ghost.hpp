@@ -59,6 +59,16 @@ public:
 		}
 	}
 
+	// Basic constructor
+	inline Ghost()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			this->setLow(i,0);
+			this->setHigh(i,0);
+		}
+	}
+
 	/*! \brief Divide component wise the ghost box with a point
 	 *
 	 * \param p point

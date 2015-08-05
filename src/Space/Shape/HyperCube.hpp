@@ -1,10 +1,9 @@
 #ifndef HYPERCUBE_HPP
 #define HYPERCUBE_HPP
 
-#include "mathutil.hpp"
 #include "Grid/grid_sm.hpp"
 #include "Grid/comb.hpp"
-#include "mathutil.hpp"
+#include "util/mathutil.hpp"
 
 template<unsigned int dim, unsigned int subdim> class SubHyperCube;
 

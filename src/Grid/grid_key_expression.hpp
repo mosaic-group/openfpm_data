@@ -1,6 +1,7 @@
 #ifndef GRID_KEY_EXPRESSION
 #define GRID_KEY_EXPRESSION
 
+#include "util/common.hpp"
 
 template<unsigned int dim> class grid_key_dx;
 template<int dim, typename exp1, typename exp2> class grid_key_dx_sum;

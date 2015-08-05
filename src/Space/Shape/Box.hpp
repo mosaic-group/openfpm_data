@@ -60,10 +60,6 @@ public:
 	typedef boost::fusion::vector<T[dim],T[dim]> type;
 	//! type of the box
 	typedef T btype;
-	//! layout that interleave the properties
-	typedef typename memory_traits_inte<type>::type memory_int;
-	//! layout with linear properties
-	typedef typename memory_traits_lin<type>::type memory_lin;
 
 	//! It store the two point bounding the box
 	type data;
@@ -238,7 +234,6 @@ public:
 	 * \param p2 High point, initialized as a list example {1.0,1.0,1.0}
 	 *
 	 */
-
 	Box(std::initializer_list<T> p1, std::initializer_list<T> p2)
 	{
 		set(p1,p2);
@@ -316,7 +311,6 @@ public:
 	 * \param box_data fusion vector from which to construct the vector
 	 *
 	 */
-
 	template<unsigned int dimS> inline Box(boost::fusion::vector<T[dimS],T[dimS]> & box_data)
 	{
 		// we copy the data
@@ -333,7 +327,6 @@ public:
 	 * \param b box from which to construct the vector (encapsulated)
 	 *
 	 */
-
 	template<typename Mem> inline Box(const encapc<1,Box<dim,T>,Mem> & b)
 	{
 		// we copy the data
@@ -343,6 +336,20 @@ public:
 			boost::fusion::at_c<p1>(data)[i] = b.template get<p1>()[i];
 			boost::fusion::at_c<p2>(data)[i] = b.template get<p2>()[i];
 		}
+	}
+
+	/*! \brief constructor from a Box of different type
+	 *
+	 * \param b box
+	 *
+	 */
+	template <typename S> inline Box(const Box<dim,S> & b)
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setLow(d,b.getLow(d));}
+
+		for (size_t d = 0 ; d < dim ; d++)
+		{this->setHigh(d,b.getHigh(d));}
 	}
 
 	/*! \brief Divide component wise each box points with a point
@@ -548,6 +555,24 @@ public:
 		return ret;
 	}
 
+	/*! \brief Translate the box
+	 *
+	 * \p Point translation vector
+	 *
+	 * \return itself
+	 *
+	 */
+	inline Box<dim,T> & operator-=(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			boost::fusion::at_c<p2>(data)[i] -= p.get(i);
+			boost::fusion::at_c<p1>(data)[i] -= p.get(i);
+		}
+
+		return *this;
+	}
+
 	/* \brief expand expand the box by a vector
 	 *
 	 * \param vector
@@ -616,13 +641,25 @@ public:
        \endverbatim
 	 *
 	 */
-	template<typename S> void enlarge_fix_P1(Box<dim,S> & gh)
+	template<typename S> inline void enlarge_fix_P1(Box<dim,S> & gh)
 	{
 		typedef ::Box<dim,T> g;
 
 		for (size_t j = 0 ; j < dim ; j++)
 		{
-			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j) + gh.template getBase<g::p1>(j));
+			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j) - gh.template getBase<g::p1>(j));
+		}
+	}
+
+	/*! \brief Shrink moving p2 of sh quantity (on each direction)
+	 *
+	 *
+	 */
+	inline void shrinkP2(T sh)
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->setHigh(j,this->getHigh(j) - sh);
 		}
 	}
 
@@ -733,6 +770,59 @@ public:
 		return true;
 	}
 
+	/*! \brief Check if the Box is a valid box P2 >= P1
+	 *
+	 * \return true if it is valid
+	 *
+	 */
+	bool isValid() const
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (getLow(i) > getHigh(i))
+				return false;
+		}
+
+		return true;
+	}
+
+	/*! \brief Translate P1 of a given vector P1
+	 *
+	 * \param p1 vector
+	 *
+	 */
+	void ceilP1()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setLow(i,std::ceil(getLow(i)));
+		}
+	}
+
+	/*! \brief Translate P1 of a unit vector on all directions
+	 *
+	 * \param p1 vector
+	 *
+	 */
+	void ceilP2()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setHigh(i,std::ceil(getHigh(i)));
+		}
+	}
+
+	/*! \brief Shrink the point P2 by one
+	 *
+	 */
+	void shrinkP2(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setHigh(i,getHigh(i) - p.get(i));
+		}
+	}
+
 	/*! \brief Check if the point is inside the region
 	 *
 	 * \param p point to check
@@ -762,12 +852,12 @@ public:
 		return true;
 	}
 
-	/*! \brief Get the volume of the box
+	/*! \brief Get the volume spanned by the Box P1 and P2 interpreted as grid key
 	 *
 	 * \return The volume
 	 *
 	 */
-	T getVolume()
+	inline T getVolumeKey()
 	{
 		T vol = 1.0;
 
@@ -775,6 +865,32 @@ public:
 			vol *= (getHigh(i) - getLow(i) + 1.0);
 
 		return vol;
+	}
+
+	/*! \brief Get the volume spanned by the Box as grid_key_dx_iterator_sub
+	 *
+	 * \warning Careful it is not the simple volume calculation there is a +1 on each dimension, consider the case of a subgrid iterator with
+	 *          P1 = {5,7} ; P2  = {5,7}, the sub-grid iterator has one point {5,7}, that mean Volume=1, so
+	 *          the volume formula is (5 - 5 + 1) * (7 - 7 + 1)
+	 *
+	 *
+	 * \return The volume
+	 *
+	 */
+	inline static T getVolumeKey(T (&p1)[dim], T(&p2)[dim])
+	{
+		T vol = 1.0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			vol *= (p2[i] - p1[i] + 1.0);
+
+		return vol;
+	}
+
+	//! This structure has no internal pointers
+	static bool noPointers()
+	{
+		return true;
 	}
 };
 

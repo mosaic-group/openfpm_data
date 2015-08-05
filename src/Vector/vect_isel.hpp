@@ -8,7 +8,7 @@
 #ifndef VECTOR_IMPL_HPP_
 #define VECTOR_IMPL_HPP_
 
-#include "common.hpp"
+#include "util/common.hpp"
 
 #define STD_VECTOR 1
 #define OPENFPM_NATIVE 2

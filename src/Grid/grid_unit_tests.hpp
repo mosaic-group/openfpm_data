@@ -5,6 +5,7 @@
 #include "Point_test.hpp"
 #include "Space/Shape/HyperCube.hpp"
 #include "timer.hpp"
+#include "grid_util_test.hpp"
 
 #ifdef TEST_COVERAGE_MODE
 #define GS_SIZE 8
@@ -244,34 +245,8 @@ template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t
 
 	bool passed = true;
 
-	key_it = c3.getIterator();
-
-	while (key_it.isNext())
-	{
-		grid_key_dx<dim> kk = key_it.get();
-
-		c3.template get<P::x>(kk) = c3.getGrid().LinId(kk);
-		c3.template get<P::y>(kk) = c3.getGrid().LinId(kk)+1;
-		c3.template get<P::z>(kk) = c3.getGrid().LinId(kk)+2;
-		c3.template get<P::s>(kk) = c3.getGrid().LinId(kk)+3;
-
-		c3.template get<P::v>(kk)[0] = c3.getGrid().LinId(kk)+123;
-		c3.template get<P::v>(kk)[1] = c3.getGrid().LinId(kk)+124;
-		c3.template get<P::v>(kk)[2] = c3.getGrid().LinId(kk)+125;
-
-		c3.template get<P::t>(kk)[0][0] = c3.getGrid().LinId(kk)+567;
-		c3.template get<P::t>(kk)[0][1] = c3.getGrid().LinId(kk)+568;
-		c3.template get<P::t>(kk)[0][2] = c3.getGrid().LinId(kk)+569;
-		c3.template get<P::t>(kk)[1][0] = c3.getGrid().LinId(kk)+570;
-		c3.template get<P::t>(kk)[1][1] = c3.getGrid().LinId(kk)+571;
-		c3.template get<P::t>(kk)[1][2] = c3.getGrid().LinId(kk)+572;
-		c3.template get<P::t>(kk)[2][0] = c3.getGrid().LinId(kk)+573;
-		c3.template get<P::t>(kk)[2][1] = c3.getGrid().LinId(kk)+574;
-		c3.template get<P::t>(kk)[2][2] = c3.getGrid().LinId(kk)+575;
-
-		++key_it;
-	}
-
+	//! Fill the grid with some data
+	fill_grid<dim>(c3);
 
 	key_it = c3.getIterator();
 
@@ -587,6 +562,13 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 	BOOST_REQUIRE_EQUAL(count, 14*14*14);
 
 	//! [Sub-grid iterator test usage]
+
+	// reset the iterator and check that it start from gk_start
+	g_it.reset();
+
+	bool val = g_it.get() == start;
+
+	BOOST_REQUIRE_EQUAL(val,true);
 	}
 }
 

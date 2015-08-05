@@ -79,15 +79,13 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	{
 		// Add 2 particles on each cell
 
-		// particle one
-		Point<dim,T> key = g_it.get();
+		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = key * spacing + offset[0];
 
 		cl1.add(key,id);
 		++id;
 
-		// particle two
-		key = g_it.get();
+		key = Point<dim,T>(g_it.get().toPoint());
 		key = key * spacing + offset[1];
 
 		cl1.add(key,id);
@@ -107,7 +105,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	{
 		// Add 2 particles on each cell
 
-		Point<dim,T> key = g_it.get();
+		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = key * spacing + offset[2];
 
 		size_t cell = cl1.getCell(key);
@@ -128,7 +126,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	{
 		// remove 1 particle on each cell
 
-		Point<dim,T> key = g_it.get();
+		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = key * spacing + offset[0];
 
 		auto cell = cl1.getCell(key);
@@ -147,7 +145,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	{
 		// remove 1 particle on each cell
 
-		Point<dim,T> key = g_it.get();
+		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = key * spacing + offset[0];
 
 		auto cell = cl1.getCell(key);
@@ -171,7 +169,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	{
 		// remove 1 particle on each cell
 
-		Point<dim,T> key = g_it_s.get();
+		Point<dim,T> key = Point<dim,T>(g_it_s.get().toPoint());
 		key = key * spacing + offset[0];
 
 		auto NN = cl1.template getNNIterator<NO_CHECK>(cl1.getCell(key));
@@ -305,7 +303,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_get_grid_points )
 	BOOST_REQUIRE_EQUAL(gp.getHigh(2),6+padding-1);
 
 	// Get the volume of the box
-	size_t vol = gp.getVolume();
+	size_t vol = gp.getVolumeKey();
 
 	BOOST_REQUIRE_EQUAL(vol,12);
 	}
@@ -342,7 +340,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_get_grid_points )
 	BOOST_REQUIRE_EQUAL(gp.getHigh(1),3+padding);
 
 	// Get the volume of the box
-	size_t vol = gp.getVolume();
+	size_t vol = gp.getVolumeKey();
 
 	BOOST_REQUIRE_EQUAL(vol,4);
 	}
