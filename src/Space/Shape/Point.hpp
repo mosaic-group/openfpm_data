@@ -14,8 +14,6 @@
 
 /*! \brief This class implement the point shape in an N-dimensional space
  *
- * This class implement the point shape in an N-dimensional space
- *
  * \param T type of the space
  * \param dim dimensionality
  *
@@ -323,9 +321,9 @@ template<unsigned int dim ,typename T> class Point
 	inline Point()
 	{}
 
-	/*! \brief Return the value i
+	/*! \brief Return the reference to the value at coordinate i
 	 *
-	 * \return the value i
+	 * \return the reference
 	 *
 	 */
 	T & value(size_t i)
@@ -333,14 +331,24 @@ template<unsigned int dim ,typename T> class Point
 		return get(i);
 	}
 
-	/*! \brief Return the coordinate i
+	/*! \brief Return the value at coordinate i
 	 *
-	 * \return the coordinate i
+	 * \return the value
 	 *
 	 */
 	T value(size_t i) const
 	{
 		return get(i);
+	}
+
+	/*! \brief Return the coordinated of the point as reference array
+	 *
+	 * \return the reference array
+	 *
+	 */
+	T (&asArray())[dim]
+	{
+		return boost::fusion::at_c<x>(data);
 	}
 
 	/*! Convert the point from Point<dim,T> to Point<dim,A>
