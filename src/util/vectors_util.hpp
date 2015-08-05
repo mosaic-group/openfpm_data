@@ -17,7 +17,7 @@ public:
     }
 };
 
-/////// When T = openfpm::grid_cpu
+// When T = openfpm::grid_cpu
 
 template <unsigned int dim, typename T, typename St>
 class weight_counter<dim,T,St,IS_GRID>
@@ -47,13 +47,14 @@ public:
     }
 };
 
-////// When T = openfpm::vector
+// When T = openfpm::vector
 
 template <unsigned int dim, typename T, typename St>
 class weight_counter<dim,T,St,IS_VECTOR>
 {
 public:
-    size_t weight(openfpm::vector<Point<dim,T>> & t, const Box<dim,St> & domain, Box<dim,St> & b)
+    size_t weight(T & t, const Box<dim,St> & domain, Box<dim,St> & b)
+
     {
        // Vector implementation
       //get size of a vector = number of points
