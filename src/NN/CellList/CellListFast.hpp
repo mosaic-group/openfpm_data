@@ -69,7 +69,7 @@
  *
  * \tparam dim Dimansionality of the space
  * \tparam T type of the space float, double, complex
- * \tparam base basic object
+ * \tparam base Base structure that store the information
  *
  * ### Declaration of a cell list
  * \snippet CellList_test.hpp Declare a cell list
@@ -141,8 +141,11 @@ class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,trans
 
 public:
 
-	// Object type that the structure store
+	// value type of the space
 	typedef T value_type;
+	
+	// type of stored elements
+	typedef typename base::value_type element_type;
 
 	/*! \brief Return the underlying grid information of the cell list
 	 *
