@@ -114,6 +114,10 @@ class AdaptiveCellList<dim,T,BALANCED,ele_container> // : public CellDecomposer_
 		}
 	}
 	
+	size_t firstIndexOfLevel(size_t level) {
+		//sum i from 0 to (target_level-1): 2^(dim*i) = (2^(dim+dim*(target_level-1)) - 1) / (2^dim - 1)
+		return ((1l << (dim*level)) - 1) / ((1l << dim) - 1);
+	}
 	
 public:
 
@@ -188,11 +192,11 @@ public:
 				  {return a.first.get(dim) > b.first.get(dim);}); // descending order!
 		
 		T minradius = all_eles.last().first.get(dim);
-		std::cout << "Min. radius: " << minradius << std::endl;
+		//std::cout << "Min. radius: " << minradius << std::endl;
 		
 		max_level = std::ceil(std::log2(D_m / minradius)) - 1;
 		// fun fact: more than about 64/dim levels are not possible with these indices (and thats already with 8 byte for a size_t). Perhaps set it as maximum? TODO.
-		std::cout << "Max. level: " << max_level << std::endl;
+		//std::cout << "Max. level: " << max_level << std::endl;
 		
 		auto end_iter = all_eles.begin();
 		auto begin_iter(end_iter);
@@ -211,7 +215,7 @@ public:
 			begin_iter = end_iter;
 			while(end_iter != all_eles.end() && end_iter->first.get(dim) >= D_m / (1l << (k+1)))
 				++end_iter;
-			std::cout << "Sorting on level " << k << ": " << std::distance(begin_iter, end_iter) << " of " << all_eles.size() << std:: endl;
+			//std::cout << "Sorting on level " << k << ": " << std::distance(begin_iter, end_iter) << " of " << all_eles.size() << std:: endl;
 			
 			// If there are no particles on this level... no need to fill the tree/hashmap.
 			if (begin_iter == end_iter)
@@ -251,19 +255,25 @@ public:
 		return std::make_pair(result.str(), foundsomething ? childresult : "");
 	}
 	
-	inline size_t findCellIndex(Point<dim+1, T> p) // called Op1 in paper
+	/*! \brief called Op1 in paper
+	 */
+	inline size_t findCellIndex(Point<dim+1, T> p)
 	{
-		unsigned int target_level = std::ceil(std::log2(D_m / p.get(dim))) - 1;
+		T radius = p.get(dim);
+		if(radius > D_m)
+			throw std::invalid_argument("Point with cutoff radius > D_m searched!");
+			// Alternatively we could just limit it to D_m, but... that might yield wrong results.
+		
+		unsigned int target_level = std::ceil(std::log2(D_m / radius)) - 1;
 		//std::cout << p.toString() << " is on level " << target_level << std::endl;
 		
 		if(target_level == 0)
 			return 0;
 		
-		size_t firstindexoflastlevel = 0, cellindexoffsetinlastlevel = 0;
+		size_t cellindexoffsetinlastlevel = 0;
 		SpaceBox<dim,T> cellbox(sbox);
 		
 		for (unsigned int k = 1; k <= target_level; ++k) {
-			firstindexoflastlevel += (1l << (dim*(k-1)));
 			// Which part of the partition are we in? (0 - 2^dim)
 			for (unsigned int i = 0; i < dim; ++i) {
 				const T pivot = (cellbox.getHigh(i) + cellbox.getLow(i)) / 2;
@@ -280,27 +290,23 @@ public:
 			//std::cout << "In k=" << k << ": firstindex=" << firstindexoflastlevel << " offset=" << cellindexoffsetinlastlevel << std::endl;
 		}
 		
-		size_t cellindex = firstindexoflastlevel + cellindexoffsetinlastlevel;
-		
-		///*
-		// check here, whether the calculated cell really contains a point! thats easy and will be a good base for debugging
-		bool found = false;
-		auto iter = cells.find(cellindex);
-		if (iter != cells.end())
-			for(auto childiter = iter->second.first; childiter != iter->second.second; ++childiter)
-				if(childiter->first == p)
-					found = true;
-		
-		if(!found)
-			std::cout << "MISSING! " << cellindex << ": " << p.toString() << std::endl;
-		else
-			std::cout << cellindex << ": " << p.toString() << std::endl;
-		//*/
-		
-		return cellindex;
+		return firstIndexOfLevel(target_level) + cellindexoffsetinlastlevel;
 	}
 	
-	inline std::vector<size_t> findChildrenIndices(size_t rootindex) // called Op3 in paper
+	/*! \brief gets start and end iterator of contents of a cell (or any two identical iterators, if the cell is empty)
+	 */
+	inline std::pair<decltype(all_eles.begin()), decltype(all_eles.end())> getCellContents(size_t cellindex)
+	{
+		auto iter = cells.find(cellindex);
+		if (iter == cells.end())
+			return std::make_pair(all_eles.end(), all_eles.end()); // nothing in there
+		else
+			return std::make_pair(iter->second.first, iter->second.second);
+	}
+	
+	/*! \brief called Op3 in paper
+	 */
+	inline std::vector<size_t> findChildrenIndices(size_t rootindex)
 	{
 		/*
 		 * ((J+1) * 2^d + l) - 1 = J ^ 2^d + (l + 2^d - 1) -- J+1 and the global -1 because our indices start at 0 and stuff.
@@ -309,9 +315,52 @@ public:
 		 */
 		std::vector<size_t> children;
 		children.reserve(1 << dim);
-		for(size_t l = 1; l <= (1 << dim); ++l)
+		for(size_t l = 1; l <= (1l << dim); ++l)
 			children.push_back((rootindex << dim) + l);
 		return children;
+	}
+	
+	/*! \brief needed for Op5
+	 */
+	inline Point<dim+1,T> findCellCenter(size_t cellindex)
+	{
+		// inverse of (sum 2^(dim*i) over i from 0 to (level-1))  ->  level = floor(ld(index * (2^dim - 1) + 1) / dim)
+		size_t level = std::floor(std::log2(((1l << dim) - 1l) * cellindex + 1l) / dim);
+		
+		size_t indexoffset = cellindex - firstIndexOfLevel(level); // offset in last level
+		size_t indexmax = 1l << (dim*level); // also in last level
+		
+		//std::cout << "Index " << cellindex << " has offset " << indexoffset << "/" << indexmax << " in level " << level << std::endl;
+		
+		Point<dim+1,T> pos;
+		// spatial coords
+		for(unsigned int d = 0; d < dim; d++)
+			pos.get(d) = sbox.getP1().get(d);
+		// cutoff radius
+		pos.get(dim) = (D_m / static_cast<T>(1l << (level+1))) * static_cast<T>(1.5f); // the *1.5 should be useless. TODO: make sure that it is
+		
+		// using this offset as a pivot on the whole row gives me the position w.r.t to the highest dimension on the highest level
+		// then pivoting on this half of the row gives me the pos in the next highest dim and so on until
+		// pivoting gives me the position in the highest dimension on the second highest level... and so on!
+		
+		size_t pivot = indexmax / 2l;
+		size_t iter = 1;
+		while(pivot > 0) {
+			for(unsigned int d = 0; d < dim && pivot > 0; ++d) {
+				//std::cout << "Pivot " << pivot << std::endl;
+				if (indexoffset >= pivot) {
+					indexoffset -= pivot;
+					pos.get(d) += (sbox.getHigh(d) - sbox.getLow(d)) / (1 << iter);
+				}
+				pivot /= 2l;
+			}
+			++iter;
+		}
+		
+		for(unsigned int d = 0; d < dim; ++d)
+			pos.get(d) += (sbox.getHigh(d) - sbox.getLow(d)) / (1l << (level+1));
+		
+		return pos;
 	}
 	
 	/*! \brief Get an element in the cell

@@ -297,6 +297,7 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_arcelllist)
 	
 	timestamp_t t0 = get_timestamp();
 	
+	///*
 	auto iter = arcl.getNNIterator<FAST>(4711); //full interactions
 	while (iter.isNext()) {
 		i2 = iter.get();
@@ -314,6 +315,7 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_arcelllist)
 		//std::cout << std::endl;
 		++iter;
 	}
+	//*/
 	
 	timestamp_t t1 = get_timestamp();
 	std::cout << "that was easy (us): " << t1-t0 << std::endl;
@@ -322,13 +324,24 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_arcelllist)
 			<< " candidates (" << (static_cast<float>(interaction_candidates) / interactions_count)
 			<< "x)." << std::endl;
 	
-	auto printresult = arcl.printTree(0,0,0);
-	std::cout << printresult.first << printresult.second << std::endl;
+	//auto printresult = arcl.printTree(0,0,0);
+	//std::cout << printresult.first << printresult.second << std::endl;
 	
-	for(auto& p: samplepoints3)
-		arcl.findCellIndex(p);
-	arcl.findCellIndex(Point<3,float>({0.0f,0.0f,0.066f}));
+	for(auto& p: samplepoints3) {
+		size_t cellindex = arcl.findCellIndex(p);
+		
+		// check here, whether the calculated cell really contains our point! thats easy and will be a good base for debugging
+		bool found = false;
+		
+		auto iter = arcl.getCellContents(cellindex);
+		for(auto childiter = iter.first; childiter != iter.second; ++childiter)
+			if(childiter->first == p)
+				found = true;
+		
+		BOOST_REQUIRE(found);
+	}
 	
+	/*
 	std::cout << "0: ";
 	for (auto& i : arcl.findChildrenIndices(0))
 		std::cout << i << " ";
@@ -348,6 +361,19 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_arcelllist)
 	for (auto& i : arcl.findChildrenIndices(6))
 		std::cout << i << " ";
 	std::cout << std::endl;
+	*/
+	
+	size_t max = -1; // = 18446744073709551615 on my system
+	//max = (1l << 32) + 1l;
+	for(size_t i = 0; i < 10000000; i++)
+		BOOST_REQUIRE_EQUAL(arcl.findCellIndex(arcl.findCellCenter(i)), i);
+	for(size_t i = 10000; i < max; i += 777777) {
+		BOOST_CHECK_EQUAL(arcl.findCellIndex(arcl.findCellCenter(i)), i);
+	}
+	
+	// Fails from about 164193736704988 on (but apparently only about every 2 tries... some mistake in the ofset calculation or something maybe?)
+	
+	std::cout << static_cast<size_t>(-1) << " < " << static_cast<size_t>(max) << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
