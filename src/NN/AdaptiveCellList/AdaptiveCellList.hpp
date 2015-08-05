@@ -47,11 +47,74 @@ class AdaptiveCellList<dim,T,BALANCED,ele_container> // : public CellDecomposer_
 	//A point
 	Point<dim,T> orig;
 	
+	// the box
 	SpaceBox<dim,T> sbox;
+	// minimum edge length of the box
+	T D_m;
+	// number of the last level
+	unsigned int max_level;
 	
 	// AR tree represented as a hashed map from node indices to node contents (which themselves are encoded as iterators at first and last element)
 	std::unordered_map<size_t, std::pair<decltype(all_eles.begin()), decltype(all_eles.end())>> cells;
-
+	
+	/*! \brief get the index (label) of the tree node at the specified position of the tree
+	 * 
+	 */
+	inline size_t getIndex(unsigned int current_level, size_t parent_row_no, size_t current_sibling_no) {
+		size_t cellindex = (parent_row_no << dim) + current_sibling_no;
+		for(size_t i=0; i<current_level; i++)
+			cellindex += (1l << (static_cast<size_t>(dim) * i));
+		return cellindex;
+	}
+	
+	/*! \brief Spatial sorting
+	 * 
+	 * \note called from construct, no need for any further calls
+	 * 
+	 */
+	void sort(
+			decltype(all_eles.begin()) begin_iter,
+			decltype(all_eles.end()) end_iter,
+			int current_level,
+			int target_level,
+			unsigned int partdim,
+			SpaceBox<dim,T> box,
+			size_t parent_row_no,
+			size_t current_sibling_no)
+	{
+		//std::cout << "On lv. " << current_level << "/" << target_level << ", dim. " << partdim << ", box: ("
+		//		<< box.getLow(0) << "," << box.getLow(1) << ")-(" << box.getHigh(0) << "," << box.getHigh(1) << "): "
+		//		<< std::distance(begin_iter, end_iter) << std::endl;
+		
+		if(begin_iter == end_iter)
+			return;
+		
+		if (partdim >= dim) { // no dimensions left to partition in (even the current one is too high)
+			if(current_level < target_level) // we successfully partitioned the particles in all dimensions on the current level, let's go on and do the same thing for the next level
+				sort(begin_iter, end_iter, current_level+1, target_level, 0, box, (parent_row_no << dim) + current_sibling_no, 0);
+			else { //we've actually reached the target level, these are the cells we wanted to describe!
+				size_t cellindex = getIndex(current_level, parent_row_no, current_sibling_no);
+				// we know this part won't change, since we start sorting the vector from the beginning, so we can store iterators in our big vector
+				//std::cout << "It's a " << cellindex << std::endl;
+				cells.insert(std::make_pair(cellindex, std::make_pair(begin_iter, end_iter)));
+			}
+		}
+		else { // do partition in the given dimension
+			const T pivot = (box.getHigh(partdim) + box.getLow(partdim)) / 2;
+			auto middle_iter = std::partition(begin_iter, end_iter,
+					[&partdim, &pivot](const std::pair<Point<dim+1, T>, size_t> &a){return a.first.get(partdim) < pivot;});
+			//std::cout << "With (dim. " << partdim << ") pivot " << pivot << ": "
+			//		<< std::distance(begin_iter, middle_iter) << " + " << std::distance(middle_iter, end_iter) << std::endl;
+			
+			SpaceBox<dim,T> leftbox(box), rightbox(box);
+			leftbox.setHigh(partdim, pivot);
+			rightbox.setLow(partdim, pivot);
+			sort(begin_iter, middle_iter, current_level, target_level, partdim+1, leftbox, parent_row_no, current_sibling_no);
+			sort(middle_iter, end_iter, current_level, target_level, partdim+1, rightbox, parent_row_no, current_sibling_no + (1l << (dim-1 - partdim)));
+		}
+	}
+	
+	
 public:
 
 	// Object type that the structure store
@@ -61,15 +124,21 @@ public:
 
 	/*! Initialize the cell list
 	 *
-	 * \param box Domain where this cell list is living
+	 * \param sbox Domain where this cell list is living
 	 * \param origin of the Cell list
-	 * \param div grid size on each dimension
 	 *
 	 */
 	void Initialize(SpaceBox<dim,T> & sbox, Point<dim,T> & orig)
 	{
 		this->sbox = sbox;
 		this->orig = orig;
+		
+		D_m = std::numeric_limits<T>::max();
+		T tmpval;
+		for(unsigned int i=0; i<dim; ++i) {
+			tmpval = sbox.getHigh(i) - sbox.getLow(i);
+			if(tmpval < D_m) D_m = tmpval;
+		}
 	}
 
 	/*! \brief Cell list
@@ -106,6 +175,8 @@ public:
 	
 	/*! \brief Sorts elements according so they are coherent in cells
 	 * 
+	 *  TODO: use some sort of isvalid-bool that is unset in add(), set in construct() and checked in the iterator
+	 * 
 	 * \note Has to be called after insertion and before usage!
 	 * 
 	 */
@@ -119,36 +190,28 @@ public:
 		T minradius = all_eles.last().first.get(dim);
 		std::cout << "Min. radius: " << minradius << std::endl;
 		
-		T D_m = std::numeric_limits<T>::max();
-		T tmpval;
-		for(unsigned int i=0; i<dim; ++i) {
-			tmpval = sbox.getHigh(i) - sbox.getLow(i);
-			if(tmpval < D_m) D_m = tmpval;
-		}
-		std::cout << "Min. edge: " << D_m << std::endl;
-		
-		unsigned int maxlevel = std::ceil(std::log2(D_m / minradius));
+		max_level = std::ceil(std::log2(D_m / minradius)) - 1;
 		// fun fact: more than about 64/dim levels are not possible with these indices (and thats already with 8 byte for a size_t). Perhaps set it as maximum? TODO.
-		std::cout << "Max. level: " << maxlevel << std::endl;
+		std::cout << "Max. level: " << max_level << std::endl;
 		
 		auto end_iter = all_eles.begin();
 		auto begin_iter(end_iter);
 		unsigned int k = 0;
 		
 		// make entries in cells for the few particles that may live on the unpartitioned level 0 (in cell 0, yeah, mine are zero-based)
-		while(end_iter->first.get(dim) >= D_m / (1 << (k+1)))
+		while(end_iter->first.get(dim) >= D_m / (1l << (k+1)))
 			++end_iter;
 		if (begin_iter != end_iter)
 			cells.insert(std::make_pair(0, std::make_pair(begin_iter, end_iter)));
 		
 		// now for the "normal" levels where we do the partition-based sorting:
-		for (k = 1; k < maxlevel; ++k) {
+		for (k = 1; k <= max_level; ++k) {
 			// We are populating level k with the particles that belong here
 			// Move iterators so that only these particles are in the range
 			begin_iter = end_iter;
-			while(end_iter->first.get(dim) >= D_m / (1 << (k+1)))
+			while(end_iter != all_eles.end() && end_iter->first.get(dim) >= D_m / (1l << (k+1)))
 				++end_iter;
-			std::cout << "On level " << k << ": " << std::distance(begin_iter, end_iter) << std:: endl;
+			std::cout << "Sorting on level " << k << ": " << std::distance(begin_iter, end_iter) << " of " << all_eles.size() << std:: endl;
 			
 			// If there are no particles on this level... no need to fill the tree/hashmap.
 			if (begin_iter == end_iter)
@@ -160,74 +223,95 @@ public:
 		}
 	}
 	
-	void sort(
-			decltype(all_eles.begin()) begin_iter,
-			decltype(all_eles.end()) end_iter,
-			int current_level,
-			int target_level,
-			int partdim,
-			SpaceBox<dim,T> box,
-			size_t parent_row_no,
-			size_t current_sibling_no)
-	{
-		if(begin_iter == end_iter)
-			return;
-		
-		if (partdim == dim) { // no dimensions left to partition in (given dim is already too large)
-			if(current_level < target_level) // we successfully partitioned the particles in all dimensions on the current level, let's go on and do the same thing for the next level
-				sort(begin_iter, end_iter, current_level+1, target_level, 0, box, (parent_row_no << dim) + current_sibling_no, 0);
-			else { //we've actually reached the target level, these are the cells we wanted to describe!
-				size_t cellindex = getIndex(current_level, parent_row_no, current_sibling_no);
-				// we know this part won't change, since we start sorting the vector from the beginning, so we can store iterators in our big vector
-				cells.insert(std::make_pair(cellindex, std::make_pair(begin_iter, end_iter)));
-			}
-		}
-		else { // do partition in the given dimension
-			const T pivot = (sbox.getHigh(partdim) - sbox.getLow(partdim)) / 2;
-			auto middle_iter = std::partition(begin_iter, end_iter, [&partdim, &pivot](const std::pair<Point<dim+1, T>, size_t> &a){return a.first.get(partdim) < pivot;});
-			//std::cout << std::distance(begin_iter, middle_iter) << " + " << std::distance(middle_iter, end_iter) << std::endl;
-			
-			SpaceBox<dim,T> leftbox(box), rightbox(box);
-			leftbox.setHigh(partdim, pivot);
-			rightbox.setLow(partdim, pivot);
-			sort(begin_iter, middle_iter, current_level, target_level, partdim+1, leftbox, parent_row_no, current_sibling_no);
-			sort(middle_iter, end_iter, current_level, target_level, partdim+1, rightbox, parent_row_no, current_sibling_no + (1 << (dim-1 - partdim)));
-		}
-	}
-	
-	inline size_t getIndex(unsigned int current_level, size_t parent_row_no, size_t current_sibling_no) {
-		size_t cellindex = (parent_row_no << dim) + current_sibling_no;
-		for(size_t i=0; i<current_level; i++)
-			cellindex += (1 << (static_cast<size_t>(dim) * i));
-		return cellindex;
-	}
-	
-	std::pair<std::string, std::string> printTree(int current_level, int max_level, size_t parent_row_no, size_t current_sibling_no) {
+	std::pair<std::string, std::string> printTree(unsigned int current_level, size_t parent_row_no, size_t current_sibling_no) {
 		bool foundsomething = false;
 		std::stringstream result;
 		size_t index = getIndex(current_level, parent_row_no, current_sibling_no);
-		auto iter = cells.find(index);
-		for(int i=0; i<current_level; i++)
+		auto resultiter = cells.find(index);
+		for(unsigned int i=0; i<current_level; i++)
 			result << "  ";
 		result << "(" << current_sibling_no << ") " << index;
-		if(iter != cells.end()) {
+		if(resultiter != cells.end()) {
 			foundsomething = true;
-			result << ": ";
-			for(auto childiter = iter->second.first; childiter != iter->second.second; ++childiter)
+			result << ": " << std::distance(resultiter->second.first, resultiter->second.second) << ": ";
+			for(auto childiter = resultiter->second.first; childiter != resultiter->second.second; ++childiter)
 				result << "(" << childiter->first.toString() << ") ";
 		}
 		result << std::endl;
 		
 		std::string childresult;
-		if(current_level < max_level)
-			for(int i=0; i<(1 << dim); i++) {
-				auto child = printTree(current_level+1, max_level, (parent_row_no << dim) + current_sibling_no, i);
+		if(current_level <= max_level)
+			for(int i=0; i<(1l << dim); i++) {
+				auto child = printTree(current_level+1, (parent_row_no << dim) + current_sibling_no, i);
 				if(child.second != "")
 					foundsomething = true;
 				childresult += child.first + child.second;
 			}
 		
 		return std::make_pair(result.str(), foundsomething ? childresult : "");
+	}
+	
+	inline size_t findCellIndex(Point<dim+1, T> p) // called Op1 in paper
+	{
+		unsigned int target_level = std::ceil(std::log2(D_m / p.get(dim))) - 1;
+		//std::cout << p.toString() << " is on level " << target_level << std::endl;
+		
+		if(target_level == 0)
+			return 0;
+		
+		size_t firstindexoflastlevel = 0, cellindexoffsetinlastlevel = 0;
+		SpaceBox<dim,T> cellbox(sbox);
+		
+		for (unsigned int k = 1; k <= target_level; ++k) {
+			firstindexoflastlevel += (1l << (dim*(k-1)));
+			// Which part of the partition are we in? (0 - 2^dim)
+			for (unsigned int i = 0; i < dim; ++i) {
+				const T pivot = (cellbox.getHigh(i) + cellbox.getLow(i)) / 2;
+				//std::cout << "Check in dim " << i << " coord " << p.get(i) << " against " << pivot << std::endl;
+				if(p.get(i) >= pivot) {
+					cellindexoffsetinlastlevel += (1l << static_cast<size_t>((dim-1 -i) + dim * (target_level - k)));
+					// first summand gives shift in current level, second summand multiplies that into last level (sum in exponent is multiplication):
+					// cellindexoffsetinlastlevel += 2 ^ (dim-1 - i) * 2 ^ dim * ... * 2 ^ dim -- (target_level - k) times 
+					cellbox.setLow(i, pivot);
+				} else
+					cellbox.setHigh(i, pivot);
+			}
+			
+			//std::cout << "In k=" << k << ": firstindex=" << firstindexoflastlevel << " offset=" << cellindexoffsetinlastlevel << std::endl;
+		}
+		
+		size_t cellindex = firstindexoflastlevel + cellindexoffsetinlastlevel;
+		
+		///*
+		// check here, whether the calculated cell really contains a point! thats easy and will be a good base for debugging
+		bool found = false;
+		auto iter = cells.find(cellindex);
+		if (iter != cells.end())
+			for(auto childiter = iter->second.first; childiter != iter->second.second; ++childiter)
+				if(childiter->first == p)
+					found = true;
+		
+		if(!found)
+			std::cout << "MISSING! " << cellindex << ": " << p.toString() << std::endl;
+		else
+			std::cout << cellindex << ": " << p.toString() << std::endl;
+		//*/
+		
+		return cellindex;
+	}
+	
+	inline std::vector<size_t> findChildrenIndices(size_t rootindex) // called Op3 in paper
+	{
+		/*
+		 * ((J+1) * 2^d + l) - 1 = J ^ 2^d + (l + 2^d - 1) -- J+1 and the global -1 because our indices start at 0 and stuff.
+		 * 
+		 * so l is not in [-(2^d)+2 ; 1], but in [1 ; 2^d]
+		 */
+		std::vector<size_t> children;
+		children.reserve(1 << dim);
+		for(size_t l = 1; l <= (1 << dim); ++l)
+			children.push_back((rootindex << dim) + l);
+		return children;
 	}
 	
 	/*! \brief Get an element in the cell

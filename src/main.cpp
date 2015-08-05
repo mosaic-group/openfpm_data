@@ -58,6 +58,7 @@ std::vector<Point<dim, float>> getSamplePoints() {
 	ysource.open("../../sampledata/y.txt", std::ifstream::in);
 	
 	std::string rline, xline, yline;
+	
 	for(; std::getline(rsource, rline); )
 	{
 		std::getline(xsource, xline);
@@ -76,7 +77,7 @@ std::vector<Point<dim, float>> getSamplePoints() {
 		if (dim == 2)
 			result.push_back({x, y});
 		else
-			result.push_back({x, y, r});
+			result.push_back({y,x, r}); // TODO: change this back ;)
 		
 		float size = 0.05f;
 		int cr,cg,cb, index, nx,ny;
@@ -104,9 +105,9 @@ std::vector<Point<dim, float>> getSamplePoints() {
 	
 	std::ofstream imgfile;
 	imgfile.open("../../sampledata/img.ppm", std::ofstream::out);
-	imgfile << "P3\n1080 800\n255\n";
+	imgfile << "P3\n1080 1080\n255\n";
 	int index;
-	for(int y=0;y<800;y++) {
+	for(int y=0;y<1080;y++) {
 		for(int x=0;x<1080;x++) {
 			index = y*1080+x;
 			imgfile << img[3*index] << " " << img[3*index+1] << " " << img[3*index+2] << " ";
@@ -116,6 +117,10 @@ std::vector<Point<dim, float>> getSamplePoints() {
 	imgfile.close();
 	
 	return result;
+	
+	//return std::vector<Point<dim, float>>({
+	//	Point<dim, float>({0.3f, 0.06f, 0.0656f})
+	//});
 }
 
 
@@ -325,8 +330,32 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_arcelllist)
 			<< " candidates (" << (static_cast<float>(interaction_candidates) / interactions_count)
 			<< "x)." << std::endl;
 	
-	//auto printresult = arcl.printTree(0,7,0,0);
-	//std::cout << printresult.first << printresult.second << std::endl;
+	auto printresult = arcl.printTree(0,0,0);
+	std::cout << printresult.first << printresult.second << std::endl;
+	
+	for(auto& p: samplepoints3)
+		arcl.findCellIndex(p);
+	arcl.findCellIndex(Point<3,float>({0.0f,0.0f,0.066f}));
+	
+	std::cout << "0: ";
+	for (auto& i : arcl.findChildrenIndices(0))
+		std::cout << i << " ";
+	std::cout << std::endl;
+	
+	std::cout << "1: ";
+	for (auto& i : arcl.findChildrenIndices(1))
+		std::cout << i << " ";
+	std::cout << std::endl;
+	
+	std::cout << "5: ";
+	for (auto& i : arcl.findChildrenIndices(5))
+		std::cout << i << " ";
+	std::cout << std::endl;
+	
+	std::cout << "6: ";
+	for (auto& i : arcl.findChildrenIndices(6))
+		std::cout << i << " ";
+	std::cout << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

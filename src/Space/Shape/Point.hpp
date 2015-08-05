@@ -102,6 +102,24 @@ template<unsigned int dim ,typename T> class Point
 		return *this;
 	}
 
+	/*! \brief Compare all components
+	 *
+	 * \param p Point
+	 *
+	 */
+	template<typename aT> inline bool operator==(const Point<dim,aT> & p)
+	{
+		bool equal = true;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if(get(i) != p.get(i))
+				equal = false;
+		}
+
+		return equal;
+	}
+
 	/*! \brief Multiply each components
 	 *
 	 * \param p Point
