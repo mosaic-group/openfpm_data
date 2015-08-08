@@ -22,16 +22,17 @@ BOOST_AUTO_TEST_CASE( weight_counter_grid )
 	std::cout << "Grid weight counter test start" << "\n";
 
 	grid_cpu<3,Point<3,float>> t({5,5,5});
+	const SpaceBox<3,float> domain({0.0,0.0,0.0},{5.0,5.0,5.0});
 
 	//general case of box, create and check weight
 	{
-	SpaceBox<3,float> b({0.5,0.5,0.5},{3.0,3.0,3.0});
+	SpaceBox<3,float> b({0.5,0.5,0.5},{3.5,3.5,3.5});
 
 	weight_counter<3,grid_cpu<3,Point<3,float>>,float,IS_GRID> w;
 
-	size_t result = w.weight(t,b);
+	size_t result = w.weight(t,domain,b);
 
-	BOOST_REQUIRE_EQUAL(result,8);
+	BOOST_REQUIRE_EQUAL(result,27);
 	}
 
 	//case of box with integer Low and High points, create and check weight (positive exclude)
@@ -40,7 +41,7 @@ BOOST_AUTO_TEST_CASE( weight_counter_grid )
 
 	weight_counter<3,grid_cpu<3,Point<3,float>>,float,IS_GRID> w;
 
-	size_t result = w.weight(t,b);
+	size_t result = w.weight(t,domain,b);
 
 	BOOST_REQUIRE_EQUAL(result,27);
 	}

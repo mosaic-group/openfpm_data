@@ -23,7 +23,7 @@ template <unsigned int dim, typename T, typename St>
 class weight_counter<dim,T,St,IS_GRID>
 {
 public:
-    size_t weight(T & t, Box<dim,St> & b)
+    size_t weight(T & t, const Box<dim,St> & domain, Box<dim,St> & b)
     {
        // Grid implementation
       // get a size vector
@@ -31,12 +31,12 @@ public:
       size_t res = 1;
       //for each dimension
       for (int i = 0; i < dim; i++) {
-          size_t count = 0;
+          double count = 0;
           //rounding coordinates of Low and High up and down
-          int a1 = (int)(b.getLow(i));
-          int a2 = (int)(b.getHigh(i) + 0.9999999);
+          //int a1 = (int)(b.getLow(i));
+          //int a2 = (int)(b.getHigh(i) + 0.9999999);
           //counting points those get into a box, excluding borders
-          count = a2 - a1 - 1;
+          count = ceil(b.getHigh(i)) - floor(b.getLow(i)) - 1;
           //adding negative borders, if the number was integer
           if (b.getLow(i) == ceil(b.getLow(i)))
             count++;
