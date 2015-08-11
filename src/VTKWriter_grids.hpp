@@ -35,64 +35,6 @@ public:
 
 
 
-/*! \brief This class specialize functions in the case the type T
- * has not defined attributes
- *
- * In C++ partial specialization of a function is not allowed so we have to
- * encapsulate this function in a class
- *
- * \tparam has_attributes parameter that specialize the function in case the vertex
- *         define or not attributes name
- *
- * \tparam i id of the property we are going to write
- *
- */
-
-template<typename ele_g, typename St, unsigned int i>
-class prop_output_g<false,St,ele_g,i>
-{
-public:
-
-	/*! \brief Given a Graph return the point data header for a typename T
-	 *
-	 * \tparam T type to write
-	 * \param n_node number of the node
-	 *
-	 */
-
-	static std::string get_point_property_header()
-	{
-		//! vertex node output string
-		std::string v_out;
-
-		// Check if T is a supported format
-		// for now we support only scalar of native type
-
-		std::string type = getType<typename boost::fusion::result_of::at<typename ele_g::value_type::value_type::type,boost::mpl::int_<i>>::type>();
-
-		// if the type is not supported return
-		if (type.size() == 0)
-		{return v_out;}
-
-		// Create point data properties
-		v_out += "SCALARS " + get_attributes() + " " + type + "\n";
-
-		// Default lookup table
-		v_out += "LOOKUP_TABLE default\n";
-
-		// return the vertex list
-		return v_out;
-	}
-
-	/*! \brief Get the attributes name
-	 *
-	 */
-	static std::string get_attributes()
-	{
-		return std::string("attr" + std::to_string(i));
-	}
-};
-
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -180,7 +122,7 @@ class VTKWriter<pair,VECTOR_GRIDS>
 		std::string v_out;
 
 		// write the number of vertex
-		v_out += "VERTICES " + std::to_string(get_total()) + " " + std::to_string(vg.size() * 2) + "\n";
+		v_out += "VERTICES " + std::to_string(get_total()) + " " + std::to_string(get_total() * 2) + "\n";
 
 		// return the vertex properties string
 		return v_out;
@@ -235,7 +177,10 @@ class VTKWriter<pair,VECTOR_GRIDS>
 				p = it.get().toPoint();
 				p = p * vg.get(i).spacing + vg.get(i).offset;
 
-				v_out << p.toString() << "\n";
+				if (pair::first::dims == 2)
+					v_out << p.toString() << " 0.0" << "\n";
+				else
+					v_out << p.toString() << "\n";
 
 				// increment the iterator and counter
 				++it;
