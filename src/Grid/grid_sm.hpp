@@ -527,9 +527,7 @@ public:
 	 * \return the size of the grid
 	 *
 	 */
-
-	//#pragma openfpm layout(size)
-	size_t size()
+	size_t size() const
 	{
 		return size_tot;
 	};
@@ -619,7 +617,7 @@ public:
 	 * \param stop stop point
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<N> getSubIterator(grid_key_dx<N> & start, grid_key_dx<N> & stop)
+	inline grid_key_dx_iterator_sub<N> getSubIterator(grid_key_dx<N> & start, grid_key_dx<N> & stop) const
 	{
 		return grid_key_dx_iterator_sub<N>(*this,start,stop);
 	}

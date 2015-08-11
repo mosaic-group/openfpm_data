@@ -323,6 +323,9 @@ public:
 	typedef Mem memory_conf;
 
 private:
+	//! Is the memory initialized
+	bool is_mem_init = false;
+
 	//! This is an header that store all information related to the grid
 	grid_sm<dim,T> g1;
 
@@ -367,6 +370,9 @@ public:
 
 	// The object type the grid is storing
 	typedef T type;
+
+	// The object type the grid is storing
+	typedef T value_type;
 
 	//! Default constructor
 	grid_cpu()
@@ -468,7 +474,7 @@ public:
 	 *
 	 */
 
-	grid_sm<dim,T> getGrid()
+	const grid_sm<dim,T> & getGrid() const
 	{
 		return g1;
 	}
@@ -490,6 +496,8 @@ public:
 
 		//! Allocate the memory and create the representation
 		if (g1.size() != 0) data.allocate(g1.size());
+
+		is_mem_init = true;
 	}
 
 	/*! \brief Get the object that provide memory
@@ -513,6 +521,8 @@ public:
 
 		//! Allocate the memory and create the reppresentation
 		if (g1.size() != 0) data.allocate(g1.size());
+
+		is_mem_init = true;
 	}
 
 	/*! \brief Return a plain pointer to the internal data
@@ -541,6 +551,19 @@ public:
 	 */
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(grid_key<p> & v1)
 	{
+#ifdef DEBUG
+		if (is_mem_init == false)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+
+
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
+			}
+		}
+#endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(&data.mem_r->operator[](g1.LinId(v1.getId()))));
 #endif
@@ -557,6 +580,19 @@ public:
 	 */
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(grid_key<p> & v1) const
 	{
+#ifdef DEBUG
+		if (is_mem_init == false)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+
+
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
+			}
+		}
+#endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(&data.mem_r->operator[](g1.LinId(v1.getId()))));
 #endif
@@ -572,6 +608,19 @@ public:
 	 */
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(grid_key_d<dim,p> & v1)
 	{
+#ifdef DEBUG
+		if (is_mem_init == false)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+
+
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
+			}
+		}
+#endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
 #endif
@@ -587,6 +636,19 @@ public:
 	 */
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(grid_key_d<dim,p> & v1) const
 	{
+#ifdef DEBUG
+		if (is_mem_init == false)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+
+
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
+			}
+		}
+#endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
 #endif
@@ -602,6 +664,18 @@ public:
 	 */
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1)
 	{
+#ifdef DEBUG
+		if (is_mem_init == false)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << "grid overflow";
+			}
+		}
+#endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
 #endif
@@ -617,6 +691,19 @@ public:
 	 */
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1) const
 	{
+#ifdef DEBUG
+		if (is_mem_init == false)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+
+
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
+			}
+		}
+#endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
 #endif
@@ -632,6 +719,19 @@ public:
 	 */
 	inline encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1)
 	{
+#ifdef DEBUG
+		if (is_mem_init == false)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+
+
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
+			}
+		}
+#endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(T));
 #endif
@@ -647,6 +747,19 @@ public:
 	 */
 	inline const encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1) const
 	{
+#ifdef DEBUG
+		if (is_mem_init == false)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+
+
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
+			}
+		}
+#endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(T));
 #endif
@@ -870,7 +983,6 @@ public:
 	{
 #ifdef DEBUG
 		// Check that the element exist
-
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (key1.get(i) >= (long int)g1.size(i) || key1.get(i) < 0)
@@ -903,7 +1015,7 @@ public:
 	 *
 	 */
 
-	inline size_t size()
+	inline size_t size() const
 	{
 		return g1.size();
 	}
@@ -916,7 +1028,7 @@ public:
 	 * \param stop stop point
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop)
+	inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop) const
 	{
 		return g1.getSubIterator(start,stop);
 	}
@@ -940,7 +1052,7 @@ public:
 	 *
 	 */
 
-	inline grid_key_dx_iterator<dim> getIterator()
+	inline grid_key_dx_iterator<dim> getIterator() const
 	{
 		return grid_key_dx_iterator<dim>(g1);
 	}
@@ -953,7 +1065,7 @@ public:
 	 *
 	 */
 
-	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
+	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
 	{
 		// get the starting point and the end point of the real domain
 
@@ -1039,6 +1151,9 @@ struct allocate
 template<unsigned int dim, typename T, typename Mem = typename memory_traits_inte< typename T::type >::type >
 class grid_gpu
 {
+	// Indicate if set memory has been called
+	bool is_mem_init = false;
+
 	//! Access the key
 	typedef grid_key_dx<dim> access_key;
 
@@ -1090,7 +1205,7 @@ public:
 	 *
 	 */
 
-	grid_sm<dim,void> getGrid()
+	const grid_sm<dim,void> & getGrid() const
 	{
 		return g1;
 	}
@@ -1108,6 +1223,8 @@ public:
 
 		//! for each element in the vector allocate the buffer
 		boost::fusion::for_each(data,all);
+
+		is_mem_init = true;
 	}
 
 	template <unsigned int p>inline typename type_gpu_prop<p,memory_int>::type::reference get(grid_key_d<dim,p> & v1)
