@@ -158,7 +158,7 @@ class CSVWriter
 		std::stringstream str;
 
 		// write positional columns
-		for (int i = 0 ; i < v_pos::value_type::dims ; i++)
+		for (size_t i = 0 ; i < v_pos::value_type::dims ; i++)
 		{
 			if (i == 0)
 				str << "x[" << i << "]";

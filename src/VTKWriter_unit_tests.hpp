@@ -221,6 +221,87 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 	BOOST_REQUIRE_EQUAL(test,true);
 }
 
+/*! \fill the CPU with some random data
+ *
+ *
+ */
+void fill_grid_some_data(grid_cpu<2,Point_test<float>> & g)
+{
+	typedef Point_test<float> p;
+
+	auto it = g.getIterator();
+
+	while (it.isNext())
+	{
+		g.template get<p::x>(it.get()) = it.get().get(0);
+		g.template get<p::y>(it.get()) = it.get().get(0);
+		g.template get<p::z>(it.get()) = 0;
+		g.template get<p::s>(it.get()) = 1.0;
+		g.template get<p::v>(it.get())[0] = g.getGrid().LinId(it.get());
+		g.template get<p::v>(it.get())[1] = g.getGrid().LinId(it.get());
+		g.template get<p::v>(it.get())[2] = g.getGrid().LinId(it.get());
+
+		g.template get<p::t>(it.get())[0][0] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[0][1] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[0][2] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[1][0] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[1][1] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[1][2] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[2][0] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[2][1] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[2][2] = g.getGrid().LinId(it.get());
+
+		++it;
+	}
+}
+
+
+BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
+{
+	// Create box grids
+	Point<2,float> offset1({0.0,0.0});
+	Point<2,float> spacing1({0.1,0.2});
+	Box<2,size_t> d1({1,2},{14,15});
+
+	// Create box grids
+	Point<2,float> offset2({5.0,7.0});
+	Point<2,float> spacing2({0.2,0.1});
+	Box<2,size_t> d2({2,1},{13,15});
+
+	// Create box grids
+	Point<2,float> offset3({0.0,7.0});
+	Point<2,float> spacing3({0.05,0.07});
+	Box<2,size_t> d3({3,2},{11,10});
+
+	// Create box grids
+	Point<2,float> offset4({5.0,0.0});
+	Point<2,float> spacing4({0.1,0.1});
+	Box<2,size_t> d4({1,1},{7,7});
+
+	size_t sz[] = {16,16};
+	grid_cpu<2,Point_test<float>> g1(sz);
+	fill_grid_some_data(g1);
+	grid_cpu<2,Point_test<float>> g2(sz);
+	fill_grid_some_data(g2);
+	grid_cpu<2,Point_test<float>> g3(sz);
+	fill_grid_some_data(g3);
+	grid_cpu<2,Point_test<float>> g4(sz);
+	fill_grid_some_data(g4);
+
+	// Create a writer and write
+	VTKWriter<boost::mpl::pair<grid_cpu<2,Point_test<float>>,float>,VECTOR_GRIDS> vtk_g;
+	vtk_g.add(g1,offset1,spacing1,d1);
+	vtk_g.add(g2,offset2,spacing2,d2);
+	vtk_g.add(g3,offset3,spacing3,d3);
+	vtk_g.add(g4,offset4,spacing4,d4);
+
+	vtk_g.write("vtk_grids.vtk");
+
+	// Check that match
+	bool test = compare("vtk_grids.vtk","vtk_grids_test.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* VTKWRITER_UNIT_TESTS_HPP_ */

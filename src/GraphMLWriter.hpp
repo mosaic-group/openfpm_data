@@ -23,7 +23,7 @@ void create_prop(std::string * str)
 	if (has_attributes<T>::value )
 	{
 		// Create properties names based on the attributes name defined
-		for (int i = 0 ; i < T::max_prop ; i++)
+		for (size_t i = 0 ; i < T::max_prop ; i++)
 		{
 			str[i] = std::string(T::attributes::name[i]);
 		}
@@ -31,7 +31,7 @@ void create_prop(std::string * str)
 	else
 	{
 		// Create default properties name
-		for (int i = 0 ; i < T::max_prop ; i++)
+		for (size_t i = 0 ; i < T::max_prop ; i++)
 		{
 			str[i] = "attr" + std::to_string(i);
 		}
