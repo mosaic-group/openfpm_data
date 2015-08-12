@@ -18,7 +18,7 @@ public:
 
 	typedef Grid value_type;
 
-	ele_g(const Grid & g, Point<Grid::dims,St> & offset, Point<Grid::dims,St> & spacing, Box<Grid::dims,St> dom)
+	ele_g(const Grid & g, const Point<Grid::dims,St> & offset, const Point<Grid::dims,St> & spacing, const Box<Grid::dims,St> & dom)
 	:g(g),offset(offset),spacing(spacing),dom(dom)
 	{}
 
@@ -30,7 +30,7 @@ public:
 	// spacing of the grid
 	Point<Grid::dims,St> spacing;
 	// Part of the grid that is real domain
-	Box<Grid::dims,St> dom;
+	Box<Grid::dims,size_t> dom;
 };
 
 
@@ -74,6 +74,34 @@ struct prop_out_g
 
     	meta_prop<boost::mpl::int_<T::value> ,ele_g,St, ptype > m(vg,v_out);
     }
+
+    void lastProp()
+	{
+		// Create point data properties
+		v_out += "SCALARS domain float\n";
+
+		// Default lookup table
+		v_out += "LOOKUP_TABLE default\n";
+
+		// Produce point data
+		for (size_t k = 0 ; k < vg.size() ; k++)
+		{
+			//! Get a vertex iterator
+			auto it = vg.get(k).g.getIterator();
+
+			// if there is the next element
+			while (it.isNext())
+			{
+				if (vg.get(k).dom.isInside(it.get().toPoint()) == true)
+					v_out += "1.0\n";
+				else
+					v_out += "0.0\n";
+
+				// increment the iterator and counter
+				++it;
+			}
+		}
+	}
 };
 
 /*!
@@ -255,7 +283,7 @@ public:
 	 * \param dom part of the spacethat is the domain
 	 *
 	 */
-	void add(const typename pair::first & g, Point<pair::first::dims,typename pair::second> & offset, Point<pair::first::dims,typename pair::second> & spacing, Box<pair::first::dims,typename pair::second> dom)
+	void add(const typename pair::first & g, const Point<pair::first::dims,typename pair::second> & offset, const Point<pair::first::dims,typename pair::second> & spacing, const Box<pair::first::dims,typename pair::second> & dom)
 	{
 		ele_g<typename pair::first,typename pair::second> t(g,offset,spacing,dom);
 
@@ -327,6 +355,10 @@ public:
 			boost::mpl::for_each< boost::mpl::range_c<int,0, pair::first::value_type::max_prop> >(pp);
 		else
 			boost::mpl::for_each< boost::mpl::range_c<int,prp, prp> >(pp);
+
+		// Add the last property
+		pp.lastProp();
+
 
 		// write the file
 		std::ofstream ofs(file);
