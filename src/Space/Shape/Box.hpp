@@ -726,7 +726,7 @@ public:
 	 *
 	 */
 
-	bool isInside(Point<dim,T> & p)
+	bool isInside(const Point<dim,T> & p) const
 	{
 		// check if bound
 
@@ -755,7 +755,7 @@ public:
 	 *
 	 */
 
-	bool isInside(T (&p)[dim])
+	bool isInside(const T (&p)[dim]) const
 	{
 		// check if bound
 

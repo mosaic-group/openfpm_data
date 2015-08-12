@@ -190,7 +190,7 @@ public:
 	/*! \brief Return the box enclosing the grid
 	 *
 	 */
-	const Box<N,size_t> & getBox()
+	const Box<N,size_t> & getBox() const
 	{
 		return box;
 	}
