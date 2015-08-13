@@ -163,7 +163,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(Box<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
 	{
 		SpaceBox<dim,T> sbox(box);
 

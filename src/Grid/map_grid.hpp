@@ -895,6 +895,16 @@ public:
 
 		// move the grid info
 		g1 = grid.g1;
+
+		// exchange the init status
+		bool exg = is_mem_init;
+		is_mem_init = grid.is_mem_init;
+		grid.is_mem_init = exg;
+
+		// exchange the is external status
+		exg = isExternal;
+		isExternal = grid.isExternal;
+		grid.isExternal = exg;
 	}
 
 	/*! \brief It move the allocated object from one grid to another
