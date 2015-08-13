@@ -32,6 +32,48 @@
 #include "memory_ly/memory_c.hpp"
 #include <vector>
 
+#ifdef STOP_ON_ERROR
+#define ACTION_ON_ERROR exit(1);
+else if defined(WORKAROUND_ON_ERROR)
+#define ACTION_ON_ERROR return boost::fusion::at_c<p>(error_sink);
+#else
+#define ACTION_ON_ERROR
+#endif
+
+// Macro for debugging
+#define CHECK_INIT() 		if (is_mem_init == false)\
+							{\
+								std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";\
+								size_t * err_code_pointer = (size_t *)&this->err_code;\
+								*err_code_pointer = 1001;\
+								ACTION_ON_ERROR;\
+							}
+
+
+#define GRID_OVERFLOW(v1) for (long int i = 0 ; i < dim ; i++)\
+						  {\
+						  	  if (v1.get(i) >= (long int)getGrid().size(i))\
+							  {\
+						  		  std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";\
+								  size_t * err_code_pointer = (size_t *)&this->err_code;\
+								  *err_code_pointer = 1002;\
+						  		  ACTION_ON_ERROR;\
+							  }\
+						  }
+
+#define GRID_OVERFLOW_EXT(g,key2) 		for (size_t i = 0 ; i < dim ; i++)\
+		{\
+			if (key2.get(i) >= (long int)g.g1.size(i) || key2.get(i) < 0)\
+			{\
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";\
+				size_t * err_code_pointer = (size_t *)&this->err_code;\
+				*err_code_pointer = 1003;\
+				ACTION_ON_ERROR;\
+			}\
+		}
+
+// Debugging macro
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -323,6 +365,23 @@ public:
 	typedef Mem memory_conf;
 
 private:
+
+	//! Error code
+	size_t err_code;
+
+	/*! \brief Return the last error
+	 *
+	 */
+	size_t getLastError()
+	{
+		return err_code;
+	}
+
+#ifdef WORKAROUND_ON_ERROR
+	// A sink in case of error
+	T error_sink;
+#endif
+
 	//! Is the memory initialized
 	bool is_mem_init = false;
 
@@ -552,17 +611,8 @@ public:
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(grid_key<p> & v1)
 	{
 #ifdef DEBUG
-		if (is_mem_init == false)
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-
-
-		for (long int i = 0 ; i < dim ; i++)
-		{
-			if (v1.get(i) >= (long int)getGrid().size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(&data.mem_r->operator[](g1.LinId(v1.getId()))));
@@ -581,17 +631,8 @@ public:
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(grid_key<p> & v1) const
 	{
 #ifdef DEBUG
-		if (is_mem_init == false)
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-
-
-		for (long int i = 0 ; i < dim ; i++)
-		{
-			if (v1.get(i) >= (long int)getGrid().size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(&data.mem_r->operator[](g1.LinId(v1.getId()))));
@@ -609,17 +650,8 @@ public:
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(grid_key_d<dim,p> & v1)
 	{
 #ifdef DEBUG
-		if (is_mem_init == false)
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-
-
-		for (long int i = 0 ; i < dim ; i++)
-		{
-			if (v1.get(i) >= (long int)getGrid().size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
@@ -637,17 +669,8 @@ public:
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(grid_key_d<dim,p> & v1) const
 	{
 #ifdef DEBUG
-		if (is_mem_init == false)
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-
-
-		for (long int i = 0 ; i < dim ; i++)
-		{
-			if (v1.get(i) >= (long int)getGrid().size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
@@ -665,16 +688,8 @@ public:
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1)
 	{
 #ifdef DEBUG
-		if (is_mem_init == false)
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-
-		for (long int i = 0 ; i < dim ; i++)
-		{
-			if (v1.get(i) >= (long int)getGrid().size(i))
-			{
-				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << "grid overflow";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
@@ -692,17 +707,8 @@ public:
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1) const
 	{
 #ifdef DEBUG
-		if (is_mem_init == false)
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-
-
-		for (long int i = 0 ; i < dim ; i++)
-		{
-			if (v1.get(i) >= (long int)getGrid().size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
@@ -720,17 +726,8 @@ public:
 	inline encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1)
 	{
 #ifdef DEBUG
-		if (is_mem_init == false)
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-
-
-		for (long int i = 0 ; i < dim ; i++)
-		{
-			if (v1.get(i) >= (long int)getGrid().size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(T));
@@ -748,17 +745,8 @@ public:
 	inline const encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1) const
 	{
 #ifdef DEBUG
-		if (is_mem_init == false)
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-
-
-		for (long int i = 0 ; i < dim ; i++)
-		{
-			if (v1.get(i) >= (long int)getGrid().size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
 		check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(T));
@@ -848,7 +836,7 @@ public:
 		if (dim != 1)
 		{
 #ifdef DEBUG
-			std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " trying to remove " << "\n";
+			std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " remove work only on dimension == 1 " << "\n";
 #endif
 			return;
 		}
@@ -933,15 +921,8 @@ public:
 	template<typename Memory> inline void set(grid_key_dx<dim> dx, const encapc<1,T,Memory> & obj)
 	{
 #ifdef DEBUG
-		// Check that the element exist
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			if (dx.get(i) >= (long int)g1.size(i))
-			{
-				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(dx)
 #endif
 
 		// create the object to copy the properties
@@ -963,15 +944,8 @@ public:
 	inline void set(grid_key_dx<dim> dx, const T & obj)
 	{
 #ifdef DEBUG
-		// Check that the element exist
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			if (dx.get(i) >= (long int)g1.size(i))
-			{
-				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(dx)
 #endif
 
 		// create the object to copy the properties
@@ -992,22 +966,9 @@ public:
 	inline void set(grid_key_dx<dim> key1,const grid_cpu<dim,T,Mem> & g, grid_key_dx<dim> key2)
 	{
 #ifdef DEBUG
-		// Check that the element exist
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			if (key1.get(i) >= (long int)g1.size(i) || key1.get(i) < 0)
-			{
-				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
-			}
-		}
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			if (key2.get(i) >= (long int)g.g1.size(i) || key2.get(i) < 0)
-			{
-				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";
-			}
-		}
+		CHECK_INIT()
+		GRID_OVERFLOW(key1)
+		GRID_OVERFLOW_EXT(g,key2)
 #endif
 
 		//create the object to copy the properties

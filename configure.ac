@@ -45,6 +45,63 @@ if test x"$test_cov" = x"yes"; then
 	CXXFLAGS="$CXXFLAGS  -fprofile-arcs -ftest-coverage "
 fi
 
+###### Check for se-class1
+
+AC_MSG_CHECKING(whether to build with security enhancement class1)
+se_class1=no
+AC_ARG_ENABLE(se-class1,
+        AC_HELP_STRING(
+            [--enable-se-class1],
+            [enable security enhancement class1]
+        ),
+        se_class1="$enableval"
+)
+
+
+
+AC_MSG_RESULT($se_class1)
+if test x"$se_class1" = x"yes"; then
+        AC_DEFINE([SE_CLASS1],[],[Security enhancement class 1])
+fi
+
+
+###### Check for se-class 2
+
+AC_MSG_CHECKING(whether to build with security enhancement class 2)
+se_class2=no
+AC_ARG_ENABLE(se-class2,
+        AC_HELP_STRING(
+            [--enable-se-class2],
+            [enable security enhancement class 2]
+        ),
+        se_class2="$enableval"
+)
+
+
+AC_MSG_RESULT($se_class2)
+if test x"$se_class2" = x"yes"; then
+        AC_DEFINE([SE_CLASS2],[],[Security enhancement class 2])
+fi
+
+###### Check for se-class 3
+
+AC_MSG_CHECKING(whether to build with security enhancement class 3)
+se_class3=no
+AC_ARG_ENABLE(se-class3,
+        AC_HELP_STRING(
+            [--enable-se-class3],
+            [enable security enhancement class 3]
+        ),
+        se_class3="$enableval"
+)
+
+
+
+AC_MSG_RESULT($se_class3)
+if test x"$se_class3" = x"yes"; then
+        AC_DEFINE([SE_CLASS3],[],[Security enhancement class 3])
+fi
+
 ###### Check for debug compilation
 
 AC_MSG_CHECKING(whether to build with debug information)
@@ -164,6 +221,21 @@ if [ test x"$debuger" = x"yes" ]; then
   echo "*    debug: yes                   *"
 else
   echo "*    debug: no                    *"
+fi
+if [ test x"$se_class1" = x"yes" ]; then
+  echo "*    se-class1: yes               *"
+else
+  echo "*    se-class1: no                *"
+fi
+if [ test x"$se_class2" = x"yes" ]; then
+  echo "*    se-class2: yes               *"
+else
+  echo "*    se-class2: no                *"
+fi
+if [ test x"$se_class3" = x"yes" ]; then
+  echo "*    se-class3: yes               *"
+else
+  echo "*    se-class3: no                *"
 fi
 if [ test x"$gpu_support" = x"no" ]; then
   echo "*    gpu: no                      *"

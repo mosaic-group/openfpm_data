@@ -572,6 +572,34 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 	}
 }
 
+BOOST_AUTO_TEST_CASE( grid_safety_check )
+{
+#ifdef SE_CLASS1
+
+	size_t sz = {16,16,16};
+
+	// Create a grid
+
+	grid_cpu<3,Point_test<float>> g(sz);
+
+	// try to access uninitialized grid
+	grid_key_dx<3> key1({23,1,1});
+
+	g.template get(key1);
+	BOOST_REQUIRE_EQUAL(g.getLastError(),1001);
+
+	g.template setMemory<HeapMemory>();
+	BOOST_REQUIRE_EQUAL(g.getLastError(),1002);
+
+	Point_test<float> t;
+	g.set(key1,t);
+
+	g.set(key1,g2,key1);
+	BOOST_REQUIRE_EQUAL(g.getLastError(),1003);
+
+#endif
+}
+
 BOOST_AUTO_TEST_CASE( grid_use)
 {
 	/*  tensor<int,3,3,3> c;
