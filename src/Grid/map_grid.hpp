@@ -61,10 +61,10 @@ struct copy_cpu_encap
 	S & grid_dst;
 
 	//! type of the object we have to set
-	typedef typename S::type obj_type;
+	typedef typename S::value_type obj_type;
 
 	//! type of the object boost::sequence
-	typedef typename S::type::type ov_seq;
+	typedef typename S::value_type::type ov_seq;
 
 	//! object we have to store
 	const encapc<1,obj_type,Memory> & obj;
@@ -131,10 +131,10 @@ struct copy_cpu
 	S & grid_dst;
 
 	//! type of the object we have to set
-	typedef typename S::type obj_type;
+	typedef typename S::value_type obj_type;
 
 	//! type of the object boost::sequence
-	typedef typename S::type::type ov_seq;
+	typedef typename S::value_type::type ov_seq;
 
 	//! object we have to store
 	const obj_type & obj;
@@ -203,7 +203,7 @@ struct copy_cpu_sd
 	S & grid_dst;
 
 	//! type of the object boost::sequence
-	typedef typename S::type::type ov_seq;
+	typedef typename S::value_type::type ov_seq;
 
 	//! constructor
 	copy_cpu_sd(grid_key_dx<dim> & key, const S & grid_src, S & grid_dst)
@@ -253,7 +253,7 @@ struct copy_cpu_sd_k
 	S & grid_dst;
 
 	//! type of the object boost::sequence
-	typedef typename S::type::type ov_seq;
+	typedef typename S::value_type::type ov_seq;
 
 	//! constructor
 	copy_cpu_sd_k(grid_key_dx<dim> & key_s, grid_key_dx<dim> & key_d, const S & grid_src, S & grid_dst)
@@ -377,9 +377,6 @@ public:
 	//! Object container for T, it is the return type of get_o it return a object type trough
 	// you can access all the properties of T
 	typedef encapc<dim,T,Mem> container;
-
-	// The object type the grid is storing
-	typedef T type;
 
 	// The object type the grid is storing
 	typedef T value_type;
