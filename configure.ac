@@ -102,6 +102,22 @@ if test x"$se_class3" = x"yes"; then
         AC_DEFINE([SE_CLASS3],[],[Security enhancement class 3])
 fi
 
+###### Check for action on error
+
+action_on_e=continue
+AC_ARG_WITH([action-on-error],
+             AS_HELP_STRING([--with-action-on-error=stop,throw,continue],
+             [specify the action to do in case of error]),
+             [action_on_e="$withval"],
+             [action_on_e=continue])
+
+if test x"$action_on_e" = x"stop"; then
+           AC_DEFINE([STOP_ON_ERROR],[],[If an error occur stop the program])
+fi
+if test x"$action_on_e" = x"throw"; then
+           AC_DEFINE([THROW_ON_ERROR],[],[when an error accur continue but avoid unsafe operation])
+fi
+
 ###### Check for debug compilation
 
 AC_MSG_CHECKING(whether to build with debug information)

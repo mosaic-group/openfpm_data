@@ -574,28 +574,105 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 
 BOOST_AUTO_TEST_CASE( grid_safety_check )
 {
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && defined (THROW_ON_ERROR)
 
-	size_t sz = {16,16,16};
+	bool error = false;
+
+	typedef Point_test<float> p;
+
+	size_t sz[] = {16,16,16};
 
 	// Create a grid
 
 	grid_cpu<3,Point_test<float>> g(sz);
+	grid_cpu<3,Point_test<float>> g2(sz);
 
 	// try to access uninitialized grid
-	grid_key_dx<3> key1({23,1,1});
+	grid_key_dx<3> keyOut(23,1,1);
+	grid_key_dx<3> keyGood(15,1,1);
+	grid_key_dx<3> keyNeg(-1,0,0);
 
-	g.template get(key1);
-	BOOST_REQUIRE_EQUAL(g.getLastError(),1001);
+	error = false;
+	try
+	{g.template get<p::x>(keyOut);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1001);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
 
+	error = false;
 	g.template setMemory<HeapMemory>();
-	BOOST_REQUIRE_EQUAL(g.getLastError(),1002);
+	try
+	{g.template get<p::x>(keyOut);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1002);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
 
+	error = false;
 	Point_test<float> t;
-	g.set(key1,t);
+	try
+	{g.set(keyOut,t);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1002);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
 
-	g.set(key1,g2,key1);
-	BOOST_REQUIRE_EQUAL(g.getLastError(),1003);
+	error = false;
+	try
+	{g.set(keyGood,g2,keyOut);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1004);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	//// Negative key
+
+	error = false;
+	try
+	{g.template get<p::x>(keyNeg);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1003);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	Point_test<float> t2;
+	try
+	{g.set(keyNeg,t2);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1003);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	try
+	{g.set(keyGood,g2,keyNeg);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1005);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
 
 #endif
 }

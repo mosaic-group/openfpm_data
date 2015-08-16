@@ -31,46 +31,9 @@
 #include "memory_ly/memory_array.hpp"
 #include "memory_ly/memory_c.hpp"
 #include <vector>
-
-#ifdef STOP_ON_ERROR
-#define ACTION_ON_ERROR exit(1);
-else if defined(WORKAROUND_ON_ERROR)
-#define ACTION_ON_ERROR return boost::fusion::at_c<p>(error_sink);
-#else
-#define ACTION_ON_ERROR
-#endif
-
-// Macro for debugging
-#define CHECK_INIT() 		if (is_mem_init == false)\
-							{\
-								std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";\
-								size_t * err_code_pointer = (size_t *)&this->err_code;\
-								*err_code_pointer = 1001;\
-								ACTION_ON_ERROR;\
-							}
+#include "se_grid.hpp"
 
 
-#define GRID_OVERFLOW(v1) for (long int i = 0 ; i < dim ; i++)\
-						  {\
-						  	  if (v1.get(i) >= (long int)getGrid().size(i))\
-							  {\
-						  		  std::cerr << "Error " __FILE__ << ":" << __LINE__ << "grid overflow";\
-								  size_t * err_code_pointer = (size_t *)&this->err_code;\
-								  *err_code_pointer = 1002;\
-						  		  ACTION_ON_ERROR;\
-							  }\
-						  }
-
-#define GRID_OVERFLOW_EXT(g,key2) 		for (size_t i = 0 ; i < dim ; i++)\
-		{\
-			if (key2.get(i) >= (long int)g.g1.size(i) || key2.get(i) < 0)\
-			{\
-				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " out of bound" << "\n";\
-				size_t * err_code_pointer = (size_t *)&this->err_code;\
-				*err_code_pointer = 1003;\
-				ACTION_ON_ERROR;\
-			}\
-		}
 
 // Debugging macro
 
@@ -119,7 +82,7 @@ struct copy_cpu_encap
 	:key(key),grid_dst(grid_dst),obj(obj){};
 
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 	/*! \brief Constructor
 	 *
 	 * Calling this constructor produce an error. This class store the reference of the object,
@@ -188,7 +151,7 @@ struct copy_cpu
 	copy_cpu(grid_key_dx<dim> & key, S & grid_dst, const obj_type & obj)
 	:key(key),grid_dst(grid_dst),obj(obj){};
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 	/*! \brief Constructor
 	 *
 	 * Calling this constructor produce an error. This class store the reference of the object,
@@ -369,18 +332,6 @@ private:
 	//! Error code
 	size_t err_code;
 
-	/*! \brief Return the last error
-	 *
-	 */
-	size_t getLastError()
-	{
-		return err_code;
-	}
-
-#ifdef WORKAROUND_ON_ERROR
-	// A sink in case of error
-	T error_sink;
-#endif
 
 	//! Is the memory initialized
 	bool is_mem_init = false;
@@ -610,7 +561,7 @@ public:
 	 */
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(grid_key<p> & v1)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
@@ -630,7 +581,7 @@ public:
 	 */
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(grid_key<p> & v1) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
@@ -649,7 +600,7 @@ public:
 	 */
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(grid_key_d<dim,p> & v1)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
@@ -668,7 +619,7 @@ public:
 	 */
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(grid_key_d<dim,p> & v1) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
@@ -687,7 +638,7 @@ public:
 	 */
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
@@ -706,7 +657,7 @@ public:
 	 */
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
@@ -725,7 +676,7 @@ public:
 	 */
 	inline encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
@@ -744,7 +695,7 @@ public:
 	 */
 	inline const encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
@@ -835,7 +786,7 @@ public:
 	{
 		if (dim != 1)
 		{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 			std::cerr << "Error: " << __FILE__ << " " << __LINE__ << " remove work only on dimension == 1 " << "\n";
 #endif
 			return;
@@ -920,7 +871,7 @@ public:
 
 	template<typename Memory> inline void set(grid_key_dx<dim> dx, const encapc<1,T,Memory> & obj)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(dx)
 #endif
@@ -943,11 +894,10 @@ public:
 
 	inline void set(grid_key_dx<dim> dx, const T & obj)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(dx)
 #endif
-
 		// create the object to copy the properties
 		copy_cpu<dim,grid_cpu<dim,T,Mem>> cp(dx,*this,obj);
 
@@ -965,7 +915,7 @@ public:
 
 	inline void set(grid_key_dx<dim> key1,const grid_cpu<dim,T,Mem> & g, grid_key_dx<dim> key2)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(key1)
 		GRID_OVERFLOW_EXT(g,key2)
@@ -1041,6 +991,14 @@ public:
 		// get the starting point and the end point of the real domain
 
 		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
+	}
+
+	/*! \brief Return the last error
+	 *
+	 */
+	size_t getLastError()
+	{
+		return err_code;
 	}
 
 	/*! \brief Return the size of the message needed to pack this object
