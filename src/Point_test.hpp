@@ -21,7 +21,7 @@
  * for more information
  *
  * ### Declaration of a point
- * \snippet vector_unit_tests.hpp Point declaration
+ * \snippet vector_test_util.hpp Point declaration
  *
  * ### Create a type definition
  *
@@ -89,7 +89,27 @@ public:
   }
 
   //! constructor from encapc
-  template <typename Mem> inline Point_test(const encapc<1,Point_test<T>,Mem> & p)
+  template <unsigned int dim, typename Mem> inline Point_test(const encapc<dim,Point_test<T>,Mem> & p)
+  {
+	  boost::fusion::at_c<0>(data) = p.template get<0>();
+	  boost::fusion::at_c<1>(data) = p.template get<1>();
+	  boost::fusion::at_c<2>(data) = p.template get<2>();
+	  boost::fusion::at_c<3>(data) = p.template get<3>();
+
+	  for (size_t i = 0 ; i < 3 ; i++)
+		  boost::fusion::at_c<4>(data)[i] = p.template get<4>()[i];
+
+	  for (size_t i = 0 ; i < 3 ; i++)
+	  {
+		  for (size_t j = 0 ; j < 3 ; j++)
+		  {
+			  boost::fusion::at_c<5>(data)[i][j] = p.template get<5>()[i][j];
+		  }
+	  }
+  }
+
+  //! constructor from encapg
+  template <unsigned int dim, typename Mem> inline Point_test(const encapg<dim,Point_test<T>,Mem> & p)
   {
 	  boost::fusion::at_c<0>(data) = p.template get<0>();
 	  boost::fusion::at_c<1>(data) = p.template get<1>();

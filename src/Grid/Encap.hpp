@@ -272,6 +272,12 @@ public:
 	{
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
 	}
+
+	// access the data
+	template <unsigned int p> const typename type_gpu_prop<p,Mem>::type::reference get() const
+	{
+		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
+	}
 };
 
 #include "util/common.hpp"

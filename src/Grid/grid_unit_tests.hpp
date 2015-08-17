@@ -201,6 +201,8 @@ template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t
 	t.start();
 #endif
 
+	//! [Get the object in an N-dimensional grid with an iterator]
+
 	typedef Point_test<float> P;
 
 	grid_key_dx_iterator<dim> key_it = c3.getIterator();
@@ -209,8 +211,11 @@ template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t
 	{
 		grid_key_dx<dim> kk = key_it.get();
 
+		// Here we get a reference to the object, in reality we get an encapsulated object reference encapc
 		auto v = c3.get_o(kk);
 
+		// An encapsulated object can be accessed like that
+		//
 		v.template get<P::x>() = 1.1f;
 		v.template get<P::y>() = 1.2f;
 		v.template get<P::z>() = 1.3f;
@@ -230,10 +235,20 @@ template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t
 		v.template get<P::t>()[2][1] = 8.0f;
 		v.template get<P::t>()[2][2] = 9.0f;
 
+		// From an encapsulated reference object you can create
+		// an object
+		Point_test<float> obj = c3.get_o(kk);
+
+		// And do some operation
+		obj.fill();
+
+		// Note obj is independent from the grid object
+
 		++key_it;
 
 	}
 
+	//! [Get the object in an N-dimensional grid with an iterator]
 
 #ifdef VERBOSE_TEST
 	t.stop();
@@ -703,6 +718,17 @@ BOOST_AUTO_TEST_CASE( grid_use)
 	test_all_grid<3>(126);
 	test_all_grid<2>(1414);
 	test_all_grid<1>(2000000);
+
+
+	// Special case grid of size 0
+	test_all_grid<8>(0);
+	test_all_grid<7>(0);
+	test_all_grid<6>(0);
+	test_all_grid<5>(0);
+	test_all_grid<4>(0);
+	test_all_grid<3>(0);
+	test_all_grid<2>(0);
+	test_all_grid<1>(0);
 #else
 	test_all_grid<4>(4);
 	test_all_grid<3>(8);
@@ -712,7 +738,7 @@ BOOST_AUTO_TEST_CASE( grid_use)
 
 	// Test the 3d gpu grid with CudaMemory and HeapMemory with different size
 
-	for (int i = 2 ; i <= GS_SIZE ; i++)
+	for (int i = 0 ; i <= GS_SIZE ; i++)
 	{
 		sz.clear();
 		sz.push_back(i);
