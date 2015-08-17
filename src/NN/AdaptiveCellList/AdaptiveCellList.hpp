@@ -8,20 +8,6 @@
 
 #include <string>
 
-/*
- * How does it work (normal cell lists)?
- * 
- * I have a particle and want to know all its interactions with particles in its subdomain.
- * Since I don't want to check against all other particles, I only check the proximity condition for those that are "nearby enough".
- * We could do so by dividing the subdomain into many cells of equal size (maximal cutoff/radius of the particles as the length of each side).
- * Once we accomplished that we only have to check for possible interactions with all the particles that are in neighbor cells of the cell our initially chosen particle was in.
- * This is what the NNIterator does: given some start cell list all elements elements in this start cell could maybe interact with.
- * There are multiple ways to define neighbor cells, I can check all neighbor cells (full) or only those that are "further ahaed" (sym).
- * If we know that interactions are symmetric, this makes them unique (and saves us nearly half the computations!)
- * 
- * First, let us screw all that fancy logic and implement it as naively as possible... so let us compute with all points! \o/
- */
-
 
 // Stub implementation
 template<unsigned int dim, typename T,  unsigned int impl=BALANCED, typename ele_container=openfpm::vector<std::pair<Point<dim+1, T>, size_t>> >
@@ -114,18 +100,41 @@ class AdaptiveCellList<dim,T,BALANCED,ele_container> // : public CellDecomposer_
 		}
 	}
 	
-	size_t firstIndexOfLevel(size_t level) {
+	inline size_t firstIndexOfLevel(size_t level) {
 		//sum i from 0 to (target_level-1): 2^(dim*i) = (2^(dim+dim*(target_level-1)) - 1) / (2^dim - 1)
 		return ((1l << (dim*level)) - 1) / ((1l << dim) - 1);
 	}
-	
 public:
 
 	// Object type that the structure store
 	typedef T value_type;
+	
+	inline size_t maxlevel() {return max_level;}
 
 	inline size_t size() {return all_eles.size();}
-
+	
+	inline T getEdgeLengthForLevel(size_t level) {
+		return D_m / static_cast<T>(1l << level);
+	}
+	
+	inline T getRadiusForLevel(size_t level) {
+		return getEdgeLengthForLevel(level+1) * static_cast<T>(1.5f); // the *1.5 should be useless. TODO: make sure that it is
+	}
+	
+	/*! \warning Checks for < low bound and >= (!) high bound
+	 * 
+	 */
+	inline bool isInside(Point<dim+1,T> p) {
+		for(unsigned int i=0; i<dim; i++)
+			if(p.get(i) < sbox.getLow(i) || p.get(i) >= sbox.getHigh(i))
+				return false;
+		return true;
+	}
+	
+	// For iterating over all points to compute all interactions:
+	inline decltype(all_eles.begin()) begin() {return all_eles.begin();}
+	inline decltype(all_eles.end()) end() {return all_eles.end();}
+	
 	/*! Initialize the cell list
 	 *
 	 * \param sbox Domain where this cell list is living
@@ -179,7 +188,7 @@ public:
 	
 	/*! \brief Sorts elements according so they are coherent in cells
 	 * 
-	 *  TODO: use some sort of isvalid-bool that is unset in add(), set in construct() and checked in the iterator
+	 *  TODO: use some sort of isvalid-bool that is unset in add(), set in construct() and checked in the iterator-getter
 	 * 
 	 * \note Has to be called after insertion and before usage!
 	 * 
@@ -195,7 +204,11 @@ public:
 		//std::cout << "Min. radius: " << minradius << std::endl;
 		
 		max_level = std::ceil(std::log2(D_m / minradius)) - 1;
-		// fun fact: more than about 64/dim levels are not possible with these indices (and thats already with 8 byte for a size_t). Perhaps set it as maximum? TODO.
+		// fun fact: more than about 64/dim levels are not even theoretically possible with these indices (and thats already with 8 byte for a size_t). 
+		// even worse: when using float, we get inconsistencies starting at level 24.
+		// So we should think about setting a maximum here (and making sure that everything else honors this):
+		// TODO .
+		
 		//std::cout << "Max. level: " << max_level << std::endl;
 		
 		auto end_iter = all_eles.begin();
@@ -337,7 +350,7 @@ public:
 		for(unsigned int d = 0; d < dim; d++)
 			pos.get(d) = sbox.getP1().get(d);
 		// cutoff radius
-		pos.get(dim) = (D_m / static_cast<T>(1l << (level+1))) * static_cast<T>(1.5f); // the *1.5 should be useless. TODO: make sure that it is
+		pos.get(dim) = getRadiusForLevel(level);
 		
 		// using this offset as a pivot on the whole row gives me the position w.r.t to the highest dimension on the highest level
 		// then pivoting on this half of the row gives me the pos in the next highest dim and so on until
@@ -363,18 +376,6 @@ public:
 		return pos;
 	}
 	
-	/*! \brief Get an element in the cell
-	 *
-	 * \param ele_id element id
-	 *
-	 * \return The element value
-	 *
-	 */
-	inline size_t& get(size_t ele_id)
-	{
-		return all_eles.get(ele_id).second;
-	}
-
 	/*! \brief Swap the memory
 	 *
 	 * \param cl Cell list with witch you swap the memory
@@ -390,23 +391,23 @@ public:
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,FULL,impl> getNNIterator(Point<dim+1,T> p)
 	{
-		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,FULL,impl> cln(*this);
+		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,FULL,impl> cln(p, *this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,SYM,impl> getNNIteratorSym(size_t cell)
+	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,SYM,impl> getNNIteratorSym(Point<dim+1,T> p)
 	{
-		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,SYM,impl> cln(*this);
+		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,SYM,impl> cln(p, *this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,CRS,impl> getNNIteratorCross(size_t cell)
+	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,CRS,impl> getNNIteratorCross(Point<dim+1,T> p)
 	{
-		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,CRS,impl> cln(*this);
+		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,CRS,impl> cln(p, *this);
 
 		return cln;
 	}

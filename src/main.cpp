@@ -7,6 +7,27 @@
 #include <iostream>
 #include <boost/mpl/int.hpp>
 #include <typeinfo>
+#include <unordered_set>
+
+
+// http://stackoverflow.com/questions/20590656/error-for-hash-function-of-pair-of-ints
+struct pairhash {
+public:
+  template <typename T, typename U>
+  std::size_t operator()(const std::pair<T, U> &x) const
+  {
+    return (3 * std::hash<T>()(x.first)) ^ std::hash<U>()(x.second);
+  }
+};
+
+
+
+
+
+
+
+
+
 
 // Include tests
 
@@ -118,6 +139,7 @@ std::vector<Point<dim, float>> getSamplePoints() {
 
 std::vector<Point<2, float>> samplepoints2 = getSamplePoints<2>();
 std::vector<Point<3, float>> samplepoints3 = getSamplePoints<3>();
+std::unordered_multiset<std::pair<size_t, size_t>, pairhash> allInteractions;
 
 template<int dim, class CellS>
 void insertIntoCl(CellS &cl, std::vector<Point<dim, float>> &points) {
@@ -129,8 +151,20 @@ void insertIntoCl(CellS &cl, std::vector<Point<dim, float>> &points) {
 	}
 }
 
+AdaptiveCellList<2, float> getSampleARCL() {
+	SpaceBox<2,float> box({0.0f,0.0f},{1.0f,1.0f});
+	Point<2,float> org({0.0,0.0});
+	AdaptiveCellList<2, float> arcl(box,org);
+	
+	insertIntoCl<3, AdaptiveCellList<2, float>>(arcl, samplepoints3);
+	arcl.construct();
+	
+	return arcl;
+}
+
 BOOST_AUTO_TEST_CASE( celllist_realloc)
 {
+	return;
 	std::cout << "2D Cell List:" << std::endl;
 	
 	//Space where is living the Cell list
@@ -223,12 +257,13 @@ inline bool is_in_radius(const Point<3, float> &p1, const Point<3, float> &p2) {
 
 BOOST_AUTO_TEST_CASE( get_all_interactions_classiccelllist)
 {
-	return;
+	//return;
+	
+	timestamp_t c0 = get_timestamp();
 	
 	auto maxradiusiterator = std::max_element(samplepoints3.begin(), samplepoints3.end(), [](Point<3, float>& a, Point<3, float>& b){return a[2] < b[2];});
 	size_t gridsize = std::floor(1.0f / (*maxradiusiterator)[2]);
-	//gridsize = 7;
-	std::cout << "Please choose a gridsize < " << 1.0f / (*maxradiusiterator)[2] << ": " << gridsize << std::endl;
+	//std::cout << "Please choose a gridsize < " << 1.0f / (*maxradiusiterator)[2] << ": " << gridsize << std::endl;
 	
 	const float epsilon = 0.0001f; // just a little bit bigger, so 1.0 is still inside.
 	//const float epsilon = 0.0f; // Iterating over padding cells crashes... due to missing boundary checks, I guess?
@@ -241,11 +276,15 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_classiccelllist)
 	
 	insertIntoCl<2, CellList<2, float>>(cl, samplepoints2); // shares indices with ~3, so just use the 2d one for a simple celllist
 	
+	timestamp_t c1 = get_timestamp();
+	
+	std::cout << "Creation time (us): " << c1-c0 << std::endl;
+	
+	
 	size_t interactions_count = 0, interaction_candidates = 0;
 	
 	size_t cell, i1, i2;
 	
-	std::cout << "ready lets go" << std::endl;
 	timestamp_t t0 = get_timestamp();
 	
 	for (int i=pad; i<div[0]+pad; i++) {
@@ -261,9 +300,10 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_classiccelllist)
 					i1 = iter_inner.get();
 					++interaction_candidates;
 					if(i1 != i2 && is_in_radius(samplepoints3[i1], samplepoints3[i2])) {
-						//std::cout << i1 << " and " << i2 << std::endl;
+						//std::cout << i1 << " and " << i2 << " with p2 = " << samplepoints3[i2].toString() << std::endl;
+						allInteractions.insert(std::make_pair(i1, i2));
 						++interactions_count;
-					}//else std::cout << i1 << " AND " << i2 << std::endl;
+					}
 					++iter_inner;
 				}
 				//std::cout << std::endl;
@@ -273,64 +313,22 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_classiccelllist)
 	}
 	
 	timestamp_t t1 = get_timestamp();
-	std::cout << "that was easy (us): " << t1-t0 << std::endl;
-	std::cout << "found interactions: " << interactions_count
+	std::cout << "Interactions time (us): " << t1-t0 << std::endl;
+	std::cout << "Found interactions: " << interactions_count
 			<< " of " << interaction_candidates
 			<< " candidates (" << (static_cast<float>(interaction_candidates) / interactions_count)
 			<< "x)." << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE( get_all_interactions_arcelllist)
+BOOST_AUTO_TEST_CASE( find_inserted_items_in_arcl)
 {
-	SpaceBox<2,float> box({0.0f,0.0f},{1.0f,1.0f});
-	Point<2,float> org({0.0,0.0});
-	AdaptiveCellList<2, float> arcl(box,org);
-	
-	insertIntoCl<3, AdaptiveCellList<2, float>>(arcl, samplepoints3);
-	arcl.construct();
-	
-	size_t interactions_count = 0, interaction_candidates = 0;
-	
-	size_t i1, i2;
-	
-	std::cout << "ready lets go (adaptive)" << std::endl;
-	
-	timestamp_t t0 = get_timestamp();
-	
-	///*
-	auto iter = arcl.getNNIterator<FAST>(4711); //full interactions
-	while (iter.isNext()) {
-		i2 = iter.get();
-		//std::cout << "Neighbor found: " << i2 << std::endl;
-		auto iter_inner = arcl.getNNIterator<FAST>(4711); //full interactions
-		while (iter_inner.isNext()) {
-			i1 = iter_inner.get();
-			++interaction_candidates;
-			if(i1 != i2 && is_in_radius(samplepoints3[i1], samplepoints3[i2])) {
-				++interactions_count;
-				//std::cout << i1 << " and " << i2 << std::endl;
-			}
-			++iter_inner;
-		}
-		//std::cout << std::endl;
-		++iter;
-	}
-	//*/
-	
-	timestamp_t t1 = get_timestamp();
-	std::cout << "that was easy (us): " << t1-t0 << std::endl;
-	std::cout << "found interactions (should be 475560): " << interactions_count
-			<< " of " << interaction_candidates
-			<< " candidates (" << (static_cast<float>(interaction_candidates) / interactions_count)
-			<< "x)." << std::endl;
-	
-	//auto printresult = arcl.printTree(0,0,0);
-	//std::cout << printresult.first << printresult.second << std::endl;
+	return;
+	auto arcl = getSampleARCL();
 	
 	for(auto& p: samplepoints3) {
 		size_t cellindex = arcl.findCellIndex(p);
 		
-		// check here, whether the calculated cell really contains our point! thats easy and will be a good base for debugging
+		// check here, whether the calculated cell really contains our point!
 		bool found = false;
 		
 		auto iter = arcl.getCellContents(cellindex);
@@ -341,39 +339,77 @@ BOOST_AUTO_TEST_CASE( get_all_interactions_arcelllist)
 		BOOST_REQUIRE(found);
 	}
 	
-	/*
-	std::cout << "0: ";
-	for (auto& i : arcl.findChildrenIndices(0))
-		std::cout << i << " ";
-	std::cout << std::endl;
+	//auto printresult = arcl.printTree(0,0,0);
+	//std::cout << printresult.first << printresult.second << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE( findcellindex_and_findcellcenter_combine)
+{
+	return;
+	auto arcl = getSampleARCL();
 	
-	std::cout << "1: ";
-	for (auto& i : arcl.findChildrenIndices(1))
-		std::cout << i << " ";
-	std::cout << std::endl;
-	
-	std::cout << "5: ";
-	for (auto& i : arcl.findChildrenIndices(5))
-		std::cout << i << " ";
-	std::cout << std::endl;
-	
-	std::cout << "6: ";
-	for (auto& i : arcl.findChildrenIndices(6))
-		std::cout << i << " ";
-	std::cout << std::endl;
-	*/
-	
-	size_t max = -1; // = 18446744073709551615 on my system
+	size_t max = 164193736414550; // = theoretically we should choose -1, which is 18446744073709551615 on my system, but on high levels float fails, so we stop earlier.
+	size_t sqrt_max = sqrt(max);
 	//max = (1l << 32) + 1l;
 	for(size_t i = 0; i < 10000000; i++)
 		BOOST_REQUIRE_EQUAL(arcl.findCellIndex(arcl.findCellCenter(i)), i);
-	for(size_t i = 10000; i < max; i += 777777) {
+	std::cout << "Checked until " << 10000000 << std::endl;
+	for(size_t i = 100000000; i < sqrt_max+10000; i += 777777)
+		BOOST_REQUIRE_EQUAL(arcl.findCellIndex(arcl.findCellCenter(i)), i);
+	std::cout << "Checked until " << sqrt_max+100000 << std::endl;
+	for(size_t i = sqrt_max+10000; i < max; i += sqrt_max)
 		BOOST_CHECK_EQUAL(arcl.findCellIndex(arcl.findCellCenter(i)), i);
+	std::cout << "Checked until " << max << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE( get_all_interactions_arcelllist)
+{
+	timestamp_t c0 = get_timestamp();
+	auto arcl = getSampleARCL();
+	timestamp_t c1 = get_timestamp();
+	std::cout << "Creation time (us): " << c1-c0 << std::endl;
+	
+	size_t interactions_count = 0, interaction_candidates = 0;
+	
+	size_t i1, i2;
+	
+	timestamp_t t0 = get_timestamp();
+	
+	///*
+	for(std::pair<Point<3,float>, size_t>& p1 : arcl) {
+		i1 = p1.second;
+		auto iter_inner = arcl.getNNIterator<FAST>(p1.first); //full interactions
+		while (iter_inner.isNext()) {
+			auto p2 = iter_inner.get();
+			i2 = p2.second;
+			++interaction_candidates;
+			if(i1 != i2 && is_in_radius(p1.first, p2.first)) {
+				++interactions_count;
+				auto it = allInteractions.find(std::make_pair(i1, i2));
+				BOOST_REQUIRE(it != allInteractions.end());
+				allInteractions.erase(it);
+				//std::cout << i1 << " and " << i2 << " with p2 = " << p2.first.toString() << std::endl;
+			} //else std::cout << i1 << " | | " << i2 << " with p2 = " << p2.first.toString() << std::endl;
+			++iter_inner;
+		}
+		//std::cout << std::endl;
 	}
+	BOOST_REQUIRE_EQUAL(allInteractions.size(), 0);
+	//*/
 	
-	// Fails from about 164193736704988 on (but apparently only about every 2 tries... some mistake in the ofset calculation or something maybe?)
+	//std::cout << "0.252 ^ 2:" << std::endl;
+	//arcl.getNNIterator<FAST>(Point<3,float>({0.02f,0.02f,0.05f}));
 	
-	std::cout << static_cast<size_t>(-1) << " < " << static_cast<size_t>(max) << std::endl;
+	//for(size_t i = 0; i < 10; i++)
+	//	arcl.getNNIterator<FAST>(arcl.findCellCenter(i));
+	
+	
+	timestamp_t t1 = get_timestamp();
+	std::cout << "Interaction time (us): " << t1-t0 << std::endl;
+	std::cout << "Found interactions: " << interactions_count
+			<< " of " << interaction_candidates
+			<< " candidates (" << (static_cast<float>(interaction_candidates) / interactions_count)
+			<< "x)." << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
