@@ -215,7 +215,7 @@ template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t
 		auto v = c3.get_o(kk);
 
 		// An encapsulated object can be accessed like that
-		//
+		// (this will change the value in the grid)
 		v.template get<P::x>() = 1.1f;
 		v.template get<P::y>() = 1.2f;
 		v.template get<P::z>() = 1.3f;
@@ -242,7 +242,7 @@ template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t
 		// And do some operation
 		obj.fill();
 
-		// Note obj is independent from the grid object
+		// Note change obj does not change the grid
 
 		++key_it;
 
@@ -590,12 +590,14 @@ BOOST_AUTO_TEST_CASE( grid_sub_iterator_test )
 {
 	//! [Sub-grid iterator test usage]
 	// Subdivisions
+	size_t count = 0;
 	typedef Point_test<float> p;
 
 	size_t div[3] = {16,16,16};
 
 	// grid info
 	grid_cpu<3,Point_test<float>> g(div);
+	g.setMemory<HeapMemory>();
 
 	grid_key_dx<3> start(1,1,1);
 	grid_key_dx<3> stop(14,14,14);
@@ -609,7 +611,7 @@ BOOST_AUTO_TEST_CASE( grid_sub_iterator_test )
 		grid_key_dx<3> key = g_it.get();
 
 		// set the x value
-		g.template get<p::x>() = 1.0;
+		g.template get<p::x>(key) = 1.0;
 
 		count++;
 
@@ -619,14 +621,6 @@ BOOST_AUTO_TEST_CASE( grid_sub_iterator_test )
 	BOOST_REQUIRE_EQUAL(count, 14*14*14);
 
 	//! [Sub-grid iterator test usage]
-
-	// reset the iterator and check that it start from gk_start
-	g_it.reset();
-
-	bool val = g_it.get() == start;
-
-	BOOST_REQUIRE_EQUAL(val,true);
-	}
 }
 
 BOOST_AUTO_TEST_CASE( grid_safety_check )

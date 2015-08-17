@@ -308,7 +308,7 @@ struct mem_reference
  * \snippet grid_unit_tests.hpp Definition and allocation of a 3D grid on CPU memory
  * ### Access a grid c3 of size sz on each direction
  * \snippet grid_unit_tests.hpp Access a grid c3 of size sz on each direction
- * ### Access to an N-dimensional grid with an iterator
+ * ### Access an N-dimensional grid with an iterator
  * \snippet grid_unit_tests.hpp Access to an N-dimensional grid with an iterator
  * ### Iterate only on a sub-set of the grid
  * \snippet grid_unit_tests.hpp Sub-grid iterator test usage
