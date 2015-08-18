@@ -61,8 +61,11 @@ public:
 	}
 };
 
+// Declarations;
 
-template<unsigned int dim> class grid_key_dx_iterator_sub;
+template<unsigned int N, typename T> class grid_sm;
+template <unsigned int dim> class print_warning_on_adjustment;
+template<unsigned int dim,typename warn=print_warning_on_adjustment<dim>> class grid_key_dx_iterator_sub;
 
 /*! \brief class that store the information of the grid like number of point on each direction and define the index linearization
  * by stride
@@ -187,7 +190,7 @@ public:
 	/*! \brief Return the box enclosing the grid
 	 *
 	 */
-	const Box<N,size_t> & getBox()
+	const Box<N,size_t> & getBox() const
 	{
 		return box;
 	}
@@ -524,9 +527,7 @@ public:
 	 * \return the size of the grid
 	 *
 	 */
-
-	//#pragma openfpm layout(size)
-	size_t size()
+	size_t size() const
 	{
 		return size_tot;
 	};
@@ -616,7 +617,7 @@ public:
 	 * \param stop stop point
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<N> getSubIterator(grid_key_dx<N> & start, grid_key_dx<N> & stop)
+	inline grid_key_dx_iterator_sub<N> getSubIterator(grid_key_dx<N> & start, grid_key_dx<N> & stop) const
 	{
 		return grid_key_dx_iterator_sub<N>(*this,start,stop);
 	}
@@ -917,6 +918,41 @@ public:
 	}
 };
 
+/* \brief grid_key_dx_iterator_sub can adjust the domain if the border go out-of-side
+ *        in this case a warning is produced
+ *
+ * \tparam dim dimensionality
+ *
+ */
+template <unsigned int dim>
+class print_warning_on_adjustment
+{
+public:
+	inline static void pw1(size_t i, const grid_key_dx<dim> & gk_start) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " start with index smaller than zero x[" << i << "]=" << gk_start.get(i) << "\n";}
+	inline static void pw2(size_t i, const grid_key_dx<dim> & gk_start) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " Cropping start point x[" << i << "]=" << gk_start.get(i) << " to x[" << i << "]=0 \n"  ;}
+	inline static void pw3() {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop with smaller index than start \n";}
+	inline static void pw4(size_t i, const grid_key_dx<dim> & gk_stop, const grid_sm<dim,void> & grid_base) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop index bigger than cell domain x[" << i << "]=" << gk_stop.get(i) << " >= " << grid_base.size(i) << "\n";}
+	inline static void pw5() {std::cerr << "Warning grid_key_dx_iterator_sub: " << __FILE__ << ":" << __LINE__ << " the starting point is not smaller or equal than than the stop point in all the coordinates" << "\n";}
+};
+
+/* \brief grid_key_dx_iterator_sub can adjust the domain if the border go out-of-side
+ *        in this case a warning is produced
+ *
+ * \tparam dim dimensionality
+ * \tparam gb type of grid
+ *
+ */
+template <unsigned int dim>
+class do_not_print_warning_on_adjustment
+{
+public:
+	inline static void pw1(size_t i, const grid_key_dx<dim> & gk_start) {}
+	inline static void pw2(size_t i, const grid_key_dx<dim> & gk_start) {}
+	inline static void pw3() {}
+	inline static void pw4(size_t i, const grid_key_dx<dim> & gk_stop, const grid_sm<dim,void> & grid_base) {}
+	inline static void pw5() {}
+};
+
 /**
  *
  * Grid key class iterator, iterate through a sub-grid defined by an hyper-cube
@@ -930,7 +966,7 @@ public:
  *
  */
 
-template<unsigned int dim>
+template<unsigned int dim, typename warn>
 class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 {
 #ifdef DEBUG
@@ -958,20 +994,20 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 			// if start smaller than 0
 			if (gk_start.get(i) < 0)
 			{
-#if defined(DEBUG) && !defined(NO_WARNING)
-				std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " start with index smaller than zero x[" << i << "]=" << gk_start.get(i) << "\n";
+#ifdef DEBUG
+				warn::pw1(i,gk_start);
 #endif
 				if (gk_start.get(i) < gk_stop.get(i))
 				{
-#if defined(DEBUG) && !defined(NO_WARNING)
-					std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " Cropping start point x[" << i << "]=" << gk_start.get(i) << " to x[" << i << "]=0 \n"  ;
+#ifdef DEBUG
+					warn::pw2(i,gk_start);
 #endif
 					gk_start.set_d(i,0);
 				}
 				else
 				{
-#if defined(DEBUG) && !defined(NO_WARNING)
-					std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop with smaller index than start \n";
+#ifdef DEBUG
+					warn::pw3();
 #endif
 					// No points are available
 					gk_start.set_d(dim-1,gk_stop.get(dim-1)+1);
@@ -982,8 +1018,8 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 			// if stop bigger than the domain
 			if (gk_stop.get(i) >= (long int)grid_base.size(i))
 			{
-#if defined(DEBUG) && !defined(NO_WARNING)
-				std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop index bigger than cell domain x[" << i << "]=" << gk_stop.get(i) << " >= " << grid_base.size(i) << "\n";
+#ifdef DEBUG
+				warn::pw4(i,gk_stop,grid_base);
 #endif
 
 				if (gk_start.get(i) < (long int)grid_base.size(i))
@@ -1049,7 +1085,7 @@ public:
 	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
 	: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
 	{
-#if defined(DEBUG) && !defined(NO_WARNING)
+#ifdef DEBUG
 		//! If we are on debug check that the stop grid_key id bigger than the start
 		//! grid_key
 
@@ -1057,7 +1093,7 @@ public:
 		{
 			if (gk_start.get(i) > gk_stop.get(i))
 			{
-				std::cerr << "Warning grid_key_dx_iterator: " << __FILE__ << " " << __LINE__ << " the starting point of the grid bigger than the stop point at any coordinate" << "\n";
+				warn::pw5();
 			}
 		}
 #endif
@@ -1114,7 +1150,7 @@ public:
 		{
 			if (start[i] > stop[i])
 			{
-				std::cerr << "Error grid_key_dx_iterator : " << __FILE__ << ":" << __LINE__ << " the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
+				warn::pw5();
 			}
 		}
 #endif
@@ -1231,7 +1267,7 @@ public:
 		{
 			if (gk_start.get(i) > gk_stop.get(i))
 			{
-				std::cerr << "Error grid_key_dx_iterator : "  << __FILE__ << ":" << __LINE__ <<  " the starting point of the grid cannot be bigger than the stop point at any coordinate" << "\n";
+				warn::pw5();
 			}
 		}
 

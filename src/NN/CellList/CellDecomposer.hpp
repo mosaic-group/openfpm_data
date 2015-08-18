@@ -278,6 +278,16 @@ protected:
 	 */
 	void Initialize(const size_t pad, const size_t (& div)[dim])
 	{
+#ifdef DEBUG
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (div[i] == 0)
+			{
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of cells on each dimension must be different from zero\n";
+			}
+		}
+#endif
+
 		// created a padded div
 		size_t div_p[dim];
 

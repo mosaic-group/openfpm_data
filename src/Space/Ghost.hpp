@@ -27,6 +27,9 @@ p1[0]<-----+         +----> p2[0]
            +----+----+
                 |
                 v  p1[1]
+
+
+    \warning p1[0] and p1[1] must be negative hile p2[1] and p2[0] must be positive
  *
  */
 

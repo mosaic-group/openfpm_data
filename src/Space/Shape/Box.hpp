@@ -6,6 +6,7 @@
 #include <boost/fusion/sequence/intrinsic/at_c.hpp>
 #include "Grid/grid_key.hpp"
 #include "Grid/Encap.hpp"
+#include <sstream>
 
 /*! \brief It define if we want the upper base or the down base (Lower or upper)
  * extreme of the interval
@@ -72,6 +73,12 @@ public:
 	static const unsigned int max_prop = 2;
 
 	static const unsigned int dims = dim;
+
+	// Get method
+	template <int i> inline auto get() -> decltype(boost::fusion::at_c<i>(data))
+	{
+		return boost::fusion::at_c<i>(data);
+	}
 
 	/*! \brief Intersect
 	 *
@@ -719,7 +726,7 @@ public:
 	 *
 	 */
 
-	bool isInside(Point<dim,T> & p)
+	bool isInside(const Point<dim,T> & p) const
 	{
 		// check if bound
 
@@ -748,7 +755,7 @@ public:
 	 *
 	 */
 
-	bool isInside(T (&p)[dim])
+	bool isInside(const T (&p)[dim]) const
 	{
 		// check if bound
 
@@ -857,7 +864,7 @@ public:
 	 * \return The volume
 	 *
 	 */
-	inline T getVolumeKey()
+	inline T getVolumeKey() const
 	{
 		T vol = 1.0;
 
@@ -891,6 +898,41 @@ public:
 	static bool noPointers()
 	{
 		return true;
+	}
+
+	/*! \brief Return the middle point of the box
+	 *
+	 * \return the middle point of the box
+	 *
+	 */
+	inline Point<dim,T> middle() const
+	{
+		Point<dim,T> p;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			p.get(i) = (getLow(i) + getHigh(i))/2;
+
+		return p;
+	}
+
+	/*! \brief Produce a string from the object
+	 *
+	 * \return string
+	 *
+	 */
+	std::string toString() const
+	{
+		std::stringstream str;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			str << "x[" << i << "]=" << getLow(i) << " ";
+
+		str << "   |  ";
+
+		for (size_t i = 0 ; i < dim ; i++)
+			str << "x[" << i << "]=" << getHigh(i) << " ";
+
+		return str.str();
 	}
 };
 

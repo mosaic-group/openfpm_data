@@ -286,7 +286,7 @@ public:
 	 *
 	 */
 
-	vector_key_iterator getIterator()
+	vector_key_iterator getIterator() const
 	{
 		return vector_key_iterator(base.size());
 	}
