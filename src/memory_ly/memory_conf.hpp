@@ -17,11 +17,11 @@
  *
  * Example:
  *
- * typedef boost::mlp::vector<float,float,float[3][3], ... > A
+ * typedef boost::mpl::vector<float,float,float[3][3], ... > A
  *
  * inter_memc<A>
  *
- * is equivalent to
+ * produce
  *
  * boost::fusion::vector<memory_c<float>,memory_c<float>, memory_c<multi_array<boost::mpl::vector<float,3,3>, ...... >
  *

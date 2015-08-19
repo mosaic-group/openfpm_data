@@ -17,9 +17,12 @@
 #ifndef V_TRANSFORM_HPP
 #define V_TRANSFORM_HPP
 
+#include <boost/fusion/container/vector.hpp>
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/reverse.hpp>
 #include <boost/mpl/vector.hpp>
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*! \brief Exit condition
  *
@@ -69,16 +72,16 @@ struct seq_traits_impl
 /*!
 *
 * It transform a boost::fusion::vector to another boost::fusion::vector
-* applying a meta-function F on each element
-*
-* usage:
-*
-* boost::fusion::vector<float,float,float[3]>::type is converted into
-*
-* S<F<float>::type,F<float>::type,F<float[3]>::type
+* applying a meta-function H on each element
 *
 * \param H metafunction (is a structure with typedef type)
 * \param L boost::fusion::vector
+*
+* ### Meta-function definition
+* \snippet variadic_to_vmpl_unit_test.hpp v_transform metafunction
+*
+* ### Usage
+* \snippet variadic_to_vmpl_unit_test.hpp v_transform usage
 *
 */
 
@@ -100,6 +103,72 @@ struct v_transform
 	//! generate the boost::fusion::vector apply H on each term
 	typedef typename v_transform_impl<H,first,last,exit_::value >::type type;
 };
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/*! \brief Recursive specialization of v_transform in case of metafunction with 2 argument
+ *
+ * \param H the metafunction
+ * \param F suppose to be the original end of boost::mpl::vector
+ * \param L suppose to be the actual position of the boost::mpl::vector
+ * \param exit, when true it say to terminate the sequence
+ *
+ */
+template<template<typename,typename> class H, typename arg0, typename F,typename L, bool exit,typename ...Args>
+struct v_transform_two_impl
+{
+   typedef typename boost::mpl::deref<F>::type front_;
+   typedef typename boost::mpl::next<F>::type next_;
+   typedef typename exit_impl<next_,L>::type exit_;
+   typedef typename v_transform_two_impl<H,arg0,next_,L,exit_::value,typename H<arg0,front_>::type,Args...>::type type;
+};
+
+
+//! Terminator of to_variadic
+template<template<typename,typename> class H,typename arg0, typename F,typename L,typename ...Args>
+struct v_transform_two_impl<H,arg0,F,L,true,Args...>
+{
+   typedef boost::fusion::vector<Args...> type;
+};
+
+/*!
+*
+* It transform a boost::fusion::vector to another boost::fusion::vector
+* applying a meta-function H on each element
+*
+* \param H 2-argument metafunction (is a structure with typedef type)
+* \param L boost::fusion::vector
+*
+* ### Meta-function definition
+* \snippet variadic_to_vmpl_unit_test.hpp v_transform_two metafunction
+*
+* ### Usage
+* \snippet variadic_to_vmpl_unit_test.hpp v_transform_two usage
+*
+*/
+
+template<template<typename,typename> class H,typename arg0, typename L>
+struct v_transform_two
+{
+	//! reverse the sequence
+	typedef typename boost::mpl::reverse<L>::type reversed_;
+
+	//! first element
+	typedef typename seq_traits_impl<reversed_>::first_ first;
+
+	//! last element
+	typedef typename seq_traits_impl<reversed_>::last_ last;
+
+	//! calculate the exit condition
+	typedef typename exit_impl<first,last>::type exit_;
+
+	//! generate the boost::fusion::vector apply H on each term
+	typedef typename v_transform_two_impl<H,arg0,first,last,exit_::value >::type type;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 template <int a, int... id>

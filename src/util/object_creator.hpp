@@ -1,6 +1,7 @@
 #ifndef VECTOR_CREATOR
 #define VECTOR_CREATOR
 
+#include <boost/fusion/container/vector.hpp>
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/push_back.hpp>
 #include <boost/type_traits/remove_reference.hpp>

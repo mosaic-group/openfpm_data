@@ -3,13 +3,14 @@
 #include "config.h"
 #define BOOST_TEST_MODULE "C++ test module for OpenFPM_data project"
 #include <boost/test/included/unit_test.hpp>
+#include <boost/fusion/include/mpl.hpp>
 
 #include <iostream>
-#include <boost/mpl/int.hpp>
 #include <typeinfo>
 
 // Include tests
 
+#include "util/variadic_to_vmpl_unit_test.hpp"
 #include "Space/Shape/Point_unit_test.hpp"
 #include "timer_util_test.hpp"
 #include "Grid/grid_key_dx_expression_unit_tests.hpp"
