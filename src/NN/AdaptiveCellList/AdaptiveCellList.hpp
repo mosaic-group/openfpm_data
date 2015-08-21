@@ -111,6 +111,9 @@ public:
 	
 	inline size_t maxlevel() {return max_level;}
 
+	// For iterating over all points to compute all interactions:
+	inline decltype(all_eles.begin()) begin() {return all_eles.begin();}
+	inline decltype(all_eles.end()) end() {return all_eles.end();}
 	inline size_t size() {return all_eles.size();}
 	
 	inline T getEdgeLengthForLevel(size_t level) {
@@ -118,7 +121,11 @@ public:
 	}
 	
 	inline T getRadiusForLevel(size_t level) {
-		return getEdgeLengthForLevel(level+1) * static_cast<T>(1.5f); // the *1.5 should be useless. TODO: make sure that it is
+		return getEdgeLengthForLevel(level+1);
+	}
+	
+	inline unsigned int getLevelOfRadius(T radius) {
+		return std::ceil(std::log2(D_m / radius)) - 1;
 	}
 	
 	/*! \warning Checks for < low bound and >= (!) high bound
@@ -130,10 +137,6 @@ public:
 				return false;
 		return true;
 	}
-	
-	// For iterating over all points to compute all interactions:
-	inline decltype(all_eles.begin()) begin() {return all_eles.begin();}
-	inline decltype(all_eles.end()) end() {return all_eles.end();}
 	
 	/*! Initialize the cell list
 	 *
@@ -203,7 +206,7 @@ public:
 		T minradius = all_eles.last().first.get(dim);
 		//std::cout << "Min. radius: " << minradius << std::endl;
 		
-		max_level = std::ceil(std::log2(D_m / minradius)) - 1;
+		max_level = getLevelOfRadius(minradius);
 		// fun fact: more than about 64/dim levels are not even theoretically possible with these indices (and thats already with 8 byte for a size_t). 
 		// even worse: when using float, we get inconsistencies starting at level 24.
 		// So we should think about setting a maximum here (and making sure that everything else honors this):
@@ -277,7 +280,7 @@ public:
 			throw std::invalid_argument("Point with cutoff radius > D_m searched!");
 			// Alternatively we could just limit it to D_m, but... that might yield wrong results.
 		
-		unsigned int target_level = std::ceil(std::log2(D_m / radius)) - 1;
+		unsigned int target_level = getLevelOfRadius(radius);
 		//std::cout << p.toString() << " is on level " << target_level << std::endl;
 		
 		if(target_level == 0)
@@ -391,21 +394,21 @@ public:
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,FULL,impl> getNNIterator(Point<dim+1,T> p)
+	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,FULL,impl> getNNIterator(std::pair<Point<dim+1,T>, size_t> p)
 	{
 		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,FULL,impl> cln(p, *this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,SYM,impl> getNNIteratorSym(Point<dim+1,T> p)
+	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,SYM,impl> getNNIteratorSym(std::pair<Point<dim+1,T>, size_t> p)
 	{
 		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,SYM,impl> cln(p, *this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,CRS,impl> getNNIteratorCross(Point<dim+1,T> p)
+	template<unsigned int impl> inline AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,CRS,impl> getNNIteratorCross(std::pair<Point<dim+1,T>, size_t> p)
 	{
 		AdaptiveCellNNIterator<dim,AdaptiveCellList<dim,T,BALANCED,ele_container>,CRS,impl> cln(p, *this);
 

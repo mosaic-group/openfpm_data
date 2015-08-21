@@ -9,11 +9,11 @@
 #define ADAPTIVECELLLIST_TEST_HPP_
 
 #include "AdaptiveCellList.hpp"
+#include "../CellList/CellListFast.hpp"
 #include "Grid/grid_sm.hpp"
 
 #include <typeinfo>
 #include <unordered_set>
-
 
 // http://stackoverflow.com/questions/20590656/error-for-hash-function-of-pair-of-ints
 struct pairhash {
@@ -22,6 +22,17 @@ public:
   std::size_t operator()(const std::pair<T, U> &x) const
   {
     return (3 * std::hash<T>()(x.first)) ^ std::hash<U>()(x.second);
+  }
+};
+struct pointhash {
+public:
+  template <unsigned int dim, typename T>
+  std::size_t operator()(const Point<dim, T> &p) const
+  {
+	size_t res = 0;
+	for(unsigned int d = 0; d < dim; ++d)
+		res ^= std::hash<T>()(p.get(d));
+    return res;
   }
 };
 
@@ -48,8 +59,11 @@ std::vector<Point<dim, float>> getSamplePoints() {
 	
 	std::string rline, xline, yline;
 	
+	int i=0;
+	
 	for(; std::getline(rsource, rline); )
 	{
+		++i;
 		std::getline(xsource, xline);
 		std::getline(ysource, yline);
 		
@@ -63,10 +77,16 @@ std::vector<Point<dim, float>> getSamplePoints() {
 		xin >> x;
 		yin >> y;
 		
+		// TODO: we actually lower these values, otherwise things break. i'm not sure that this should be happening.
+		if(x == 1.0f)
+			x -= std::numeric_limits<float>::epsilon();
+		if(y == 1.0f)
+			y -= std::numeric_limits<float>::epsilon();
+		
 		if (dim == 2)
 			result.push_back({x, y});
 		else
-			result.push_back({y,x, r}); // TODO: change this back ;)
+			result.push_back({x,y, r});
 		
 		float size = 0.05f;
 		int cr,cg,cb, index, nx,ny;
@@ -138,8 +158,220 @@ AdaptiveCellList<2, float> getSampleARCL() {
 	return arcl;
 }
 
+inline bool is_in_radius(const Point<3, float> &p1, const Point<3, float> &p2) {
+	Point<3, float> diff = p1 - p2;
+	//std::cout << p1.toString() << "  -  " << p2.toString() << "  =  " << diff.toString() << std::endl << std::flush;
+	//std::cout << p2.get(2) << std::endl << std::flush;
+	//std::cout << diff[0]*diff[0] + diff[1]*diff[1] <<std::flush<< " <= " << (p1[2] < p2[2] ? p1[2] : p2[2]) << std::endl << std::flush;
+	float minradius = (p1[2] < p2[2] ? p1[2] : p2[2]);
+	return diff[0]*diff[0] + diff[1]*diff[1] <= minradius*minradius;
+}
+
+void interactionsOfClassicCL(unsigned int NNc_size)
+{
+	std::cout << "## Classic CL:" << std::endl;
+	
+	timestamp_t c0 = get_timestamp();
+	
+	auto maxradiusiterator = std::max_element(samplepoints3.begin(), samplepoints3.end(), [](Point<3, float>& a, Point<3, float>& b){return a[2] < b[2];});
+	size_t gridsize = std::floor(1.0f / (*maxradiusiterator)[2]);
+	//std::cout << "Please choose a gridsize < " << 1.0f / (*maxradiusiterator)[2] << ": " << gridsize << std::endl;
+	
+	const unsigned int dim = 2;
+	SpaceBox<2,float> box({0.0f,0.0f},{1.0f,1.0f});
+	size_t div[2] = {gridsize,gridsize};
+	grid_sm<2,void> g_info(div);
+	Point<2,float> org({0.0,0.0});
+	const float pad = 1.0f;
+	CellList<2, float> cl(box,div,org,pad, 30000);
+	
+	insertIntoCl<2, CellList<2, float>>(cl, samplepoints2); // shares indices with ~3, so just use the 2d one for a simple celllist
+	
+	timestamp_t c1 = get_timestamp();
+	
+	std::cout << "Creation time (us): " << c1-c0 << std::endl;
+	
+	size_t interactions_count = 0, interaction_candidates = 0;
+	
+	size_t cell, i1, i2;
+	
+	timestamp_t t0 = get_timestamp();
+	
+	for (int i=pad; i<div[0]+pad; i++) {
+		for (int j=pad; j<div[1]+pad; j++) {
+			cell = cl.getGrid().LinId(grid_key_dx<2>(i, j));
+			//std::cout << "getting iterator for cell " << cell << " with elems: " << nels << std::endl;
+			switch(NNc_size) {
+				// differences in both blocks:
+				// * first line (I tried to use first templates, then function pointers, but nothing seemed to work)
+				// * SYM sorts the interaction pair
+				case FULL:
+				{
+					CellNNIterator<dim,CellList<dim,float,FAST>,FULL,FAST> iter = cl.getNNIterator<FAST>(cell);
+					while (iter.isNext()) {
+						i2 = iter.get();
+						//std::cout << "Neighbor found: " << i2 << std::endl;
+						CellIterator<CellList<2, float>> iter_inner(cell, cl);
+						while (iter_inner.isNext()) {
+							i1 = iter_inner.get();
+							++interaction_candidates;
+							if(i1 != i2 && is_in_radius(samplepoints3[i1], samplepoints3[i2])) {
+								//std::cout << i1 << " and " << i2 << " with p2 = " << samplepoints3[i2].toString() << std::endl;
+								allInteractions.insert(std::make_pair(i1, i2));
+								++interactions_count;
+							}
+							++iter_inner;
+						}
+						//std::cout << std::endl;
+						++iter;
+					}
+				}
+				break;
+				case SYM:
+				{
+					auto iter = cl.getNNIteratorSym<FAST>(cell);
+					while (iter.isNext()) {
+						i2 = iter.get();
+						//std::cout << "Neighbor found: " << i2 << std::endl;
+						CellIterator<CellList<2, float>> iter_inner(cell, cl);
+						while (iter_inner.isNext()) {
+							i1 = iter_inner.get();
+							++interaction_candidates;
+							/*
+							 * We have a bit of a problem here.
+							 * The iterator will at one point in time consider all particles in the current cell to be neighbors.
+							 * Since we want symmetric interactions only once, we would like to filter them.
+							 * The thing is: if we use it like here, the iterator doesn't know which element we are looking at (since we consider all, obviously)
+							 * But we also cannot implement some filtering here, since we don't know where the elements come from.
+							 * 
+							 * The way it is implemented now uses the auxiliary interaction storage vector, but this cannot be a proper solution.
+							 */
+							if(i1 != i2 && is_in_radius(samplepoints3[i1], samplepoints3[i2])) {
+								std::pair<size_t, size_t> interaction = std::make_pair(i1 < i2 ? i1 : i2, i1 < i2 ? i2 : i1);
+								auto isitinthere = allInteractions.find(interaction);
+								if(isitinthere == allInteractions.end()) {
+									//std::cout << i1 << " and " << i2 << " with p2 = " << samplepoints3[i2].toString() << std::endl;
+									allInteractions.insert(interaction);
+									++interactions_count;
+								}
+							}
+							++iter_inner;
+						}
+						//std::cout << std::endl;
+						++iter;
+					}
+				}
+				break;
+			}
+		}
+	}
+	
+	timestamp_t t1 = get_timestamp();
+	std::cout << "Interactions time (us): " << t1-t0 << std::endl;
+	std::cout << "Found interactions: " << interactions_count
+			<< " of " << interaction_candidates
+			<< " candidates (" << (static_cast<float>(interaction_candidates) / interactions_count)
+			<< "x)." << std::endl;
+}
+
+void interactionsOfARCL(unsigned int NNc_size)
+{
+	std::cout << "## AR-CL:" << std::endl;
+	
+	timestamp_t c0 = get_timestamp();
+	const unsigned int dim = 2; // needed for the FULL/SYM macros
+	auto arcl = getSampleARCL();
+	timestamp_t c1 = get_timestamp();
+	std::cout << "Creation time (us): " << c1-c0 << std::endl;
+	
+	BOOST_REQUIRE_EQUAL(arcl.size(), samplepoints3.size());
+	
+	size_t interactions_count = 0, interaction_candidates = 0;
+	
+	size_t i1, i2;
+	
+	const auto allInteractions_all(allInteractions);
+	
+	timestamp_t t0 = get_timestamp();
+	
+	std::unordered_set<Point<3,float>, pointhash> unipoints;
+	for(std::pair<Point<3,float>, size_t>& p1 : arcl) {
+		BOOST_REQUIRE(std::find(samplepoints3.begin(), samplepoints3.end(), p1.first) != samplepoints3.end());
+		unipoints.insert(p1.first);
+	}
+	//BOOST_REQUIRE_EQUAL(unipoints.size(), arcl.size());
+	// This is actually not the case, and it's causing problems.
+	
+	arcl.construct(); // again
+	
+	for(std::pair<Point<3,float>, size_t>& p1 : arcl) {
+		i1 = p1.second;
+		//if(i1 != 547) continue;
+		switch(NNc_size) {
+			// differences in both blocks:
+			// * first line (I tried to use first templates, then function pointers, but nothing seemed to work)
+			// * SYM sorts the interaction pair
+			case FULL:
+			{
+				auto iter = arcl.getNNIterator<FAST>(p1); //FULL interactions
+				while (iter.isNext()) {
+					auto p2 = iter.get();
+					i2 = p2.second;
+					++interaction_candidates;
+					if(i1 != i2 && is_in_radius(p1.first, p2.first)) {
+						++interactions_count;
+						auto it = allInteractions.find(std::make_pair(i1, i2));
+						BOOST_REQUIRE(it != allInteractions.end());
+						allInteractions.erase(it);
+						//std::cout << i1 << " and " << i2 << " with p2 = " << p2.first.toString() << std::endl;
+					} //else std::cout << i1 << " | | " << i2 << " with p2 = " << p2.first.toString() << std::endl;
+					++iter;
+				}
+				//std::cout << std::endl;
+			}
+			break;
+			case SYM:
+			{
+				//std::cout << "NN of pt " << p1.second << " at " << p1.first.toString() << std::endl << std::endl;
+				auto iter = arcl.getNNIteratorSym<FAST>(p1); //SYM interactions
+				while (iter.isNext()) {
+					auto p2 = iter.get();
+					//std::cout << "got for crunching: pt " << p2.second << " at " << p2.first.toString() << std::endl;
+					i2 = p2.second;
+					++interaction_candidates;
+					if(i1 != i2 && is_in_radius(p1.first, p2.first)) {
+						++interactions_count;
+						std::pair<size_t, size_t> interaction = std::make_pair(i1 < i2 ? i1 : i2, i1 < i2 ? i2 : i1);
+						auto it = allInteractions.find(interaction);
+						BOOST_REQUIRE(it != allInteractions.end());
+						allInteractions.erase(it);
+						//std::cout << i1 << " and " << i2 << " with p2 = " << p2.first.toString() << std::endl;
+					} //else std::cout << i1 << " | | " << i2 << " with p2 = " << p2.first.toString() << std::endl;
+					//std::cout << "~~~< just crunched " << p2.first.toString() << std::endl;
+					++iter;
+					//std::cout << "~~~> finished counting up." << std::endl;
+				}
+				//std::cout << "\n/\\\n\\/\n" << std::endl;
+			}
+			break;
+		}
+	}
+	BOOST_REQUIRE_EQUAL(allInteractions.size(), 0);
+	
+	
+	timestamp_t t1 = get_timestamp();
+	std::cout << "Interaction time (us): " << t1-t0 << std::endl;
+	std::cout << "Found interactions: " << interactions_count
+			<< " of " << interaction_candidates
+			<< " candidates (" << (static_cast<float>(interaction_candidates) / interactions_count)
+			<< "x)." << std::endl;
+}
+
 BOOST_AUTO_TEST_SUITE( ARCL_and_ARCLvsCL )
 
+/*
+// It doesn't really belong here, but I didn't want to just delete it.
+ 
 BOOST_AUTO_TEST_CASE( celllist_realloc)
 {
 	std::cout << "2D Cell List:" << std::endl;
@@ -190,23 +422,21 @@ BOOST_AUTO_TEST_CASE( celllist_realloc)
 	int sum4 = 0;
 	for (unsigned int i=0; i<div[0]+2; i++) for (unsigned int j=0; j<div[1]+2; j++) sum4 += cl4.getNelements(cl4.getGrid().LinId(grid_key_dx<2>(i, j)));
 
-	/*
-	for (int i=0; i<div[0]+2; i++) {
-		for (int j=0; j<div[1]+2; j++) {
-			::printf("%6d  ",cl0.getNelements(cl0.getGrid().LinId(grid_key_dx<2>(i, j))));
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-	
-	for (int i=0; i<div[0]+2; i++) {
-		for (int j=0; j<div[1]+2; j++) {
-			::printf("%6d  ",cl1.getNelements(cl1.getGrid().LinId(grid_key_dx<2>(i, j))));
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-	*/
+// 	for (int i=0; i<div[0]+2; i++) {
+// 		for (int j=0; j<div[1]+2; j++) {
+// 			::printf("%6d  ",cl0.getNelements(cl0.getGrid().LinId(grid_key_dx<2>(i, j))));
+// 		}
+// 		std::cout << std::endl;
+// 	}
+// 	std::cout << std::endl;
+// 	
+// 	for (int i=0; i<div[0]+2; i++) {
+// 		for (int j=0; j<div[1]+2; j++) {
+// 			::printf("%6d  ",cl1.getNelements(cl1.getGrid().LinId(grid_key_dx<2>(i, j))));
+// 		}
+// 		std::cout << std::endl;
+// 	}
+// 	std::cout << std::endl;
 	
 	size_t s = samplepoints2.size();
 	
@@ -223,78 +453,7 @@ BOOST_AUTO_TEST_CASE( celllist_realloc)
 	std::cout << "Without realloc, overestimate (us): " << t4-t3 << std::endl;
 }
 
-
-inline bool is_in_radius(const Point<3, float> &p1, const Point<3, float> &p2) {
-	Point<3, float> diff = p1 - p2;
-	//std::cout << p1.toString() << "  -  " << p2.toString() << "  =  " << diff.toString() << std::endl << std::flush;
-	//std::cout << p2.get(2) << std::endl << std::flush;
-	//std::cout << diff[0]*diff[0] + diff[1]*diff[1] <<std::flush<< " <= " << (p1[2] < p2[2] ? p1[2] : p2[2]) << std::endl << std::flush;
-	float minradius = (p1[2] < p2[2] ? p1[2] : p2[2]);
-	return diff[0]*diff[0] + diff[1]*diff[1] <= minradius*minradius;
-}
-
-BOOST_AUTO_TEST_CASE( get_all_interactions_classiccelllist)
-{
-	timestamp_t c0 = get_timestamp();
-	
-	auto maxradiusiterator = std::max_element(samplepoints3.begin(), samplepoints3.end(), [](Point<3, float>& a, Point<3, float>& b){return a[2] < b[2];});
-	size_t gridsize = std::floor(1.0f / (*maxradiusiterator)[2]);
-	//std::cout << "Please choose a gridsize < " << 1.0f / (*maxradiusiterator)[2] << ": " << gridsize << std::endl;
-	
-	const float epsilon = 0.0001f; // just a little bit bigger, so 1.0 is still inside.
-	//const float epsilon = 0.0f; // Iterating over padding cells crashes... due to missing boundary checks, I guess?
-	SpaceBox<2,float> box({0.0f,0.0f},{1.0f+epsilon,1.0f+epsilon});
-	size_t div[2] = {gridsize,gridsize};
-	grid_sm<2,void> g_info(div);
-	Point<2,float> org({0.0,0.0});
-	const float pad = 1;
-	CellList<2, float> cl(box,div,org,pad, 30000);
-	
-	insertIntoCl<2, CellList<2, float>>(cl, samplepoints2); // shares indices with ~3, so just use the 2d one for a simple celllist
-	
-	timestamp_t c1 = get_timestamp();
-	
-	std::cout << "Creation time (us): " << c1-c0 << std::endl;
-	
-	
-	size_t interactions_count = 0, interaction_candidates = 0;
-	
-	size_t cell, i1, i2;
-	
-	timestamp_t t0 = get_timestamp();
-	
-	for (int i=pad; i<div[0]+pad; i++) {
-		for (int j=pad; j<div[1]+pad; j++) {
-			cell = cl.getGrid().LinId(grid_key_dx<2>(i, j));
-			//std::cout << "getting iterator for cell " << cell << " with elems: " << nels << std::endl;
-			auto iter = cl.getNNIterator<FAST>(cell); //full interactions
-			while (iter.isNext()) {
-				i2 = iter.get();
-				//std::cout << "Neighbor found: " << i2 << std::endl;
-				CellIterator<CellList<2, float>> iter_inner(cell, cl);
-				while (iter_inner.isNext()) {
-					i1 = iter_inner.get();
-					++interaction_candidates;
-					if(i1 != i2 && is_in_radius(samplepoints3[i1], samplepoints3[i2])) {
-						//std::cout << i1 << " and " << i2 << " with p2 = " << samplepoints3[i2].toString() << std::endl;
-						allInteractions.insert(std::make_pair(i1, i2));
-						++interactions_count;
-					}
-					++iter_inner;
-				}
-				//std::cout << std::endl;
-				++iter;
-			}
-		}
-	}
-	
-	timestamp_t t1 = get_timestamp();
-	std::cout << "Interactions time (us): " << t1-t0 << std::endl;
-	std::cout << "Found interactions: " << interactions_count
-			<< " of " << interaction_candidates
-			<< " candidates (" << (static_cast<float>(interaction_candidates) / interactions_count)
-			<< "x)." << std::endl;
-}
+//*/
 
 BOOST_AUTO_TEST_CASE( find_inserted_items_in_arcl)
 {
@@ -336,54 +495,32 @@ BOOST_AUTO_TEST_CASE( findcellindex_and_findcellcenter_combine)
 	std::cout << "Checked until " << max << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE( get_all_interactions_arcl)
+BOOST_AUTO_TEST_CASE( get_all_interactions_classiccelllist_full)
 {
-	timestamp_t c0 = get_timestamp();
-	auto arcl = getSampleARCL();
-	timestamp_t c1 = get_timestamp();
-	std::cout << "Creation time (us): " << c1-c0 << std::endl;
+	const unsigned int dim = 2;
 	
-	size_t interactions_count = 0, interaction_candidates = 0;
+	std::cout << std::endl << "FULL" << std::endl << "----" << std::endl;
+	interactionsOfClassicCL(FULL);
+}
+
+BOOST_AUTO_TEST_CASE( get_all_interactions_arcl_full)
+{
+	const unsigned int dim = 2;
+	interactionsOfARCL(FULL);
+}
+
+BOOST_AUTO_TEST_CASE( get_all_interactions_classiccelllist_sym)
+{
+	const unsigned int dim = 2;
 	
-	size_t i1, i2;
-	
-	timestamp_t t0 = get_timestamp();
-	
-	///*
-	for(std::pair<Point<3,float>, size_t>& p1 : arcl) {
-		i1 = p1.second;
-		auto iter_inner = arcl.getNNIterator<FAST>(p1.first); //full interactions
-		while (iter_inner.isNext()) {
-			auto p2 = iter_inner.get();
-			i2 = p2.second;
-			++interaction_candidates;
-			if(i1 != i2 && is_in_radius(p1.first, p2.first)) {
-				++interactions_count;
-				auto it = allInteractions.find(std::make_pair(i1, i2));
-				BOOST_REQUIRE(it != allInteractions.end());
-				allInteractions.erase(it);
-				//std::cout << i1 << " and " << i2 << " with p2 = " << p2.first.toString() << std::endl;
-			} //else std::cout << i1 << " | | " << i2 << " with p2 = " << p2.first.toString() << std::endl;
-			++iter_inner;
-		}
-		//std::cout << std::endl;
-	}
-	BOOST_REQUIRE_EQUAL(allInteractions.size(), 0);
-	//*/
-	
-	//std::cout << "0.252 ^ 2:" << std::endl;
-	//arcl.getNNIterator<FAST>(Point<3,float>({0.02f,0.02f,0.05f}));
-	
-	//for(size_t i = 0; i < 10; i++)
-	//	arcl.getNNIterator<FAST>(arcl.findCellCenter(i));
-	
-	
-	timestamp_t t1 = get_timestamp();
-	std::cout << "Interaction time (us): " << t1-t0 << std::endl;
-	std::cout << "Found interactions: " << interactions_count
-			<< " of " << interaction_candidates
-			<< " candidates (" << (static_cast<float>(interaction_candidates) / interactions_count)
-			<< "x)." << std::endl;
+	std::cout << std::endl << "SYM" << std::endl << "---" << std::endl;
+	interactionsOfClassicCL(SYM);
+}
+
+BOOST_AUTO_TEST_CASE( get_all_interactions_arcl_sym)
+{
+	const unsigned int dim = 2;
+	interactionsOfARCL(SYM);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

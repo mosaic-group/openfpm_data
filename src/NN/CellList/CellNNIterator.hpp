@@ -11,7 +11,7 @@
 #include "util/mathutil.hpp"
 
 #define FULL openfpm::math::pow(3,dim)
-#define SYM  openfpm::math::pow(3,dim)/2
+#define SYM  openfpm::math::pow(3,dim)/2+1
 #define CRS openfpm::math::pow(2,dim)
 
 #define NO_CHECK 1

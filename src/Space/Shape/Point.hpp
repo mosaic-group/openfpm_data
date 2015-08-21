@@ -100,7 +100,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p Point
 	 *
 	 */
-	template<typename aT> inline bool operator==(const Point<dim,aT> & p)
+	template<typename aT> inline bool operator==(const Point<dim,aT> & p) const
 	{
 		bool equal = true;
 
@@ -118,7 +118,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p Point
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> operator*(const Point<dim,aT> & p)
+	template<typename aT> inline Point<dim,T> operator*(const Point<dim,aT> & p) const
 	{
 		Point<dim,T> result;
 
@@ -150,7 +150,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p Point
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> operator+(const Point<dim,aT> & p)
+	template<typename aT> inline Point<dim,T> operator+(const Point<dim,aT> & p) const
 	{
 		Point<dim,T> result;
 
@@ -167,7 +167,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param ar Component wise division
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> operator/(const aT (&ar)[dim])
+	template<typename aT> inline Point<dim,T> operator/(const aT (&ar)[dim]) const
 	{
 		Point<dim,T> result;
 
@@ -184,7 +184,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param c Component wise division
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> operator/(const aT c)
+	template<typename aT> inline Point<dim,T> operator/(const aT c) const
 	{
 		Point<dim,T> result;
 

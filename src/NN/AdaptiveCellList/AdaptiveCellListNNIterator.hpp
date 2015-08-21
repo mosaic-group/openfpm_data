@@ -12,7 +12,12 @@
 #include <vector>
 #include <iostream>
 
-template<unsigned int dim, typename CellS, unsigned int NNc_size, unsigned int impl> class AdaptiveCellNNIterator
+// TODO: copied from CellNNIterator (including the fixed +1 at SYM!), doesn't look like a very good idea to me
+#define FULL openfpm::math::pow(3,dim)
+#define SYM openfpm::math::pow(3,dim)/2+1
+#define CRS openfpm::math::pow(2,dim)
+
+template<unsigned int dim, typename CellS, unsigned int NNc_size_original, unsigned int impl> class AdaptiveCellNNIterator
 {
 
 	CellS & cl;
@@ -21,42 +26,55 @@ template<unsigned int dim, typename CellS, unsigned int NNc_size, unsigned int i
 
 	size_t currentlevel;
 	
+	// With FULL it always stays full, but with SYM we have to change it to FULL after the first level!
+	unsigned int NNc_size;
+	
 	std::vector<size_t> cellindices;
 	std::vector<size_t>::iterator cell_iter, cell_iter_end;
 	decltype(cl.getCellContents(0).first) ele_iter, ele_iter_end;
 	
 	// TODO: theres got to be a more intelligent way of doing this.
-	inline void populateIndices(int current_dim, Point<dim+1, typename CellS::value_type>& p, typename CellS::value_type edgelength) {
-		if (current_dim == dim) {
+	// Also: we pass NNc as a parameter, to use FULL inside SYM. See code below.
+	inline void populateIndices(int current_dim, Point<dim+1, typename CellS::value_type>& p, typename CellS::value_type edgelength, unsigned int NNc) {
+		if (current_dim < 0) {
 			if(cl.isInside(p))
 				cellindices.push_back(cl.findCellIndex(p));
 			//std::cout << p.toString() << std::endl;
 		}
-		else {
-			populateIndices(current_dim + 1, p, edgelength);
+		else if(NNc == SYM) {
+			// This means that the first cell we start in is the cell of the origin particle itself!
+			populateIndices(current_dim - 1, p, edgelength, SYM);
+			p.get(current_dim) += edgelength;
+			populateIndices(current_dim - 1, p, edgelength, FULL);
 			p.get(current_dim) -= edgelength;
-			populateIndices(current_dim + 1, p, edgelength);
+		}
+		else { // Assumption: FULL
+			populateIndices(current_dim - 1, p, edgelength, NNc);
+			p.get(current_dim) -= edgelength;
+			populateIndices(current_dim - 1, p, edgelength, NNc);
 			p.get(current_dim) += edgelength+edgelength;
-			populateIndices(current_dim + 1, p, edgelength);
+			populateIndices(current_dim - 1, p, edgelength, NNc);
 			p.get(current_dim) -= edgelength;
 		}
 	}
 	
 	inline void updateCellIterators() {
 		cellindices.resize(0);
-		cellindices.reserve(openfpm::math::pow(3,dim));
+		cellindices.reserve(NNc_size);
 		
 		Point<dim+1, typename CellS::value_type> center(p);
 		center.get(dim) = cl.getRadiusForLevel(currentlevel);
 		typename CellS::value_type edgelength = cl.getEdgeLengthForLevel(currentlevel);
 		
-		populateIndices(0,center,edgelength);
+		populateIndices(dim - 1, center, edgelength, NNc_size);
 		
 		/*
-		std::cout << " -- On level " << currentlevel << ": ";
-		for (auto i : cellindices)
-			std::cout << i << ", ";
-		std::cout << std::endl;
+		if(NNc_size == SYM) {
+			std::cout << " -- On level " << currentlevel << ": ";
+			for (auto i : cellindices)
+				std::cout << i << ", ";
+			std::cout << std::endl;
+		}
 		//*/
 		
 		cell_iter = cellindices.begin();
@@ -64,7 +82,7 @@ template<unsigned int dim, typename CellS, unsigned int NNc_size, unsigned int i
 	}
 	
 	inline void updateEleIterators() {
-		//std::cout << "Request ele_iters for cell " << *cell_iter << std::endl;
+		//if(NNc_size == SYM) std::cout << "Request ele_iters for cell " << *cell_iter << std::endl;
 		auto iterpair = cl.getCellContents(*cell_iter);
 		ele_iter = iterpair.first;
 		ele_iter_end = iterpair.second;
@@ -77,20 +95,42 @@ public:
 	 * Cell NN iterator
 	 *
 	 */
-	AdaptiveCellNNIterator(Point<dim+1, typename CellS::value_type> point, CellS & cl)
-		:cl(cl), p(point), currentlevel(0)
+	AdaptiveCellNNIterator(std::pair<Point<dim+1, typename CellS::value_type>, size_t> pointpair, CellS & cl)
+		:cl(cl), p(pointpair.first), currentlevel(0), NNc_size(NNc_size_original)
 	{
-		//std::cout << "NN of " << point.toString() << std::endl;
+		if(NNc_size != FULL)
+			currentlevel = cl.getLevelOfRadius(p.get(dim));
+		
+		//std::cout << "NN of " << pointpair.second << " at " << p.toString() << " starting on lv " << currentlevel << std::endl;
 		
 		updateCellIterators();
 		updateEleIterators();
 		
-		while(ele_iter == ele_iter_end && currentlevel <= cl.maxlevel() + 1) {
+		if(NNc_size == SYM) {
+			// We know this cell contains an element - the original particle.
+			assert(ele_iter != ele_iter_end);
+			//for(auto it = ele_iter; it != ele_iter_end; ++it) std::cout << it->second << " at " << it->first.toString() << std::endl;
+			// So progress to it to ensure uniqueness for SYM.
+			//std::cout << "> ";
+			while (ele_iter->second != pointpair.second) {
+				++ele_iter;
+				//std::cout << "+";
+			}
+			++ele_iter;
+			//std::cout << " <, now at " << ele_iter->second << std::endl;
+		}
+		
+		// Even in SYM the original particle might be the only one existing in the cell!
+		while(ele_iter == ele_iter_end && currentlevel <= cl.maxlevel()) {
 			++cell_iter;
+			
 			if(cell_iter == cell_iter_end) {
 				++currentlevel;
+				if(NNc_size_original == SYM)
+					NNc_size = FULL;
 				updateCellIterators();
 			}
+			
 			updateEleIterators();
 		}
 		
@@ -104,7 +144,7 @@ public:
 	 */
 	bool isNext()
 	{
-		//std::cout << currentlevel << " < " << cl.maxlevel() << std::endl;
+		//if(NNc_size == SYM) std::cout << currentlevel << " <= " << cl.maxlevel() << std::endl;
 		return currentlevel <= cl.maxlevel();
 	}
 
@@ -113,15 +153,19 @@ public:
 	 */
 	AdaptiveCellNNIterator & operator++()
 	{
-		// Condition: don't start in an empty cell, otherwise this `++` will trick the following `if`.
+		// Condition: don't start in an empty cell, otherwise this `++` will trick the following `while`.
 		++ele_iter;
 		
-		while(ele_iter == ele_iter_end && currentlevel <= cl.maxlevel() + 1) {
+		while(ele_iter == ele_iter_end && currentlevel <= cl.maxlevel()) {
 			++cell_iter;
+			
 			if(cell_iter == cell_iter_end) {
 				++currentlevel;
+				if(NNc_size_original == SYM)
+					NNc_size = FULL;
 				updateCellIterators();
 			}
+			
 			updateEleIterators();
 		}
 		
