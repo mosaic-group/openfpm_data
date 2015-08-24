@@ -381,6 +381,29 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		}
 
 		{
+		//! [Check has_posMask]
+
+		struct test_has_posMask
+		{
+			float data;
+
+			bool posMask[] = {true,false,true}
+		};
+
+		struct test_no_has_posMask
+		{
+			float data;
+		};
+
+		int val = has_posMask<test_has_data>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = has_posMask<test_no_has_data>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check has_posMask]
+		}
+
+		{
 		//! [Check has_typedef_type]
 
 		struct test_has_typedef

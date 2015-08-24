@@ -59,6 +59,9 @@ template<typename T>
 struct has_typedef_type<T, typename Void< typename T::type>::type> : std::true_type
 {};
 
+template<typename T, typename Sfinae = void>
+struct has_data: std::false_type {};
+
 /*! \brief has_data check if a type has defined a member data
  *
  * ### Example
@@ -68,14 +71,25 @@ struct has_typedef_type<T, typename Void< typename T::type>::type> : std::true_t
  * return true if T::type is a valid type
  *
  */
-
-template<typename T, typename Sfinae = void>
-struct has_data: std::false_type {};
-
 template<typename T>
 struct has_data<T, typename Void<decltype( T::data )>::type> : std::true_type
 {};
 
+template<typename T, typename Sfinae = void>
+struct has_posMask: std::false_type {};
+
+/*! \brief has_data check if a type has defined a member data
+ *
+ * ### Example
+ *
+ * \snippet util.hpp Check has_data
+ *
+ * return true if T::type is a valid type
+ *
+ */
+template<typename T>
+struct has_posMask<T, typename Void<decltype( T::stag_mask )>::type> : std::true_type
+{};
 
 /*! \brief check if T::type and T.data has the same type
  *

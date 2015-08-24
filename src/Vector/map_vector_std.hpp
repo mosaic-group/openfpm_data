@@ -179,6 +179,16 @@ public:
 		base.resize( std::distance(base.begin(),it) );
 	}
 
+	/*! \brief It sort the vector
+	 *
+	 * \note The base object must have an operator< defined
+	 *
+	 */
+	void sort()
+	{
+		std::sort(base.begin(), base.end());
+	}
+
 	/*! \brief Get an element of the vector
 	 *
 	 * \tparam p must be 0

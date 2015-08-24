@@ -1,6 +1,16 @@
 #ifndef COMB_HPP
 #define COMB_HPP
 
+#define COMB_ERROR 1001lu
+
+// Macro that decide what to do in case of error
+#ifdef STOP_ON_ERROR
+#define ACTION_ON_ERROR() exit(1);
+#elif defined(THROW_ON_ERROR)
+#define ACTION_ON_ERROR() throw COMB_ERROR;
+#else
+#define ACTION_ON_ERROR()
+#endif
 
 /*! \brief Position of the element of dimension d in the hyper-cube of dimension dim
  *
@@ -193,6 +203,30 @@ struct comb
 	    {this->c[c.size() - i - 1] = x;i++;}
 	}
 
+	/*! \brief produce a linearized (unique) version of the combination
+	 *
+	 * \does not work for dimension bigger than 8
+	 *
+	 */
+	size_t lin()
+	{
+#ifdef SE_CLASS1
+		if (dim > 8)
+			return;
+#endif
+		switch (dim)
+		{
+		case 1:
+			return *(unsigned char *)c;
+		case 2:
+			return *(unsigned short *)c;
+		case 4:
+			return *(unsigned int *)c;
+		case 8:
+			return *(unsigned long int *)c;
+
+		}
+	}
 };
 
 /*! brief specialization of comb in case of dim 0
