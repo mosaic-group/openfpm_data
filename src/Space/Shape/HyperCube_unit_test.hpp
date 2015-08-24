@@ -77,6 +77,18 @@ template<unsigned int dim> bool isValid(std::vector<comb<dim>> combs)
 
 BOOST_AUTO_TEST_SUITE( Hyper_cube )
 
+BOOST_AUTO_TEST_CASE( Hyper_cube_comb_use )
+{
+	comb<3> c1({1,2,3});
+	comb<3> c2({1,1,1});
+
+	comb<3> c_ret = c1 - c2;
+
+	BOOST_REQUIRE_EQUAL(c_ret.c[0],2);
+	BOOST_REQUIRE_EQUAL(c_ret.c[1],1);
+	BOOST_REQUIRE_EQUAL(c_ret.c[2],0);
+}
+
 BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 {
 	std::cout << "Hyper-cube unit test start" << "\n";
@@ -395,32 +407,6 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_2[i]),true);
 	}
-
-/*	comb<5> c0;
-	for (int i = 0 ; i < 5 ; i++)
-		c0.c[i] = 1;
-
-	std::vector<comb<5>> combs_0_0 = SubHyperCube<5,0>::getCombinations_R(c0,0);
-	std::vector<comb<5>> combs_1_0 = SubHyperCube<5,1>::getCombinations_R(c,0);
-	std::vector<comb<5>> combs_1_1 = SubHyperCube<5,1>::getCombinations_R(c,1);
-	std::vector<comb<5>> combs_2_0 = SubHyperCube<5,2>::getCombinations_R(c,0);
-	std::vector<comb<5>> combs_2_1 = SubHyperCube<5,2>::getCombinations_R(c,1);
-	std::vector<comb<5>> combs_2_2 = SubHyperCube<5,2>::getCombinations_R(c,2);
-	std::vector<comb<5>> combs_3_0 = SubHyperCube<5,3>::getCombinations_R(c,0);
-	std::vector<comb<5>> combs_3_1 = SubHyperCube<5,3>::getCombinations_R(c,1);
-	std::vector<comb<5>> combs_3_2 = SubHyperCube<5,3>::getCombinations_R(c,2);
-	std::vector<comb<5>> combs_3_3 = SubHyperCube<5,3>::getCombinations_R(c,3);
-	std::vector<comb<5>> combs_4_0 = SubHyperCube<5,4>::getCombinations_R(c,0);
-	std::vector<comb<5>> combs_4_1 = SubHyperCube<5,4>::getCombinations_R(c,1);
-	std::vector<comb<5>> combs_4_2 = SubHyperCube<5,4>::getCombinations_R(c,2);
-	std::vector<comb<5>> combs_4_3 = SubHyperCube<5,4>::getCombinations_R(c,3);
-	std::vector<comb<5>> combs_4_4 = SubHyperCube<5,4>::getCombinations_R(c,4);
-	std::vector<comb<5>> combs_5_0 = SubHyperCube<5,5>::getCombinations_R(c,0);
-	std::vector<comb<5>> combs_5_1 = SubHyperCube<5,5>::getCombinations_R(c,1);
-	std::vector<comb<5>> combs_5_2 = SubHyperCube<5,5>::getCombinations_R(c,2);
-	std::vector<comb<5>> combs_5_3 = SubHyperCube<5,5>::getCombinations_R(c,3);
-	std::vector<comb<5>> combs_5_4 = SubHyperCube<5,5>::getCombinations_R(c,4);
-	std::vector<comb<5>> combs_5_5 = SubHyperCube<5,5>::getCombinations_R(c,5);*/
 
 	std::cout << "Hyper-cube unit test end" << "\n";
 }

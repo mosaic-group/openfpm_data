@@ -20,6 +20,6 @@
 #include "Space/Shape/Box_unit_tests.hpp"
 #include "NN/CellList/CellList_test.hpp"
 #include "Vector/vector_unit_tests.hpp"
-#include "hypercube_unit_test.hpp"
+#include "Space/Shape/HyperCube_unit_test.hpp"
 #include "Graph/graph_unit_tests.hpp"
 #include "Grid/grid_unit_tests.hpp"

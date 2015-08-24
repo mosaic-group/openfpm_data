@@ -95,6 +95,22 @@ struct comb
 		}
 	}
 
+	/*! \brief Subtract the combinations and return the result
+	 *
+	 * \return Result combination
+	 *
+	 */
+	inline comb<dim> operator-(const comb<dim> & t)
+	{
+		comb<dim> ret;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			ret.c[i] = c[i] - t.c[i];
+		}
+
+		return ret;
+	}
 
 	/*! \brief Compare two combination
 	 *
