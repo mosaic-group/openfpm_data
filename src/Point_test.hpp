@@ -18,7 +18,7 @@ public:
 
 	typedef boost::fusion::vector<T,T,T,T,T[2],T[2][2]> type;
 
-	static const bool stag_mask[]={false,false,false,true,true,true};
+	static constexpr bool stag_mask[]={false,false,false,true,true,true};
 
 	type data;
 
@@ -29,7 +29,7 @@ public:
 	static const unsigned int v = 4;
 	static const unsigned int t = 5;
 	static const unsigned int max_prop = 6;
-}
+};
 
 /*! \brief Test structure used for several test
  *
@@ -56,7 +56,7 @@ public:
 
 	typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3]> type;
 
-	static const bool stag_mask[]={false,false,false,true,true,true};
+	static constexpr bool stag_mask[]={false,false,false,true,true,true};
 
 	type data;
 

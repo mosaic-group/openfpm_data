@@ -17,6 +17,22 @@
 #include "Grid/util.hpp"
 #include "data_type/scalar.hpp"
 
+//! [Check has_posMask struct definition]
+
+struct test_has_posMask
+{
+	float data;
+
+	static constexpr bool stag_mask[] = {true,false,true};
+};
+
+struct test_no_has_posMask
+{
+	float data;
+};
+
+//! [Check has_posMask struct definition]
+
 //! [Declaration of struct with attributes and without]
 
 struct test_has_attributes
@@ -383,21 +399,9 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		{
 		//! [Check has_posMask]
 
-		struct test_has_posMask
-		{
-			float data;
-
-			bool posMask[] = {true,false,true}
-		};
-
-		struct test_no_has_posMask
-		{
-			float data;
-		};
-
-		int val = has_posMask<test_has_data>::value;
+		int val = has_posMask<test_has_posMask>::value;
 		BOOST_REQUIRE_EQUAL(val, true);
-		val = has_posMask<test_no_has_data>::value;
+		val = has_posMask<test_no_has_posMask>::value;
 		BOOST_REQUIRE_EQUAL(val, false);
 
 		//! [Check has_posMask]
