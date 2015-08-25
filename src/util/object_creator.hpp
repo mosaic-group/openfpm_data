@@ -154,9 +154,12 @@ struct noPointers_sequence
 };
 
 
-/*! \brief This is a container to create a general (used for the sending buffers)
+/*! \brief This is a container to create a general object
  *
- * It is used in ghost_get to create a particular object with the properties selected
+ * \note It is used in ghost_get to create a particular object with the properties selected
+ *
+ * For object we mean an object that follow the OpenFPM data structure format, see the WIKI for more information
+ *
  *
  * \tparam Is a boost::fusion::vector with the properties selected
  *
@@ -183,7 +186,7 @@ struct object
 	static const int max_prop = size_tpy::value;
 };
 
-/*! \brief Implementation of vector creator
+/*! \brief Implementation of object creator
  *
  * \tparam v boost::fusion::vector
  * \tparam vc basic boost::fusion::vector object from where start to push
@@ -195,7 +198,7 @@ struct object_creator_impl
 {
 };
 
-/*! \brief Implementation of vector creator
+/*! \brief Implementation of object creator
  *
  * \tparam v original boost::fusion::vector
  * \tparam vc basic boost::fusion::vector object from where start to push
@@ -214,7 +217,7 @@ struct object_creator_impl<v,vc,p1,prp...>
 	typedef typename boost::mpl::push_front<vc_step, ele >::type type;
 };
 
-/*! \brief Implementation of vector creator
+/*! \brief Implementation of object creator
  *
  * \tparam v original boost::fusion::vector
  * \tparam vc basic boost::fusion::vector object from where start to push
@@ -234,12 +237,17 @@ struct object_creator_impl<v,vc,prp>
  * \tparam v boost::fusion::vector
  * \tparam prp selected properties
  *
- * ## Example
+ * ## Create a compile-time object and copy *from* the selected properties
+ * \snippet util_test.hpp object copy example
+ * ## Create a compile-time Encap object and copy *from* the selected properties
+ * \snippet util_test.hpp object copy encap example
+ * ## Create a compile-time object and copy *to* the selected properties
+ * \snipper util_test.hpp object write example
+ * ## Create a compile-time Encap object and copy *to* the selected properties
+ * \snipper util_test.hpp object write encap example
  *
- * \snippet util.hpp object copy example
  *
  */
-
 template<typename v, int... prp>
 struct object_creator
 {

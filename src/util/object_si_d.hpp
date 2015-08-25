@@ -148,10 +148,14 @@ struct object_si_d<v_src,v_dst,NORMAL,prp...>
 
 /*! \brief It copy the properties from one object to another
  *
- * Given a set of properties for the source (0,1,3) it copy that property to the destination properties
- * (0,1,2)
+ * Given a set of properties for the source object (0,1,3) it copy that properties
+ * to the destination object properties (0,1,2)
  *
- * ### Object copy example
+ * For object we mean an object that follow the OpenFPM data structure format, see the WIKI for more information
+ *
+ * ## Create a compile-time object and copy *from* the selected properties
+ * \snippet util_test.hpp object copy example
+ * ## Create a compile-time Encap object and copy *from* the selected properties
  * \snippet util_test.hpp object copy encap example
  *
  */

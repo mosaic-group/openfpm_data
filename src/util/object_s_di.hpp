@@ -171,10 +171,17 @@ struct object_s_di<v_src,v_dst,NORMAL,prp...>
 	}
 };
 
-/*! \brief Given a set of properties for the destination (0,1,3,5) it copy the source properties (0,1,2,3)
+/*! \brief It copy the properties from one object to another
  *
- * ### Object copy example
- * \snippet util_test.hpp object copy encap example
+ * Given a set of properties for the destination object (0,1,3) it copy that properties
+ * to the source object properties (0,1,2)
+ *
+ * For object we mean an object that follow the OpenFPM data structure format, see the WIKI for more information
+ *
+ * ## Create a compile-time object and copy *to* the selected properties
+ * \snipper util_test.hpp object write example
+ * ## Create a compile-time Encap object and copy *to* the selected properties
+ * \snipper util_test.hpp object write encap example
  *
  */
 template<typename v_src, typename v_dst, int... prp>
