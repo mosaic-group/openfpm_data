@@ -151,7 +151,8 @@ struct object_si_d<v_src,v_dst,NORMAL,prp...>
  * Given a set of properties for the source object (0,1,3) it copy that properties
  * to the destination object properties (0,1,2)
  *
- * For object we mean an object that follow the OpenFPM data structure format, see the WIKI for more information
+ * For object we mean an object that follow the OpenFPM data structure format, see openFPM_data wiki
+ * for more information
  *
  * ## Create a compile-time object and copy *from* the selected properties
  * \snippet util_test.hpp object copy example

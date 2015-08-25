@@ -158,8 +158,8 @@ struct noPointers_sequence
  *
  * \note It is used in ghost_get to create a particular object with the properties selected
  *
- * For object we mean an object that follow the OpenFPM data structure format, see the WIKI for more information
- *
+ * For object we mean an object that follow the OpenFPM data structure format, see openFPM_data wiki
+ * for more information
  *
  * \tparam Is a boost::fusion::vector with the properties selected
  *

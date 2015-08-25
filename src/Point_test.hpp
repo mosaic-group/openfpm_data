@@ -12,6 +12,26 @@
 #include "Point_orig.hpp"
 #include "Grid/Encap.hpp"
 
+
+/*! \brief Test structure used for several test
+ *
+ * It is a test structure used for several test it contain 4 scalar "x,y,z,s"
+ * one vector property v[3] and one tensor or rank 2 t[3][3]
+ *
+ * It is the OpenFPM data structure format for type parsing of see openFPM_data wiki
+ * for more information
+ *
+ * ### Declaration of a point
+ * \snippet vector_test_util.hpp Point declaration
+ *
+ * ### Create a type definition
+ *
+ * \snippet vector_test_util.hpp typedef point
+ *
+ * ### Access the members
+ * \snippet vector_test_util.hpp Point usage
+ *
+ */
 template<typename T> class Point2D_test
 {
 public:

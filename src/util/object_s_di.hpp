@@ -176,7 +176,8 @@ struct object_s_di<v_src,v_dst,NORMAL,prp...>
  * Given a set of properties for the destination object (0,1,3) it copy that properties
  * to the source object properties (0,1,2)
  *
- * For object we mean an object that follow the OpenFPM data structure format, see the WIKI for more information
+ * For object we mean an object that follow the OpenFPM data structure format, see openFPM_data wiki
+ * for more information
  *
  * ## Create a compile-time object and copy *to* the selected properties
  * \snipper util_test.hpp object write example
