@@ -16,6 +16,7 @@
 #include "check_no_pointers.hpp"
 #include "Grid/util.hpp"
 #include "data_type/scalar.hpp"
+#include "util/convert.hpp"
 
 //! [Check has_posMask struct definition]
 
@@ -554,6 +555,41 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 
 		//! [Check is_vector]
 		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE( check_convert_function )
+{
+	{
+	//! [Convert combination to Point]
+
+	comb<2> c;
+	c.c[0] = 1;
+	c.c[1] = -1;
+
+	Point<2,size_t> p = toPoint<2,size_t>::convert(c);
+
+	BOOST_REQUIRE_EQUAL(p.get(0),1);
+	BOOST_REQUIRE_EQUAL(p.get(1),-1);
+
+	//! [Convert combination to Point]
+	}
+
+	{
+	//! [Convert combination to Point3]
+
+	comb<3> c;
+	c.c[0] = 1;
+	c.c[1] = -1;
+	c.c[2] = 0;
+
+	Point<3,float> p = toPoint<3,float>::convert(c);
+
+	BOOST_REQUIRE_EQUAL(p.get(0),1);
+	BOOST_REQUIRE_EQUAL(p.get(1),-1);
+	BOOST_REQUIRE_EQUAL(p.get(2),0);
+
+	//! [Convert combination to Point3]
 	}
 }
 

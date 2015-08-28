@@ -67,14 +67,13 @@ template<unsigned int N, typename T> class grid_sm;
 template <unsigned int dim> class print_warning_on_adjustment;
 template<unsigned int dim,typename warn=print_warning_on_adjustment<dim>> class grid_key_dx_iterator_sub;
 
-/*! \brief class that store the information of the grid like number of point on each direction and define the index linearization
- * by stride
+/*! \brief class that store the information of the grid like number of point on each direction and
+ *  define the index linearization by stride
  *
  * \param N dimensionality
  * \param T type of object is going to store the grid
  *
  */
-
 template<unsigned int N, typename T>
 class grid_sm
 {

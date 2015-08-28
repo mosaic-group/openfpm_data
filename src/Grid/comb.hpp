@@ -219,12 +219,36 @@ struct comb
 	    {this->c[c.size() - i - 1] = x;i++;}
 	}
 
+	/*! \brief Check if any alement in the combination is <= 0
+	 *
+	 *    +----#----+
+	 *    |         |
+	 *    |         |
+	 *    #    *    #
+	 *    |         |
+	 *    |         |
+	 *    +----#----+
+	 *
+	 *  Is negative return true when the combination indicate * the down-left vertex + and down and left edge #
+	 *
+	 */
+	bool isNegative()
+	{
+		for (size_t i = 0; i < dim ; i++)
+		{
+			if (c[i] > 0)
+				return false;
+		}
+
+		return true;
+	}
+
 	/*! \brief produce a linearized (unique) version of the combination
 	 *
 	 * \does not work for dimension bigger than 8
 	 *
 	 */
-	size_t lin()
+/*	size_t lin()
 	{
 #ifdef SE_CLASS1
 		if (dim > 8)
@@ -242,7 +266,7 @@ struct comb
 			return *(unsigned long int *)c;
 
 		}
-	}
+	}*/
 };
 
 /*! brief specialization of comb in case of dim 0

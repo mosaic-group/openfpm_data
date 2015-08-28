@@ -392,10 +392,10 @@ public:
 	}
 
 	//! Set the grid dimensions
-	void setDimensions(std::vector<size_t> & sz)
+/*	void setDimensions(std::vector<size_t> & sz)
 	{
 		g1.setDimension(sz);
-	}
+	}*/
 
 	/*! \brief create a grid from another grid
 	 *

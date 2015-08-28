@@ -198,6 +198,18 @@ template<unsigned int dim ,typename T> class Point
 		}
 	}
 
+	/*! \brief Set to one the point coordinate
+	 *
+	 *
+	 */
+	inline void one()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			get(i) = 1;
+		}
+	}
+
 	/*! \brief Create a point set to zero
 	 *
 	 * \return a point with all coorfinate set to 0

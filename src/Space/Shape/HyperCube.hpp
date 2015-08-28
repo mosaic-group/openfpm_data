@@ -39,11 +39,11 @@ template<unsigned int dim> std::ostream& operator<<(std::ostream& str, const com
  * \tparam dim dimensionality of the Hyper-cube
  *
  * ### Get vertex and edge on a line
- * \snippet hypercube_unit_test.hpp Get vertex and edge on a line
+ * \snippet HyperCube_unit_test.hpp Get vertex and edge on a line
  * ### Get vertex edge and surfaces of a square
- * \snippet hypercube_unit_test.hpp  Get vertex edge and surfaces of a square
+ * \snippet HyperCube_unit_test.hpp  Get vertex edge and surfaces of a square
  * ### Get vertex edge surfaces and volumes of a cube
- * \snippet hypercube_unit_test.hpp Get vertex edge surfaces and volumes of a cube
+ * \snippet HyperCube_unit_test.hpp Get vertex edge surfaces and volumes of a cube
  *
  * hyper-cube define only the features of an N-dimensional hyper-cube, does not define
  * where is is located and its size, use Box for that purpose
@@ -89,7 +89,7 @@ public:
 
 	/*! brief Calculate the position (combinations) of all the elements of size d
 	 *
-	 * \param d dimensionality of the object position
+	 * \param d dimensionality of the object returned in the combinations
 	 * \return all the combinations
 	 *
 	 */
@@ -152,7 +152,6 @@ public:
 	 * \param v vector to fill with the permutations
 	 *
 	 */
-
 	static void BinPermutations(grid_key_dx_r & pos, std::vector<comb<dim>> & v)
 	{
 		size_t p_stop = pow(2,pos.getDim());
@@ -182,6 +181,94 @@ public:
 		}
 	}
 
+	/*! \brief Binary permutations
+	 *
+	 * Fill v with all the possible binary permutations
+	 * it produce 2^(pos.getDim()) Permutations
+	 *
+	 * Example
+	 *
+	 * if getDim() is 2
+	 *
+	 * it produce 4 configuration
+	 *
+	 * (1,1) (1,-0) (0,1) (0,0)
+	 *
+	 * from another prospective given
+	 *
+	 * \verbatim
+	 *
+	 *    +----#----+
+	 *    |         |
+	 *    |         |
+	 *    #    *    #
+	 *    |         |
+	 *    |         |
+	 *    +----#----+
+	 *
+	 * \endverbatim
+	 *
+     *  combination in the center (*) the down-left vertex (+). down and left edge (#)
+	 *
+	 * \param pos slots inside comb to fill with all permutations
+	 * \param v vector to fill with the permutations
+	 *
+	 */
+	static void BinPermutationsSt(std::vector<comb<dim>> & v)
+	{
+		size_t p_stop = pow(2,dim);
+		for (size_t p = 0 ; p < p_stop ; p++)
+		{
+			// Create a new permutation
+			struct comb<dim> c;
+
+			// zero the combination
+			c.zero();
+
+			// the bit of p give the permutations 0 mean bottom 1 mean up
+			// Fill the combination based on the bit of p
+
+			for (size_t k = 0 ; k < dim ; k++)
+			{
+				// bit of p
+				bool bit = (p >> k) & 0x01;
+
+				// Fill the combination
+				c.c[k] = (bit == 0)? 0 : -1;
+			}
+
+			// save the combination
+
+			v.push_back(c);
+		}
+	}
+
+	/*! \brief Linearize the Permitation given by BinPermutationSt
+	 *
+	 * Suppose BinPermutation return the following combination
+	 *
+	 * (-1,-1) (-1,0) (0,-1) (0,0)
+	 *
+	 * giving (0,-1) it return 2
+	 *
+	 * \param c combination to linearize
+	 *
+	 * \see BinPermitationSt
+	 *
+	 */
+	static size_t LinPerm(comb<dim> & c)
+	{
+		size_t id = 0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (c.c[i] == -1)
+			{id = id | (1 << i);}
+		}
+
+		return id;
+	}
+
 	static SubHyperCube<dim,dim-1> getSubHyperCube(int d)
 	{
 		SubHyperCube<dim,dim-1> sub;
@@ -189,15 +276,15 @@ public:
 		return sub;
 	}
 
-//	std::vector<comb<dim>> gm;
-
 	/** \brief Linearize the combination
+	 *
+	 * It map the combination into a linear id, in particular given the vector of combinations
+	 * with get getCombinations_R, given the combination it give where is located in the vector
 	 *
 	 *	\param c given combination
 	 *  \return the linearized combination
 	 *
 	 */
-
 	static size_t LinId(comb<dim> & c)
 	{
 		// calculate the numbers of non-zero
@@ -222,7 +309,6 @@ public:
 			}
 		}
 
-		// The combination linearization is given by
 		size_t lin_id = 0;
 
 		// Cumulative value
@@ -238,7 +324,7 @@ public:
 
 			for (long int j = 0 ; j < (long int)val; j++)
 			{
-				// C is not safe check the limit
+				// C is not safe, check the limit
 				if (((long int)dim)-cum_val-j-1 >= 0 && i > 0 && ((long int)dim)-cum_val-j >= i)
 					lin_id += openfpm::math::C(dim-cum_val-j-1,i);
 				else
@@ -267,7 +353,7 @@ public:
 
 	/** \brief isPositive return if the combination d is a positive or a negative
 	 *
-	 * For an hyper-cube of dimension dim we have 2*dim combinations half on positive direction
+	 * For an hyper-cube of dimension dim we have 2*dim faces combinations half on positive direction
 	 * half on negative direction, the function check
 	 * if the d combination is negative or positive
 	 *

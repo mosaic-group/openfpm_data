@@ -180,9 +180,9 @@ struct object_s_di<v_src,v_dst,NORMAL,prp...>
  * for more information
  *
  * ## Create a compile-time object and copy *to* the selected properties
- * \snipper util_test.hpp object write example
+ * \snippet util_test.hpp object write example
  * ## Create a compile-time Encap object and copy *to* the selected properties
- * \snipper util_test.hpp object write encap example
+ * \snippet util_test.hpp object write encap example
  *
  */
 template<typename v_src, typename v_dst, int... prp>

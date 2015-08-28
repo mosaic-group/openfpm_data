@@ -19,6 +19,21 @@ template<unsigned int dim> void check_lin(std::vector<comb<dim>> cmb)
 	}
 }
 
+/*! \brief Check if the linearization of the permutation is correct
+ *
+ * \param cmb vector of combination to checl
+ *
+ */
+
+template<unsigned int dim> void check_lin_perm(std::vector<comb<dim>> cmb)
+{
+	// Check the linearization
+	for (size_t i = 0 ; i < cmb.size() ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(HyperCube<dim>::LinPerm(cmb[i]),i);
+	}
+}
+
 /*! \brief Check if the combinations are dinstict
  *
  * \param combs combinations to check
@@ -119,6 +134,10 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	// Check the linearization
 	check_lin(v_c1_0);
 
+	std::vector<comb<1>> v1_st;
+	HyperCube<1>::BinPermutationsSt(v1_st);
+	check_lin_perm(v1_st);
+
 	boost_check_array(&c[0],&v_c1_0[0],2);
 
 	//! [Get vertex edge and surfaces of a square]
@@ -147,6 +166,10 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	comb<2> c2_1[] = {{0,1},{0,-1},{1,0},{-1,0}};
 	check_lin(v_c2_0);
 	check_lin(v_c2_1);
+
+	std::vector<comb<2>> v2_st;
+	HyperCube<2>::BinPermutationsSt(v2_st);
+	check_lin_perm(v2_st);
 
 	boost_check_array(&c2_0[0],&v_c2_0[0],4);
 	boost_check_array(&c2_1[0],&v_c2_1[0],4);
@@ -185,6 +208,10 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	check_lin(v_c3_1);
 	check_lin(v_c3_2);
 
+	std::vector<comb<3>> v3_st;
+	HyperCube<3>::BinPermutationsSt(v3_st);
+	check_lin_perm(v3_st);
+
 	boost_check_array(&c3_0[0],&v_c3_0[0],8);
 	boost_check_array(&c3_1[0],&v_c3_1[0],12);
 	boost_check_array(&c3_2[0],&v_c3_2[0],6);
@@ -210,6 +237,10 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	check_lin(v_c4_1);
 	check_lin(v_c4_2);
 	check_lin(v_c4_3);
+
+	std::vector<comb<4>> v4_st;
+	HyperCube<4>::BinPermutationsSt(v4_st);
+	check_lin_perm(v1_st);
 
 	// Check
 	BOOST_REQUIRE_EQUAL(ele[0],16);
@@ -243,6 +274,10 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	check_lin(v_c5_2);
 	check_lin(v_c5_3);
 	check_lin(v_c5_4);
+
+	std::vector<comb<5>> v5_st;
+	HyperCube<5>::BinPermutationsSt(v5_st);
+	check_lin_perm(v5_st);
 
 	// Check
 	BOOST_REQUIRE_EQUAL(ele[0],32);
