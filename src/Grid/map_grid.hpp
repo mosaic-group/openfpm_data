@@ -344,7 +344,7 @@ private:
 	grid_sm<dim,T> g1;
 
 	//! Memory layout specification + memory chunk pointer
-	Mem data;
+	Mem data_;
 
 	//! The memory allocator is not internally created
 	bool isExternal;
@@ -446,7 +446,7 @@ public:
 		if (dim == 1)
 		{
 			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
-			grid_new.data.mem->copy(*data.mem);
+			grid_new.data_.mem->copy(*data_.mem);
 		}
 		else
 		{
@@ -503,10 +503,10 @@ public:
 		S * mem = new S();
 
 		//! Create and set the memory allocator
-		data.setMemory(*mem);
+		data_.setMemory(*mem);
 
 		//! Allocate the memory and create the representation
-		if (g1.size() != 0) data.allocate(g1.size());
+		if (g1.size() != 0) data_.allocate(g1.size());
 
 		is_mem_init = true;
 	}
@@ -528,10 +528,10 @@ public:
 		isExternal = true;
 
 		//! Create and set the memory allocator
-		data.setMemory(m);
+		data_.setMemory(m);
 
 		//! Allocate the memory and create the reppresentation
-		if (g1.size() != 0) data.allocate(g1.size());
+		if (g1.size() != 0) data_.allocate(g1.size());
 
 		is_mem_init = true;
 	}
@@ -546,10 +546,10 @@ public:
 
 	void * getPointer()
 	{
-		if (data.mem_r == NULL)
+		if (data_.mem_r == NULL)
 			return NULL;
 
-		return data.mem_r->get_pointer();
+		return data_.mem_r->get_pointer();
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -567,9 +567,9 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(&data.mem_r->operator[](g1.LinId(v1.getId()))));
+		check_valid(&boost::fusion::at_c<p>(&data_.mem_r->operator[](g1.LinId(v1.getId()))));
 #endif
-		return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1.getId())));
+		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1.getId())));
 	}
 
 	/*! \brief Get the const reference of the selected element
@@ -589,7 +589,7 @@ public:
 #ifdef MEMLEAK_CHECK
 		check_valid(&boost::fusion::at_c<p>(&data.mem_r->operator[](g1.LinId(v1.getId()))));
 #endif
-		return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1.getId())));
+		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1.getId())));
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -606,9 +606,9 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
+		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))));
 #endif
-		return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
+		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
 
 	/*! \brief Get the const reference of the selected element
@@ -625,9 +625,9 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))));
+		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))));
 #endif
-		return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
+		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -644,9 +644,9 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
+		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
 #endif
-		return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
+		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
 
 	/*! \brief Get the const reference of the selected element
@@ -663,9 +663,9 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
+		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
 #endif
-		return boost::fusion::at_c<p>(data.mem_r->operator[](g1.LinId(v1)));
+		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
 
 	/*! \brief Get the of the selected element as a boost::fusion::vector
@@ -682,9 +682,9 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
-		check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(T));
+		check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T));
 #endif
-		return encapc<dim,T,Mem>(data.mem_r->operator[](g1.LinId(v1)));
+		return encapc<dim,T,Mem>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
 
 	/*! \brief Get the of the selected element as a boost::fusion::vector
@@ -701,9 +701,9 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef MEMLEAK_CHECK
-		check_valid(&data.mem_r->operator[](g1.LinId(v1)),sizeof(T));
+		check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T));
 #endif
-		return encapc<dim,T,Mem>(data.mem_r->operator[](g1.LinId(v1)));
+		return encapc<dim,T,Mem>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
 
 	/*! \brief Fill the memory with the selected byte
@@ -734,7 +734,7 @@ public:
 		//! Set the allocator and allocate the memory
 		if (isExternal == true)
 		{
-			grid_new.template setMemory<S>(static_cast<S&>(data.getMemory()));
+			grid_new.template setMemory<S>(static_cast<S&>(data_.getMemory()));
 
 			// Create an empty memory allocator for the actual structure
 
@@ -748,7 +748,7 @@ public:
 		if (dim == 1)
 		{
 			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
-			grid_new.data.mem->copy(*data.mem);
+			grid_new.data_.mem->copy(*data_.mem);
 		}
 		else
 		{
@@ -795,7 +795,7 @@ public:
 
 		// It is safe to do a memory copy
 
-		data.move(&this->template get<0>());
+		data_.move(&this->template get<0>());
 	}
 
 	/*! \brief Resize the space
@@ -831,7 +831,7 @@ public:
 	void swap(grid_cpu<dim,T,Mem> & grid)
 	{
 		// move the data
-		data.swap(grid.data);
+		data_.swap(grid.data_);
 
 		// move the grid info
 		g1 = grid.g1;
@@ -1092,7 +1092,7 @@ class grid_gpu
 
 	//! This is the interface to allocate,resize ... memory
 	//! and give also a representation to the allocated memory
-	Mem data;
+	Mem data_;
 
 public:
 
@@ -1152,19 +1152,19 @@ public:
 		allocate<S> all(g1.size());
 
 		//! for each element in the vector allocate the buffer
-		boost::fusion::for_each(data,all);
+		boost::fusion::for_each(data_,all);
 
 		is_mem_init = true;
 	}
 
 	template <unsigned int p>inline typename type_gpu_prop<p,memory_int>::type::reference get(grid_key_d<dim,p> & v1)
 	{
-		return boost::fusion::at_c<p>(data).mem_r->operator[](g1.LinId(v1));
+		return boost::fusion::at_c<p>(data_).mem_r->operator[](g1.LinId(v1));
 	}
 
 	template <unsigned int p>inline typename type_gpu_prop<p,memory_int>::type::reference get(grid_key_dx<dim> & v1)
 	{
-		return boost::fusion::at_c<p>(data).mem_r->operator[](g1.LinId(v1));
+		return boost::fusion::at_c<p>(data_).mem_r->operator[](g1.LinId(v1));
 	}
 
 	/*! \brief Get the of the selected element as a boost::fusion::vector
@@ -1176,7 +1176,7 @@ public:
 	 */
 	inline encapg<dim,T,Mem> get_o(grid_key_dx<dim> & v1)
 	{
-		return encapg<dim,T,Mem>(data,g1.LinId(v1));
+		return encapg<dim,T,Mem>(data_,g1.LinId(v1));
 	}
 
 	/*! \brief Get the of the selected element as a boost::fusion::vector
@@ -1188,7 +1188,7 @@ public:
 	 */
 	inline const encapg<dim,T,Mem> get_o(grid_key_dx<dim> & v1) const
 	{
-		return encapg<dim,T,Mem>(data,g1.LinId(v1));
+		return encapg<dim,T,Mem>(data_,g1.LinId(v1));
 	}
 
 	inline size_t size()
@@ -1201,7 +1201,7 @@ public:
 	//! allocator
 	void set_memory(memory & mem)
 	{
-		data.mem.set_memory(mem);
+		data_.mem.set_memory(mem);
 	}
 
 	/*! \brief Return a grid iterator
@@ -1237,7 +1237,7 @@ public:
 	void swap(grid_gpu<dim,T,Mem> & obj)
 	{
 		g1.swap(obj.g1);
-		data.swap(obj.data);
+		data_.swap(obj.data_);
 	}
 };
 
