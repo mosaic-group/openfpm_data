@@ -725,7 +725,7 @@ public:
 	 * \param sz reference to an array of dimension dim
 	 *
 	 */
-	template<typename S> void resize(size_t (& sz)[dim])
+	template<typename S> void resize(const size_t (& sz)[dim])
 	{
 		//! Create a completely new grid with sz
 
@@ -806,7 +806,7 @@ public:
 	 *
 	 */
 
-	template<typename S> void resize(std::vector<size_t> & sz)
+/*	template<typename S> void resize(const std::vector<size_t> & sz)
 	{
 		// array containing the size of the grid
 		size_t sz_a[dim];
@@ -817,7 +817,7 @@ public:
 
 		// resize
 		resize<S>(sz_a);
-	}
+	}*/
 
 	/*! \brief It move the allocated object from one grid to another
 	 *
