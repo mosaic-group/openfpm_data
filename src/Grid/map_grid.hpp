@@ -391,12 +391,6 @@ public:
 	{
 	}
 
-	//! Set the grid dimensions
-/*	void setDimensions(std::vector<size_t> & sz)
-	{
-		g1.setDimension(sz);
-	}*/
-
 	/*! \brief create a grid from another grid
 	 *
 	 * \tparam S memory type for allocation
@@ -550,46 +544,6 @@ public:
 			return NULL;
 
 		return data_.mem_r->get_pointer();
-	}
-
-	/*! \brief Get the reference of the selected element
-	 *
-	 * \tparam p property to get (is an integer)
-	 * \param v1 grid_key that identify the element in the grid
-	 *
-	 * \return a reference to the element
-	 *
-	 */
-	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(grid_key<p> & v1)
-	{
-#ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
-#endif
-#ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(&data_.mem_r->operator[](g1.LinId(v1.getId()))));
-#endif
-		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1.getId())));
-	}
-
-	/*! \brief Get the const reference of the selected element
-	 *
-	 * \tparam p property to get (is an integer)
-	 * \param v1 grid_key that identify the element in the grid
-	 *
-	 * \return a const reference to the element
-	 *
-	 */
-	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(grid_key<p> & v1) const
-	{
-#ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
-#endif
-#ifdef MEMLEAK_CHECK
-		check_valid(&boost::fusion::at_c<p>(&data.mem_r->operator[](g1.LinId(v1.getId()))));
-#endif
-		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1.getId())));
 	}
 
 	/*! \brief Get the reference of the selected element
