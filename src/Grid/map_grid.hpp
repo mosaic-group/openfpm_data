@@ -798,26 +798,6 @@ public:
 		data_.move(&this->template get<0>());
 	}
 
-	/*! \brief Resize the space
-	 *
-	 * Resize the space to a new grid, the element are retained on the new grid,
-	 * if the new grid is bigger the new element are now initialized, if is smaller
-	 * the data are cropped
-	 *
-	 */
-
-/*	template<typename S> void resize(const std::vector<size_t> & sz)
-	{
-		// array containing the size of the grid
-		size_t sz_a[dim];
-
-		// fill the array
-		for (int i = 0 ; i < dim ; i++)
-		{sz_a[i] = sz[i];}
-
-		// resize
-		resize<S>(sz_a);
-	}*/
 
 	/*! \brief It move the allocated object from one grid to another
 	 *

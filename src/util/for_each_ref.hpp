@@ -75,7 +75,7 @@ struct for_each_ref_impl<false>
         aux::unwrap(f, 0)(boost::get(x));
 
         typedef typename mpl::next<Iterator>::type iter;
-        for_each_impl<boost::is_same<iter,LastIterator>::value>
+        for_each_ref_impl<boost::is_same<iter,LastIterator>::value>
             ::execute( static_cast<iter*>(0), static_cast<LastIterator*>(0), static_cast<TransformFunc*>(0), f);
     }
 };
