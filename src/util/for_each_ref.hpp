@@ -108,7 +108,7 @@ template<
 inline
 void for_each_ref(F & f, Sequence* = 0)
 {
-    for_each<Sequence, identity<> >(f);
+    for_each_ref<Sequence, identity<> >(f);
 }
 
 }}
