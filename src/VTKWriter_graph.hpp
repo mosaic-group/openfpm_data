@@ -177,7 +177,7 @@ public:
 	 *
 	 */
 
-	static std::string get_point_data(Graph & g)
+	static std::string get_point_data(const Graph & g)
 	{
 		//! vertex node output string
 		std::string v_out;
@@ -350,14 +350,14 @@ struct prop_out
 	std::string & v_out;
 
 	// Graph that we are processing
-	Graph & g;
+	const Graph & g;
 
 	/*! \brief constructor
 	 *
 	 * \param v_out string to fill with the vertex properties
 	 *
 	 */
-	prop_out(std::string & v_out, Graph & g)
+	prop_out(std::string & v_out, const Graph & g)
 	:v_out(v_out),g(g)
 	{};
 
@@ -393,7 +393,7 @@ struct prop_out
 template <typename Graph>
 class VTKWriter<Graph,GRAPH>
 {
-	Graph & g;
+	const Graph & g;
 
 	/*! \brief It get the vertex properties list
 	 *
@@ -572,7 +572,7 @@ public:
 	 * \param g Graph to write
 	 *
 	 */
-	VTKWriter(Graph & g)
+	VTKWriter(const Graph & g)
 	:g(g)
 	{}
 
