@@ -1094,7 +1094,7 @@ namespace openfpm
 		 * \return an iterator to iterate through all the elements of the vector
 		 *
 		 */
-		auto getIterator() -> decltype(base.getIterator())
+		auto getIterator() -> decltype(base.getIterator()) const
 		{
 			return base.getIterator();
 		}

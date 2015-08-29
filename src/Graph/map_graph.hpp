@@ -140,7 +140,7 @@ template<typename Graph>
 class edge_iterator
 {
 	//! Graph
-	Graph & g;
+	const Graph & g;
 
 	// Actual edge key
 	edge_key ek;
@@ -153,7 +153,7 @@ public:
 	 *
 	 */
 
-	edge_iterator(Graph & g)
+	edge_iterator(const Graph & g)
 	:g(g)
 	{
 		ek.begin();
@@ -532,6 +532,40 @@ public:
 		return v.get(id.get());
 	}
 
+	/*! \brief Function to access the vertexes
+	 *
+	 * \param id of the vertex to access
+	 *
+	 */
+	auto vertex(size_t id) const -> const decltype( v.get(id) )
+	{
+		return v.get(id);
+	}
+
+	/*! \brief operator to access the vertex
+	 *
+	 * operator to access the vertex
+	 *
+	 * \param id of the vertex to access
+	 *
+	 */
+	auto vertex(grid_key_dx<1> id) const -> const decltype( v.get(id.get(0)) )
+	{
+		return v.get(id.get(0));
+	}
+
+	/*! \brief operator to access the vertex
+	 *
+	 * operator to access the vertex
+	 *
+	 * \param id of the vertex to access
+	 *
+	 */
+	auto vertex(openfpm::vector_key_iterator id) const -> const decltype( v.get(0) )
+	{
+		return v.get(id.get());
+	}
+
 	/*! \brief Access the edge
 	 *
 	 * \tparam i property to access
@@ -595,7 +629,7 @@ public:
 	 *
 	 */
 
-	inline size_t getNChilds(size_t c)
+	inline size_t getNChilds(size_t c) const
 	{
 		// Get the number of childs
 
@@ -645,11 +679,11 @@ public:
 	 * \param v node
 	 * \param i child at position i
 	 *
-	 * \return the target i connected by an edge node, for the node v
+	 * \return the edge id that connect v with the target at position i
 	 *
 	 */
 
-	inline size_t getChild(size_t v, size_t i)
+	inline size_t getChild(size_t v, size_t i) const
 	{
 #ifdef DEBUG
 		if (i >= v_l.template get<0>(v) )
@@ -797,7 +831,7 @@ public:
 	 *
 	 */
 
-	inline auto getVertexIterator() -> decltype(v.getIterator())
+	inline auto getVertexIterator() const -> decltype(v.getIterator())
 	{
 		return v.getIterator();
 	}
@@ -810,7 +844,7 @@ public:
 	 *
 	 */
 
-	inline edge_iterator<Graph_CSR<V,E,device,VertexList,EdgeList,Memory>> getEdgeIterator()
+	inline edge_iterator<Graph_CSR<V,E,device,VertexList,EdgeList,Memory>> getEdgeIterator() const
 	{
 		return edge_iterator<Graph_CSR<V,E,device,VertexList,EdgeList,Memory>>(*this);
 	}
@@ -821,7 +855,7 @@ public:
 	 *
 	 */
 
-	inline size_t getNVertex()
+	inline size_t getNVertex() const
 	{
 		return v.size();
 	}
@@ -832,7 +866,7 @@ public:
 	 *
 	 */
 
-	inline size_t getNEdge()
+	inline size_t getNEdge() const
 	{
 		return e.size();
 	}

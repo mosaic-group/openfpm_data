@@ -198,7 +198,31 @@ public:
 	 * \return the reference to the element
 	 *
 	 */
-	template <unsigned int p>inline auto get(size_t id) -> decltype(base[id])
+	template <unsigned int p>inline T& get(size_t id)
+	{
+#ifdef DEBUG
+		if (p != 0)
+		{std::cerr << "Error the property does not exist" << "\n";}
+
+		if (id >= base.size())
+		{
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
+		}
+#endif
+
+		return base[id];
+	}
+
+	/*! \brief Get an element of the vector
+	 *
+	 * \tparam p must be 0
+	 *
+	 * \param id element to get
+	 *
+	 * \return the reference to the element
+	 *
+	 */
+	template <unsigned int p>inline const T& get(size_t id) const
 	{
 #ifdef DEBUG
 		if (p != 0)
