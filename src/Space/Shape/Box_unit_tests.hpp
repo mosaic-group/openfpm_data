@@ -166,6 +166,24 @@ BOOST_AUTO_TEST_CASE( box_use)
 
 	}
 
+	{
+	//! [Box operators]
+
+	Box<2,float> box({0.5,0.6},{1.4,1.3});
+	Point<2,float> p({3.0,4.0});
+	Box<2,float> result;
+
+	result = box * p;
+
+	BOOST_REQUIRE_CLOSE(result.getHigh(0),4.2,0.0001);
+	BOOST_REQUIRE_CLOSE(result.getHigh(1),5.2,0.0001);
+
+	BOOST_REQUIRE_CLOSE(result.getLow(0),1.5,0.0001);
+	BOOST_REQUIRE_CLOSE(result.getLow(1),2.4,0.0001);
+
+	//! [Box operators]
+	}
+
 	std::cout << "Box unit test stop" << "\n";
 }
 

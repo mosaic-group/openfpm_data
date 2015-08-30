@@ -376,6 +376,24 @@ public:
 		return *this;
 	}
 
+	/*! \brief Multiply component wise each box points with a point
+	 *
+	 * \param p point
+	 *
+	 * \return the result box
+	 *
+	 */
+	inline Box<dim,T> operator*(const Point<dim,T> & p)
+	{
+		Box<dim,T> ret;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			ret.setLow(i, getLow(i)*p.get(i));
+			ret.setHigh(i, getHigh(i)*p.get(i));
+		}
+		return ret;
+	}
 
 	/*! \brief Constructor from initializer list
 	 *

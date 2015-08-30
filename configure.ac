@@ -198,6 +198,11 @@ fi
 
 #
 
+if test x$gpu_support = x"no"; then
+     CUDA_LIBS=""
+     CUDA_CFLAGS=""
+fi
+
 AM_CONDITIONAL(BUILDCUDA, test x$gpu_support = x"yes")
 
 ##### CHECK FOR BOOST ###
