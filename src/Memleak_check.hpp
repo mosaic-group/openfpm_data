@@ -102,6 +102,12 @@ static void check_valid(void * ptr, size_t size_access)
 
 	std::map<byte_ptr, size_t>::iterator l_b = active_ptr.upper_bound((byte_ptr)ptr);
 
+	if (active_ptr.size() == 0)
+	{
+		std::cout << "Error invalid pointer: " << __FILE__ << ":" << __LINE__ << "  " << ptr << "\n";
+		return;
+	}
+
 	//! subtract one
 	l_b--;
 
@@ -109,7 +115,7 @@ static void check_valid(void * ptr, size_t size_access)
 	if (l_b == active_ptr.end())
 	{
 		if (process_to_print < 0 || process_to_print == process_v_cl)
-			std::cout << "Error invalid pointer: " << __FILE__ << " " << __LINE__ << "  " << ptr << "\n";
+			std::cout << "Error invalid pointer: " << __FILE__ << ":" << __LINE__ << "  " << ptr << "\n";
 		return;
 	}
 
@@ -120,7 +126,7 @@ static void check_valid(void * ptr, size_t size_access)
 	if (((unsigned char *)l_b->first) + sz < ((unsigned char *)ptr) + size_access)
 	{
 		if (process_to_print < 0 || process_to_print == process_v_cl)
-			std::cout << "Error invalid pointer: " << __FILE__ << " " << __LINE__ << "  "  << ptr << "\n";
+			std::cout << "Error invalid pointer: " << __FILE__ << ":" << __LINE__ << "  "  << ptr << "\n";
 	}
 }
 
