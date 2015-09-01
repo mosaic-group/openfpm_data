@@ -23,8 +23,10 @@ extern long int process_to_print;
  *
  * \param pointer to check and remove
  *
+ * \return true if the operation succeded, false if the pointer does not exist
+ *
  */
-static void remove_ptr(void * ptr)
+static bool remove_ptr(void * ptr)
 {
 	// Check if the pointer exist
 	std::map<byte_ptr, size_t>::iterator it = active_ptr.find((byte_ptr)ptr);
@@ -33,11 +35,13 @@ static void remove_ptr(void * ptr)
 	if ( it == active_ptr.end() )
 	{
 		std::cout << "Error pointer not found " << ptr << "\n";
-		return;
+		return false;
 	}
 
 	// erase the pointer
 	active_ptr.erase((byte_ptr)ptr);
+
+	return true;
 }
 
 /*! \brief Print all active pointer
@@ -62,13 +66,18 @@ static void print_unalloc()
  * \param sz size of the new allocated memory
  *
  */
-static void check_new(void * data, size_t sz)
+static bool check_new(void * data, size_t sz)
 {
 	// Add a new pointer
 	new_data++;
 	active_ptr[(byte_ptr)data] = sz;
+
+#ifdef SE_CLASS2_VERBOSE
 	if (process_to_print < 0 || process_to_print == process_v_cl)
 		std::cout << "New data: " << new_data << "   " << data << "\n";
+#endif
+
+	return true;
 }
 
 /*! \brief check and delete a pointer
@@ -76,16 +85,22 @@ static void check_new(void * data, size_t sz)
  * check and delete a pointer from the list of active pointers
  *
  * \param pointer data
+ * \return true if the operation to delete succeed
  *
  */
-static void check_delete(void * data)
+static bool check_delete(void * data)
 {
-	if (data == NULL)	return;
+	if (data == NULL)	return true;
 	// Delete the pointer
 	delete_data++;
-	remove_ptr(data);
+	bool result = remove_ptr(data);
+
+#ifdef SE_CLASS2_VERBOSE
 	if (process_to_print < 0 || process_to_print == process_v_cl)
 		std::cout << "Delete data: " << delete_data << "   " << data << "\n";
+#endif
+
+	return result;
 }
 
 /*! \brief check if the access is valid
@@ -95,8 +110,10 @@ static void check_delete(void * data)
  * \param ptr pointer we are going to access
  * \param size_access is the size in byte of the data we are fetching
  *
+ * \return true if the pointer is valid
+ *
  */
-static void check_valid(void * ptr, size_t size_access)
+static bool check_valid(void * ptr, size_t size_access)
 {
 	// get the lower bound
 
@@ -105,7 +122,7 @@ static void check_valid(void * ptr, size_t size_access)
 	if (active_ptr.size() == 0)
 	{
 		std::cout << "Error invalid pointer: " << __FILE__ << ":" << __LINE__ << "  " << ptr << "\n";
-		return;
+		return false;
 	}
 
 	//! subtract one
@@ -116,7 +133,7 @@ static void check_valid(void * ptr, size_t size_access)
 	{
 		if (process_to_print < 0 || process_to_print == process_v_cl)
 			std::cout << "Error invalid pointer: " << __FILE__ << ":" << __LINE__ << "  " << ptr << "\n";
-		return;
+		return false;
 	}
 
 	// check if ptr is in the range
@@ -126,8 +143,23 @@ static void check_valid(void * ptr, size_t size_access)
 	if (((unsigned char *)l_b->first) + sz < ((unsigned char *)ptr) + size_access)
 	{
 		if (process_to_print < 0 || process_to_print == process_v_cl)
+		{
 			std::cout << "Error invalid pointer: " << __FILE__ << ":" << __LINE__ << "  "  << ptr << "\n";
+			return false;
+		}
 	}
+
+	return true;
+}
+
+/*! \brief In case of Parallel application it set the process that print the
+ *
+ * \param p_to_print is < 0 (Mean all)
+ *
+ */
+static void set_process_to_print(long int p_to_print)
+{
+	process_to_print = p_to_print;
 }
 
 #else

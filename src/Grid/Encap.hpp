@@ -11,6 +11,9 @@
 #include "util/for_each_ref.hpp"
 #include "util/meta_copy.hpp"
 #include "boost/mpl/range_c.hpp"
+#ifdef SE_CLASS2
+#include "Memleak_check.hpp"
+#endif
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
