@@ -170,7 +170,7 @@ public:
 	 */
 	template <unsigned int p> inline typename type_cpu_prop<p,Mem>::type get()
 	{
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,Mem>::type));
 #endif
 		return boost::fusion::at_c<p>(data);
@@ -183,7 +183,7 @@ public:
 	 */
 	template <unsigned int p> inline const typename type_cpu_prop<p,Mem>::type get() const
 	{
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,Mem>::type));
 #endif
 		return boost::fusion::at_c<p>(data);
@@ -192,7 +192,7 @@ public:
 	// access the data
 	template <unsigned int p> inline void set(typename type_cpu_prop<p,Mem>::type & ele)
 	{
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 			check_valid(&boost::fusion::at_c<p>(data),sizeof(typename type_cpu_prop<p,T>::type));
 #endif
 			return boost::fusion::at_c<p>(data) = ele;

@@ -7,7 +7,7 @@
 
 typedef unsigned char * byte_ptr;
 
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 
 extern size_t new_data;
 extern size_t delete_data;

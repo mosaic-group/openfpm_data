@@ -559,7 +559,7 @@ public:
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))));
 #endif
 		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
@@ -578,7 +578,7 @@ public:
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))));
 #endif
 		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
@@ -597,7 +597,7 @@ public:
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
 #endif
 		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
@@ -616,7 +616,7 @@ public:
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
 #endif
 		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
@@ -635,7 +635,7 @@ public:
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 		check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T));
 #endif
 		return encapc<dim,T,Mem>(data_.mem_r->operator[](g1.LinId(v1)));
@@ -654,7 +654,7 @@ public:
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
 #endif
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 		check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T));
 #endif
 		return encapc<dim,T,Mem>(data_.mem_r->operator[](g1.LinId(v1)));

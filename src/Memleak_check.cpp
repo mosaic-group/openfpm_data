@@ -1,7 +1,7 @@
 #include "config.h"
 #include "Memleak_check.hpp"
 
-#ifdef MEMLEAK_CHECK
+#ifdef SE_CLASS2
 
 // counter for allocation of new memory
 size_t new_data;
