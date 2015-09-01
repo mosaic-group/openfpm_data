@@ -33,8 +33,6 @@
 #include <vector>
 #include "se_grid.hpp"
 
-
-
 // Debugging macro
 
 /*! \brief this class is a functor for "for_each" algorithm
@@ -560,7 +558,7 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef SE_CLASS2
-		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))));
+		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)))) == false) {ACTION_ON_ERROR();}
 #endif
 		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
@@ -579,7 +577,7 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef SE_CLASS2
-		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))));
+		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)))) == false) {ACTION_ON_ERROR()};
 #endif
 		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
@@ -598,7 +596,7 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef SE_CLASS2
-		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
+		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type)) == false) {ACTION_ON_ERROR()};
 #endif
 		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
@@ -617,7 +615,7 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef SE_CLASS2
-		check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type));
+		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type)) == false) {ACTION_ON_ERROR()};
 #endif
 		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
@@ -655,7 +653,7 @@ public:
 		GRID_OVERFLOW(v1)
 #endif
 #ifdef SE_CLASS2
-		check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T));
+		if (check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T)) == false)	{ACTION_ON_ERROR()}
 #endif
 		return encapc<dim,T,Mem>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
