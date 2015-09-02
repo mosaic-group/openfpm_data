@@ -95,6 +95,18 @@ struct comb
 		}
 	}
 
+	/*! \brief Set all the elements to -1
+	 *
+	 */
+
+	inline void mone()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			c[i] = -1;
+		}
+	}
+
 	/*! \brief Subtract the combinations and return the result
 	 *
 	 * \return Result combination
