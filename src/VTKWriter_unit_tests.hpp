@@ -280,16 +280,16 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 
 	size_t sz[] = {16,16};
 	grid_cpu<2,Point_test<float>> g1(sz);
-	g1.template setMemory<HeapMemory>();
+	g1.setMemory();
 	fill_grid_some_data(g1);
 	grid_cpu<2,Point_test<float>> g2(sz);
-	g2.template setMemory<HeapMemory>();
+	g2.setMemory();
 	fill_grid_some_data(g2);
 	grid_cpu<2,Point_test<float>> g3(sz);
-	g3.template setMemory<HeapMemory>();
+	g3.setMemory();
 	fill_grid_some_data(g3);
 	grid_cpu<2,Point_test<float>> g4(sz);
-	g4.template setMemory<HeapMemory>();
+	g4.setMemory();
 	fill_grid_some_data(g4);
 
 	// Create a writer and write
