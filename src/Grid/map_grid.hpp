@@ -35,7 +35,7 @@
 #include "memory/HeapMemory.hpp"
 
 #ifndef CUDA_GPU
-typedef CudaMemory HeapMemory;
+typedef HeapMemory CudaMemory;
 #endif
 
 // Debugging macro
