@@ -34,6 +34,10 @@
 #include "se_grid.hpp"
 #include "memory/HeapMemory.hpp"
 
+#ifndef CUDA_GPU
+typedef CudaMemory HeapMemory;
+#endif
+
 // Debugging macro
 
 /*! \brief this class is a functor for "for_each" algorithm
