@@ -744,7 +744,7 @@ namespace openfpm
 		{
 			v_size = mv.v_size;
 			size_t rsz[1] = {v_size};
-			base.template resize<Memory>(rsz);
+			base.resize(rsz);
 
 			// copy the object
 			for (size_t i = 0 ; i < v_size ; i++ )
