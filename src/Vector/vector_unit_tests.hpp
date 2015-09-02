@@ -103,9 +103,9 @@ BOOST_AUTO_TEST_CASE( vector_use)
 struct pre_test
 {
 	//! position vector
-	openfpm::vector<Point<2,float>,openfpm::device_cpu<Point<2,float>>,PreAllocHeapMemory<2>,openfpm::grow_policy_identity> pos;
+	openfpm::vector<Point<2,float>,PreAllocHeapMemory<2>,openfpm::grow_policy_identity> pos;
 	//! properties vector
-	openfpm::vector<Point_test<float>,openfpm::device_cpu<Point_test<float>>,PreAllocHeapMemory<2>,openfpm::grow_policy_identity> prp;
+	openfpm::vector<Point_test<float>,PreAllocHeapMemory<2>,openfpm::grow_policy_identity> prp;
 };
 
 BOOST_AUTO_TEST_CASE( vector_std_utility )
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 	// Create an object of preallocated memory
 	ExtPreAlloc<HeapMemory> * prAlloc = new ExtPreAlloc<HeapMemory>(pap,mem);
 
-	typedef openfpm::vector<Point_test<float>,openfpm::device_cpu<Point_test<float>>,ExtPreAlloc<HeapMemory>> send_vector;
+	typedef openfpm::vector<Point_test<float>,ExtPreAlloc<HeapMemory>> send_vector;
 
 	// create a vector of send_vector (ExtPreAlloc warrant that all the created vector are contiguous)
 	openfpm::vector<send_vector> g_send;
@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_CASE( vector_memory_repr )
 
 	// create vector representation to a piece of memory already allocated
 
-	openfpm::vector<Point_test<float>,openfpm::device_cpu<Point_test<float>>,PtrMemory,openfpm::grow_policy_identity> v2;
+	openfpm::vector<Point_test<float>,PtrMemory,openfpm::grow_policy_identity> v2;
 
 	v2.setMemory(*ptr1);
 

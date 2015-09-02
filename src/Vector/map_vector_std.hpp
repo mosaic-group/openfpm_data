@@ -21,7 +21,7 @@
  *
  */
 template<typename T>
-class vector<T,device_cpu<T>,HeapMemory,grow_policy_double,STD_VECTOR>
+class vector<T,HeapMemory,grow_policy_double,STD_VECTOR>
 {
 	//! Actual size of the vector, warning: it is not the space allocated in grid
 	//! grid size increase by a fixed amount every time we need a vector bigger than
@@ -309,7 +309,7 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(openfpm::vector<T,device_cpu<T>,HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	void swap(openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v)
 	{
 		base.swap(v.base);
 	}

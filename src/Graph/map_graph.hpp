@@ -65,7 +65,7 @@ public:
 	static const unsigned int max_prop = 0;
 };
 
-template<typename V, typename E,template<typename> class device,template<typename, typename,typename,typename, unsigned int> class VertexList, template<typename,typename,typename,typename, unsigned int> class EdgeList, typename Memory, typename grow_p>
+template<typename V, typename E,template<typename, typename,typename, unsigned int> class VertexList, template<typename,typename,typename, unsigned int> class EdgeList, typename Memory, typename grow_p>
 class Graph_CSR;
 
 /*! \brief Structure used inside GraphCSR an edge
@@ -269,38 +269,26 @@ public:
  *
  */
 
-template<typename V, typename E=no_edge,template<typename> class device=openfpm::device_cpu,template<typename, typename,typename, typename, unsigned int> class VertexList=openfpm::vector, template<typename,typename,typename,typename, unsigned int> class EdgeList=openfpm::vector, typename Memory=HeapMemory, typename grow_p=openfpm::grow_policy_double>
+template<typename V, typename E=no_edge,template<typename,typename, typename, unsigned int> class VertexList=openfpm::vector, template<typename,typename,typename, unsigned int> class EdgeList=openfpm::vector, typename Memory=HeapMemory, typename grow_p=openfpm::grow_policy_double>
 class Graph_CSR
 {
 	//! number of slot per vertex
 	size_t v_slot;
 
-	//! create a layout type for vertex
-	typedef device<V> dev_V_sel;
-
-	//! create a layout type for edge
-	typedef device<E> dev_E_sel;
-
-	//! create a layout type for size_t (e_l and v_l)
-	typedef device<size_t> dev_S_sel;
-
-	//! create a layout type for size_t (e_l and v_l)
-	typedef device<e_map> dev_emap_sel;
-
 	//! Structure that store the vertex properties
-	VertexList<V,dev_V_sel,Memory,grow_p,openfpm::vect_isel<V>::value> v;
+	VertexList<V,Memory,grow_p,openfpm::vect_isel<V>::value> v;
 
 	//! Structure that store the number of adjacent vertex in e_l for each vertex
-	VertexList<size_t,dev_S_sel,Memory,grow_p,openfpm::vect_isel<size_t>::value> v_l;
+	VertexList<size_t,Memory,grow_p,openfpm::vect_isel<size_t>::value> v_l;
 
 	//! Structure that store the edge properties
-	EdgeList<E,dev_E_sel,Memory,grow_p,openfpm::vect_isel<E>::value> e;
+	EdgeList<E,Memory,grow_p,openfpm::vect_isel<E>::value> e;
 
 	//! Structure that store for each vertex the adjacent the vertex id and edge id (for property into e)
-	EdgeList<e_map,dev_emap_sel,Memory,grow_p,openfpm::vect_isel<e_map>::value> e_l;
+	EdgeList<e_map,Memory,grow_p,openfpm::vect_isel<e_map>::value> e_l;
 
 	//! invalid edge element, when a function try to create an in valid edge this object is returned
-	EdgeList<E,dev_E_sel,Memory,grow_p,openfpm::vect_isel<E>::value> e_invalid;
+	EdgeList<E,Memory,grow_p,openfpm::vect_isel<E>::value> e_invalid;
 
 	/*! \brief add edge on the graph
 	 *
@@ -350,7 +338,7 @@ class Graph_CSR
 
 			// Create an new Graph
 
-			Graph_CSR<V,E,device,VertexList,EdgeList> g_new(2*v_slot,v.size());
+			Graph_CSR<V,E,VertexList,EdgeList> g_new(2*v_slot,v.size());
 
 			// Copy the graph
 
@@ -400,10 +388,10 @@ public:
 	typedef E E_type;
 
 	//! Object container for the vertex, for example can be encap<...> (map_grid or openfpm::vector)
-	typedef typename VertexList<V,dev_V_sel,Memory,grow_p,openfpm::vect_isel<V>::value>::container V_container;
+	typedef typename VertexList<V,Memory,grow_p,openfpm::vect_isel<V>::value>::container V_container;
 
 	//! Object container for the edge, for example can be encap<...> (map_grid or openfpm::vector)
-	typedef typename EdgeList<E,dev_E_sel,Memory,grow_p,openfpm::vect_isel<E>::value>::container E_container;
+	typedef typename EdgeList<E,Memory,grow_p,openfpm::vect_isel<E>::value>::container E_container;
 
 	/*! \brief It duplicate the graph
 	 *
@@ -411,9 +399,9 @@ public:
 	 *
 	 */
 
-	Graph_CSR<V,E,device,VertexList,EdgeList,Memory,grow_p> duplicate()
+	Graph_CSR<V,E,VertexList,EdgeList,Memory,grow_p> duplicate()
 	{
-		Graph_CSR<V,E,device,VertexList,EdgeList,Memory,grow_p> dup;
+		Graph_CSR<V,E,VertexList,EdgeList,Memory,grow_p> dup;
 
 		dup.v_slot = v_slot;
 
@@ -469,7 +457,7 @@ public:
 	/*! \brief Copy constructor
 	 *
 	 */
-	Graph_CSR(Graph_CSR<V,E,device,VertexList,EdgeList,Memory> && g)
+	Graph_CSR(Graph_CSR<V,E,VertexList,EdgeList,Memory> && g)
 	{
 		swap(g);
 	}
@@ -643,7 +631,7 @@ public:
 	 * \return the number of childs
 	 *
 	 */
-	inline size_t getNChilds(typename VertexList<V,dev_V_sel,Memory,grow_p,openfpm::vect_isel<V>::value>::iterator_key & c)
+	inline size_t getNChilds(typename VertexList<V,Memory,grow_p,openfpm::vect_isel<V>::value>::iterator_key & c)
 	{
 		// Get the number of childs
 
@@ -710,7 +698,7 @@ public:
 	 *
 	 */
 
-	inline size_t getChild(typename VertexList<V,dev_V_sel,Memory,grow_p,openfpm::vect_isel<V>::value>::iterator_key & v, size_t i)
+	inline size_t getChild(typename VertexList<V,Memory,grow_p,openfpm::vect_isel<V>::value>::iterator_key & v, size_t i)
 	{
 #ifdef DEBUG
 		if (i >= v_l.template get<0>(v.get()) )
@@ -812,7 +800,7 @@ public:
 	 *
 	 */
 
-	inline void swap(Graph_CSR<V,E,device,VertexList,EdgeList> & g)
+	inline void swap(Graph_CSR<V,E,VertexList,EdgeList> & g)
 	{
 		// switch the memory
 
@@ -844,9 +832,9 @@ public:
 	 *
 	 */
 
-	inline edge_iterator<Graph_CSR<V,E,device,VertexList,EdgeList,Memory>> getEdgeIterator() const
+	inline edge_iterator<Graph_CSR<V,E,VertexList,EdgeList,Memory>> getEdgeIterator() const
 	{
-		return edge_iterator<Graph_CSR<V,E,device,VertexList,EdgeList,Memory>>(*this);
+		return edge_iterator<Graph_CSR<V,E,VertexList,EdgeList,Memory>>(*this);
 	}
 
 	/*! \brief Return the number of the vertex

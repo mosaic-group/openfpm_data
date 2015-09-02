@@ -32,6 +32,7 @@
 #include "memory_ly/memory_c.hpp"
 #include <vector>
 #include "se_grid.hpp"
+#include "memory/HeapMemory.hpp"
 
 // Debugging macro
 
@@ -294,6 +295,7 @@ struct mem_reference
  *
  *	\tparam dim Dimensionality of the grid
  *	\tparam T type of object the grid store
+ *	\tparam S type of memory HeapMemory CudaMemory
  *	\tparam Mem memory layout
  *
  * ### Defining the grid size on each dimension
@@ -314,7 +316,7 @@ struct mem_reference
  * \snippet grid_unit_tests.hpp Get the object in an N-dimensional grid with an iterator
  *
  */
-template<unsigned int dim, typename T, typename Mem = typename memory_traits_lin< typename T::type >::type >
+template<unsigned int dim, typename T, typename S=HeapMemory, typename Mem = typename memory_traits_lin< typename T::type >::type >
 class grid_cpu
 {
 public:
@@ -397,10 +399,10 @@ public:
 	 * \param mem memory object (only used for template deduction)
 	 *
 	 */
-	template<typename S> grid_cpu(const grid_cpu & g, S & mem)
+	grid_cpu(const grid_cpu & g)
 	:isExternal(false)
 	{
-		swap(g.duplicate<S>());
+		swap(g.duplicate());
 	}
 
 	//! Constructor allocate memory and give them a representation
@@ -425,14 +427,14 @@ public:
 	 *
 	 */
 
-	template<typename S> grid_cpu<dim,T,Mem> duplicate() const
+	grid_cpu<dim,T,S,Mem> duplicate() const
 	{
 		//! Create a completely new grid with sz
 
-		grid_cpu<dim,T,Mem> grid_new(g1.getSize());
+		grid_cpu<dim,T,S,Mem> grid_new(g1.getSize());
 
 		//! Set the allocator and allocate the memory
-		grid_new.template setMemory<S>();
+		grid_new.setMemory();
 
 		// We know that, if it is 1D we can safely copy the memory
 		if (dim == 1)
@@ -454,7 +456,7 @@ public:
 
 				// create a copy element
 
-				copy_cpu_sd<dim,grid_cpu<dim,T,Mem>> cp(key,*this,grid_new);
+				copy_cpu_sd<dim,grid_cpu<dim,T,S,Mem>> cp(key,*this,grid_new);
 
 				// copy each property for each point of the grid
 
@@ -490,7 +492,7 @@ public:
 	 *
 	 */
 
-	template<typename S> void setMemory()
+	void setMemory()
 	{
 		S * mem = new S();
 
@@ -514,7 +516,7 @@ public:
 	 *
 	 */
 
-	template<typename S> void setMemory(S & m)
+	void setMemory(S & m)
 	{
 		//! Is external
 		isExternal = true;
@@ -677,23 +679,23 @@ public:
 	 * \param sz reference to an array of dimension dim
 	 *
 	 */
-	template<typename S> void resize(const size_t (& sz)[dim])
+	void resize(const size_t (& sz)[dim])
 	{
 		//! Create a completely new grid with sz
 
-		grid_cpu<dim,T,Mem> grid_new(sz);
+		grid_cpu<dim,T,S,Mem> grid_new(sz);
 
 		//! Set the allocator and allocate the memory
 		if (isExternal == true)
 		{
-			grid_new.template setMemory<S>(static_cast<S&>(data_.getMemory()));
+			grid_new.setMemory(static_cast<S&>(data_.getMemory()));
 
 			// Create an empty memory allocator for the actual structure
 
-			setMemory<S>();
+			setMemory();
 		}
 		else
-			grid_new.template setMemory<S>();
+			grid_new.setMemory();
 
 
 		// We know that, if it is 1D we can safely copy the memory
@@ -716,7 +718,7 @@ public:
 
 				// create a copy element
 
-				copy_cpu_sd<dim,grid_cpu<dim,T,Mem>> cp(key,*this,grid_new);
+				copy_cpu_sd<dim,grid_cpu<dim,T,S,Mem>> cp(key,*this,grid_new);
 
 				// copy each property for each point of the grid
 
@@ -760,7 +762,7 @@ public:
 	 *
 	 */
 
-	void swap(grid_cpu<dim,T,Mem> & grid)
+	void swap(grid_cpu<dim,T,S,Mem> & grid)
 	{
 		// move the data
 		data_.swap(grid.data_);
@@ -788,7 +790,7 @@ public:
 	 *
 	 */
 
-	void swap(grid_cpu<dim,T,Mem> && grid)
+	void swap(grid_cpu<dim,T,S,Mem> && grid)
 	{
 		swap(grid);
 	}
@@ -810,7 +812,7 @@ public:
 #endif
 
 		// create the object to copy the properties
-		copy_cpu_encap<dim,grid_cpu<dim,T,Mem>,Mem> cp(dx,*this,obj);
+		copy_cpu_encap<dim,grid_cpu<dim,T,S,Mem>,Mem> cp(dx,*this,obj);
 
 		// copy each property
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -832,7 +834,7 @@ public:
 		GRID_OVERFLOW(dx)
 #endif
 		// create the object to copy the properties
-		copy_cpu<dim,grid_cpu<dim,T,Mem>> cp(dx,*this,obj);
+		copy_cpu<dim,grid_cpu<dim,T,S,Mem>> cp(dx,*this,obj);
 
 		// copy each property
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -846,7 +848,7 @@ public:
 	 *
 	 */
 
-	inline void set(grid_key_dx<dim> key1,const grid_cpu<dim,T,Mem> & g, grid_key_dx<dim> key2)
+	inline void set(grid_key_dx<dim> key1,const grid_cpu<dim,T,S,Mem> & g, grid_key_dx<dim> key2)
 	{
 #ifdef SE_CLASS1
 		CHECK_INIT()
@@ -855,7 +857,7 @@ public:
 #endif
 
 		//create the object to copy the properties
-		copy_cpu_sd_k<dim,grid_cpu<dim,T,Mem>> cp(key2,key1,g,*this);
+		copy_cpu_sd_k<dim,grid_cpu<dim,T,S,Mem>> cp(key2,key1,g,*this);
 
 		// copy each property for each point of the grid
 
@@ -1010,7 +1012,7 @@ struct allocate
  * \snippet grid_unit_tests.hpp Access to an N-dimensional grid with an iterator
  *
  */
-template<unsigned int dim, typename T, typename Mem = typename memory_traits_inte< typename T::type >::type >
+template<unsigned int dim, typename T, typename S=CudaMemory , typename Mem = typename memory_traits_inte< typename T::type >::type >
 class grid_gpu
 {
 	// Indicate if set memory has been called
@@ -1078,7 +1080,7 @@ public:
 	 *
 	 */
 
-	template<typename S> void setMemory()
+	void setMemory()
 	{
 		//! Create an allocate object
 		allocate<S> all(g1.size());
@@ -1166,7 +1168,7 @@ public:
 	 * \param obj Memory to swap with
 	 *
 	 */
-	void swap(grid_gpu<dim,T,Mem> & obj)
+	void swap(grid_gpu<dim,T,S,Mem> & obj)
 	{
 		g1.swap(obj.g1);
 		data_.swap(obj.data_);
