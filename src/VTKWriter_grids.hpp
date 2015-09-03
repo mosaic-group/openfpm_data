@@ -178,12 +178,8 @@ class VTKWriter<pair,VECTOR_GRIDS>
 
 	/*! \brief Create the VTK point definition
 	 *
-	 * \tparam s_type spatial type of the data
-	 * \tparam attr false x,y,z are set to 0 for each vertex
-	 *
 	 */
-
-	template <bool attr> std::string get_point_list()
+	std::string get_point_list()
 	{
 		//! vertex node output string
 		std::stringstream v_out;
@@ -221,11 +217,7 @@ class VTKWriter<pair,VECTOR_GRIDS>
 
 	/*! \brief Create the VTK vertex definition
 	 *
-	 * \tparam s_type spatial type of the data
-	 * \tparam attr false x,y,z are set to 0 for each vertex
-	 *
 	 */
-
 	std::string get_vertex_list()
 	{
 		//! vertex node output string
@@ -336,7 +328,7 @@ public:
 		point_prop_header = get_point_properties_list();
 
 		// Get point list
-		point_list = get_point_list<has_attributes<typename pair::first::value_type>::value>();
+		point_list = get_point_list();
 
 		// vertex properties header
 		vertex_prop_header = get_vertex_properties_list();

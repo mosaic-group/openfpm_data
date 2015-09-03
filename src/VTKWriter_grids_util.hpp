@@ -2,11 +2,13 @@
  * VTKWriter_grids_util.hpp
  *
  *  Created on: Aug 10, 2015
- *      Author: i-bird
+ *      Author: Pietro Incardona
  */
 
 #ifndef SRC_VTKWRITER_GRIDS_UTIL_HPP_
 #define SRC_VTKWRITER_GRIDS_UTIL_HPP_
+
+#include "util/util_debug.hpp"
 
 /*! \brief This class specialize functions in the case the type T
  * has or not defined attributes
@@ -67,14 +69,20 @@ public:
 		//! vertex node output string
 		std::string v_out;
 
+		typedef typename boost::fusion::result_of::at<typename ele_g::value_type::type,boost::mpl::int_<i>>::type ctype;
+
 		// Check if T is a supported format
 		// for now we support only scalar of native type
 
-		std::string type = getType<typename boost::fusion::result_of::at<typename ele_g::value_type::type,boost::mpl::int_<i>>::type>();
+		std::string type = getType<ctype>();
 
 		// if the type is not supported return
+		// if the type is not supported return
 		if (type.size() == 0)
-		{return v_out;}
+		{
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(ctype).name()) << " is not supported by vtk\n";
+			return "";
+		}
 
 		// Create point data properties
 		v_out += "SCALARS " + get_attributes(oprp) + " " + type + "\n";
@@ -136,7 +144,10 @@ public:
 
 		// if the type is not supported return
 		if (type.size() == 0)
-		{return v_out;}
+		{
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(ctype).name()) << " is not supported by vtk\n";
+			return "";
+		}
 
 		// Create point data properties
 		v_out += "SCALARS " + get_attributes(oprp) + " " + type + "\n";

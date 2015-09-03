@@ -258,6 +258,7 @@ void fill_grid_some_data(grid_cpu<2,Point_test<float>> & g)
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 {
+	{
 	// Create box grids
 	Point<2,float> offset1({0.0,0.0});
 	Point<2,float> spacing1({0.1,0.2});
@@ -304,6 +305,58 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	// Check that match
 	bool test = compare("vtk_grids.vtk","vtk_grids_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
+	}
+
+	{
+	// Create box grids
+	Point<2,float> offset1({0.0,0.0});
+	Point<2,float> spacing1({0.1,0.1});
+	Box<2,size_t> d1({1,2},{14,15});
+
+	// Create box grids
+	Point<2,float> offset2({0.0,0.0});
+	Point<2,float> spacing2({0.1,0.1});
+	Box<2,size_t> d2({2,1},{13,15});
+
+	// Create box grids
+	Point<2,float> offset3({5.0,5.0});
+	Point<2,float> spacing3({0.1,0.1});
+	Box<2,size_t> d3({3,2},{11,10});
+
+	// Create box grids
+	Point<2,float> offset4({5.0,5.0});
+	Point<2,float> spacing4({0.1,0.1});
+	Box<2,size_t> d4({1,1},{7,7});
+
+	size_t sz[] = {16,16};
+	grid_cpu<2,Point_test<float>> g1(sz);
+	g1.setMemory();
+	fill_grid_some_data(g1);
+	grid_cpu<2,Point_test<float>> g2(sz);
+	g2.setMemory();
+	fill_grid_some_data(g2);
+	grid_cpu<2,Point_test<float>> g3(sz);
+	g3.setMemory();
+	fill_grid_some_data(g3);
+	grid_cpu<2,Point_test<float>> g4(sz);
+	g4.setMemory();
+	fill_grid_some_data(g4);
+
+	comb<2> cmb;
+	cmb.zero();
+
+	comb<2> cmb2;
+	cmb2.mone();
+
+	// Create a writer and write
+	VTKWriter<boost::mpl::pair<grid_cpu<2,Point_test<float>>,float>,VECTOR_ST_GRIDS> vtk_g;
+	vtk_g.add(0,g1,offset1,spacing1,d1,cmb);
+	vtk_g.add(0,g2,offset2,spacing2,d2,cmb);
+	vtk_g.add(1,g3,offset3,spacing3,d3,cmb);
+	vtk_g.add(1,g4,offset4,spacing4,d4,cmb2);
+
+	vtk_g.write("vtk_grids_st.vtk");
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()
