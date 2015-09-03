@@ -188,12 +188,39 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 		return v_out.str();
 	}
 
+	/* \brief Get the properties components
+	 *
+	 * \return the components printed
+	 *
+	 */
+	std::string get_prop_components(size_t k)
+	{
+		std::stringstream v_out;
+
+		//! For each sub-domain
+		for (size_t i = 0 ; i < vg.size() ; i++)
+		{
+			// For each position in the cell
+			for (size_t j = 0 ; j < vg.get(i).g.size() ; j++)
+			{
+				if (k < vg.get(i).g.get(j).grids.size())
+				{
+					// get the combination string
+					v_out << vg.get(i).g.get(j).cmb.to_string();
+				}
+			}
+		}
+
+		return v_out.str();
+	}
+
 	/*! \brief Create the VTK properties output
 	 *
 	 * \param k component
+	 * \param prop property name
 	 *
 	 */
-	std::string get_properties_output(size_t k)
+	std::string get_properties_output(size_t k, std::string prop_name)
 	{
 		//! vertex node output string
 		std::stringstream v_out;
@@ -212,8 +239,10 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 			return "";
 		}
 
+		std::string prp_cp = get_prop_components(k);
+
 		// Create point data properties
-		v_out << "SCALARS " << "attr" << k << " " << type + "\n";
+		v_out << "SCALARS " << prop_name << "_" << prp_cp << " " << type + "\n";
 
 		// Default lookup table
 		v_out << "LOOKUP_TABLE default\n";
@@ -462,12 +491,12 @@ public:
 	 * \tparam prp_out which properties to output [default = -1 (all)]
 	 *
 	 * \param file path where to write
-	 * \param name of the set of grids
+	 * \param g_name of the set of grids
 	 * \param file_type specify if it is a VTK BINARY or ASCII file [default = ASCII]
 	 *
 	 */
 
-	template<int prp = -1> bool write(std::string file, std::string f_name = "grids" , file_type ft = file_type::ASCII)
+	template<int prp = -1> bool write(std::string file, std::string g_name = "grids" , file_type ft = file_type::ASCII)
 	{
 		// Header for the vtk
 		std::string vtk_header;
@@ -488,7 +517,7 @@ public:
 
 		// VTK header
 		vtk_header = "# vtk DataFile Version 3.0\n"
-				     + f_name + "\n";
+				     + g_name + "\n";
 
 		// Choose if binary or ASCII
 		if (ft == file_type::ASCII)
@@ -519,7 +548,7 @@ public:
 
 		// For each property in the vertex type produce a point data
 		for (size_t i = 0 ; i < mf ; i++)
-			point_data += get_properties_output(i);
+			point_data += get_properties_output(i,g_name);
 
 		lastProp();
 
