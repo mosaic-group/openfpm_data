@@ -114,6 +114,17 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_comb_use )
 	BOOST_REQUIRE_EQUAL(c2.c[1],0);
 	BOOST_REQUIRE_EQUAL(c2.c[2],1);
 	}
+
+	{
+	comb<3> c1({1,2,3});
+	comb<3> c2({1,1,1});
+
+	comb<3> c_ret = c1 + c2;
+
+	BOOST_REQUIRE_EQUAL(c_ret.c[0],4);
+	BOOST_REQUIRE_EQUAL(c_ret.c[1],3);
+	BOOST_REQUIRE_EQUAL(c_ret.c[2],2);
+	}
 }
 
 BOOST_AUTO_TEST_CASE( Hyper_cube_use)
