@@ -141,6 +141,29 @@ struct comb
 		return ret;
 	}
 
+	/*! \brief flip the coefficent of the combination to be < 0
+	 *
+	 *
+	 * * 0 --> 0
+	 * * 1 --> -1
+	 * * 2 --> -2
+	 * * -1 --> -1
+	 *
+	 * \return flipped combination
+	 *
+	 */
+	inline comb<dim> flip()
+	{
+		comb<dim> ret;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			ret.c[i] = -abs(c[i]);
+		}
+
+		return ret;
+	}
+
 	/*! \brief Subtract the combinations and return the result
 	 *
 	 * \return Result combination
