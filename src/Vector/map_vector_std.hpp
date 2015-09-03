@@ -248,9 +248,7 @@ public:
 	{
 #ifdef DEBUG
 		if (id >= base.size())
-		{
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
-		}
 #endif
 		return base[id];
 	}

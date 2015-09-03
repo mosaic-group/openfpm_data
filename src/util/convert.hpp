@@ -22,7 +22,7 @@ public:
 	/*! \brief Return the combination converted to point
 	 *
 	 */
-	static inline Point<dim,St> convert(comb<dim> & c)
+	static inline Point<dim,St> convert(const comb<dim> & c)
 	{
 		// Point
 		Point<dim,St> ret;
