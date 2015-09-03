@@ -329,30 +329,26 @@ struct comb
 		return true;
 	}
 
-	/*! \brief produce a linearized (unique) version of the combination
+	/*! \brief Convert a combination into string
 	 *
-	 * \does not work for dimension bigger than 8
+	 * \return a string reppresentation of the combination
 	 *
 	 */
-/*	size_t lin()
+	std::string to_string() const
 	{
-#ifdef SE_CLASS1
-		if (dim > 8)
-			return;
-#endif
-		switch (dim)
-		{
-		case 1:
-			return *(unsigned char *)c;
-		case 2:
-			return *(unsigned short *)c;
-		case 4:
-			return *(unsigned int *)c;
-		case 8:
-			return *(unsigned long int *)c;
+		size_t i;
 
-		}
-	}*/
+		std::stringstream str;
+		str << "(";
+
+		// convert to string
+		for (i = 0 ; i < dim - 1 ; i++)
+			str << std::to_string(c[i]) << ",";
+
+		str << std::to_string(c[i]) << ")";
+
+		return str.str();
+	}
 };
 
 /*! brief specialization of comb in case of dim 0
