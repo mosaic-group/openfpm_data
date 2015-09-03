@@ -141,6 +141,23 @@ struct comb
 		return ret;
 	}
 
+	/*! \brief Subtract the combinations and return the result
+	 *
+	 * \return Result combination
+	 *
+	 */
+	inline comb<dim> operator-()
+	{
+		comb<dim> ret;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			ret.c[i] = -c[i];
+		}
+
+		return ret;
+	}
+
 	/*! \brief sum the combinations and return the result
 	 *
 	 * \return Result combination
