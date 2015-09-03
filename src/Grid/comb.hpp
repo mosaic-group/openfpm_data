@@ -107,6 +107,23 @@ struct comb
 		}
 	}
 
+	/*! \brief Bitwise operator &
+	 *
+	 * \return Result combination
+	 *
+	 */
+	inline comb<dim> operator&(char c_)
+	{
+		comb<dim> ret;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			ret.c[i] = c[i] & c_;
+		}
+
+		return ret;
+	}
+
 	/*! \brief Subtract the combinations and return the result
 	 *
 	 * \return Result combination
