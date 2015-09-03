@@ -356,6 +356,10 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	vtk_g.add(1,g4,offset4,spacing4,d4,cmb2);
 
 	vtk_g.write("vtk_grids_st.vtk");
+
+	// Check that match
+	bool test = compare("vtk_grids_st.vtk","vtk_grids_st_test.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
 	}
 }
 
