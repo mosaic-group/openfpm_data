@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# Make a directory in /tmp/OpenFPM_data
+# Make a directory in /tmp/openfpm_data
 
 mkdir /tmp/openfpm_io
 mv * .[^.]* /tmp/openfpm_io
@@ -11,11 +11,11 @@ mkdir openfpm_io/src/config
 git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_devices.git openfpm_devices
 git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_data.git openfpm_data
 git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_pdata.git openfpm_pdata
-cd "$1/OpenFPM_data"
+cd "$1/openfpm_data"
 git checkout develop
 cd ..
 
-cd "$1/OpenFPM_IO"
+cd "$1/openfpm_IO"
 
 echo "Compiling on $2"
 
