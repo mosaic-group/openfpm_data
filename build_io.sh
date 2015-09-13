@@ -15,7 +15,7 @@ cd "$1/openfpm_data"
 git checkout develop
 cd ..
 
-cd "$1/openfpm_IO"
+cd "$1/openfpm_io"
 
 echo "Compiling on $2"
 
