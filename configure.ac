@@ -50,9 +50,9 @@ else
 	NVCCFLAGS+="$NVCCFLAGS -O3 "
 fi
 
-####### include OpenFPM_devices include path
+####### include openfpm_devices include path
 
-INCLUDES_PATH+="-I. -Iconfig -I../../OpenFPM_data/src -I../../OpenFPM_devices/src -I../../OpenFPM_pdata/src "
+INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_data/src -I../../openfpm_devices/src -I../../openfpm_pdata/src "
 
 ###### Check for memleak check compilation
 
