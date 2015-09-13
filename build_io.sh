@@ -4,13 +4,13 @@
 
 mkdir /tmp/openfpm_io
 mv * .[^.]* /tmp/openfpm_io
-mv /tmp/openfpm_io OpenFPM_IO
+mv /tmp/openfpm_io openfpm_io
 
-mkdir OpenFPM_IO/src/config
+mkdir openfpm_io/src/config
 
-git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_devices.git OpenFPM_devices
-git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_data.git OpenFPM_data
-git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_pdata.git OpenFPM_pdata
+git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_devices.git openfpm_devices
+git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_data.git openfpm_data
+git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_pdata.git openfpm_pdata
 cd "$1/OpenFPM_data"
 git checkout develop
 cd ..
