@@ -19,6 +19,10 @@ NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
 # Add openfpm_pdata to prefix forlder
+if [ x"$prefix" == x"NONE" ]; then
+   prefix="/usr/local"
+fi
+
 prefix="$prefix//openfpm_data"
 echo "Installation dir is: $prefix"
 
