@@ -54,9 +54,17 @@ else
 	NVCCFLAGS+="$NVCCFLAGS -O3 "
 fi
 
+####### Set location of openfpm_pdata
+
+AC_ARG_WITH([pdata],
+             AS_HELP_STRING([--with-pdata=directory],
+             [specify where is located the pdata project]),
+             [pdata_dir="$withval"],
+             [pdata_dir="../../openfpm_pdata/src"])
+
 ####### include openfpm_devices include path
 
-INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_data/src -I../../openfpm_devices/src -I../../openfpm_pdata/src "
+INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_data/src -I../../openfpm_devices/src -I$pdata_dir "
 
 ###### Check for memleak check compilation
 
