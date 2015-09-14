@@ -18,7 +18,10 @@ CXXFLAGS+=" --std=c++11 -march=native -mtune=native -Wno-unused-local-typedefs -
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
-# Add openfpm_pdata to prefix forlder
+# Add openfpm_io to prefix forlder (if prefix end if openfpm_pdata remove that path)
+if [ echo "$prefix" | grep -qE "/openfpm_pdata$" ]; then
+  prefix=$(echo "$prefix" | sed 's/\(.*\)\/openfpm_pdata$/\1/g')
+fi
 prefix="$prefix/openfpm_io"
 echo "Installation dir is: $prefix"
 
