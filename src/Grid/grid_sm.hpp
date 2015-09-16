@@ -9,6 +9,7 @@
 #include "memory/memory.hpp"
 #include "Space/Shape/Box.hpp"
 #include "grid_key.hpp"
+#include <iostream>
 
 // Box need the definition of grid_key_dx_r
 
