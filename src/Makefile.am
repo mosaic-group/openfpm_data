@@ -22,7 +22,8 @@ NN/CellList/CellDecomposer.hpp NN/CellList/CellKey.hpp NN/CellList/CellList.hpp 
 Space/Ghost.hpp Space/Matrix.hpp Space/SpaceBox.hpp Space/SpaceBox_unit_tests.hpp \
 Space/Shape/AdaptiveCylinderCone.hpp Space/Shape/Box.hpp Space/Shape/Box_unit_tests.hpp Space/Shape/HyperCube.hpp Space/Shape/HyperCube_unit_test.hpp Space/Shape/Point.hpp Space/Shape/Point_unit_test.hpp Space/Shape/Sphere.hpp \
 util/check_no_pointers.hpp util/common.hpp util/convert.hpp util/create_vmpl_sequence.hpp util/ct_array.hpp util/for_each_ref.hpp util/mathutil.hpp util/meta_copy.hpp util/object_creator.hpp util/object_s_di.hpp util/object_si_d.hpp util/object_util.hpp util/util_debug.hpp util/util_test.hpp util/variadic_to_vmpl.hpp util/variadic_to_vmpl_unit_test.hpp \
-Vector/map_vector.hpp Vector/map_vector_std.hpp Vector/util.hpp Vector/vect_isel.hpp Vector/vector_test_util.hpp Vector/vector_unit_tests.hpp
+Vector/map_vector.hpp Vector/map_vector_std.hpp Vector/util.hpp Vector/vect_isel.hpp Vector/vector_test_util.hpp Vector/vector_unit_tests.hpp \
+Memleak_check.hpp
 
 .cu.o :
 	$(NVCC) $(NVCCFLAGS) $(INCLUDES_PATH) -o $@ -c $<

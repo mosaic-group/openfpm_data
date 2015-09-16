@@ -19,7 +19,9 @@
 #include <boost/mpl/for_each.hpp>
 #include "memory_ly/memory_conf.hpp"
 #include "util/meta_copy.hpp"
+#ifdef SE_CLASS2
 #include "Memleak_check.hpp"
+#endif
 #include "util/for_each_ref.hpp"
 #include "util.hpp"
 #include <utility>
