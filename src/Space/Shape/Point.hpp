@@ -8,8 +8,6 @@
 #include <boost/fusion/container/vector/vector_fwd.hpp>
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
-#include "base_type.hpp"
-//#include "Grid/grid_key.hpp"
 #include "Grid/Encap.hpp"
 
 /*! \brief This class implement the point shape in an N-dimensional space
