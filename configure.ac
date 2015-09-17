@@ -18,6 +18,11 @@ CXXFLAGS+=" --std=c++11 -march=native -mtune=native -Wno-unused-local-typedefs -
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
+# set default prefix
+if test "$prefix" = "NONE"; then
+   prefix="/usr/local"
+fi
+
 # Add openfpm_io to prefix forlder (if prefix end if openfpm_pdata remove that path)
 if [ echo "$prefix" | grep -qE "/openfpm_pdata$" ]; then
   prefix=$(echo "$prefix" | sed 's/\(.*\)\/openfpm_pdata$/\1/g')
