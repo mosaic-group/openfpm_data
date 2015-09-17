@@ -19,7 +19,7 @@ NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
 # set default prefix
-if [ x"$prefix" == x"NONE" ]; then
+if test "$prefix" = "NONE"; then
    prefix="/usr/local"
 fi
 
