@@ -223,7 +223,25 @@ AX_BOOST([1.52],[],[])
 
 ##########################
 
-OPT_LIBS=" -lrt "
+
+# Check for which host we are on and setup a few things
+# specifically based on the host
+case $host_os in
+  darwin* )
+        # Do something specific for mac
+        ;;
+  linux*)
+        # Do something specific for linux
+        OPT_LIBS=" -lrt "
+        ;;
+   *BSD*)
+        # Do something specific for BSD
+        ;;
+    *)
+        #Default Case
+        AC_MSG_ERROR([Your platform is not currently supported])
+        ;;
+esac
 
 AC_SUBST(NVCCFLAGS)
 AC_SUBST(INCLUDES_PATH)
