@@ -223,8 +223,11 @@ AX_BOOST([1.52],[],[])
 
 ##########################
 
+OPT_LIBS=" -lrt "
+
 AC_SUBST(NVCCFLAGS)
 AC_SUBST(INCLUDES_PATH)
+AC_SUBST(OPT_LIBS)
 
 # Checks for typedefs, structures, and compiler characteristics.
 
