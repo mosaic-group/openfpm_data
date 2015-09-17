@@ -128,8 +128,8 @@ struct object_s_di_f
     }
 };
 
-#define ENCAP 1
-#define NORMAL 2
+#define OBJ_ENCAP 1
+#define OBJ_NORMAL 2
 
 /*! \brief It copy the properties from one object to another
  *

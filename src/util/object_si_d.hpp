@@ -101,8 +101,8 @@ struct object_si_d_f
     }
 };
 
-#define ENCAP 1
-#define NORMAL 2
+#define OBJ_ENCAP 1
+#define OBJ_NORMAL 2
 
 /*! \brief It copy the properties from one object to another
  *
@@ -131,7 +131,7 @@ struct object_si_d
  *
  */
 template<typename v_src, typename v_dst, int... prp>
-struct object_si_d<v_src,v_dst,NORMAL,prp...>
+struct object_si_d<v_src,v_dst,OBJ_NORMAL,prp...>
 {
 	inline object_si_d(const v_src && vs, v_dst && vd)
 	{
@@ -161,7 +161,7 @@ struct object_si_d<v_src,v_dst,NORMAL,prp...>
  *
  */
 template<typename v_src, typename v_dst, int... prp>
-struct object_si_d<v_src,v_dst,ENCAP,prp...>
+struct object_si_d<v_src,v_dst,OBJ_ENCAP,prp...>
 {
 	inline object_si_d(const v_src && vs, v_dst && vd)
 	{

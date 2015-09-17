@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 		boost::fusion::at_c<p::v>(src.data)[i] = i + 5.0;
 
 	// copy from src to dst
-	object_si_d<object<vboost>,object<vboost_red>,NORMAL,0,1,4>(src,dst);
+	object_si_d<object<vboost>,object<vboost_red>,OBJ_NORMAL,0,1,4>(src,dst);
 
 	// Check the result
 	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<0>(dst.data),1.0);
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 	auto src_e = v_point.get(0);
 	auto dst_e = v_point_red.get(0);
 
-	object_si_d<encap_src,encap_dst,ENCAP,0,1,4>(src_e,dst_e);
+	object_si_d<encap_src,encap_dst,OBJ_ENCAP,0,1,4>(src_e,dst_e);
 
 	BOOST_REQUIRE_EQUAL(v_point_red.get(0).template get<0>(),1.0);
 	BOOST_REQUIRE_EQUAL(v_point_red.get(0).template get<1>(),2.0);
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 		boost::fusion::at_c<2>(src.data)[i] = i + 5.0;
 
 	// copy from src to dst
-	object_s_di<object<vboost_red>,object<vboost>,NORMAL,0,1,4>(src,dst);
+	object_s_di<object<vboost_red>,object<vboost>,OBJ_NORMAL,0,1,4>(src,dst);
 
 	// Check the result
 	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::x>(dst.data),1.0);
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 	auto dst_e = v_point.get(0);
 	auto src_e = v_point_red.get(0);
 
-	object_s_di<encap_src,encap_dst,ENCAP,0,1,4>(src_e,dst_e);
+	object_s_di<encap_src,encap_dst,OBJ_ENCAP,0,1,4>(src_e,dst_e);
 
 	BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::x>(),11.0);
 	BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::y>(),12.0);

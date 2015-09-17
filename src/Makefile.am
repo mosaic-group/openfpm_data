@@ -11,7 +11,7 @@ noinst_PROGRAMS = mem_map
 mem_map_SOURCES = main.cpp Memleak_check.cpp $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
 mem_map_CXXFLAGS = $(CUDA_CFLAGS) $(INCLUDES_PATH) -I/usr/local/include
 mem_map_CFLAGS = $(CUDA_CFLAGS)
-mem_map_LDADD = $(LINKLIBS) -L/usr/lib64/nvidia-bumblebee/ -L/usr/local/lib -L/usr/local/lib64 
+mem_map_LDADD = $(LINKLIBS) $(CUDA_LIBS) -L/usr/local/lib -L/usr/local/lib64 
 
 nobase_include_HEADERS= data_type/scalar.hpp \
 Graph/graph_unit_tests.hpp Graph/map_graph.hpp \
