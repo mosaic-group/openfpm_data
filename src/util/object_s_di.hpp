@@ -186,7 +186,7 @@ struct object_s_di<v_src,v_dst,OBJ_NORMAL,prp...>
  *
  */
 template<typename v_src, typename v_dst, int... prp>
-struct object_s_di<v_src,v_dst,ENCAP,prp...>
+struct object_s_di<v_src,v_dst,OBJ_ENCAP,prp...>
 {
 	inline object_s_di(const v_src && vs, v_dst && vd)
 	{
