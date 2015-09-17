@@ -135,7 +135,7 @@ struct object_s_di_f
  *
  * Stub object
  *
- * \see object_copy<v_src,v_dst,NORMAL,prp...> object_copy<v_src,v_dst,ENCAP,prp...>
+ * \see object_copy<v_src,v_dst,OBJ_NORMAL,prp...> object_copy<v_src,v_dst,OBJ_ENCAP,prp...>
  *
  *
  */
@@ -156,7 +156,7 @@ struct object_s_di
  *
  */
 template<typename v_src, typename v_dst, int... prp>
-struct object_s_di<v_src,v_dst,NORMAL,prp...>
+struct object_s_di<v_src,v_dst,OBJ_NORMAL,prp...>
 {
 	inline object_s_di(const v_src && vs, v_dst && vd)
 	{
