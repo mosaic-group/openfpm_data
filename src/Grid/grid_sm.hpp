@@ -856,9 +856,6 @@ public:
 template<unsigned int dim>
 class grid_key_dx_iterator_sp : public grid_key_dx_iterator<dim>
 {
-	//! grid base where we are iterating
-	grid_sm<dim,void> grid_base;
-
 	//! stop point
 	grid_key_dx<dim> gk_stop;
 
@@ -871,6 +868,37 @@ public:
 	 * create an iterator that pass through Linearize^(-1)(start)
 	 * Linearize^(-1)(start+1) ....... Linearize^(-1)(stop)
 	 *
+	 * For example for start (1,1) and stop (3,3) the point indicated with # are
+	 * explored by the iterator
+	 *
+	 * \verbatim
+	 *
+                      +-----+-----+-----+-----+-----+-----+ (6,5)
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      #-----#-----#-----#-----+-----+-----+
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      #-----#-----#-----#-----#-----#-----#
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      +-----#-----#-----#-----#-----#-----#
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                    (0,0)
+	 *
+	 *
+	 * \endverbatim
+	 *
+	 *
 	 * \tparam T type of object that the grid store
 	 *
 	 * \param g Grid on which iterate
@@ -879,13 +907,13 @@ public:
 	 *
 	 */
 	template<typename T> grid_key_dx_iterator_sp(grid_sm<dim,T> & g, mem_id from, mem_id to)
-	:grid_base(g)
+	:grid_key_dx_iterator<dim>(g)
 	 {
 		//! Convert to a grid_key
 		this->gk = g.InvLinId(from);
 
 		//! Convert to a grid_key
-		gk_stop = g.InfLinId(to);
+		gk_stop = g.InvLinId(to);
 	 }
 
 	/*! \brief Check if there is the next element
@@ -899,22 +927,17 @@ public:
 	bool isNext()
 	{
 		//! for all dimensions
-		for (int i = dim-1 ; i >= 0 ; i++ )
+		for (int i = dim-1 ; i >= 0 ; i-- )
 		{
-			//! if the index overflow the stop point
-			if (this->gk.get(i) > gk_stop.get(i))
-			{
+			//! check if we still have points
+			if (this->gk.get(i) < gk_stop.get(i))
 				return true;
-			}
-			else if (this->gk.get(i) < gk_stop.get(i))
-			{
-				// we have still point
+			else if (this->gk.get(i) > gk_stop.get(i))
 				return false;
-			}
 		}
 
-		//! we reach the end of the grid
-		return false;
+		//! (Final point) we we still have one point
+		return true;
 	}
 };
 

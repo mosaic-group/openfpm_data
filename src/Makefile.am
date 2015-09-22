@@ -16,7 +16,8 @@ mem_map_LDADD = $(LINKLIBS) $(CUDA_LIBS) -L/usr/local/lib -L/usr/local/lib64
 nobase_include_HEADERS= data_type/scalar.hpp \
 Graph/graph_unit_tests.hpp Graph/map_graph.hpp \
 Grid/comb.hpp Grid/Encap.hpp Grid/grid_key.hpp Grid/grid_key_dx_expression_unit_tests.hpp Grid/grid_key_expression.hpp Grid/grid_sm.hpp Grid/grid_unit_tests.hpp Grid/grid_util_test.hpp Grid/map_grid.hpp Grid/se_grid.hpp Grid/util.hpp \
-map_units_test/Point_test.hpp \
+Point_test.hpp \
+Point_orig.hpp \
 memory_ly/memory_array.hpp memory_ly/memory_c.hpp memory_ly/memory_conf.hpp memory_ly/t_to_memory_c.hpp \
 NN/CellList/CellDecomposer.hpp NN/CellList/CellKey.hpp NN/CellList/CellList.hpp NN/CellList/CellList_test.hpp NN/CellList/CellListBal.hpp NN/CellList/CellListFast.hpp NN/CellList/CellListMem.hpp NN/CellList/CellNNIterator.hpp \
 Space/Ghost.hpp Space/Matrix.hpp Space/SpaceBox.hpp Space/SpaceBox_unit_tests.hpp \

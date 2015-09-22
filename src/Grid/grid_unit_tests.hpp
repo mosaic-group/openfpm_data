@@ -815,6 +815,32 @@ BOOST_AUTO_TEST_CASE( grid_use)
 	std::cout << "Grid unit test end" << "\n";
 }
 
+BOOST_AUTO_TEST_CASE( grid_iterator_sp_test )
+{
+	size_t sz[3] = {16,16,16};
+
+	grid_cpu<3, Point_test<float> > c3(sz);
+	c3.setMemory();
+
+	grid_key_dx<3> start(2,2,2);
+	grid_key_dx<3> stop(10,10,10);
+
+	auto info = c3.getGrid();
+
+	grid_key_dx_iterator_sp<3> it(info,info.LinId(start),info.LinId(stop));
+
+	size_t count = 0;
+
+	while (it.isNext())
+	{
+		count++;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(count,2185);
+}
+
 /* \brief This is an ordinary test simple 3D with plain C array
  *
  * This is an ordinary test simple 3D with plain C array

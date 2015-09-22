@@ -40,7 +40,7 @@ public:
 	 */
 	inline T transform(const T(&s)[dim], const size_t i) const
 	{
-		return s.get(i) - sh.get(i);
+		return s[i] - sh.get(i);
 	}
 
 	/*! \brief Shift the point transformation
@@ -350,19 +350,16 @@ public:
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
-
-
 		grid_key_dx<dim> key;
-		key.set_d(0,ConvertToID(pos[0],0));
+		key.set_d(0,ConvertToID(pos,0));
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef DEBUG
-			if (ConvertToID(pos[s],s) < 0)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space";
+			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space\n";
 #endif
-
-			key.set_d(s,ConvertToID(pos[s],s));
+			key.set_d(s,ConvertToID(pos,s));
 
 		}
 
@@ -427,7 +424,7 @@ public:
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
-			cell_id += gr_cell.size(s) * ConvertToID(pos,s);
+			cell_id += gr_cell.size_s(s-1) * ConvertToID(pos,s);
 		}
 
 		return cell_id;

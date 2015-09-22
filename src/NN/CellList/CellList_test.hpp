@@ -199,6 +199,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	//Space where is living the Cell list
 	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	Point<3,double> p({0.5,0.5,0.5});
+	double pp[3] = {0.5,0.5,0.5};
 
 	// Number of cell on each dimension
 	size_t div[3] = {16,16,16};
@@ -218,6 +219,13 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	BOOST_REQUIRE_EQUAL(key.get(0),8);
 	BOOST_REQUIRE_EQUAL(key.get(1),8);
 	BOOST_REQUIRE_EQUAL(key.get(2),8);
+
+	cell = cd.getCell(pp);
+	BOOST_REQUIRE_EQUAL(cell,8*16*16 + 8*16 + 8);
+	key = cd.getCellGrid(pp);
+	BOOST_REQUIRE_EQUAL(key.get(0),8);
+	BOOST_REQUIRE_EQUAL(key.get(1),8);
+	BOOST_REQUIRE_EQUAL(key.get(2),8);
 	}
 
 	//! [Cell decomposer use without shift]
@@ -231,6 +239,13 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	BOOST_REQUIRE_EQUAL(key.get(0),9);
 	BOOST_REQUIRE_EQUAL(key.get(1),9);
 	BOOST_REQUIRE_EQUAL(key.get(2),9);
+
+	cell = cd.getCell(pp);
+	BOOST_REQUIRE_EQUAL(cell,9*18*18 + 9*18 + 9);
+	key = cd.getCellGrid(pp);
+	BOOST_REQUIRE_EQUAL(key.get(0),9);
+	BOOST_REQUIRE_EQUAL(key.get(1),9);
+	BOOST_REQUIRE_EQUAL(key.get(2),9);
 	}
 
 	//! [Test Cell decomposer with padding]
@@ -238,10 +253,19 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	//! [Test Cell decomposer with shift]
 	{
 	Point<3,double> sht({1.0,2.0,3.0});
+	double psht[3] = {1.5,2.5,3.5};
+
 	CellDecomposer_sm< 3,double,shift<3,double> > cd(box,div,sht,1);
 	size_t cell = cd.getCell(p + sht);
 	BOOST_REQUIRE_EQUAL(cell,9*18*18 + 9*18 + 9);
 	auto key = cd.getCellGrid(p + sht);
+	BOOST_REQUIRE_EQUAL(key.get(0),9);
+	BOOST_REQUIRE_EQUAL(key.get(1),9);
+	BOOST_REQUIRE_EQUAL(key.get(2),9);
+
+	cell = cd.getCell(psht);
+	BOOST_REQUIRE_EQUAL(cell,9*18*18 + 9*18 + 9);
+	key = cd.getCellGrid(psht);
 	BOOST_REQUIRE_EQUAL(key.get(0),9);
 	BOOST_REQUIRE_EQUAL(key.get(1),9);
 	BOOST_REQUIRE_EQUAL(key.get(2),9);
