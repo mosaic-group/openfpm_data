@@ -8,6 +8,8 @@
 #ifndef MAP_VECTOR_STD_HPP_
 #define MAP_VECTOR_STD_HPP_
 
+#include "Pack_stat.hpp"
+#include "memory/ExtPreAlloc.hpp"
 
 /*! \brief Implementation of 1-D std::vector like structure
  *
@@ -40,6 +42,70 @@ public:
 	typedef vector_key_iterator iterator_key;
 	//! Type of the value the vector is storing
 	typedef T value_type;
+
+	/*! \brief pack a vector selecting the properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the vector
+	 * \param obj object to pack
+	 * \param sts pack-stat info
+	 *
+	 */
+	template<int ... prp> static void pack(ExtPreAlloc<HeapMemory> & mem, T & obj, Pack_stat & sts)
+	{
+#ifdef DEBUG
+		if (mem.ref() == 0)
+			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
+#endif
+
+		// if no properties should be packed return
+		if (sizeof...(prp) == 0)
+			return;
+
+		// Sending property object
+		typedef object<typename object_creator<typename T::value_type::type,prp...>::type> prp_object;
+
+		typedef openfpm::vector<prp_object,ExtPreAlloc<HeapMemory>,openfpm::grow_policy_identity> dtype;
+
+		// Create an object over the preallocated memory (No allocation is produced)
+		dtype dest;
+		dest.setMemory(mem);
+		dest.resize(obj.size());
+		auto obj_it = obj.getIterator();
+
+		while (obj_it.isNext())
+		{
+			// copy all the object in the send buffer
+			typedef encapc<1,typename T::value_type,typename T::memory_conf > encap_src;
+			// destination object type
+			typedef encapc<1,prp_object,typename dtype::memory_conf > encap_dst;
+
+			// Copy only the selected properties
+			object_si_d<encap_src,encap_dst,ENCAP,prp...>(obj.get(obj_it.get()),dest.get(obj_it.get()));
+
+			++obj_it;
+		}
+
+		// Update statistic
+		sts.incReq();
+
+	}
+
+	/*! \brief Insert an allocation request into the vector
+	 *
+	 * \param obj vector object to pack
+	 * \param requests vector
+	 *
+	 */
+	template<int ... prp> static void packRequest(openfpm::vector<T> & obj, std::vector<size_t> & v)
+	{
+		typedef openfpm::vector<T> vctr;
+		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
+
+		// Calculate the required memory for packing
+		size_t alloc_ele = openfpm::vector<prp_object>::calculateMem(obj.size(),0);
+
+		v.push_back(alloc_ele);
+	}
 
 	//! return the size of the vector
 	inline size_t size() const

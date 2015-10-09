@@ -8,6 +8,14 @@
 #ifndef MAP_VECTOR_HPP
 #define MAP_VECTOR_HPP
 
+#include "memory/PtrMemory.hpp"
+#include "util/object_util.hpp"
+#include "Grid/util.hpp"
+#include "Vector/util.hpp"
+#include "Vector/map_vector_grow_p.hpp"
+#include "memory/ExtPreAlloc.hpp"
+#include "util/util_debug.hpp"
+#include "Pack_stat.hpp"
 #include "Grid/map_grid.hpp"
 #include "memory/HeapMemory.hpp"
 #include "vect_isel.hpp"
@@ -16,8 +24,6 @@
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
-
-#define PAGE_ALLOC 1
 
 namespace openfpm
 {
@@ -107,85 +113,6 @@ namespace openfpm
 			return gk;
 		}
 	};
-
-	/*! \brief Grow policy define how the vector should grow every time we exceed the size
-	 *
-	 * In this case it return the requested size
-	 *
-	 */
-
-	class grow_policy_identity
-	{
-	public:
-
-		/*! \brief It say how much the vector must grow
-		 *
-		 * \param original size
-		 * \param requested size
-		 *
-		 * \return how much to grow
-		 *
-		 */
-		static size_t grow(size_t original, size_t requested)
-		{
-			return requested;
-		}
-	};
-
-	/*! \brief Grow policy define how the vector should grow every time we exceed the size
-	 *
-	 * In this case it double up the size
-	 *
-	 */
-
-	class grow_policy_double
-	{
-	public:
-
-		/*! \brief It say how much the vector must grow
-		 *
-		 * \param original size
-		 * \param requested size
-		 *
-		 * \return how much to grow
-		 *
-		 */
-		static size_t grow(size_t original, size_t requested)
-		{
-			size_t grow = (original == 0)?1:original;
-			while (grow < requested)	{grow *= 2;}
-			return grow;
-		}
-	};
-
-	//! default grow policy
-	typedef grow_policy_double vector_grow_policy_default;
-
-	/*! \brief Grow policy define how the vector should grow every time we exceed the size
-	 *
-	 * In this case it increase of 4096 elements
-	 *
-	 */
-
-	class grow_policy_page
-	{
-	public:
-
-		/*! \brief It say how much the vector must grow
-		 *
-		 * \param original size
-		 * \param requested size
-		 *
-		 * \return how much to grow
-		 *
-		 */
-		static size_t grow(size_t original, size_t requested)
-		{
-			return (requested / PAGE_ALLOC) * PAGE_ALLOC + PAGE_ALLOC;
-		}
-	};
-
-
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
 	 * Stub object look at the various implementations
@@ -201,7 +128,7 @@ namespace openfpm
 	 * \see vector<T,Memory,grow_p,OPENFPM_NATIVE>
 	 *
 	 */
-	template<typename T, typename Memory=HeapMemory, typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value>
+	template<typename T, typename Memory, typename grow_p, unsigned int impl>
 	class vector
 	{
 	};
@@ -286,6 +213,120 @@ namespace openfpm
 
 		//! Type of the value the vector is storing
 		typedef T value_type;
+
+		/*! \brief pack a vector selecting the properties to pack
+		 *
+		 * \param mem preallocated memory where to pack the vector
+		 * \param obj object to pack
+		 * \param sts pack-stat info
+		 *
+		 */
+		template<int ... prp> void pack(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Pack_stat & sts)
+		{
+	#ifdef DEBUG
+			if (mem.ref() == 0)
+				std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
+	#endif
+
+			// if no properties should be packed return
+			if (sizeof...(prp) == 0)
+				return;
+
+			// Sending property object
+			typedef openfpm::vector<T> vctr;
+			typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
+
+			typedef openfpm::vector<prp_object,ExtPreAlloc<Memory>,openfpm::grow_policy_identity> dtype;
+
+			// Create an object over the preallocated memory (No allocation is produced)
+			dtype dest;
+			dest.setMemory(mem);
+			dest.resize(obj.size());
+			auto obj_it = obj.getIterator();
+
+			while (obj_it.isNext())
+			{
+				// copy all the object in the send buffer
+				typedef encapc<1,typename vctr::value_type,typename vctr::memory_conf > encap_src;
+				// destination object type
+				typedef encapc<1,prp_object,typename dtype::memory_conf > encap_dst;
+
+				// Copy only the selected properties
+				object_si_d<encap_src,encap_dst,ENCAP,prp...>(obj.get(obj_it.get()),dest.get(obj_it.get()));
+
+				++obj_it;
+			}
+
+			// Update statistic
+			sts.incReq();
+
+		}
+
+		/*! \brief Insert an allocation request into the vector
+		 *
+		 * \param obj vector object to pack
+		 * \param requests vector
+		 *
+		 */
+		template<int ... prp> void packRequest(openfpm::vector<T> & obj, std::vector<size_t> & v)
+		{
+			typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
+
+			// Calculate the required memory for packing
+			size_t alloc_ele = openfpm::vector<prp_object>::calculateMem(obj.size(),0);
+
+			v.push_back(alloc_ele);
+		}
+
+		/*! \brief unpack a vector
+		 *
+		 * \warning the properties should match the packed properties, and the obj must have the same size of the packed vector, consider to pack
+		 *          this information if you cannot infer-it
+		 *
+		 * \param ext preallocated memory from where to unpack the vector
+		 * \param obj object where to unpack
+		 *
+		 */
+		template<unsigned int ... prp> void unpack(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Unpack_stat & ps)
+		{
+			// if no properties should be unpacked return
+			if (sizeof...(prp) == 0)
+				return;
+
+			size_t id = 0;
+
+			// Sending property object
+			typedef openfpm::vector<T> vctr;
+			typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
+			typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
+
+			// Calculate the size to pack the object
+			size_t size = stype::calculateMem(obj.size(),0);
+
+			// Create a Pointer object over the preallocated memory (No allocation is produced)
+			PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
+
+			stype src;
+			src.setMemory(ptr);
+			src.resize(obj.size());
+			auto obj_it = obj.getIterator();
+
+			while (obj_it.isNext())
+			{
+				// copy all the object in the send buffer
+				typedef encapc<1,typename vctr::value_type,typename vctr::memory_conf > encap_dst;
+				// destination object type
+				typedef encapc<1,prp_object,typename stype::memory_conf > encap_src;
+
+				// Copy only the selected properties
+				object_s_di<encap_src,encap_dst,ENCAP,prp...>(src.get(id),obj.get(obj_it.get()));
+
+				++id;
+				++obj_it;
+			}
+
+			ps.addOffset(size);
+		}
 
 		/*! \brief Return the size of the vector
 		 *

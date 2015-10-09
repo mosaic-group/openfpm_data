@@ -8,6 +8,8 @@
 #ifndef UTIL_DEBUG_HPP
 #define UTIL_DEBUG_HPP
 
+#include <memory>
+
 /*! \brief check that two array match
  *
  * check that two array match

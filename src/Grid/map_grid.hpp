@@ -5,6 +5,16 @@
 
 //! Warning: apparently you cannot used nested boost::mpl with boost::fusion
 //! can create template circularity, this include avoid the problem
+#include "util/object_util.hpp"
+#include "Grid/util.hpp"
+#include "Vector/vect_isel.hpp"
+#include "Vector/util.hpp"
+#include "Vector/map_vector_grow_p.hpp"
+#include "memory/ExtPreAlloc.hpp"
+#include "util/util_debug.hpp"
+#include "Pack_stat.hpp"
+//#include "Vector/map_vector.hpp"
+//#include "Pack_selector.hpp"
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/fusion/sequence/intrinsic/at_c.hpp>
 #include <boost/fusion/include/at_c.hpp>
@@ -320,6 +330,12 @@ struct mem_reference
  * \snippet grid_unit_tests.hpp Get the object in an N-dimensional grid with an iterator
  *
  */
+
+namespace openfpm {
+
+template<typename T, typename Memory=HeapMemory, typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value> class vector;
+}
+
 template<unsigned int dim, typename T, typename S=HeapMemory, typename Mem = typename memory_traits_lin< typename T::type >::type >
 class grid_cpu
 {
@@ -334,6 +350,239 @@ public:
 	typedef typename T::type T_type;
 
 	typedef Mem memory_conf;
+
+	/*! \brief Pack the object into the memory given an iterator
+	 *
+	 * \tparam dim Dimensionality of the grid
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 * \param obj object to pack
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void pack(ExtPreAlloc<S> & mem, Pack_stat & sts)
+	{
+#ifdef DEBUG
+		if (mem.ref() == 0)
+			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
+#endif
+
+		// Sending property object and vector
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>> dtype;
+
+		// Calculate the required memory for packing
+		size_t alloc_ele = dtype::calculateMem(size(),0);
+
+		// Create an object over the preallocated memory (No allocation is produced)
+		dtype dest;
+		dest.setMemory(mem);
+		dest.resize(size());
+
+		auto it = getIterator();
+
+		pack_with_iterator<decltype(it),dtype,prp...>(it,dest);
+
+		// Update statistic
+		sts.incReq();
+	}
+
+
+	/*! \brief Pack the object into the memory given an iterator
+	 *
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 * \param sub_it sub grid iterator ( or the elements in the grid to pack )
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void pack(ExtPreAlloc<S> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Pack_stat & sts)
+	{
+#ifdef DEBUG
+		if (mem.ref() == 0)
+			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
+#endif
+
+		// Sending property object
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
+
+		// Create an object over the preallocated memory (No allocation is produced)
+		dtype dest;
+		dest.setMemory(mem);
+		dest.resize(sub_it.getVolume());
+
+		pack_with_iterator<grid_key_dx_iterator_sub<dims>,dtype,prp...>(sub_it,dest);
+
+		// Update statistic
+		sts.incReq();
+	}
+
+	/*! \brief Insert an allocation request
+	 *
+	 * \param vector of requests
+	 *
+	 */
+	template<int ... prp> void packRequest(std::vector<size_t> & v)
+	{
+		// Sending property object
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
+
+		// Calculate the required memory for packing
+		size_t alloc_ele = dtype::calculateMem(size(),0);
+
+		v.push_back(alloc_ele);
+	}
+
+	/*! \brief Insert an allocation request
+	 *
+	 * \tparam prp set of properties to pack
+	 *
+
+	 * \param sub sub-grid iterator
+	 * \param vector of requests
+	 *
+	 */
+	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims> & sub, std::vector<size_t> & v)
+	{
+		// Sending property object
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
+
+		// Calculate the required memory for packing
+		size_t alloc_ele = dtype::calculateMem(sub.getVolume(),0);
+
+		v.push_back(alloc_ele);
+	}
+
+	/*! \brief Pack an N-dimensional grid into a vector like structure B given an iterator of the grid
+	 *
+	 * \tparam it type of iterator of the grid-structure
+	 * \tparam dtype type of the structure B
+	 * \tparam dim Dimensionality of the grid
+	 * \tparam properties to pack
+	 *
+	 * \param it Grid iterator
+	 * \param obj object to pack
+	 * \param dest where to pack
+	 *
+	 */
+	template <typename it, typename dtype, int ... prp> void pack_with_iterator(it & sub_it, dtype & dest)
+	{
+		// Sending property object
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+
+		size_t id = 0;
+
+		// Packing the information
+		while (sub_it.isNext())
+		{
+			// copy all the object in the send buffer
+			typedef encapc<dims,value_type,memory_conf > encap_src;
+			// destination object type
+			typedef encapc<1,prp_object,typename dtype::memory_conf > encap_dst;
+
+			// Copy only the selected properties
+			object_si_d<encap_src,encap_dst,ENCAP,prp...>(get_o(sub_it.get()),dest.get(id));
+
+			++id;
+			++sub_it;
+		}
+	}
+
+	/*! \brief unpack the grid given an iterator
+	 *
+	 * \tparam it type of iterator
+	 * \tparam prp of the grid object to unpack
+	 *
+	 */
+	template <typename it, typename stype, unsigned int ... prp> void unpack_with_iterator(ExtPreAlloc<S> & mem, it & sub_it, stype & src, Unpack_stat & ps)
+	{
+		size_t id = 0;
+
+		// Sending property object
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+
+		// unpacking the information
+		while (sub_it.isNext())
+		{
+			// copy all the object in the send buffer
+			typedef encapc<dims,grid_cpu<dim,T,S,Mem>::value_type,grid_cpu<dim,T,S,Mem>::memory_conf > encap_dst;
+			// destination object type
+			typedef encapc<1,prp_object,typename grid_cpu<dims,prp_object>::memory_conf > encap_src;
+
+			// Copy only the selected properties
+			object_s_di<encap_src,encap_dst,ENCAP,prp...>(src.get(id),this->get_o(sub_it.get()));
+
+			++id;
+			++sub_it;
+		}
+	}
+
+	/*! \brief unpack the grid object
+	 *
+	 * \tparam prp properties to unpack
+	 *
+	 * \param ext preallocated memory from where to unpack the grid
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<unsigned int ... prp> void unpack(ExtPreAlloc<S> & mem, Unpack_stat & ps)
+	{
+		// object that store the information in mem
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
+
+		// Calculate the size to pack the object
+		size_t size = stype::calculateMem(this->size(),0);
+
+		// Create an Pointer object over the preallocated memory (No allocation is produced)
+		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
+
+		// Create an object over a pointer (No allocation is produced)
+		stype src;
+		src.setMemory(mem);
+		src.resize(this->size());
+
+		auto it = this->getIterator();
+
+		unpack_with_iterator<decltype(it),stype,prp...>(mem,it,src,ps);
+
+		ps.addOffset(size);
+	}
+
+	/*! \brief unpack the sub-grid object
+	 *
+	 * \tparam prp properties to unpack
+	 *
+	 * \param mem preallocated memory from where to unpack the object
+	 * \param sub sub-grid iterator
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<unsigned int ... prp> void unpack(ExtPreAlloc<S> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Unpack_stat & ps)
+	{
+		// object that store the information in mem
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
+
+		size_t size = stype::calculateMem(sub_it.getVolume(),0);
+
+		// Create an object over the preallocated memory (No allocation is produced)
+		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
+
+		// Create an object of the packed information over a pointer (No allocation is produced)
+		stype src;
+		src.setMemory(ptr);
+		src.resize(sub_it.getVolume());
+
+		unpack_with_iterator<grid_key_dx_iterator_sub<dims>,stype,prp...>(mem,sub_it,src,ps);
+
+		ps.addOffset(size);
+	}
 
 private:
 
