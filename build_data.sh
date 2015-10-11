@@ -30,7 +30,16 @@ if [ x"$3" == x"VALGRIND" ]; then
 fi
 
 sh ./configure $options
+if [ $? != 0 ]; then
+    exit 1
+fi
 make
+if [ $? != 0 ]; then
+    exit 1
+fi
 
 $pre_command ./src/mem_map
+if [ $? != 0 ]; then
+    exit 1
+fi
 
