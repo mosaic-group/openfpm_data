@@ -25,7 +25,7 @@ if [ x"$3" == x"SE"  ]; then
 fi
 
 if [ x"$3" == x"VALGRIND" ]; then
-  precommand="valgrind"
+  pre_command="valgrind --leak-check=full"
   options="$options --disable-gpu"
 fi
 
