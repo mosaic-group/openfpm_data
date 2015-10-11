@@ -4,6 +4,8 @@
 #include <type_traits>
 #include <random>
 #include "memory/memory.hpp"
+//#include "memory/ExtPreAlloc.hpp"
+//#include "Vector/map_vector.hpp"
 
 namespace std
 {
@@ -145,6 +147,41 @@ struct has_noPointers: std::false_type {};
 template<typename T>
 struct has_noPointers<T, typename Void<decltype( T::noPointers() )>::type> : std::true_type
 {};
+
+template<typename ObjType, typename Sfinae = void>
+struct has_Pack: std::false_type {};
+
+
+/*! \brief has_Pack check if a type has defined a
+ * method called Pack
+ *
+ * ### Example
+ *
+ * \snippet util.hpp Check for 'pack'
+ *
+ * return true if T::pack() is a valid expression (function pointers)
+ * and produce a defined type
+ *
+ */
+template<typename ObjType>
+struct has_Pack<ObjType, typename Void<decltype( ObjType::pack() )>::type> : std::true_type
+{};
+
+
+/*template<bool cond>
+struct nested_pack_cond
+{
+	template<int ... prp> void pack(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Pack_stat & sts)
+    {
+               for (int i = 0; i < obj.size(); i++) {
+                   T ele = obj.get(i);
+                   ele.pack<prp...>(mem, sts);
+    }
+};
+
+template<false>
+struct nested_pack_cond
+{};*/
 
 
 #endif

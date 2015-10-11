@@ -17,6 +17,7 @@
 #include "Grid/util.hpp"
 #include "data_type/scalar.hpp"
 #include "util/convert.hpp"
+#include <iostream>
 
 //! [Check has_posMask struct definition]
 

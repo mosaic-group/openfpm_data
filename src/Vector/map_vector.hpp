@@ -8,6 +8,9 @@
 #ifndef MAP_VECTOR_HPP
 #define MAP_VECTOR_HPP
 
+#include <iostream>
+#include <typeinfo>
+#include "util/common.hpp"
 #include "memory/PtrMemory.hpp"
 #include "util/object_util.hpp"
 #include "Grid/util.hpp"
@@ -221,6 +224,13 @@ namespace openfpm
 		 * \param sts pack-stat info
 		 *
 		 */
+
+		struct testtest
+		{
+			static bool noPointers()	{return true;}
+		};
+
+
 		template<int ... prp> void pack(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Pack_stat & sts)
 		{
 	#ifdef DEBUG
@@ -231,6 +241,13 @@ namespace openfpm
 			// if no properties should be packed return
 			if (sizeof...(prp) == 0)
 				return;
+
+			if (has_Pack<T>::type::value == true)
+				for (int i = 0; i < obj.size(); i++) {
+					T var = obj.get(i);
+					var.pack<prp...>(mem, sts);
+				}
+
 
 			// Sending property object
 			typedef openfpm::vector<T> vctr;
@@ -327,6 +344,7 @@ namespace openfpm
 
 			ps.addOffset(size);
 		}
+
 
 		/*! \brief Return the size of the vector
 		 *
