@@ -2,9 +2,11 @@
 
 # Make a directory in /tmp/openfpm_data
 
-mkdir /tmp/openfpm_data
-mv * .[^.]* /tmp/openfpm_data
-mv /tmp/openfpm_data openfpm_data
+echo "Build on: $2 with $3"
+
+mkdir /tmp/openfpm_data_$3
+mv * .[^.]* /tmp/openfpm_data_$3
+mv /tmp/openfpm_data_$3 openfpm_data
 
 mkdir openfpm_data/src/config
 
@@ -14,7 +16,7 @@ cd "$1/openfpm_data"
 
 pre_command=""
 sh ./autogen.sh
-if [ "$2" == "master" ]
+if [ "$2" == "master" ]; then
   options="$options --disable-gpu"
 fi
 
