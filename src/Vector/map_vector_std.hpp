@@ -145,6 +145,10 @@ public:
 	 */
 	inline T & last()
 	{
+#ifdef DEBUG
+		if (base.size() == 0)
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
+#endif
 		return base[base.size()-1];
 	}
 

@@ -894,6 +894,8 @@ BOOST_AUTO_TEST_CASE( C_array_test )
 		}
 	}
 
+	delete [] pA;
+
 #ifdef VERBOSE_TEST
 	t.stop();
 

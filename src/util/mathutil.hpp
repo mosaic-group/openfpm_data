@@ -77,6 +77,17 @@ namespace openfpm
 			// (parentheses not required in next line)
 			return (exponent == 0) ? 1 : (base * pow(base, exponent-1));
 		}
+
+		/* \brief Return the positive modulo of a number
+		 *
+		 * \param i number
+		 * \param n modulo
+		 *
+		 */
+		inline long int positive_modulo(long int i, long int n)
+		{
+		    return (i % n + n) % n;
+		}
 	}
 }
 
