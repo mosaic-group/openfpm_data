@@ -26,7 +26,7 @@ fi
 
 if [ x"$3" == x"VALGRIND" ]; then
   pre_command="valgrind --leak-check=full"
-  options="$options --disable-gpu"
+  options="$options --disable-gpu --enable-test-coverage"
 fi
 
 sh ./configure $options
