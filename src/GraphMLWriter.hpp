@@ -595,8 +595,8 @@ class GraphMLWriter
 			// create a new node
 			en.new_node(nc,it.source(),it.target());
 
-			// Iterate through all the vertex and create the vertex list
-			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::V_type::max_prop> >(en);
+			// Iterate through all the edges and create the edge list
+			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::E_type::max_prop> >(en);
 
 			// end new node
 			en.end_node();

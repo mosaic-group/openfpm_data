@@ -15,7 +15,6 @@
 #include "util/common.hpp"
 #include <boost/mpl/range_c.hpp>
 #include <boost/mpl/for_each.hpp>
-#include "Point_test.hpp"
 #include "csv_multiarray.hpp"
 #include "util.hpp"
 

@@ -665,7 +665,7 @@ public:
 
 		// Check if the file is open
 		if (ofs.is_open() == false)
-		{std::cerr << "Error cannot create the VTK file: " + file;}
+		{std::cerr << "Error cannot create the VTK file: " + file + "\n";}
 
 		ofs << vtk_header << point_prop_header << point_list <<
 				vertex_prop_header << vertex_list << edge_prop_header << edge_list << point_data_header << point_data;
