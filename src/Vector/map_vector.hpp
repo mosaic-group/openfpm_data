@@ -116,6 +116,31 @@ namespace openfpm
 			return gk;
 		}
 	};
+
+
+	// Structures to check if inside of the object there is/are simple or complex structure/structures
+
+	template<bool cond, typename T, typename Memory, int ... prp>
+	struct nested_pack_cond
+	{
+		void packing(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Pack_stat & sts)
+				{
+					//std::cout << "No pack() function inside!" << std::endl;
+				}
+
+	};
+
+	template<typename T, typename Memory, int ... prp>
+	struct nested_pack_cond<true, T, Memory, prp...>
+	{
+		void packing(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Pack_stat & sts)
+				{
+				   for (int i = 0; i < obj.size(); i++) {
+					   obj.get(i).template pack<prp...>(mem, sts);
+				   }
+				}
+	};
+
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
 	 * Stub object look at the various implementations
@@ -131,6 +156,7 @@ namespace openfpm
 	 * \see vector<T,Memory,grow_p,OPENFPM_NATIVE>
 	 *
 	 */
+
 	template<typename T, typename Memory, typename grow_p, unsigned int impl>
 	class vector
 	{
@@ -225,11 +251,6 @@ namespace openfpm
 		 *
 		 */
 
-		struct testtest
-		{
-			static bool noPointers()	{return true;}
-		};
-
 
 		template<int ... prp> void pack(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Pack_stat & sts)
 		{
@@ -242,11 +263,8 @@ namespace openfpm
 			if (sizeof...(prp) == 0)
 				return;
 
-			if (has_Pack<T>::type::value == true)
-				for (int i = 0; i < obj.size(); i++) {
-					T var = obj.get(i);
-					var.pack<prp...>(mem, sts);
-				}
+			nested_pack_cond<has_Pack<T>::type::value, T, Memory, prp...> dc;
+			dc.packing(mem, obj, sts);
 
 
 			// Sending property object
@@ -288,9 +306,10 @@ namespace openfpm
 		template<int ... prp> void packRequest(openfpm::vector<T> & obj, std::vector<size_t> & v)
 		{
 			typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
+			openfpm::vector<prp_object> vect;
 
 			// Calculate the required memory for packing
-			size_t alloc_ele = openfpm::vector<prp_object>::calculateMem(obj.size(),0);
+			size_t alloc_ele = vect.calculateMem(obj.size(),0);
 
 			v.push_back(alloc_ele);
 		}
@@ -316,9 +335,10 @@ namespace openfpm
 			typedef openfpm::vector<T> vctr;
 			typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
 			typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
+			stype svect;
 
 			// Calculate the size to pack the object
-			size_t size = stype::calculateMem(obj.size(),0);
+			size_t size = svect.calculateMem(obj.size(),0);
 
 			// Create a Pointer object over the preallocated memory (No allocation is produced)
 			PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
@@ -892,6 +912,32 @@ namespace openfpm
 			return base.packObject(mem);
 		}
 
+		// Structures to check if object has or has not calculateMem() function
+
+		template<bool cond, typename T1>
+		struct calculateMem_cond
+		{
+			size_t calculateMemory(T1 & obj, size_t n, size_t e)
+			{
+				return grow_p::grow(0,n) * sizeof(T1);
+			}
+
+		};
+
+		template<typename T1>
+		struct calculateMem_cond<true, T1>
+		{
+			size_t calculateMemory(T1 & obj, size_t n, size_t e)
+			{
+				size_t res = 0;
+				size_t count = grow_p::grow(0,n) - obj.size();
+				for (int i = 0; i < n; i++) {
+					res += obj.get(i).calculateMem(n,0);
+				}
+				return res+count*sizeof(T1);
+			}
+		};
+
 		/*! \brief Calculate the memory size required to allocate n elements
 		 *
 		 * Calculate the total size required to store n-elements in a vector
@@ -902,7 +948,26 @@ namespace openfpm
 		 * \return the size of the allocation number e
 		 *
 		 */
-		inline static size_t calculateMem(size_t n, size_t e)
+		inline size_t calculateMem(size_t n, size_t e)
+		{
+			if (n == 0)
+				return 0;
+
+			calculateMem_cond<has_calculateMem<T>::type::value, openfpm::vector<T, Memory, grow_p>> cm;
+			return cm.calculateMemory(*this,n,0);
+		}
+
+		/*! \brief Calculate the memory size required to allocate n elements
+		 *
+		 * Calculate the total size required to store n-elements in a vector
+		 *
+		 * \param n number of elements
+		 * \param e unused
+		 *
+		 * \return the size of the allocation number e
+		 *
+		 */
+		inline static size_t calculateMemDummy(size_t n, size_t e)
 		{
 			if (n == 0)
 				return 0;
@@ -951,6 +1016,7 @@ namespace openfpm
 		{
 			return false;
 		}
+
 	};
 
 	template <typename T> using vector_std = vector<T, HeapMemory, openfpm::grow_policy_double, STD_VECTOR>;

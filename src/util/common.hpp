@@ -4,8 +4,6 @@
 #include <type_traits>
 #include <random>
 #include "memory/memory.hpp"
-//#include "memory/ExtPreAlloc.hpp"
-//#include "Vector/map_vector.hpp"
 
 namespace std
 {
@@ -148,40 +146,47 @@ template<typename T>
 struct has_noPointers<T, typename Void<decltype( T::noPointers() )>::type> : std::true_type
 {};
 
-template<typename ObjType, typename Sfinae = void>
-struct has_Pack: std::false_type {};
-
-
 /*! \brief has_Pack check if a type has defined a
  * method called Pack
  *
  * ### Example
  *
- * \snippet util.hpp Check for 'pack'
+ * \snippet
  *
  * return true if T::pack() is a valid expression (function pointers)
  * and produce a defined type
  *
  */
+
+template<typename ObjType, typename Sfinae = void>
+struct has_Pack: std::false_type {};
+
 template<typename ObjType>
 struct has_Pack<ObjType, typename Void<decltype( ObjType::pack() )>::type> : std::true_type
 {};
 
+/*! \brief has_calculateMem check if a type has defined a
+ * method called calculateMem
+ *
+ * ### Example
+ *
+ * \snippet
+ *
+ * return true if T::calculateMem() is a valid expression (function pointers)
+ * and produce a defined type
+ *
+ */
 
-/*template<bool cond>
-struct nested_pack_cond
-{
-	template<int ... prp> void pack(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Pack_stat & sts)
-    {
-               for (int i = 0; i < obj.size(); i++) {
-                   T ele = obj.get(i);
-                   ele.pack<prp...>(mem, sts);
-    }
-};
+template<typename ObjType, typename Sfinae = void>
+struct has_calculateMem: std::false_type {};
 
-template<false>
-struct nested_pack_cond
-{};*/
+template<typename ObjType>
+struct has_calculateMem<ObjType, typename Void<decltype( ObjType::calculateMem() )>::type> : std::true_type
+{};
+
+
+
+
 
 
 #endif

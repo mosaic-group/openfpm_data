@@ -371,9 +371,10 @@ public:
 		// Sending property object and vector
 		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
 		typedef openfpm::vector<prp_object,ExtPreAlloc<S>> dtype;
+		dtype dvect;
 
 		// Calculate the required memory for packing
-		size_t alloc_ele = dtype::calculateMem(size(),0);
+		size_t alloc_ele = dvect.calculateMem(size(),0);
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -430,9 +431,10 @@ public:
 		// Sending property object
 		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
 		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
+		dtype dvect;
 
 		// Calculate the required memory for packing
-		size_t alloc_ele = dtype::calculateMem(size(),0);
+		size_t alloc_ele = dvect.calculateMem(size(),0);
 
 		v.push_back(alloc_ele);
 	}
@@ -451,9 +453,10 @@ public:
 		// Sending property object
 		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
 		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
+		dtype dvect;
 
 		// Calculate the required memory for packing
-		size_t alloc_ele = dtype::calculateMem(sub.getVolume(),0);
+		size_t alloc_ele = dvect.calculateMem(sub.getVolume(),0);
 
 		v.push_back(alloc_ele);
 	}
@@ -535,9 +538,11 @@ public:
 		// object that store the information in mem
 		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
 		typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
+		stype svect;
+
 
 		// Calculate the size to pack the object
-		size_t size = stype::calculateMem(this->size(),0);
+		size_t size = svect.calculateMem(this->size(),0);
 
 		// Create an Pointer object over the preallocated memory (No allocation is produced)
 		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
@@ -568,8 +573,9 @@ public:
 		// object that store the information in mem
 		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
 		typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
+		stype svect;
 
-		size_t size = stype::calculateMem(sub_it.getVolume(),0);
+		size_t size = svect.calculateMem(sub_it.getVolume(),0);
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));

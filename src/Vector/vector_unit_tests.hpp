@@ -151,10 +151,12 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 
 	size_t total = 0;
 
+	openfpm::vector<Point_test<float>> vect;
+
 	// Calculate the total size required for the sending buffer
 	for (size_t i = 0 ; i < n_alloc ; i++)
 	{
-		size_t alloc_ele = openfpm::vector<Point_test<float>>::calculateMem(alloc[i],0);
+		size_t alloc_ele = vect.calculateMem(alloc[i],0);
 		pap.push_back(alloc_ele);
 		total += alloc_ele;
 	}
@@ -233,8 +235,10 @@ BOOST_AUTO_TEST_CASE( vector_prealloc )
 	for (size_t i = 0 ;  i < 3 ; i++)
 	{
 		// Create the size required to store the particles position and properties to communicate
-		size_t s1 = openfpm::vector<Point<2,float>>::calculateMem(1024,0);
-		size_t s2 = openfpm::vector<Point_test<float>>::calculateMem(1024,0);
+		openfpm::vector<Point<2,float>> vect1;
+		size_t s1 = vect1.calculateMem(1024,0);
+		openfpm::vector<Point_test<float>> vect2;
+		size_t s2 = vect2.calculateMem(1024,0);
 
 		// Preallocate the memory
 		size_t sz[2] = {s1,s2};
