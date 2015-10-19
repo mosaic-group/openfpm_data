@@ -323,6 +323,37 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 	}
 }
 
+BOOST_AUTO_TEST_CASE(vector_clear )
+{
+	typedef Point_test<float> p;
+
+	openfpm::vector<Point_test<float>> v1;
+
+	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
+	{
+		// Point
+		Point_test<float> p;
+		p.setx(i);
+
+		v1.add(p);
+	}
+
+	v1.clear();
+
+	BOOST_REQUIRE_EQUAL(v1.size(),0);
+
+	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
+	{
+		// Point
+		Point_test<float> p;
+		p.setx(i);
+
+		v1.add(p);
+	}
+
+	BOOST_REQUIRE_EQUAL(v1.size(),V_REM_PUSH);
+}
+
 BOOST_AUTO_TEST_CASE( vector_memory_repr )
 {
 	// create a vector

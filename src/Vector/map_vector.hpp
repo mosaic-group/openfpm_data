@@ -315,6 +315,16 @@ namespace openfpm
 			}
 		}
 
+		/*! \brief Clear the vector
+		 *
+		 * Eliminate all the elements for from the vector
+		 *
+		 */
+		void clear()
+		{
+			resize(0);
+		}
+
 		/*! \brief Resize the vector
 		 *
 		 * Resize the vector and allocate n elements
