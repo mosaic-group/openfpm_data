@@ -623,6 +623,19 @@ BOOST_AUTO_TEST_CASE( grid_sub_iterator_test )
 	//! [Sub-grid iterator test usage]
 }
 
+////////// Test function ///////////
+
+grid_cpu<3,scalar<float>> & test_error()
+{
+	size_t sz[] = {16,16,16};
+
+	grid_cpu<3,scalar<float>> g(sz);
+
+	return g;
+}
+
+/////////////////////////////////////
+
 BOOST_AUTO_TEST_CASE( grid_safety_check )
 {
 #if defined(SE_CLASS1) && defined (THROW_ON_ERROR)
@@ -738,6 +751,15 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 
 	try
 	{gp->size();}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,MEM_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	try
+	{grid_cpu<3,scalar<float>> gr = test_error();}
 	catch (size_t e)
 	{
 		error = true;
