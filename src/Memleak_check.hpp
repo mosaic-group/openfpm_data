@@ -9,6 +9,10 @@ typedef unsigned char * byte_ptr;
 
 #ifdef SE_CLASS2
 
+#include "util/se_util.hpp"
+
+#define MEM_ERROR 1300lu
+
 extern size_t new_data;
 extern size_t delete_data;
 
@@ -26,7 +30,7 @@ extern long int process_to_print;
  * \return true if the operation succeded, false if the pointer does not exist
  *
  */
-static bool remove_ptr(void * ptr)
+static bool remove_ptr(const void * ptr)
 {
 	// Check if the pointer exist
 	std::map<byte_ptr, size_t>::iterator it = active_ptr.find((byte_ptr)ptr);
@@ -35,6 +39,7 @@ static bool remove_ptr(void * ptr)
 	if ( it == active_ptr.end() )
 	{
 		std::cout << "Error pointer not found " << ptr << "\n";
+		ACTION_ON_ERROR(MEM_ERROR);
 		return false;
 	}
 
@@ -66,7 +71,7 @@ static void print_unalloc()
  * \param sz size of the new allocated memory
  *
  */
-static bool check_new(void * data, size_t sz)
+static bool check_new(const void * data, size_t sz)
 {
 	// Add a new pointer
 	new_data++;
@@ -88,7 +93,7 @@ static bool check_new(void * data, size_t sz)
  * \return true if the operation to delete succeed
  *
  */
-static bool check_delete(void * data)
+static bool check_delete(const void * data)
 {
 	if (data == NULL)	return true;
 	// Delete the pointer
@@ -113,7 +118,7 @@ static bool check_delete(void * data)
  * \return true if the pointer is valid
  *
  */
-static bool check_valid(void * ptr, size_t size_access)
+static bool check_valid(const void * ptr, size_t size_access)
 {
 	// get the lower bound
 
@@ -122,6 +127,7 @@ static bool check_valid(void * ptr, size_t size_access)
 	if (active_ptr.size() == 0)
 	{
 		std::cout << "Error invalid pointer: " << __FILE__ << ":" << __LINE__ << "  " << ptr << "\n";
+		ACTION_ON_ERROR(MEM_ERROR);
 		return false;
 	}
 
@@ -132,7 +138,10 @@ static bool check_valid(void * ptr, size_t size_access)
 	if (l_b == active_ptr.end())
 	{
 		if (process_to_print < 0 || process_to_print == process_v_cl)
+		{
 			std::cout << "Error invalid pointer: " << __FILE__ << ":" << __LINE__ << "  " << ptr << "\n";
+			ACTION_ON_ERROR(MEM_ERROR);
+		}
 		return false;
 	}
 
@@ -145,6 +154,7 @@ static bool check_valid(void * ptr, size_t size_access)
 		if (process_to_print < 0 || process_to_print == process_v_cl)
 		{
 			std::cout << "Error invalid pointer: " << __FILE__ << ":" << __LINE__ << "  "  << ptr << "\n";
+			ACTION_ON_ERROR(MEM_ERROR);
 			return false;
 		}
 	}

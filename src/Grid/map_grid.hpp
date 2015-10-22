@@ -408,6 +408,10 @@ public:
 	grid_cpu(const grid_cpu & g)
 	:isExternal(false)
 	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_new(this,8);
+#endif
 		swap(g.duplicate());
 	}
 
@@ -415,18 +419,39 @@ public:
 	grid_cpu(std::vector<size_t> & sz)
 	:g1(sz),isExternal(false)
 	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_new(this,8);
+#endif
 	}
 
 	//! Constructor allocate memory and give them a representation
 	grid_cpu(std::vector<size_t> && sz)
 	:g1(sz),isExternal(false)
 	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_new(this,8);
+#endif
 	}
 
 	//! Constructor allocate memory and give them a representation
 	grid_cpu(const size_t (& sz)[dim])
 	:g1(sz),isExternal(false)
 	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_new(this,8);
+#endif
+	}
+
+	//! Destructor
+	~grid_cpu()
+	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_delete(this);
+#endif
 	}
 
 	/*! \brief create a duplicated version of the grid
@@ -435,6 +460,9 @@ public:
 
 	grid_cpu<dim,T,S,Mem> duplicate() const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		//! Create a completely new grid with sz
 
 		grid_cpu<dim,T,S,Mem> grid_new(g1.getSize());
@@ -487,6 +515,9 @@ public:
 
 	const grid_sm<dim,T> & getGrid() const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return g1;
 	}
 
@@ -500,6 +531,9 @@ public:
 
 	void setMemory()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		S * mem = new S();
 
 		//! Create and set the memory allocator
@@ -524,6 +558,9 @@ public:
 
 	void setMemory(S & m)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		//! Is external
 		isExternal = true;
 
@@ -546,6 +583,9 @@ public:
 
 	void * getPointer()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		if (data_.mem_r == NULL)
 			return NULL;
 
@@ -561,6 +601,9 @@ public:
 	 */
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(grid_key_d<dim,p> & v1)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
@@ -580,6 +623,9 @@ public:
 	 */
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(grid_key_d<dim,p> & v1) const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
@@ -599,6 +645,9 @@ public:
 	 */
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
@@ -618,6 +667,9 @@ public:
 	 */
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1) const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
@@ -637,6 +689,9 @@ public:
 	 */
 	inline encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
@@ -656,6 +711,9 @@ public:
 	 */
 	inline const encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1) const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(v1)
@@ -673,6 +731,9 @@ public:
 	 */
 	void fill(unsigned char fl)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		memset(getPointer(),fl,size() * sizeof(T));
 	}
 
@@ -687,6 +748,9 @@ public:
 	 */
 	void resize(const size_t (& sz)[dim])
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		//! Create a completely new grid with sz
 
 		grid_cpu<dim,T,S,Mem> grid_new(sz);
@@ -745,6 +809,9 @@ public:
 	 */
 	void remove(size_t key)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		if (dim != 1)
 		{
 #ifdef SE_CLASS1
@@ -770,6 +837,9 @@ public:
 
 	void swap(grid_cpu<dim,T,S,Mem> & grid)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		// move the data
 		data_.swap(grid.data_);
 
@@ -798,6 +868,9 @@ public:
 
 	void swap(grid_cpu<dim,T,S,Mem> && grid)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		swap(grid);
 	}
 
@@ -812,6 +885,9 @@ public:
 
 	template<typename Memory> inline void set(grid_key_dx<dim> dx, const encapc<1,T,Memory> & obj)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(dx)
@@ -835,6 +911,9 @@ public:
 
 	inline void set(grid_key_dx<dim> dx, const T & obj)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(dx)
@@ -856,6 +935,9 @@ public:
 
 	inline void set(grid_key_dx<dim> key1,const grid_cpu<dim,T,S,Mem> & g, grid_key_dx<dim> key2)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
 		CHECK_INIT()
 		GRID_OVERFLOW(key1)
@@ -879,6 +961,9 @@ public:
 
 	inline size_t size() const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return g1.size();
 	}
 
@@ -892,6 +977,9 @@ public:
 	 */
 	inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop) const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return g1.getSubIterator(start,stop);
 	}
 
@@ -905,6 +993,9 @@ public:
 
 	inline grid_key_dx_iterator_sub<dim> getSubIterator(size_t m)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return grid_key_dx_iterator_sub<dim>(g1,m);
 	}
 
@@ -916,6 +1007,9 @@ public:
 
 	inline grid_key_dx_iterator<dim> getIterator() const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return grid_key_dx_iterator<dim>(g1);
 	}
 
@@ -929,6 +1023,9 @@ public:
 
 	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		// get the starting point and the end point of the real domain
 
 		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
@@ -939,6 +1036,9 @@ public:
 	 */
 	size_t getLastError()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return err_code;
 	}
 
@@ -953,6 +1053,9 @@ public:
 
 	size_t packObjectSize()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return 0;
 	}
 
@@ -967,6 +1070,9 @@ public:
 
 	size_t packObject(void * mem)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return 0;
 	}
 };

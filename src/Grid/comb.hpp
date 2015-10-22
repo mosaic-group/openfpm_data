@@ -3,14 +3,7 @@
 
 #define COMB_ERROR 1001lu
 
-// Macro that decide what to do in case of error
-#ifdef STOP_ON_ERROR
-#define ACTION_ON_ERROR() exit(1);
-#elif defined(THROW_ON_ERROR)
-#define ACTION_ON_ERROR() throw COMB_ERROR;
-#else
-#define ACTION_ON_ERROR()
-#endif
+#include "util/se_util.hpp"
 
 /*! \brief Position of the element of dimension d in the hyper-cube of dimension dim
  *
