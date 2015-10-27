@@ -87,5 +87,27 @@ public:
 	}
 };
 
+/*! \brief Class that contain Padding information on each direction positive and Negative direction
+ *
+ * It is equivalent to a Ghost<dim,size_t>
+ *
+ * \see Ghost
+ *
+ */
+template<unsigned int dim>
+class Padding : public Ghost<dim,size_t>
+{
+public:
+	/*! \brief Constructor from initializer list
+	 *
+	 * \param p1 Padding left, initialize as a list example {0.0,0.0,0.0}
+	 * \param p2 Padding right, initialized as a list example {1.0,1.0,1.0}
+	 *
+	 */
+	Padding(std::initializer_list<size_t> p1, std::initializer_list<size_t> p2)
+	{
+		Box<dim,size_t>::set(p1,p2);
+	}
+};
 
 #endif /* GHOST_HPP_ */
