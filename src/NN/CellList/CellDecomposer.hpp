@@ -726,6 +726,8 @@ public:
 
 	/*! \brief Return the box that represent the cell
 	 *
+	 * Can be considered the spacing between vertices of the cells
+	 *
 	 * \return the box
 	 *
 	 */

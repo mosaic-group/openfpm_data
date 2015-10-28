@@ -107,6 +107,52 @@ BOOST_AUTO_TEST_CASE( box_use)
 	}
 
 	{
+	//! [Magnify the box]
+
+	Box<3,float> box1({0.1,0.2,0.3},{1.0,1.1,1.3});
+
+	box1.magnify(1.001);
+
+	BOOST_REQUIRE_CLOSE(box1.getLow(0),0.1001,0.001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(1),0.2002,0.001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(2),0.3003,0.001);
+
+	BOOST_REQUIRE_CLOSE(box1.getHigh(0),1.001,0.00001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(1),1.1011,0.00001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(2),1.3013,0.00001);
+
+	// Check that the dimensions of the box are magnified of 0.1%
+	BOOST_REQUIRE_CLOSE(box1.getHigh(0) - box1.getLow(0), 1.001 * 0.9 ,0.001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(1) - box1.getLow(1), 1.001 * 0.9, 0.001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(2) - box1.getLow(2), 1.001 * 1.0, 0.001);
+
+	//! [Magnify the box]
+	}
+
+	{
+	//! [Magnify the box with fixed P1]
+
+	Box<3,float> box1({0.1,0.2,0.3},{1.0,1.1,1.3});
+
+	box1.magnify_fix_P1(1.001);
+
+	BOOST_REQUIRE_CLOSE(box1.getLow(0),0.1,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(1),0.2,0.0001);
+	BOOST_REQUIRE_CLOSE(box1.getLow(2),0.3,0.0001);
+
+	BOOST_REQUIRE_CLOSE(box1.getHigh(0),1.0009,0.00001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(1),1.1009,0.00001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(2),1.301,0.00001);
+
+	// Check that the dimensions of the box are magnified of 0.1%
+	BOOST_REQUIRE_CLOSE(box1.getHigh(0) - box1.getLow(0), 1.001 * 0.9 ,0.00001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(1) - box1.getLow(1), 1.001 * 0.9, 0.00001);
+	BOOST_REQUIRE_CLOSE(box1.getHigh(2) - box1.getLow(2), 1.001 * 1.0, 0.00001);
+
+	//! [Magnify the box with fixed P1]
+	}
+
+	{
 	//! [Translate a box]
 
 	Box<3,float> box1({0.1,0.5,0.6},{1.0,1.2,1.4});

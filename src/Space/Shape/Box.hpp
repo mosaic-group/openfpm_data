@@ -676,6 +676,44 @@ public:
 		}
 	}
 
+
+	/*! \brief Magnify the box
+	 *
+	 * For example 1.001 enlarge the box of 0.1% on each direction
+	 *
+	 * \warning P1 is mooved if not zero
+	 *
+	 * \param mg Magnification factor
+	 *
+	 */
+	void magnify(T mg)
+	{
+		typedef ::Box<dim,T> g;
+
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->setLow(j,mg * this->template getBase<g::p1>(j));
+			this->setHigh(j,mg * this->template getBase<g::p2>(j));
+		}
+	}
+
+	/*! \brief Magnify the box by a factor keeping fix the point P1
+	 *
+	 * For example 1.001 enlarge the box of 0.1% on each direction
+	 *
+	 * \param mg Magnification factor
+	 *
+	 */
+	inline void magnify_fix_P1(T mg)
+	{
+		typedef ::Box<dim,T> g;
+
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->setHigh(j,this->template getBase<g::p1>(j) + mg * (this->template getBase<g::p2>(j) - this->template getBase<g::p1>(j)));
+		}
+	}
+
 	/*! \brief Shrink moving p2 of sh quantity (on each direction)
 	 *
 	 *
