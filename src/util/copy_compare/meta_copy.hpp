@@ -1,20 +1,27 @@
 #ifndef META_COPY_HPP
 #define META_COPY_HPP
 
-/*! \brief This class is an helper to copy scalar and compile-time array element
+#include "copy_general.hpp"
+
+/*! \brief This class copy general objects
  *
- * This class is an helper to copy scalar and compile-time array element
+ * * primitives
+ * * array of primitives
+ * * complex objects
+ * * aggregates
  *
- * Usage:
- *
- * \code{.cpp}
- *
- * float src[3];
- * float dst[3];
- *
- * meta_copy<float[3]> cp(src,dst);
- *
- * \endcode
+ * ### Usage of meta copy and compare for primitives
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for primitives
+ * ### Usage of meta copy and compare for array of primitives
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for array of primitives
+ * ### Usage of meta copy and compare for openfpm aggregates
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for openfpm aggregates
+ * ### Usage of meta copy and compare for complex object
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for complex object
+ * ### Usage of meta copy and compare for complex aggregates object
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for complex aggregates object
+ * ### Usage of meta copy and compare for Point_test
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for Point_test
  *
  */
 template<typename T>
@@ -22,7 +29,7 @@ struct meta_copy
 {
 	inline meta_copy(const T & src, T & dst)
 	{
-		dst = src;
+		copy_general<T>(src,dst);
 	}
 };
 
@@ -34,7 +41,7 @@ struct meta_copy<T[N1]>
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
-			dst[i1] = src[i1];
+			copy_general<T>(src[i1],dst[i1]);
 		}
 	}
 };
@@ -49,7 +56,7 @@ struct meta_copy<T[N1][N2]>
 		{
 			for (size_t i2 = 0 ; i2 < N2 ; i2++)
 			{
-				dst[i1][i2] = src[i1][i2];
+				copy_general<T>(src[i1][i2],dst[i1][i2]);
 			}
 		}
 	}
@@ -67,7 +74,7 @@ struct meta_copy<T[N1][N2][N3]>
 			{
 				for (size_t i3 = 0 ; i3 < N3 ; i3++)
 				{
-					dst[i1][i2][i3] = src[i1][i2][i3];
+					copy_general<T>(src[i1][i2][i3],dst[i1][i2][i3]);
 				}
 			}
 		}
@@ -88,7 +95,7 @@ struct meta_copy<T[N1][N2][N3][N4]>
 				{
 					for (size_t i4 = 0 ; i4 < N4 ; i4++)
 					{
-						dst[i1][i2][i3][i4] = src[i1][i2][i3][i4];
+						copy_general<T>(src[i1][i2][i3][i4],dst[i1][i2][i3][i4]);
 					}
 				}
 			}
@@ -112,7 +119,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5]>
 					{
 						for (size_t i5 = 0 ; i5 < N5 ; i5++)
 						{
-							dst[i1][i2][i3][i4][i5] = src[i1][i2][i3][i4][i5];
+							copy_general<T>(src[i1][i2][i3][i4][i5],dst[i1][i2][i3][i4][i5]);
 						}
 					}
 				}
@@ -139,7 +146,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6]>
 						{
 							for (size_t i6 = 0 ; i6 < N6 ; i6++)
 							{
-								dst[i1][i2][i3][i4][i5][i6] = src[i1][i2][i3][i4][i5][i6];
+								copy_general<T>(src[i1][i2][i3][i4][i5][i6],dst[i1][i2][i3][i4][i5][i6]);
 							}
 						}
 					}
@@ -169,7 +176,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7]>
 							{
 								for (size_t i7 = 0 ; i7 < N7 ; i7++)
 								{
-									dst[i1][i2][i3][i4][i5][i6][i7] = src[i1][i2][i3][i4][i5][i6][i7];
+									copy_general<T>(src[i1][i2][i3][i4][i5][i6][i7],dst[i1][i2][i3][i4][i5][i6][i7]);
 								}
 							}
 						}
@@ -202,7 +209,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8]>
 								{
 									for (size_t i8 = 0 ; i8 < N8 ; i8++)
 									{
-										dst[i1][i2][i3][i4][i5][i6][i7][i8] = src[i1][i2][i3][i4][i5][i6][i7][i8];
+										copy_general<T>(src[i1][i2][i3][i4][i5][i6][i7][i8],dst[i1][i2][i3][i4][i5][i6][i7][i8]);
 									}
 								}
 							}
@@ -238,7 +245,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8][N9]>
 									{
 										for (size_t i9 = 0 ; i9 < N9 ; i9++)
 										{
-											dst[i1][i2][i3][i4][i5][i6][i7][i8][i9] = src[i1][i2][i3][i4][i5][i6][i7][i8][i9];
+											copy_general<T>(src[i1][i2][i3][i4][i5][i6][i7][i8][i9],dst[i1][i2][i3][i4][i5][i6][i7][i8][i9]);
 										}
 									}
 								}
@@ -277,7 +284,7 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10]>
 										{
 											for (size_t i10 = 0 ; i10 < N10 ; i10++)
 											{
-												dst[i1][i2][i3][i4][i5][i6][i7][i8][i9][i10] = src[i1][i2][i3][i4][i5][i6][i7][i8][i9][i10];
+												copy_general<T>(src[i1][i2][i3][i4][i5][i6][i7][i8][i9][i10],dst[i1][i2][i3][i4][i5][i6][i7][i8][i9][i10]);
 											}
 										}
 									}

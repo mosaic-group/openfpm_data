@@ -758,6 +758,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
+	error = false;
 	try
 	{grid_cpu<3,scalar<float>> gr = test_error();}
 	catch (size_t e)
@@ -945,6 +946,39 @@ BOOST_AUTO_TEST_CASE( C_array_test )
 
 	std::cout << "End : " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024 << " MB " << "  Bandwidth: " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024/t.getcputime() << " MB/s  \n";
 #endif
+}
+
+BOOST_AUTO_TEST_CASE(grid_operator_equal)
+{
+	//! [Create a grid g1 and copy into another g2]
+
+	size_t sz[] = {16,16};
+
+	typedef Box<2,float> b;
+
+	grid_cpu<2,Box<2,float>> g1(sz);
+	g1.setMemory();
+
+	auto it = g1.getIterator();
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		g1.template get<b::p1>(key)[0] = key.get(0);
+		g1.template get<b::p2>(key)[1] = key.get(1);
+
+		++it;
+	}
+
+	grid_cpu<2,Box<2,float>> g2;
+	g2 = g1;
+
+	//! [Create a grid g1 and copy into another g2]
+
+	bool ret = (g2 == g1);
+
+	BOOST_REQUIRE_EQUAL(ret,true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -113,7 +113,7 @@ class grid_sm
 	 *
 	 */
 
-	void Initialize(std::vector<size_t> & sz)
+	inline void Initialize(std::vector<size_t> & sz)
 	{
 		// Convert the vector to an array
 		size_t sz_a[N];
@@ -137,7 +137,7 @@ class grid_sm
 	 *
 	 */
 
-	void Initialize(const size_t (& sz)[N])
+	inline void Initialize(const size_t (& sz)[N])
 	{
 		//! Initialize the basic structure for each dimension
 		sz_s[0] = sz[0];
@@ -164,7 +164,7 @@ class grid_sm
 	 *
 	 */
 
-	void Initialize()
+	inline void Initialize()
 	{
 		//! Initialize the basic structure for each dimension
 		sz_s[0] = 0;
@@ -190,7 +190,7 @@ public:
 	/*! \brief Return the box enclosing the grid
 	 *
 	 */
-	const Box<N,size_t> & getBox() const
+	inline const Box<N,size_t> & getBox() const
 	{
 		return box;
 	}
@@ -201,7 +201,7 @@ public:
 	 *
 	 */
 
-	void setDimensions(std::vector<size_t> & dims)
+	inline void setDimensions(std::vector<size_t> & dims)
 	{
 		Initialize(dims);
 		size_tot = totalSize(dims);
@@ -212,7 +212,7 @@ public:
 	 * \param dims store on each dimension the size of the grid
 	 *
 	 */
-	void setDimensions(const size_t  (& dims)[N])
+	inline void setDimensions(const size_t  (& dims)[N])
 	{
 		Initialize(dims);
 		size_tot = totalSize(dims);
@@ -227,7 +227,7 @@ public:
 	 *
 	 */
 
-	bool isLinearizeLinear()
+	inline bool isLinearizeLinear()
 	{
 		return true;
 	}
@@ -238,7 +238,7 @@ public:
 	 *
 	 */
 
-	grid_sm()
+	inline grid_sm()
 	{
 		Initialize();
 	}
@@ -249,7 +249,7 @@ public:
 	 *
 	 */
 
-	template<typename S> grid_sm(const grid_sm<N,S> & g)
+	template<typename S> inline grid_sm(const grid_sm<N,S> & g)
 		  {
 		// copy all the members
 
@@ -261,7 +261,7 @@ public:
 
 	// Static element to calculate total size
 
-	size_t totalSize(const size_t (& sz)[N])
+	inline size_t totalSize(const size_t (& sz)[N])
 	{
 		size_t tSz = 1;
 
@@ -275,7 +275,7 @@ public:
 
 	// Static element to calculate total size
 
-	size_t totalSize(const std::vector<size_t> & sz)
+	inline size_t totalSize(const std::vector<size_t> & sz)
 	{
 		// Convert the vector to an array
 		size_t sz_a[N];
@@ -297,7 +297,7 @@ public:
 	 *
 	 */
 
-	grid_sm(std::vector<size_t> & sz)
+	inline grid_sm(std::vector<size_t> & sz)
 	: size_tot(totalSize(sz))
 	{
 		Initialize(sz);
@@ -311,7 +311,7 @@ public:
 	 *
 	 */
 
-	grid_sm(const size_t (& sz)[N])
+	inline grid_sm(const size_t (& sz)[N])
 	: size_tot(totalSize(sz))
 	{
 		Initialize(sz);
@@ -325,7 +325,7 @@ public:
 	 *
 	 */
 
-	grid_sm(std::vector<size_t> && sz)
+	inline grid_sm(std::vector<size_t> && sz)
 	: size_tot(totalSize(sz))
 	{
 		sz_s[0] = sz[0];
@@ -346,7 +346,7 @@ public:
 	 * \return The linearization of the gk key shifted by c, or -1 if the check fail
 	 */
 
-	template<typename check=NoCheck> mem_id LinId(const grid_key_dx<N> & gk, char sum_id[N]) const
+	template<typename check=NoCheck> inline mem_id LinId(const grid_key_dx<N> & gk, char sum_id[N]) const
 	{
 		// Check the sum produce a valid key
 
@@ -376,7 +376,7 @@ public:
 	 *
 	 */
 
-	mem_id LinIdPtr(size_t * k) const
+	inline mem_id LinIdPtr(size_t * k) const
 	{
 		mem_id lid = k[0];
 		for (mem_id i = 1 ; i < N ; i++)
@@ -396,7 +396,7 @@ public:
 	 *
 	 */
 
-	mem_id LinId(const size_t (& k)[N]) const
+	inline mem_id LinId(const size_t (& k)[N]) const
 	{
 		mem_id lid = k[0];
 		for (mem_id i = 1 ; i < N ; i++)
@@ -416,7 +416,7 @@ public:
 	 *
 	 */
 
-	mem_id LinId(const grid_key_dx<N> & gk) const
+	inline mem_id LinId(const grid_key_dx<N> & gk) const
 	{
 		mem_id lid = gk.k[0];
 		for (mem_id i = 1 ; i < N ; i++)
@@ -432,7 +432,7 @@ public:
 	 * linearize an arbitrary set of index
 	 *
 	 */
-	template<typename a, typename ...lT>mem_id Lin(a v,lT...t) const
+	template<typename a, typename ...lT> inline mem_id Lin(a v,lT...t) const
 	{
 #ifdef DEBUG
 		if (sizeof...(t)+1 > N)
@@ -445,7 +445,7 @@ public:
 	}
 
 	//! Linearize a set of index
-	template<typename a>mem_id Lin(a v) const
+	template<typename a> inline mem_id Lin(a v) const
 	{
 		return v;
 	}
@@ -458,7 +458,7 @@ public:
 	 * \return key of the grid that id identify
 	 *
 	 */
-	grid_key_dx<N> InvLinId(mem_id id) const
+	inline grid_key_dx<N> InvLinId(mem_id id) const
 	{
 		// Inversion of linearize
 
@@ -484,7 +484,7 @@ public:
 	 */
 
 	//#pragma openfpm layout(get)
-	template<unsigned int dim, unsigned int p> mem_id LinId(const grid_key_d<dim,p> & gk) const
+	template<unsigned int dim, unsigned int p> inline mem_id LinId(const grid_key_d<dim,p> & gk) const
 	{
 		mem_id lid = gk.k[0];
 		for (mem_id i = 1 ; i < dim ; i++)
@@ -505,7 +505,7 @@ public:
 	 */
 
 	//#pragma openfpm layout(get)
-	mem_id LinId(mem_id * id) const
+	inline mem_id LinId(mem_id * id) const
 	{
 		mem_id lid = 0;
 		lid += id[0];
@@ -527,7 +527,7 @@ public:
 	 * \return the size of the grid
 	 *
 	 */
-	size_t size() const
+	inline size_t size() const
 	{
 		return size_tot;
 	};
@@ -552,6 +552,51 @@ public:
 		return *this;
 	}
 
+	/*! \brief Check if the two grid_sm are the same
+	 *
+	 * \param g element to check
+	 *
+	 * \return true if they are the same
+	 *
+	 */
+
+	inline bool operator==(const grid_sm<N,T> & g)
+	{
+		for (size_t i = 0 ; i < N ; i++)
+		{
+			if (sz[i] != g.sz[i])
+				return false;
+		}
+
+		if (box != g.box)
+			return false;
+
+#ifdef SE_CLASS1
+
+		if (size_tot != g.size_tot)
+			return false;
+
+		for (size_t i = 0 ; i < N ; i++)
+		{
+			if (sz_s[i] != g.sz_s[i])
+				return false;
+		}
+
+#endif
+		return true;
+	}
+
+	/*! \brief Check if the two grid_sm are the same
+	 *
+	 * \param g element to check
+	 *
+	 */
+
+	inline bool operator!=(const grid_sm<N,T> & g)
+	{
+		return ! this->operator==(g);
+	}
+
 	/**
 	 *
 	 * Get the stride-size of the grid on the direction i
@@ -563,7 +608,7 @@ public:
 	 *
 	 */
 
-	size_t size_s(unsigned int i) const
+	inline size_t size_s(unsigned int i) const
 	{
 		return sz_s[i];
 	}
@@ -577,7 +622,7 @@ public:
 	 *
 	 */
 
-	size_t size(unsigned int i) const
+	inline size_t size(unsigned int i) const
 	{
 		return sz[i];
 	}
@@ -587,7 +632,7 @@ public:
 	 * \return get the size of the grid as an std::vector
 	 *
 	 */
-	std::vector<size_t> getVectorSize()
+	inline std::vector<size_t> getVectorSize()
 	{
 		std::vector<size_t> vect_sz;
 
@@ -604,7 +649,7 @@ public:
 	 * \return get the size of the grid as an array
 	 *
 	 */
-	const size_t (& getSize() const)[N]
+	inline const size_t (& getSize() const)[N]
 	{
 		return sz;
 	}

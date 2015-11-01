@@ -831,6 +831,54 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 
 		return g_box;
 	}
+
+	/*! \brief Check that the CellDecomposer is the same
+	 *
+	 * \param cd Cell decomposer
+	 *
+	 * \return true if the two CellDecomposer are the same
+	 *
+	 */
+	bool operator==(const CellDecomposer_sm<dim,T,transform> & cd)
+	{
+		if (p_middle != cd.p_middle)
+			return false;
+
+		if (t != cd.t)
+			return false;
+
+		if (tot_n_cell != cd.tot_n_cell)
+			return false;
+
+		if (box != cd.box)
+			return false;
+
+		if (box_unit != cd.box_unit)
+			return false;
+
+		if (gr_cell != cd.gr_cell)
+			return false;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (off[i] != cd.off[i])
+				return false;
+		}
+
+		return true;
+	}
+
+	/*! \brief Check that the CellDecomposer is the same
+	 *
+	 * \param cd Cell decomposer
+	 *
+	 * \return true if the two CellDecomposer is different
+	 *
+	 */
+	bool operator!=(const CellDecomposer_sm<dim,T,transform> & cd)
+	{
+		return ! this->operator==(cd);
+	}
 };
 
 

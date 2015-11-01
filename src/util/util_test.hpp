@@ -353,6 +353,17 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		}
 
 		{
+		//! [Declaration of an openfpm native structure]
+
+		int val = is_openfpm_native<Point_test<float>>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = is_openfpm_native<float>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Declaration of an openfpm native structure]
+		}
+
+		{
 		//! [Check is_typedef_and_data_same]
 
 		struct test_typedef_same_data

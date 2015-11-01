@@ -8,6 +8,10 @@
 #ifndef SRC_GRID_GRID_UTIL_TEST_HPP_
 #define SRC_GRID_GRID_UTIL_TEST_HPP_
 
+#include "map_grid.hpp"
+#include "Point_test.hpp"
+#include "grid_key.hpp"
+
 /*! \brief Fill the grid with some data
  *
  * \param grid to fill
@@ -15,6 +19,8 @@
  */
 template<unsigned int dim, typename T> void fill_grid(T & grid)
 {
+	typedef Point_test<float> P;
+
 	auto key_it = grid.getIterator();
 
 	while (key_it.isNext())

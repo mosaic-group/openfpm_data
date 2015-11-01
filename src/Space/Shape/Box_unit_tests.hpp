@@ -230,6 +230,13 @@ BOOST_AUTO_TEST_CASE( box_use)
 	//! [Box operators]
 	}
 
+	Box<3,float> b1({1.0,2.4,5.3},{6.0,7.9,9.9});
+	Box<3,float> b2 = b1;
+
+	bool ret = (b1 == b2);
+
+	BOOST_REQUIRE_EQUAL(ret,true);
+
 	std::cout << "Box unit test stop" << "\n";
 }
 

@@ -146,5 +146,23 @@ template<typename T>
 struct has_noPointers<T, typename Void<decltype( T::noPointers() )>::type> : std::true_type
 {};
 
+/*! \brief is_openfpm_native check if a type is an openfpm native structure type
+ *
+ * ### Example
+ * \snippet util_test.hpp Declaration of an openfpm native structure
+ * \snippet util_test.hpp Usage with a non openfpm native structure
+ *
+ * return true if T::attributes::name[0] is a valid expression
+ * and produce a defined type
+ *
+ */
+template<typename T, bool = is_typedef_and_data_same<has_typedef_type<T>::value && has_data<T>::value,T>::value>
+struct is_openfpm_native : std::false_type
+{};
+
+
+template<typename T>
+struct is_openfpm_native<T,true> : std::true_type
+{};
 
 #endif

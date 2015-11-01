@@ -8,6 +8,7 @@
 #ifndef MAP_VECTOR_STD_HPP_
 #define MAP_VECTOR_STD_HPP_
 
+#include "se_vector.hpp"
 
 /*! \brief Implementation of 1-D std::vector like structure
  *
@@ -31,6 +32,9 @@ class vector<T,HeapMemory,grow_policy_double,STD_VECTOR>
 	//! 1-D static grid
 	std::vector<T> base;
 
+	//! Error code
+	size_t err_code;
+
 public:
 
 	//! it define that it is a vector
@@ -44,6 +48,9 @@ public:
 	//! return the size of the vector
 	inline size_t size() const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return base.size();
 	}
 
@@ -55,6 +62,9 @@ public:
 	 */
 	inline void resize(size_t slot)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		v_size = slot;
 
 		base.resize(slot);
@@ -65,6 +75,9 @@ public:
 	 */
 	inline void clear()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		base.clear();
 	}
 
@@ -79,6 +92,9 @@ public:
 	 */
 	inline void add(const T & v)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		base.push_back(v);
 	}
 
@@ -88,6 +104,9 @@ public:
 
 	inline void add()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		base.resize(base.size() + 1);
 	}
 
@@ -99,6 +118,9 @@ public:
 	 */
 	void erase(typename std::vector<T>::iterator start, typename std::vector<T>::iterator end)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		base.erase(start,end);
 	}
 
@@ -109,11 +131,11 @@ public:
 	 */
 	void remove(size_t key)
 	{
-#ifdef DEBUG
-		if (key >= base.size())
-		{
-			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << key << "\n";
-		}
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		VECTOR_OVERFLOW_STD(key);
 #endif
 		base.erase(base.begin() + key);
 	}
@@ -145,7 +167,10 @@ public:
 	 */
 	inline T & last()
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
 		if (base.size() == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
 #endif
@@ -159,6 +184,9 @@ public:
 	 */
 	std::vector<T> duplicate()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return base;
 	}
 
@@ -169,6 +197,9 @@ public:
 	 */
 	void swap(std::vector<T> && v)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		base.swap(v);
 	}
 
@@ -179,6 +210,9 @@ public:
 	 */
 	void unique()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		auto it = std::unique(base.begin(),base.end());
 		base.resize( std::distance(base.begin(),it) );
 	}
@@ -190,6 +224,9 @@ public:
 	 */
 	void sort()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		std::sort(base.begin(), base.end());
 	}
 
@@ -204,14 +241,14 @@ public:
 	 */
 	template <unsigned int p>inline T& get(size_t id)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
 		if (p != 0)
 		{std::cerr << "Error the property does not exist" << "\n";}
 
-		if (id >= base.size())
-		{
-			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
-		}
+		VECTOR_OVERFLOW_STD(id);
 #endif
 
 		return base[id];
@@ -228,14 +265,14 @@ public:
 	 */
 	template <unsigned int p>inline const T& get(size_t id) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
 		if (p != 0)
 		{std::cerr << "Error the property does not exist" << "\n";}
 
-		if (id >= base.size())
-		{
-			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
-		}
+		VECTOR_OVERFLOW_STD(id);
 #endif
 
 		return base[id];
@@ -250,7 +287,10 @@ public:
 	 */
 	inline T & get(size_t id)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
 		if (id >= base.size())
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
 #endif
@@ -266,11 +306,11 @@ public:
 	 */
 	inline const T & get(size_t id) const
 	{
-#ifdef DEBUG
-		if (id >= base.size())
-		{
-			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
-		}
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		VECTOR_OVERFLOW_STD(id);
 #endif
 		return base[id];
 	}
@@ -286,6 +326,9 @@ public:
 
 	inline void fill(unsigned char fl)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		memset(&base[0],fl,base.size() * sizeof(T));
 	}
 
@@ -297,14 +340,53 @@ public:
 
 	inline void reserve(size_t ns)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		base.reserve(ns);
 	}
 
 	//! Constructor, vector of size 0
-	vector() {}
+	vector()
+	{
+#ifdef SE_CLASS2
+		check_new(this,8);
+#endif
+	}
 
 	//! Constructor, vector of size sz
-	vector(size_t sz):base(sz) {}
+	vector(size_t sz):base(sz)
+	{
+#ifdef SE_CLASS2
+		check_new(this,8);
+#endif
+	}
+
+	//! Constructor from another vector
+	vector(const vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	{
+#ifdef SE_CLASS2
+		check_new(this,8);
+#endif
+		base = v.base;
+	}
+
+	//! Constructor from another vector
+	vector(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v)
+	{
+#ifdef SE_CLASS2
+		check_new(this,8);
+#endif
+		base = v.base;
+	}
+
+	//! destructor
+	~vector()
+	{
+#ifdef SE_CLASS2
+		check_delete(this);
+#endif
+	}
 
 	/*! swap the content of the vector
 	 *
@@ -313,7 +395,60 @@ public:
 	 */
 	void swap(openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		base.swap(v.base);
+	}
+
+	/*! \brief Operator= copy the vector into another
+	 *
+	 * \return itself
+	 *
+	 */
+	vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		base = v.base;
+
+		return *this;
+	}
+
+	/*! \brief Operator= copy the vector into another
+	 *
+	 * \return itself
+	 *
+	 */
+	vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		base = v.base;
+
+		return *this;
+	}
+
+	/*! \brief Check that two vectors are equal
+	 *
+	 * \param vector to compare
+	 *
+	 */
+	bool operator!=(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	{
+		return base == v.base;
+	}
+
+	/*! \brief Check that two vectors are not equal
+	 *
+	 * \param vector to compare
+	 *
+	 */
+	bool operator==(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	{
+		return base != v.base;
 	}
 
 	/*! \brief Get iterator
@@ -321,9 +456,11 @@ public:
 	 * \return an iterator
 	 *
 	 */
-
 	vector_key_iterator getIterator() const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return vector_key_iterator(base.size());
 	}
 
@@ -351,6 +488,7 @@ public:
 	 */
 	inline static size_t calculateNMem(size_t n)
 	{
+
 		return 1;
 	}
 
@@ -361,6 +499,9 @@ public:
 	 */
 	void * getPointer()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return &base[0];
 	}
 
@@ -372,6 +513,17 @@ public:
 	static bool noPointers()
 	{
 		return false;
+	}
+
+	/*! \brief Return the last error
+	 *
+	 */
+	size_t getLastError()
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		return err_code;
 	}
 };
 

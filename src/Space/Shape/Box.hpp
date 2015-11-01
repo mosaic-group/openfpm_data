@@ -990,6 +990,40 @@ public:
 
 		return str.str();
 	}
+
+	/*! \brief Compare two boxes
+	 *
+	 * \param box
+	 *
+	 * \return true if the boxes are equal
+	 *
+	 */
+	bool operator==(const Box<dim,T> & b)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (getLow(i) != b.getLow(i))
+				return false;
+
+			if (getHigh(i) != b.getHigh(i))
+				return false;
+		}
+
+		return true;
+	}
+
+
+	/*! \brief Compare two boxes
+	 *
+	 * \param box
+	 *
+	 * \return true if the boxes are equal
+	 *
+	 */
+	bool operator!=(const Box<dim,T> & b)
+	{
+		return ! this->operator==(b);
+	}
 };
 
 #endif

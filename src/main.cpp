@@ -10,6 +10,8 @@
 
 // Include tests
 
+#include "Grid/grid_performance_tests.hpp"
+#include "util/copy_compare/meta_cc_unit_tests.hpp"
 #include "util/variadic_to_vmpl_unit_test.hpp"
 #include "Space/Shape/Point_unit_test.hpp"
 #include "timer_util_test.hpp"

@@ -505,6 +505,134 @@ BOOST_AUTO_TEST_CASE( vector_add_test_case )
 
 }
 
+////////// Test function ///////////
+
+openfpm::vector<scalar<float>> & test_error_v()
+{
+	openfpm::vector<scalar<float>> v(16);
+
+	return v;
+}
+
+/////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE( vector_safety_check )
+{
+#if defined(SE_CLASS1) && defined (THROW_ON_ERROR)
+
+	bool error = false;
+
+	typedef Point_test<float> p;
+
+	// Create a vector
+
+	openfpm::vector<Point_test<float>> v(16);
+	openfpm::vector<Point_test<float>> v2(16);
+
+	error = false;
+	try
+	{v.template get<p::x>(23);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	Point_test<float> t;
+	try
+	{v.set(23,t);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	try
+	{v.set(6,v2,23);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	//// Negative key
+
+	error = false;
+	try
+	{v.template get<p::x>(-1);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	Point_test<float> t2;
+	try
+	{v.set(-1,t2);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	try
+	{v.set(12,v2,-1);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	#if defined(SE_CLASS2) && defined (THROW_ON_ERROR)
+
+	error = false;
+
+	// Create a grid
+
+	openfpm::vector<scalar<float>> * v3 = new openfpm::vector<scalar<float>>(16);
+	delete v3;
+
+	// Try to access the class
+
+	try
+	{v3->size();}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,MEM_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	try
+	{
+		openfpm::vector<scalar<float>> vr = test_error_v();
+	}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,MEM_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	#endif
+
+#endif
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif
