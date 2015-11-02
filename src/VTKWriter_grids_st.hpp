@@ -27,12 +27,42 @@ struct cell_grid
 	openfpm::vector<const Grid *> grids;
 
 	// combination
-	const comb<Grid::dims> cmb;
+	comb<Grid::dims> cmb;
 
 	//! construct a cell grid
 	cell_grid(const comb<Grid::dims> & cmb)
 	:cmb(cmb)
 	{}
+
+	//! Copy constructor
+	inline cell_grid(const cell_grid<Grid> & ele)
+	{
+		this->operator=(ele);
+	}
+
+	//! Copy constructor
+	inline cell_grid(cell_grid<Grid> && ele)
+	{
+		this->operator=(ele);
+	}
+
+	//! Copy constructor
+	inline cell_grid<Grid> & operator=(const cell_grid<Grid> & ele)
+	{
+		cmb = ele.cmb;
+		grids = ele.grids;
+
+		return *this;
+	}
+
+	//! Copy constructor
+	inline cell_grid<Grid> & operator=(cell_grid<Grid> && ele)
+	{
+		cmb = ele.cmb;
+		grids = ele.grids;
+
+		return *this;
+	}
 };
 
 template <typename Grid, typename St>
@@ -57,6 +87,50 @@ public:
 	Point<Grid::dims,St> spacing;
 	// Part of the grid that is real domain
 	Box<Grid::dims,size_t> dom;
+
+	//! Copy constructor
+	inline ele_g_st(const ele_g_st & ele)
+	{
+		this->operator=(ele);
+	}
+
+	//! Copy constructor
+	inline ele_g_st(ele_g_st && ele)
+	{
+		this->operator=(ele);
+	}
+
+	/*! \brief Copy the object
+	 *
+	 * \patam ele ele_g_st to copy
+	 *
+	 */
+	ele_g_st<Grid,St> & operator=(const ele_g_st & ele)
+	{
+		dataset = ele.dataset;
+		g = ele.g;
+		offset = ele.offset;
+		spacing = ele.spacing;
+		dom = ele.dom;
+
+		return *this;
+	}
+
+	/*! \brief Copy the object
+	 *
+	 * \patam ele ele_g_st to copy
+	 *
+	 */
+	ele_g_st<Grid,St> & operator=(ele_g_st && ele)
+	{
+		dataset = ele.dataset;
+		g = ele.g;
+		offset = ele.offset;
+		spacing = ele.spacing;
+		dom = ele.dom;
+
+		return *this;
+	}
 };
 
 /*!
