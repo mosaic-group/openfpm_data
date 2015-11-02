@@ -601,7 +601,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 
 	error = false;
 
-	// Create a grid
+	// Create a vector
 
 	openfpm::vector<scalar<float>> * v3 = new openfpm::vector<scalar<float>>(16);
 	delete v3;
