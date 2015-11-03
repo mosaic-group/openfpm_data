@@ -13,6 +13,7 @@
 #include "copy_compare_aggregates.hpp"
 #include "util/for_each_ref.hpp"
 #include <boost/mpl/range_c.hpp>
+#include <iostream>
 
 /*! \brief structure to copy aggregates
  *

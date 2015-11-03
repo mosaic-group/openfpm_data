@@ -446,7 +446,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base = v.base;
+		base.swap(v.base);
 
 		return *this;
 	}
