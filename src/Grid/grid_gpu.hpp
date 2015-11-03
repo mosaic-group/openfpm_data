@@ -59,7 +59,7 @@ public:
 	typedef T type;
 
 	//! Default constructor
-	grid_gpu()
+	grid_gpu() THROW
 	{
 	}
 
@@ -70,7 +70,7 @@ public:
 	}
 
 	//! Constructor it initialize the memory and give representation
-	grid_gpu(std::vector<size_t> & sz)
+	grid_gpu(std::vector<size_t> & sz) THROW
 	:g1(sz)
 	{
 	}

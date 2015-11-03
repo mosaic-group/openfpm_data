@@ -142,7 +142,7 @@ public:
 	typedef T value_type;
 
 	//! Default constructor
-	grid_cpu()
+	grid_cpu() THROW
 	:g1(getV()),isExternal(false)
 	{
 		// Add this pointer
@@ -159,14 +159,14 @@ public:
 	 * \param mem memory object (only used for template deduction)
 	 *
 	 */
-	grid_cpu(const grid_cpu & g)
+	grid_cpu(const grid_cpu & g) THROW
 	:isExternal(false)
 	{
 		this->operator=(g);
 	}
 
 	//! Constructor allocate memory and give them a representation
-	grid_cpu(std::vector<size_t> & sz)
+	grid_cpu(std::vector<size_t> & sz) THROW
 	:g1(sz),isExternal(false)
 	{
 		// Add this pointer
@@ -176,7 +176,7 @@ public:
 	}
 
 	//! Constructor allocate memory and give them a representation
-	grid_cpu(std::vector<size_t> && sz)
+	grid_cpu(std::vector<size_t> && sz) THROW
 	:g1(sz),isExternal(false)
 	{
 		// Add this pointer
@@ -186,7 +186,7 @@ public:
 	}
 
 	//! Constructor allocate memory and give them a representation
-	grid_cpu(const size_t (& sz)[dim])
+	grid_cpu(const size_t (& sz)[dim]) THROW
 	:g1(sz),isExternal(false)
 	{
 		// Add this pointer
@@ -196,7 +196,7 @@ public:
 	}
 
 	//! Destructor
-	~grid_cpu()
+	~grid_cpu() THROW
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
@@ -268,7 +268,7 @@ public:
 	/*! \brief create a duplicated version of the grid
 	 *
 	 */
-	grid_cpu<dim,T,S,Mem> duplicate() const
+	grid_cpu<dim,T,S,Mem> duplicate() const THROW
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
