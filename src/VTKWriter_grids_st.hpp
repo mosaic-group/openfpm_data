@@ -16,8 +16,7 @@
 
 /*! \brief for each combination in the cell grid you can have different grids
  *
- * \param grid
- * \param cg combination
+ * \tparam Grid type of grid
  *
  */
 template <typename Grid>
@@ -29,37 +28,49 @@ struct cell_grid
 	// combination
 	comb<Grid::dims> cmb;
 
+	cell_grid() {}
+
 	//! construct a cell grid
 	cell_grid(const comb<Grid::dims> & cmb)
 	:cmb(cmb)
 	{}
 
-	//! Copy constructor
-	inline cell_grid(const cell_grid<Grid> & ele)
+	cell_grid(const cell_grid<Grid> & cg)
 	{
-		this->operator=(ele);
+		this->operator=(cg);
 	}
 
-	//! Copy constructor
-	inline cell_grid(cell_grid<Grid> && ele)
+	cell_grid(cell_grid<Grid> && cg)
 	{
-		this->operator=(ele);
+		this->operator=(cg);
 	}
 
-	//! Copy constructor
-	inline cell_grid<Grid> & operator=(const cell_grid<Grid> & ele)
+	/*! \brief Copy the cell grid
+	 *
+	 * \param cg cell_grid to copy
+	 *
+	 * \return itself
+	 *
+	 */
+	cell_grid<Grid> & operator=(const cell_grid<Grid> & cg)
 	{
-		cmb = ele.cmb;
-		grids = ele.grids;
+		cmb = cg.cmb;
+		grids = cg.grids;
 
 		return *this;
 	}
 
-	//! Copy constructor
-	inline cell_grid<Grid> & operator=(cell_grid<Grid> && ele)
+	/*! \brief Copy the cell grid
+	 *
+	 * \param cg cell_grid to copy
+	 *
+	 * \return itself
+	 *
+	 */
+	cell_grid<Grid> & operator=(cell_grid<Grid> && cg)
 	{
-		cmb = ele.cmb;
-		grids = ele.grids;
+		cmb = cg.cmb;
+		grids = cg.grids;
 
 		return *this;
 	}
