@@ -662,7 +662,7 @@ namespace openfpm
 		}
 
 		//! Destructor
-		~vector()
+		~vector() noexcept
 		{
 			// Eliminate the pointer
 	#ifdef SE_CLASS2
@@ -675,7 +675,7 @@ namespace openfpm
 		 * \param mv vector
 		 *
 		 */
-		vector(vector<T, Memory,grow_p,OPENFPM_NATIVE> && mv)
+		vector(vector<T, Memory,grow_p,OPENFPM_NATIVE> && mv) noexcept
 		:v_size(mv.v_size),base(mv.base)
 		{
 			// Add this pointer
@@ -722,7 +722,7 @@ namespace openfpm
 		 * \param v the vector
 		 *
 		 */
-		vector(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v)
+		vector(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v) noexcept
 		:v_size(0)
 		{
 #ifdef SE_CLASS2
@@ -732,7 +732,8 @@ namespace openfpm
 		}
 
 		//! Constructor, vector of size 0
-		vector():v_size(0),base(getV(0))
+		vector() noexcept
+		:v_size(0),base(getV(0))
 		{
 #ifdef SE_CLASS2
 			check_new(this,8);

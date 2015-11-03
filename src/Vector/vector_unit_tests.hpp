@@ -17,6 +17,8 @@ BOOST_AUTO_TEST_SUITE( vector_test )
 
 BOOST_AUTO_TEST_CASE (vector_iterator_test)
 {
+	//////////////////////////////////
+
 	openfpm::vector<Point_test<float>> v_ofp_test = allocate_openfpm(FIRST_PUSH);
 
 	size_t count = 0;

@@ -98,6 +98,23 @@ public:
 		base.push_back(v);
 	}
 
+	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
+	 *
+	 * \param v element to add
+	 *
+	 * \warning It is not thread safe should not be used in multi-thread environment
+	 *          reallocation, work only on cpu
+	 *
+	 *vector_isel<T>::value
+	 */
+	inline void add(T && v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		base.emplace_back(v);
+	}
+
 	/*! \brief Add an empty object (it call the default constructor () ) at the end of the vector
 	 *
 	 */
@@ -107,7 +124,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base.resize(base.size() + 1);
+		base.emplace_back(T());
 	}
 
 	/*! \brief Erase the elements from start to end
@@ -347,7 +364,7 @@ public:
 	}
 
 	//! Constructor, vector of size 0
-	vector()
+	vector() noexcept
 	{
 #ifdef SE_CLASS2
 		check_new(this,8);
@@ -355,7 +372,8 @@ public:
 	}
 
 	//! Constructor, vector of size sz
-	vector(size_t sz):base(sz)
+	vector(size_t sz) noexcept
+	:base(sz)
 	{
 #ifdef SE_CLASS2
 		check_new(this,8);
@@ -363,25 +381,27 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(const vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	vector(const vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v) noexcept
 	{
 #ifdef SE_CLASS2
 		check_new(this,8);
 #endif
+
 		base = v.base;
 	}
 
 	//! Constructor from another vector
-	vector(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v)
+	vector(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v) noexcept
 	{
 #ifdef SE_CLASS2
 		check_new(this,8);
 #endif
-		base = v.base;
+
+		base.swap(v.base);
 	}
 
 	//! destructor
-	~vector()
+	~vector() noexcept
 	{
 #ifdef SE_CLASS2
 		check_delete(this);
