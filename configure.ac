@@ -168,10 +168,6 @@ fi
 
 AM_CONDITIONAL(BUILDCUDA, test x$gpu_support = x"yes")
 
-##### CHECK FOR BOOST ###
-
-AX_BOOST([1.52],[],[])
-
 ##########################
 
 AC_SUBST(NVCCFLAGS)
