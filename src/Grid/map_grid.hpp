@@ -406,8 +406,8 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)))) == false) {ACTION_ON_ERROR();}
@@ -428,8 +428,8 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)))) == false) {ACTION_ON_ERROR()};
@@ -450,8 +450,8 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type)) == false) {ACTION_ON_ERROR()};
@@ -472,8 +472,8 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type)) == false) {ACTION_ON_ERROR()};
@@ -494,8 +494,8 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T));
@@ -516,8 +516,8 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		if (check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T)) == false)	{ACTION_ON_ERROR()}
@@ -688,8 +688,8 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(dx)
+		check_init();
+		check_bound(dx);
 #endif
 
 		// create the object to copy the properties
@@ -714,8 +714,8 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(dx)
+		check_init();
+		check_bound(dx);
 #endif
 
 		this->get_o(dx) = obj;
@@ -736,9 +736,9 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(key1)
-		GRID_OVERFLOW_EXT(g,key2)
+		check_init();
+		check_bound(key1);
+		check_bound(g,key2);
 #endif
 
 		this->get_o(key1) = g.get_o(key2);
@@ -866,6 +866,81 @@ public:
 #endif
 		return 0;
 	}
+
+
+#ifdef SE_CLASS1
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 *
+	 */
+	inline void check_init() const
+	{
+		if (is_mem_init == false)
+		{
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+			size_t * err_code_pointer = (size_t *)&this->err_code;
+			*err_code_pointer = 1001;
+			ACTION_ON_ERROR(GRID_ERROR);
+		}
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * \param key
+	 *
+	 */
+	inline void check_bound(const grid_key_dx<dim> & v1) const
+	{
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " >= " << getGrid().size(i) << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1002;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+			else if (v1.get(i) < 0)
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " is negative " << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1003;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+		}
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * check if key2 is inside the g grid boundary
+	 *
+	 * \param g grid
+	 * \param key2
+	 *
+	 */
+	inline void check_bound(const grid_cpu<dim,T,S,Mem> & g,const grid_key_dx<dim> & key2) const
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (key2.get(i) >= (long int)g.g1.size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " >= " << g.g1.size(i) << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1004;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+			else if (key2.get(i) < 0)
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " is negative " << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1005;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+		}
+	}
+
+#endif
 };
 
 /*! \brief this class is a functor for "for_each" algorithm

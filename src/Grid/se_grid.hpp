@@ -17,7 +17,7 @@
 #define GRID_ERROR 1000lu
 
 // Macro for security enhancement
-#define CHECK_INIT() 		if (is_mem_init == false)\
+/*#define CHECK_INIT() 		if (is_mem_init == false)\
 							{\
 								std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";\
 								size_t * err_code_pointer = (size_t *)&this->err_code;\
@@ -59,6 +59,6 @@
 				*err_code_pointer = 1005;\
 				ACTION_ON_ERROR(GRID_ERROR);\
 			}\
-		}
+		}*/
 
 #endif /* SRC_GRID_SE_GRID_HPP_ */
