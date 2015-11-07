@@ -250,14 +250,16 @@ public:
 	 */
 
 	template<typename S> inline grid_sm(const grid_sm<N,S> & g)
-		  {
-		// copy all the members
-
+	{
+		box = g.box;
 		size_tot = g.size_tot;
 
 		for (size_t i = 0 ; i < N ; i++)
-		{sz[i] = g.sz[i]; sz_s[i] = g.sz_s[i];}
-		  }
+		{
+			sz[i] = g.sz[i];
+			sz_s[i] = g.sz_s[i];
+		}
+	}
 
 	// Static element to calculate total size
 
@@ -665,6 +667,33 @@ public:
 	inline grid_key_dx_iterator_sub<N> getSubIterator(grid_key_dx<N> & start, grid_key_dx<N> & stop) const
 	{
 		return grid_key_dx_iterator_sub<N>(*this,start,stop);
+	}
+
+	/*! \brief swap the grid_sm informations
+	 *
+	 * \param g grid to swap
+	 *
+	 */
+	inline void swap(grid_sm<N,T> & g)
+	{
+		Box<N,size_t> box_t = box;
+		box = g.box;
+		g.box = box_t;
+
+		size_t tmp = size_tot;
+		size_tot = g.size_tot;
+		g.size_tot = tmp;
+
+		for (size_t i = 0 ; i < N ; i++)
+		{
+			tmp = sz[i];
+			sz[i] = g.sz[i];
+			g.sz[i] = tmp;
+
+			tmp = sz_s[i];
+			sz_s[i] = g.sz_s[i];
+			g.sz_s[i] = tmp;
+		}
 	}
 
 	//!  It simply mean that all the classes grid are friend of all its specialization

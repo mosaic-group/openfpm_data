@@ -981,6 +981,75 @@ BOOST_AUTO_TEST_CASE(grid_operator_equal)
 	BOOST_REQUIRE_EQUAL(ret,true);
 }
 
+/*! \brief Fill twi grid of boxes with data
+ *
+ * \param g1 Grid1
+ * \param g2 Grid2
+ *
+ */
+
+void fill_2_grid_data(grid_cpu<2,Box<2,float>> & g1, grid_cpu<2,Box<2,float>> & g2)
+{
+	typedef Box<2,float> b;
+
+	auto it1 = g1.getIterator();
+
+	while (it1.isNext())
+	{
+		auto key = it1.get();
+
+		g1.template get<b::p1>(key)[0] = key.get(0);
+		g1.template get<b::p2>(key)[1] = key.get(1);
+
+		++it1;
+	}
+
+	auto it2 = g2.getIterator();
+
+	while (it2.isNext())
+	{
+		auto key = it2.get();
+
+		g2.template get<b::p1>(key)[0] = key.get(0);
+		g2.template get<b::p2>(key)[1] = key.get(1);
+
+		++it2;
+	}
+
+
+}
+
+BOOST_AUTO_TEST_CASE(grid_operator_swap)
+{
+	size_t sz1[] = {16,16};
+	size_t sz2[] = {5,5};
+
+	typedef Box<2,float> b;
+
+	grid_cpu<2,Box<2,float>> g1_old(sz1);
+	g1_old.setMemory();
+	grid_cpu<2,Box<2,float>> g2_old(sz2);
+	g2_old.setMemory();
+	grid_cpu<2,Box<2,float>> g1(sz1);
+	g1.setMemory();
+	grid_cpu<2,Box<2,float>> g2(sz2);
+	g2.setMemory();
+
+	fill_2_grid_data(g1_old,g2_old);
+	fill_2_grid_data(g1,g2);
+
+	//! [swap the memory of two grids]
+
+	g2.swap(g1);
+
+	//! [swap the memory of two grids]
+
+	bool ret = (g2 == g1_old);
+	BOOST_REQUIRE_EQUAL(ret,true);
+	ret = (g1 == g2_old);
+	BOOST_REQUIRE_EQUAL(ret,true);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif

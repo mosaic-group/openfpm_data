@@ -642,8 +642,8 @@ public:
 		// move the data
 		data_.swap(grid.data_);
 
-		// move the grid info
-		g1 = grid.g1;
+		// exghange the grid info
+		g1.swap(grid.g1);
 
 		// exchange the init status
 		bool exg = is_mem_init;

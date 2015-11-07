@@ -162,27 +162,6 @@ fi
 
 INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src"
 
-###### Check for memleak check compilation
-
-AC_MSG_CHECKING(whether to build with memory check)
-mem_check=no
-AC_ARG_ENABLE(memcheck,
-	AC_HELP_STRING(
-	    [--enable-memcheck],
-	    [enable memory checking (def=no)]
-	),
-  	mem_check="$enableval"
-)
-
-
-
-AC_MSG_RESULT($mem_check)
-if test x"$mem_check" = x"yes"; then
-	AC_DEFINE([MEMLEAK_CHECK],[],[Memory check])
-fi
-
-
-
 ####### Checking for GPU support
 
 AX_CUDA

@@ -41,8 +41,6 @@ struct generate_array_constexpr_impl<T,0,orig_N, F, args...> {
     typedef ArrayHolder_constexpr<T,F<0,orig_N>::value, args...> result;
 };
 
-#endif
-
 /*! \brief Main class to generate constexpr compile-time array
  *
  *
@@ -67,6 +65,8 @@ template<class T, size_t N, template<size_t,size_t> class F>
 struct generate_array_constexpr {
     typedef typename generate_array_constexpr_impl<T,N-1, N, F>::result result;
 };
+
+#endif
 
 //////////////////////////////////////////////////
 
