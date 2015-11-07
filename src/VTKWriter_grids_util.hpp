@@ -69,7 +69,7 @@ public:
 		//! vertex node output string
 		std::string v_out;
 
-		typedef typename boost::fusion::result_of::at<typename ele_g::value_type::type,boost::mpl::int_<i>>::type ctype;
+		typedef typename boost::fusion::result_of::at<typename ele_g::value_type::value_type::type,boost::mpl::int_<i>>::type ctype;
 
 		// Check if T is a supported format
 		// for now we support only scalar of native type
@@ -100,7 +100,7 @@ public:
 
 	static std::string get_attributes(const std::string & out)
 	{
-		return ele_g::value_type::attributes::name[i] + out;
+		return ele_g::value_type::value_type::attributes::name[i] + out;
 	}
 };
 

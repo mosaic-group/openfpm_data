@@ -221,8 +221,9 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 	BOOST_REQUIRE_EQUAL(test,true);
 }
 
-/*! \fill the CPU with some random data
+/*! \brief fill the grid with some random data
  *
+ * \param g Grid to fill
  *
  */
 void fill_grid_some_data(grid_cpu<2,Point_test<float>> & g)
@@ -234,7 +235,7 @@ void fill_grid_some_data(grid_cpu<2,Point_test<float>> & g)
 	while (it.isNext())
 	{
 		g.template get<p::x>(it.get()) = it.get().get(0);
-		g.template get<p::y>(it.get()) = it.get().get(0);
+		g.template get<p::y>(it.get()) = it.get().get(1);
 		g.template get<p::z>(it.get()) = 0;
 		g.template get<p::s>(it.get()) = 1.0;
 		g.template get<p::v>(it.get())[0] = g.getGrid().LinId(it.get());
@@ -255,6 +256,61 @@ void fill_grid_some_data(grid_cpu<2,Point_test<float>> & g)
 	}
 }
 
+/*! \brief fill the grid with some random data
+ *
+ * \param g Grid to fill
+ *
+ */
+void fill_grid_some_data_prp(grid_cpu<2,Point_test_prp<float>> & g)
+{
+	typedef Point_test<float> p;
+
+	auto it = g.getIterator();
+
+	while (it.isNext())
+	{
+		g.template get<p::x>(it.get()) = it.get().get(0);
+		g.template get<p::y>(it.get()) = it.get().get(1);
+		g.template get<p::z>(it.get()) = 0;
+		g.template get<p::s>(it.get()) = 1.0;
+		g.template get<p::v>(it.get())[0] = g.getGrid().LinId(it.get());
+		g.template get<p::v>(it.get())[1] = g.getGrid().LinId(it.get());
+		g.template get<p::v>(it.get())[2] = g.getGrid().LinId(it.get());
+
+		g.template get<p::t>(it.get())[0][0] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[0][1] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[0][2] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[1][0] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[1][1] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[1][2] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[2][0] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[2][1] = g.getGrid().LinId(it.get());
+		g.template get<p::t>(it.get())[2][2] = g.getGrid().LinId(it.get());
+
+		++it;
+	}
+}
+
+/*! \brief fill the grid with some random data
+ *
+ *
+ */
+void fill_grid_some_data_scal(grid_cpu<2,Point_test_scal<float>> & g)
+{
+	typedef Point_test<float> p;
+
+	auto it = g.getIterator();
+
+	while (it.isNext())
+	{
+		g.template get<p::x>(it.get()) = it.get().get(0);
+		g.template get<p::y>(it.get()) = it.get().get(1);
+		g.template get<p::z>(it.get()) = 0;
+		g.template get<p::s>(it.get()) = 1.0;
+
+		++it;
+	}
+}
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 {
@@ -359,6 +415,55 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 
 	// Check that match
 	bool test = compare("vtk_grids_st.vtk","vtk_grids_st_test.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
+	}
+
+	{
+	// Create box grids
+	Point<2,float> offset1({0.0,0.0});
+	Point<2,float> spacing1({0.1,0.1});
+	Box<2,size_t> d1({1,2},{14,15});
+
+	// Create box grids
+	Point<2,float> offset2({0.0,0.0});
+	Point<2,float> spacing2({0.1,0.1});
+	Box<2,size_t> d2({2,1},{13,15});
+
+	// Create box grids
+	Point<2,float> offset3({5.0,5.0});
+	Point<2,float> spacing3({0.1,0.1});
+	Box<2,size_t> d3({3,2},{11,10});
+
+	// Create box grids
+	Point<2,float> offset4({5.0,5.0});
+	Point<2,float> spacing4({0.1,0.1});
+	Box<2,size_t> d4({1,1},{7,7});
+
+	size_t sz[] = {16,16};
+	grid_cpu<2,Point_test_scal<float>> g1(sz);
+	g1.setMemory();
+	fill_grid_some_data_scal(g1);
+	grid_cpu<2,Point_test_scal<float>> g2(sz);
+	g2.setMemory();
+	fill_grid_some_data_scal(g2);
+	grid_cpu<2,Point_test_scal<float>> g3(sz);
+	g3.setMemory();
+	fill_grid_some_data_scal(g3);
+	grid_cpu<2,Point_test_scal<float>> g4(sz);
+	g4.setMemory();
+	fill_grid_some_data_scal(g4);
+
+	// Create a writer and write
+	VTKWriter<boost::mpl::pair<grid_cpu<2,Point_test_scal<float>>,float>,VECTOR_GRIDS> vtk_g;
+	vtk_g.add(g1,offset1,spacing1,d1);
+	vtk_g.add(g2,offset2,spacing2,d2);
+	vtk_g.add(g3,offset3,spacing3,d3);
+	vtk_g.add(g4,offset4,spacing4,d4);
+
+	vtk_g.write("vtk_grids_prp.vtk");
+
+	// Check that match
+	bool test = compare("vtk_grids_prp.vtk","vtk_grids_prp_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 	}
 }
