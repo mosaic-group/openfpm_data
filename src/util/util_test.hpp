@@ -8,6 +8,7 @@
 #ifndef UTIL_TEST_HPP_
 #define UTIL_TEST_HPP_
 
+#include "config.h"
 #include "object_util.hpp"
 #include "Point_test.hpp"
 #include "util/ct_array.hpp"
