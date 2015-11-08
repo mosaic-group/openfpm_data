@@ -311,6 +311,8 @@ BOOST_AUTO_TEST_CASE( generate_array )
 
 	// check constexpr compile time array as template parameters
 
+#ifdef COVERTY_SCAN
+
 	{
 	//! [constexpr array]
 	const size_t count = 5;
@@ -322,6 +324,8 @@ BOOST_AUTO_TEST_CASE( generate_array )
 	BOOST_REQUIRE_EQUAL(ct_calc,11);
 	//! [constexpr array]
 	}
+
+#endif
 }
 
 BOOST_AUTO_TEST_CASE( check_templates_util_function )
