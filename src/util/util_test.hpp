@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE( generate_array )
 
 	// check constexpr compile time array as template parameters
 
-#ifdef COVERTY_SCAN
+#ifndef COVERTY_SCAN
 
 	{
 	//! [constexpr array]
