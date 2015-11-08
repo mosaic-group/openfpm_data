@@ -133,6 +133,25 @@ if test x"$action_on_e" = x"throw"; then
            AC_DEFINE([THROW_ON_ERROR],[],[when an error accur continue but avoid unsafe operation])
 fi
 
+########
+
+## Enable scan coverty
+
+AC_MSG_CHECKING(whether to build for scan coverty compilation)
+AC_ARG_ENABLE(scan-coverty,
+        AC_HELP_STRING(
+            [--enable-scan-coverty],
+            [enable scan-coverty compilation (def=no)]
+        ),
+        scancoverty="$enableval"
+)
+
+AC_MSG_RESULT($scancoverty)
+
+if test x"$scancoverty" = x"yes"; then
+        AC_DEFINE([COVERTY_SCAN],[],[Compile for coverty scan])
+fi
+
 ###### Check for debug compilation
 
 AC_MSG_CHECKING(whether to build with debug information)
