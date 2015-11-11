@@ -46,7 +46,7 @@ struct meta_compare
 template<typename T,size_t N1>
 struct meta_compare<T[N1]>
 {
-	static inline bool meta_compare_f(const T src[N1], const T dst[N1])
+	static inline bool meta_compare_f(const T (& src)[N1], const T (& dst)[N1])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -62,7 +62,7 @@ struct meta_compare<T[N1]>
 template<typename T,size_t N1,size_t N2>
 struct meta_compare<T[N1][N2]>
 {
-	static inline bool meta_compare_f(const T src[N1][N2], const T dst[N1][N2])
+	static inline bool meta_compare_f(const T (& src)[N1][N2], const T (& dst)[N1][N2])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -81,7 +81,7 @@ struct meta_compare<T[N1][N2]>
 template<typename T,size_t N1,size_t N2,size_t N3>
 struct meta_compare<T[N1][N2][N3]>
 {
-	static inline bool meta_compare_f(const T src[N1][N2][N3], const T dst[N1][N2][N3])
+	static inline bool meta_compare_f(const T (& src)[N1][N2][N3], const T (& dst)[N1][N2][N3])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{

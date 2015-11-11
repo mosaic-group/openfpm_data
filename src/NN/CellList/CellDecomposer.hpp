@@ -10,6 +10,7 @@
 
 #include "Space/SpaceBox.hpp"
 #include "Space/Matrix.hpp"
+#include "util/copy_compare/meta_compare.hpp"
 
 // Shift transformation
 template<unsigned int dim, typename T>
@@ -147,6 +148,30 @@ public:
 	inline void setTransform(Matrix<dim,T> & mat, Point<dim,T> & orig, size_t crd)
 	{
 
+	}
+
+	/*! \brief It return always true true
+	 *
+	 * There is nothing to compare
+	 *
+	 * \return true
+	 *
+	 */
+	inline bool operator==(const no_transform<dim,T> & nt)
+	{
+		return true;
+	}
+
+	/*! \brief It return always true true
+	 *
+	 * There is nothing to compare
+	 *
+	 * \return true
+	 *
+	 */
+	inline bool operator!=(const no_transform<dim,T> & nt)
+	{
+		return false;
 	}
 };
 
@@ -841,7 +866,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	 */
 	bool operator==(const CellDecomposer_sm<dim,T,transform> & cd)
 	{
-		if (p_middle != cd.p_middle)
+		if (meta_compare<Point<dim,T>>::meta_compare_f(p_middle,cd.p_middle) == false)
 			return false;
 
 		if (t != cd.t)

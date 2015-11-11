@@ -19,7 +19,7 @@
  * \tparam T type to copy
  *
  */
-template<typename T, unsigned int agg=2 * is_openfpm_native<T>::value + std::is_copy_assignable<T>::value>
+template<typename T, unsigned int agg=2 * is_openfpm_native<T>::value>
 struct compare_general
 {
 	/*! \brief Spacialization when there is unknown compare method
@@ -30,29 +30,11 @@ struct compare_general
 	 */
 	static inline bool compare_general_f(const T & src, const T & dst)
 	{
-		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << demangle(typeid(T).name()) << " does not have an operator== and is not an aggregate or an openfpm native structure, comparation is not possible" << "\n";
+		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << "  " << demangle(typeid(T).name()) << " does not have an operator== and is not an aggregate or an openfpm native structure, comparation is not possible" << "\n";
 		return false;
 	}
 };
 
-/*! \brief
- *
- *
- */
-template<typename T>
-struct compare_general<T,1>
-{
-	/*! \brief compare objects that has an operator== (implicit or explicit)
-	 *
-	 * \tparam src source object to copy
-	 * \tparam dst destination object
-	 *
-	 */
-	static inline bool compare_general_f(const T & src, const T & dst)
-	{
-		return dst == src;
-	}
-};
 
 template<typename T>
 struct compare_general<T,2>
@@ -74,7 +56,7 @@ struct compare_general<T,2>
 };
 
 template<typename T>
-struct compare_general<T,3>
+struct compare_general<T,0>
 {
 	/*! \brief compare objects that are aggregates but define an operator=
 	 *

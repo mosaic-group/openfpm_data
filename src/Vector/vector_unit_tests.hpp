@@ -516,6 +516,74 @@ openfpm::vector<scalar<float>> & test_error_v()
 	return v;
 }
 
+BOOST_AUTO_TEST_CASE( vector_copy_and_compare )
+{
+	{
+	openfpm::vector<openfpm::vector<float>> v1;
+
+	v1.add();
+	v1.last().add(1.0);
+	v1.last().add(10.0);
+	v1.last().add(11.0);
+	v1.last().add(21.0);
+	v1.last().add(13.0);
+	v1.add();
+	v1.last().add(11.0);
+	v1.last().add(41.0);
+	v1.last().add(61.0);
+	v1.last().add(91.0);
+	v1.add();
+	v1.last().add(133.0);
+	v1.last().add(221.0);
+
+	openfpm::vector<openfpm::vector<float>> v2;
+
+	v2 = v1;
+
+	bool ret = (v2 == v1);
+	BOOST_REQUIRE_EQUAL(ret,true);
+
+	v1.get(2).get(1) = 222.0;
+
+	ret = (v2 == v1);
+	BOOST_REQUIRE_EQUAL(ret,false);
+	}
+
+	{
+	Box<3,float> bt({1.2,1.3,1.5},{6.0,7.0,8.0});
+
+	openfpm::vector<openfpm::vector<Box<3,float>>> v1;
+
+	v1.add();
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.add();
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.add();
+	v1.last().add(bt);
+	v1.last().add(bt);
+
+	openfpm::vector<openfpm::vector<Box<3,float>>> v2;
+
+	v2 = v1;
+
+	bool ret = (v2 == v1);
+	BOOST_REQUIRE_EQUAL(ret,true);
+
+	v1.get(2).get(1).template get<Box<3,float>::p1>()[0] = 222.0;
+
+	ret = (v2 == v1);
+	BOOST_REQUIRE_EQUAL(ret,false);
+	}
+
+}
+
 /////////////////////////////////////
 
 BOOST_AUTO_TEST_CASE( vector_safety_check )

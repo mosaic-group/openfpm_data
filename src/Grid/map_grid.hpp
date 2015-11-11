@@ -89,10 +89,6 @@ public:
 
 private:
 
-	//! Error code
-	size_t err_code;
-
-
 	//! Is the memory initialized
 	bool is_mem_init = false;
 
@@ -104,6 +100,9 @@ private:
 
 	//! The memory allocator is not internally created
 	bool isExternal;
+
+	//! Error code
+	size_t err_code;
 
 	/*! \brief Get 1D vector with the
 	 *
@@ -143,7 +142,7 @@ public:
 
 	//! Default constructor
 	grid_cpu() THROW
-	:g1(getV()),isExternal(false)
+	:g1(getV()),isExternal(false),err_code(0)
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
@@ -160,14 +159,14 @@ public:
 	 *
 	 */
 	grid_cpu(const grid_cpu & g) THROW
-	:isExternal(false)
+	:isExternal(false),err_code(0)
 	{
 		this->operator=(g);
 	}
 
 	//! Constructor allocate memory and give them a representation
 	grid_cpu(std::vector<size_t> & sz) THROW
-	:g1(sz),isExternal(false)
+	:g1(sz),isExternal(false),err_code(0)
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
@@ -177,7 +176,7 @@ public:
 
 	//! Constructor allocate memory and give them a representation
 	grid_cpu(std::vector<size_t> && sz) THROW
-	:g1(sz),isExternal(false)
+	:g1(sz),isExternal(false),err_code(0)
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
@@ -187,7 +186,7 @@ public:
 
 	//! Constructor allocate memory and give them a representation
 	grid_cpu(const size_t (& sz)[dim]) THROW
-	:g1(sz),isExternal(false)
+	:g1(sz),isExternal(false),err_code(0)
 	{
 		// Add this pointer
 #ifdef SE_CLASS2

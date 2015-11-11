@@ -365,6 +365,7 @@ public:
 
 	//! Constructor, vector of size 0
 	vector() noexcept
+	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
 		check_new(this,8);
@@ -373,7 +374,7 @@ public:
 
 	//! Constructor, vector of size sz
 	vector(size_t sz) noexcept
-	:base(sz)
+	:v_size(0),base(sz),err_code(0)
 	{
 #ifdef SE_CLASS2
 		check_new(this,8);
@@ -382,6 +383,7 @@ public:
 
 	//! Constructor from another vector
 	vector(const vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v) noexcept
+	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
 		check_new(this,8);
@@ -392,6 +394,7 @@ public:
 
 	//! Constructor from another vector
 	vector(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v) noexcept
+	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
 		check_new(this,8);
@@ -456,9 +459,9 @@ public:
 	 * \param vector to compare
 	 *
 	 */
-	bool operator!=(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	bool operator!=(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v) const
 	{
-		return base == v.base;
+		return base != v.base;
 	}
 
 	/*! \brief Check that two vectors are not equal
@@ -466,9 +469,9 @@ public:
 	 * \param vector to compare
 	 *
 	 */
-	bool operator==(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	bool operator==(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v) const
 	{
-		return base != v.base;
+		return base == v.base;
 	}
 
 	/*! \brief Get iterator

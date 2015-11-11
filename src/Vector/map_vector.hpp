@@ -723,7 +723,7 @@ namespace openfpm
 		 *
 		 */
 		vector(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v) THROW
-		:v_size(0)
+		:v_size(0),err_code(0)
 		{
 #ifdef SE_CLASS2
 			check_new(this,8);
@@ -733,7 +733,7 @@ namespace openfpm
 
 		//! Constructor, vector of size 0
 		vector() THROW
-		:v_size(0),base(getV(0))
+		:v_size(0),base(getV(0)),err_code(0)
 		{
 #ifdef SE_CLASS2
 			check_new(this,8);
@@ -742,7 +742,8 @@ namespace openfpm
 		}
 
 		//! Constructor, vector of size sz
-		vector(size_t sz):v_size(sz),base(getV(sz))
+		vector(size_t sz) THROW
+		:v_size(sz),base(getV(sz)),err_code(0)
 		{
 #ifdef SE_CLASS2
 			check_new(this,8);
@@ -857,7 +858,7 @@ namespace openfpm
 		 * \param vector to compare
 		 *
 		 */
-		bool operator!=(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v)
+		bool operator!=(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v) const
 		{
 			return !this->operator==(v);
 		}
@@ -867,19 +868,21 @@ namespace openfpm
 		 * \param vector to compare
 		 *
 		 */
-		bool operator==(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v)
+		bool operator==(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v) const
 		{
-			if (v_size = v.v_size)
+			if (v_size != v.v_size)
 				return false;
 
 			// check object by object
 			for (size_t i = 0 ; i < v_size ; i++ )
 			{
 				grid_key_dx<1> key(i);
-				base.get_o(key) == v.base.get_o(key);
+
+				if (base.get_o(key) != v.base.get_o(key))
+					return false;
 			}
 
-			return *this;
+			return true;
 		}
 
 		/*! \brief Swap the memory with another vector

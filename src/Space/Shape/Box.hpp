@@ -90,7 +90,7 @@ public:
 	 * \return true if they intersect
 	 *
 	 */
-	bool Intersect(const Box<dim,T> & b, Box<dim,T> & b_out)
+	bool Intersect(const Box<dim,T> & b, Box<dim,T> & b_out) const
 	{
 		// check if p1 of b is smaller than
 
@@ -123,7 +123,7 @@ public:
 	 * \return true if they intersect
 	 *
 	 */
-	template<typename Mem> bool Intersect(const encapc<1,Box<dim,T>,Mem> & e_b, Box<dim,T> & b_out)
+	template<typename Mem> bool Intersect(const encapc<1,Box<dim,T>,Mem> & e_b, Box<dim,T> & b_out) const
 	{
 		return Intersect(e_b,b_out);
 	}
@@ -751,7 +751,7 @@ public:
 	 * \param reset_p1 if true set p1 to 0
 	 *
 	 */
-	inline void contained(Box<dim,T> & en, const bool reset_p1 = true)
+	inline void contained(const Box<dim,T> & en, const bool reset_p1 = true)
 	{
 		for (size_t j = 0 ; j < dim ; j++)
 		{
@@ -998,7 +998,7 @@ public:
 	 * \return true if the boxes are equal
 	 *
 	 */
-	bool operator==(const Box<dim,T> & b)
+	bool operator==(const Box<dim,T> & b) const
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -1020,7 +1020,7 @@ public:
 	 * \return true if the boxes are equal
 	 *
 	 */
-	bool operator!=(const Box<dim,T> & b)
+	bool operator!=(const Box<dim,T> & b) const
 	{
 		return ! this->operator==(b);
 	}

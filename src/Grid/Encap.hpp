@@ -307,7 +307,7 @@ public:
 	 * \return true if the two encap store the same information
 	 *
 	 */
-	inline bool operator==(const encapc<dim,T,Mem> & ec)
+	inline bool operator==(const encapc<dim,T,Mem> & ec) const
 	{
 		compare_fusion_vector<typename T::type> cp(ec.data_c,data_c);
 
@@ -323,7 +323,7 @@ public:
 	 * \return true if the two encap store different information
 	 *
 	 */
-	inline bool operator!=(const encapc<dim,T,Mem> & ec)
+	inline bool operator!=(const encapc<dim,T,Mem> & ec) const
 	{
 		return ! this->operator==(ec);
 	}

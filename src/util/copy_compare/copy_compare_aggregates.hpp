@@ -8,6 +8,8 @@
 #ifndef OPENFPM_DATA_SRC_UTIL_COPY_COMPARE_AGGREGATES_HPP_
 #define OPENFPM_DATA_SRC_UTIL_COPY_COMPARE_AGGREGATES_HPP_
 
+#include <boost/type_traits.hpp>
+
 template<typename T> struct meta_copy;
 template<typename T> struct meta_compare;
 
@@ -77,7 +79,7 @@ struct compare_aggregate
 		if (eq == false)
 			return;
 
-		eq = meta_compare<compare_rtype>::meta_compare_f(src.template get<T::value>(),dst.template get<T::value>());
+		eq = meta_compare<compare_rtype>::meta_compare_f(boost::fusion::at_c<T::value>(src.data),boost::fusion::at_c<T::value>(dst.data));
 	}
 
 	/*! \brief Returh the result of the comparison
