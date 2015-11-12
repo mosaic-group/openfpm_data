@@ -36,6 +36,7 @@
 #include "se_grid.hpp"
 #include "memory/HeapMemory.hpp"
 #include "grid_common.hpp"
+#include "util/se_util.hpp"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;

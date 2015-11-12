@@ -15,14 +15,6 @@
 
 #define VECTOR_ERROR 2000lu
 
-#define VECTOR_OVERFLOW_STD(v1) 		if (v1 >= base.size())\
-		{\
-			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << v1 << "\n";\
-			size_t * err_code_pointer = (size_t *)&this->err_code;\
-			*err_code_pointer = 2001;\
-			ACTION_ON_ERROR(VECTOR_ERROR);\
-		}
-
 #define VECTOR_OVERFLOW_NATIVE(id) if (id >= v_size)\
 		{\
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";\

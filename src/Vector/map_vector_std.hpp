@@ -152,7 +152,7 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		VECTOR_OVERFLOW_STD(key);
+		vector_overflow(key);
 #endif
 		base.erase(base.begin() + key);
 	}
@@ -265,7 +265,7 @@ public:
 		if (p != 0)
 		{std::cerr << "Error the property does not exist" << "\n";}
 
-		VECTOR_OVERFLOW_STD(id);
+		vector_overflow(id);
 #endif
 
 		return base[id];
@@ -289,7 +289,7 @@ public:
 		if (p != 0)
 		{std::cerr << "Error the property does not exist" << "\n";}
 
-		VECTOR_OVERFLOW_STD(id);
+		vector_overflow(id);
 #endif
 
 		return base[id];
@@ -327,7 +327,7 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		VECTOR_OVERFLOW_STD(id);
+		vector_overflow(id);
 #endif
 		return base[id];
 	}
@@ -547,6 +547,22 @@ public:
 		check_valid(this,8);
 #endif
 		return err_code;
+	}
+
+	/*! \brief check that the id does not overflow the buffer
+	 *
+	 * \param id to check
+	 *
+	 */
+	inline void vector_overflow(size_t v1) const
+	{
+		if (v1 >= base.size())
+		{
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << v1 << "\n";\
+			size_t * err_code_pointer = (size_t *)&this->err_code;\
+			*err_code_pointer = 2001;\
+			ACTION_ON_ERROR(VECTOR_ERROR);\
+		}
 	}
 };
 
