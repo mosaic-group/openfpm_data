@@ -20,6 +20,12 @@ BOOST_AUTO_TEST_CASE( grid_expression_use)
 	const grid_key_dx<3> key2(4,5,6);
 	const grid_key_dx<3> key3(12,11,10);
 
+	grid_key_dx<3> res2 = key3 + key2;
+
+	BOOST_REQUIRE_EQUAL(res2.get(0),16);
+	BOOST_REQUIRE_EQUAL(res2.get(1),16);
+	BOOST_REQUIRE_EQUAL(res2.get(2),16);
+
 	grid_key_dx<3> res = key3 + c - key2;
 
 	BOOST_REQUIRE_EQUAL(res.get(0),3);

@@ -70,6 +70,15 @@ public:
 			k[i] = 0;
 	}
 
+	/* \brief Set to one the key
+	 *
+	 */
+	inline void one()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			k[i] = 1;
+	}
+
 	/* \brief Set to invalid the key
 	 *
 	 */
@@ -77,6 +86,20 @@ public:
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			k[i] = -1;
+	}
+
+	/* \brief sum a grid_key to the grid_key
+	 *
+	 * \param comb combination (or relative movement)
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
+	inline grid_key_dx_sum<dim,grid_key_dx<dim>,grid_key_dx<dim>> operator+(const grid_key_dx<dim> & p) const
+	{
+		grid_key_dx_sum<dim,grid_key_dx<dim>,grid_key_dx<dim>> exp_sum(*this,p);
+
+		return exp_sum;
 	}
 
 	/* \brief sum an a combination to the grid_key
