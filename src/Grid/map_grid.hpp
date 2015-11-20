@@ -109,10 +109,11 @@ private:
 	 *
 	 * Get std::vector with element 0 to dim set to 0
 	 *
+	 * \return an std::vector
+	 *
 	 */
-
 	std::vector<size_t> getV()
-				{
+	{
 		std::vector<size_t> tmp;
 
 		for (unsigned int i = 0 ; i < dim ; i++)
@@ -121,7 +122,81 @@ private:
 		}
 
 		return tmp;
-				}
+	}
+
+#ifdef SE_CLASS1
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 *
+	 */
+	inline void check_init() const
+	{
+		if (is_mem_init == false)
+		{
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+			size_t * err_code_pointer = (size_t *)&this->err_code;
+			*err_code_pointer = 1001;
+			ACTION_ON_ERROR(GRID_ERROR);
+		}
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * \param key
+	 *
+	 */
+	inline void check_bound(const grid_key_dx<dim> & v1) const
+	{
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " >= " << getGrid().size(i) << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1002;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+			else if (v1.get(i) < 0)
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " is negative " << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1003;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+		}
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * check if key2 is inside the g grid boundary
+	 *
+	 * \param g grid
+	 * \param key2
+	 *
+	 */
+	inline void check_bound(const grid_cpu<dim,T,S,Mem> & g,const grid_key_dx<dim> & key2) const
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (key2.get(i) >= (long int)g.g1.size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " >= " << g.g1.size(i) << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1004;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+			else if (key2.get(i) < 0)
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " is negative " << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1005;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+		}
+	}
+
+#endif
 
 public:
 
@@ -147,7 +222,7 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 	}
 
@@ -171,7 +246,7 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 	}
 
@@ -181,7 +256,7 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 	}
 
@@ -191,14 +266,14 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 	}
 
 	//! Destructor
 	~grid_cpu() THROW
 	{
-		// Add this pointer
+		// delete this pointer
 #ifdef SE_CLASS2
 		check_delete(this);
 #endif
@@ -213,7 +288,7 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 		swap(g.duplicate());
 
@@ -229,7 +304,7 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 
 		swap(g);
@@ -867,80 +942,17 @@ public:
 		return 0;
 	}
 
-
-#ifdef SE_CLASS1
-
-	/*! \brief Check that the key is inside the grid
+	/* \brief It return the id of structure in the allocation list
 	 *
+	 * \see print_alloc and SE_CLASS2
 	 *
 	 */
-	inline void check_init() const
+	long int who()
 	{
-		if (is_mem_init == false)
-		{
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-			size_t * err_code_pointer = (size_t *)&this->err_code;
-			*err_code_pointer = 1001;
-			ACTION_ON_ERROR(GRID_ERROR);
-		}
-	}
-
-	/*! \brief Check that the key is inside the grid
-	 *
-	 * \param key
-	 *
-	 */
-	inline void check_bound(const grid_key_dx<dim> & v1) const
-	{
-		for (long int i = 0 ; i < dim ; i++)
-		{
-			if (v1.get(i) >= (long int)getGrid().size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " >= " << getGrid().size(i) << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1002;
-				ACTION_ON_ERROR(GRID_ERROR);
-			}
-			else if (v1.get(i) < 0)
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " is negative " << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1003;
-				ACTION_ON_ERROR(GRID_ERROR);
-			}
-		}
-	}
-
-	/*! \brief Check that the key is inside the grid
-	 *
-	 * check if key2 is inside the g grid boundary
-	 *
-	 * \param g grid
-	 * \param key2
-	 *
-	 */
-	inline void check_bound(const grid_cpu<dim,T,S,Mem> & g,const grid_key_dx<dim> & key2) const
-	{
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			if (key2.get(i) >= (long int)g.g1.size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " >= " << g.g1.size(i) << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1004;
-				ACTION_ON_ERROR(GRID_ERROR);
-			}
-			else if (key2.get(i) < 0)
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " is negative " << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1005;
-				ACTION_ON_ERROR(GRID_ERROR);
-			}
-		}
-	}
-
+#ifdef SE_CLASS2
+		return check_whoami(this,8);
 #endif
+	}
 };
 
 /*! \brief this class is a functor for "for_each" algorithm

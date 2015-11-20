@@ -680,7 +680,7 @@ namespace openfpm
 		{
 			// Add this pointer
 #ifdef SE_CLASS2
-			check_new(this,8);
+			check_new(this,8,VECTOR_EVENT,1);
 #endif
 		}
 
@@ -712,7 +712,7 @@ namespace openfpm
 		{
 			// Add this pointer
 #ifdef SE_CLASS2
-			check_new(this,8);
+			check_new(this,8,VECTOR_EVENT,1);
 #endif
 			swap(v);
 		}
@@ -726,7 +726,7 @@ namespace openfpm
 		:v_size(0),err_code(0)
 		{
 #ifdef SE_CLASS2
-			check_new(this,8);
+			check_new(this,8,VECTOR_EVENT,1);
 #endif
 			swap(v.duplicate());
 		}
@@ -736,7 +736,7 @@ namespace openfpm
 		:v_size(0),base(getV(0)),err_code(0)
 		{
 #ifdef SE_CLASS2
-			check_new(this,8);
+			check_new(this,8,VECTOR_EVENT,1);
 #endif
 			base.setMemory();
 		}
@@ -746,7 +746,7 @@ namespace openfpm
 		:v_size(sz),base(getV(sz)),err_code(0)
 		{
 #ifdef SE_CLASS2
-			check_new(this,8);
+			check_new(this,8,VECTOR_EVENT,1);
 #endif
 			base.setMemory();
 		}
@@ -1055,6 +1055,18 @@ namespace openfpm
 		static bool noPointers()
 		{
 			return false;
+		}
+
+		/* \brief It return the id of structure in the allocation list
+		 *
+		 * \see print_alloc and SE_CLASS2
+		 *
+		 */
+		long int who()
+		{
+#ifdef SE_CLASS2
+			return check_whoami(this,8);
+#endif
 		}
 	};
 

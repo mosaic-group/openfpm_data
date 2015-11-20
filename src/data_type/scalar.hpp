@@ -8,6 +8,8 @@
 #ifndef SCALAR_HPP_
 #define SCALAR_HPP_
 
+#include <boost/fusion/container/vector.hpp>
+
 /*! \brief it define a scalar value compatible with grid_cpu , grid_gpu, vector, graph ...
  *
  * \tparam T scalar type
