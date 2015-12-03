@@ -368,7 +368,7 @@ public:
 	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
 	}
 
@@ -377,7 +377,7 @@ public:
 	:v_size(0),base(sz),err_code(0)
 	{
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
 	}
 
@@ -386,7 +386,7 @@ public:
 	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
 
 		base = v.base;
@@ -397,7 +397,7 @@ public:
 	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
 
 		base.swap(v.base);
@@ -563,6 +563,18 @@ public:
 			*err_code_pointer = 2001;\
 			ACTION_ON_ERROR(VECTOR_ERROR);\
 		}
+	}
+
+	/* \brief It return the id of structure in the allocation list
+	 *
+	 * \see print_alloc and SE_CLASS2
+	 *
+	 */
+	long int who()
+	{
+#ifdef SE_CLASS2
+		return check_whoami(this,8);
+#endif
 	}
 };
 
