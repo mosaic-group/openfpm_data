@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D )
 	bool test = compare("vtk_graph_v2.vtk","vtk_graph_v2_test.vtk");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
-/*
+
 BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D_edge )
 {
 	// Create some graphs and output them
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D_edge )
 	bool test = compare("vtk_graph_v4.vtk","vtk_graph_v4_test.vtk");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
-*/
+
 struct vertex3
 {
 	//! The node contain 3 unsigned long integer for communication computation memory and id
