@@ -775,7 +775,7 @@ namespace openfpm
 		 * \param obj
 		 *
 		 */
-		void set(size_t id, T & obj)
+		void set(size_t id, const T & obj)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
