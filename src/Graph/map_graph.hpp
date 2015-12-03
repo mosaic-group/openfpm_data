@@ -54,7 +54,8 @@
 /*! \brief class with no edge
  *
  */
-class no_edge {
+class no_edge
+{
 public:
 	typedef boost::fusion::vector<> type;
 	typedef typename memory_traits_inte<type>::type memory_int;
@@ -65,9 +66,8 @@ public:
 	static const unsigned int max_prop = 0;
 };
 
-template<typename V, typename E, template<typename, typename, typename,
-		unsigned int> class VertexList, template<typename, typename, typename,
-		unsigned int> class EdgeList, typename Memory, typename grow_p>
+template<typename V, typename E, template<typename, typename, typename, unsigned int> class VertexList, template<typename, typename, typename, unsigned int> class EdgeList, typename Memory,
+		typename grow_p>
 class Graph_CSR;
 
 /*! \brief Structure used inside GraphCSR an edge
@@ -77,7 +77,8 @@ class Graph_CSR;
  *
  */
 
-class e_map {
+class e_map
+{
 public:
 	typedef boost::fusion::vector<size_t, size_t> type;
 	typedef typename memory_traits_inte<type>::type memory_int;
@@ -91,17 +92,20 @@ public:
 
 	// Setter method
 
-	inline void setvid(size_t vid_) {
+	inline void setvid(size_t vid_)
+	{
 		boost::fusion::at_c<0>(data) = vid_;
 	}
 	;
-	inline void seteid(size_t eid_) {
+	inline void seteid(size_t eid_)
+	{
 		boost::fusion::at_c<1>(data) = eid_;
 	}
 	;
 };
 
-class edge_key {
+class edge_key
+{
 public:
 
 	// Actual source node
@@ -110,7 +114,8 @@ public:
 	//Actual target node
 	size_t pos_e;
 
-	void begin() {
+	void begin()
+	{
 		pos = 0;
 		pos_e = 0;
 	}
@@ -120,7 +125,8 @@ public:
 	 * \return the source of this edge
 	 *
 	 */
-	size_t & source() {
+	size_t & source()
+	{
 		return pos;
 	}
 
@@ -130,7 +136,8 @@ public:
 	 *
 	 */
 
-	size_t & target_t() {
+	size_t & target_t()
+	{
 		return pos_e;
 	}
 };
@@ -140,7 +147,8 @@ public:
  */
 
 template<typename Graph>
-class edge_iterator {
+class edge_iterator
+{
 	//! Graph
 	const Graph & g;
 
@@ -156,7 +164,8 @@ public:
 	 */
 
 	edge_iterator(const Graph & g) :
-			g(g) {
+			g(g)
+	{
 		ek.begin();
 	}
 
@@ -166,18 +175,23 @@ public:
 	 *
 	 */
 
-	edge_iterator & operator++() {
+	edge_iterator & operator++()
+	{
 		// Check if reach the end of the edge list
-		if (ek.pos_e + 1 >= g.getNChilds(ek.pos)) {
+		if (ek.pos_e + 1 >= g.getNChilds(ek.pos))
+		{
 			// increment the node position and reset
 			ek.pos++;
 			ek.pos_e = 0;
 
 			// skip every vertex without edges
-			while (ek.pos < g.getNVertex() && g.getNChilds(ek.pos) == 0) {
+			while (ek.pos < g.getNVertex() && g.getNChilds(ek.pos) == 0)
+			{
 				ek.pos++;
 			}
-		} else {
+		}
+		else
+		{
 			// increment the edge position
 			ek.pos_e++;
 		}
@@ -193,8 +207,10 @@ public:
 	 *
 	 */
 
-	bool isNext() {
-		if (ek.pos < g.getNVertex()) {
+	bool isNext()
+	{
+		if (ek.pos < g.getNVertex())
+		{
 			//! we did not reach the end of the node
 
 			return true;
@@ -211,7 +227,8 @@ public:
 	 * \return the actual key
 	 *
 	 */
-	edge_key get() {
+	edge_key get()
+	{
 		return ek;
 	}
 
@@ -220,7 +237,8 @@ public:
 	 * \return the source node
 	 *
 	 */
-	size_t source() {
+	size_t source()
+	{
 		return ek.pos;
 	}
 
@@ -229,7 +247,8 @@ public:
 	 * \return the target node
 	 *
 	 */
-	size_t target() {
+	size_t target()
+	{
 		return g.getChild(ek.pos, ek.pos_e);
 	}
 };
@@ -261,20 +280,21 @@ public:
  *
  */
 
-template<typename V, typename E = no_edge, template<typename, typename,
-		typename, unsigned int> class VertexList = openfpm::vector,
-		template<typename, typename, typename, unsigned int> class EdgeList = openfpm::vector,
-		typename Memory = HeapMemory,
-		typename grow_p = openfpm::grow_policy_double>
-class Graph_CSR {
+template<typename V, typename E = no_edge, template<typename, typename, typename, unsigned int> class VertexList = openfpm::vector,
+		template<typename, typename, typename, unsigned int> class EdgeList = openfpm::vector, typename Memory = HeapMemory, typename grow_p = openfpm::grow_policy_double>
+class Graph_CSR
+{
 	//! number of slot per vertex
 	size_t v_slot;
 
 	//! Structure that store the vertex properties
 	VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value> v;
 
+	//! Hashmap to access to the global position given the re-mapped one (needed for access the map)
+	std::unordered_map<size_t, size_t> mapToGlobal;
+
 	//! Vector that stores 'id's in the position of the vertex in the main vector (needed to fast access by property 'id')
-	std::unordered_map<size_t, size_t> map_ids;
+	std::unordered_map<size_t, size_t> globalToLocal;
 
 	//! Structure that store the number of adjacent vertex in e_l for each vertex
 	VertexList<size_t, Memory, grow_p, openfpm::vect_isel<size_t>::value> v_l;
@@ -297,8 +317,8 @@ class Graph_CSR {
 	 *
 	 */
 
-	template<typename CheckPolicy = NoCheck> inline size_t addEdge_(size_t v1,
-			size_t v2) {
+	template<typename CheckPolicy = NoCheck> inline size_t addEdge_(size_t v1, size_t v2)
+	{
 		// If v1 and v2 does not satisfy some criteria return
 		if (CheckPolicy::valid(v1, v.size()) == false)
 			return NO_EDGE;
@@ -311,14 +331,17 @@ class Graph_CSR {
 #ifdef DEBUG
 		// Check that v1 and v2 exist
 
-		if (v1 >= v.size() || v2 >= v.size()) {
+		if (v1 >= v.size() || v2 >= v.size())
+		{
 			//std::cout << "Warning graph: creating an edge between vertex that does not exist" << "\n";
 		}
 
 		// Check that the edge does not already exist
 
-		for (size_t s = 0; s < id_x_end; s++) {
-			if (e_l.template get<e_map::vid>(v1 * v_slot + s) == v2) {
+		for (size_t s = 0; s < id_x_end; s++)
+		{
+			if (e_l.template get<e_map::vid>(v1 * v_slot + s) == v2)
+			{
 				std::cerr << "Error graph: the edge already exist\n";
 			}
 		}
@@ -326,7 +349,8 @@ class Graph_CSR {
 
 		// Check if there is space for another edge
 
-		if (id_x_end >= v_slot) {
+		if (id_x_end >= v_slot)
+		{
 			// Unfortunately there is not space we need to reallocate memory
 			// Reallocate with double slot
 
@@ -336,7 +360,8 @@ class Graph_CSR {
 
 			// Copy the graph
 
-			for (size_t i = 0; i < v.size(); i++) {
+			for (size_t i = 0; i < v.size(); i++)
+			{
 				// copy the property from the old graph
 
 				g_new.v.set(i, v, 2 * i);
@@ -351,7 +376,8 @@ class Graph_CSR {
 		// Check that e_l has enough space to store new edge
 		// should be always e.size == e_l.size
 
-		if (id_x_end >= e_l.size()) {
+		if (id_x_end >= e_l.size())
+		{
 			// Resize the basic structure
 
 			e_l.resize(v.size() * v_slot);
@@ -391,7 +417,8 @@ public:
 	 *
 	 */
 
-	Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> duplicate() {
+	Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> duplicate()
+	{
 		Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> dup;
 
 		dup.v_slot = v_slot;
@@ -413,7 +440,8 @@ public:
 	 *
 	 */
 	Graph_CSR() :
-			Graph_CSR(0, 16) {
+			Graph_CSR(0, 16)
+	{
 	}
 
 	/*! \brief Constructor
@@ -422,7 +450,8 @@ public:
 	 *
 	 */
 	Graph_CSR(size_t n_vertex) :
-			Graph_CSR(n_vertex, 16) {
+			Graph_CSR(n_vertex, 16)
+	{
 	}
 
 	/*! \brief Constructor
@@ -431,7 +460,8 @@ public:
 	 *
 	 */
 	Graph_CSR(size_t n_vertex, size_t n_slot) :
-			v_slot(n_slot) {
+			v_slot(n_slot)
+	{
 		//! Creating n_vertex into the graph
 		v.resize(n_vertex);
 		//! Creating n_vertex adjacency list counters
@@ -445,7 +475,8 @@ public:
 	/*! \brief Copy constructor
 	 *
 	 */
-	Graph_CSR(Graph_CSR<V, E, VertexList, EdgeList, Memory> && g) {
+	Graph_CSR(Graph_CSR<V, E, VertexList, EdgeList, Memory> && g)
+	{
 		swap(g);
 	}
 
@@ -458,7 +489,7 @@ public:
 	{
 		swap(g);
 	}
-	
+
 	/*! \breif Copy the graph
 	 * 
 	 * \param g graph to copy
@@ -468,7 +499,7 @@ public:
 	{
 		swap(g.duplicate());
 	}
-	
+
 	/*! \brief operator to access the vertex
 	 *
 	 * operator to access the vertex
@@ -477,8 +508,8 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	template<unsigned int i> auto vertex_p(
-			size_t id) -> decltype( v.template get<i>(id) ) {
+	template<unsigned int i> auto vertex_p(size_t id) -> decltype( v.template get<i>(id) )
+	{
 		return v.template get<i>(id);
 	}
 
@@ -488,8 +519,8 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	template<unsigned int i> auto vertex_p(
-			grid_key_dx<1> id) -> decltype( v.template get<i>(id) ) {
+	template<unsigned int i> auto vertex_p(grid_key_dx<1> id) -> decltype( v.template get<i>(id) )
+	{
 		return v.template get<i>(id);
 	}
 
@@ -498,7 +529,8 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(size_t id) -> decltype( v.get(id) ) {
+	auto vertex(size_t id) -> decltype( v.get(id) )
+	{
 		return v.get(id);
 	}
 
@@ -509,7 +541,8 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(grid_key_dx<1> id) -> decltype( v.get(id.get(0)) ) {
+	auto vertex(grid_key_dx<1> id) -> decltype( v.get(id.get(0)) )
+	{
 		return v.get(id.get(0));
 	}
 
@@ -520,7 +553,8 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(openfpm::vector_key_iterator id) -> decltype( v.get(0) ) {
+	auto vertex(openfpm::vector_key_iterator id) -> decltype( v.get(0) )
+	{
 		return v.get(id.get());
 	}
 
@@ -529,7 +563,8 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(size_t id) const -> const decltype( v.get(id) ) {
+	auto vertex(size_t id) const -> const decltype( v.get(id) )
+	{
 		return v.get(id);
 	}
 
@@ -540,7 +575,8 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(grid_key_dx<1> id) const -> const decltype( v.get(id.get(0)) ) {
+	auto vertex(grid_key_dx<1> id) const -> const decltype( v.get(id.get(0)) )
+	{
 		return v.get(id.get(0));
 	}
 
@@ -551,89 +587,121 @@ public:
 	 * \param id of the vertex to access
 	 *
 	 */
-	auto vertex(
-			openfpm::vector_key_iterator id) const -> const decltype( v.get(0) ) {
+	auto vertex(openfpm::vector_key_iterator id) const -> const decltype( v.get(0) )
+	{
 		return v.get(id.get());
 	}
 
-	/*! \brief operator to access the vertex by position (id property)
+	/*! \brief operator to access the vertex by mapped position
 	 *
 	 * operator to access the vertex
 	 *
-	 * \param 'id' of the vertex to access
+	 * \param id re-mapped id of the vertex to access
 	 *
 	 */
-	auto vertexById(size_t id) -> decltype( v.get(map_ids.at(0)) ) {
-		return v.get(map_ids.at(id));
+	auto vertexByMapId(size_t id) -> decltype( v.get(mapToGlobal.at(0)) )
+	{
+		return v.get(mapToGlobal.at(id));
+	}
+
+	/*! \brief Get the local id given the global one
+	 *
+	 * \param id global id
+	 * \return local id
+	 *
+	 */
+	auto getLocalByGlobalId(size_t id, int pid) -> decltype( v.get(globalToLocal.at(0)) )
+	{
+		return v.get(globalToLocal.at(id));
+	}
+
+	/*! \brief Check if the vertex with global_id is in this graph
+	 *
+	 * \param id global id of the vertex
+	 * \return true if vertex with global_id is in this graph, false otherwise
+	 */
+	bool vertexIsInThisGraph(size_t id)
+	{
+		try
+		{
+			globalToLocal.at(id);
+		} catch (const std::out_of_range& oor)
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	/*! \brief operator to remap vertex to a new position
 	 *
-	 * \param old position
-	 * \param new position
+	 * \param n re-mapped position
+	 * \param g global position
+	 * \tparam i id of the property storing the id
 	 *
 	 */
-	void set_map_ids(size_t n, size_t o) {
-        
-        try {
-            map_ids.at(n) =  o;
-        }
-        catch (const std::out_of_range& oor) {
-            map_ids.insert( { n, o });
-        }
+	template<size_t i>
+	void setMapId(size_t n, size_t g, size_t l)
+	{
+		try
+		{
+			mapToGlobal.at(n) = g;
+		} catch (const std::out_of_range& oor)
+		{
+			mapToGlobal.insert( { n, g });
+		}
 
+		v.get(l).template get<i>() = n;
 	}
-    
-    /*! \brief operator to get vertex value given key
-     *
-     * \param n new id
-     * \return old id
-     *
-     */
-    size_t getVertexOldId(size_t n) {
-        
-        return map_ids.at(n);
-        
-    }
+
+	/*! \brief Get the global id of the vertex given the re-mapped one
+	 *
+	 * \param remapped id
+	 * \return global id
+	 *
+	 */
+	size_t getVertexGlobalId(size_t n)
+	{
+		return mapToGlobal.at(n);
+	}
 
 	/*! \brief operator to init ids vector
 	 *
 	 * operator to init ids vector
 	 *
 	 */
-	void init_map_ids() {
-		map_ids.clear();
-		for (size_t i = 0; i < v.size(); i++) {
-			map_ids.insert( { i, i });
+	void initLocalToGlobalMap()
+	{
+		mapToGlobal.clear();
+		for (size_t i = 0; i < v.size(); i++)
+		{
+			mapToGlobal.insert( { i, i });
 		}
 	}
-    
-    
-    /*! \brief operator to reset ids vector
-     *
-     * operator to reset ids vector
-     *
-     */
-	void reset_map_ids() {
-		map_ids.clear();
-	}
 
-	/*! \brief get map_ids
-	 *
-	 * operator to reset ids vector
+	/*! \brief operator to reset LocalToGlobalMap
 	 *
 	 */
-	std::unordered_map<size_t, size_t> get_map_ids() {
-		return map_ids;
+	void resetLocalToGlobalMap()
+	{
+		mapToGlobal.clear();
 	}
 
-	/*! \brief get map_ids
-	 *
-	 * operator to reset ids vector
+	/*! \brief operator to reset globalToLocalMap
 	 *
 	 */
-	size_t get_real_id(size_t i) {
-		return map_ids.at(i);
+	void resetGlobalToLocalMap()
+	{
+		globalToLocal.clear();
+	}
+
+	/*! \brief get global id given re-mapped id
+	 *
+	 * \param i global id
+	 */
+	size_t getGlobalIdFromMap(size_t i)
+	{
+		return mapToGlobal.at(i);
 	}
 
 	/*! \brief operator to clear the whole graph
@@ -641,10 +709,12 @@ public:
 	 * operator to clear all
 	 *
 	 */
-	void clear() {
+	void clear()
+	{
 		v.clear();
 		e.clear();
-		reset_map_ids();
+		resetLocalToGlobalMap();
+		resetGlobalToLocalMap();
 		v_l.clear();
 		e_l.clear();
 		e_invalid.clear();
@@ -656,8 +726,8 @@ public:
 	 * \param id of the edge to access
 	 *
 	 */
-	template<unsigned int i> auto edge_p(
-			grid_key_dx<1> id) -> decltype ( e.template get<i>(id) ) {
+	template<unsigned int i> auto edge_p(grid_key_dx<1> id) -> decltype ( e.template get<i>(id) )
+	{
 		return e.template get<i>(id);
 	}
 
@@ -667,8 +737,8 @@ public:
 	 * \param id of the edge to access
 	 *
 	 */
-	template<unsigned int i> auto edge_p(
-			size_t id) -> decltype ( e.template get<i>(id) ) {
+	template<unsigned int i> auto edge_p(size_t id) -> decltype ( e.template get<i>(id) )
+	{
 		return e.template get<i>(id);
 	}
 
@@ -677,7 +747,8 @@ public:
 	 * \param id of the edge to access
 	 *
 	 */
-	auto edge(grid_key_dx<1> id) const -> const decltype ( e.get(id.get(0)) ) {
+	auto edge(grid_key_dx<1> id) const -> const decltype ( e.get(id.get(0)) )
+	{
 		return e.get(id.get(0));
 	}
 
@@ -686,7 +757,8 @@ public:
 	 * \param ek key of the edge
 	 *
 	 */
-	auto edge(edge_key ek) const -> const decltype ( e.get(0) ) {
+	auto edge(edge_key ek) const -> const decltype ( e.get(0) )
+	{
 		return e.get(e_l.template get<e_map::eid>(ek.pos * v_slot + ek.pos_e));
 	}
 
@@ -697,7 +769,8 @@ public:
 	 * \param id of the edge to access
 	 *
 	 */
-	auto edge(size_t id) const -> const decltype ( e.get(id) ) {
+	auto edge(size_t id) const -> const decltype ( e.get(id) )
+	{
 		return e.get(id);
 	}
 
@@ -709,7 +782,8 @@ public:
 	 *
 	 */
 
-	inline size_t getNChilds(size_t c) const {
+	inline size_t getNChilds(size_t c) const
+	{
 		// Get the number of childs
 
 		return v_l.template get<0>(c);
@@ -722,8 +796,8 @@ public:
 	 * \return the number of childs
 	 *
 	 */
-	inline size_t getNChilds(
-			typename VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value>::iterator_key & c) {
+	inline size_t getNChilds(typename VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value>::iterator_key & c)
+	{
 		// Get the number of childs
 
 		return v_l.template get<0>(c.get());
@@ -737,9 +811,10 @@ public:
 	 *
 	 */
 
-	inline size_t getNChildsByVertexId(size_t id) const {
+	inline size_t getNChildsByMapId(size_t id) const
+	{
 		//Get vertex position in main VertexList
-		size_t v = map_ids.at(id);
+		size_t v = mapToGlobal.at(id);
 
 		// Get the number of childs
 
@@ -752,16 +827,19 @@ public:
 	 * \param v_e edge id
 	 *
 	 */
-	inline auto getChildEdge(size_t v, size_t v_e) -> decltype(e.get(0)) {
+	inline auto getChildEdge(size_t v, size_t v_e) -> decltype(e.get(0))
+	{
 #ifdef DEBUG
-		if (e >= v_l.template get<0>(v * v_slot)) {
+		if (e >= v_l.template get<0>(v * v_slot))
+		{
 			std::cerr << "Error node " << v << " does not have edge " << v_e
-					<< "\n";
+			<< "\n";
 		}
 
-		if (e.size() >= e_l.template get<e_map::eid>(v * v_slot + v_e)) {
+		if (e.size() >= e_l.template get<e_map::eid>(v * v_slot + v_e))
+		{
 			std::cerr << "Error edge " << v << " does not have edge " << v_e
-					<< "\n";
+			<< "\n";
 		}
 #endif
 
@@ -778,17 +856,20 @@ public:
 	 *
 	 */
 
-	inline size_t getChild(size_t v, size_t i) const {
+	inline size_t getChild(size_t v, size_t i) const
+	{
 #ifdef DEBUG
-		if (i >= v_l.template get<0>(v)) {
+		if (i >= v_l.template get<0>(v))
+		{
 			std::cerr << "Error " << __FILE__ << " line: " << __LINE__
-					<< "    vertex " << v << " does not have edge " << i
-					<< "\n";
+			<< "    vertex " << v << " does not have edge " << i
+			<< "\n";
 		}
 
-		if (e.size() <= e_l.template get<e_map::eid>(v * v_slot + i)) {
+		if (e.size() <= e_l.template get<e_map::eid>(v * v_slot + i))
+		{
 			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge "
-					<< v << " does not have edge " << i << "\n";
+			<< v << " does not have edge " << i << "\n";
 		}
 #endif
 		// Get the edge id
@@ -804,19 +885,20 @@ public:
 	 *
 	 */
 
-	inline size_t getChild(
-			typename VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value>::iterator_key & v,
-			size_t i) {
+	inline size_t getChild(typename VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value>::iterator_key & v, size_t i)
+	{
 #ifdef DEBUG
-		if (i >= v_l.template get<0>(v.get())) {
+		if (i >= v_l.template get<0>(v.get()))
+		{
 			std::cerr << "Error " << __FILE__ << " line: " << __LINE__
-					<< "    vertex " << v.get() << " does not have edge " << i
-					<< "\n";
+			<< "    vertex " << v.get() << " does not have edge " << i
+			<< "\n";
 		}
 
-		if (e.size() <= e_l.template get<e_map::eid>(v.get() * v_slot + i)) {
+		if (e.size() <= e_l.template get<e_map::eid>(v.get() * v_slot + i))
+		{
 			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge "
-					<< v.get() << " does not have edge " << i << "\n";
+			<< v.get() << " does not have edge " << i << "\n";
 		}
 #endif
 
@@ -833,9 +915,10 @@ public:
 	 *
 	 */
 
-	inline size_t getChildByVertexId(size_t id, size_t i) const {
+	inline size_t getChildByVertexId(size_t id, size_t i) const
+	{
 		//Get vertex position in main VertexList
-		size_t v = map_ids.at(id);
+		size_t v = mapToGlobal.at(id);
 
 		// Get the edge id
 		return e_l.template get<e_map::vid>(v * v_slot + i);
@@ -847,13 +930,41 @@ public:
 	 *
 	 */
 
-	inline void addVertex(const V & vrt) {
+	inline void addVertex(const V & vrt)
+	{
 
 		v.add(vrt);
 
 		// Set position to ids vector
 
-		map_ids.insert( { v.size() - 1, v.size() - 1 });
+		mapToGlobal.insert( { v.size() - 1, v.size() - 1 });
+
+		// Set the number of adjacent vertex for this vertex to 0
+
+		v_l.add(0ul);
+
+		// Add a slot for the vertex adjacency list
+
+		e_l.resize(e_l.size() + v_slot);
+	}
+
+	/*! \brief add vertex
+	 *
+	 * \param vrt Vertex properties
+	 * \param g_id global id to store in the globalToLocal map
+	 */
+
+	inline void addVertex(const V & vrt, size_t g_id)
+	{
+
+		v.add(vrt);
+
+		// Set position to mapToGlobal map
+
+		mapToGlobal.insert( { v.size() - 1, v.size() - 1 });
+
+		// Set position to globalToLocal map
+		globalToLocal.insert( { g_id, v.size() - 1 });
 
 		// Set the number of adjacent vertex for this vertex to 0
 
@@ -868,13 +979,14 @@ public:
 	 *
 	 */
 
-	inline void addVertex() {
+	inline void addVertex()
+	{
 
 		v.add();
 
 		// Set position to ids vector
 
-		map_ids.insert( { v.size() - 1, v.size() - 1 });
+		mapToGlobal.insert( { v.size() - 1, v.size() - 1 });
 
 		// Set the number of adjacent vertex for this vertex to 0
 
@@ -891,8 +1003,8 @@ public:
 	 *
 	 */
 
-	template<typename CheckPolicy = NoCheck> inline auto addEdge(size_t v1,
-			size_t v2, E & ed) -> decltype(e.get(0)) {
+	template<typename CheckPolicy = NoCheck> inline auto addEdge(size_t v1, size_t v2, const E & ed) -> decltype(e.get(0))
+	{
 		long int id_x_end = addEdge_<CheckPolicy>(v1, v2);
 
 		// If there is not edge return an invalid edge, is a kind of stub object
@@ -914,8 +1026,8 @@ public:
 	 *
 	 */
 
-	template<typename CheckPolicy = NoCheck> inline auto addEdge(size_t v1,
-			size_t v2) -> decltype(e.get(0)) {
+	template<typename CheckPolicy = NoCheck> inline auto addEdge(size_t v1, size_t v2) -> decltype(e.get(0))
+	{
 		//! add an edge
 		long int id_x_end = addEdge_<CheckPolicy>(v1, v2);
 		// If there is not edge return an invalid edge, is a kind of stub object
@@ -933,7 +1045,8 @@ public:
 	 *
 	 */
 
-	inline void swap(Graph_CSR<V, E, VertexList, EdgeList> & g) {
+	inline void swap(Graph_CSR<V, E, VertexList, EdgeList> & g)
+	{
 		// switch the memory
 
 		v.swap(g.v);
@@ -951,7 +1064,8 @@ public:
 	 *
 	 */
 
-	inline auto getVertexIterator() const -> decltype(v.getIterator()) {
+	inline auto getVertexIterator() const -> decltype(v.getIterator())
+	{
 		return v.getIterator();
 	}
 
@@ -963,9 +1077,9 @@ public:
 	 *
 	 */
 
-	inline edge_iterator<Graph_CSR<V, E, VertexList, EdgeList, Memory>> getEdgeIterator() const {
-		return edge_iterator<Graph_CSR<V, E, VertexList, EdgeList, Memory>>(
-				*this);
+	inline edge_iterator<Graph_CSR<V, E, VertexList, EdgeList, Memory>> getEdgeIterator() const
+	{
+		return edge_iterator<Graph_CSR<V, E, VertexList, EdgeList, Memory>>(*this);
 	}
 
 	/*! \brief Return the number of the vertex
@@ -974,7 +1088,8 @@ public:
 	 *
 	 */
 
-	inline size_t getNVertex() const {
+	inline size_t getNVertex() const
+	{
 		return v.size();
 	}
 
@@ -984,7 +1099,8 @@ public:
 	 *
 	 */
 
-	inline size_t getNEdge() const {
+	inline size_t getNEdge() const
+	{
 		return e.size();
 	}
 };
@@ -1014,7 +1130,8 @@ public:
  *
  */
 template<typename V, typename E>
-class Graph_CSR_s: public Graph_CSR<V, E> {
+class Graph_CSR_s: public Graph_CSR<V, E>
+{
 
 };
 

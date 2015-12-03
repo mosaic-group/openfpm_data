@@ -85,6 +85,7 @@ public:
 
 		return *this;
 	}
+
 };
 
 /*! \brief Class that contain Padding information on each direction positive and Negative direction
