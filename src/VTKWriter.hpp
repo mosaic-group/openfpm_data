@@ -46,6 +46,7 @@ template <typename T> std::string getType()
 		return "unsigned_long";
 	else if (typeid(T) == typeid(bool))
 		return "bit";
+
 	return "";
 }
 

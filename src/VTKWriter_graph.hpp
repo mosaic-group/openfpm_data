@@ -8,6 +8,71 @@
 #ifndef VTKWRITER_GRAPH_HPP_
 #define VTKWRITER_GRAPH_HPP_
 
+/*! Property data store for scalar and vector
+ *
+ */
+template<bool is_array>
+struct vtk_vertex_node_array_scalar_selector
+{
+	/*! /brief Print the geometric informations in case it is not an array
+	 *
+	 * \tparam T Type of the vertex
+	 * \tparam ele_v Attribute element to check
+	 * \tparam G Graph of reference
+	 * \tparam s_type Vertex spatial type information
+	 *
+	 * \param vo Vertex object container
+	 * \param x Array to store geometric informations
+	 * \param z_set Value set to true id z axis is in use
+	 */
+	template<typename T, typename ele_v, typename G, typename s_type>
+	static inline void move(typename G::V_container &vo, s_type (&x)[3], bool &z_set)
+	{
+		if (G::V_type::attributes::name[T::value] == "x")
+		{
+			x[0] = convert<typename boost::remove_reference<decltype(vo.template get<T::value>())>::type>::template to<s_type>(vo.template get<T::value>());
+		}
+		else if (G::V_type::attributes::name[T::value] == "y")
+		{
+			x[1] = convert<typename boost::remove_reference<decltype(vo.template get<T::value>())>::type>::template to<s_type>(vo.template get<T::value>());
+		}
+		else if (G::V_type::attributes::name[T::value] == "z")
+		{
+			x[2] = convert<typename boost::remove_reference<decltype(vo.template get<T::value>())>::type>::template to<s_type>(vo.template get<T::value>());
+			z_set = true;
+		}
+	}
+};
+
+/*! Template specialization in the case of array type attribute
+ *
+ */
+template<>
+struct vtk_vertex_node_array_scalar_selector<true>
+{
+	/*! \brief Store the geometric informations in case it is an array
+	 *
+	 * \tparam T Type of the vertex
+	 * \tparam ele_v Attribute element to check
+	 * \tparam G Graph of reference
+	 * \tparam s_type Vertex spatial type information
+	 *
+	 * \param vo Vertex object container
+	 * \param x Array to store geometric informations
+	 * \param z_set Value set to true id z axis is in use
+	 */
+	template<typename T, typename ele_v, typename G, typename s_type>
+	static inline void move(typename G::V_container &vo, s_type (&x)[3], bool &z_set)
+	{
+		if (std::extent<ele_v>::value == 3)
+			z_set = true;
+
+		for (size_t i = 0; i < std::extent<ele_v>::value; i++)
+			x[i] = convert<typename boost::remove_reference<decltype(vo.template get<T::value>()[i])>::type>::template to<s_type>(vo.template get<T::value>()[i]);
+
+	}
+};
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -25,10 +90,10 @@ struct vtk_vertex_node
 {
 	// Vertex spatial type information
 	typedef typename G::V_type::s_type s_type;
-    
-    bool z_set;
-    
-	s_type (& x)[3];
+
+	bool z_set;
+
+	s_type (&x)[3];
 
 	// Vertex object container
 	typename G::V_container & vo;
@@ -44,26 +109,29 @@ struct vtk_vertex_node
 	 * \param n_obj object container to access its properties for example encapc<...>
 	 *
 	 */
-	vtk_vertex_node(std::string & v_node, typename G::V_container & n_obj, s_type (&x)[3])
-	:x(x),vo(n_obj),v_node(v_node),z_set(false)
+	vtk_vertex_node(std::string & v_node, typename G::V_container & n_obj, s_type (&x)[3]) :
+			x(x), vo(n_obj), v_node(v_node), z_set(false)
 	{
-	};
+	}
+	;
 
 	//! \brief Write collected information
 	void write()
 	{
-        v_node += std::to_string(x[0]) + " " + std::to_string(x[1]) + " " + std::to_string(x[2]) + "\n";
+		v_node += std::to_string(x[0]) + " " + std::to_string(x[1]) + " " + std::to_string(x[2]) + "\n";
 	}
 
 	//! It call the functor for each member
-    template<typename T>
-    void operator()(T& t)
-    {
-    	// if the attribute name is x y or z, create a string with the value of the properties and store it
-		if (G::V_type::attributes::name[T::value] == "x"){x[0] = convert<typename boost::remove_reference<decltype(vo.template get<T::value>())>::type>::template to<s_type>(vo.template get<T::value>());}
-		else if (G::V_type::attributes::name[T::value] == "y"){x[1] = convert<typename boost::remove_reference<decltype(vo.template get<T::value>())>::type>::template to<s_type>(vo.template get<T::value>());}
-        else if (G::V_type::attributes::name[T::value] == "z"){x[2] = convert<typename boost::remove_reference<decltype(vo.template get<T::value>())>::type>::template to<s_type>(vo.template get<T::value>());z_set=true;}
-    }
+	template<typename T>
+	void operator()(T& t)
+	{
+		typedef typename boost::mpl::at<typename G::V_type::type, boost::mpl::int_<T::value>>::type ele_v;
+
+		// if the attribute name is x y or z, create a string with the value of the properties and store it
+
+		vtk_vertex_node_array_scalar_selector<std::is_array<ele_v>::value>::template move<T, ele_v, G, s_type>(vo, x, z_set);
+
+	}
 };
 
 /*! \brief this class is a functor for "for_each" algorithm
@@ -80,7 +148,7 @@ struct vtk_vertex_node
  */
 
 template<typename G>
-struct vtk_vertex_node<G,false>
+struct vtk_vertex_node<G, false>
 {
 	// Vertex object container
 	typename G::V_container & vo;
@@ -96,19 +164,19 @@ struct vtk_vertex_node<G,false>
 	 * \param n_obj object container to access its properties for example encapc<...>
 	 *
 	 */
-	vtk_vertex_node(std::string & v_node, typename G::V_container & n_obj)
-	:vo(n_obj),v_node(v_node)
+	vtk_vertex_node(std::string & v_node, typename G::V_container & n_obj) :
+			vo(n_obj), v_node(v_node)
 	{
-	};
+	}
+	;
 
 	//! It call the functor for each member
-    template<typename T>
-    void operator()(T& t)
-    {
-    	v_node += "0 0 0\n";
-    }
+	template<typename T>
+	void operator()(T& t)
+	{
+		v_node += "0 0 0\n";
+	}
 };
-
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -137,10 +205,11 @@ struct vtk_edge_node
 	 * \param n_prop number of properties
 	 *
 	 */
-	vtk_edge_node(std::string & e_node, typename G::E_container & n_obj)
-	:vo(n_obj),e_node(e_node)
+	vtk_edge_node(std::string & e_node, typename G::E_container & n_obj) :
+			vo(n_obj), e_node(e_node)
 	{
-	};
+	}
+	;
 
 	/*! \brief Create a new node
 	 *
@@ -151,6 +220,150 @@ struct vtk_edge_node
 	{
 		// start a new node
 		e_node += "2 " + std::to_string(s) + " " + std::to_string(d) + "\n";
+	}
+};
+
+/*! \brief Property writer for scalar and vector
+ *
+ */
+template<bool is_array>
+struct prop_output_array_scalar_selector_vertex
+{
+	/*! \brief Writer in case the property is not an array
+	 *
+	 * \tparam ele_v Property element
+	 * \tparam Graph Graph of reference
+	 * \tparam i Property id
+	 *
+	 * \param v_out Buffer to write into
+	 * \param g Graph
+	 * \param p Property id
+	 */
+	template<typename ele_v, typename Graph, unsigned int i>
+	static inline void write(std::string &v_out, const Graph &g, size_t p)
+	{
+		v_out += std::to_string(g.vertex(p).template get<i>()) + "\n";
+	}
+};
+
+/*! \brief Property writer for vector
+ *
+ */
+template<>
+struct prop_output_array_scalar_selector_vertex<true>
+{
+	/*! \brief Writer in case the property is an array
+	 *
+	 * \tparam ele_v Property element
+	 * \tparam Graph Graph of reference
+	 * \tparam i Property id
+	 *
+	 * \param v_out Buffer to write into
+	 * \param g Graph
+	 * \param p Property id
+	 */
+	template<typename ele_v, typename Graph, unsigned int i>
+	static inline void write(std::string &v_out, const Graph &g, size_t p)
+	{
+		for (size_t j = 0; j < 2; j++)
+		{
+			v_out += std::to_string(g.vertex(p).template get<i>()[j]) + " ";
+		}
+
+		if (std::extent<ele_v>::value == 2)
+			v_out += "0";
+		else
+			v_out += std::to_string(g.vertex(p).template get<i>()[2]);
+
+		v_out += "\n";
+	}
+};
+
+/*! \brief Property writer for scalar and vector
+ *
+ */
+template<bool is_array>
+struct prop_output_array_scalar_selector_edge
+{
+	/*! \brief Writer in case the property is not an array
+	 *
+	 * \tparam ele_v Property element
+	 * \tparam Graph Graph of reference
+	 * \tparam i Property id
+	 *
+	 * \param v_out Buffer to write into
+	 * \param g Graph
+	 * \param p Property id
+	 */
+	template<typename ele_v, typename Graph, unsigned int i>
+	static inline void write(std::string &v_out, const Graph &g, const typename Graph::E_container &edge)
+	{
+		v_out += std::to_string(edge.template get<i>()) + "\n";
+	}
+};
+
+/*! \brief Property writer for vector
+ *
+ */
+template<>
+struct prop_output_array_scalar_selector_edge<true>
+{
+	/*! \brief Writer in case the property is an array
+	 *
+	 * \tparam ele_v Property element
+	 * \tparam Graph Graph of reference
+	 * \tparam i Property id
+	 *
+	 * \param v_out Buffer to write into
+	 * \param g Graph
+	 * \param p Property id
+	 */
+	template<typename ele_v, typename Graph, unsigned int i>
+	static inline void write(std::string &v_out, const Graph &g, const typename Graph::E_container &edge)
+	{
+		for (size_t j = 0; j < 2; j++)
+		{
+			v_out += std::to_string(edge.template get<i>()[j]) + " ";
+		}
+
+		if (std::extent<ele_v>::value == 2)
+			v_out += "0";
+		else
+			v_out += std::to_string(edge.template get<i>()[2]);
+
+		v_out += "\n";
+	}
+};
+
+/*! \brief Property writer for scalar and vector, it fill the vertex data (needed for edge representation in vtk)
+ *
+ */
+template<bool is_array>
+struct prop_output_array_scalar_selector_edge_fill_vertex
+{
+	/*! \brief Writer in case the property is not an array
+	 *
+	 * \param v_out Buffer to write into
+	 */
+	static inline void write(std::string &v_out)
+	{
+		v_out += "0\n";
+	}
+};
+
+/*! \brief Property writer for vector
+ *
+ */
+template<>
+struct prop_output_array_scalar_selector_edge_fill_vertex<true>
+{
+	/*! \brief Writer in case the property is an array
+	 *
+	 * \param v_out Buffer to write into
+	 */
+	static inline void write(std::string &v_out)
+	{
+		v_out += "0 0 0\n";
 	}
 };
 
@@ -190,8 +403,8 @@ public:
 		// if there is the next element
 		while (it.isNext())
 		{
-			// Print the property
-			v_out += std::to_string(g.vertex(it.get()).template get<i>()) + "\n";
+			typedef typename boost::mpl::at<typename Graph::V_type::type, boost::mpl::int_<i>>::type ele_v;
+			prop_output_array_scalar_selector_vertex<std::is_array<ele_v>::value>::template write<ele_v, Graph, i>(v_out, g, it.get());
 
 			// increment the iterator and counter
 			++it;
@@ -199,48 +412,47 @@ public:
 
 		return v_out;
 	}
-    
-    /*! \brief For each edge set the value, set 1 on verteces, needed by vtk file format
-     *
-     * \tparam i edge property to print
-     *
-     */
-    
-    static std::string get_cell_data(const Graph & g)
-    {
-        //! vertex node output string
-        std::string e_out;
-        
-        
-        //! Get a vertex iterator
-        auto it_v = g.getVertexIterator();
-        
-        // if there is the next element
-        while (it_v.isNext())
-        {
-            // Print the property
-            e_out += std::to_string(0) + "\n";
-            
-            // increment the iterator and counter
-            ++it_v;
-        }
-        
-        
-        //! Get an edge iterator
-        auto it_e = g.getEdgeIterator();
-        
-        // if there is the next element
-        while(it_e.isNext())
-        {
-            // Print the property
-            e_out += std::to_string(g.edge(it_e.get()).template get<i>()) + "\n";
-            
-            // increment the iterator and counter
-            ++it_e;
-        }
-        
-        return e_out;
-    }
+
+	/*! \brief For each edge set the value, set 1 on vertices, needed by vtk file format
+	 *
+	 * \tparam i edge property to print
+	 *
+	 */
+
+	static std::string get_cell_data(const Graph & g)
+	{
+		//! vertex node output string
+		std::string e_out;
+
+		//! Get a vertex iterator
+		auto it_v = g.getVertexIterator();
+
+		// if there is the next element
+		while (it_v.isNext())
+		{
+			// Print the property
+			typedef typename boost::mpl::at<typename Graph::E_type::type, boost::mpl::int_<i>>::type ele_v;
+			prop_output_array_scalar_selector_edge_fill_vertex<std::is_array<ele_v>::value>::write(e_out);
+
+			// increment the iterator and counter
+			++it_v;
+		}
+
+		//! Get an edge iterator
+		auto it_e = g.getEdgeIterator();
+
+		// if there is the next element
+		while (it_e.isNext())
+		{
+			typedef typename boost::mpl::at<typename Graph::E_type::type, boost::mpl::int_<i>>::type ele_v;
+			prop_output_array_scalar_selector_edge<std::is_array<ele_v>::value>::template write<ele_v, Graph, i>(e_out, g, g.edge(it_e.get()));
+
+			// increment the iterator and counter
+			++it_e;
+		}
+
+		return e_out;
+	}
 
 	/*! \brief Given a Graph return the point data header for a typename T
 	 *
@@ -254,55 +466,95 @@ public:
 		//! vertex node output string
 		std::string v_out;
 
+		// Type of the property
+		std::string type;
+
+		typedef typename boost::mpl::at<typename Graph::V_type::type, boost::mpl::int_<i>>::type T;
+
 		// Check if T is a supported format
 		// for now we support only scalar of native type
+		if (std::is_array<T>::value == true && std::is_array<typename std::remove_extent<T>::type>::value == false)
+		{
+			//Get type of the property
+			type = getType<typename std::remove_all_extents<T>::type>();
 
-		std::string type = getType<typename boost::fusion::result_of::at<typename Graph::V_type::type,boost::mpl::int_<i>>::type>();
+			// if the type is not supported return
+			if (type.size() == 0)
+				return v_out;
 
-		// if the type is not supported return
-		if (type.size() == 0)
-		{return v_out;}
+			// Create point data properties
+			v_out += "VECTORS " + get_attributes_vertex() + " " + type + "\n";
+		}
+		else
+		{
+			type = getType<T>();
 
-		// Create point data properties
-		v_out += "SCALARS " + get_attributes_vertex() + " " + type + "\n";
+			// if the type is not supported return
+			if (type.size() == 0)
+				return v_out;
 
-		// Default lookup table
-		v_out += "LOOKUP_TABLE default\n";
+			// Create point data properties
+			v_out += "SCALARS " + get_attributes_vertex() + " " + type + "\n";
+
+			// Default lookup table
+			v_out += "LOOKUP_TABLE default\n";
+
+		}
 
 		// return the vertex list
 		return v_out;
 	}
-    
-    /*! \brief Given a Graph return the cell data header for a typename T
-     *
-     * \tparam T type to write
-     * \param n_node number of the node
-     *
-     */
-    
-    static std::string get_cell_property_header(size_t prop)
-    {
-        //! edge node output string
-        std::string e_out;
-        
-        // Check if T is a supported format
-        // for now we support only scalar of native type
-        
-        std::string type = getType<typename boost::fusion::result_of::at<typename Graph::E_type::type,boost::mpl::int_<i>>::type>();
-        
-        // if the type is not supported return
-        if (type.size() == 0)
-        {return e_out;}
-        
-        // Create point data properties
-        e_out += "SCALARS " + get_attributes_edge() + " " + type + "\n";
-        
-        // Default lookup table
-        e_out += "LOOKUP_TABLE default\n";
-        
-        // return the vertex list
-        return e_out;
-    }
+
+	/*! \brief Given a Graph return the cell data header for a typename T
+	 *
+	 * \tparam T type to write
+	 * \param n_node number of the node
+	 *
+	 */
+
+	static std::string get_cell_property_header(size_t prop)
+	{
+		//! edge node output string
+		std::string e_out;
+
+		// Type of the property
+		std::string type;
+
+		typedef typename boost::mpl::at<typename Graph::E_type::type, boost::mpl::int_<i>>::type T;
+
+		// Check if T is a supported format
+		// for now we support only scalar of native type
+		if (std::is_array<T>::value == true && std::is_array<typename std::remove_extent<T>::type>::value == false)
+		{
+			//Get type of the property
+			type = getType<typename std::remove_all_extents<T>::type>();
+
+			// if the type is not supported return
+			if (type.size() == 0)
+				return e_out;
+
+			// Create point data properties
+			e_out += "VECTORS " + get_attributes_edge() + " " + type + "\n";
+		}
+		else
+		{
+			type = getType<T>();
+
+			// if the type is not supported return
+			if (type.size() == 0)
+				return e_out;
+
+			// Create point data properties
+			e_out += "SCALARS " + get_attributes_edge() + " " + type + "\n";
+
+			// Default lookup table
+			e_out += "LOOKUP_TABLE default\n";
+
+		}
+
+		// return the vertex list
+		return e_out;
+	}
 
 	/*! \brief Get the attributes name for vertex
 	 *
@@ -312,15 +564,15 @@ public:
 	{
 		return Graph::V_type::attributes::name[i];
 	}
-    
-    /*! \brief Get the attributes name for edge
-     *
-     */
-    
-    static std::string get_attributes_edge()
-    {
-        return Graph::E_type::attributes::name[i];
-    }
+
+	/*! \brief Get the attributes name for edge
+	 *
+	 */
+
+	static std::string get_attributes_edge()
+	{
+		return Graph::E_type::attributes::name[i];
+	}
 };
 
 /*! \brief This class specialize functions in the case the type T
@@ -337,7 +589,7 @@ public:
  */
 
 template<typename Graph, unsigned int i>
-class prop_output<false,Graph,i>
+class prop_output<false, Graph, i>
 {
 	/*! \brief For each vertex set the value
 	 *
@@ -365,49 +617,46 @@ class prop_output<false,Graph,i>
 
 		return v_out;
 	}
-    
-    /*! \brief For each edge set the value
-     *
-     * \tparam i edge property to print
-     *
-     */
-    
-    static std::string get_cell_data(const Graph & g)
-    {
-        //! vertex node output string
-        std::string e_out;
-        
-        
-        //! Get a vertex iterator
-        auto it_v = g.getVertexIterator();
-        
-        // if there is the next element
-        while (it_v.isNext())
-        {
-            // Print the property
-            e_out += std::to_string(0) + "\n";
-            
-            // increment the iterator and counter
-            ++it_v;
-        }
-        
-        
-        //! Get an edge iterator
-        auto it_e = g.getEdgeIterator();
-        
-        // if there is the next element
-        while(it_e.isNext())
-        {
-            // Print the property
-            e_out += std::to_string(g.edge(it_e.get()).template get<i>()) + "\n";
-            
-            // increment the iterator and counter
-            ++it_e;
-        }
-        
-        return e_out;
-    }
 
+	/*! \brief For each edge set the value
+	 *
+	 * \tparam i edge property to print
+	 *
+	 */
+
+	static std::string get_cell_data(const Graph & g)
+	{
+		//! vertex node output string
+		std::string e_out;
+
+		//! Get a vertex iterator
+		auto it_v = g.getVertexIterator();
+
+		// if there is the next element
+		while (it_v.isNext())
+		{
+			// Print the property
+			e_out += std::to_string(0) + "\n";
+
+			// increment the iterator and counter
+			++it_v;
+		}
+
+		//! Get an edge iterator
+		auto it_e = g.getEdgeIterator();
+
+		// if there is the next element
+		while (it_e.isNext())
+		{
+			// Print the property
+			e_out += std::to_string(g.edge(it_e.get()).template get<i>()) + "\n";
+
+			// increment the iterator and counter
+			++it_e;
+		}
+
+		return e_out;
+	}
 
 	/*! \brief Given a Graph return the point data header for a typename T
 	 *
@@ -426,11 +675,13 @@ class prop_output<false,Graph,i>
 		// Check if T is a supported format
 		// for now we support only scalar of native type
 
-		std::string type = getType<boost::fusion::result_of::at<typename Graph::V_type::type,boost::mpl::int_<i>>>("attr" + std::to_string(prop));
+		std::string type = getType<boost::fusion::result_of::at<typename Graph::V_type::type, boost::mpl::int_<i>>>("attr" + std::to_string(prop));
 
 		// if the type is not supported return
 		if (type.size() == 0)
-		{return v_out;}
+		{
+			return v_out;
+		}
 
 		// Create point data properties
 		v_out += "SCALARS " + get_attributes_vertex() + " " + type + "\n";
@@ -441,55 +692,74 @@ class prop_output<false,Graph,i>
 		// return the vertex list
 		return v_out;
 	}
-    
-    /*! \brief Given a Graph return the cell data header for a typename T
-     *
-     * \tparam T type to write
-     * \param n_node number of the node
-     *
-     */
-    
-    static std::string get_cell_property_header(size_t prop)
-    {
-        //! edge node output string
-        std::string e_out;
-        
-        // Check if T is a supported format
-        // for now we support only scalar of native type
-        
-        std::string type = getType<boost::fusion::result_of::at<typename Graph::E_type::type,boost::mpl::int_<i>>>("attr" + std::to_string(prop));
-        
-        // if the type is not supported return
-        if (type.size() == 0)
-        {return e_out;}
-        
-        // Create point data properties
-        e_out += "SCALARS " + get_attributes_edge() + " " + type + "\n";
-        
-        // Default lookup table
-        e_out += "LOOKUP_TABLE default\n";
-        
-        // return the vertex list
-        return e_out;
-    }
 
-    /*! \brief Get the attributes name for vertex
-     *
-     */
-    
-    static std::string get_attributes_vertex()
-    {
-        return Graph::V_type::attributes::name[i];
-    }
-    
-    /*! \brief Get the attributes name for edge
-     *
-     */
-    
-    static std::string get_attributes_edge()
-    {
-        return Graph::E_type::attributes::name[i];
-    }
+	/*! \brief Given a Graph return the cell data header for a typename T
+	 *
+	 * \param n_node number of the node
+	 *
+	 */
+
+	static std::string get_cell_property_header(size_t prop)
+	{
+		//! edge node output string
+		std::string e_out;
+
+		// Type of the property
+		std::string type;
+
+		typedef typename boost::mpl::at<typename Graph::E_type::type, boost::mpl::int_<i>>::type T;
+
+		// Check if T is a supported format
+		// for now we support only scalar of native type
+		if (std::is_array<T>::value == true && std::is_array<typename std::remove_extent<T>::type>::value == false)
+		{
+			//Get type of the property
+			type = getType<typename std::remove_all_extents<T>::type>();
+
+			// if the type is not supported return
+			if (type.size() == 0)
+				return e_out;
+
+			// Create point data properties
+			e_out += "VECTORS " + get_attributes_edge() + " " + type + "\n";
+		}
+		else
+		{
+			type = getType<T>();
+
+			// if the type is not supported return
+			if (type.size() == 0)
+				return e_out;
+
+			// Create point data properties
+			e_out += "SCALARS " + get_attributes_edge() + " " + type + "\n";
+
+			// Default lookup table
+			e_out += "LOOKUP_TABLE default\n";
+
+		}
+
+		// return the vertex list
+		return e_out;
+	}
+
+	/*! \brief Get the attributes name for vertex
+	 *
+	 */
+
+	static std::string get_attributes_vertex()
+	{
+		return Graph::V_type::attributes::name[i];
+	}
+
+	/*! \brief Get the attributes name for edge
+	 *
+	 */
+
+	static std::string get_attributes_edge()
+	{
+		return Graph::E_type::attributes::name[i];
+	}
 };
 
 /*! \brief this class is a functor for "for_each" algorithm
@@ -519,29 +789,31 @@ struct prop_out_vertex
 	 * \param v_out string to fill with the vertex properties
 	 *
 	 */
-	prop_out_vertex(std::string & v_out, const Graph & g)
-	:v_out(v_out),g(g)
-	{};
+	prop_out_vertex(std::string & v_out, const Graph & g) :
+			v_out(v_out), g(g)
+	{
+	}
+	;
 
 	//! It produce an output for each property
-    template<typename T>
-    void operator()(T& t) const
-    {
-    	// actual string size
-    	size_t sz = v_out.size();
+	template<typename T>
+	void operator()(T& t) const
+	{
+		// actual string size
+		size_t sz = v_out.size();
 
 		// Produce the point properties header
-		v_out += prop_output<has_attributes<typename Graph::V_type>::value ,Graph,T::value>::get_point_property_header(t);
+		v_out += prop_output<has_attributes<typename Graph::V_type>::value, Graph, T::value>::get_point_property_header(t);
 
 		// If the output has changed, we have to write the properties
 		if (v_out.size() != sz)
 		{
-			std::string attr = prop_output<has_attributes<typename Graph::V_type>::value,Graph,T::value>::get_attributes_vertex();
+			std::string attr = prop_output<has_attributes<typename Graph::V_type>::value, Graph, T::value>::get_attributes_vertex();
 
 			// Produce point data
-			v_out += prop_output<has_attributes<typename Graph::V_type>::value ,Graph ,T::value>::get_point_data(g);
+			v_out += prop_output<has_attributes<typename Graph::V_type>::value, Graph, T::value>::get_point_data(g);
 		}
-    }
+	}
 };
 
 /*! \brief this class is a functor for "for_each" algorithm
@@ -560,42 +832,43 @@ struct prop_out_vertex
 template<typename Graph>
 struct prop_out_edge
 {
-    // property output string
-    std::string & e_out;
-    
-    // Graph that we are processing
-    const Graph & g;
-    
-    /*! \brief constructor
-     *
-     * \param v_out string to fill with the vertex properties
-     *
-     */
-    prop_out_edge(std::string & e_out, const Graph & g)
-    :e_out(e_out),g(g)
-    {};
-    
-    //! It produce an output for each property
-    template<typename T>
-    void operator()(T& t) const
-    {
-        // actual string size
-        size_t sz = e_out.size();
-        
-        // Produce the point properties header
-        e_out += prop_output<has_attributes<typename Graph::E_type>::value ,Graph,T::value>::get_cell_property_header(t);
-        
-        // If the output has changed, we have to write the properties
-        if (e_out.size() != sz)
-        {
-            std::string attr = prop_output<has_attributes<typename Graph::E_type>::value,Graph,T::value>::get_attributes_edge();
-            
-            // Produce cell data
-            e_out += prop_output<has_attributes<typename Graph::E_type>::value ,Graph ,T::value>::get_cell_data(g);
-        }
-    }
-};
+	// property output string
+	std::string & e_out;
 
+	// Graph that we are processing
+	const Graph & g;
+
+	/*! \brief constructor
+	 *
+	 * \param v_out string to fill with the vertex properties
+	 *
+	 */
+	prop_out_edge(std::string & e_out, const Graph & g) :
+			e_out(e_out), g(g)
+	{
+	}
+	;
+
+	//! It produce an output for each property
+	template<typename T>
+	void operator()(T& t) const
+	{
+		// actual string size
+		size_t sz = e_out.size();
+
+		// Produce the point properties header
+		e_out += prop_output<has_attributes<typename Graph::E_type>::value, Graph, T::value>::get_cell_property_header(t);
+
+		// If the output has changed, we have to write the properties
+		if (e_out.size() != sz)
+		{
+			std::string attr = prop_output<has_attributes<typename Graph::E_type>::value, Graph, T::value>::get_attributes_edge();
+
+			// Produce cell data
+			e_out += prop_output<has_attributes<typename Graph::E_type>::value, Graph, T::value>::get_cell_data(g);
+		}
+	}
+};
 
 /*!
  *
@@ -605,8 +878,8 @@ struct prop_out_edge
  *
  */
 
-template <typename Graph>
-class VTKWriter<Graph,GRAPH>
+template<typename Graph>
+class VTKWriter<Graph, GRAPH>
 {
 	const Graph & g;
 
@@ -664,7 +937,7 @@ class VTKWriter<Graph,GRAPH>
 		std::string e_out;
 
 		// write the number of lines
-		e_out += "LINES " + std::to_string(g.getNEdge()) + " " + std::to_string(3*g.getNEdge()) + "\n";
+		e_out += "LINES " + std::to_string(g.getNEdge()) + " " + std::to_string(3 * g.getNEdge()) + "\n";
 
 		// return the vertex properties string
 		return e_out;
@@ -677,10 +950,10 @@ class VTKWriter<Graph,GRAPH>
 	 *
 	 */
 
-	template <bool attr> std::string get_point_list()
+	template<bool attr> std::string get_point_list()
 	{
 		//! VTK spatial information
-		typename Graph::V_type::s_type x[3] = {0,0,0};
+		typename Graph::V_type::s_type x[3] = { 0, 0, 0 };
 
 		//! vertex node output string
 		std::string v_out;
@@ -695,10 +968,10 @@ class VTKWriter<Graph,GRAPH>
 			auto obj = g.vertex(it.get());
 
 			// create a vertex list functor
-			vtk_vertex_node<Graph,attr> vn(v_out,obj,x);
+			vtk_vertex_node<Graph, attr> vn(v_out, obj, x);
 
 			// Iterate through all the vertex and create the vertex list
-			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::V_type::max_prop-1> >(vn);
+			boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::V_type::max_prop - 1> >(vn);
 
 			// write the node string
 			vn.write();
@@ -724,7 +997,7 @@ class VTKWriter<Graph,GRAPH>
 		std::string v_out;
 
 		//! For each point create a vertex
-		for (size_t i = 0 ; i < g.getNVertex() ; i++)
+		for (size_t i = 0; i < g.getNVertex(); i++)
 		{
 			v_out += "1 " + std::to_string(i) + "\n";
 		}
@@ -747,21 +1020,21 @@ class VTKWriter<Graph,GRAPH>
 
 		return v_out;
 	}
-    
-    /*! \brief Get the point data header
-     *
-     * \return a string with the point data header for VTK format
-     *
-     */
-    
-    std::string get_cell_data_header()
-    {
-        std::string v_out;
-        
-        v_out += "CELL_DATA " + std::to_string(g.getNVertex()+g.getNEdge()) + "\n";
-        
-        return v_out;
-    }
+
+	/*! \brief Get the point data header
+	 *
+	 * \return a string with the point data header for VTK format
+	 *
+	 */
+
+	std::string get_cell_data_header()
+	{
+		std::string v_out;
+
+		v_out += "CELL_DATA " + std::to_string(g.getNVertex() + g.getNEdge()) + "\n";
+
+		return v_out;
+	}
 
 	/*! \brief Return the edge list
 	 *
@@ -802,9 +1075,10 @@ public:
 	 * \param g Graph to write
 	 *
 	 */
-	VTKWriter(const Graph & g)
-	:g(g)
-	{}
+	VTKWriter(const Graph & g) :
+			g(g)
+	{
+	}
 
 	/*! \brief It write a VTK file from a graph
 	 *
@@ -816,7 +1090,7 @@ public:
 	 *
 	 */
 
-	template<int prp = -1> bool write(std::string file, std::string graph_name="Graph", file_type ft = file_type::ASCII)
+	template<int prp = -1> bool write(std::string file, std::string graph_name = "Graph", file_type ft = file_type::ASCII)
 	{
 		// Check that the Vertex type define x y and z attributes
 
@@ -846,20 +1120,23 @@ public:
 		std::string point_data_header;
 		// Data point
 		std::string point_data;
-        // Cell data header
-        std::string cell_data_header;
-        // Cell data
-        std::string cell_data;
+		// Cell data header
+		std::string cell_data_header;
+		// Cell data
+		std::string cell_data;
 
 		// VTK header
-		vtk_header = "# vtk DataFile Version 3.0\n"
-				     + graph_name + "\n";
+		vtk_header = "# vtk DataFile Version 3.0\n" + graph_name + "\n";
 
 		// Choose if binary or ASCII
 		if (ft == file_type::ASCII)
-		{vtk_header += "ASCII\n";}
+		{
+			vtk_header += "ASCII\n";
+		}
 		else
-		{vtk_header += "BINARY\n";}
+		{
+			vtk_header += "BINARY\n";
+		}
 
 		// Data type for graph is DATASET POLYDATA
 		vtk_header += "DATASET POLYDATA\n";
@@ -884,37 +1161,38 @@ public:
 
 		// Get the point data header
 		point_data_header = get_point_data_header();
-        
-        // Get the cell data header
-        cell_data_header = get_cell_data_header();
-        
+
+		// Get the cell data header
+		cell_data_header = get_cell_data_header();
+
 		// For each property in the vertex type produce a point data
 
 		prop_out_vertex<Graph> pp(point_data, g);
 
 		if (prp == -1)
-			boost::mpl::for_each< boost::mpl::range_c<int,0, Graph::V_type::max_prop> >(pp);
+			boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::V_type::max_prop> >(pp);
 		else
-			boost::mpl::for_each< boost::mpl::range_c<int,prp, prp> >(pp);
-        
-        // For each property in the edge type produce a point data
-        
-        prop_out_edge<Graph> ep(cell_data, g);
-        
-        if (prp == -1)
-            boost::mpl::for_each< boost::mpl::range_c<int,0, Graph::E_type::max_prop> >(ep);
-        else
-            boost::mpl::for_each< boost::mpl::range_c<int,prp, prp> >(ep);
+			boost::mpl::for_each<boost::mpl::range_c<int, prp, prp> >(pp);
+
+		// For each property in the edge type produce a point data
+
+		prop_out_edge<Graph> ep(cell_data, g);
+
+		if (prp == -1)
+			boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::E_type::max_prop> >(ep);
+		else
+			boost::mpl::for_each<boost::mpl::range_c<int, prp, prp> >(ep);
 
 		// write the file
 		std::ofstream ofs(file);
 
 		// Check if the file is open
 		if (ofs.is_open() == false)
-		{std::cerr << "Error cannot create the VTK file: " + file;}
+		{
+			std::cerr << "Error cannot create the VTK file: " + file;
+		}
 
-		ofs << vtk_header << point_prop_header << point_list <<
-				vertex_prop_header << vertex_list << edge_prop_header << edge_list << point_data_header << point_data << cell_data_header << cell_data;
+		ofs << vtk_header << point_prop_header << point_list << vertex_prop_header << vertex_list << edge_prop_header << edge_list << point_data_header << point_data << cell_data_header << cell_data;
 
 		// Close the file
 
@@ -924,6 +1202,5 @@ public:
 		return true;
 	}
 };
-
 
 #endif /* VTKWRITER_GRAPH_HPP_ */

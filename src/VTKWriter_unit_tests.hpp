@@ -33,22 +33,13 @@ struct vertex
 
 	//! The data
 	type data;
-
-	//! computation property id in boost::fusion::vector
 	static const unsigned int x = 0;
-	//! computation property id in boost::fusion::vector
 	static const unsigned int y = 1;
-	//! memory property id in boost::fusion::vector
 	static const unsigned int z = 2;
-	//! computation property id in boost::fusion::vector
 	static const unsigned int prp1 = 3;
-	//! computation property id in boost::fusion::vector
 	static const unsigned int prp2 = 4;
-	//! memory property id in boost::fusion::vector
 	static const unsigned int prp3 = 5;
-	//! memory property id in boost::fusion::vector
 	static const unsigned int prp4 = 6;
-	//! memory property sub_id in boost::fusion::vector
 	static const unsigned int prp5 = 7;
 
 	//! total number of properties boost::fusion::vector
@@ -76,10 +67,305 @@ struct vertex
 	}
 };
 
+const std::string vertex::attributes::name[] = {"x","y","z","prp1","prp2","prp3","prp4","prp5"};
+
+struct vertex2
+{
+	//! The node contain 3 unsigned long integer for communication computation memory and id
+	typedef boost::fusion::vector<float[3],size_t,double> type;
+
+	typedef typename memory_traits_inte<type>::type memory_int;
+	typedef typename memory_traits_lin<type>::type memory_lin;
+
+	//! type of the positional field
+	typedef float s_type;
+
+	//! Attributes name
+	struct attributes
+	{
+		static const std::string name[];
+	};
+
+	//! The data
+	type data;
+
+	//! computation property id in boost::fusion::vector
+	static const unsigned int x = 0;
+	static const unsigned int prp1 = 1;
+	static const unsigned int prp2 = 2;
+
+	//! total number of properties boost::fusion::vector
+	static const unsigned int max_prop = 3;
+
+	/*!
+	 * Default constructor
+	 *
+	 */
+	vertex2()
+	{
+
+	}
+
+	/*! \brief Initialize the VTKVertex
+	 *
+	 * \param
+	 *
+	 */
+	vertex2(float x, float y, float z)
+	{
+		boost::fusion::at_c<vertex::x>(data)[0] = x;
+		boost::fusion::at_c<vertex::x>(data)[1] = y;
+		boost::fusion::at_c<vertex::x>(data)[2] = z;
+	}
+};
+
 // use the vertex like the edge
 typedef vertex edge;
 
-const std::string vertex::attributes::name[] = {"x","y","z","prp1","prp2","prp3","prp4","prp5"};
+const std::string vertex2::attributes::name[] = {"x","prp1","prp2"};
+
+
+
+BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D )
+{
+	// Create some graphs and output them
+
+	// Graph
+
+	Graph_CSR<vertex2,edge> gr;
+
+	// Create a cube graph
+
+	gr.addVertex(vertex2(0.0,0.0,0.0));
+	gr.addVertex(vertex2(0.0,0.0,1.0));
+	gr.addVertex(vertex2(0.0,1.0,0.0));
+	gr.addVertex(vertex2(0.0,1.0,1.0));
+	gr.addVertex(vertex2(1.0,0.0,0.0));
+	gr.addVertex(vertex2(1.0,0.0,1.0));
+	gr.addVertex(vertex2(1.0,1.0,0.0));
+	gr.addVertex(vertex2(1.0,1.0,1.0));
+
+	gr.addEdge(0,6);
+	gr.addEdge(6,4);
+	gr.addEdge(4,0);
+
+	gr.addEdge(0,2);
+	gr.addEdge(2,6);
+	gr.addEdge(6,0);
+
+	gr.addEdge(0,3);
+	gr.addEdge(3,2);
+	gr.addEdge(2,0);
+
+	gr.addEdge(0,1);
+	gr.addEdge(1,3);
+	gr.addEdge(3,0);
+
+	gr.addEdge(2,7);
+	gr.addEdge(7,6);
+	gr.addEdge(6,2);
+
+	gr.addEdge(2,3);
+	gr.addEdge(3,7);
+	gr.addEdge(7,2);
+
+	gr.addEdge(4,6);
+	gr.addEdge(6,7);
+	gr.addEdge(7,4);
+
+	gr.addEdge(4,7);
+	gr.addEdge(7,5);
+	gr.addEdge(5,4);
+
+	gr.addEdge(0,4);
+	gr.addEdge(4,5);
+	gr.addEdge(5,0);
+
+	gr.addEdge(0,5);
+	gr.addEdge(5,1);
+	gr.addEdge(1,0);
+
+	gr.addEdge(1,5);
+	gr.addEdge(5,7);
+	gr.addEdge(7,1);
+
+	gr.addEdge(1,7);
+	gr.addEdge(7,3);
+	gr.addEdge(3,1);
+
+	// Write the VTK file
+
+	VTKWriter<Graph_CSR<vertex2,edge>,GRAPH> vtk(gr);
+	vtk.write("vtk_graph_v2.vtk");
+
+	// check that match
+
+	bool test = compare("vtk_graph_v2.vtk","vtk_graph_test.vtk");
+	BOOST_REQUIRE_EQUAL(true,test);
+}
+
+BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D_edge )
+{
+	// Create some graphs and output them
+
+	// Graph
+
+	Graph_CSR<vertex2,vertex2> gr;
+
+	// Create a cube graph
+
+	gr.addVertex(vertex2(0.0,0.0,0.0));
+	gr.addVertex(vertex2(0.0,0.0,1.0));
+	gr.addVertex(vertex2(0.0,1.0,0.0));
+	gr.addVertex(vertex2(0.0,1.0,1.0));
+	gr.addVertex(vertex2(1.0,0.0,0.0));
+	gr.addVertex(vertex2(1.0,0.0,1.0));
+	gr.addVertex(vertex2(1.0,1.0,0.0));
+	gr.addVertex(vertex2(1.0,1.0,1.0));
+
+	gr.addEdge(0,6,vertex2(0.0,0.0,1.0));
+	gr.addEdge(6,4,vertex2(0.0,0.0,1.0));
+	gr.addEdge(4,0,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(0,2,vertex2(0.0,0.0,1.0));
+	gr.addEdge(2,6,vertex2(0.0,0.0,1.0));
+	gr.addEdge(6,0,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(0,3,vertex2(0.0,0.0,1.0));
+	gr.addEdge(3,2,vertex2(0.0,0.0,1.0));
+	gr.addEdge(2,0,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(0,1,vertex2(0.0,0.0,1.0));
+	gr.addEdge(1,3,vertex2(0.0,0.0,1.0));
+	gr.addEdge(3,0,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(2,7,vertex2(0.0,0.0,1.0));
+	gr.addEdge(7,6,vertex2(0.0,0.0,1.0));
+	gr.addEdge(6,2,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(2,3,vertex2(0.0,0.0,1.0));
+	gr.addEdge(3,7,vertex2(0.0,0.0,1.0));
+	gr.addEdge(7,2,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(4,6,vertex2(0.0,0.0,1.0));
+	gr.addEdge(6,7,vertex2(0.0,0.0,1.0));
+	gr.addEdge(7,4,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(4,7,vertex2(0.0,0.0,1.0));
+	gr.addEdge(7,5,vertex2(0.0,0.0,1.0));
+	gr.addEdge(5,4,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(0,4,vertex2(0.0,0.0,1.0));
+	gr.addEdge(4,5,vertex2(0.0,0.0,1.0));
+	gr.addEdge(5,0,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(0,5,vertex2(0.0,0.0,1.0));
+	gr.addEdge(5,1,vertex2(0.0,0.0,1.0));
+	gr.addEdge(1,0,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(1,5,vertex2(0.0,0.0,1.0));
+	gr.addEdge(5,7,vertex2(0.0,0.0,1.0));
+	gr.addEdge(7,1,vertex2(0.0,0.0,1.0));
+
+	gr.addEdge(1,7,vertex2(0.0,0.0,1.0));
+	gr.addEdge(7,3,vertex2(0.0,0.0,1.0));
+	gr.addEdge(3,1,vertex2(0.0,0.0,1.0));
+
+	// Write the VTK file
+
+	VTKWriter<Graph_CSR<vertex2,vertex2>,GRAPH> vtk(gr);
+	vtk.write("vtk_graph_v4.vtk");
+
+	// check that match
+
+	bool test = compare("vtk_graph_v4.vtk","vtk_graph_test.vtk");
+	BOOST_REQUIRE_EQUAL(true,test);
+}
+
+struct vertex3
+{
+	//! The node contain 3 unsigned long integer for communication computation memory and id
+	typedef boost::fusion::vector<float[2],size_t,double> type;
+
+	typedef typename memory_traits_inte<type>::type memory_int;
+	typedef typename memory_traits_lin<type>::type memory_lin;
+
+	//! type of the positional field
+	typedef float s_type;
+
+	//! Attributes name
+	struct attributes
+	{
+		static const std::string name[];
+	};
+
+	//! The data
+	type data;
+
+	//! computation property id in boost::fusion::vector
+	static const unsigned int x = 0;
+	static const unsigned int prp1 = 1;
+	static const unsigned int prp2 = 2;
+
+	//! total number of properties boost::fusion::vector
+	static const unsigned int max_prop = 3;
+
+	/*!
+	 * Default constructor
+	 *
+	 */
+	vertex3()
+	{
+
+	}
+
+	/*! \brief Initialize the VTKVertex
+	 *
+	 * \param
+	 *
+	 */
+	vertex3(float x, float y)
+	{
+		boost::fusion::at_c<vertex::x>(data)[0] = x;
+		boost::fusion::at_c<vertex::x>(data)[1] = y;
+	}
+};
+
+// use the vertex like the edge
+typedef vertex edge;
+
+const std::string vertex3::attributes::name[] = {"x","prp1","prp2"};
+
+BOOST_AUTO_TEST_CASE( vtk_writer_use_graph2D )
+{
+	// Create some graphs and output them
+
+	// Graph
+
+	Graph_CSR<vertex3,edge> gr;
+
+	// Create a cube graph
+
+	gr.addVertex(vertex3(0.0,0.0));
+	gr.addVertex(vertex3(0.0,1.0));
+	gr.addVertex(vertex3(1.0,0.0));
+	gr.addVertex(vertex3(1.0,1.0));
+
+	gr.addEdge(0,1);
+	gr.addEdge(1,3);
+	gr.addEdge(3,2);
+	gr.addEdge(2,0);
+
+	// Write the VTK file
+
+	VTKWriter<Graph_CSR<vertex3,edge>,GRAPH> vtk(gr);
+	vtk.write("vtk_graph_v3.vtk");
+
+	// check that match
+
+	bool test = compare("vtk_graph_v3.vtk","vtk_graph_test.vtk");
+	BOOST_REQUIRE_EQUAL(true,test);
+}
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_graph)
 {
