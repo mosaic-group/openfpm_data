@@ -54,7 +54,7 @@ struct csv_prp
     void operator()(T& t)
     {
 		// This is the type of the csv column
-		typedef typename boost::fusion::result_of::at_c<typename Tobj::type,T::value>::type col_type;
+		typedef decltype(obj.template get<T::value>()) col_type;
 
 		// Remove the reference from the column type
 		typedef typename boost::remove_reference<col_type>::type col_rtype;
@@ -87,7 +87,7 @@ struct csv_col
     void operator()(T& t)
     {
 		// This is the type of the csv column
-		typedef typename boost::fusion::result_of::at_c<typename Tobj::type,T::value>::type col_type;
+		typedef decltype(std::declval<Tobj>.template get<T::value>()) col_type;
 
 		// Remove the reference from the column type
 		typedef typename boost::remove_reference<col_type>::type col_rtype;
@@ -206,9 +206,9 @@ class CSVWriter
 			}
 
 			// Object to write
-			typename v_prp::value_type obj = vpr.get(i);
+			auto obj = vpr.get(i);
 
-			csv_prp<typename v_prp::value_type> c_prp(str,obj);
+			csv_prp<decltype(obj)> c_prp(str,obj);
 
 			// write the properties to the stream string
 			boost::mpl::for_each< boost::mpl::range_c<int,0,v_prp::value_type::max_prop> >(c_prp);
