@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D )
 
 	// check that match
 
-	bool test = compare("vtk_graph_v2.vtk","vtk_graph_test.vtk");
+	bool test = compare("vtk_graph_v2.vtk","vtk_graph_v2_test.vtk");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D_edge )
 
 	// check that match
 
-	bool test = compare("vtk_graph_v4.vtk","vtk_graph_test.vtk");
+	bool test = compare("vtk_graph_v4.vtk","vtk_graph_v4_test.vtk");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -363,7 +363,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph2D )
 
 	// check that match
 
-	bool test = compare("vtk_graph_v3.vtk","vtk_graph_test.vtk");
+	bool test = compare("vtk_graph_v3.vtk","vtk_graph_v3_test.vtk");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
