@@ -94,14 +94,22 @@ BOOST_AUTO_TEST_CASE( graphml_writer_use)
 	n1.get_i() = 6.0;
 	n1.get_str() = std::string("test");
 	g_csr2.addVertex(n1);
+	n1.get_str() = std::string("tes2");
 	g_csr2.addVertex(n1);
+	n1.get_str() = std::string("test3");
 	g_csr2.addVertex(n1);
+	n1.get_str() = std::string("test4");
 	g_csr2.addVertex(n1);
+	n1.get_str() = std::string("test5");
 
 	g_csr2.addEdge(0,1,n1);
+	n1.get_str() = std::string("test6");
 	g_csr2.addEdge(2,1,n1);
+	n1.get_str() = std::string("test7");
 	g_csr2.addEdge(3,1,n1);
+	n1.get_str() = std::string("test8");
 	g_csr2.addEdge(2,0,n1);
+	n1.get_str() = std::string("test9");
 	g_csr2.addEdge(3,2,n1);
 
 	// Create a graph ML

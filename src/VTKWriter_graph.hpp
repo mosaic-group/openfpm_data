@@ -109,11 +109,10 @@ struct vtk_vertex_node
 	 * \param n_obj object container to access its properties for example encapc<...>
 	 *
 	 */
-	vtk_vertex_node(std::string & v_node, typename G::V_container & n_obj, s_type (&x)[3]) :
-			x(x), vo(n_obj), v_node(v_node), z_set(false)
+	vtk_vertex_node(std::string & v_node, typename G::V_container & n_obj, s_type (&x)[3])
+	:z_set(false),x(x),vo(n_obj),v_node(v_node)
 	{
 	}
-	;
 
 	//! \brief Write collected information
 	void write()
@@ -473,7 +472,7 @@ public:
 
 		// Check if T is a supported format
 		// for now we support only scalar of native type
-		if (std::is_array<T>::value == true && std::is_array<typename std::remove_extent<T>::type>::value == false)
+		if (std::rank<T>::value == 1)
 		{
 			//Get type of the property
 			type = getType<typename std::remove_all_extents<T>::type>();

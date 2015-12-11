@@ -69,26 +69,40 @@ public:
 		//! vertex node output string
 		std::string v_out;
 
-		typedef typename boost::fusion::result_of::at<typename ele_g::value_type::value_type::type,boost::mpl::int_<i>>::type ctype;
+		typedef typename boost::mpl::at<typename ele_g::value_type::value_type::type,boost::mpl::int_<i>>::type ctype;
 
 		// Check if T is a supported format
 		// for now we support only scalar of native type
-
-		std::string type = getType<ctype>();
-
-		// if the type is not supported return
-		// if the type is not supported return
-		if (type.size() == 0)
+		if (std::rank<ctype>::value == 1)
 		{
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(ctype).name()) << " is not supported by vtk\n";
-			return "";
+			//Get type of the property
+			std::string type = getType<typename std::remove_all_extents<ctype>::type>();
+
+			// if the type is not supported skip-it
+			if (type.size() == 0)
+			{
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(ctype).name()) << " is not supported by vtk\n";
+				return "";
+			}
+
+			// Create point data properties
+			v_out += "VECTORS " + get_attributes("") + " " + type + "\n";
 		}
+		else
+		{
+			std::string type = getType<ctype>();
 
-		// Create point data properties
-		v_out += "SCALARS " + get_attributes(oprp) + " " + type + "\n";
+			// if the type is not supported return
+			if (type.size() == 0)
+				return v_out;
 
-		// Default lookup table
-		v_out += "LOOKUP_TABLE default\n";
+			// Create point data properties
+			v_out += "SCALARS " + get_attributes(oprp) + " " + type + "\n";
+
+			// Default lookup table
+			v_out += "LOOKUP_TABLE default\n";
+
+		}
 
 		// return the vertex list
 		return v_out;
@@ -134,26 +148,40 @@ public:
 		//! vertex node output string
 		std::string v_out;
 
+		typedef typename boost::mpl::at<typename ele_g::value_type::value_type::type,boost::mpl::int_<i>>::type ctype;
+
 		// Check if T is a supported format
 		// for now we support only scalar of native type
-
-		typedef typename boost::mpl::at<typename ele_g::value_type::value_type::type,boost::mpl::int_<i>>::type ctype;
-		typedef typename std::remove_all_extents<ctype>::type vttype;
-
-		std::string type = getType<vttype>();
-
-		// if the type is not supported return
-		if (type.size() == 0)
+		if (std::rank<ctype>::value == 1)
 		{
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(ctype).name()) << " is not supported by vtk\n";
-			return "";
+			//Get type of the property
+			std::string type = getType<typename std::remove_all_extents<ctype>::type>();
+
+			// if the type is not supported skip-it
+			if (type.size() == 0)
+			{
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(ctype).name()) << " is not supported by vtk\n";
+				return "";
+			}
+
+			// Create point data properties
+			v_out += "VECTORS " + get_attributes("") + " " + type + "\n";
 		}
+		else
+		{
+			std::string type = getType<typename std::remove_all_extents<ctype>::type>();
 
-		// Create point data properties
-		v_out += "SCALARS " + get_attributes(oprp) + " " + type + "\n";
+			// if the type is not supported return
+			if (type.size() == 0)
+				return v_out;
 
-		// Default lookup table
-		v_out += "LOOKUP_TABLE default\n";
+			// Create point data properties
+			v_out += "SCALARS " + get_attributes(oprp) + " " + type + "\n";
+
+			// Default lookup table
+			v_out += "LOOKUP_TABLE default\n";
+
+		}
 
 		// return the vertex list
 		return v_out;
@@ -214,33 +242,38 @@ struct meta_prop<I, ele_g,St,T[N1]>
 {
 	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out)
 	{
-		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+	    // actual string size
+	    size_t sz = v_out.size();
+
+		// Produce the point properties header
+		v_out += prop_output_g<has_attributes<typename ele_g::value_type::value_type>::value,St ,ele_g,I::value>::get_point_property_header("");
+
+		// If the output has changed, we have to write the properties
+		if (v_out.size() != sz)
 		{
-	    	// actual string size
-	    	size_t sz = v_out.size();
+			// Produce point data
 
-			// Produce the point properties header
-			v_out += prop_output_g<has_attributes<typename ele_g::value_type::value_type>::value,St ,ele_g,I::value>::get_point_property_header("_" + std::to_string(i1));
-
-			// If the output has changed, we have to write the properties
-			if (v_out.size() != sz)
+			for (size_t k = 0 ; k < vg.size() ; k++)
 			{
-				// Produce point data
+				//! Get a vertex iterator
+				auto it = vg.get(k).g.getIterator();
 
-				for (size_t k = 0 ; k < vg.size() ; k++)
+				// if there is the next element
+				while (it.isNext())
 				{
-					//! Get a vertex iterator
-					auto it = vg.get(k).g.getIterator();
-
-					// if there is the next element
-					while (it.isNext())
+					// Print the properties
+					for (size_t i1 = 0 ; i1 < N1 ; i1++)
 					{
-						// Print the property
-						v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()[i1]) + "\n";
-
-						// increment the iterator and counter
-						++it;
+						v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()[i1]) + " ";
 					}
+					if (N1 == 2)
+					{
+						v_out += "0.0";
+					}
+					v_out += "\n";
+
+					// increment the iterator and counter
+					++it;
 				}
 			}
 		}
