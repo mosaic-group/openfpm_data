@@ -18,7 +18,7 @@
 #include "Grid/util.hpp"
 #include "data_type/scalar.hpp"
 #include "util/convert.hpp"
-#include "mul_array_extent.hpp"
+#include "mul_array_extents.hpp"
 
 //! [Check has_posMask struct definition]
 

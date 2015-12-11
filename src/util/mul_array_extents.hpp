@@ -47,7 +47,7 @@ struct array_extents<T[N1]>
 template<typename T,size_t N1,size_t N2>
 struct array_extents<T[N1][N2]>
 {
-	static inline bool mul()
+	static inline size_t mul()
 	{
 		return N1 * N2;
 	}
@@ -62,7 +62,7 @@ struct array_extents<T[N1][N2]>
 template<typename T,size_t N1,size_t N2,size_t N3>
 struct array_extents<T[N1][N2][N3]>
 {
-	static inline bool mul()
+	static inline size_t mul()
 	{
 		return N1 * N2 * N3;
 	}
