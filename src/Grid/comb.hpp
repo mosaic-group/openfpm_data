@@ -234,7 +234,7 @@ struct comb
 	 *
 	 */
 
-	inline char operator[](int i)
+	inline char operator[](int i) const
 	{
 		return c[i];
 	}

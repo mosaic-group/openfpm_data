@@ -459,9 +459,9 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	for (size_t i = 0 ; i < sc3_2.size() ; i++)
 	{
 		// Expecting two elements, valid, distinct,  sub-decomposition of sc3_2[i]
-		//! [Getting the vertices of the surfaces of the cube]
+		//! [Getting the vertices of one surface of the cube]
 		std::vector<comb<3>> combs = SubHyperCube<3,2>::getCombinations_R(sc3_2[i],0);
-		//! [Getting the vertices of the surfaces of the cube]
+		//! [Getting the vertices of one surface of the cube]
 		BOOST_REQUIRE_EQUAL(combs.size(),4);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);

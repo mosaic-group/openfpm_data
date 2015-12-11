@@ -647,13 +647,15 @@ public:
 
 
 		// We know that, if it is 1D we can safely copy the memory
-		if (dim == 1)
-		{
-			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
-			grid_new.data_.mem->copy(*data_.mem);
-		}
-		else
-		{
+//		if (dim == 1)
+//		{
+//			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
+//			grid_new.data_.mem->copy(*data_.mem);
+//		}
+//		else
+//		{
+		// It should be better to separate between fast and slow cases
+
 			//! N-D copy
 
 			//! create a source grid iterator
@@ -670,7 +672,7 @@ public:
 
 				++it;
 			}
-		}
+//		}
 
 		// copy grid_new to the base
 

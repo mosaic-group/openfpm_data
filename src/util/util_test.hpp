@@ -18,6 +18,7 @@
 #include "Grid/util.hpp"
 #include "data_type/scalar.hpp"
 #include "util/convert.hpp"
+#include "mul_array_extent.hpp"
 
 //! [Check has_posMask struct definition]
 
@@ -570,6 +571,21 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		BOOST_REQUIRE_EQUAL( val, false);
 
 		//! [Check is_vector]
+		}
+
+		{
+		//! [Usage mul_array_extents]
+
+		size_t mul = array_extents<float>::mul();
+		BOOST_REQUIRE_EQUAL(mul,1);
+		mul = array_extents<float[3]>::mul();
+		BOOST_REQUIRE_EQUAL(mul,3);
+		mul = array_extents<float[3][2]>::mul();
+		BOOST_REQUIRE_EQUAL(mul,3*2);
+		mul = array_extents<float[3][2][5]>::mul();
+		BOOST_REQUIRE_EQUAL(mul,3*2*5);
+
+		//! [Usage mul_array_extents]
 		}
 	}
 }
