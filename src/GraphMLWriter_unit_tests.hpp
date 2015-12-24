@@ -131,7 +131,10 @@ BOOST_AUTO_TEST_CASE( graphml_writer_use)
 	// Box
 	Box<3,float> box({0.0,0.0,0.0},{1.0,1.0,1.0});
 
-	Graph_CSR<ne_cp,ne_cp> g_csr = g_factory.construct<5,float,2,ne_cp::x,ne_cp::y,ne_cp::z>(sz,box);
+	// Boundary conditions, non periodic
+	size_t bc[] = {NON_PERIODIC,NON_PERIODIC,NON_PERIODIC};
+
+	Graph_CSR<ne_cp,ne_cp> g_csr = g_factory.construct<5,float,2,ne_cp::x,ne_cp::y,ne_cp::z>(sz,box,bc);
 
 	// Create a graph ML
 	GraphMLWriter<Graph_CSR<ne_cp,ne_cp>> gw(g_csr);

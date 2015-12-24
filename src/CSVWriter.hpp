@@ -181,9 +181,10 @@ class CSVWriter
 	 *
 	 * \param v_pos vector that contain the positional information
 	 * \param v_prp vector that contain the property information
+	 * \param offset from where to start
 	 *
 	 */
-	std::string get_csv_data(v_pos & vp, v_prp & vpr)
+	std::string get_csv_data(v_pos & vp, v_prp & vpr, size_t offset)
 	{
 		std::stringstream str;
 
@@ -195,7 +196,7 @@ class CSVWriter
 		}
 
 		// Write the data
-		for (size_t i = 0 ; i < vp.size() ; i++)
+		for (size_t i = offset ; i < vp.size() ; i++)
 		{
 			for (size_t j = 0 ; j < v_pos::value_type::dims ; j++)
 			{
@@ -228,10 +229,11 @@ public:
 	 * \param file path where to write
 	 * \param v_pos positional vector
 	 * \param v_prp properties vector
+	 * \param offset from where to start to write
 	 *
 	 */
 
-	bool write(std::string file, v_pos & v , v_prp & prp)
+	bool write(std::string file, v_pos & v , v_prp & prp, size_t offset=0)
 	{
 		// Header for csv (colums name)
 		std::string csv_header;
@@ -242,7 +244,7 @@ public:
 		csv_header = get_csv_colums();
 
 		// For each property in the vertex type produce a point data
-		point_data = get_csv_data(v,prp);
+		point_data = get_csv_data(v,prp,offset);
 
 		// write the file
 		std::ofstream ofs(file);
