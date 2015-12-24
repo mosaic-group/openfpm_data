@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE( vector_std_utility )
 	// Check is zero
 	for (size_t i = 0 ;  i < 16 ; i++)
 	{
-		BOOST_REQUIRE_EQUAL(pb.get(i),0);
+		BOOST_REQUIRE_EQUAL(pb.get(i),0ul);
 	}
 
 }
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE( object_test_creator )
 	BOOST_REQUIRE_EQUAL(tst , true);
 }
 
-#define V_REM_PUSH 1024
+#define V_REM_PUSH 1024ul
 
 BOOST_AUTO_TEST_CASE(vector_remove )
 {
@@ -291,7 +291,7 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 
 	//! [Create push and multiple remove]
 
-	BOOST_REQUIRE_EQUAL(v1.size(),1020);
+	BOOST_REQUIRE_EQUAL(v1.size(),1020ul);
 	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(0),4);
 
 	{
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 	v1.remove(rem);
 	}
 
-	BOOST_REQUIRE_EQUAL(v1.size(),1016);
+	BOOST_REQUIRE_EQUAL(v1.size(),1016ul);
 	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(v1.size()-1),1019);
 
 	{
@@ -316,12 +316,12 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 	v1.remove(rem);
 	}
 
-	BOOST_REQUIRE_EQUAL(v1.size(),508);
+	BOOST_REQUIRE_EQUAL(v1.size(),508ul);
 
 	// Check only odd
 	for (size_t i = 0 ; i < v1.size() ; i++)
 	{
-		BOOST_REQUIRE_EQUAL((size_t)v1.template get<p::x>(v1.size()-1) % 2, 1);
+		BOOST_REQUIRE_EQUAL((size_t)v1.template get<p::x>(v1.size()-1) % 2, 1ul);
 	}
 }
 
@@ -342,7 +342,7 @@ BOOST_AUTO_TEST_CASE(vector_clear )
 
 	v1.clear();
 
-	BOOST_REQUIRE_EQUAL(v1.size(),0);
+	BOOST_REQUIRE_EQUAL(v1.size(),0ul);
 
 	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
 	{

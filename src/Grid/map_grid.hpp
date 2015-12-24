@@ -37,6 +37,10 @@
 #include "memory/HeapMemory.hpp"
 #include "grid_common.hpp"
 #include "util/se_util.hpp"
+#include "iterators/grid_key_dx_iterator.hpp"
+#include "iterators/grid_key_dx_iterator_sub.hpp"
+#include "iterators/grid_key_dx_iterator_sp.hpp"
+#include "iterators/grid_key_dx_iterator_sub_bc.hpp"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;
@@ -93,7 +97,7 @@ private:
 	//! Is the memory initialized
 	bool is_mem_init = false;
 
-	//! This is an header that store all information related to the grid
+	//! This is a structure that store all information related to the grid and how indexes are linearized
 	grid_sm<dim,T> g1;
 
 	//! Memory layout specification + memory chunk pointer
@@ -953,6 +957,8 @@ public:
 	{
 #ifdef SE_CLASS2
 		return check_whoami(this,8);
+#else
+		return -1;
 #endif
 	}
 };

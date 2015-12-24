@@ -539,7 +539,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 		++g_it;
 	}
 
-	BOOST_REQUIRE_EQUAL(count, 16*16*16);
+	BOOST_REQUIRE_EQUAL(count, (size_t)16*16*16);
 	//! [Grid iterator test usage]
 	}
 
@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 		++g_it;
 	}
 
-	BOOST_REQUIRE_EQUAL(count, 14*14*14);
+	BOOST_REQUIRE_EQUAL(count, (size_t)14*14*14);
 
 	//! [Sub-grid iterator test usage]
 
@@ -618,7 +618,7 @@ BOOST_AUTO_TEST_CASE( grid_sub_iterator_test )
 		++g_it;
 	}
 
-	BOOST_REQUIRE_EQUAL(count, 14*14*14);
+	BOOST_REQUIRE_EQUAL(count, (size_t)14*14*14);
 
 	//! [Sub-grid iterator test usage]
 }
@@ -883,7 +883,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sp_test )
 		++it;
 	}
 
-	BOOST_REQUIRE_EQUAL(count,2185);
+	BOOST_REQUIRE_EQUAL(count,2185ul);
 }
 
 /* \brief This is an ordinary test simple 3D with plain C array

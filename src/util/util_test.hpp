@@ -323,7 +323,7 @@ BOOST_AUTO_TEST_CASE( generate_array )
 	// ct_test_ce::data is equivalent to constexpr size_t [5] = {5,6,7,8,9}
 
 	const size_t ct_calc = MetaFunc<ct_test_ce::data[0],ct_test_ce::data[1]>::value;
-	BOOST_REQUIRE_EQUAL(ct_calc,11);
+	BOOST_REQUIRE_EQUAL(ct_calc,11ul);
 	//! [constexpr array]
 	}
 
@@ -577,13 +577,13 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		//! [Usage mul_array_extents]
 
 		size_t mul = array_extents<float>::mul();
-		BOOST_REQUIRE_EQUAL(mul,1);
+		BOOST_REQUIRE_EQUAL(mul,1ul);
 		mul = array_extents<float[3]>::mul();
-		BOOST_REQUIRE_EQUAL(mul,3);
+		BOOST_REQUIRE_EQUAL(mul,3ul);
 		mul = array_extents<float[3][2]>::mul();
-		BOOST_REQUIRE_EQUAL(mul,3*2);
+		BOOST_REQUIRE_EQUAL(mul,3ul*2ul);
 		mul = array_extents<float[3][2][5]>::mul();
-		BOOST_REQUIRE_EQUAL(mul,3*2*5);
+		BOOST_REQUIRE_EQUAL(mul,3ul*2ul*5ul);
 
 		//! [Usage mul_array_extents]
 		}
@@ -601,8 +601,8 @@ BOOST_AUTO_TEST_CASE( check_convert_function )
 
 	Point<2,size_t> p = toPoint<2,size_t>::convert(c);
 
-	BOOST_REQUIRE_EQUAL(p.get(0),1);
-	BOOST_REQUIRE_EQUAL(p.get(1),-1);
+	BOOST_REQUIRE_EQUAL(p.get(0),1ul);
+	BOOST_REQUIRE_EQUAL(p.get(1),(size_t)-1);
 
 	//! [Convert combination to Point]
 	}

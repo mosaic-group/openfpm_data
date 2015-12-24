@@ -574,6 +574,8 @@ public:
 	{
 #ifdef SE_CLASS2
 		return check_whoami(this,8);
+#else
+		return -1;
 #endif
 	}
 };

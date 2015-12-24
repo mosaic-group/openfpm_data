@@ -14,25 +14,7 @@
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
 
-// Compile time array functor needed to generate array at compile-time of type
-// {0,0,0,0,0,.....}
-// {3,3,3,3,3,3,.....}
-
- template<size_t index, size_t N> struct Fill_three {
-    enum { value = 3 };
- };
-
- template<size_t index, size_t N> struct Fill_zero {
-    enum { value = 0 };
- };
-
- template<size_t index, size_t N> struct Fill_two {
-    enum { value = 2 };
- };
-
- template<size_t index, size_t N> struct Fill_one {
-    enum { value = 1 };
- };
+#include "util/common.hpp"
 
 /*! \brief Class for FAST cell list implementation
  *

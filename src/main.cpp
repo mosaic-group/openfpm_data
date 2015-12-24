@@ -25,3 +25,5 @@
 #include "Space/Shape/HyperCube_unit_test.hpp"
 #include "Graph/graph_unit_tests.hpp"
 #include "Grid/grid_unit_tests.hpp"
+#include "Grid/grid_sm_unit_tests.hpp"
+#include "util/mathutil_unit_test.hpp"

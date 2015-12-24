@@ -96,6 +96,11 @@ public:
 
 	static std::vector<comb<dim>> getCombinations_R(size_t d)
 	{
+#ifdef SE_CLASS1
+		if (d > dim)
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " " << d << " must be smaller than " << "\n";
+#endif
+
 		// Create an Iterator_g_const
 		// And a vector that store all the combination
 

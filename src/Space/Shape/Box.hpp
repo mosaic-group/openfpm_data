@@ -235,6 +235,18 @@ public:
 	Box()
 	{}
 
+	/*! \brief Constructor from two points
+	 *
+	 * \param p1 Low point, initialize as a list example {0.0,0.0,0.0}
+	 * \param p2 High point, initialized as a list example {1.0,1.0,1.0}
+	 *
+	 */
+	Box(const Point<dim,T> & p1, const Point<dim,T> & p2)
+	{
+		setP1(p1);
+		setP2(p2);
+	}
+
 	/*! \brief Constructor from initializer list
 	 *
 	 * \param p1 Low point, initialize as a list example {0.0,0.0,0.0}
@@ -310,6 +322,21 @@ public:
 		{
 			boost::fusion::at_c<p1>(data)[i] = 0;
 			boost::fusion::at_c<p2>(data)[i] = box_data[i];
+		}
+	}
+
+	/*! \brief constructor from 2 grid_key_dx
+	 *
+	 * \param key1 start point
+	 * \param key2 stop point
+	 *
+	 */
+	inline Box(const grid_key_dx<dim> & key1, const grid_key_dx<dim> & key2)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setLow(i,key1.get(i));
+			setHigh(i,key2.get(i));
 		}
 	}
 
@@ -407,12 +434,22 @@ public:
 	inline void set(std::initializer_list<T> p1, std::initializer_list<T> p2)
 	{
 		size_t i = 0;
-	    for(T x : p1)
-	    {setLow(i,x);i++;}
+		for(T x : p1)
+		{
+			setLow(i,x);
+			i++;
+			if (i > dim)
+				break;
+		}
 
-	    i = 0;
-	    for(T x : p2)
-	    {setHigh(i,x);i++;}
+		i = 0;
+		for(T x : p2)
+		{
+			setHigh(i,x);
+			i++;
+			if (i > dim)
+				break;
+		}
 	}
 
 	/*! \brief set the low interval of the box
@@ -593,6 +630,24 @@ public:
 		{
 			boost::fusion::at_c<p2>(data)[i] -= p.get(i);
 			boost::fusion::at_c<p1>(data)[i] -= p.get(i);
+		}
+
+		return *this;
+	}
+
+	/*! \brief Translate the box
+	 *
+	 * \p Point translation vector
+	 *
+	 * \return itself
+	 *
+	 */
+	inline Box<dim,T> & operator+=(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			boost::fusion::at_c<p2>(data)[i] += p.get(i);
+			boost::fusion::at_c<p1>(data)[i] += p.get(i);
 		}
 
 		return *this;

@@ -250,6 +250,17 @@ struct comb
 		return c;
 	}
 
+	/*! \brief get the combination array pointer
+	 *
+	 * \return an array of char representing the combination
+	 *
+	 */
+
+	inline const char * getComb() const
+	{
+		return c;
+	}
+
 	/*! \brief get the index i of the combination
 	 *
 	 * NOTE: used on expression template
@@ -341,6 +352,27 @@ struct comb
 		str << std::to_string(c[i]) << ")";
 
 		return str.str();
+	}
+
+	/*! \brief Linearization
+	 *
+	 * From the combination produce a number
+	 *
+	 * \return the number
+	 *
+	 */
+	size_t inline lin() const
+	{
+		size_t ret = 0;
+		size_t accu = 1;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			ret += (c[i] + 1) * accu;
+			accu *= 3;
+		}
+
+		return ret;
 	}
 };
 
@@ -464,6 +496,15 @@ struct comb<0>
 		return 0;
 	}
 
+	/* \brief produce an unique number from the combination
+	 *
+	 *
+	 *
+	 */
+	inline size_t lin()
+	{
+		return 0;
+	}
 };
 
 // create a specialization of std::vector<comb<0>>
