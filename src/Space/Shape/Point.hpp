@@ -116,6 +116,21 @@ template<unsigned int dim ,typename T> class Point
 		return result;
 	}
 
+	/*! \brief Subtract each components
+	 *
+	 * \param p Point
+	 *
+	 */
+	inline Point<dim,T> & operator-=(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			get(i) -= p.get(i);
+		}
+
+		return *this;
+	}
+
 	/*! \brief Sum each components
 	 *
 	 * \param p Point
@@ -129,6 +144,23 @@ template<unsigned int dim ,typename T> class Point
 		}
 
 		return *this;
+	}
+
+	/*! \Brief norm of the vector
+	 *
+	 * \return the norm of the vector
+	 *
+	 */
+	T norm()
+	{
+		T n = 0.0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			n+=get(i) * get(i);
+		}
+
+		return sqrt(n);
 	}
 
 	/*! \brief Sum each components

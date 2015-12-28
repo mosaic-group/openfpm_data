@@ -281,7 +281,7 @@ struct comb
 	 * \return number of zero
 	 *
 	 */
-	inline int n_zero()
+	inline int n_zero() const
 	{
 		int zero = 0;
 

@@ -320,7 +320,7 @@ namespace openfpm
 			{
 				//! Resize the memory
 				size_t sz[1] = {sp};
-				base.template resize<Memory>(sz);
+				base.resize(sz);
 			}
 		}
 
@@ -614,6 +614,22 @@ namespace openfpm
 			return base.get_o(key);
 		}
 
+		/*! \brief Get the last element of the vector
+		 *
+		 * \return the last element (encapsulated)
+		 *
+		 */
+
+		inline const typename grid_cpu<1,T>::container last() const
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			grid_key_dx<1> key(size()-1);
+
+			return base.get_o(key);
+		}
+
 		/*! \brief Get an element of the vector
 		 *
 		 * Get an element of the vector
@@ -661,6 +677,22 @@ namespace openfpm
 			return base.get_o(key);
 		}
 
+		/*! \brief Get the last element of the vector
+		 *
+		 * \return the element (encapsulated)
+		 *
+		 */
+
+		inline typename grid_cpu<1,T>::container last()
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			grid_key_dx<1> key(size()-1);
+
+			return base.get_o(key);
+		}
+
 		//! Destructor
 		~vector() THROW
 		{
@@ -668,20 +700,6 @@ namespace openfpm
 	#ifdef SE_CLASS2
 			check_delete(this);
 	#endif
-		}
-
-		/*! \brief Constructor from vector
-		 *
-		 * \param mv vector
-		 *
-		 */
-		vector(vector<T, Memory,grow_p,OPENFPM_NATIVE> && mv) THROW
-		:v_size(mv.v_size),base(mv.base)
-		{
-			// Add this pointer
-#ifdef SE_CLASS2
-			check_new(this,8,VECTOR_EVENT,1);
-#endif
 		}
 
 		/*! \brief It duplicate the vector
@@ -707,7 +725,7 @@ namespace openfpm
 		 * \param v the vector
 		 *
 		 */
-		vector(const vector<T, Memory,grow_p,OPENFPM_NATIVE> && v)
+		vector(vector<T, Memory,grow_p,OPENFPM_NATIVE> && v)
 		:v_size(0)
 		{
 			// Add this pointer
@@ -1029,6 +1047,19 @@ namespace openfpm
 		 *
 		 */
 		void * getPointer()
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			return base.getPointer();
+		}
+
+		/*! \brief Return the pointer that store the data
+		 *
+		 * \return the pointer that store the data
+		 *
+		 */
+		const void * getPointer() const
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);

@@ -151,7 +151,7 @@ namespace openfpm
 		{
 			T pos_tmp = pos;
 
-			if (pos > p2)
+			if (pos >= p2)
 				pos_tmp -= (p2 - p1);
 			else if (pos < p1)
 				pos_tmp += (p2 - p1);

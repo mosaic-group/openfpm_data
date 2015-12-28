@@ -9,6 +9,7 @@
 #define MEMORY_ARRAY_HPP_
 
 #include "memory/memory.hpp"
+#include "Memleak_check.hpp"
 
 /*!
  *
@@ -65,6 +66,10 @@ class memory_array
 	memory_array(void * ptr, size_t sz, bool init)
 	: ptr(static_cast<T *>(ptr))
 	{
+#ifdef SE_CLASS2
+		check_valid(ptr,sz);
+#endif
+
 		// Initialize the constructors
 
 		if (init == false)

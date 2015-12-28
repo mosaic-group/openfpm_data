@@ -859,6 +859,38 @@ public:
 		return true;
 	}
 
+	/*! \brief Check if the point is inside the region excluding the positive part
+	 *
+	 * In periodic boundary conditions the positive border is not included, but match the beginning
+	 *
+	 * \param p point to check
+	 * \return true if the point is inside the space
+	 *
+	 */
+	bool isInsideNP(const Point<dim,T> & p) const
+	{
+		// check if bound
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			// if outside the region return false
+			if (   boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
+			    || boost::fusion::at_c<Point<dim,T>::x>(p.data)[i] >= boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
+			{
+				// Out of bound
+
+
+
+				return false;
+			}
+
+		}
+
+		// In bound
+
+		return true;
+	}
+
 	/*! \brief Check if the point is inside the region
 	 *
 	 * \param p point to check
@@ -887,6 +919,7 @@ public:
 
 		return true;
 	}
+
 
 	/*! \brief Check if the Box is a valid box P2 >= P1
 	 *

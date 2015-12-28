@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE( vector_std_utility )
 
 }
 
-size_t alloc[] = {235,345,520};
+size_t alloc[] = {235,345,0,520};
 size_t n_alloc = sizeof(alloc)/sizeof(size_t);
 
 BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
@@ -227,6 +227,7 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 		offset += pap[i];
 	}
 }
+
 
 BOOST_AUTO_TEST_CASE( vector_prealloc )
 {

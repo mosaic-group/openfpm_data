@@ -360,13 +360,13 @@ public:
 		grid_new.setMemory();
 
 		// We know that, if it is 1D we can safely copy the memory
-		if (dim == 1)
-		{
+//		if (dim == 1)
+//		{
 			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
-			grid_new.data_.mem->copy(*data_.mem);
-		}
-		else
-		{
+//			grid_new.data_.mem->copy(*data_.mem);
+//		}
+//		else
+//		{
 			//! N-D copy
 
 			//! create a source grid iterator
@@ -378,7 +378,7 @@ public:
 
 				++it;
 			}
-		}
+//		}
 
 		// copy grid_new to the base
 
@@ -462,6 +462,25 @@ public:
 	 */
 
 	void * getPointer()
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		if (data_.mem_r == NULL)
+			return NULL;
+
+		return data_.mem_r->get_pointer();
+	}
+
+	/*! \brief Return a plain pointer to the internal data
+	 *
+	 * Return a plain pointer to the internal data
+	 *
+	 * \return plain data pointer
+	 *
+	 */
+
+	const void * getPointer() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
