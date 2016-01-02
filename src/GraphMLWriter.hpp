@@ -208,6 +208,11 @@ struct vertex_node
 		create_prop<typename G::V_type>(attributes_names);
 	};
 
+	inline ~vertex_node()
+	{
+		delete [] attributes_names;
+	}
+
 #ifdef DEBUG
 	/*! \brief Constructor
 	 *

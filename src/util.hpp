@@ -71,6 +71,8 @@ struct RGB getColor(int group, std::uniform_real_distribution<float> & d, std::d
 
 	float s = d(g);
 
+	group = group % 12;
+
 #ifdef ON_IO_UNIT_TESTS
 	s = 0.5;
 #endif
