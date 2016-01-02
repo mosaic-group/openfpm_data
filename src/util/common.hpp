@@ -9,7 +9,7 @@ namespace std
 {
 	// We need the definition of std::to_string that work on string
 
-	static std::string to_string(std::string s)
+	inline static std::string to_string(std::string s)
 	{
 		return s;
 	}
