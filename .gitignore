@@ -55,3 +55,7 @@ numerics
 aclocal.m4
 **/autom4te.cache
 src/io
+csv_out.csv
+test_graph.graphml
+test_graph2.graphml
+
