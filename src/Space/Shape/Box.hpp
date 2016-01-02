@@ -438,7 +438,7 @@ public:
 		{
 			setLow(i,x);
 			i++;
-			if (i > dim)
+			if (i >= dim)
 				break;
 		}
 
@@ -447,7 +447,7 @@ public:
 		{
 			setHigh(i,x);
 			i++;
-			if (i > dim)
+			if (i >= dim)
 				break;
 		}
 	}

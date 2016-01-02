@@ -401,5 +401,41 @@ public:
 };
 
 
+//// Specialization for dimension 0
+
+/**
+ *
+ * Grid key class iterator, iterate through a sub-grid defined by an hyper-cube
+ *
+ * \param dim dimensionality of the grid
+ *
+ * \note if you have a grid you can get this object from getIteratorSub()
+ *
+ * ### Sub grid iterator declaration and usage
+ * \snippet grid_unit_tests.hpp Sub-grid iterator test usage
+ *
+ */
+
+template<typename warn>
+class grid_key_dx_iterator_sub<0,warn>
+{
+
+public:
+
+	grid_key_dx_iterator_sub()
+	{}
+
+	grid_key_dx_iterator<0> & operator++()
+	{return *this;}
+
+	inline bool isNext()
+	{return false;}
+
+	inline size_t getVolume()
+	{return 0;}
+
+	inline void reset()
+	{}
+};
 
 #endif /* OPENFPM_DATA_SRC_GRID_ITERATORS_GRID_KEY_DX_ITERATOR_SUB_HPP_ */

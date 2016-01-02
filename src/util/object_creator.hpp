@@ -58,10 +58,12 @@ struct check_types
 			{
 				std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " impossible to check the type " << demangle(typeid(tpy).name()) << " please consider to add a static method \"static bool noPointers()\" \n" ;
 				ret = PNP::UNKNOWN;
+				break;
 			}
 			case PNP::POINTERS:
 			{
 				ret = PNP::POINTERS;
+				break;
 			}
 			default:
 			{

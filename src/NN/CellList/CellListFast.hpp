@@ -244,6 +244,7 @@ public:
 	 *
 	 */
 	CellList()
+	:slot(16)
 	{
 	}
 

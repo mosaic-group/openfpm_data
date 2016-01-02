@@ -452,8 +452,8 @@ public:
 	 * Constructor
 	 *
 	 */
-	Graph_CSR(size_t n_vertex, size_t n_slot) :
-			v_slot(n_slot)
+	Graph_CSR(size_t n_vertex, size_t n_slot)
+	:v_slot(n_slot)
 	{
 		//! Creating n_vertex into the graph
 		v.resize(n_vertex);
@@ -470,6 +470,9 @@ public:
 	 */
 	Graph_CSR(Graph_CSR<V, E, VertexList, EdgeList, Memory> && g)
 	{
+		size_t vs_tmp = v_slot;
+		v_slot = g.v_slot;
+		g.v_slot = vs_tmp;
 		swap(g);
 	}
 

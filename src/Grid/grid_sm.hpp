@@ -179,7 +179,6 @@ class grid_sm
 		for (size_t i = 1 ;  i < N ; i++)
 		{
 			sz_s[i] = sz[i]*sz_s[i-1];
-			this->sz[i] = sz[i];
 
 			// set the box
 			box.setHigh(i,sz[i]);
@@ -241,6 +240,7 @@ public:
 	 */
 
 	inline grid_sm()
+	:size_tot(0)
 	{
 		Initialize();
 	}

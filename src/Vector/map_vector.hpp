@@ -726,7 +726,7 @@ namespace openfpm
 		 *
 		 */
 		vector(vector<T, Memory,grow_p,OPENFPM_NATIVE> && v)
-		:v_size(0)
+		:v_size(0),err_code(0)
 		{
 			// Add this pointer
 #ifdef SE_CLASS2
