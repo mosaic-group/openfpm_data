@@ -159,11 +159,32 @@ struct has_noPointers<T, typename Void<decltype( T::noPointers() )>::type> : std
  */
 
 template<typename ObjType, typename Sfinae = void>
-struct has_Pack: std::false_type {};
+struct has_pack: std::false_type {};
 
 template<typename ObjType>
-struct has_Pack<ObjType, typename Void<decltype( ObjType::pack() )>::type> : std::true_type
+struct has_pack<ObjType, typename Void<decltype( ObjType::pack() )>::type> : std::true_type
 {};
+
+
+/*! \brief has_packRequest check if a type has defined a
+ * method called packRequest
+ *
+ * ### Example
+ *
+ * \snippet
+ *
+ * return true if T::packRequest() is a valid expression (function pointers)
+ * and produce a defined type
+ *
+ */
+
+template<typename ObjType, typename Sfinae = void>
+struct has_packRequest: std::false_type {};
+
+template<typename ObjType>
+struct has_packRequest<ObjType, typename Void<decltype( ObjType::packRequest() )>::type> : std::true_type
+{};
+
 
 /*! \brief has_calculateMem check if a type has defined a
  * method called calculateMem
@@ -183,10 +204,5 @@ struct has_calculateMem: std::false_type {};
 template<typename ObjType>
 struct has_calculateMem<ObjType, typename Void<decltype( ObjType::calculateMem() )>::type> : std::true_type
 {};
-
-
-
-
-
 
 #endif

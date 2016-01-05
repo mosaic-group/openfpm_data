@@ -12,7 +12,7 @@
 #include "Vector/map_vector_grow_p.hpp"
 #include "memory/ExtPreAlloc.hpp"
 #include "util/util_debug.hpp"
-#include "Pack_stat.hpp"
+#include "util/Pack_stat.hpp"
 //#include "Vector/map_vector.hpp"
 //#include "Pack_selector.hpp"
 #include <boost/fusion/include/mpl.hpp>
@@ -361,6 +361,22 @@ public:
 	 * \param sts pack statistic
 	 *
 	 */
+
+	static bool pack()
+	{
+		return false;
+	}
+
+	static bool packRequest()
+	{
+		return false;
+	}
+
+	static bool calculateMem()
+	{
+		return false;
+	}
+
 	template<int ... prp> void pack(ExtPreAlloc<S> & mem, Pack_stat & sts)
 	{
 #ifdef DEBUG

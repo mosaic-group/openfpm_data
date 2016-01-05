@@ -18,7 +18,7 @@
 #include "Vector/map_vector_grow_p.hpp"
 #include "memory/ExtPreAlloc.hpp"
 #include "util/util_debug.hpp"
-#include "Pack_stat.hpp"
+#include "util/Pack_stat.hpp"
 #include "Grid/map_grid.hpp"
 #include "memory/HeapMemory.hpp"
 #include "vect_isel.hpp"
@@ -27,6 +27,12 @@
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
+#include "util/Pack_stat.hpp"
+#include "memory/ExtPreAlloc.hpp"
+#include <string.h>
+#include "vect_isel.hpp"
+#include "Unpacker.hpp"
+#include "Packer.hpp"
 
 namespace openfpm
 {
@@ -115,30 +121,6 @@ namespace openfpm
 		{
 			return gk;
 		}
-	};
-
-
-	// Structures to check if inside of the object there is/are simple or complex structure/structures
-
-	template<bool cond, typename T, typename Memory, int ... prp>
-	struct nested_pack_cond
-	{
-		void packing(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Pack_stat & sts)
-				{
-					//std::cout << "No pack() function inside!" << std::endl;
-				}
-
-	};
-
-	template<typename T, typename Memory, int ... prp>
-	struct nested_pack_cond<true, T, Memory, prp...>
-	{
-		void packing(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Pack_stat & sts)
-				{
-				   for (int i = 0; i < obj.size(); i++) {
-					   obj.get(i).template pack<prp...>(mem, sts);
-				   }
-				}
 	};
 
 	/*! \brief Implementation of 1-D std::vector like structure
@@ -243,127 +225,8 @@ namespace openfpm
 		//! Type of the value the vector is storing
 		typedef T value_type;
 
-		/*! \brief pack a vector selecting the properties to pack
-		 *
-		 * \param mem preallocated memory where to pack the vector
-		 * \param obj object to pack
-		 * \param sts pack-stat info
-		 *
-		 */
-
-
-		template<int ... prp> void pack(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Pack_stat & sts)
-		{
-	#ifdef DEBUG
-			if (mem.ref() == 0)
-				std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
-	#endif
-
-			// if no properties should be packed return
-			if (sizeof...(prp) == 0)
-				return;
-
-			nested_pack_cond<has_Pack<T>::type::value, T, Memory, prp...> dc;
-			dc.packing(mem, obj, sts);
-
-
-			// Sending property object
-			typedef openfpm::vector<T> vctr;
-			typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
-
-			typedef openfpm::vector<prp_object,ExtPreAlloc<Memory>,openfpm::grow_policy_identity> dtype;
-
-			// Create an object over the preallocated memory (No allocation is produced)
-			dtype dest;
-			dest.setMemory(mem);
-			dest.resize(obj.size());
-			auto obj_it = obj.getIterator();
-
-			while (obj_it.isNext())
-			{
-				// copy all the object in the send buffer
-				typedef encapc<1,typename vctr::value_type,typename vctr::memory_conf > encap_src;
-				// destination object type
-				typedef encapc<1,prp_object,typename dtype::memory_conf > encap_dst;
-
-				// Copy only the selected properties
-				object_si_d<encap_src,encap_dst,ENCAP,prp...>(obj.get(obj_it.get()),dest.get(obj_it.get()));
-
-				++obj_it;
-			}
-
-			// Update statistic
-			sts.incReq();
-
-		}
-
-		/*! \brief Insert an allocation request into the vector
-		 *
-		 * \param obj vector object to pack
-		 * \param requests vector
-		 *
-		 */
-		template<int ... prp> void packRequest(openfpm::vector<T> & obj, std::vector<size_t> & v)
-		{
-			typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
-			openfpm::vector<prp_object> vect;
-
-			// Calculate the required memory for packing
-			size_t alloc_ele = vect.calculateMem(obj.size(),0);
-
-			v.push_back(alloc_ele);
-		}
-
-		/*! \brief unpack a vector
-		 *
-		 * \warning the properties should match the packed properties, and the obj must have the same size of the packed vector, consider to pack
-		 *          this information if you cannot infer-it
-		 *
-		 * \param ext preallocated memory from where to unpack the vector
-		 * \param obj object where to unpack
-		 *
-		 */
-		template<unsigned int ... prp> void unpack(ExtPreAlloc<Memory> & mem, openfpm::vector<T> & obj, Unpack_stat & ps)
-		{
-			// if no properties should be unpacked return
-			if (sizeof...(prp) == 0)
-				return;
-
-			size_t id = 0;
-
-			// Sending property object
-			typedef openfpm::vector<T> vctr;
-			typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
-			typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
-			stype svect;
-
-			// Calculate the size to pack the object
-			size_t size = svect.calculateMem(obj.size(),0);
-
-			// Create a Pointer object over the preallocated memory (No allocation is produced)
-			PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
-
-			stype src;
-			src.setMemory(ptr);
-			src.resize(obj.size());
-			auto obj_it = obj.getIterator();
-
-			while (obj_it.isNext())
-			{
-				// copy all the object in the send buffer
-				typedef encapc<1,typename vctr::value_type,typename vctr::memory_conf > encap_dst;
-				// destination object type
-				typedef encapc<1,prp_object,typename stype::memory_conf > encap_src;
-
-				// Copy only the selected properties
-				object_s_di<encap_src,encap_dst,ENCAP,prp...>(src.get(id),obj.get(obj_it.get()));
-
-				++id;
-				++obj_it;
-			}
-
-			ps.addOffset(size);
-		}
+		// Implementation of packer and unpacker for vector
+#include "vector_pack_unpack.ipp"
 
 
 		/*! \brief Return the size of the vector
@@ -912,32 +775,6 @@ namespace openfpm
 			return base.packObject(mem);
 		}
 
-		// Structures to check if object has or has not calculateMem() function
-
-		template<bool cond, typename T1>
-		struct calculateMem_cond
-		{
-			size_t calculateMemory(T1 & obj, size_t n, size_t e)
-			{
-				return grow_p::grow(0,n) * sizeof(T1);
-			}
-
-		};
-
-		template<typename T1>
-		struct calculateMem_cond<true, T1>
-		{
-			size_t calculateMemory(T1 & obj, size_t n, size_t e)
-			{
-				size_t res = 0;
-				size_t count = grow_p::grow(0,n) - obj.size();
-				for (int i = 0; i < n; i++) {
-					res += obj.get(i).calculateMem(n,0);
-				}
-				return res+count*sizeof(T1);
-			}
-		};
-
 		/*! \brief Calculate the memory size required to allocate n elements
 		 *
 		 * Calculate the total size required to store n-elements in a vector
@@ -948,31 +785,18 @@ namespace openfpm
 		 * \return the size of the allocation number e
 		 *
 		 */
-		inline size_t calculateMem(size_t n, size_t e)
+		template<int ... prp> static inline size_t calculateMem(size_t n, size_t e)
 		{
 			if (n == 0)
 				return 0;
-
-			calculateMem_cond<has_calculateMem<T>::type::value, openfpm::vector<T, Memory, grow_p>> cm;
-			return cm.calculateMemory(*this,n,0);
-		}
-
-		/*! \brief Calculate the memory size required to allocate n elements
-		 *
-		 * Calculate the total size required to store n-elements in a vector
-		 *
-		 * \param n number of elements
-		 * \param e unused
-		 *
-		 * \return the size of the allocation number e
-		 *
-		 */
-		inline static size_t calculateMemDummy(size_t n, size_t e)
-		{
-			if (n == 0)
-				return 0;
-			else
-				return grow_p::grow(0,n) * sizeof(T);
+			else {
+				typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
+				//std::cout << demangle(typeid(prp_object).name()) << " " << sizeof(prp_object) << std::endl;
+#ifdef DEBUG
+				std::cout << "Inside calculateMem() (map_vector)" << std::endl;
+#endif
+				return n * sizeof(prp_object);
+			}
 		}
 
 		/*! \brief How many allocation are required to create n-elements
