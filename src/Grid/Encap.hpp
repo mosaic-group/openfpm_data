@@ -11,6 +11,7 @@
 #include "util/for_each_ref.hpp"
 #include "util/copy_compare/meta_copy.hpp"
 #include "boost/mpl/range_c.hpp"
+#include <boost/fusion/container/vector.hpp>
 #ifdef SE_CLASS2
 #include "Memleak_check.hpp"
 #endif

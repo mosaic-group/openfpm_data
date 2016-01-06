@@ -45,6 +45,9 @@ public:
 	//! Type of the value the vector is storing
 	typedef T value_type;
 
+	//This file implements a pack and unpack for std vector
+#include "vector_std_pack_unpack.ipp"
+
 	//! return the size of the vector
 	inline size_t size() const
 	{
@@ -497,7 +500,30 @@ public:
 	 * \return the size of the allocation number e
 	 *
 	 */
-	inline static size_t calculateMem(size_t n, size_t e)
+	template<int ... prp> inline size_t packMem(size_t n, size_t e)
+	{
+		if (n == 0)
+			return 0;
+		else {
+#ifdef DEBUG
+			std::cout << "Inside map_vector_std.hpp packMem()" << std::endl;
+#endif
+			packMem_cond<has_packMem<T>::type::value, openfpm::vector<T, HeapMemory, grow_policy_double>, prp...> cm;
+			return cm.packMemory(*this,n,0);
+		}
+	}
+
+	/*! \brief Calculate the memory size required to allocate n elements
+	 *
+	 * Calculate the total size required to store n-elements in a vector
+	 *
+	 * \param n number of elements
+	 * \param e unused
+	 *
+	 * \return the size of the allocation number e
+	 *
+	 */
+	inline static size_t calculateMemDummy(size_t n, size_t e)
 	{
 		return n*sizeof(T);
 	}
@@ -525,6 +551,16 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
+		return &base[0];
+	}
+
+	/*! \brief Return the pointer to the chunk of memory
+	 *
+	 * \return the pointer to the chunk of memory
+	 *
+	 */
+	const void * getPointer() const
+	{
 		return &base[0];
 	}
 

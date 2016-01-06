@@ -8,6 +8,17 @@
 #ifndef MAP_VECTOR_HPP
 #define MAP_VECTOR_HPP
 
+#include <iostream>
+#include <typeinfo>
+#include "util/common.hpp"
+#include "memory/PtrMemory.hpp"
+#include "util/object_util.hpp"
+#include "Grid/util.hpp"
+#include "Vector/util.hpp"
+#include "Vector/map_vector_grow_p.hpp"
+#include "memory/ExtPreAlloc.hpp"
+#include "util/util_debug.hpp"
+#include "util/Pack_stat.hpp"
 #include "Grid/map_grid.hpp"
 #include "memory/HeapMemory.hpp"
 #include "vect_isel.hpp"
@@ -16,8 +27,12 @@
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
-
-#define PAGE_ALLOC 1
+#include "util/Pack_stat.hpp"
+#include "memory/ExtPreAlloc.hpp"
+#include <string.h>
+#include "vect_isel.hpp"
+#include "Packer_Unpacker/Unpacker.hpp"
+#include "Packer_Unpacker/Packer.hpp"
 
 namespace openfpm
 {
@@ -108,84 +123,6 @@ namespace openfpm
 		}
 	};
 
-	/*! \brief Grow policy define how the vector should grow every time we exceed the size
-	 *
-	 * In this case it return the requested size
-	 *
-	 */
-
-	class grow_policy_identity
-	{
-	public:
-
-		/*! \brief It say how much the vector must grow
-		 *
-		 * \param original size
-		 * \param requested size
-		 *
-		 * \return how much to grow
-		 *
-		 */
-		static size_t grow(size_t original, size_t requested)
-		{
-			return requested;
-		}
-	};
-
-	/*! \brief Grow policy define how the vector should grow every time we exceed the size
-	 *
-	 * In this case it double up the size
-	 *
-	 */
-
-	class grow_policy_double
-	{
-	public:
-
-		/*! \brief It say how much the vector must grow
-		 *
-		 * \param original size
-		 * \param requested size
-		 *
-		 * \return how much to grow
-		 *
-		 */
-		static size_t grow(size_t original, size_t requested)
-		{
-			size_t grow = (original == 0)?1:original;
-			while (grow < requested)	{grow *= 2;}
-			return grow;
-		}
-	};
-
-	//! default grow policy
-	typedef grow_policy_double vector_grow_policy_default;
-
-	/*! \brief Grow policy define how the vector should grow every time we exceed the size
-	 *
-	 * In this case it increase of 4096 elements
-	 *
-	 */
-
-	class grow_policy_page
-	{
-	public:
-
-		/*! \brief It say how much the vector must grow
-		 *
-		 * \param original size
-		 * \param requested size
-		 *
-		 * \return how much to grow
-		 *
-		 */
-		static size_t grow(size_t original, size_t requested)
-		{
-			return (requested / PAGE_ALLOC) * PAGE_ALLOC + PAGE_ALLOC;
-		}
-	};
-
-
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
 	 * Stub object look at the various implementations
@@ -201,7 +138,8 @@ namespace openfpm
 	 * \see vector<T,Memory,grow_p,OPENFPM_NATIVE>
 	 *
 	 */
-	template<typename T, typename Memory=HeapMemory, typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value>
+
+	template<typename T, typename Memory, typename grow_p, unsigned int impl>
 	class vector
 	{
 	};
@@ -289,6 +227,10 @@ namespace openfpm
 
 		//! Type of the value the vector is storing
 		typedef T value_type;
+
+		// Implementation of packer and unpacker for vector
+#include "vector_pack_unpack.ipp"
+
 
 		/*! \brief Return the size of the vector
 		 *
@@ -1008,12 +950,45 @@ namespace openfpm
 		 * \return the size of the allocation number e
 		 *
 		 */
-		inline static size_t calculateMem(size_t n, size_t e)
+		template<int ... prp> static inline size_t calculateMem(size_t n, size_t e)
 		{
 			if (n == 0)
+			{
 				return 0;
+			}
 			else
-				return grow_p::grow(0,n) * sizeof(T);
+			{
+				if (sizeof...(prp) == 0)
+					return grow_p::grow(0,n) * sizeof(typename T::type);
+
+				typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
+#ifdef DEBUG
+				std::cout << "Inside calculateMem() (map_vector)" << std::endl;
+#endif
+				return grow_p::grow(0,n) * sizeof(prp_object);
+			}
+		}
+
+		/*! \brief Calculate the memory size required to pack n elements
+		 *
+		 * Calculate the total size required to store n-elements in a vector
+		 *
+		 * \param n number of elements
+		 * \param e unused
+		 *
+		 * \return the size of the allocation number e
+		 *
+		 */
+		template<int ... prp> static inline size_t packMem(size_t n, size_t e)
+		{
+			if (sizeof...(prp) == 0)
+				return n * sizeof(typename T::type);
+
+			typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
+#ifdef DEBUG
+			std::cout << "Inside packMem() (map_vector)" << std::endl;
+#endif
+			return n * sizeof(prp_object);
 		}
 
 		/*! \brief How many allocation are required to create n-elements
