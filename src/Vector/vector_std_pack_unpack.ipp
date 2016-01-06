@@ -94,11 +94,10 @@
 #ifdef DEBUG
 			std::cout << "There is no packRequest() function inside! (packingRequest)" << std::endl;
 #endif
-				//openfpm::vector<T1>::calculateMem(obj.size(),0);
 				//Pushback a size of number of elements of the internal vectors
 				v.push_back(sizeof(obj.size()));
 
-				size_t alloc_ele = obj.calculateMem<prp...>(obj.size(),0);
+				size_t alloc_ele = obj.template packMem<prp...>(obj.size(),0);
 
 				v.push_back(alloc_ele);
 		}
@@ -125,34 +124,34 @@
 		}
 	};
 
-	// Structures that calculate memory for an object, depending on the existence of 'calculateMem' function inside of the object
+	// Structures that calculate memory for an object, depending on the existence of 'packMem' function inside of the object
 
-	//There is no calculateMem() inside
+	//There is no packMem() inside
 	template<bool cond, typename T1, int ... prp>
-	struct calculateMem_cond
+	struct packMem_cond
 	{
-		size_t calculateMemory(T1 & obj, size_t n, size_t e)
+		size_t packMemory(T1 & obj, size_t n, size_t e)
 		{
 #ifdef DEBUG
-			std::cout << "There is no calculateMem() function inside! (calculateMemory)" << std::endl;
+			std::cout << "There is no packMem() function inside! (packMemory)" << std::endl;
 #endif
 			return obj.size() * sizeof(T);
 		}
 	};
 
-	//There is calculateMem() inside
+	//There is packMem() inside
 	template<typename T1, int ... prp>
-	struct calculateMem_cond<true, T1, prp...>
+	struct packMem_cond<true, T1, prp...>
 	{
-		size_t calculateMemory(T1 & obj, size_t n, size_t e)
+		size_t packMemory(T1 & obj, size_t n, size_t e)
 		{
 #ifdef DEBUG
-			std::cout << "There is calculateMem() function inside! (calculateMemory)" << std::endl;
+			std::cout << "There is packMem() function inside! (packMemory)" << std::endl;
 #endif
 			size_t res = 0;
 
 			for (int i = 0; i < n; i++) {
-				res += obj.get(i).calculateMem<prp...>(obj.get(i).size(),0);
+				res += obj.get(i).template packMem<prp...>(obj.get(i).size(),0);
 			}
 
 			return res;
@@ -178,7 +177,7 @@
 		return false;
 	}
 
-	static bool calculateMem()
+	static bool packMem()
 	{
 		return false;
 	}

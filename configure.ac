@@ -9,17 +9,20 @@ AC_CONFIG_SRCDIR([src/main.cpp])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([src/config/config.h])
 m4_ifdef([ACX_PTHREAD],,[m4_include([m4/acx_pthread.m4])])
-m4_ifdef([AX_BOOST],,[m4_include([m4/ax_boost.m4])])
 m4_ifdef([ACX_MPI],,[m4_include([m4/acx_mpi.m4])])
 m4_ifdef([AX_OPENMP],,[m4_include([m4/ax_openmp.m4])])
 m4_ifdef([AX_CUDA],,[m4_include([m4/ax_cuda.m4])])
+m4_ifdef([AX_BOOST_BASE],,[m4_include([m4/ax_boost_base.m4])])
+m4_ifdef([AX_BOOST_IOSTREAMS],,[m4_include([m4/ax_boost_iostreams.m4])])
+m4_ifdef([AX_BOOST_PROGRAM_OPTIONS],,[m4_include([m4/ax_boost_program_options.m4])])
+m4_ifdef([AX_BOOST_UNIT_TEST_FRAMEWORK],,[m4_include([m4/ax_boost_unit_test_framework.m4])])
 
 CXXFLAGS+=" --std=c++11 -march=native -mtune=native -Wno-unused-local-typedefs -Wextra -Wno-unused-parameter "
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
 # set default prefix
-if [ x"$prefix" == x"NONE" ]; then
+if test "$prefix" = "NONE"; then
    prefix="/usr/local"
 fi
 
@@ -130,6 +133,25 @@ if test x"$action_on_e" = x"throw"; then
            AC_DEFINE([THROW_ON_ERROR],[],[when an error accur continue but avoid unsafe operation])
 fi
 
+########
+
+## Enable scan coverty
+
+AC_MSG_CHECKING(whether to build for scan coverty compilation)
+AC_ARG_ENABLE(scan-coverty,
+        AC_HELP_STRING(
+            [--enable-scan-coverty],
+            [enable scan-coverty compilation (def=no)]
+        ),
+        scancoverty="$enableval"
+)
+
+AC_MSG_RESULT($scancoverty)
+
+if test x"$scancoverty" = x"yes"; then
+        AC_DEFINE([COVERTY_SCAN],[],[Compile for coverty scan])
+fi
+
 ###### Check for debug compilation
 
 AC_MSG_CHECKING(whether to build with debug information)
@@ -158,29 +180,6 @@ fi
 ####### include openfpm_devices include path
 
 INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src"
-
-###### Check for memleak check compilation
-
-AC_MSG_CHECKING(whether to build with memory check)
-mem_check=no
-AC_ARG_ENABLE(memcheck,
-	AC_HELP_STRING(
-	    [--enable-memcheck],
-	    [enable memory checking (def=no)]
-	),
-  	mem_check="$enableval"
-)
-
-
-
-AC_MSG_RESULT($mem_check)
-if test x"$mem_check" = x"yes"; then
-	AC_DEFINE([MEMLEAK_CHECK],[],[Memory check])
-fi
-
-##### CHECK FOR BOOST ##############
-
-AX_BOOST([1.52],[],[])
 
 ####### Checking for GPU support
 
@@ -217,14 +216,71 @@ fi
 
 AM_CONDITIONAL(BUILDCUDA, test x$gpu_support = x"yes")
 
-##### CHECK FOR BOOST ###
+##### CHECK FOR BOOST ##############
 
-AX_BOOST([1.52],[],[])
+AX_BOOST_BASE([1.52],[],[echo "boost not found"
+                    exit 202])
+AX_BOOST_UNIT_TEST_FRAMEWORK
+AX_BOOST_PROGRAM_OPTIONS
+AX_BOOST_IOSTREAMS
+
+if test x"$ax_cv_boost_unit_test_framework" = x"no"; then
+  echo "Notify boost not usable"
+  exit 202
+fi
+
+if test x"$ax_cv_boost_iostreams" = x"no"; then
+  echo "Notify boost not usable"
+  exit 202
+fi
+
+if test x"$ax_cv_boost_programs_options" = x"no"; then
+  echo "Notify boost not usable"
+  exit 202
+fi
+
+### Unfortunately a lot of linux distros install a pretty old MPI in the system wide folder,
+### override such MPI with the installed one is extremely difficult and tricky, because we want
+### to include "some" system library but exclude mpi. One possibility is to give specifically
+### the wanted libmpi.so directly to the linker. But this is not possible because this lib is
+### given by mpic++ in the form -L/path/to/mpi -lmpi, the other is completely eliminate every
+### -L with a system default library
+###
+
+# eliminate any /usr/lib and and /usr/include from $BOOST_LIB and $BOOST_INCLUDE
+
+BOOST_LDFLAGS=$(echo "$BOOST_LDFLAGS" | sed -e 's/ -L\/usr\/lib64[ \b]//g' | sed -e 's/ -L\/usr\/lib[ \b]//g')
+BOOST_CPPFLAGS=$(echo "$BOOST_CPPFLAGS" | sed -e 's/-I\/usr\/include[ \b]//g')
+
+AC_SUBST(BOOST_LDFLAGS)
+AC_SUBST(BOOST_CPPFLAGS)
+
 
 ##########################
 
+
+# Check for which host we are on and setup a few things
+# specifically based on the host
+case $host_os in
+  darwin* )
+        # Do something specific for mac
+        ;;
+  linux*)
+        # Do something specific for linux
+        OPT_LIBS=" -lrt "
+        ;;
+   *BSD*)
+        # Do something specific for BSD
+        ;;
+    *)
+        #Default Case
+        AC_MSG_ERROR([Your platform is not currently supported])
+        ;;
+esac
+
 AC_SUBST(NVCCFLAGS)
 AC_SUBST(INCLUDES_PATH)
+AC_SUBST(OPT_LIBS)
 
 # Checks for typedefs, structures, and compiler characteristics.
 

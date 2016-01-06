@@ -539,7 +539,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 		++g_it;
 	}
 
-	BOOST_REQUIRE_EQUAL(count, 16*16*16);
+	BOOST_REQUIRE_EQUAL(count, (size_t)16*16*16);
 	//! [Grid iterator test usage]
 	}
 
@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
 		++g_it;
 	}
 
-	BOOST_REQUIRE_EQUAL(count, 14*14*14);
+	BOOST_REQUIRE_EQUAL(count, (size_t)14*14*14);
 
 	//! [Sub-grid iterator test usage]
 
@@ -618,10 +618,23 @@ BOOST_AUTO_TEST_CASE( grid_sub_iterator_test )
 		++g_it;
 	}
 
-	BOOST_REQUIRE_EQUAL(count, 14*14*14);
+	BOOST_REQUIRE_EQUAL(count, (size_t)14*14*14);
 
 	//! [Sub-grid iterator test usage]
 }
+
+////////// Test function ///////////
+
+grid_cpu<3,scalar<float>> & test_error()
+{
+	size_t sz[] = {16,16,16};
+
+	grid_cpu<3,scalar<float>> g(sz);
+
+	return g;
+}
+
+/////////////////////////////////////
 
 BOOST_AUTO_TEST_CASE( grid_safety_check )
 {
@@ -655,7 +668,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	BOOST_REQUIRE_EQUAL(error,true);
 
 	error = false;
-	g.template setMemory();
+	g.setMemory();
 	try
 	{g.template get<p::x>(keyOut);}
 	catch (size_t e)
@@ -724,6 +737,38 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 		BOOST_REQUIRE_EQUAL(g.getLastError(),1005);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
+
+	#if defined(SE_CLASS2) && defined (THROW_ON_ERROR)
+
+	error = false;
+
+	// Create a grid
+
+	grid_cpu<3,scalar<float>> * gp = new grid_cpu<3,scalar<float>>(sz);
+	delete gp;
+
+	// Try to access the class
+
+	try
+	{gp->size();}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,MEM_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	try
+	{grid_cpu<3,scalar<float>> gr = test_error();}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,MEM_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	#endif
 
 #endif
 }
@@ -815,6 +860,32 @@ BOOST_AUTO_TEST_CASE( grid_use)
 	std::cout << "Grid unit test end" << "\n";
 }
 
+BOOST_AUTO_TEST_CASE( grid_iterator_sp_test )
+{
+	size_t sz[3] = {16,16,16};
+
+	grid_cpu<3, Point_test<float> > c3(sz);
+	c3.setMemory();
+
+	grid_key_dx<3> start(2,2,2);
+	grid_key_dx<3> stop(10,10,10);
+
+	auto info = c3.getGrid();
+
+	grid_key_dx_iterator_sp<3> it(info,info.LinId(start),info.LinId(stop));
+
+	size_t count = 0;
+
+	while (it.isNext())
+	{
+		count++;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(count,2185ul);
+}
+
 /* \brief This is an ordinary test simple 3D with plain C array
  *
  * This is an ordinary test simple 3D with plain C array
@@ -868,11 +939,115 @@ BOOST_AUTO_TEST_CASE( C_array_test )
 		}
 	}
 
+	delete [] pA;
+
 #ifdef VERBOSE_TEST
 	t.stop();
 
 	std::cout << "End : " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024 << " MB " << "  Bandwidth: " << GS_SIZE*GS_SIZE*GS_SIZE*16*4/1024/1024/t.getcputime() << " MB/s  \n";
 #endif
+}
+
+BOOST_AUTO_TEST_CASE(grid_operator_equal)
+{
+	//! [Create a grid g1 and copy into another g2]
+
+	size_t sz[] = {16,16};
+
+	typedef Box<2,float> b;
+
+	grid_cpu<2,Box<2,float>> g1(sz);
+	g1.setMemory();
+
+	auto it = g1.getIterator();
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		g1.template get<b::p1>(key)[0] = key.get(0);
+		g1.template get<b::p2>(key)[1] = key.get(1);
+
+		++it;
+	}
+
+	grid_cpu<2,Box<2,float>> g2;
+	g2 = g1;
+
+	//! [Create a grid g1 and copy into another g2]
+
+	bool ret = (g2 == g1);
+
+	BOOST_REQUIRE_EQUAL(ret,true);
+}
+
+/*! \brief Fill twi grid of boxes with data
+ *
+ * \param g1 Grid1
+ * \param g2 Grid2
+ *
+ */
+
+void fill_2_grid_data(grid_cpu<2,Box<2,float>> & g1, grid_cpu<2,Box<2,float>> & g2)
+{
+	typedef Box<2,float> b;
+
+	auto it1 = g1.getIterator();
+
+	while (it1.isNext())
+	{
+		auto key = it1.get();
+
+		g1.template get<b::p1>(key)[0] = key.get(0);
+		g1.template get<b::p2>(key)[1] = key.get(1);
+
+		++it1;
+	}
+
+	auto it2 = g2.getIterator();
+
+	while (it2.isNext())
+	{
+		auto key = it2.get();
+
+		g2.template get<b::p1>(key)[0] = key.get(0);
+		g2.template get<b::p2>(key)[1] = key.get(1);
+
+		++it2;
+	}
+
+
+}
+
+BOOST_AUTO_TEST_CASE(grid_operator_swap)
+{
+	size_t sz1[] = {16,16};
+	size_t sz2[] = {5,5};
+
+	typedef Box<2,float> b;
+
+	grid_cpu<2,Box<2,float>> g1_old(sz1);
+	g1_old.setMemory();
+	grid_cpu<2,Box<2,float>> g2_old(sz2);
+	g2_old.setMemory();
+	grid_cpu<2,Box<2,float>> g1(sz1);
+	g1.setMemory();
+	grid_cpu<2,Box<2,float>> g2(sz2);
+	g2.setMemory();
+
+	fill_2_grid_data(g1_old,g2_old);
+	fill_2_grid_data(g1,g2);
+
+	//! [swap the memory of two grids]
+
+	g2.swap(g1);
+
+	//! [swap the memory of two grids]
+
+	bool ret = (g2 == g1_old);
+	BOOST_REQUIRE_EQUAL(ret,true);
+	ret = (g1 == g2_old);
+	BOOST_REQUIRE_EQUAL(ret,true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

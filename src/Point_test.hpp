@@ -8,7 +8,6 @@
 #include <boost/fusion/container/vector/vector_fwd.hpp>
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
-#include "base_type.hpp"
 #include "Point_orig.hpp"
 #include "Grid/Encap.hpp"
 
@@ -368,5 +367,72 @@ public:
 };
 
 template<typename T> const std::string Point_test_prp<T>::attributes::name[] = {"x","y","z","s","v","t"};
+
+template<typename T> class Point_test_scal
+{
+public:
+
+  typedef boost::fusion::vector<T,T,T,T> type;
+
+  type data;
+
+  static const unsigned int x = 0;
+  static const unsigned int y = 1;
+  static const unsigned int z = 2;
+  static const unsigned int s = 3;
+  static const unsigned int max_prop = 4;
+
+  // Setter method
+
+  inline void setx(T x_)	{boost::fusion::at_c<0>(data) = x_;};
+  inline void sety(T y_)	{boost::fusion::at_c<1>(data) = y_;};
+  inline void setz(T z_)	{boost::fusion::at_c<2>(data) = z_;};
+  inline void sets(T s_)	{boost::fusion::at_c<3>(data) = s_;};
+
+  //! Attributes name
+  struct attributes
+  {
+    static const std::string name[];
+  };
+
+  // getter method
+
+  template<unsigned int i> inline typename boost::fusion::result_of::at<type, boost::mpl::int_<i> >::type get()	{return boost::fusion::at_c<i>(data);};
+
+  //! Default constructor
+  Point_test_scal()
+  {}
+
+//! constructor from encapc
+  template <typename Mem> inline Point_test_scal(const encapc<1,Point_test_scal<T>,Mem> & p)
+  {
+	  boost::fusion::at_c<0>(data) = p.template get<0>();
+	  boost::fusion::at_c<1>(data) = p.template get<1>();
+	  boost::fusion::at_c<2>(data) = p.template get<2>();
+	  boost::fusion::at_c<3>(data) = p.template get<3>();
+  }
+
+  //! constructor from another point
+  inline Point_test_scal(const Point_test_scal<T> & p)
+  {
+	  boost::fusion::at_c<0>(data) = boost::fusion::at_c<0>(p.data);
+	  boost::fusion::at_c<1>(data) = boost::fusion::at_c<1>(p.data);
+	  boost::fusion::at_c<2>(data) = boost::fusion::at_c<2>(p.data);
+	  boost::fusion::at_c<3>(data) = boost::fusion::at_c<3>(p.data);
+  }
+
+  //! constructor from another point
+  inline Point_test_scal<T> operator= (const Point_test_scal<T> & p)
+  {
+	  boost::fusion::at_c<0>(data) = boost::fusion::at_c<0>(p.data);
+	  boost::fusion::at_c<1>(data) = boost::fusion::at_c<1>(p.data);
+	  boost::fusion::at_c<2>(data) = boost::fusion::at_c<2>(p.data);
+	  boost::fusion::at_c<3>(data) = boost::fusion::at_c<3>(p.data);
+
+	  return *this;
+  }
+};
+
+template<typename T> const std::string Point_test_scal<T>::attributes::name[] = {"x","y","z","s"};
 
 #endif

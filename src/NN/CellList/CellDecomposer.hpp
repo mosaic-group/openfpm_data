@@ -10,6 +10,7 @@
 
 #include "Space/SpaceBox.hpp"
 #include "Space/Matrix.hpp"
+#include "util/copy_compare/meta_compare.hpp"
 
 // Shift transformation
 template<unsigned int dim, typename T>
@@ -40,7 +41,7 @@ public:
 	 */
 	inline T transform(const T(&s)[dim], const size_t i) const
 	{
-		return s.get(i) - sh.get(i);
+		return s[i] - sh.get(i);
 	}
 
 	/*! \brief Shift the point transformation
@@ -147,6 +148,30 @@ public:
 	inline void setTransform(Matrix<dim,T> & mat, Point<dim,T> & orig, size_t crd)
 	{
 
+	}
+
+	/*! \brief It return always true true
+	 *
+	 * There is nothing to compare
+	 *
+	 * \return true
+	 *
+	 */
+	inline bool operator==(const no_transform<dim,T> & nt)
+	{
+		return true;
+	}
+
+	/*! \brief It return always true true
+	 *
+	 * There is nothing to compare
+	 *
+	 * \return true
+	 *
+	 */
+	inline bool operator!=(const no_transform<dim,T> & nt)
+	{
+		return false;
 	}
 };
 
@@ -350,19 +375,16 @@ public:
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
 
-
-
 		grid_key_dx<dim> key;
-		key.set_d(0,ConvertToID(pos[0],0));
+		key.set_d(0,ConvertToID(pos,0));
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef DEBUG
-			if (ConvertToID(pos[s],s) < 0)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space";
+			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space\n";
 #endif
-
-			key.set_d(s,ConvertToID(pos[s],s));
+			key.set_d(s,ConvertToID(pos,s));
 
 		}
 
@@ -427,7 +449,7 @@ public:
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
-			cell_id += gr_cell.size(s) * ConvertToID(pos,s);
+			cell_id += gr_cell.size_s(s-1) * ConvertToID(pos,s);
 		}
 
 		return cell_id;
@@ -729,6 +751,8 @@ public:
 
 	/*! \brief Return the box that represent the cell
 	 *
+	 * Can be considered the spacing between vertices of the cells
+	 *
 	 * \return the box
 	 *
 	 */
@@ -831,6 +855,54 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		g_box.shrinkP2(p_move);
 
 		return g_box;
+	}
+
+	/*! \brief Check that the CellDecomposer is the same
+	 *
+	 * \param cd Cell decomposer
+	 *
+	 * \return true if the two CellDecomposer are the same
+	 *
+	 */
+	bool operator==(const CellDecomposer_sm<dim,T,transform> & cd)
+	{
+		if (meta_compare<Point<dim,T>>::meta_compare_f(p_middle,cd.p_middle) == false)
+			return false;
+
+		if (t != cd.t)
+			return false;
+
+		if (tot_n_cell != cd.tot_n_cell)
+			return false;
+
+		if (box != cd.box)
+			return false;
+
+		if (box_unit != cd.box_unit)
+			return false;
+
+		if (gr_cell != cd.gr_cell)
+			return false;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (off[i] != cd.off[i])
+				return false;
+		}
+
+		return true;
+	}
+
+	/*! \brief Check that the CellDecomposer is the same
+	 *
+	 * \param cd Cell decomposer
+	 *
+	 * \return true if the two CellDecomposer is different
+	 *
+	 */
+	bool operator!=(const CellDecomposer_sm<dim,T,transform> & cd)
+	{
+		return ! this->operator==(cd);
 	}
 };
 

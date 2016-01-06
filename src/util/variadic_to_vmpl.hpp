@@ -21,6 +21,8 @@
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/reverse.hpp>
 #include <boost/mpl/vector.hpp>
+#include <boost/fusion/sequence/intrinsic/at_c.hpp>
+#include <boost/fusion/include/at_c.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

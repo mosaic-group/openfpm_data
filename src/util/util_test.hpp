@@ -8,6 +8,7 @@
 #ifndef UTIL_TEST_HPP_
 #define UTIL_TEST_HPP_
 
+#include "config.h"
 #include "object_util.hpp"
 #include "Point_test.hpp"
 #include "util/ct_array.hpp"
@@ -18,6 +19,7 @@
 #include "data_type/scalar.hpp"
 #include "util/convert.hpp"
 #include <iostream>
+#include "mul_array_extents.hpp"
 
 //! [Check has_posMask struct definition]
 
@@ -75,7 +77,7 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 		boost::fusion::at_c<p::v>(src.data)[i] = i + 5.0;
 
 	// copy from src to dst
-	object_si_d<object<vboost>,object<vboost_red>,NORMAL,0,1,4>(src,dst);
+	object_si_d<object<vboost>,object<vboost_red>,OBJ_NORMAL,0,1,4>(src,dst);
 
 	// Check the result
 	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<0>(dst.data),1.0);
@@ -106,7 +108,7 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 	auto src_e = v_point.get(0);
 	auto dst_e = v_point_red.get(0);
 
-	object_si_d<encap_src,encap_dst,ENCAP,0,1,4>(src_e,dst_e);
+	object_si_d<encap_src,encap_dst,OBJ_ENCAP,0,1,4>(src_e,dst_e);
 
 	BOOST_REQUIRE_EQUAL(v_point_red.get(0).template get<0>(),1.0);
 	BOOST_REQUIRE_EQUAL(v_point_red.get(0).template get<1>(),2.0);
@@ -137,7 +139,7 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 		boost::fusion::at_c<2>(src.data)[i] = i + 5.0;
 
 	// copy from src to dst
-	object_s_di<object<vboost_red>,object<vboost>,NORMAL,0,1,4>(src,dst);
+	object_s_di<object<vboost_red>,object<vboost>,OBJ_NORMAL,0,1,4>(src,dst);
 
 	// Check the result
 	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::x>(dst.data),1.0);
@@ -168,7 +170,7 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 	auto dst_e = v_point.get(0);
 	auto src_e = v_point_red.get(0);
 
-	object_s_di<encap_src,encap_dst,ENCAP,0,1,4>(src_e,dst_e);
+	object_s_di<encap_src,encap_dst,OBJ_ENCAP,0,1,4>(src_e,dst_e);
 
 	BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::x>(),11.0);
 	BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::y>(),12.0);
@@ -312,6 +314,8 @@ BOOST_AUTO_TEST_CASE( generate_array )
 
 	// check constexpr compile time array as template parameters
 
+#ifndef COVERTY_SCAN
+
 	{
 	//! [constexpr array]
 	const size_t count = 5;
@@ -320,9 +324,11 @@ BOOST_AUTO_TEST_CASE( generate_array )
 	// ct_test_ce::data is equivalent to constexpr size_t [5] = {5,6,7,8,9}
 
 	const size_t ct_calc = MetaFunc<ct_test_ce::data[0],ct_test_ce::data[1]>::value;
-	BOOST_REQUIRE_EQUAL(ct_calc,11);
+	BOOST_REQUIRE_EQUAL(ct_calc,11ul);
 	//! [constexpr array]
 	}
+
+#endif
 }
 
 BOOST_AUTO_TEST_CASE( check_templates_util_function )
@@ -351,6 +357,17 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 
 		//! [Check no pointers]
 
+		}
+
+		{
+		//! [Declaration of an openfpm native structure]
+
+		int val = is_openfpm_native<Point_test<float>>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = is_openfpm_native<float>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Declaration of an openfpm native structure]
 		}
 
 		{
@@ -556,6 +573,21 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 
 		//! [Check is_vector]
 		}
+
+		{
+		//! [Usage mul_array_extents]
+
+		size_t mul = array_extents<float>::mul();
+		BOOST_REQUIRE_EQUAL(mul,1ul);
+		mul = array_extents<float[3]>::mul();
+		BOOST_REQUIRE_EQUAL(mul,3ul);
+		mul = array_extents<float[3][2]>::mul();
+		BOOST_REQUIRE_EQUAL(mul,3ul*2ul);
+		mul = array_extents<float[3][2][5]>::mul();
+		BOOST_REQUIRE_EQUAL(mul,3ul*2ul*5ul);
+
+		//! [Usage mul_array_extents]
+		}
 	}
 }
 
@@ -570,8 +602,8 @@ BOOST_AUTO_TEST_CASE( check_convert_function )
 
 	Point<2,size_t> p = toPoint<2,size_t>::convert(c);
 
-	BOOST_REQUIRE_EQUAL(p.get(0),1);
-	BOOST_REQUIRE_EQUAL(p.get(1),-1);
+	BOOST_REQUIRE_EQUAL(p.get(0),1ul);
+	BOOST_REQUIRE_EQUAL(p.get(1),(size_t)-1);
 
 	//! [Convert combination to Point]
 	}

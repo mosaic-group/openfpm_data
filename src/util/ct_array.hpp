@@ -22,6 +22,8 @@
 
 ///////////////////////////////////////////////////
 
+#ifndef COVERTY_SCAN
+
 //! the array itself
 template<class T, unsigned long... args> struct ArrayHolder_constexpr {
     static constexpr T data[sizeof...(args)] = { args... };
@@ -63,6 +65,8 @@ template<class T, size_t N, template<size_t,size_t> class F>
 struct generate_array_constexpr {
     typedef typename generate_array_constexpr_impl<T,N-1, N, F>::result result;
 };
+
+#endif
 
 //////////////////////////////////////////////////
 

@@ -37,14 +37,14 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	grid_sm<dim,void> g_info(div);
 
 	// Test force reallocation in case of Cell list fast
-	for (int i = 0 ; i < CELL_REALLOC * 3 ; i++)
+	for (size_t i = 0 ; i < CELL_REALLOC * 3 ; i++)
 	{
 		cl2.add(org,i);
 	}
 
 	// Check the elements
-	BOOST_REQUIRE_EQUAL(cl2.getNelements(cl2.getCell(org)),CELL_REALLOC * 3);
-	for (int i = 0 ; i < CELL_REALLOC * 3 ; i++)
+	BOOST_REQUIRE_EQUAL(cl2.getNelements(cl2.getCell(org)),CELL_REALLOC * 3ul);
+	for (size_t i = 0 ; i < CELL_REALLOC * 3 ; i++)
 	{
 		BOOST_REQUIRE_EQUAL(cl2.get(cl2.getCell(org),i),i);
 	}
@@ -111,7 +111,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 		size_t cell = cl1.getCell(key);
 		size_t n_ele = cl1.getNelements(cell);
 
-		BOOST_REQUIRE_EQUAL(n_ele,2);
+		BOOST_REQUIRE_EQUAL(n_ele,2ul);
 		BOOST_REQUIRE_EQUAL(cl1.get(cell,1) - cl1.get(cell,0),1);
 
 		++g_it;
@@ -151,7 +151,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 		auto cell = cl1.getCell(key);
 		size_t n_ele = cl1.getNelements(cell);
 
-		BOOST_REQUIRE_EQUAL(n_ele,1);
+		BOOST_REQUIRE_EQUAL(n_ele,1ul);
 		++g_it;
 	}
 
@@ -184,7 +184,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 			++NN;
 		}
 
-		BOOST_REQUIRE_EQUAL(total,openfpm::math::pow(3,dim));
+		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim));
 		++g_it_s;
 	}
 
@@ -199,6 +199,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	//Space where is living the Cell list
 	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	Point<3,double> p({0.5,0.5,0.5});
+	double pp[3] = {0.5,0.5,0.5};
 
 	// Number of cell on each dimension
 	size_t div[3] = {16,16,16};
@@ -213,8 +214,15 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	{
 	CellDecomposer_sm<3,double> cd(box,div,0);
 	size_t cell = cd.getCell(p);
-	BOOST_REQUIRE_EQUAL(cell,8*16*16 + 8*16 + 8);
+	BOOST_REQUIRE_EQUAL(cell,(size_t)(8*16*16 + 8*16 + 8));
 	auto key = cd.getCellGrid(p);
+	BOOST_REQUIRE_EQUAL(key.get(0),8);
+	BOOST_REQUIRE_EQUAL(key.get(1),8);
+	BOOST_REQUIRE_EQUAL(key.get(2),8);
+
+	cell = cd.getCell(pp);
+	BOOST_REQUIRE_EQUAL(cell,(size_t)(8*16*16 + 8*16 + 8));
+	key = cd.getCellGrid(pp);
 	BOOST_REQUIRE_EQUAL(key.get(0),8);
 	BOOST_REQUIRE_EQUAL(key.get(1),8);
 	BOOST_REQUIRE_EQUAL(key.get(2),8);
@@ -226,8 +234,15 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	{
 	CellDecomposer_sm<3,double> cd(box,div,1);
 	size_t cell = cd.getCell(p);
-	BOOST_REQUIRE_EQUAL(cell,9*18*18 + 9*18 + 9);
+	BOOST_REQUIRE_EQUAL(cell,(size_t)(9*18*18 + 9*18 + 9));
 	auto key = cd.getCellGrid(p);
+	BOOST_REQUIRE_EQUAL(key.get(0),9);
+	BOOST_REQUIRE_EQUAL(key.get(1),9);
+	BOOST_REQUIRE_EQUAL(key.get(2),9);
+
+	cell = cd.getCell(pp);
+	BOOST_REQUIRE_EQUAL(cell,(size_t)(9*18*18 + 9*18 + 9));
+	key = cd.getCellGrid(pp);
 	BOOST_REQUIRE_EQUAL(key.get(0),9);
 	BOOST_REQUIRE_EQUAL(key.get(1),9);
 	BOOST_REQUIRE_EQUAL(key.get(2),9);
@@ -238,10 +253,19 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	//! [Test Cell decomposer with shift]
 	{
 	Point<3,double> sht({1.0,2.0,3.0});
+	double psht[3] = {1.5,2.5,3.5};
+
 	CellDecomposer_sm< 3,double,shift<3,double> > cd(box,div,sht,1);
 	size_t cell = cd.getCell(p + sht);
-	BOOST_REQUIRE_EQUAL(cell,9*18*18 + 9*18 + 9);
+	BOOST_REQUIRE_EQUAL(cell,(size_t)(9*18*18 + 9*18 + 9));
 	auto key = cd.getCellGrid(p + sht);
+	BOOST_REQUIRE_EQUAL(key.get(0),9);
+	BOOST_REQUIRE_EQUAL(key.get(1),9);
+	BOOST_REQUIRE_EQUAL(key.get(2),9);
+
+	cell = cd.getCell(psht);
+	BOOST_REQUIRE_EQUAL(cell,(size_t)(9*18*18 + 9*18 + 9));
+	key = cd.getCellGrid(psht);
 	BOOST_REQUIRE_EQUAL(key.get(0),9);
 	BOOST_REQUIRE_EQUAL(key.get(1),9);
 	BOOST_REQUIRE_EQUAL(key.get(2),9);
@@ -299,7 +323,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_get_grid_points )
 	// Get the volume of the box
 	size_t vol = gp.getVolumeKey();
 
-	BOOST_REQUIRE_EQUAL(vol,12);
+	BOOST_REQUIRE_EQUAL(vol,12ul);
 	}
 
 	//////////////////////////
@@ -336,7 +360,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_get_grid_points )
 	// Get the volume of the box
 	size_t vol = gp.getVolumeKey();
 
-	BOOST_REQUIRE_EQUAL(vol,4);
+	BOOST_REQUIRE_EQUAL(vol,4ul);
 	}
 }
 

@@ -44,7 +44,7 @@ struct for_each_ref_impl
           Iterator*
         , LastIterator*
         , TransformFunc*
-        , F
+        , F &
         )
     {
     }
@@ -63,7 +63,7 @@ struct for_each_ref_impl<false>
           Iterator*
         , LastIterator*
         , TransformFunc*
-        , F f
+        , F & f
         )
     {
         typedef typename deref<Iterator>::type item;

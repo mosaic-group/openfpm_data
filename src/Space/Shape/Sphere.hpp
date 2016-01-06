@@ -8,7 +8,6 @@
 #include <boost/fusion/container/vector/vector_fwd.hpp>
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
-#include "base_type.hpp"
 #include "Point.hpp"
 #include <Space/Shape/Point.hpp>
 

@@ -28,8 +28,10 @@
 #include <boost/mpl/range_c.hpp>
 #include <boost/mpl/for_each.hpp>
 #include "memory_ly/memory_conf.hpp"
-#include "util/meta_copy.hpp"
+#include "util/copy_compare/meta_copy.hpp"
+#ifdef SE_CLASS2
 #include "Memleak_check.hpp"
+#endif
 #include "util/for_each_ref.hpp"
 #include "util.hpp"
 #include <utility>
@@ -43,263 +45,16 @@
 #include <vector>
 #include "se_grid.hpp"
 #include "memory/HeapMemory.hpp"
+#include "grid_common.hpp"
+#include "util/se_util.hpp"
+#include "iterators/grid_key_dx_iterator.hpp"
+#include "iterators/grid_key_dx_iterator_sub.hpp"
+#include "iterators/grid_key_dx_iterator_sp.hpp"
+#include "iterators/grid_key_dx_iterator_sub_bc.hpp"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;
 #endif
-
-// Debugging macro
-
-/*! \brief this class is a functor for "for_each" algorithm
- *
- * This class is a functor for "for_each" algorithm. For each
- * element of the boost::vector the operator() is called.
- * Is mainly used to copy one object into one target
- * grid  element in a generic way for a
- * generic object T with variable number of property
- *
- * \tparam dim Dimensionality
- * \tparam S type of grid
- * \tparam Memory type of memory needed for encap
- *
- */
-
-template<unsigned int dim, typename S, typename Memory>
-struct copy_cpu_encap
-{
-	//! size to allocate
-	grid_key_dx<dim> & key;
-
-	//! grid where we have to store the data
-	S & grid_dst;
-
-	//! type of the object we have to set
-	typedef typename S::value_type obj_type;
-
-	//! type of the object boost::sequence
-	typedef typename S::value_type::type ov_seq;
-
-	//! object we have to store
-	const encapc<1,obj_type,Memory> & obj;
-
-	/*! \brief constructor
-	 *
-	 * It define the copy parameters.
-	 *
-	 * \param key which element we are modifying
-	 * \param grid_dst grid we are updating
-	 * \param obj object we have to set in grid_dst (encapsulated)
-	 *
-	 */
-	copy_cpu_encap(grid_key_dx<dim> & key, S & grid_dst, const encapc<1,obj_type,Memory> & obj)
-	:key(key),grid_dst(grid_dst),obj(obj){};
-
-
-#ifdef SE_CLASS1
-	/*! \brief Constructor
-	 *
-	 * Calling this constructor produce an error. This class store the reference of the object,
-	 * this mean that the object passed must not be a temporal object
-	 *
-	 */
-	copy_cpu_encap(grid_key_dx<dim> & key, S & grid_dst, const encapc<1,obj_type,Memory> && obj)
-	:key(key),grid_dst(grid_dst),obj(obj)
-	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object";};
-#endif
-
-	//! It call the copy function for each property
-	template<typename T>
-	void operator()(T& t) const
-	{
-		// This is the type of the object we have to copy
-		typedef typename boost::fusion::result_of::at_c<ov_seq,T::value>::type copy_type;
-
-		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
-
-		meta_copy<copy_rtype> cp(obj.template get<T::value>(),grid_dst.template get<T::value>(key));
-	}
-};
-
-/*! \brief this class is a functor for "for_each" algorithm
- *
- * This class is a functor for "for_each" algorithm. For each
- * element of the boost::vector the operator() is called.
- * Is mainly used to copy one object into one target
- * grid  element in a generic way for a
- * generic object T with variable number of property
- *
- * \param dim Dimensionality
- * \param S type of grid
- *
- */
-
-template<unsigned int dim, typename S>
-struct copy_cpu
-{
-	//! size to allocate
-	grid_key_dx<dim> & key;
-
-	//! grid where we have to store the data
-	S & grid_dst;
-
-	//! type of the object we have to set
-	typedef typename S::value_type obj_type;
-
-	//! type of the object boost::sequence
-	typedef typename S::value_type::type ov_seq;
-
-	//! object we have to store
-	const obj_type & obj;
-
-	/*! \brief constructor
-	 *
-	 * It define the copy parameters.
-	 *
-	 * \param key which element we are modifying
-	 * \param grid_dst grid we are updating
-	 * \param obj object we have to set in grid_dst
-	 *
-	 */
-	copy_cpu(grid_key_dx<dim> & key, S & grid_dst, const obj_type & obj)
-	:key(key),grid_dst(grid_dst),obj(obj){};
-
-#ifdef SE_CLASS1
-	/*! \brief Constructor
-	 *
-	 * Calling this constructor produce an error. This class store the reference of the object,
-	 * this mean that the object passed must not be a temporal object
-	 *
-	 */
-	copy_cpu(grid_key_dx<dim> & key, S & grid_dst, const obj_type && obj)
-	:key(key),grid_dst(grid_dst),obj(obj)
-	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object\n";};
-#endif
-
-	//! It call the copy function for each property
-	template<typename T>
-	void operator()(T& t) const
-	{
-		// This is the type of the object we have to copy
-		typedef typename boost::fusion::result_of::at_c<ov_seq,T::value>::type copy_type;
-
-		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
-
-		meta_copy<copy_rtype> cp(boost::fusion::at_c<T::value>(obj.data),grid_dst.template get<T::value>(key));
-	}
-};
-
-/*! \brief this class is a functor for "for_each" algorithm
- *
- * This class is a functor for "for_each" algorithm. For each
- * element of the boost::vector the operator() is called.
- * Is mainly used to copy one source grid element into one target
- * grid element in a generic way for an object T with variable
- * number of property
- *
- * \param dim Dimensionality
- * \param S grid type
- *
- */
-
-template<unsigned int dim, typename S>
-struct copy_cpu_sd
-{
-	//! size to allocate
-	grid_key_dx<dim> & key;
-
-	//! Source grid
-	const S & grid_src;
-
-	//! Destination grid
-	S & grid_dst;
-
-	//! type of the object boost::sequence
-	typedef typename S::value_type::type ov_seq;
-
-	//! constructor
-	copy_cpu_sd(grid_key_dx<dim> & key, const S & grid_src, S & grid_dst)
-	:key(key),grid_src(grid_src),grid_dst(grid_dst){};
-
-	//! It call the copy function for each member
-	template<typename T>
-	void operator()(T& t) const
-	{
-		// This is the type of the object we have to copy
-		typedef typename boost::fusion::result_of::at_c<ov_seq,T::value>::type copy_type;
-
-		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
-
-		meta_copy<copy_rtype> cp(grid_src.template get<T::value>(key),grid_dst.template get<T::value>(key));
-	}
-};
-
-
-/*! \brief this class is a functor for "for_each" algorithm
- *
- * This class is a functor for "for_each" algorithm. For each
- * element of the boost::vector the operator() is called.
- * Is mainly used to copy one source grid element into one target
- * grid element in a generic way for an object T with variable
- * number of property
- *
- * \param dim Dimensionality
- * \param S grid type
- *
- */
-
-template<unsigned int dim, typename S>
-struct copy_cpu_sd_k
-{
-	//! source key
-	grid_key_dx<dim> & key_s;
-
-	//! destination key
-	grid_key_dx<dim> & key_d;
-
-	//! Source grid
-	const S & grid_src;
-
-	//! Destination grid
-	S & grid_dst;
-
-	//! type of the object boost::sequence
-	typedef typename S::value_type::type ov_seq;
-
-	//! constructor
-	copy_cpu_sd_k(grid_key_dx<dim> & key_s, grid_key_dx<dim> & key_d, const S & grid_src, S & grid_dst)
-	:key_s(key_s),key_d(key_d),grid_src(grid_src),grid_dst(grid_dst){};
-
-	//! It call the copy function for each member
-	template<typename T>
-	void operator()(T& t) const
-	{
-		// This is the type of the object we have to copy
-		typedef typename boost::fusion::result_of::at_c<ov_seq,T::value>::type copy_type;
-
-		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
-
-		meta_copy<copy_rtype> cp(grid_src.template get<T::value>(key_s),grid_dst.template get<T::value>(key_d));
-	}
-};
-
-/*! \brief Metafunction take T and return a reference
- *
- * Metafunction take T and return a reference
- *
- * \param T type
- *
- */
-
-template<typename T>
-struct mem_reference
-{
-	typedef T& type;
-};
-
 
 /*!
  *
@@ -328,6 +83,8 @@ struct mem_reference
  * \snippet grid_unit_tests.hpp Sub-grid iterator test usage
  * ### Get the full-object in an N-dimensional grid
  * \snippet grid_unit_tests.hpp Get the object in an N-dimensional grid with an iterator
+ * ### Create a grid g1 and copy into another g2
+ * \snippet grid_unit_tests.hpp Create a grid g1 and copy into another g2
  *
  */
 
@@ -466,13 +223,11 @@ public:
 	 */
 	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims> & sub, std::vector<size_t> & v)
 	{
-		// Sending property object
-		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
-		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<typename grid_cpu<dim,T,S,Mem>::value_type,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
 		dtype dvect;
 
 		// Calculate the required memory for packing
-		size_t alloc_ele = dvect.calculateMem(sub.getVolume(),0);
+		size_t alloc_ele = dvect.template calculateMem<prp...>(sub.getVolume(),0);
 
 		v.push_back(alloc_ele);
 	}
@@ -505,7 +260,7 @@ public:
 			typedef encapc<1,prp_object,typename dtype::memory_conf > encap_dst;
 
 			// Copy only the selected properties
-			object_si_d<encap_src,encap_dst,ENCAP,prp...>(get_o(sub_it.get()),dest.get(id));
+			object_si_d<encap_src,encap_dst,OBJ_ENCAP,prp...>(get_o(sub_it.get()),dest.get(id));
 
 			++id;
 			++sub_it;
@@ -534,7 +289,7 @@ public:
 			typedef encapc<1,prp_object,typename grid_cpu<dims,prp_object>::memory_conf > encap_src;
 
 			// Copy only the selected properties
-			object_s_di<encap_src,encap_dst,ENCAP,prp...>(src.get(id),this->get_o(sub_it.get()));
+			object_s_di<encap_src,encap_dst,OBJ_ENCAP,prp...>(src.get(id),this->get_o(sub_it.get()));
 
 			++id;
 			++sub_it;
@@ -589,9 +344,10 @@ public:
 		// object that store the information in mem
 		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
 		typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
-		stype svect;
 
-		size_t size = svect.calculateMem(sub_it.getVolume(),0);
+		typedef openfpm::vector<typename grid_cpu<dim,T,S,Mem>::value_type,PtrMemory,openfpm::grow_policy_identity> stype2;
+
+		size_t size = stype::template calculateMem(sub_it.getVolume(),0);
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
@@ -608,14 +364,10 @@ public:
 
 private:
 
-	//! Error code
-	size_t err_code;
-
-
 	//! Is the memory initialized
 	bool is_mem_init = false;
 
-	//! This is an header that store all information related to the grid
+	//! This is a structure that store all information related to the grid and how indexes are linearized
 	grid_sm<dim,T> g1;
 
 	//! Memory layout specification + memory chunk pointer
@@ -624,14 +376,18 @@ private:
 	//! The memory allocator is not internally created
 	bool isExternal;
 
+	//! Error code
+	size_t err_code;
+
 	/*! \brief Get 1D vector with the
 	 *
 	 * Get std::vector with element 0 to dim set to 0
 	 *
+	 * \return an std::vector
+	 *
 	 */
-
 	std::vector<size_t> getV()
-				{
+	{
 		std::vector<size_t> tmp;
 
 		for (unsigned int i = 0 ; i < dim ; i++)
@@ -640,7 +396,81 @@ private:
 		}
 
 		return tmp;
-				}
+	}
+
+#ifdef SE_CLASS1
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 *
+	 */
+	inline void check_init() const
+	{
+		if (is_mem_init == false)
+		{
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+			size_t * err_code_pointer = (size_t *)&this->err_code;
+			*err_code_pointer = 1001;
+			ACTION_ON_ERROR(GRID_ERROR);
+		}
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * \param key
+	 *
+	 */
+	inline void check_bound(const grid_key_dx<dim> & v1) const
+	{
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " >= " << getGrid().size(i) << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1002;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+			else if (v1.get(i) < 0)
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " is negative " << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1003;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+		}
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * check if key2 is inside the g grid boundary
+	 *
+	 * \param g grid
+	 * \param key2
+	 *
+	 */
+	inline void check_bound(const grid_cpu<dim,T,S,Mem> & g,const grid_key_dx<dim> & key2) const
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (key2.get(i) >= (long int)g.g1.size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " >= " << g.g1.size(i) << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1004;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+			else if (key2.get(i) < 0)
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " is negative " << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1005;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+		}
+	}
+
+#endif
 
 public:
 
@@ -661,9 +491,13 @@ public:
 	typedef T value_type;
 
 	//! Default constructor
-	grid_cpu()
-	:g1(getV()),isExternal(false)
+	grid_cpu() THROW
+	:g1(getV()),isExternal(false),err_code(0)
 	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_new(this,8,GRID_EVENT,1);
+#endif
 	}
 
 	/*! \brief create a grid from another grid
@@ -674,36 +508,120 @@ public:
 	 * \param mem memory object (only used for template deduction)
 	 *
 	 */
-	grid_cpu(const grid_cpu & g)
-	:isExternal(false)
+	grid_cpu(const grid_cpu & g) THROW
+	:isExternal(false),err_code(0)
 	{
+		this->operator=(g);
+	}
+
+	//! Constructor allocate memory and give them a representation
+	grid_cpu(std::vector<size_t> & sz) THROW
+	:g1(sz),isExternal(false),err_code(0)
+	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_new(this,8,GRID_EVENT,1);
+#endif
+	}
+
+	//! Constructor allocate memory and give them a representation
+	grid_cpu(std::vector<size_t> && sz) THROW
+	:g1(sz),isExternal(false),err_code(0)
+	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_new(this,8,GRID_EVENT,1);
+#endif
+	}
+
+	//! Constructor allocate memory and give them a representation
+	grid_cpu(const size_t (& sz)[dim]) THROW
+	:g1(sz),isExternal(false),err_code(0)
+	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_new(this,8,GRID_EVENT,1);
+#endif
+	}
+
+	//! Destructor
+	~grid_cpu() THROW
+	{
+		// delete this pointer
+#ifdef SE_CLASS2
+		check_delete(this);
+#endif
+	}
+
+	/*! \brief It copy an operator
+	 *
+	 * \param g grid to copy
+	 *
+	 */
+	grid_cpu<dim,T,S,Mem> & operator=(const grid_cpu<dim,T,S,Mem> & g)
+	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_new(this,8,GRID_EVENT,1);
+#endif
 		swap(g.duplicate());
+
+		return *this;
 	}
 
-	//! Constructor allocate memory and give them a representation
-	grid_cpu(std::vector<size_t> & sz)
-	:g1(sz),isExternal(false)
+	/*! \brief It copy an operator
+	 *
+	 * \param g grid to copy
+	 *
+	 */
+	grid_cpu<dim,T,S,Mem> & operator=(grid_cpu<dim,T,S,Mem> && g)
 	{
+		// Add this pointer
+#ifdef SE_CLASS2
+		check_new(this,8,GRID_EVENT,1);
+#endif
+
+		swap(g);
+
+		return *this;
 	}
 
-	//! Constructor allocate memory and give them a representation
-	grid_cpu(std::vector<size_t> && sz)
-	:g1(sz),isExternal(false)
+	/*! \brief Compare two grids
+	 *
+	 * \param g1 grid to check
+	 *
+	 * \return true if they match
+	 *
+	 */
+	bool operator==(const grid_cpu<dim,T,S,Mem> & g)
 	{
-	}
+		// check if the have the same size
+		if (g1 != g.g1)
+			return false;
 
-	//! Constructor allocate memory and give them a representation
-	grid_cpu(const size_t (& sz)[dim])
-	:g1(sz),isExternal(false)
-	{
+		auto it = getIterator();
+
+		while (it.isNext())
+		{
+			auto key = it.get();
+
+			if (this->get_o(key) != this->get_o(key))
+				return false;
+
+			++it;
+		}
+
+		return true;
 	}
 
 	/*! \brief create a duplicated version of the grid
 	 *
 	 */
-
-	grid_cpu<dim,T,S,Mem> duplicate() const
+	grid_cpu<dim,T,S,Mem> duplicate() const THROW
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		//! Create a completely new grid with sz
 
 		grid_cpu<dim,T,S,Mem> grid_new(g1.getSize());
@@ -712,13 +630,13 @@ public:
 		grid_new.setMemory();
 
 		// We know that, if it is 1D we can safely copy the memory
-		if (dim == 1)
-		{
+//		if (dim == 1)
+//		{
 			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
-			grid_new.data_.mem->copy(*data_.mem);
-		}
-		else
-		{
+//			grid_new.data_.mem->copy(*data_.mem);
+//		}
+//		else
+//		{
 			//! N-D copy
 
 			//! create a source grid iterator
@@ -726,20 +644,11 @@ public:
 
 			while(it.isNext())
 			{
-				// get the grid key
-				grid_key_dx<dim> key = it.get();
-
-				// create a copy element
-
-				copy_cpu_sd<dim,grid_cpu<dim,T,S,Mem>> cp(key,*this,grid_new);
-
-				// copy each property for each point of the grid
-
-				boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+				grid_new.get_o(it.get()) = this->get_o(it.get());
 
 				++it;
 			}
-		}
+//		}
 
 		// copy grid_new to the base
 
@@ -756,6 +665,9 @@ public:
 
 	const grid_sm<dim,T> & getGrid() const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return g1;
 	}
 
@@ -769,6 +681,9 @@ public:
 
 	void setMemory()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		S * mem = new S();
 
 		//! Create and set the memory allocator
@@ -793,6 +708,9 @@ public:
 
 	void setMemory(S & m)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		//! Is external
 		isExternal = true;
 
@@ -815,6 +733,28 @@ public:
 
 	void * getPointer()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		if (data_.mem_r == NULL)
+			return NULL;
+
+		return data_.mem_r->get_pointer();
+	}
+
+	/*! \brief Return a plain pointer to the internal data
+	 *
+	 * Return a plain pointer to the internal data
+	 *
+	 * \return plain data pointer
+	 *
+	 */
+
+	const void * getPointer() const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		if (data_.mem_r == NULL)
 			return NULL;
 
@@ -830,9 +770,12 @@ public:
 	 */
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(grid_key_d<dim,p> & v1)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)))) == false) {ACTION_ON_ERROR();}
@@ -849,9 +792,12 @@ public:
 	 */
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(grid_key_d<dim,p> & v1) const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)))) == false) {ACTION_ON_ERROR()};
@@ -868,9 +814,12 @@ public:
 	 */
 	template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type)) == false) {ACTION_ON_ERROR()};
@@ -887,9 +836,12 @@ public:
 	 */
 	template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(const grid_key_dx<dim> & v1) const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type)) == false) {ACTION_ON_ERROR()};
@@ -906,9 +858,12 @@ public:
 	 */
 	inline encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T));
@@ -925,9 +880,12 @@ public:
 	 */
 	inline const encapc<dim,T,Mem> get_o(const grid_key_dx<dim> & v1) const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(v1)
+		check_init();
+		check_bound(v1);
 #endif
 #ifdef SE_CLASS2
 		if (check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T)) == false)	{ACTION_ON_ERROR()}
@@ -937,11 +895,16 @@ public:
 
 	/*! \brief Fill the memory with the selected byte
 	 *
+	 * \warning It is a low level memory operation it ignore any type and semantic safety
+	 *
 	 * \param fl byte pattern to fill
 	 *
 	 */
 	void fill(unsigned char fl)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		memset(getPointer(),fl,size() * sizeof(T));
 	}
 
@@ -956,6 +919,9 @@ public:
 	 */
 	void resize(const size_t (& sz)[dim])
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		//! Create a completely new grid with sz
 
 		grid_cpu<dim,T,S,Mem> grid_new(sz);
@@ -974,13 +940,15 @@ public:
 
 
 		// We know that, if it is 1D we can safely copy the memory
-		if (dim == 1)
-		{
-			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
-			grid_new.data_.mem->copy(*data_.mem);
-		}
-		else
-		{
+//		if (dim == 1)
+//		{
+//			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
+//			grid_new.data_.mem->copy(*data_.mem);
+//		}
+//		else
+//		{
+		// It should be better to separate between fast and slow cases
+
 			//! N-D copy
 
 			//! create a source grid iterator
@@ -993,15 +961,11 @@ public:
 
 				// create a copy element
 
-				copy_cpu_sd<dim,grid_cpu<dim,T,S,Mem>> cp(key,*this,grid_new);
-
-				// copy each property for each point of the grid
-
-				boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+				grid_new.get_o(key) = this->get_o(key);
 
 				++it;
 			}
-		}
+//		}
 
 		// copy grid_new to the base
 
@@ -1014,6 +978,9 @@ public:
 	 */
 	void remove(size_t key)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		if (dim != 1)
 		{
 #ifdef SE_CLASS1
@@ -1039,11 +1006,14 @@ public:
 
 	void swap(grid_cpu<dim,T,S,Mem> & grid)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		// move the data
 		data_.swap(grid.data_);
 
-		// move the grid info
-		g1 = grid.g1;
+		// exghange the grid info
+		g1.swap(grid.g1);
 
 		// exchange the init status
 		bool exg = is_mem_init;
@@ -1067,6 +1037,9 @@ public:
 
 	void swap(grid_cpu<dim,T,S,Mem> && grid)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		swap(grid);
 	}
 
@@ -1081,9 +1054,12 @@ public:
 
 	template<typename Memory> inline void set(grid_key_dx<dim> dx, const encapc<1,T,Memory> & obj)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(dx)
+		check_init();
+		check_bound(dx);
 #endif
 
 		// create the object to copy the properties
@@ -1104,16 +1080,17 @@ public:
 
 	inline void set(grid_key_dx<dim> dx, const T & obj)
 	{
-#ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(dx)
+#ifdef SE_CLASS2
+		check_valid(this,8);
 #endif
-		// create the object to copy the properties
-		copy_cpu<dim,grid_cpu<dim,T,S,Mem>> cp(dx,*this,obj);
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(dx);
+#endif
 
-		// copy each property
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+		this->get_o(dx) = obj;
 	}
+
 
 	/*! \brief Set an element of the grid from another element of another grid
 	 *
@@ -1123,21 +1100,18 @@ public:
 	 *
 	 */
 
-	inline void set(grid_key_dx<dim> key1,const grid_cpu<dim,T,S,Mem> & g, grid_key_dx<dim> key2)
+	inline void set(const grid_key_dx<dim> & key1,const grid_cpu<dim,T,S,Mem> & g, const grid_key_dx<dim> & key2)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 #ifdef SE_CLASS1
-		CHECK_INIT()
-		GRID_OVERFLOW(key1)
-		GRID_OVERFLOW_EXT(g,key2)
+		check_init();
+		check_bound(key1);
+		check_bound(g,key2);
 #endif
 
-		//create the object to copy the properties
-		copy_cpu_sd_k<dim,grid_cpu<dim,T,S,Mem>> cp(key2,key1,g,*this);
-
-		// copy each property for each point of the grid
-
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
-
+		this->get_o(key1) = g.get_o(key2);
 	}
 
 	/*! \brief return the size of the grid
@@ -1148,6 +1122,9 @@ public:
 
 	inline size_t size() const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return g1.size();
 	}
 
@@ -1161,6 +1138,9 @@ public:
 	 */
 	inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop) const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return g1.getSubIterator(start,stop);
 	}
 
@@ -1174,6 +1154,9 @@ public:
 
 	inline grid_key_dx_iterator_sub<dim> getSubIterator(size_t m)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return grid_key_dx_iterator_sub<dim>(g1,m);
 	}
 
@@ -1185,6 +1168,9 @@ public:
 
 	inline grid_key_dx_iterator<dim> getIterator() const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return grid_key_dx_iterator<dim>(g1);
 	}
 
@@ -1198,6 +1184,9 @@ public:
 
 	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		// get the starting point and the end point of the real domain
 
 		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
@@ -1208,6 +1197,9 @@ public:
 	 */
 	size_t getLastError()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return err_code;
 	}
 
@@ -1222,6 +1214,9 @@ public:
 
 	size_t packObjectSize()
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return 0;
 	}
 
@@ -1236,7 +1231,24 @@ public:
 
 	size_t packObject(void * mem)
 	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
 		return 0;
+	}
+
+	/* \brief It return the id of structure in the allocation list
+	 *
+	 * \see print_alloc and SE_CLASS2
+	 *
+	 */
+	long int who()
+	{
+#ifdef SE_CLASS2
+		return check_whoami(this,8);
+#else
+		return -1;
+#endif
 	}
 };
 
@@ -1271,199 +1283,7 @@ struct allocate
 	}
 };
 
-/*! \brief This is an N-dimensional grid or an N-dimensional array with memory_traits_inte layout
- *
- * it is basically an N-dimensional Cartesian grid
- *
- *	\tparam dim Dimensionality of the grid
- *	\tparam T type of object the grid store
- *	\tparam Mem memory layout
- *
- * ### Definition and allocation of a 3D grid on GPU memory
- * \snippet grid_unit_tests.hpp Definition and allocation of a 3D grid on GPU memory
- * ### Access a grid c3 of size sz on each direction
- * \snippet grid_unit_tests.hpp Access a grid c3 of size sz on each direction
- * ### Access to an N-dimensional grid with an iterator
- * \snippet grid_unit_tests.hpp Access to an N-dimensional grid with an iterator
- *
- */
-template<unsigned int dim, typename T, typename S=CudaMemory , typename Mem = typename memory_traits_inte< typename T::type >::type >
-class grid_gpu
-{
-	// Indicate if set memory has been called
-	bool is_mem_init = false;
-
-	//! Access the key
-	typedef grid_key_dx<dim> access_key;
-
-	//! It store all the information regarding the grid
-	grid_sm<dim,void> g1;
-
-	//! This is the interface to allocate,resize ... memory
-	//! and give also a representation to the allocated memory
-	Mem data_;
-
-public:
-
-	//! it define that it is a grid
-	typedef int yes_i_am_grid;
-
-	//! Definition of the layout
-	typedef typename memory_traits_inte<typename T::type>::type memory_int;
-
-	//! Memory traits
-	typedef Mem memory_conf;
-
-	//! Object container for T, it is the return type of get_o it return a object type trough
-	// you can access all the properties of T
-	typedef encapg<dim,T,Mem> container;
-
-	// The object type the grid is storing
-	typedef T type;
-
-	//! Default constructor
-	grid_gpu()
-	{
-	}
-
-	//! Set the grid dimensions
-	void setDimensions(std::vector<size_t> & sz)
-	{
-		g1.setDimension(sz);
-	}
-
-	//! Constructor it initialize the memory and give representation
-	grid_gpu(std::vector<size_t> & sz)
-	:g1(sz)
-	{
-	}
-
-	/*! \brief Return the internal grid information
-	 *
-	 * \return the internal grid information
-	 *
-	 */
-
-	const grid_sm<dim,void> & getGrid() const
-	{
-		return g1;
-	}
-
-	/*! \brief Create the object that provide memory
-	 *
-	 * \tparam S memory object type
-	 *
-	 */
-
-	void setMemory()
-	{
-		//! Create an allocate object
-		allocate<S> all(g1.size());
-
-		//! for each element in the vector allocate the buffer
-		boost::fusion::for_each(data_,all);
-
-		is_mem_init = true;
-	}
-
-	template <unsigned int p>inline typename type_gpu_prop<p,memory_int>::type::reference get(grid_key_d<dim,p> & v1)
-	{
-		return boost::fusion::at_c<p>(data_).mem_r->operator[](g1.LinId(v1));
-	}
-
-	template <unsigned int p>inline typename type_gpu_prop<p,memory_int>::type::reference get(grid_key_dx<dim> & v1)
-	{
-		return boost::fusion::at_c<p>(data_).mem_r->operator[](g1.LinId(v1));
-	}
-
-	/*! \brief Get the of the selected element as a boost::fusion::vector
-	 *
-	 * Get the selected element as a boost::fusion::vector
-	 *
-	 * \param v1 grid_key that identify the element in the grid
-	 *
-	 */
-	inline encapg<dim,T,Mem> get_o(grid_key_dx<dim> & v1)
-	{
-		return encapg<dim,T,Mem>(data_,g1.LinId(v1));
-	}
-
-	/*! \brief Get the of the selected element as a boost::fusion::vector
-	 *
-	 * Get the selected element as a boost::fusion::vector
-	 *
-	 * \param v1 grid_key that identify the element in the grid
-	 *
-	 */
-	inline const encapg<dim,T,Mem> get_o(grid_key_dx<dim> & v1) const
-	{
-		return encapg<dim,T,Mem>(data_,g1.LinId(v1));
-	}
-
-	inline size_t size()
-	{
-		return g1.size();
-	}
-
-	//! this function set the memory interface if required
-	//! this operation is required when we define a void memory
-	//! allocator
-	void set_memory(memory & mem)
-	{
-		data_.mem.set_memory(mem);
-	}
-
-	/*! \brief Return a grid iterator
-	 *
-	 * Return a grid iterator, to iterate through the grid
-	 *
-	 */
-
-	inline grid_key_dx_iterator<dim> getIterator()
-	{
-		return grid_key_dx_iterator<dim>(g1);
-	}
-
-
-	/*! \brief Return a sub-grid iterator
-	 *
-	 * Return a sub-grid iterator, to iterate through the grid
-	 *
-	 */
-
-	inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop)
-	{
-		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
-	}
-
-	/*! \brief Swap the memory of another grid
-	 *
-	 * Swap the memory of another grid
-	 *
-	 * \param obj Memory to swap with
-	 *
-	 */
-	void swap(grid_gpu<dim,T,S,Mem> & obj)
-	{
-		g1.swap(obj.g1);
-		data_.swap(obj.data_);
-	}
-};
-
-/*! device selector struct
- *
- * device selector struct, it return the correct data type for each device
- *
- */
-
-template<unsigned int dim, typename T>
-struct device_g
-{
-	//! cpu
-	typedef grid_cpu<dim,T> cpu;
-	//! gpu
-	typedef grid_gpu<dim,T> gpu;
-};
+#include "grid_gpu.hpp"
 
 #endif
 

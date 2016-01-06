@@ -31,8 +31,8 @@
 #include "memory/ExtPreAlloc.hpp"
 #include <string.h>
 #include "vect_isel.hpp"
-#include "Unpacker.hpp"
-#include "Packer.hpp"
+#include "Packer_Unpacker/Unpacker.hpp"
+#include "Packer_Unpacker/Packer.hpp"
 
 namespace openfpm
 {
@@ -175,6 +175,9 @@ namespace openfpm
 		//! 1-D static grid
 		grid_cpu<1,T,Memory> base;
 
+		//! Error code
+		size_t err_code;
+
 		/*! \brief Create a 1D vector that contain the vector size
 		 *
 		 * Used to construct the underline 1D-grid
@@ -236,6 +239,9 @@ namespace openfpm
 		 */
 		size_t size() const
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			return v_size;
 		}
 
@@ -249,12 +255,28 @@ namespace openfpm
 
 		void reserve(size_t sp)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			if (sp > base.size())
 			{
 				//! Resize the memory
 				size_t sz[1] = {sp};
-				base.template resize<Memory>(sz);
+				base.resize(sz);
 			}
+		}
+
+		/*! \brief Clear the vector
+		 *
+		 * Eliminate all the elements for from the vector
+		 *
+		 */
+		void clear()
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			resize(0);
 		}
 
 		/*! \brief Resize the vector
@@ -266,6 +288,9 @@ namespace openfpm
 		 */
 		void resize(size_t slot)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			// If we need more space than what we allocated, allocate new memory
 
 			if (slot > base.size())
@@ -292,6 +317,9 @@ namespace openfpm
 		 */
 		void add()
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			//! Check if we have enough space
 
 			if (v_size >= base.size())
@@ -316,6 +344,9 @@ namespace openfpm
 		 */
 		void add(const T & v)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			//! Check if we have enough space
 
 			if (v_size >= base.size())
@@ -344,6 +375,9 @@ namespace openfpm
 		 */
 		void add(const typename grid_cpu<1,T>::container & v)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			//! Check if we have enough space
 
 			if (v_size >= base.size())
@@ -368,6 +402,9 @@ namespace openfpm
 		 */
 		template <typename M, typename gp> void add(const vector<T, M,gp,OPENFPM_NATIVE> & v)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			//! Add the element of v
 			for (size_t i = 0 ; i < v.size() ; i++)
 				add(v.get(i));
@@ -389,6 +426,9 @@ namespace openfpm
 		 */
 		template <typename S, typename M, typename gp, unsigned int ...args> void add_prp(const vector<S, M,gp,OPENFPM_NATIVE> & v)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			//! Add the element of v
 			for (size_t i = 0 ; i < v.size() ; i++)
 			{
@@ -396,7 +436,7 @@ namespace openfpm
 				add();
 
 				// write the object in the last element
-				object_s_di<decltype(v.get(i)),decltype(get(size()-1)),ENCAP,args...>(v.get(i),get(size()-1));
+				object_s_di<decltype(v.get(i)),decltype(get(size()-1)),OBJ_ENCAP,args...>(v.get(i),get(size()-1));
 			}
 		}
 
@@ -407,6 +447,9 @@ namespace openfpm
 		 */
 		void remove(size_t key)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			size_t d_k = key;
 			size_t s_k = key + 1;
 
@@ -429,8 +472,11 @@ namespace openfpm
 		 * \param start key starting point
 		 *
 		 */
-		void remove(openfpm::vector<size_t> keys, size_t start = 0)
+		void remove(openfpm::vector<size_t> & keys, size_t start = 0)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			// Nothing to remove return
 			if (keys.size() <= start )
 				return;
@@ -476,9 +522,11 @@ namespace openfpm
 
 		template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(size_t id) const
 		{
-#ifdef DEBUG
-			if (id >= v_size)
-			{std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " overflow" <<  "\n";}
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+			VECTOR_OVERFLOW_NATIVE(id)
 #endif
 			grid_key_dx<1> key(id);
 
@@ -497,11 +545,29 @@ namespace openfpm
 
 		inline const typename grid_cpu<1,T>::container get(size_t id) const
 		{
-#ifdef DEBUG
-			if (id >= v_size)
-			{std::cerr << "Error: "  << __FILE__ << ":" << __LINE__ << " vector overflow" << "\n";}
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+			VECTOR_OVERFLOW_NATIVE(id)
 #endif
 			grid_key_dx<1> key(id);
+
+			return base.get_o(key);
+		}
+
+		/*! \brief Get the last element of the vector
+		 *
+		 * \return the last element (encapsulated)
+		 *
+		 */
+
+		inline const typename grid_cpu<1,T>::container last() const
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			grid_key_dx<1> key(size()-1);
 
 			return base.get_o(key);
 		}
@@ -519,9 +585,11 @@ namespace openfpm
 
 		template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(size_t id)
 		{
-#ifdef DEBUG
-			if (id >= v_size)
-			{std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " overflow" <<  "\n";}
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+			VECTOR_OVERFLOW_NATIVE(id)
 #endif
 			grid_key_dx<1> key(id);
 
@@ -540,23 +608,40 @@ namespace openfpm
 
 		inline typename grid_cpu<1,T>::container get(size_t id)
 		{
-#ifdef DEBUG
-			if (id >= v_size)
-			{std::cerr << "Error "  << __FILE__ << ":" << __LINE__ << " vector overflow" << "\n";}
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+			VECTOR_OVERFLOW_NATIVE(id)
 #endif
 			grid_key_dx<1> key(id);
 
 			return base.get_o(key);
 		}
 
-		/*! \brief Constructor from vector
+		/*! \brief Get the last element of the vector
 		 *
-		 * \param mv vector
+		 * \return the element (encapsulated)
 		 *
 		 */
-		vector(vector<T, Memory,grow_p,OPENFPM_NATIVE> && mv)
-		:v_size(mv.v_size),base(mv.base)
+
+		inline typename grid_cpu<1,T>::container last()
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			grid_key_dx<1> key(size()-1);
+
+			return base.get_o(key);
+		}
+
+		//! Destructor
+		~vector() THROW
+		{
+			// Eliminate the pointer
+	#ifdef SE_CLASS2
+			check_delete(this);
+	#endif
 		}
 
 		/*! \brief It duplicate the vector
@@ -566,6 +651,9 @@ namespace openfpm
 		 */
 		vector<T, Memory,grow_p,OPENFPM_NATIVE> duplicate() const
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			vector<T, Memory,grow_p,OPENFPM_NATIVE> dup;
 
 			dup.v_size = v_size;
@@ -579,9 +667,13 @@ namespace openfpm
 		 * \param v the vector
 		 *
 		 */
-		vector(const vector<T, Memory,grow_p,OPENFPM_NATIVE> && v)
+		vector(vector<T, Memory,grow_p,OPENFPM_NATIVE> && v)
 		:v_size(0)
 		{
+			// Add this pointer
+#ifdef SE_CLASS2
+			check_new(this,8,VECTOR_EVENT,1);
+#endif
 			swap(v);
 		}
 
@@ -590,21 +682,32 @@ namespace openfpm
 		 * \param v the vector
 		 *
 		 */
-		vector(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v)
-		:v_size(0)
+		vector(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v) THROW
+		:v_size(0),err_code(0)
 		{
+#ifdef SE_CLASS2
+			check_new(this,8,VECTOR_EVENT,1);
+#endif
 			swap(v.duplicate());
 		}
 
 		//! Constructor, vector of size 0
-		vector():v_size(0),base(getV(0))
+		vector() THROW
+		:v_size(0),base(getV(0)),err_code(0)
 		{
+#ifdef SE_CLASS2
+			check_new(this,8,VECTOR_EVENT,1);
+#endif
 			base.setMemory();
 		}
 
 		//! Constructor, vector of size sz
-		vector(size_t sz):v_size(sz),base(getV(sz))
+		vector(size_t sz) THROW
+		:v_size(sz),base(getV(sz)),err_code(0)
 		{
+#ifdef SE_CLASS2
+			check_new(this,8,VECTOR_EVENT,1);
+#endif
 			base.setMemory();
 		}
 
@@ -616,9 +719,11 @@ namespace openfpm
 		 */
 		void set(size_t id, const typename grid_cpu<1,T>::container & obj)
 		{
-#ifdef DEBUG
-			if (id >= v_size)
-			{std::cerr << "Error " << __FILE__ << "  " << __LINE__ << " id overflow your vector" << "\n";}
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+			VECTOR_OVERFLOW_NATIVE(id)
 #endif
 			//! copy the element
 			base.set(id,obj);
@@ -630,11 +735,13 @@ namespace openfpm
 		 * \param obj
 		 *
 		 */
-		void set(size_t id, T & obj)
+		void set(size_t id, const T & obj)
 		{
-#ifdef DEBUG
-			if (id >= v_size)
-			{std::cerr << "Error " << __FILE__ << "  " << __LINE__ << " id overflow your vector" << "\n";}
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+			VECTOR_OVERFLOW_NATIVE(id)
 #endif
 			//! copy the element
 			base.set(id,obj);
@@ -649,9 +756,11 @@ namespace openfpm
 		 */
 		void set(size_t id, vector<T,Memory,grow_p,OPENFPM_NATIVE> & v, size_t src)
 		{
-#ifdef DEBUG
-			if (id >= v_size)
-			{std::cerr << "Error " << __FILE__ << "  " << __LINE__ << " id overflow your vector" << "\n";}
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+			VECTOR_OVERFLOW_NATIVE(id)
 #endif
 			base.set(id,v.base,src);
 		}
@@ -665,8 +774,11 @@ namespace openfpm
 		 * \return itself
 		 *
 		 */
-		vector<T, Memory,grow_p,OPENFPM_NATIVE> operator=(vector<T, Memory,grow_p,OPENFPM_NATIVE> && mv)
+		vector<T, Memory,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Memory,grow_p,OPENFPM_NATIVE> && mv)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			v_size = mv.v_size;
 			base.swap(mv.base);
 
@@ -682,8 +794,11 @@ namespace openfpm
 		 * \return itself
 		 *
 		 */
-		vector<T, Memory,grow_p,OPENFPM_NATIVE> operator=(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & mv)
+		vector<T, Memory,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & mv)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			v_size = mv.v_size;
 			size_t rsz[1] = {v_size};
 			base.resize(rsz);
@@ -698,6 +813,38 @@ namespace openfpm
 			return *this;
 		}
 
+		/*! \brief Check that two vectors are equal
+		 *
+		 * \param vector to compare
+		 *
+		 */
+		bool operator!=(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v) const
+		{
+			return !this->operator==(v);
+		}
+
+		/*! \brief Check that two vectors are not equal
+		 *
+		 * \param vector to compare
+		 *
+		 */
+		bool operator==(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v) const
+		{
+			if (v_size != v.v_size)
+				return false;
+
+			// check object by object
+			for (size_t i = 0 ; i < v_size ; i++ )
+			{
+				grid_key_dx<1> key(i);
+
+				if (base.get_o(key) != v.base.get_o(key))
+					return false;
+			}
+
+			return true;
+		}
+
 		/*! \brief Swap the memory with another vector
 		 *
 		 * \param v vector
@@ -705,6 +852,9 @@ namespace openfpm
 		 */
 		void swap(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & v)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			size_t sz_sp = v_size;
 
 			// swap the v_size
@@ -721,6 +871,9 @@ namespace openfpm
 		 */
 		void swap(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> && v)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			size_t sz_sp = v_size;
 
 			// swap the v_size
@@ -737,6 +890,9 @@ namespace openfpm
 		 */
 		vector_key_iterator getIteratorFrom(size_t mark) const
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			return vector_key_iterator(v_size,mark);
 		}
 
@@ -749,6 +905,9 @@ namespace openfpm
 
 		vector_key_iterator getIterator() const
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			return vector_key_iterator(v_size);
 		}
 
@@ -760,6 +919,9 @@ namespace openfpm
 
 		size_t packObjectSize()
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			return base.packObjectSize();
 		}
 
@@ -772,6 +934,9 @@ namespace openfpm
 		 */
 		size_t packObject(void * mem)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			return base.packObject(mem);
 		}
 
@@ -788,15 +953,42 @@ namespace openfpm
 		template<int ... prp> static inline size_t calculateMem(size_t n, size_t e)
 		{
 			if (n == 0)
+			{
 				return 0;
-			else {
+			}
+			else
+			{
+				if (sizeof...(prp) == 0)
+					return grow_p::grow(0,n) * sizeof(typename T::type);
+
 				typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
-				//std::cout << demangle(typeid(prp_object).name()) << " " << sizeof(prp_object) << std::endl;
 #ifdef DEBUG
 				std::cout << "Inside calculateMem() (map_vector)" << std::endl;
 #endif
-				return n * sizeof(prp_object);
+				return grow_p::grow(0,n) * sizeof(prp_object);
 			}
+		}
+
+		/*! \brief Calculate the memory size required to pack n elements
+		 *
+		 * Calculate the total size required to store n-elements in a vector
+		 *
+		 * \param n number of elements
+		 * \param e unused
+		 *
+		 * \return the size of the allocation number e
+		 *
+		 */
+		template<int ... prp> static inline size_t packMem(size_t n, size_t e)
+		{
+			if (sizeof...(prp) == 0)
+				return n * sizeof(typename T::type);
+
+			typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
+#ifdef DEBUG
+			std::cout << "Inside packMem() (map_vector)" << std::endl;
+#endif
+			return n * sizeof(prp_object);
 		}
 
 		/*! \brief How many allocation are required to create n-elements
@@ -818,6 +1010,9 @@ namespace openfpm
 		 */
 		void setMemory(Memory & mem)
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			base.setMemory(mem);
 		}
 
@@ -828,7 +1023,34 @@ namespace openfpm
 		 */
 		void * getPointer()
 		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
 			return base.getPointer();
+		}
+
+		/*! \brief Return the pointer that store the data
+		 *
+		 * \return the pointer that store the data
+		 *
+		 */
+		const void * getPointer() const
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			return base.getPointer();
+		}
+
+		/*! \brief Return the last error
+		 *
+		 */
+		size_t getLastError()
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			return err_code;
 		}
 
 		/*! \brief This class has pointer inside
@@ -841,6 +1063,19 @@ namespace openfpm
 			return false;
 		}
 
+		/* \brief It return the id of structure in the allocation list
+		 *
+		 * \see print_alloc and SE_CLASS2
+		 *
+		 */
+		long int who()
+		{
+#ifdef SE_CLASS2
+			return check_whoami(this,8);
+#else
+			return -1;
+#endif
+		}
 	};
 
 	template <typename T> using vector_std = vector<T, HeapMemory, openfpm::grow_policy_double, STD_VECTOR>;

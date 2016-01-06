@@ -11,7 +11,7 @@
 
 #include "for_each_ref.hpp"
 #include "util/variadic_to_vmpl.hpp"
-#include "util/meta_copy.hpp"
+#include "util/copy_compare/meta_copy.hpp"
 #include <boost/mpl/range_c.hpp>
 #include <boost/fusion/include/size.hpp>
 
@@ -128,14 +128,14 @@ struct object_s_di_f
     }
 };
 
-#define ENCAP 1
-#define NORMAL 2
+#define OBJ_ENCAP 1
+#define OBJ_NORMAL 2
 
 /*! \brief It copy the properties from one object to another
  *
  * Stub object
  *
- * \see object_copy<v_src,v_dst,NORMAL,prp...> object_copy<v_src,v_dst,ENCAP,prp...>
+ * \see object_copy<v_src,v_dst,OBJ_NORMAL,prp...> object_copy<v_src,v_dst,OBJ_ENCAP,prp...>
  *
  *
  */
@@ -156,7 +156,7 @@ struct object_s_di
  *
  */
 template<typename v_src, typename v_dst, int... prp>
-struct object_s_di<v_src,v_dst,NORMAL,prp...>
+struct object_s_di<v_src,v_dst,OBJ_NORMAL,prp...>
 {
 	inline object_s_di(const v_src && vs, v_dst && vd)
 	{
@@ -186,7 +186,7 @@ struct object_s_di<v_src,v_dst,NORMAL,prp...>
  *
  */
 template<typename v_src, typename v_dst, int... prp>
-struct object_s_di<v_src,v_dst,ENCAP,prp...>
+struct object_s_di<v_src,v_dst,OBJ_ENCAP,prp...>
 {
 	inline object_s_di(const v_src && vs, v_dst && vd)
 	{

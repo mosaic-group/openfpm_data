@@ -33,7 +33,7 @@ template<typename T> void boost_check_array(const T * ptr1, const T * ptr2, size
 
 #include <cxxabi.h>
 
-/*! \brief typeid().name return a mangled name this function demangle it creating a more readable type string
+/*! \brief typeid().name() return a mangled name this function demangle it creating a more readable type string
  *
  * \param mangle string
  *

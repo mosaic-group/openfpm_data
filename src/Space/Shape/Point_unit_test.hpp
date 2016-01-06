@@ -54,6 +54,14 @@ BOOST_AUTO_TEST_CASE( Point_use )
 
 	//! [assign and operation]
 
+	//! [norm]
+
+	Point<3,float> pn({1.0,1.0,1.0});
+
+	BOOST_REQUIRE_CLOSE(pn.norm(),1.732050,0.0001);
+
+	//! [norm]
+
 	std::cout << "Point unit test stop" << "\n";
 }
 

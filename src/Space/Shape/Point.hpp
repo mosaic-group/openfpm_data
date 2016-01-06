@@ -8,8 +8,6 @@
 #include <boost/fusion/container/vector/vector_fwd.hpp>
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
-#include "base_type.hpp"
-//#include "Grid/grid_key.hpp"
 #include "Grid/Encap.hpp"
 
 /*! \brief This class implement the point shape in an N-dimensional space
@@ -84,6 +82,23 @@ template<unsigned int dim ,typename T> class Point
 		return *this;
 	}
 
+	/*! \brief Multiply each components by a constant
+	 *
+	 * \param c constanr
+	 *
+	 */
+	inline Point<dim,T> operator*(T c)
+	{
+		Point<dim,T> result;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			result.get(i) = get(i) * c;
+		}
+
+		return result;
+	}
+
 	/*! \brief Multiply each components
 	 *
 	 * \param p Point
@@ -101,12 +116,27 @@ template<unsigned int dim ,typename T> class Point
 		return result;
 	}
 
+	/*! \brief Subtract each components
+	 *
+	 * \param p Point
+	 *
+	 */
+	inline Point<dim,T> & operator-=(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			get(i) -= p.get(i);
+		}
+
+		return *this;
+	}
+
 	/*! \brief Sum each components
 	 *
 	 * \param p Point
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> & operator+=(const Point<dim,aT> & p)
+	inline Point<dim,T> & operator+=(const Point<dim,T> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -114,6 +144,23 @@ template<unsigned int dim ,typename T> class Point
 		}
 
 		return *this;
+	}
+
+	/*! \Brief norm of the vector
+	 *
+	 * \return the norm of the vector
+	 *
+	 */
+	T norm()
+	{
+		T n = 0.0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			n+=get(i) * get(i);
+		}
+
+		return sqrt(n);
 	}
 
 	/*! \brief Sum each components
@@ -306,16 +353,16 @@ template<unsigned int dim ,typename T> class Point
 			get(i) = static_cast<S>(p.get(i));
 	}
 
-	/*! \brief Constructor from a grid_key_dx<dim>
+	/*! \brief Point constructor
 	 *
-	 * \param key from where to initialize
+	 * \param p encapc Point
 	 *
 	 */
-/*	inline Point(grid_key_dx<dim> key)
+	template <unsigned int d, typename M> inline Point(const encapc<d,Point<dim,T>,M> & p)
 	{
-	    for(size_t i = 0 ; i < dim ; i++)
-	    {get(i) = key.k[i];}
-	}*/
+		for (size_t i = 0 ; i < dim ; i++)
+			get(i) = p.template get<0>()[i];
+	}
 
 	/*! \brief Constructor from a list
 	 *

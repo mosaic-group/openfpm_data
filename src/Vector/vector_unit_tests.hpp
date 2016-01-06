@@ -17,6 +17,8 @@ BOOST_AUTO_TEST_SUITE( vector_test )
 
 BOOST_AUTO_TEST_CASE (vector_iterator_test)
 {
+	//////////////////////////////////
+
 	openfpm::vector<Point_test<float>> v_ofp_test = allocate_openfpm(FIRST_PUSH);
 
 	size_t count = 0;
@@ -133,12 +135,12 @@ BOOST_AUTO_TEST_CASE( vector_std_utility )
 	// Check is zero
 	for (size_t i = 0 ;  i < 16 ; i++)
 	{
-		BOOST_REQUIRE_EQUAL(pb.get(i),0);
+		BOOST_REQUIRE_EQUAL(pb.get(i),0ul);
 	}
 
 }
 
-size_t alloc[] = {235,345,520};
+size_t alloc[] = {235,345,0,520};
 size_t n_alloc = sizeof(alloc)/sizeof(size_t);
 
 BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
@@ -228,6 +230,7 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 	}
 }
 
+
 BOOST_AUTO_TEST_CASE( vector_prealloc )
 {
 	openfpm::vector<pre_test> pb(3);
@@ -262,7 +265,7 @@ BOOST_AUTO_TEST_CASE( object_test_creator )
 	BOOST_REQUIRE_EQUAL(tst , true);
 }
 
-#define V_REM_PUSH 1024
+#define V_REM_PUSH 1024ul
 
 BOOST_AUTO_TEST_CASE(vector_remove )
 {
@@ -293,7 +296,7 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 
 	//! [Create push and multiple remove]
 
-	BOOST_REQUIRE_EQUAL(v1.size(),1020);
+	BOOST_REQUIRE_EQUAL(v1.size(),1020ul);
 	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(0),4);
 
 	{
@@ -306,7 +309,7 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 	v1.remove(rem);
 	}
 
-	BOOST_REQUIRE_EQUAL(v1.size(),1016);
+	BOOST_REQUIRE_EQUAL(v1.size(),1016ul);
 	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(v1.size()-1),1019);
 
 	{
@@ -318,13 +321,44 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 	v1.remove(rem);
 	}
 
-	BOOST_REQUIRE_EQUAL(v1.size(),508);
+	BOOST_REQUIRE_EQUAL(v1.size(),508ul);
 
 	// Check only odd
 	for (size_t i = 0 ; i < v1.size() ; i++)
 	{
-		BOOST_REQUIRE_EQUAL((size_t)v1.template get<p::x>(v1.size()-1) % 2, 1);
+		BOOST_REQUIRE_EQUAL((size_t)v1.template get<p::x>(v1.size()-1) % 2, 1ul);
 	}
+}
+
+BOOST_AUTO_TEST_CASE(vector_clear )
+{
+	typedef Point_test<float> p;
+
+	openfpm::vector<Point_test<float>> v1;
+
+	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
+	{
+		// Point
+		Point_test<float> p;
+		p.setx(i);
+
+		v1.add(p);
+	}
+
+	v1.clear();
+
+	BOOST_REQUIRE_EQUAL(v1.size(),0ul);
+
+	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
+	{
+		// Point
+		Point_test<float> p;
+		p.setx(i);
+
+		v1.add(p);
+	}
+
+	BOOST_REQUIRE_EQUAL(v1.size(),V_REM_PUSH);
 }
 
 BOOST_AUTO_TEST_CASE( vector_memory_repr )
@@ -476,6 +510,202 @@ BOOST_AUTO_TEST_CASE( vector_add_test_case )
 		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][2], v1.template get<P::t>(i+2*v2.size())[2][2]);
 	}
 
+}
+
+////////// Test function ///////////
+
+openfpm::vector<scalar<float>> & test_error_v()
+{
+	openfpm::vector<scalar<float>> v(16);
+
+	return v;
+}
+
+BOOST_AUTO_TEST_CASE( vector_copy_and_compare )
+{
+	{
+	openfpm::vector<openfpm::vector<float>> v1;
+
+	v1.add();
+	v1.last().add(1.0);
+	v1.last().add(10.0);
+	v1.last().add(11.0);
+	v1.last().add(21.0);
+	v1.last().add(13.0);
+	v1.add();
+	v1.last().add(11.0);
+	v1.last().add(41.0);
+	v1.last().add(61.0);
+	v1.last().add(91.0);
+	v1.add();
+	v1.last().add(133.0);
+	v1.last().add(221.0);
+
+	openfpm::vector<openfpm::vector<float>> v2;
+
+	v2 = v1;
+
+	bool ret = (v2 == v1);
+	BOOST_REQUIRE_EQUAL(ret,true);
+
+	v1.get(2).get(1) = 222.0;
+
+	ret = (v2 == v1);
+	BOOST_REQUIRE_EQUAL(ret,false);
+	}
+
+	{
+	Box<3,float> bt({1.2,1.3,1.5},{6.0,7.0,8.0});
+
+	openfpm::vector<openfpm::vector<Box<3,float>>> v1;
+
+	v1.add();
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.add();
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.last().add(bt);
+	v1.add();
+	v1.last().add(bt);
+	v1.last().add(bt);
+
+	openfpm::vector<openfpm::vector<Box<3,float>>> v2;
+
+	v2 = v1;
+
+	bool ret = (v2 == v1);
+	BOOST_REQUIRE_EQUAL(ret,true);
+
+	v1.get(2).get(1).template get<Box<3,float>::p1>()[0] = 222.0;
+
+	ret = (v2 == v1);
+	BOOST_REQUIRE_EQUAL(ret,false);
+	}
+
+}
+
+/////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE( vector_safety_check )
+{
+#if defined(SE_CLASS1) && defined (THROW_ON_ERROR)
+
+	bool error = false;
+
+	typedef Point_test<float> p;
+
+	// Create a vector
+
+	openfpm::vector<Point_test<float>> v(16);
+	openfpm::vector<Point_test<float>> v2(16);
+
+	error = false;
+	try
+	{v.template get<p::x>(23);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	Point_test<float> t;
+	try
+	{v.set(23,t);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	try
+	{v.set(6,v2,23);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	//// Negative key
+
+	error = false;
+	try
+	{v.template get<p::x>(-1);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	Point_test<float> t2;
+	try
+	{v.set(-1,t2);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	error = false;
+	try
+	{v.set(12,v2,-1);}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	#if defined(SE_CLASS2) && defined (THROW_ON_ERROR)
+
+	error = false;
+
+	// Create a vector
+
+	openfpm::vector<scalar<float>> * v3 = new openfpm::vector<scalar<float>>(16);
+	delete v3;
+
+	// Try to access the class
+
+	try
+	{v3->size();}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,MEM_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	try
+	{
+		openfpm::vector<scalar<float>> vr = test_error_v();
+	}
+	catch (size_t e)
+	{
+		error = true;
+		BOOST_REQUIRE_EQUAL(e,MEM_ERROR);
+	}
+	BOOST_REQUIRE_EQUAL(error,true);
+
+	#endif
+
+#endif
 }
 
 BOOST_AUTO_TEST_SUITE_END()

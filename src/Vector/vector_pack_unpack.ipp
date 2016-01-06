@@ -14,7 +14,7 @@ static bool packRequest()
 	return false;
 }
 
-static bool calculateMem()
+static bool packMem()
 {
 	return false;
 }
@@ -46,13 +46,13 @@ struct pack_cond<true, T1, Memory1, prp...>
 	}
 };
 
-// Structures that calculate memory for an object, depending on the existence of 'calculateMem' function inside of the object
+// Structures that calculate memory for an object, depending on the existence of 'packMem' function inside of the object
 
-//There is no calculateMem()
+//There is no packMem()
 template<bool cond, typename T1>
-struct calculateMem_cond
+struct packMem_cond
 {
-	size_t calculateMemory(T1 & obj, size_t n, size_t e)
+	size_t packMemory(T1 & obj, size_t n, size_t e)
 	{
 #ifdef DEBUG
 		std::cout << grow_policy_double::grow(0,n) << "*" << sizeof(T) << " " << demangle(typeid(T).name()) << std::endl;
@@ -62,19 +62,19 @@ struct calculateMem_cond
 
 };
 
-//There is calculateMem()
+//There is packMem()
 template<typename T1>
-struct calculateMem_cond<true, T1>
+struct packMem_cond<true, T1>
 {
-	size_t calculateMemory(T1 & obj, size_t n, size_t e)
+	size_t packMemory(T1 & obj, size_t n, size_t e)
 	{
 		size_t res = 0;
 		size_t count = grow_policy_double::grow(0,n) - obj.size();
 		for (int i = 0; i < n; i++) {
-			res += obj.get(i).calculateMem(n,0);
+			res += obj.get(i).packMem(n,0);
 		}
 #ifdef DEBUG
-		std::cout << "Inside calculateMem (map_vector)" << std::endl;
+		std::cout << "Inside packMem - true (map_vector)" << std::endl;
 #endif
 		return res+count*sizeof(T);
 	}
@@ -119,7 +119,7 @@ template<int ... prp> void pack(ExtPreAlloc<Memory> & mem, Pack_stat & sts)
 		typedef encapc<1,prp_object,typename dtype::memory_conf > encap_dst;
 
 		// Copy only the selected properties
-		object_si_d<encap_src,encap_dst,ENCAP,prp...>(this->get(obj_it.get()),dest.get(obj_it.get()));
+		object_si_d<encap_src,encap_dst,OBJ_ENCAP,prp...>(this->get(obj_it.get()),dest.get(obj_it.get()));
 
 		++obj_it;
 	}
@@ -144,7 +144,7 @@ template<int ... prp> void packRequest(std::vector<size_t> & v)
 	std::cout << "Inside map_vector.hpp packRequest()" << std::endl;
 #endif
 
-	size_t alloc_ele = this->calculateMem<prp...>(this->size(),0);
+	size_t alloc_ele = this->packMem<prp...>(this->size(),0);
 
 	v.push_back(alloc_ele);
 }
@@ -180,7 +180,7 @@ template<unsigned int ... prp> void unpack(ExtPreAlloc<Memory> & mem, Unpack_sta
 	std::cout << "Inside unpack() function! (map_vector)" << std::endl;
 #endif
 	// Calculate the size to pack the object
-	size_t size = this->calculateMem<prp...>(this->size(),0);
+	size_t size = this->packMem<prp...>(this->size(),0);
 
 	// Create a Pointer object over the preallocated memory (No allocation is produced)
 	PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
@@ -198,7 +198,7 @@ template<unsigned int ... prp> void unpack(ExtPreAlloc<Memory> & mem, Unpack_sta
 		typedef encapc<1,prp_object,typename stype::memory_conf > encap_src;
 
 		// Copy only the selected properties
-		object_s_di<encap_src,encap_dst,ENCAP,prp...>(src.get(id),this->get(obj_it.get()));
+		object_s_di<encap_src,encap_dst,OBJ_ENCAP,prp...>(src.get(id),this->get(obj_it.get()));
 
 		++id;
 		++obj_it;
