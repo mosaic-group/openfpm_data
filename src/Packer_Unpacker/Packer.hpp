@@ -256,7 +256,7 @@ public:
 
 	template<int ... prp> static void packRequest(T & obj, std::vector<size_t> & v)
 	{
-		obj.packRequest<prp...>(v);
+		obj.template packRequest<prp...>(v);
 	};
 
 	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, Pack_stat & sts)
@@ -264,7 +264,7 @@ public:
 #ifdef DEBUG
 		std::cout << "Inside vector pack() function! (packer.hpp)" << std::endl;
 #endif
-		obj.pack<prp...>(mem, sts);
+		obj.template pack<prp...>(mem, sts);
 	};
 };
 
@@ -281,22 +281,22 @@ public:
 
 	template<int ... prp> static void packRequest(T & obj, std::vector<size_t> & v)
 	{
-		obj.packRequest<prp...>(v);
+		obj.template packRequest<prp...>(v);
 	};
 
 	template<int ... prp> static void packRequest(T & obj, grid_key_dx_iterator_sub<T::dims> & sub, std::vector<size_t> & v)
 	{
-		obj.packRequest<prp...>(sub, v);
+		obj.template packRequest<prp...>(sub, v);
 	};
 
 	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, Pack_stat & sts)
 	{
-		obj.pack<prp...>(mem, sts);
+		obj.template pack<prp...>(mem, sts);
 	}
 
 	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, grid_key_dx_iterator_sub<T::dims> & sub_it, Pack_stat & sts)
 	{
-		obj.pack<prp...>(mem, sub_it, sts);
+		obj.template pack<prp...>(mem, sub_it, sts);
 	}
 
 };
