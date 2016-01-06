@@ -88,9 +88,39 @@ public:
 			k[i] = -1;
 	}
 
-	/* \brief sum a grid_key to the grid_key
+	/* \brief sum a grid_key
 	 *
 	 * \param comb combination (or relative movement)
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
+	inline grid_key_dx<dim> & operator+=(const grid_key_dx<dim> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			k[i] += p.k[i];
+
+		return *this;
+	}
+
+	/* \brief sum a grid_key
+	 *
+	 * \param comb combination (or relative movement)
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
+	inline grid_key_dx<dim> & operator-=(const grid_key_dx<dim> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			k[i] -= p.k[i];
+
+		return *this;
+	}
+
+	/* \brief sum a grid_key to the grid_key
+	 *
+	 * \param p grid_key to sum
 	 *
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
@@ -212,6 +242,16 @@ public:
 		}
 
 		return p;
+	}
+
+	/*! \brief convert the information into a string
+	 *
+	 * \return a string
+	 *
+	 */
+	std::string to_string()
+	{
+		return this->toPointS().toString();
 	}
 
 	/*! \brief Convert to a point the grid_key_dx
