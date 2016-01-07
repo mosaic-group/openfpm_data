@@ -41,7 +41,7 @@ struct pack_cond<true, T1, Memory1, prp...>
 {
 	void packing(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Pack_stat & sts)
 	{
-	   for (int i = 0; i < obj.size(); i++)
+	   for (size_t i = 0; i < obj.size(); i++)
 		   obj.get(i).template pack<prp...>(mem, sts);
 	}
 };
@@ -70,7 +70,7 @@ struct packMem_cond<true, T1>
 	{
 		size_t res = 0;
 		size_t count = grow_policy_double::grow(0,n) - obj.size();
-		for (int i = 0; i < n; i++) {
+		for (size_t i = 0; i < n; i++) {
 			res += obj.get(i).packMem(n,0);
 		}
 #ifdef DEBUG

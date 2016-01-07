@@ -45,6 +45,7 @@
 #include <vector>
 #include "se_grid.hpp"
 #include "memory/HeapMemory.hpp"
+#include "memory/PtrMemory.hpp"
 #include "grid_common.hpp"
 #include "util/se_util.hpp"
 #include "iterators/grid_key_dx_iterator.hpp"

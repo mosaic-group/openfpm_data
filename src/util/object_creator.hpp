@@ -10,6 +10,7 @@
 #include "util_debug.hpp"
 #include "check_no_pointers.hpp"
 #include "util/for_each_ref.hpp"
+#include <iostream>
 
 /*! \brief functor for for_each algorithm
  *
