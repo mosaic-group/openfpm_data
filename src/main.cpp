@@ -9,3 +9,4 @@
 #include "CSVWriter_unit_tests.hpp"
 #include "GraphMLWriter_unit_tests.hpp"
 #include "VTKWriter_unit_tests.hpp"
+#include "Plot/Plot_unit_tests.hpp"
