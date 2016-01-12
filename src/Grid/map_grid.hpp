@@ -346,8 +346,6 @@ public:
 		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
 		typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
 
-		typedef openfpm::vector<typename grid_cpu<dim,T,S,Mem>::value_type,PtrMemory,openfpm::grow_policy_identity> stype2;
-
 		size_t size = stype::template calculateMem(sub_it.getVolume(),0);
 
 		// Create an object over the preallocated memory (No allocation is produced)

@@ -51,6 +51,13 @@ public:
 	}
 
 	//! Construct a grid key from a list of numbers
+	template<typename ...T> inline grid_key_dx(const comb<dim> & cmb)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			k[i] = cmb[i];
+	}
+
+	//! Construct a grid key from a list of numbers
 	template<typename ...T> inline grid_key_dx(const size_t v,const T...t)
 	{
 #ifdef DEBUG

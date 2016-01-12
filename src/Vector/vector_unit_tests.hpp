@@ -708,6 +708,38 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 #endif
 }
 
+BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
+{
+	openfpm::vector<openfpm::vector<float>> v1;
+
+	for (size_t i = 0; i < 5; i++)
+	{
+		v1.add();
+		for (size_t j = 0; j < 6; j++)
+		{
+			v1.get(i).add(j);
+		}
+	}
+
+	v1.save("test_save");
+
+	openfpm::vector<openfpm::vector<float>> v2;
+
+	v2.load("test_save");
+
+	// check the v1 and v2 match
+
+	BOOST_REQUIRE_EQUAL(v1.size(),v2.size());
+	for (size_t i = 0; i < v1.size(); i++)
+	{
+		BOOST_REQUIRE_EQUAL(v1.get(i).size(),v2.get(i).size());
+		for (size_t j = 0; j < 6; j++)
+		{
+			BOOST_REQUIRE_EQUAL(v1.get(i).get(j),v2.get(i).get(j));
+		}
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif

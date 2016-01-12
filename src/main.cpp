@@ -12,7 +12,6 @@
 
 #include "Packer_Unpacker/Packer_unit_tests.hpp"
 #include "Packer_Unpacker/Packer_nested_tests.hpp"
-#include "Grid/grid_performance_tests.hpp"
 #include "util/copy_compare/meta_cc_unit_tests.hpp"
 #include "util/variadic_to_vmpl_unit_test.hpp"
 #include "Space/Shape/Point_unit_test.hpp"
@@ -29,3 +28,6 @@
 #include "Grid/grid_unit_tests.hpp"
 #include "Grid/grid_sm_unit_tests.hpp"
 #include "util/mathutil_unit_test.hpp"
+#ifdef PERFORMANCE_TEST
+#include "performance.hpp"
+#endif

@@ -85,10 +85,6 @@ public:
 	 */
 	inline static void pack(ExtPreAlloc<Mem> & ext, const T & obj, Pack_stat & sts)
 	{
-#ifdef DEBUG
-		if (ext.ref() == 0)
-			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
-#endif
 		ext.allocate(sizeof(T));
 		*(T *)ext.getPointer() = obj;
 
@@ -127,10 +123,6 @@ public:
 	 */
 	inline static void pack(ExtPreAlloc<Mem> & ext, const T & obj, Pack_stat & sts, size_t n)
 	{
-#ifdef DEBUG
-		if (ext.ref() == 0)
-			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
-#endif
 		//Pack the size of a vector
 		Packer<size_t, Mem>::pack(ext,obj.size(),sts);
 

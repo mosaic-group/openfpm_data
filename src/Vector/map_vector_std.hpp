@@ -395,6 +395,15 @@ public:
 		base = v.base;
 	}
 
+	/*! \brief Initializer from constructor
+	 *
+	 * \param v Initializer list
+	 *
+	 */
+	vector(const std::initializer_list<T> & v)
+	:base(v)
+	{}
+
 	//! Constructor from another vector
 	vector(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v) noexcept
 	:v_size(0),err_code(0)

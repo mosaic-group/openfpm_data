@@ -186,11 +186,6 @@
 	template<int ... prp> void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts)
 	{
 #ifdef DEBUG
-		if (mem.ref() == 0)
-			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
-#endif
-
-#ifdef DEBUG
 		std::cout << "Inside pack() function! (map_vector_std)" << std::endl;
 #endif
 		pack_cond<has_pack<T>::type::value, T, HeapMemory, prp...> p;
@@ -228,4 +223,80 @@
 		unpack_cond<has_pack<T>::type::value, T, HeapMemory, prp...> unp;
 		unp.unpacking(mem, *this, ps);
 
+	}
+	
+	/*! \brief Save this object into file
+	 * 
+	 * \param file filename
+	 * 
+	 * \return true if succed
+	 * 
+	 */
+	bool save(std::string file)
+	{
+		std::vector<size_t> pap_prp;
+		
+		Packer<openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR>,HeapMemory>::packRequest(*this,pap_prp);
+
+		// Calculate how much preallocated memory we need to pack all the objects
+		size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+
+		// allocate the memory
+		HeapMemory pmem;
+		pmem.allocate(req);
+		ExtPreAlloc<HeapMemory> mem(pap_prp,pmem);
+
+		//Packing
+
+		Pack_stat sts;
+		Packer<openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR>,HeapMemory>::pack(mem,*this,sts);
+
+		// Save into a binary file
+	    std::ofstream dump (file, std::ios::out | std::ios::binary);
+	    dump.write ((const char *)pmem.getPointer(), pmem.size());
+	    
+	    return true;
+	}
+	
+	/*! \brief Load this object from file
+	 * 
+	 * \param file filename
+	 * 
+	 * \return true if succed
+	 * 
+	 */
+	bool load(std::string file)
+	{
+	    std::ifstream fs (file, std::ios::in | std::ios::binary | std::ios::ate );
+	    if (fs.is_open() == false)
+	    	return false;
+	    
+	    // take the size of the file
+	    size_t sz = fs.tellg();
+	    
+	    fs.close();
+	    
+	    // reopen the file without ios::ate to read
+	    std::ifstream input (file, std::ios::in | std::ios::binary );
+	    if (input.is_open() == false)
+	    	return false;
+	    
+	    // Create the HeapMemory and the ExtPreAlloc memory
+	    std::vector<size_t> pap_prp;
+	    pap_prp.push_back(sz);
+	    HeapMemory pmem;
+		ExtPreAlloc<HeapMemory> mem(pap_prp,pmem);
+		
+		// read
+	    input.read((char *)pmem.getPointer(), sz);
+	    
+	    //close the file
+	    input.close();
+		
+		//Unpacking
+		Unpack_stat ps;
+
+	 	Unpacker<openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR>,HeapMemory>::unpack(mem,*this,ps);
+	 	
+	 	return true;
 	}

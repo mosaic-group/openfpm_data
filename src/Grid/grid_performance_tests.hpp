@@ -9,15 +9,9 @@
 #define OPENFPM_DATA_SRC_GRID_GRID_PERFORMANCE_TESTS_HPP_
 
 #include "grid_util_test.hpp"
-#include "timer.hpp"
 
-#define N_STAT 256
-#define N_STAT_SMALL 32
-#define N_TRY 8
-
-#ifdef PERFORMANCE_TEST
-
-BOOST_AUTO_TEST_SUITE( grid_performance )
+openfpm::vector<std::string> testsg;
+openfpm::vector<float> per_timesg;
 
 BOOST_AUTO_TEST_CASE(grid_performance_set_obj)
 {
@@ -58,7 +52,8 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_obj)
 		sleep(5);
 	}
 
-	std::cout << "Time : " <<  times[0] << "s ";
+	testsg.add("Grid so");
+	per_timesg.add(times[0]);
 
 }
 
@@ -99,7 +94,8 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_other_grid)
 		sleep(5);
 	}
 
-	std::cout << "Time : " <<  times[0] << "s ";
+	testsg.add("Grid sog");
+	per_timesg.add(times[0]);
 
 }
 
@@ -140,7 +136,8 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_other_grid_encap)
 		sleep(5);
 	}
 
-	std::cout << "Time : " <<  times[0] << "s ";
+	testsg.add("Grid soge");
+	per_timesg.add(times[0]);
 }
 
 BOOST_AUTO_TEST_CASE(grid_performance_duplicate)
@@ -173,11 +170,8 @@ BOOST_AUTO_TEST_CASE(grid_performance_duplicate)
 		sleep(5);
 	}
 
-	std::cout << "Time : " <<  times[0] << "s ";
+	testsg.add("Grid dup");
+	per_timesg.add(times[0]);
 }
-
-BOOST_AUTO_TEST_SUITE_END()
-
-#endif
 
 #endif /* OPENFPM_DATA_SRC_GRID_GRID_PERFORMANCE_TESTS_HPP_ */

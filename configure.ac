@@ -60,6 +60,28 @@ if test x"$test_cov" = x"yes"; then
 	CXXFLAGS="$CXXFLAGS  -fprofile-arcs -ftest-coverage "
 fi
 
+###### Check for performance test
+
+AC_MSG_CHECKING(whether to build with performance test)
+test_per=no
+AC_ARG_ENABLE(test-performance,
+        AC_HELP_STRING(
+            [--enable-test-performance],
+            [enable test performance]
+        ),
+        test_per="$enableval"
+)
+
+
+
+AC_MSG_RESULT($test_per)
+if test x"$test_per" = x"yes"; then
+        AC_DEFINE([PERFORMANCE_TEST],[],[Test performance mode])
+fi
+
+###### Check for se-class1
+
+
 ###### Check for se-class1
 
 AC_MSG_CHECKING(whether to build with security enhancement class1)
@@ -179,7 +201,7 @@ fi
 
 ####### include openfpm_devices include path
 
-INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src"
+INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_io/src"
 
 ####### Checking for GPU support
 
