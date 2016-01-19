@@ -192,7 +192,7 @@ public:
 	 *
 	 */
 
-	template<unsigned int b> T getBase(const unsigned int i)
+	template<unsigned int b> T getBase(const unsigned int i) const
 	{
 		return boost::fusion::at_c<b>(data)[i];
 	}
@@ -688,7 +688,7 @@ public:
        \endverbatim
 	 *
 	 */
-	void enlarge(Box<dim,T> & gh)
+	void enlarge(const Box<dim,T> & gh)
 	{
 		typedef ::Box<dim,T> g;
 

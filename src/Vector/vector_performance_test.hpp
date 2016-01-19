@@ -8,7 +8,7 @@
 #ifndef OPENFPM_DATA_SRC_VECTOR_VECTOR_PERFORMANCE_TEST_HPP_
 #define OPENFPM_DATA_SRC_VECTOR_VECTOR_PERFORMANCE_TEST_HPP_
 
-#define NADD 128*128
+#define NADD 128*128*128
 
 openfpm::vector<std::string> testsv;
 openfpm::vector<float> per_timesv;
@@ -55,8 +55,12 @@ BOOST_AUTO_TEST_CASE(vector_add_performance)
 			{
 				v1.add(p);
 			}
+
+			t.stop();
+			times[i] = t.getcputime();
 		}
 		std::sort(times.begin(),times.end());
+
 		sleep(5);
 	}
 
@@ -64,5 +68,37 @@ BOOST_AUTO_TEST_CASE(vector_add_performance)
 	per_timesv.add(times[0]);
 }
 
+/////// THIS IS NOT A TEST IT WRITE THE PERFORMANCE RESULT ///////
+
+BOOST_AUTO_TEST_CASE(vector_performance_write_report)
+{
+	openfpm::vector<std::string> yn;
+	openfpm::vector<openfpm::vector<float>> y;
+
+	std::cout << "Write vector report\n";
+
+	// Get the directory of the performance test files
+	std::string per_dir(test_dir);
+
+	load_and_combine(per_dir + std::string("/previous_measurev"),y,per_timesv,testsv.size());
+
+	// Adding the dataset names
+	if (y.size() != 0)
+	{
+		for (size_t j = 0; j < y.get(0).size(); j++)
+			yn.add("config " + std::to_string(j));
+	}
+
+	// Google charts options
+	GCoptions options;
+
+	options.title = std::string("Vector Performances");
+	options.yAxis = std::string("Time (seconds)");
+	options.xAxis = std::string("Benchmark");
+	options.stype = std::string("bars");
+
+	cg.addHTML("<h2>Vector performance test</h2>");
+	cg.AddColumsGraph(testsv,y,yn,options);
+}
 
 #endif /* OPENFPM_DATA_SRC_VECTOR_VECTOR_PERFORMANCE_TEST_HPP_ */

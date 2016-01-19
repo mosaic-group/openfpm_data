@@ -94,15 +94,15 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	template<unsigned int dim_s,typename Mem, typename S>SpaceBox(const encapc<dim_s,Box<dim,S>,Mem> & box)
+	template<unsigned int dim_s,typename Mem>SpaceBox(const encapc<dim_s,Box<dim,T>,Mem> & box)
 	{
 		// for each dimension set high and low
 
 		for (size_t d = 0 ; d < dim ; d++)
-		{this->setLow(d,box.template get<Box<dim,S>::p1>()[d]);}
+		{this->setLow(d,box.template get<Box<dim,T>::p1>()[d]);}
 
 		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,box.template get<Box<dim,S>::p2>()[d]);}
+		{this->setHigh(d,box.template get<Box<dim,T>::p2>()[d]);}
 	}
 
 	/*! \brief Constructor from a Box
@@ -110,16 +110,15 @@ class SpaceBox : public Box<dim,T>
 	 * \param box box (Encapsulated)
 	 *
 	 */
-
-	template<unsigned int dim_s,typename Mem, typename S>SpaceBox(const encapc<dim_s,SpaceBox<dim,S>,Mem> & box)
+	template<unsigned int dim_s,typename Mem>SpaceBox(const encapc<dim_s,SpaceBox<dim,T>,Mem> & box)
 	{
 		// for each dimension set high and low
 
 		for (size_t d = 0 ; d < dim ; d++)
-		{this->setLow(d,box.template get<Box<dim,S>::p1>()[d]);}
+		{this->setLow(d,box.template get<Box<dim,T>::p1>()[d]);}
 
 		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,box.template get<Box<dim,S>::p2>()[d]);}
+		{this->setHigh(d,box.template get<Box<dim,T>::p2>()[d]);}
 	}
 
 	/*! \brief Constructor from initializer list
@@ -150,7 +149,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	void rescale(float (& sp)[dim])
+	void rescale(T (& sp)[dim])
 	{
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setHigh(d,this->getLow(d) + (this->getHigh(d) -this->getLow(d)) * sp[d]);}
@@ -162,7 +161,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	void rescale(size_t (& sp)[dim])
+	template<typename S> void rescale(S (& sp)[dim])
 	{
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setHigh(d,this->getLow(d) + (this->getHigh(d) -this->getLow(d)) * sp[d]);}
@@ -176,7 +175,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	void mul(float (& sp)[dim])
+	void mul(T (& sp)[dim])
 	{
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setLow(d,this->getLow(d) * sp[d]);}
@@ -193,7 +192,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	void mul(size_t (& sp)[dim])
+	template<typename S> void mul(S (& sp)[dim])
 	{
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setLow(d,this->getLow(d) * sp[d]);}
@@ -223,18 +222,5 @@ class SpaceBox : public Box<dim,T>
 
 #include "Grid/Encap.hpp"
 
-/*! \brief It make explicit the inheritance of SpaceBox to Box
- * for encap
- *
- * \param dim Dimensionality of the grid
- * \param T type of object the grid store
- * \param Mem suppose to be a boost::fusion::vector of arrays
- *
- */
-
-template<unsigned int dim,typename T,typename Mem>
-class encapc<dim,SpaceBox<dim,T>,Mem> : encapc<dim,Box<dim,T>,Mem>
-{
-};
 
 #endif

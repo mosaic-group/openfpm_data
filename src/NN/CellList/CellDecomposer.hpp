@@ -76,7 +76,7 @@ public:
 	 * \param orig origin point
 	 *
 	 */
-	inline void setTransform(Matrix<dim,T> & mat, Point<dim,T> & orig)
+	inline void setTransform(const Matrix<dim,T> & mat, const Point<dim,T> & orig)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			sh.get(i) = orig.get(i);
@@ -142,10 +142,9 @@ public:
 	 *
 	 * \param mat Matrix transformation
 	 * \param orig origin point
-	 * \param crd coordinate
 	 *
 	 */
-	inline void setTransform(Matrix<dim,T> & mat, Point<dim,T> & orig, size_t crd)
+	inline void setTransform(const Matrix<dim,T> & mat, const Point<dim,T> & orig)
 	{
 
 	}
@@ -370,7 +369,7 @@ public:
 	 */
 	inline grid_key_dx<dim> getCellGrid(const T (& pos)[dim]) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 #endif
@@ -380,7 +379,7 @@ public:
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space\n";
 #endif
@@ -402,7 +401,7 @@ public:
 	 */
 	grid_key_dx<dim> getCellGrid(const Point<dim,T> pos) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer\n";
 #endif
@@ -412,7 +411,7 @@ public:
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space\n";
 #endif
@@ -433,7 +432,7 @@ public:
 	 */
 	size_t getCell(const T (& pos)[dim]) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 
@@ -445,7 +444,7 @@ public:
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
@@ -466,7 +465,7 @@ public:
 	 */
 	size_t getCell(const Point<dim,T> & pos) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 
@@ -500,7 +499,7 @@ public:
 	template<typename Mem> size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos) const
 	{
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (tot_n_cell == 0)
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
 
@@ -512,7 +511,7 @@ public:
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 #endif
@@ -580,20 +579,6 @@ public:
 	 * \param pad padding cell
 	 *
 	 */
-	void setDimensions(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad)
-	{
-		this->box = box;
-		this->gr_cell.setDimensions(div);
-		Initialize(pad,div);
-	}
-
-	/*! \brief Set the domain to decompose
-	 *
-	 * \param box Domain to decompose
-	 * \param div array with the number of cells on each dimensions
-	 * \param pad padding cell
-	 *
-	 */
 	void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad)
 	{
 		this->box = box;
@@ -610,29 +595,12 @@ public:
 	 * \param pad padding cell
 	 *
 	 */
-	void setDimensions(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
+	void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const Matrix<dim,T> & mat, const Point<dim,T> & orig, const size_t pad)
 	{
 		t.setTransform(mat,orig);
 		this->box = box;
 		this->gr_cell.setDimensions(div);
-		Initialize(pad);
-	}
-
-	/*! \brief Set the cell decomposition parameters
-	 *
-	 * \param box Domain to decompose
-	 * \param div array with the number of cells on each dimensions
-	 * \param mat transformation matrix the cell space is transformed by p' = A * p
-	 * \param orig origin of the cell decomposition
-	 * \param pad padding cell
-	 *
-	 */
-	void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
-	{
-		t.setTransform(mat,orig);
-		this->box = box;
-		this->gr_cell.setDimensions(div);
-		Initialize(pad);
+		Initialize(pad,div);
 	}
 
 	/*! \brief Constructor

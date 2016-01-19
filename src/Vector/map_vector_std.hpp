@@ -197,6 +197,23 @@ public:
 		return base[base.size()-1];
 	}
 
+	/*! \brief Get the last element
+	 *
+	 * \return the last element as reference
+	 *
+	 */
+	inline const T & last() const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		if (base.size() == 0)
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
+#endif
+		return base[base.size()-1];
+	}
+
 	/*! \brief Duplicate the vector
 	 *
 	 * \return the duplicated vector

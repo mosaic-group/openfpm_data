@@ -151,7 +151,7 @@ public:
 
 		// Initialize point transformation
 
-		Initialize(sbox,div,pad,slot);
+		Initialize(sbox,div,orig,pad,slot);
 	}
 
 	/*! Initialize the cell list constructor
@@ -162,9 +162,11 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=16)
+	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig , const size_t pad = 1, size_t slot=16)
 	{
-		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, pad);
+		Matrix<dim,T> mat;
+
+		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, orig, pad);
 		this->slot = slot;
 		this->orig = orig;
 
@@ -240,12 +242,67 @@ public:
 		}
 	}
 
-	/*! \brief Default constructor
-	 *
-	 */
+	//! Default Constructor
 	CellList()
 	:slot(16)
+	{};
+
+	//! Copy constructor
+	CellList(const CellList<dim,T,FAST,transform,base> & cell)
 	{
+		this->operator=(cell);
+	}
+
+	//! Copy constructor
+	CellList(CellList<dim,T,FAST,transform,base> && cell)
+	{
+		this->operator=(cell);
+	}
+
+	/*! \brief Constructor from a temporal object
+	 *
+	 * \param cell Cell list structure
+	 *
+	 */
+	CellList<dim,T,FAST,transform,base> & operator=(CellList<dim,T,FAST,transform,base> && cell)
+	{
+		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
+		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
+		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
+
+		size_t tslot = slot;
+		slot = cell.slot;
+		cell.slot = tslot;
+
+		cl_n.swap(cell.cl_n);
+		cl_base.swap(cell.cl_base);
+
+		Point<dim,T> torig = orig;
+		orig = cell.orig;
+		cell.orig = torig;
+
+		return this;
+	}
+
+	/*! \brief Constructor from a temporal object
+	 *
+	 * \param cell Cell list structure
+	 *
+	 */
+	CellList<dim,T,FAST,transform,base> & operator=(const CellList<dim,T,FAST,transform,base> & cell)
+	{
+		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
+		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
+		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
+
+		slot = cell.slot;
+
+		cl_n = cell.cl_n;
+		cl_base = cell.cl_base;
+
+		orig = cell.orig;
+
+		return *this;
 	}
 
 	/*! \brief Cell list constructor
@@ -328,7 +385,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos,1);
+		size_t cell_id = this->getCell(pos);
 
 		// add the element to the cell
 

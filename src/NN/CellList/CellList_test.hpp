@@ -156,8 +156,6 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	}
 
 
-	//! [Usage of the neighborhood iterator]
-
 	// Check we have 1 object per cell
 
 	// Create a grid iterator
@@ -168,6 +166,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 	while (g_it_s.isNext())
 	{
 		// remove 1 particle on each cell
+
+		//! [Usage of the neighborhood iterator]
 
 		Point<dim,T> key = Point<dim,T>(g_it_s.get().toPoint());
 		key = key * spacing + offset[0];
@@ -184,11 +184,12 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 			++NN;
 		}
 
+		//! [Usage of the neighborhood iterator]
+
 		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim));
 		++g_it_s;
 	}
 
-	//! [Usage of the neighborhood iterator]
 }
 
 BOOST_AUTO_TEST_SUITE( CellList_test )

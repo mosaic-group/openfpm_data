@@ -253,6 +253,8 @@
 
 		// Save into a binary file
 	    std::ofstream dump (file, std::ios::out | std::ios::binary);
+	    if (dump.is_open() == false)
+	    	return false;
 	    dump.write ((const char *)pmem.getPointer(), pmem.size());
 	    
 	    return true;

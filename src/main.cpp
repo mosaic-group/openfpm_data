@@ -31,3 +31,4 @@
 #ifdef PERFORMANCE_TEST
 #include "performance.hpp"
 #endif
+#include "unit_test_init_cleanup.hpp"
