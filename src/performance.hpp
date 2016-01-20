@@ -27,7 +27,7 @@ const char * test_dir;
 // Declaration of functions
 
 
-void load_and_combine(std::string file, openfpm::vector<openfpm::vector<float>> & y, openfpm::vector<float> & per_times, size_t nc);
+void load_and_combine(std::string file, openfpm::vector<openfpm::vector<float>> & y, openfpm::vector<float> & per_times);
 void speedup_calculate(openfpm::vector<openfpm::vector<float>> & y_ref_sup, openfpm::vector<openfpm::vector<float>> & y, openfpm::vector<openfpm::vector<float>> & y_ref ,openfpm::vector<std::string> & yn);
 
 BOOST_AUTO_TEST_SUITE( performance )
@@ -195,17 +195,18 @@ void load_and_combine_commit(std::string file, openfpm::vector<configuration> & 
  * \param per_times for each test the result
  *
  */
-void load_and_combine(std::string file, openfpm::vector<openfpm::vector<float>> & y, openfpm::vector<float> & per_times, size_t nc)
+void load_and_combine(std::string file, openfpm::vector<openfpm::vector<float>> & y, openfpm::vector<float> & per_times)
 {
 	// Load the previous measure and combine the previous measure with the actual measure
 	y.clear();
 
 	y.load(file);
-	if (y.size() == 0)
-		y.resize(nc);
 
-	if (nc == 0)
+	if (per_times.size() == 0)
 		return;
+
+	if (y.size() == 0)
+		y.resize(per_times.size());
 
 	for(size_t i = 0 ; i < y.size() ; i++)
 	{

@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_obj)
 
 			t.stop();
 
-			times[i] = t.getcputime();
+			times[i] = t.getwct();
 		}
 		std::sort(times.begin(),times.end());
 		sleep(5);
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_other_grid)
 
 			t.stop();
 
-			times[i] = t.getcputime();
+			times[i] = t.getwct();
 		}
 		std::sort(times.begin(),times.end());
 		sleep(5);
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_other_grid_encap)
 
 			t.stop();
 
-			times[i] = t.getcputime();
+			times[i] = t.getwct();
 		}
 		std::sort(times.begin(),times.end());
 		sleep(5);
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_duplicate)
 
 			t.stop();
 
-			times[i] = t.getcputime();
+			times[i] = t.getwct();
 		}
 		std::sort(times.begin(),times.end());
 		sleep(5);
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_write_report)
 	openfpm::vector<openfpm::vector<float>> y_ref;
 	y_ref.load(per_dir + std::string("/ref_timesg"));
 
-	load_and_combine(per_dir + std::string("/previous_measureg"),y,per_timesg,testsg.size());
+	load_and_combine(per_dir + std::string("/previous_measureg"),y,per_timesg);
 
 	// Adding the dataset names
 	if (y.size() != 0)

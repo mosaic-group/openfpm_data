@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(vector_add_performance)
 			}
 
 			t.stop();
-			times[i] = t.getcputime();
+			times[i] = t.getwct();
 		}
 		std::sort(times.begin(),times.end());
 
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(vector_performance_write_report)
 	// Get the directory of the performance test files
 	std::string per_dir(test_dir);
 
-	load_and_combine(per_dir + std::string("/previous_measurev"),y,per_timesv,testsv.size());
+	load_and_combine(per_dir + std::string("/previous_measurev"),y,per_timesv);
 
 	// Adding the dataset names
 	if (y.size() != 0)
