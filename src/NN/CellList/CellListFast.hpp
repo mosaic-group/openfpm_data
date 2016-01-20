@@ -281,7 +281,7 @@ public:
 		orig = cell.orig;
 		cell.orig = torig;
 
-		return this;
+		return *this;
 	}
 
 	/*! \brief Constructor from a temporal object
