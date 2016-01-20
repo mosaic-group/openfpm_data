@@ -11,13 +11,13 @@
 #include "Plot/GoogleChart.hpp"
 #include "timer.hpp"
 
-//#define N_STAT 256
-//#define N_STAT_SMALL 32
-//#define N_TRY 8
+#define N_STAT 256
+#define N_STAT_SMALL 32
+#define N_TRY 8
 
-#define N_STAT 1
-#define N_STAT_SMALL 1
-#define N_TRY 1
+//#define N_STAT 1
+//#define N_STAT_SMALL 1
+//#define N_TRY 1
 
 #ifdef PERFORMANCE_TEST
 
