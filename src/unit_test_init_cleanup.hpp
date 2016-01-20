@@ -12,6 +12,7 @@ struct ut_start
 {
     ut_start()
     {
+#ifdef PERFORMANCE_TEST
     	test_dir = getenv("OPENFPM_PERFORMANCE_TEST_DIR");
 
     	if (test_dir == NULL)
@@ -19,6 +20,7 @@ struct ut_start
     		std::cerr << "Error: " __FILE__ << ":" << __LINE__ << " in order to run the performance test you must set the environment variable $OPENFPM_PERFORMANCE_TEST_DIR to the test or an empty directory";
     		return;
     	}
+#endif
     }
     ~ut_start()
     {
