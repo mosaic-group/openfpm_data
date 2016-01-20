@@ -287,7 +287,7 @@ void write_performance_report()
 		config_list += pcommit.get(i).toHTML(i);
 
 	cg.addHTML(config_list);
-	cg.write(test_dir + std::string("/gc_out.html"));
+	cg.write(test_dir + std::string("/openfpm_data_performance.html"));
 }
 
 #endif
