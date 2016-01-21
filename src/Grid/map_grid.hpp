@@ -643,7 +643,7 @@ public:
 
 			while(it.isNext())
 			{
-				grid_new.get_o(it.get()) = this->get_o(it.get());
+				grid_new.set(it.get(),*this,it.get());
 
 				++it;
 			}

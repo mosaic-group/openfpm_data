@@ -65,7 +65,8 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_other_grid)
 	c3.setMemory();
 
 	fill_grid<3>(c3);
-	grid_cpu<3, Point_test<float> > c1 = c3.duplicate();
+	grid_cpu<3, Point_test<float> > c1(sz);
+	c1.setMemory();
 
 	std::vector<double> times(N_STAT + 1);
 	times[0] = 1000;
@@ -107,7 +108,8 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_other_grid_encap)
 	c3.setMemory();
 
 	fill_grid<3>(c3);
-	grid_cpu<3, Point_test<float> > c1 = c3.duplicate();
+	grid_cpu<3, Point_test<float> > c1(sz);
+	c1.setMemory();
 
 	std::vector<double> times(N_STAT + 1);
 	times[0] = 1000;
@@ -211,7 +213,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_write_report)
 	g_test_desc << "<strong>Grid so:</strong> Initialize each element of the grid<br>";
 	g_test_desc << "<strong>Grid sog:</strong> Manual copy of two grids<br>";
 	g_test_desc << "<strong>Grid soge:</strong> Manual copy of two grids in a different way<br>";
-	g_test_desc << "<strong>Grid dup:</strong> Duplication of the grid<br>";
+	g_test_desc << "<strong>Grid dup:</strong> Duplication of the grid (Duplication include grid creation time)<br>";
 
 
 	cg.addHTML(g_test_desc.str());
@@ -228,10 +230,12 @@ BOOST_AUTO_TEST_CASE(grid_performance_write_report)
 	g_test_spdesc << "<h2>Grid speedup</h2>\n";
 	g_test_spdesc << "The previous tests are compared with the best performances ever registered, ";
 	g_test_spdesc << "the banded area indicate the upper and lower bounds of the best registrered performances.<br>";
-	g_test_spdesc << "The lines are the latest 5 test<br>";
-	g_test_spdesc << "<strong>Line inside the area</strong>: The tested configuration has improvement or degradation in performance<br>";
+	g_test_spdesc << "The lines are the latest 5 tests<br>";
+	g_test_spdesc << "<strong>Line inside the area</strong>: The tested configuration has no improvement or degradation in performance<br>";
 	g_test_spdesc << "<strong>Line break the upper bound</strong>: The tested configuration has improvement in performance<br>";
 	g_test_spdesc << "<strong>Line break the lower bound</strong>: The tested configuration has degradation in performance<br>";
+	g_test_spdesc << "<strong>Y axis:</strong> Performance change in percentage from the average of the best registered performances<br>";
+
 
 	cg.addHTML(g_test_spdesc.str());
 	cg.AddPointsGraph(testsg,y_ref_sup,yn,options);
