@@ -457,7 +457,7 @@ public:
 	{
 		if (y.size() == 0)
 		{
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " vector y must be filled";
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " vector y must be filled\n";
 			return;
 		}
 
