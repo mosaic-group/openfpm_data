@@ -245,6 +245,36 @@ BOOST_AUTO_TEST_CASE( box_use)
 	//! [Box is insideNP]
 	}
 
+	{
+	//! [Box is inside]
+
+	Box<2,float> box({0.0,0.0},{1.0,1.0});
+	Point<2,float> p1({0.0,0.0});
+	Point<2,float> p2({0.5,0.5});
+	Point<2,float> p3({1.0,0.5});
+
+	BOOST_REQUIRE_EQUAL(box.isInside(p1),true);
+	BOOST_REQUIRE_EQUAL(box.isInside(p2),true);
+	BOOST_REQUIRE_EQUAL(box.isInside(p3),true);
+
+	//! [Box is inside]
+	}
+
+	{
+	//! [Box is insideNB]
+
+	Box<2,float> box({0.0,0.0},{1.0,1.0});
+	Point<2,float> p1({0.0,0.0});
+	Point<2,float> p2({0.5,0.5});
+	Point<2,float> p3({1.0,0.5});
+
+	BOOST_REQUIRE_EQUAL(box.isInsideNB(p1),false);
+	BOOST_REQUIRE_EQUAL(box.isInsideNB(p2),true);
+	BOOST_REQUIRE_EQUAL(box.isInsideNB(p3),false);
+
+	//! [Box is insideNB]
+	}
+
 	Box<3,float> b1({1.0,2.4,5.3},{6.0,7.9,9.9});
 	Box<3,float> b2 = b1;
 

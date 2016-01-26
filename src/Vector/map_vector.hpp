@@ -211,6 +211,27 @@ namespace openfpm
 			{sz[0] = arg;}
 		}
 
+#ifdef SE_CLASS1
+
+		/*! \brief Check that id is not bigger than the vector size
+		 *
+		 * \param id element id
+		 *
+		 */
+
+		void check_overflow(size_t id) const
+		{
+			if (id >= v_size)
+			{
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 2001;
+				ACTION_ON_ERROR(VECTOR_ERROR);
+			}
+		}
+
+#endif
+
 	public:
 
 		//! it define that it is a vector
@@ -441,6 +462,31 @@ namespace openfpm
 			}
 		}
 
+		/*! \brief Insert an entry in the vector
+		 *
+		 * \size_t key Where to insert the element
+		 *
+		 */
+		void insert(size_t key)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			add();
+
+			long int d_k = (long int)size()-1;
+			long int s_k = (long int)size()-2;
+
+			// keys
+			while (s_k >= (long int)key)
+			{
+				set(d_k,get(s_k));
+				d_k--;
+				s_k--;
+			}
+		}
+
+
 		/*! \brief Remove one entry from the vector
 		 *
 		 * \param key element to remove
@@ -527,7 +573,7 @@ namespace openfpm
 			check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-			VECTOR_OVERFLOW_NATIVE(id)
+			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
 
@@ -550,7 +596,7 @@ namespace openfpm
 			check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-			VECTOR_OVERFLOW_NATIVE(id)
+			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
 
@@ -590,7 +636,7 @@ namespace openfpm
 			check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-			VECTOR_OVERFLOW_NATIVE(id)
+			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
 
@@ -613,7 +659,7 @@ namespace openfpm
 			check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-			VECTOR_OVERFLOW_NATIVE(id)
+			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
 
@@ -724,7 +770,7 @@ namespace openfpm
 			check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-			VECTOR_OVERFLOW_NATIVE(id)
+			check_overflow(id);
 #endif
 			//! copy the element
 			base.set(id,obj);
@@ -742,7 +788,7 @@ namespace openfpm
 			check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-			VECTOR_OVERFLOW_NATIVE(id)
+			check_overflow(id);
 #endif
 			//! copy the element
 			base.set(id,obj);
@@ -761,7 +807,7 @@ namespace openfpm
 			check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-			VECTOR_OVERFLOW_NATIVE(id)
+			check_overflow(id);
 #endif
 			base.set(id,v.base,src);
 		}

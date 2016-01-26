@@ -330,6 +330,58 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 	}
 }
 
+BOOST_AUTO_TEST_CASE(vector_insert )
+{
+	typedef Point_test<float> p;
+
+	openfpm::vector<Point_test<float>> v1;
+
+	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
+	{
+		// Point
+		Point_test<float> p;
+		p.setx(i);
+
+		v1.add(p);
+	}
+
+	BOOST_REQUIRE_EQUAL(v1.size(),V_REM_PUSH);
+
+	// Add one at the first element
+
+	v1.insert(0);
+	v1.template get<p::x>(0) = -9999.0;
+
+	// Add one in the middle
+
+	v1.insert(V_REM_PUSH / 2);
+	v1.template get<p::x>(V_REM_PUSH / 2) = -9999.0;
+
+	// Add one at the end
+
+	v1.insert(v1.size()-1);
+	v1.template get<p::x>(v1.size()-1) = -9999.0;
+
+	BOOST_REQUIRE_EQUAL(v1.size(),V_REM_PUSH + 3);
+
+	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(0), -9999.0);
+	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(V_REM_PUSH / 2), -9999.0);
+	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(v1.size()-1), -9999.0);
+
+	size_t c = 0;
+
+	// Check only odd
+	for (size_t i = 0 ; i < v1.size() ; i++)
+	{
+		if (i == 0 || i == V_REM_PUSH / 2 || i == v1.size()-1)
+			continue;
+
+		BOOST_REQUIRE_EQUAL((size_t)v1.template get<p::x>(i), c);
+
+		c++;
+	}
+}
+
 BOOST_AUTO_TEST_CASE(vector_clear )
 {
 	typedef Point_test<float> p;

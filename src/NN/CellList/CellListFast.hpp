@@ -124,7 +124,7 @@ class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,trans
 public:
 
 	// Object type that the structure store
-	typedef T value_type;
+	typedef typename base::value_type value_type;
 
 	/*! \brief Return the underlying grid information of the cell list
 	 *

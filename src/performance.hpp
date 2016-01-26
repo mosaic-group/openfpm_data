@@ -10,6 +10,7 @@
 
 #include "Plot/GoogleChart.hpp"
 #include "timer.hpp"
+#include "Memleak_check.hpp"
 
 #define N_STAT 256
 #define N_STAT_SMALL 32

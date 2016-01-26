@@ -112,7 +112,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s()
 		size_t n_ele = cl1.getNelements(cell);
 
 		BOOST_REQUIRE_EQUAL(n_ele,2ul);
-		BOOST_REQUIRE_EQUAL(cl1.get(cell,1) - cl1.get(cell,0),1);
+		BOOST_REQUIRE_EQUAL((long int)(cl1.get(cell,1) - cl1.get(cell,0)),1);
 
 		++g_it;
 	}
