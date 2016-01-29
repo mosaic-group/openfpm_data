@@ -114,7 +114,7 @@ public:
 	static void unpack(ExtPreAlloc<Mem> & ext, T & obj, Unpack_stat & ps)
 	{
 #ifdef DEBUG
-		std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " impossible to check the type " << demangle(typeid(T).name()) << " please consider to add a static method \"void noPointers()\" \n" ;
+		std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " impossible to check the type " << demangle(typeid(T).name()) << " please consider to add a static method like \"static bool noPointers() {return true;}\" \n" ;
 #endif
 		memcpy(&obj,(T *)ext.getPointerOffset(ps.getOffset()),sizeof(T));
 
