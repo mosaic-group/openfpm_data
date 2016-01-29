@@ -66,8 +66,7 @@ public:
 	static const unsigned int max_prop = 0;
 };
 
-template<typename V, typename E, template<typename, typename, typename, unsigned int> class VertexList, template<typename, typename, typename, unsigned int> class EdgeList, typename Memory,
-		typename grow_p>
+template<typename V, typename E, template<typename, typename, typename, unsigned int> class VertexList, template<typename, typename, typename, unsigned int> class EdgeList, typename Memory, typename grow_p>
 class Graph_CSR;
 
 /*! \brief Structure used inside GraphCSR an edge
@@ -280,8 +279,8 @@ public:
  *
  */
 
-template<typename V, typename E = no_edge, template<typename, typename, typename, unsigned int> class VertexList = openfpm::vector,
-		template<typename, typename, typename, unsigned int> class EdgeList = openfpm::vector, typename Memory = HeapMemory, typename grow_p = openfpm::grow_policy_double>
+template<typename V, typename E = no_edge, template<typename, typename, typename, unsigned int> class VertexList = openfpm::vector, template<typename, typename, typename, unsigned int> class EdgeList = openfpm::vector, typename Memory = HeapMemory,
+		typename grow_p = openfpm::grow_policy_double>
 class Graph_CSR
 {
 	//! number of slot per vertex
@@ -293,7 +292,7 @@ class Graph_CSR
 	//! Hashmap to access to the global position given the re-mapped one (needed for access the map)
 	std::unordered_map<size_t, size_t> mapToGlobal;
 
-	//! Vector that stores 'id's in the position of the vertex in the main vector (needed to fast access by property 'id')
+	//! Hashmap to access the local vertex given the global one
 	std::unordered_map<size_t, size_t> globalToLocal;
 
 	//! Structure that store the number of adjacent vertex in e_l for each vertex
@@ -427,6 +426,8 @@ public:
 
 		dup.v.swap(v.duplicate());
 		dup.v_l.swap(v_l.duplicate());
+		dup.globalToLocal = globalToLocal;
+		dup.mapToGlobal = mapToGlobal;
 		dup.e.swap(e.duplicate());
 		dup.e_l.swap(e_l.duplicate());
 		dup.e_invalid.swap(e_invalid.duplicate());
@@ -610,7 +611,7 @@ public:
 	 * \return local id
 	 *
 	 */
-	auto getLocalByGlobalId(size_t id, int pid) -> decltype( v.get(globalToLocal.at(0)) )
+	auto getLocalVertexByGlobalId(size_t id) -> decltype( v.get(globalToLocal.at(0)) )
 	{
 		return v.get(globalToLocal.at(id));
 	}
@@ -631,6 +632,16 @@ public:
 		}
 
 		return true;
+	}
+
+	/*! \brief get the local id of a vertex given the global id
+	 *
+	 * \param id global id of the vertex
+	 * \return local id of the vertex
+	 */
+	size_t getLocalIdFromGlobalId(size_t id)
+	{
+		return globalToLocal.at(id);
 	}
 
 	/*! \brief operator to remap vertex to a new position
@@ -693,6 +704,17 @@ public:
 	void resetGlobalToLocalMap()
 	{
 		globalToLocal.clear();
+	}
+
+	/*! \brief map global id to local id
+	 *
+	 * \param g global id
+	 * \param l local index
+	 * \param i id
+	 */
+	void setGlobalMap(size_t g, size_t l, size_t i)
+	{
+		globalToLocal.insert( { g, l });
 	}
 
 	/*! \brief get global id given re-mapped id
@@ -830,7 +852,7 @@ public:
 	inline auto getChildEdge(size_t v, size_t v_e) -> decltype(e.get(0))
 	{
 #ifdef DEBUG
-		if (e >= v_l.template get<0>(v * v_slot))
+		if (v_e >= v_l.template get<0>(v * v_slot))
 		{
 			std::cerr << "Error node " << v << " does not have edge " << v_e
 			<< "\n";
@@ -1038,6 +1060,33 @@ public:
 		return e.get(id_x_end);
 	}
 
+	/*! \brief add edge on the graph and fill source and destination informations
+	 *
+	 * add edge on the graph
+	 *
+	 * \param v1 start vertex
+	 * \param v2 end vertex
+	 *
+	 * \tparam sgid property id filled with the source vertex global id
+	 * \tparam dgid property id filled with the destination vertex global id
+	 */
+
+	template<typename CheckPolicy = NoCheck, int sgid, int dgid> inline auto addEdge(size_t v1, size_t v2, size_t srdgid, size_t dstgid) -> decltype(e.get(0))
+	{
+		//! add an edge
+		long int id_x_end = addEdge_<CheckPolicy>(v1, v2);
+		//! If there is not edge return an invalid edge, is a kind of stub object
+		if (id_x_end == NO_EDGE)
+			return e_invalid.get(0);
+
+		//! set source and destination ids of the edge
+		e.get(id_x_end).template get<sgid>() = srdgid;
+		e.get(id_x_end).template get<dgid>() = dstgid;
+
+		//! return the edge to change the properties
+		return e.get(id_x_end);
+	}
+
 	/*! \brief swap the memory of g with this graph
 	 *
 	 * swap the memory of g with this graph, it is basically used
@@ -1052,6 +1101,8 @@ public:
 		v.swap(g.v);
 		e.swap(g.e);
 		v_l.swap(g.v_l);
+		globalToLocal = g.globalToLocal;
+		mapToGlobal = g.mapToGlobal;
 		e_l.swap(g.e_l);
 		e_invalid.swap(g.e_invalid);
 	}

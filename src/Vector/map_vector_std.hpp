@@ -199,7 +199,7 @@ public:
 	 * \return the duplicated vector
 	 *
 	 */
-	std::vector<T> duplicate()
+	std::vector<T> duplicate() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -417,6 +417,19 @@ public:
 	 *
 	 */
 	void swap(openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		base.swap(v.base);
+	}
+
+	/*! swap the content of the vector
+	 *
+	 * \param v vector to be swapped with
+	 *
+	 */
+	void swap(openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
