@@ -62,3 +62,9 @@ compile
 depcomp
 missing
 src/mem_map
+**/performance/
+previous_measure
+previous_measureg
+previous_measurev
+*.html
+test_save
