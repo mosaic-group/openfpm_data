@@ -32,6 +32,77 @@ template<unsigned int dim ,typename T> class Point
 	//! Property id of the point
 	static const unsigned int x = 0;
 
+	/*! \brief Point constructor from point
+	 *
+	 * \param p the point
+	 *
+	 */
+	inline Point(const Point<dim,T> && p)
+	{
+	    for(size_t i = 0; i < dim ; i++)
+	    {get(i) = p.get(i);}
+	}
+
+	/*! \brief Point constructor from point
+	 *
+	 * \param p the point
+	 *
+	 */
+	inline Point(const Point<dim,T> & p)
+	{
+	    for(size_t i = 0; i < dim ; i++)
+	    {get(i) = p.get(i);}
+	}
+
+	/*! \brief Constructor from an array
+	 *
+	 * \param p array with the coordinate of the point
+	 *
+	 */
+	inline Point(const T (&p)[dim])
+	{
+	    for(size_t i = 0; i < dim ; i++)
+	    {get(i) = p[i];}
+	}
+
+	/*! \brief Point constructor
+	 *
+	 * \param p Point
+	 *
+	 */
+	template <typename S> inline Point(const Point<dim,S> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			get(i) = static_cast<S>(p.get(i));
+	}
+
+	/*! \brief Point constructor
+	 *
+	 * \param p encapc Point
+	 *
+	 */
+	template <unsigned int d, typename M> inline Point(const encapc<d,Point<dim,T>,M> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			get(i) = p.template get<0>()[i];
+	}
+
+	/*! \brief Constructor from a list
+	 *
+	 * [Example] Point<3,float> p({0.0,0.0,1.0})
+	 *
+	 */
+	inline Point(std::initializer_list<T> p1)
+	{
+		size_t i = 0;
+	    for(T x : p1)
+	    {get(i) = x;i++;}
+	}
+
+	//! Default contructor
+	inline Point()
+	{}
+
 	/*! \brief Get coordinate
 	 *
 	 * \param i dimension
@@ -214,6 +285,44 @@ template<unsigned int dim ,typename T> class Point
 		return result;
 	}
 
+	/*! \brief  It calculate the distance between 2 points
+	 *
+	 * Itself (p) and the other point (q)
+	 *
+	 * \parameter q target point
+	 *
+	 * \return the distance
+	 *
+	 */
+	T distance(const Point<dim,T> & q)
+	{
+		T tot = 0.0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			tot += (this->get(i)  - q.get(i)) * (this->get(i)  - q.get(i));
+
+		return sqrt(tot);
+	}
+
+	/*! \brief  It calculate the square distance between 2 points
+	 *
+	 * Itself (p) and the other point (q)
+	 *
+	 * \parameter q target point
+	 *
+	 * \return the square of the distance
+	 *
+	 */
+	T distance2(const Point<dim,T> & q)
+	{
+		T tot = 0.0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			tot += (this->get(i)  - q.get(i)) * (this->get(i)  - q.get(i));
+
+		return tot;
+	}
+
 	/*! \brief Operator subtraction
 	 *
 	 *  it produce a point that is the subtraction of two points
@@ -308,77 +417,6 @@ template<unsigned int dim ,typename T> class Point
 
 		return str;
 	}
-
-	/*! \brief Point constructor from point
-	 *
-	 * \param p the point
-	 *
-	 */
-	inline Point(const Point<dim,T> && p)
-	{
-	    for(size_t i = 0; i < dim ; i++)
-	    {get(i) = p.get(i);}
-	}
-
-	/*! \brief Point constructor from point
-	 *
-	 * \param p the point
-	 *
-	 */
-	inline Point(const Point<dim,T> & p)
-	{
-	    for(size_t i = 0; i < dim ; i++)
-	    {get(i) = p.get(i);}
-	}
-
-	/*! \brief Constructor from an array
-	 *
-	 * \param p array with the coordinate of the point
-	 *
-	 */
-	inline Point(const T (&p)[dim])
-	{
-	    for(size_t i = 0; i < dim ; i++)
-	    {get(i) = p[i];}
-	}
-
-	/*! \brief Point constructor
-	 *
-	 * \param p Point
-	 *
-	 */
-	template <typename S> inline Point(const Point<dim,S> & p)
-	{
-		for (size_t i = 0 ; i < dim ; i++)
-			get(i) = static_cast<S>(p.get(i));
-	}
-
-	/*! \brief Point constructor
-	 *
-	 * \param p encapc Point
-	 *
-	 */
-	template <unsigned int d, typename M> inline Point(const encapc<d,Point<dim,T>,M> & p)
-	{
-		for (size_t i = 0 ; i < dim ; i++)
-			get(i) = p.template get<0>()[i];
-	}
-
-	/*! \brief Constructor from a list
-	 *
-	 * [Example] Point<3,float> p({0.0,0.0,1.0})
-	 *
-	 */
-	inline Point(std::initializer_list<T> p1)
-	{
-		size_t i = 0;
-	    for(T x : p1)
-	    {get(i) = x;i++;}
-	}
-
-	//! Default contructor
-	inline Point()
-	{}
 
 	/*! \brief Return the reference to the value at coordinate i
 	 *

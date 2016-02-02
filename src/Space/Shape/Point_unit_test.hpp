@@ -62,6 +62,17 @@ BOOST_AUTO_TEST_CASE( Point_use )
 
 	//! [norm]
 
+	// distance between two points
+
+	Point<3,float> p1({1.0,1.0,1.0});
+	Point<3,float> p2({2.0,3.0,4.0});
+
+	BOOST_REQUIRE_EQUAL(p1.distance(p2),p2.distance(p1));
+	BOOST_REQUIRE_CLOSE(p1.distance(p1),3.74165738677,0.0001);
+
+	BOOST_REQUIRE_EQUAL(p1.distance2(p2),p2.distance2(p1));
+	BOOST_REQUIRE_CLOSE(p1.distance2(p1),14.0,0.0001);
+
 	std::cout << "Point unit test stop" << "\n";
 }
 

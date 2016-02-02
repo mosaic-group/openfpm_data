@@ -932,15 +932,34 @@ namespace openfpm
 
 		/*! \brief Get iterator over the particles from a particular index
 		 *
+		 * \param start starting point
+		 *
 		 * \return an iterator to iterate from a particular index
 		 *
 		 */
-		vector_key_iterator getIteratorFrom(size_t mark) const
+		vector_key_iterator getIteratorFrom(size_t start) const
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-			return vector_key_iterator(v_size,mark);
+			return vector_key_iterator(v_size,start);
+		}
+
+		/*! \brief Get iterator over the particles from 0 until a particular index
+		 *
+		 * \warning stop point is not included
+		 *
+		 * \param stop stop point
+		 *
+		 * \return an iterator to iterate until a particular index
+		 *
+		 */
+		vector_key_iterator getIteratorTo(size_t stop) const
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			return vector_key_iterator(stop,0);
 		}
 
 		/*! \brief Get the vector elements iterator
