@@ -603,6 +603,31 @@ namespace openfpm
 			return base.get_o(key);
 		}
 
+		/*! \brief Get an element of the vector
+		 *
+		 * \deprecated
+		 *
+		 * exactly as get, exist to keep the compatibility with grid
+		 *
+		 * \param id Element to get
+		 *
+		 * \return the element (encapsulated)
+		 *
+		 */
+
+		inline const typename grid_cpu<1,T>::container get_o(size_t id) const
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+			check_overflow(id);
+#endif
+			grid_key_dx<1> key(id);
+
+			return base.get_o(key);
+		}
+
 		/*! \brief Get the last element of the vector
 		 *
 		 * \return the last element (encapsulated)

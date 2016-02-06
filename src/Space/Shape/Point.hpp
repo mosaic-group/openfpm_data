@@ -21,6 +21,7 @@ template<unsigned int dim ,typename T> class Point
 {
 	public:
 
+	//! coordinate type
 	typedef T coord_type;
 
 	//! boost fusion that store the point
