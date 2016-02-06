@@ -98,6 +98,7 @@ enum file_type
 #define VECTOR_BOX 2
 #define VECTOR_GRIDS 3
 #define VECTOR_ST_GRIDS 4
+#define VECTOR_POINTS 5
 
 template <typename Graph, unsigned int imp>
 class VTKWriter
@@ -109,5 +110,6 @@ class VTKWriter
 #include "VTKWriter_vector_box.hpp"
 #include "VTKWriter_grids.hpp"
 #include "VTKWriter_grids_st.hpp"
+#include "VTKWriter_point_set.hpp"
 
 #endif /* VTKWRITER_HPP_ */

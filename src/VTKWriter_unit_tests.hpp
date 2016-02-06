@@ -8,6 +8,9 @@
 #ifndef VTKWRITER_UNIT_TESTS_HPP_
 #define VTKWRITER_UNIT_TESTS_HPP_
 
+#include "data_type/aggregate.hpp"
+#include <random>
+
 BOOST_AUTO_TEST_SUITE( vtk_writer_test )
 
 /* \brief Sub-domain vertex graph node
@@ -750,6 +753,76 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 
 	// Check that match
 	bool test = compare("vtk_grids_prp.vtk","vtk_grids_prp_test.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
+	}
+}
+
+BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
+{
+	{
+	// Create 3 vectors with random particles
+	openfpm::vector<Point<3,double>> v1ps;
+	openfpm::vector<Point<3,double>> v2ps;
+	openfpm::vector<Point<3,double>> v3ps;
+	openfpm::vector<aggregate<float,float[3]>> v1pp;
+	openfpm::vector<aggregate<float,float[3]>> v2pp;
+	openfpm::vector<aggregate<float,float[3]>> v3pp;
+
+    // set the seed
+	// create the random generator engine
+	std::srand(0);
+    std::default_random_engine eg;
+    std::uniform_real_distribution<float> ud(0.0f, 1.0f);
+
+	// fill the vector with random data
+	v1ps.resize(100);
+	v2ps.resize(100);
+	v3ps.resize(100);
+
+	v1pp.resize(100);
+	v2pp.resize(100);
+	v3pp.resize(100);
+
+	for (size_t i = 0 ; i < v1ps.size(); i++)
+	{
+		v1ps.template get<0>(i)[0] = ud(eg);
+		v1ps.template get<0>(i)[1] = ud(eg);
+		v1ps.template get<0>(i)[2] = ud(eg);
+
+		v2ps.template get<0>(i)[0] = ud(eg)*0.5;
+		v2ps.template get<0>(i)[1] = ud(eg)*0.5;
+		v2ps.template get<0>(i)[2] = ud(eg)*0.5;
+
+		v3ps.template get<0>(i)[0] = ud(eg)*0.3;
+		v3ps.template get<0>(i)[1] = ud(eg)*0.3;
+		v3ps.template get<0>(i)[2] = ud(eg)*0.3;
+
+		v1pp.template get<0>(i) = ud(eg);
+		v1pp.template get<1>(i)[0] = ud(eg);
+		v1pp.template get<1>(i)[1] = ud(eg);
+		v1pp.template get<1>(i)[2] = ud(eg);
+
+		v2pp.template get<0>(i) = ud(eg);
+		v2pp.template get<1>(i)[0] = ud(eg);
+		v2pp.template get<1>(i)[1] = ud(eg);
+		v2pp.template get<1>(i)[2] = ud(eg);
+
+		v3pp.template get<0>(i) = ud(eg);
+		v3pp.template get<1>(i)[0] = ud(eg);
+		v3pp.template get<1>(i)[1] = ud(eg);
+		v3pp.template get<1>(i)[2] = ud(eg);
+	}
+
+	// Create a writer and write
+	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,float[3]>>>,VECTOR_POINTS> vtk_v;
+	vtk_v.add(v1ps,v1pp,75);
+	vtk_v.add(v2ps,v2pp,88);
+	vtk_v.add(v3ps,v3pp,90);
+
+	vtk_v.write("vtk_points.vtk");
+
+	// Check that match
+	bool test = compare("vtk_points.vtk","vtk_points_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 	}
 }

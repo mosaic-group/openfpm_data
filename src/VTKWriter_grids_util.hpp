@@ -198,7 +198,10 @@ public:
 
 /*! \brief This class is an helper to create properties output from scalar and compile-time array elements
  *
- * This class is an helper to copy scalar and compile-time array elements
+ * \tparam I It is an boost::mpl::int_ that indicate which property we are writing
+ * \tparam ele_g element type that store the grid information
+ * \tparam St type of space where the grid live
+ * \tparam T the type of the property
  *
  */
 template<typename I, typename ele_g, typename St, typename T>
