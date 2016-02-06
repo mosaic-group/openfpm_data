@@ -7,7 +7,7 @@ io_CXXFLAGS = $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/inc
 io_CFLAGS = $(CUDA_CFLAGS)
 io_LDADD = $(LINKLIBS)
 
-nobase_include_HEADERS = csv_multiarray.hpp CSVWriter.hpp GraphMLWriter.hpp util.hpp VTKWriter.hpp VTKWriter_graph.hpp VTKWriter_grids.hpp VTKWriter_grids_st.hpp VTKWriter_grids_util.hpp VTKWriter_vector_box.hpp
+nobase_include_HEADERS = CSVWriter/csv_multiarray.hpp CSVWriter/CSVWriter.hpp GraphMLWriter/GraphMLWriter.hpp util.hpp VTKWriter/VTKWriter.hpp VTKWriter/VTKWriter_graph.hpp VTKWriter/VTKWriter_grids.hpp VTKWriter/VTKWriter_grids_st.hpp VTKWriter/VTKWriter_grids_util.hpp VTKWriter/VTKWriter_vector_box.hpp
 
 
 .cu.o :

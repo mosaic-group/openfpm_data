@@ -11,7 +11,6 @@
 #define GS_SIZE 8
 
 #include "GraphMLWriter.hpp"
-#include "VTKWriter.hpp"
 #include "Graph/CartesianGraphFactory.hpp"
 #include "util.hpp"
 

@@ -10,6 +10,7 @@
 
 #include "data_type/aggregate.hpp"
 #include <random>
+#include "VTKWriter.hpp"
 
 BOOST_AUTO_TEST_SUITE( vtk_writer_test )
 
