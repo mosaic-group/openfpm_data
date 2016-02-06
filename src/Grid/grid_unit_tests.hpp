@@ -31,8 +31,6 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 	for (size_t i = 0 ; i < dim ; i++)
 	{szz.push_back(sz);}
 
-#ifdef CUDA_GPU
-
 	{grid_cpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory();
 	test_layout_gridNd<dim>(c3,sz);}
@@ -40,6 +38,8 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 	{grid_cpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory();
 	test_layout_gridObjNd<dim>(c3,sz);}
+
+#ifdef CUDA_GPU
 
 	{grid_gpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory();
@@ -59,6 +59,8 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 	c3.template setMemory();
 	test_layout_gridNd<dim>(c3,sz);}
 
+#ifdef CUDA_GPU
+
 	{grid_gpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory();
 	test_layout_gridNd<dim>(c3,sz);}
@@ -66,6 +68,8 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 	{grid_gpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory();
 	test_layout_gridObjNd<dim>(c3,sz);}
+
+#endif
 }
 
 
@@ -836,11 +840,11 @@ BOOST_AUTO_TEST_CASE( grid_use)
 		test_layout_grid3d(c3,i);
 		}
 
+#endif
+
 		{grid_cpu<3, Point_test<float> > c3(sz);
 		c3.setMemory();
 		test_layout_grid3d(c3,i);}
-
-#endif
 
 		{
 		//! [Definition and allocation of a 3D grid on CPU memory]

@@ -203,6 +203,16 @@ fi
 
 INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_io/src"
 
+####### include /usr/local/lib and /usr/local/lib64 if they exist
+
+if [ -d "/usr/local/lib64" ]; then
+	LOCAL_LIBS="/usr/local/lib64"
+else
+	if [ -d "/usr/local/lib" ]; then
+		LOCAL_LIBS="/usr/local/lib"
+	fi
+fi
+
 ####### Checking for GPU support
 
 AX_CUDA
@@ -303,6 +313,7 @@ esac
 AC_SUBST(NVCCFLAGS)
 AC_SUBST(INCLUDES_PATH)
 AC_SUBST(OPT_LIBS)
+AC_SUBST(LOCAL_LIBS)
 
 # Checks for typedefs, structures, and compiler characteristics.
 

@@ -1,5 +1,5 @@
 
-LINKLIBS = $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(CUDA_LIBS) $(BOOST_IOSTREAMS_LIB)
+LINKLIBS = $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(CUDA_LIBS) $(BOOST_IOSTREAMS_LIB) $(LOCAL_LIBS)
 
 if BUILDCUDA
  CUDA_SOURCES=../../openfpm_devices/src/memory/CudaMemory.cu
@@ -11,7 +11,7 @@ noinst_PROGRAMS = mem_map
 mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
 mem_map_CXXFLAGS = $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include
 mem_map_CFLAGS = $(CUDA_CFLAGS)
-mem_map_LDADD = $(LINKLIBS) $(CUDA_LIBS) -L/usr/local/lib -L/usr/local/lib64 
+mem_map_LDADD = $(LINKLIBS)
 
 nobase_include_HEADERS= data_type/scalar.hpp data_type/aggregate.hpp \
 Graph/graph_unit_tests.hpp Graph/map_graph.hpp \

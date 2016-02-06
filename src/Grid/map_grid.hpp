@@ -13,8 +13,6 @@
 #include "memory/ExtPreAlloc.hpp"
 #include "util/util_debug.hpp"
 #include "util/Pack_stat.hpp"
-//#include "Vector/map_vector.hpp"
-//#include "Pack_selector.hpp"
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/fusion/sequence/intrinsic/at_c.hpp>
 #include <boost/fusion/include/at_c.hpp>
