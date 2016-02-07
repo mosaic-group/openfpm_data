@@ -11,6 +11,7 @@
 #include "data_type/aggregate.hpp"
 #include <random>
 #include "VTKWriter.hpp"
+#include "util/SimpleRNG.hpp"
 
 BOOST_AUTO_TEST_SUITE( vtk_writer_test )
 
@@ -771,9 +772,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 
     // set the seed
 	// create the random generator engine
-	std::srand(0);
-    std::default_random_engine eg;
-    std::uniform_real_distribution<float> ud(0.0f, 1.0f);
+	SimpleRNG rng;
 
 	// fill the vector with random data
 	v1ps.resize(100);
@@ -786,32 +785,32 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 
 	for (size_t i = 0 ; i < v1ps.size(); i++)
 	{
-		v1ps.template get<0>(i)[0] = ud(eg);
-		v1ps.template get<0>(i)[1] = ud(eg);
-		v1ps.template get<0>(i)[2] = ud(eg);
+		v1ps.template get<0>(i)[0] = rng.GetUniform();
+		v1ps.template get<0>(i)[1] = rng.GetUniform();
+		v1ps.template get<0>(i)[2] = rng.GetUniform();
 
-		v2ps.template get<0>(i)[0] = ud(eg)*0.5;
-		v2ps.template get<0>(i)[1] = ud(eg)*0.5;
-		v2ps.template get<0>(i)[2] = ud(eg)*0.5;
+		v2ps.template get<0>(i)[0] = rng.GetUniform()*0.5;
+		v2ps.template get<0>(i)[1] = rng.GetUniform()*0.5;
+		v2ps.template get<0>(i)[2] = rng.GetUniform()*0.5;
 
-		v3ps.template get<0>(i)[0] = ud(eg)*0.3;
-		v3ps.template get<0>(i)[1] = ud(eg)*0.3;
-		v3ps.template get<0>(i)[2] = ud(eg)*0.3;
+		v3ps.template get<0>(i)[0] = rng.GetUniform()*0.3;
+		v3ps.template get<0>(i)[1] = rng.GetUniform()*0.3;
+		v3ps.template get<0>(i)[2] = rng.GetUniform()*0.3;
 
-		v1pp.template get<0>(i) = ud(eg);
-		v1pp.template get<1>(i)[0] = ud(eg);
-		v1pp.template get<1>(i)[1] = ud(eg);
-		v1pp.template get<1>(i)[2] = ud(eg);
+		v1pp.template get<0>(i) = rng.GetUniform();
+		v1pp.template get<1>(i)[0] = rng.GetUniform();
+		v1pp.template get<1>(i)[1] = rng.GetUniform();
+		v1pp.template get<1>(i)[2] = rng.GetUniform();
 
-		v2pp.template get<0>(i) = ud(eg);
-		v2pp.template get<1>(i)[0] = ud(eg);
-		v2pp.template get<1>(i)[1] = ud(eg);
-		v2pp.template get<1>(i)[2] = ud(eg);
+		v2pp.template get<0>(i) = rng.GetUniform();
+		v2pp.template get<1>(i)[0] = rng.GetUniform();
+		v2pp.template get<1>(i)[1] = rng.GetUniform();
+		v2pp.template get<1>(i)[2] = rng.GetUniform();
 
-		v3pp.template get<0>(i) = ud(eg);
-		v3pp.template get<1>(i)[0] = ud(eg);
-		v3pp.template get<1>(i)[1] = ud(eg);
-		v3pp.template get<1>(i)[2] = ud(eg);
+		v3pp.template get<0>(i) = rng.GetUniform();
+		v3pp.template get<1>(i)[0] = rng.GetUniform();
+		v3pp.template get<1>(i)[1] = rng.GetUniform();
+		v3pp.template get<1>(i)[2] = rng.GetUniform();
 	}
 
 	// Create a writer and write
