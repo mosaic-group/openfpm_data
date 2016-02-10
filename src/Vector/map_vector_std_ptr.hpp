@@ -200,7 +200,7 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		if (base.size() == 0)
+		if (v_size == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
 #endif
 		return ((T *)mem->getPointer())[v_size-1];
@@ -217,7 +217,7 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		if (base.size() == 0)
+		if (v_size == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
 #endif
 		return ((T *)mem->getPointer())[v_size-1];
@@ -289,7 +289,7 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		if (id >= base.size())
+		if (id >= v_size)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
 #endif
 		return ((T *)mem->getPointer())[id];

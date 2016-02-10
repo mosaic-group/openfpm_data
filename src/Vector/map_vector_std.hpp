@@ -197,7 +197,7 @@ public:
 	 * \return an iterator to the first element
 	 *
 	 */
-	inline const auto begin() const -> decltype(base.begin())
+	inline auto begin() const -> const decltype(base.begin())
 	{
 		return base.begin();
 	}
@@ -207,7 +207,7 @@ public:
 	 * \return an iterator to the last element
 	 *
 	 */
-	inline const auto end() const -> decltype(base.begin())
+	inline auto end() const -> const decltype(base.begin())
 	{
 		return base.end();
 	}
