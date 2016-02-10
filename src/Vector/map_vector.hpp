@@ -146,6 +146,7 @@ namespace openfpm
 	};
 
 	#include "map_vector_std.hpp"
+	#include "map_vector_std_ptr.hpp"
 
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *

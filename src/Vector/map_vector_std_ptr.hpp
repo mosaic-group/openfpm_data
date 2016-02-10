@@ -1,32 +1,24 @@
 /*
- * map_vector_std.hpp
+ * map_vector_std_ptr.hpp
  *
- *  Created on: Mar 8, 2015
+ *  Created on: Feb 9, 2016
  *      Author: i-bird
  */
 
-#ifndef MAP_VECTOR_STD_HPP_
-#define MAP_VECTOR_STD_HPP_
+#ifndef OPENFPM_DATA_SRC_VECTOR_MAP_VECTOR_STD_PTR_HPP_
+#define OPENFPM_DATA_SRC_VECTOR_MAP_VECTOR_STD_PTR_HPP_
 
-#include "se_vector.hpp"
-#include "map_vector_std_ptr.hpp"
 
-/*! \brief Implementation of 1-D std::vector like structure
- *
- * this implementation is just a wrapper for the std::vector in the case
- * of data where the members cannot be parsed see openFPM_data wiki for more information
- *
- * ### Create add and access the elements
- * \snippet vector_test_util.hpp Create add and access stl
- *
- * \param T base type
- *
- */
-template<typename T>
-class vector<T,HeapMemory,grow_policy_double,STD_VECTOR>
+template<typename T,typename gp>
+class vector<T,PtrMemory,gp,STD_VECTOR>
 {
+	//! Actual size of the vector, warning: it is not the space allocated in grid
+	//! grid size increase by a fixed amount every time we need a vector bigger than
+	//! the actually allocated space
+	size_t v_size;
+
 	//! 1-D static grid
-	std::vector<T> base;
+	PtrMemory * mem;
 
 	//! Error code
 	size_t err_code;
@@ -41,16 +33,13 @@ public:
 	//! Type of the value the vector is storing
 	typedef T value_type;
 
-	//This file implements a pack and unpack for std vector
-#include "vector_std_pack_unpack.ipp"
-
 	//! return the size of the vector
 	inline size_t size() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		return base.size();
+		return v_size;
 	}
 
 
@@ -64,8 +53,10 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-
-		base.resize(slot);
+		// resize is valid only if v_size is 0 and it match the size of PtrMemory
+		if (slot > mem->size()/sizeof(T))
+			std::cerr << __FILE__ << ":" << __LINE__ << " error: this vector cannot be bigger than " << mem->size()/sizeof(T) << " elements\n";
+		v_size = slot;
 	}
 
 	/*! \brief Remove all the element from the vector
@@ -76,7 +67,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base.clear();
+		v_size = 0;
 	}
 
 	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
@@ -93,7 +84,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base.push_back(v);
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: you cannot add a new element to this vector \n";
 	}
 
 	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
@@ -110,7 +101,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base.emplace_back(v);
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: you cannot add new element to this vector \n";
 	}
 
 	/*! \brief Add an empty object (it call the default constructor () ) at the end of the vector
@@ -122,24 +113,10 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base.emplace_back(T());
-	}
+		v_size++;
 
-	/*! \brief add elements to the vector
-	 *
-	 * \param eles elements to add
-	 *
-	 */
-	template<typename Mem,typename gp> inline void add(const openfpm::vector<T,Mem,gp> & eles)
-	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-		size_t start = base.size();
-		base.resize(base.size() + eles.size());
-
-		// copy the elements
-		std::copy(eles.begin(),eles.end(),base.begin()+start);
+		if (v_size > mem->size()/sizeof(T))
+			std::cerr << __FILE__ << ":" << __LINE__ << " error: you cannot resize a PtrMemory vector over the size stored by PtrMemory";
 	}
 
 	/*! \brief Erase the elements from start to end
@@ -153,7 +130,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base.erase(start,end);
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: you cannot erase element from this vector \n";
 	}
 
 	/*! \brief Remove one entry from the vector
@@ -169,7 +146,7 @@ public:
 #ifdef SE_CLASS1
 		vector_overflow(key);
 #endif
-		base.erase(base.begin() + key);
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: you cannot remove elements from this vector \n";
 	}
 
 	/*! \brief Return an std compatible iterator to the first element
@@ -177,19 +154,19 @@ public:
 	 * \return an iterator to the first element
 	 *
 	 */
-	inline auto begin() -> decltype(base.begin())
+	inline T * begin()
 	{
-		return base.begin();
+		return mem->getPointer();
 	}
 
-	/*! \brief Return an std compatible iterator to the last element
+	/*! \brief Return an std compatible iterator to the past the last element
 	 *
 	 * \return an iterator to the last element
 	 *
 	 */
-	inline auto end() -> decltype(base.begin())
+	inline T * end()
 	{
-		return base.end();
+		return &((T *)mem->getPointer())[v_size];
 	}
 
 	/*! \brief Return an std compatible iterator to the first element
@@ -197,19 +174,19 @@ public:
 	 * \return an iterator to the first element
 	 *
 	 */
-	inline const auto begin() const -> decltype(base.begin())
+	inline const T * begin() const
 	{
-		return base.begin();
+		return (T *)mem->getPointer();
 	}
 
-	/*! \brief Return an std compatible iterator to the last element
+	/*! \brief Return an std compatible iterator to the past the last element
 	 *
 	 * \return an iterator to the last element
 	 *
 	 */
-	inline const auto end() const -> decltype(base.begin())
+	inline const T * end() const
 	{
-		return base.end();
+		return &((T *)mem->getPointer())[v_size];
 	}
 
 	/*! \brief Get the last element
@@ -226,7 +203,7 @@ public:
 		if (base.size() == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
 #endif
-		return base[base.size()-1];
+		return ((T *)mem->getPointer())[v_size-1];
 	}
 
 	/*! \brief Get the last element
@@ -243,60 +220,7 @@ public:
 		if (base.size() == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
 #endif
-		return base[base.size()-1];
-	}
-
-	/*! \brief Duplicate the vector
-	 *
-	 * \return the duplicated vector
-	 *
-	 */
-	std::vector<T> duplicate()
-	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-		return base;
-	}
-
-	/*! \brief swap the memory between the two vector
-	 *
-	 * \param v vector to swap
-	 *
-	 */
-	void swap(std::vector<T> && v)
-	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-		base.swap(v);
-	}
-
-	/*! \brief It eliminate double entries
-	 *
-	 * \note The base object must have an operator== defined
-	 *
-	 */
-	void unique()
-	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-		auto it = std::unique(base.begin(),base.end());
-		base.resize( std::distance(base.begin(),it) );
-	}
-
-	/*! \brief It sort the vector
-	 *
-	 * \note The base object must have an operator< defined
-	 *
-	 */
-	void sort()
-	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-		std::sort(base.begin(), base.end());
+		return ((T *)mem->getPointer())[v_size-1];
 	}
 
 	/*! \brief Get an element of the vector
@@ -320,7 +244,12 @@ public:
 		vector_overflow(id);
 #endif
 
-		return base[id];
+		return ((T *)mem->getPointer())[id];
+	}
+
+	inline void setMemory(PtrMemory & mem)
+	{
+		this->mem = &mem;
 	}
 
 	/*! \brief Get an element of the vector
@@ -344,7 +273,7 @@ public:
 		vector_overflow(id);
 #endif
 
-		return base[id];
+		return ((T *)mem->getPointer())[id];
 	}
 
 	/*! \brief Get an element of the vector
@@ -363,7 +292,7 @@ public:
 		if (id >= base.size())
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
 #endif
-		return base[id];
+		return ((T *)mem->getPointer())[id];
 	}
 
 	/*! \brief Get an element of the vector
@@ -381,7 +310,7 @@ public:
 #ifdef SE_CLASS1
 		vector_overflow(id);
 #endif
-		return base[id];
+		return ((T *)mem->getPointer())[id];
 	}
 
 	/*! \brief it fill all the memory of fl patterns
@@ -398,7 +327,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		memset(&base[0],fl,base.size() * sizeof(T));
+		memset(mem->getPointer(),fl,v_size * sizeof(T));
 	}
 
 	/*! \brief reserve a memory space in advance to avoid reallocation
@@ -412,21 +341,21 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base.reserve(ns);
 	}
 
 	//! Constructor, vector of size 0
 	vector() noexcept
-	:err_code(0)
+	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
 		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
+		v_size = 0;
 	}
 
 	//! Constructor, vector of size sz
 	vector(size_t sz) noexcept
-	:base(sz),err_code(0)
+	:v_size(sz),err_code(0)
 	{
 #ifdef SE_CLASS2
 		check_new(this,8,VECTOR_STD_EVENT,1);
@@ -434,34 +363,26 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(const vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v) noexcept
-	:err_code(0)
+	vector(const vector<T,PtrMemory,gp,STD_VECTOR> & v) noexcept
+	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
 		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
 
-		base = v.base;
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: copy constructor is not supported by this vector \n";
 	}
 
-	/*! \brief Initializer from constructor
-	 *
-	 * \param v Initializer list
-	 *
-	 */
-	vector(const std::initializer_list<T> & v)
-	:base(v)
-	{}
 
 	//! Constructor from another vector
-	vector(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v) noexcept
-	:err_code(0)
+	vector(vector<T,PtrMemory,gp,STD_VECTOR> && v) noexcept
+	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
 		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
 
-		base.swap(v.base);
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: copy constructor is not supported by this vector \n";
 	}
 
 	//! destructor
@@ -477,12 +398,12 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	void swap(openfpm::vector<T,PtrMemory,gp,STD_VECTOR> & v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base.swap(v.base);
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: swap is not supported by this vector \n";
 	}
 
 	/*! \brief Operator= copy the vector into another
@@ -495,7 +416,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base = v.base;
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator= is not supported by this vector \n";
 
 		return *this;
 	}
@@ -510,7 +431,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		base.swap(v.base);
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator= is not supported by this vector \n";
 
 		return *this;
 	}
@@ -522,7 +443,9 @@ public:
 	 */
 	bool operator!=(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v) const
 	{
-		return base != v.base;
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator!= is not supported by this vector \n";
+
+		return false;
 	}
 
 	/*! \brief Check that two vectors are not equal
@@ -532,7 +455,9 @@ public:
 	 */
 	bool operator==(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v) const
 	{
-		return base == v.base;
+		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator== is not supported by this vector \n";
+
+		return false;
 	}
 
 	/*! \brief Get iterator
@@ -545,59 +470,9 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		return vector_key_iterator(base.size());
+		return vector_key_iterator(v_size);
 	}
 
-	/*! \brief Calculate the memory size required to allocate n elements
-	 *
-	 * Calculate the total size required to store n-elements in a vector
-	 *
-	 * \param n number of elements
-	 * \param e unused
-	 *
-	 * \return the size of the allocation number e
-	 *
-	 */
-	template<int ... prp> inline size_t packMem(size_t n, size_t e)
-	{
-		if (n == 0)
-			return 0;
-		else {
-#ifdef DEBUG
-			std::cout << "Inside map_vector_std.hpp packMem()" << std::endl;
-#endif
-			packMem_cond<has_packMem<T>::type::value, openfpm::vector<T, HeapMemory, grow_policy_double>, prp...> cm;
-			return cm.packMemory(*this,n,0);
-		}
-	}
-
-	/*! \brief Calculate the memory size required to allocate n elements
-	 *
-	 * Calculate the total size required to store n-elements in a vector
-	 *
-	 * \param n number of elements
-	 * \param e unused
-	 *
-	 * \return the size of the allocation number e
-	 *
-	 */
-	inline static size_t calculateMemDummy(size_t n, size_t e)
-	{
-		return n*sizeof(T);
-	}
-
-	/*! \brief How many allocation are required to create n-elements
-	 *
-	 * \param n number of elements
-	 *
-	 * \return the number of allocations
-	 *
-	 */
-	inline static size_t calculateNMem(size_t n)
-	{
-
-		return 1;
-	}
 
 	/*! \brief Return the pointer to the chunk of memory
 	 *
@@ -609,7 +484,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		return &base[0];
+		return mem->getPointer();
 	}
 
 	/*! \brief Return the pointer to the chunk of memory
@@ -619,7 +494,7 @@ public:
 	 */
 	const void * getPointer() const
 	{
-		return &base[0];
+		return mem->getPointer();
 	}
 
 	/*! \brief This class has pointer inside
@@ -650,7 +525,7 @@ public:
 	 */
 	inline void vector_overflow(size_t v1) const
 	{
-		if (v1 >= base.size())
+		if (v1 >= v_size)
 		{
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << v1 << "\n";\
 			size_t * err_code_pointer = (size_t *)&this->err_code;\
@@ -675,4 +550,4 @@ public:
 };
 
 
-#endif /* MAP_VECTOR_STD_HPP_ */
+#endif /* OPENFPM_DATA_SRC_VECTOR_MAP_VECTOR_STD_PTR_HPP_ */
