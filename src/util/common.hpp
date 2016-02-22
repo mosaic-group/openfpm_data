@@ -4,6 +4,8 @@
 #include <type_traits>
 #include <random>
 #include "memory/memory.hpp"
+#include "util/for_each_ref.hpp"
+#include "util/variadic_to_vmpl.hpp"
 
 namespace std
 {
@@ -191,7 +193,7 @@ struct has_pack<ObjType, typename Void<decltype( ObjType::pack() )>::type> : std
  *
  * ### Example
  *
- * \snippet
+ * \snippet util_test.hpp Check has pack
  *
  * return true if T::packRequest() is a valid expression (function pointers)
  * and produce a defined type
@@ -211,7 +213,7 @@ struct has_packRequest<ObjType, typename Void<decltype( ObjType::packRequest() )
  *
  * ### Example
  *
- * \snippet
+ * \snippet util_test.hpp Check has packRequest
  *
  * return true if T::calculateMem() is a valid expression (function pointers)
  * and produce a defined type
@@ -224,7 +226,7 @@ struct has_packMem: std::false_type {};
 /*! \brief has_PackMem check if a type has packMem() member function
  *
  * ### Example
- * \snippet util_test.hpp
+ * \snippet util_test.hpp Check has packMem
  *
  * return true if ObjType::packMem() is a valid expression
  *

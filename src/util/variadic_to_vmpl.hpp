@@ -195,7 +195,7 @@ struct to_boost_vmpl_impl<a>
 *
 * to_boost_mpl<3,4,7,10>::type is converted into
 *
-* boost::mpl::vector<int<3>,int<4>,int<7>,int<10>>
+* boost::mpl::vector<int_<3>,int_<4>,int_<7>,int_<10>>
 *
 *
 */

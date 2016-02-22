@@ -1,5 +1,7 @@
 /*!
- * This file include the implemetation of packer and unpacker for std vector
+ * This file contains the implemetation of packer and unpacker for std vector
+ * Created on: Jan 5, 2016
+ *     Author: Yaroslav Zaluzhnyi
  */
 
 
@@ -33,7 +35,7 @@
 			Packer<size_t, Memory1>::pack(mem,obj.size(),sts);
 
 			//Call a packer in nested way
-			for (int i = 0; i < obj.size(); i++) {
+			for (size_t i = 0; i < obj.size(); i++) {
 				obj.get(i).template pack<prp...>(mem,sts);
 			}
 		}
@@ -77,7 +79,7 @@
 			//Call an unpacker in nested way
 
 			//std::cout<< demangle(typeid(obj.get(1)).name()) << std::endl;
-			for (int i = 0; i < obj.size(); i++) {
+			for (size_t i = 0; i < obj.size(); i++) {
 				obj.get(i).template unpack<prp...>(mem,ps);
 			}
 		}
@@ -117,7 +119,7 @@
 			v.push_back(sizeof(obj.size()));
 
 			//Call an packRequest in nested way
-			for (int i = 0; i < obj.size(); i++)
+			for (size_t i = 0; i < obj.size(); i++)
 			{
 				obj.get(i).template packRequest<prp...>(v);
 			}
@@ -150,7 +152,7 @@
 #endif
 			size_t res = 0;
 
-			for (int i = 0; i < n; i++) {
+			for (size_t i = 0; i < n; i++) {
 				res += obj.get(i).template packMem<prp...>(obj.get(i).size(),0);
 			}
 
@@ -206,6 +208,9 @@
 	 */
 	template<int ... prp> void packRequest(std::vector<size_t> & v)
 	{
+#ifdef DEBUG
+		std::cout << "Inside packRequest() function! (map_vector_std)" << std::endl;
+#endif
 		packRequest_cond<has_packRequest<T>::value, T, prp...> pr;
 		pr.packingRequest(*this, v);
 

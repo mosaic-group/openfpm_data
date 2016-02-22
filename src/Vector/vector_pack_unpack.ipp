@@ -1,6 +1,7 @@
 /*!
- * This file include the implemetation of packer and unpacker for vector
- * 
+ * This file contains the implemetation of packer and unpacker for vector
+ * Created on: Jan 5, 2016
+ *     Author: Yaroslav Zaluzhnyi
  */
 
 //Functions to check if the packing object is complex
@@ -21,7 +22,7 @@ static bool packMem()
 
 
 
-// Structures that do a nested packing, depending on the existence of 'pack' function inside of the object
+// Structures that do a nested packing, depending on the existence of 'pack()' function inside of the object
 
 //There is no pack() inside
 template<bool cond, typename T1, typename Memory1, int ... prp>
@@ -41,14 +42,14 @@ struct pack_cond<true, T1, Memory1, prp...>
 {
 	void packing(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Pack_stat & sts)
 	{
-	   for (int i = 0; i < obj.size(); i++)
+	   for (size_t i = 0; i < obj.size(); i++)
 		   obj.get(i).template pack<prp...>(mem, sts);
 	}
 };
 
-// Structures that calculate memory for an object, depending on the existence of 'packMem' function inside of the object
+// Structures that calculate memory for an object, depending on the existence of 'packMem()' function inside of the object
 
-//There is no packMem()
+//There is no packMem() inside
 template<bool cond, typename T1>
 struct packMem_cond
 {
@@ -62,7 +63,7 @@ struct packMem_cond
 
 };
 
-//There is packMem()
+//There is packMem() inside
 template<typename T1>
 struct packMem_cond<true, T1>
 {
@@ -70,7 +71,7 @@ struct packMem_cond<true, T1>
 	{
 		size_t res = 0;
 		size_t count = grow_policy_double::grow(0,n) - obj.size();
-		for (int i = 0; i < n; i++) {
+		for (size_t i = 0; i < n; i++) {
 			res += obj.get(i).packMem(n,0);
 		}
 #ifdef DEBUG
@@ -80,130 +81,327 @@ struct packMem_cond<true, T1>
 	}
 };
 
-/*! \brief pack a vector selecting the properties to pack
- *
- * \param mem preallocated memory where to pack the vector
- * \param obj object to pack
- * \param sts pack-stat info
- *
- */
-template<int ... prp> void pack(ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+
+//These structures do a packing of a simple object (no pack() inside)
+
+//With specified properties
+template<bool sel, int ... prp>
+struct pack_simple_cond
 {
+	static inline void pack(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+	{
+	#ifdef DEBUG
+		if (mem.ref() == 0)
+			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
+	#endif
+//#ifdef DEBUG
+		timer t;
+		t.start();
+//#endif
+		//auto start = std::chrono::system_clock::now();	
+		//Pack the size of a vector
+		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
+		// Sending property object
+		typedef openfpm::vector<T> vctr;
+		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
+	
+		typedef openfpm::vector<prp_object,ExtPreAlloc<Memory>,openfpm::grow_policy_identity> dtype;
+#ifdef DEBUG
+	std::cout << "Inside pack_simple(not 0 prop) function! (map_vector)" << std::endl;
+#endif
+		// Create an object over the preallocated memory (No allocation is produced)
+		dtype dest;
+		dest.setMemory(mem);
+		dest.resize(obj.size());
+	
+		auto obj_it = obj.getIterator();
+	
+		while (obj_it.isNext())
+		{
+			// copy all the object in the send buffer
+			typedef encapc<1,typename vctr::value_type,typename vctr::memory_conf > encap_src;
+			// destination object type
+			typedef encapc<1,prp_object,typename dtype::memory_conf > encap_dst;
+	
+			// Copy only the selected properties
+			object_si_d<encap_src,encap_dst,OBJ_ENCAP,prp...>(obj.get(obj_it.get()),dest.get(obj_it.get()));
+	
+			++obj_it;
+		}
+	
+		// Update statistic
+		sts.incReq();	
+		
+//#ifdef DEBUG
+		t.stop();
+		std::cout << t.getwct() << std::endl;
+//#endif
+	//	auto end = std::chrono::system_clock::now();
+	//	auto elapsed = end - start;
+	//	std::cout << elapsed.count() << '\n';
+	}
+};
+
+//Without specified properties
+template<int ... prp>
+struct pack_simple_cond<true, prp ...>
+{
+	static inline void pack(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+	{
+	#ifdef DEBUG
+		if (mem.ref() == 0)
+			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
+	#endif
+//#ifdef DEBUG
+		timer t;
+		t.start();
+//#endif
+		//Pack the size of a vector
+		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
+		// Sending property object
+	
+		typedef openfpm::vector<T,ExtPreAlloc<Memory>,openfpm::grow_policy_identity> dtype;
+	#ifdef DEBUG
+		std::cout << "Inside pack_simple(0 prop) function! (map_vector)" << std::endl;
+	#endif
+		// Create an object over the preallocated memory (No allocation is produced)
+		dtype dest;
+		dest.setMemory(mem);
+		dest.resize(obj.size());
+	
+		auto obj_it = obj.getIterator();
+	
+		while (obj_it.isNext())
+		{
+			// Copy
+			dest.get(obj_it.get()) = obj.get(obj_it.get());
+	
+			++obj_it;
+		}
+	
+		// Update statistic
+		sts.incReq();	
+		
+//#ifdef DEBUG
+		t.stop();
+		std::cout << t.getwct() << std::endl;
+//#endif
+	}
+};
+
+//These structures do an upacking of a simple object (no pack() inside)
+
+//With specified properties
+template<bool sel, int ... prp>
+struct unpack_simple_cond
+{
+	static inline void unpack(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
+	{
+#ifdef DEBUG
+	std::cout << "Inside unpack_simple(not 0 prop) function! (map_vector)" << std::endl;
+#endif
+		//Unpack a size of a source vector
+		size_t u2 = 0;
+		Unpacker<size_t, Memory>::unpack(mem,u2,ps);
+		
+		//Resize a destination vector
+		obj.resize(u2);
+		
+		size_t id = 0;
+		
+		// Sending property object
+		typedef openfpm::vector<T> vctr;
+		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
+		stype svect;
+		
+
+		// Calculate the size to pack the object
+		size_t size = obj.packMem<prp...>(obj.size(),0);
+		
+		// Create a Pointer object over the preallocated memory (No allocation is produced)
+		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
+		
+		stype src;
+		src.setMemory(ptr);
+		src.resize(obj.size());
+		auto obj_it = obj.getIterator();
+		
+		while (obj_it.isNext())
+		{
+			// copy all the object in the send buffer
+			typedef encapc<1,typename vctr::value_type,typename vctr::memory_conf > encap_dst;
+			// destination object type
+			typedef encapc<1,prp_object,typename stype::memory_conf > encap_src;
+		
+			// Copy only the selected properties
+			object_s_di<encap_src,encap_dst,OBJ_ENCAP,prp...>(src.get(id),obj.get(obj_it.get()));
+		
+			++id;
+			++obj_it;
+		}
+		
+		ps.addOffset(size);
+	}
+};
+
+//Without specified properties
+template<int ... prp>
+struct unpack_simple_cond<true, prp ...>
+{
+	static inline void unpack(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
+	{
+#ifdef DEBUG
+	std::cout << "Inside unpack_simple(0 prop) function! (map_vector)" << std::endl;
+#endif
+		//Unpack a size of a source vector
+		size_t u2 = 0;
+		Unpacker<size_t, Memory>::unpack(mem,u2,ps);
+		
+		//Resize a destination vector
+		obj.resize(u2);
+		
+		size_t id = 0;
+		
+		// Sending property object
+		typedef openfpm::vector<T,PtrMemory,openfpm::grow_policy_identity> stype;
+
+		// Calculate the size to pack the object
+		size_t size = obj.packMem<prp...>(obj.size(),0);
+		
+		// Create a Pointer object over the preallocated memory (No allocation is produced)
+		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
+		
+		stype src;
+		src.setMemory(ptr);
+		src.resize(obj.size());
+		auto obj_it = obj.getIterator();
+		
+		while (obj_it.isNext())
+		{
+			// Copy
+			obj.get(obj_it.get()) = src.get(id);
+		
+			++id;
+			++obj_it;
+		}
+		
+		ps.addOffset(size);
+	}
+};
+
+/*inline void pack_complex(vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+{	
 #ifdef DEBUG
 	if (mem.ref() == 0)
 		std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 #endif
+	for (size_t i = 0 ; i < obj.size() ; i++)
+			{
+				call_aggregatePack<T,Memory,prp ... >::call_packRequest(v);
+					// for all prp ... i
+	//				Packer<at<prp[i]>>::packRequest();
+			}
+	Packer<>::pack(*this,mem,sts);
+}*/
 
-	//Pack the size of a vector
-	Packer<size_t, Memory>::pack(mem,this->size(),sts);
-	// Sending property object
-	typedef openfpm::vector<T> vctr;
-	typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
-
-	typedef openfpm::vector<prp_object,ExtPreAlloc<Memory>,openfpm::grow_policy_identity> dtype;
-#ifdef DEBUG
-	std::cout << "Inside pack() function! (map_vector)" << std::endl;
-#endif
-	// Create an object over the preallocated memory (No allocation is produced)
-	dtype dest;
-	dest.setMemory(mem);
-	dest.resize(this->size());
-
-	auto obj_it = this->getIterator();
-
-	while (obj_it.isNext())
-	{
-		// copy all the object in the send buffer
-		typedef encapc<1,typename vctr::value_type,typename vctr::memory_conf > encap_src;
-		// destination object type
-		typedef encapc<1,prp_object,typename dtype::memory_conf > encap_dst;
-
-		// Copy only the selected properties
-		object_si_d<encap_src,encap_dst,OBJ_ENCAP,prp...>(this->get(obj_it.get()),dest.get(obj_it.get()));
-
-		++obj_it;
-	}
-
-	// Update statistic
-	sts.incReq();
-
-}
 
 /*! \brief Insert an allocation request into the vector
  *
- * \param obj vector object to pack
+ * \param v vector of allocation sequence
  * \param requests vector
  *
  */
-template<int ... prp> void packRequest(std::vector<size_t> & v)
+template<int ... prp> inline void packRequest(std::vector<size_t> & v)
 {
-
-	//Pushback a size of number of elements of the internal vectors
+	//Pushback a sizeof number of elements of the internal vectors
 	v.push_back(sizeof(this->size()));
+	//std::cout << demangle(typeid(this).name()) << std::endl;
+	//std::cout << this->size() << std::endl;
 #ifdef DEBUG
 	std::cout << "Inside map_vector.hpp packRequest()" << std::endl;
 #endif
-
-	size_t alloc_ele = this->packMem<prp...>(this->size(),0);
-
-	v.push_back(alloc_ele);
+	
+	// if all the aggregate properties do not have pack() member
+	
+	if (has_pack_agg<T,prp...>::result::value != has_aggregatePack<T,prp ... >::has_pack())
+	{
+		
+		std::cout << "AHHHHHHHHHHHH is wrong" <<  has_pack_agg<T,prp...>::result::value << " " << has_aggregatePack<T,prp ... >::has_pack() << "\n";
+	}
+	
+	if (has_pack_agg<T,prp...>::result::value == false)
+//	if (has_aggregatePack<T,prp ... >::has_pack() == false)
+	{
+#ifdef DEBUG
+			std::cout << "All of the aggregate members are simple!(packRequest)" << std::endl;
+#endif
+		size_t alloc_ele = this->packMem<prp...>(this->size(),0);
+		v.push_back(alloc_ele);
+	}
+	//if at least one has pack()
+	else
+	{
+#ifdef DEBUG
+			std::cout << "Not all of the aggregate members are simple!(packRequest)" << std::endl;
+#endif
+		for (size_t i = 0 ; i < this->size() ; i++)
+		{
+			call_aggregatePackRequest<T,Memory,grow_p,prp ... >::call_packRequest(*this,v);
+		}
+	}
 }
+
+
+/*! \brief pack a vector selecting the properties to pack
+ *
+ * \param mem preallocated memory where to pack the vector
+ * \param sts pack-stat info
+ *
+ */
+template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+{
+	//if all of the aggregate properties are simple (don't have pack() member inside)
+	if (has_aggregatePack<T,prp ... >::has_pack() == false)
+	{
+#ifdef DEBUG
+		std::cout << "All of the aggregate members are simple!(pack)" << std::endl;
+#endif
+		pack_simple_cond<sizeof...(prp) == 0,prp...>::pack(*this,mem,sts);
+	}
+	//if at least one has pack()
+	else
+	{
+#ifdef DEBUG
+		std::cout << "Not all of the aggregate members are simple!(pack)" << std::endl;
+#endif
+		call_aggregatePack<T,Memory,grow_p,prp ... >::call_pack(*this,mem,sts);
+	}
+}
+
 
 /*! \brief unpack a vector
  *
- * \warning the properties should match the packed properties, and the obj must have the same size of the packed vector, consider to pack
- *          this information if you cannot infer-it
- *
- * \param ext preallocated memory from where to unpack the vector
- * \param obj object where to unpack
- *
+ * \param mem preallocated memory from where to unpack the vector
+ * \param ps unpack-stat info
  */
-template<unsigned int ... prp> void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
+template<int ... prp> inline void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
 {
-
-	//Unpack a size of a source vector
-	size_t u2 = 0;
-	Unpacker<size_t, Memory>::unpack(mem,u2,ps);
-
-	//Resize a destination vector
-	this->resize(u2);
-
-	size_t id = 0;
-
-	// Sending property object
-	typedef openfpm::vector<T> vctr;
-	typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
-	typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
-	stype svect;
-
-#ifdef DEBUG
-	std::cout << "Inside unpack() function! (map_vector)" << std::endl;
-#endif
-	// Calculate the size to pack the object
-	size_t size = this->packMem<prp...>(this->size(),0);
-
-	// Create a Pointer object over the preallocated memory (No allocation is produced)
-	PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
-
-	stype src;
-	src.setMemory(ptr);
-	src.resize(this->size());
-	auto obj_it = this->getIterator();
-
-	while (obj_it.isNext())
+	//if all of the aggregate properties are simple (don't have pack() member inside)
+	if (has_aggregatePack<T,prp ... >::has_pack() == false)
 	{
-		// copy all the object in the send buffer
-		typedef encapc<1,typename vctr::value_type,typename vctr::memory_conf > encap_dst;
-		// destination object type
-		typedef encapc<1,prp_object,typename stype::memory_conf > encap_src;
-
-		// Copy only the selected properties
-		object_s_di<encap_src,encap_dst,OBJ_ENCAP,prp...>(src.get(id),this->get(obj_it.get()));
-
-		++id;
-		++obj_it;
+#ifdef DEBUG
+		std::cout << "All of the aggregate members are simple!(unpack)" << std::endl;
+#endif
+		unpack_simple_cond<sizeof...(prp) == 0,prp...>::unpack(*this,mem,ps);
 	}
-
-	ps.addOffset(size);
+	//if not simple
+	else
+	{
+#ifdef DEBUG
+		std::cout << "Not all of the aggregate members are simple!(unpack)" << std::endl;
+#endif
+		call_aggregateUnpack<T,Memory,grow_p,prp ... >::call_unpack(*this,mem,ps);
+	}
 }
 
