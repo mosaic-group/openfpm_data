@@ -164,6 +164,9 @@ public:
 
 	template<unsigned int ... prp> void static unpack(ExtPreAlloc<Mem> & mem, T & obj, Unpack_stat & ps)
 	{
+#ifdef DEBUG
+		std::cout << "Inside vector unpack() function! (unpacker.hpp)" << std::endl;
+#endif
 		obj.template unpack<prp...>(mem, ps);
 	};
 };

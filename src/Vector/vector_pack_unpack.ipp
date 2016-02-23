@@ -4,7 +4,7 @@
  *     Author: Yaroslav Zaluzhnyi
  */
 
-//Functions to check if the packing object is complex
+//Meta-functions to check if the packing object is complex
 static bool pack()
 {
 	return false;
@@ -21,7 +21,6 @@ static bool packMem()
 }
 
 
-
 // Structures that do a nested packing, depending on the existence of 'pack()' function inside of the object
 
 //There is no pack() inside
@@ -30,7 +29,7 @@ struct pack_cond
 {
 	void packing(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Pack_stat & sts)
 	{
-		//std::cout << "No pack() function inside!" << std::endl;
+		Packer<openfpm::vector<T1>, Memory1, PACKER_ARRAY_PRIMITIVE>::pack(mem,obj,sts,obj.size());	
 	}
 
 };
@@ -82,7 +81,7 @@ struct packMem_cond<true, T1>
 };
 
 
-//These structures do a packing of a simple object (no pack() inside)
+//These structures do a packing of a simple (no "pack()" inside) object 
 
 //With specified properties
 template<bool sel, int ... prp>
@@ -94,13 +93,14 @@ struct pack_simple_cond
 		if (mem.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 	#endif
-//#ifdef DEBUG
+
+		//Measure an execution time
 		timer t;
 		t.start();
-//#endif
-		//auto start = std::chrono::system_clock::now();	
+
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
+		
 		// Sending property object
 		typedef openfpm::vector<T> vctr;
 		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
@@ -132,13 +132,10 @@ struct pack_simple_cond
 		// Update statistic
 		sts.incReq();	
 		
-//#ifdef DEBUG
+		//cout an execution time
 		t.stop();
 		std::cout << t.getwct() << std::endl;
-//#endif
-	//	auto end = std::chrono::system_clock::now();
-	//	auto elapsed = end - start;
-	//	std::cout << elapsed.count() << '\n';
+
 	}
 };
 
@@ -152,14 +149,15 @@ struct pack_simple_cond<true, prp ...>
 		if (mem.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 	#endif
-//#ifdef DEBUG
+		
+		//Measure an execution time
 		timer t;
 		t.start();
-//#endif
+
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
+		
 		// Sending property object
-	
 		typedef openfpm::vector<T,ExtPreAlloc<Memory>,openfpm::grow_policy_identity> dtype;
 	#ifdef DEBUG
 		std::cout << "Inside pack_simple(0 prop) function! (map_vector)" << std::endl;
@@ -180,12 +178,12 @@ struct pack_simple_cond<true, prp ...>
 		}
 	
 		// Update statistic
-		sts.incReq();	
-		
-//#ifdef DEBUG
+		sts.incReq();			
+
+		//cout an execution time
 		t.stop();
 		std::cout << t.getwct() << std::endl;
-//#endif
+
 	}
 };
 
@@ -290,21 +288,6 @@ struct unpack_simple_cond<true, prp ...>
 	}
 };
 
-/*inline void pack_complex(vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
-{	
-#ifdef DEBUG
-	if (mem.ref() == 0)
-		std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
-#endif
-	for (size_t i = 0 ; i < obj.size() ; i++)
-			{
-				call_aggregatePack<T,Memory,prp ... >::call_packRequest(v);
-					// for all prp ... i
-	//				Packer<at<prp[i]>>::packRequest();
-			}
-	Packer<>::pack(*this,mem,sts);
-}*/
-
 
 /*! \brief Insert an allocation request into the vector
  *
@@ -322,16 +305,9 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v)
 	std::cout << "Inside map_vector.hpp packRequest()" << std::endl;
 #endif
 	
-	// if all the aggregate properties do not have pack() member
-	
-	if (has_pack_agg<T,prp...>::result::value != has_aggregatePack<T,prp ... >::has_pack())
-	{
-		
-		std::cout << "AHHHHHHHHHHHH is wrong" <<  has_pack_agg<T,prp...>::result::value << " " << has_aggregatePack<T,prp ... >::has_pack() << "\n";
-	}
-	
+	// If all of the aggregate properties do not have a "pack()" member	
 	if (has_pack_agg<T,prp...>::result::value == false)
-//	if (has_aggregatePack<T,prp ... >::has_pack() == false)
+	//if (has_aggregatePack<T,prp ... >::has_pack() == false)
 	{
 #ifdef DEBUG
 			std::cout << "All of the aggregate members are simple!(packRequest)" << std::endl;
@@ -339,7 +315,7 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v)
 		size_t alloc_ele = this->packMem<prp...>(this->size(),0);
 		v.push_back(alloc_ele);
 	}
-	//if at least one has pack()
+	//If at least one property has "pack()"
 	else
 	{
 #ifdef DEBUG
@@ -347,6 +323,7 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v)
 #endif
 		for (size_t i = 0 ; i < this->size() ; i++)
 		{
+			//Call a pack request
 			call_aggregatePackRequest<T,Memory,grow_p,prp ... >::call_packRequest(*this,v);
 		}
 	}
@@ -361,24 +338,29 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v)
  */
 template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & sts)
 {
-	//if all of the aggregate properties are simple (don't have pack() member inside)
-	if (has_aggregatePack<T,prp ... >::has_pack() == false)
+	//If all of the aggregate properties are simple (don't have "pack()" member)
+	if (has_pack_agg<T,prp...>::result::value == false)
+	//if (has_aggregatePack<T,prp ... >::has_pack() == false)
 	{
 #ifdef DEBUG
 		std::cout << "All of the aggregate members are simple!(pack)" << std::endl;
 #endif
+		//Call a packer
 		pack_simple_cond<sizeof...(prp) == 0,prp...>::pack(*this,mem,sts);
 	}
-	//if at least one has pack()
+	//If at least one property has a "pack()" member
 	else
 	{
 #ifdef DEBUG
 		std::cout << "Not all of the aggregate members are simple!(pack)" << std::endl;
 #endif
+		//Pack the size of a vector
+		Packer<size_t, Memory>::pack(mem,this->size(),sts);
+		
+		//Call a packer in nested way
 		call_aggregatePack<T,Memory,grow_p,prp ... >::call_pack(*this,mem,sts);
 	}
 }
-
 
 /*! \brief unpack a vector
  *
@@ -387,20 +369,30 @@ template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & st
  */
 template<int ... prp> inline void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
 {
-	//if all of the aggregate properties are simple (don't have pack() member inside)
-	if (has_aggregatePack<T,prp ... >::has_pack() == false)
+	//if all of the aggregate properties are simple (don't have "pack()" member)
+	if (has_pack_agg<T,prp...>::result::value == false)
+	//if (has_aggregatePack<T,prp ... >::has_pack() == false)
 	{
 #ifdef DEBUG
 		std::cout << "All of the aggregate members are simple!(unpack)" << std::endl;
 #endif
+		//Call an unpacker
 		unpack_simple_cond<sizeof...(prp) == 0,prp...>::unpack(*this,mem,ps);
 	}
-	//if not simple
+	//If at least one is not simple (has a "pack()" member)
 	else
 	{
 #ifdef DEBUG
 		std::cout << "Not all of the aggregate members are simple!(unpack)" << std::endl;
 #endif
+		//Unpack a size of a source vector
+		size_t u2 = 0;
+		Unpacker<size_t, Memory>::unpack(mem,u2,ps);
+		
+		//Resize a destination vector
+		this->resize(u2);
+		
+		//Call an unpacker in nested way
 		call_aggregateUnpack<T,Memory,grow_p,prp ... >::call_unpack(*this,mem,ps);
 	}
 }

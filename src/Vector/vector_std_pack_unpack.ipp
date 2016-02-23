@@ -106,6 +106,7 @@
 
 	};
 
+	
 	//There is packRequest() inside
 	template<typename T1, int ... prp>
 	struct packRequest_cond<true, T1, prp...>
@@ -159,16 +160,9 @@
 			return res;
 		}
 	};
+	
 
-	/*! \brief pack a vector selecting the properties to pack
-	 *
-	 * \param mem preallocated memory where to pack the vector
-	 * \param obj object to pack
-	 * \param sts pack-stat info
-	 *
-	 */
-
-	//Functions to check if the packing object is complex
+	//Meta-functions to check if the packing object is complex
 	static bool pack()
 	{
 		return false;
@@ -184,7 +178,13 @@
 		return false;
 	}
 
-
+	
+	/*! \brief pack a vector
+	 *
+	 * \param mem preallocated memory where to pack the vector
+	 * \param sts pack-stat info
+	 *
+	 */
 	template<int ... prp> void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts)
 	{
 #ifdef DEBUG
@@ -195,6 +195,7 @@
 #ifdef DEBUG
 		std::cout << "Inside pack() function! (map_vector_std)" << std::endl;
 #endif
+		//Call a nested packer
 		pack_cond<has_pack<T>::type::value, T, HeapMemory, prp...> p;
 		p.packing(mem, *this, sts);
 
@@ -202,8 +203,7 @@
 
 	/*! \brief Insert an allocation request into the vector
 	 *
-	 * \param obj vector object to pack
-	 * \param requests vector
+	 * \param v - requests vector
 	 *
 	 */
 	template<int ... prp> void packRequest(std::vector<size_t> & v)
@@ -211,6 +211,7 @@
 #ifdef DEBUG
 		std::cout << "Inside packRequest() function! (map_vector_std)" << std::endl;
 #endif
+		//Call a nested pack request
 		packRequest_cond<has_packRequest<T>::value, T, prp...> pr;
 		pr.packingRequest(*this, v);
 
@@ -218,11 +219,10 @@
 
 	/*! \brief unpack a vector
 	 *
-	 * \warning the properties should match the packed properties, and the obj must have the same size of the packed vector, consider to pack
-	 *          this information if you cannot infer-it
+	 * \warning the properties should match the packed properties,
 	 *
 	 * \param ext preallocated memory from where to unpack the vector
-	 * \param obj object where to unpack
+	 * \param ps unpack info
 	 *
 	 */
 	template<unsigned int ... prp> void unpack(ExtPreAlloc<HeapMemory> & mem, Unpack_stat & ps)

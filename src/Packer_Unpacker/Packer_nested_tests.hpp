@@ -499,17 +499,17 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 
 	//Fill it with data
 
-	v4.resize(4);
+	v4.resize(1);
 	Point_test<float> p;
 	p.fill();
 	for (size_t i = 0 ; i < v4.size() ; i++)
 	{
-		v4.get(i).resize(5);
+		v4.get(i).resize(1);
 		for (size_t j = 0 ; j < v4.get(i).size() ; j++)
 		{
 			v4.get(i).template get<0>(j) = 1.0;
 			v4.get(i).template get<1>(j) = 2.0;
-			v4.get(i).template get<2>(j).resize(6);
+			v4.get(i).template get<2>(j).resize(2);
 
 			for (size_t k = 0 ; k < v4.get(i).template get<2>(j).size() ; k++)
 				v4.get(i).template get<2>(j).get(k) = p;
@@ -520,7 +520,7 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 	std::vector<size_t> pap_prp;
 
 	//Pack request
-	Packer<decltype(v4),HeapMemory>::packRequest<0,1,2>(v4,pap_prp);
+	Packer<decltype(v4),HeapMemory>::packRequest<1,2>(v4,pap_prp);
 
 	//Just to see the elements of pack request vector
 #ifdef DEBUG
@@ -528,8 +528,7 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 		std::cout << pap_prp[i] << std::endl;
 #endif
 
-	//BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*6 + sizeof(float[3])) + sizeof(float[3][3]))*5);
-
+	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*4 + sizeof(float[3])) + sizeof(float[3][3]))*2);
 
 	// Calculate how much preallocated memory we need to pack all the objects
 	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
@@ -544,7 +543,7 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 
 	Pack_stat sts;
 
-	Packer<decltype(v4),HeapMemory>::pack<0,1,2>(mem,v4,sts);
+	Packer<decltype(v4),HeapMemory>::pack<1,2>(mem,v4,sts);
 
 	//Unpacking
 
@@ -552,38 +551,32 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 
 	openfpm::vector<openfpm::vector<aggregate<float,float,openfpm::vector<Point_test<float>>>>> v4_unp;
 
-	Unpacker<decltype(v4_unp),HeapMemory>::unpack<0,1,2>(mem,v4_unp,ps);
+	Unpacker<decltype(v4_unp),HeapMemory>::unpack<1,2>(mem,v4_unp,ps);
 
 	//Check the data
 
-	/*for (size_t i = 0 ; i < v4.size() ; i++)
+	for (size_t i = 0 ; i < v4.size() ; i++)
 	{
 		for (size_t j = 0 ; j < v4.get(i).size() ; j++)
 		{
-			std::cout << v4.get(i).template get<0>(j) << std::endl;
-			std::cout << v4.get(i).template get<1>(j) << std::endl;
+			//float f1 = v4_unp.get(i).template get<0>(j);
+			//float f2 = v4.get(i).template get<0>(j);
+			float f3 = v4_unp.get(i).template get<1>(j);
+			float f4 = v4.get(i).template get<1>(j);
+
+			//BOOST_REQUIRE_EQUAL(f1,f2);
+			BOOST_REQUIRE_EQUAL(f3,f4);
 
 			for (size_t k = 0 ; k < v4.get(i).template get<2>(j).size() ; k++)
 			{
-				std::cout << v4.get(i).template get<2>(j).template get<0>(k) << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<1>(k) << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<2>(k) << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<3>(k) << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<4>(k)[0] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<4>(k)[1] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<4>(k)[2] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<5>(k)[0][0] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<5>(k)[0][1] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<5>(k)[0][2] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<5>(k)[1][0] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<5>(k)[1][1] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<5>(k)[1][2] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<5>(k)[2][0] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<5>(k)[2][1] << " ";
-				std::cout << v4.get(i).template get<2>(j).template get<5>(k)[2][2] << std::endl;
+				Point_test<float> p1 = v4_unp.get(i).template get<2>(j).get(k);
+				Point_test<float> p2 = v4.get(i).template get<2>(j).get(k);
+
+				BOOST_REQUIRE(p1 == p2);
 			}
 		}
-	}*/
+	}
+
 }
 
 BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_2 )
