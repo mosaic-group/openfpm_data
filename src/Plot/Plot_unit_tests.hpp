@@ -9,6 +9,7 @@
 #define OPENFPM_DATA_SRC_PLOT_PLOT_UNIT_TESTS_HPP_
 
 #include "GoogleChart.hpp"
+#include "Plot/util.hpp"
 
 BOOST_AUTO_TEST_SUITE( plot_unit_test )
 
@@ -380,6 +381,46 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot2 )
 
 	bool test = compare("gc_plot2_out.html","gc_plot2_out_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
+}
+
+//! [Definition of a function]
+
+double f(double x)
+{
+	return x*x;
+}
+
+//! [Definition of a function]
+
+BOOST_AUTO_TEST_CASE( plot_util )
+{
+	//! [fill a vector]
+
+	openfpm::vector<double> x;
+
+	Fill1D(0.0,2.0,5,x);
+
+	BOOST_REQUIRE_EQUAL(x.get(0),0.0);
+	BOOST_REQUIRE_EQUAL(x.get(1),0.5);
+	BOOST_REQUIRE_EQUAL(x.get(2),1.0);
+	BOOST_REQUIRE_EQUAL(x.get(3),1.5);
+	BOOST_REQUIRE_EQUAL(x.get(4),2.0);
+
+	//! [fill a vector]
+
+	x.clear();
+
+	//! [fill a vector with a function]
+
+	Fill1D(0.0,2.0,5,x,f);
+
+	BOOST_REQUIRE_EQUAL(x.get(0),0.0);
+	BOOST_REQUIRE_EQUAL(x.get(1),0.25);
+	BOOST_REQUIRE_EQUAL(x.get(2),1.0);
+	BOOST_REQUIRE_EQUAL(x.get(3),2.25);
+	BOOST_REQUIRE_EQUAL(x.get(4),4.0);
+
+	//! [fill a vector function]
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -878,7 +878,7 @@ struct prop_out_edge
  */
 
 template<typename Graph>
-class VTKWriter<Graph, GRAPH>
+class VTKWriter<Graph, VTK_GRAPH>
 {
 	const Graph & g;
 

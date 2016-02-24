@@ -9,6 +9,7 @@
 #define OPENFPM_DATA_SRC_PLOT_GOOGLECHART_HPP_
 
 #include <fstream>
+#include "Vector/map_vector.hpp"
 
 #define GGRAPH_COLUMS 1
 #define GGRAPH_POINTS 2
@@ -54,6 +55,9 @@ struct GCoptions
 	//! Check Google Chart API interval option
 	std::string intervalext;
 
+	//! more
+	std::string more;
+
 	GCoptions & operator=(const GCoptions & opt)
 	{
 		title = opt.title;
@@ -66,6 +70,7 @@ struct GCoptions
 
 		lineWidth = opt.lineWidth;
 		intervalsext = opt.intervalsext;
+		more = opt.more;
 
 		return *this;
 	}
@@ -232,6 +237,7 @@ class GoogleChart
 	    str << "seriesType: '" << opt.stype << "',\n";
 	    if (opt.stypeext.size() != 0)
 	    	str << "series: " << opt.stypeext << "\n";
+	    str << opt.more;
 
 	    return str.str();
 	}
@@ -252,6 +258,8 @@ class GoogleChart
 
         if (opt.intervalext.size() != 0)
         	str << "interval: " << opt.intervalext << "\n";
+
+        str << opt.more;
 
 	    return str.str();
 	}

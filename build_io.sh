@@ -11,6 +11,7 @@ mkdir openfpm_io/src/config
 git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_devices.git openfpm_devices
 git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_data.git openfpm_data
 git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_pdata.git openfpm_pdata
+git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_vcluster.git openfpm_vcluster
 
 cd "$1/openfpm_io"
 

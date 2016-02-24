@@ -18,6 +18,8 @@
 #include "csv_multiarray.hpp"
 #include "util.hpp"
 
+#define CSV_WRITER 0x30000
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * For each element of the boost::vector the operator() is called.

@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D )
 
 	// Write the VTK file
 
-	VTKWriter<Graph_CSR<vertex2,edge>,GRAPH> vtk(gr);
+	VTKWriter<Graph_CSR<vertex2,edge>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph_v2.vtk");
 
 	// check that match
@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D_edge )
 
 	// Write the VTK file
 
-	VTKWriter<Graph_CSR<vertex2,vertex2>,GRAPH> vtk(gr);
+	VTKWriter<Graph_CSR<vertex2,vertex2>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph_v4.vtk");
 
 	// check that match
@@ -363,7 +363,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph2D )
 
 	// Write the VTK file
 
-	VTKWriter<Graph_CSR<vertex3,edge>,GRAPH> vtk(gr);
+	VTKWriter<Graph_CSR<vertex3,edge>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph_v3.vtk");
 
 	// check that match
@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph)
 
 	// Write the VTK file
 
-	VTKWriter<Graph_CSR<vertex,edge>,GRAPH> vtk(gr);
+	VTKWriter<Graph_CSR<vertex,edge>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph.vtk");
 
 	// check that match

@@ -94,13 +94,14 @@ enum file_type
 	ASCII
 };
 
-#define GRAPH 1
+#define VTK_GRAPH 1
 #define VECTOR_BOX 2
 #define VECTOR_GRIDS 3
 #define VECTOR_ST_GRIDS 4
 #define VECTOR_POINTS 5
+#define VTK_WRITER 0x10000
 
-template <typename Graph, unsigned int imp>
+template <typename Object, unsigned int imp>
 class VTKWriter
 {
 
