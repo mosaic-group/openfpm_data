@@ -17,7 +17,18 @@ m4_ifdef([AX_BOOST_IOSTREAMS],,[m4_include([m4/ax_boost_iostreams.m4])])
 m4_ifdef([AX_BOOST_PROGRAM_OPTIONS],,[m4_include([m4/ax_boost_program_options.m4])])
 m4_ifdef([AX_BOOST_UNIT_TEST_FRAMEWORK],,[m4_include([m4/ax_boost_unit_test_framework.m4])])
 
-CXXFLAGS+=" --std=c++11 -march=native -mtune=native -Wno-unused-local-typedefs -Wextra -Wno-unused-parameter "
+case $host_os in
+   *cygwin*)
+        # Do something specific for cygwin
+        CXXFLAGS+=" --std=gnu++11 "
+        ;;
+    *)
+        #Default Case
+        CXXFLAGS+=" --std=c++11 "
+        ;;
+esac
+
+CXXFLAGS+=" -march=native -mtune=native -Wno-unused-local-typedefs -Wextra -Wno-unused-parameter "
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
@@ -73,9 +84,19 @@ AC_ARG_WITH([pdata],
              [pdata_dir="$withval"],
              [pdata_dir="../../openfpm_pdata/src"])
 
+####### HDF5 
+
+AX_LIB_HDF5([parallel])
+
+if test x"$with_hdf5" = x"no"; then
+    echo "Cannot detect hdf5, use the --with-hdf5 option if it is not installed in the default location"
+    exit 207
+fi
+
+
 ####### include openfpm_devices include path
 
-INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_data/src -I../../openfpm_devices/src -I$pdata_dir "
+INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_vcluster/src  -I../../openfpm_data/src -I../../openfpm_devices/src -I$pdata_dir "
 
 ########
 

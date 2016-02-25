@@ -31,7 +31,7 @@
   <data key="vk3">4.000000</data>
   <data key="vk4">5</data>
   <data key="vk5">6</data>
-  <data key="vk6">test</data>
+  <data key="vk6">tes2</data>
 </node>
 <node id="n2">
   <data key="vk0">1.000000</data>
@@ -40,7 +40,7 @@
   <data key="vk3">4.000000</data>
   <data key="vk4">5</data>
   <data key="vk5">6</data>
-  <data key="vk6">test</data>
+  <data key="vk6">test3</data>
 </node>
 <node id="n3">
   <data key="vk0">1.000000</data>
@@ -49,7 +49,7 @@
   <data key="vk3">4.000000</data>
   <data key="vk4">5</data>
   <data key="vk5">6</data>
-  <data key="vk6">test</data>
+  <data key="vk6">test4</data>
 </node>
 <edge id="e0" source="n0" target="n1">
   <data key="ek0">1.000000</data>
@@ -58,7 +58,7 @@
   <data key="ek3">4.000000</data>
   <data key="ek4">5</data>
   <data key="ek5">6</data>
-  <data key="ek6">test</data>
+  <data key="ek6">test5</data>
 </edge>
 <edge id="e1" source="n2" target="n1">
   <data key="ek0">1.000000</data>
@@ -67,7 +67,7 @@
   <data key="ek3">4.000000</data>
   <data key="ek4">5</data>
   <data key="ek5">6</data>
-  <data key="ek6">test</data>
+  <data key="ek6">test6</data>
 </edge>
 <edge id="e2" source="n2" target="n0">
   <data key="ek0">1.000000</data>
@@ -76,7 +76,7 @@
   <data key="ek3">4.000000</data>
   <data key="ek4">5</data>
   <data key="ek5">6</data>
-  <data key="ek6">test</data>
+  <data key="ek6">test8</data>
 </edge>
 <edge id="e3" source="n3" target="n1">
   <data key="ek0">1.000000</data>
@@ -85,7 +85,7 @@
   <data key="ek3">4.000000</data>
   <data key="ek4">5</data>
   <data key="ek5">6</data>
-  <data key="ek6">test</data>
+  <data key="ek6">test7</data>
 </edge>
 <edge id="e4" source="n3" target="n2">
   <data key="ek0">1.000000</data>
@@ -94,7 +94,7 @@
   <data key="ek3">4.000000</data>
   <data key="ek4">5</data>
   <data key="ek5">6</data>
-  <data key="ek6">test</data>
+  <data key="ek6">test9</data>
 </edge>
 </graph>
 </graphml>

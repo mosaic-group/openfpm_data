@@ -21,7 +21,7 @@
  * \return true if they match
  *
  */
-bool compare(std::string file1, std::string file2)
+static inline bool compare(std::string file1, std::string file2)
 {
     boost::iostreams::mapped_file_source f1(file1);
     boost::iostreams::mapped_file_source f2(file2);
@@ -65,11 +65,13 @@ struct RGB
  *
  */
 
-struct RGB getColor(int group, std::uniform_real_distribution<float> & d, std::default_random_engine & g)
+static inline struct RGB getColor(int group, std::uniform_real_distribution<float> & d, std::default_random_engine & g)
 {
 	struct RGB col;
 
 	float s = d(g);
+
+	group = group % 12;
 
 #ifdef ON_IO_UNIT_TESTS
 	s = 0.5;
@@ -157,7 +159,7 @@ struct RGB getColor(int group, std::uniform_real_distribution<float> & d, std::d
  * \param ending ending string to check
  *
  */
-bool hasEnding (std::string const &fullString, std::string const &ending)
+static inline bool hasEnding (std::string const &fullString, std::string const &ending)
 {
     if (fullString.length() >= ending.length())
     {return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));}

@@ -208,6 +208,11 @@ struct vertex_node
 		create_prop<typename G::V_type>(attributes_names);
 	};
 
+	inline ~vertex_node()
+	{
+		delete [] attributes_names;
+	}
+
 #ifdef DEBUG
 	/*! \brief Constructor
 	 *
@@ -558,7 +563,7 @@ class GraphMLWriter
 			vn.new_node(nc);
 
 			// Iterate through all the vertex and create the vertex list
-			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::V_type::max_prop> >(vn);
+			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,Graph::V_type::max_prop> >(vn);
 
 			// end node
 			vn.end_node();

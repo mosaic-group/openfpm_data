@@ -8,6 +8,11 @@
 #ifndef VTKWRITER_UNIT_TESTS_HPP_
 #define VTKWRITER_UNIT_TESTS_HPP_
 
+#include "data_type/aggregate.hpp"
+#include <random>
+#include "VTKWriter.hpp"
+#include "util/SimpleRNG.hpp"
+
 BOOST_AUTO_TEST_SUITE( vtk_writer_test )
 
 /* \brief Sub-domain vertex graph node
@@ -195,7 +200,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D )
 
 	// Write the VTK file
 
-	VTKWriter<Graph_CSR<vertex2,edge>,GRAPH> vtk(gr);
+	VTKWriter<Graph_CSR<vertex2,edge>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph_v2.vtk");
 
 	// check that match
@@ -273,7 +278,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D_edge )
 
 	// Write the VTK file
 
-	VTKWriter<Graph_CSR<vertex2,vertex2>,GRAPH> vtk(gr);
+	VTKWriter<Graph_CSR<vertex2,vertex2>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph_v4.vtk");
 
 	// check that match
@@ -358,7 +363,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph2D )
 
 	// Write the VTK file
 
-	VTKWriter<Graph_CSR<vertex3,edge>,GRAPH> vtk(gr);
+	VTKWriter<Graph_CSR<vertex3,edge>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph_v3.vtk");
 
 	// check that match
@@ -438,7 +443,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph)
 
 	// Write the VTK file
 
-	VTKWriter<Graph_CSR<vertex,edge>,GRAPH> vtk(gr);
+	VTKWriter<Graph_CSR<vertex,edge>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph.vtk");
 
 	// check that match
@@ -750,6 +755,74 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 
 	// Check that match
 	bool test = compare("vtk_grids_prp.vtk","vtk_grids_prp_test.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
+	}
+}
+
+BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
+{
+	{
+	// Create 3 vectors with random particles
+	openfpm::vector<Point<3,double>> v1ps;
+	openfpm::vector<Point<3,double>> v2ps;
+	openfpm::vector<Point<3,double>> v3ps;
+	openfpm::vector<aggregate<float,float[3]>> v1pp;
+	openfpm::vector<aggregate<float,float[3]>> v2pp;
+	openfpm::vector<aggregate<float,float[3]>> v3pp;
+
+    // set the seed
+	// create the random generator engine
+	SimpleRNG rng;
+
+	// fill the vector with random data
+	v1ps.resize(100);
+	v2ps.resize(100);
+	v3ps.resize(100);
+
+	v1pp.resize(100);
+	v2pp.resize(100);
+	v3pp.resize(100);
+
+	for (size_t i = 0 ; i < v1ps.size(); i++)
+	{
+		v1ps.template get<0>(i)[0] = rng.GetUniform();
+		v1ps.template get<0>(i)[1] = rng.GetUniform();
+		v1ps.template get<0>(i)[2] = rng.GetUniform();
+
+		v2ps.template get<0>(i)[0] = rng.GetUniform()*0.5;
+		v2ps.template get<0>(i)[1] = rng.GetUniform()*0.5;
+		v2ps.template get<0>(i)[2] = rng.GetUniform()*0.5;
+
+		v3ps.template get<0>(i)[0] = rng.GetUniform()*0.3;
+		v3ps.template get<0>(i)[1] = rng.GetUniform()*0.3;
+		v3ps.template get<0>(i)[2] = rng.GetUniform()*0.3;
+
+		v1pp.template get<0>(i) = rng.GetUniform();
+		v1pp.template get<1>(i)[0] = rng.GetUniform();
+		v1pp.template get<1>(i)[1] = rng.GetUniform();
+		v1pp.template get<1>(i)[2] = rng.GetUniform();
+
+		v2pp.template get<0>(i) = rng.GetUniform();
+		v2pp.template get<1>(i)[0] = rng.GetUniform();
+		v2pp.template get<1>(i)[1] = rng.GetUniform();
+		v2pp.template get<1>(i)[2] = rng.GetUniform();
+
+		v3pp.template get<0>(i) = rng.GetUniform();
+		v3pp.template get<1>(i)[0] = rng.GetUniform();
+		v3pp.template get<1>(i)[1] = rng.GetUniform();
+		v3pp.template get<1>(i)[2] = rng.GetUniform();
+	}
+
+	// Create a writer and write
+	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,float[3]>>>,VECTOR_POINTS> vtk_v;
+	vtk_v.add(v1ps,v1pp,75);
+	vtk_v.add(v2ps,v2pp,88);
+	vtk_v.add(v3ps,v3pp,90);
+
+	vtk_v.write("vtk_points.vtk");
+
+	// Check that match
+	bool test = compare("vtk_points.vtk","vtk_points_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 	}
 }
