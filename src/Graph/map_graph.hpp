@@ -851,20 +851,6 @@ public:
 	 */
 	inline auto getChildEdge(size_t v, size_t v_e) -> decltype(e.get(0))
 	{
-#ifdef DEBUG
-		if (v_e >= v_l.template get<0>(v * v_slot))
-		{
-			std::cerr << "Error node " << v << " does not have edge " << v_e
-			<< "\n";
-		}
-
-		if (e.size() >= e_l.template get<e_map::eid>(v * v_slot + v_e))
-		{
-			std::cerr << "Error edge " << v << " does not have edge " << v_e
-			<< "\n";
-		}
-#endif
-
 		// Get the edge id
 		return e.get(e_l.template get<e_map::eid>(v * v_slot + v_e));
 	}
