@@ -168,6 +168,144 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_p )
 	BOOST_REQUIRE_EQUAL(cnt,0ul);
 }
 
+BOOST_AUTO_TEST_CASE( grid_iterator_sp_test )
+{
+	size_t sz[3] = {16,16,16};
+
+	grid_cpu<3, Point_test<float> > c3(sz);
+	c3.setMemory();
+
+	grid_key_dx<3> start(2,2,2);
+	grid_key_dx<3> stop(10,10,10);
+
+	auto info = c3.getGrid();
+
+	grid_key_dx_iterator_sp<3> it(info,info.LinId(start),info.LinId(stop));
+
+	size_t count = 0;
+
+	while (it.isNext())
+	{
+		count++;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(count,2185ul);
+}
+
+BOOST_AUTO_TEST_CASE( grid_iterator_test_use)
+{
+	{
+	//! [Grid iterator test usage]
+	size_t count = 0;
+
+	// Subdivisions
+	size_t div[3] = {16,16,16};
+
+	// grid info
+	grid_sm<3,void> g_info(div);
+
+	// Create a grid iterator
+	grid_key_dx_iterator<3> g_it(g_info);
+
+	// Iterate on all the elements
+	while (g_it.isNext())
+	{
+		grid_key_dx<3> key = g_it.get();
+
+		// set the grid key to zero without any reason ( to avoid warning compilations )
+		key.zero();
+
+		count++;
+
+		++g_it;
+	}
+
+	BOOST_REQUIRE_EQUAL(count, (size_t)16*16*16);
+	//! [Grid iterator test usage]
+	}
+
+	{
+	size_t count = 0;
+	// Iterate only on the internal elements
+
+	//! [Sub-grid iterator test usage]
+	// Subdivisions
+	size_t div[3] = {16,16,16};
+
+	// grid info
+	grid_sm<3,void> g_info(div);
+
+	grid_key_dx<3> start(1,1,1);
+	grid_key_dx<3> stop(14,14,14);
+
+	// Create a grid iterator (start and stop included)
+	grid_key_dx_iterator_sub<3> g_it(g_info,start,stop);
+
+	// Iterate on all the elements
+	while (g_it.isNext())
+	{
+		grid_key_dx<3> key = g_it.get();
+
+		// set the grid key to zero without any reason ( to avoid warning compilations )
+		key.zero();
+
+		count++;
+
+		++g_it;
+	}
+
+	BOOST_REQUIRE_EQUAL(count, (size_t)14*14*14);
+
+	//! [Sub-grid iterator test usage]
+
+	// reset the iterator and check that it start from gk_start
+	g_it.reset();
+
+	bool val = g_it.get() == start;
+
+	BOOST_REQUIRE_EQUAL(val,true);
+	}
+}
+
+BOOST_AUTO_TEST_CASE( grid_sub_iterator_test )
+{
+	//! [Sub-grid iterator test usage]
+	// Subdivisions
+	size_t count = 0;
+	typedef Point_test<float> p;
+
+	size_t div[3] = {16,16,16};
+
+	// grid info
+	grid_cpu<3,Point_test<float>> g(div);
+	g.setMemory();
+
+	grid_key_dx<3> start(1,1,1);
+	grid_key_dx<3> stop(14,14,14);
+
+	// Create a grid iterator (start and stop included)
+	auto g_it =  g.getIterator(start,stop);
+
+	// Iterate on all the elements
+	while (g_it.isNext())
+	{
+		grid_key_dx<3> key = g_it.get();
+
+		// set the x value
+		g.template get<p::x>(key) = 1.0;
+
+		count++;
+
+		++g_it;
+	}
+
+	BOOST_REQUIRE_EQUAL(count, (size_t)14*14*14);
+
+	//! [Sub-grid iterator test usage]
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

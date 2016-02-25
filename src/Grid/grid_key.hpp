@@ -223,6 +223,20 @@ public:
 		return true;
 	}
 
+
+	/* \brief Check if two key are the same
+	 *
+	 * \param key_t key to check
+	 *
+	 * \return true if the two key are equal
+	 *
+	 */
+	template<unsigned int dim_t> bool operator!=(const grid_key_dx<dim_t> & key_t)
+	{
+		return !this->operator==(key_t);
+	}
+
+
 	//! set the grid key from a list of numbers
 	template<typename a, typename ...T>void set(a v, T...t)
 	{

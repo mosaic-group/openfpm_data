@@ -9,6 +9,9 @@
 /// Converted to C++ by Pietro Incardona
 /// </summary>
 
+#ifndef SIMPLE_RNG_HPP
+#define SIMPLE_RNG_HPP
+
 #include <string>
 #include <cmath>
 
@@ -234,3 +237,5 @@ public:
 		return u / (u + v);
 	}
 };
+
+#endif

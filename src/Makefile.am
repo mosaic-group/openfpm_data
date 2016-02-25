@@ -24,7 +24,7 @@ NN/CellList/CellDecomposer.hpp NN/CellList/CellKey.hpp NN/CellList/CellList.hpp 
 Space/Ghost.hpp Space/Matrix.hpp Space/SpaceBox.hpp Space/SpaceBox_unit_tests.hpp \
 Space/Shape/AdaptiveCylinderCone.hpp Space/Shape/Box.hpp Space/Shape/Box_unit_tests.hpp Space/Shape/HyperCube.hpp Space/Shape/HyperCube_unit_test.hpp Space/Shape/Point.hpp Space/Shape/Point_unit_test.hpp Space/Shape/Sphere.hpp \
 util/check_no_pointers.hpp util/common.hpp util/convert.hpp util/create_vmpl_sequence.hpp util/ct_array.hpp util/for_each_ref.hpp util/mathutil.hpp util/object_creator.hpp util/object_s_di.hpp util/object_si_d.hpp util/object_util.hpp util/util_debug.hpp util/util_test.hpp util/variadic_to_vmpl.hpp util/variadic_to_vmpl_unit_test.hpp util/Pack_stat.hpp \
-Vector/map_vector.hpp Vector/map_vector_std.hpp Vector/util.hpp Vector/vect_isel.hpp Vector/vector_test_util.hpp Vector/vector_unit_tests.hpp Vector/se_vector.hpp Vector/map_vector_grow_p.hpp Vector/vector_std_pack_unpack.ipp Vector/vector_pack_unpack.ipp  \
+Vector/map_vector.hpp Vector/map_vector_std_ptr.hpp Vector/map_vector_std.hpp Vector/util.hpp Vector/vect_isel.hpp Vector/vector_test_util.hpp Vector/vector_unit_tests.hpp Vector/se_vector.hpp Vector/map_vector_grow_p.hpp Vector/vector_std_pack_unpack.ipp Vector/vector_pack_unpack.ipp  \
 timer.hpp \
 util/copy_compare/compare_fusion_vector.hpp util/copy_compare/compare_general.hpp util/copy_compare/copy_compare_aggregates.hpp util/copy_compare/copy_fusion_vector.hpp util/copy_compare/copy_general.hpp util/copy_compare/meta_compare.hpp util/copy_compare/meta_copy.hpp \
 Packer_Unpacker/Pack_selector.hpp Packer_Unpacker/Packer_nested_tests.hpp Packer_Unpacker/Packer_unit_tests.hpp Packer_Unpacker/Packer.hpp Packer_Unpacker/Unpacker.hpp

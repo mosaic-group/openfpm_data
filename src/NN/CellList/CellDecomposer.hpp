@@ -17,6 +17,7 @@ template<unsigned int dim, typename T>
 class shift
 {
 	Point<dim,T> sh;
+	Matrix<dim,T> mat;
 
 public:
 
@@ -29,6 +30,7 @@ public:
 	shift(const Matrix<dim,T> & t, const Point<dim,T> & s)
 	:sh(s)
 	{
+		mat.identity();
 	}
 
 	/*! \brief Shift the point transformation
@@ -81,12 +83,33 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)
 			sh.get(i) = orig.get(i);
 	}
+
+	/*! \brief Get the origin
+	 *
+	 *
+	 */
+	inline const Point<dim,T> & getOrig() const
+	{
+		return sh;
+	}
+
+	/*! \brief Get the transformation Matrix
+	 *
+	 *
+	 */
+	inline const Matrix<dim,T> & getMat() const
+	{
+		return mat;
+	}
 };
 
 // No transformation
 template<unsigned int dim, typename T>
 class no_transform
 {
+	Point<dim,T> orig;
+	Matrix<dim,T> mat;
+
 public:
 
 	/*! \brief Constructor
@@ -97,6 +120,8 @@ public:
 	 */
 	no_transform(const Matrix<dim,T> & t, const Point<dim,T> & s)
 	{
+		orig.zero();
+		mat.identity();
 	}
 
 	/*! \brief Shift the point transformation
@@ -172,6 +197,24 @@ public:
 	{
 		return false;
 	}
+
+	/*! \brief Get the origin
+	 *
+	 *
+	 */
+	inline const Point<dim,T> & getOrig() const
+	{
+		return orig;
+	}
+
+	/*! \brief Get the transformation Matrix
+	 *
+	 *
+	 */
+	inline const Matrix<dim,T> & getMat() const
+	{
+		return mat;
+	}
 };
 
 
@@ -208,11 +251,11 @@ public:
  * \endverbatim
  *
  * ### Cell decomposer without shift
- * \snippet CellList_test.hpp Cell decomposer use without shift
+ * \snippet CellDecomposer_unit_tests.hpp Cell decomposer use without shift
  * ### Cell decomposer with padding
- * \snippet CellList_test.hpp Test Cell decomposer with padding
+ * \snippet CellDecomposer_unit_tests.hpp Test Cell decomposer with padding
  * ### Cell decomposer with shift
- * \snippet CellList_test.hpp Test Cell decomposer with shift
+ * \snippet CellDecompose_unit_tests.hpp Test Cell decomposer with shift
  *
  */
 template<unsigned int dim,typename T, typename transform = no_transform<dim,T>>
@@ -399,7 +442,7 @@ public:
 	 * \return the cell-ids ad a grid_key_dx<dim>
 	 *
 	 */
-	grid_key_dx<dim> getCellGrid(const Point<dim,T> pos) const
+	inline grid_key_dx<dim> getCellGrid(const Point<dim,T> & pos) const
 	{
 #ifdef SE_CLASS1
 		if (tot_n_cell == 0)
@@ -430,7 +473,7 @@ public:
 	 * \return the cell-id
 	 *
 	 */
-	size_t getCell(const T (& pos)[dim]) const
+	inline size_t getCell(const T (& pos)[dim]) const
 	{
 #ifdef SE_CLASS1
 		if (tot_n_cell == 0)
@@ -463,7 +506,7 @@ public:
 	 * \return the cell-id
 	 *
 	 */
-	size_t getCell(const Point<dim,T> & pos) const
+	inline size_t getCell(const Point<dim,T> & pos) const
 	{
 #ifdef SE_CLASS1
 		if (tot_n_cell == 0)
@@ -496,7 +539,7 @@ public:
 	 * \return the cell-id
 	 *
 	 */
-	template<typename Mem> size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos) const
+	template<typename Mem> inline size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos) const
 	{
 
 #ifdef SE_CLASS1
@@ -553,7 +596,7 @@ public:
 	 * \return the box containing the grid points
 	 *
 	 */
-	Box<dim,size_t> getGridPoints(const Box<dim,T> & s_box) const
+	inline Box<dim,size_t> getGridPoints(const Box<dim,T> & s_box) const
 	{
 		// Box with inside grid
 		Box<dim,size_t> bx;
@@ -579,10 +622,9 @@ public:
 	 * \param pad padding cell
 	 *
 	 */
-	void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad)
+	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad)
 	{
 		this->box = box;
-		this->gr_cell.setDimensions(div);
 		Initialize(pad,div);
 	}
 
@@ -595,12 +637,54 @@ public:
 	 * \param pad padding cell
 	 *
 	 */
-	void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const Matrix<dim,T> & mat, const Point<dim,T> & orig, const size_t pad)
+	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const Matrix<dim,T> & mat, const Point<dim,T> & orig, const size_t pad)
 	{
 		t.setTransform(mat,orig);
 		this->box = box;
-		this->gr_cell.setDimensions(div);
 		Initialize(pad,div);
+	}
+
+
+	/*! \brief Set a consistent cell decomposer
+	 *
+	 * When we want to create a new extended CellDecomposer consistent with the old one
+	 * this function can be used to guarantee such costrain.
+	 * With consistent we mean that for each cell of the old CellDecomposer exist
+	 * a Cell in the new CellDecomposer that perfectly overlap
+	 *
+	 * \param cd OLD CellDecomposer
+	 * \param cell_extension extension of the CellDecomposer in term of Cell extesion
+	 *
+	 */
+	inline void setDimensions(const CellDecomposer_sm<dim,T,transform> & cd, const Box<dim,size_t> & cell_extension)
+	{
+		// Get the space transformation
+
+		t.setTransform(cd.getMat(),cd.getOrig());
+
+		// The domain is equivalent to the old one
+		this->box = cd.box;
+
+		// The padding must be calculated
+
+		size_t pad = 0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (pad < cell_extension.getLow(i))
+				pad = cell_extension.getLow(i);
+			else if (pad > cell_extension.getHigh(i))
+				pad = cell_extension.getHigh(i);
+		}
+
+		// We have to give the old division
+
+		size_t sz_div[dim];
+
+		for (size_t i = 0 ; i < dim ; i++)
+			sz_div[i] = cd.gr_cell.size(i) - 2*cd.off[i];
+
+		Initialize(pad,sz_div);
 	}
 
 	/*! \brief Constructor
@@ -710,6 +794,20 @@ public:
 	}
 
 
+	/*! \brief Constructor for a consistent CellDecomposer construction
+	 *
+	 * \param cd Old CellDecomposer
+	 * \param ext Extension box
+	 *
+	 *
+	 */
+	CellDecomposer_sm(const CellDecomposer_sm<dim,T,transform> & cd, Box<dim,size_t> & ext)
+	:t(Matrix<dim,T>::identity(),cd.getOrig())
+	{
+		setDimensions(cd,ext);
+	}
+
+
 	//! default constructor
 	CellDecomposer_sm()
 	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero_p()),tot_n_cell(0)
@@ -724,29 +822,34 @@ public:
 	 * \return the box
 	 *
 	 */
-	const Box<dim,T> & getCellBox() const
+	inline const Box<dim,T> & getCellBox() const
 	{
 		return box_unit;
 	}
 
-	/*! \brief It fix the boundaries for rounding errors
+	/*! \brief Get the transformation Matrix of the cell decomposer
 	 *
-	 * Let's consider in floating point units 1.0 / 1011.0 * 1011.0 = 1011.00006
-	 * Let's also consider the case 1.0 / 998 * 998 = 997.99996
-	 * these two are problematic cases because the first
+	 * \return the transformation Matrix
 	 *
 	 */
-/*	Box<dim,T> BoundaryFixation()
+	inline const Matrix<dim,T> & getMat() const
 	{
+		return t.getMat();
+	}
 
-	}*/
+	/*! \brief Get the origin of the cell decomposer
+	 *
+	 * \return the origin
+	 *
+	 */
+	inline const Point<dim,T> & getOrig() const
+	{
+		return t.getOrig();
+	}
 
-	/*! \brief Convert a Box in the domain space into grid units (Positive countour inclused Negative countour excluded)
+	/*! \brief Convert a Box in the domain space into grid units (Negative contour included, positive contour excluded)
 	 *
 	 *  Given the following
-	 *
-	 * \warning Be carefull the use of this function require boundary fixation
-	 * \see Boundary Fixation
 	 *
 	 * \verbatim
 	 *
@@ -785,7 +888,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	 * \return Box in grid units, if P2 < P1 the box does not include any grid points
 	 *
 	 */
-	Box<dim,size_t> convertDomainSpaceIntoGridUnits(const Box<dim,T> & b_d) const
+	inline Box<dim,size_t> convertDomainSpaceIntoGridUnits(const Box<dim,T> & b_d) const
 	{
 		Box<dim,size_t> g_box;
 		Box<dim,T> b = b_d;
@@ -794,23 +897,25 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		b /= getCellBox().getP2();
 
 		// Considering that we are interested in a box decomposition of the space
-		// where basically all the point are uniquely assigned we include the positive
+		// where each box does not intersect any other boxes in the decomposition we include the positive
 		// countour and exclude the negative one. So ceilP1 do the job for P1 while ceilP2 - 1
 		// do the job for P2
 
 		b.ceilP1();
+
+		// (we do -1 later)
 		b.ceilP2();
 
 		g_box = b;
 
-		// on the other hand if we are at the positive (with non periodic boundary condition)
-		// we have to include also the positive border
+		// on the other hand with non periodic boundary condition, the positive border of the
+		// sub-domain at the edge of the domain must be included
 
 		Point<dim,size_t> p_move;
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			// we are at the positive border (We are assuming that there are not rounding error, check boundary Fixation)
+			// we are at the positive border (We are assuming that there are not rounding error)
 			if (b_d.getHigh(i) == box.getHigh(i))
 			{
 				p_move.get(i) = 0;
@@ -820,6 +925,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 				p_move.get(i) = 1;
 		}
 
+		// here we do ceilP2-1
 		g_box.shrinkP2(p_move);
 
 		return g_box;
@@ -832,7 +938,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	 * \return true if the two CellDecomposer are the same
 	 *
 	 */
-	bool operator==(const CellDecomposer_sm<dim,T,transform> & cd)
+	inline bool operator==(const CellDecomposer_sm<dim,T,transform> & cd)
 	{
 		if (meta_compare<Point<dim,T>>::meta_compare_f(p_middle,cd.p_middle) == false)
 			return false;
@@ -868,7 +974,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	 * \return true if the two CellDecomposer is different
 	 *
 	 */
-	bool operator!=(const CellDecomposer_sm<dim,T,transform> & cd)
+	inline bool operator!=(const CellDecomposer_sm<dim,T,transform> & cd)
 	{
 		return ! this->operator==(cd);
 	}

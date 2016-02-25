@@ -412,9 +412,9 @@ template<unsigned int dim ,typename T> class Point
 
 		for (size_t i = 0 ; i < dim - 1 ; i++)
 		{
-			str += std::to_string(get(i)) + " ";
+			str += std::to_string(static_cast<double>(get(i))) + " ";
 		}
-		str += std::to_string(get(dim-1));
+		str += std::to_string(static_cast<double>(get(dim-1)));
 
 		return str;
 	}
