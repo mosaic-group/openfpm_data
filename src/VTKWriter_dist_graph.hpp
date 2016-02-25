@@ -923,6 +923,31 @@ class VTKWriter<Graph, DIST_GRAPH>
 		return v_out;
 	}
 
+	std::string get_point_info()
+	{
+		//! vertex property output string
+		std::string v_out;
+
+		// write the ids
+		v_out += "SCALARS id unsigned_long\nLOOKUP_TABLE default\n";
+
+		for (size_t i = 0; i < g.getNVertex(); ++i)
+		{
+			v_out += std::to_string(g.getVertexId(i)) + "\n";
+		}
+
+		// write the ids
+		v_out += "SCALARS gid unsigned_long\nLOOKUP_TABLE default\n";
+
+		for (size_t i = 0; i < g.getNVertex(); ++i)
+		{
+			v_out += std::to_string(g.getVertexGlobalId(i)) + "\n";
+		}
+
+		// return the vertex properties string
+		return v_out;
+	}
+
 	/*! \brief It get the edge properties list
 	 *
 	 * It get the edge properties list of the edge defined as a GraphML header
@@ -1118,6 +1143,8 @@ public:
 		std::string edge_prop_header;
 		// Data point header
 		std::string point_data_header;
+		// Ids point
+		std::string point_ids;
 		// Data point
 		std::string point_data;
 		// Cell data header
@@ -1162,6 +1189,9 @@ public:
 		// Get the point data header
 		point_data_header = get_point_data_header();
 
+		// Get the point info
+		point_ids = get_point_info();
+
 		// Get the cell data header
 		cell_data_header = get_cell_data_header();
 
@@ -1192,7 +1222,7 @@ public:
 			std::cerr << "Error cannot create the VTK file: " + file;
 		}
 
-		ofs << vtk_header << point_prop_header << point_list << vertex_prop_header << vertex_list << edge_prop_header << edge_list << point_data_header << point_data << cell_data_header << cell_data;
+		ofs << vtk_header << point_prop_header << point_list << vertex_prop_header << vertex_list << edge_prop_header << edge_list << point_data_header << point_ids << point_data << cell_data_header << cell_data;
 
 		// Close the file
 
