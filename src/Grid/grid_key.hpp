@@ -51,6 +51,13 @@ public:
 	}
 
 	//! Construct a grid key from a list of numbers
+	template<typename ...T> inline grid_key_dx(const comb<dim> & cmb)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			k[i] = cmb[i];
+	}
+
+	//! Construct a grid key from a list of numbers
 	template<typename ...T> inline grid_key_dx(const size_t v,const T...t)
 	{
 #ifdef DEBUG
@@ -70,6 +77,15 @@ public:
 			k[i] = 0;
 	}
 
+	/* \brief Set to one the key
+	 *
+	 */
+	inline void one()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			k[i] = 1;
+	}
+
 	/* \brief Set to invalid the key
 	 *
 	 */
@@ -77,6 +93,50 @@ public:
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			k[i] = -1;
+	}
+
+	/* \brief sum a grid_key
+	 *
+	 * \param comb combination (or relative movement)
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
+	inline grid_key_dx<dim> & operator+=(const grid_key_dx<dim> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			k[i] += p.k[i];
+
+		return *this;
+	}
+
+	/* \brief sum a grid_key
+	 *
+	 * \param comb combination (or relative movement)
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
+	inline grid_key_dx<dim> & operator-=(const grid_key_dx<dim> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			k[i] -= p.k[i];
+
+		return *this;
+	}
+
+	/* \brief sum a grid_key to the grid_key
+	 *
+	 * \param p grid_key to sum
+	 *
+	 * \return a grid_key_dx_expression that encapsulate the expression
+	 *
+	 */
+	inline grid_key_dx_sum<dim,grid_key_dx<dim>,grid_key_dx<dim>> operator+(const grid_key_dx<dim> & p) const
+	{
+		grid_key_dx_sum<dim,grid_key_dx<dim>,grid_key_dx<dim>> exp_sum(*this,p);
+
+		return exp_sum;
 	}
 
 	/* \brief sum an a combination to the grid_key
@@ -163,6 +223,20 @@ public:
 		return true;
 	}
 
+
+	/* \brief Check if two key are the same
+	 *
+	 * \param key_t key to check
+	 *
+	 * \return true if the two key are equal
+	 *
+	 */
+	template<unsigned int dim_t> bool operator!=(const grid_key_dx<dim_t> & key_t)
+	{
+		return !this->operator==(key_t);
+	}
+
+
 	//! set the grid key from a list of numbers
 	template<typename a, typename ...T>void set(a v, T...t)
 	{
@@ -189,6 +263,16 @@ public:
 		}
 
 		return p;
+	}
+
+	/*! \brief convert the information into a string
+	 *
+	 * \return a string
+	 *
+	 */
+	std::string to_string()
+	{
+		return this->toPointS().toString();
 	}
 
 	/*! \brief Convert to a point the grid_key_dx

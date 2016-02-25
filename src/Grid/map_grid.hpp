@@ -5,6 +5,14 @@
 
 //! Warning: apparently you cannot used nested boost::mpl with boost::fusion
 //! can create template circularity, this include avoid the problem
+#include "util/object_util.hpp"
+#include "Grid/util.hpp"
+#include "Vector/vect_isel.hpp"
+#include "Vector/util.hpp"
+#include "Vector/map_vector_grow_p.hpp"
+#include "memory/ExtPreAlloc.hpp"
+#include "util/util_debug.hpp"
+#include "util/Pack_stat.hpp"
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/fusion/sequence/intrinsic/at_c.hpp>
 #include <boost/fusion/include/at_c.hpp>
@@ -35,8 +43,13 @@
 #include <vector>
 #include "se_grid.hpp"
 #include "memory/HeapMemory.hpp"
+#include "memory/PtrMemory.hpp"
 #include "grid_common.hpp"
 #include "util/se_util.hpp"
+#include "iterators/grid_key_dx_iterator.hpp"
+#include "iterators/grid_key_dx_iterator_sub.hpp"
+#include "iterators/grid_key_dx_iterator_sp.hpp"
+#include "iterators/grid_key_dx_iterator_sub_bc.hpp"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;
@@ -73,6 +86,12 @@ typedef HeapMemory CudaMemory;
  * \snippet grid_unit_tests.hpp Create a grid g1 and copy into another g2
  *
  */
+
+namespace openfpm {
+
+template<typename T, typename Memory=HeapMemory, typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value> class vector;
+}
+
 template<unsigned int dim, typename T, typename S=HeapMemory, typename Mem = typename memory_traits_lin< typename T::type >::type >
 class grid_cpu
 {
@@ -88,12 +107,264 @@ public:
 
 	typedef Mem memory_conf;
 
+	/*! \brief Pack the object into the memory given an iterator
+	 *
+	 * \tparam dim Dimensionality of the grid
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 * \param obj object to pack
+	 * \param sts pack statistic
+	 *
+	 */
+
+	static bool pack()
+	{
+		return false;
+	}
+
+	static bool packRequest()
+	{
+		return false;
+	}
+
+	static bool calculateMem()
+	{
+		return false;
+	}
+
+	template<int ... prp> void pack(ExtPreAlloc<S> & mem, Pack_stat & sts)
+	{
+#ifdef DEBUG
+		if (mem.ref() == 0)
+			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
+#endif
+
+		// Sending property object and vector
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>> dtype;
+		dtype dvect;
+
+		// Calculate the required memory for packing
+		size_t alloc_ele = dvect.calculateMem(size(),0);
+
+		// Create an object over the preallocated memory (No allocation is produced)
+		dtype dest;
+		dest.setMemory(mem);
+		dest.resize(size());
+
+		auto it = getIterator();
+
+		pack_with_iterator<decltype(it),dtype,prp...>(it,dest);
+
+		// Update statistic
+		sts.incReq();
+	}
+
+
+	/*! \brief Pack the object into the memory given an iterator
+	 *
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 * \param sub_it sub grid iterator ( or the elements in the grid to pack )
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void pack(ExtPreAlloc<S> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Pack_stat & sts)
+	{
+#ifdef DEBUG
+		if (mem.ref() == 0)
+			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
+#endif
+
+		// Sending property object
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
+
+		// Create an object over the preallocated memory (No allocation is produced)
+		dtype dest;
+		dest.setMemory(mem);
+		dest.resize(sub_it.getVolume());
+
+		pack_with_iterator<grid_key_dx_iterator_sub<dims>,dtype,prp...>(sub_it,dest);
+
+		// Update statistic
+		sts.incReq();
+	}
+
+	/*! \brief Insert an allocation request
+	 *
+	 * \param vector of requests
+	 *
+	 */
+	template<int ... prp> void packRequest(std::vector<size_t> & v)
+	{
+		// Sending property object
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
+		dtype dvect;
+
+		// Calculate the required memory for packing
+		size_t alloc_ele = dvect.calculateMem(size(),0);
+
+		v.push_back(alloc_ele);
+	}
+
+	/*! \brief Insert an allocation request
+	 *
+	 * \tparam prp set of properties to pack
+	 *
+
+	 * \param sub sub-grid iterator
+	 * \param vector of requests
+	 *
+	 */
+	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims> & sub, std::vector<size_t> & v)
+	{
+		typedef openfpm::vector<typename grid_cpu<dim,T,S,Mem>::value_type,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
+		dtype dvect;
+
+		// Calculate the required memory for packing
+		size_t alloc_ele = dvect.template calculateMem<prp...>(sub.getVolume(),0);
+
+		v.push_back(alloc_ele);
+	}
+
+	/*! \brief Pack an N-dimensional grid into a vector like structure B given an iterator of the grid
+	 *
+	 * \tparam it type of iterator of the grid-structure
+	 * \tparam dtype type of the structure B
+	 * \tparam dim Dimensionality of the grid
+	 * \tparam properties to pack
+	 *
+	 * \param it Grid iterator
+	 * \param obj object to pack
+	 * \param dest where to pack
+	 *
+	 */
+	template <typename it, typename dtype, int ... prp> void pack_with_iterator(it & sub_it, dtype & dest)
+	{
+		// Sending property object
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+
+		size_t id = 0;
+
+		// Packing the information
+		while (sub_it.isNext())
+		{
+			// copy all the object in the send buffer
+			typedef encapc<dims,value_type,memory_conf > encap_src;
+			// destination object type
+			typedef encapc<1,prp_object,typename dtype::memory_conf > encap_dst;
+
+			// Copy only the selected properties
+			object_si_d<encap_src,encap_dst,OBJ_ENCAP,prp...>(get_o(sub_it.get()),dest.get(id));
+
+			++id;
+			++sub_it;
+		}
+	}
+
+	/*! \brief unpack the grid given an iterator
+	 *
+	 * \tparam it type of iterator
+	 * \tparam prp of the grid object to unpack
+	 *
+	 */
+	template <typename it, typename stype, unsigned int ... prp> void unpack_with_iterator(ExtPreAlloc<S> & mem, it & sub_it, stype & src, Unpack_stat & ps)
+	{
+		size_t id = 0;
+
+		// Sending property object
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+
+		// unpacking the information
+		while (sub_it.isNext())
+		{
+			// copy all the object in the send buffer
+			typedef encapc<dims,grid_cpu<dim,T,S,Mem>::value_type,grid_cpu<dim,T,S,Mem>::memory_conf > encap_dst;
+			// destination object type
+			typedef encapc<1,prp_object,typename grid_cpu<dims,prp_object>::memory_conf > encap_src;
+
+			// Copy only the selected properties
+			object_s_di<encap_src,encap_dst,OBJ_ENCAP,prp...>(src.get(id),this->get_o(sub_it.get()));
+
+			++id;
+			++sub_it;
+		}
+	}
+
+	/*! \brief unpack the grid object
+	 *
+	 * \tparam prp properties to unpack
+	 *
+	 * \param ext preallocated memory from where to unpack the grid
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<unsigned int ... prp> void unpack(ExtPreAlloc<S> & mem, Unpack_stat & ps)
+	{
+		// object that store the information in mem
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
+		stype svect;
+
+
+		// Calculate the size to pack the object
+		size_t size = svect.calculateMem(this->size(),0);
+
+		// Create an Pointer object over the preallocated memory (No allocation is produced)
+		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
+
+		// Create an object over a pointer (No allocation is produced)
+		stype src;
+		src.setMemory(mem);
+		src.resize(this->size());
+
+		auto it = this->getIterator();
+
+		unpack_with_iterator<decltype(it),stype,prp...>(mem,it,src,ps);
+
+		ps.addOffset(size);
+	}
+
+	/*! \brief unpack the sub-grid object
+	 *
+	 * \tparam prp properties to unpack
+	 *
+	 * \param mem preallocated memory from where to unpack the object
+	 * \param sub sub-grid iterator
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<unsigned int ... prp> void unpack(ExtPreAlloc<S> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Unpack_stat & ps)
+	{
+		// object that store the information in mem
+		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
+		typedef openfpm::vector<prp_object,PtrMemory,openfpm::grow_policy_identity> stype;
+
+		size_t size = stype::template calculateMem(sub_it.getVolume(),0);
+
+		// Create an object over the preallocated memory (No allocation is produced)
+		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
+
+		// Create an object of the packed information over a pointer (No allocation is produced)
+		stype src;
+		src.setMemory(ptr);
+		src.resize(sub_it.getVolume());
+
+		unpack_with_iterator<grid_key_dx_iterator_sub<dims>,stype,prp...>(mem,sub_it,src,ps);
+
+		ps.addOffset(size);
+	}
+
 private:
 
 	//! Is the memory initialized
 	bool is_mem_init = false;
 
-	//! This is an header that store all information related to the grid
+	//! This is a structure that store all information related to the grid and how indexes are linearized
 	grid_sm<dim,T> g1;
 
 	//! Memory layout specification + memory chunk pointer
@@ -109,10 +380,11 @@ private:
 	 *
 	 * Get std::vector with element 0 to dim set to 0
 	 *
+	 * \return an std::vector
+	 *
 	 */
-
 	std::vector<size_t> getV()
-				{
+	{
 		std::vector<size_t> tmp;
 
 		for (unsigned int i = 0 ; i < dim ; i++)
@@ -121,7 +393,81 @@ private:
 		}
 
 		return tmp;
-				}
+	}
+
+#ifdef SE_CLASS1
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 *
+	 */
+	inline void check_init() const
+	{
+		if (is_mem_init == false)
+		{
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
+			size_t * err_code_pointer = (size_t *)&this->err_code;
+			*err_code_pointer = 1001;
+			ACTION_ON_ERROR(GRID_ERROR);
+		}
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * \param key
+	 *
+	 */
+	inline void check_bound(const grid_key_dx<dim> & v1) const
+	{
+		for (long int i = 0 ; i < dim ; i++)
+		{
+			if (v1.get(i) >= (long int)getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " >= " << getGrid().size(i) << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1002;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+			else if (v1.get(i) < 0)
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " is negative " << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1003;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+		}
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * check if key2 is inside the g grid boundary
+	 *
+	 * \param g grid
+	 * \param key2
+	 *
+	 */
+	inline void check_bound(const grid_cpu<dim,T,S,Mem> & g,const grid_key_dx<dim> & key2) const
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (key2.get(i) >= (long int)g.g1.size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " >= " << g.g1.size(i) << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1004;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+			else if (key2.get(i) < 0)
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " is negative " << "\n";
+				size_t * err_code_pointer = (size_t *)&this->err_code;
+				*err_code_pointer = 1005;
+				ACTION_ON_ERROR(GRID_ERROR);
+			}
+		}
+	}
+
+#endif
 
 public:
 
@@ -147,7 +493,7 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 	}
 
@@ -171,7 +517,7 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 	}
 
@@ -181,7 +527,7 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 	}
 
@@ -191,14 +537,14 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 	}
 
 	//! Destructor
 	~grid_cpu() THROW
 	{
-		// Add this pointer
+		// delete this pointer
 #ifdef SE_CLASS2
 		check_delete(this);
 #endif
@@ -213,7 +559,7 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 		swap(g.duplicate());
 
@@ -229,7 +575,7 @@ public:
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,GRID_EVENT,1);
 #endif
 
 		swap(g);
@@ -281,13 +627,13 @@ public:
 		grid_new.setMemory();
 
 		// We know that, if it is 1D we can safely copy the memory
-		if (dim == 1)
-		{
+//		if (dim == 1)
+//		{
 			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
-			grid_new.data_.mem->copy(*data_.mem);
-		}
-		else
-		{
+//			grid_new.data_.mem->copy(*data_.mem);
+//		}
+//		else
+//		{
 			//! N-D copy
 
 			//! create a source grid iterator
@@ -295,11 +641,11 @@ public:
 
 			while(it.isNext())
 			{
-				grid_new.get_o(it.get()) = this->get_o(it.get());
+				grid_new.set(it.get(),*this,it.get());
 
 				++it;
 			}
-		}
+//		}
 
 		// copy grid_new to the base
 
@@ -383,6 +729,25 @@ public:
 	 */
 
 	void * getPointer()
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		if (data_.mem_r == NULL)
+			return NULL;
+
+		return data_.mem_r->get_pointer();
+	}
+
+	/*! \brief Return a plain pointer to the internal data
+	 *
+	 * Return a plain pointer to the internal data
+	 *
+	 * \return plain data pointer
+	 *
+	 */
+
+	const void * getPointer() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -572,13 +937,15 @@ public:
 
 
 		// We know that, if it is 1D we can safely copy the memory
-		if (dim == 1)
-		{
-			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
-			grid_new.data_.mem->copy(*data_.mem);
-		}
-		else
-		{
+//		if (dim == 1)
+//		{
+//			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
+//			grid_new.data_.mem->copy(*data_.mem);
+//		}
+//		else
+//		{
+		// It should be better to separate between fast and slow cases
+
 			//! N-D copy
 
 			//! create a source grid iterator
@@ -595,7 +962,7 @@ public:
 
 				++it;
 			}
-		}
+//		}
 
 		// copy grid_new to the base
 
@@ -867,80 +1234,19 @@ public:
 		return 0;
 	}
 
-
-#ifdef SE_CLASS1
-
-	/*! \brief Check that the key is inside the grid
+	/* \brief It return the id of structure in the allocation list
 	 *
+	 * \see print_alloc and SE_CLASS2
 	 *
 	 */
-	inline void check_init() const
+	long int who()
 	{
-		if (is_mem_init == false)
-		{
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-			size_t * err_code_pointer = (size_t *)&this->err_code;
-			*err_code_pointer = 1001;
-			ACTION_ON_ERROR(GRID_ERROR);
-		}
-	}
-
-	/*! \brief Check that the key is inside the grid
-	 *
-	 * \param key
-	 *
-	 */
-	inline void check_bound(const grid_key_dx<dim> & v1) const
-	{
-		for (long int i = 0 ; i < dim ; i++)
-		{
-			if (v1.get(i) >= (long int)getGrid().size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " >= " << getGrid().size(i) << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1002;
-				ACTION_ON_ERROR(GRID_ERROR);
-			}
-			else if (v1.get(i) < 0)
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " is negative " << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1003;
-				ACTION_ON_ERROR(GRID_ERROR);
-			}
-		}
-	}
-
-	/*! \brief Check that the key is inside the grid
-	 *
-	 * check if key2 is inside the g grid boundary
-	 *
-	 * \param g grid
-	 * \param key2
-	 *
-	 */
-	inline void check_bound(const grid_cpu<dim,T,S,Mem> & g,const grid_key_dx<dim> & key2) const
-	{
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			if (key2.get(i) >= (long int)g.g1.size(i))
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " >= " << g.g1.size(i) << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1004;
-				ACTION_ON_ERROR(GRID_ERROR);
-			}
-			else if (key2.get(i) < 0)
-			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " is negative " << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1005;
-				ACTION_ON_ERROR(GRID_ERROR);
-			}
-		}
-	}
-
+#ifdef SE_CLASS2
+		return check_whoami(this,8);
+#else
+		return -1;
 #endif
+	}
 };
 
 /*! \brief this class is a functor for "for_each" algorithm

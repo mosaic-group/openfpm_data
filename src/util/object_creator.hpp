@@ -10,6 +10,7 @@
 #include "util_debug.hpp"
 #include "check_no_pointers.hpp"
 #include "util/for_each_ref.hpp"
+#include <iostream>
 
 /*! \brief functor for for_each algorithm
  *
@@ -58,10 +59,12 @@ struct check_types
 			{
 				std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " impossible to check the type " << demangle(typeid(tpy).name()) << " please consider to add a static method \"static bool noPointers()\" \n" ;
 				ret = PNP::UNKNOWN;
+				break;
 			}
 			case PNP::POINTERS:
 			{
 				ret = PNP::POINTERS;
+				break;
 			}
 			default:
 			{

@@ -125,7 +125,12 @@ template<unsigned int dim ,typename T> class Matrix
 	Matrix(const Matrix<dim,T> & p)
 	{
 	    for(size_t i = 0; i < dim ; i++)
-	    {get(i) = p.get(i);}
+	    {
+			for (size_t j = 0 ; j < dim ; j++)
+			{
+				get(i,j) = p.get(i,j);
+			}
+	    }
 	}
 
 	/*! \brief Constructor from an array
@@ -136,30 +141,12 @@ template<unsigned int dim ,typename T> class Matrix
 	Matrix(const T (&p)[dim][dim])
 	{
 	    for(size_t i = 0; i < dim ; i++)
-	    {get(i) = p[i];}
-	}
-
-	/*! \brief Constructor from a grid_key_dx<dim>
-	 *
-	 * \param key from where to initialize
-	 *
-	 */
-	Matrix(grid_key_dx<dim> key)
-	{
-	    for(size_t i = 0 ; i < dim ; i++)
-	    {get(i) = key.k[i];}
-	}
-
-	/*! \brief Constructor from a list
-	 *
-	 * [Example] Point<3,float> p({0.0,0.0,1.0})
-	 *
-	 */
-	Matrix(std::initializer_list<T> p1)
-	{
-		size_t i = 0;
-	    for(T x : p1)
-	    {get(i) = x;i++;}
+	    {
+			for (size_t j = 0 ; j < dim ; j++)
+			{
+				get(i,j) = p[i][j];
+			}
+	    }
 	}
 
 	//! Default contructor

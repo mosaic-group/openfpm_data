@@ -55,7 +55,10 @@ public:
 
     //! Default constructor
     timer()
+	:running(false),cstart(0),cstop(0)
     {
+    	tsstart = timespec();
+    	tsstop = timespec();
     }
 
     /*! \brief Start the timer

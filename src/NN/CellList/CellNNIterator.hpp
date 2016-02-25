@@ -49,6 +49,24 @@ template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int imp
 	// Center cell, or cell for witch we are searching the NN-cell
 	const long int cell;
 
+	/*! \brief Select non-empty cell
+	 *
+	 */
+	inline void selectValid()
+	{
+		while (ele_id >= cl.getNelements(cell_id))
+		{
+			NNc_id++;
+
+			// No more Cell
+			if (NNc_id >= NNc_size) return;
+
+			cell_id = NNc[NNc_id] + cell;
+
+			ele_id = 0;
+		}
+	}
+
 public:
 
 	/*! \brief
@@ -63,6 +81,7 @@ public:
 	CellNNIterator(size_t cell, long int (&NNc)[NNc_size], Cell & cl)
 	:cl(cl),NNc_id(0),cell_id(NNc[NNc_id] + cell),ele_id(0),NNc(NNc),cell(cell)
 	{
+		selectValid();
 	}
 
 	/*! \brief
@@ -84,17 +103,7 @@ public:
 	{
 		ele_id++;
 
-		while (ele_id >= cl.getNelements(cell_id))
-		{
-			NNc_id++;
-
-			// No more Cell
-			if (NNc_id >= NNc_size) return * this;
-
-			cell_id = NNc[NNc_id] + cell;
-
-			ele_id = 0;
-		}
+		selectValid();
 
 		return *this;
 	}

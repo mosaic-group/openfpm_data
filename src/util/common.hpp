@@ -9,12 +9,32 @@ namespace std
 {
 	// We need the definition of std::to_string that work on string
 
-	static std::string to_string(std::string s)
+	inline static std::string to_string(std::string s)
 	{
 		return s;
 	}
 }
 
+
+// Compile time array functor needed to generate array at compile-time of type
+// {0,0,0,0,0,.....}
+// {3,3,3,3,3,3,.....}
+
+ template<size_t index, size_t N> struct Fill_three {
+    enum { value = 3 };
+ };
+
+ template<size_t index, size_t N> struct Fill_zero {
+    enum { value = 0 };
+ };
+
+ template<size_t index, size_t N> struct Fill_two {
+    enum { value = 2 };
+ };
+
+ template<size_t index, size_t N> struct Fill_one {
+    enum { value = 1 };
+ };
 
 //! Void structure
 template<typename> struct Void
@@ -31,8 +51,8 @@ struct has_attributes: std::false_type {};
  * internal structure with attributes
  *
  * ### Example
- * \snippet util.hpp Declaration of struct with attributes and without
- * \snippet util.hpp Check has_attributes
+ * \snippet util_test.hpp Declaration of struct with attributes and without
+ * \snippet util_test.hpp Check has_attributes
  *
  * return true if T::attributes::name[0] is a valid expression
  * and produce a defined type
@@ -50,7 +70,7 @@ struct has_typedef_type: std::false_type {};
  *
  * ### Example
  *
- * \snippet util.hpp Check has_typedef_type
+ * \snippet util_test.hpp Check has_typedef_type
  *
  * return true if T::type is a valid type
  *
@@ -66,7 +86,7 @@ struct has_data: std::false_type {};
  *
  * ### Example
  *
- * \snippet util.hpp Check has_data
+ * \snippet util_test.hpp Check has_data
  *
  * return true if T::type is a valid type
  *
@@ -82,7 +102,7 @@ struct has_posMask: std::false_type {};
  *
  * ### Example
  *
- * \snippet util.hpp Check has_data
+ * \snippet util_test.hpp Check has_data
  *
  * return true if T::type is a valid type
  *
@@ -102,7 +122,7 @@ struct has_posMask<T, typename Void<decltype( T::stag_mask )>::type> : std::true
  *
  * ### Example
  *
- * \snippet util.hpp Check is_typedef_and_data_same
+ * \snippet util_test.hpp Check is_typedef_and_data_same
  *
  * return true if the type of T::data is the same of T::type, false otherwise
  *
@@ -136,7 +156,7 @@ struct has_noPointers: std::false_type {};
  *
  * ### Example
  *
- * \snippet util.hpp Check no pointers
+ * \snippet util_test.hpp Check no pointers
  *
  * return true if T::noPointers() is a valid expression (function pointers)
  * and produce a defined type
@@ -144,6 +164,73 @@ struct has_noPointers: std::false_type {};
  */
 template<typename T>
 struct has_noPointers<T, typename Void<decltype( T::noPointers() )>::type> : std::true_type
+{};
+
+/*! \brief has_Pack check if a type has defined a
+ * method called Pack
+ *
+ * ### Example
+ *
+ * \snippet
+ *
+ * return true if T::pack() is a valid expression (function pointers)
+ * and produce a defined type
+ *
+ */
+
+template<typename ObjType, typename Sfinae = void>
+struct has_pack: std::false_type {};
+
+template<typename ObjType>
+struct has_pack<ObjType, typename Void<decltype( ObjType::pack() )>::type> : std::true_type
+{};
+
+
+/*! \brief has_packRequest check if a type has defined a
+ * method called packRequest
+ *
+ * ### Example
+ *
+ * \snippet
+ *
+ * return true if T::packRequest() is a valid expression (function pointers)
+ * and produce a defined type
+ *
+ */
+
+template<typename ObjType, typename Sfinae = void>
+struct has_packRequest: std::false_type {};
+
+template<typename ObjType>
+struct has_packRequest<ObjType, typename Void<decltype( ObjType::packRequest() )>::type> : std::true_type
+{};
+
+
+/*! \brief has_calculateMem check if a type has defined a
+ * method called calculateMem
+ *
+ * ### Example
+ *
+ * \snippet
+ *
+ * return true if T::calculateMem() is a valid expression (function pointers)
+ * and produce a defined type
+ *
+ */
+
+template<typename ObjType, typename Sfinae = void>
+struct has_packMem: std::false_type {};
+
+/*! \brief has_PackMem check if a type has packMem() member function
+ *
+ * ### Example
+ * \snippet util_test.hpp
+ *
+ * return true if ObjType::packMem() is a valid expression
+ *
+ */
+template<typename ObjType>
+struct has_packMem<ObjType, typename Void<decltype( ObjType::packMem() )>::type> : std::true_type
 {};
 
 /*! \brief is_openfpm_native check if a type is an openfpm native structure type

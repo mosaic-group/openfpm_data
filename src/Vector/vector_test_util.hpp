@@ -32,11 +32,6 @@ std::vector<Point_orig<float>> allocate_stl()
 
 	// Now fill the vector
 
-	#ifdef VERBOSE_TEST
-	timer t;
-	t.start();
-	#endif
-
 	Point_orig<float> po;
 	po.setx(1.0);
 	po.sety(2.0);
@@ -65,11 +60,6 @@ std::vector<Point_orig<float>> allocate_stl()
 
 		v_stl_test.push_back(po);
 	}
-
-	#ifdef VERBOSE_TEST
-	t.stop();
-	std::cout << "STL : " << FIRST_PUSH << " add " << "  Time: " << t.getcputime() << " s  " << "\n";
-	#endif
 
 	return v_stl_test;
 }
@@ -123,11 +113,6 @@ openfpm::vector<Point_test<float>> allocate_openfpm_fill(size_t n, size_t fill)
 
 openfpm::vector<Point_test<float>> allocate_openfpm(size_t n_ele)
 {
-	#ifdef VERBOSE_TEST
-	timer t;
-	t.start();
-	#endif
-
 	//! [Create add and access]
 	openfpm::vector<Point_test<float>> v_ofp_test;
 
@@ -191,11 +176,6 @@ openfpm::vector<Point_test<float>> allocate_openfpm(size_t n_ele)
 	}
 
 	//! [Create add and access]
-
-	#ifdef VERBOSE_TEST
-	t.stop();
-	std::cout << "OPENFPM : " << FIRST_PUSH << " add " << "  Time: " << t.getcputime() << " s  " << "\n";
-	#endif
 
 	return v_ofp_test;
 }

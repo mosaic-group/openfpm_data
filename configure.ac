@@ -17,7 +17,18 @@ m4_ifdef([AX_BOOST_IOSTREAMS],,[m4_include([m4/ax_boost_iostreams.m4])])
 m4_ifdef([AX_BOOST_PROGRAM_OPTIONS],,[m4_include([m4/ax_boost_program_options.m4])])
 m4_ifdef([AX_BOOST_UNIT_TEST_FRAMEWORK],,[m4_include([m4/ax_boost_unit_test_framework.m4])])
 
-CXXFLAGS+=" --std=c++11 -march=native -mtune=native -Wno-unused-local-typedefs -Wextra -Wno-unused-parameter "
+case $host_os in
+   *cygwin*)
+        # Do something specific for cygwin
+        CXXFLAGS+=" --std=gnu++11 "
+        ;;
+    *)
+        #Default Case
+        CXXFLAGS+=" --std=c++11 "
+        ;;
+esac
+
+CXXFLAGS+=" -march=native -mtune=native -Wno-unused-local-typedefs -Wextra -Wno-unused-parameter "
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
@@ -59,6 +70,28 @@ if test x"$test_cov" = x"yes"; then
 	AC_DEFINE([TEST_COVERAGE_MODE],[],[Test coverage mode])
 	CXXFLAGS="$CXXFLAGS  -fprofile-arcs -ftest-coverage "
 fi
+
+###### Check for performance test
+
+AC_MSG_CHECKING(whether to build with performance test)
+test_per=no
+AC_ARG_ENABLE(test-performance,
+        AC_HELP_STRING(
+            [--enable-test-performance],
+            [enable test performance]
+        ),
+        test_per="$enableval"
+)
+
+
+
+AC_MSG_RESULT($test_per)
+if test x"$test_per" = x"yes"; then
+        AC_DEFINE([PERFORMANCE_TEST],[],[Test performance mode])
+fi
+
+###### Check for se-class1
+
 
 ###### Check for se-class1
 
@@ -179,7 +212,17 @@ fi
 
 ####### include openfpm_devices include path
 
-INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src"
+INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_io/src"
+
+####### include /usr/local/lib and /usr/local/lib64 if they exist
+
+if [ -d "/usr/local/lib64" ]; then
+	LOCAL_LIBS="/usr/local/lib64"
+else
+	if [ -d "/usr/local/lib" ]; then
+		LOCAL_LIBS="/usr/local/lib"
+	fi
+fi
 
 ####### Checking for GPU support
 
@@ -258,29 +301,10 @@ AC_SUBST(BOOST_CPPFLAGS)
 
 ##########################
 
-
-# Check for which host we are on and setup a few things
-# specifically based on the host
-case $host_os in
-  darwin* )
-        # Do something specific for mac
-        ;;
-  linux*)
-        # Do something specific for linux
-        OPT_LIBS=" -lrt "
-        ;;
-   *BSD*)
-        # Do something specific for BSD
-        ;;
-    *)
-        #Default Case
-        AC_MSG_ERROR([Your platform is not currently supported])
-        ;;
-esac
-
 AC_SUBST(NVCCFLAGS)
 AC_SUBST(INCLUDES_PATH)
 AC_SUBST(OPT_LIBS)
+AC_SUBST(LOCAL_LIBS)
 
 # Checks for typedefs, structures, and compiler characteristics.
 

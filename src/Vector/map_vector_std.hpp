@@ -9,6 +9,7 @@
 #define MAP_VECTOR_STD_HPP_
 
 #include "se_vector.hpp"
+#include "map_vector_std_ptr.hpp"
 
 /*! \brief Implementation of 1-D std::vector like structure
  *
@@ -24,11 +25,6 @@
 template<typename T>
 class vector<T,HeapMemory,grow_policy_double,STD_VECTOR>
 {
-	//! Actual size of the vector, warning: it is not the space allocated in grid
-	//! grid size increase by a fixed amount every time we need a vector bigger than
-	//! the actually allocated space
-	size_t v_size;
-
 	//! 1-D static grid
 	std::vector<T> base;
 
@@ -44,6 +40,9 @@ public:
 	typedef vector_key_iterator iterator_key;
 	//! Type of the value the vector is storing
 	typedef T value_type;
+
+	//This file implements a pack and unpack for std vector
+#include "vector_std_pack_unpack.ipp"
 
 	//! return the size of the vector
 	inline size_t size() const
@@ -65,7 +64,6 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		v_size = slot;
 
 		base.resize(slot);
 	}
@@ -127,6 +125,23 @@ public:
 		base.emplace_back(T());
 	}
 
+	/*! \brief add elements to the vector
+	 *
+	 * \param eles elements to add
+	 *
+	 */
+	template<typename Mem,typename gp> inline void add(const openfpm::vector<T,Mem,gp> & eles)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		size_t start = base.size();
+		base.resize(base.size() + eles.size());
+
+		// copy the elements
+		std::copy(eles.begin(),eles.end(),base.begin()+start);
+	}
+
 	/*! \brief Erase the elements from start to end
 	 *
 	 * \param start element
@@ -177,12 +192,49 @@ public:
 		return base.end();
 	}
 
+	/*! \brief Return an std compatible iterator to the first element
+	 *
+	 * \return an iterator to the first element
+	 *
+	 */
+	inline auto begin() const -> const decltype(base.begin())
+	{
+		return base.begin();
+	}
+
+	/*! \brief Return an std compatible iterator to the last element
+	 *
+	 * \return an iterator to the last element
+	 *
+	 */
+	inline auto end() const -> const decltype(base.begin())
+	{
+		return base.end();
+	}
+
 	/*! \brief Get the last element
 	 *
 	 * \return the last element as reference
 	 *
 	 */
 	inline T & last()
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		if (base.size() == 0)
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
+#endif
+		return base[base.size()-1];
+	}
+
+	/*! \brief Get the last element
+	 *
+	 * \return the last element as reference
+	 *
+	 */
+	inline const T & last() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -365,39 +417,48 @@ public:
 
 	//! Constructor, vector of size 0
 	vector() noexcept
-	:v_size(0),err_code(0)
+	:err_code(0)
 	{
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
 	}
 
 	//! Constructor, vector of size sz
 	vector(size_t sz) noexcept
-	:v_size(0),base(sz),err_code(0)
+	:base(sz),err_code(0)
 	{
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
 	}
 
 	//! Constructor from another vector
 	vector(const vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v) noexcept
-	:v_size(0),err_code(0)
+	:err_code(0)
 	{
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
 
 		base = v.base;
 	}
 
+	/*! \brief Initializer from constructor
+	 *
+	 * \param v Initializer list
+	 *
+	 */
+	vector(const std::initializer_list<T> & v)
+	:base(v)
+	{}
+
 	//! Constructor from another vector
 	vector(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v) noexcept
-	:v_size(0),err_code(0)
+	:err_code(0)
 	{
 #ifdef SE_CLASS2
-		check_new(this,8);
+		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
 
 		base.swap(v.base);
@@ -510,7 +571,30 @@ public:
 	 * \return the size of the allocation number e
 	 *
 	 */
-	inline static size_t calculateMem(size_t n, size_t e)
+	template<int ... prp> inline size_t packMem(size_t n, size_t e)
+	{
+		if (n == 0)
+			return 0;
+		else {
+#ifdef DEBUG
+			std::cout << "Inside map_vector_std.hpp packMem()" << std::endl;
+#endif
+			packMem_cond<has_packMem<T>::type::value, openfpm::vector<T, HeapMemory, grow_policy_double>, prp...> cm;
+			return cm.packMemory(*this,n,0);
+		}
+	}
+
+	/*! \brief Calculate the memory size required to allocate n elements
+	 *
+	 * Calculate the total size required to store n-elements in a vector
+	 *
+	 * \param n number of elements
+	 * \param e unused
+	 *
+	 * \return the size of the allocation number e
+	 *
+	 */
+	inline static size_t calculateMemDummy(size_t n, size_t e)
 	{
 		return n*sizeof(T);
 	}
@@ -538,6 +622,16 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
+		return &base[0];
+	}
+
+	/*! \brief Return the pointer to the chunk of memory
+	 *
+	 * \return the pointer to the chunk of memory
+	 *
+	 */
+	const void * getPointer() const
+	{
 		return &base[0];
 	}
 
@@ -576,6 +670,20 @@ public:
 			*err_code_pointer = 2001;\
 			ACTION_ON_ERROR(VECTOR_ERROR);\
 		}
+	}
+
+	/* \brief It return the id of structure in the allocation list
+	 *
+	 * \see print_alloc and SE_CLASS2
+	 *
+	 */
+	long int who()
+	{
+#ifdef SE_CLASS2
+		return check_whoami(this,8);
+#else
+		return -1;
+#endif
 	}
 };
 

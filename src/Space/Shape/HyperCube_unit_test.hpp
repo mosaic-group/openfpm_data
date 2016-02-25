@@ -167,8 +167,8 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	//! [Get vertex and edge on a line]
 
 	// Check
-	BOOST_REQUIRE_EQUAL(ele[0],2);
-	BOOST_REQUIRE_EQUAL(ele[1],1);
+	BOOST_REQUIRE_EQUAL(ele[0],2ul);
+	BOOST_REQUIRE_EQUAL(ele[1],1ul);
 
 	// Fill the expected vector
 
@@ -199,9 +199,9 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	//! [Get vertex edge and surfaces of a square]
 
 	// Check
-	BOOST_REQUIRE_EQUAL(ele[0],4);
-	BOOST_REQUIRE_EQUAL(ele[1],4);
-	BOOST_REQUIRE_EQUAL(ele[2],1);
+	BOOST_REQUIRE_EQUAL(ele[0],4ul);
+	BOOST_REQUIRE_EQUAL(ele[1],4ul);
+	BOOST_REQUIRE_EQUAL(ele[2],1ul);
 
 	// Check combination
 
@@ -237,10 +237,10 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	//! [Get vertex edge surfaces and volumes of a cube]
 
 	// Check
-	BOOST_REQUIRE_EQUAL(ele[0],8);
-	BOOST_REQUIRE_EQUAL(ele[1],12);
-	BOOST_REQUIRE_EQUAL(ele[2],6);
-	BOOST_REQUIRE_EQUAL(ele[3],1);
+	BOOST_REQUIRE_EQUAL(ele[0],8ul);
+	BOOST_REQUIRE_EQUAL(ele[1],12ul);
+	BOOST_REQUIRE_EQUAL(ele[2],6ul);
+	BOOST_REQUIRE_EQUAL(ele[3],1ul);
 
 	// Check combination
 
@@ -286,11 +286,11 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	check_lin_perm(v1_st);
 
 	// Check
-	BOOST_REQUIRE_EQUAL(ele[0],16);
-	BOOST_REQUIRE_EQUAL(ele[1],32);
-	BOOST_REQUIRE_EQUAL(ele[2],24);
-	BOOST_REQUIRE_EQUAL(ele[3],8);
-	BOOST_REQUIRE_EQUAL(ele[4],1);
+	BOOST_REQUIRE_EQUAL(ele[0],16ul);
+	BOOST_REQUIRE_EQUAL(ele[1],32ul);
+	BOOST_REQUIRE_EQUAL(ele[2],24ul);
+	BOOST_REQUIRE_EQUAL(ele[3],8ul);
+	BOOST_REQUIRE_EQUAL(ele[4],1ul);
 
 	// Penteract
 	// Number of vertex
@@ -323,12 +323,12 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	check_lin_perm(v5_st);
 
 	// Check
-	BOOST_REQUIRE_EQUAL(ele[0],32);
-	BOOST_REQUIRE_EQUAL(ele[1],80);
-	BOOST_REQUIRE_EQUAL(ele[2],80);
-	BOOST_REQUIRE_EQUAL(ele[3],40);
-	BOOST_REQUIRE_EQUAL(ele[4],10);
-	BOOST_REQUIRE_EQUAL(ele[5],1);
+	BOOST_REQUIRE_EQUAL(ele[0],32ul);
+	BOOST_REQUIRE_EQUAL(ele[1],80ul);
+	BOOST_REQUIRE_EQUAL(ele[2],80ul);
+	BOOST_REQUIRE_EQUAL(ele[3],40ul);
+	BOOST_REQUIRE_EQUAL(ele[4],10ul);
+	BOOST_REQUIRE_EQUAL(ele[5],1ul);
 
 
 	// Test SubHypercube 2D and 3D
@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the vertex as a sub-hypercube]
 		std::vector<comb<2>> combs = SubHyperCube<2,0>::getCombinations_R(sc2_0[i],0);
 		//! [Getting the vertex as a sub-hypercube]
-		BOOST_REQUIRE_EQUAL(combs.size(),1);
+		BOOST_REQUIRE_EQUAL(combs.size(),1ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_0[i]),true);
@@ -360,7 +360,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the vertex of the line of the original square]
 		std::vector<comb<2>> combs = SubHyperCube<2,1>::getCombinations_R(sc2_1[i],0);
 		//! [Getting the vertex of the line of the original square]
-		BOOST_REQUIRE_EQUAL(combs.size(),2);
+		BOOST_REQUIRE_EQUAL(combs.size(),2ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_1[i]),true);
@@ -369,7 +369,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the edge(line) of the line of the original square]
 		combs = SubHyperCube<2,1>::getCombinations_R(sc2_1[i],1);
 		//! [Getting the edge(line) of the line of the original square]
-		BOOST_REQUIRE_EQUAL(combs.size(),1);
+		BOOST_REQUIRE_EQUAL(combs.size(),1ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_1[i]),true);
@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the vertices of the square of the original square]
 		std::vector<comb<2>> combs = SubHyperCube<2,2>::getCombinations_R(sc2_2[i],0);
 		//! [Getting the vertices of the square of the original square]
-		BOOST_REQUIRE_EQUAL(combs.size(),4);
+		BOOST_REQUIRE_EQUAL(combs.size(),4ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_2[i]),true);
@@ -394,7 +394,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the lines of the square of the original square]
 		combs = SubHyperCube<2,2>::getCombinations_R(sc2_2[i],1);
 		//! [Getting the lines of the square of the original square]
-		BOOST_REQUIRE_EQUAL(combs.size(),4);
+		BOOST_REQUIRE_EQUAL(combs.size(),4ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_2[i]),true);
@@ -403,7 +403,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the square of the square of the original square]
 		combs = SubHyperCube<2,2>::getCombinations_R(sc2_2[i],2);
 		//! [Getting the square of the square of the original square]
-		BOOST_REQUIRE_EQUAL(combs.size(),1);
+		BOOST_REQUIRE_EQUAL(combs.size(),1ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc2_2[i]),true);
@@ -421,7 +421,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the vertices of the vertices of the cube]
 		std::vector<comb<3>> combs = SubHyperCube<3,0>::getCombinations_R(sc3_0[i],0);
 		//! [Getting the vertices of the vertices of the cube]
-		BOOST_REQUIRE_EQUAL(combs.size(),1);
+		BOOST_REQUIRE_EQUAL(combs.size(),1ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 //		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_0[i]),true);
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the vertices of the edge of the cube]
 		std::vector<comb<3>> combs = SubHyperCube<3,1>::getCombinations_R(sc3_1[i],0);
 		//! [Getting the vertices of the vertices of the cube]
-		BOOST_REQUIRE_EQUAL(combs.size(),2);
+		BOOST_REQUIRE_EQUAL(combs.size(),2ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_1[i]),true);
@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the edges of the edges of the cube]
 		combs = SubHyperCube<3,1>::getCombinations_R(sc3_1[i],1);
 		//! [Getting the edges of the edges of the cube]
-		BOOST_REQUIRE_EQUAL(combs.size(),1);
+		BOOST_REQUIRE_EQUAL(combs.size(),1ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_1[i]),true);
@@ -459,10 +459,10 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 	for (size_t i = 0 ; i < sc3_2.size() ; i++)
 	{
 		// Expecting two elements, valid, distinct,  sub-decomposition of sc3_2[i]
-		//! [Getting the vertices of the surfaces of the cube]
+		//! [Getting the vertices of one surface of the cube]
 		std::vector<comb<3>> combs = SubHyperCube<3,2>::getCombinations_R(sc3_2[i],0);
-		//! [Getting the vertices of the surfaces of the cube]
-		BOOST_REQUIRE_EQUAL(combs.size(),4);
+		//! [Getting the vertices of one surface of the cube]
+		BOOST_REQUIRE_EQUAL(combs.size(),4ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_2[i]),true);
@@ -471,7 +471,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the edges of the surfaces of the cube]
 		combs = SubHyperCube<3,2>::getCombinations_R(sc3_2[i],1);
 		//! [Getting the edges of the surfaces of the cube]
-		BOOST_REQUIRE_EQUAL(combs.size(),4);
+		BOOST_REQUIRE_EQUAL(combs.size(),4ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_2[i]),true);
@@ -480,7 +480,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 		//! [Getting the surfaces of the surfaces of the cube]
 		combs = SubHyperCube<3,2>::getCombinations_R(sc3_2[i],2);
 		//! [Getting the surfaces of the surfaces of the cube]
-		BOOST_REQUIRE_EQUAL(combs.size(),1);
+		BOOST_REQUIRE_EQUAL(combs.size(),1ul);
 		BOOST_REQUIRE_EQUAL(isDinstict(combs),true);
 		BOOST_REQUIRE_EQUAL(isValid(combs),true);
 		BOOST_REQUIRE_EQUAL(isSubdecomposition(combs,sc3_2[i]),true);

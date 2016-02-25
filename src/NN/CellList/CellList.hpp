@@ -12,7 +12,7 @@
 #include "CellDecomposer.hpp"
 
 //! Point at witch the cell do a reallocation (it should the the maximum for all the implementations)
-#define CELL_REALLOC 16
+#define CELL_REALLOC 16ul
 
 /* NOTE all the implementations
  *
@@ -36,7 +36,7 @@
  * \see CellList<dim,T,FAST,transform,base>
  *
  */
-template<unsigned int dim, typename T,  unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename base=openfpm::vector<T>>
+template<unsigned int dim, typename T,  unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
 class CellList
 {
 };

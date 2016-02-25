@@ -96,6 +96,11 @@ public:
 
 	static std::vector<comb<dim>> getCombinations_R(size_t d)
 	{
+#ifdef SE_CLASS1
+		if (d > dim)
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " " << d << " must be smaller than " << "\n";
+#endif
+
 		// Create an Iterator_g_const
 		// And a vector that store all the combination
 
@@ -269,12 +274,13 @@ public:
 		return id;
 	}
 
+	/*
 	static SubHyperCube<dim,dim-1> getSubHyperCube(int d)
 	{
 		SubHyperCube<dim,dim-1> sub;
 
 		return sub;
-	}
+	}*/
 
 	/** \brief Linearize the combination
 	 *
@@ -397,12 +403,12 @@ public:
  * \tparam dimensionality of the hyper-cube
  * \tparam dimensionality of the sub-hyper-cube
  *
- * ### Getting the surfaces of the cube
- * \snippet hypercube_unit_test.hpp Getting the surfaces of the cube
- * ### Getting the vertices of the surfaces of the cube
- * \snippet hypercube_unit_test.hpp Getting the vertices of the surfaces of the cube
- * ### Getting the edges of the surfaces of the cube
- * \snippet hypercube_unit_test.hpp Getting the edges of the surfaces of the cube
+ * ### First we get the surfaces of an hyper-cube
+ * \snippet HyperCube_unit_test.hpp Getting the surfaces of the cube
+ * ### Getting the vertices of one particular surface of the cube
+ * \snippet HyperCube_unit_test.hpp Getting the vertices of one surface of the cube
+ * ### Getting the edges of one particular surface of the cube
+ * \snippet HyperCube_unit_test.hpp Getting the edges of the surfaces of the cube
  *
  */
 

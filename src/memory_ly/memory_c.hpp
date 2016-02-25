@@ -5,7 +5,6 @@
  *      Author: Pietro Incardona
  */
 
-#include <boost/shared_ptr.hpp>
 #include <boost/multi_array.hpp>
 #include <boost/fusion/mpl.hpp>
 #include <boost/fusion/include/mpl.hpp>

@@ -278,7 +278,6 @@ public:
  * \snippet graph_unit_tests.hpp Create a tree graph with no edge properties
  *
  */
-
 template<typename V, typename E = no_edge, template<typename, typename, typename, unsigned int> class VertexList = openfpm::vector, template<typename, typename, typename, unsigned int> class EdgeList = openfpm::vector, typename Memory = HeapMemory,
 		typename grow_p = openfpm::grow_policy_double>
 class Graph_CSR
@@ -488,6 +487,9 @@ public:
 	 */
 	Graph_CSR<V, E, VertexList, EdgeList, Memory> & operator=(Graph_CSR<V, E, VertexList, EdgeList, Memory> && g)
 	{
+		size_t vs_tmp = v_slot;
+		v_slot = g.v_slot;
+		g.v_slot = vs_tmp;
 		swap(g);
 	}
 
@@ -796,6 +798,38 @@ public:
 		return e.get(id);
 	}
 
+	/*! \brief Access the edge
+	 *
+	 * \param id of the edge to access
+	 *
+	 */
+	auto edge(grid_key_dx<1> id) const -> const decltype ( e.get(id.get(0)) )
+	{
+		return e.get(id.get(0));
+	}
+
+	/*! \brief operator to access the edge
+	 *
+	 * \param ek key of the edge
+	 *
+	 */
+	auto edge(edge_key ek) const -> const decltype ( e.get(0) )
+	{
+		return e.get(e_l.template get<e_map::eid>(ek.pos * v_slot + ek.pos_e));
+	}
+
+	/*! \brief operator to access the edge
+	 *
+	 * operator to access the edge
+	 *
+	 * \param id of the edge to access
+	 *
+	 */
+	auto edge(size_t id) const -> const decltype ( e.get(id) )
+	{
+		return e.get(id);
+	}
+
 	/*! \brief Return the number of childs of a vertex
 	 *
 	 * \param c Child id
@@ -869,15 +903,12 @@ public:
 #ifdef DEBUG
 		if (i >= v_l.template get<0>(v))
 		{
-			std::cerr << "Error " << __FILE__ << " line: " << __LINE__
-			<< "    vertex " << v << " does not have edge " << i
-			<< "\n";
+			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v << " does not have edge " << i << "\n";
 		}
 
 		if (e.size() <= e_l.template get<e_map::eid>(v * v_slot + i))
 		{
-			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge "
-			<< v << " does not have edge " << i << "\n";
+			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge " << v << " does not have edge "<< i << "\n";
 		}
 #endif
 		// Get the edge id
@@ -898,15 +929,12 @@ public:
 #ifdef DEBUG
 		if (i >= v_l.template get<0>(v.get()))
 		{
-			std::cerr << "Error " << __FILE__ << " line: " << __LINE__
-			<< "    vertex " << v.get() << " does not have edge " << i
-			<< "\n";
+			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v.get() << " does not have edge " << i << "\n";
 		}
 
 		if (e.size() <= e_l.template get<e_map::eid>(v.get() * v_slot + i))
 		{
-			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge "
-			<< v.get() << " does not have edge " << i << "\n";
+			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge " << v.get() << " does not have edge "<< i << "\n";
 		}
 #endif
 
