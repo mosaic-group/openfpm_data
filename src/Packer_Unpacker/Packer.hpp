@@ -105,6 +105,16 @@ public:
 	{
 		req.push_back(sizeof(T));
 	}
+
+	/*! \brief It add a request to pack a C++ primitive
+	 *
+	 * \param req requests vector
+	 *
+	 */
+	static void packRequest(std::vector<size_t> & req)
+	{
+		req.push_back(sizeof(T));
+	}
 };
 
 /*! \brief Packer for primitives
