@@ -58,7 +58,7 @@ public:
 	/*! \brief Error, no implementation
 	 *
 	 */
-	static size_t packRequest(std::vector<size_t> & req)
+	static size_t packRequest(T & obj, std::vector<size_t> & req)
 	{
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " packing for the type " << demangle(typeid(T).name()) << " is not implemented\n";
 		return 0;
@@ -90,6 +90,16 @@ public:
 
 		// update statistic
 		sts.incReq();
+	}
+
+	/*! \brief It add a request to pack a C++ primitive
+	 *
+	 * \param req requests vector
+	 *
+	 */
+	static void packRequest(T & obj, std::vector<size_t> & req)
+	{
+		req.push_back(sizeof(T));
 	}
 
 	/*! \brief It add a request to pack a C++ primitive
@@ -139,9 +149,9 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequestDummy(std::vector<size_t> & req)
+	static void packRequest(T & obj,std::vector<size_t> & req)
 	{
-		req.push_back(sizeof(T));
+		req.push_back(sizeof(typename T::value_type)*obj.size());
 	}
 };
 
@@ -184,7 +194,7 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(std::vector<size_t> & req)
+	static void packRequest(T & obj,std::vector<size_t> & req)
 	{
 		req.push_back(sizeof(T));
 	}
@@ -229,7 +239,7 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(std::vector<size_t> & req)
+	static void packRequest(T & obj,std::vector<size_t> & req)
 	{
 		req.push_back(sizeof(T));
 	}
@@ -319,7 +329,7 @@ public:
 	 *
 	 *
 	 */
-	void packRequest(std::vector<size_t> & v)
+	void packRequest(T & eobj,std::vector<size_t> & v)
 	{
 		v.push_back(sizeof(T::type));
 	}

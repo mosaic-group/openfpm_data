@@ -202,7 +202,7 @@ public:
 	 * \return true if the two key are equal
 	 *
 	 */
-	template<unsigned int dim_t> bool operator==(const grid_key_dx<dim_t> & key_t)
+	template<unsigned int dim_t> bool operator==(const grid_key_dx<dim_t> & key_t) const
 	{
 		if (dim != dim_t)
 		{
