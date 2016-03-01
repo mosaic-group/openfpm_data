@@ -302,7 +302,7 @@ public:
 	 *
 	 *
 	 */
-	void pack(ExtPreAlloc<Mem> & mem, T & eobj)
+	static void pack(ExtPreAlloc<Mem> & mem, const T & eobj, Pack_stat & sts)
 	{
 #ifdef DEBUG
 		if (mem.ref() == 0)
@@ -310,9 +310,13 @@ public:
 #endif
 
 		// Create an object out of the encapsulated object and copy
-		typename T::type obj = eobj;
+		const typename T::T_type obj = eobj;
+		mem.allocate(sizeof(typename T::T_type));
 
-		memcpy(mem.getPointer(),&obj,sizeof(T::type));
+		memcpy(mem.getPointer(),&obj,sizeof(typename T::T_type));
+
+		// update statistic
+		sts.incReq();
 	}
 
 	/*! \brief

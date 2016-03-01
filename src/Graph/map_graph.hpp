@@ -409,13 +409,39 @@ public:
 	//! Object container for the edge, for example can be encap<...> (map_grid or openfpm::vector)
 	typedef typename EdgeList<E, Memory, grow_p, openfpm::vect_isel<E>::value>::container E_container;
 
+	/*! \brief Check if two graph exactly match
+	 *
+	 * \warning The requirement to match is more restrictive than simply content matching
+	 *
+	 * \param g Graph to compare
+	 *
+	 * \return true if they match
+	 *
+	 */
+	bool operator==(const Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> & g) const
+	{
+		bool ret = true;
+
+		// Check if they match
+
+		ret &= (v_slot == g.v_slot);
+		ret &= (v == g.v);
+		ret &= (v_l == g.v_l);
+		ret &= (globalToLocal == g.globalToLocal);
+		ret &= (mapToGlobal == g.mapToGlobal);
+		ret &= (e == g.e);
+		ret &= (e_l == g.e_l);
+
+		return ret;
+	}
+
+
 	/*! \brief It duplicate the graph
 	 *
 	 * \return a graph duplicate of the first
 	 *
 	 */
-
-	Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> duplicate()
+	Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> duplicate() const
 	{
 		Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> dup;
 
@@ -491,6 +517,8 @@ public:
 		v_slot = g.v_slot;
 		g.v_slot = vs_tmp;
 		swap(g);
+
+		return *this;
 	}
 
 	/*! \breif Copy the graph
@@ -501,6 +529,8 @@ public:
 	Graph_CSR<V, E, VertexList, EdgeList, Memory> & operator=(const Graph_CSR<V, E, VertexList, EdgeList, Memory> & g)
 	{
 		swap(g.duplicate());
+
+		return *this;
 	}
 
 	/*! \brief operator to access the vertex
@@ -650,21 +680,11 @@ public:
 	 *
 	 * \param n re-mapped position
 	 * \param g global position
-	 * \tparam i id of the property storing the id
 	 *
 	 */
-	template<size_t i>
-	void setMapId(size_t n, size_t g, size_t l)
+	void setMapId(size_t n, size_t g)
 	{
-		try
-		{
-			mapToGlobal.at(n) = g;
-		} catch (const std::out_of_range& oor)
-		{
-			mapToGlobal.insert( { n, g });
-		}
-
-		v.get(l).template get<i>() = n;
+		mapToGlobal[n] = g;
 	}
 
 	/*! \brief Get the global id of the vertex given the re-mapped one
@@ -766,15 +786,6 @@ public:
 		return e.template get<i>(id);
 	}
 
-	/*! \brief Access the edge
-	 *
-	 * \param id of the edge to access
-	 *
-	 */
-	auto edge(grid_key_dx<1> id) const -> const decltype ( e.get(id.get(0)) )
-	{
-		return e.get(id.get(0));
-	}
 
 	/*! \brief operator to access the edge
 	 *
@@ -806,28 +817,6 @@ public:
 	auto edge(grid_key_dx<1> id) const -> const decltype ( e.get(id.get(0)) )
 	{
 		return e.get(id.get(0));
-	}
-
-	/*! \brief operator to access the edge
-	 *
-	 * \param ek key of the edge
-	 *
-	 */
-	auto edge(edge_key ek) const -> const decltype ( e.get(0) )
-	{
-		return e.get(e_l.template get<e_map::eid>(ek.pos * v_slot + ek.pos_e));
-	}
-
-	/*! \brief operator to access the edge
-	 *
-	 * operator to access the edge
-	 *
-	 * \param id of the edge to access
-	 *
-	 */
-	auto edge(size_t id) const -> const decltype ( e.get(id) )
-	{
-		return e.get(id);
 	}
 
 	/*! \brief Return the number of childs of a vertex
@@ -1121,6 +1110,26 @@ public:
 		e_invalid.swap(g.e_invalid);
 	}
 
+	/*! \brief swap the memory of g with this graph
+	 *
+	 * swap the memory of g with this graph, it is basically used
+	 * for move semantic
+	 *
+	 */
+
+	inline void swap(Graph_CSR<V, E, VertexList, EdgeList> && g)
+	{
+		// switch the memory
+
+		v.swap(g.v);
+		e.swap(g.e);
+		v_l.swap(g.v_l);
+		globalToLocal = g.globalToLocal;
+		mapToGlobal = g.mapToGlobal;
+		e_l.swap(g.e_l);
+		e_invalid.swap(g.e_invalid);
+	}
+
 	/*! \brief Get the vertex iterator
 	 *
 	 * Get the vertex iterator
@@ -1167,6 +1176,11 @@ public:
 	inline size_t getNEdge() const
 	{
 		return e.size();
+	}
+
+	inline const std::unordered_map<size_t,size_t> & getMap()
+	{
+		return mapToGlobal;
 	}
 };
 
