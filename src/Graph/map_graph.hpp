@@ -288,12 +288,6 @@ class Graph_CSR
 	//! Structure that store the vertex properties
 	VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value> v;
 
-	//! Hashmap to access to the global position given the re-mapped one (needed for access the map)
-	std::unordered_map<size_t, size_t> mapToGlobal;
-
-	//! Hashmap to access the local vertex given the global one
-	std::unordered_map<size_t, size_t> globalToLocal;
-
 	//! Structure that store the number of adjacent vertex in e_l for each vertex
 	VertexList<size_t, Memory, grow_p, openfpm::vect_isel<size_t>::value> v_l;
 
@@ -427,8 +421,6 @@ public:
 		ret &= (v_slot == g.v_slot);
 		ret &= (v == g.v);
 		ret &= (v_l == g.v_l);
-		ret &= (globalToLocal == g.globalToLocal);
-		ret &= (mapToGlobal == g.mapToGlobal);
 		ret &= (e == g.e);
 		ret &= (e_l == g.e_l);
 
@@ -451,8 +443,6 @@ public:
 
 		dup.v.swap(v.duplicate());
 		dup.v_l.swap(v_l.duplicate());
-		dup.globalToLocal = globalToLocal;
-		dup.mapToGlobal = mapToGlobal;
 		dup.e.swap(e.duplicate());
 		dup.e_l.swap(e_l.duplicate());
 		dup.e_invalid.swap(e_invalid.duplicate());
@@ -625,129 +615,6 @@ public:
 		return v.get(id.get());
 	}
 
-	/*! \brief operator to access the vertex by mapped position
-	 *
-	 * operator to access the vertex
-	 *
-	 * \param id re-mapped id of the vertex to access
-	 *
-	 */
-	auto vertexByMapId(size_t id) -> decltype( v.get(mapToGlobal.at(0)) )
-	{
-		return v.get(mapToGlobal.at(id));
-	}
-
-	/*! \brief Get the local id given the global one
-	 *
-	 * \param id global id
-	 * \return local id
-	 *
-	 */
-	auto getLocalVertexByGlobalId(size_t id) -> decltype( v.get(globalToLocal.at(0)) )
-	{
-		return v.get(globalToLocal.at(id));
-	}
-
-	/*! \brief Check if the vertex with global_id is in this graph
-	 *
-	 * \param id global id of the vertex
-	 * \return true if vertex with global_id is in this graph, false otherwise
-	 */
-	bool vertexIsInThisGraph(size_t id)
-	{
-		try
-		{
-			globalToLocal.at(id);
-		} catch (const std::out_of_range& oor)
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	/*! \brief get the local id of a vertex given the global id
-	 *
-	 * \param id global id of the vertex
-	 * \return local id of the vertex
-	 */
-	size_t getLocalIdFromGlobalId(size_t id)
-	{
-		return globalToLocal.at(id);
-	}
-
-	/*! \brief operator to remap vertex to a new position
-	 *
-	 * \param n re-mapped position
-	 * \param g global position
-	 *
-	 */
-	void setMapId(size_t n, size_t g)
-	{
-		mapToGlobal[n] = g;
-	}
-
-	/*! \brief Get the global id of the vertex given the re-mapped one
-	 *
-	 * \param remapped id
-	 * \return global id
-	 *
-	 */
-	size_t getVertexGlobalId(size_t n)
-	{
-		return mapToGlobal.at(n);
-	}
-
-	/*! \brief operator to init ids vector
-	 *
-	 * operator to init ids vector
-	 *
-	 */
-	void initLocalToGlobalMap()
-	{
-		mapToGlobal.clear();
-		for (size_t i = 0; i < v.size(); i++)
-		{
-			mapToGlobal.insert( { i, i });
-		}
-	}
-
-	/*! \brief operator to reset LocalToGlobalMap
-	 *
-	 */
-	void resetLocalToGlobalMap()
-	{
-		mapToGlobal.clear();
-	}
-
-	/*! \brief operator to reset globalToLocalMap
-	 *
-	 */
-	void resetGlobalToLocalMap()
-	{
-		globalToLocal.clear();
-	}
-
-	/*! \brief map global id to local id
-	 *
-	 * \param g global id
-	 * \param l local index
-	 * \param i id
-	 */
-	void setGlobalMap(size_t g, size_t l, size_t i)
-	{
-		globalToLocal.insert( { g, l });
-	}
-
-	/*! \brief get global id given re-mapped id
-	 *
-	 * \param i global id
-	 */
-	size_t getGlobalIdFromMap(size_t i)
-	{
-		return mapToGlobal.at(i);
-	}
-
 	/*! \brief operator to clear the whole graph
 	 *
 	 * operator to clear all
@@ -757,8 +624,6 @@ public:
 	{
 		v.clear();
 		e.clear();
-		resetLocalToGlobalMap();
-		resetGlobalToLocalMap();
 		v_l.clear();
 		e_l.clear();
 		e_invalid.clear();
@@ -848,24 +713,6 @@ public:
 		return v_l.template get<0>(c.get());
 	}
 
-	/*! \brief Return the number of childs of a vertex by Id
-	 *
-	 * \param id vertex id
-	 *
-	 * \return the number of childs
-	 *
-	 */
-
-	inline size_t getNChildsByMapId(size_t id) const
-	{
-		//Get vertex position in main VertexList
-		size_t v = mapToGlobal.at(id);
-
-		// Get the number of childs
-
-		return v_l.template get<0>(v);
-	}
-
 	/*! \brief Get the vertex edge
 	 *
 	 * \param v vertex
@@ -931,24 +778,6 @@ public:
 		return e_l.template get<e_map::vid>(v.get() * v_slot + i);
 	}
 
-	/*! \brief Get the child edge from vertex with property id
-	 *
-	 * \param id id of the vertex
-	 * \param i child at position i
-	 *
-	 * \return the edge id that connect v with the target with id
-	 *
-	 */
-
-	inline size_t getChildByVertexId(size_t id, size_t i) const
-	{
-		//Get vertex position in main VertexList
-		size_t v = mapToGlobal.at(id);
-
-		// Get the edge id
-		return e_l.template get<e_map::vid>(v * v_slot + i);
-	}
-
 	/*! \brief add vertex
 	 *
 	 * \param vrt Vertex properties
@@ -959,37 +788,6 @@ public:
 	{
 
 		v.add(vrt);
-
-		// Set position to ids vector
-
-		mapToGlobal.insert( { v.size() - 1, v.size() - 1 });
-
-		// Set the number of adjacent vertex for this vertex to 0
-
-		v_l.add(0ul);
-
-		// Add a slot for the vertex adjacency list
-
-		e_l.resize(e_l.size() + v_slot);
-	}
-
-	/*! \brief add vertex
-	 *
-	 * \param vrt Vertex properties
-	 * \param g_id global id to store in the globalToLocal map
-	 */
-
-	inline void addVertex(const V & vrt, size_t g_id)
-	{
-
-		v.add(vrt);
-
-		// Set position to mapToGlobal map
-
-		mapToGlobal.insert( { v.size() - 1, v.size() - 1 });
-
-		// Set position to globalToLocal map
-		globalToLocal.insert( { g_id, v.size() - 1 });
 
 		// Set the number of adjacent vertex for this vertex to 0
 
@@ -1008,10 +806,6 @@ public:
 	{
 
 		v.add();
-
-		// Set position to ids vector
-
-		mapToGlobal.insert( { v.size() - 1, v.size() - 1 });
 
 		// Set the number of adjacent vertex for this vertex to 0
 
@@ -1104,8 +898,6 @@ public:
 		v.swap(g.v);
 		e.swap(g.e);
 		v_l.swap(g.v_l);
-		globalToLocal = g.globalToLocal;
-		mapToGlobal = g.mapToGlobal;
 		e_l.swap(g.e_l);
 		e_invalid.swap(g.e_invalid);
 	}
@@ -1124,8 +916,6 @@ public:
 		v.swap(g.v);
 		e.swap(g.e);
 		v_l.swap(g.v_l);
-		globalToLocal = g.globalToLocal;
-		mapToGlobal = g.mapToGlobal;
 		e_l.swap(g.e_l);
 		e_invalid.swap(g.e_invalid);
 	}
@@ -1176,11 +966,6 @@ public:
 	inline size_t getNEdge() const
 	{
 		return e.size();
-	}
-
-	inline const std::unordered_map<size_t,size_t> & getMap()
-	{
-		return mapToGlobal;
 	}
 };
 
