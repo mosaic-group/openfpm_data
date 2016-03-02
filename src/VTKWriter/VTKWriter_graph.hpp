@@ -970,7 +970,7 @@ class VTKWriter<Graph, VTK_GRAPH>
 			vtk_vertex_node<Graph, attr> vn(v_out, obj, x);
 
 			// Iterate through all the vertex and create the vertex list
-			boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::V_type::max_prop - 1> >(vn);
+			boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::V_type::max_prop > >(vn);
 
 			// write the node string
 			vn.write();
