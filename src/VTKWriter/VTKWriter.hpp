@@ -94,13 +94,15 @@ enum file_type
 	ASCII
 };
 
-#define GRAPH 1
+#define VTK_GRAPH 1
 #define VECTOR_BOX 2
 #define VECTOR_GRIDS 3
 #define VECTOR_ST_GRIDS 4
 #define DIST_GRAPH 5
+#define VECTOR_POINTS 6
+#define VTK_WRITER 0x10000
 
-template <typename Graph, unsigned int imp>
+template <typename Object, unsigned int imp>
 class VTKWriter
 {
 
@@ -111,5 +113,6 @@ class VTKWriter
 #include "VTKWriter_grids.hpp"
 #include "VTKWriter_grids_st.hpp"
 #include "VTKWriter_dist_graph.hpp"
+#include "VTKWriter_point_set.hpp"
 
 #endif /* VTKWRITER_HPP_ */

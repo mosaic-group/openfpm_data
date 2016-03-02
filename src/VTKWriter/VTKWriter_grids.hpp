@@ -11,6 +11,12 @@
 #include <boost/mpl/pair.hpp>
 #include "VTKWriter_grids_util.hpp"
 
+/*! \brief It store one grid
+ *
+ * \tparam Grid type of grid
+ * \tparam St type of space where the grid is defined
+ *
+ */
 template <typename Grid, typename St>
 class ele_g
 {
@@ -22,6 +28,7 @@ public:
 	:g(g),offset(offset),spacing(spacing),dom(dom)
 	{}
 
+	//! Dataset name
 	std::string dataset;
 	//! Grid
 	const Grid & g;
@@ -41,10 +48,8 @@ public:
  * element of the boost::vector the operator() is called.
  * Is mainly used to produce at output for each property
  *
- * \tparam Graph graph we are processing
- *
- * \param dim Dimensionality
- * \param S type of grid
+ * \tparam ele_g element that store the grid and its attributes
+ * \param St type of space where the grid live
  *
  */
 

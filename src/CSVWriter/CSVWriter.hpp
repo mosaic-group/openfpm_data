@@ -18,6 +18,8 @@
 #include "csv_multiarray.hpp"
 #include "util.hpp"
 
+#define CSV_WRITER 0x30000
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * For each element of the boost::vector the operator() is called.
@@ -54,7 +56,7 @@ struct csv_prp
     void operator()(T& t)
     {
 		// This is the type of the csv column
-		typedef typename boost::fusion::result_of::at_c<typename Tobj::type,T::value>::type col_type;
+		typedef decltype(obj.template get<T::value>()) col_type;
 
 		// Remove the reference from the column type
 		typedef typename boost::remove_reference<col_type>::type col_rtype;
@@ -87,7 +89,7 @@ struct csv_col
     void operator()(T& t)
     {
 		// This is the type of the csv column
-		typedef typename boost::fusion::result_of::at_c<typename Tobj::type,T::value>::type col_type;
+		typedef decltype(std::declval<Tobj>.template get<T::value>()) col_type;
 
 		// Remove the reference from the column type
 		typedef typename boost::remove_reference<col_type>::type col_rtype;
@@ -181,9 +183,10 @@ class CSVWriter
 	 *
 	 * \param v_pos vector that contain the positional information
 	 * \param v_prp vector that contain the property information
+	 * \param offset from where to start
 	 *
 	 */
-	std::string get_csv_data(v_pos & vp, v_prp & vpr)
+	std::string get_csv_data(v_pos & vp, v_prp & vpr, size_t offset)
 	{
 		std::stringstream str;
 
@@ -195,7 +198,7 @@ class CSVWriter
 		}
 
 		// Write the data
-		for (size_t i = 0 ; i < vp.size() ; i++)
+		for (size_t i = offset ; i < vp.size() ; i++)
 		{
 			for (size_t j = 0 ; j < v_pos::value_type::dims ; j++)
 			{
@@ -206,9 +209,9 @@ class CSVWriter
 			}
 
 			// Object to write
-			typename v_prp::value_type obj = vpr.get(i);
+			auto obj = vpr.get(i);
 
-			csv_prp<typename v_prp::value_type> c_prp(str,obj);
+			csv_prp<decltype(obj)> c_prp(str,obj);
 
 			// write the properties to the stream string
 			boost::mpl::for_each< boost::mpl::range_c<int,0,v_prp::value_type::max_prop> >(c_prp);
@@ -228,10 +231,11 @@ public:
 	 * \param file path where to write
 	 * \param v_pos positional vector
 	 * \param v_prp properties vector
+	 * \param offset from where to start to write
 	 *
 	 */
 
-	bool write(std::string file, v_pos & v , v_prp & prp)
+	bool write(std::string file, v_pos & v , v_prp & prp, size_t offset=0)
 	{
 		// Header for csv (colums name)
 		std::string csv_header;
@@ -242,7 +246,7 @@ public:
 		csv_header = get_csv_colums();
 
 		// For each property in the vertex type produce a point data
-		point_data = get_csv_data(v,prp);
+		point_data = get_csv_data(v,prp,offset);
 
 		// write the file
 		std::ofstream ofs(file);

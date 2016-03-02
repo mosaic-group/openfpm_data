@@ -1,0 +1,43 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawVisualization);
+
+
+      function drawVisualization() {
+var data0 = new google.visualization.DataTable();
+data0.addColumn('string','X Axis');
+data0.addColumn('number','line0');
+data0.addColumn('number','line1');
+data0.addColumn('number','line2');
+data0.addColumn('number','line3');
+data0.addColumn('number','line4');
+data0.addColumn('number','line5');
+data0.addColumn('number','line6');
+data0.addColumn('number','line7');
+data0.addColumn('number','line8');
+data0.addRows([
+['colum1',0.1,0.2,0.19,0.22,0.195,0.215,0.35,0.34,0.36],
+['colum2',0.11,0.21,0.18,0.22,0.19,0.215,0.36,0.35,0.37],
+['colum3',0.12,0.22,0.21,0.23,0.215,0.225,0.35,0.34,0.36],
+['colum4',0.15,0.25,0.2,0.26,0.22,0.255,0.36,0.35,0.37],
+['colum5',0.09,0.29,0.25,0.3,0.26,0.295,0.35,0.34,0.36],
+['colum6',0.08,0.28,0.27,0.29,0.275,0.285,0.36,0.35,0.37],
+]);
+var options0= {
+title : 'Example',
+vAxis: {title: 'Y Axis'},
+hAxis: {title: 'X Axis'},
+curveType: 'function',
+lineWidth: 1,
+intervals: { 'style':'area' },
+};
+var chart = new google.visualization.ComboChart(document.getElementById('chart_div0'));chart.draw(data0, options0);
+}</script>
+</head>
+<body>
+<div id="chart_div0" style="width: 900px; height: 500px;"></div>
+</body>
+</html>
