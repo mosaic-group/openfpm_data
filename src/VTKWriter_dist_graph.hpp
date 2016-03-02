@@ -8,6 +8,8 @@
 #ifndef VTKWRITER_DIST_GRAPH_HPP_
 #define VTKWRITER_DIST_GRAPH_HPP_
 
+#include "VCluster.hpp"
+
 /*! Property data store for scalar and vector
  *
  */
@@ -881,7 +883,7 @@ struct dist_prop_out_edge
 template<typename Graph>
 class VTKWriter<Graph, DIST_GRAPH>
 {
-	const Graph & g;
+	Graph & g;
 
 	/*! \brief It get the vertex properties list
 	 *
@@ -996,7 +998,7 @@ class VTKWriter<Graph, DIST_GRAPH>
 			vtk_dist_vertex_node<Graph, attr> vn(v_out, obj, x);
 
 			// Iterate through all the vertex and create the vertex list
-			boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::V_type::max_prop - 1> >(vn);
+			boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::V_type::max_prop> >(vn);
 
 			// write the node string
 			vn.write();
@@ -1100,7 +1102,7 @@ public:
 	 * \param g Graph to write
 	 *
 	 */
-	VTKWriter(const Graph & g) :
+	VTKWriter(Graph & g) :
 			g(g)
 	{
 	}
@@ -1117,116 +1119,137 @@ public:
 
 	template<int prp = -1> bool write(std::string file, std::string graph_name = "Graph", file_type ft = file_type::ASCII)
 	{
-		// Check that the Vertex type define x y and z attributes
 
-		if (has_attributes<typename Graph::V_type>::value == false)
+		Vcluster & v_cl = *global_v_cluster;
+
+		g.deleteGhosts();
+
+		if (v_cl.getProcessUnitID() == 0)
 		{
-			std::cerr << "Error writing a graph: Vertex must has defines x,y,z properties" << "\n";
-			return false;
+			for (size_t i = 0; i < g.getTotNVertex(); ++i)
+			{
+				g.reqVertex(i);
+			}
 		}
 
-		// Header for the vtk
-		std::string vtk_header;
-		// Point list of the VTK
-		std::string point_list;
-		// Vertex list of the VTK
-		std::string vertex_list;
-		// Graph header
-		std::string vtk_binary_or_ascii;
-		// Edge list of the GraphML
-		std::string edge_list;
-		// vertex properties header
-		std::string point_prop_header;
-		// edge properties header
-		std::string vertex_prop_header;
-		// edge properties header
-		std::string edge_prop_header;
-		// Data point header
-		std::string point_data_header;
-		// Ids point
-		std::string point_ids;
-		// Data point
-		std::string point_data;
-		// Cell data header
-		std::string cell_data_header;
-		// Cell data
-		std::string cell_data;
+		g.sync();
 
-		// VTK header
-		vtk_header = "# vtk DataFile Version 3.0\n" + graph_name + "\n";
-
-		// Choose if binary or ASCII
-		if (ft == file_type::ASCII)
+		if (v_cl.getProcessUnitID() == 0)
 		{
-			vtk_header += "ASCII\n";
+			// Check that the Vertex type define x y and z attributes
+
+			if (has_attributes<typename Graph::V_type>::value == false)
+			{
+				std::cerr << "Error writing a graph: Vertex must has defines x,y,z properties" << "\n";
+				return false;
+			}
+
+			// Header for the vtk
+			std::string vtk_header;
+			// Point list of the VTK
+			std::string point_list;
+			// Vertex list of the VTK
+			std::string vertex_list;
+			// Graph header
+			std::string vtk_binary_or_ascii;
+			// Edge list of the GraphML
+			std::string edge_list;
+			// vertex properties header
+			std::string point_prop_header;
+			// edge properties header
+			std::string vertex_prop_header;
+			// edge properties header
+			std::string edge_prop_header;
+			// Data point header
+			std::string point_data_header;
+			// Ids point
+			std::string point_ids;
+			// Data point
+			std::string point_data;
+			// Cell data header
+			std::string cell_data_header;
+			// Cell data
+			std::string cell_data;
+
+			// VTK header
+			vtk_header = "# vtk DataFile Version 3.0\n" + graph_name + "\n";
+
+			// Choose if binary or ASCII
+			if (ft == file_type::ASCII)
+			{
+				vtk_header += "ASCII\n";
+			}
+			else
+			{
+				vtk_header += "BINARY\n";
+			}
+
+			// Data type for graph is DATASET POLYDATA
+			vtk_header += "DATASET POLYDATA\n";
+
+			// point properties header
+			point_prop_header = get_point_properties_list();
+
+			// Get point list
+			point_list = get_point_list<has_attributes<typename Graph::V_type>::value>();
+
+			// vertex properties header
+			vertex_prop_header = get_vertex_properties_list();
+
+			// Get vertex list
+			vertex_list = get_vertex_list();
+
+			// Edge properties header
+			edge_prop_header = get_edge_properties_list();
+
+			// Get the edge graph list
+			edge_list = get_edge_list();
+
+			// Get the point data header
+			point_data_header = get_point_data_header();
+
+			// Get the point info
+			point_ids = get_point_info();
+
+			// Get the cell data header
+			cell_data_header = get_cell_data_header();
+
+			// For each property in the vertex type produce a point data
+
+			dist_prop_out_vertex<Graph> pp(point_data, g);
+
+			if (prp == -1)
+				boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::V_type::max_prop> >(pp);
+			else
+				boost::mpl::for_each<boost::mpl::range_c<int, prp, prp> >(pp);
+
+			// For each property in the edge type produce a point data
+
+			dist_prop_out_edge<Graph> ep(cell_data, g);
+
+			if (prp == -1)
+				boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::E_type::max_prop> >(ep);
+			else
+				boost::mpl::for_each<boost::mpl::range_c<int, prp, prp> >(ep);
+
+			// write the file
+			std::ofstream ofs(file);
+
+			// Check if the file is open
+			if (ofs.is_open() == false)
+			{
+				std::cerr << "Error cannot create the VTK file: " + file;
+			}
+
+			ofs << vtk_header << point_prop_header << point_list << vertex_prop_header << vertex_list << edge_prop_header << edge_list << point_data_header << point_ids << point_data << cell_data_header << cell_data;
+
+			// Close the file
+
+			ofs.close();
+
 		}
-		else
-		{
-			vtk_header += "BINARY\n";
-		}
 
-		// Data type for graph is DATASET POLYDATA
-		vtk_header += "DATASET POLYDATA\n";
-
-		// point properties header
-		point_prop_header = get_point_properties_list();
-
-		// Get point list
-		point_list = get_point_list<has_attributes<typename Graph::V_type>::value>();
-
-		// vertex properties header
-		vertex_prop_header = get_vertex_properties_list();
-
-		// Get vertex list
-		vertex_list = get_vertex_list();
-
-		// Edge properties header
-		edge_prop_header = get_edge_properties_list();
-
-		// Get the edge graph list
-		edge_list = get_edge_list();
-
-		// Get the point data header
-		point_data_header = get_point_data_header();
-
-		// Get the point info
-		point_ids = get_point_info();
-
-		// Get the cell data header
-		cell_data_header = get_cell_data_header();
-
-		// For each property in the vertex type produce a point data
-
-		dist_prop_out_vertex<Graph> pp(point_data, g);
-
-		if (prp == -1)
-			boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::V_type::max_prop> >(pp);
-		else
-			boost::mpl::for_each<boost::mpl::range_c<int, prp, prp> >(pp);
-
-		// For each property in the edge type produce a point data
-
-		dist_prop_out_edge<Graph> ep(cell_data, g);
-
-		if (prp == -1)
-			boost::mpl::for_each<boost::mpl::range_c<int, 0, Graph::E_type::max_prop> >(ep);
-		else
-			boost::mpl::for_each<boost::mpl::range_c<int, prp, prp> >(ep);
-
-		// write the file
-		std::ofstream ofs(file);
-
-		// Check if the file is open
-		if (ofs.is_open() == false)
-		{
-			std::cerr << "Error cannot create the VTK file: " + file;
-		}
-
-		ofs << vtk_header << point_prop_header << point_list << vertex_prop_header << vertex_list << edge_prop_header << edge_list << point_data_header << point_ids << point_data << cell_data_header << cell_data;
-
-		// Close the file
-
-		ofs.close();
+		g.deleteGhosts();
 
 		// Completed succefully
 		return true;
