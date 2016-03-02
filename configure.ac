@@ -75,7 +75,7 @@ AC_ARG_WITH([pdata],
 
 ####### include openfpm_devices include path
 
-INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_data/src -I../../openfpm_devices/src -I$pdata_dir "
+INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_data/src -I../../openfpm_devices/src -I../../openfpm_vcluster/src -I$pdata_dir "
 
 ########
 
