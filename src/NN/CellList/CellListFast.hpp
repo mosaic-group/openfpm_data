@@ -151,22 +151,9 @@ public:
 
 		// Initialize point transformation
 
-		Initialize(sbox,div,orig,pad,slot);
-	}
-
-	/*! Initialize the cell list constructor
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param div grid size on each dimension
-	 * \param pad padding cell
-	 * \param slot maximum number of slot
-	 *
-	 */
-	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig , const size_t pad = 1, size_t slot=16)
-	{
 		Matrix<dim,T> mat;
 
-		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, orig, pad);
+		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, pad);
 		this->slot = slot;
 		this->orig = orig;
 

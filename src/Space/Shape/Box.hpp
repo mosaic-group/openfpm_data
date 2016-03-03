@@ -830,7 +830,7 @@ public:
 		}
 	}
 
-	/*! \brief Check if the point is inside the region
+	/*! \brief Check if the point is inside the box
 	 *
 	 * \param p point to check
 	 * \return true if the point is inside the space

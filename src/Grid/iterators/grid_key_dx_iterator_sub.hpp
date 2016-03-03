@@ -21,7 +21,7 @@ public:
 	inline static void pw1(size_t i, const grid_key_dx<dim> & gk_start) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " start with index smaller than zero x[" << i << "]=" << gk_start.get(i) << "\n";}
 	inline static void pw2(size_t i, const grid_key_dx<dim> & gk_start) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " Cropping start point x[" << i << "]=" << gk_start.get(i) << " to x[" << i << "]=0 \n"  ;}
 	inline static void pw3() {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop with smaller index than start \n";}
-	inline static void pw4(size_t i, const grid_key_dx<dim> & gk_stop, const grid_sm<dim,void> & grid_base) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop index bigger than cell domain x[" << i << "]=" << gk_stop.get(i) << " >= " << grid_base.size(i) << "\n";}
+	inline static void pw4(size_t i, const grid_key_dx<dim> & gk_stop, const grid_sm<dim,void> & grid_base) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop index bigger than cell domain x[" << i << "]=" << gk_stop.get(i) << " > " << grid_base.size(i) << "\n";}
 	inline static void pw5() {std::cerr << "Warning grid_key_dx_iterator_sub: " << __FILE__ << ":" << __LINE__ << " the starting point is not smaller or equal than than the stop point in all the coordinates" << "\n";}
 };
 

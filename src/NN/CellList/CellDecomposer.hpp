@@ -624,7 +624,11 @@ public:
 	 */
 	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad)
 	{
+		Matrix<dim,T> mat;
+		mat.identity();
+		t.setTransform(mat,box.getP1());
 		this->box = box;
+		this->box -= box.getP1();
 		Initialize(pad,div);
 	}
 
@@ -637,10 +641,11 @@ public:
 	 * \param pad padding cell
 	 *
 	 */
-	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const Matrix<dim,T> & mat, const Point<dim,T> & orig, const size_t pad)
+	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const Matrix<dim,T> & mat, const size_t pad)
 	{
-		t.setTransform(mat,orig);
+		t.setTransform(mat,box.getP1());
 		this->box = box;
+		this->box -= box.getP1();
 		Initialize(pad,div);
 	}
 
