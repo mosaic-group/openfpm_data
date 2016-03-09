@@ -10,7 +10,7 @@ BOOST_AUTO_TEST_SUITE( csv_writer_test )
 BOOST_AUTO_TEST_CASE( csv_writer_particles )
 {
 	// Allocate a property vector
-	auto v_prp = allocate_openfpm(16);
+	auto v_prp = allocate_openfpm_prp(16);
 	// Vector of position
 	openfpm::vector<Point<3,float>> v_pos;
 
@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE( csv_writer_particles )
 	}
 
 	// CSVWriter test
-	CSVWriter<openfpm::vector<Point<3,float>>, openfpm::vector<Point_test<float>> > csv_writer;
+	CSVWriter<openfpm::vector<Point<3,float>>, openfpm::vector<Point_test_prp<float>> > csv_writer;
 
 	// Write the CSV
 	csv_writer.write("csv_out.csv",v_pos,v_prp);

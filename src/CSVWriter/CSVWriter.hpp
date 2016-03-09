@@ -86,15 +86,12 @@ struct csv_col
 
 	//! It call the functor for each member
     template<typename T>
-    void operator()(T& t)
+    inline void operator()(T& t)
     {
 		// This is the type of the csv column
-		typedef decltype(std::declval<Tobj>.template get<T::value>()) col_type;
+		typedef typename boost::mpl::at<typename Tobj::type,boost::mpl::int_<T::value>>::type col_type;
 
-		// Remove the reference from the column type
-		typedef typename boost::remove_reference<col_type>::type col_rtype;
-
-    	csv_col_str<col_rtype>(std::string(Tobj::attributes::name[T::value]),str);
+    	csv_col_str<col_type>(std::string(Tobj::attributes::name[T::value]),str);
     }
 };
 
