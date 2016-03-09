@@ -21,7 +21,8 @@
 #include "Grid/grid_sm.hpp"
 #include "util/Pack_stat.hpp"
 #include "Pack_selector.hpp"
-//#include "Vector/map_vector.hpp"
+#include "has_pack_encap.hpp"
+#include "Packer_util.hpp"
 
 /*! \brief Packing class
  *
@@ -42,7 +43,7 @@
  * \tparam Implementation of the packer (the Pack_selector choose the correct one)
  *
  */
-template<typename T, typename Mem, int pack_type=Pack_selector<T>::value >
+template<typename T, typename Mem, int pack_type >
 class Packer
 {
 public:
@@ -58,7 +59,7 @@ public:
 	/*! \brief Error, no implementation
 	 *
 	 */
-	static size_t packRequest(std::vector<size_t> & req)
+	static size_t packRequest(T & obj, std::vector<size_t> & req)
 	{
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " packing for the type " << demangle(typeid(T).name()) << " is not implemented\n";
 		return 0;
@@ -90,6 +91,16 @@ public:
 
 		// update statistic
 		sts.incReq();
+	}
+
+	/*! \brief It add a request to pack a C++ primitive
+	 *
+	 * \param req requests vector
+	 *
+	 */
+	static void packRequest(T & obj, std::vector<size_t> & req)
+	{
+		req.push_back(sizeof(T));
 	}
 
 	/*! \brief It add a request to pack a C++ primitive
@@ -139,9 +150,9 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequestDummy(std::vector<size_t> & req)
+	static void packRequest(T & obj,std::vector<size_t> & req)
 	{
-		req.push_back(sizeof(T));
+		req.push_back(sizeof(typename T::value_type)*obj.size());
 	}
 };
 
@@ -177,6 +188,16 @@ public:
 
 		// update statistic
 		sts.incReq();
+	}
+
+	/*! \brief it add a request to pack an object
+	 *
+	 * \param req requests vector
+	 *
+	 */
+	static void packRequest(T & obj,std::vector<size_t> & req)
+	{
+		req.push_back(sizeof(T));
 	}
 
 	/*! \brief it add a request to pack an object
@@ -222,6 +243,16 @@ public:
 
 		// Update statistic
 		sts.incReq();
+	}
+
+	/*! \brief it add a request to pack an object
+	 *
+	 * \param req requests vector
+	 *
+	 */
+	static void packRequest(T & obj,std::vector<size_t> & req)
+	{
+		req.push_back(sizeof(T));
 	}
 
 	/*! \brief it add a request to pack an object
@@ -302,7 +333,7 @@ public:
 	 *
 	 *
 	 */
-	static void pack(ExtPreAlloc<Mem> & mem, const T & eobj, Pack_stat & sts)
+	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, const T & eobj, Pack_stat & sts)
 	{
 #ifdef DEBUG
 		if (mem.ref() == 0)
@@ -310,10 +341,29 @@ public:
 #endif
 
 		// Create an object out of the encapsulated object and copy
-		const typename T::T_type obj = eobj;
-		mem.allocate(sizeof(typename T::T_type));
+//		const typename T::T_type obj = eobj;
+//		mem.allocate(sizeof(typename T::T_type));
 
-		memcpy(mem.getPointer(),&obj,sizeof(typename T::T_type));
+//		memcpy(mem.getPointer(),&obj,sizeof(typename T::T_type));
+
+		if (has_pack_encap<T,prp ...>::result::value == true)
+			call_encapPack<T,Mem,prp ...>::call_pack(eobj,mem,sts);
+		else
+		{
+			if (sizeof...(prp) == 0)
+			{
+				mem.allocate(sizeof(typename T::T_type));
+				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type::type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
+				enc = eobj;
+			}
+			else
+			{
+				typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
+				mem.allocate(sizeof(prp_object));
+				encapc<1,prp_object,typename memory_traits_lin< typename T::T_type::type >::type> enc(*static_cast<typename prp_object::type *>(mem.getPointer()));
+				object_si_d<T,decltype(enc),OBJ_ENCAP,prp ... >(eobj,enc);
+			}
+		}
 
 		// update statistic
 		sts.incReq();
@@ -323,9 +373,19 @@ public:
 	 *
 	 *
 	 */
-	void packRequest(std::vector<size_t> & v)
+	template<int ... prp> void packRequest(T & eobj,std::vector<size_t> & v)
 	{
-		v.push_back(sizeof(T::type));
+		if (has_pack_encap<T>::value == true)
+			call_encapPackRequest<T,Mem,prp ...>::call_packRequest(eobj,v);
+		else
+		{
+			if (sizeof...(prp) == 0)
+				return sizeof(typename T::T_type);
+
+			typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
+
+			v.push_back(sizeof(prp_object));
+		}
 	}
 };
 

@@ -30,10 +30,13 @@
 #include "util/Pack_stat.hpp"
 #include "memory/ExtPreAlloc.hpp"
 #include <string.h>
-#include "vect_isel.hpp"
 #include "Packer_Unpacker/Unpacker.hpp"
 #include "Packer_Unpacker/Packer.hpp"
 #include <fstream>
+#include "Packer_Unpacker/Packer_util.hpp"
+#include "Packer_Unpacker/has_pack_agg.hpp"
+#include <chrono>
+#include "timer.hpp"
 
 namespace openfpm
 {
@@ -1073,13 +1076,14 @@ namespace openfpm
 		 */
 		template<int ... prp> static inline size_t packMem(size_t n, size_t e)
 		{
+#ifdef DEBUG
+			std::cout << "Inside packMem() (map_vector)" << std::endl;
+#endif
 			if (sizeof...(prp) == 0)
 				return n * sizeof(typename T::type);
 
 			typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
-#ifdef DEBUG
-			std::cout << "Inside packMem() (map_vector)" << std::endl;
-#endif
+
 			return n * sizeof(prp_object);
 		}
 

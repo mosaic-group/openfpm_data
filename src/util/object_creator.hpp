@@ -261,7 +261,7 @@ struct object_creator
 template<typename v>
 struct object_creator<v>
 {
-	typedef typename boost::fusion::vector<> type;
+	typedef v type;
 };
 
 #endif

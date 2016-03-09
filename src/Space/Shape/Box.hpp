@@ -821,7 +821,7 @@ public:
 	/*! \brief Set p1 and p2 to 0
 	 *
 	 */
-	void zero()
+	inline void zero()
 	{
 		for (size_t j = 0 ; j < dim ; j++)
 		{
@@ -830,14 +830,29 @@ public:
 		}
 	}
 
-	/*! \brief Check if the point is inside the region
+	/*! \brief Check if the box is contained
+	 *
+	 * \return true if the box is contained
+	 *
+	 */
+	inline bool isContained(const Box<dim,T> & b) const
+	{
+		bool isc = true;
+
+		isc &= isInside(b.getP1());
+		isc &= isInside(b.getP2());
+
+		return isc;
+	}
+
+	/*! \brief Check if the point is inside the box
 	 *
 	 * \param p point to check
 	 * \return true if the point is inside the space
 	 *
 	 */
 
-	bool isInside(const Point<dim,T> & p) const
+	inline bool isInside(const Point<dim,T> & p) const
 	{
 		// check if bound
 
@@ -867,7 +882,7 @@ public:
 	 * \return true if the point is inside the space
 	 *
 	 */
-	bool isInsideNP(const Point<dim,T> & p) const
+	inline bool isInsideNP(const Point<dim,T> & p) const
 	{
 		// check if bound
 
@@ -897,7 +912,7 @@ public:
 	 * \return true if the point is inside the space
 	 *
 	 */
-	bool isInsideNB(const Point<dim,T> & p) const
+	inline bool isInsideNB(const Point<dim,T> & p) const
 	{
 		// check if bound
 
@@ -926,7 +941,7 @@ public:
 	 *
 	 */
 
-	bool isInside(const T (&p)[dim]) const
+	inline bool isInside(const T (&p)[dim]) const
 	{
 		// check if bound
 
@@ -954,7 +969,7 @@ public:
 	 * \return true if it is valid
 	 *
 	 */
-	bool isValid() const
+	inline bool isValid() const
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -970,7 +985,7 @@ public:
 	 * \param p1 vector
 	 *
 	 */
-	void ceilP1()
+	inline void ceilP1()
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -983,7 +998,7 @@ public:
 	 * \param p1 vector
 	 *
 	 */
-	void ceilP2()
+	inline void ceilP2()
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -994,7 +1009,7 @@ public:
 	/*! \brief Shrink the point P2 by one
 	 *
 	 */
-	void shrinkP2(const Point<dim,T> & p)
+	inline void shrinkP2(const Point<dim,T> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -1009,7 +1024,7 @@ public:
 	 *
 	 */
 
-	template <typename Mem> bool isInside(const encapc<1,Point<dim,T>,Mem> & p)
+	template <typename Mem> inline bool isInside(const encapc<1,Point<dim,T>,Mem> & p)
 	{
 		// check if bound
 
@@ -1029,6 +1044,16 @@ public:
 		// In bound
 
 		return true;
+	}
+
+	inline T getVolume() const
+	{
+		T vol = 1.0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			vol *= (getHigh(i) - getLow(i));
+
+		return vol;
 	}
 
 	/*! \brief Get the volume spanned by the Box P1 and P2 interpreted as grid key

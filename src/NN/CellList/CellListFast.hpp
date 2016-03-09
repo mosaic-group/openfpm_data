@@ -166,9 +166,10 @@ public:
 	 */
 	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig , const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
+
 		Matrix<dim,T> mat;
 
-		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, orig, pad);
+		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, pad);
 		this->slot = slot;
 		this->orig = orig;
 

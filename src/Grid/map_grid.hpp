@@ -50,6 +50,7 @@
 #include "iterators/grid_key_dx_iterator_sub.hpp"
 #include "iterators/grid_key_dx_iterator_sp.hpp"
 #include "iterators/grid_key_dx_iterator_sub_bc.hpp"
+#include "Packer_Unpacker/Packer_util.hpp"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;
@@ -86,11 +87,6 @@ typedef HeapMemory CudaMemory;
  * \snippet grid_unit_tests.hpp Create a grid g1 and copy into another g2
  *
  */
-
-namespace openfpm {
-
-template<typename T, typename Memory=HeapMemory, typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value> class vector;
-}
 
 template<unsigned int dim, typename T, typename S=HeapMemory, typename Mem = typename memory_traits_lin< typename T::type >::type >
 class grid_cpu

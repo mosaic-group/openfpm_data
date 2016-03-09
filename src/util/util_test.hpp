@@ -335,6 +335,50 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 {
 	{
 		{
+
+		//! [Check has pack]
+
+		struct test_pack
+		{
+			static bool pack()	{return true;}
+		};
+
+		struct test_unknown_pack
+		{
+		};
+
+		BOOST_REQUIRE_EQUAL(has_pack<test_pack>::type::value,true);
+		BOOST_REQUIRE_EQUAL(has_pack<test_unknown_pack>::type::value,false);
+
+		//! [Check has packRequest]
+
+		struct test_packRequest
+		{
+			static bool packRequest()	{return false;}
+		};
+
+		struct test_unknown_packRequest
+		{
+		};
+
+		BOOST_REQUIRE_EQUAL(has_packRequest<test_packRequest>::type::value,true);
+		BOOST_REQUIRE_EQUAL(has_packRequest<test_unknown_packRequest>::type::value,false);
+
+		//! [Check has packMem]
+
+		struct test_packMem
+		{
+			static bool packMem()	{return true;}
+		};
+
+		struct test_unknown_packMem
+		{
+		};
+
+		BOOST_REQUIRE_EQUAL(has_packMem<test_packMem>::type::value,true);
+		BOOST_REQUIRE_EQUAL(has_packMem<test_unknown_packMem>::type::value,false);
+
+
 		//! [Check no pointers]
 
 		struct test_no_ptr

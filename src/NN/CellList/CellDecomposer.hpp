@@ -69,7 +69,7 @@ public:
 	 */
 	template<typename Mem> inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i) const
 	{
-		return s.get(i) - sh.get(i);
+		return s.template get<0>()[i] - sh.get(i);
 	}
 
 	/*! \brief Set the transformation Matrix and shift
@@ -624,7 +624,11 @@ public:
 	 */
 	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad)
 	{
+		Matrix<dim,T> mat;
+		mat.identity();
+		t.setTransform(mat,box.getP1());
 		this->box = box;
+		this->box -= box.getP1();
 		Initialize(pad,div);
 	}
 
@@ -637,10 +641,11 @@ public:
 	 * \param pad padding cell
 	 *
 	 */
-	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const Matrix<dim,T> & mat, const Point<dim,T> & orig, const size_t pad)
+	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const Matrix<dim,T> & mat, const size_t pad)
 	{
-		t.setTransform(mat,orig);
+		t.setTransform(mat,box.getP1());
 		this->box = box;
+		this->box -= box.getP1();
 		Initialize(pad,div);
 	}
 
@@ -653,7 +658,7 @@ public:
 	 * a Cell in the new CellDecomposer that perfectly overlap
 	 *
 	 * \param cd OLD CellDecomposer
-	 * \param cell_extension extension of the CellDecomposer in term of Cell extesion
+	 * \param cell_extension extension of the CellDecomposer in term of cells to add in each directions (like Ghost)
 	 *
 	 */
 	inline void setDimensions(const CellDecomposer_sm<dim,T,transform> & cd, const Box<dim,size_t> & cell_extension)
@@ -888,9 +893,9 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	 * \return Box in grid units, if P2 < P1 the box does not include any grid points
 	 *
 	 */
-	inline Box<dim,size_t> convertDomainSpaceIntoGridUnits(const Box<dim,T> & b_d) const
+	inline Box<dim,long int> convertDomainSpaceIntoGridUnits(const Box<dim,T> & b_d) const
 	{
-		Box<dim,size_t> g_box;
+		Box<dim,long int> g_box;
 		Box<dim,T> b = b_d;
 
 		// Convert b into grid units

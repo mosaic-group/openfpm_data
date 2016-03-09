@@ -99,27 +99,27 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 
 	std::vector<size_t> pap_prp;
 
-	Packer<unsigned char,HeapMemory>::packRequest(pap_prp);
+	Packer<unsigned char,HeapMemory>::packRequest(uc,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(unsigned char));
-	Packer<char,HeapMemory>::packRequest(pap_prp);
+	Packer<char,HeapMemory>::packRequest(c,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(char));
-	Packer<short,HeapMemory>::packRequest(pap_prp);
+	Packer<short,HeapMemory>::packRequest(s,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(short));
-	Packer<unsigned short,HeapMemory>::packRequest(pap_prp);
+	Packer<unsigned short,HeapMemory>::packRequest(us,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(unsigned short));
-	Packer<int,HeapMemory>::packRequest(pap_prp);
+	Packer<int,HeapMemory>::packRequest(i,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(int));
-	Packer<unsigned int,HeapMemory>::packRequest(pap_prp);
+	Packer<unsigned int,HeapMemory>::packRequest(ui,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(unsigned int));
-	Packer<long int,HeapMemory>::packRequest(pap_prp);
+	Packer<long int,HeapMemory>::packRequest(li,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(long int));
-	Packer<long unsigned int,HeapMemory>::packRequest(pap_prp);
+	Packer<long unsigned int,HeapMemory>::packRequest(uli,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(long unsigned int));
-	Packer<float,HeapMemory>::packRequest(pap_prp);
+	Packer<float,HeapMemory>::packRequest(f,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(float));
-	Packer<double,HeapMemory>::packRequest(pap_prp);
+	Packer<double,HeapMemory>::packRequest(d,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(double));
-	Packer<Point_test<float>,HeapMemory>::packRequest(pap_prp);
+	Packer<Point_test<float>,HeapMemory>::packRequest(p,pap_prp);
 	Packer<openfpm::vector<Point_test<float>>,HeapMemory>::packRequest<pt::x,pt::v>(v,pap_prp);
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],(sizeof(float) + sizeof(float[3])) * v.size());
 	Packer<grid_cpu<3,Point_test<float>>,HeapMemory>::packRequest<pt::x,pt::v>(g,sub,pap_prp);
