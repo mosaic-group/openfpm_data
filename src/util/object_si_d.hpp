@@ -176,5 +176,16 @@ struct object_si_d<v_src,v_dst,OBJ_ENCAP,prp...>
 	}
 };
 
+template<typename v_src, typename v_dst>
+struct object_si_d<v_src,v_dst,OBJ_ENCAP>
+{
+	inline object_si_d(const v_src && vs, v_dst && vd)
+	{
+	}
+
+	inline object_si_d(const v_src & vs, v_dst & vd)
+	{
+	}
+};
 
 #endif /* VECTOR_PROP_COPY_HPP_ */
