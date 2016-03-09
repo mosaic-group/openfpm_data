@@ -16,6 +16,8 @@
 
 #include "util/common.hpp"
 
+#define STARTING_NSLOT 16
+
 /*! \brief Class for FAST cell list implementation
  *
  * This class implement the FAST cell list, fast but memory
@@ -145,7 +147,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig, const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 		SpaceBox<dim,T> sbox(box);
 
@@ -162,7 +164,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig , const size_t pad = 1, size_t slot=16)
+	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig , const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 		Matrix<dim,T> mat;
 
@@ -244,7 +246,7 @@ public:
 
 	//! Default Constructor
 	CellList()
-	:slot(16)
+	:slot(STARTING_NSLOT)
 	{};
 
 	//! Copy constructor
@@ -315,7 +317,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, Point<dim,T> & orig, const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	:CellDecomposer_sm<dim,T,transform>(box,div,mat,orig,pad)
 	{
 		SpaceBox<dim,T> sbox(box);
@@ -331,7 +333,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	CellList(Box<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	CellList(Box<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 		SpaceBox<dim,T> sbox(box);
 		Initialize(sbox,div,orig,pad,slot);
@@ -346,7 +348,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	CellList(SpaceBox<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	CellList(SpaceBox<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 		Initialize(box,div,orig,pad,slot);
 	}
@@ -558,6 +560,16 @@ public:
 		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> cln(cell,NNc_cr,*this);
 
 		return cln;
+	}
+
+	/*! \brief Clear the cell list
+	 *
+	 */
+	void clear()
+	{
+		slot = STARTING_NSLOT;
+		cl_n.clear();
+		cl_base.clear();
 	}
 };
 
