@@ -100,9 +100,6 @@ class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,trans
 	// of elements == slot )
 	base cl_base;
 
-	//Origin point
-	Point<dim,T> orig;
-
 	void realloc()
 	{
 		// we do not have enough slots reallocate the basic structure with more
@@ -142,18 +139,17 @@ public:
 	 *
 	 * \param box Domain where this cell list is living
 	 * \param div grid size on each dimension
-	 * \param orig origin of the Cell list
 	 * \param pad padding cell
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig, const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 		SpaceBox<dim,T> sbox(box);
 
 		// Initialize point transformation
 
-		Initialize(sbox,div,orig,pad,slot);
+		Initialize(sbox,div,pad,slot);
 	}
 
 	/*! Initialize the cell list constructor
@@ -164,14 +160,13 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig , const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 
 		Matrix<dim,T> mat;
 
 		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, pad);
 		this->slot = slot;
-		this->orig = orig;
 
 		// create the array that store the number of particle on each cell and se it to 0
 
@@ -280,10 +275,6 @@ public:
 		cl_n.swap(cell.cl_n);
 		cl_base.swap(cell.cl_base);
 
-		Point<dim,T> torig = orig;
-		orig = cell.orig;
-		cell.orig = torig;
-
 		return *this;
 	}
 
@@ -303,8 +294,6 @@ public:
 		cl_n = cell.cl_n;
 		cl_base = cell.cl_base;
 
-		orig = cell.orig;
-
 		return *this;
 	}
 
@@ -313,45 +302,42 @@ public:
 	 * \param box Domain where this cell list is living
 	 * \param div grid size on each dimension
 	 * \param mat Matrix transformation
-	 * \param orig origin of the Cell list
 	 * \param pad Cell padding
 	 * \param slot maximum number of slot
 	 *
 	 */
-	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, Point<dim,T> & orig, const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	:CellDecomposer_sm<dim,T,transform>(box,div,mat,orig,pad)
+	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	:CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad)
 	{
 		SpaceBox<dim,T> sbox(box);
-		Initialize(sbox,div,orig,pad,slot);
+		Initialize(sbox,div,pad,slot);
 	}
 
 	/*! \brief Cell list constructor
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param orig origin of the Cell list
 	 * \param div grid size on each dimension
 	 * \param pad Cell padding
 	 * \param slot maximum number of slot
 	 *
 	 */
-	CellList(Box<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	CellList(Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 		SpaceBox<dim,T> sbox(box);
-		Initialize(sbox,div,orig,pad,slot);
+		Initialize(sbox,div,pad,slot);
 	}
 
 	/*! \brief Cell list constructor
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param orig origin of the Cell list
 	 * \param div grid size on each dimension
 	 * \param pad Cell padding
 	 * \param slot maximum number of slot
 	 *
 	 */
-	CellList(SpaceBox<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	CellList(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
-		Initialize(box,div,orig,pad,slot);
+		Initialize(box,div,pad,slot);
 	}
 
 
