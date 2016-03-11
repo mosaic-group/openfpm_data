@@ -380,7 +380,7 @@ public:
 		else
 		{
 			if (sizeof...(prp) == 0)
-				return sizeof(typename T::T_type);
+				return;
 
 			typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
 
