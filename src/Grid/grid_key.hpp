@@ -95,6 +95,22 @@ public:
 			k[i] = -1;
 	}
 
+	/* \brief Check if the key is invalid (all components set to -1)
+	 *
+	 * \return true if it is valid
+	 *
+	 */
+	inline bool isValid()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (k[i] != -1)
+				return true;
+		}
+
+		return false;
+	}
+
 	/* \brief sum a grid_key
 	 *
 	 * \param comb combination (or relative movement)
