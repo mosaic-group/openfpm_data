@@ -566,12 +566,16 @@ BOOST_AUTO_TEST_CASE( vector_add_test_case )
 
 ////////// Test function ///////////
 
+#ifdef SE_CLASS2
+
 openfpm::vector<scalar<float>> & test_error_v()
 {
 	openfpm::vector<scalar<float>> v(16);
 
 	return v;
 }
+
+#endif
 
 BOOST_AUTO_TEST_CASE( vector_copy_and_compare )
 {

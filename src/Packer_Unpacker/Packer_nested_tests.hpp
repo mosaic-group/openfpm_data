@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE ( vector_zerosize_packer_unpacker )
 
 	//Pack requesting
 	Packer<decltype(v5),HeapMemory>::packRequest<pt::x, pt::v>(v5,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],0);
+	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],0ul);
 
 	//Just to see the elements of pack request vector
 #ifdef DEBUG

@@ -1017,6 +1017,26 @@ public:
 		}
 	}
 
+	/*! \brief exchange the data of two boxes
+	 *
+	 * \param p Point to swap with
+	 *
+	 */
+	void swap(Box<dim,T> & b)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			T tmp_l = b.getLow(i);
+			T tmp_h = b.getHigh(i);
+
+			setLow(i,b.getLow(i));
+			setHigh(i,b.getHigh(i));
+
+			b.setLow(i,tmp_l);
+			b.setHigh(i,tmp_h);
+		}
+	}
+
 	/*! \brief Check if the point is inside the region
 	 *
 	 * \param p point to check

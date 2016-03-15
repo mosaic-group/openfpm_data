@@ -63,9 +63,21 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
+
+		// here we have to check if the vector go into reallocation
+		void * ptr_old = &base[0];
 #endif
 
 		base.resize(slot);
+
+#ifdef SE_CLASS2
+
+		if (ptr_old != &base[0])
+		{
+			check_delete(ptr_old);
+			check_new(&base[0],slot*sizeof(T),VECTOR_STD_EVENT,1);
+		}
+#endif
 	}
 
 	/*! \brief Remove all the element from the vector
@@ -92,8 +104,20 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
+
+		void * ptr_old = &base[0];
 #endif
+
 		base.push_back(v);
+
+#ifdef SE_CLASS2
+
+		if (ptr_old != &base[0])
+		{
+			check_delete(ptr_old);
+			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+		}
+#endif
 	}
 
 	/*! \brief It insert a new object on the vector, eventually it reallocate the grid

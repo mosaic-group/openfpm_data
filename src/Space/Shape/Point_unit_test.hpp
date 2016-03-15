@@ -74,6 +74,11 @@ BOOST_AUTO_TEST_CASE( Point_use )
 	BOOST_REQUIRE_CLOSE(p1.distance2(p2),14.0,0.0001);
 
 	std::cout << "Point unit test stop" << "\n";
+
+	// check two point are equal
+
+	BOOST_REQUIRE( p1 != p2 );
+	BOOST_REQUIRE( p1 == p1 );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

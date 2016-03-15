@@ -101,6 +101,26 @@ public:
 	{
 		return mat;
 	}
+
+	/*! \brief It return true if the shift match
+	 *
+	 * \return true is match
+	 *
+	 */
+	inline bool operator==(const shift<dim,T> & s)
+	{
+		return sh == s.sh;
+	}
+
+	/*! \brief It return true if the shift is different
+	 *
+	 * \return true if the shift is different
+	 *
+	 */
+	inline bool operator!=(const shift<dim,T> & s)
+	{
+		return !this->operator==(s);
+	}
 };
 
 // No transformation
@@ -186,11 +206,11 @@ public:
 		return true;
 	}
 
-	/*! \brief It return always true true
+	/*! \brief It return always false
 	 *
-	 * There is nothing to compare
+	 * There is nothing to compare they cannot be differents
 	 *
-	 * \return true
+	 * \return false
 	 *
 	 */
 	inline bool operator!=(const no_transform<dim,T> & nt)
@@ -446,7 +466,7 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (tot_n_cell == 0)
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer\n";
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer" << std::endl;
 #endif
 
 		grid_key_dx<dim> key;
@@ -456,7 +476,7 @@ public:
 		{
 #ifdef SE_CLASS1
 			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space\n";
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space" << std::endl;
 #endif
 			key.set_d(s,ConvertToID(pos,s));
 		}
@@ -520,7 +540,7 @@ public:
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
 #endif
@@ -934,6 +954,37 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		g_box.shrinkP2(p_move);
 
 		return g_box;
+	}
+
+	/*! \brief it swap the content of two Cell Decomposer
+	 *
+	 *
+	 */
+	inline void swap(CellDecomposer_sm<dim,T,transform> & cd)
+	{
+		// swap all the members
+		p_middle.swap(p_middle);
+
+		// Point transformation before get the Cell object (useful for example to shift the cell list)
+		transform t_t = t;
+		t = cd.t;
+		cd.t = t_t;
+
+		// Total number of cell
+		size_t tot_n_cell_t = tot_n_cell;
+		tot_n_cell = cd.tot_n_cell;
+		cd.tot_n_cell = tot_n_cell_t;
+
+		box.swap(cd.box);
+		box_unit.swap(cd.box_unit);
+		gr_cell.swap(cd.gr_cell);
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			size_t off_t = off[i];
+			off[i] = cd.off[i];
+			cd.off[i] = off_t;
+		}
 	}
 
 	/*! \brief Check that the CellDecomposer is the same

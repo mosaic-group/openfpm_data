@@ -517,6 +517,8 @@ BOOST_AUTO_TEST_SUITE( grid_test )
 
 ////////// Test function ///////////
 
+#ifdef SE_CLASS2
+
 grid_cpu<3,scalar<float>> & test_error()
 {
 	size_t sz[] = {16,16,16};
@@ -525,6 +527,8 @@ grid_cpu<3,scalar<float>> & test_error()
 
 	return g;
 }
+
+#endif
 
 /////////////////////////////////////
 

@@ -257,45 +257,6 @@ public:
 		this->operator=(cell);
 	}
 
-	/*! \brief Constructor from a temporal object
-	 *
-	 * \param cell Cell list structure
-	 *
-	 */
-	CellList<dim,T,FAST,transform,base> & operator=(CellList<dim,T,FAST,transform,base> && cell)
-	{
-		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
-		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
-
-		size_t tslot = slot;
-		slot = cell.slot;
-		cell.slot = tslot;
-
-		cl_n.swap(cell.cl_n);
-		cl_base.swap(cell.cl_base);
-
-		return *this;
-	}
-
-	/*! \brief Constructor from a temporal object
-	 *
-	 * \param cell Cell list structure
-	 *
-	 */
-	CellList<dim,T,FAST,transform,base> & operator=(const CellList<dim,T,FAST,transform,base> & cell)
-	{
-		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
-		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
-
-		slot = cell.slot;
-
-		cl_n = cell.cl_n;
-		cl_base = cell.cl_base;
-
-		return *this;
-	}
 
 	/*! \brief Cell list constructor
 	 *
@@ -340,6 +301,56 @@ public:
 		Initialize(box,div,pad,slot);
 	}
 
+	/*! \brief Destructor
+	 *
+	 *
+	 */
+	~CellList()
+	{}
+
+	/*! \brief Constructor from a temporal object
+	 *
+	 * \param cell Cell list structure
+	 *
+	 */
+	CellList<dim,T,FAST,transform,base> & operator=(CellList<dim,T,FAST,transform,base> && cell)
+	{
+		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
+		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
+		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
+
+		size_t tslot = slot;
+		slot = cell.slot;
+		cell.slot = tslot;
+
+		cl_n.swap(cell.cl_n);
+		cl_base.swap(cell.cl_base);
+
+		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this).swap(cell);
+
+		return *this;
+	}
+
+	/*! \brief Constructor from a temporal object
+	 *
+	 * \param cell Cell list structure
+	 *
+	 */
+	CellList<dim,T,FAST,transform,base> & operator=(const CellList<dim,T,FAST,transform,base> & cell)
+	{
+		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
+		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
+		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
+
+		slot = cell.slot;
+
+		cl_n = cell.cl_n;
+		cl_base = cell.cl_base;
+
+		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cell);
+
+		return *this;
+	}
 
 	/*! \brief Add to the cell
 	 *

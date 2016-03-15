@@ -401,6 +401,49 @@ template<unsigned int dim ,typename T> class Point
 		return ps.str();
 	}
 
+	/*! \brief exchange the data of two points
+	 *
+	 * \param p Point to swap with
+	 *
+	 */
+	void swap(Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			T tmp = p.get(i);
+			get(i) = p.get(i);
+			p.get(i) = tmp;
+		}
+	}
+
+	/*! \brief Check if two points match
+	 *
+	 * \return true if two points match
+	 *
+	 */
+	inline bool operator==(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (p.get(i) != get(i))
+				return false;
+		}
+
+		return true;
+	}
+
+	/*! \brief Check if two points match
+	 *
+	 * \return true if two points match
+	 *
+	 */
+	inline bool operator!=(const Point<dim,T> & p)
+	{
+		return !this->operator==(p);
+
+		return true;
+	}
+
 	/*! \brief Return the string with the point coordinate
 	 *
 	 * \return the string

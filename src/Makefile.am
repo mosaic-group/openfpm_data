@@ -27,7 +27,7 @@ util/check_no_pointers.hpp util/common.hpp util/convert.hpp util/create_vmpl_seq
 Vector/map_vector.hpp Vector/map_vector_std_ptr.hpp Vector/map_vector_std.hpp Vector/util.hpp Vector/vect_isel.hpp Vector/vector_test_util.hpp Vector/vector_unit_tests.hpp Vector/se_vector.hpp Vector/map_vector_grow_p.hpp Vector/vector_std_pack_unpack.ipp Vector/vector_pack_unpack.ipp  \
 timer.hpp \
 util/copy_compare/compare_fusion_vector.hpp util/copy_compare/compare_general.hpp util/copy_compare/copy_compare_aggregates.hpp util/copy_compare/copy_fusion_vector.hpp util/copy_compare/copy_general.hpp util/copy_compare/meta_compare.hpp util/copy_compare/meta_copy.hpp \
-Packer_Unpacker/Pack_selector.hpp Packer_Unpacker/Packer_nested_tests.hpp Packer_Unpacker/Packer_unit_tests.hpp Packer_Unpacker/Packer.hpp Packer_Unpacker/Unpacker.hpp
+Packer_Unpacker/Pack_selector.hpp Packer_Unpacker/Packer_nested_tests.hpp Packer_Unpacker/Packer_unit_tests.hpp Packer_Unpacker/Packer.hpp Packer_Unpacker/Unpacker.hpp Packer_Unpacker/Packer_util.hpp Packer_Unpacker/prp_all_zero.hpp Packer_Unpacker/has_pack_encap.hpp Packer_Unpacker/has_pack_agg.hpp
 
 .cu.o :
 	$(NVCC) $(NVCCFLAGS) $(INCLUDES_PATH) -o $@ -c $<

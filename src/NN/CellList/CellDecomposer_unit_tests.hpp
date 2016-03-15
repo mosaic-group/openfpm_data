@@ -244,6 +244,37 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_consistent_use )
 
 }
 
+BOOST_AUTO_TEST_CASE( CellDecomposer_swap_use )
+{
+	// number of divisions in each directions
+	// random engine
+	size_t div[3] = {16,16,16};
+
+	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Point<3,double> sht({1.1,2.1,3.1});
+
+	CellDecomposer_sm< 3,double,shift<3,double> > cd1(box,div,sht,1);
+
+	// another cell Decomposer
+
+	// number of divisions in each directions
+	// random engine
+	size_t div2[3] = {15,15,15};
+
+	SpaceBox<3,double> box2({-1.0f,1.0f,1.0f},{1.0f,1.0f,1.0f});
+	Point<3,double> sht2({1.0,2.0,3.0});
+
+	CellDecomposer_sm< 3,double,shift<3,double> > cd2(box2,div2,sht2,2);
+
+	auto cd1_old = cd1;
+	auto cd2_old = cd2;
+
+	cd1.swap(cd2);
+
+	BOOST_REQUIRE(cd2 == cd1_old);
+	BOOST_REQUIRE(cd1 == cd2_old);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* OPENFPM_DATA_SRC_NN_CELLLIST_CELLDECOMPOSER_UNIT_TESTS_HPP_ */
