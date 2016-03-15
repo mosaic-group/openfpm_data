@@ -111,11 +111,10 @@ struct vtk_dist_vertex_node
 	 * \param n_obj object container to access its properties for example encapc<...>
 	 *
 	 */
-	vtk_dist_vertex_node(std::string & v_node, typename G::V_container & n_obj, s_type (&x)[3]) :
-			x(x), vo(n_obj), v_node(v_node), z_set(false)
+	vtk_dist_vertex_node(std::string & v_node, typename G::V_container & n_obj, s_type (&x)[3])
+	:z_set(false),x(x), vo(n_obj), v_node(v_node)
 	{
 	}
-	;
 
 	//! \brief Write collected information
 	void write()

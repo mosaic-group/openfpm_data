@@ -64,6 +64,9 @@ struct vtk_vertex_node_array_scalar_selector<true>
 	template<typename T, typename ele_v, typename G, typename s_type>
 	static inline void move(typename G::V_container &vo, s_type (&x)[3], bool &z_set)
 	{
+		if (G::V_type::attributes::name[T::value] != "x")
+			return;
+
 		if (std::extent<ele_v>::value == 3)
 			z_set = true;
 
