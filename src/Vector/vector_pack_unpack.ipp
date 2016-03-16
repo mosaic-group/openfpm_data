@@ -94,10 +94,6 @@ struct pack_simple_cond
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 	#endif
 
-		//Measure an execution time
-		timer t;
-		t.start();
-
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
 		
@@ -131,11 +127,6 @@ struct pack_simple_cond
 	
 		// Update statistic
 		sts.incReq();	
-		
-		//cout an execution time
-		t.stop();
-		std::cout << t.getwct() << std::endl;
-
 	}
 };
 
@@ -149,10 +140,6 @@ struct pack_simple_cond<true, prp ...>
 		if (mem.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 	#endif
-		
-		//Measure an execution time
-		timer t;
-		t.start();
 
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
@@ -178,12 +165,7 @@ struct pack_simple_cond<true, prp ...>
 		}
 	
 		// Update statistic
-		sts.incReq();			
-
-		//cout an execution time
-		t.stop();
-		std::cout << t.getwct() << std::endl;
-
+		sts.incReq();
 	}
 };
 

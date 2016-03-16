@@ -963,7 +963,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	inline void swap(CellDecomposer_sm<dim,T,transform> & cd)
 	{
 		// swap all the members
-		p_middle.swap(p_middle);
+		p_middle.swap(cd.p_middle);
 
 		// Point transformation before get the Cell object (useful for example to shift the cell list)
 		transform t_t = t;

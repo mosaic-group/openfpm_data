@@ -82,10 +82,10 @@ BOOST_AUTO_TEST_CASE( variadic_to_vmpl_test)
 	val = std::is_same<boost::mpl::at<bfv,boost::mpl::int_<1>>::type,boost::mpl::int_<4>>::value;
 	BOOST_REQUIRE_EQUAL(val,true);
 
-	val = std::is_same<boost::mpl::at<bfv,boost::mpl::int_<3>>::type,boost::mpl::int_<5>>::value;
+	val = std::is_same<boost::mpl::at<bfv,boost::mpl::int_<2>>::type,boost::mpl::int_<5>>::value;
 	BOOST_REQUIRE_EQUAL(val,true);
 
-	val = std::is_same<boost::mpl::at<bfv,boost::mpl::int_<4>>::type,boost::mpl::int_<9>>::value;
+	val = std::is_same<boost::mpl::at<bfv,boost::mpl::int_<3>>::type,boost::mpl::int_<9>>::value;
 	BOOST_REQUIRE_EQUAL(val,true);
 
 	//! [to_boost_vmpl usage]

@@ -410,7 +410,7 @@ template<unsigned int dim ,typename T> class Point
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			T tmp = p.get(i);
+			T tmp = get(i);
 			get(i) = p.get(i);
 			p.get(i) = tmp;
 		}

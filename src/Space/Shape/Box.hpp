@@ -1026,8 +1026,8 @@ public:
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			T tmp_l = b.getLow(i);
-			T tmp_h = b.getHigh(i);
+			T tmp_l = getLow(i);
+			T tmp_h = getHigh(i);
 
 			setLow(i,b.getLow(i));
 			setHigh(i,b.getHigh(i));
