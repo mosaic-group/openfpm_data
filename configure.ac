@@ -282,6 +282,10 @@ if test x"$ax_cv_boost_programs_options" = x"no"; then
   exit 202
 fi
 
+AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE([HAVE_CLOCK_GETTIME],[],[Have clock time])
+                                 OPT_LIBS="$OPT_LIBS -lrt"
+                                ])
+
 ### Unfortunately a lot of linux distros install a pretty old MPI in the system wide folder,
 ### override such MPI with the installed one is extremely difficult and tricky, because we want
 ### to include "some" system library but exclude mpi. One possibility is to give specifically
