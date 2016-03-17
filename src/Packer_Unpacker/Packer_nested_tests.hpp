@@ -102,6 +102,8 @@ BOOST_AUTO_TEST_CASE ( vector_ptst_packer_unpacker )
 		}
 	}
 
+	mem.decRef();
+	delete &mem;
 }
 
 BOOST_AUTO_TEST_CASE ( vector_std_packer_unpacker )
@@ -171,6 +173,8 @@ BOOST_AUTO_TEST_CASE ( vector_std_packer_unpacker )
 		}
 	}
 
+	mem.decRef();
+	delete &mem;
 }
 
 BOOST_AUTO_TEST_CASE ( vector_zerosize_packer_unpacker )
@@ -253,6 +257,8 @@ BOOST_AUTO_TEST_CASE ( vector_zerosize_packer_unpacker )
 		}
 	}
 
+	mem.decRef();
+	delete &mem;
 }
 
 BOOST_AUTO_TEST_CASE ( vector_zerosize__lvl_2_packer_unpacker )
@@ -337,6 +343,8 @@ BOOST_AUTO_TEST_CASE ( vector_zerosize__lvl_2_packer_unpacker )
 		}
 	}
 
+	mem.decRef();
+	delete &mem;
 }
 
 
@@ -408,6 +416,9 @@ BOOST_AUTO_TEST_CASE ( vector_zerosize__lvl_2_packer_unpacker_float )
 			}
 		}
 	}
+
+	mem.decRef();
+	delete &mem;
 }
 
 BOOST_AUTO_TEST_CASE ( vector_std_smarter_packer_unpacker )
@@ -490,6 +501,9 @@ BOOST_AUTO_TEST_CASE ( vector_std_smarter_packer_unpacker )
 			BOOST_REQUIRE(b1 == b2);
 		}
 	}
+
+	mem.decRef();
+	delete &mem;
 }
 
 BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
@@ -577,6 +591,8 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 		}
 	}
 
+	mem.decRef();
+	delete &mem;
 }
 
 BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_2 )
@@ -662,6 +678,9 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_2 )
 	}
 
 	std::cout << "Vector pack/unpack test stop" << "\n";
+
+	mem.decRef();
+	delete &mem;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

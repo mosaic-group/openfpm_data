@@ -71,7 +71,6 @@ public:
 		base.resize(slot);
 
 #ifdef SE_CLASS2
-
 		if (ptr_old != &base[0])
 		{
 			check_delete(ptr_old);
@@ -104,7 +103,6 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
-
 		void * ptr_old = &base[0];
 #endif
 
@@ -117,6 +115,7 @@ public:
 			check_delete(ptr_old);
 			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
 		}
+
 #endif
 	}
 
@@ -133,8 +132,20 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
+		void * ptr_old = &base[0];
 #endif
+
 		base.emplace_back(v);
+
+#ifdef SE_CLASS2
+
+		if (ptr_old != &base[0])
+		{
+			check_delete(ptr_old);
+			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+		}
+
+#endif
 	}
 
 	/*! \brief Add an empty object (it call the default constructor () ) at the end of the vector
@@ -145,8 +156,20 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
+		void * ptr_old = &base[0];
 #endif
+
 		base.emplace_back(T());
+
+#ifdef SE_CLASS2
+
+		if (ptr_old != &base[0])
+		{
+			check_delete(ptr_old);
+			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+		}
+
+#endif
 	}
 
 	/*! \brief add elements to the vector
@@ -156,14 +179,27 @@ public:
 	 */
 	template<typename Mem,typename gp> inline void add(const openfpm::vector<T,Mem,gp> & eles)
 	{
+
 #ifdef SE_CLASS2
 		check_valid(this,8);
+		void * ptr_old = &base[0];
 #endif
+
 		size_t start = base.size();
 		base.resize(base.size() + eles.size());
 
 		// copy the elements
 		std::copy(eles.begin(),eles.end(),base.begin()+start);
+
+#ifdef SE_CLASS2
+
+		if (ptr_old != &base[0])
+		{
+			check_delete(ptr_old);
+			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+		}
+
+#endif
 	}
 
 	/*! \brief Erase the elements from start to end
@@ -177,6 +213,7 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
+
 		base.erase(start,end);
 	}
 
@@ -275,12 +312,12 @@ public:
 	 * \return the duplicated vector
 	 *
 	 */
-	std::vector<T> duplicate() const
+	openfpm::vector<T> duplicate() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		return base;
+		return *this;
 	}
 
 	/*! \brief swap the memory between the two vector
@@ -454,6 +491,7 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_new(this,8,VECTOR_STD_EVENT,1);
+		check_new(&base[0],sizeof(T)*sz,VECTOR_STD_EVENT,1);
 #endif
 	}
 
@@ -463,9 +501,20 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_new(this,8,VECTOR_STD_EVENT,1);
+		void * ptr_old = &base[0];
 #endif
 
 		base = v.base;
+
+#ifdef SE_CLASS2
+
+		if (ptr_old != &base[0])
+		{
+			check_delete(ptr_old);
+			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+		}
+
+#endif
 	}
 
 	/*! \brief Initializer from constructor
@@ -475,7 +524,12 @@ public:
 	 */
 	vector(const std::initializer_list<T> & v)
 	:base(v)
-	{}
+	{
+#ifdef SE_CLASS2
+		check_new(this,8,VECTOR_STD_EVENT,1);
+		check_new(&base[0],sizeof(T)*v.size(),VECTOR_STD_EVENT,1);
+#endif
+	}
 
 	//! Constructor from another vector
 	vector(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v) noexcept
@@ -493,6 +547,7 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_delete(this);
+		check_delete(&base[0]);
 #endif
 	}
 
@@ -531,8 +586,19 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
+		void * ptr_old = &base[0];
 #endif
 		base = v.base;
+
+#ifdef SE_CLASS2
+
+		if (ptr_old != &base[0])
+		{
+			check_delete(ptr_old);
+			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+		}
+
+#endif
 
 		return *this;
 	}

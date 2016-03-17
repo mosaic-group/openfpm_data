@@ -559,7 +559,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1001);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1001ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -571,7 +571,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1002);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1002ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -583,7 +583,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1002);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1002ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -594,7 +594,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1004);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1004ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -607,7 +607,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1003);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1003ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -619,7 +619,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1003);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1003ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -630,7 +630,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1005);
+		BOOST_REQUIRE_EQUAL(g.getLastError(),1005ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 

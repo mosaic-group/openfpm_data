@@ -667,7 +667,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
-		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -679,7 +679,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
-		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -702,7 +702,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
-		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -714,7 +714,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
-		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
