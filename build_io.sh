@@ -1,5 +1,7 @@
 #! /bin/bash
 
+source $HOME/.bashrc
+
 # Make a directory in /tmp/openfpm_data
 
 mkdir /tmp/openfpm_io
