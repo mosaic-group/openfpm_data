@@ -1,6 +1,5 @@
 #! /bin/bash
 
-echo $HOME
 source $HOME/.bashrc
 
 # Make a directory in /tmp/openfpm_data
@@ -23,7 +22,7 @@ echo "Compiling on $2"
 sh ./autogen.sh
 if [ "$2" == "master" ]
 then
- sh ./configure --disable-gpu
+ sh ./configure CXX=mpic++ --with-hdf5=$HOME/HDF5/bin/h5pcc --disable-gpu
 elif [ "$2" == "gin" ]
 then
  module load gcc/4.8.2
