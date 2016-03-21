@@ -39,7 +39,7 @@ template<typename T> void boost_check_array(const T * ptr1, const T * ptr2, size
  *
  * \return demangled string
  */
-static std::string demangle(const char* name) {
+static inline std::string demangle(const char* name) {
 
     int status = -4; // some arbitrary value to eliminate the compiler warning
 

@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 
 	// Fill the expected vector
 
-	comb<1> c[] = {{{1}},{{-1}}};
+	comb<1> c[] = {{1},{-1}};
 
 	// Check the linearization
 	check_lin(v_c1_0);
