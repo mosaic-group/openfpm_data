@@ -152,10 +152,18 @@ namespace openfpm
 			T pos_tmp = pos;
 
 			if (pos >= p2)
-				pos_tmp -= (p2 - p1);
+			{
+				pos_tmp = p1 + (pos - p2);
+			}
 			else if (pos < p1)
-				pos_tmp += (p2 - p1);
+			{
+				pos_tmp = p2 - (p1 - pos);
 
+				// This is a round off error fix
+				// if the shift bring exactly on p2 p2 we back the particle to p1
+				if (pos_tmp == p2)
+					pos_tmp = p1;
+			}
 
 			return pos_tmp;
 		}

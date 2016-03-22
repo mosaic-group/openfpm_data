@@ -651,6 +651,19 @@ public:
 		return vector_key_iterator(base.size());
 	}
 
+	/*! \brief Get iterator untill a specified key
+	 *
+	 * \return an iterator
+	 *
+	 */
+	vector_key_iterator getIteratorTo(size_t k) const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		return vector_key_iterator(k);
+	}
+
 	/*! \brief Calculate the memory size required to allocate n elements
 	 *
 	 * Calculate the total size required to store n-elements in a vector
