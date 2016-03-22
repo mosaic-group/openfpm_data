@@ -141,9 +141,6 @@ public:
 		typedef openfpm::vector<prp_object,ExtPreAlloc<S>> dtype;
 		dtype dvect;
 
-		// Calculate the required memory for packing
-		size_t alloc_ele = dvect.calculateMem(size(),0);
-
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
 		dest.setMemory(mem);
@@ -309,9 +306,6 @@ public:
 
 		// Calculate the size to pack the object
 		size_t size = svect.calculateMem(this->size(),0);
-
-		// Create an Pointer object over the preallocated memory (No allocation is produced)
-		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
 
 		// Create an object over a pointer (No allocation is produced)
 		stype src;
