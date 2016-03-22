@@ -518,6 +518,8 @@ namespace openfpm
 
 		/*! \brief Remove several entries from the vector
 		 *
+		 * \warning the keys in the vector MUST be sorted
+		 *
 		 * \param keys objects id to remove
 		 * \param start key starting point
 		 *

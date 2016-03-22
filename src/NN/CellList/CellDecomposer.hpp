@@ -12,6 +12,8 @@
 #include "Space/Matrix.hpp"
 #include "util/copy_compare/meta_compare.hpp"
 
+#define CELL_DECOMPOSER 8001lu
+
 // Shift transformation
 template<unsigned int dim, typename T>
 class shift
@@ -434,7 +436,10 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (tot_n_cell == 0)
+		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
 #endif
 
 		grid_key_dx<dim> key;
@@ -444,7 +449,10 @@ public:
 		{
 #ifdef SE_CLASS1
 			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
+			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space\n";
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
 #endif
 			key.set_d(s,ConvertToID(pos,s));
 
@@ -466,7 +474,10 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (tot_n_cell == 0)
+		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer" << std::endl;
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
 #endif
 
 		grid_key_dx<dim> key;
@@ -476,7 +487,10 @@ public:
 		{
 #ifdef SE_CLASS1
 			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
+			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space" << std::endl;
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
 #endif
 			key.set_d(s,ConvertToID(pos,s));
 		}
@@ -497,10 +511,16 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (tot_n_cell == 0)
+		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
 
 		if (t.transform(pos,0) < box.getLow(0) || t.transform(pos,0) > box.getHigh(0))
+		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
 #endif
 
 		size_t cell_id = ConvertToID(pos,0);
@@ -509,7 +529,10 @@ public:
 		{
 #ifdef SE_CLASS1
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
+			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
 #endif
 			cell_id += gr_cell.size_s(s-1) * ConvertToID(pos,s);
 		}
@@ -530,10 +553,16 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (tot_n_cell == 0)
+		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
 
 		if (t.transform(pos,0) < box.getLow(0) || t.transform(pos,0) > box.getHigh(0))
+		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
 #endif
 
 		size_t cell_id = ConvertToID(pos,0);
@@ -542,7 +571,10 @@ public:
 		{
 #ifdef SE_CLASS1
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
+			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
 #endif
 			cell_id += gr_cell.size_s(s-1) * ConvertToID(pos,s);
 		}
@@ -564,10 +596,16 @@ public:
 
 #ifdef SE_CLASS1
 		if (tot_n_cell == 0)
+		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
 
 		if (t.transform(pos,0) < box.getLow(0) || t.transform(pos,0) > box.getHigh(0))
+		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
 #endif
 
 		size_t cell_id = ConvertToID_(pos,0);
@@ -576,7 +614,10 @@ public:
 		{
 #ifdef SE_CLASS1
 			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
+			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
 #endif
 			cell_id += gr_cell.size_s(s-1) * ConvertToID_(pos,s);
 		}
