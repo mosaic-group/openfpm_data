@@ -305,8 +305,7 @@ class VTKWriter<vector,VECTOR_BOX>
 	std::string get_cell_data_list()
 	{
 		// random engine
-		std::default_random_engine generator;
-		std::uniform_real_distribution<float> d(0.0,1.0);
+		SimpleRNG rng;
 
 		//! vertex node output string
 		std::string v_out;
@@ -322,7 +321,7 @@ class VTKWriter<vector,VECTOR_BOX>
 			while (it.isNext())
 			{
 				// write a color
-				v_out += getColor(col_group,d,generator).toString() + " 1.0" + "\n";
+				v_out += getColor(col_group,rng).toString() + " 1.0" + "\n";
 
 				++it;
 			}

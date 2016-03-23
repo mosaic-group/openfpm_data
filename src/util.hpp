@@ -7,6 +7,8 @@
 
 #include "config.h"
 
+#include "util/SimpleRNG.hpp"
+
 #ifndef UTIL_HPP_
 #define UTIL_HPP_
 
@@ -65,11 +67,11 @@ struct RGB
  *
  */
 
-static inline struct RGB getColor(int group, std::uniform_real_distribution<float> & d, std::default_random_engine & g)
+static inline struct RGB getColor(int group, SimpleRNG & d)
 {
 	struct RGB col;
 
-	float s = d(g);
+	float s = (float)d.GetUniform();
 
 	group = group % 12;
 
