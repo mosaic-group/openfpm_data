@@ -15,6 +15,8 @@ BOOST_AUTO_TEST_SUITE( plot_unit_test )
 
 BOOST_AUTO_TEST_CASE( google_chart )
 {
+	//! [Producing an Histogram graph]
+
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<size_t>> y;
 	openfpm::vector<std::string> yn;
@@ -53,8 +55,10 @@ BOOST_AUTO_TEST_CASE( google_chart )
 	options.stypeext = std::string("{3: {type: 'line'}}");
 
 	GoogleChart cg;
-	cg.AddColumsGraph(x,y,yn,options);
+	cg.AddHistGraph(x,y,yn,options);
 	cg.write("gc_out.html");
+
+	//! [Producing an Histogram graph]
 
 	bool test = compare("gc_out.html","gc_out_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
@@ -97,7 +101,7 @@ BOOST_AUTO_TEST_CASE( google_chart2 )
 	options.stype = std::string("bars");
 
 	GoogleChart cg;
-	cg.AddColumsGraph(x,y,yn,options);
+	cg.AddHistGraph(x,y,yn,options);
 	cg.write("gc_out2.html");
 
 	bool test = compare("gc_out2.html","gc_out2_test.html");
@@ -140,7 +144,7 @@ BOOST_AUTO_TEST_CASE( google_chart3 )
 	options.xAxis = std::string("X Axis");
 
 	GoogleChart cg;
-	cg.AddColumsGraph(x,y,yn,options);
+	cg.AddHistGraph(x,y,yn,options);
 	cg.write("gc_out3.html");
 
 	bool test = compare("gc_out3.html","gc_out3_test.html");
@@ -176,7 +180,7 @@ BOOST_AUTO_TEST_CASE( google_chart4 )
 	y.add({2.0,1.1,4.0,6.1});
 
 	GoogleChart cg;
-	cg.AddColumsGraph(x,y,yn);
+	cg.AddHistGraph(x,y,yn);
 	cg.write("gc_out4.html");
 
 	bool test = compare("gc_out4.html","gc_out4_test.html");
@@ -204,7 +208,7 @@ BOOST_AUTO_TEST_CASE( google_chart5 )
 	y.add({2.0,1.1,4.0,6.1});
 
 	GoogleChart cg;
-	cg.AddColumsGraph(x,y);
+	cg.AddHistGraph(x,y);
 	cg.write("gc_out5.html");
 
 	bool test = compare("gc_out5.html","gc_out5_test.html");
@@ -224,7 +228,7 @@ BOOST_AUTO_TEST_CASE( google_chart6 )
 	y.add({2.0,1.1,4.0,6.1});
 
 	GoogleChart cg;
-	cg.AddColumsGraph(y);
+	cg.AddHistGraph(y);
 	cg.write("gc_out6.html");
 
 	bool test = compare("gc_out6.html","gc_out6_test.html");
@@ -233,6 +237,8 @@ BOOST_AUTO_TEST_CASE( google_chart6 )
 
 BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 {
+	//! [Producing a set of histograms graphs]
+
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<size_t>> y;
 	openfpm::vector<std::string> yn;
@@ -273,13 +279,15 @@ BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 	GoogleChart cg;
 	//
 	cg.addHTML("<h2>Before first graph</h2>");
-	cg.AddColumsGraph(x,y,yn,options);
+	cg.AddHistGraph(x,y,yn,options);
 	cg.addHTML("<h2>Before second graph</h2>");
-	cg.AddColumsGraph(x,y,yn,options);
+	cg.AddHistGraph(x,y,yn,options);
 	cg.addHTML("<h2>Before third graph</h2>");
-	cg.AddColumsGraph(x,y,yn,options);
+	cg.AddHistGraph(x,y,yn,options);
 	cg.addHTML("<h2>At the end</h2>");
 	cg.write("gc_out7.html");
+
+	//! [Producing a set of histograms graphs]
 
 	bool test = compare("gc_out7.html","gc_out7_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
@@ -287,6 +295,8 @@ BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 
 BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 {
+	//! [Producing lines graph with style]
+
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<double>> y;
 	openfpm::vector<std::string> yn;
@@ -336,8 +346,10 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 	options.intervalext = std::string("{'i2': { 'color': '#4374E0', 'style':'bars', 'lineWidth':4, 'fillOpacity':1 } }");
 
 	GoogleChart cg;
-	cg.AddPointsGraph(x,y,yn,options);
+	cg.AddLinesGraph(x,y,yn,options);
 	cg.write("gc_plot_out.html");
+
+	//! [Producing lines graph with style]
 
 	bool test = compare("gc_plot_out.html","gc_plot_out_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
@@ -345,6 +357,8 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 
 BOOST_AUTO_TEST_CASE( google_chart_linear_plot2 )
 {
+	//! [Producing lines]
+
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<double>> y;
 
@@ -376,8 +390,10 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot2 )
 	options.lineWidth = 1.0;
 
 	GoogleChart cg;
-	cg.AddPointsGraph(x,y,options);
+	cg.AddLinesGraph(x,y,options);
 	cg.write("gc_plot2_out.html");
+
+	//! [Producing lines]
 
 	bool test = compare("gc_plot2_out.html","gc_plot2_out_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);

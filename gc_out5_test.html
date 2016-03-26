@@ -7,14 +7,19 @@
 
 
       function drawVisualization() {
-var data0 = google.visualization.arrayToDataTable([
-['','','','',''],
-['colum1',2.200000,1.300000,4.500000,0.600000],
-['colum2',5.000000,6.100000,1.300000,2.600000],
-['colum3',2.100000,1.000000,6.100000,9.300000],
-['colum4',1.100000,6.100000,3.000000,2.000000],
-['colum5',3.300000,0.300000,0.000000,6.200000],
-['colum6',2.000000,1.100000,4.000000,6.100000],
+var data0 = new google.visualization.DataTable();
+data0.addColumn('string','');
+data0.addColumn('number','');
+data0.addColumn('number','');
+data0.addColumn('number','');
+data0.addColumn('number','');
+data0.addRows([
+['colum1',2.2,1.3,4.5,0.6],
+['colum2',5,6.1,1.3,2.6],
+['colum3',2.1,1,6.1,9.3],
+['colum4',1.1,6.1,3,2],
+['colum5',3.3,0.3,0,6.2],
+['colum6',2,1.1,4,6.1],
 ]);
 var options0= {
 title : '',

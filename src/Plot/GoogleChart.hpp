@@ -114,7 +114,33 @@ const std::string div_end = "</body>\n\
 
 /////////////////////////////////////////////////////////////////////
 
-/*! It convert an array y or a set of two array x,y into a Google chart
+/*! \brief Small class to produce graph with Google chart in HTML
+ *
+ * This Class can produce several graph using google chart
+ *
+ * ### Create Histogram graph
+ *
+ * \image html g_graph_hist.jpg
+ *
+ * This code produce the graph above
+ *
+ * \snippet Plot_unit_tests.hpp Producing an Histogram graph
+ *
+ * ### Create Lines
+ *
+ * \image html g_graph_plot2.jpg
+ *
+ * This code produce the graph above
+ *
+ * \snippet Plot_unit_tests.hpp Producing lines
+ *
+ * ### Create lines with different styles
+ *
+ * \image html g_graph_plot.jpg
+ *
+ * This code produce the graph above
+ *
+ * \snippet Plot_unit_tests.hpp Producing lines graph with style
  *
  */
 class GoogleChart
@@ -182,48 +208,6 @@ class GoogleChart
         	}
         	data << "],\n";
         }
-
-		return data.str();
-	}
-
-	/*! \brief Given X and Y vector return the string representing the data section of the Google Chart
-	 *
-	 * \param X vector
-	 * \param Y vector
-	 *
-	 * \return string with the data section
-	 *
-	 */
-	template<typename X, typename Y, typename Yn> std::string get_colums_bar_data(const openfpm::vector<X> & x, const openfpm::vector<Y> & y, const openfpm::vector<Yn> & yn, const GCoptions & opt, size_t i)
-	{
-		std::stringstream data;
-
-		data << "var data";
-		data << i;
-		data << " = google.visualization.arrayToDataTable([\n";
-
-		// we require that the number of x elements are the same as y elements
-
-		if (x.size() != y.size())
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " vector x and the vector y must have the same number of elements " << x.size() << "!=" << y.size() << "\n";
-
-		data << "['";
-		data << opt.xAxis << "'";
-		for (size_t i = 0 ; i < yn.size() ; i++)
-			data << ",'" << std::to_string(yn.get(i)) << "'";
-
-		data << "],\n";
-
-		// Write the values
-		for (size_t i = 0 ; i < y.size() ; i++)
-		{
-			data << "[";
-			data << "'" << std::to_string(x.get(i)) << "'";
-			for (size_t j = 0 ; j < y.get(i).size() ; j++)
-				data << "," << std::to_string(y.get(i).get(j));
-
-			data << "],\n";
-		}
 
 		return data.str();
 	}
@@ -335,29 +319,29 @@ public:
 		injectHTML.add();
 	}
 
-	/*! \brief Add a colums graph
+	/*! \brief Add an histogram graph
 	 *
-	 * \param y A vector of vector of values (numbers) the size of y indicate how many columns
-	 *          has the graph while the internal vector can store multiple datasets
+	 * \param y A vector of vectors the size of y indicate how many values we have on x
+	 *          each x value can have multiple values or datasets
 	 *
 	 */
-	template<typename Y> void AddColumsGraph(openfpm::vector<Y> & y)
+	template<typename Y> void AddHistGraph(openfpm::vector<Y> & y)
 	{
 		openfpm::vector<std::string> x;
 		x.resize(y.size());
 
-		AddColumsGraph<std::string,Y>(x,y);
+		AddHistGraph<std::string,Y>(x,y);
 	}
 
-	/*! \brief Add a colums graph
+	/*! \brief Add an histogram graph
 	 *
-	 * \param y A vector of vector of values (numbers) the size of y indicate how many columns
-	 *          has the graph while the internal vector can store multiple datasets
+	 * \param y A vector of vectors the size of y indicate how many values we have on x
+	 *          each x value can have multiple values or datasets
 	 *
-	 * \param x Give a name or number to each colums, so can be a string or a number
+	 * \param x Give a name or number to each colums. Can be a string or a number
 	 *
 	 */
-	template<typename X, typename Y> void AddColumsGraph(openfpm::vector<X> & x, openfpm::vector<Y> & y)
+	template<typename X, typename Y> void AddHistGraph(openfpm::vector<X> & x, openfpm::vector<Y> & y)
 	{
 		GCoptions opt;
 
@@ -366,39 +350,39 @@ public:
 		if (y.size() != 0)
 			yn.resize(y.get(0).size());
 
-		AddColumsGraph<X,Y,std::string>(x,y,yn,opt);
+		AddHistGraph<X,Y,std::string>(x,y,yn,opt);
 	}
 
-	/*! \brief Add a colums graph
+	/*! \brief Add an histogram graph
 	 *
-	 * \param y A vector of vector of values (numbers) the size of y indicate how many columns
-	 *          has the graph while the internal vector can store multiple datasets
+	 * \param y A vector of vectors the size of y indicate how many values we have on x
+	 *          each x value can have multiple values or datasets
 	 *
-	 * \param x Give a name or number to each colums, so can be a string or a number
+	 * \param x Give a name or number to each colums. Can be a string or a number
 	 *
 	 * \param yn Give a name to each dataset
 	 *
 	 */
-	template<typename X, typename Y, typename Yn> void AddColumsGraph(openfpm::vector<X> & x, openfpm::vector<Y> & y, openfpm::vector<Yn> & yn)
+	template<typename X, typename Y, typename Yn> void AddHistGraph(openfpm::vector<X> & x, openfpm::vector<Y> & y, openfpm::vector<Yn> & yn)
 	{
 		GCoptions opt;
 
-		AddColumsGraph(x,y,yn,opt);
+		AddHistGraph(x,y,yn,opt);
 	}
 
-	/*! \brief Add a colums graph
+	/*! \brief Add an histogram graph
 	 *
-	 * \param y A vector of vector of values (numbers) the size of y indicate how many columns
-	 *          has the graph while the internal vector can store multiple datasets
+	 * \param y A vector of vectors the size of y indicate how many values we have on x
+	 *          each x value can have multiple values or datasets
 	 *
-	 * \param x Give a name or number to each colums, so can be a string or a number
+	 * \param x Give a name or number to each colums. Can be a string or a number
 	 *
 	 * \param yn Give a name to each dataset
 	 *
 	 * \param opt Graph options
 	 *
 	 */
-	template<typename X, typename Y, typename Yn> void AddColumsGraph(openfpm::vector<X> & x, openfpm::vector<Y> & y, openfpm::vector<Yn> & yn , const GCoptions & opt)
+	template<typename X, typename Y, typename Yn> void AddHistGraph(openfpm::vector<X> & x, openfpm::vector<Y> & y, openfpm::vector<Yn> & yn , const GCoptions & opt)
 	{
 		set_of_graphs.add();
 		injectHTML.add();
@@ -416,23 +400,23 @@ public:
 		}
 
 		set_of_graphs.last().type = GGRAPH_COLUMS;
-		set_of_graphs.last().data = get_colums_bar_data(x,y,yn,opt,set_of_graphs.size()-1);
+		set_of_graphs.last().data = get_points_plot_data(x,y,yn,opt,set_of_graphs.size()-1);
 		set_of_graphs.last().option = get_colums_bar_option(opt);
 		set_of_graphs.last().opt = opt;
 	}
 
-	/*! \brief Add a simple plot graph
+	/*! \brief Add a simple lines graph
 	 *
-	 * \param y A vector of vector of values (numbers) the size of y indicate how many x values
-	 *          or colums do we have, while the internal vector can store multiple realizations,
+	 * \param y A vector of vectors of values. The size of y indicate how many x values
+	 *          we have, while the internal vector can store multiple realizations,
 	 *          or min and max, for error bar
 	 *
-	 * \param x Give a name or number to each colums, so can be a string or a number
+	 * \param x Give a name or number to each x value, so can be a string or a number
 	 *
 	 * \param opt Graph options
 	 *
 	 */
-	template<typename X, typename Y> void AddPointsGraph(openfpm::vector<X> & x, openfpm::vector<Y> & y , const GCoptions & opt)
+	template<typename X, typename Y> void AddLinesGraph(openfpm::vector<X> & x, openfpm::vector<Y> & y , const GCoptions & opt)
 	{
 		openfpm::vector<std::string> yn;
 
@@ -445,7 +429,7 @@ public:
 		for (size_t i = 0 ; i < y.last().size() ; i++)
 			yn.add(std::string("line") + std::to_string(i));
 
-		AddPointsGraph(x,y,yn,opt);
+		AddLinesGraph(x,y,yn,opt);
 	}
 
 	/*! \brief Add a simple plot graph
@@ -461,7 +445,7 @@ public:
 	 * \param opt Graph options
 	 *
 	 */
-	template<typename X, typename Y> void AddPointsGraph(openfpm::vector<X> & x, openfpm::vector<Y> & y , const openfpm::vector<std::string> & yn, const GCoptions & opt)
+	template<typename X, typename Y> void AddLinesGraph(openfpm::vector<X> & x, openfpm::vector<Y> & y , const openfpm::vector<std::string> & yn, const GCoptions & opt)
 	{
 		if (y.size() == 0)
 		{
@@ -500,9 +484,9 @@ public:
 		injectHTML.last() = html;
 	}
 
-	/*! \brief It write the html file
+	/*! \brief It write the graphs on file in html format using Google charts
 	 *
-	 * \param file output html file
+	 * \param file output file
 	 *
 	 */
 	void write(std::string file)

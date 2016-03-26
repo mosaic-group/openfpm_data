@@ -7,8 +7,13 @@
 
 
       function drawVisualization() {
-var data0 = google.visualization.arrayToDataTable([
-['X Axis','dataset1','dataset2','dataset3','dataset4'],
+var data0 = new google.visualization.DataTable();
+data0.addColumn('string','X Axis');
+data0.addColumn('number','dataset1');
+data0.addColumn('number','dataset2');
+data0.addColumn('number','dataset3');
+data0.addColumn('number','dataset4');
+data0.addRows([
 ['colum1',2,3,5,6],
 ['colum2',5,6,1,6],
 ['colum3',2,1,6,9],
@@ -16,8 +21,13 @@ var data0 = google.visualization.arrayToDataTable([
 ['colum5',3,3,0,6],
 ['colum6',2,1,4,6],
 ]);
-var data1 = google.visualization.arrayToDataTable([
-['X Axis','dataset1','dataset2','dataset3','dataset4'],
+var data1 = new google.visualization.DataTable();
+data1.addColumn('string','X Axis');
+data1.addColumn('number','dataset1');
+data1.addColumn('number','dataset2');
+data1.addColumn('number','dataset3');
+data1.addColumn('number','dataset4');
+data1.addRows([
 ['colum1',2,3,5,6],
 ['colum2',5,6,1,6],
 ['colum3',2,1,6,9],
@@ -25,8 +35,13 @@ var data1 = google.visualization.arrayToDataTable([
 ['colum5',3,3,0,6],
 ['colum6',2,1,4,6],
 ]);
-var data2 = google.visualization.arrayToDataTable([
-['X Axis','dataset1','dataset2','dataset3','dataset4'],
+var data2 = new google.visualization.DataTable();
+data2.addColumn('string','X Axis');
+data2.addColumn('number','dataset1');
+data2.addColumn('number','dataset2');
+data2.addColumn('number','dataset3');
+data2.addColumn('number','dataset4');
+data2.addRows([
 ['colum1',2,3,5,6],
 ['colum2',5,6,1,6],
 ['colum3',2,1,6,9],

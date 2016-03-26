@@ -7,8 +7,13 @@
 
 
       function drawVisualization() {
-var data0 = google.visualization.arrayToDataTable([
-['X Axis','dataset1','dataset2','dataset3','dataset4'],
+var data0 = new google.visualization.DataTable();
+data0.addColumn('string','X Axis');
+data0.addColumn('number','dataset1');
+data0.addColumn('number','dataset2');
+data0.addColumn('number','dataset3');
+data0.addColumn('number','dataset4');
+data0.addRows([
 ['colum1',2,3,5,6],
 ['colum2',5,6,1,6],
 ['colum3',2,1,6,9],
