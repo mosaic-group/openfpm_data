@@ -6,7 +6,8 @@ AC_PREREQ(2.59)
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_SRCDIR([src/main.cpp])
-AM_INIT_AUTOMAKE
+
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_HEADER([src/config/config.h])
 m4_ifdef([ACX_PTHREAD],,[m4_include([m4/acx_pthread.m4])])
 m4_ifdef([ACX_MPI],,[m4_include([m4/acx_mpi.m4])])
