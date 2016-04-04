@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_write_report)
 
 
 	cg.addHTML(g_test_desc.str());
-	cg.AddColumsGraph(testsg,y,yn,options);
+	cg.AddHistGraph(testsg,y,yn,options);
 
 	// compare the reference times with the actual times
 
@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_write_report)
 
 
 	cg.addHTML(g_test_spdesc.str());
-	cg.AddPointsGraph(testsg,y_ref_sup,yn,options);
+	cg.AddLinesGraph(testsg,y_ref_sup,yn,options);
 }
 
 #endif /* OPENFPM_DATA_SRC_GRID_GRID_PERFORMANCE_TESTS_HPP_ */
