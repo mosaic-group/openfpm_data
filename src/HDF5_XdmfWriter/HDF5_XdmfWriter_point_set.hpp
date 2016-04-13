@@ -135,7 +135,7 @@ public:
 	 */
 	template<typename VPos, typename VPrp, int ... prp > bool write(const std::string & file, openfpm::vector<VPos> & v_pos, openfpm::vector<VPrp> & v_prp, size_t stop)
 	{
-		Vcluster & v_cl = *global_v_cluster;
+		Vcluster & v_cl = create_vcluster();
 
 		// Open and HDF5 file in parallel
 

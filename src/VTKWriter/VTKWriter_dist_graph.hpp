@@ -1116,7 +1116,7 @@ public:
 	template<int prp = -1> bool write(std::string file, std::string graph_name = "Graph", file_type ft = file_type::ASCII)
 	{
 
-		Vcluster & v_cl = *global_v_cluster;
+		Vcluster & v_cl = create_vcluster();
 
 		g.deleteGhosts();
 

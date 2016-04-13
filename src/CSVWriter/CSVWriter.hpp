@@ -250,7 +250,7 @@ public:
 
 		// Check if the file is open
 		if (ofs.is_open() == false)
-		{std::cerr << "Error cannot create the CSV file: " + file;}
+		{std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " cannot create the CSV file: " << file << std::endl;}
 
 		ofs << csv_header << point_data;
 
