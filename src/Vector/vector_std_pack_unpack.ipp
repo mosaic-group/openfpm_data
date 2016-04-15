@@ -11,7 +11,7 @@
 	template<bool cond, typename T1, typename Memory1, int ... prp>
 	struct pack_cond
 	{
-		void packing(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Pack_stat & sts)
+		void packing(ExtPreAlloc<Memory1> & mem, const openfpm::vector<T1> & obj, Pack_stat & sts)
 		{
 #ifdef DEBUG
 			std::cout << "No pack() function inside! (packer)" << std::endl;
@@ -25,7 +25,7 @@
 	template<typename T1, typename Memory1, int ... prp>
 	struct pack_cond<true, T1, Memory1, prp...>
 	{
-		void packing(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Pack_stat & sts)
+		void packing(ExtPreAlloc<Memory1> & mem, const openfpm::vector<T1> & obj, Pack_stat & sts)
 		{
 #ifdef DEBUG
 			std::cout << "There is pack() function inside! (true, map_vector_std)" << std::endl;
@@ -91,7 +91,7 @@
 	template<bool cond, typename T1, int ... prp>
 	struct packRequest_cond
 	{
-		void packingRequest(openfpm::vector<T1> & obj, std::vector<size_t> & v)
+		void packingRequest(const openfpm::vector<T1> & obj, std::vector<size_t> & v)
 		{
 #ifdef DEBUG
 			std::cout << "There is no packRequest() function inside! (packingRequest)" << std::endl;
@@ -111,7 +111,7 @@
 	template<typename T1, int ... prp>
 	struct packRequest_cond<true, T1, prp...>
 	{
-		void packingRequest(openfpm::vector<T1> & obj, std::vector<size_t> & v)
+		void packingRequest(const openfpm::vector<T1> & obj, std::vector<size_t> & v)
 		{
 #ifdef DEBUG
 			std::cout << "There is packRequest() function inside! (packingRequest)" << std::endl;
@@ -133,7 +133,7 @@
 	template<bool cond, typename T1, int ... prp>
 	struct packMem_cond
 	{
-		size_t packMemory(T1 & obj, size_t n, size_t e)
+		size_t packMemory(const T1 & obj, size_t n, size_t e)
 		{
 #ifdef DEBUG
 			std::cout << "There is no packMem() function inside! (packMemory)" << std::endl;
@@ -146,7 +146,7 @@
 	template<typename T1, int ... prp>
 	struct packMem_cond<true, T1, prp...>
 	{
-		size_t packMemory(T1 & obj, size_t n, size_t e)
+		size_t packMemory(const T1 & obj, size_t n, size_t e)
 		{
 #ifdef DEBUG
 			std::cout << "There is packMem() function inside! (packMemory)" << std::endl;
@@ -185,7 +185,7 @@
 	 * \param sts pack-stat info
 	 *
 	 */
-	template<int ... prp> void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts)
+	template<int ... prp> void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts) const
 	{
 #ifdef DEBUG
 		std::cout << "Inside pack() function! (map_vector_std)" << std::endl;
@@ -201,7 +201,7 @@
 	 * \param v - requests vector
 	 *
 	 */
-	template<int ... prp> void packRequest(std::vector<size_t> & v)
+	template<int ... prp> void packRequest(std::vector<size_t> & v) const
 	{
 #ifdef DEBUG
 		std::cout << "Inside packRequest() function! (map_vector_std)" << std::endl;
@@ -237,7 +237,7 @@
 	 * \return true if succed
 	 * 
 	 */
-	bool save(std::string file)
+	bool save(const std::string & file) const
 	{
 		std::vector<size_t> pap_prp;
 		
@@ -272,7 +272,7 @@
 	 * \return true if succed
 	 * 
 	 */
-	bool load(std::string file)
+	bool load(const std::string & file)
 	{
 	    std::ifstream fs (file, std::ios::in | std::ios::binary | std::ios::ate );
 	    if (fs.is_open() == false)

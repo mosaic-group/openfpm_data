@@ -156,10 +156,10 @@ template<typename Aggr, typename Mem, typename grow_p>
 struct call_packRequest_agg_functor
 {
 
-	openfpm::vector<Aggr,Mem,grow_p,OPENFPM_NATIVE> & obj;
+	const openfpm::vector<Aggr,Mem,grow_p,OPENFPM_NATIVE> & obj;
 	std::vector<size_t> & pap_prp;
 
-	call_packRequest_agg_functor(openfpm::vector<Aggr,Mem,grow_p,OPENFPM_NATIVE> & obj, std::vector<size_t> & pap_prp)
+	call_packRequest_agg_functor(const openfpm::vector<Aggr,Mem,grow_p,OPENFPM_NATIVE> & obj, std::vector<size_t> & pap_prp)
 	:obj(obj),pap_prp(pap_prp)
 	{}
 
@@ -179,7 +179,7 @@ struct call_packRequest_agg_functor
 template<typename T, typename Mem, typename grow_p, int ... prp>
 struct call_aggregatePackRequest
 {
-	static inline void call_packRequest(openfpm::vector<T,Mem,grow_p,OPENFPM_NATIVE> & obj, std::vector<size_t> & pap_prp)
+	static inline void call_packRequest(const openfpm::vector<T,Mem,grow_p,OPENFPM_NATIVE> & obj, std::vector<size_t> & pap_prp)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type b_prp;
@@ -196,10 +196,10 @@ template<typename Aggr, typename Mem, typename grow_p>
 struct call_pack_agg_functor
 {
 	ExtPreAlloc<Mem> & mem;
-	openfpm::vector<Aggr,Mem,grow_p,OPENFPM_NATIVE> & obj;
+	const openfpm::vector<Aggr,Mem,grow_p,OPENFPM_NATIVE> & obj;
 	Pack_stat & sts;
 
-	call_pack_agg_functor(ExtPreAlloc<Mem> & mem, openfpm::vector<Aggr,Mem,grow_p,OPENFPM_NATIVE> & obj, Pack_stat & sts)
+	call_pack_agg_functor(ExtPreAlloc<Mem> & mem, const openfpm::vector<Aggr,Mem,grow_p,OPENFPM_NATIVE> & obj, Pack_stat & sts)
 	:mem(mem), obj(obj), sts(sts)
 	{
 	}
@@ -219,7 +219,7 @@ struct call_pack_agg_functor
 template<typename T, typename Mem, typename grow_p, int ... prp>
 struct call_aggregatePack
 {
-	static inline void call_pack(openfpm::vector<T,Mem,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Mem> & mem, Pack_stat & sts)
+	static inline void call_pack(const openfpm::vector<T,Mem,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Mem> & mem, Pack_stat & sts)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type b_prp;

@@ -442,7 +442,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele))
+	inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.get(cell * slot + ele);
 	}
@@ -457,7 +457,37 @@ public:
 	 * \return The element value
 	 *
 	 */
-	template<unsigned int i> inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele))
+	inline const auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(cell * slot + ele)) &
+	{
+		return cl_base.get(cell * slot + ele);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	template<unsigned int i> inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele)) &
+	{
+		return cl_base.template get<i>(cell * slot + ele);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	template<unsigned int i> inline const auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.template get<i>(cell * slot + ele);
 	}
@@ -503,7 +533,7 @@ public:
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> getNNIterator(size_t cell)
 	{
 		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> cln(cell,NNc_full,*this);
 
@@ -566,7 +596,9 @@ public:
 	void clear()
 	{
 		slot = STARTING_NSLOT;
-		cl_n.clear();
+		for (size_t i = 0 ; i < cl_n.size() ; i++)
+			cl_n.get(i) = 0;
+
 		cl_base.clear();
 	}
 };

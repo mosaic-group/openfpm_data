@@ -674,7 +674,7 @@ public:
 	 * \return the size of the allocation number e
 	 *
 	 */
-	template<int ... prp> inline size_t packMem(size_t n, size_t e)
+	template<int ... prp> inline size_t packMem(size_t n, size_t e) const
 	{
 		if (n == 0)
 			return 0;

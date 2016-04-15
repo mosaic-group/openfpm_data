@@ -87,7 +87,7 @@ struct packMem_cond<true, T1>
 template<bool sel, int ... prp>
 struct pack_simple_cond
 {
-	static inline void pack(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+	static inline void pack(const openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory> & mem, Pack_stat & sts)
 	{
 	#ifdef DEBUG
 		if (mem.ref() == 0)
@@ -134,7 +134,7 @@ struct pack_simple_cond
 template<int ... prp>
 struct pack_simple_cond<true, prp ...>
 {
-	static inline void pack(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+	static inline void pack(const openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
 	{
 	#ifdef DEBUG
 		if (mem.ref() == 0)
@@ -278,7 +278,7 @@ struct unpack_simple_cond<true, prp ...>
  * \param v vector of allocation sequence
  *
  */
-template<int ... prp> inline void packRequest(std::vector<size_t> & v)
+template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
 {
 	//Pushback a sizeof number of elements of the internal vectors
 	v.push_back(sizeof(this->size()));
@@ -318,7 +318,7 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v)
  * \param sts pack-stat info
  *
  */
-template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & sts) const
 {
 	//If all of the aggregate properties are simple (don't have "pack()" member)
 	if (has_pack_agg<T,prp...>::result::value == false)

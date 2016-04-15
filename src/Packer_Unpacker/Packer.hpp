@@ -277,12 +277,12 @@ class Packer<T,Mem,PACKER_VECTOR>
 {
 public:
 
-	template<int ... prp> static void packRequest(T & obj, std::vector<size_t> & v)
+	template<int ... prp> static void packRequest(const T & obj, std::vector<size_t> & v)
 	{
 		obj.template packRequest<prp...>(v);
 	};
 
-	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, Pack_stat & sts)
+	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, const T & obj, Pack_stat & sts)
 	{
 #ifdef DEBUG
 		std::cout << "Inside vector pack() function! (packer.hpp)" << std::endl;

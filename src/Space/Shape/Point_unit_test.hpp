@@ -79,6 +79,21 @@ BOOST_AUTO_TEST_CASE( Point_use )
 
 	BOOST_REQUIRE( p1 != p2 );
 	BOOST_REQUIRE( p1 == p1 );
+
+	// Check division and operator*
+
+	p2 /= 2.0;
+	p1 = p1 * 2.0;
+
+	BOOST_REQUIRE_CLOSE(p2.get(0),1.0,0.001);
+	BOOST_REQUIRE_CLOSE(p2.get(1),1.5,0.001);
+	BOOST_REQUIRE_CLOSE(p2.get(2),2.0,0.001);
+
+	BOOST_REQUIRE_CLOSE(p1.get(0),2.0,0.001);
+	BOOST_REQUIRE_CLOSE(p1.get(1),2.0,0.001);
+	BOOST_REQUIRE_CLOSE(p1.get(2),2.0,0.001);
+
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

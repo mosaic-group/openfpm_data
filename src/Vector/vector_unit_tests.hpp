@@ -778,9 +778,7 @@ BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
 	}
 
 	v1.save("test_save");
-
 	openfpm::vector<openfpm::vector<float>> v2;
-
 	v2.load("test_save");
 
 	// check the v1 and v2 match
@@ -795,6 +793,7 @@ BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
 		}
 	}
 }
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
