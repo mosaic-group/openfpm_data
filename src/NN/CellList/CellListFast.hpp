@@ -487,7 +487,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	template<unsigned int i> inline const auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(cell * slot + ele)) &
+	template<unsigned int i> inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.template get<i>(cell * slot + ele);
 	}
