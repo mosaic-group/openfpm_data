@@ -447,7 +447,7 @@ public:
 		return cl_base.get(cell * slot + ele);
 	}
 
-	// Workaround for old bugged compilers
+	///////////////////////////////////// Temporal workaround  for GCC bug ////////////////////////
 #if defined(__GNUC__) &&  GCC_VERSION <= 40804
 
 	/*! \brief Get an element in the cell
@@ -464,44 +464,6 @@ public:
 	{
 		return cl_base.get(cell * slot + ele);
 	}
-
-#else
-
-	/*! \brief Get an element in the cell
-	 *
-	 * \tparam i property to get
-	 *
-	 * \param cell cell id
-	 * \param ele element id
-	 *
-	 * \return The element value
-	 *
-	 */
-	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
-	{
-		return cl_base.get(cell * slot + ele);
-	}
-
-#endif
-
-	/*! \brief Get an element in the cell
-	 *
-	 * \tparam i property to get
-	 *
-	 * \param cell cell id
-	 * \param ele element id
-	 *
-	 * \return The element value
-	 *
-	 */
-	template<unsigned int i> inline auto get(size_t cell, size_t ele) -> const decltype(cl_base.get(cell * slot + ele)) &
-	{
-		return cl_base.template get<i>(cell * slot + ele);
-	}
-///////////////////////////////////// Temporal workaround  for GCC bug ////////////////////////
-
-	// Workaround for old bugged compilers
-#if defined(__GNUC__) && GCC_VERSION <= 40804
 
 	/*! \brief Get an element in the cell
 	 *
@@ -530,12 +492,28 @@ public:
 	 * \return The element value
 	 *
 	 */
+	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
+	{
+		return cl_base.get(cell * slot + ele);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
 	template<unsigned int i> inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.template get<i>(cell * slot + ele);
 	}
 
 #endif
+
 
 	/*! \brief Swap the memory
 	 *
