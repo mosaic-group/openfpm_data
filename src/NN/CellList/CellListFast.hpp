@@ -448,7 +448,7 @@ public:
 	}
 
 	///////////////////////////////////// Temporal workaround  for GCC bug ////////////////////////
-#if defined(__GNUC__) &&  GCC_VERSION <= 40804
+#if !defined(__APPLE_CC__) &&  GCC_VERSION <= 40804
 
 	/*! \brief Get an element in the cell
 	 *
