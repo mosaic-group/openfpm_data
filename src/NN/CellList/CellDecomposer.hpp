@@ -950,11 +950,12 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 
 	 *
 	 * \param b Box in domain space
+	 * \param bc boundary conditions
 	 *
 	 * \return Box in grid units, if P2 < P1 the box does not include any grid points
 	 *
 	 */
-	inline Box<dim,long int> convertDomainSpaceIntoGridUnits(const Box<dim,T> & b_d) const
+	inline Box<dim,long int> convertDomainSpaceIntoGridUnits(const Box<dim,T> & b_d, const size_t (& bc)[dim]) const
 	{
 		Box<dim,long int> g_box;
 		Box<dim,T> b = b_d;
@@ -981,8 +982,8 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			// we are at the positive border (We are assuming that there are not rounding error)
-			if (b_d.getHigh(i) == box.getHigh(i))
+			// we are at the positive border (We are assuming that there are not rounding error in the decomposition)
+			if (b_d.getHigh(i) == box.getHigh(i) && bc[i] == NON_PERIODIC)
 			{
 				p_move.get(i) = 0;
 				g_box.setHigh(i,gr_cell.size(i));

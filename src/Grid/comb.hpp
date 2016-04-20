@@ -117,6 +117,18 @@ struct comb
 		return ret;
 	}
 
+	/*! \brief Flip the sign of the combination
+	 *
+	 *
+	 */
+	inline void sign_flip()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			c[i] = -c[i];
+		}
+	}
+
 	/*! \brief Subtract the combinations and return the result
 	 *
 	 * \return Result combination
