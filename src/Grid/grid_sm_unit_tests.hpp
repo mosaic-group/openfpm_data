@@ -171,6 +171,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_p )
 
 BOOST_AUTO_TEST_CASE( grid_key_dx_iterator_hilbert_test )
 {
+	// 2D test
 	{
 		size_t count = 0;
 
@@ -187,7 +188,9 @@ BOOST_AUTO_TEST_CASE( grid_key_dx_iterator_hilbert_test )
 			grid_key_dx<2> key = h_it.get();
 
 			//Check the curve
+#ifdef DEBUG
 			std::cout << "(" << key.get(0) << "," << key.get(1) << ")" << std::endl;
+#endif
 
 			count++;
 
@@ -204,6 +207,7 @@ BOOST_AUTO_TEST_CASE( grid_key_dx_iterator_hilbert_test )
 		BOOST_REQUIRE_EQUAL(val,true);
 	}
 
+	// 3D test
 	{
 		size_t count = 0;
 
@@ -219,6 +223,11 @@ BOOST_AUTO_TEST_CASE( grid_key_dx_iterator_hilbert_test )
 		{
 			grid_key_dx<3> key = h_it.get();
 
+			//Check the curve
+#ifdef DEBUG
+			std::cout << "(" << key.get(0) << "," << key.get(1) << "," key.get(2) << ")" << std::endl;
+#endif
+
 			count++;
 
 			++h_it;
@@ -233,41 +242,6 @@ BOOST_AUTO_TEST_CASE( grid_key_dx_iterator_hilbert_test )
 
 		BOOST_REQUIRE_EQUAL(val,true);
 	}
-
-	/*{
-		openfpm::vector<Point<2,float>> v_pos;
-		openfpm::vector<Point<2,float>> v_pos_dest;
-		v_pos.resize(4);
-		v_pos_dest.resize(v_pos.size());
-
-		v_pos.get(0) = Point<2,float>({1.0,0.0});
-		v_pos.get(1) = Point<2,float>({1.0,1.0});
-		v_pos.get(2) = Point<2,float>({0.0,0.0});
-		v_pos.get(3) = Point<2,float>({0.0,1.0});
-
-		//An order of a hilberts curve
-		int32_t m = 1;
-
-		//Create an iterator
-		grid_key_dx_iterator_hilbert<3> h_it(m);
-
-		size_t count = 0;
-
-		while (h_it.isNext())
-		{
-		  grid_key_dx<2> key = h_it.get();
-
-		  for (each particle in the Cell key)
-		  {
-			  size_t v = Cell.get();
-
-			  v_pos_dest.get(count) = v_pos.get(v);
-			  count++;
-		  }
-		}
-
-	}*/
-
 }
 
 BOOST_AUTO_TEST_SUITE_END()

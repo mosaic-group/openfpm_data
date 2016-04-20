@@ -420,7 +420,7 @@ public:
 		cl_n.get(cell)--;
 	}
 
-	/*! \brief Return the number of element in the cell
+	/*! \brief Return the number of elements in the cell
 	 *
 	 * \param cell_id id of the cell
 	 *
@@ -558,6 +558,18 @@ public:
 		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> cln(cell,NNc_cr,*this);
 
 		return cln;
+	}
+
+	/*! \brief Return the number of padding cells of the Cell decomposer
+	 *
+	 * \param i dimension
+	 *
+	 * \return the number of padding cells
+	 *
+	 */
+	size_t getPadding(size_t i)
+	{
+		return CellDecomposer_sm<dim,T,transform>::getPadding(i);
 	}
 };
 
