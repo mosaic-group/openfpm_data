@@ -44,6 +44,7 @@
 #define MAP_GRAPH_HPP_
 
 #include "Vector/map_vector.hpp"
+#include <unordered_map>
 #ifdef METIS_GP
 #include "metis_util.hpp"
 #endif
@@ -65,8 +66,7 @@ public:
 	static const unsigned int max_prop = 0;
 };
 
-template<typename V, typename E, template<typename, typename, typename, unsigned int> class VertexList, template<typename, typename, typename, unsigned int> class EdgeList, typename Memory,
-		typename grow_p>
+template<typename V, typename E, template<typename, typename, typename, unsigned int> class VertexList, template<typename, typename, typename, unsigned int> class EdgeList, typename Memory, typename grow_p>
 class Graph_CSR;
 
 /*! \brief Structure used inside GraphCSR an edge
@@ -278,9 +278,8 @@ public:
  * \snippet graph_unit_tests.hpp Create a tree graph with no edge properties
  *
  */
-
-template<typename V, typename E = no_edge, template<typename, typename, typename, unsigned int> class VertexList = openfpm::vector,
-		template<typename, typename, typename, unsigned int> class EdgeList = openfpm::vector, typename Memory = HeapMemory, typename grow_p = openfpm::grow_policy_double>
+template<typename V, typename E = no_edge, template<typename, typename, typename, unsigned int> class VertexList = openfpm::vector, template<typename, typename, typename, unsigned int> class EdgeList = openfpm::vector, typename Memory = HeapMemory,
+		typename grow_p = openfpm::grow_policy_double>
 class Graph_CSR
 {
 	//! number of slot per vertex
@@ -326,7 +325,7 @@ class Graph_CSR
 
 		if (v1 >= v.size() || v2 >= v.size())
 		{
-			std::cerr << "Error graph: trying to create an edge between vertex that does not exist" << "\n";
+			//std::cout << "Warning graph: creating an edge between vertex that does not exist" << "\n";
 		}
 
 		// Check that the edge does not already exist
@@ -335,7 +334,7 @@ class Graph_CSR
 		{
 			if (e_l.template get<e_map::vid>(v1 * v_slot + s) == v2)
 			{
-				std::cerr << "Error graph: the edge already exist" << "\n";
+				std::cerr << "Error graph: the edge already exist\n";
 			}
 		}
 #endif
@@ -404,13 +403,37 @@ public:
 	//! Object container for the edge, for example can be encap<...> (map_grid or openfpm::vector)
 	typedef typename EdgeList<E, Memory, grow_p, openfpm::vect_isel<E>::value>::container E_container;
 
+	/*! \brief Check if two graph exactly match
+	 *
+	 * \warning The requirement to match is more restrictive than simply content matching
+	 *
+	 * \param g Graph to compare
+	 *
+	 * \return true if they match
+	 *
+	 */
+	bool operator==(const Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> & g) const
+	{
+		bool ret = true;
+
+		// Check if they match
+
+		ret &= (v_slot == g.v_slot);
+		ret &= (v == g.v);
+		ret &= (v_l == g.v_l);
+		ret &= (e == g.e);
+		ret &= (e_l == g.e_l);
+
+		return ret;
+	}
+
+
 	/*! \brief It duplicate the graph
 	 *
 	 * \return a graph duplicate of the first
 	 *
 	 */
-
-	Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> duplicate()
+	Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> duplicate() const
 	{
 		Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> dup;
 
@@ -452,8 +475,8 @@ public:
 	 * Constructor
 	 *
 	 */
-	Graph_CSR(size_t n_vertex, size_t n_slot)
-	:v_slot(n_slot)
+	Graph_CSR(size_t n_vertex, size_t n_slot) :
+			v_slot(n_slot)
 	{
 		//! Creating n_vertex into the graph
 		v.resize(n_vertex);
@@ -470,10 +493,34 @@ public:
 	 */
 	Graph_CSR(Graph_CSR<V, E, VertexList, EdgeList, Memory> && g)
 	{
+		swap(g);
+	}
+
+	/*! \breif Copy the graph
+	 * 
+	 * \param g graph to copy
+	 * 
+	 */
+	Graph_CSR<V, E, VertexList, EdgeList, Memory> & operator=(Graph_CSR<V, E, VertexList, EdgeList, Memory> && g)
+	{
 		size_t vs_tmp = v_slot;
 		v_slot = g.v_slot;
 		g.v_slot = vs_tmp;
 		swap(g);
+
+		return *this;
+	}
+
+	/*! \breif Copy the graph
+	 * 
+	 * \param g graph to copy
+	 * 
+	 */
+	Graph_CSR<V, E, VertexList, EdgeList, Memory> & operator=(const Graph_CSR<V, E, VertexList, EdgeList, Memory> & g)
+	{
+		swap(g.duplicate());
+
+		return *this;
 	}
 
 	/*! \brief operator to access the vertex
@@ -568,6 +615,20 @@ public:
 		return v.get(id.get());
 	}
 
+	/*! \brief operator to clear the whole graph
+	 *
+	 * operator to clear all
+	 *
+	 */
+	void clear()
+	{
+		v.clear();
+		e.clear();
+		v_l.clear();
+		e_l.clear();
+		e_invalid.clear();
+	}
+
 	/*! \brief Access the edge
 	 *
 	 * \tparam i property to access
@@ -590,47 +651,6 @@ public:
 		return e.template get<i>(id);
 	}
 
-	/*! \brief Access the edge
-	 *
-	 * \param id of the edge to access
-	 *
-	 */
-	auto edge(grid_key_dx<1> id) -> decltype ( e.get(id.get(0)) )
-	{
-		return e.get(id.get(0));
-	}
-
-	/*! \brief operator to access the edge
-	 *
-	 * \param ek key of the edge
-	 *
-	 */
-	auto edge(edge_key ek) -> decltype ( e.get(0) )
-	{
-		return e.get(e_l.template get<e_map::eid>(ek.pos * v_slot + ek.pos_e));
-	}
-
-	/*! \brief operator to access the edge
-	 *
-	 * operator to access the edge
-	 *
-	 * \param id of the edge to access
-	 *
-	 */
-	auto edge(size_t id) -> decltype ( e.get(id) )
-	{
-		return e.get(id);
-	}
-
-	/*! \brief Access the edge
-	 *
-	 * \param id of the edge to access
-	 *
-	 */
-	auto edge(grid_key_dx<1> id) const -> const decltype ( e.get(id.get(0)) )
-	{
-		return e.get(id.get(0));
-	}
 
 	/*! \brief operator to access the edge
 	 *
@@ -652,6 +672,16 @@ public:
 	auto edge(size_t id) const -> const decltype ( e.get(id) )
 	{
 		return e.get(id);
+	}
+
+	/*! \brief Access the edge
+	 *
+	 * \param id of the edge to access
+	 *
+	 */
+	auto edge(grid_key_dx<1> id) const -> const decltype ( e.get(id.get(0)) )
+	{
+		return e.get(id.get(0));
 	}
 
 	/*! \brief Return the number of childs of a vertex
@@ -691,18 +721,6 @@ public:
 	 */
 	inline auto getChildEdge(size_t v, size_t v_e) -> decltype(e.get(0))
 	{
-#ifdef DEBUG
-		if (e >= v_l.template get<0>(v*v_slot))
-		{
-			std::cerr << "Error node " << v << " does not have edge " << v_e << "\n";
-		}
-
-		if (e.size() >= e_l.template get<e_map::eid>(v * v_slot + v_e))
-		{
-			std::cerr << "Error edge " << v << " does not have edge "<< v_e << "\n";
-		}
-#endif
-
 		// Get the edge id
 		return e.get(e_l.template get<e_map::eid>(v * v_slot + v_e));
 	}
@@ -719,7 +737,7 @@ public:
 	inline size_t getChild(size_t v, size_t i) const
 	{
 #ifdef DEBUG
-		if (i >= v_l.template get<0>(v) )
+		if (i >= v_l.template get<0>(v))
 		{
 			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v << " does not have edge " << i << "\n";
 		}
@@ -729,7 +747,6 @@ public:
 			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge " << v << " does not have edge "<< i << "\n";
 		}
 #endif
-
 		// Get the edge id
 		return e_l.template get<e_map::vid>(v * v_slot + i);
 	}
@@ -746,7 +763,7 @@ public:
 	inline size_t getChild(typename VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value>::iterator_key & v, size_t i)
 	{
 #ifdef DEBUG
-		if (i >= v_l.template get<0>(v.get()) )
+		if (i >= v_l.template get<0>(v.get()))
 		{
 			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v.get() << " does not have edge " << i << "\n";
 		}
@@ -769,6 +786,7 @@ public:
 
 	inline void addVertex(const V & vrt)
 	{
+
 		v.add(vrt);
 
 		// Set the number of adjacent vertex for this vertex to 0
@@ -786,6 +804,7 @@ public:
 
 	inline void addVertex()
 	{
+
 		v.add();
 
 		// Set the number of adjacent vertex for this vertex to 0
@@ -838,6 +857,33 @@ public:
 		return e.get(id_x_end);
 	}
 
+	/*! \brief add edge on the graph and fill source and destination informations
+	 *
+	 * add edge on the graph
+	 *
+	 * \param v1 start vertex
+	 * \param v2 end vertex
+	 *
+	 * \tparam sgid property id filled with the source vertex global id
+	 * \tparam dgid property id filled with the destination vertex global id
+	 */
+
+	template<typename CheckPolicy = NoCheck, int sgid, int dgid> inline auto addEdge(size_t v1, size_t v2, size_t srdgid, size_t dstgid) -> decltype(e.get(0))
+	{
+		//! add an edge
+		long int id_x_end = addEdge_<CheckPolicy>(v1, v2);
+		//! If there is not edge return an invalid edge, is a kind of stub object
+		if (id_x_end == NO_EDGE)
+			return e_invalid.get(0);
+
+		//! set source and destination ids of the edge
+		e.get(id_x_end).template get<sgid>() = srdgid;
+		e.get(id_x_end).template get<dgid>() = dstgid;
+
+		//! return the edge to change the properties
+		return e.get(id_x_end);
+	}
+
 	/*! \brief swap the memory of g with this graph
 	 *
 	 * swap the memory of g with this graph, it is basically used
@@ -849,11 +895,29 @@ public:
 	{
 		// switch the memory
 
-		g.v.swap(v);
-		g.e.swap(e);
-		g.v_l.swap(v_l);
-		g.e_l.swap(e_l);
-		g.e_invalid.swap(e_invalid);
+		v.swap(g.v);
+		e.swap(g.e);
+		v_l.swap(g.v_l);
+		e_l.swap(g.e_l);
+		e_invalid.swap(g.e_invalid);
+	}
+
+	/*! \brief swap the memory of g with this graph
+	 *
+	 * swap the memory of g with this graph, it is basically used
+	 * for move semantic
+	 *
+	 */
+
+	inline void swap(Graph_CSR<V, E, VertexList, EdgeList> && g)
+	{
+		// switch the memory
+
+		v.swap(g.v);
+		e.swap(g.e);
+		v_l.swap(g.v_l);
+		e_l.swap(g.e_l);
+		e_invalid.swap(g.e_invalid);
 	}
 
 	/*! \brief Get the vertex iterator

@@ -180,4 +180,73 @@ openfpm::vector<Point_test<float>> allocate_openfpm(size_t n_ele)
 	return v_ofp_test;
 }
 
+openfpm::vector<Point_test_prp<float>> allocate_openfpm_prp(size_t n_ele)
+{
+	//! [Create add and access]
+	openfpm::vector<Point_test_prp<float>> v_ofp_test;
+
+	//! [Point declaration]
+	Point_test_prp<float> p;
+	//! [Point declaration]
+
+	p.setx(1.0);
+	p.sety(2.0);
+	p.setz(3.0);
+	p.sets(4.0);
+
+	// push objects
+
+	for (size_t i = 0 ; i < n_ele / 2 ; i++)
+	{
+		// Modify the point
+
+		//! [Point usage]
+		p.get<P::v>()[0] = 1.0 + i;
+		p.get<P::v>()[1] = 2.0 + i;
+		p.get<P::v>()[2] = 7.0 + i;
+
+		p.get<P::t>()[0][0] = 10.0 + i;
+		p.get<P::t>()[0][1] = 13.0 + i;
+		p.get<P::t>()[0][2] = 8.0 + i;
+		p.get<P::t>()[1][0] = 19.0 + i;
+		p.get<P::t>()[1][1] = 23.0 + i;
+		p.get<P::t>()[1][2] = 5.0 + i;
+		p.get<P::t>()[2][0] = 4.0 + i;
+		p.get<P::t>()[2][1] = 3.0 + i;
+		p.get<P::t>()[2][2] = 11.0 + i;
+		//! [Point usage]
+
+		// add p
+
+		v_ofp_test.add(p);
+	}
+
+	for (size_t i = n_ele / 2 ; i < n_ele ; i++)
+	{
+		v_ofp_test.add();
+
+		size_t last = v_ofp_test.size()-1;
+
+		// Modify the point
+
+		v_ofp_test.get<P::v>(last)[0] = 1.0 + i;
+		v_ofp_test.get<P::v>(last)[1] = 2.0 + i;
+		v_ofp_test.get<P::v>(last)[2] = 7.0 + i;
+
+		v_ofp_test.get<P::t>(last)[0][0] = 10.0 + i;
+		v_ofp_test.get<P::t>(last)[0][1] = 13.0 + i;
+		v_ofp_test.get<P::t>(last)[0][2] = 8.0 + i;
+		v_ofp_test.get<P::t>(last)[1][0] = 19.0 + i;
+		v_ofp_test.get<P::t>(last)[1][1] = 23.0 + i;
+		v_ofp_test.get<P::t>(last)[1][2] = 5.0 + i;
+		v_ofp_test.get<P::t>(last)[2][0] = 4.0 + i;
+		v_ofp_test.get<P::t>(last)[2][1] = 3.0 + i;
+		v_ofp_test.get<P::t>(last)[2][2] = 11.0 + i;
+	}
+
+	//! [Create add and access]
+
+	return v_ofp_test;
+}
+
 #endif /* VECTOR_TEST_UTIL_HPP_ */

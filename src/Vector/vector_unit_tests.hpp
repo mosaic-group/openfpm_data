@@ -566,12 +566,16 @@ BOOST_AUTO_TEST_CASE( vector_add_test_case )
 
 ////////// Test function ///////////
 
+#ifdef SE_CLASS2
+
 openfpm::vector<scalar<float>> & test_error_v()
 {
 	openfpm::vector<scalar<float>> v(16);
 
 	return v;
 }
+
+#endif
 
 BOOST_AUTO_TEST_CASE( vector_copy_and_compare )
 {
@@ -663,7 +667,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
-		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -675,7 +679,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
-		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -698,7 +702,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
-		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -710,7 +714,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e,VECTOR_ERROR);
-		BOOST_REQUIRE_EQUAL(v.getLastError(),2001);
+		BOOST_REQUIRE_EQUAL(v.getLastError(),2001ul);
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -774,9 +778,7 @@ BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
 	}
 
 	v1.save("test_save");
-
 	openfpm::vector<openfpm::vector<float>> v2;
-
 	v2.load("test_save");
 
 	// check the v1 and v2 match
@@ -791,6 +793,7 @@ BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
 		}
 	}
 }
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

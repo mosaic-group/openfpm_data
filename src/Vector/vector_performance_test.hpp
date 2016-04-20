@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(vector_performance_write_report)
 	options.stype = std::string("bars");
 
 	cg.addHTML("<h2>Vector performance test</h2>");
-	cg.AddColumsGraph(testsv,y,yn,options);
+	cg.AddHistGraph(testsv,y,yn,options);
 }
 
 #endif /* OPENFPM_DATA_SRC_VECTOR_VECTOR_PERFORMANCE_TEST_HPP_ */

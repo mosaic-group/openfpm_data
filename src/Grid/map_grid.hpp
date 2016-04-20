@@ -50,6 +50,7 @@
 #include "iterators/grid_key_dx_iterator_sub.hpp"
 #include "iterators/grid_key_dx_iterator_sp.hpp"
 #include "iterators/grid_key_dx_iterator_sub_bc.hpp"
+#include "Packer_Unpacker/Packer_util.hpp"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;
@@ -86,11 +87,6 @@ typedef HeapMemory CudaMemory;
  * \snippet grid_unit_tests.hpp Create a grid g1 and copy into another g2
  *
  */
-
-namespace openfpm {
-
-template<typename T, typename Memory=HeapMemory, typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value> class vector;
-}
 
 template<unsigned int dim, typename T, typename S=HeapMemory, typename Mem = typename memory_traits_lin< typename T::type >::type >
 class grid_cpu
@@ -144,9 +140,6 @@ public:
 		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
 		typedef openfpm::vector<prp_object,ExtPreAlloc<S>> dtype;
 		dtype dvect;
-
-		// Calculate the required memory for packing
-		size_t alloc_ele = dvect.calculateMem(size(),0);
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -313,9 +306,6 @@ public:
 
 		// Calculate the size to pack the object
 		size_t size = svect.calculateMem(this->size(),0);
-
-		// Create an Pointer object over the preallocated memory (No allocation is produced)
-		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));
 
 		// Create an object over a pointer (No allocation is produced)
 		stype src;

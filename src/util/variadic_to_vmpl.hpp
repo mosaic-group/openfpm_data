@@ -191,12 +191,11 @@ struct to_boost_vmpl_impl<a>
 *
 * It convert a variadic template into a boost::mpl::vector
 *
-* usage:
-*
 * to_boost_mpl<3,4,7,10>::type is converted into
 *
 * boost::mpl::vector<int_<3>,int_<4>,int_<7>,int_<10>>
 *
+* \snippet variadic_to_vmpl_unit_test.hpp to_boost_vmpl usage
 *
 */
 template <int... id>

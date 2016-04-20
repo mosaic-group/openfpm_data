@@ -70,6 +70,26 @@ BOOST_AUTO_TEST_CASE( variadic_to_vmpl_test)
 
 	//! [v_transform_two usage]
 	}
+
+	{
+	//! [to_boost_vmpl usage]
+
+	typedef to_boost_vmpl<1,4,5,9>::type bfv;
+
+	bool val = std::is_same<boost::mpl::at<bfv,boost::mpl::int_<0>>::type,boost::mpl::int_<1>>::value;
+	BOOST_REQUIRE_EQUAL(val,true);
+
+	val = std::is_same<boost::mpl::at<bfv,boost::mpl::int_<1>>::type,boost::mpl::int_<4>>::value;
+	BOOST_REQUIRE_EQUAL(val,true);
+
+	val = std::is_same<boost::mpl::at<bfv,boost::mpl::int_<2>>::type,boost::mpl::int_<5>>::value;
+	BOOST_REQUIRE_EQUAL(val,true);
+
+	val = std::is_same<boost::mpl::at<bfv,boost::mpl::int_<3>>::type,boost::mpl::int_<9>>::value;
+	BOOST_REQUIRE_EQUAL(val,true);
+
+	//! [to_boost_vmpl usage]
+	}
 }
 
 

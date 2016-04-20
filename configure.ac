@@ -6,7 +6,8 @@ AC_PREREQ(2.59)
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_SRCDIR([src/main.cpp])
-AM_INIT_AUTOMAKE
+
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_HEADER([src/config/config.h])
 m4_ifdef([ACX_PTHREAD],,[m4_include([m4/acx_pthread.m4])])
 m4_ifdef([ACX_MPI],,[m4_include([m4/acx_mpi.m4])])
@@ -17,7 +18,18 @@ m4_ifdef([AX_BOOST_IOSTREAMS],,[m4_include([m4/ax_boost_iostreams.m4])])
 m4_ifdef([AX_BOOST_PROGRAM_OPTIONS],,[m4_include([m4/ax_boost_program_options.m4])])
 m4_ifdef([AX_BOOST_UNIT_TEST_FRAMEWORK],,[m4_include([m4/ax_boost_unit_test_framework.m4])])
 
-CXXFLAGS+=" --std=c++11 -march=native -mtune=native -Wno-unused-local-typedefs -Wextra -Wno-unused-parameter "
+case $host_os in
+   *cygwin*)
+        # Do something specific for cygwin
+        CXXFLAGS+=" --std=gnu++11 "
+        ;;
+    *)
+        #Default Case
+        CXXFLAGS+=" --std=c++11 "
+        ;;
+esac
+
+CXXFLAGS+=" -march=native -mtune=native -Wno-unused-local-typedefs -Wextra -Wno-unused-parameter "
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
@@ -271,6 +283,10 @@ if test x"$ax_cv_boost_programs_options" = x"no"; then
   exit 202
 fi
 
+AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE([HAVE_CLOCK_GETTIME],[],[Have clock time])
+                                 OPT_LIBS="$OPT_LIBS -lrt"
+                                ])
+
 ### Unfortunately a lot of linux distros install a pretty old MPI in the system wide folder,
 ### override such MPI with the installed one is extremely difficult and tricky, because we want
 ### to include "some" system library but exclude mpi. One possibility is to give specifically
@@ -289,26 +305,6 @@ AC_SUBST(BOOST_CPPFLAGS)
 
 
 ##########################
-
-
-# Check for which host we are on and setup a few things
-# specifically based on the host
-case $host_os in
-  darwin* )
-        # Do something specific for mac
-        ;;
-  linux*)
-        # Do something specific for linux
-        OPT_LIBS=" -lrt "
-        ;;
-   *BSD*)
-        # Do something specific for BSD
-        ;;
-    *)
-        #Default Case
-        AC_MSG_ERROR([Your platform is not currently supported])
-        ;;
-esac
 
 AC_SUBST(NVCCFLAGS)
 AC_SUBST(INCLUDES_PATH)

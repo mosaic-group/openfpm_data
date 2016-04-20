@@ -16,6 +16,8 @@
 
 #include "util/common.hpp"
 
+#define STARTING_NSLOT 16
+
 /*! \brief Class for FAST cell list implementation
  *
  * This class implement the FAST cell list, fast but memory
@@ -98,9 +100,6 @@ class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,trans
 	// of elements == slot )
 	base cl_base;
 
-	//Origin point
-	Point<dim,T> orig;
-
 	void realloc()
 	{
 		// we do not have enough slots reallocate the basic structure with more
@@ -140,18 +139,17 @@ public:
 	 *
 	 * \param box Domain where this cell list is living
 	 * \param div grid size on each dimension
-	 * \param orig origin of the Cell list
 	 * \param pad padding cell
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
+	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 		SpaceBox<dim,T> sbox(box);
 
 		// Initialize point transformation
 
-		Initialize(sbox,div,orig,pad,slot);
+		Initialize(sbox,div,pad,slot);
 	}
 
 	/*! Initialize the cell list constructor
@@ -162,13 +160,13 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const Point<dim,T> & orig , const size_t pad = 1, size_t slot=16)
+	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
+
 		Matrix<dim,T> mat;
 
-		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, orig, pad);
+		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, pad);
 		this->slot = slot;
-		this->orig = orig;
 
 		// create the array that store the number of particle on each cell and se it to 0
 
@@ -244,7 +242,7 @@ public:
 
 	//! Default Constructor
 	CellList()
-	:slot(16)
+	:slot(STARTING_NSLOT)
 	{};
 
 	//! Copy constructor
@@ -258,6 +256,57 @@ public:
 	{
 		this->operator=(cell);
 	}
+
+
+	/*! \brief Cell list constructor
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param div grid size on each dimension
+	 * \param mat Matrix transformation
+	 * \param pad Cell padding
+	 * \param slot maximum number of slot
+	 *
+	 */
+	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	:CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad)
+	{
+		SpaceBox<dim,T> sbox(box);
+		Initialize(sbox,div,pad,slot);
+	}
+
+	/*! \brief Cell list constructor
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param div grid size on each dimension
+	 * \param pad Cell padding
+	 * \param slot maximum number of slot
+	 *
+	 */
+	CellList(Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	{
+		SpaceBox<dim,T> sbox(box);
+		Initialize(sbox,div,pad,slot);
+	}
+
+	/*! \brief Cell list constructor
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param div grid size on each dimension
+	 * \param pad Cell padding
+	 * \param slot maximum number of slot
+	 *
+	 */
+	CellList(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	{
+		Initialize(box,div,pad,slot);
+	}
+
+	/*! \brief Destructor
+	 *
+	 *
+	 */
+	~CellList()
+	{}
 
 	/*! \brief Constructor from a temporal object
 	 *
@@ -277,9 +326,7 @@ public:
 		cl_n.swap(cell.cl_n);
 		cl_base.swap(cell.cl_base);
 
-		Point<dim,T> torig = orig;
-		orig = cell.orig;
-		cell.orig = torig;
+		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this).swap(cell);
 
 		return *this;
 	}
@@ -300,57 +347,10 @@ public:
 		cl_n = cell.cl_n;
 		cl_base = cell.cl_base;
 
-		orig = cell.orig;
+		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cell);
 
 		return *this;
 	}
-
-	/*! \brief Cell list constructor
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param div grid size on each dimension
-	 * \param mat Matrix transformation
-	 * \param orig origin of the Cell list
-	 * \param pad Cell padding
-	 * \param slot maximum number of slot
-	 *
-	 */
-	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
-	:CellDecomposer_sm<dim,T,transform>(box,div,mat,orig,pad)
-	{
-		SpaceBox<dim,T> sbox(box);
-		Initialize(sbox,div,orig,pad,slot);
-	}
-
-	/*! \brief Cell list constructor
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param orig origin of the Cell list
-	 * \param div grid size on each dimension
-	 * \param pad Cell padding
-	 * \param slot maximum number of slot
-	 *
-	 */
-	CellList(Box<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
-	{
-		SpaceBox<dim,T> sbox(box);
-		Initialize(sbox,div,orig,pad,slot);
-	}
-
-	/*! \brief Cell list constructor
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param orig origin of the Cell list
-	 * \param div grid size on each dimension
-	 * \param pad Cell padding
-	 * \param slot maximum number of slot
-	 *
-	 */
-	CellList(SpaceBox<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1, size_t slot=16)
-	{
-		Initialize(box,div,orig,pad,slot);
-	}
-
 
 	/*! \brief Add to the cell
 	 *
@@ -442,7 +442,25 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele))
+	inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele)) &
+	{
+		return cl_base.get(cell * slot + ele);
+	}
+
+	///////////////////////////////////// Temporal workaround  for GCC bug ////////////////////////
+#if !defined(__APPLE_CC__) &&  GCC_VERSION <= 40902
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	inline const auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.get(cell * slot + ele);
 	}
@@ -457,10 +475,45 @@ public:
 	 * \return The element value
 	 *
 	 */
-	template<unsigned int i> inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele))
+	template<unsigned int i> inline const auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.template get<i>(cell * slot + ele);
 	}
+
+#else
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
+	{
+		return cl_base.get(cell * slot + ele);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	template<unsigned int i> inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
+	{
+		return cl_base.template get<i>(cell * slot + ele);
+	}
+
+#endif
+
 
 	/*! \brief Swap the memory
 	 *
@@ -503,7 +556,7 @@ public:
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> getNNIterator(size_t cell)
 	{
 		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> cln(cell,NNc_full,*this);
 
@@ -570,6 +623,18 @@ public:
 	size_t getPadding(size_t i)
 	{
 		return CellDecomposer_sm<dim,T,transform>::getPadding(i);
+	}
+
+	/*! \brief Clear the cell list
+	 *
+	 */
+	void clear()
+	{
+		slot = STARTING_NSLOT;
+		for (size_t i = 0 ; i < cl_n.size() ; i++)
+			cl_n.get(i) = 0;
+
+		cl_base.clear();
 	}
 };
 

@@ -8,6 +8,7 @@
 #ifndef SRC_PACKER_UNPACKER_HAS_PACK_AGG_HPP_
 #define SRC_PACKER_UNPACKER_HAS_PACK_AGG_HPP_
 
+#include "prp_all_zero.hpp"
 
 /*! \brief These set of classes generate an array definition at compile-time
  *

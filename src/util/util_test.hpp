@@ -498,7 +498,7 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		val = has_attributes<test_no_attributes>::value;
 		BOOST_REQUIRE_EQUAL(val, false);
 
-		//! [Check has_typedef_type]
+		//! [Check has_attributes]
 		}
 
 		//! [Check no pointers in structure]

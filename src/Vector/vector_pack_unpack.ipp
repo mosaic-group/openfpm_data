@@ -87,16 +87,12 @@ struct packMem_cond<true, T1>
 template<bool sel, int ... prp>
 struct pack_simple_cond
 {
-	static inline void pack(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+	static inline void pack(const openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory> & mem, Pack_stat & sts)
 	{
 	#ifdef DEBUG
 		if (mem.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 	#endif
-
-		//Measure an execution time
-		timer t;
-		t.start();
 
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
@@ -131,11 +127,6 @@ struct pack_simple_cond
 	
 		// Update statistic
 		sts.incReq();	
-		
-		//cout an execution time
-		t.stop();
-		std::cout << t.getwct() << std::endl;
-
 	}
 };
 
@@ -143,16 +134,12 @@ struct pack_simple_cond
 template<int ... prp>
 struct pack_simple_cond<true, prp ...>
 {
-	static inline void pack(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+	static inline void pack(const openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
 	{
 	#ifdef DEBUG
 		if (mem.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 	#endif
-		
-		//Measure an execution time
-		timer t;
-		t.start();
 
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
@@ -178,12 +165,7 @@ struct pack_simple_cond<true, prp ...>
 		}
 	
 		// Update statistic
-		sts.incReq();			
-
-		//cout an execution time
-		t.stop();
-		std::cout << t.getwct() << std::endl;
-
+		sts.incReq();
 	}
 };
 
@@ -291,11 +273,12 @@ struct unpack_simple_cond<true, prp ...>
 
 /*! \brief Insert an allocation request into the vector
  *
+ * \tparam prp list of properties
+ *
  * \param v vector of allocation sequence
- * \param requests vector
  *
  */
-template<int ... prp> inline void packRequest(std::vector<size_t> & v)
+template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
 {
 	//Pushback a sizeof number of elements of the internal vectors
 	v.push_back(sizeof(this->size()));
@@ -307,7 +290,6 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v)
 	
 	// If all of the aggregate properties do not have a "pack()" member	
 	if (has_pack_agg<T,prp...>::result::value == false)
-	//if (has_aggregatePack<T,prp ... >::has_pack() == false)
 	{
 #ifdef DEBUG
 			std::cout << "All of the aggregate members are simple!(packRequest)" << std::endl;
@@ -336,7 +318,7 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v)
  * \param sts pack-stat info
  *
  */
-template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & sts) const
 {
 	//If all of the aggregate properties are simple (don't have "pack()" member)
 	if (has_pack_agg<T,prp...>::result::value == false)

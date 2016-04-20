@@ -16,6 +16,7 @@
 #include "Pack_selector.hpp"
 #include "util/Pack_stat.hpp"
 #include "memory/PtrMemory.hpp"
+#include "Packer_util.hpp"
 
 /*! \brief Unpacker class
  *
@@ -24,7 +25,7 @@
  * \tparam Implementation of the unpacker (the Pack_selector choose the correct one)
  *
  */
-template<typename T, typename Mem, int pack_type=Pack_selector<T>::value >
+template<typename T, typename Mem, int pack_type >
 class Unpacker
 {
 public:

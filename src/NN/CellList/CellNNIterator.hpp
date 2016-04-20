@@ -179,6 +179,16 @@ public:
 	{
 		return cl.get(cell,ele_id);
 	}
+
+	/*! \brief Get the value of the cell
+	 *
+	 * \return  the next element object
+	 *
+	 */
+	const typename Cell::value_type & get() const
+	{
+		return cl.get(cell,ele_id);
+	}
 };
 
 #endif /* CELLNNITERATOR_FULL_HPP_ */

@@ -147,9 +147,7 @@ template<unsigned int dim ,typename T> class Point
 	inline Point<dim,T> & operator=(const Point<dim,T> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
-		{
 			get(i) = p.get(i);
-		}
 
 		return *this;
 	}
@@ -164,9 +162,7 @@ template<unsigned int dim ,typename T> class Point
 		Point<dim,T> result;
 
 		for (size_t i = 0 ; i < dim ; i++)
-		{
 			result.get(i) = get(i) * c;
-		}
 
 		return result;
 	}
@@ -181,9 +177,7 @@ template<unsigned int dim ,typename T> class Point
 		Point<dim,T> result;
 
 		for (size_t i = 0 ; i < dim ; i++)
-		{
 			result.get(i) = get(i) * p.get(i);
-		}
 
 		return result;
 	}
@@ -196,9 +190,7 @@ template<unsigned int dim ,typename T> class Point
 	inline Point<dim,T> & operator-=(const Point<dim,T> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
-		{
 			get(i) -= p.get(i);
-		}
 
 		return *this;
 	}
@@ -211,9 +203,7 @@ template<unsigned int dim ,typename T> class Point
 	inline Point<dim,T> & operator+=(const Point<dim,T> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
-		{
 			get(i) += p.get(i);
-		}
 
 		return *this;
 	}
@@ -228,9 +218,7 @@ template<unsigned int dim ,typename T> class Point
 		T n = 0.0;
 
 		for (size_t i = 0 ; i < dim ; i++)
-		{
 			n+=get(i) * get(i);
-		}
 
 		return sqrt(n);
 	}
@@ -245,9 +233,7 @@ template<unsigned int dim ,typename T> class Point
 		Point<dim,T> result;
 
 		for (size_t i = 0 ; i < dim ; i++)
-		{
 			result.get(i) = get(i) + p.get(i);
-		}
 
 		return result;
 	}
@@ -262,11 +248,22 @@ template<unsigned int dim ,typename T> class Point
 		Point<dim,T> result;
 
 		for (size_t i = 0 ; i < dim ; i++)
-		{
 			result.get(i) = get(i) / ar[i];
-		}
 
 		return result;
+	}
+
+	/*! \brief divide each component
+	 *
+	 * \param ar Component wise division
+	 *
+	 */
+	template<typename aT> inline Point<dim,T> operator/=(const aT c)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			get(i) = get(i) / c;
+
+		return *this;
 	}
 
 	/*! \brief divide each component
@@ -279,9 +276,7 @@ template<unsigned int dim ,typename T> class Point
 		Point<dim,T> result;
 
 		for (size_t i = 0 ; i < dim ; i++)
-		{
 			result.get(i) = get(i) / c;
-		}
 
 		return result;
 	}
@@ -401,6 +396,49 @@ template<unsigned int dim ,typename T> class Point
 		return ps.str();
 	}
 
+	/*! \brief exchange the data of two points
+	 *
+	 * \param p Point to swap with
+	 *
+	 */
+	void swap(Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			T tmp = get(i);
+			get(i) = p.get(i);
+			p.get(i) = tmp;
+		}
+	}
+
+	/*! \brief Check if two points match
+	 *
+	 * \return true if two points match
+	 *
+	 */
+	inline bool operator==(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (p.get(i) != get(i))
+				return false;
+		}
+
+		return true;
+	}
+
+	/*! \brief Check if two points match
+	 *
+	 * \return true if two points match
+	 *
+	 */
+	inline bool operator!=(const Point<dim,T> & p)
+	{
+		return !this->operator==(p);
+
+		return true;
+	}
+
 	/*! \brief Return the string with the point coordinate
 	 *
 	 * \return the string
@@ -412,9 +450,9 @@ template<unsigned int dim ,typename T> class Point
 
 		for (size_t i = 0 ; i < dim - 1 ; i++)
 		{
-			str += std::to_string(get(i)) + " ";
+			str += std::to_string(static_cast<double>(get(i))) + " ";
 		}
-		str += std::to_string(get(dim-1));
+		str += std::to_string(static_cast<double>(get(dim-1)));
 
 		return str;
 	}
@@ -510,6 +548,24 @@ template <unsigned int N, typename T, typename Mem> std::string toPointString(co
 	ps << "\n";
 
 	return ps.str();
+}
+
+/*! \brief Multiply each components
+ *
+ * \param c constant
+ * \param p Point
+ *
+ * \return the result point
+ *
+ */
+template<typename T, unsigned int dim, typename aT> inline Point<dim,aT> operator*(T c, const Point<dim,aT> & p)
+{
+	Point<dim,aT> result;
+
+	for (size_t i = 0 ; i < dim ; i++)
+		result.get(i) = c * p.get(i);
+
+	return result;
 }
 
 #endif

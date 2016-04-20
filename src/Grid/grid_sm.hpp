@@ -346,6 +346,40 @@ public:
 	 * \tparam check class that check the linearization, if this check fail the function return -1
 	 * \param gk grid_key_dx to linearize
 	 * \param sum_id shift on each dimension
+	 *
+	 * \return The linearization of the gk key shifted by c, or -1 if the check fail
+	 */
+
+	template<typename check=NoCheck> inline mem_id LinId(const grid_key_dx<N> & gk, const char sum_id[N]) const
+	{
+		mem_id lid;
+
+		// Check the sum produce a valid key
+
+		if (check::valid(gk.k[0] + sum_id[0],sz[0]) == false)
+			return -1;
+
+		lid = gk.k[0] + sum_id[0];
+
+
+		for (mem_id i = 1 ; i < N ; i++)
+		{
+			// Check the sum produce a valid key
+
+			if (check::valid(gk.k[i] + sum_id[i],sz[i]) == false)
+				return -1;
+
+			lid += (gk.k[i] + sum_id[i]) * sz_s[i-1];
+		}
+
+		return lid;
+	}
+
+	/*! \brief Linearization of the grid_key_dx with a specified shift
+	 *
+	 * \tparam check class that check the linearization, if this check fail the function return -1
+	 * \param gk grid_key_dx to linearize
+	 * \param sum_id shift on each dimension
 	 * \param bc boundary conditions
 	 *
 	 * \return The linearization of the gk key shifted by c, or -1 if the check fail

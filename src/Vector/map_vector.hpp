@@ -30,7 +30,6 @@
 #include "util/Pack_stat.hpp"
 #include "memory/ExtPreAlloc.hpp"
 #include <string.h>
-#include "vect_isel.hpp"
 #include "Packer_Unpacker/Unpacker.hpp"
 #include "Packer_Unpacker/Packer.hpp"
 #include <fstream>
@@ -519,6 +518,8 @@ namespace openfpm
 		}
 
 		/*! \brief Remove several entries from the vector
+		 *
+		 * \warning the keys in the vector MUST be sorted
 		 *
 		 * \param keys objects id to remove
 		 * \param start key starting point
@@ -1084,10 +1085,6 @@ namespace openfpm
 				return n * sizeof(typename T::type);
 
 			typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
-
-			//std::cout << demangle(typeid(typename T::type).name()) << std::endl;
-			//std::cout << demangle(typeid(prp_object).name()) << std::endl;
-			//std::cout << sizeof(prp_object) << std::endl;
 
 			return n * sizeof(prp_object);
 		}

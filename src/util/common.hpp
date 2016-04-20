@@ -7,6 +7,10 @@
 #include "util/for_each_ref.hpp"
 #include "util/variadic_to_vmpl.hpp"
 
+#define GCC_VERSION (__GNUC__ * 10000 \
+                               + __GNUC_MINOR__ * 100 \
+                               + __GNUC_PATCHLEVEL__)
+
 namespace std
 {
 	// We need the definition of std::to_string that work on string
