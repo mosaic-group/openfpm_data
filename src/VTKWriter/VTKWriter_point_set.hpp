@@ -311,7 +311,7 @@ public:
 	 *
 	 */
 
-	template<int prp = -1> bool write(std::string file, std::string f_name = "grids" , file_type ft = file_type::ASCII)
+	template<int prp = -1> bool write(std::string file, std::string f_name = "points" , file_type ft = file_type::ASCII)
 	{
 		// Header for the vtk
 		std::string vtk_header;
