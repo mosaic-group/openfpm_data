@@ -2,6 +2,8 @@
 
 source $HOME/.bashrc
 
+echo "$PATH"
+
 # Make a directory in /tmp/openfpm_data
 
 mkdir /tmp/openfpm_io
