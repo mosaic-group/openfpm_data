@@ -10,8 +10,10 @@
 
 
 template<typename T,typename gp>
-class vector<T,PtrMemory,gp,STD_VECTOR>
+class vector<T,PtrMemory,typename memory_traits_lin<T>::type,gp,STD_VECTOR>
 {
+	typedef typename memory_traits_lin<T>::type layout;
+
 	//! Actual size of the vector, warning: it is not the space allocated in grid
 	//! grid size increase by a fixed amount every time we need a vector bigger than
 	//! the actually allocated space
@@ -363,7 +365,7 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(const vector<T,PtrMemory,gp,STD_VECTOR> & v) noexcept
+	vector(const vector<T,PtrMemory,layout,gp,STD_VECTOR> & v) noexcept
 	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
@@ -375,7 +377,7 @@ public:
 
 
 	//! Constructor from another vector
-	vector(vector<T,PtrMemory,gp,STD_VECTOR> && v) noexcept
+	vector(vector<T,PtrMemory,gp,layout,STD_VECTOR> && v) noexcept
 	:v_size(0),err_code(0)
 	{
 #ifdef SE_CLASS2
@@ -398,7 +400,7 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(openfpm::vector<T,PtrMemory,gp,STD_VECTOR> & v)
+	void swap(openfpm::vector<T,PtrMemory,layout,gp,STD_VECTOR> & v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -411,7 +413,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	vector<T,HeapMemory,layout,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,layout,grow_policy_double,STD_VECTOR> & v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -426,7 +428,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v)
+	vector<T,HeapMemory,layout,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,layout,grow_policy_double,STD_VECTOR> && v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -441,7 +443,7 @@ public:
 	 * \param vector to compare
 	 *
 	 */
-	bool operator!=(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v) const
+	bool operator!=(const vector<T, HeapMemory, layout,grow_policy_double,STD_VECTOR> & v) const
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator!= is not supported by this vector \n";
 
@@ -453,7 +455,7 @@ public:
 	 * \param vector to compare
 	 *
 	 */
-	bool operator==(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v) const
+	bool operator==(const vector<T, HeapMemory, layout,grow_policy_double,STD_VECTOR> & v) const
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator== is not supported by this vector \n";
 

@@ -134,6 +134,7 @@ namespace openfpm
 	 *
 	 * \param T type of structure the vector has to store
 	 * \param Memory allocator to use
+	 * \param Memory layout
 	 * \param grow_p grow policy, how this vector should grow
 	 *
 	 * \see vector<T,HeapMemory,grow_policy_double,STD_VECTOR>
@@ -142,7 +143,7 @@ namespace openfpm
 	 *
 	 */
 
-	template<typename T, typename Memory, typename grow_p, unsigned int impl>
+	template<typename T, typename Memory, typename layout, typename grow_p, unsigned int impl>
 	class vector
 	{
 	};
@@ -158,26 +159,23 @@ namespace openfpm
 	 * \snippet vector_test_util.hpp Create add and access
 	 *
 	 * \tparam T type of object the vector store
-	 * \tparam base memory layout to use
 	 * \tparam Memory allocator to use
+	 * \tparam layout layout to use
 	 * \tparam grow_p grow policy for vector in case of reallocation
 	 *
 	 * OPENFPM_NATIVE implementation
 	 *
 	 */
-	template<typename T,typename Memory, typename grow_p>
-	class vector<T,Memory,grow_p,OPENFPM_NATIVE>
+	template<typename T,typename Memory, typename layout, typename grow_p>
+	class vector<T,Memory,layout,grow_p,OPENFPM_NATIVE>
 	{
-		//! This structure use this layout
-		typedef typename grid_cpu<1,T,Memory>::memory_lin memory_lin;
-
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
 		//! the actually allocated space
 		size_t v_size;
 
 		//! 1-D static grid
-		grid_cpu<1,T,Memory> base;
+		grid_cpu<1,T,Memory,layout> base;
 
 		//! Error code
 		size_t err_code;
@@ -191,14 +189,14 @@ namespace openfpm
 		 * \return a vector with one element
 		 *
 		 */
-		std::vector<size_t> getV(size_t sz)
+/*		std::vector<size_t> getV(size_t sz)
 		{
 			std::vector<size_t> tmp;
 
 			tmp.push_back(sz);
 
 			return tmp;
-		}
+		}*/
 
 		/*! \brief If the argument is zero return 1 otherwise return the argument
 		 *
@@ -241,14 +239,14 @@ namespace openfpm
 		typedef int yes_i_am_vector;
 
 		//! Type of the encapsulation memory parameter
-		typedef typename grid_cpu<1,T>::memory_conf memory_conf;
+		typedef layout layout_type;
 
 		//! iterator for the vector
 		typedef vector_key_iterator iterator_key;
 
 		//! Object container for T, it is the return type of get_o it return a object type trough
 		// you can access all the properties of T
-		typedef typename grid_cpu<1,T>::container container;
+		typedef typename grid_cpu<1,T,Memory,layout>::container container;
 
 		//! Type of the value the vector is storing
 		typedef T value_type;
@@ -398,7 +396,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		void add(const typename grid_cpu<1,T>::container & v)
+		void add(const typename grid_cpu<1,T,Memory,layout>::container & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -425,7 +423,7 @@ namespace openfpm
 		 * \param v from where to take the vector
 		 *
 		 */
-		template <typename M, typename gp> void add(const vector<T, M,gp,OPENFPM_NATIVE> & v)
+		template <typename M, typename gp> void add(const vector<T, M,layout,gp,OPENFPM_NATIVE> & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -449,7 +447,7 @@ namespace openfpm
 		 * \param v source vector
 		 *
 		 */
-		template <typename S, typename M, typename gp, unsigned int ...args> void add_prp(const vector<S, M,gp,OPENFPM_NATIVE> & v)
+		template <typename S, typename M, typename gp, unsigned int ...args> void add_prp(const vector<S,M,typename memory_traits_lin<S>::type,gp,OPENFPM_NATIVE> & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -572,7 +570,7 @@ namespace openfpm
 		 *
 		 */
 
-		template <unsigned int p>inline const typename type_cpu_prop<p,memory_lin>::type & get(size_t id) const
+		template <unsigned int p>inline auto get(size_t id) const -> const decltype(base.template get<p>(grid_key_dx<1>(id))) &
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -594,8 +592,29 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
+		inline auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>(id)))
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+			check_overflow(id);
+#endif
+			grid_key_dx<1> key(id);
 
-		inline const typename grid_cpu<1,T>::container get(size_t id) const
+			return base.get_o(key);
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \param id Element to get
+		 *
+		 * \return the element (encapsulated)
+		 *
+		 */
+		inline auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -620,7 +639,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline const typename grid_cpu<1,T>::container get_o(size_t id) const
+		inline const typename grid_cpu<1,T,Memory,layout>::container get_o(size_t id) const
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -639,7 +658,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline const typename grid_cpu<1,T>::container last() const
+		inline const typename grid_cpu<1,T,Memory,layout>::container last() const
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -660,7 +679,7 @@ namespace openfpm
 		 *
 		 */
 
-		template <unsigned int p>inline typename type_cpu_prop<p,memory_lin>::type & get(size_t id)
+		template <unsigned int p> inline auto get(size_t id) -> decltype(base.template get<p>(grid_key_dx<1>(id))) &
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -673,36 +692,13 @@ namespace openfpm
 			return base.template get<p>(key);
 		}
 
-		/*! \brief Get an element of the vector
-		 *
-		 * Get an element of the vector
-		 *
-		 * \param id Element to get
-		 *
-		 * \return the element (encapsulated)
-		 *
-		 */
-
-		inline typename grid_cpu<1,T>::container get(size_t id)
-		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
-#ifdef SE_CLASS1
-			check_overflow(id);
-#endif
-			grid_key_dx<1> key(id);
-
-			return base.get_o(key);
-		}
-
 		/*! \brief Get the last element of the vector
 		 *
 		 * \return the element (encapsulated)
 		 *
 		 */
 
-		inline typename grid_cpu<1,T>::container last()
+		inline typename grid_cpu<1,T,Memory,layout>::container last()
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -726,12 +722,12 @@ namespace openfpm
 		 * \return a duplicated vector
 		 *
 		 */
-		vector<T, Memory,grow_p,OPENFPM_NATIVE> duplicate() const
+		vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> duplicate() const
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-			vector<T, Memory,grow_p,OPENFPM_NATIVE> dup;
+			vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> dup;
 
 			dup.v_size = v_size;
 			dup.base.swap(base.duplicate());
@@ -744,7 +740,7 @@ namespace openfpm
 		 * \param v the vector
 		 *
 		 */
-		vector(vector<T, Memory,grow_p,OPENFPM_NATIVE> && v)
+		vector(vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> && v)
 		:v_size(0),err_code(0)
 		{
 			// Add this pointer
@@ -759,7 +755,7 @@ namespace openfpm
 		 * \param v the vector
 		 *
 		 */
-		vector(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v) THROW
+		vector(const vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> & v) THROW
 		:v_size(0),err_code(0)
 		{
 #ifdef SE_CLASS2
@@ -770,7 +766,7 @@ namespace openfpm
 
 		//! Constructor, vector of size 0
 		vector() THROW
-		:v_size(0),base(getV(0)),err_code(0)
+		:v_size(0),base(0),err_code(0)
 		{
 #ifdef SE_CLASS2
 			check_new(this,8,VECTOR_EVENT,1);
@@ -780,7 +776,7 @@ namespace openfpm
 
 		//! Constructor, vector of size sz
 		vector(size_t sz) THROW
-		:v_size(sz),base(getV(sz)),err_code(0)
+		:v_size(sz),base(sz),err_code(0)
 		{
 #ifdef SE_CLASS2
 			check_new(this,8,VECTOR_EVENT,1);
@@ -794,7 +790,7 @@ namespace openfpm
 		 * \param obj object (encapsulated)
 		 *
 		 */
-		void set(size_t id, const typename grid_cpu<1,T>::container & obj)
+		void set(size_t id, const typename grid_cpu<1,T,Memory,layout>::container & obj)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -831,7 +827,7 @@ namespace openfpm
 		 * \param src source element
 		 *
 		 */
-		void set(size_t id, vector<T,Memory,grow_p,OPENFPM_NATIVE> & v, size_t src)
+		void set(size_t id, vector<T,Memory,layout,grow_p,OPENFPM_NATIVE> & v, size_t src)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -851,7 +847,7 @@ namespace openfpm
 		 * \return itself
 		 *
 		 */
-		vector<T, Memory,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Memory,grow_p,OPENFPM_NATIVE> && mv)
+		vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Memory, layout,grow_p,OPENFPM_NATIVE> && mv)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -871,7 +867,7 @@ namespace openfpm
 		 * \return itself
 		 *
 		 */
-		vector<T, Memory,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & mv)
+		vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Memory, layout ,grow_p,OPENFPM_NATIVE> & mv)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -895,7 +891,7 @@ namespace openfpm
 		 * \param vector to compare
 		 *
 		 */
-		bool operator!=(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v) const
+		bool operator!=(const vector<T, Memory, layout,grow_p,OPENFPM_NATIVE> & v) const
 		{
 			return !this->operator==(v);
 		}
@@ -905,7 +901,7 @@ namespace openfpm
 		 * \param vector to compare
 		 *
 		 */
-		bool operator==(const vector<T, Memory,grow_p,OPENFPM_NATIVE> & v) const
+		bool operator==(const vector<T, Memory, layout,grow_p,OPENFPM_NATIVE> & v) const
 		{
 			if (v_size != v.v_size)
 				return false;
@@ -927,7 +923,7 @@ namespace openfpm
 		 * \param v vector
 		 *
 		 */
-		void swap(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> & v)
+		void swap(openfpm::vector<T,Memory,layout,grow_p,OPENFPM_NATIVE> & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -946,7 +942,7 @@ namespace openfpm
 		 * \param v vector
 		 *
 		 */
-		void swap(openfpm::vector<T,Memory,grow_p,OPENFPM_NATIVE> && v)
+		void swap(openfpm::vector<T,Memory,layout,grow_p,OPENFPM_NATIVE> && v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -1175,7 +1171,7 @@ namespace openfpm
 		}
 	};
 
-	template <typename T> using vector_std = vector<T, HeapMemory, openfpm::grow_policy_double, STD_VECTOR>;
+	template <typename T> using vector_std = vector<T, HeapMemory, typename memory_traits_lin<T>::type, openfpm::grow_policy_double, STD_VECTOR>;
 
 }
 

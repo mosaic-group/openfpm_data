@@ -106,6 +106,7 @@ class grid_sm
 		return a*b;
 	}
 
+
 	/*! \brief Initialize the basic structure
 	 *
 	 * Initialize the basic structure
@@ -115,19 +116,25 @@ class grid_sm
 	 *
 	 */
 
-	inline void Initialize(std::vector<size_t> & sz)
+	inline void Initialize(const size_t sz)
 	{
-		// Convert the vector to an array
-		size_t sz_a[N];
+		//! Initialize the basic structure for each dimension
+		sz_s[0] = sz;
+		this->sz[0] = sz;
 
-		// Copy
-		for(size_t i = 0 ; i < N ; i++)
+		// set the box
+		box.setHigh(0,sz);
+		box.setLow(0,0);
+
+		for (size_t i = 1 ;  i < N ; i++)
 		{
-			sz_a[i] = sz[i];
-		}
+			sz_s[i] = sz*sz_s[i-1];
+			this->sz[i] = sz;
 
-		// Initialize
-		Initialize(sz_a);
+			// set the box
+			box.setHigh(i,sz);
+			box.setLow(i,0);
+		}
 	}
 
 	/*! \brief Initialize the basic structure
@@ -198,18 +205,6 @@ public:
 
 	/*! \brief Reset the dimension of the grid
 	 *
-	 * \param dims std::vector that store on each dimension the size of the grid
-	 *
-	 */
-
-	inline void setDimensions(std::vector<size_t> & dims)
-	{
-		Initialize(dims);
-		size_tot = totalSize(dims);
-	}
-
-	/*! \brief Reset the dimension of the grid
-	 *
 	 * \param dims store on each dimension the size of the grid
 	 *
 	 */
@@ -265,6 +260,20 @@ public:
 
 	// Static element to calculate total size
 
+	inline size_t totalSize(const size_t sz)
+	{
+		size_t tSz = 1;
+
+		for (size_t i = 0 ;  i < N ; i++)
+		{
+			tSz *= sz;
+		}
+
+		return tSz;
+	}
+
+	// Static element to calculate total size
+
 	inline size_t totalSize(const size_t (& sz)[N])
 	{
 		size_t tSz = 1;
@@ -277,31 +286,16 @@ public:
 		return tSz;
 	}
 
-	// Static element to calculate total size
-
-	inline size_t totalSize(const std::vector<size_t> & sz)
-	{
-		// Convert the vector to an array
-		size_t sz_a[N];
-
-		// Copy
-		for(size_t i = 0 ; i < N ; i++)
-		{
-			sz_a[i] = sz[i];
-		}
-
-		return totalSize(sz_a);
-	}
 
 	/*! \brief Construct a grid of a specified size
 	 *
 	 * Construct a grid of a specified size
 	 *
-	 * \param sz is an std::vector that contain the size of the grid on each dimension
+	 * \param sz is an array that contain the size of the grid on each dimension
 	 *
 	 */
 
-	inline grid_sm(std::vector<size_t> & sz)
+	inline grid_sm(const size_t & sz)
 	: size_tot(totalSize(sz))
 	{
 		Initialize(sz);
@@ -319,26 +313,6 @@ public:
 	: size_tot(totalSize(sz))
 	{
 		Initialize(sz);
-	}
-
-	/*! \brief Construct a grid of a specified size
-	 *
-	 * Construct a grid of a specified size
-	 *
-	 * \param sz is an std::vector that contain the size of the grid on each dimension
-	 *
-	 */
-
-	inline grid_sm(std::vector<size_t> && sz)
-	: size_tot(totalSize(sz))
-	{
-		sz_s[0] = sz[0];
-		this->sz[0] = sz[0];
-		for (size_t i = 1 ;  i < sz.size() && N > 1 ; i++)
-		{
-			sz_s[i] = sz[i]*sz_s[i-1];
-			this->sz[i] = sz[i];
-		}
 	}
 
 	/*! \brief Linearization of the grid_key_dx with a specified shift
@@ -681,23 +655,6 @@ public:
 	inline size_t size(unsigned int i) const
 	{
 		return sz[i];
-	}
-
-	/*! \brief Return the size of the grid as an std::vector
-	 *
-	 * \return get the size of the grid as an std::vector
-	 *
-	 */
-	inline std::vector<size_t> getVectorSize()
-	{
-		std::vector<size_t> vect_sz;
-
-		for (int i = 0 ; i < N ; i++)
-		{
-			vect_sz.push_back(sz[i]);
-		}
-
-		return vect_sz;
 	}
 
 	/*! \brief Return the size of the grid as an array

@@ -75,9 +75,11 @@ BOOST_AUTO_TEST_CASE( graph_use)
 	// and give a set of usefull function
 
 
-	std::vector<size_t> gs;
+/*	std::vector<size_t> gs;
 	gs.push_back(GS_SIZE);
-	gs.push_back(GS_SIZE);
+	gs.push_back(GS_SIZE);*/
+
+	size_t gs[2] = {GS_SIZE,GS_SIZE};
 
 	grid_sm<2,void> g2(gs);
 

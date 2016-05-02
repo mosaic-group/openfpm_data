@@ -90,8 +90,8 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 
 	//! [object copy encap example]
 
-	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_conf> encap_src;
-	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_conf> encap_dst;
+	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::layout_type> encap_src;
+	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::layout_type> encap_dst;
 
 	openfpm::vector<p> v_point;
 	openfpm::vector<object<vboost_red>> v_point_red;
@@ -152,8 +152,8 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 
 	//! [object write encap example]
 
-	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::memory_conf> encap_dst;
-	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::memory_conf> encap_src;
+	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::layout_type> encap_dst;
+	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::layout_type> encap_src;
 
 	openfpm::vector<p> v_point;
 	openfpm::vector<object<vboost_red>> v_point_red;
@@ -603,11 +603,11 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		val = is_encap< encapc<4,Point_test<float>,memory_traits_lin<Point_test<float>>> >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 
-		val = is_encap< encapg<2,scalar<float>,memory_traits_lin<scalar<float>>> >::value;
+		val = is_encap< encapc<2,scalar<float>,memory_traits_inte<scalar<float>>> >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
-		val = is_encap< encapg<3,object<boost::fusion::vector<float,double> >,memory_traits_lin<object< boost::fusion::vector<float,double>>>>  >::value;
+		val = is_encap< encapc<3,object<boost::fusion::vector<float,double> >,memory_traits_inte<object< boost::fusion::vector<float,double>>>>  >::value;
 		BOOST_REQUIRE_EQUAL( val , true);
-		val = is_encap< encapg<4,Point_test<float>,memory_traits_lin<Point_test<float>>> >::value;
+		val = is_encap< encapc<4,Point_test<float>,memory_traits_inte<Point_test<float>>> >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 
 		val = is_encap< float >::value;

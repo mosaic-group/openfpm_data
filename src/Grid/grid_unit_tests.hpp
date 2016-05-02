@@ -25,11 +25,10 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz);
 
 template<unsigned int dim> void test_all_grid(size_t sz)
 {
-	std::vector<size_t> szz;
-	szz.clear();
+	size_t szz[dim];
 
 	for (size_t i = 0 ; i < dim ; i++)
-	{szz.push_back(sz);}
+	{szz[i] = sz;}
 
 	{grid_cpu<dim, Point_test<float> > c3(szz);
 	c3.template setMemory();
@@ -676,10 +675,7 @@ BOOST_AUTO_TEST_CASE( grid_use)
 
 	std::cout << "Grid unit test start" << "\n";
 
-	std::vector<size_t> sz;
-	sz.push_back(GS_SIZE);
-	sz.push_back(GS_SIZE);
-	sz.push_back(GS_SIZE);
+	size_t sz[3] = {GS_SIZE,GS_SIZE,GS_SIZE};
 
 	// test the grid from dimensionality 1 to 8 with several size non multiple of two
 	// Dimension 8-1
@@ -717,11 +713,6 @@ BOOST_AUTO_TEST_CASE( grid_use)
 
 	for (int i = 0 ; i <= GS_SIZE ; i++)
 	{
-		sz.clear();
-		sz.push_back(i);
-		sz.push_back(i);
-		sz.push_back(i);
-
 #ifdef CUDA_GPU
 
 		{

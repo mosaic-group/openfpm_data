@@ -10,6 +10,7 @@
 
 #include "util/variadic_to_vmpl.hpp"
 #include "t_to_memory_c.hpp"
+#include "Vector/vect_isel.hpp"
 
 /*! \brief This class convert a boost::mpl::fusion/vector to a boost::mpl::fusion/vector with memory_c interleaved
  *
@@ -52,7 +53,27 @@ template<typename T>
 struct memory_traits_inte
 {
 	//! for each element in the vector interleave memory_c
-	typedef typename inter_memc<T>::type type;
+	typedef typename inter_memc<typename T::type>::type type;
+};
+
+/*! \brief small meta-function to get the type of the memory
+ *
+ *
+ */
+template<typename T, bool is_agg>
+struct memory_traits_lin_type
+{
+	typedef memory_c<typename T::type> type;
+};
+
+/*! \brief small meta-function to get the type of the memory
+ *
+ *
+ */
+template<typename T>
+struct memory_traits_lin_type<T,false>
+{
+	typedef void type;
 };
 
 /*! \brief Transform the boost::fusion::vector into memory specification (memory_traits)
@@ -71,7 +92,10 @@ template<typename T>
 struct memory_traits_lin
 {
 	//! for each element in the vector interleave memory_c
-	typedef memory_c<T> type;
+	typedef typename memory_traits_lin_type<T,openfpm::vect_isel<T>::value == OPENFPM_NATIVE>::type type;
+
+	template<typename K> using layout = memory_traits_lin<K>;
 };
+
 
 #endif

@@ -340,12 +340,6 @@ public:
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 #endif
 
-		// Create an object out of the encapsulated object and copy
-//		const typename T::T_type obj = eobj;
-//		mem.allocate(sizeof(typename T::T_type));
-
-//		memcpy(mem.getPointer(),&obj,sizeof(typename T::T_type));
-
 		if (has_pack_encap<T,prp ...>::result::value == true)
 			call_encapPack<T,Mem,prp ...>::call_pack(eobj,mem,sts);
 		else
@@ -353,14 +347,14 @@ public:
 			if (sizeof...(prp) == 0)
 			{
 				mem.allocate(sizeof(typename T::T_type));
-				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type::type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
+				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
 				enc = eobj;
 			}
 			else
 			{
 				typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
 				mem.allocate(sizeof(prp_object));
-				encapc<1,prp_object,typename memory_traits_lin< typename T::T_type::type >::type> enc(*static_cast<typename prp_object::type *>(mem.getPointer()));
+				encapc<1,prp_object,typename memory_traits_lin< typename T::T_type >::type> enc(*static_cast<typename prp_object::type *>(mem.getPointer()));
 				object_si_d<T,decltype(enc),OBJ_ENCAP,prp ... >(eobj,enc);
 			}
 		}

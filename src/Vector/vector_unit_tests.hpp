@@ -105,9 +105,9 @@ BOOST_AUTO_TEST_CASE( vector_use)
 struct pre_test
 {
 	//! position vector
-	openfpm::vector<Point<2,float>,PreAllocHeapMemory<2>,openfpm::grow_policy_identity> pos;
+	openfpm::vector<Point<2,float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point<2,float>>::type,openfpm::grow_policy_identity> pos;
 	//! properties vector
-	openfpm::vector<Point_test<float>,PreAllocHeapMemory<2>,openfpm::grow_policy_identity> prp;
+	openfpm::vector<Point_test<float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point_test<float>>::type,openfpm::grow_policy_identity> prp;
 };
 
 BOOST_AUTO_TEST_CASE( vector_std_utility )
@@ -454,7 +454,7 @@ BOOST_AUTO_TEST_CASE( vector_memory_repr )
 
 	// create vector representation to a piece of memory already allocated
 
-	openfpm::vector<Point_test<float>,PtrMemory,openfpm::grow_policy_identity> v2;
+	openfpm::vector<Point_test<float>,PtrMemory,typename memory_traits_lin<Point_test<float>>::type,openfpm::grow_policy_identity> v2;
 
 	v2.setMemory(*ptr1);
 

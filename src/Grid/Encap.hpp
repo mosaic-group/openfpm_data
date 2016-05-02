@@ -18,6 +18,7 @@
 #include "util/se_util.hpp"
 #include "util/copy_compare/copy_fusion_vector.hpp"
 #include "util/copy_compare/compare_fusion_vector.hpp"
+#include "memory_ly/memory_conf.hpp"
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -152,24 +153,6 @@ struct compare_cpu_encap_encap
 	}
 };
 
-/*! \brief This class is an helper to get the return type for get method for each property
- *
- * This class is an helper to get the return type for get method for each property
- *
- * \param p id of the property
- * \param T original boost fusion vector, T is suppose to be a boost::fusion::vector<memory_c<...>,.....>
- *
- */
-
-template<unsigned int p,typename mem>
-struct type_cpu_prop
-{
-	//! return a boost::fusion::vector<memory_c<....>....>
-	typedef typename mem::vtype vtype;
-	//! return a memory_c<...>
-	typedef typename boost::fusion::result_of::at< vtype,boost::mpl::int_<p> >::type type;
-};
-
 /*! \brief This class is an helper to get the return type of get for each property
  *
  * This class is an helper to get the return type of get for each property
@@ -192,7 +175,18 @@ struct type_gpu_prop
 	typedef typename mtype::type type;
 };
 
+/*! Stub encap
+ *
+ * \tparam dim dimension
+ * \tparam T object it encapsulate
+ * \tparam layout
+ *
+ */
+template<unsigned int dim,typename T,typename layout>
+class encapc
+{
 
+};
 
 /*! \brief this structure encapsulate an object of the grid
  *
@@ -201,12 +195,11 @@ struct type_gpu_prop
  *
  * \param dim Dimensionality of the grid
  * \param T type of object the grid store
- * \param Mem suppose to be a boost::fusion::vector of arrays
  *
  */
 
-template<unsigned int dim,typename T,typename Mem>
-class encapc
+template<unsigned int dim,typename T>
+class encapc<dim,T,typename memory_traits_lin<T>::type >
 {
 public:
 	typedef typename T::type type;
@@ -214,6 +207,8 @@ public:
 private:
 
 	type & data_c;
+
+	typedef typename memory_traits_lin<T>::type Mem;
 
 public:
 
@@ -223,7 +218,7 @@ public:
 
 	static const int max_prop = T::max_prop;
 
-	// constructor require a key and a memory data
+	// constructor from a reference object
 	inline encapc(type & data_c)
 	:data_c(data_c)
 	{}
@@ -243,7 +238,7 @@ public:
 	 * \return the reference
 	 *
 	 */
-	template <unsigned int p> inline typename type_cpu_prop<p,Mem>::type get()
+	template <unsigned int p> inline auto get() -> decltype(boost::fusion::at_c<p>(data_c))
 	{
 #ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,Mem>::type));
@@ -256,7 +251,7 @@ public:
 	 * \return the reference
 	 *
 	 */
-	template <unsigned int p> inline const typename type_cpu_prop<p,Mem>::type get() const
+	template <unsigned int p> inline auto get() const -> decltype(boost::fusion::at_c<p>(data_c)) const
 	{
 #ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,Mem>::type));
@@ -265,7 +260,7 @@ public:
 	}
 
 	// access the data
-	template <unsigned int p> inline void set(typename type_cpu_prop<p,Mem>::type & ele)
+	template <unsigned int p> inline void set(decltype(boost::fusion::at_c<p>(data_c)) & ele)
 	{
 #ifdef SE_CLASS2
 			check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,T>::type));
@@ -362,13 +357,14 @@ public:
  *
  *	\param dim Dimensionality of the grid
  *	\param T type of object the grid store
- *	\param Mem interface used to allocate memory
  *
  */
 
-template<unsigned int dim,typename T,typename Mem>
-class encapg
+template<unsigned int dim,typename T>
+class encapc<dim,T,typename memory_traits_inte<T>::type>
 {
+	typedef typename memory_traits_inte<T>::type Mem;
+
 	// constructor require a key
 	Mem & data;
 	size_t k;
@@ -380,18 +376,18 @@ public:
 	typedef T T_type;
 
 	// constructor require a key and a memory data
-	encapg(Mem & data, size_t k)
+	encapc(typename memory_traits_inte<T>::type & data, size_t k)
 	:data(data),k(k)
 	{}
 
 	// access the data
-	template <unsigned int p> typename type_gpu_prop<p,Mem>::type::reference get()
+	template <unsigned int p> typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get()
 	{
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
 	}
 
 	// access the data
-	template <unsigned int p> const typename type_gpu_prop<p,Mem>::type::reference get() const
+	template <unsigned int p> const typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get() const
 	{
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
 	}
