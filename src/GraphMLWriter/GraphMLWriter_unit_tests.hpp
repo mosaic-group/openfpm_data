@@ -27,9 +27,6 @@ struct ne_cp
 	//! The node contain several properties
 	typedef boost::fusion::vector<float,float,float,double,long int,int,std::string> type;
 
-	typedef typename memory_traits_inte<type>::type memory_int;
-	typedef typename memory_traits_lin<type>::type memory_lin;
-
 	//! The data
 	type data;
 

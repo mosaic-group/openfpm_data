@@ -24,9 +24,6 @@ struct vertex
 	//! The node contain 3 unsigned long integer for communication computation memory and id
 	typedef boost::fusion::vector<float,float,float,float,size_t,double,unsigned char,long int> type;
 
-	typedef typename memory_traits_inte<type>::type memory_int;
-	typedef typename memory_traits_lin<type>::type memory_lin;
-
 	//! type of the positional field
 	typedef float s_type;
 
@@ -78,9 +75,6 @@ struct vertex2
 {
 	//! The node contain 3 unsigned long integer for communication computation memory and id
 	typedef boost::fusion::vector<float[3],size_t,double> type;
-
-	typedef typename memory_traits_inte<type>::type memory_int;
-	typedef typename memory_traits_lin<type>::type memory_lin;
 
 	//! type of the positional field
 	typedef float s_type;
@@ -291,9 +285,6 @@ struct vertex3
 {
 	//! The node contain 3 unsigned long integer for communication computation memory and id
 	typedef boost::fusion::vector<float[2],size_t,double> type;
-
-	typedef typename memory_traits_inte<type>::type memory_int;
-	typedef typename memory_traits_lin<type>::type memory_lin;
 
 	//! type of the positional field
 	typedef float s_type;
