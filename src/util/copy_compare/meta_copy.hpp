@@ -31,6 +31,21 @@ struct meta_copy
 	{
 		copy_general<T>(src,dst);
 	}
+
+	// Needed to make reference objects working
+	inline meta_copy(const T & src, T && dst)
+	{
+		copy_general<T>(src,dst);
+	}
+};
+
+template<typename Tsrc,typename Tdst>
+struct meta_copy_d
+{
+	inline meta_copy_d(const Tsrc & src, Tdst & dst)
+	{
+		copy_general<Tsrc>(src,dst);
+	}
 };
 
 //! Partial specialization for N=1 1D-Array
@@ -46,6 +61,19 @@ struct meta_copy<T[N1]>
 	}
 };
 
+//! Partial specialization for N=1 1D-Array
+template<typename Tsrc, typename Tdst, size_t N1>
+struct meta_copy_d<Tsrc[N1],Tdst>
+{
+	inline meta_copy_d(const Tsrc src[N1], Tdst && dst)
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general<Tsrc>(src[i1],static_cast<Tsrc&>(dst[i1]));
+		}
+	}
+};
+
 //! Partial specialization for N=2 2D-Array
 template<typename T,size_t N1,size_t N2>
 struct meta_copy<T[N1][N2]>
@@ -57,6 +85,22 @@ struct meta_copy<T[N1][N2]>
 			for (size_t i2 = 0 ; i2 < N2 ; i2++)
 			{
 				copy_general<T>(src[i1][i2],dst[i1][i2]);
+			}
+		}
+	}
+};
+
+//! Partial specialization for N=2 2D-Array
+template<typename Tsrc, typename Tdst,size_t N1,size_t N2>
+struct meta_copy_d<Tsrc[N1][N2],Tdst>
+{
+	inline meta_copy_d(const Tsrc src[N1][N2], Tdst && dst)
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < N2 ; i2++)
+			{
+				copy_general<Tsrc>(src[i1][i2],static_cast<Tsrc&>(dst[i1][i2]));
 			}
 		}
 	}

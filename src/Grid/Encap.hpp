@@ -77,10 +77,10 @@ struct copy_cpu_encap_encap
 	inline void operator()(T& t) const
 	{
 		// This is the type of the object we have to copy
-		typedef typename boost::fusion::result_of::at_c<typename e_src::type,T::value>::type copy_type;
+//		typedef typename boost::fusion::result_of::at_c<typename e_src::type,T::value>::type copy_type;
 
 		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
+		typedef typename boost::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
 
 		meta_copy<copy_rtype> cp(src.template get<T::value>(),dst.template get<T::value>());
 	}
@@ -371,6 +371,8 @@ class encapc<dim,T,typename memory_traits_inte<T>::type>
 
 public:
 
+	typedef typename T::type type;
+
 	typedef int yes_i_am_encap;
 
 	typedef T T_type;
@@ -390,6 +392,34 @@ public:
 	template <unsigned int p> const typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get() const
 	{
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
+	}
+
+	/*! \brief Assignment
+	 *
+	 * \param ec encapsulator
+	 *
+	 */
+	inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
+	{
+		copy_cpu_encap_encap<encapc<dim,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+		return *this;
+	}
+
+	/*! \brief Assignment
+	 *
+	 * \param ec encapsulator
+	 *
+	 */
+	inline encapc<dim,T,Mem> & operator=(const T & obj)
+	{
+		copy_fusion_vector_encap<typename T::type,decltype(*this)> cp(obj.data,*this);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+		return *this;
 	}
 };
 

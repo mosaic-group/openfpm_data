@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 	BOOST_REQUIRE_EQUAL(val,PACKER_VECTOR);
 	val = Pack_selector< grid_cpu<3,Point_test<float>> >::value;
 	BOOST_REQUIRE_EQUAL(val,PACKER_GRID);
-	val = Pack_selector< encapc<3,Point_test<float>, memory_traits_lin<Point_test<float>> > >::value;
+	val = Pack_selector< encapc<3,Point_test<float>, memory_traits_lin<Point_test<float>>::type > >::value;
 	BOOST_REQUIRE_EQUAL(val,PACKER_ENCAP_OBJECTS);
 
 	struct test_s
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 	float f = 9;
 	double d = 10;
 
-	openfpm::vector<Point_test<float>> v = allocate_openfpm(1024);
+	openfpm::vector<Point_test<float>> v = allocate_openfpm<openfpm::vector<Point_test<float>>>(1024);
 
 	Point_test<float> p;
 	p.fill();

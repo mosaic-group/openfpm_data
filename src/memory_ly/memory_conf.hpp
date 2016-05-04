@@ -48,12 +48,13 @@ struct inter_memc
  *
  *
  */
-
 template<typename T>
 struct memory_traits_inte
 {
 	//! for each element in the vector interleave memory_c
 	typedef typename inter_memc<typename T::type>::type type;
+
+	typedef int yes_is_inte;
 };
 
 /*! \brief small meta-function to get the type of the memory
@@ -94,8 +95,45 @@ struct memory_traits_lin
 	//! for each element in the vector interleave memory_c
 	typedef typename memory_traits_lin_type<T,openfpm::vect_isel<T>::value == OPENFPM_NATIVE>::type type;
 
-	template<typename K> using layout = memory_traits_lin<K>;
+	typedef int yes_is_tlin;
 };
 
+
+//////////////////////////////////////////////////////////////
+
+template<typename T, typename Sfinae = void>
+struct is_layout_mlin: std::false_type {};
+
+
+/*! \brief is_layout_mlin
+ *
+ * ### Example
+ *
+ * \snippet util.hpp Check if the memory layout is memory_traits_lin
+ *
+ * return true if T is a memory_traits_lin
+ *
+ */
+template<typename T>
+struct is_layout_mlin<T, typename Void< typename T::yes_is_tlin>::type> : std::true_type
+{};
+
+
+template<typename T, typename Sfinae = void>
+struct is_layout_inte: std::false_type {};
+
+
+/*! \brief is_layout_inte
+ *
+ * ### Example
+ *
+ * \snippet util.hpp Check if the memory layout is memory_traits_inte
+ *
+ * return true if T is a memory_traits_inte
+ *
+ */
+template<typename T>
+struct is_layout_inte<T, typename Void< typename T::yes_is_inte>::type> : std::true_type
+{};
 
 #endif

@@ -13,13 +13,11 @@
 
 BOOST_AUTO_TEST_SUITE( vector_test )
 
-// Test vector iterator
-
-BOOST_AUTO_TEST_CASE (vector_iterator_test)
+template <typename vector> void test_iterator()
 {
 	//////////////////////////////////
 
-	openfpm::vector<Point_test<float>> v_ofp_test = allocate_openfpm(FIRST_PUSH);
+	vector v_ofp_test = allocate_openfpm<vector>(FIRST_PUSH);
 
 	size_t count = 0;
 
@@ -47,17 +45,15 @@ BOOST_AUTO_TEST_CASE (vector_iterator_test)
 	BOOST_REQUIRE_EQUAL(count, v_ofp_test.size() / 2 );
 }
 
-// Test the openfpm vector
-
-BOOST_AUTO_TEST_CASE( vector_use)
+template <typename vector> void test_vector_use()
 {
 	std::cout << "Vector unit test start" << "\n";
 
 	std::vector<Point_orig<float>> v_stl_test = allocate_stl();
-	openfpm::vector<Point_test<float>> v_ofp_test = allocate_openfpm(FIRST_PUSH);
+	vector v_ofp_test = allocate_openfpm<vector>(FIRST_PUSH);
 
 	// try to duplicate the vector
-	openfpm::vector<Point_test<float>> dv_ofp_test = v_ofp_test.duplicate();
+	vector dv_ofp_test = v_ofp_test.duplicate();
 
 	// Check if the STL and openfpm match
 
@@ -98,6 +94,22 @@ BOOST_AUTO_TEST_CASE( vector_use)
 	}
 
 	std::cout << "Vector unit test end" << "\n";
+}
+
+// Test vector iterator
+
+BOOST_AUTO_TEST_CASE (vector_iterator_test)
+{
+	test_iterator< openfpm::vector<Point_test<float>> >();
+	test_iterator< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+}
+
+// Test the openfpm vector
+
+BOOST_AUTO_TEST_CASE( vector_use)
+{
+	test_vector_use<openfpm::vector<Point_test<float>>>();
+	test_vector_use< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
 }
 
 // Pre alloc test
@@ -143,127 +155,6 @@ BOOST_AUTO_TEST_CASE( vector_std_utility )
 size_t alloc[] = {235,345,0,520};
 size_t n_alloc = sizeof(alloc)/sizeof(size_t);
 
-BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
-{
-	// Memory for the ghost sending buffer
-	HeapMemory mem;
-
-	// sequence of pre-allocation pattern
-	std::vector<size_t> pap;
-
-	size_t total = 0;
-
-	openfpm::vector<Point_test<float>> vect;
-
-	// Calculate the total size required for the sending buffer
-	for (size_t i = 0 ; i < n_alloc ; i++)
-	{
-		size_t alloc_ele = vect.calculateMem(alloc[i],0);
-		pap.push_back(alloc_ele);
-		total += alloc_ele;
-	}
-
-	// Create an object of preallocated memory
-	ExtPreAlloc<HeapMemory> * prAlloc = new ExtPreAlloc<HeapMemory>(pap,mem);
-
-	typedef openfpm::vector<Point_test<float>,ExtPreAlloc<HeapMemory>> send_vector;
-
-	// create a vector of send_vector (ExtPreAlloc warrant that all the created vector are contiguous)
-	openfpm::vector<send_vector> g_send;
-
-	// resize
-	g_send.resize(n_alloc);
-
-	// Number of allocation
-	for (size_t i = 0 ; i < n_alloc ; i++)
-	{
-		// set the preallocated memory to ensure contiguity
-		g_send.get(i).setMemory(*prAlloc);
-
-		// resize the sending vector (No allocation is produced)
-		g_send.get(i).resize(alloc[i]);
-	}
-
-	// Fill the send buffer with one
-	for (size_t i = 0 ; i < n_alloc ; i++)
-	{
-		auto it = g_send.get(i).getIterator();
-		auto & v = g_send.get(i);
-
-		while(it.isNext())
-		{
-			auto kk = it.get();
-
-			v.template get<P::x>(kk) = 1.0f;
-			v.template get<P::y>(kk) = 1.0f;
-			v.template get<P::z>(kk) = 1.0f;
-			v.template get<P::s>(kk) = 1.0f;
-
-			v.template get<P::v>(kk)[0] = 1.0f;
-			v.template get<P::v>(kk)[1] = 1.0f;
-			v.template get<P::v>(kk)[2] = 1.0f;
-
-			v.template get<P::t>(kk)[0][0] = 1.0f;
-			v.template get<P::t>(kk)[0][1] = 1.0f;
-			v.template get<P::t>(kk)[0][2] = 1.0f;
-			v.template get<P::t>(kk)[1][0] = 1.0f;
-			v.template get<P::t>(kk)[1][1] = 1.0f;
-			v.template get<P::t>(kk)[1][2] = 1.0f;
-			v.template get<P::t>(kk)[2][0] = 1.0f;
-			v.template get<P::t>(kk)[2][1] = 1.0f;
-			v.template get<P::t>(kk)[2][2] = 1.0f;
-
-			++it;
-		}
-	}
-
-	// check that HeapMemory contain ones in the right position
-	float * ptr = (float *) mem.getPointer();
-	size_t offset = 0;
-
-	for (size_t i = 0 ; i < n_alloc ; i++)
-	{
-		for (size_t j = 0 ; j < alloc[i] ; j++)
-			BOOST_REQUIRE_EQUAL(ptr[j + offset/sizeof(float)],1.0f);
-
-		offset += pap[i];
-	}
-}
-
-
-BOOST_AUTO_TEST_CASE( vector_prealloc )
-{
-	openfpm::vector<pre_test> pb(3);
-
-	for (size_t i = 0 ;  i < 3 ; i++)
-	{
-		// Create the size required to store the particles position and properties to communicate
-		openfpm::vector<Point<2,float>> vect1;
-		size_t s1 = vect1.calculateMem(1024,0);
-		openfpm::vector<Point_test<float>> vect2;
-		size_t s2 = vect2.calculateMem(1024,0);
-
-		// Preallocate the memory
-		size_t sz[2] = {s1,s2};
-		PreAllocHeapMemory<2> * mem = new PreAllocHeapMemory<2>(sz);
-
-		// Set the memory allocator
-		pb.get(i).pos.setMemory(*mem);
-		pb.get(i).prp.setMemory(*mem);
-
-		// set the size and allocate, using mem warrant that pos and prp is contiguous
-		pb.get(i).pos.resize(1024);
-		pb.get(i).prp.resize(1024);
-	}
-}
-
-
-BOOST_AUTO_TEST_CASE( object_test_creator )
-{
-	bool tst = std::is_same< typename object_creator<Point_test<float>::type,0,1,5>::type, typename boost::fusion::vector3<float,float,float[3][3]> >::value;
-
-	BOOST_REQUIRE_EQUAL(tst , true);
-}
 
 #define V_REM_PUSH 1024ul
 
@@ -794,6 +685,127 @@ BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
 	}
 }
 
+
+BOOST_AUTO_TEST_CASE( object_test_creator )
+{
+	bool tst = std::is_same< typename object_creator<Point_test<float>::type,0,1,5>::type, typename boost::fusion::vector3<float,float,float[3][3]> >::value;
+
+	BOOST_REQUIRE_EQUAL(tst , true);
+}
+
+BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
+{
+	// Memory for the ghost sending buffer
+	HeapMemory mem;
+
+	// sequence of pre-allocation pattern
+	std::vector<size_t> pap;
+
+	size_t total = 0;
+
+	openfpm::vector<Point_test<float>> vect;
+
+	// Calculate the total size required for the sending buffer
+	for (size_t i = 0 ; i < n_alloc ; i++)
+	{
+		size_t alloc_ele = vect.calculateMem(alloc[i],0);
+		pap.push_back(alloc_ele);
+		total += alloc_ele;
+	}
+
+	// Create an object of preallocated memory
+	ExtPreAlloc<HeapMemory> * prAlloc = new ExtPreAlloc<HeapMemory>(pap,mem);
+
+	typedef openfpm::vector<Point_test<float>,ExtPreAlloc<HeapMemory>> send_vector;
+
+	// create a vector of send_vector (ExtPreAlloc warrant that all the created vector are contiguous)
+	openfpm::vector<send_vector> g_send;
+
+	// resize
+	g_send.resize(n_alloc);
+
+	// Number of allocation
+	for (size_t i = 0 ; i < n_alloc ; i++)
+	{
+		// set the preallocated memory to ensure contiguity
+		g_send.get(i).setMemory(*prAlloc);
+
+		// resize the sending vector (No allocation is produced)
+		g_send.get(i).resize(alloc[i]);
+	}
+
+	// Fill the send buffer with one
+	for (size_t i = 0 ; i < n_alloc ; i++)
+	{
+		auto it = g_send.get(i).getIterator();
+		auto & v = g_send.get(i);
+
+		while(it.isNext())
+		{
+			auto kk = it.get();
+
+			v.template get<P::x>(kk) = 1.0f;
+			v.template get<P::y>(kk) = 1.0f;
+			v.template get<P::z>(kk) = 1.0f;
+			v.template get<P::s>(kk) = 1.0f;
+
+			v.template get<P::v>(kk)[0] = 1.0f;
+			v.template get<P::v>(kk)[1] = 1.0f;
+			v.template get<P::v>(kk)[2] = 1.0f;
+
+			v.template get<P::t>(kk)[0][0] = 1.0f;
+			v.template get<P::t>(kk)[0][1] = 1.0f;
+			v.template get<P::t>(kk)[0][2] = 1.0f;
+			v.template get<P::t>(kk)[1][0] = 1.0f;
+			v.template get<P::t>(kk)[1][1] = 1.0f;
+			v.template get<P::t>(kk)[1][2] = 1.0f;
+			v.template get<P::t>(kk)[2][0] = 1.0f;
+			v.template get<P::t>(kk)[2][1] = 1.0f;
+			v.template get<P::t>(kk)[2][2] = 1.0f;
+
+			++it;
+		}
+	}
+
+	// check that HeapMemory contain ones in the right position
+	float * ptr = (float *) mem.getPointer();
+	size_t offset = 0;
+
+	for (size_t i = 0 ; i < n_alloc ; i++)
+	{
+		for (size_t j = 0 ; j < alloc[i] ; j++)
+			BOOST_REQUIRE_EQUAL(ptr[j + offset/sizeof(float)],1.0f);
+
+		offset += pap[i];
+	}
+}
+
+
+BOOST_AUTO_TEST_CASE( vector_prealloc )
+{
+	openfpm::vector<pre_test> pb(3);
+
+	for (size_t i = 0 ;  i < 3 ; i++)
+	{
+		// Create the size required to store the particles position and properties to communicate
+		openfpm::vector<Point<2,float>> vect1;
+		size_t s1 = vect1.calculateMem(1024,0);
+		openfpm::vector<Point_test<float>> vect2;
+		size_t s2 = vect2.calculateMem(1024,0);
+
+		// Preallocate the memory
+		size_t sz[2] = {s1,s2};
+		PreAllocHeapMemory<2> * mem = new PreAllocHeapMemory<2>(sz);
+
+		// Set the memory allocator
+		pb.get(i).pos.setMemory(*mem);
+		pb.get(i).prp.setMemory(*mem);
+
+		// set the size and allocate, using mem warrant that pos and prp is contiguous
+		pb.get(i).pos.resize(1024);
+		pb.get(i).prp.resize(1024);
+	}
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

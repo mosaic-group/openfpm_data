@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE ( vector_ptst_packer_unpacker )
 	for (size_t i = 0; i < 5; i++) {
 		openfpm::vector<openfpm::vector<Point_test<float>>> v4;
 		for (size_t j = 0; j < 6; j++) {
-			v4.add(allocate_openfpm(7));
+			v4.add(allocate_openfpm<openfpm::vector<Point_test<float>>>(7));
 		}
 		v.add(v4);
 	}
@@ -183,15 +183,15 @@ BOOST_AUTO_TEST_CASE ( vector_zerosize_packer_unpacker )
 	for (size_t i = 0; i < 5; i++) {
 		openfpm::vector<openfpm::vector<Point_test<float>>> v4;
 		for (size_t j = 0; j < 6; j++) {
-			v4.add(allocate_openfpm(7));
+			v4.add(allocate_openfpm<openfpm::vector<Point_test<float>>>(7));
 		}
 		v5.add(v4);
 	}
 	openfpm::vector<openfpm::vector<Point_test<float>>> v51;
 	for (size_t j = 0; j < 5; j++) {
-		v51.add(allocate_openfpm(7));
+		v51.add(allocate_openfpm<openfpm::vector<Point_test<float>>>(7));
 	}
-	v51.add(allocate_openfpm(0));
+	v51.add(allocate_openfpm<openfpm::vector<Point_test<float>>>(0));
 
 	v5.add(v51);
 
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE ( vector_zerosize__lvl_2_packer_unpacker )
 	for (size_t i = 0; i < 5; i++) {
 		openfpm::vector<openfpm::vector<Point_test<float>>> v4;
 		for (size_t j = 0; j < 6; j++) {
-			v4.add(allocate_openfpm(7));
+			v4.add(allocate_openfpm<openfpm::vector<Point_test<float>>>(7));
 		}
 		v5.add(v4);
 	}

@@ -596,18 +596,18 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 			double b;
 		};
 
-		bool val = is_encap< encapc<2,scalar<float>,memory_traits_lin<scalar<float>>> >::value;
+		bool val = is_encap< encapc<2,scalar<float>,memory_traits_lin<scalar<float>>::type > >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
-		val = is_encap< encapc<3,object<boost::fusion::vector<float,double> >,memory_traits_lin<object< boost::fusion::vector<float,double>>>>  >::value;
+		val = is_encap< encapc<3,object<boost::fusion::vector<float,double> >,memory_traits_lin<object< boost::fusion::vector<float,double>>>::type >  >::value;
 		BOOST_REQUIRE_EQUAL( val , true);
-		val = is_encap< encapc<4,Point_test<float>,memory_traits_lin<Point_test<float>>> >::value;
+		val = is_encap< encapc<4,Point_test<float>,memory_traits_lin<Point_test<float>>::type > >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 
-		val = is_encap< encapc<2,scalar<float>,memory_traits_inte<scalar<float>>> >::value;
+		val = is_encap< encapc<2,scalar<float>,memory_traits_inte<scalar<float>>::type > >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
-		val = is_encap< encapc<3,object<boost::fusion::vector<float,double> >,memory_traits_inte<object< boost::fusion::vector<float,double>>>>  >::value;
+		val = is_encap< encapc<3,object<boost::fusion::vector<float,double> >,memory_traits_inte<object< boost::fusion::vector<float,double>>>::type >  >::value;
 		BOOST_REQUIRE_EQUAL( val , true);
-		val = is_encap< encapc<4,Point_test<float>,memory_traits_inte<Point_test<float>>> >::value;
+		val = is_encap< encapc<4,Point_test<float>,memory_traits_inte<Point_test<float>>::type > >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 
 		val = is_encap< float >::value;
@@ -631,6 +631,22 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		BOOST_REQUIRE_EQUAL(mul,3ul*2ul*5ul);
 
 		//! [Usage mul_array_extents]
+		}
+
+		{
+		//! [Check memory layout]
+
+		bool val = is_layout_mlin<memory_traits_lin<scalar<float>>>::value;
+		BOOST_REQUIRE_EQUAL(val,true);
+		val = is_layout_mlin<memory_traits_inte<scalar<float>>>::value;
+		BOOST_REQUIRE_EQUAL(val,false);
+
+		val = is_layout_inte<memory_traits_lin<scalar<float>>>::value;
+		BOOST_REQUIRE_EQUAL(val,false);
+		val = is_layout_inte<memory_traits_inte<scalar<float>>>::value;
+		BOOST_REQUIRE_EQUAL(val,true);
+
+		//! [Check memory layout]
 		}
 	}
 }

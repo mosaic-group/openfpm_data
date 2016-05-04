@@ -180,24 +180,6 @@ namespace openfpm
 		//! Error code
 		size_t err_code;
 
-		/*! \brief Create a 1D vector that contain the vector size
-		 *
-		 * Used to construct the underline 1D-grid
-		 *
-		 * \param sz size of the vector
-		 *
-		 * \return a vector with one element
-		 *
-		 */
-/*		std::vector<size_t> getV(size_t sz)
-		{
-			std::vector<size_t> tmp;
-
-			tmp.push_back(sz);
-
-			return tmp;
-		}*/
-
 		/*! \brief If the argument is zero return 1 otherwise return the argument
 		 *
 		 * \param sz output
@@ -679,7 +661,7 @@ namespace openfpm
 		 *
 		 */
 
-		template <unsigned int p> inline auto get(size_t id) -> decltype(base.template get<p>(grid_key_dx<1>(id))) &
+		template <unsigned int p> inline auto get(size_t id) -> decltype(base.template get<p>(grid_key_dx<1>(id)))
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
