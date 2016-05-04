@@ -63,7 +63,7 @@ public:
 
 		// Sending property object and vector
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,prp...>::type> prp_object;
-		typedef openfpm::vector<prp_object,ExtPreAlloc<S>, typename layout_base<prp_object>::type, openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>, typename layout_base<prp_object>::type,layout_base, openfpm::grow_policy_identity> dtype;
 		dtype dvect;
 
 		// Create an object over the preallocated memory (No allocation is produced)
@@ -98,7 +98,7 @@ public:
 
 		// Sending property object
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,prp...>::type> prp_object;
-		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,typename layout_base<prp_object>::type,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,typename layout_base<prp_object>::type, layout_base,openfpm::grow_policy_identity> dtype;
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -140,7 +140,7 @@ public:
 	 */
 	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims> & sub, std::vector<size_t> & v)
 	{
-		typedef openfpm::vector<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type,ExtPreAlloc<S>,layout,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type,ExtPreAlloc<S>,layout,layout_base,openfpm::grow_policy_identity> dtype;
 		dtype dvect;
 
 		// Calculate the required memory for packing
@@ -257,7 +257,7 @@ public:
 	{
 		// object that store the information in mem
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,prp...>::type> prp_object;
-		typedef openfpm::vector<prp_object,PtrMemory, typename memory_traits_lin<prp_object>::type ,openfpm::grow_policy_identity> stype;
+		typedef openfpm::vector<prp_object,PtrMemory, typename memory_traits_lin<prp_object>::type, memory_traits_lin ,openfpm::grow_policy_identity> stype;
 
 		size_t size = stype::template calculateMem(sub_it.getVolume(),0);
 

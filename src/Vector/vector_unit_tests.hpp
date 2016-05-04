@@ -446,37 +446,37 @@ size_t n_alloc = sizeof(alloc)/sizeof(size_t);
 BOOST_AUTO_TEST_CASE(vector_remove )
 {
 	test_vector_remove<openfpm::vector<Point_test<float>>>();
-	test_vector_remove< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+	test_vector_remove< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type, memory_traits_inte> >();
 }
 
 BOOST_AUTO_TEST_CASE(vector_insert )
 {
 	test_vector_insert<openfpm::vector<Point_test<float>>>();
-	test_vector_insert< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+	test_vector_insert< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type, memory_traits_inte > >();
 }
 
 BOOST_AUTO_TEST_CASE(vector_clear )
 {
 	test_vector_clear< openfpm::vector<Point_test<float>> >();
-	test_vector_clear< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+	test_vector_clear< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type, memory_traits_inte> >();
 }
 
 BOOST_AUTO_TEST_CASE( vector_add_test_case )
 {
 	test_vector_add_test_case<openfpm::vector<Point_test<float>>>();
-	test_vector_add_test_case<openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+	test_vector_add_test_case<openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type,memory_traits_inte> >();
 }
 
 BOOST_AUTO_TEST_CASE( vector_copy_and_compare )
 {
 	test_vector_copy_and_compare< openfpm::vector<Point_test<float>> >();
-	test_vector_copy_and_compare< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+	test_vector_copy_and_compare< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type, memory_traits_inte> >();
 }
 
 BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
 {
 	test_vector_load_and_save_check< openfpm::vector<Point_test<float>> >();
-	test_vector_load_and_save_check< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+	test_vector_load_and_save_check< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type, memory_traits_inte> >();
 }
 
 ////////// Test function ///////////
@@ -658,7 +658,7 @@ BOOST_AUTO_TEST_CASE( vector_memory_repr )
 
 	// create vector representation to a piece of memory already allocated
 
-	openfpm::vector<Point_test<float>,PtrMemory,typename memory_traits_lin<Point_test<float>>::type,openfpm::grow_policy_identity> v2;
+	openfpm::vector<Point_test<float>,PtrMemory,typename memory_traits_lin<Point_test<float>>::type, memory_traits_lin,openfpm::grow_policy_identity> v2;
 
 	v2.setMemory(*ptr1);
 
@@ -808,9 +808,9 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 struct pre_test
 {
 	//! position vector
-	openfpm::vector<Point<2,float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point<2,float>>::type,openfpm::grow_policy_identity> pos;
+	openfpm::vector<Point<2,float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point<2,float>>::type,memory_traits_lin,openfpm::grow_policy_identity> pos;
 	//! properties vector
-	openfpm::vector<Point_test<float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point_test<float>>::type,openfpm::grow_policy_identity> prp;
+	openfpm::vector<Point_test<float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point_test<float>>::type,memory_traits_lin,openfpm::grow_policy_identity> prp;
 };
 
 BOOST_AUTO_TEST_CASE( vector_prealloc )

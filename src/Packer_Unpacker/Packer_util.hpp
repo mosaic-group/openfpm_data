@@ -20,7 +20,7 @@ template<typename T, typename Mem, int pack_type=Pack_selector<T>::value > class
 
 namespace openfpm
 {
-	template<typename T, typename Memory=HeapMemory, typename layout=typename memory_traits_lin<T>::type , typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value> class vector;
+	template<typename T, typename Memory=HeapMemory, typename layout=typename memory_traits_lin<T>::type, template<typename> class layout_base=memory_traits_lin , typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value> class vector;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -152,14 +152,14 @@ struct call_encapUnpack
 ////////////////////////////////////////////////////////////////////////////////////
 
 //A functor for call_aggregatePackRequest
-template<typename Aggr, typename Mem, typename layout, typename grow_p>
+template<typename Aggr, typename Mem, typename layout,template <typename> class layout_base, typename grow_p>
 struct call_packRequest_agg_functor
 {
 
-	const openfpm::vector<Aggr,Mem,layout,grow_p,OPENFPM_NATIVE> & obj;
+	const openfpm::vector<Aggr,Mem,layout, layout_base,grow_p,OPENFPM_NATIVE> & obj;
 	std::vector<size_t> & pap_prp;
 
-	call_packRequest_agg_functor(const openfpm::vector<Aggr,Mem,layout,grow_p,OPENFPM_NATIVE> & obj, std::vector<size_t> & pap_prp)
+	call_packRequest_agg_functor(const openfpm::vector<Aggr,Mem,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj, std::vector<size_t> & pap_prp)
 	:obj(obj),pap_prp(pap_prp)
 	{}
 
@@ -176,15 +176,15 @@ struct call_packRequest_agg_functor
 
 
 //Calls a pack request in nested way
-template<typename T, typename Mem, typename layout, typename grow_p, int ... prp>
+template<typename T, typename Mem, typename layout,template <typename> class layout_base, typename grow_p, int ... prp>
 struct call_aggregatePackRequest
 {
-	static inline void call_packRequest(const openfpm::vector<T,Mem,layout,grow_p,OPENFPM_NATIVE> & obj, std::vector<size_t> & pap_prp)
+	static inline void call_packRequest(const openfpm::vector<T,Mem,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj, std::vector<size_t> & pap_prp)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type b_prp;
 
-		call_packRequest_agg_functor<T,Mem,layout,grow_p> functor(obj,pap_prp);
+		call_packRequest_agg_functor<T,Mem,layout, layout_base,grow_p> functor(obj,pap_prp);
 
 		//Apply functor for each property
 		boost::mpl::for_each_ref<b_prp>(functor);
@@ -192,14 +192,14 @@ struct call_aggregatePackRequest
 };
 
 //A functor for call_aggregatePack
-template<typename Aggr, typename Mem, typename layout, typename grow_p>
+template<typename Aggr, typename Mem, typename layout,template <typename> class layout_base, typename grow_p>
 struct call_pack_agg_functor
 {
 	ExtPreAlloc<Mem> & mem;
-	const openfpm::vector<Aggr,Mem,layout,grow_p,OPENFPM_NATIVE> & obj;
+	const openfpm::vector<Aggr,Mem,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj;
 	Pack_stat & sts;
 
-	call_pack_agg_functor(ExtPreAlloc<Mem> & mem, const openfpm::vector<Aggr,Mem,layout,grow_p,OPENFPM_NATIVE> & obj, Pack_stat & sts)
+	call_pack_agg_functor(ExtPreAlloc<Mem> & mem, const openfpm::vector<Aggr,Mem,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj, Pack_stat & sts)
 	:mem(mem), obj(obj), sts(sts)
 	{
 	}
@@ -216,15 +216,15 @@ struct call_pack_agg_functor
 };
 
 //Calls a packer in nested way
-template<typename T, typename Mem, typename layout,typename grow_p, int ... prp>
+template<typename T, typename Mem, typename layout, template <typename> class layout_base, typename grow_p, int ... prp>
 struct call_aggregatePack
 {
-	static inline void call_pack(const openfpm::vector<T,Mem,layout,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Mem> & mem, Pack_stat & sts)
+	static inline void call_pack(const openfpm::vector<T,Mem,layout, layout_base,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Mem> & mem, Pack_stat & sts)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type b_prp;
 
-		call_pack_agg_functor<T,Mem,layout,grow_p> functor(mem,obj,sts);
+		call_pack_agg_functor<T,Mem,layout,layout_base,grow_p> functor(mem,obj,sts);
 
 		//Apply functor for each property
 		boost::mpl::for_each_ref<b_prp>(functor);
@@ -233,14 +233,14 @@ struct call_aggregatePack
 
 
 //A functor for call_aggregateUnpack
-template<typename Aggr, typename Mem, typename layout,typename grow_p>
+template<typename Aggr, typename Mem, typename layout,template <typename> class layout_base,typename grow_p>
 struct call_unpack_agg_functor
 {
 	ExtPreAlloc<Mem> & mem;
-	openfpm::vector<Aggr,Mem,layout,grow_p,OPENFPM_NATIVE> & obj;
+	openfpm::vector<Aggr,Mem,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj;
 	Unpack_stat & ps;
 
-	call_unpack_agg_functor(ExtPreAlloc<Mem> & mem, openfpm::vector<Aggr,Mem,layout,grow_p,OPENFPM_NATIVE> & obj, Unpack_stat & ps)
+	call_unpack_agg_functor(ExtPreAlloc<Mem> & mem, openfpm::vector<Aggr,Mem,layout, layout_base,grow_p,OPENFPM_NATIVE> & obj, Unpack_stat & ps)
 	:mem(mem), obj(obj), ps(ps)
 	{
 	}
@@ -257,15 +257,15 @@ struct call_unpack_agg_functor
 };
 
 //Calls an unpacker in nested way
-template<typename T, typename Mem, typename layout, typename grow_p, int ... prp>
+template<typename T, typename Mem, typename layout, template <typename> class layout_base,typename grow_p, int ... prp>
 struct call_aggregateUnpack
 {
-	static inline void call_unpack(openfpm::vector<T,Mem,layout,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Mem> & mem, Unpack_stat & ps)
+	static inline void call_unpack(openfpm::vector<T,Mem,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Mem> & mem, Unpack_stat & ps)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type b_prp;
 
-		call_unpack_agg_functor<T,Mem,layout,grow_p> functor(mem,obj,ps);
+		call_unpack_agg_functor<T,Mem,layout,layout_base,grow_p> functor(mem,obj,ps);
 
 		//Apply functor for each property
 		boost::mpl::for_each_ref<b_prp>(functor);

@@ -241,7 +241,7 @@
 	{
 		std::vector<size_t> pap_prp;
 		
-		Packer<openfpm::vector<T,HeapMemory,layout,grow_policy_double,STD_VECTOR>,HeapMemory>::packRequest(*this,pap_prp);
+		Packer<openfpm::vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR>,HeapMemory>::packRequest(*this,pap_prp);
 
 		// Calculate how much preallocated memory we need to pack all the objects
 		size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
@@ -254,7 +254,7 @@
 		//Packing
 
 		Pack_stat sts;
-		Packer<openfpm::vector<T,HeapMemory,layout,grow_policy_double,STD_VECTOR>,HeapMemory>::pack(mem,*this,sts);
+		Packer<openfpm::vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR>,HeapMemory>::pack(mem,*this,sts);
 
 		// Save into a binary file
 	    std::ofstream dump (file, std::ios::out | std::ios::binary);
@@ -303,7 +303,7 @@
 		//Unpacking
 		Unpack_stat ps;
 
-	 	Unpacker<openfpm::vector<T,HeapMemory,layout,grow_policy_double,STD_VECTOR>,HeapMemory>::unpack(mem,*this,ps);
+	 	Unpacker<openfpm::vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR>,HeapMemory>::unpack(mem,*this,ps);
 	 	
 	 	return true;
 	}

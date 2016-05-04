@@ -87,7 +87,7 @@ struct packMem_cond<true, T1>
 template<bool sel, int ... prp>
 struct pack_simple_cond
 {
-	static inline void pack(const openfpm::vector<T,Memory,layout,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+	static inline void pack(const openfpm::vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory> & mem, Pack_stat & sts)
 	{
 	#ifdef DEBUG
 		if (mem.ref() == 0)
@@ -101,7 +101,7 @@ struct pack_simple_cond
 		typedef openfpm::vector<T> vctr;
 		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
 	
-		typedef openfpm::vector<prp_object,ExtPreAlloc<Memory>,typename memory_traits_lin<prp_object>::type ,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<Memory>,typename memory_traits_lin<prp_object>::type, memory_traits_lin ,openfpm::grow_policy_identity> dtype;
 #ifdef DEBUG
 	std::cout << "Inside pack_simple(not 0 prop) function! (map_vector)" << std::endl;
 #endif
@@ -134,7 +134,7 @@ struct pack_simple_cond
 template<int ... prp>
 struct pack_simple_cond<true, prp ...>
 {
-	static inline void pack(const openfpm::vector<T,Memory,layout,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+	static inline void pack(const openfpm::vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
 	{
 	#ifdef DEBUG
 		if (mem.ref() == 0)
@@ -145,7 +145,7 @@ struct pack_simple_cond<true, prp ...>
 		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
 		
 		// Sending property object
-		typedef openfpm::vector<T,ExtPreAlloc<Memory>,layout,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<T,ExtPreAlloc<Memory>,layout,layout_base,openfpm::grow_policy_identity> dtype;
 	#ifdef DEBUG
 		std::cout << "Inside pack_simple(0 prop) function! (map_vector)" << std::endl;
 	#endif
@@ -175,7 +175,7 @@ struct pack_simple_cond<true, prp ...>
 template<bool sel, int ... prp>
 struct unpack_simple_cond
 {
-	static inline void unpack(openfpm::vector<T,Memory,layout,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
+	static inline void unpack(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
 	{
 #ifdef DEBUG
 	std::cout << "Inside unpack_simple(not 0 prop) function! (map_vector)" << std::endl;
@@ -192,7 +192,7 @@ struct unpack_simple_cond
 		// Sending property object
 		typedef openfpm::vector<T> vctr;
 		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
-		typedef openfpm::vector<prp_object,PtrMemory,typename memory_traits_lin<prp_object>::type,openfpm::grow_policy_identity> stype;
+		typedef openfpm::vector<prp_object,PtrMemory,typename memory_traits_lin<prp_object>::type, memory_traits_lin,openfpm::grow_policy_identity> stype;
 		stype svect;
 		
 
@@ -229,7 +229,7 @@ struct unpack_simple_cond
 template<int ... prp>
 struct unpack_simple_cond<true, prp ...>
 {
-	static inline void unpack(openfpm::vector<T,Memory,layout,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
+	static inline void unpack(openfpm::vector<T,Memory,layout,layout_base, grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
 	{
 #ifdef DEBUG
 	std::cout << "Inside unpack_simple(0 prop) function! (map_vector)" << std::endl;
@@ -244,7 +244,7 @@ struct unpack_simple_cond<true, prp ...>
 		size_t id = 0;
 		
 		// Sending property object
-		typedef openfpm::vector<T,PtrMemory,layout,openfpm::grow_policy_identity> stype;
+		typedef openfpm::vector<T,PtrMemory,layout,layout_base,openfpm::grow_policy_identity> stype;
 
 		// Calculate the size to pack the object
 		size_t size = obj.packMem<prp...>(obj.size(),0);
@@ -306,7 +306,7 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
 		for (size_t i = 0 ; i < this->size() ; i++)
 		{
 			//Call a pack request
-			call_aggregatePackRequest<T,Memory,layout,grow_p,prp ... >::call_packRequest(*this,v);
+			call_aggregatePackRequest<T,Memory,layout,layout_base,grow_p,prp ... >::call_packRequest(*this,v);
 		}
 	}
 }
@@ -340,7 +340,7 @@ template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & st
 		Packer<size_t, Memory>::pack(mem,this->size(),sts);
 		
 		//Call a packer in nested way
-		call_aggregatePack<T,Memory,layout,grow_p,prp ... >::call_pack(*this,mem,sts);
+		call_aggregatePack<T,Memory,layout,layout_base,grow_p,prp ... >::call_pack(*this,mem,sts);
 	}
 }
 
@@ -375,7 +375,7 @@ template<int ... prp> inline void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat 
 		this->resize(u2);
 		
 		//Call an unpacker in nested way
-		call_aggregateUnpack<T,Memory,layout,grow_p,prp ... >::call_unpack(*this,mem,ps);
+		call_aggregateUnpack<T,Memory,layout,layout_base,grow_p,prp ... >::call_unpack(*this,mem,ps);
 	}
 }
 

@@ -134,7 +134,8 @@ namespace openfpm
 	 *
 	 * \param T type of structure the vector has to store
 	 * \param Memory allocator to use
-	 * \param Memory layout
+	 * \param Memory layout what memory_traits_lin<T>::type produce
+	 * \param Memory layout_base Memory layout base class like memory_traits_lin ...
 	 * \param grow_p grow policy, how this vector should grow
 	 *
 	 * \see vector<T,HeapMemory,grow_policy_double,STD_VECTOR>
@@ -143,7 +144,7 @@ namespace openfpm
 	 *
 	 */
 
-	template<typename T, typename Memory, typename layout, typename grow_p, unsigned int impl>
+	template<typename T, typename Memory, typename layout, template<typename> class layout_base, typename grow_p, unsigned int impl>
 	class vector
 	{
 	};
@@ -166,8 +167,8 @@ namespace openfpm
 	 * OPENFPM_NATIVE implementation
 	 *
 	 */
-	template<typename T,typename Memory, typename layout, typename grow_p>
-	class vector<T,Memory,layout,grow_p,OPENFPM_NATIVE>
+	template<typename T,typename Memory, typename layout, template <typename> class layout_base, typename grow_p>
+	class vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE>
 	{
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
@@ -405,7 +406,7 @@ namespace openfpm
 		 * \param v from where to take the vector
 		 *
 		 */
-		template <typename M, typename gp> void add(const vector<T, M,layout,gp,OPENFPM_NATIVE> & v)
+		template <typename M, typename gp> void add(const vector<T, M,layout, layout_base,gp,OPENFPM_NATIVE> & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -429,7 +430,7 @@ namespace openfpm
 		 * \param v source vector
 		 *
 		 */
-		template <typename S, typename M, typename gp, unsigned int ...args> void add_prp(const vector<S,M,layout,gp,OPENFPM_NATIVE> & v)
+		template <typename S, typename M, typename gp, unsigned int ...args> void add_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -704,12 +705,12 @@ namespace openfpm
 		 * \return a duplicated vector
 		 *
 		 */
-		vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> duplicate() const
+		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> duplicate() const
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-			vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> dup;
+			vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> dup;
 
 			dup.v_size = v_size;
 			dup.base.swap(base.duplicate());
@@ -722,7 +723,7 @@ namespace openfpm
 		 * \param v the vector
 		 *
 		 */
-		vector(vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> && v)
+		vector(vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> && v)
 		:v_size(0),err_code(0)
 		{
 			// Add this pointer
@@ -737,7 +738,7 @@ namespace openfpm
 		 * \param v the vector
 		 *
 		 */
-		vector(const vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> & v) THROW
+		vector(const vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & v) THROW
 		:v_size(0),err_code(0)
 		{
 #ifdef SE_CLASS2
@@ -809,7 +810,7 @@ namespace openfpm
 		 * \param src source element
 		 *
 		 */
-		void set(size_t id, vector<T,Memory,layout,grow_p,OPENFPM_NATIVE> & v, size_t src)
+		void set(size_t id, vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & v, size_t src)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -829,7 +830,7 @@ namespace openfpm
 		 * \return itself
 		 *
 		 */
-		vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Memory, layout,grow_p,OPENFPM_NATIVE> && mv)
+		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Memory, layout, layout_base,grow_p,OPENFPM_NATIVE> && mv)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -849,7 +850,7 @@ namespace openfpm
 		 * \return itself
 		 *
 		 */
-		vector<T, Memory,layout,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Memory, layout ,grow_p,OPENFPM_NATIVE> & mv)
+		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Memory, layout, layout_base ,grow_p,OPENFPM_NATIVE> & mv)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -873,7 +874,7 @@ namespace openfpm
 		 * \param vector to compare
 		 *
 		 */
-		bool operator!=(const vector<T, Memory, layout,grow_p,OPENFPM_NATIVE> & v) const
+		bool operator!=(const vector<T, Memory, layout, layout_base,grow_p,OPENFPM_NATIVE> & v) const
 		{
 			return !this->operator==(v);
 		}
@@ -883,7 +884,7 @@ namespace openfpm
 		 * \param vector to compare
 		 *
 		 */
-		bool operator==(const vector<T, Memory, layout,grow_p,OPENFPM_NATIVE> & v) const
+		bool operator==(const vector<T, Memory, layout, layout_base, grow_p,OPENFPM_NATIVE> & v) const
 		{
 			if (v_size != v.v_size)
 				return false;
@@ -905,7 +906,7 @@ namespace openfpm
 		 * \param v vector
 		 *
 		 */
-		void swap(openfpm::vector<T,Memory,layout,grow_p,OPENFPM_NATIVE> & v)
+		void swap(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -924,7 +925,7 @@ namespace openfpm
 		 * \param v vector
 		 *
 		 */
-		void swap(openfpm::vector<T,Memory,layout,grow_p,OPENFPM_NATIVE> && v)
+		void swap(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> && v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -1153,7 +1154,7 @@ namespace openfpm
 		}
 	};
 
-	template <typename T> using vector_std = vector<T, HeapMemory, typename memory_traits_lin<T>::type, openfpm::grow_policy_double, STD_VECTOR>;
+	template <typename T> using vector_std = vector<T, HeapMemory, typename memory_traits_lin<T>::type, memory_traits_lin, openfpm::grow_policy_double, STD_VECTOR>;
 
 }
 
