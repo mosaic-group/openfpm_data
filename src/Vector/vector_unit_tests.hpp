@@ -13,6 +13,8 @@
 
 BOOST_AUTO_TEST_SUITE( vector_test )
 
+#define V_REM_PUSH 1024ul
+
 template <typename vector> void test_iterator()
 {
 	//////////////////////////////////
@@ -47,8 +49,6 @@ template <typename vector> void test_iterator()
 
 template <typename vector> void test_vector_use()
 {
-	std::cout << "Vector unit test start" << "\n";
-
 	std::vector<Point_orig<float>> v_stl_test = allocate_stl();
 	vector v_ofp_test = allocate_openfpm<vector>(FIRST_PUSH);
 
@@ -92,79 +92,15 @@ template <typename vector> void test_vector_use()
 		BOOST_REQUIRE_EQUAL(dv_ofp_test.template get<P::t>(i)[2][1],v_ofp_test.template get<P::t>(i)[2][1]);
 		BOOST_REQUIRE_EQUAL(dv_ofp_test.template get<P::t>(i)[2][2],v_ofp_test.template get<P::t>(i)[2][2]);
 	}
-
-	std::cout << "Vector unit test end" << "\n";
 }
 
-// Test vector iterator
-
-BOOST_AUTO_TEST_CASE (vector_iterator_test)
-{
-	test_iterator< openfpm::vector<Point_test<float>> >();
-	test_iterator< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
-}
-
-// Test the openfpm vector
-
-BOOST_AUTO_TEST_CASE( vector_use)
-{
-	test_vector_use<openfpm::vector<Point_test<float>>>();
-	test_vector_use< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
-}
-
-// Pre alloc test
-
-struct pre_test
-{
-	//! position vector
-	openfpm::vector<Point<2,float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point<2,float>>::type,openfpm::grow_policy_identity> pos;
-	//! properties vector
-	openfpm::vector<Point_test<float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point_test<float>>::type,openfpm::grow_policy_identity> prp;
-};
-
-BOOST_AUTO_TEST_CASE( vector_std_utility )
-{
-	//! [Create add and access stl]
-
-	// Create a vector with 13 element
-	openfpm::vector<size_t> pb(13);
-
-	// add at the end some othe element
-	pb.add(0);
-	pb.add(1);
-	pb.add(2);
-
-	// access the vector
-	for (size_t i = 0 ;  i < 16 ; i++)
-	{
-		pb.get(i) = i+1;
-	}
-
-	//! [Create add and access stl]
-
-	pb.fill(0);
-
-	// Check is zero
-	for (size_t i = 0 ;  i < 16 ; i++)
-	{
-		BOOST_REQUIRE_EQUAL(pb.get(i),0ul);
-	}
-
-}
-
-size_t alloc[] = {235,345,0,520};
-size_t n_alloc = sizeof(alloc)/sizeof(size_t);
-
-
-#define V_REM_PUSH 1024ul
-
-BOOST_AUTO_TEST_CASE(vector_remove )
+template <typename vector> void test_vector_remove()
 {
 	typedef Point_test<float> p;
 
 	//! [Create push and multiple remove]
 
-	openfpm::vector<Point_test<float>> v1;
+	vector v1;
 
 	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
 	{
@@ -221,11 +157,11 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 	}
 }
 
-BOOST_AUTO_TEST_CASE(vector_insert )
+template <typename vector> void test_vector_insert()
 {
 	typedef Point_test<float> p;
 
-	openfpm::vector<Point_test<float>> v1;
+	vector v1;
 
 	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
 	{
@@ -273,11 +209,11 @@ BOOST_AUTO_TEST_CASE(vector_insert )
 	}
 }
 
-BOOST_AUTO_TEST_CASE(vector_clear )
+template <typename vector> void test_vector_clear()
 {
 	typedef Point_test<float> p;
 
-	openfpm::vector<Point_test<float>> v1;
+	vector v1;
 
 	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
 	{
@@ -304,79 +240,10 @@ BOOST_AUTO_TEST_CASE(vector_clear )
 	BOOST_REQUIRE_EQUAL(v1.size(),V_REM_PUSH);
 }
 
-BOOST_AUTO_TEST_CASE( vector_memory_repr )
-{
-	// create a vector
-	openfpm::vector<Point_test<float>> v1;
-
-	// Point
-	Point_test<float> p;
-	p.setx(1.0);
-	p.sety(2.0);
-	p.setz(3.0);
-	p.sets(4.0);
-
-	// push objects
-
-	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
-	{
-		// Modify p
-
-		p.get<P::v>()[0] = 1.0 + i;
-		p.get<P::v>()[1] = 2.0 + i;
-		p.get<P::v>()[2] = 7.0 + i;
-
-		p.get<P::t>()[0][0] = 10.0 + i;
-		p.get<P::t>()[0][1] = 13.0 + i;
-		p.get<P::t>()[0][2] = 8.0 + i;
-		p.get<P::t>()[1][0] = 19.0 + i;
-		p.get<P::t>()[1][1] = 23.0 + i;
-		p.get<P::t>()[1][2] = 5.0 + i;
-		p.get<P::t>()[2][0] = 4.0 + i;
-		p.get<P::t>()[2][1] = 3.0 + i;
-		p.get<P::t>()[2][2] = 11.0 + i;
-
-		// add p
-
-		v1.add(p);
-	}
-
-	PtrMemory * ptr1 = new PtrMemory(v1.getPointer(),sizeof(Point_test<float>)*FIRST_PUSH);
-
-	// create vector representation to a piece of memory already allocated
-
-	openfpm::vector<Point_test<float>,PtrMemory,typename memory_traits_lin<Point_test<float>>::type,openfpm::grow_policy_identity> v2;
-
-	v2.setMemory(*ptr1);
-
-	v2.resize(FIRST_PUSH);
-
-	// check
-
-	// Check if the duplicated vector match
-
-	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
-	{
-		BOOST_REQUIRE_EQUAL(v1.template get<P::v>(i)[0],v2.template get<P::v>(i)[0]);
-		BOOST_REQUIRE_EQUAL(v1.template get<P::v>(i)[1],v2.template get<P::v>(i)[1]);
-		BOOST_REQUIRE_EQUAL(v1.template get<P::v>(i)[2],v2.template get<P::v>(i)[2]);
-
-		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[0][0],v2.template get<P::t>(i)[0][0]);
-		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[0][1],v2.template get<P::t>(i)[0][1]);
-		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[0][2],v2.template get<P::t>(i)[0][2]);
-		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[1][0],v2.template get<P::t>(i)[1][0]);
-		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[1][1],v2.template get<P::t>(i)[1][1]);
-		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[1][2],v2.template get<P::t>(i)[1][2]);
-		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][0],v2.template get<P::t>(i)[2][0]);
-		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][1],v2.template get<P::t>(i)[2][1]);
-		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][2],v2.template get<P::t>(i)[2][2]);
-	}
-}
-
-BOOST_AUTO_TEST_CASE( vector_add_test_case )
+template <typename vector> void test_vector_add_test_case()
 {
 	// create two vector
-	openfpm::vector<Point_test<float>> v1;
+	vector v1;
 
 	// Point
 	Point_test<float> p;
@@ -411,7 +278,7 @@ BOOST_AUTO_TEST_CASE( vector_add_test_case )
 	}
 
 	// Duplicate the vector
-	openfpm::vector<Point_test<float>> v2 = v1.duplicate();
+	vector v2 = v1.duplicate();
 
 	v1.template add_prp<Point_test<float>,HeapMemory,typename openfpm::grow_policy_double,P::x,P::y,P::z,P::s,P::v,P::t>(v2);
 
@@ -452,23 +319,9 @@ BOOST_AUTO_TEST_CASE( vector_add_test_case )
 		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][1], v1.template get<P::t>(i+2*v2.size())[2][1]);
 		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][2], v1.template get<P::t>(i+2*v2.size())[2][2]);
 	}
-
 }
 
-////////// Test function ///////////
-
-#ifdef SE_CLASS2
-
-openfpm::vector<scalar<float>> & test_error_v()
-{
-	openfpm::vector<scalar<float>> v(16);
-
-	return v;
-}
-
-#endif
-
-BOOST_AUTO_TEST_CASE( vector_copy_and_compare )
+template <typename vector> void test_vector_copy_and_compare()
 {
 	{
 	openfpm::vector<openfpm::vector<float>> v1;
@@ -533,10 +386,112 @@ BOOST_AUTO_TEST_CASE( vector_copy_and_compare )
 	ret = (v2 == v1);
 	BOOST_REQUIRE_EQUAL(ret,false);
 	}
-
 }
 
+template <typename vector> void test_vector_load_and_save_check()
+{
+	openfpm::vector<openfpm::vector<float>> v1;
+
+	for (size_t i = 0; i < 5; i++)
+	{
+		v1.add();
+		for (size_t j = 0; j < 6; j++)
+		{
+			v1.get(i).add(j);
+		}
+	}
+
+	v1.save("test_save");
+	openfpm::vector<openfpm::vector<float>> v2;
+	v2.load("test_save");
+
+	// check the v1 and v2 match
+
+	BOOST_REQUIRE_EQUAL(v1.size(),v2.size());
+	for (size_t i = 0; i < v1.size(); i++)
+	{
+		BOOST_REQUIRE_EQUAL(v1.get(i).size(),v2.get(i).size());
+		for (size_t j = 0; j < 6; j++)
+		{
+			BOOST_REQUIRE_EQUAL(v1.get(i).get(j),v2.get(i).get(j));
+		}
+	}
+}
+
+// Test vector iterator
+
+BOOST_AUTO_TEST_CASE (vector_iterator_test)
+{
+	test_iterator< openfpm::vector<Point_test<float>> >();
+	test_iterator< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+}
+
+// Test the openfpm vector
+
+BOOST_AUTO_TEST_CASE( vector_use)
+{
+	std::cout << "Vector unit test start" << "\n";
+
+	test_vector_use<openfpm::vector<Point_test<float>>>();
+	test_vector_use< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+
+	std::cout << "Vector unit test end" << "\n";
+}
+
+
+size_t alloc[] = {235,345,0,520};
+size_t n_alloc = sizeof(alloc)/sizeof(size_t);
+
+
+BOOST_AUTO_TEST_CASE(vector_remove )
+{
+	test_vector_remove<openfpm::vector<Point_test<float>>>();
+	test_vector_remove< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+}
+
+BOOST_AUTO_TEST_CASE(vector_insert )
+{
+	test_vector_insert<openfpm::vector<Point_test<float>>>();
+	test_vector_insert< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+}
+
+BOOST_AUTO_TEST_CASE(vector_clear )
+{
+	test_vector_clear< openfpm::vector<Point_test<float>> >();
+	test_vector_clear< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+}
+
+BOOST_AUTO_TEST_CASE( vector_add_test_case )
+{
+	test_vector_add_test_case<openfpm::vector<Point_test<float>>>();
+	test_vector_add_test_case<openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+}
+
+BOOST_AUTO_TEST_CASE( vector_copy_and_compare )
+{
+	test_vector_copy_and_compare< openfpm::vector<Point_test<float>> >();
+	test_vector_copy_and_compare< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+}
+
+BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
+{
+	test_vector_load_and_save_check< openfpm::vector<Point_test<float>> >();
+	test_vector_load_and_save_check< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+}
+
+////////// Test function ///////////
 /////////////////////////////////////
+
+#ifdef SE_CLASS2
+
+openfpm::vector<scalar<float>> & test_error_v()
+{
+	openfpm::vector<scalar<float>> v(16);
+
+	return v;
+}
+
+#endif
 
 BOOST_AUTO_TEST_CASE( vector_safety_check )
 {
@@ -655,42 +610,110 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 #endif
 }
 
-BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
-{
-	openfpm::vector<openfpm::vector<float>> v1;
-
-	for (size_t i = 0; i < 5; i++)
-	{
-		v1.add();
-		for (size_t j = 0; j < 6; j++)
-		{
-			v1.get(i).add(j);
-		}
-	}
-
-	v1.save("test_save");
-	openfpm::vector<openfpm::vector<float>> v2;
-	v2.load("test_save");
-
-	// check the v1 and v2 match
-
-	BOOST_REQUIRE_EQUAL(v1.size(),v2.size());
-	for (size_t i = 0; i < v1.size(); i++)
-	{
-		BOOST_REQUIRE_EQUAL(v1.get(i).size(),v2.get(i).size());
-		for (size_t j = 0; j < 6; j++)
-		{
-			BOOST_REQUIRE_EQUAL(v1.get(i).get(j),v2.get(i).get(j));
-		}
-	}
-}
-
-
 BOOST_AUTO_TEST_CASE( object_test_creator )
 {
 	bool tst = std::is_same< typename object_creator<Point_test<float>::type,0,1,5>::type, typename boost::fusion::vector3<float,float,float[3][3]> >::value;
 
 	BOOST_REQUIRE_EQUAL(tst , true);
+}
+
+BOOST_AUTO_TEST_CASE( vector_memory_repr )
+{
+	// create a vector
+	openfpm::vector<Point_test<float>> v1;
+
+	// Point
+	Point_test<float> p;
+	p.setx(1.0);
+	p.sety(2.0);
+	p.setz(3.0);
+	p.sets(4.0);
+
+	// push objects
+
+	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
+	{
+		// Modify p
+
+		p.get<P::v>()[0] = 1.0 + i;
+		p.get<P::v>()[1] = 2.0 + i;
+		p.get<P::v>()[2] = 7.0 + i;
+
+		p.get<P::t>()[0][0] = 10.0 + i;
+		p.get<P::t>()[0][1] = 13.0 + i;
+		p.get<P::t>()[0][2] = 8.0 + i;
+		p.get<P::t>()[1][0] = 19.0 + i;
+		p.get<P::t>()[1][1] = 23.0 + i;
+		p.get<P::t>()[1][2] = 5.0 + i;
+		p.get<P::t>()[2][0] = 4.0 + i;
+		p.get<P::t>()[2][1] = 3.0 + i;
+		p.get<P::t>()[2][2] = 11.0 + i;
+
+		// add p
+
+		v1.add(p);
+	}
+
+	PtrMemory * ptr1 = new PtrMemory(v1.getPointer(),sizeof(Point_test<float>)*FIRST_PUSH);
+
+	// create vector representation to a piece of memory already allocated
+
+	openfpm::vector<Point_test<float>,PtrMemory,typename memory_traits_lin<Point_test<float>>::type,openfpm::grow_policy_identity> v2;
+
+	v2.setMemory(*ptr1);
+
+	v2.resize(FIRST_PUSH);
+
+	// check
+
+	// Check if the duplicated vector match
+
+	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(v1.template get<P::v>(i)[0],v2.template get<P::v>(i)[0]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::v>(i)[1],v2.template get<P::v>(i)[1]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::v>(i)[2],v2.template get<P::v>(i)[2]);
+
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[0][0],v2.template get<P::t>(i)[0][0]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[0][1],v2.template get<P::t>(i)[0][1]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[0][2],v2.template get<P::t>(i)[0][2]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[1][0],v2.template get<P::t>(i)[1][0]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[1][1],v2.template get<P::t>(i)[1][1]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[1][2],v2.template get<P::t>(i)[1][2]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][0],v2.template get<P::t>(i)[2][0]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][1],v2.template get<P::t>(i)[2][1]);
+		BOOST_REQUIRE_EQUAL(v1.template get<P::t>(i)[2][2],v2.template get<P::t>(i)[2][2]);
+	}
+}
+
+BOOST_AUTO_TEST_CASE( vector_std_utility )
+{
+	//! [Create add and access stl]
+
+	// Create a vector with 13 element
+	openfpm::vector<size_t> pb(13);
+
+	// add at the end some othe element
+	pb.add(0);
+	pb.add(1);
+	pb.add(2);
+
+	// access the vector
+	for (size_t i = 0 ;  i < 16 ; i++)
+	{
+		pb.get(i) = i+1;
+	}
+
+	//! [Create add and access stl]
+
+	pb.fill(0);
+
+	// Check is zero
+	for (size_t i = 0 ;  i < 16 ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(pb.get(i),0ul);
+	}
+
 }
 
 BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
@@ -780,6 +803,15 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 	}
 }
 
+// Pre alloc test
+
+struct pre_test
+{
+	//! position vector
+	openfpm::vector<Point<2,float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point<2,float>>::type,openfpm::grow_policy_identity> pos;
+	//! properties vector
+	openfpm::vector<Point_test<float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point_test<float>>::type,openfpm::grow_policy_identity> prp;
+};
 
 BOOST_AUTO_TEST_CASE( vector_prealloc )
 {

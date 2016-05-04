@@ -429,7 +429,7 @@ namespace openfpm
 		 * \param v source vector
 		 *
 		 */
-		template <typename S, typename M, typename gp, unsigned int ...args> void add_prp(const vector<S,M,typename memory_traits_lin<S>::type,gp,OPENFPM_NATIVE> & v)
+		template <typename S, typename M, typename gp, unsigned int ...args> void add_prp(const vector<S,M,layout,gp,OPENFPM_NATIVE> & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);

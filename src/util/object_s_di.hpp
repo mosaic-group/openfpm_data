@@ -65,9 +65,10 @@ struct object_s_di_e
     template<typename T>
     void operator()(T& t)
     {
-    	typedef typename boost::mpl::at<typename v_dst::type,typename boost::mpl::int_<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>>::type ctype;
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type copy_rtype;
 
-    	meta_copy<ctype>(src.template get<T::value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>());
+    	meta_copy<copy_rtype>(src.template get<T::value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>());
     }
 };
 

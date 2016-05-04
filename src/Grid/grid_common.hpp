@@ -71,11 +71,8 @@ struct copy_cpu_encap
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		// This is the type of the object we have to copy
-		typedef typename boost::fusion::result_of::at_c<ov_seq,T::value>::type copy_type;
-
 		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
+		typedef typename boost::remove_reference<decltype(grid_dst.template get<T::value>(key))>::type copy_rtype;
 
 		meta_copy<copy_rtype> cp(obj.template get<T::value>(),grid_dst.template get<T::value>(key));
 	}

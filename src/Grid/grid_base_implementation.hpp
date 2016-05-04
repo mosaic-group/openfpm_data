@@ -570,18 +570,9 @@ public:
 
 	void setMemory()
 	{
-/*#ifdef SE_CLASS2
+#ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		S * mem = new S();
-
-		//! Create and set the memory allocator
-		data_.setMemory(*mem);
-
-		//! Allocate the memory and create the representation
-		if (g1.size() != 0) data_.allocate(g1.size());
-
-		is_mem_init = true;*/
 
 		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::setMemory(data_,g1,is_mem_init);
 	}
