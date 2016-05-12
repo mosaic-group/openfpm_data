@@ -1,6 +1,7 @@
 #ifndef GRID_UNIT_TEST_HPP
 #define GRID_UNIT_TEST_HPP
 
+#include "config.h"
 #include "map_grid.hpp"
 #include "Point_test.hpp"
 #include "Space/Shape/HyperCube.hpp"

@@ -659,9 +659,6 @@ public:
 		check_init();
 		check_bound(v1);
 #endif
-#ifdef SE_CLASS2
-		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type)) == false) {ACTION_ON_ERROR()};
-#endif
 		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
 	}
 
@@ -680,9 +677,6 @@ public:
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
-#endif
-#ifdef SE_CLASS2
-		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type)) == false) {ACTION_ON_ERROR()};
 #endif
 		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
 	}
@@ -703,9 +697,6 @@ public:
 		check_init();
 		check_bound(v1);
 #endif
-#ifdef SE_CLASS2
-		check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T));
-#endif
 		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
 	}
 
@@ -724,9 +715,6 @@ public:
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
-#endif
-#ifdef SE_CLASS2
-		if (check_valid(&data_.mem_r->operator[](g1.LinId(v1)),sizeof(T)) == false)	{ACTION_ON_ERROR()}
 #endif
 		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(const_cast<decltype(this->data_) &>(data_),g1,v1);
 	}
