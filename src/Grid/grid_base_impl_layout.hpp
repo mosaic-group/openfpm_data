@@ -35,7 +35,7 @@ struct allocate
 		t.setMemory(*new S());
 
 		//! Allocate the memory and create the reppresentation
-		t.allocate(sz);
+		if (sz != 0)	t.allocate(sz);
 	}
 };
 
