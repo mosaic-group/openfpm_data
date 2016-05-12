@@ -238,7 +238,7 @@ public:
 	 * \return the reference
 	 *
 	 */
-	template <unsigned int p> inline auto get() -> decltype(boost::fusion::at_c<p>(data_c))
+	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))> inline r_type get()
 	{
 #ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,Mem>::type));
@@ -251,7 +251,7 @@ public:
 	 * \return the reference
 	 *
 	 */
-	template <unsigned int p> inline auto get() const -> decltype(boost::fusion::at_c<p>(data_c)) const
+	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))> inline const r_type get() const
 	{
 #ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,Mem>::type));

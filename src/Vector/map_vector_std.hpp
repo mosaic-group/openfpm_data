@@ -27,7 +27,8 @@ class vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,
 {
 	// Memory layout
 	typedef typename memory_traits_lin<T>::type layout;
-	template <typename lb> using layout_base = memory_traits_lin<lb>;
+//      Doeas not work on gcc 4.8.4
+//	template <typename lb> using layout_base = memory_traits_lin<lb>;
 
 	//! 1-D static grid
 	std::vector<T> base;
@@ -500,7 +501,7 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(const vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & v) noexcept
+	vector(const vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v) noexcept
 	:err_code(0)
 	{
 #ifdef SE_CLASS2
@@ -536,7 +537,7 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> && v) noexcept
+	vector(vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v) noexcept
 	:err_code(0)
 	{
 #ifdef SE_CLASS2
@@ -560,7 +561,7 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(openfpm::vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & v)
+	void swap(openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -573,7 +574,7 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(openfpm::vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> && v)
+	void swap(openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -586,7 +587,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & v)
+	vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -612,7 +613,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> && v)
+	vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -627,7 +628,7 @@ public:
 	 * \param vector to compare
 	 *
 	 */
-	bool operator!=(const vector<T, HeapMemory, layout, layout_base,grow_policy_double,STD_VECTOR> & v) const
+	bool operator!=(const vector<T, HeapMemory, layout, memory_traits_lin,grow_policy_double,STD_VECTOR> & v) const
 	{
 		return base != v.base;
 	}
@@ -637,7 +638,7 @@ public:
 	 * \param vector to compare
 	 *
 	 */
-	bool operator==(const vector<T, HeapMemory, layout, layout_base,grow_policy_double,STD_VECTOR> & v) const
+	bool operator==(const vector<T, HeapMemory, layout, memory_traits_lin,grow_policy_double,STD_VECTOR> & v) const
 	{
 		return base == v.base;
 	}
@@ -686,7 +687,7 @@ public:
 #ifdef DEBUG
 			std::cout << "Inside map_vector_std.hpp packMem()" << std::endl;
 #endif
-			packMem_cond<has_packMem<T>::type::value, openfpm::vector<T, HeapMemory, layout, layout_base, grow_policy_double>, prp...> cm;
+			packMem_cond<has_packMem<T>::type::value, openfpm::vector<T, HeapMemory, layout, memory_traits_lin, grow_policy_double>, prp...> cm;
 			return cm.packMemory(*this,n,0);
 		}
 	}

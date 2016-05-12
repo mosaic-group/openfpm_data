@@ -647,56 +647,10 @@ public:
 	 *
 	 * \param v1 grid_key that identify the element in the grid
 	 *
-	 * \return the reference to the element
-	 *
-	 */
-	template <unsigned int p>inline auto get(grid_key_d<dim,p> & v1) -> decltype(mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1))
-	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-#ifdef SE_CLASS1
-		check_init();
-		check_bound(v1);
-#endif
-#ifdef SE_CLASS2
-		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)))) == false) {ACTION_ON_ERROR();}
-#endif
-//		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
-	}
-
-	/*! \brief Get the const reference of the selected element
-	 *
-	 * \param v1 grid_key that identify the element in the grid
-	 *
-	 * \return the const reference to the element
-	 *
-	 */
-	template <unsigned int p>inline auto get(grid_key_d<dim,p> & v1) const -> const decltype(mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1))
-	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-#ifdef SE_CLASS1
-		check_init();
-		check_bound(v1);
-#endif
-#ifdef SE_CLASS2
-		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)))) == false) {ACTION_ON_ERROR()};
-#endif
-//		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
-	}
-
-	/*! \brief Get the reference of the selected element
-	 *
-	 * \param v1 grid_key that identify the element in the grid
-	 *
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p>inline auto get(const grid_key_dx<dim> & v1) -> decltype(mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1))
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))> inline r_type get(const grid_key_dx<dim> & v1)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -709,7 +663,6 @@ public:
 		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type)) == false) {ACTION_ON_ERROR()};
 #endif
 		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
-//		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
 
 	/*! \brief Get the const reference of the selected element
@@ -719,7 +672,7 @@ public:
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p> inline auto get(const grid_key_dx<dim> & v1) const -> const decltype(mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1))
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))> inline const r_type get(const grid_key_dx<dim> & v1) const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -732,7 +685,6 @@ public:
 		if (check_valid(&boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))),sizeof(typename type_cpu_prop<p,memory_lin>::type)) == false) {ACTION_ON_ERROR()};
 #endif
 		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
-//		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
 
 	/*! \brief Get the of the selected element as a boost::fusion::vector
