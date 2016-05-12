@@ -96,9 +96,6 @@ struct mem_setm
 {
 	static inline void setMemory(data_type & data_, const g1_type & g1, bool & is_mem_init)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		S * mem = new S();
 
 		//! Create and set the memory allocator

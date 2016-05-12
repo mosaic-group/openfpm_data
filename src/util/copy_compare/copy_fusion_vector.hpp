@@ -84,7 +84,7 @@ struct copy_fusion_vector_encap
 	 * this mean that the object passed must not be a temporal object
 	 *
 	 */
-	inline copy_fusion_vector(const bfv && src, enc && dst)
+	inline copy_fusion_vector_encap(const bfv && src, enc && dst)
 	:src(src),dst(dst)
 	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object\n";};
 #endif

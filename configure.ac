@@ -215,16 +215,6 @@ fi
 
 INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_io/src"
 
-####### include /usr/local/lib and /usr/local/lib64 if they exist
-
-if [ -d "/usr/local/lib64" ]; then
-	LOCAL_LIBS="/usr/local/lib64"
-else
-	if [ -d "/usr/local/lib" ]; then
-		LOCAL_LIBS="/usr/local/lib"
-	fi
-fi
-
 ####### Checking for GPU support
 
 AX_CUDA
@@ -253,10 +243,14 @@ fi
 
 #
 
+NVCCFLAGS="--std=c++11"
+
 if test x$gpu_support = x"no"; then
      CUDA_LIBS=""
      CUDA_CFLAGS=""
 fi
+
+AC_SUBST(NVCCFLAGS)
 
 AM_CONDITIONAL(BUILDCUDA, test x$gpu_support = x"yes")
 

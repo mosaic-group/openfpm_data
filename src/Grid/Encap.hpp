@@ -54,7 +54,7 @@ struct copy_cpu_encap_encap
 #ifdef SE_CLASS1
 		// e_src and e_dst must have the same number of properties
 
-		if (e_src::max_prop != e_dst::max_prop)
+		if (e_src::T_type::max_prop != e_dst::T_type::max_prop)
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of properties between src and dst must match";
 #endif
 	};
@@ -241,7 +241,7 @@ public:
 	template <unsigned int p> inline auto get() -> decltype(boost::fusion::at_c<p>(data_c))
 	{
 #ifdef SE_CLASS2
-		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,Mem>::type));
+		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
 #endif
 		return boost::fusion::at_c<p>(data_c);
 	}
@@ -254,7 +254,7 @@ public:
 	template <unsigned int p> inline auto get() const -> decltype(boost::fusion::at_c<p>(data_c)) const
 	{
 #ifdef SE_CLASS2
-		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,Mem>::type));
+		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
 #endif
 		return boost::fusion::at_c<p>(data_c);
 	}
@@ -263,7 +263,7 @@ public:
 	template <unsigned int p> inline void set(decltype(boost::fusion::at_c<p>(data_c)) & ele)
 	{
 #ifdef SE_CLASS2
-			check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,T>::type));
+			check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
 #endif
 			return boost::fusion::at_c<p>(data_c) = ele;
 	}
