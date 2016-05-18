@@ -943,6 +943,28 @@ public:
 		this->get_o(key1) = g.get_o(key2);
 	}
 
+	/*! \brief Set an element of the grid from another element of another grid
+	 *
+	 * \param key1 element of the grid to set
+	 * \param g source grid
+	 * \param key2 element of the source grid to copy
+	 *
+	 */
+
+	template<typename Mem> inline void set(const grid_key_dx<dim> & key1,const grid_base_impl<dim,T,Mem,layout,layout_base> & g, const grid_key_dx<dim> & key2)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(key1);
+		check_bound(g,key2);
+#endif
+
+		this->get_o(key1) = g.get_o(key2);
+	}
+
 	/*! \brief return the size of the grid
 	 *
 	 * Return the size of the grid

@@ -621,8 +621,6 @@ public:
 		slot = STARTING_NSLOT;
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
 			cl_n.get(i) = 0;
-
-		cl_base.clear();
 	}
 };
 

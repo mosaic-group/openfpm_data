@@ -222,7 +222,7 @@ public:
 #endif
 #ifdef SE_CLASS1
 		if (v_size == 0)
-			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
+			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0" << std::endl;
 #endif
 		return ((T *)mem->getPointer())[v_size-1];
 	}

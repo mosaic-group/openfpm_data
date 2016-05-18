@@ -964,14 +964,15 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		b /= getCellBox().getP2();
 
 		// Considering that we are interested in a box decomposition of the space
-		// where each box does not intersect any other boxes in the decomposition we include the positive
-		// countour and exclude the negative one. So ceilP1 do the job for P1 while ceilP2 - 1
+		// where each box does not intersect any other boxes in the decomposition we include the negative
+		// countour and exclude the positive one. So ceilP1 do the job for P1 while ceilP2 - 1
 		// do the job for P2
 
 		b.ceilP1();
 
 		// (we do -1 later)
 		b.ceilP2();
+		for (size_t i = 0 ; i < dim ; i++)	{b.setHigh(i,b.getHigh(i)-1);}
 
 		g_box = b;
 
@@ -983,17 +984,46 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			// we are at the positive border (We are assuming that there are not rounding error in the decomposition)
-			if (b_d.getHigh(i) == box.getHigh(i) && bc[i] == NON_PERIODIC)
+			if (b_d.getHigh(i) == box.getHigh(i))
 			{
-				p_move.get(i) = 0;
-				g_box.setHigh(i,gr_cell.size(i));
+				if (bc[i] == NON_PERIODIC)
+				{
+					p_move.get(i) = 0;
+					// Here the positive boundary is included
+					g_box.setHigh(i,gr_cell.size(i));
+				}
+				else
+				{
+					p_move.get(i) = 0;
+					// Carefull in periodic gr_cell is one bigger than the non-periodic
+					// and the positive boundary is excluded
+					g_box.setHigh(i,gr_cell.size(i)-1);
+				}
 			}
-			else
-				p_move.get(i) = 1;
+/*			else
+				p_move.get(i) = 1;*/
+
+			if (b_d.getLow(i) == box.getHigh(i))
+			{
+				if (bc[i] == NON_PERIODIC)
+				{
+					// The instruction is the same but the meaning is different
+					// for this reason there is anyway a branch
+					// Here the border is not included
+					g_box.setLow(i,gr_cell.size(i));
+				}
+				else
+				{
+					// Carefull in periodic gr_cell is one bigger than the non-periodic
+					// Here the border is included
+					g_box.setLow(i,gr_cell.size(i));
+				}
+			}
+
 		}
 
 		// here we do ceilP2-1
-		g_box.shrinkP2(p_move);
+//		g_box.shrinkP2(p_move);
 
 		return g_box;
 	}

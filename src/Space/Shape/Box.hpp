@@ -731,6 +731,19 @@ public:
 		}
 	}
 
+	/*! \brief Invalidate the box
+	 *
+	 * Bring the state of this box in a way that isValid return false
+	 *
+	 */
+	void invalidate()
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->setLow(j,this->getHigh(j)+1);
+		}
+	}
+
 
 	/*! \brief Magnify the box
 	 *

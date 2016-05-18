@@ -36,6 +36,7 @@
 #include "Packer_Unpacker/Packer_util.hpp"
 #include "Packer_Unpacker/has_pack_agg.hpp"
 #include <chrono>
+#include "map_vector_std_util.hpp"
 
 namespace openfpm
 {
@@ -869,6 +870,54 @@ namespace openfpm
 			return *this;
 		}
 
+		/*! \brief Assignment operator
+		 *
+		 * move semantic movement operator=
+		 *
+		 * \param mv vector
+		 *
+		 * \return itself
+		 *
+		 */
+		template<typename Mem, typename gp> vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Mem, layout, layout_base,gp,OPENFPM_NATIVE> && mv)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			v_size = mv.v_size;
+			base.swap(mv.base);
+
+			return *this;
+		}
+
+		/*! \brief Assignment operator
+		 *
+		 * it copy
+		 *
+		 * \param mv vector
+		 *
+		 * \return itself
+		 *
+		 */
+		template<typename Mem, typename gp> vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Mem, layout, layout_base ,gp,OPENFPM_NATIVE> & mv)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			v_size = mv.getInternal_v_size();
+			size_t rsz[1] = {v_size};
+			base.resize(rsz);
+
+			// copy the object
+			for (size_t i = 0 ; i < v_size ; i++ )
+			{
+				grid_key_dx<1> key(i);
+				base.set(key,mv.getInternal_base(),key);
+			}
+
+			return *this;
+		}
+
 		/*! \brief Check that two vectors are equal
 		 *
 		 * \param vector to compare
@@ -1151,6 +1200,24 @@ namespace openfpm
 #else
 			return -1;
 #endif
+		}
+
+		/*! \brief Internal function
+		 *
+		 *
+		 */
+		const size_t & getInternal_v_size() const
+		{
+			return v_size;
+		}
+
+		/*! \brief Internal function
+		 *
+		 *
+		 */
+		const grid_cpu<1,T,Memory,layout> & getInternal_base() const
+		{
+			return base;
 		}
 	};
 
