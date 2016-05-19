@@ -988,20 +988,17 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 			{
 				if (bc[i] == NON_PERIODIC)
 				{
-					p_move.get(i) = 0;
 					// Here the positive boundary is included
 					g_box.setHigh(i,gr_cell.size(i));
 				}
 				else
 				{
-					p_move.get(i) = 0;
 					// Carefull in periodic gr_cell is one bigger than the non-periodic
 					// and the positive boundary is excluded
 					g_box.setHigh(i,gr_cell.size(i)-1);
 				}
 			}
-/*			else
-				p_move.get(i) = 1;*/
+
 
 			if (b_d.getLow(i) == box.getHigh(i))
 			{
@@ -1021,9 +1018,6 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 			}
 
 		}
-
-		// here we do ceilP2-1
-//		g_box.shrinkP2(p_move);
 
 		return g_box;
 	}
