@@ -146,6 +146,29 @@ public:
 	{
 	}
 
+	/*! \brief It copy a grid
+	 *
+	 * \param g grid to copy
+	 *
+	 */
+	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_base_impl<dim,T,S,layout,memory_traits_lin> & g)
+	{
+		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g.duplicate());
+
+		return *this;
+	}
+
+	/*! \brief It copy a grid
+	 *
+	 * \param g grid to copy
+	 *
+	 */
+	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_base_impl<dim,T,S,layout,memory_traits_lin> && g)
+	{
+		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g);
+
+		return *this;
+	}
 };
 
 #include "grid_gpu.hpp"

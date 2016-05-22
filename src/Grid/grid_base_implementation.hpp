@@ -442,7 +442,7 @@ public:
 #endif
 	}
 
-	/*! \brief It copy an operator
+	/*! \brief It copy a grid
 	 *
 	 * \param g grid to copy
 	 *
@@ -458,7 +458,7 @@ public:
 		return *this;
 	}
 
-	/*! \brief It copy an operator
+	/*! \brief It copy a grid
 	 *
 	 * \param g grid to copy
 	 *
