@@ -786,6 +786,32 @@ namespace openfpm
 			base.set(id,obj);
 		}
 
+		/*! \brief It set an element of the vector from a object that is a subset of the vector properties
+		 *
+		 * The number of properties in the source vector must be smaller than the destination
+		 * all the properties of S must be mapped so if S has 3 properties
+		 * 3 numbers for args are required
+		 *
+		 * \tparam encap_S object that encapsulate the object
+		 * \tparam args ids of the properties to map the object to
+		 *
+		 * \param i element to set
+		 * \param obj object that encapsulate the object
+		 *
+		 * \param v source vector
+		 *
+		 */
+		template <typename encap_S, unsigned int ...args> void set_o(size_t i, const encap_S & obj)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+//			auto enc = get(i);
+
+			// write the object in the last element
+			object_s_di<encap_S,decltype(get(i)),OBJ_ENCAP,args...>(obj,get(i));
+		}
+
 		/*! \brief Set the object id to obj
 		 *
 		 * \param id
@@ -1086,9 +1112,7 @@ namespace openfpm
 					return grow_p::grow(0,n) * sizeof(typename T::type);
 
 				typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
-#ifdef DEBUG
-				std::cout << "Inside calculateMem() (map_vector)" << std::endl;
-#endif
+
 				return grow_p::grow(0,n) * sizeof(prp_object);
 			}
 		}
@@ -1105,9 +1129,6 @@ namespace openfpm
 		 */
 		template<int ... prp> static inline size_t packMem(size_t n, size_t e)
 		{
-#ifdef DEBUG
-			std::cout << "Inside packMem() (map_vector)" << std::endl;
-#endif
 			if (sizeof...(prp) == 0)
 				return n * sizeof(typename T::type);
 

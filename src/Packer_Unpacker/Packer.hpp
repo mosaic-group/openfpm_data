@@ -14,9 +14,6 @@
 #include "memory/ExtPreAlloc.hpp"
 #include "util/util_debug.hpp"
 
-#ifdef SRC_PACK_SELECTOR_HPP_
-#error blabla
-#endif
 
 #include "Grid/grid_sm.hpp"
 #include "util/Pack_stat.hpp"
@@ -284,9 +281,6 @@ public:
 
 	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, const T & obj, Pack_stat & sts)
 	{
-#ifdef DEBUG
-		std::cout << "Inside vector pack() function! (packer.hpp)" << std::endl;
-#endif
 		obj.template pack<prp...>(mem, sts);
 	};
 };
