@@ -31,3 +31,9 @@ Packer_Unpacker/Pack_selector.hpp Packer_Unpacker/Packer_nested_tests.hpp Packer
 
 .cu.o :
 	$(NVCC) $(NVCCFLAGS) $(INCLUDES_PATH) -o $@ -c $<
+
+test: mem_map
+	source $(HOME)/openfpm_vars && cd .. && ./src/mem_map
+
+.PHONY: test
+

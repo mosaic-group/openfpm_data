@@ -78,7 +78,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	CellNNIterator(size_t cell, long int (&NNc)[NNc_size], Cell & cl)
+	CellNNIterator(size_t cell, const long int (&NNc)[NNc_size], Cell & cl)
 	:cl(cl),NNc_id(0),cell_id(NNc[NNc_id] + cell),ele_id(0),NNc(NNc),cell(cell)
 	{
 		selectValid();
@@ -145,7 +145,7 @@ public:
 	 * \param cl Cell on which iterate
 	 *
 	 */
-	CellIterator(const size_t cell, Cell & cl)
+	inline CellIterator(const size_t cell, Cell & cl)
 	:cl(cl),ele_id(0),cell(cell)
 	{
 	}
@@ -155,7 +155,7 @@ public:
 	 * Check if there is the next element
 	 *
 	 */
-	bool isNext()
+	inline bool isNext()
 	{
 		return cl.getNelements(cell) > ele_id;
 	}
@@ -163,7 +163,7 @@ public:
 	/*! \brief take the next element
 	 *
 	 */
-	CellIterator & operator++()
+	inline CellIterator & operator++()
 	{
 		ele_id++;
 
@@ -175,7 +175,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	typename Cell::value_type & get()
+	inline typename Cell::value_type & get()
 	{
 		return cl.get(cell,ele_id);
 	}
@@ -185,7 +185,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	const typename Cell::value_type & get() const
+	inline const typename Cell::value_type & get() const
 	{
 		return cl.get(cell,ele_id);
 	}

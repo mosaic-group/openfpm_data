@@ -14,6 +14,7 @@
 #include "Grid/grid_util_test.hpp"
 #include <iostream>
 #include "Vector/vector_test_util.hpp"
+#include "data_type/aggregate.hpp"
 
 BOOST_AUTO_TEST_SUITE( packer_unpacker )
 
