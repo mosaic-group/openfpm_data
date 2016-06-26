@@ -249,14 +249,14 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 				Point<pair::first::dims,typename pair::second> one;
 				one.one();
 				one = one + toPoint<pair::first::dims,typename pair::second>::convert(vg.get(i).g.get(j).cmb);
-				Point<pair::first::dims,typename pair::second> offset = middle * one + vg.get(i).offset;
+				Point<pair::first::dims,typename pair::second> offset = pmul(middle,one) + vg.get(i).offset;
 
 				// if there is the next element
 				while (it.isNext())
 				{
 					Point<pair::first::dims,typename pair::second> p;
 					p = it.get().toPoint();
-					p = p * vg.get(i).spacing + offset;
+					p = pmul(p,vg.get(i).spacing) + offset;
 
 					if (pair::first::dims == 2)
 						v_out << p.toString() << " 0.0" << "\n";

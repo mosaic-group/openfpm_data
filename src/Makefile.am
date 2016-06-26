@@ -15,3 +15,7 @@ Plot/GoogleChart.hpp Plot/util.hpp
 
 .cu.o :
 	$(NVCC) $(NVCCFLAGS) -o $@ -c $<
+
+test: io
+	source $(HOME)/openfpm_vars &&  cd .. && ./src/io
+

@@ -1,3 +1,7 @@
 SUBDIRS = src
 
-bin_PROGRAMS = 
+bin_PROGRAMS =
+
+test:
+	cd src && make test
+

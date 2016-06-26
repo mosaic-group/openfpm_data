@@ -204,7 +204,7 @@ class VTKWriter<pair,VECTOR_GRIDS>
 			{
 				Point<pair::first::dims,typename pair::second> p;
 				p = it.get().toPoint();
-				p = p * vg.get(i).spacing + vg.get(i).offset;
+				p = pmul(p,vg.get(i).spacing) + vg.get(i).offset;
 
 				if (pair::first::dims == 2)
 					v_out << p.toString() << " 0.0" << "\n";
