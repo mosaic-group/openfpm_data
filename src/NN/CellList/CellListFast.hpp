@@ -13,6 +13,7 @@
 #include "util/mathutil.hpp"
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
+#include "CellListIterator.hpp"
 
 #include "util/common.hpp"
 

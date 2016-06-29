@@ -306,7 +306,7 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
 		for (size_t i = 0 ; i < this->size() ; i++)
 		{
 			//Call a pack request
-			call_aggregatePackRequest<T,Memory,grow_p,prp ... >::call_packRequest(*this,v);
+			call_aggregatePackRequest<decltype(this->get(i)),Memory,grow_p,prp ... >::call_packRequest(this->get(i),v);
 		}
 	}
 }
@@ -339,8 +339,11 @@ template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & st
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,this->size(),sts);
 		
-		//Call a packer in nested way
-		call_aggregatePack<T,Memory,grow_p,prp ... >::call_pack(*this,mem,sts);
+		for (size_t i = 0 ; i < this->size() ; i++)
+		{
+			//Call a packer in nested way
+			call_aggregatePack<decltype(this->get(i)),Memory,grow_p,prp ... >::call_pack(this->get(i),mem,sts);
+		}
 	}
 }
 
@@ -374,8 +377,11 @@ template<int ... prp> inline void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat 
 		//Resize a destination vector
 		this->resize(u2);
 		
-		//Call an unpacker in nested way
-		call_aggregateUnpack<T,Memory,grow_p,prp ... >::call_unpack(*this,mem,ps);
+		for (size_t i = 0 ; i < this->size() ; i++)
+		{
+			//Call an unpacker in nested way
+			call_aggregateUnpack<decltype(this->get(i)),Memory,grow_p,prp ... >::call_unpack(this->get(i),mem,ps);
+		}
 	}
 }
 

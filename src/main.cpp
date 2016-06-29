@@ -29,6 +29,7 @@
 #include "Grid/grid_sm_unit_tests.hpp"
 #include "util/mathutil_unit_test.hpp"
 #include "NN/CellList/CellDecomposer_unit_tests.hpp"
+#include "NN/CellList/CellListIterator_test.hpp"
 #ifdef PERFORMANCE_TEST
 #include "performance.hpp"
 #endif

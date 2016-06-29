@@ -513,12 +513,12 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 
 	//Fill it with data
 
-	v4.resize(1);
+	v4.resize(3);
 	Point_test<float> p;
 	p.fill();
 	for (size_t i = 0 ; i < v4.size() ; i++)
 	{
-		v4.get(i).resize(1);
+		v4.get(i).resize(4);
 		for (size_t j = 0 ; j < v4.get(i).size() ; j++)
 		{
 			v4.get(i).template get<0>(j) = 1.0;
@@ -540,6 +540,12 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 #ifdef DEBUG
 	for (size_t i = 0; i < pap_prp.size(); i++)
 		std::cout << pap_prp[i] << std::endl;
+
+	size_t sum = 0;
+	for (size_t i = 0; i < pap_prp.size(); i++)
+		sum += pap_prp[i];
+
+	std::cout << "Total size is: " << sum << std::endl;
 #endif
 
 	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*4 + sizeof(float[3])) + sizeof(float[3][3]))*2);
@@ -606,7 +612,7 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_2 )
 	p.fill();
 	for (size_t i = 0 ; i < v4.size() ; i++)
 	{
-		v4.get(i).resize(5000);
+		v4.get(i).resize(50);
 		for (size_t j = 0 ; j < v4.get(i).size() ; j++)
 		{
 			v4.get(i).template get<0>(j) = 1.0;
@@ -633,7 +639,7 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_2 )
 		std::cout << pap_prp[i] << std::endl;
 #endif
 
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*30 + sizeof(float[3])*7) + sizeof(float[3][3])*7)*5000);
+	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*30 + sizeof(float[3])*7) + sizeof(float[3][3])*7)*50);
 
 	// Calculate how much preallocated memory we need to pack all the objects
 	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
@@ -677,10 +683,88 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_2 )
 		}
 	}
 
-	std::cout << "Vector pack/unpack test stop" << "\n";
+	mem.decRef();
+	delete &mem;
+}
+
+BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_3 )
+{
+	//Create an object
+	openfpm::vector<aggregate<float,openfpm::vector<Point_test<float>>>> v;
+
+	//Fill it with data
+
+	v.resize(3);
+	Point_test<float> p;
+	p.fill();
+	for (size_t i = 0 ; i < v.size() ; i++)
+	{
+		v.template get<1>(i).resize(2);
+
+		for (size_t k = 0 ; k < v.template get<1>(i).size() ; k++)
+			v.template get<1>(i).get(k) = p;
+	}
+
+	//Pack_request vector
+	std::vector<size_t> pap_prp;
+
+	//Pack request
+	Packer<decltype(v),HeapMemory>::packRequest<1>(v,pap_prp);
+
+	//Just to see the elements of pack request vector
+#ifdef DEBUG
+	for (size_t i = 0; i < pap_prp.size(); i++)
+		std::cout << pap_prp[i] << std::endl;
+
+	size_t sum = 0;
+	for (size_t i = 0; i < pap_prp.size(); i++)
+		sum += pap_prp[i];
+
+	std::cout << "Sum is " << sum << std::endl;
+
+#endif
+
+	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1], (sizeof(float)*4 + sizeof(float[3]) + sizeof(float[3][3]))*2);
+
+	// Calculate how much preallocated memory we need to pack all the objects
+	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+
+	// allocate the memory
+	HeapMemory pmem;
+	pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	mem.incRef();
+
+	//Packing
+
+	Pack_stat sts;
+
+	Packer<decltype(v),HeapMemory>::pack<1>(mem,v,sts);
+
+	//Unpacking
+
+	Unpack_stat ps;
+
+	openfpm::vector<aggregate<float,openfpm::vector<Point_test<float>>>> v_unp;
+
+	Unpacker<decltype(v_unp),HeapMemory>::unpack<1>(mem,v_unp,ps);
+
+	//Checking the data
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		for (size_t j = 0 ; j < v.template get<1>(i).size() ; j++)
+		{
+			Point_test<float> p1 = v_unp.template get<1>(i).get(j);
+			Point_test<float> p2 = v.template get<1>(i).get(j);
+
+			BOOST_REQUIRE(p1 == p2);
+		}
+	}
 
 	mem.decRef();
 	delete &mem;
+
+	std::cout << "Vector pack/unpack test stop" << "\n";
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -185,13 +185,6 @@ BOOST_AUTO_TEST_CASE( grid_key_dx_iterator_hilbert_test )
 
 		while (h_it.isNext())
 		{
-			grid_key_dx<2> key = h_it.get();
-
-			//Check the curve
-#ifdef DEBUG
-			std::cout << "(" << key.get(0) << "," << key.get(1) << ")" << std::endl;
-#endif
-
 			count++;
 
 			++h_it;
@@ -221,13 +214,6 @@ BOOST_AUTO_TEST_CASE( grid_key_dx_iterator_hilbert_test )
 
 		while (h_it.isNext())
 		{
-			grid_key_dx<3> key = h_it.get();
-
-			//Check the curve
-#ifdef DEBUG
-			std::cout << "(" << key.get(0) << "," << key.get(1) << "," key.get(2) << ")" << std::endl;
-#endif
-
 			count++;
 
 			++h_it;
