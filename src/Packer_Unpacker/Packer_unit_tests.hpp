@@ -97,41 +97,69 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 
 	// Here we start to push all the allocations required to pack all the data
 
-	std::vector<size_t> pap_prp;
+	//std::vector<size_t> pap_prp;
 
-	Packer<unsigned char,HeapMemory>::packRequest(uc,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(unsigned char));
-	Packer<char,HeapMemory>::packRequest(c,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(char));
-	Packer<short,HeapMemory>::packRequest(s,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(short));
-	Packer<unsigned short,HeapMemory>::packRequest(us,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(unsigned short));
-	Packer<int,HeapMemory>::packRequest(i,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(int));
-	Packer<unsigned int,HeapMemory>::packRequest(ui,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(unsigned int));
-	Packer<long int,HeapMemory>::packRequest(li,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(long int));
-	Packer<long unsigned int,HeapMemory>::packRequest(uli,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(long unsigned int));
-	Packer<float,HeapMemory>::packRequest(f,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(float));
-	Packer<double,HeapMemory>::packRequest(d,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(double));
-	Packer<Point_test<float>,HeapMemory>::packRequest(p,pap_prp);
-	Packer<openfpm::vector<Point_test<float>>,HeapMemory>::packRequest<pt::x,pt::v>(v,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],(sizeof(float) + sizeof(float[3])) * v.size());
-	Packer<grid_cpu<3,Point_test<float>>,HeapMemory>::packRequest<pt::x,pt::v>(g,sub,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],(sizeof(float) + sizeof(float[3])) * sub.getVolume());
+	size_t size_total = 0;
+	size_t size_total_old = 0;
+
+	Packer<unsigned char,HeapMemory>::packRequest(uc,size_total);
+	BOOST_REQUIRE_EQUAL(size_total,sizeof(unsigned char));
+	size_total_old = size_total;
+
+	Packer<char,HeapMemory>::packRequest(c,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,sizeof(char));
+	size_total_old = size_total;
+
+	Packer<short,HeapMemory>::packRequest(s,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,sizeof(short));
+	size_total_old = size_total;
+
+	Packer<unsigned short,HeapMemory>::packRequest(us,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,sizeof(unsigned short));
+	size_total_old = size_total;
+
+	Packer<int,HeapMemory>::packRequest(i,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,sizeof(int));
+	size_total_old = size_total;
+
+	Packer<unsigned int,HeapMemory>::packRequest(ui,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,sizeof(unsigned int));
+	size_total_old = size_total;
+
+	Packer<long int,HeapMemory>::packRequest(li,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,sizeof(long int));
+	size_total_old = size_total;
+
+	Packer<long unsigned int,HeapMemory>::packRequest(uli,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,sizeof(long unsigned int));
+	size_total_old = size_total;
+
+	Packer<float,HeapMemory>::packRequest(f,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,sizeof(float));
+	size_total_old = size_total;
+
+	Packer<double,HeapMemory>::packRequest(d,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,sizeof(double));
+	size_total_old = size_total;
+
+	Packer<Point_test<float>,HeapMemory>::packRequest(p,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,(sizeof(float)*4 + sizeof(float[3]) + sizeof(float[3][3])));
+	size_total_old = size_total;
+
+	Packer<openfpm::vector<Point_test<float>>,HeapMemory>::packRequest<pt::x,pt::v>(v,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,(sizeof(float) + sizeof(float[3])) * v.size() + sizeof(v.size()));
+	size_total_old = size_total;
+
+	Packer<grid_cpu<3,Point_test<float>>,HeapMemory>::packRequest<pt::x,pt::v>(g,sub,size_total);
+	BOOST_REQUIRE_EQUAL(size_total - size_total_old,(sizeof(float) + sizeof(float[3])) * sub.getVolume());
 
 	// Calculate how much preallocated memory we need to pack all the objects
-	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+	//size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
 
 	// allocate the memory
 	HeapMemory pmem;
-	pmem.allocate(req);
-	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	pmem.allocate(size_total);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(size_total,pmem));
 	mem.incRef();
 
 	Pack_stat sts;

@@ -10,7 +10,7 @@
 
 // Include tests
 
-//#include "Packer_Unpacker/Packer_unit_tests.hpp"
+#include "Packer_Unpacker/Packer_unit_tests.hpp"
 //#include "Packer_Unpacker/Packer_nested_tests.hpp"
 #include "util/copy_compare/meta_cc_unit_tests.hpp"
 #include "util/variadic_to_vmpl_unit_test.hpp"

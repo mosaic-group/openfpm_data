@@ -191,7 +191,7 @@ public:
 	 * \param vector of requests
 	 *
 	 */
-	template<int ... prp> void packRequest(std::vector<size_t> & v)
+	template<int ... prp> void packRequest(size_t & req)
 	{
 		// Sending property object
 		typedef object<typename object_creator<typename grid_cpu<dim,T,S,Mem>::value_type::type,prp...>::type> prp_object;
@@ -201,7 +201,7 @@ public:
 		// Calculate the required memory for packing
 		size_t alloc_ele = dvect.calculateMem(size(),0);
 
-		v.push_back(alloc_ele);
+		req += alloc_ele;
 	}
 
 	/*! \brief Insert an allocation request
@@ -213,7 +213,7 @@ public:
 	 * \param vector of requests
 	 *
 	 */
-	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims> & sub, std::vector<size_t> & v)
+	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims> & sub, size_t & req)
 	{
 		typedef openfpm::vector<typename grid_cpu<dim,T,S,Mem>::value_type,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
 		dtype dvect;
@@ -221,7 +221,7 @@ public:
 		// Calculate the required memory for packing
 		size_t alloc_ele = dvect.template calculateMem<prp...>(sub.getVolume(),0);
 
-		v.push_back(alloc_ele);
+		req += alloc_ele;
 	}
 
 	/*! \brief Pack an N-dimensional grid into a vector like structure B given an iterator of the grid

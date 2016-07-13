@@ -278,10 +278,11 @@ struct unpack_simple_cond<true, prp ...>
  * \param v vector of allocation sequence
  *
  */
-template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
+template<int ... prp> inline void packRequest(size_t & req) const
 {
 	//Pushback a sizeof number of elements of the internal vectors
-	v.push_back(sizeof(this->size()));
+	//v.push_back(sizeof(this->size()));
+	req += sizeof(this->size());
 	//std::cout << demangle(typeid(this).name()) << std::endl;
 	//std::cout << this->size() << std::endl;
 #ifdef DEBUG
@@ -295,7 +296,8 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
 			std::cout << "All of the aggregate members are simple!(packRequest)" << std::endl;
 #endif
 		size_t alloc_ele = this->packMem<prp...>(this->size(),0);
-		v.push_back(alloc_ele);
+		//v.push_back(alloc_ele);
+		req += alloc_ele;
 	}
 	//If at least one property has "pack()"
 	else
@@ -306,7 +308,7 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
 		for (size_t i = 0 ; i < this->size() ; i++)
 		{
 			//Call a pack request
-			call_aggregatePackRequest<decltype(this->get(i)),Memory,grow_p,prp ... >::call_packRequest(this->get(i),v);
+			call_aggregatePackRequest<decltype(this->get(i)),Memory,grow_p,prp ... >::call_packRequest(this->get(i),req);
 		}
 	}
 }
