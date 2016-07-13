@@ -68,6 +68,7 @@
 template<unsigned int dim, typename T, typename transform, typename base>
 class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,transform>
 {
+protected:
 	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
 	//
 	//    * * *
@@ -89,6 +90,8 @@ class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,trans
 	//   x *
 	//
 	long int NNc_cr[openfpm::math::pow(2,dim)];
+
+private:
 
 	// Number of slot for each cell
 	size_t slot;

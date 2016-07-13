@@ -553,6 +553,18 @@ public:
 		return *this;
 	}
 
+	/*! \brief Get the box enclosing this Box
+	 *
+	 * basically return itself
+	 *
+	 * \return itself
+	 *
+	 */
+	const Box<dim,T> & getBox() const
+	{
+		return *this;
+	}
+
 	/*! \brief Get the internal boost::fusion::vector that store the data
 	 *
 	 * \return the internal boost::fusion::vector that store the data

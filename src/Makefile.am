@@ -1,5 +1,5 @@
 
-LINKLIBS = $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(CUDA_LIBS) $(BOOST_IOSTREAMS_LIB) $(LOCAL_LIBS)
+LINKLIBS = $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(CUDA_LIBS) $(BOOST_IOSTREAMS_LIB) $(LOCAL_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(BOOST_CHRONO_LIB) $(BOOST_TIMER_LIB) $(BOOST_SYSTEM_LIB)
 
 if BUILDCUDA
  CUDA_SOURCES=../../openfpm_devices/src/memory/CudaMemory.cu
@@ -8,7 +8,7 @@ else
 endif
 
 noinst_PROGRAMS = mem_map
-mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
+mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp Grid/iterators/grid_iterators_unit_tests.cpp
 mem_map_CXXFLAGS = $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include
 mem_map_CFLAGS = $(CUDA_CFLAGS)
 mem_map_LDADD = $(LINKLIBS)

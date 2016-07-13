@@ -8,6 +8,9 @@
 #ifndef OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTM_HPP_
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTM_HPP_
 
+#include "CellNNIteratorM.hpp"
+#include <boost/integer/integer_mask.hpp>
+
 struct PV_cl
 {
 	size_t ele;
@@ -36,8 +39,10 @@ struct PV_cl
  * +-----------------------+
  * \endverbatim
  *
- *
- * \tparam CellBase Cell list type for the Multi-Phase cell list implementation
+ * \tparam dim dimensionality
+ * \tparam T type of the space
+ * \tparam sh_byte bit to dedicate to the phases informations
+ * \tparam CellBase Base cell list used for the implementation
  *
  * ### Declaration of a Multi-Phase cell list and usage
  *
@@ -46,20 +51,22 @@ template<unsigned int dim, typename T, unsigned int sh_byte, typename CellBase=C
 class CellListM : public CellBase
 {
 	typedef boost::high_bit_mask_t<sh_byte>  mask_high;
-	typedef boost::low_bit_mask_t<64-sh_byte>  mask_low;
+	typedef boost::low_bits_mask_t<sizeof(size_t)*8-sh_byte>  mask_low;
+
+public:
 
 	//! Default Constructor
 	CellListM()
 	{};
 
 	//! Copy constructor
-	CellListM(const CellListM<CellBase> & cell)
+	CellListM(const CellListM<dim,T,sh_byte,CellBase> & cell)
 	{
 		this->operator=(cell);
 	}
 
 	//! Copy constructor
-	CellListM(CellListM<CellBase> && cell)
+	CellListM(CellListM<dim,T,sh_byte,CellBase> && cell)
 	{
 		this->operator=(cell);
 	}
@@ -90,17 +97,6 @@ class CellListM : public CellBase
 	:CellBase(box,div,pad,slot)
 	{}
 
-	/*! \brief Cell list constructor
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param div grid size on each dimension
-	 * \param pad Cell padding
-	 * \param slot maximum number of slot
-	 *
-	 */
-	CellListM(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	:CellBase(box,div,mat,pad,slot)
-	{}
 
 	/*! \brief Destructor
 	 *
@@ -152,7 +148,7 @@ class CellListM : public CellBase
 		// calculate the Cell id
 
 		size_t cell_id = this->getCell(pos);
-		size_t ele_k = ele | v_id << sizeof(size_t)*8-sh_byte;
+		size_t ele_k = ele | (v_id << (sizeof(size_t)*8-sh_byte));
 
 		// add the element to the cell
 
@@ -171,7 +167,7 @@ class CellListM : public CellBase
 	 */
 	inline size_t getP(size_t cell, size_t ele) const
 	{
-		return CellBase::get(cell * slot + ele) & mask_low;
+		return CellBase::get(cell,ele) & mask_low::sig_bits_fast;
 	}
 
 	/*! \brief Get the element vector in the cell
@@ -186,7 +182,7 @@ class CellListM : public CellBase
 	 */
 	inline size_t getV(size_t cell, size_t ele) const
 	{
-		return (cl_base.get(cell * slot + ele) & mask_high) >> 64-sh_byte;
+		return (CellBase::get(cell,ele)) >> (sizeof(size_t)*8-sh_byte);
 	}
 
 	/*! \brief Swap the memory
@@ -194,7 +190,7 @@ class CellListM : public CellBase
 	 * \param cl Cell list with witch you swap the memory
 	 *
 	 */
-	inline void swap(CellListM<dim,T,FAST,transform,base> & cl)
+	inline void swap(CellListM<dim,T,sh_byte,CellBase> & cl)
 	{
 		CellBase::swap(*this);
 	}
@@ -206,7 +202,7 @@ class CellListM : public CellBase
 	 * \return the iterator to the elements inside cell
 	 *
 	 */
-	CellIterator<CellList<dim,T,FAST,transform,base>> getIterator(size_t cell)
+	CellIterator<CellListM<dim,T,sh_byte,CellBase>> getIterator(size_t cell)
 	{
 		return CellBase::getIterator(cell);
 	}
@@ -229,9 +225,9 @@ class CellListM : public CellBase
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellListM<dim,T,sh_byte,CellBase>,FULL,impl> getNNIterator(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> cln(cell,NNc_full,*this);
+		CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL,impl> cln(cell,CellListM<dim,T,sh_byte,CellBase>::NNc_full,*this);
 
 		return cln;
 	}
@@ -254,9 +250,9 @@ class CellListM : public CellBase
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell)
+	template<unsigned int impl> inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> getNNIteratorSym(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,NNc_sym,*this);
+		CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> cln(cell,CellListM<dim,T,sh_byte,CellBase>::NNc_sym,*this);
 
 		return cln;
 	}
@@ -279,21 +275,11 @@ class CellListM : public CellBase
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> getNNIteratorCross(size_t cell)
+	template<unsigned int impl> inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,CRS,impl> getNNIteratorCross(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> cln(cell,NNc_cr,*this);
+		CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,CRS,impl> cln(cell,CellListM<dim,T,sh_byte,CellBase>::NNc_cr,*this);
 
 		return cln;
-	}
-
-	/*! \brief Clear the cell list
-	 *
-	 */
-	void clear()
-	{
-		slot = STARTING_NSLOT;
-		for (size_t i = 0 ; i < cl_n.size() ; i++)
-			cl_n.get(i) = 0;
 	}
 };
 

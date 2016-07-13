@@ -1,8 +1,21 @@
 #define BOOST_DISABLE_ASSERTS
 
 #include "config.h"
-#define BOOST_TEST_MODULE "C++ test module for OpenFPM_data project"
-#include <boost/test/included/unit_test.hpp>
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
+
+// initialization function:
+bool init_unit_test()
+{
+  return true;
+}
+
+// entry point:
+int main(int argc, char* argv[])
+{
+  return boost::unit_test::unit_test_main( &init_unit_test, argc, argv );
+}
+
 #include <boost/fusion/include/mpl.hpp>
 
 #include <iostream>
@@ -30,6 +43,7 @@
 #include "util/mathutil_unit_test.hpp"
 #include "NN/CellList/CellDecomposer_unit_tests.hpp"
 #include "Vector/map_vector_std_util_unit_test.hpp"
+//#include "Grid/iterators/grid_iterators_unit_tests.cpp"
 #ifdef PERFORMANCE_TEST
 #include "performance.hpp"
 #endif

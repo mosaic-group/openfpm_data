@@ -327,12 +327,12 @@ class Graph_CSR
 		// get the number of adjacent vertex
 		size_t id_x_end = v_l.template get<0>(v1);
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		// Check that v1 and v2 exist
 
 		if (v1 >= v.size() || v2 >= v.size())
 		{
-			//std::cout << "Warning graph: creating an edge between vertex that does not exist" << "\n";
+			std::cout << "Warning graph: creating an edge between vertex that does not exist" << std::endl;
 		}
 
 		// Check that the edge does not already exist
@@ -341,7 +341,7 @@ class Graph_CSR
 		{
 			if (e_l.template get<e_map::vid>(v1 * v_slot + s) == v2)
 			{
-				std::cerr << "Error graph: the edge already exist\n";
+				std::cerr << "Error graph: the edge already exist" << std::endl;
 			}
 		}
 #endif
@@ -743,15 +743,15 @@ public:
 
 	inline size_t getChild(size_t v, size_t i) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (i >= v_l.template get<0>(v))
 		{
-			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v << " does not have edge " << i << "\n";
+			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v << " does not have edge " << i << std::endl;
 		}
 
 		if (e.size() <= e_l.template get<e_map::vid>(v * v_slot + i))
 		{
-			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge " << v << " does not have edge "<< i << "\n";
+			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " vertex " << v << " does not have edge "<< i << std::endl;
 		}
 #endif
 		// Get the edge id
@@ -769,15 +769,15 @@ public:
 
 	inline size_t getChild(typename openfpm::vector<V, Memory, layout_v, layout_v_base, grow_p>::iterator_key & v, size_t i)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (i >= v_l.template get<0>(v.get()))
 		{
-			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v.get() << " does not have edge " << i << "\n";
+			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v.get() << " does not have edge " << i << std::endl;
 		}
 
 		if (e.size() <= e_l.template get<e_map::eid>(v.get() * v_slot + i))
 		{
-			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge " << v.get() << " does not have edge "<< i << "\n";
+			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " vertex " << v.get() << " does not have edge "<< i << std::endl;
 		}
 #endif
 

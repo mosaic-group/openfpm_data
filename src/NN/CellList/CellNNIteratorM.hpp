@@ -27,9 +27,7 @@
  */
 template<unsigned int dim, typename Cell, unsigned int sh_byte,unsigned int NNc_size, unsigned int impl> class CellNNIteratorM : public CellNNIterator<dim,Cell,NNc_size,impl>
 {
-
-	typedef boost::high_bit_mask_t<sh_byte>  mask_high;
-	typedef boost::low_bit_mask_t<64-sh_byte>  mask_low;
+	typedef boost::low_bits_mask_t<sizeof(size_t)*8-sh_byte>  mask_low;
 
 public:
 
@@ -43,7 +41,7 @@ public:
 	 *
 	 */
 	CellNNIteratorM(size_t cell, const long int (&NNc)[NNc_size], Cell & cl)
-	:CellNNIterator(cell,NNc,cl)
+	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl)
 	{}
 
 
@@ -54,7 +52,7 @@ public:
 	 */
 	inline size_t getP()
 	{
-		return CellNNIterator<dim,Cell,NNc_size,impl>::get() & mask_low;
+		return CellNNIterator<dim,Cell,NNc_size,impl>::get() & mask_low::sig_bits_fast;
 	}
 
 	/*! \brief Get the value of the cell
@@ -64,7 +62,7 @@ public:
 	 */
 	inline size_t getV()
 	{
-		return (CellNNIterator<dim,Cell,NNc_size,impl>::get() & mask_high) >> 64-sh_byte;
+		return (CellNNIterator<dim,Cell,NNc_size,impl>::get()) >> (sizeof(size_t)*8-sh_byte);
 	}
 };
 
@@ -77,6 +75,8 @@ public:
  */
 template<typename Cell, unsigned int sh_byte> class CellIteratorM : public CellIterator<Cell>
 {
+
+	typedef boost::low_bits_mask_t<sizeof(size_t)*8-sh_byte>  mask_low;
 
 public:
 
@@ -97,7 +97,7 @@ public:
 	 */
 	inline size_t getP()
 	{
-		return CellIterator<Cell>::get() & mask_low;
+		return CellIterator<Cell>::get() & mask_low::sig_bits_fast;
 	}
 
 	/*! \brief Get the value of the cell
@@ -107,7 +107,7 @@ public:
 	 */
 	inline size_t getV()
 	{
-		return (CellIterator<Cell>::get() & mask_high) >> 64-sh_byte;
+		return (CellIterator<Cell>::get()) >> (sizeof(size_t)*8-sh_byte);
 	}
 };
 

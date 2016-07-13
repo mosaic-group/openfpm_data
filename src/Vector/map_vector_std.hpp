@@ -486,8 +486,7 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		if (id >= base.size())
-			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
+		vector_overflow(id);
 #endif
 		return base[id];
 	}

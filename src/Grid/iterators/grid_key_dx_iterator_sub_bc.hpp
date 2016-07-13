@@ -8,7 +8,7 @@
 #ifndef OPENFPM_DATA_SRC_GRID_ITERATORS_GRID_KEY_DX_ITERATOR_SUB_BC_HPP_
 #define OPENFPM_DATA_SRC_GRID_ITERATORS_GRID_KEY_DX_ITERATOR_SUB_BC_HPP_
 
-
+#include "grid_key_dx_iterator_sub.hpp"
 
 /*! \brief The same as grid_key_dx_iterator_sub_p but with periodic boundary
  *
@@ -49,12 +49,38 @@ public:
 
 	/*! \brief Constructor
 	 *
+	 *
+	 */
+	grid_key_dx_iterator_sub_bc()
+	:act(0)
+	{
+
+	}
+
+
+	/*! \brief Constructor
+	 *
 	 * \param g Grid information
-	 * \param
+	 * \param start starting point
+	 * \param stop stop point
+	 * \param bc boundary conditions
 	 *
 	 */
 	template<typename T> grid_key_dx_iterator_sub_bc(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start , const grid_key_dx<dim> & stop, const size_t (& bc)[dim])
 	:act(0)
+	{
+		Initialize(g,start,stop,bc);
+	}
+
+	/*! \brief Initialize the iterator
+	 *
+	 * \param g Grid information
+	 * \param start starting point
+	 * \param stop stop point
+	 * \param bc boundary conditions
+	 *
+	 */
+	template<typename T> void Initialize(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start , const grid_key_dx<dim> & stop, const size_t (& bc)[dim])
 	{
 		// copy the boundary conditions
 
@@ -122,7 +148,6 @@ public:
 			grid_key_dx_iterator_sub<dim,warn>::reinitialize(grid_key_dx_iterator_sub<dim,warn>(g,boxes[0].getKP1(),boxes[0].getKP2()));
 	}
 
-
 	/*! \brief Get the next element
 	 *
 	 * Get the next element
@@ -164,7 +189,7 @@ public:
 	/*! \brief Return the actual grid key iterator
 	 *
 	 */
-	inline grid_key_dx<dim> get()
+	inline const grid_key_dx<dim> get() const
 	{
 		return grid_key_dx_iterator_sub<dim,warn>::get();
 	}

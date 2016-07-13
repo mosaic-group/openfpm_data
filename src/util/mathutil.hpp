@@ -6,7 +6,6 @@ namespace openfpm
 {
 	namespace math
 	{
-
 		/*! \brief calculate the factorial
 		 *
 		 * calculate the factorial of a number

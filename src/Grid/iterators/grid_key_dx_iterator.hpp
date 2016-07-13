@@ -8,7 +8,7 @@
 #ifndef OPENFPM_DATA_SRC_GRID_ITERATORS_GRID_KEY_DX_ITERATOR_HPP_
 #define OPENFPM_DATA_SRC_GRID_ITERATORS_GRID_KEY_DX_ITERATOR_HPP_
 
-
+#include "Grid/grid_sm.hpp"
 
 /**
  *
@@ -26,7 +26,7 @@
 template<unsigned int dim>
 class grid_key_dx_iterator
 {
-#ifdef DEBUG
+#ifdef SE_CLASS1
 	// Actual status of the iterator, when the iterator is not initialized cannot be used
 	// and reinitialize must be called
 	bool initialized = false;
@@ -61,7 +61,7 @@ public:
 	 */
 	grid_key_dx_iterator()
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		initialized = false;
 #endif
 	}
@@ -80,7 +80,7 @@ public:
 			gk.set_d(i,g_it.get_gk(i));
 		}
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		initialized = true;
 #endif
 	}
@@ -94,7 +94,7 @@ public:
 	{
 		reset();
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		initialized = true;
 #endif
 	}
@@ -194,7 +194,7 @@ public:
 	 * \return the actual key
 	 *
 	 */
-	const grid_key_dx<dim> & get()
+	const grid_key_dx<dim> & get() const
 	{
 		return gk;
 	}
@@ -215,10 +215,21 @@ public:
 	 */
 	void reset()
 	{
-		//! Initialize to 0 the index
+		// Initialize to 0 the index
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{gk.set_d(i,0);}
+
+		// here we check if grid have a size equal to zero or negative
+		// in this case the grid has no points
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			// If the size of the grid is zero in any dimension set the iterator
+			// to the end point
+			if (grid_base.size(i) == 0)
+				gk.set_d(dim-1,grid_base.size(dim-1));
+		}
 	}
 };
 

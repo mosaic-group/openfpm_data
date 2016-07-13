@@ -8,6 +8,9 @@
 #ifndef OPENFPM_DATA_SRC_GRID_ITERATORS_GRID_KEY_DX_ITERATOR_SUB_HPP_
 #define OPENFPM_DATA_SRC_GRID_ITERATORS_GRID_KEY_DX_ITERATOR_SUB_HPP_
 
+#include "grid_key_dx_iterator.hpp"
+#include "Grid/grid_key.hpp"
+
 /* \brief grid_key_dx_iterator_sub can adjust the domain if the border go out-of-side
  *        in this case a warning is produced
  *
@@ -211,8 +214,8 @@ public:
 		// Initialize the start and stop point
 		for (unsigned int i = 0 ; i < dim ; i++)
 		{
-			gk_start.set(i,m);
-			gk_stop.set(i,g.size(i)-m);
+			gk_start.set_d(i,m);
+			gk_stop.set_d(i,g.size(i)-m-1);
 		}
 
 		//
@@ -321,7 +324,7 @@ public:
 	/*! \brief Return the actual grid key iterator
 	 *
 	 */
-	inline grid_key_dx<dim> get()
+	inline grid_key_dx<dim> get() const
 	{
 #ifdef DEBUG
 		if (initialized == false)
