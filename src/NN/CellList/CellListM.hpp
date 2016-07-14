@@ -9,7 +9,6 @@
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTM_HPP_
 
 #include "CellNNIteratorM.hpp"
-#include <boost/integer/integer_mask.hpp>
 
 struct PV_cl
 {

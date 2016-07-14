@@ -9,8 +9,8 @@
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLNNITERATORM_HPP_
 
 
-
 #include "util/mathutil.hpp"
+#include <boost/integer/integer_mask.hpp>
 
 
 /*! \brief Iterator for the neighborhood of the cell structures
