@@ -42,26 +42,17 @@ BOOST_AUTO_TEST_CASE ( vector_ptst_packer_unpacker )
 	typedef Point_test<float> pt;
 
 	//Pack request vector
-	std::vector<size_t> pap_prp;
+	size_t req = 0;
 	
 	//Pack requesting
 	
-	Packer<decltype(v),HeapMemory>::packRequest<pt::x, pt::v>(v,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],(sizeof(float) + sizeof(float[3])) * 7);
-
-	//Just to see the elements of pack request vector
-#ifdef DEBUG
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		std::cout << pap_prp[i] << std::endl;
-#endif
-
-	// Calculate how much preallocated memory we need to pack all the objects
-	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+	Packer<decltype(v),HeapMemory>::packRequest<pt::x, pt::v>(v,req);
+	BOOST_REQUIRE_EQUAL(req,(sizeof(float) + sizeof(float[3])) * 5 * 6 * 7 + sizeof(size_t)*(1+5+5*6));
 
 	// allocate the memory
 	HeapMemory pmem;
-	pmem.allocate(req);
-	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
 	mem.incRef();
 
 	//Packing
@@ -109,11 +100,11 @@ BOOST_AUTO_TEST_CASE ( vector_ptst_packer_unpacker )
 BOOST_AUTO_TEST_CASE ( vector_std_packer_unpacker )
 {
 	openfpm::vector<openfpm::vector<openfpm::vector<float>>> v2;
-	for (size_t i = 0; i < 5; i++) {
+	for (size_t i = 0; i < 3; i++) {
 		openfpm::vector<openfpm::vector<float>> v6;
-		for (size_t j = 0; j < 6; j++) {
+		for (size_t j = 0; j < 4; j++) {
 			openfpm::vector<float> v7;
-			for (size_t k = 0; k < 7; k++) {
+			for (size_t k = 0; k < 5; k++) {
 				v7.add(1);
 			}
 			v6.add(v7);
@@ -122,26 +113,17 @@ BOOST_AUTO_TEST_CASE ( vector_std_packer_unpacker )
 	}
 
 	//Pack request vector
-	std::vector<size_t> pap_prp;
+	size_t req = 0;
 
 	//Pack requesting
 
-	Packer<decltype(v2),HeapMemory>::packRequest<>(v2,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(float) * 7);
-
-	//Just to see the elements of pack request vector
-#ifdef DEBUG
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		std::cout << pap_prp[i] << std::endl;
-#endif
-
-	// Calculate how much preallocated memory we need to pack all the objects
-	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+	Packer<decltype(v2),HeapMemory>::packRequest<>(v2,req);
+	BOOST_REQUIRE_EQUAL(req,sizeof(float) * 3 * 4 * 5 + sizeof(size_t)*(1+3+3*4));
 
 	// allocate the memory
 	HeapMemory pmem;
-	pmem.allocate(req);
-	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
 	mem.incRef();
 
 	//Packing
@@ -198,25 +180,16 @@ BOOST_AUTO_TEST_CASE ( vector_zerosize_packer_unpacker )
 	typedef Point_test<float> pt;
 
 	//Pack request vector
-	std::vector<size_t> pap_prp;
+	size_t req = 0;
 
 	//Pack requesting
-	Packer<decltype(v5),HeapMemory>::packRequest<pt::x, pt::v>(v5,pap_prp);
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],0ul);
-
-	//Just to see the elements of pack request vector
-#ifdef DEBUG
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		std::cout << pap_prp[i] << std::endl;
-#endif
-
-	// Calculate how much preallocated memory we need to pack all the objects
-	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+	Packer<decltype(v5),HeapMemory>::packRequest<pt::x, pt::v>(v5,req);
+	BOOST_REQUIRE_EQUAL(req,(sizeof(float)+sizeof(float[3]))*5*6*7 + (sizeof(float)+sizeof(float[3]))*1*5*7 + sizeof(size_t)*(1+6+6*6));
 
 	// allocate the memory
 	HeapMemory pmem;
-	pmem.allocate(req);
-	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
 	mem.incRef();
 
 	//Packing
@@ -280,26 +253,16 @@ BOOST_AUTO_TEST_CASE ( vector_zerosize__lvl_2_packer_unpacker )
 	typedef Point_test<float> pt;
 
 	//Pack request vector
-	std::vector<size_t> pap_prp;
+	size_t req = 0;
 
 	//Pack requesting
-	Packer<decltype(v5),HeapMemory>::packRequest<pt::x, pt::v>(v5,pap_prp);
-
-	//Just to see the elements of pack request vector
-#ifdef DEBUG
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		std::cout << pap_prp[i] << std::endl;
-#endif
-
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(size_t));
-
-	// Calculate how much preallocated memory we need to pack all the objects
-	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+	Packer<decltype(v5),HeapMemory>::packRequest<pt::x, pt::v>(v5,req);
+	//BOOST_REQUIRE_EQUAL(req,(sizeof(float)+sizeof(float[3]))*5*6*7 + (sizeof(float)+sizeof(float[3]))*1*5*7 + sizeof(size_t)*(1+6+6*6));
 
 	// allocate the memory
 	HeapMemory pmem;
-	pmem.allocate(req);
-	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
 	mem.incRef();
 
 	//Packing
@@ -366,26 +329,17 @@ BOOST_AUTO_TEST_CASE ( vector_zerosize__lvl_2_packer_unpacker_float )
 	v2.get(0).clear();
 
 	//Pack request vector
-	std::vector<size_t> pap_prp;
+	size_t req = 0;
 
 	//Pack requesting
 
-	Packer<decltype(v2),HeapMemory>::packRequest<>(v2,pap_prp);
-//	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],sizeof(float) * 7);
-
-	//Just to see the elements of pack request vector
-#ifdef DEBUG
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		std::cout << pap_prp[i] << std::endl;
-#endif
-
-	// Calculate how much preallocated memory we need to pack all the objects
-	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+	Packer<decltype(v2),HeapMemory>::packRequest<>(v2,req);
+	//BOOST_REQUIRE_EQUAL(req,(sizeof(float))*4*6*7 + sizeof(size_t)*(1+5+5*6));
 
 	// allocate the memory
 	HeapMemory pmem;
-	pmem.allocate(req);
-	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
 	mem.incRef();
 
 	//Packing
@@ -447,27 +401,17 @@ BOOST_AUTO_TEST_CASE ( vector_std_smarter_packer_unpacker )
 	}
 
 	//Pack_request vector
-	std::vector<size_t> pap_prp;
+	size_t req = 0;
 
 	typedef Point_test<float> pt;
 	//Pack request
-	Packer<decltype(v),HeapMemory>::packRequest<>(v,pap_prp);
-
-	//Just to see the elements of pack request vector
-#ifdef DEBUG
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		std::cout << pap_prp[i] << std::endl;
-#endif
-
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],(sizeof(float)*6 + sizeof(size_t)*2) * 5);
-
-	// Calculate how much preallocated memory we need to pack all the objects
-	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+	Packer<decltype(v),HeapMemory>::packRequest<>(v,req);
+	BOOST_REQUIRE_EQUAL(req,(sizeof(float)*6 + sizeof(size_t)*2) * 4 * 5 + sizeof(size_t)*(1+4));
 
 	// allocate the memory
 	HeapMemory pmem;
-	pmem.allocate(req);
-	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
 	mem.incRef();
 
 	//Packing
@@ -531,32 +475,16 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 	}
 
 	//Pack_request vector
-	std::vector<size_t> pap_prp;
+	size_t req = 0;
 
 	//Pack request
-	Packer<decltype(v4),HeapMemory>::packRequest<1,2>(v4,pap_prp);
-
-	//Just to see the elements of pack request vector
-#ifdef DEBUG
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		std::cout << pap_prp[i] << std::endl;
-
-	size_t sum = 0;
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		sum += pap_prp[i];
-
-	std::cout << "Total size is: " << sum << std::endl;
-#endif
-
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*4 + sizeof(float[3])) + sizeof(float[3][3]))*2);
-
-	// Calculate how much preallocated memory we need to pack all the objects
-	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+	Packer<decltype(v4),HeapMemory>::packRequest<1,2>(v4,req);
+	//BOOST_REQUIRE_EQUAL(req,((sizeof(float)*4 + sizeof(float[3])) + sizeof(float[3][3]))*2);
 
 	// allocate the memory
 	HeapMemory pmem;
-	pmem.allocate(req);
-	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
 	mem.incRef();
 
 	//Packing
@@ -628,26 +556,16 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_2 )
 	}
 
 	//Pack_request vector
-	std::vector<size_t> pap_prp;
+	size_t req = 0;
 
 	//Pack request
-	Packer<decltype(v4),HeapMemory>::packRequest<0,1,2,3,4,5,6,7,8>(v4,pap_prp);
-
-	//Just to see the elements of pack request vector
-#ifdef DEBUG
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		std::cout << pap_prp[i] << std::endl;
-#endif
-
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*30 + sizeof(float[3])*7) + sizeof(float[3][3])*7)*50);
-
-	// Calculate how much preallocated memory we need to pack all the objects
-	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+	Packer<decltype(v4),HeapMemory>::packRequest<0,1,2,3,4,5,6,7,8>(v4,req);
+	//BOOST_REQUIRE_EQUAL(req,((sizeof(float)*30 + sizeof(float[3])*7) + sizeof(float[3][3])*7)*50 + sizeof(size_t)*(1+50));
 
 	// allocate the memory
 	HeapMemory pmem;
-	pmem.allocate(req);
-	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
 	mem.incRef();
 
 	//Packing
@@ -706,33 +624,16 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_3 )
 	}
 
 	//Pack_request vector
-	std::vector<size_t> pap_prp;
+	size_t req = 0;
 
 	//Pack request
-	Packer<decltype(v),HeapMemory>::packRequest<1>(v,pap_prp);
-
-	//Just to see the elements of pack request vector
-#ifdef DEBUG
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		std::cout << pap_prp[i] << std::endl;
-
-	size_t sum = 0;
-	for (size_t i = 0; i < pap_prp.size(); i++)
-		sum += pap_prp[i];
-
-	std::cout << "Sum is " << sum << std::endl;
-
-#endif
-
-	BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1], (sizeof(float)*4 + sizeof(float[3]) + sizeof(float[3][3]))*2);
-
-	// Calculate how much preallocated memory we need to pack all the objects
-	size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+	Packer<decltype(v),HeapMemory>::packRequest<1>(v,req);
+	//BOOST_REQUIRE_EQUAL(req, (sizeof(float)*4 + sizeof(float[3]) + sizeof(float[3][3]))*2);
 
 	// allocate the memory
 	HeapMemory pmem;
-	pmem.allocate(req);
-	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(pap_prp,pmem));
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
 	mem.incRef();
 
 	//Packing

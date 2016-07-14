@@ -102,6 +102,17 @@ public:
 	{
 		req += sizeof(T);
 	}
+
+	/*! \brief It add a request to pack a C++ primitive
+	 *
+	 * \param req requests vector
+	 *
+	 */
+	static void packRequest(size_t & req)
+	{
+		req += sizeof(T);
+	}
+
 };
 
 /*! \brief Packer for primitives
@@ -234,6 +245,16 @@ public:
 	{
 		req += sizeof(T);
 	}
+	/*! \brief it add a request to pack an object
+	 *
+	 * \param req requests vector
+	 *
+	 */
+	static void packRequest(size_t & req)
+	{
+		req += sizeof(T);
+	}
+
 };
 
 /*! \brief Packer class for vectors

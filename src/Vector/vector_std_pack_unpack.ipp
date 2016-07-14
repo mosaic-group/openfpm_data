@@ -248,11 +248,9 @@
 
 		// allocate the memory
 		HeapMemory pmem;
-		
-///////////////////////////////////////
+
 		//pmem.allocate(req);
 		ExtPreAlloc<HeapMemory> mem(size_total,pmem);
-////////////////////////////////////////
 
 		//Packing
 
@@ -293,13 +291,14 @@
 	    
 	    // Create the HeapMemory and the ExtPreAlloc memory
 	    std::vector<size_t> pap_prp;
-	    pap_prp.push_back(sz);
+	    size_t req = 0;
+	    
+	    req += sz;
+	   
 	    HeapMemory pmem;
-///////////////////////////////////////////////	    
-		// Calculate how much preallocated memory we need to pack all the objects
-		size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+
 		ExtPreAlloc<HeapMemory> mem(req,pmem);
-////////////////////////////////////////////////		
+		
 		// read
 	    input.read((char *)pmem.getPointer(), sz);
 	    
