@@ -34,10 +34,10 @@ struct call_packRequest_enc_functor
 {
 
 	encap & obj;
-	size_t & req;
+	std::vector<size_t> & pap_prp;
 
-	call_packRequest_enc_functor(encap & obj, size_t & req)
-	:obj(obj),req(req)
+	call_packRequest_enc_functor(encap & obj, std::vector<size_t> & pap_prp)
+	:obj(obj),pap_prp(pap_prp)
 	{}
 
 	//! It calls the pack request for each property
@@ -46,7 +46,7 @@ struct call_packRequest_enc_functor
 	{
 		typedef typename boost::mpl::at<typename encap::T_type,T>::type obj_type;
 
-		Packer<obj_type,Mem>::packRequest(obj.template get<T::value>(),req);
+		Packer<obj_type,Mem>::packRequest(obj.template get<T::value>(),pap_prp);
 	}
 };
 
@@ -55,12 +55,12 @@ struct call_packRequest_enc_functor
 template<typename encap, typename Mem, int ... prp>
 struct call_encapPackRequest
 {
-	static inline void call_packRequest(encap & obj, size_t & req)
+	static inline void call_packRequest(encap & obj, std::vector<size_t> & pap_prp)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<encap,sizeof...(prp) == 0,prp...>::type b_prp;
 
-		call_packRequest_enc_functor<encap,Mem> functor(obj,req);
+		call_packRequest_enc_functor<encap,Mem> functor(obj,pap_prp);
 
 		//Apply functor for each property
 		boost::mpl::for_each_ref<b_prp>(functor);
@@ -152,15 +152,15 @@ struct call_encapUnpack
 ////////////////////////////////////////////////////////////////////////////////////
 
 //A functor for call_aggregatePackRequest
-template<typename obj_type, typename Mem, typename grow_p>
+template<typename obj_type, typename Mem>
 struct call_packRequest_agg_functor
 {
 
 	const obj_type & obj;
-	size_t & req;
+	std::vector<size_t> & pap_prp;
 
-	call_packRequest_agg_functor(const obj_type & obj, size_t & req)
-	:obj(obj),req(req)
+	call_packRequest_agg_functor(const obj_type & obj, std::vector<size_t> & pap_prp)
+	:obj(obj),pap_prp(pap_prp)
 	{}
 
 	//! It calls the pack request for each property
@@ -170,21 +170,21 @@ struct call_packRequest_agg_functor
 		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_t;
 
 		//for (size_t i = 0; i < obj_type::max_prop ; i++)
-		Packer<obj_t,Mem>::packRequest(obj.template get<T::value>(),req);
+		Packer<obj_t,Mem>::packRequest(obj.template get<T::value>(),pap_prp);
 	}
 };
 
 
 //Calls a pack request in nested way
-template<typename obj_type, typename Mem, typename grow_p, int ... prp>
+template<typename obj_type, typename Mem, int ... prp>
 struct call_aggregatePackRequest
 {
-	static inline void call_packRequest(const obj_type & obj, size_t & req)
+	static inline void call_packRequest(const obj_type & obj, std::vector<size_t> & pap_prp)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<obj_type,sizeof...(prp) == 0,prp...>::type b_prp;
 
-		call_packRequest_agg_functor<obj_type,Mem,grow_p> functor(obj,req);
+		call_packRequest_agg_functor<obj_type,Mem> functor(obj,pap_prp);
 
 		//Apply functor for each property
 		boost::mpl::for_each_ref<b_prp>(functor);
@@ -192,7 +192,7 @@ struct call_aggregatePackRequest
 };
 
 //A functor for call_aggregatePack
-template<typename obj_type, typename Mem, typename grow_p>
+template<typename obj_type, typename Mem>
 struct call_pack_agg_functor
 {
 	ExtPreAlloc<Mem> & mem;
@@ -216,7 +216,7 @@ struct call_pack_agg_functor
 };
 
 //Calls a packer in nested way
-template<typename obj_type, typename Mem, typename grow_p, int ... prp>
+template<typename obj_type, typename Mem, int ... prp>
 struct call_aggregatePack
 {
 	static inline void call_pack(const obj_type & obj, ExtPreAlloc<Mem> & mem, Pack_stat & sts)
@@ -224,7 +224,7 @@ struct call_aggregatePack
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<obj_type,sizeof...(prp) == 0,prp...>::type b_prp;
 
-		call_pack_agg_functor<obj_type,Mem,grow_p> functor(mem,obj,sts);
+		call_pack_agg_functor<obj_type,Mem> functor(mem,obj,sts);
 
 		//Apply functor for each property
 		boost::mpl::for_each_ref<b_prp>(functor);
@@ -233,7 +233,7 @@ struct call_aggregatePack
 
 
 //A functor for call_aggregateUnpack
-template<typename obj_type, typename Mem, typename grow_p>
+template<typename obj_type, typename Mem>
 struct call_unpack_agg_functor
 {
 	ExtPreAlloc<Mem> & mem;
@@ -257,7 +257,7 @@ struct call_unpack_agg_functor
 };
 
 //Calls an unpacker in nested way
-template<typename obj_type, typename Mem, typename grow_p, int ... prp>
+template<typename obj_type, typename Mem, int ... prp>
 struct call_aggregateUnpack
 {
 	static inline void call_unpack(const obj_type & obj, ExtPreAlloc<Mem> & mem, Unpack_stat & ps)
@@ -265,7 +265,7 @@ struct call_aggregateUnpack
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<obj_type,sizeof...(prp) == 0,prp...>::type b_prp;
 
-		call_unpack_agg_functor<obj_type,Mem,grow_p> functor(mem,obj,ps);
+		call_unpack_agg_functor<obj_type,Mem> functor(mem,obj,ps);
 
 		//Apply functor for each property
 		boost::mpl::for_each_ref<b_prp>(functor);
