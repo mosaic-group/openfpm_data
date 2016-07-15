@@ -233,12 +233,12 @@ struct unpack_simple_cond<true, prp ...>
 	 * \param v vector of allocation sequence
 	 *
 	 */
-	template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
+	template<int ... prp> inline void packRequest(size_t & req) const
 	{
 		//Pushback a "sizeof" of dimension sizes of the grid
 		for (size_t i = 0; i < dim; i++)
 		{
-			v.push_back(sizeof(this->getGrid().size(i)));
+			req += sizeof(this->getGrid().size(i));
 		}
 		//std::cout << demangle(typeid(this).name()) << std::endl;
 		//std::cout << this->size() << std::endl;
@@ -253,7 +253,7 @@ struct unpack_simple_cond<true, prp ...>
 		std::cout << "All of the aggregate members are simple!(packRequest)" << std::endl;
 #endif
 			size_t alloc_ele = this->packMem<prp...>(this->size(),0);
-			v.push_back(alloc_ele);
+			req += alloc_ele;
 		}
 		//If at least one property has "pack()"
 		else
@@ -267,7 +267,7 @@ struct unpack_simple_cond<true, prp ...>
 			{
 				auto k = key_it.get();
 				//Call a pack request
-				call_aggregatePackRequest<decltype(this->get_o(k)),S,prp ... >::call_packRequest(this->get_o(k),v);
+				call_aggregatePackRequest<decltype(this->get_o(k)),S,prp ... >::call_packRequest(this->get_o(k),req);
 				
 				++key_it;
 			}

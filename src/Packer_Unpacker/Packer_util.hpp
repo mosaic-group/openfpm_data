@@ -34,10 +34,10 @@ struct call_packRequest_enc_functor
 {
 
 	encap & obj;
-	std::vector<size_t> & pap_prp;
+	size_t & req;
 
-	call_packRequest_enc_functor(encap & obj, std::vector<size_t> & pap_prp)
-	:obj(obj),pap_prp(pap_prp)
+	call_packRequest_enc_functor(encap & obj, size_t & req)
+	:obj(obj),req(req)
 	{}
 
 	//! It calls the pack request for each property
@@ -46,7 +46,7 @@ struct call_packRequest_enc_functor
 	{
 		typedef typename boost::mpl::at<typename encap::T_type,T>::type obj_type;
 
-		Packer<obj_type,Mem>::packRequest(obj.template get<T::value>(),pap_prp);
+		Packer<obj_type,Mem>::packRequest(obj.template get<T::value>(),req);
 	}
 };
 
@@ -55,12 +55,12 @@ struct call_packRequest_enc_functor
 template<typename encap, typename Mem, int ... prp>
 struct call_encapPackRequest
 {
-	static inline void call_packRequest(encap & obj, std::vector<size_t> & pap_prp)
+	static inline void call_packRequest(encap & obj, size_t & req)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<encap,sizeof...(prp) == 0,prp...>::type b_prp;
 
-		call_packRequest_enc_functor<encap,Mem> functor(obj,pap_prp);
+		call_packRequest_enc_functor<encap,Mem> functor(obj,req);
 
 		//Apply functor for each property
 		boost::mpl::for_each_ref<b_prp>(functor);
@@ -157,10 +157,10 @@ struct call_packRequest_agg_functor
 {
 
 	const obj_type & obj;
-	std::vector<size_t> & pap_prp;
+	size_t & req;
 
-	call_packRequest_agg_functor(const obj_type & obj, std::vector<size_t> & pap_prp)
-	:obj(obj),pap_prp(pap_prp)
+	call_packRequest_agg_functor(const obj_type & obj, size_t & req)
+	:obj(obj),req(req)
 	{}
 
 	//! It calls the pack request for each property
@@ -170,7 +170,7 @@ struct call_packRequest_agg_functor
 		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_t;
 
 		//for (size_t i = 0; i < obj_type::max_prop ; i++)
-		Packer<obj_t,Mem>::packRequest(obj.template get<T::value>(),pap_prp);
+		Packer<obj_t,Mem>::packRequest(obj.template get<T::value>(),req);
 	}
 };
 
@@ -179,12 +179,12 @@ struct call_packRequest_agg_functor
 template<typename obj_type, typename Mem, int ... prp>
 struct call_aggregatePackRequest
 {
-	static inline void call_packRequest(const obj_type & obj, std::vector<size_t> & pap_prp)
+	static inline void call_packRequest(const obj_type & obj, size_t & req)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<obj_type,sizeof...(prp) == 0,prp...>::type b_prp;
 
-		call_packRequest_agg_functor<obj_type,Mem> functor(obj,pap_prp);
+		call_packRequest_agg_functor<obj_type,Mem> functor(obj,req);
 
 		//Apply functor for each property
 		boost::mpl::for_each_ref<b_prp>(functor);

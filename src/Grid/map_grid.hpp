@@ -51,6 +51,7 @@
 #include "iterators/grid_key_dx_iterator_sp.hpp"
 #include "iterators/grid_key_dx_iterator_sub_bc.hpp"
 #include "Packer_Unpacker/Packer_util.hpp"
+#include "Packer_Unpacker/has_pack_agg.hpp"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;
@@ -200,7 +201,7 @@ public:
 	 * \param vector of requests
 	 *
 	 */
-	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims> & sub, std::vector<size_t> & v)
+	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims> & sub, size_t & req)
 	{
 		typedef openfpm::vector<typename grid_cpu<dim,T,S,Mem>::value_type,ExtPreAlloc<S>,openfpm::grow_policy_identity> dtype;
 		dtype dvect;
@@ -208,7 +209,7 @@ public:
 		// Calculate the required memory for packing
 		size_t alloc_ele = dvect.template calculateMem<prp...>(sub.getVolume(),0);
 
-		v.push_back(alloc_ele);
+		req += alloc_ele;
 	}
 
 	/*! \brief Pack an N-dimensional grid into a vector like structure B given an iterator of the grid

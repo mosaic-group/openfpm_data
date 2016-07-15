@@ -59,7 +59,7 @@ public:
 	/*! \brief Error, no implementation
 	 *
 	 */
-	static size_t packRequest(T & obj, std::vector<size_t> & req)
+	static size_t packRequest(T & obj, size_t & req)
 	{
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " packing for the type " << demangle(typeid(T).name()) << " is not implemented\n";
 		return 0;
@@ -98,9 +98,9 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(T & obj, std::vector<size_t> & req)
+	static void packRequest(T & obj, size_t & req)
 	{
-		req.push_back(sizeof(T));
+		req += sizeof(T);
 	}
 
 	/*! \brief It add a request to pack a C++ primitive
@@ -108,9 +108,9 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(std::vector<size_t> & req)
+	static void packRequest(size_t & req)
 	{
-		req.push_back(sizeof(T));
+		req += sizeof(T);
 	}
 };
 
@@ -150,9 +150,9 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(T & obj,std::vector<size_t> & req)
+	static void packRequest(T & obj,size_t & req)
 	{
-		req.push_back(sizeof(typename T::value_type)*obj.size());
+		req += sizeof(typename T::value_type)*obj.size();
 	}
 };
 
@@ -195,9 +195,9 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(T & obj,std::vector<size_t> & req)
+	static void packRequest(T & obj,size_t & req)
 	{
-		req.push_back(sizeof(T));
+		req += sizeof(T);
 	}
 
 	/*! \brief it add a request to pack an object
@@ -205,9 +205,9 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(std::vector<size_t> & req)
+	static void packRequest(size_t & req)
 	{
-		req.push_back(sizeof(T));
+		req += sizeof(T);
 	}
 };
 
@@ -250,9 +250,9 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(T & obj,std::vector<size_t> & req)
+	static void packRequest(T & obj,size_t & req)
 	{
-		req.push_back(sizeof(T));
+		req += sizeof(T);
 	}
 
 	/*! \brief it add a request to pack an object
@@ -260,9 +260,9 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(std::vector<size_t> & req)
+	static void packRequest(size_t & req)
 	{
-		req.push_back(sizeof(T));
+		req += sizeof(T);
 	}
 };
 
@@ -277,9 +277,9 @@ class Packer<T,Mem,PACKER_VECTOR>
 {
 public:
 
-	template<int ... prp> static void packRequest(const T & obj, std::vector<size_t> & v)
+	template<int ... prp> static void packRequest(const T & obj, size_t & req)
 	{
-		obj.template packRequest<prp...>(v);
+		obj.template packRequest<prp...>(req);
 	};
 
 	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, const T & obj, Pack_stat & sts)
@@ -302,14 +302,14 @@ class Packer<T,Mem,PACKER_GRID>
 {
 public:
 
-	template<int ... prp> static void packRequest(T & obj, std::vector<size_t> & v)
+	template<int ... prp> static void packRequest(T & obj, size_t & req)
 	{
-		obj.template packRequest<prp...>(v);
+		obj.template packRequest<prp...>(req);
 	};
 
-	template<int ... prp> static void packRequest(T & obj, grid_key_dx_iterator_sub<T::dims> & sub, std::vector<size_t> & v)
+	template<int ... prp> static void packRequest(T & obj, grid_key_dx_iterator_sub<T::dims> & sub, size_t & req)
 	{
-		obj.template packRequest<prp...>(sub, v);
+		obj.template packRequest<prp...>(sub, req);
 	};
 
 	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, Pack_stat & sts)
@@ -372,10 +372,10 @@ public:
 	 *
 	 *
 	 */
-	template<int ... prp> void packRequest(T & eobj,std::vector<size_t> & v)
+	template<int ... prp> void packRequest(T & eobj,size_t & req)
 	{
 		if (has_pack_encap<T>::value == true)
-			call_encapPackRequest<T,Mem,prp ...>::call_packRequest(eobj,v);
+			call_encapPackRequest<T,Mem,prp ...>::call_packRequest(eobj,req);
 		else
 		{
 			if (sizeof...(prp) == 0)
@@ -383,7 +383,7 @@ public:
 
 			typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
 
-			v.push_back(sizeof(prp_object));
+			req += sizeof(prp_object);
 		}
 	}
 };
