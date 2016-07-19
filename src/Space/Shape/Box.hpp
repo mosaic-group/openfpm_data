@@ -553,6 +553,18 @@ public:
 		return *this;
 	}
 
+	/*! \brief Get the box enclosing this Box
+	 *
+	 * basically return itself
+	 *
+	 * \return itself
+	 *
+	 */
+	const Box<dim,T> & getBox() const
+	{
+		return *this;
+	}
+
 	/*! \brief Get the internal boost::fusion::vector that store the data
 	 *
 	 * \return the internal boost::fusion::vector that store the data
@@ -728,6 +740,19 @@ public:
 		for (size_t j = 0 ; j < dim ; j++)
 		{
 			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j) - gh.template getBase<g::p1>(j));
+		}
+	}
+
+	/*! \brief Invalidate the box
+	 *
+	 * Bring the state of this box in a way that isValid return false
+	 *
+	 */
+	void invalidate()
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->setLow(j,this->getHigh(j)+1);
 		}
 	}
 

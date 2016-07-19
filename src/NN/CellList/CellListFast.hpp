@@ -69,6 +69,7 @@
 template<unsigned int dim, typename T, typename transform, typename base>
 class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,transform>
 {
+protected:
 	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
 	//
 	//    * * *
@@ -90,6 +91,8 @@ class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,trans
 	//   x *
 	//
 	long int NNc_cr[openfpm::math::pow(2,dim)];
+
+private:
 
 	// Number of slot for each cell
 	size_t slot;
@@ -493,7 +496,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
+	inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.get(cell * slot + ele);
 	}
@@ -508,7 +511,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	template<unsigned int i> inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
+	template<unsigned int i> inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.template get<i>(cell * slot + ele);
 	}
@@ -634,8 +637,6 @@ public:
 		slot = STARTING_NSLOT;
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
 			cl_n.get(i) = 0;
-
-		cl_base.clear();
 	}
 };
 

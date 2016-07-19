@@ -23,8 +23,13 @@
  *
  */
 template<typename T>
-class vector<T,HeapMemory,grow_policy_double,STD_VECTOR>
+class vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,grow_policy_double,STD_VECTOR>
 {
+	// Memory layout
+	typedef typename memory_traits_lin<T>::type layout;
+//      Doeas not work on gcc 4.8.4
+//	template <typename lb> using layout_base = memory_traits_lin<lb>;
+
 	//! 1-D static grid
 	std::vector<T> base;
 
@@ -40,6 +45,8 @@ public:
 	typedef vector_key_iterator iterator_key;
 	//! Type of the value the vector is storing
 	typedef T value_type;
+
+	typedef void base_to_copy;
 
 	//This file implements a pack and unpack for std vector
 #include "vector_std_pack_unpack.ipp"
@@ -177,7 +184,7 @@ public:
 	 * \param eles elements to add
 	 *
 	 */
-	template<typename Mem,typename gp> inline void add(const openfpm::vector<T,Mem,gp> & eles)
+	template<typename Mem,typename l,template<typename> class lb,typename gp> inline void add(const openfpm::vector<T,Mem,l,lb,gp> & eles)
 	{
 
 #ifdef SE_CLASS2
@@ -190,6 +197,64 @@ public:
 
 		// copy the elements
 		std::copy(eles.begin(),eles.end(),base.begin()+start);
+
+#ifdef SE_CLASS2
+
+		if (ptr_old != &base[0])
+		{
+			check_delete(ptr_old);
+			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+		}
+
+#endif
+	}
+
+	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
+	 *
+	 * \param v element to add
+	 *
+	 * \warning It is not thread safe should not be used in multi-thread environment
+	 *          reallocation, work only on cpu
+	 *
+	 *vector_isel<T>::value
+	 */
+	template<typename S> inline void add(const S & v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+		void * ptr_old = &base[0];
+#endif
+
+		push_back_op<is_vector<T>::value,is_vector<S>::value,T,S>::push_back(base,v);
+
+#ifdef SE_CLASS2
+
+		if (ptr_old != &base[0])
+		{
+			check_delete(ptr_old);
+			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+		}
+
+#endif
+	}
+
+	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
+	 *
+	 * \param v element to add
+	 *
+	 * \warning It is not thread safe should not be used in multi-thread environment
+	 *          reallocation, work only on cpu
+	 *
+	 *vector_isel<T>::value
+	 */
+	template<typename S> inline void add(const S && v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+		void * ptr_old = &base[0];
+#endif
+
+		base.push_back(v);
 
 #ifdef SE_CLASS2
 
@@ -421,8 +486,7 @@ public:
 		check_valid(this,8);
 #endif
 #ifdef SE_CLASS1
-		if (id >= base.size())
-			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
+		vector_overflow(id);
 #endif
 		return base[id];
 	}
@@ -496,7 +560,7 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(const vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v) noexcept
+	vector(const vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v) noexcept
 	:err_code(0)
 	{
 #ifdef SE_CLASS2
@@ -532,7 +596,7 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v) noexcept
+	vector(vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v) noexcept
 	:err_code(0)
 	{
 #ifdef SE_CLASS2
@@ -556,7 +620,7 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	void swap(openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -569,7 +633,7 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v)
+	void swap(openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -582,12 +646,13 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & v)
+	vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
 		void * ptr_old = &base[0];
 #endif
+
 		base = v.base;
 
 #ifdef SE_CLASS2
@@ -608,7 +673,52 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,grow_policy_double,STD_VECTOR> && v)
+	template<typename Mem, typename gp> vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR> & v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+		void * ptr_old = &base[0];
+#endif
+
+		base_copy<has_base_to_copy<vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR>>::value,
+		          decltype(*this),
+				  vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR> >::copy(*this,v);
+//		base = v.base;
+
+#ifdef SE_CLASS2
+
+		if (ptr_old != &base[0])
+		{
+			check_delete(ptr_old);
+			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+		}
+
+#endif
+
+		return *this;
+	}
+
+	/*! \brief Operator= copy the vector into another
+	 *
+	 * \return itself
+	 *
+	 */
+	vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		base.swap(v.base);
+
+		return *this;
+	}
+
+	/*! \brief Operator= copy the vector into another
+	 *
+	 * \return itself
+	 *
+	 */
+	template<typename Mem, typename gp>  vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR> && v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -623,7 +733,7 @@ public:
 	 * \param vector to compare
 	 *
 	 */
-	bool operator!=(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v) const
+	bool operator!=(const vector<T, HeapMemory, layout, memory_traits_lin,grow_policy_double,STD_VECTOR> & v) const
 	{
 		return base != v.base;
 	}
@@ -633,7 +743,7 @@ public:
 	 * \param vector to compare
 	 *
 	 */
-	bool operator==(const vector<T, HeapMemory,grow_policy_double,STD_VECTOR> & v) const
+	bool operator==(const vector<T, HeapMemory, layout, memory_traits_lin,grow_policy_double,STD_VECTOR> & v) const
 	{
 		return base == v.base;
 	}
@@ -682,7 +792,7 @@ public:
 #ifdef DEBUG
 			std::cout << "Inside map_vector_std.hpp packMem()" << std::endl;
 #endif
-			packMem_cond<has_packMem<T>::type::value, openfpm::vector<T, HeapMemory, grow_policy_double>, prp...> cm;
+			packMem_cond<has_packMem<T>::type::value, openfpm::vector<T, HeapMemory, layout, memory_traits_lin, grow_policy_double>, prp...> cm;
 			return cm.packMemory(*this,n,0);
 		}
 	}

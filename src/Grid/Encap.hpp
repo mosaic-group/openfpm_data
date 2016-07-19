@@ -18,6 +18,7 @@
 #include "util/se_util.hpp"
 #include "util/copy_compare/copy_fusion_vector.hpp"
 #include "util/copy_compare/compare_fusion_vector.hpp"
+#include "memory_ly/memory_conf.hpp"
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -53,7 +54,7 @@ struct copy_cpu_encap_encap
 #ifdef SE_CLASS1
 		// e_src and e_dst must have the same number of properties
 
-		if (e_src::max_prop != e_dst::max_prop)
+		if (e_src::T_type::max_prop != e_dst::T_type::max_prop)
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of properties between src and dst must match";
 #endif
 	};
@@ -76,10 +77,10 @@ struct copy_cpu_encap_encap
 	inline void operator()(T& t) const
 	{
 		// This is the type of the object we have to copy
-		typedef typename boost::fusion::result_of::at_c<typename e_src::type,T::value>::type copy_type;
+//		typedef typename boost::fusion::result_of::at_c<typename e_src::type,T::value>::type copy_type;
 
 		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
+		typedef typename boost::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
 
 		meta_copy<copy_rtype> cp(src.template get<T::value>(),dst.template get<T::value>());
 	}
@@ -152,24 +153,6 @@ struct compare_cpu_encap_encap
 	}
 };
 
-/*! \brief This class is an helper to get the return type for get method for each property
- *
- * This class is an helper to get the return type for get method for each property
- *
- * \param p id of the property
- * \param T original boost fusion vector, T is suppose to be a boost::fusion::vector<memory_c<...>,.....>
- *
- */
-
-template<unsigned int p,typename mem>
-struct type_cpu_prop
-{
-	//! return a boost::fusion::vector<memory_c<....>....>
-	typedef typename mem::vtype vtype;
-	//! return a memory_c<...>
-	typedef typename boost::fusion::result_of::at< vtype,boost::mpl::int_<p> >::type type;
-};
-
 /*! \brief This class is an helper to get the return type of get for each property
  *
  * This class is an helper to get the return type of get for each property
@@ -192,7 +175,18 @@ struct type_gpu_prop
 	typedef typename mtype::type type;
 };
 
+/*! Stub encap
+ *
+ * \tparam dim dimension
+ * \tparam T object it encapsulate
+ * \tparam layout
+ *
+ */
+template<unsigned int dim,typename T,typename layout>
+class encapc
+{
 
+};
 
 /*! \brief this structure encapsulate an object of the grid
  *
@@ -201,12 +195,11 @@ struct type_gpu_prop
  *
  * \param dim Dimensionality of the grid
  * \param T type of object the grid store
- * \param Mem suppose to be a boost::fusion::vector of arrays
  *
  */
 
-template<unsigned int dim,typename T,typename Mem>
-class encapc
+template<unsigned int dim,typename T>
+class encapc<dim,T,typename memory_traits_lin<T>::type >
 {
 public:
 	typedef typename T::type type;
@@ -214,6 +207,8 @@ public:
 private:
 
 	type & data_c;
+
+	typedef typename memory_traits_lin<T>::type Mem;
 
 public:
 
@@ -223,7 +218,7 @@ public:
 
 	static const int max_prop = T::max_prop;
 
-	// constructor require a key and a memory data
+	// constructor from a reference object
 	inline encapc(type & data_c)
 	:data_c(data_c)
 	{}
@@ -243,10 +238,10 @@ public:
 	 * \return the reference
 	 *
 	 */
-	template <unsigned int p> inline typename type_cpu_prop<p,Mem>::type get()
+	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))> inline r_type get()
 	{
 #ifdef SE_CLASS2
-		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,Mem>::type));
+		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
 #endif
 		return boost::fusion::at_c<p>(data_c);
 	}
@@ -256,19 +251,19 @@ public:
 	 * \return the reference
 	 *
 	 */
-	template <unsigned int p> inline const typename type_cpu_prop<p,Mem>::type get() const
+	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))> inline const r_type get() const
 	{
 #ifdef SE_CLASS2
-		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,Mem>::type));
+		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
 #endif
 		return boost::fusion::at_c<p>(data_c);
 	}
 
 	// access the data
-	template <unsigned int p> inline void set(typename type_cpu_prop<p,Mem>::type & ele)
+	template <unsigned int p> inline void set(decltype(boost::fusion::at_c<p>(data_c)) & ele)
 	{
 #ifdef SE_CLASS2
-			check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename type_cpu_prop<p,T>::type));
+			check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
 #endif
 			return boost::fusion::at_c<p>(data_c) = ele;
 	}
@@ -362,38 +357,69 @@ public:
  *
  *	\param dim Dimensionality of the grid
  *	\param T type of object the grid store
- *	\param Mem interface used to allocate memory
  *
  */
 
-template<unsigned int dim,typename T,typename Mem>
-class encapg
+template<unsigned int dim,typename T>
+class encapc<dim,T,typename memory_traits_inte<T>::type>
 {
+	typedef typename memory_traits_inte<T>::type Mem;
+
 	// constructor require a key
 	Mem & data;
 	size_t k;
 
 public:
 
+	typedef typename T::type type;
+
 	typedef int yes_i_am_encap;
 
 	typedef T T_type;
 
 	// constructor require a key and a memory data
-	encapg(Mem & data, size_t k)
+	encapc(typename memory_traits_inte<T>::type & data, size_t k)
 	:data(data),k(k)
 	{}
 
 	// access the data
-	template <unsigned int p> typename type_gpu_prop<p,Mem>::type::reference get()
+	template <unsigned int p> typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get()
 	{
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
 	}
 
 	// access the data
-	template <unsigned int p> const typename type_gpu_prop<p,Mem>::type::reference get() const
+	template <unsigned int p> const typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get() const
 	{
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
+	}
+
+	/*! \brief Assignment
+	 *
+	 * \param ec encapsulator
+	 *
+	 */
+	inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
+	{
+		copy_cpu_encap_encap<encapc<dim,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+		return *this;
+	}
+
+	/*! \brief Assignment
+	 *
+	 * \param ec encapsulator
+	 *
+	 */
+	inline encapc<dim,T,Mem> & operator=(const T & obj)
+	{
+		copy_fusion_vector_encap<typename T::type,decltype(*this)> cp(obj.data,*this);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+		return *this;
 	}
 };
 

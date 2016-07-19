@@ -23,7 +23,7 @@
 template<typename T, unsigned int agg=2 * is_openfpm_native<T>::value + std::is_copy_assignable<T>::value>
 struct copy_general
 {
-	/*! \brief Spacialization when there is unknown copy method
+	/*! \brief Specialization when there is unknown copy method
 	 *
 	 * \tparam src source object to copy
 	 * \tparam dst destination object
@@ -31,7 +31,7 @@ struct copy_general
 	 */
 	inline copy_general(const T & src, T & dst)
 	{
-		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << demangle(typeid(T).name()) << " does not have an operator= and is not an aggregate or an openfpm native structure, copy is not possible" << "\n";
+		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << "  " << demangle(typeid(T).name()) << " does not have an operator= and is not an aggregate or an openfpm native structure, copy is not possible" << "\n";
 	}
 };
 

@@ -111,10 +111,10 @@ openfpm::vector<Point_test<float>> allocate_openfpm_fill(size_t n, size_t fill)
 }
 
 
-openfpm::vector<Point_test<float>> allocate_openfpm(size_t n_ele)
+template<typename vector> vector allocate_openfpm(size_t n_ele)
 {
 	//! [Create add and access]
-	openfpm::vector<Point_test<float>> v_ofp_test;
+	vector v_ofp_test;
 
 	//! [Point declaration]
 	Point_test<float> p;
@@ -160,19 +160,19 @@ openfpm::vector<Point_test<float>> allocate_openfpm(size_t n_ele)
 
 		// Modify the point
 
-		v_ofp_test.get<P::v>(last)[0] = 1.0 + i;
-		v_ofp_test.get<P::v>(last)[1] = 2.0 + i;
-		v_ofp_test.get<P::v>(last)[2] = 7.0 + i;
+		v_ofp_test.template get<P::v>(last)[0] = 1.0 + i;
+		v_ofp_test.template get<P::v>(last)[1] = 2.0 + i;
+		v_ofp_test.template get<P::v>(last)[2] = 7.0 + i;
 
-		v_ofp_test.get<P::t>(last)[0][0] = 10.0 + i;
-		v_ofp_test.get<P::t>(last)[0][1] = 13.0 + i;
-		v_ofp_test.get<P::t>(last)[0][2] = 8.0 + i;
-		v_ofp_test.get<P::t>(last)[1][0] = 19.0 + i;
-		v_ofp_test.get<P::t>(last)[1][1] = 23.0 + i;
-		v_ofp_test.get<P::t>(last)[1][2] = 5.0 + i;
-		v_ofp_test.get<P::t>(last)[2][0] = 4.0 + i;
-		v_ofp_test.get<P::t>(last)[2][1] = 3.0 + i;
-		v_ofp_test.get<P::t>(last)[2][2] = 11.0 + i;
+		v_ofp_test.template get<P::t>(last)[0][0] = 10.0 + i;
+		v_ofp_test.template get<P::t>(last)[0][1] = 13.0 + i;
+		v_ofp_test.template get<P::t>(last)[0][2] = 8.0 + i;
+		v_ofp_test.template get<P::t>(last)[1][0] = 19.0 + i;
+		v_ofp_test.template get<P::t>(last)[1][1] = 23.0 + i;
+		v_ofp_test.template get<P::t>(last)[1][2] = 5.0 + i;
+		v_ofp_test.template get<P::t>(last)[2][0] = 4.0 + i;
+		v_ofp_test.template get<P::t>(last)[2][1] = 3.0 + i;
+		v_ofp_test.template get<P::t>(last)[2][2] = 11.0 + i;
 	}
 
 	//! [Create add and access]

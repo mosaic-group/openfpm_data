@@ -241,7 +241,7 @@
 	{
 		size_t req = 0;
 		
-		Packer<openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR>,HeapMemory>::packRequest(*this,req);
+		Packer<openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR>,HeapMemory>::packRequest(*this,req);
 
 		// allocate the memory
 		HeapMemory pmem;
@@ -251,7 +251,7 @@
 		//Packing
 
 		Pack_stat sts;
-		Packer<openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR>,HeapMemory>::pack(mem,*this,sts);
+		Packer<openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR>,HeapMemory>::pack(mem,*this,sts);
 
 		// Save into a binary file
 	    std::ofstream dump (file, std::ios::out | std::ios::binary);
@@ -300,7 +300,7 @@
 		//Unpacking
 		Unpack_stat ps;
 
-	 	Unpacker<openfpm::vector<T,HeapMemory,grow_policy_double,STD_VECTOR>,HeapMemory>::unpack(mem,*this,ps);
+	 	Unpacker<openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR>,HeapMemory>::unpack(mem,*this,ps);
 	 	
 	 	return true;
 	}

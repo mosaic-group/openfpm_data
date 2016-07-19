@@ -24,8 +24,17 @@
 template<typename T>
 class memory_array
 {
+
+#if defined(__GNUG__) || defined(__clang__)
+
 	//! Internal pointer
+	T __attribute__((aligned(16))) * ptr;
+
+#else
+
 	T * ptr;
+
+#endif
 
 	//! return the i element
 	T get(mem_id i)

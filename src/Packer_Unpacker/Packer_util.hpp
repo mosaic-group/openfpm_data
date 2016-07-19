@@ -20,7 +20,7 @@ template<typename T, typename Mem, int pack_type=Pack_selector<T>::value > class
 
 namespace openfpm
 {
-	template<typename T, typename Memory=HeapMemory, typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value> class vector;
+	template<typename T, typename Memory=HeapMemory, typename layout=typename memory_traits_lin<T>::type, template<typename> class layout_base=memory_traits_lin , typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value> class vector;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -152,6 +152,7 @@ struct call_encapUnpack
 ////////////////////////////////////////////////////////////////////////////////////
 
 //A functor for call_aggregatePackRequest
+
 template<typename obj_type, typename Mem>
 struct call_packRequest_agg_functor
 {
@@ -208,10 +209,10 @@ struct call_pack_agg_functor
 	template<typename T>
 	inline void operator()(T& t)
 	{
-		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_type;
+		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_t;
 
 		//for (size_t i = 0; i < obj.size(); i++)
-			Packer<obj_type,Mem>::pack(mem,obj.template get<T::value>(),sts);
+			Packer<obj_t,Mem>::pack(mem,obj.template get<T::value>(),sts);
 	}
 };
 
@@ -249,10 +250,10 @@ struct call_unpack_agg_functor
 	template<typename T>
 	inline void operator()(T& t)
 	{
-		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_type;
+		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_t;
 
 		//for (size_t i = 0; i < obj.size(); i++)
-			Unpacker<obj_type,Mem>::unpack(mem,obj.template get<T::value>(),ps);
+			Unpacker<obj_t,Mem>::unpack(mem,obj.template get<T::value>(),ps);
 	}
 };
 

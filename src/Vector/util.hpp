@@ -24,7 +24,7 @@ struct is_vector: std::false_type {};
  *
  */
 template<typename T>
-struct is_vector<T, typename Void< typename T::yes_i_am_vector>::type> : std::true_type
+struct is_vector<T, typename Void< typename T::yes_i_am_vector>::type > : std::true_type
 {};
 
 

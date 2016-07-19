@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_obj)
 
 	fill_grid<3>(c3);
 
-	Point_test<float> f;
+	Point_test<float> f __attribute__((aligned(16)));
 	f.fill();
 
 	std::vector<double> times(N_STAT + 1);
@@ -47,6 +47,8 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_obj)
 			t.stop();
 
 			times[i] = t.getwct();
+
+			std::cout << "Time " << times[i] << std::endl;
 		}
 		std::sort(times.begin(),times.end());
 		sleep(5);

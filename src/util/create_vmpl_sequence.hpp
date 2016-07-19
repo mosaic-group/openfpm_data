@@ -64,7 +64,7 @@ struct seq_traits_impl
 *
 * usage:
 *
-* to_sequence<3,5>::type
+* to_sequence<3,4,5>::type
 *
 * is mapped to
 *

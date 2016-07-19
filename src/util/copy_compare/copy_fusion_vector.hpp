@@ -56,5 +56,52 @@ struct copy_fusion_vector
 };
 
 
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * It copy a boost::fusion::vector into an encap
+ *
+ */
+template<typename bfv, typename enc>
+struct copy_fusion_vector_encap
+{
+	const bfv & src;
+	enc & dst;
+
+	/*! \brief constructor
+	 *
+	 * It define the copy parameters.
+	 *
+	 * \param obj object we have to set in grid_dst
+	 *
+	 */
+	inline copy_fusion_vector_encap(const bfv & src, enc & dst)
+	:src(src),dst(dst){};
+
+#ifdef SE_CLASS1
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	inline copy_fusion_vector_encap(const bfv && src, enc && dst)
+	:src(src),dst(dst)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object\n";};
+#endif
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t)
+	{
+		// This is the type of the object we have to copy
+//		typedef typename boost::fusion::result_of::at_c<bfv,T::value>::type copy_type;
+
+		// Remove the reference from the type to copy
+//		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
+
+		meta_copy_d<typename boost::mpl::at<bfv,boost::mpl::int_<T::value> >::type,decltype(dst.template get<T::value>())> cp(boost::fusion::at_c<T::value>(src),dst.template get<T::value>());
+	}
+};
+
 
 #endif /* OPENFPM_DATA_SRC_GRID_COPY_FUSION_VECTOR_HPP_ */

@@ -9,6 +9,8 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
 #include "Grid/Encap.hpp"
+#include "Point_operators.hpp"
+
 
 /*! \brief This class implement the point shape in an N-dimensional space
  *
@@ -32,6 +34,16 @@ template<unsigned int dim ,typename T> class Point
 
 	//! Property id of the point
 	static const unsigned int x = 0;
+
+
+	/*! \brief Evaluate the expression and save the result on the point
+	 *
+	 *
+	 */
+	template<typename orig, typename exp1, typename exp2, unsigned int op> Point(const point_expression_op<orig,exp1,exp2,op> & p_exp)
+	{
+		this->operator=(p_exp);
+	}
 
 	/*! \brief Point constructor from point
 	 *
@@ -64,6 +76,14 @@ template<unsigned int dim ,typename T> class Point
 	{
 	    for(size_t i = 0; i < dim ; i++)
 	    {get(i) = p[i];}
+	}
+
+	/*! \brief Constructor from scalar
+	 *
+	 */
+	inline Point(T d)
+	{
+		this->operator=(d);
 	}
 
 	/*! \brief Point constructor
@@ -139,75 +159,6 @@ template<unsigned int dim ,typename T> class Point
 		return get(i);
 	}
 
-	/*! \brief operator= between points
-	 *
-	 * \param p Point
-	 *
-	 */
-	inline Point<dim,T> & operator=(const Point<dim,T> & p)
-	{
-		for (size_t i = 0 ; i < dim ; i++)
-			get(i) = p.get(i);
-
-		return *this;
-	}
-
-	/*! \brief Multiply each components by a constant
-	 *
-	 * \param c constanr
-	 *
-	 */
-	inline Point<dim,T> operator*(T c)
-	{
-		Point<dim,T> result;
-
-		for (size_t i = 0 ; i < dim ; i++)
-			result.get(i) = get(i) * c;
-
-		return result;
-	}
-
-	/*! \brief Multiply each components
-	 *
-	 * \param p Point
-	 *
-	 */
-	template<typename aT> inline Point<dim,T> operator*(const Point<dim,aT> & p)
-	{
-		Point<dim,T> result;
-
-		for (size_t i = 0 ; i < dim ; i++)
-			result.get(i) = get(i) * p.get(i);
-
-		return result;
-	}
-
-	/*! \brief Subtract each components
-	 *
-	 * \param p Point
-	 *
-	 */
-	inline Point<dim,T> & operator-=(const Point<dim,T> & p)
-	{
-		for (size_t i = 0 ; i < dim ; i++)
-			get(i) -= p.get(i);
-
-		return *this;
-	}
-
-	/*! \brief Sum each components
-	 *
-	 * \param p Point
-	 *
-	 */
-	inline Point<dim,T> & operator+=(const Point<dim,T> & p)
-	{
-		for (size_t i = 0 ; i < dim ; i++)
-			get(i) += p.get(i);
-
-		return *this;
-	}
-
 	/*! \Brief norm of the vector
 	 *
 	 * \return the norm of the vector
@@ -221,64 +172,6 @@ template<unsigned int dim ,typename T> class Point
 			n+=get(i) * get(i);
 
 		return sqrt(n);
-	}
-
-	/*! \brief Sum each components
-	 *
-	 * \param p Point
-	 *
-	 */
-	template<typename aT> inline Point<dim,T> operator+(const Point<dim,aT> & p)
-	{
-		Point<dim,T> result;
-
-		for (size_t i = 0 ; i < dim ; i++)
-			result.get(i) = get(i) + p.get(i);
-
-		return result;
-	}
-
-	/*! \brief divide each component
-	 *
-	 * \param ar Component wise division
-	 *
-	 */
-	template<typename aT> inline Point<dim,T> operator/(const aT (&ar)[dim])
-	{
-		Point<dim,T> result;
-
-		for (size_t i = 0 ; i < dim ; i++)
-			result.get(i) = get(i) / ar[i];
-
-		return result;
-	}
-
-	/*! \brief divide each component
-	 *
-	 * \param ar Component wise division
-	 *
-	 */
-	template<typename aT> inline Point<dim,T> operator/=(const aT c)
-	{
-		for (size_t i = 0 ; i < dim ; i++)
-			get(i) = get(i) / c;
-
-		return *this;
-	}
-
-	/*! \brief divide each component
-	 *
-	 * \param c Component wise division
-	 *
-	 */
-	template<typename aT> inline Point<dim,T> operator/(const aT c)
-	{
-		Point<dim,T> result;
-
-		for (size_t i = 0 ; i < dim ; i++)
-			result.get(i) = get(i) / c;
-
-		return result;
 	}
 
 	/*! \brief  It calculate the distance between 2 points
@@ -319,24 +212,6 @@ template<unsigned int dim ,typename T> class Point
 		return tot;
 	}
 
-	/*! \brief Operator subtraction
-	 *
-	 *  it produce a point that is the subtraction of two points
-	 *
-	 * \param p Point
-	 *
-	 */
-	inline Point<dim,T> operator-(const Point<dim,T> & p)
-	{
-		Point<dim,T> result;
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			result.get(i) = get(i) - p.get(i);
-		}
-
-		return result;
-	}
 
 	/*! \brief Set to zero the point coordinate
 	 *
@@ -472,7 +347,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the value
 	 *
 	 */
-	T value(size_t i) const
+	inline T value(size_t i) const
 	{
 		return get(i);
 	}
@@ -502,14 +377,127 @@ template<unsigned int dim ,typename T> class Point
 		return p;
 	}
 
+
 	//! This structure has no internal pointers
 	static bool noPointers()
 	{
 		return true;
 	}
 
+	////////////////////////////////////////////////////////////////
+	////////////////////// ARITMETIC OPERATORS /////////////////////
+	////////////////////////////////////////////////////////////////
+
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 */
+	template<typename orig, typename exp1, typename exp2, unsigned int op> Point<dim,T> & operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
+	{
+		p_exp.init();
+
+		for (size_t i = 0; i < dim ; i++)
+			get(i) = p_exp.value(i);
+
+		return *this;
+	}
+
+	/*! \brief divide each component
+	 *
+	 * \param ar Component wise division
+	 *
+	 */
+	template<typename aT> inline Point<dim,T> operator/(const aT (&ar)[dim])
+	{
+		Point<dim,T> result;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			result.get(i) = get(i) / ar[i];
+
+		return result;
+	}
+
+	/*! \brief divide each component
+	 *
+	 * \param ar Component wise division
+	 *
+	 */
+	template<typename aT> inline Point<dim,T> operator/=(const aT c)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			get(i) = get(i) / c;
+
+		return *this;
+	}
+
+
+	/*! \brief Fill the vector property with the double
+	 *
+	 * \param d value to fill
+	 *
+	 */
+	Point<dim,T> & operator=(T d)
+	{
+		for (size_t i = 0; i < dim ; i++)
+			get(i) = d;
+
+		return *this;
+	}
+
+	/*! \brief operator= between points
+	 *
+	 * \param p Point
+	 *
+	 */
+	inline Point<dim,T> & operator=(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			get(i) = p.get(i);
+
+		return *this;
+	}
+
+	/*! \brief Subtract each components
+	 *
+	 * \param p Point
+	 *
+	 */
+	inline Point<dim,T> & operator-=(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			get(i) -= p.get(i);
+
+		return *this;
+	}
+
+	/*! \brief Sum each components
+	 *
+	 * \param p Point
+	 *
+	 */
+	inline Point<dim,T> & operator+=(const Point<dim,T> & p)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			get(i) += p.get(i);
+
+		return *this;
+	}
+
+	/*! \brief Do nothing stub operation
+	 *
+	 * Required to make the code compilable
+	 *
+	 */
+	inline void init() const
+	{}
+
+	///////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////
+
 	static const unsigned int max_prop = 1;
 	static const unsigned int dims = dim;
+	static const unsigned int nvals = dim;
 };
 
 /*! \brief Convert an array of point coordinate into string
@@ -550,22 +538,11 @@ template <unsigned int N, typename T, typename Mem> std::string toPointString(co
 	return ps.str();
 }
 
-/*! \brief Multiply each components
- *
- * \param c constant
- * \param p Point
- *
- * \return the result point
- *
- */
-template<typename T, unsigned int dim, typename aT> inline Point<dim,aT> operator*(T c, const Point<dim,aT> & p)
-{
-	Point<dim,aT> result;
 
-	for (size_t i = 0 ; i < dim ; i++)
-		result.get(i) = c * p.get(i);
+//! A point is a vector on a computer (But do not say this to a Mathematician)
 
-	return result;
-}
+template<unsigned int dim, typename T>  using VectorS = Point<dim,T>;
+
+
 
 #endif

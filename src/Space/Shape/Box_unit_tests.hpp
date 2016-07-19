@@ -282,6 +282,10 @@ BOOST_AUTO_TEST_CASE( box_use)
 
 	BOOST_REQUIRE_EQUAL(ret,true);
 
+	b1.invalidate();
+
+	BOOST_REQUIRE_EQUAL(b1.isValid(),false);
+
 	std::cout << "Box unit test stop" << "\n";
 }
 

@@ -17,6 +17,8 @@ m4_ifdef([AX_BOOST_BASE],,[m4_include([m4/ax_boost_base.m4])])
 m4_ifdef([AX_BOOST_IOSTREAMS],,[m4_include([m4/ax_boost_iostreams.m4])])
 m4_ifdef([AX_BOOST_PROGRAM_OPTIONS],,[m4_include([m4/ax_boost_program_options.m4])])
 m4_ifdef([AX_BOOST_UNIT_TEST_FRAMEWORK],,[m4_include([m4/ax_boost_unit_test_framework.m4])])
+m4_ifdef([AX_BOOST_TIMER],,[m4_include(m4/ax_boost_timer.m4)])
+m4_ifdef([AX_BOOST_SYSTEM],,[m4_include(m4/ax_boost_system.m4)])
 
 case $host_os in
    *cygwin*)
@@ -215,16 +217,6 @@ fi
 
 INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_io/src"
 
-####### include /usr/local/lib and /usr/local/lib64 if they exist
-
-if [ -d "/usr/local/lib64" ]; then
-	LOCAL_LIBS="/usr/local/lib64"
-else
-	if [ -d "/usr/local/lib" ]; then
-		LOCAL_LIBS="/usr/local/lib"
-	fi
-fi
-
 ####### Checking for GPU support
 
 AX_CUDA
@@ -253,10 +245,14 @@ fi
 
 #
 
+NVCCFLAGS="--std=c++11"
+
 if test x$gpu_support = x"no"; then
      CUDA_LIBS=""
      CUDA_CFLAGS=""
 fi
+
+AC_SUBST(NVCCFLAGS)
 
 AM_CONDITIONAL(BUILDCUDA, test x$gpu_support = x"yes")
 
@@ -267,6 +263,9 @@ AX_BOOST_BASE([1.52],[],[echo "boost not found"
 AX_BOOST_UNIT_TEST_FRAMEWORK
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_IOSTREAMS
+AX_BOOST_SYSTEM
+AX_BOOST_CHRONO
+AX_BOOST_TIMER
 
 if test x"$ax_cv_boost_unit_test_framework" = x"no"; then
   echo "Notify boost not usable"

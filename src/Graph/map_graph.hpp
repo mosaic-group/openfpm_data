@@ -58,15 +58,19 @@ class no_edge
 {
 public:
 	typedef boost::fusion::vector<> type;
-	typedef typename memory_traits_inte<type>::type memory_int;
-	typedef typename memory_traits_lin<type>::type memory_lin;
 
 	type data;
 
 	static const unsigned int max_prop = 0;
 };
 
-template<typename V, typename E, template<typename, typename, typename, unsigned int> class VertexList, template<typename, typename, typename, unsigned int> class EdgeList, typename Memory, typename grow_p>
+template<typename V, typename E,
+		 typename Memory,
+		 typename layout_v,
+		 typename layout_e,
+		 template <typename> class layout_v_base,
+		 template <typename> class layout_e_base,
+		 typename grow_p>
 class Graph_CSR;
 
 /*! \brief Structure used inside GraphCSR an edge
@@ -80,8 +84,6 @@ class e_map
 {
 public:
 	typedef boost::fusion::vector<size_t, size_t> type;
-	typedef typename memory_traits_inte<type>::type memory_int;
-	typedef typename memory_traits_lin<type>::type memory_lin;
 
 	type data;
 
@@ -278,27 +280,32 @@ public:
  * \snippet graph_unit_tests.hpp Create a tree graph with no edge properties
  *
  */
-template<typename V, typename E = no_edge, template<typename, typename, typename, unsigned int> class VertexList = openfpm::vector, template<typename, typename, typename, unsigned int> class EdgeList = openfpm::vector, typename Memory = HeapMemory,
-		typename grow_p = openfpm::grow_policy_double>
+template<typename V, typename E = no_edge,
+		  typename Memory = HeapMemory,
+		  typename layout_v = typename memory_traits_lin<V>::type,
+		  typename layout_e = typename memory_traits_lin<E>::type,
+		  template<typename> class layout_v_base = memory_traits_lin,
+		  template<typename> class layout_e_base = memory_traits_lin,
+		  typename grow_p = openfpm::grow_policy_double>
 class Graph_CSR
 {
 	//! number of slot per vertex
 	size_t v_slot;
 
 	//! Structure that store the vertex properties
-	VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value> v;
+	openfpm::vector<V, Memory, layout_v, layout_v_base,grow_p, openfpm::vect_isel<V>::value> v;
 
 	//! Structure that store the number of adjacent vertex in e_l for each vertex
-	VertexList<size_t, Memory, grow_p, openfpm::vect_isel<size_t>::value> v_l;
+	openfpm::vector<size_t, Memory, typename layout_v_base<size_t>::type, layout_v_base,grow_p, openfpm::vect_isel<size_t>::value> v_l;
 
 	//! Structure that store the edge properties
-	EdgeList<E, Memory, grow_p, openfpm::vect_isel<E>::value> e;
+	openfpm::vector<E, Memory, layout_e, layout_e_base, grow_p, openfpm::vect_isel<E>::value> e;
 
 	//! Structure that store for each vertex the adjacent the vertex id and edge id (for property into e)
-	EdgeList<e_map, Memory, grow_p, openfpm::vect_isel<e_map>::value> e_l;
+	openfpm::vector<e_map, Memory, typename layout_e_base<e_map>::type, layout_e_base , grow_p, openfpm::vect_isel<e_map>::value> e_l;
 
 	//! invalid edge element, when a function try to create an in valid edge this object is returned
-	EdgeList<E, Memory, grow_p, openfpm::vect_isel<E>::value> e_invalid;
+	openfpm::vector<E, Memory, layout_e, layout_e_base, grow_p, openfpm::vect_isel<E>::value> e_invalid;
 
 	/*! \brief add edge on the graph
 	 *
@@ -320,12 +327,12 @@ class Graph_CSR
 		// get the number of adjacent vertex
 		size_t id_x_end = v_l.template get<0>(v1);
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		// Check that v1 and v2 exist
 
 		if (v1 >= v.size() || v2 >= v.size())
 		{
-			//std::cout << "Warning graph: creating an edge between vertex that does not exist" << "\n";
+			std::cout << "Warning graph: creating an edge between vertex that does not exist" << std::endl;
 		}
 
 		// Check that the edge does not already exist
@@ -334,7 +341,7 @@ class Graph_CSR
 		{
 			if (e_l.template get<e_map::vid>(v1 * v_slot + s) == v2)
 			{
-				std::cerr << "Error graph: the edge already exist\n";
+				std::cerr << "Error graph: the edge already exist" << std::endl;
 			}
 		}
 #endif
@@ -348,7 +355,7 @@ class Graph_CSR
 
 			// Create an new Graph
 
-			Graph_CSR<V, E, VertexList, EdgeList> g_new(2 * v_slot, v.size());
+			Graph_CSR<V, E> g_new(2 * v_slot, v.size());
 
 			// Copy the graph
 
@@ -398,10 +405,10 @@ public:
 	typedef E E_type;
 
 	//! Object container for the vertex, for example can be encap<...> (map_grid or openfpm::vector)
-	typedef typename VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value>::container V_container;
+	typedef typename openfpm::vector<V, Memory, layout_v, layout_v_base, grow_p, openfpm::vect_isel<V>::value>::container V_container;
 
 	//! Object container for the edge, for example can be encap<...> (map_grid or openfpm::vector)
-	typedef typename EdgeList<E, Memory, grow_p, openfpm::vect_isel<E>::value>::container E_container;
+	typedef typename openfpm::vector<E, Memory, layout_e, layout_e_base, grow_p, openfpm::vect_isel<E>::value>::container E_container;
 
 	/*! \brief Check if two graph exactly match
 	 *
@@ -412,7 +419,7 @@ public:
 	 * \return true if they match
 	 *
 	 */
-	bool operator==(const Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> & g) const
+	bool operator==(const Graph_CSR<V, E, Memory, layout_v,layout_e,layout_v_base, layout_e_base, grow_p> & g) const
 	{
 		bool ret = true;
 
@@ -433,9 +440,9 @@ public:
 	 * \return a graph duplicate of the first
 	 *
 	 */
-	Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> duplicate() const
+	Graph_CSR<V, E, Memory, layout_v, layout_e,layout_v_base,layout_e_base, grow_p> duplicate() const
 	{
-		Graph_CSR<V, E, VertexList, EdgeList, Memory, grow_p> dup;
+		Graph_CSR<V, E, Memory, layout_v, layout_e,layout_v_base,layout_e_base, grow_p> dup;
 
 		dup.v_slot = v_slot;
 
@@ -455,8 +462,8 @@ public:
 	 * Constructor
 	 *
 	 */
-	Graph_CSR() :
-			Graph_CSR(0, 16)
+	Graph_CSR()
+	:Graph_CSR(0, 16)
 	{
 	}
 
@@ -491,7 +498,7 @@ public:
 	/*! \brief Copy constructor
 	 *
 	 */
-	Graph_CSR(Graph_CSR<V, E, VertexList, EdgeList, Memory> && g)
+	Graph_CSR(Graph_CSR<V, E, Memory> && g)
 	{
 		swap(g);
 	}
@@ -501,7 +508,7 @@ public:
 	 * \param g graph to copy
 	 * 
 	 */
-	Graph_CSR<V, E, VertexList, EdgeList, Memory> & operator=(Graph_CSR<V, E, VertexList, EdgeList, Memory> && g)
+	Graph_CSR<V, E, Memory> & operator=(Graph_CSR<V, E, Memory> && g)
 	{
 		size_t vs_tmp = v_slot;
 		v_slot = g.v_slot;
@@ -516,7 +523,7 @@ public:
 	 * \param g graph to copy
 	 * 
 	 */
-	Graph_CSR<V, E, VertexList, EdgeList, Memory> & operator=(const Graph_CSR<V, E, VertexList, EdgeList, Memory> & g)
+	Graph_CSR<V, E, Memory> & operator=(const Graph_CSR<V, E, Memory> & g)
 	{
 		swap(g.duplicate());
 
@@ -706,7 +713,7 @@ public:
 	 * \return the number of childs
 	 *
 	 */
-	inline size_t getNChilds(typename VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value>::iterator_key & c)
+	inline size_t getNChilds(typename openfpm::vector<V, Memory, layout_v, layout_v_base, grow_p, openfpm::vect_isel<V>::value>::iterator_key & c)
 	{
 		// Get the number of childs
 
@@ -725,26 +732,26 @@ public:
 		return e.get(e_l.template get<e_map::eid>(v * v_slot + v_e));
 	}
 
-	/*! \brief Get the child edge
+	/*! \brief Get the child vertex id
 	 *
 	 * \param v node
 	 * \param i child at position i
 	 *
-	 * \return the edge id that connect v with the target at position i
+	 * \return the target vertex id that connect v with the target vertex at position i
 	 *
 	 */
 
 	inline size_t getChild(size_t v, size_t i) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (i >= v_l.template get<0>(v))
 		{
-			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v << " does not have edge " << i << "\n";
+			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v << " does not have edge " << i << std::endl;
 		}
 
-		if (e.size() <= e_l.template get<e_map::eid>(v * v_slot + i))
+		if (e.size() <= e_l.template get<e_map::vid>(v * v_slot + i))
 		{
-			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge " << v << " does not have edge "<< i << "\n";
+			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " vertex " << v << " does not have edge "<< i << std::endl;
 		}
 #endif
 		// Get the edge id
@@ -760,17 +767,17 @@ public:
 	 *
 	 */
 
-	inline size_t getChild(typename VertexList<V, Memory, grow_p, openfpm::vect_isel<V>::value>::iterator_key & v, size_t i)
+	inline size_t getChild(typename openfpm::vector<V, Memory, layout_v, layout_v_base, grow_p>::iterator_key & v, size_t i)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (i >= v_l.template get<0>(v.get()))
 		{
-			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v.get() << " does not have edge " << i << "\n";
+			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v.get() << " does not have edge " << i << std::endl;
 		}
 
 		if (e.size() <= e_l.template get<e_map::eid>(v.get() * v_slot + i))
 		{
-			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " edge " << v.get() << " does not have edge "<< i << "\n";
+			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " vertex " << v.get() << " does not have edge "<< i << std::endl;
 		}
 #endif
 
@@ -891,7 +898,7 @@ public:
 	 *
 	 */
 
-	inline void swap(Graph_CSR<V, E, VertexList, EdgeList> & g)
+	inline void swap(Graph_CSR<V, E> & g)
 	{
 		// switch the memory
 
@@ -909,7 +916,7 @@ public:
 	 *
 	 */
 
-	inline void swap(Graph_CSR<V, E, VertexList, EdgeList> && g)
+	inline void swap(Graph_CSR<V, E> && g)
 	{
 		// switch the memory
 
@@ -941,9 +948,9 @@ public:
 	 *
 	 */
 
-	inline edge_iterator<Graph_CSR<V, E, VertexList, EdgeList, Memory>> getEdgeIterator() const
+	inline edge_iterator<Graph_CSR<V, E, Memory>> getEdgeIterator() const
 	{
-		return edge_iterator<Graph_CSR<V, E, VertexList, EdgeList, Memory>>(*this);
+		return edge_iterator<Graph_CSR<V, E, Memory>>(*this);
 	}
 
 	/*! \brief Return the number of the vertex
