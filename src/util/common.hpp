@@ -258,4 +258,20 @@ template<typename T>
 struct is_openfpm_native<T,true> : std::true_type
 {};
 
+template<typename T, typename Sfinae = void>
+struct has_max_prop: std::false_type {};
+
+/*! \brief has_max_prop check if a type has defined a member max_prop
+ *
+ * ### Example
+ *
+ * \snippet util_test.hpp Check has_max_prop
+ *
+ * return true if T::value_type::max_prop is a valid type
+ *
+ */
+template<typename T>
+struct has_max_prop<T, typename Void<decltype( T::max_prop )>::type> : std::true_type
+{};
+
 #endif

@@ -460,6 +460,26 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		}
 
 		{
+		//! [Check has_max_prop]
+
+		struct test_has_max_prop
+		{
+			const unsigned int max_prop = 6;
+		};
+
+		struct test_has_no_max_prop
+		{
+		};
+
+		int val = has_max_prop<test_has_max_prop>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = has_max_prop<test_has_no_max_prop>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check has_data]
+		}
+
+		{
 		//! [Check has_posMask]
 
 		int val = has_posMask<test_has_posMask>::value;
