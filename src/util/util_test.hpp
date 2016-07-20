@@ -21,6 +21,15 @@
 #include <iostream>
 #include "mul_array_extents.hpp"
 
+struct test_has_max_prop
+{
+	static const unsigned int max_prop = 6;
+};
+
+struct test_has_no_max_prop
+{
+};
+
 //! [Check has_posMask struct definition]
 
 struct test_has_posMask
@@ -462,14 +471,7 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		{
 		//! [Check has_max_prop]
 
-		struct test_has_max_prop
-		{
-			const unsigned int max_prop = 6;
-		};
-
-		struct test_has_no_max_prop
-		{
-		};
+		int a = test_has_max_prop::max_prop;
 
 		int val = has_max_prop<test_has_max_prop>::value;
 		BOOST_REQUIRE_EQUAL(val, true);
