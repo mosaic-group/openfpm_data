@@ -143,7 +143,7 @@ public:
 	{
 		++sub_it[act];
 
-		while (sub_it[act].isNext() == false)
+		while (act < 2*dim && sub_it[act].isNext() == false)
 			act++;
 
 		return *this;

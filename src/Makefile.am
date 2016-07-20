@@ -16,13 +16,13 @@ mem_map_LDADD = $(LINKLIBS)
 nobase_include_HEADERS= data_type/scalar.hpp data_type/aggregate.hpp \
 Graph/graph_unit_tests.hpp Graph/map_graph.hpp \
 Grid/comb.hpp Grid/grid_base_implementation.hpp Grid/grid_base_impl_layout.hpp Grid/grid_common.hpp Grid/grid_gpu.hpp Grid/Encap.hpp Grid/grid_key.hpp Grid/grid_key_dx_expression_unit_tests.hpp Grid/grid_key_expression.hpp Grid/grid_sm.hpp Grid/grid_unit_tests.hpp Grid/grid_util_test.hpp Grid/map_grid.hpp Grid/se_grid.hpp Grid/util.hpp \
-Grid/iterators/grid_key_dx_iterator_sp.hpp Grid/iterators/grid_key_dx_iterator_sub_bc.hpp Grid/iterators/grid_key_dx_iterator_sub.hpp Grid/iterators/grid_key_dx_iterator.hpp \
+Grid/iterators/grid_key_dx_iterator_sp.hpp Grid/iterators/grid_key_dx_iterator_sub_bc.hpp Grid/iterators/grid_key_dx_iterator_sub.hpp Grid/iterators/grid_key_dx_iterator.hpp Grid/iterators/grid_skin_iterator.hpp  \
 Point_test.hpp \
 Point_orig.hpp \
 memory_ly/memory_array.hpp memory_ly/memory_c.hpp memory_ly/memory_conf.hpp memory_ly/t_to_memory_c.hpp \
 NN/CellList/CellDecomposer.hpp NN/CellList/CellKey.hpp NN/CellList/CellList.hpp NN/CellList/CellList_test.hpp NN/CellList/CellListBal.hpp NN/CellList/CellListFast.hpp NN/CellList/CellListMem.hpp NN/CellList/CellNNIterator.hpp \
 Space/Ghost.hpp Space/Matrix.hpp Space/SpaceBox.hpp Space/SpaceBox_unit_tests.hpp \
-Space/Shape/AdaptiveCylinderCone.hpp Space/Shape/Box.hpp Space/Shape/Box_unit_tests.hpp Space/Shape/HyperCube.hpp Space/Shape/HyperCube_unit_test.hpp Space/Shape/Point.hpp Space/Shape/Point_unit_test.hpp Space/Shape/Sphere.hpp \
+Space/Shape/AdaptiveCylinderCone.hpp Space/Shape/Box.hpp Space/Shape/Box_unit_tests.hpp Space/Shape/HyperCube.hpp Space/Shape/HyperCube_unit_test.hpp Space/Shape/Point.hpp Space/Shape/Point_unit_test.hpp Space/Shape/Point_operators_functions.hpp Space/Shape/Point_operators.hpp  Space/Shape/Sphere.hpp \
 util/check_no_pointers.hpp util/common.hpp util/convert.hpp util/create_vmpl_sequence.hpp util/ct_array.hpp util/for_each_ref.hpp util/mathutil.hpp util/object_creator.hpp util/object_s_di.hpp util/object_si_d.hpp util/object_util.hpp util/util_debug.hpp util/util_test.hpp util/variadic_to_vmpl.hpp util/variadic_to_vmpl_unit_test.hpp util/Pack_stat.hpp \
 Vector/map_vector.hpp Vector/map_vector_std_util.hpp Vector/map_vector_std_ptr.hpp Vector/map_vector_std.hpp Vector/util.hpp Vector/vect_isel.hpp Vector/vector_test_util.hpp Vector/vector_unit_tests.hpp Vector/se_vector.hpp Vector/map_vector_grow_p.hpp Vector/vector_std_pack_unpack.ipp Vector/vector_pack_unpack.ipp  \
 timer.hpp \

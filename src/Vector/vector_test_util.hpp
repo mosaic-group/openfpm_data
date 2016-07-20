@@ -11,6 +11,7 @@
 #include "config.h"
 #include "Point_test.hpp"
 #include "Vector/map_vector.hpp"
+#include "data_type/aggregate.hpp"
 
 //! [typedef point]
 typedef Point_test<float> P;
@@ -228,6 +229,45 @@ openfpm::vector<Point_test_prp<float>> allocate_openfpm_prp(size_t n_ele)
 		size_t last = v_ofp_test.size()-1;
 
 		// Modify the point
+
+		v_ofp_test.get<P::v>(last)[0] = 1.0 + i;
+		v_ofp_test.get<P::v>(last)[1] = 2.0 + i;
+		v_ofp_test.get<P::v>(last)[2] = 7.0 + i;
+
+		v_ofp_test.get<P::t>(last)[0][0] = 10.0 + i;
+		v_ofp_test.get<P::t>(last)[0][1] = 13.0 + i;
+		v_ofp_test.get<P::t>(last)[0][2] = 8.0 + i;
+		v_ofp_test.get<P::t>(last)[1][0] = 19.0 + i;
+		v_ofp_test.get<P::t>(last)[1][1] = 23.0 + i;
+		v_ofp_test.get<P::t>(last)[1][2] = 5.0 + i;
+		v_ofp_test.get<P::t>(last)[2][0] = 4.0 + i;
+		v_ofp_test.get<P::t>(last)[2][1] = 3.0 + i;
+		v_ofp_test.get<P::t>(last)[2][2] = 11.0 + i;
+	}
+
+	//! [Create add and access]
+
+	return v_ofp_test;
+}
+
+
+openfpm::vector< aggregate<float,float,float,float,float[3],float[3][3],openfpm::vector<int>> > allocate_openfpm_aggregate_with_complex(size_t n_ele)
+{
+	//! [Create add and access]
+	openfpm::vector< aggregate<float,float,float,float,float[3],float[3][3],openfpm::vector<int>> > v_ofp_test;
+
+	for (size_t i = 0 ; i < n_ele ; i++)
+	{
+		v_ofp_test.add();
+
+		size_t last = v_ofp_test.size()-1;
+
+		// Modify the point
+
+		v_ofp_test.get<P::x>(last) = 100.0 + i;
+		v_ofp_test.get<P::y>(last) = 102.0 + i;
+		v_ofp_test.get<P::z>(last) = 107.0 + i;
+		v_ofp_test.get<P::s>(last) = 109.0 + i;
 
 		v_ofp_test.get<P::v>(last)[0] = 1.0 + i;
 		v_ofp_test.get<P::v>(last)[1] = 2.0 + i;

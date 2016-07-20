@@ -403,6 +403,21 @@ template<unsigned int dim ,typename T> class Point
 		return *this;
 	}
 
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \param v_exp expression to evaluate
+	 *
+	 */
+	Point<dim,T> & operator=(const point_expression<T[dim]> & p_exp)
+	{
+		p_exp.init();
+
+		for (size_t i = 0; i < dim ; i++)
+			get(i) = p_exp.value(i);
+
+		return *this;
+	}
+
 	/*! \brief divide each component
 	 *
 	 * \param ar Component wise division
@@ -542,7 +557,5 @@ template <unsigned int N, typename T, typename Mem> std::string toPointString(co
 //! A point is a vector on a computer (But do not say this to a Mathematician)
 
 template<unsigned int dim, typename T>  using VectorS = Point<dim,T>;
-
-
 
 #endif

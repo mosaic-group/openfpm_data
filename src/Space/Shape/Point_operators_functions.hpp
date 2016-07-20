@@ -32,7 +32,7 @@ public:\
 \
 	typedef typename orig::coord_type return_type;\
 \
-	static const unsigned int nvals = 1;\
+	static const unsigned int nvals = exp1::nvals;\
 \
 	inline point_expression_op(const exp1 & o1)\
 	:o1(o1)\
@@ -75,7 +75,7 @@ template<unsigned int dim, typename T>\
 inline point_expression_op<Point<dim,T>,Point<dim,T>,void, OP_ID >\
 fun_name(const Point<dim,T> & va)\
 {\
-	point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM> exp_sum(va);\
+	point_expression_op<Point<dim,T>,Point<dim,T>,void,OP_ID> exp_sum(va);\
 \
 	return exp_sum;\
 }
@@ -247,6 +247,24 @@ template <typename T>T norm(T d)
 {
 	return d;
 }
+
+
+/* \brief Calculate the norm of the point
+ *
+ * \param va point expression one
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int dim, typename T>
+inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM>
+norm(const point_expression<T[dim]> & d)
+{
+        point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM> exp_sum( (point_expression<T[dim]>(d)) );
+
+        return exp_sum;
+}
+
 
 /* \brief Divide two points expression
  *

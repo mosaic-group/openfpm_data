@@ -806,7 +806,6 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-//			auto enc = get(i);
 
 			// write the object in the last element
 			object_s_di<encap_S,decltype(get(i)),OBJ_ENCAP,args...>(obj,get(i));

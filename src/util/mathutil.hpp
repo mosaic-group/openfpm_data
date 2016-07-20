@@ -1,6 +1,10 @@
 #ifndef MATHUTIL_HPP
 #define MATHUTIL_HPP
 
+template <typename T> static inline T norm2(T d)
+{
+	return d;
+}
 
 namespace openfpm
 {
