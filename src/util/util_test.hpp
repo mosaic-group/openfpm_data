@@ -20,6 +20,7 @@
 #include "util/convert.hpp"
 #include <iostream>
 #include "mul_array_extents.hpp"
+#include "Packer_Unpacker/has_max_prop.hpp"
 
 struct test_has_max_prop
 {
@@ -29,6 +30,8 @@ struct test_has_max_prop
 struct test_has_no_max_prop
 {
 };
+
+typedef openfpm::vector<openfpm::vector<aggregate<float,int,double>>> max_prop_vector_test;
 
 //! [Check has_posMask struct definition]
 
@@ -302,6 +305,10 @@ template<size_t index, size_t N> struct MetaFunc {
    enum { value = index + N };
 };
 
+template<size_t index, size_t N> struct MetaFuncOrd {
+   enum { value = index };
+};
+
 //! [Metafunction definition]
 
 BOOST_AUTO_TEST_CASE( generate_array )
@@ -338,6 +345,17 @@ BOOST_AUTO_TEST_CASE( generate_array )
 	}
 
 #endif
+
+
+	{
+	//! [indexes array]
+	const size_t count = 5;
+	typedef typename ::generate_indexes<size_t,count, MetaFuncOrd>::result ct_test_ce;
+
+	bool check = std::is_same<ct_test_ce,index_tuple<0,1,2,3,4>>::value;
+	BOOST_REQUIRE_EQUAL(check,true);
+	//! [indexes array]
+	}
 }
 
 BOOST_AUTO_TEST_CASE( check_templates_util_function )
@@ -471,15 +489,41 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		{
 		//! [Check has_max_prop]
 
-		int a = test_has_max_prop::max_prop;
-
-		int val = has_max_prop<test_has_max_prop>::value;
+		int val = has_max_prop_nn<test_has_max_prop>::value;
 		BOOST_REQUIRE_EQUAL(val, true);
-		val = has_max_prop<test_has_no_max_prop>::value;
+		val = has_max_prop_nn<test_has_no_max_prop>::value;
 		BOOST_REQUIRE_EQUAL(val, false);
 
-		//! [Check has_data]
+
+		val = has_max_prop<max_prop_vector_test, has_value_type<max_prop_vector_test>::value>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = has_max_prop<max_prop_vector_test, has_value_type<max_prop_vector_test>::value>::number;
+		BOOST_REQUIRE_EQUAL(val, 3);
+
+		//! [Check has_max_prop]
 		}
+
+		{
+		//! [Check has_value_type]
+
+		struct test_has_value_type
+		{
+			typedef int value_type;
+		};
+
+		struct test_has_no_value_type
+		{
+
+		};
+
+		int val = has_value_type<test_has_value_type>::value;
+		BOOST_REQUIRE_EQUAL(val, true);
+		val = has_value_type<test_has_no_value_type>::value;
+		BOOST_REQUIRE_EQUAL(val, false);
+
+		//! [Check has_value_type]
+		}
+
 
 		{
 		//! [Check has_posMask]

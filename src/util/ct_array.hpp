@@ -20,6 +20,45 @@
 
 #include <boost/fusion/mpl.hpp>
 
+/////////////////////////////////////////////////// Make indexes ///////////////////////
+
+template<int ...> struct index_tuple{};
+
+//! the array itself
+template<class T, int... args> struct ArrayHolder_indexes {
+    typedef index_tuple<args ... > type;
+};
+
+
+template<class T,size_t N, size_t orig_N, template<size_t,size_t> class F, int... args>
+struct generate_indexes_impl {
+    typedef typename generate_indexes_impl<T,N-1,orig_N, F, F<N,orig_N>::value, args...>::result result;
+};
+
+//! terminator of the variadic template
+template<class T, size_t orig_N, template<size_t,size_t> class F, int... args>
+struct generate_indexes_impl<T,0,orig_N, F, args...> {
+    typedef typename ArrayHolder_indexes<T,F<0,orig_N>::value, args...>::type result;
+};
+
+/*! \brief Main class to generate indexes data structure
+ *
+ *
+ * ### Metafunction definition
+ * \snippet util_test.hpp Metafunction definition
+ * ### Usage
+ * \snippet util_test.hpp indexes array
+ *
+ * \param T is the type of the output array
+ * \param N size of the sequence
+ * \param F Meta function it take two template arguments
+ *
+ */
+template<class T, size_t N, template<size_t,size_t> class F>
+struct generate_indexes {
+    typedef typename generate_indexes_impl<T,N-1, N, F>::result result;
+};
+
 ///////////////////////////////////////////////////
 
 #ifndef COVERTY_SCAN
