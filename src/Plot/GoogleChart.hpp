@@ -14,6 +14,10 @@
 #define GGRAPH_COLUMS 1
 #define GGRAPH_POINTS 2
 
+#define GC_ZOOM std::string("explorer: {actions: ['dragToZoom', 'rightClickToReset'],axis: 'horizontal,vertical',keepInBounds: true, maxZoomIn: 128.0}")
+#define GC_X_LOG std::string("hAxis: { logscale: true }")
+#define GC_Y_LOG std::string("vAxis: { logscale: true }")
+
 /*! \brief Google chart options
  *
  */
@@ -57,6 +61,9 @@ struct GCoptions
 
 	//! more
 	std::string more;
+
+	//! curve type
+	std::string curveType = "function";
 
 	GCoptions & operator=(const GCoptions & opt)
 	{
@@ -190,7 +197,7 @@ class GoogleChart
         }
 
         data << "data" << i << ".addRows([\n";
-        for (size_t i = 0 ; i < y.size() ; i++)
+        for (size_t i = 0 ; i < y.size() && x.size() ; i++)
         {
 
         	for (size_t j = 0 ; j < y.get(i).size()+1 ; j++)
@@ -215,13 +222,14 @@ class GoogleChart
 	std::string get_colums_bar_option(const GCoptions & opt)
 	{
 		std::stringstream str;
-		str << "title : '" << opt.title << "',\n";
-	    str << "vAxis: {title: '" << opt.yAxis <<  "'},\n";
-	    str << "hAxis: {title: '" << opt.xAxis << "'},\n";
-	    str << "seriesType: '" << opt.stype << "',\n";
+		str << "title : '" << opt.title << "'";
+	    str << ",\nvAxis: {title: '" << opt.yAxis <<  "'}";
+	    str << ",\nhAxis: {title: '" << opt.xAxis << "'}";
+	    str << ",\nseriesType: '" << opt.stype << "'";
 	    if (opt.stypeext.size() != 0)
-	    	str << "series: " << opt.stypeext << "\n";
-	    str << opt.more;
+	    	str << ",\nseries: " << opt.stypeext;
+	    if (opt.more.size() != 0)
+	    	str << ",\n" <<opt.more;
 
 	    return str.str();
 	}
@@ -229,21 +237,22 @@ class GoogleChart
 	std::string get_points_plot_option(const GCoptions & opt)
 	{
 		std::stringstream str;
-		str << "title : '" << opt.title << "',\n";
-	    str << "vAxis: {title: '" << opt.yAxis <<  "'},\n";
-	    str << "hAxis: {title: '" << opt.xAxis << "'},\n";
-	    str << "curveType: 'function',\n";
+		str << "title : '" << opt.title << "'";
+	    str << ",\nvAxis: {title: '" << opt.yAxis <<  "'}";
+	    str << ",\nhAxis: {title: '" << opt.xAxis << "'}";
+	    str << ",\ncurveType: '"<< opt.curveType << "'";
 
-        str << "lineWidth: " << opt.lineWidth << ",\n";
+        str << ",\nlineWidth: " << opt.lineWidth;
         if (opt.intervalsext.size() != 0)
-        	str << "intervals: " << opt.intervalsext << ",\n";
+        	str << ",\nintervals: " << opt.intervalsext;
         else
-        	str << "intervals: " << "{ 'style':'area' }" << ",\n";
+        	str << ",\nintervals: " << "{ 'style':'area' }";
 
         if (opt.intervalext.size() != 0)
-        	str << "interval: " << opt.intervalext << "\n";
+        	str << ",\ninterval: " << opt.intervalext << "\n";
 
-        str << opt.more;
+        if (opt.more.size() != 0)
+        	str << ",\n" << opt.more;
 
 	    return str.str();
 	}
@@ -405,11 +414,64 @@ public:
 		set_of_graphs.last().opt = opt;
 	}
 
+	/*! \brief Add lines graph
+	 *
+	 * \param y A vector of vectors of values. each vector is a graph of points
+	 *
+	 * \param x Give a name or number to each x value, so can be a string or a number
+	 *
+	 * \param opt Graph options
+	 *
+	 */
+	template<typename X, typename Y> void AddLines(openfpm::vector<X> & x, openfpm::vector<Y> & y , const GCoptions & opt)
+	{
+		openfpm::vector<std::string> yn;
+
+		if (y.size() == 0)
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " vector y must be filled" << std::endl;
+			return;
+		}
+
+		for (size_t i = 0 ; i < y.last().size() ; i++)
+			yn.add(std::string("line") + std::to_string(i));
+
+		if (y.size() == 0)
+			return;
+
+		// number of points
+		size_t np = y.last().size();
+
+		for (size_t j = 0 ; j < y.size() ; j++)
+		{
+			if (y.get(j).size() != np)
+				std::cerr << __FILE__ << ":" << __LINE__ << " Error all the graph must have the same number of points " << np << "!=" << y.get(j).size() << std::endl;
+		}
+
+		openfpm::vector<openfpm::vector<X>> swap;
+
+
+		// swap the vector
+		// Each vector is a graph
+		// It is different from the other call where each vector
+		// has multiple value for the same point
+		for (size_t i = 0 ; i < np ; i++)
+		{
+			swap.add();
+			for (size_t j = 0 ; j < y.size() ; j++)
+			{
+				swap.last().add(y.get(j).get(i));
+			}
+		}
+
+		AddLinesGraph(x,swap,yn,opt);
+	}
+
 	/*! \brief Add a simple lines graph
 	 *
 	 * \param y A vector of vectors of values. The size of y indicate how many x values
-	 *          we have, while the internal vector can store multiple realizations,
-	 *          or min and max, for error bar
+	 *          we have, while the internal vector can store multiple value of the same point,
+	 *          for example error bar
 	 *
 	 * \param x Give a name or number to each x value, so can be a string or a number
 	 *

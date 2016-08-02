@@ -124,7 +124,7 @@ struct csv_col_str<T[N1][N2][N3][N4]>
  * Will produce ",1.0,2.0,3.0"
  *
  */
-template<typename T>
+template<typename T, bool is_writable>
 struct csv_value_str
 {
 	inline csv_value_str(T & v, std::stringstream & str)
@@ -134,8 +134,8 @@ struct csv_value_str
 };
 
 //! Partial specialization for N=1 1D-Array
-template<typename T,size_t N1>
-struct csv_value_str<T[N1]>
+template<typename T,size_t N1, bool is_writable>
+struct csv_value_str<T[N1], is_writable>
 {
 	inline csv_value_str(const T v[N1], std::stringstream & str)
 	{
@@ -145,8 +145,8 @@ struct csv_value_str<T[N1]>
 };
 
 //! Partial specialization for N=2 2D-Array
-template<typename T,size_t N1,size_t N2>
-struct csv_value_str<T[N1][N2]>
+template<typename T,size_t N1,size_t N2, bool is_writable>
+struct csv_value_str<T[N1][N2], is_writable>
 {
 	inline csv_value_str(const T v[N1][N2], std::stringstream & str)
 	{
@@ -161,8 +161,8 @@ struct csv_value_str<T[N1][N2]>
 };
 
 //! Partial specialization for N=3
-template<typename T,size_t N1,size_t N2,size_t N3>
-struct csv_value_str<T[N1][N2][N3]>
+template<typename T,size_t N1,size_t N2,size_t N3, bool is_writable>
+struct csv_value_str<T[N1][N2][N3], is_writable>
 {
 	inline csv_value_str(const T v[N1][N2][N3], std::stringstream & str)
 	{
@@ -180,8 +180,8 @@ struct csv_value_str<T[N1][N2][N3]>
 };
 
 //! Partial specialization for N=4
-template<typename T,size_t N1,size_t N2,size_t N3,size_t N4>
-struct csv_value_str<T[N1][N2][N3][N4]>
+template<typename T,size_t N1,size_t N2,size_t N3,size_t N4, bool is_writable>
+struct csv_value_str<T[N1][N2][N3][N4],is_writable>
 {
 	inline csv_value_str(const T v[N1][N2][N3][N4], std::stringstream & str)
 	{
@@ -198,6 +198,16 @@ struct csv_value_str<T[N1][N2][N3][N4]>
 				}
 			}
 		}
+	}
+};
+
+//! Partial specialization for unknown property
+template<typename T>
+struct csv_value_str<T,false>
+{
+	inline csv_value_str(const T v, std::stringstream & str)
+	{
+		str << "," << 0.0;
 	}
 };
 

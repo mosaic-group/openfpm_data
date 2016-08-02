@@ -508,7 +508,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
  * \param g Grid to fill
  *
  */
-void fill_grid_some_data(grid_cpu<2,Point_test<float>> & g)
+template<typename grid_type> void fill_grid_some_data(grid_type & g)
 {
 	typedef Point_test<float> p;
 
@@ -748,7 +748,73 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	bool test = compare("vtk_grids_prp.vtk","vtk_grids_prp_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 	}
+
+	{
+	// Create box grids
+	Point<2,float> offset1({0.0,0.0});
+	Point<2,float> spacing1({0.1,0.2});
+	Box<2,size_t> d1({1,2},{14,15});
+
+	// Create box grids
+	Point<2,float> offset2({5.0,7.0});
+	Point<2,float> spacing2({0.2,0.1});
+	Box<2,size_t> d2({2,1},{13,15});
+
+	// Create box grids
+	Point<2,float> offset3({0.0,7.0});
+	Point<2,float> spacing3({0.05,0.07});
+	Box<2,size_t> d3({3,2},{11,10});
+
+	// Create box grids
+	Point<2,float> offset4({5.0,0.0});
+	Point<2,float> spacing4({0.1,0.1});
+	Box<2,size_t> d4({1,1},{7,7});
+
+	size_t sz[] = {16,16};
+	grid_cpu<2,aggregate<float,float,float,float,float[3],float[3][3],openfpm::vector<int>> > g1(sz);
+	g1.setMemory();
+	fill_grid_some_data(g1);
+	grid_cpu<2,aggregate<float,float,float,float,float[3],float[3][3],openfpm::vector<int>> > g2(sz);
+	g2.setMemory();
+	fill_grid_some_data(g2);
+	grid_cpu<2,aggregate<float,float,float,float,float[3],float[3][3],openfpm::vector<int>> > g3(sz);
+	g3.setMemory();
+	fill_grid_some_data(g3);
+	grid_cpu<2,aggregate<float,float,float,float,float[3],float[3][3],openfpm::vector<int>> > g4(sz);
+	g4.setMemory();
+	fill_grid_some_data(g4);
+
+	// Create a writer and write
+	VTKWriter<boost::mpl::pair<grid_cpu<2,aggregate<float,float,float,float,float[3],float[3][3],openfpm::vector<int>> >,float>,VECTOR_GRIDS> vtk_g;
+	vtk_g.add(g1,offset1,spacing1,d1);
+	vtk_g.add(g2,offset2,spacing2,d2);
+	vtk_g.add(g3,offset3,spacing3,d3);
+	vtk_g.add(g4,offset4,spacing4,d4);
+
+	vtk_g.write("vtk_grids_unk.vtk");
+
+	// Check that match
+	bool test = compare("vtk_grids_unk.vtk","vtk_grids_test.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
+	}
+
+	// Try
+
+	{
+		bool ret = is_vtk_writable<Point<3,float>>::value;
+		BOOST_REQUIRE_EQUAL(ret,true);
+		ret = is_vtk_writable<Point<3,double>>::value;
+		BOOST_REQUIRE_EQUAL(ret,true);
+
+		int  dims = vtk_dims<Point<3,float>>::value;
+		BOOST_REQUIRE_EQUAL(dims,3);
+
+		dims = vtk_dims<long int>::value;
+		BOOST_REQUIRE_EQUAL(dims,1);
+	}
+
 }
+
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 {
@@ -760,6 +826,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	openfpm::vector<aggregate<float,float[3]>> v1pp;
 	openfpm::vector<aggregate<float,float[3]>> v2pp;
 	openfpm::vector<aggregate<float,float[3]>> v3pp;
+	openfpm::vector<aggregate<float,Point<3,float>>> v4pp;
 
     // set the seed
 	// create the random generator engine
@@ -773,6 +840,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	v1pp.resize(100);
 	v2pp.resize(100);
 	v3pp.resize(100);
+	v4pp.resize(100);
 
 	for (size_t i = 0 ; i < v1ps.size(); i++)
 	{
@@ -802,6 +870,11 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 		v3pp.template get<1>(i)[0] = rng.GetUniform();
 		v3pp.template get<1>(i)[1] = rng.GetUniform();
 		v3pp.template get<1>(i)[2] = rng.GetUniform();
+
+		v4pp.template get<0>(i) = rng.GetUniform();
+		v4pp.template get<1>(i).get(0) = rng.GetUniform();
+		v4pp.template get<1>(i).get(1) = rng.GetUniform();
+		v4pp.template get<1>(i).get(2) = rng.GetUniform();
 	}
 
 	// Create a writer and write
@@ -815,6 +888,18 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	// Check that match
 	bool test = compare("vtk_points.vtk","vtk_points_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
+
+
+	// Create a writer and write
+	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,Point<3,float>>>>,VECTOR_POINTS> vtk_v2;
+	vtk_v2.add(v1ps,v4pp,75);
+
+	vtk_v2.write("vtk_points_pp.vtk");
+
+	// Check that match
+	test = compare("vtk_points_pp.vtk","vtk_points_pp_test.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
+
 	}
 }
 

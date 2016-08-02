@@ -10,6 +10,7 @@
 
 #include <boost/mpl/pair.hpp>
 #include "VTKWriter_grids_util.hpp"
+#include "is_vtk_writable.hpp"
 
 /*! \brief It store one grid
  *
@@ -76,8 +77,9 @@ struct prop_out_g
     void operator()(T& t) const
     {
     	typedef typename boost::mpl::at<typename ele_g::value_type::value_type::type,boost::mpl::int_<T::value>>::type ptype;
+    	typedef typename std::remove_all_extents<ptype>::type base_ptype;
 
-    	meta_prop<boost::mpl::int_<T::value> ,ele_g,St, ptype > m(vg,v_out);
+    	meta_prop<boost::mpl::int_<T::value> ,ele_g,St, ptype, is_vtk_writable<base_ptype>::value > m(vg,v_out);
     }
 
     void lastProp()

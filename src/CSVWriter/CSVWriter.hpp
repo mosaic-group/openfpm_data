@@ -17,6 +17,7 @@
 #include <boost/mpl/for_each.hpp>
 #include "csv_multiarray.hpp"
 #include "util.hpp"
+#include "is_csv_writable.hpp"
 
 #define CSV_WRITER 0x30000
 
@@ -60,8 +61,9 @@ struct csv_prp
 
 		// Remove the reference from the column type
 		typedef typename boost::remove_reference<col_type>::type col_rtype;
+		typedef typename std::remove_all_extents<col_rtype>::type base_col_rtype;
 
-    	csv_value_str<col_rtype>(obj.template get<T::value>(),str);
+    	csv_value_str<col_rtype, is_csv_writable<base_col_rtype>::value >(obj.template get<T::value>(),str);
     }
 };
 

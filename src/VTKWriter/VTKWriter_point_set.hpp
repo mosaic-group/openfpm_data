@@ -10,6 +10,7 @@
 
 #include <boost/mpl/pair.hpp>
 #include "VTKWriter_grids_util.hpp"
+#include "is_vtk_writable.hpp"
 
 /*! \brief Store the couple of vector position and properties
  *
@@ -90,8 +91,9 @@ struct prop_out_v
     void operator()(T& t) const
     {
     	typedef typename boost::mpl::at<typename ele_v::value_type::value_type::type,boost::mpl::int_<T::value>>::type ptype;
+    	typedef typename std::remove_all_extents<ptype>::type base_ptype;
 
-    	meta_prop<boost::mpl::int_<T::value> ,ele_v,St, ptype > m(vv,v_out);
+    	meta_prop<boost::mpl::int_<T::value> ,ele_v,St, ptype, is_vtk_writable<base_ptype>::value > m(vv,v_out);
     }
 
     void lastProp()
