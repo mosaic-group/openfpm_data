@@ -13,6 +13,7 @@
 #include "util/mathutil.hpp"
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
+#include "CellListIterator.hpp"
 
 #include "util/common.hpp"
 
@@ -423,7 +424,7 @@ public:
 		cl_n.get(cell)--;
 	}
 
-	/*! \brief Return the number of element in the cell
+	/*! \brief Return the number of elements in the cell
 	 *
 	 * \param cell_id id of the cell
 	 *
@@ -495,7 +496,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
+	inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.get(cell * slot + ele);
 	}
@@ -510,7 +511,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	template<unsigned int i> inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
+	template<unsigned int i> inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.template get<i>(cell * slot + ele);
 	}
@@ -614,6 +615,18 @@ public:
 		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> cln(cell,NNc_cr,*this);
 
 		return cln;
+	}
+
+	/*! \brief Return the number of padding cells of the Cell decomposer
+	 *
+	 * \param i dimension
+	 *
+	 * \return the number of padding cells
+	 *
+	 */
+	size_t getPadding(size_t i)
+	{
+		return CellDecomposer_sm<dim,T,transform>::getPadding(i);
 	}
 
 	/*! \brief Clear the cell list

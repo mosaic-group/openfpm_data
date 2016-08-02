@@ -51,6 +51,7 @@
 #include "iterators/grid_key_dx_iterator_sp.hpp"
 #include "iterators/grid_key_dx_iterator_sub_bc.hpp"
 #include "Packer_Unpacker/Packer_util.hpp"
+#include "Packer_Unpacker/has_pack_agg.hpp"
 #include "grid_base_implementation.hpp"
 
 #ifndef CUDA_GPU
@@ -100,9 +101,10 @@ class grid_cpu
 template<unsigned int dim, typename T, typename S>
 class grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>
 {
-	typedef typename memory_traits_lin<T>::type layout;
 
 public:
+
+	typedef typename memory_traits_lin<T>::type layout;
 
 	//! Object container for T, it is the return type of get_o it return a object type trough
 	// you can access all the properties of T

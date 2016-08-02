@@ -91,17 +91,17 @@
 	template<bool cond, typename T1, int ... prp>
 	struct packRequest_cond
 	{
-		void packingRequest(const openfpm::vector<T1> & obj, std::vector<size_t> & v)
+		void packingRequest(const openfpm::vector<T1> & obj, size_t & req)
 		{
 #ifdef DEBUG
 			std::cout << "There is no packRequest() function inside! (packingRequest)" << std::endl;
 #endif
 				//Pushback a size of number of elements of the internal vectors
-				v.push_back(sizeof(obj.size()));
+				req += sizeof(obj.size());
 
 				size_t alloc_ele = obj.template packMem<prp...>(obj.size(),0);
 
-				v.push_back(alloc_ele);
+				req += alloc_ele;
 		}
 
 	};
@@ -111,18 +111,18 @@
 	template<typename T1, int ... prp>
 	struct packRequest_cond<true, T1, prp...>
 	{
-		void packingRequest(const openfpm::vector<T1> & obj, std::vector<size_t> & v)
+		void packingRequest(const openfpm::vector<T1> & obj, size_t & req)
 		{
 #ifdef DEBUG
 			std::cout << "There is packRequest() function inside! (packingRequest)" << std::endl;
 #endif
 			//Pushback a size of number of elements of the external vectors
-			v.push_back(sizeof(obj.size()));
+			req += sizeof(obj.size());
 
 			//Call an packRequest in nested way
 			for (size_t i = 0; i < obj.size(); i++)
 			{
-				obj.get(i).template packRequest<prp...>(v);
+				obj.get(i).template packRequest<prp...>(req);
 			}
 		}
 	};
@@ -201,14 +201,14 @@
 	 * \param v - requests vector
 	 *
 	 */
-	template<int ... prp> void packRequest(std::vector<size_t> & v) const
+	template<int ... prp> void packRequest(size_t & req) const
 	{
 #ifdef DEBUG
 		std::cout << "Inside packRequest() function! (map_vector_std)" << std::endl;
 #endif
 		//Call a nested pack request
 		packRequest_cond<has_packRequest<T>::value, T, prp...> pr;
-		pr.packingRequest(*this, v);
+		pr.packingRequest(*this, req);
 
 	}
 
@@ -239,17 +239,14 @@
 	 */
 	bool save(const std::string & file) const
 	{
-		std::vector<size_t> pap_prp;
+		size_t req = 0;
 		
-		Packer<openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR>,HeapMemory>::packRequest(*this,pap_prp);
-
-		// Calculate how much preallocated memory we need to pack all the objects
-		size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
+		Packer<openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR>,HeapMemory>::packRequest(*this,req);
 
 		// allocate the memory
 		HeapMemory pmem;
-		pmem.allocate(req);
-		ExtPreAlloc<HeapMemory> mem(pap_prp,pmem);
+		//pmem.allocate(req);
+		ExtPreAlloc<HeapMemory> mem(req,pmem);
 
 		//Packing
 
@@ -289,10 +286,10 @@
 	    	return false;
 	    
 	    // Create the HeapMemory and the ExtPreAlloc memory
-	    std::vector<size_t> pap_prp;
-	    pap_prp.push_back(sz);
+	    size_t req = 0;
+	    req += sz;
 	    HeapMemory pmem;
-		ExtPreAlloc<HeapMemory> mem(pap_prp,pmem);
+		ExtPreAlloc<HeapMemory> mem(req,pmem);
 		
 		// read
 	    input.read((char *)pmem.getPointer(), sz);

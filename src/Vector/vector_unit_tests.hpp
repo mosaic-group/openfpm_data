@@ -737,7 +737,7 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 	}
 
 	// Create an object of preallocated memory
-	ExtPreAlloc<HeapMemory> * prAlloc = new ExtPreAlloc<HeapMemory>(pap,mem);
+	ExtPreAlloc<HeapMemory> * prAlloc = new ExtPreAlloc<HeapMemory>(total,mem);
 
 	typedef openfpm::vector<Point_test<float>,ExtPreAlloc<HeapMemory>> send_vector;
 
@@ -802,6 +802,7 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 		offset += pap[i];
 	}
 }
+
 
 // Pre alloc test
 

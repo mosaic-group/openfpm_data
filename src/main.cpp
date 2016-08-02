@@ -42,6 +42,7 @@ int main(int argc, char* argv[])
 #include "Grid/grid_sm_unit_tests.hpp"
 #include "util/mathutil_unit_test.hpp"
 #include "NN/CellList/CellDecomposer_unit_tests.hpp"
+#include "NN/CellList/CellListIterator_test.hpp"
 #include "Vector/map_vector_std_util_unit_test.hpp"
 //#include "Grid/iterators/grid_iterators_unit_tests.cpp"
 #ifdef PERFORMANCE_TEST

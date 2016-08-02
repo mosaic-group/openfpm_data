@@ -8,10 +8,10 @@ else
 endif
 
 noinst_PROGRAMS = mem_map
-mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp Grid/iterators/grid_iterators_unit_tests.cpp
-mem_map_CXXFLAGS = $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include
+mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
+mem_map_CXXFLAGS = $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include -I/usr/local/libhilbert/include
 mem_map_CFLAGS = $(CUDA_CFLAGS)
-mem_map_LDADD = $(LINKLIBS)
+mem_map_LDADD = $(LINKLIBS) -L/usr/local/libhilbert/lib -lhilbert
 
 nobase_include_HEADERS= data_type/scalar.hpp data_type/aggregate.hpp \
 Graph/graph_unit_tests.hpp Graph/map_graph.hpp \

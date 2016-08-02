@@ -1100,6 +1100,18 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	{
 		return ! this->operator==(cd);
 	}
+
+	/*! \brief Return the number of padding cells of the Cell decomposer
+	 *
+	 * \param i dimension
+	 *
+	 * \return the number of padding cells
+	 *
+	 */
+	size_t getPadding(size_t i)
+	{
+		return off[i];
+	}
 };
 
 

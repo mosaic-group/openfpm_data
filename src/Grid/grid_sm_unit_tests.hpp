@@ -9,6 +9,7 @@
 #define OPENFPM_DATA_SRC_GRID_GRID_SM_UNIT_TESTS_HPP_
 
 #include "iterators/grid_key_dx_iterator_sub_bc.hpp"
+#include "grid_key_dx_iterator_hilbert.hpp"
 
 BOOST_AUTO_TEST_SUITE( grid_sm_test )
 
@@ -167,6 +168,68 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_p )
 
 	BOOST_REQUIRE_EQUAL(cnt,0ul);
 }
+
+BOOST_AUTO_TEST_CASE( grid_key_dx_iterator_hilbert_test )
+{
+	// 2D test
+	{
+		size_t count = 0;
+
+		//An order of a hilberts curve
+		int32_t m = 2;
+
+		grid_key_dx<2> start (0,0);
+
+		//Create an iterator
+		grid_key_dx_iterator_hilbert<2> h_it(m);
+
+		while (h_it.isNext())
+		{
+			count++;
+
+			++h_it;
+		}
+
+		//(2^m)^dim
+		BOOST_REQUIRE_EQUAL(count, (size_t)16);
+
+		h_it.reset();
+
+		bool val = h_it.get() == start;
+
+		BOOST_REQUIRE_EQUAL(val,true);
+	}
+
+	// 3D test
+	{
+		size_t count = 0;
+
+		//An order of a hilberts curve
+		int32_t m = 2;
+
+		grid_key_dx<3> start (0,0,0);
+
+		//Create an iterator
+		grid_key_dx_iterator_hilbert<3> h_it(m);
+
+		while (h_it.isNext())
+		{
+			count++;
+
+			++h_it;
+		}
+
+		//(2^m)^dim
+		BOOST_REQUIRE_EQUAL(count, (size_t)64);
+
+		h_it.reset();
+
+		bool val = h_it.get() == start;
+
+		BOOST_REQUIRE_EQUAL(val,true);
+	}
+}
+
 
 BOOST_AUTO_TEST_CASE( grid_iterator_sp_test )
 {

@@ -4,7 +4,7 @@
  *     Author: Yaroslav Zaluzhnyi
  */
 
-//Meta-functions to check if the packing object is complex
+//Functions to check if the packing object is complex
 static bool pack()
 {
 	return false;
@@ -41,6 +41,7 @@ struct pack_cond<true, T1, Memory1, prp...>
 {
 	void packing(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Pack_stat & sts)
 	{
+	   std::cout << "There is packMem() inside TEST" << std::endl;
 	   for (size_t i = 0; i < obj.size(); i++)
 		   obj.get(i).template pack<prp...>(mem, sts);
 	}
@@ -55,6 +56,7 @@ struct packMem_cond
 	size_t packMemory(T1 & obj, size_t n, size_t e)
 	{
 #ifdef DEBUG
+		std::cout << "There is no packMem() inside TEST" << std::endl;
 		std::cout << grow_policy_double::grow(0,n) << "*" << sizeof(T) << " " << demangle(typeid(T).name()) << std::endl;
 #endif
 		return grow_policy_double::grow(0,n) * sizeof(T);
@@ -193,8 +195,7 @@ struct unpack_simple_cond
 		typedef openfpm::vector<T> vctr;
 		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
 		typedef openfpm::vector<prp_object,PtrMemory,typename memory_traits_lin<prp_object>::type, memory_traits_lin,openfpm::grow_policy_identity> stype;
-		stype svect;
-		
+
 
 		// Calculate the size to pack the object
 		size_t size = obj.packMem<prp...>(obj.size(),0);
@@ -278,10 +279,10 @@ struct unpack_simple_cond<true, prp ...>
  * \param v vector of allocation sequence
  *
  */
-template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
+template<int ... prp> inline void packRequest(size_t & req) const
 {
 	//Pushback a sizeof number of elements of the internal vectors
-	v.push_back(sizeof(this->size()));
+	req += sizeof(this->size());
 	//std::cout << demangle(typeid(this).name()) << std::endl;
 	//std::cout << this->size() << std::endl;
 #ifdef DEBUG
@@ -295,7 +296,7 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
 			std::cout << "All of the aggregate members are simple!(packRequest)" << std::endl;
 #endif
 		size_t alloc_ele = this->packMem<prp...>(this->size(),0);
-		v.push_back(alloc_ele);
+		req += alloc_ele;
 	}
 	//If at least one property has "pack()"
 	else
@@ -306,7 +307,7 @@ template<int ... prp> inline void packRequest(std::vector<size_t> & v) const
 		for (size_t i = 0 ; i < this->size() ; i++)
 		{
 			//Call a pack request
-			call_aggregatePackRequest<T,Memory,layout,layout_base,grow_p,prp ... >::call_packRequest(*this,v);
+			call_aggregatePackRequest<decltype(this->get(i)),Memory,prp ... >::call_packRequest(this->get(i),req);
 		}
 	}
 }
@@ -339,8 +340,11 @@ template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & st
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,this->size(),sts);
 		
-		//Call a packer in nested way
-		call_aggregatePack<T,Memory,layout,layout_base,grow_p,prp ... >::call_pack(*this,mem,sts);
+		for (size_t i = 0 ; i < this->size() ; i++)
+		{
+			//Call a packer in nested way
+			call_aggregatePack<decltype(this->get(i)),Memory,prp ... >::call_pack(this->get(i),mem,sts);
+		}
 	}
 }
 
@@ -374,8 +378,11 @@ template<int ... prp> inline void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat 
 		//Resize a destination vector
 		this->resize(u2);
 		
-		//Call an unpacker in nested way
-		call_aggregateUnpack<T,Memory,layout,layout_base,grow_p,prp ... >::call_unpack(*this,mem,ps);
+		for (size_t i = 0 ; i < this->size() ; i++)
+		{
+			//Call an unpacker in nested way
+			call_aggregateUnpack<decltype(this->get(i)),Memory,prp ... >::call_unpack(this->get(i),mem,ps);
+		}
 	}
 }
 
