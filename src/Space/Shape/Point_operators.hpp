@@ -628,7 +628,7 @@ operator_name(double d, const point_expression<T[dim]> & va)\
 \
 template<unsigned int dim, typename T>\
 inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<T[dim]>,OP_ID>\
-operator_name(point_expression<T[dim]> & va, const point_expression<T[dim]> & vb)\
+operator_name(const point_expression<T[dim]> & va, const point_expression<T[dim]> & vb)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<T[dim]>,OP_ID> exp_sum(va,vb);\
 \
@@ -677,7 +677,7 @@ template<typename orig,typename exp1 , typename exp2, unsigned int op1, unsigned
 inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,OP_ID>\
 operator_name(const Point<dim,T> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)\
 {\
-	point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,OP_ID> exp_sum(va,vb);\
+	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,OP_ID> exp_sum(va,vb);\
 \
 	return exp_sum;\
 }\
@@ -785,12 +785,33 @@ CREATE_POINT_OPERATOR(operator/,POINT_DIV)
  * \return an object that encapsulate the expression
  *
  */
-template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T>
+template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T, typename check=typename std::enable_if< ! std::is_same<T,orig>::value >::type >
 inline T &
 operator+=(T & d, const point_expression_op<orig,exp1,exp2,op1> & va)
 {
 	va.init();
 	d += va.value(0);
+
+	return d;
+}
+
+
+
+/* \brief sum two points expression
+ *
+ * \param va point expression one
+ * \param vb point expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T>
+inline T &
+operator+=(orig & d, const point_expression_op<orig,exp1,exp2,op1> & va)
+{
+	va.init();
+
+	d = d + va;
 
 	return d;
 }
@@ -852,7 +873,7 @@ operator*(double d, const point_expression<T[dim]> & va)
 
 template<unsigned int dim, typename T>
 inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<T[dim]>,POINT_MUL_POINT>
-operator*(point_expression<T[dim]> & va, const point_expression<T[dim]> & vb)
+operator*(const point_expression<T[dim]> & va, const point_expression<T[dim]> & vb)
 {
 	point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<T[dim]>,POINT_MUL_POINT> exp_sum(va,vb);
 

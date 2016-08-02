@@ -274,7 +274,23 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage )
 	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),p[i]+p1.get(i)) ;}
 
 	tmp = norm(p_e);
-	BOOST_REQUIRE_EQUAL(tmp,sqrt(14.0f)) ;
+	BOOST_REQUIRE_EQUAL(tmp,sqrt(14.0f));
+
+	Point<3,float> p4({1.0,2.0,3.0});
+
+	p4 += p2;
+	for (size_t i = 0 ; i < 3 ; i++)
+		std::cout << p4.get(i) << std::endl;
+
+	p4 = Point<3,float>({1.0,2.0,3.0});
+
+	p4 += p2 + p1;
+	for (size_t i = 0 ; i < 3 ; i++)
+		std::cout << p4.get(i) << std::endl;
+
+	double s = 0.0;
+	s += p1+(p1+p2);
+	BOOST_REQUIRE_EQUAL(s,4.0);
 
 
 }

@@ -18,13 +18,13 @@
 class SimpleRNG
 {
 private:
-	uint m_w;
-	uint m_z;
+	unsigned int m_w;
+	unsigned int m_z;
 
 	// This is the heart of the generator.
 	// It uses George Marsaglia's MWC algorithm to produce an unsigned integer.
 	// See http://www.bobwheeler.com/statistics/Password/MarsagliaPost.txt
-	uint GetUint()
+	unsigned int GetUint()
 	{
 		m_z = 36969 * (m_z & 65535) + (m_z >> 16);
 		m_w = 18000 * (m_w & 65535) + (m_w >> 16);
@@ -46,13 +46,13 @@ public:
 	// 2) specifying one non-zero unsigned integer and taking a default value for the second
 	// 3) setting the seed from the system time
 
-	void SetSeed(uint u, uint v)
+	void SetSeed(unsigned int u, unsigned int v)
 	{
 		if (u != 0) m_w = u;
 		if (v != 0) m_z = v;
 	}
 
-	void SetSeed(uint u)
+	void SetSeed(unsigned int u)
 	{
 		m_w = u;
 	}
@@ -60,7 +60,7 @@ public:
 	void SetSeedFromSystemTime()
 	{
 		long x = clock();
-		SetSeed((uint)(x >> 16), (uint)(x % 4294967296));
+		SetSeed((unsigned int)(x >> 16), (unsigned int)(x % 4294967296));
 	}
 
 	// Produce a uniform random sample from the open interval (0, 1).
@@ -68,7 +68,7 @@ public:
 	double GetUniform()
 	{
 		// 0 <= u < 2^32
-		uint u = GetUint();
+		unsigned int u = GetUint();
 		// The magic number below is 1/(2^32 + 2).
 		// The result is strictly between 0 and 1.
 		return (u + 1.0) * 2.328306435454494e-10;

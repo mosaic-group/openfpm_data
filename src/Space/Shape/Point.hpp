@@ -23,6 +23,9 @@ template<unsigned int dim ,typename T> class Point
 {
 	public:
 
+	// Indicate that this object is vtk writable
+	typedef int is_vtk_writable;
+
 	//! coordinate type
 	typedef T coord_type;
 
@@ -132,6 +135,18 @@ template<unsigned int dim ,typename T> class Point
 	 */
 
 	inline T get(int i) const
+	{
+		return boost::fusion::at_c<x>(data)[i];
+	}
+
+	/*! \brief Get coordinate
+	 *
+	 * \param i dimension
+	 * \return the i-coordinate of the point
+	 *
+	 */
+
+	inline T get_vtk(int i) const
 	{
 		return boost::fusion::at_c<x>(data)[i];
 	}

@@ -284,6 +284,72 @@ norm(const Point<dim,T> & va)
 }
 
 
+//////////////////////////////////////// norm2 operation //////////////////
+
+/* \brief Calculate the norm of the point
+ *
+ * \param va point expression one
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename orig,typename exp1, typename exp2, unsigned int op1>
+inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_NORM2>
+norm2(const point_expression_op<orig,exp1,exp2,op1> & va)
+{
+	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_NORM2> exp_sum(va);
+
+	return exp_sum;
+}
+
+
+/* \brief norm of a scalar
+ *
+ * \param d scalar double or float
+ *
+ * \return d
+ *
+ */
+template <typename T>T norm2(T d)
+{
+	return d*d;
+}
+
+
+/* \brief Calculate the norm of the point
+ *
+ * \param va point expression one
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int dim, typename T>
+inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM2>
+norm2(const point_expression<T[dim]> & d)
+{
+        point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM2> exp_sum( (point_expression<T[dim]>(d)) );
+
+        return exp_sum;
+}
+
+
+/* \brief Divide two points expression
+ *
+ * \param va point expression one
+ * \param vb point expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int dim, typename T>
+inline point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM2>
+norm2(const Point<dim,T> & va)
+{
+	point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM2> exp_sum(va);
+
+	return exp_sum;
+}
+
 /*! \brief General distance formula
  *
  *
