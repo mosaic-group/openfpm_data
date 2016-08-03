@@ -592,7 +592,7 @@ template<unsigned int dim, typename T> point_expression<T[dim]> getExpr(T (& a)[
 \
 template<unsigned int dim, typename T>\
 inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<T[dim]>,OP_ID>\
-operator_name(const Point<dim,T> & va, const point_expression<T[dim]> & vb)\
+operator_name(const Point<dim,T> & va, const point_expression<T[(unsigned int)dim]> & vb)\
 {\
 	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<T[dim]>,OP_ID> exp_sum(va,vb);\
 \
@@ -601,7 +601,7 @@ operator_name(const Point<dim,T> & va, const point_expression<T[dim]> & vb)\
 \
 template<unsigned int dim, typename T>\
 inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,Point<dim,T>,OP_ID>\
-operator_name(const point_expression<T[dim]> & va, const Point<dim,T> & vb)\
+operator_name(const point_expression<T[(unsigned int)dim]> & va, const Point<dim,T> & vb)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<T[dim]>,Point<dim,T>,OP_ID> exp_sum(va,vb);\
 \
