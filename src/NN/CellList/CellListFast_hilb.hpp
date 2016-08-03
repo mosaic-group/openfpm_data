@@ -75,7 +75,8 @@ private:
 		int err;
 
 		//Array to handle output
-		size_t coord[dim];
+		uint64_t coord[dim];
+		size_t coord2[dim];
 
 		this->getKeys().sort();
 
@@ -85,9 +86,9 @@ private:
 		{
 			getIntCoordFromHKey(coord, m, dim, this->getKeys().get(i), &err);
 
-			for (size_t j = 0 ; j < dim ; j++)	{coord[j] += this->getPadding(j);}
+			for (size_t j = 0 ; j < dim ; j++)	{coord2[j] = coord[j] + this->getPadding(j);}
 
-			keys_new.add(this->getGrid().LinIdPtr(static_cast<size_t *>(coord)));
+			keys_new.add(this->getGrid().LinIdPtr(static_cast<size_t *>(coord2)));
 		}
 
 		this->getKeys().swap(keys_new);
