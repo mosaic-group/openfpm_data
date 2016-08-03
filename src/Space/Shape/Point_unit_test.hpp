@@ -432,7 +432,7 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage_with_array )
 	p3 = atan(p1 + p2);
 	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],std::atan(p1_p[i] + p2_p[i])) ;}
 	p3 = asin(p1/5.0f + p2/6.0f);
-	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],std::asin(p1_p[i]/5.0f + p2_p[i]/6.0f)) ;}
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_CLOSE(p3_p[i],std::asin(p1_p[i]/5.0f + p2_p[i]/6.0f),0.1) ;}
 	p3 = acos(p1/5.0f + p2/6.0f);
 	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],std::acos(p1_p[i]/5.0f + p2_p[i]/6.0f)) ;}
 	p3 = sinh(p1 + p2);
