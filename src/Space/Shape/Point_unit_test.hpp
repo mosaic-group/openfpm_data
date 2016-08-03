@@ -268,9 +268,9 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage )
 	float p[3] = {1.0,2.0,3.0};
 	auto p_e = getExpr(p);
 
-	p3 = p - p1;
+	p3 = p_e - p1;
 	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),p[i]-p1.get(i)) ;}
-	p3 = p + p1;
+	p3 = p_e + p1;
 	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),p[i]+p1.get(i)) ;}
 
 	tmp = norm(p_e);
