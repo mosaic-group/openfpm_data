@@ -213,9 +213,17 @@ else
 	NVCCFLAGS+="$NVCCFLAGS -O3 "
 fi
 
+##########
+
+## Check for LIBHILBERT
+
+AX_LIB_HILBERT([],[echo "Cannot detect libhilbert, use the --with-libhilbert option if it is not installed in the default location"
+                    exit 210])
+
 ####### include openfpm_devices include path
 
 INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_io/src"
+
 
 ####### Checking for GPU support
 
