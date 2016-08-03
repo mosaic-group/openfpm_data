@@ -75,7 +75,7 @@ private:
 		int err;
 
 		//Array to handle output
-		uint64_t coord[dim];
+		size_t coord[dim];
 
 		this->getKeys().sort();
 

@@ -405,7 +405,6 @@ public:
 	 * \param k set of indexes to linearize
 	 *
 	 */
-
 	inline mem_id LinIdPtr(size_t * k) const
 	{
 		mem_id lid = k[0];
