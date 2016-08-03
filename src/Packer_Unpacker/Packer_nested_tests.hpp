@@ -398,8 +398,6 @@ BOOST_AUTO_TEST_CASE ( vector_std_smarter_packer_unpacker )
 
 	size_t req = 0;
 
-	typedef Point_test<float> pt;
-
 	//Pack request
 	Packer<decltype(v),HeapMemory>::packRequest<>(v,req);
 

@@ -886,8 +886,6 @@ BOOST_AUTO_TEST_CASE(grid_operator_swap)
 	size_t sz1[] = {16,16};
 	size_t sz2[] = {5,5};
 
-	typedef Box<2,float> b;
-
 	grid_cpu<2,Box<2,float>> g1_old(sz1);
 	g1_old.setMemory();
 	grid_cpu<2,Box<2,float>> g2_old(sz2);

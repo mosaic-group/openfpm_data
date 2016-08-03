@@ -113,7 +113,7 @@ public:
 	 */
 	inline void addCell(size_t cell_id, size_t ele, size_t v_id)
 	{
-		size_t ele_k = ele | v_id << sizeof(size_t)*8-sh_byte;
+		size_t ele_k = ele | (v_id << (sizeof(size_t)*8-sh_byte));
 
 		CellBase::addCell(cell_id,ele_k);
 	}
@@ -129,7 +129,7 @@ public:
 		// calculate the Cell id
 
 		size_t cell_id = this->getCell(pos);
-		size_t ele_k = ele | v_id << sizeof(size_t)*8-sh_byte;
+		size_t ele_k = ele | (v_id << (sizeof(size_t)*8-sh_byte));
 
 		// add the element to the cell
 

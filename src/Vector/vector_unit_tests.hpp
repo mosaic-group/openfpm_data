@@ -211,8 +211,6 @@ template <typename vector> void test_vector_insert()
 
 template <typename vector> void test_vector_clear()
 {
-	typedef Point_test<float> p;
-
 	vector v1;
 
 	for (size_t i = 0 ; i < V_REM_PUSH ; i++)

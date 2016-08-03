@@ -78,9 +78,6 @@ openfpm::vector<T> allocate_openfpm_primitive(size_t n, size_t fill)
 
 openfpm::vector<Point_test<float>> allocate_openfpm_fill(size_t n, size_t fill)
 {
-	// Test point
-	typedef Point_test<float> p;
-
 	Point_test<float> pt;
 	openfpm::vector<Point_test<float>> v_send;
 
