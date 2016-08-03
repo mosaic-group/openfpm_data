@@ -87,7 +87,7 @@ private:
 
 			for (size_t j = 0 ; j < dim ; j++)	{coord[j] += this->getPadding(j);}
 
-			keys_new.add(this->getGrid().LinIdPtr(coord));
+			keys_new.add(this->getGrid().LinIdPtr(static_cast<size_t *>(coord)));
 		}
 
 		this->getKeys().swap(keys_new);
