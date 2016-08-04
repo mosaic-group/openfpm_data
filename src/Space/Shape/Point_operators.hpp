@@ -362,7 +362,7 @@ public:
 		return -(o1.value(k));
 	}
 
-	template <typename T>operator T() const
+	template <typename T, typename check = typename std::enable_if<!std::is_same<T,orig>::value >::type  >operator T() const
 	{
 		init();
 		return -(o1.value(0));
