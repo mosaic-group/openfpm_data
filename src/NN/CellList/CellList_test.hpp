@@ -285,6 +285,38 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		++g_it;
 	}
 
+
+	// Create a grid iterator
+	grid_key_dx<dim> p1(1,1,1);
+	grid_key_dx<dim> p2(div[0]-2,div[1]-2,div[2]-2);
+	grid_key_dx_iterator_sub<dim> g_it_s(g_info,p1,p2);
+
+	while (g_it_s.isNext())
+	{
+		Point<dim,T> key = Point<dim,T>(g_it_s.get().toPoint());
+		key = pmul(key,spacing) + offset[0] + box.getP1();
+
+		auto NN = cl1.template getNNIterator<NO_CHECK>(cl1.getCell(key));
+		size_t total1 = 0;
+		size_t total2 = 0;
+
+		while(NN.isNext())
+		{
+			// total
+
+			if (NN.getV() == 1)
+				total1++;
+			else
+				total2++;
+
+			++NN;
+		}
+
+		BOOST_REQUIRE_EQUAL(total1,(size_t)openfpm::math::pow(3,dim));
+		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim));
+
+		++g_it_s;
+	}
 }
 
 BOOST_AUTO_TEST_SUITE( CellList_test )

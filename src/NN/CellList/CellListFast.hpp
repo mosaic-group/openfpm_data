@@ -528,6 +528,28 @@ public:
 	{
 		cl_n.swap(cl.cl_n);
 		cl_base.swap(cl.cl_base);
+
+		long int NNc_full_tmp[openfpm::math::pow(3,dim)];
+		long int NNc_sym_tmp[openfpm::math::pow(3,dim)];
+		long int NNc_cr_tmp[openfpm::math::pow(3,dim)];
+
+		std::copy(&cl.NNc_full[0],&cl.NNc_full[openfpm::math::pow(3,dim)],&NNc_full_tmp[0]);
+		std::copy(&cl.NNc_sym[0],&cl.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym_tmp[0]);
+		std::copy(&cl.NNc_cr[0],&cl.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr_tmp[0]);
+
+		std::copy(&NNc_full[0],&NNc_full[openfpm::math::pow(3,dim)],&cl.NNc_full[0]);
+		std::copy(&NNc_sym[0],&NNc_sym[openfpm::math::pow(3,dim)/2+1],&cl.NNc_sym[0]);
+		std::copy(&NNc_cr[0],&NNc_cr[openfpm::math::pow(2,dim)],&cl.NNc_cr[0]);
+
+		std::copy(&NNc_full_tmp[0],&NNc_full_tmp[openfpm::math::pow(3,dim)],&NNc_full[0]);
+		std::copy(&NNc_sym_tmp[0],&NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
+		std::copy(&NNc_cr_tmp[0],&NNc_cr_tmp[openfpm::math::pow(2,dim)],&NNc_cr[0]);
+
+		size_t cl_slot_tmp = cl.slot;
+		cl.slot = slot;
+		slot = cl_slot_tmp;
+
+		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cl);
 	}
 
 	/*! \brief Get the Cell iterator
@@ -638,6 +660,32 @@ public:
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
 			cl_n.get(i) = 0;
 	}
+
+//////////////////////////////// POINTLESS BUT REQUIRED TO RESPECT THE INTERFACE //////////////////
+
+	// Ghost marker
+	size_t g_m = 0;
+
+	/*! \brief return the ghost marker
+	 *
+	 * \return ghost marker
+	 *
+	 */
+	inline size_t get_gm()
+	{
+		return g_m;
+	}
+
+	/*! \brief Set the ghost marker
+	 *
+	 *
+	 */
+	inline void set_gm(size_t g_m)
+	{
+		this->g_m = g_m;
+	}
+
+/////////////////////////////////////
 };
 
 

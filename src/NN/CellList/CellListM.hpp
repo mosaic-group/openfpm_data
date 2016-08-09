@@ -224,7 +224,7 @@ public:
 	 * \param cell cell id
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellListM<dim,T,sh_byte,CellBase>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl=NO_CHECK> inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL,impl> getNNIterator(size_t cell)
 	{
 		CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL,impl> cln(cell,CellListM<dim,T,sh_byte,CellBase>::NNc_full,*this);
 

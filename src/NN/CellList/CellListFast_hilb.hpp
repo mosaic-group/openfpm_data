@@ -132,8 +132,6 @@ public:
 				break;
 		}
 
-		//std::cout << "An order of a corresponding hilberts curve is " << m << std::endl;
-
 		grid_key_dx_iterator<dim> it(gs_small);
 
 		while (it.isNext())
@@ -174,6 +172,14 @@ public:
 		return g_m;
 	}
 
+	/*! \brief Set the ghost marker
+	 *
+	 *
+	 */
+	inline void set_gm(size_t g_m)
+	{
+		this->g_m = g_m;
+	}
 
 	/*! \brief return the celllist iterator (across cells)
 	 *
