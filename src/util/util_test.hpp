@@ -714,6 +714,15 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 
 		//! [Check memory layout]
 		}
+
+		//! [Check has_pack_agg]
+		{
+			typedef aggregate<float,openfpm::vector<float>> aggr;
+
+			bool val = has_pack_agg<aggr>::result::value;
+		}
+		//! [Check has_pack_agg]
+
 	}
 }
 

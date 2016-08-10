@@ -474,7 +474,9 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 	size_t req = 0;
 
 	//Pack request
-	Packer<decltype(v4),HeapMemory>::packRequest<1,2>(v4,req);
+	Packer<decltype(v4),HeapMemory>::packRequest<0,1,2>(v4,req);
+
+	std::cout << "Req 1: " << req << std::endl;
 
 	//BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*4 + sizeof(float[3])) + sizeof(float[3][3]))*2);
 
@@ -488,7 +490,7 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 
 	Pack_stat sts;
 
-	Packer<decltype(v4),HeapMemory>::pack<1,2>(mem,v4,sts);
+	Packer<decltype(v4),HeapMemory>::pack<0,1,2>(mem,v4,sts);
 
 	//Unpacking
 
@@ -496,7 +498,7 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 
 	openfpm::vector<openfpm::vector<aggregate<float,float,openfpm::vector<Point_test<float>>>>> v4_unp;
 
-	Unpacker<decltype(v4_unp),HeapMemory>::unpack<1,2>(mem,v4_unp,ps);
+	Unpacker<decltype(v4_unp),HeapMemory>::unpack<0,1,2>(mem,v4_unp,ps);
 
 	//Check the data
 
@@ -504,12 +506,12 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 	{
 		for (size_t j = 0 ; j < v4.get(i).size() ; j++)
 		{
-			//float f1 = v4_unp.get(i).template get<0>(j);
-			//float f2 = v4.get(i).template get<0>(j);
+			float f1 = v4_unp.get(i).template get<0>(j);
+			float f2 = v4.get(i).template get<0>(j);
 			float f3 = v4_unp.get(i).template get<1>(j);
 			float f4 = v4.get(i).template get<1>(j);
 
-			//BOOST_REQUIRE_EQUAL(f1,f2);
+			BOOST_REQUIRE_EQUAL(f1,f2);
 			BOOST_REQUIRE_EQUAL(f3,f4);
 
 			for (size_t k = 0 ; k < v4.get(i).template get<2>(j).size() ; k++)
@@ -557,7 +559,7 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_2 )
 	//Pack request
 	Packer<decltype(v4),HeapMemory>::packRequest<0,1,2,3,4,5,6,7,8>(v4,req);
 
-	//BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*30 + sizeof(float[3])*7) + sizeof(float[3][3])*7)*50);
+	BOOST_REQUIRE_EQUAL(req,22816);
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -624,8 +626,15 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_3 )
 
 	//Pack request
 	Packer<decltype(v),HeapMemory>::packRequest<1>(v,req);
+	BOOST_REQUIRE_EQUAL(req, 3*(sizeof(Point_test<float>)*2+8)+8);
 
-	//BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1], (sizeof(float)*4 + sizeof(float[3]) + sizeof(float[3][3]))*2);
+	size_t req2 = 0;
+	Packer<decltype(v),HeapMemory>::packRequest<0,1>(v,req2);
+	BOOST_REQUIRE_EQUAL(req2, 3*(sizeof(Point_test<float>)*2+4+8)+8);
+
+	req2 = 0;
+	Packer<decltype(v),HeapMemory>::packRequest<>(v,req2);
+	BOOST_REQUIRE_EQUAL(req2, 3*(sizeof(Point_test<float>)*2+4+8)+8);
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -661,7 +670,175 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_3 )
 
 	mem.decRef();
 	delete &mem;
+}
 
+BOOST_AUTO_TEST_CASE ( vector_aggr_packer_unpacker_zero_prop )
+{
+	//Create an object
+	openfpm::vector<aggregate<float,float>> v4;
+
+	//Fill it with data
+
+	v4.resize(3);
+	Point_test<float> p;
+	p.fill();
+	for (size_t i = 0 ; i < v4.size() ; i++)
+	{
+		v4.template get<0>(i) = 1.0;
+		v4.template get<1>(i) = 2.0;
+	}
+
+	size_t req = 0;
+
+	//Pack request
+	Packer<decltype(v4),HeapMemory>::packRequest<>(v4,req);
+
+	std::cout << "Req 1: " << req << std::endl;
+
+	Packer<decltype(v4),HeapMemory>::packRequest<0,1>(v4,req);
+
+	std::cout << "Req 2: " << req << std::endl;
+
+	//BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*4 + sizeof(float[3])) + sizeof(float[3][3]))*2);
+
+	// allocate the memory
+	HeapMemory pmem;
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
+	mem.incRef();
+
+	//Packing
+
+	Pack_stat sts;
+
+	Packer<decltype(v4),HeapMemory>::pack<>(mem,v4,sts);
+
+	Packer<decltype(v4),HeapMemory>::pack<0,1>(mem,v4,sts);
+
+	//Unpacking
+
+	Unpack_stat ps;
+
+	openfpm::vector<aggregate<float,float>> v4_unp;
+
+	openfpm::vector<aggregate<float,float>> v4_unp_2;
+
+	Unpacker<decltype(v4_unp),HeapMemory>::unpack<>(mem,v4_unp,ps);
+
+	Unpacker<decltype(v4_unp_2),HeapMemory>::unpack<0,1>(mem,v4_unp_2,ps);
+
+	//Check the data
+
+	for (size_t i = 0 ; i < v4.size() ; i++)
+	{
+		float f1 = v4_unp.template get<0>(i);
+		float f2 = v4.template get<0>(i);
+		float f3 = v4_unp.template get<1>(i);
+		float f4 = v4.template get<1>(i);
+
+		BOOST_REQUIRE_EQUAL(f1,f2);
+		BOOST_REQUIRE_EQUAL(f3,f4);
+	}
+
+	for (size_t i = 0 ; i < v4.size() ; i++)
+	{
+		float f1 = v4_unp_2.template get<0>(i);
+		float f2 = v4.template get<0>(i);
+		float f3 = v4_unp_2.template get<1>(i);
+		float f4 = v4.template get<1>(i);
+
+		BOOST_REQUIRE_EQUAL(f1,f2);
+		BOOST_REQUIRE_EQUAL(f3,f4);
+	}
+
+	mem.decRef();
+	delete &mem;
+}
+
+BOOST_AUTO_TEST_CASE ( vector_aggr_packer_unpacker_zero_prop_2 )
+{
+	//Create an object
+	openfpm::vector<aggregate<float,openfpm::vector<float>>> v4;
+
+	//Fill it with data
+
+	v4.resize(1);
+	Point_test<float> p;
+	p.fill();
+	for (size_t i = 0 ; i < v4.size() ; i++)
+	{
+		v4.template get<0>(i) = 1.0;
+		v4.template get<1>(i).add(5);
+		v4.template get<1>(i).add(6);
+	}
+
+	size_t req = 0;
+	size_t req_2 = 0;
+
+	//Pack request
+	Packer<decltype(v4),HeapMemory>::packRequest<>(v4,req);
+
+	std::cout << "Req 1: " << req << std::endl;
+
+	Packer<decltype(v4),HeapMemory>::packRequest<0,1>(v4,req_2);
+
+	std::cout << "Req 2: " << req_2 << std::endl;
+/*
+	//BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],((sizeof(float)*4 + sizeof(float[3])) + sizeof(float[3][3]))*2);
+
+	// allocate the memory
+	HeapMemory pmem;
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
+	mem.incRef();
+
+	//Packing
+
+	Pack_stat sts;
+
+	Packer<decltype(v4),HeapMemory>::pack<>(mem,v4,sts);
+
+	Packer<decltype(v4),HeapMemory>::pack<0,1>(mem,v4,sts);
+
+	//Unpacking
+
+	Unpack_stat ps;
+
+	openfpm::vector<aggregate<float,float>> v4_unp;
+
+	openfpm::vector<aggregate<float,float>> v4_unp_2;
+
+	Unpacker<decltype(v4_unp),HeapMemory>::unpack<>(mem,v4_unp,ps);
+
+	Unpacker<decltype(v4_unp_2),HeapMemory>::unpack<0,1>(mem,v4_unp_2,ps);
+
+	//Check the data
+
+	for (size_t i = 0 ; i < v4.size() ; i++)
+	{
+		float f1 = v4_unp.template get<0>(i);
+		float f2 = v4.template get<0>(i);
+		float f3 = v4_unp.template get<1>(i);
+		float f4 = v4.template get<1>(i);
+
+		BOOST_REQUIRE_EQUAL(f1,f2);
+		BOOST_REQUIRE_EQUAL(f3,f4);
+	}
+
+	for (size_t i = 0 ; i < v4.size() ; i++)
+	{
+		float f1 = v4_unp_2.template get<0>(i);
+		float f2 = v4.template get<0>(i);
+		float f3 = v4_unp_2.template get<1>(i);
+		float f4 = v4.template get<1>(i);
+
+		BOOST_REQUIRE_EQUAL(f1,f2);
+		BOOST_REQUIRE_EQUAL(f3,f4);
+	}
+
+	mem.decRef();
+	delete &mem;
+*/
 	std::cout << "Vector pack/unpack test stop" << "\n";
 }
 
@@ -679,7 +856,7 @@ BOOST_AUTO_TEST_CASE ( grid_ptst_packer_unpacker )
 	size_t req = 0;
 	//Pack request
 	Packer<decltype(g),HeapMemory>::packRequest<pt::x,pt::v>(g,req);
-	//BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],(sizeof(float) + sizeof(float[3])) * g.getGrid().size());
+	BOOST_REQUIRE_EQUAL(req,(sizeof(float) + sizeof(float[3])) * 16 * 16 * 16 + sizeof(size_t)*3);
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -752,7 +929,7 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_packer_unpacker )
 	size_t req = 0;
 
 	Packer<decltype(g),HeapMemory>::packRequest<0,1,2,3,4>(g,req);
-	//BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],(sizeof(float))* 5 * g.getGrid().size());
+	BOOST_REQUIRE_EQUAL(req,(sizeof(float))* 5 * 64*4*16 + sizeof(size_t)*3);
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -840,7 +1017,7 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_grid_packer_unpacker )
 	size_t req = 0;
 
 	Packer<decltype(g),HeapMemory>::packRequest<0,1,2>(g,req);
-	//BOOST_REQUIRE_EQUAL(pap_prp[pap_prp.size()-1],(64 * g2.getGrid().size()));
+	BOOST_REQUIRE_EQUAL(req,(8*7*5*(sizeof(float)*2 + 2*4*13 * 64 + sizeof(size_t)*3) + sizeof(size_t)*3));
 
 	// allocate the memory
 	HeapMemory pmem;

@@ -283,9 +283,10 @@ template<int ... prp> inline void packRequest(size_t & req) const
 {
 	//Pushback a sizeof number of elements of the internal vectors
 	req += sizeof(this->size());
-	//std::cout << demangle(typeid(this).name()) << std::endl;
-	//std::cout << this->size() << std::endl;
+	
 #ifdef DEBUG
+	std::cout << demangle(typeid(this).name()) << std::endl;
+	std::cout << this->size() << std::endl;
 	std::cout << "Inside map_vector.hpp packRequest()" << std::endl;
 #endif
 	

@@ -44,10 +44,23 @@ struct has_pack_agg_impl<T,0,result_p,vprp>
 //    typedef std::vector<result_p::value> fail;
 };
 
+template<typename T, int np>
+struct number_prop
+{
+	enum
+	{
+		value = np
+	};
+};
 
-
-
-
+template<typename T>
+struct number_prop<T,0>
+{
+	enum
+	{
+		value = T::max_prop
+	};
+};
 
 
 template<class T, int ... prp>
@@ -55,7 +68,7 @@ struct has_pack_agg
 {
 	typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type vprp;
 	//typedef typename to_boost_vmpl<prp...>::type vprp;
-    typedef typename has_pack_agg_impl<T,sizeof ... (prp), boost::mpl::bool_<false> , vprp>::result result;
+    typedef typename has_pack_agg_impl<T,number_prop<T,sizeof ... (prp)>::value, boost::mpl::bool_<false> , vprp>::result result;
 };
 
 
