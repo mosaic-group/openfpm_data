@@ -500,7 +500,7 @@ public:
 	 */
 	Graph_CSR(Graph_CSR<V, E, Memory> && g)
 	{
-		swap(g);
+		this->operator=(g);
 	}
 
 	/*! \breif Copy the graph

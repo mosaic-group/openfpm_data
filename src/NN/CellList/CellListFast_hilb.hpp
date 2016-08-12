@@ -148,7 +148,7 @@ public:
 	}
 
 	CellList_hilb()
-	:CellList<dim,T,impl,transform,base>()
+	:CellList<dim,T,impl,transform,base>(),m(0)
 	{};
 
 

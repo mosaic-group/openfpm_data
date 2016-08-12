@@ -8,13 +8,8 @@
 #ifndef OPENFPM_DATA_SRC_SPACE_SHAPE_POINT_OPERATORS_FUNCTIONS_HPP_
 #define OPENFPM_DATA_SRC_SPACE_SHAPE_POINT_OPERATORS_FUNCTIONS_HPP_
 
-/*! A macro to define single value function specialization that apply the function component-wise
- *
- * \param fun function name
- * \param ID function ID
- *
- */
-#define CREATE_ARG_FUNC(fun_base,fun_name,OP_ID) \
+#define CREATE_ARG_FUNC_CLASS(fun_base,fun_name,OP_ID) \
+\
 template <typename orig, typename exp1, typename exp2>\
 class point_expression_op<orig,exp1,exp2, OP_ID >\
 {\
@@ -53,7 +48,15 @@ public:\
 		init();\
 		return fun_base(o1.value(0));\
 	}\
-};\
+};
+
+/*! A macro to define single value function specialization that apply the function component-wise
+ *
+ * \param fun function name
+ * \param ID function ID
+ *
+ */
+#define CREATE_ARG_FUNC(fun_base,fun_name,OP_ID) \
 \
 template<typename orig,typename exp1, typename exp_2, unsigned int op1>\
 inline point_expression_op<orig,point_expression_op<orig,exp1,exp_2,op1>,void, OP_ID >\
@@ -62,12 +65,6 @@ fun_name(const point_expression_op<orig,exp1,exp_2,op1> & va)\
 	point_expression_op<orig,point_expression_op<orig,exp1,exp_2,op1>,void,OP_ID> exp_sum(va);\
 \
 	return exp_sum;\
-}\
-\
-\
-template <typename T>inline T fun_name(T d)\
-{\
-	return fun_base(d);\
 }\
 \
 \
@@ -94,7 +91,7 @@ class point_expression_op<orig,exp1,exp2,POINT_NORM>
 {
 	const exp1 o1;
 
-	mutable typename orig::coord_type scal;
+	mutable typename orig::coord_type scal = 0.0;
 
 public:
 
@@ -216,6 +213,40 @@ public:
 		return scal;
 	}
 };
+
+
+CREATE_ARG_FUNC_CLASS(std::abs,abs,POINT_ABS)
+CREATE_ARG_FUNC_CLASS(std::exp,exp,POINT_EXP)
+CREATE_ARG_FUNC_CLASS(std::exp2,exp2,POINT_EXP2)
+CREATE_ARG_FUNC_CLASS(std::expm1,expm1,POINT_EXPM1)
+CREATE_ARG_FUNC_CLASS(std::log,log,POINT_LOG)
+CREATE_ARG_FUNC_CLASS(std::log10,log10,POINT_LOG10)
+CREATE_ARG_FUNC_CLASS(std::log2,log2,POINT_LOG2)
+CREATE_ARG_FUNC_CLASS(std::log1p,log1p,POINT_LOG1P)
+CREATE_ARG_FUNC_CLASS(std::sqrt,sqrt,POINT_SQRT)
+CREATE_ARG_FUNC_CLASS(std::cbrt,cbrt,POINT_CBRT)
+CREATE_ARG_FUNC_CLASS(std::sin,sin,POINT_SIN)
+CREATE_ARG_FUNC_CLASS(std::cos,cos,POINT_COS)
+CREATE_ARG_FUNC_CLASS(std::tan,tan,POINT_TAN)
+CREATE_ARG_FUNC_CLASS(std::asin,asin,POINT_ASIN)
+CREATE_ARG_FUNC_CLASS(std::acos,acos,POINT_ACOS)
+CREATE_ARG_FUNC_CLASS(std::atan,atan,POINT_ATAN)
+CREATE_ARG_FUNC_CLASS(std::sinh,sinh,POINT_SINH)
+CREATE_ARG_FUNC_CLASS(std::cosh,cosh,POINT_COSH)
+CREATE_ARG_FUNC_CLASS(std::tanh,tanh,POINT_TANH)
+CREATE_ARG_FUNC_CLASS(std::asinh,asinh,POINT_ASINH)
+CREATE_ARG_FUNC_CLASS(std::acosh,acosh,POINT_ACOSH)
+CREATE_ARG_FUNC_CLASS(std::atanh,atanh,POINT_ATANH)
+CREATE_ARG_FUNC_CLASS(std::erf,erf,POINT_ERF)
+CREATE_ARG_FUNC_CLASS(std::erfc,erfc,POINT_ERFC)
+CREATE_ARG_FUNC_CLASS(std::tgamma,tgamma,POINT_TGAMMA)
+CREATE_ARG_FUNC_CLASS(std::lgamma,lgamma,POINT_LGAMMA)
+CREATE_ARG_FUNC_CLASS(std::ceil,ceil,POINT_CEIL)
+CREATE_ARG_FUNC_CLASS(std::floor,floor,POINT_FLOOR)
+CREATE_ARG_FUNC_CLASS(std::trunc,trunc,POINT_TRUNC)
+CREATE_ARG_FUNC_CLASS(std::round,round,POINT_ROUND)
+CREATE_ARG_FUNC_CLASS(std::nearbyint,nearbyint,POINT_NEARBYINT)
+CREATE_ARG_FUNC_CLASS(std::rint,rint,POINT_RINT)
 
 /////// norm operation
 
@@ -393,5 +424,6 @@ CREATE_ARG_FUNC(std::trunc,trunc,POINT_TRUNC)
 CREATE_ARG_FUNC(std::round,round,POINT_ROUND)
 CREATE_ARG_FUNC(std::nearbyint,nearbyint,POINT_NEARBYINT)
 CREATE_ARG_FUNC(std::rint,rint,POINT_RINT)
+
 
 #endif /* OPENFPM_DATA_SRC_SPACE_SHAPE_POINT_OPERATORS_FUNCTIONS_HPP_ */

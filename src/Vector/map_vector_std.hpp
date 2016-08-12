@@ -34,7 +34,7 @@ class vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,
 	std::vector<T> base;
 
 	//! Error code
-	size_t err_code;
+	size_t err_code = 0;
 
 public:
 
