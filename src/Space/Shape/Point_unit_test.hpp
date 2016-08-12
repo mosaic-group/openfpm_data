@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage )
 	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),p[i]+p1.get(i)) ;}
 
 	tmp = norm(p_e);
-	BOOST_REQUIRE_EQUAL(tmp,sqrt(14.0f));
+	BOOST_REQUIRE_EQUAL(tmp,sqrtf(14.0));
 
 	Point<3,float> p4({1.0,2.0,3.0});
 
@@ -383,7 +383,7 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage_with_array )
 
 	// norm test
 	p3 = p1 / norm(p1);
-	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],p1_p[i] / sqrt(3.0f)) ;}
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],p1_p[i] / sqrtf(3.0)) ;}
 	// distance calculation
 	float dist = norm(p1 - p2);
 	float dist2 = 0.0;
