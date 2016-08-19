@@ -41,6 +41,30 @@ class CellList
 {
 };
 
+/*! \brief Calculate parameters for the cell list
+ *
+ * \param div Division array
+ * \param r_cut interation radius or size of each cell
+ * \param enlarge In case of padding particles the cell list must be enlarged, like a ghost. This parameter says how much must be enlarged
+ *
+ * \return the processor bounding box
+ */
+template<unsigned int dim, typename St> static inline void cl_param_calculate(Box<dim, St> & pbox, size_t (&div)[dim], St r_cut, const Ghost<dim, St> & enlarge)
+{
+	// calculate the parameters of the cell list
+
+	// extend by the ghost
+	pbox.enlarge(enlarge);
+
+	// Calculate the division array and the cell box
+	for (size_t i = 0; i < dim; i++)
+	{
+		div[i] = static_cast<size_t>((pbox.getP2().get(i) - pbox.getP1().get(i)) / r_cut);
+		div[i]++;
+		pbox.setHigh(i,pbox.getLow(i) + div[i]*r_cut);
+	}
+}
+
 #include "CellListFast.hpp"
 #include "CellListBal.hpp"
 #include "CellListMem.hpp"

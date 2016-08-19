@@ -11,7 +11,7 @@
 #include "util/mathutil.hpp"
 
 #define FULL openfpm::math::pow(3,dim)
-#define SYM  openfpm::math::pow(3,dim)/2
+#define SYM  openfpm::math::pow(3,dim)/2 + 1
 #define CRS openfpm::math::pow(2,dim)
 
 #define NO_CHECK 1
@@ -78,7 +78,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	CellNNIterator(size_t cell, const long int (&NNc)[NNc_size], Cell & cl)
+	inline CellNNIterator(size_t cell, const long int (&NNc)[NNc_size], Cell & cl)
 	:cl(cl),NNc_id(0),cell_id(NNc[NNc_id] + cell),ele_id(0),NNc(NNc),cell(cell)
 	{
 		selectValid();
@@ -89,7 +89,7 @@ public:
 	 * Check if there is the next element
 	 *
 	 */
-	bool isNext()
+	inline bool isNext()
 	{
 		if (NNc_id >= NNc_size)
 			return false;
@@ -99,7 +99,7 @@ public:
 	/*! \brief take the next element
 	 *
 	 */
-	CellNNIterator & operator++()
+	inline CellNNIterator & operator++()
 	{
 		ele_id++;
 
@@ -113,7 +113,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	typename Cell::value_type & get()
+	inline typename Cell::value_type & get()
 	{
 		return cl.get(cell_id,ele_id);
 	}

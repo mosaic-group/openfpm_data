@@ -188,6 +188,21 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 		//! [Usage of the neighborhood iterator]
 
 		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim));
+
+		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key));
+		total = 0;
+
+		while(NNSym.isNext())
+		{
+			// total
+
+			total++;
+
+			++NNSym;
+		}
+
+		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
+
 		++g_it_s;
 	}
 
@@ -314,6 +329,26 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 
 		BOOST_REQUIRE_EQUAL(total1,(size_t)openfpm::math::pow(3,dim));
 		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim));
+
+
+		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key));
+		total1 = 0;
+		total2 = 0;
+
+		while(NNSym.isNext())
+		{
+			// total
+
+			if (NNSym.getV() == 1)
+				total1++;
+			else
+				total2++;
+
+			++NNSym;
+		}
+
+		BOOST_REQUIRE_EQUAL(total1,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
+		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
 
 		++g_it_s;
 	}

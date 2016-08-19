@@ -14,6 +14,8 @@
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
 #include "CellListIterator.hpp"
+#include "CellListNNIteratorRadius.hpp"
+#include <unordered_map>
 
 #include "util/common.hpp"
 
@@ -52,8 +54,8 @@
  * \endverbatim
  *
  *
- * \tparam dim Dimansionality of the space
- * \tparam T type of the space float, double, complex
+ * \tparam dim Dimensionality of the space
+ * \tparam T type of the space float, double ...
  * \tparam base Base structure that store the information
  *
  * ### Declaration of a cell list
@@ -70,7 +72,7 @@ template<unsigned int dim, typename T, typename transform, typename base>
 class CellList<dim,T,FAST,transform,base> : public CellDecomposer_sm<dim,T,transform>
 {
 protected:
-	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
+	//! The array contain the neighborhood of the cell-id in case of asymmetric interaction
 	//
 	//    * * *
 	//    * x *
@@ -78,14 +80,14 @@ protected:
 
 	long int NNc_full[openfpm::math::pow(3,dim)];
 
-	// The array contain the neighborhood of the cell-id in case of symmetric interaction
+	//! The array contain the neighborhood of the cell-id in case of symmetric interaction
 	//
 	//   * * *
 	//     x *
 	//
 	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
 
-	// The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
+	//! The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
 	//
 	//   * *
 	//   x *
@@ -94,16 +96,23 @@ protected:
 
 private:
 
-	// Number of slot for each cell
+	//! Number of slot for each cell
 	size_t slot;
 
-	// number of particle in each cell list
+	//! number of particle in each cell list
 	openfpm::vector<size_t> cl_n;
 
-	// elements that each cell store (each cell can store a number
-	// of elements == slot )
+	//! elements that each cell store (each cell can store a number
+	//! of elements == slot )
 	base cl_base;
 
+	//! Caching of r_cutoff radius
+	std::unordered_map<T,openfpm::vector<long int>> rcache;
+
+	/*! \brief realloc the data structures
+	 *
+	 *
+	 */
 	void realloc()
 	{
 		// we do not have enough slots reallocate the basic structure with more
@@ -124,9 +133,72 @@ private:
 		cl_base.swap(cl_base_);
 	}
 
+	/*! Calculate the neighborhood cells based on the radius
+	 *
+	 * \note To the calculated neighborhood cell you have to add the id of the central cell
+	 *
+		\verbatim
+       +-----------------------+
+       |p |p |p |p |p |p |p |p |
+       +-----------------------+
+       |p |  |  |  |  |  |  |p |
+       +-----------------------+
+       |p |  |  |7 |8 |9 |  |p |
+       +-----------------------+
+       |p |  |  |-1|0 |1 |  |p |
+       +-----------------------+
+       |p |9 |  |-9|-8|-7|  |p |
+       +-----------------------+
+       |p |p |p |p |p |p |p |p |
+       +-----------------------+
+		\endverbatim
+	 *
+	 * The number indicate the cell id calculated
+	 *
+	 * -9,-8,-7,-1,0,1,7,8,9
+	 *
+	 * The cell 0 has id = 22 in the big cell matrix, so to calculate the
+	 * neighborhood cells you have to sum the id of the center cell
+	 *
+	 * 13,14,15,21,22,23,29,30,31
+	 *
+	 * \param r_cut Cutoff-radius
+	 * \param NNcell vector containing the neighborhood cells ids
+	 *
+	 */
+	void NNcalc(T r_cut, openfpm::vector<long int> & NNcell)
+	{
+		size_t n_cell[dim];
+		size_t n_cell_mid[dim];
+
+		Point<dim,T> spacing = this->getCellBox().getP2();
+		const grid_sm<dim,void> & gs = this->getGrid();
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			n_cell[i] = 2*(std::ceil(r_cut / spacing.get(i)))+1;
+			n_cell_mid[i] = n_cell[i] / 2;
+		}
+
+		grid_sm<dim,void> gsc(n_cell);
+		grid_key_dx_iterator<dim> gkdi(gsc);
+
+		while (gkdi.isNext())
+		{
+			auto key = gkdi.get();
+
+			for (size_t i = 0 ; i < dim ; i++)
+				key.set_d(i,key.get(i) - n_cell_mid[i]);
+
+			NNcell.add(gs.LinId(key));
+
+			++gkdi;
+		}
+	}
+
 public:
 
-	// Object type that the structure store
+	//! Object type that the structure store
 	typedef typename base::value_type value_type;
 
 	/*! \brief Return the underlying grid information of the cell list
@@ -251,12 +323,14 @@ public:
 
 	//! Copy constructor
 	CellList(const CellList<dim,T,FAST,transform,base> & cell)
+	:slot(STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
 
 	//! Copy constructor
 	CellList(CellList<dim,T,FAST,transform,base> && cell)
+	:slot(STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
@@ -272,7 +346,7 @@ public:
 	 *
 	 */
 	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	:CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad)
+	:slot(slot),CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad)
 	{
 		SpaceBox<dim,T> sbox(box);
 		Initialize(sbox,div,pad,slot);
@@ -287,6 +361,7 @@ public:
 	 *
 	 */
 	CellList(Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	:slot(slot)
 	{
 		SpaceBox<dim,T> sbox(box);
 		Initialize(sbox,div,pad,slot);
@@ -301,6 +376,7 @@ public:
 	 *
 	 */
 	CellList(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	:slot(slot)
 	{
 		Initialize(box,div,pad,slot);
 	}
@@ -316,6 +392,8 @@ public:
 	 *
 	 * \param cell Cell list structure
 	 *
+	 * \return itself
+	 *
 	 */
 	CellList<dim,T,FAST,transform,base> & operator=(CellList<dim,T,FAST,transform,base> && cell)
 	{
@@ -323,9 +401,7 @@ public:
 		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
 		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
-		size_t tslot = slot;
 		slot = cell.slot;
-		cell.slot = tslot;
 
 		cl_n.swap(cell.cl_n);
 		cl_base.swap(cell.cl_base);
@@ -338,6 +414,8 @@ public:
 	/*! \brief Constructor from a temporal object
 	 *
 	 * \param cell Cell list structure
+	 *
+	 * \return itself
 	 *
 	 */
 	CellList<dim,T,FAST,transform,base> & operator=(const CellList<dim,T,FAST,transform,base> & cell)
@@ -581,6 +659,8 @@ public:
 	 *
 	 * \param cell cell id
 	 *
+	 * \return An iterator across the neighhood particles
+	 *
 	 */
 	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,FULL,impl> getNNIterator(size_t cell)
 	{
@@ -589,6 +669,27 @@ public:
 		return cln;
 	}
 
+	/*! \brief Get the Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells up to some selected radius
+	 *
+	 * \param cell cell id
+	 * \param r_cut radius
+	 *
+	 * \return An iterator across the neighborhood particles
+	 *
+	 */
+	template<unsigned int impl=NO_CHECK> inline CellNNIteratorRadius<dim,CellList<dim,T,FAST,transform,base>,impl> getNNIteratorRadius(size_t cell, T r_cut)
+	{
+		openfpm::vector<long int> & NNc = rcache[r_cut];
+
+		if (NNc.size() == 0)
+			NNcalc(r_cut,NNc);
+
+		CellNNIteratorRadius<dim,CellList<dim,T,FAST,transform,base>,impl> cln(cell,NNc,*this);
+
+		return cln;
+	}
 
 	/*! \brief Get the Neighborhood iterator
 	 *
@@ -605,6 +706,8 @@ public:
 	 * * * are the near cell
 	 *
 	 * \param cell cell id
+	 *
+	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
 	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell)
@@ -631,6 +734,8 @@ public:
 	 *
 	 * \param cell cell id
 	 *
+	 * \return an iterator across the neighborhood params
+	 *
 	 */
 	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> getNNIteratorCross(size_t cell)
 	{
@@ -656,14 +761,13 @@ public:
 	 */
 	void clear()
 	{
-		slot = STARTING_NSLOT;
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
 			cl_n.get(i) = 0;
 	}
 
 //////////////////////////////// POINTLESS BUT REQUIRED TO RESPECT THE INTERFACE //////////////////
 
-	// Ghost marker
+	//! Ghost marker
 	size_t g_m = 0;
 
 	/*! \brief return the ghost marker
@@ -678,6 +782,7 @@ public:
 
 	/*! \brief Set the ghost marker
 	 *
+	 * \param g_m marker
 	 *
 	 */
 	inline void set_gm(size_t g_m)
