@@ -369,6 +369,74 @@ BOOST_AUTO_TEST_CASE ( vector_zerosize__lvl_2_packer_unpacker_float )
 	delete &mem;
 }
 
+BOOST_AUTO_TEST_CASE ( vector_box_packer_unpacker )
+{
+	//Create an object
+
+	openfpm::vector<openfpm::vector<Box<3,float>>> v;
+
+	Box<3,float> bx;
+	bx.setHigh(0, 3.0);
+	bx.setHigh(1, 4.0);
+	bx.setHigh(2, 5.0);
+	bx.setLow(0, 6.0);
+	bx.setLow(1, 7.0);
+	bx.setLow(2, 8.0);
+
+	//Fill it with data
+
+	v.resize(4);
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		v.get(i).resize(5);
+		for (size_t j = 0; j < v.get(i).size(); j++)
+		{
+			v.get(i).get(j) = bx;
+		}
+	}
+	size_t req = 0;
+
+	typedef Point_test<float> pt;
+
+	//Pack request
+	Packer<decltype(v),HeapMemory>::packRequest<>(v,req);
+
+	BOOST_REQUIRE_EQUAL(req,((sizeof(float)*6) * 5 + 8) * 4 + 8);
+
+	// allocate the memory
+	HeapMemory pmem;
+	//pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
+	mem.incRef();
+
+	//Packing
+
+	Pack_stat sts;
+
+	Packer<decltype(v),HeapMemory>::pack<>(mem,v,sts);
+
+	//Unpacking
+
+	Unpack_stat ps;
+
+	openfpm::vector<openfpm::vector<Box<3,float>>> v_unp;
+
+	Unpacker<decltype(v_unp),HeapMemory>::unpack<>(mem,v_unp,ps);
+
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		for (size_t j = 0; j < v.get(i).size(); j++)
+		{
+			Box<3,float> b1 = v_unp.get(i).get(j);
+			Box<3,float> b2 = v.get(i).get(j);
+			BOOST_REQUIRE(b1 == b2);
+		}
+	}
+
+	mem.decRef();
+	delete &mem;
+}
+
 BOOST_AUTO_TEST_CASE ( vector_std_smarter_packer_unpacker )
 {
 	//Create an object

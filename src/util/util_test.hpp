@@ -720,6 +720,15 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 			typedef aggregate<float,openfpm::vector<float>> aggr;
 
 			bool val = has_pack_agg<aggr>::result::value;
+
+			BOOST_REQUIRE_EQUAL(val,true);
+
+			typedef aggregate<float, Point_test<float>> aggr2;
+
+			val = has_pack_agg<aggr2>::result::value;
+
+			BOOST_REQUIRE_EQUAL(val,false);
+
 		}
 		//! [Check has_pack_agg]
 
