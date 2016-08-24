@@ -14,7 +14,6 @@
 
 #define VL_NON_SYMMETRIC 0
 #define VL_SYMMETRIC 1
-#define VL_SYMMETRIC_RED 2
 
 #define WITH_RADIUS 3
 
@@ -37,7 +36,7 @@ struct NNType
 	 * \param r_cut Cutoff radius
 	 *
 	 */
-	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut, openfpm::vector<Point<dim,T>> & v_pos, size_t g_m, const Box<dim,T> & dom) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
+	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
 	{
 		return cl.template getNNIterator<NO_CHECK>(cl.getCell(xp));
 	}
@@ -64,7 +63,7 @@ struct NNType<dim,T,CellListImpl,WITH_RADIUS>
 	 * \param r_cut Cutoff radius
 	 *
 	 */
-	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut, openfpm::vector<Point<dim,T>> & v_pos, size_t g_m, const Box<dim,T> & dom) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
+	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
 	{
 		return cl.template getNNIteratorRadius<NO_CHECK>(cl.getCell(xp),r_cut);
 	}
@@ -91,40 +90,12 @@ struct NNType<dim,T,CellListImpl,VL_SYMMETRIC>
 	 * \param r_cut Cutoff radius
 	 *
 	 */
-	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut, openfpm::vector<Point<dim,T>> & v_pos, size_t g_m, const Box<dim,T> & dom) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0))
+	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0))
 	{
 		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),p);
 	}
 };
 
-
-/*! \brief Get the heighborhood iterator based on type
- *
- * spacialization for the case with NN symmetric
- *
- * \tparam dim dimensionality
- * \tparam T type of space
- * \tparam CellListImpl Cell-list implementation
- *
- */
-template<unsigned int dim, typename T, typename CellListImpl>
-struct NNType<dim,T,CellListImpl,VL_SYMMETRIC_RED>
-{
-	/*! \brief Get the neighborhood
-	 *
-	 * \param xp Position of the particle p
-	 * \param p id of the particle p
-	 * \param cl Cell-list type implementation
-	 * \param r_cut Cutoff radius
-	 * \param v_pos vector of particle positions
-	 * \param dom Processor domain
-	 *
-	 */
-	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut, openfpm::vector<Point<dim,T>> & v_pos, size_t g_m, const Box<dim,T> & dom) -> decltype(cl.template getNNIteratorSymRed<NO_CHECK>(0,0,0,openfpm::vector<Point<dim,T>>(),Box<dim,T>()))
-	{
-		return cl.template getNNIteratorSymRed<NO_CHECK>(cl.getCell(xp),p,g_m,v_pos,dom);
-	}
-};
 
 /*! \brief Class for FAST Verlet list implementation
  *
@@ -224,11 +195,9 @@ private:
 	inline void create(openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cl, const Box<dim,T> & dom, size_t opt)
 	{
 		if (opt == VL_SYMMETRIC)
-			create_<decltype(cli.template getNNIteratorSym<NO_CHECK>(0,0)),VL_SYMMETRIC>(pos,r_cut,g_m,cli,dom,opt);
-		else if (opt == VL_SYMMETRIC_RED)
-			create_<decltype(cli.template getNNIteratorSymRed<NO_CHECK>(0,0,0,openfpm::vector<Point<dim,T>>(),Box<dim,T>())),VL_SYMMETRIC_RED>(pos,r_cut,g_m,cli,dom,opt);
+			create_<decltype(cli.template getNNIteratorSym<NO_CHECK>(0,0)),VL_SYMMETRIC>(pos,r_cut,g_m,cli,opt);
 		else
-			create_<decltype(cli.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cli,dom,opt);
+			create_<decltype(cli.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cli,opt);
 	}
 
 	/*! \brief Create the Verlet list from a given cell-list
@@ -242,12 +211,12 @@ private:
 	 * \param dom Processor domain
 	 *
 	 */
-	template<typename NN_type, int type> inline void create_(openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cli, const Box<dim,T> & dom, size_t opt)
+	template<typename NN_type, int type> inline void create_(openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
 	{
 		size_t end;
 
 		// resize verlet to store the number of particles
-		if (opt == VL_SYMMETRIC || opt == VL_SYMMETRIC_RED)
+		if (opt == VL_SYMMETRIC)
 			end = pos.size();
 		else
 			end = g_m;
@@ -265,7 +234,7 @@ private:
 			Point<dim,T> p = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			NN_type NN = NNType<dim,T,CellListImpl,type>::get(p,i,cli,r_cut,pos,g_m,dom);
+			NN_type NN = NNType<dim,T,CellListImpl,type>::get(p,i,cli,r_cut);
 			while (NN.isNext())
 			{
 				auto nnp = NN.get();
@@ -429,9 +398,9 @@ public:
 			wr &= r_cut <= spacing.get(i);
 
 		if (wr == true)
-			create_<decltype(cli.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cli,dom);
+			create_<decltype(cli.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cli,VL_NON_SYMMETRIC);
 		else
-			create_<decltype(cli.template getNNIteratorRadius<NO_CHECK>(0,0.0)),WITH_RADIUS>(pos,r_cut,g_m,cli,dom);
+			create_<decltype(cli.template getNNIteratorRadius<NO_CHECK>(0,0.0)),WITH_RADIUS>(pos,r_cut,g_m,cli,VL_NON_SYMMETRIC);
 	}
 
 	//! Default Constructor

@@ -720,36 +720,6 @@ public:
 		return cln;
 	}
 
-	/*! \brief Get the Neighborhood iterator
-	 *
-	 * It iterate across all the element of the selected cell and the near cells
-	 *
-	 *  \verbatim
-
-	   * * *
-	     x *
-
-	   \endverbatim
-	 *
-	 * * x is the selected cell
-	 * * * are the near cell
-	 *
-	 * \param cell cell id
-	 * \param p particle id
-	 *
-	 * \return An aiterator across the neighborhood particles
-	 *
-	 */
-	template<unsigned int impl> inline CellNNIteratorSymRed<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSymRed(size_t cell,
-																															   size_t p,
-																															   size_t g_m,
-																															   const openfpm::vector<Point<dim,T>> & v_pos,
-																															   const Box<dim,T> & dom)
-	{
-		CellNNIteratorSymRed<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,g_m,v_pos,dom);
-
-		return cln;
-	}
 
 	/*! \brief Get the Neighborhood iterator
 	 *
