@@ -201,6 +201,8 @@ public:
 	//! Object type that the structure store
 	typedef typename base::value_type value_type;
 
+	typedef T stype;
+
 	/*! \brief Return the underlying grid information of the cell list
 	 *
 	 * \return the grid infos
@@ -706,17 +708,48 @@ public:
 	 * * * are the near cell
 	 *
 	 * \param cell cell id
+	 * \param p particle id
 	 *
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell)
+	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p)
 	{
-		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,NNc_sym,*this);
+		CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this);
 
 		return cln;
 	}
 
+	/*! \brief Get the Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
+
+	   * * *
+	     x *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
+	 *
+	 * \param cell cell id
+	 * \param p particle id
+	 *
+	 * \return An aiterator across the neighborhood particles
+	 *
+	 */
+	template<unsigned int impl> inline CellNNIteratorSymRed<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSymRed(size_t cell,
+																															   size_t p,
+																															   size_t g_m,
+																															   const openfpm::vector<Point<dim,T>> & v_pos,
+																															   const Box<dim,T> & dom)
+	{
+		CellNNIteratorSymRed<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,g_m,v_pos,dom);
+
+		return cln;
+	}
 
 	/*! \brief Get the Neighborhood iterator
 	 *

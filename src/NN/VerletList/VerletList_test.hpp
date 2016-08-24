@@ -77,7 +77,7 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_s(SpaceBo
 			innerBox.setHigh(i,1.0-r_cut);
 		}
 
-		vl1.Initialize(box,r_cut,pos,pos.size());
+		vl1.Initialize(box,box,r_cut,pos,pos.size());
 
 		// Check that the verlet is consistent
 		for (size_t i = 0 ; i < pos.size() ; i++)
@@ -152,14 +152,14 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_s(SpaceBo
 		//! [create verlet cell]
 
 		VerS vl1;
-		vl1.Initialize(cli,r_cut,pos,pos.size());
+		vl1.Initialize(bt,cli,r_cut,pos,pos.size());
 
 		//! [create verlet cell]
 
 		//! [create verlet]
 
 		VerS vl2;
-		vl2.Initialize(box,r_cut,pos,pos.size());
+		vl2.Initialize(box,box,r_cut,pos,pos.size());
 
 		//! [create verlet]
 
