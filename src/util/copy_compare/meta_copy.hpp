@@ -3,6 +3,7 @@
 
 #include "copy_general.hpp"
 
+
 /*! \brief This class copy general objects
  *
  * * primitives
@@ -27,22 +28,45 @@
 template<typename T>
 struct meta_copy
 {
-	inline meta_copy(const T & src, T & dst)
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T & src, T & dst)
 	{
 		copy_general<T>(src,dst);
 	}
 
-	// Needed to make reference objects working
-	inline meta_copy(const T & src, T && dst)
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T & src, T && dst)
 	{
 		copy_general<T>(src,dst);
 	}
 };
 
+/*! \brief copy for a source object to a destination
+ *
+ * \tparam Tsrc source object
+ * \tparam Tdst destination object
+ *
+ */
 template<typename Tsrc,typename Tdst>
 struct meta_copy_d
 {
-	inline meta_copy_d(const Tsrc & src, Tdst & dst)
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_d_(const Tsrc & src, Tdst & dst)
 	{
 		copy_general<Tsrc>(src,dst);
 	}
@@ -52,7 +76,13 @@ struct meta_copy_d
 template<typename T,size_t N1>
 struct meta_copy<T[N1]>
 {
-	inline meta_copy(const T src[N1], T dst[N1])
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T src[N1], T dst[N1])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -65,7 +95,13 @@ struct meta_copy<T[N1]>
 template<typename Tsrc, typename Tdst, size_t N1>
 struct meta_copy_d<Tsrc[N1],Tdst>
 {
-	inline meta_copy_d(const Tsrc src[N1], Tdst && dst)
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_d_(const Tsrc src[N1], Tdst && dst)
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -78,7 +114,13 @@ struct meta_copy_d<Tsrc[N1],Tdst>
 template<typename T,size_t N1,size_t N2>
 struct meta_copy<T[N1][N2]>
 {
-	inline meta_copy(const T src[N1][N2], T dst[N1][N2])
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T src[N1][N2], T dst[N1][N2])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -94,8 +136,14 @@ struct meta_copy<T[N1][N2]>
 template<typename Tsrc, typename Tdst,size_t N1,size_t N2>
 struct meta_copy_d<Tsrc[N1][N2],Tdst>
 {
-	inline meta_copy_d(const Tsrc src[N1][N2], Tdst && dst)
+	static inline void meta_copy_d_(const Tsrc src[N1][N2], Tdst && dst)
 	{
+		/*! \brief copy and object from src to dst
+		 *
+		 * \param src source object to copy
+		 * \param dst destination object
+		 *
+		 */
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
 			for (size_t i2 = 0 ; i2 < N2 ; i2++)
@@ -110,7 +158,13 @@ struct meta_copy_d<Tsrc[N1][N2],Tdst>
 template<typename T,size_t N1,size_t N2,size_t N3>
 struct meta_copy<T[N1][N2][N3]>
 {
-	inline meta_copy(const T src[N1][N2][N3], T dst[N1][N2][N3])
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T src[N1][N2][N3], T dst[N1][N2][N3])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -129,7 +183,13 @@ struct meta_copy<T[N1][N2][N3]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4>
 struct meta_copy<T[N1][N2][N3][N4]>
 {
-	inline meta_copy(const T src[N1][N2][N3][N4], T dst[N1][N2][N3][N4])
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T src[N1][N2][N3][N4], T dst[N1][N2][N3][N4])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -151,7 +211,13 @@ struct meta_copy<T[N1][N2][N3][N4]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5>
 struct meta_copy<T[N1][N2][N3][N4][N5]>
 {
-	inline meta_copy(const T src[N1][N2][N3][N4][N5], T dst[N1][N2][N3][N4][N5])
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T src[N1][N2][N3][N4][N5], T dst[N1][N2][N3][N4][N5])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -176,7 +242,13 @@ struct meta_copy<T[N1][N2][N3][N4][N5]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6>
 struct meta_copy<T[N1][N2][N3][N4][N5][N6]>
 {
-	inline meta_copy(const T src[N1][N2][N3][N4][N5][N6], T dst[N1][N2][N3][N4][N5][N6])
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T src[N1][N2][N3][N4][N5][N6], T dst[N1][N2][N3][N4][N5][N6])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -204,7 +276,13 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7>
 struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7]>
 {
-	inline meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7], T dst[N1][N2][N3][N4][N5][N6][N7])
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T src[N1][N2][N3][N4][N5][N6][N7], T dst[N1][N2][N3][N4][N5][N6][N7])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -235,7 +313,13 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7, size_t N8>
 struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8]>
 {
-	inline meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7][N8], T dst[N1][N2][N3][N4][N5][N6][N7][N8])
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T src[N1][N2][N3][N4][N5][N6][N7][N8], T dst[N1][N2][N3][N4][N5][N6][N7][N8])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -269,7 +353,13 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7, size_t N8, size_t N9>
 struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8][N9]>
 {
-	inline meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7][N8][N9], T dst[N1][N2][N3][N4][N5][N6][N7][N8][N9])
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T src[N1][N2][N3][N4][N5][N6][N7][N8][N9], T dst[N1][N2][N3][N4][N5][N6][N7][N8][N9])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -306,7 +396,13 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8][N9]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7, size_t N8, size_t N9, size_t N10>
 struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10]>
 {
-	inline meta_copy(const T src[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10], T dst[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10])
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_(const T src[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10], T dst[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -336,6 +432,124 @@ struct meta_copy<T[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10]>
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+};
+
+////////////////////////// VERSION WITH OPERATION ////////////////////////
+
+
+/*! \brief This class copy general objects applying an operation
+ *
+ * * primitives
+ * * array of primitives
+ * * complex objects
+ * * aggregates
+ *
+ * ### Usage of meta copy and compare for primitives
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for primitives
+ * ### Usage of meta copy and compare for array of primitives
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for array of primitives
+ * ### Usage of meta copy and compare for openfpm aggregates
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for openfpm aggregates
+ * ### Usage of meta copy and compare for complex object
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for complex object
+ * ### Usage of meta copy and compare for complex aggregates object
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for complex aggregates object
+ * ### Usage of meta copy and compare for Point_test
+ * \snippet meta_cc_unit_tests.hpp Usage of meta copy and compare for Point_test
+ *
+ */
+template<template<typename,typename> class op, typename T>
+struct meta_copy_op
+{
+	/*! \brief Meta-copy applying an operation
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_(const T & src, T & dst)
+	{
+		copy_general_op<op,T>(src,dst);
+	}
+
+	/*! \brief Meta-copy applying an operation
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_(const T & src, T && dst)
+	{
+		copy_general_op<op,T>(src,dst);
+	}
+};
+
+
+//! Partial specialization for N=1 1D-Array
+template<template<typename,typename> class op, typename T,size_t N1>
+struct meta_copy_op<op,T[N1]>
+{
+	/*! \brief Meta-copy applying an operation
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_(const T src[N1], T dst[N1])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general_op<op,T>(src[i1],dst[i1]);
+		}
+	}
+};
+
+//! Partial specialization for N=2 2D-Array
+template<template<typename,typename> class op, typename T,size_t N1,size_t N2>
+struct meta_copy_op<op,T[N1][N2]>
+{
+	/*! \brief Meta-copy applying an operation
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_(const T src[N1][N2], T dst[N1][N2])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < N2 ; i2++)
+			{
+				copy_general_op<op,T>(src[i1][i2],dst[i1][i2]);
+			}
+		}
+	}
+};
+
+
+//! Partial specialization for N=3
+template<template<typename,typename> class op, typename T,size_t N1,size_t N2,size_t N3>
+struct meta_copy_op<op,T[N1][N2][N3]>
+{
+	/*! \brief Meta-copy applying an operation
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_(const T src[N1][N2][N3], T dst[N1][N2][N3])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < N2 ; i2++)
+			{
+				for (size_t i3 = 0 ; i3 < N3 ; i3++)
+				{
+					copy_general_op<op,T>(src[i1][i2][i3],dst[i1][i2][i3]);
 				}
 			}
 		}

@@ -73,9 +73,9 @@ public:
 	inline CellNNIteratorRadius(size_t cell, const openfpm::vector<long int> &NNc, Cell & cl)
 	:cl(cl),NNc_id(0),cell_id(NNc.get(NNc_id) + cell),ele_id(0),NNc(NNc),cell(cell)
 	{
-#if SE_CLASS1
+#ifdef SE_CLASS1
 		if (cell_id < 0)
-			std::cerr << "Error " << __FILE__ ":" << __ERROR__ << " cell_id is negative, please check the the padding is chosen correctly." <<
+			std::cerr << "Error " << __FILE__ ":" << __LINE__ << " cell_id is negative, please check the the padding is chosen correctly." <<
 			                                                      "Remember, if you choose a radius that span N neighborhood cell-list, padding must be one" << std::endl;
 #endif
 

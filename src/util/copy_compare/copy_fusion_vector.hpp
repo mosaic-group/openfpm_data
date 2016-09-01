@@ -51,7 +51,7 @@ struct copy_fusion_vector
 		// Remove the reference from the type to copy
 		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
 
-		meta_copy<copy_rtype> cp(boost::fusion::at_c<T::value>(src),boost::fusion::at_c<T::value>(dst));
+		meta_copy<copy_rtype>::meta_copy_(boost::fusion::at_c<T::value>(src),boost::fusion::at_c<T::value>(dst));
 	}
 };
 
@@ -99,7 +99,7 @@ struct copy_fusion_vector_encap
 		// Remove the reference from the type to copy
 //		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
 
-		meta_copy_d<typename boost::mpl::at<bfv,boost::mpl::int_<T::value> >::type,decltype(dst.template get<T::value>())> cp(boost::fusion::at_c<T::value>(src),dst.template get<T::value>());
+		meta_copy_d<typename boost::mpl::at<bfv,boost::mpl::int_<T::value> >::type,decltype(dst.template get<T::value>())>::meta_copy_d_(boost::fusion::at_c<T::value>(src),dst.template get<T::value>());
 	}
 };
 

@@ -57,6 +57,144 @@ struct test_no_attributes
 
 BOOST_AUTO_TEST_SUITE( util_test )
 
+BOOST_AUTO_TEST_CASE( object_s_di_test )
+{
+	// Object write test
+
+	//! [object write example]
+	typedef Point_test<float> p;
+	typedef Point_test<float>::type vboost;
+	typedef object_creator<Point_test<float>::type,0,1,4>::type vboost_red;
+
+	object<vboost> dst;
+	object<vboost_red> src;
+
+	// fill the source properties 0,1,2 with data
+
+	boost::fusion::at_c<0>(src.data) = 1.0;
+	boost::fusion::at_c<1>(src.data) = 2.0;
+
+	for (size_t i = 0 ; i < 3 ;  i++)
+		boost::fusion::at_c<2>(src.data)[i] = i + 5.0;
+
+	// copy from src to dst
+	object_s_di<object<vboost_red>,object<vboost>,OBJ_NORMAL,0,1,4>(src,dst);
+
+	// Check the result
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::x>(dst.data),1.0);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::y>(dst.data),2.0);
+
+	for (size_t i = 0 ; i < 3 ;  i++)
+		BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::v>(dst.data)[i],i + 5.0);
+
+	//! [object write example]
+
+	//! [object write encap example]
+
+	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::layout_type> encap_dst;
+	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::layout_type> encap_src;
+
+	openfpm::vector<p> v_point;
+	openfpm::vector<object<vboost_red>> v_point_red;
+
+	v_point.resize(2);
+	v_point_red.resize(2);
+
+	v_point_red.template get<0>(0) = 11.0;
+	v_point_red.template get<1>(0) = 12.0;
+
+	for (size_t i = 0 ; i < 3 ;  i++)
+		v_point_red.template get<2>(0)[i] = i + 15.0;
+
+	auto dst_e = v_point.get(0);
+	auto src_e = v_point_red.get(0);
+
+	object_s_di<encap_src,encap_dst,OBJ_ENCAP,0,1,4>(src_e,dst_e);
+
+	BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::x>(),11.0);
+	BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::y>(),12.0);
+
+	for (size_t i = 0 ; i < 3 ;  i++)
+		BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::v>()[i],i + 15.0);
+
+	//! [object write encap example]
+}
+
+BOOST_AUTO_TEST_CASE( object_s_di_op_test )
+{
+	// Object write test
+
+	//! [object write example with op]
+	typedef Point_test<float> p;
+	typedef Point_test<float>::type vboost;
+	typedef object_creator<Point_test<float>::type,0,1,4>::type vboost_red;
+
+	object<vboost> dst;
+	object<vboost_red> src;
+
+	// fill the source properties 0,1,2 with data
+
+	boost::fusion::at_c<0>(src.data) = 1.0;
+	boost::fusion::at_c<1>(src.data) = 2.0;
+
+	for (size_t i = 0 ; i < 3 ;  i++)
+		boost::fusion::at_c<2>(src.data)[i] = i + 5.0;
+
+	boost::fusion::at_c<0>(dst.data) = 2.0;
+	boost::fusion::at_c<1>(dst.data) = 3.0;
+
+	for (size_t i = 0 ; i < 3 ;  i++)
+		boost::fusion::at_c<4>(dst.data)[i] = i + 7.0;
+
+	// copy from src to dst
+	object_s_di_op<add_,object<vboost_red>,object<vboost>,OBJ_NORMAL,0,1,4>(src,dst);
+
+	// Check the result
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::x>(dst.data),3.0);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::y>(dst.data),5.0);
+
+	for (size_t i = 0 ; i < 3 ;  i++)
+		BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::v>(dst.data)[i],2*i + 12.0);
+
+	//! [object write example with op]
+
+	//! [object write encap example with op]
+
+	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::layout_type> encap_dst;
+	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::layout_type> encap_src;
+
+	openfpm::vector<p> v_point;
+	openfpm::vector<object<vboost_red>> v_point_red;
+
+	v_point.resize(2);
+	v_point_red.resize(2);
+
+	v_point_red.template get<0>(0) = 11.0;
+	v_point_red.template get<1>(0) = 12.0;
+
+	v_point.template get<0>(0) = 10.0;
+	v_point.template get<1>(0) = 9.0;
+
+	for (size_t i = 0 ; i < 3 ;  i++)
+		v_point_red.template get<2>(0)[i] = i + 8.0;
+
+	for (size_t i = 0 ; i < 3 ;  i++)
+		v_point.template get<4>(0)[i] = i + 3.0;
+
+	auto dst_e = v_point.get(0);
+	auto src_e = v_point_red.get(0);
+
+	object_s_di_op<add_,encap_src,encap_dst,OBJ_ENCAP,0,1,4>(src_e,dst_e);
+
+	BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::x>(),21.0);
+	BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::y>(),21.0);
+
+	for (size_t i = 0 ; i < 3 ;  i++)
+		BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::v>()[i],2*i + 11.0);
+
+	//! [object write encap example with op]
+}
+
 BOOST_AUTO_TEST_CASE( object_prop_copy )
 {
 	{
@@ -119,67 +257,6 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 	//! [object copy encap example]
 	}
 
-	{
-	// Object write test
-
-	//! [object write example]
-	typedef Point_test<float> p;
-	typedef Point_test<float>::type vboost;
-	typedef object_creator<Point_test<float>::type,0,1,4>::type vboost_red;
-
-	object<vboost> dst;
-	object<vboost_red> src;
-
-	// fill the source properties 0,1,2 with data
-
-	boost::fusion::at_c<0>(src.data) = 1.0;
-	boost::fusion::at_c<1>(src.data) = 2.0;
-
-	for (size_t i = 0 ; i < 3 ;  i++)
-		boost::fusion::at_c<2>(src.data)[i] = i + 5.0;
-
-	// copy from src to dst
-	object_s_di<object<vboost_red>,object<vboost>,OBJ_NORMAL,0,1,4>(src,dst);
-
-	// Check the result
-	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::x>(dst.data),1.0);
-	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::y>(dst.data),2.0);
-
-	for (size_t i = 0 ; i < 3 ;  i++)
-		BOOST_REQUIRE_EQUAL(boost::fusion::at_c<p::v>(dst.data)[i],i + 5.0);
-
-	//! [object write example]
-
-	//! [object write encap example]
-
-	typedef encapc<1,Point_test<float>,openfpm::vector<Point_test<float>>::layout_type> encap_dst;
-	typedef encapc<1,object<vboost_red>,openfpm::vector<object<vboost_red>>::layout_type> encap_src;
-
-	openfpm::vector<p> v_point;
-	openfpm::vector<object<vboost_red>> v_point_red;
-
-	v_point.resize(2);
-	v_point_red.resize(2);
-
-	v_point_red.template get<0>(0) = 11.0;
-	v_point_red.template get<1>(0) = 12.0;
-
-	for (size_t i = 0 ; i < 3 ;  i++)
-		v_point_red.template get<2>(0)[i] = i + 15.0;
-
-	auto dst_e = v_point.get(0);
-	auto src_e = v_point_red.get(0);
-
-	object_s_di<encap_src,encap_dst,OBJ_ENCAP,0,1,4>(src_e,dst_e);
-
-	BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::x>(),11.0);
-	BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::y>(),12.0);
-
-	for (size_t i = 0 ; i < 3 ;  i++)
-		BOOST_REQUIRE_EQUAL(v_point.get(0).template get<p::v>()[i],i + 15.0);
-
-	//! [object write encap example]
-	}
 
 	{
 	//! [object creator check for no pointers]
@@ -286,6 +363,8 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 	BOOST_REQUIRE_EQUAL(val,PNP::NO_POINTERS);
 	}
 }
+
+
 
 //! [Metafunction definition]
 

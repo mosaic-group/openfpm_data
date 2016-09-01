@@ -74,7 +74,7 @@ struct copy_cpu_encap
 		// Remove the reference from the type to copy
 		typedef typename boost::remove_reference<decltype(grid_dst.template get<T::value>(key))>::type copy_rtype;
 
-		meta_copy<copy_rtype> cp(obj.template get<T::value>(),grid_dst.template get<T::value>(key));
+		meta_copy<copy_rtype>::meta_copy_(obj.template get<T::value>(),grid_dst.template get<T::value>(key));
 	}
 };
 

@@ -37,7 +37,10 @@ class CellNNIterator
 protected:
 
 	//! actual element id
-	size_t ele_id;
+	size_t start_id;
+
+	//! stop id to read the end of the cell
+	size_t stop_id;
 
 	//! Actual NNc_id;
 	size_t NNc_id;
@@ -56,7 +59,7 @@ protected:
 	 */
 	inline void selectValid()
 	{
-		while (ele_id >= cl.getNelements(cell_id))
+		while (start_id == stop_id)
 		{
 			NNc_id++;
 
@@ -65,7 +68,8 @@ protected:
 
 			cell_id = NNc[NNc_id] + cell;
 
-			ele_id = 0;
+			start_id = cl.getStartId(cell_id);
+			stop_id = cl.getStopId(cell_id);
 		}
 	}
 
@@ -87,14 +91,16 @@ public:
 	 *
 	 */
 	inline CellNNIterator(size_t cell, const long int (&NNc)[NNc_size], Cell & cl)
-	:ele_id(0),NNc_id(0),cell(cell),cell_id(NNc[NNc_id] + cell),cl(cl),NNc(NNc)
+	:NNc_id(0),cell(cell),cell_id(NNc[NNc_id] + cell),cl(cl),NNc(NNc)
 	{
+		start_id = cl.getStartId(cell_id);
+		stop_id = cl.getStopId(cell_id);
 		selectValid();
 	}
 
-	/*! \brief
+	/*! \brief Check if there is the next element
 	 *
-	 * Check if there is the next element
+	 * \return true if there is the next element
 	 *
 	 */
 	inline bool isNext()
@@ -106,10 +112,12 @@ public:
 
 	/*! \brief take the next element
 	 *
+	 * \return itself
+	 *
 	 */
 	inline CellNNIterator & operator++()
 	{
-		ele_id++;
+		start_id++;
 
 		selectValid();
 
@@ -123,7 +131,7 @@ public:
 	 */
 	inline typename Cell::value_type & get()
 	{
-		return cl.get(cell_id,ele_id);
+		return cl.get_lin(start_id);
 	}
 };
 
@@ -146,16 +154,20 @@ public:
  */
 template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int impl> class CellNNIteratorSym : public CellNNIterator<dim,Cell,NNc_size,impl>
 {
+	//! index of the particle p
 	size_t p;
 
+	/*! Select the next valid element
+	 *
+	 */
 	inline void selectValid()
 	{
 		if (this->NNc_id == 0)
 		{
-			while (this->ele_id < this->cl.getNelements(this->cell_id))
+			while (this->start_id < this->stop_id)
 			{
-				if (this->cl.get(this->cell_id,this->ele_id) >= p)	return;
-				this->ele_id++;
+				if (this->cl.get_lin(this->start_id) >= p)	return;
+				this->start_id++;
 			}
 
 			CellNNIterator<dim,Cell,NNc_size,impl>::selectValid();
@@ -173,6 +185,7 @@ public:
 	 * Cell NN iterator
 	 *
 	 * \param cell Cell id
+	 * \param p index of the particle from which we are searching the neighborhood particles
 	 * \param NNc Cell neighborhood indexes (relative)
 	 * \param cl Cell structure
 	 *
@@ -191,7 +204,7 @@ public:
 	 */
 	inline CellNNIteratorSym<dim,Cell,NNc_size,impl> & operator++()
 	{
-		this->ele_id++;
+		this->start_id++;
 
 		selectValid();
 
@@ -209,13 +222,13 @@ public:
  */
 template<typename Cell> class CellIterator
 {
-	// Cell list
+	//! Cell list
 	Cell & cl;
 
-	// actual element id inside the cell
+	//! actual element id inside the cell
 	size_t ele_id;
 
-	// selected cell
+	//! selected cell
 	const long int cell;
 
 public:
@@ -231,9 +244,9 @@ public:
 	{
 	}
 
-	/*! \brief
+	/*! \brief Check if there is the next element
 	 *
-	 * Check if there is the next element
+	 * \return true if there are still neighborhood particles
 	 *
 	 */
 	inline bool isNext()
@@ -241,7 +254,9 @@ public:
 		return cl.getNelements(cell) > ele_id;
 	}
 
-	/*! \brief take the next element
+	/*! \brief take the next neoghborhood particle
+	 *
+	 * \return itself
 	 *
 	 */
 	inline CellIterator & operator++()

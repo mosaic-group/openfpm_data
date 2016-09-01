@@ -35,18 +35,34 @@ template<typename T> class Point2D_test
 {
 public:
 
+	//! declaration of what the Point2D_test store
 	typedef boost::fusion::vector<T,T,T,T,T[2],T[2][2]> type;
 
+	//! in case of usage with staggered grid it define which properties are staggered in the cell grid
 	static constexpr bool stag_mask[]={false,false,false,true,true,true};
 
+	//! object itself
 	type data;
 
+	//! x property is at position 0 in the boost::fusion::vector
 	static const unsigned int x = 0;
+
+	//! y property is at position 1 in the boost::fusion::vector
 	static const unsigned int y = 1;
+
+	//! z property is at position 2 in the boost::fusion::vector
 	static const unsigned int z = 2;
+
+	//! s property is at position 3 in the boost::fusion::vector
 	static const unsigned int s = 3;
+
+	//! v property is at position 4 in the boost::fusion::vector
 	static const unsigned int v = 4;
+
+	//! t property is at position 5 in the boost::fusion::vector
 	static const unsigned int t = 5;
+
+	//! number of properties in the boost::fusion::vector
 	static const unsigned int max_prop = 6;
 };
 
@@ -73,33 +89,58 @@ template<typename T> class Point_test
 {
 public:
 
+	//! declaration of what the Point_test store
 	typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3]> type;
 
+	//! in case usage with a staggered grid indicate which properties are staggered in the cell
 	static constexpr bool stag_mask[]={false,false,false,true,true,true};
 
+	//! The object itself
 	type data;
 
+	//! x property is at position 0 in the boost::fusion::vector
 	static const unsigned int x = 0;
+
+	//! y property is at position 1 in the boost::fusion::vector
 	static const unsigned int y = 1;
+
+	//! z property is at position 2 in the boost::fusion::vector
 	static const unsigned int z = 2;
+
+	//! s property is at position 3 in the boost::fusion::vector
 	static const unsigned int s = 3;
+
+	//! v property is at position 4 in the boost::fusion::vector
 	static const unsigned int v = 4;
+
+	//! t property is at position 5 in the boost::fusion::vector
 	static const unsigned int t = 5;
+
+	//! number of properties in the boost::fusion::vector
 	static const unsigned int max_prop = 6;
 
 	// Setter method
 
+	//! set the x property
 	inline void setx(T x_)	{boost::fusion::at_c<0>(data) = x_;};
+
+	//! set the y property
 	inline void sety(T y_)	{boost::fusion::at_c<1>(data) = y_;};
+
+	//! set the z property
 	inline void setz(T z_)	{boost::fusion::at_c<2>(data) = z_;};
+
+	//! set the s property
 	inline void sets(T s_)	{boost::fusion::at_c<3>(data) = s_;};
 
+	//! set the v property
 	inline void setv(size_t i,T v_)	{boost::fusion::at_c<4>(data)[i] = v_;}
+
+	//! set the t property
 	inline void sett(size_t i, size_t j,T t_)	{boost::fusion::at_c<5>(data)[i][j] = t_;}
 
 
-	// getter method
-
+	//! getter method for a general property i
 	template<unsigned int i> inline typename boost::fusion::result_of::at<type, boost::mpl::int_<i> >::type get()	{return boost::fusion::at_c<i>(data);};
 
 	//! Default constructor
@@ -126,6 +167,26 @@ public:
 		}
 
 		return true;
+	}
+
+	//! check if two point match
+	Point_test<float> & operator+=(const Point_test<float> & p)
+	{
+		boost::fusion::at_c<0>(data) += boost::fusion::at_c<0>(p.data);
+		boost::fusion::at_c<1>(data) += boost::fusion::at_c<1>(p.data);
+		boost::fusion::at_c<2>(data) += boost::fusion::at_c<2>(p.data);
+		boost::fusion::at_c<3>(data) += boost::fusion::at_c<3>(p.data);
+
+		for (size_t i = 0 ; i < 3 ; i++)
+			boost::fusion::at_c<4>(data)[i] += boost::fusion::at_c<4>(p.data)[i];
+
+		for (size_t i = 0 ; i < 3 ; i++)
+		{
+			for (size_t j = 0 ; j < 3 ; j++)
+				boost::fusion::at_c<5>(data)[i][j] += boost::fusion::at_c<5>(p.data)[i][j];
+		}
+
+		return *this;
 	}
 
 	//! constructor from encapg
@@ -236,47 +297,66 @@ public:
  * for more information
  *
  * ### Declaration of a point
- * \snippet vector_unit_tests.hpp Point declaration
+ * \snippet vector_test_util.hpp Point prp declaration
  *
  * ### Create a type definition
  *
  * \snippet vector_test_util.hpp typedef point
  *
  * ### Access the members
- * \snippet vector_test_util.hpp Point usage
+ * \snippet vector_test_util.hpp Point prp usage
  *
  */
 template<typename T> class Point_test_prp
 {
 public:
 
+  //! declaration of what the Point_test_prp store
   typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3]> type;
 
+  //! Object itself
   type data;
 
+  //! x property is at position 0 in the boost::fusion::vector
   static const unsigned int x = 0;
+
+  //! y property is at position 1 in the boost::fusion::vector
   static const unsigned int y = 1;
+
+  //! z property is at position 2 in the boost::fusion::vector
   static const unsigned int z = 2;
+
+  //! s property is at position 3 in the boost::fusion::vector
   static const unsigned int s = 3;
+
+  //! v property is at position 4 in the boost::fusion::vector
   static const unsigned int v = 4;
+
+  //! t property is at position 5 in the boost::fusion::vector
   static const unsigned int t = 5;
+
+  //! maximum number of properties
   static const unsigned int max_prop = 6;
 
   // Setter method
 
+  //! set the property x
   inline void setx(T x_)	{boost::fusion::at_c<0>(data) = x_;};
+  //! set the property y
   inline void sety(T y_)	{boost::fusion::at_c<1>(data) = y_;};
+  //! set the property z
   inline void setz(T z_)	{boost::fusion::at_c<2>(data) = z_;};
+  //! set the property s
   inline void sets(T s_)	{boost::fusion::at_c<3>(data) = s_;};
 
   //! Attributes name
   struct attributes
   {
+	//! array of attributes name
     static const std::string name[];
   };
 
-  // getter method
-
+  //! getter method for a general property i
   template<unsigned int i> inline typename boost::fusion::result_of::at<type, boost::mpl::int_<i> >::type get()	{return boost::fusion::at_c<i>(data);};
 
   //! Default constructor
@@ -348,42 +428,58 @@ public:
 
 template<typename T> const std::string Point_test_prp<T>::attributes::name[] = {"x","y","z","s","v","t"};
 
+//! point test with only scalar properties
 template<typename T> class Point_test_scal
 {
 public:
 
+  //! declaration of what the Point_test_scal store
   typedef boost::fusion::vector<T,T,T,T> type;
 
+  //! The data itself
   type data;
 
+  //! x property is at position 0 in the boost::fusion::vector
   static const unsigned int x = 0;
+
+  //! y property is at position 1 in the boost::fusion::vector
   static const unsigned int y = 1;
+
+  //! z property is at position 0 in the boost::fusion::vector
   static const unsigned int z = 2;
+
+  //! s property is at position 0 in the boost::fusion::vector
   static const unsigned int s = 3;
+
+  //! the number of properties
   static const unsigned int max_prop = 4;
 
   // Setter method
 
+  //! set the property x
   inline void setx(T x_)	{boost::fusion::at_c<0>(data) = x_;};
+  //! set the property y
   inline void sety(T y_)	{boost::fusion::at_c<1>(data) = y_;};
+  //! set the property z
   inline void setz(T z_)	{boost::fusion::at_c<2>(data) = z_;};
+  //! set the property s
   inline void sets(T s_)	{boost::fusion::at_c<3>(data) = s_;};
 
   //! Attributes name
   struct attributes
   {
+    //! array of names
     static const std::string name[];
   };
 
-  // getter method
-
+  //! getter method for the property i
   template<unsigned int i> inline typename boost::fusion::result_of::at<type, boost::mpl::int_<i> >::type get()	{return boost::fusion::at_c<i>(data);};
 
   //! Default constructor
   Point_test_scal()
   {}
 
-//! constructor from encapc
+  //! constructor from encapc
   template <typename Mem> inline Point_test_scal(const encapc<1,Point_test_scal<T>,Mem> & p)
   {
 	  boost::fusion::at_c<0>(data) = p.template get<0>();
@@ -401,7 +497,7 @@ public:
 	  boost::fusion::at_c<3>(data) = boost::fusion::at_c<3>(p.data);
   }
 
-  //! constructor from another point
+  //! operator=
   inline Point_test_scal<T> operator= (const Point_test_scal<T> & p)
   {
 	  boost::fusion::at_c<0>(data) = boost::fusion::at_c<0>(p.data);

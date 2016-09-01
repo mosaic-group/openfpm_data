@@ -76,16 +76,85 @@ struct copy_cpu_encap_encap
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		// This is the type of the object we have to copy
-//		typedef typename boost::fusion::result_of::at_c<typename e_src::type,T::value>::type copy_type;
-
 		// Remove the reference from the type to copy
 		typedef typename boost::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
 
-		meta_copy<copy_rtype> cp(src.template get<T::value>(),dst.template get<T::value>());
+		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<T::value>());
 	}
 };
 
+///////////////////////////////////
+
+
+template<template<typename,typename> class op,typename e_src, typename e_dst, int ... prp>
+struct copy_cpu_encap_encap_op_prp
+{
+	//! object we have to store
+	const e_src & src;
+	e_dst & dst;
+
+
+	/*! \brief constructor
+	 *
+	 * It define the copy parameters.
+	 *
+	 * \param key which element we are modifying
+	 * \param grid_dst grid we are updating
+	 * \param obj object we have to set in grid_dst (encapsulated)
+	 *
+	 */
+	inline copy_cpu_encap_encap_op_prp(const e_src & src, e_dst & dst)
+	:src(src),dst(dst)
+	{
+#ifdef SE_CLASS1
+		// e_src and e_dst must have the same number of properties
+
+		if (e_src::T_type::max_prop != e_dst::T_type::max_prop)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of properties between src and dst must match";
+#endif
+	};
+
+
+#ifdef SE_CLASS1
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	inline copy_cpu_encap_encap_op_prp(const e_src && src, const e_dst && dst)
+	:src(src),dst(dst)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object";};
+#endif
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		// Remove the reference from the type to copy
+//		typedef typename boost::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
+
+//		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<T::value>());
+
+		// This is the type of the object we have to copy
+		typedef typename boost::fusion::result_of::at_c<typename e_src::type,T::value>::type copy_type;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
+
+		// Convert variadic to boost::vector
+		typedef typename boost::mpl::vector_c<unsigned int,prp...> prpv;
+
+		// element id to copy applying an operation
+		typedef typename boost::mpl::at<prpv,T>::type ele_cop;
+
+		meta_copy_op<op,copy_rtype>::meta_copy_op_(src.template get< ele_cop::value >(),dst.template get< ele_cop::value >());
+	}
+};
+
+
+
+///////////////////////////////
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -101,8 +170,9 @@ struct copy_cpu_encap_encap
 template<typename e_src, typename e_dst>
 struct compare_cpu_encap_encap
 {
-	//! object we have to compare
+	//! object 1 we have to compare
 	const e_src & src;
+	//! object 2 we have to compare
 	const e_dst & dst;
 
 
@@ -143,10 +213,10 @@ struct compare_cpu_encap_encap
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		// This is the type of the object we have to copy
+		//! This is the type of the object we have to copy
 		typedef typename boost::fusion::result_of::at_c<typename e_src::type,T::value>::type copy_type;
 
-		// Remove the reference from the type to copy
+		//! Remove the reference from the type to copy
 		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
 
 		meta_compare<copy_rtype> cp(src.template get<T::value>(),dst.template get<T::value>());

@@ -583,6 +583,42 @@ public:
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
 			cl_n.get(i) = 0;
 	}
+
+	/*! \brief Return the starting point of the neighborhood for the particle p
+	 *
+	 * \param part_id particle id
+	 *
+	 * \return the index
+	 *
+	 */
+	inline size_t getStart(size_t part_id)
+	{
+		return part_id*slot;
+	}
+
+	/*! \brief Return the end point of the neighborhood for the particle p
+	 *
+	 * \param part_id particle id
+	 *
+	 * \return the stop index
+	 *
+	 */
+	inline size_t getStop(size_t part_id)
+	{
+		return part_id*slot+cl_n.get(part_id);
+	}
+
+	/*! \brief Return the neighborhood id
+	 *
+	 * \param part_id particle id
+	 *
+	 * \return the neighborhood id
+	 *
+	 */
+	inline size_t get_lin(size_t part_id)
+	{
+		return cl_base.get(part_id);
+	}
 };
 
 

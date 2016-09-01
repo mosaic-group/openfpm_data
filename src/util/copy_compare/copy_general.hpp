@@ -15,6 +15,28 @@
 #include <boost/mpl/range_c.hpp>
 #include <iostream>
 
+/*! \brief This structure define the operation add to use with copy general
+ *
+ * \tparam Tdst destination object type
+ * \tparam Tsrc source object type
+ *
+ */
+template<typename Tdst, typename Tsrc>
+struct add_
+{
+	/*! \brief Defition of the add operation
+	 *
+	 * \param dst Destination object
+	 * \param src Source object
+	 *
+	 */
+	static inline void operation(Tdst & dst, const Tsrc & src)
+	{
+		dst += src;
+	}
+};
+
+
 /*! \brief structure to copy aggregates
  *
  * \tparam T type to copy
@@ -25,8 +47,8 @@ struct copy_general
 {
 	/*! \brief Specialization when there is unknown copy method
 	 *
-	 * \tparam src source object to copy
-	 * \tparam dst destination object
+	 * \param src source object to copy
+	 * \param dst destination object
 	 *
 	 */
 	inline copy_general(const T & src, T & dst)
@@ -35,17 +57,14 @@ struct copy_general
 	}
 };
 
-/*! \brief
- *
- *
- */
+//! Specialization for if dst type is copy assignable from src type
 template<typename T>
 struct copy_general<T,1>
 {
 	/*! \brief copy objects that has an operator= (implicit or explicit)
 	 *
-	 * \tparam src source object to copy
-	 * \tparam dst destination object
+	 * \param src source object to copy
+	 * \param dst destination object
 	 *
 	 */
 	inline copy_general(const T & src, T & dst)
@@ -54,13 +73,14 @@ struct copy_general<T,1>
 	}
 };
 
+//! Specialization for aggregate type object
 template<typename T>
 struct copy_general<T,2>
 {
 	/*! \brief copy objects that are aggregates
 	 *
-	 * \tparam src source object to copy
-	 * \tparam dst destination object
+	 * \param src source object to copy
+	 * \param dst destination object
 	 *
 	 */
 	inline copy_general(const T & src, T & dst)
@@ -71,18 +91,91 @@ struct copy_general<T,2>
 	}
 };
 
+//! Specialization for aggregate type object that define an operator=
 template<typename T>
 struct copy_general<T,3>
 {
 	/*! \brief copy objects that are aggregates but define an operator=
 	 *
-	 * \tparam src source object to copy
-	 * \tparam dst destination object
+	 * \param src source object to copy
+	 * \param dst destination object
 	 *
 	 */
 	inline copy_general(const T & src, T & dst)
 	{
 		dst = src;
+	}
+};
+
+/////////////////// VERSION WITH OPERATIONS ///////////////////
+
+/*! \brief structure to copy aggregates applying an operation
+ *
+ * \tparam T type to copy
+ *
+ */
+template<template<typename,typename> class op, typename T, unsigned int agg=2 * is_openfpm_native<T>::value + std::is_copy_assignable<T>::value>
+struct copy_general_op
+{
+	/*! \brief Specialization when there is unknown copy method
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	inline copy_general_op(const T & src, T & dst)
+	{
+		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << "  " << demangle(typeid(T).name()) << " does not have an operator= and is not an aggregate or an openfpm native structure, copy is not possible" << "\n";
+	}
+};
+
+//! Specialization for object that can be assigned with an operator copy
+template<template<typename,typename> class op,typename T>
+struct copy_general_op<op,T,1>
+{
+	/*! \brief copy objects that has an operator= (implicit or explicit)
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	inline copy_general_op(const T & src, T & dst)
+	{
+		op<T,T>::operation(dst,src);
+	}
+};
+
+//! Specialization for aggregate type objects
+template<template<typename,typename> class op, typename T>
+struct copy_general_op<op,T,2>
+{
+	/*! \brief copy objects that are aggregates
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	inline copy_general_op(const T & src, T & dst)
+	{
+		copy_aggregate_op<op,T> cp(src,dst);
+
+		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cp);
+	}
+};
+
+//! specialization for aggregate type object that define an operator=
+template<template<typename,typename> class op,typename T>
+struct copy_general_op<op,T,3>
+{
+	/*! \brief copy objects that are aggregates but define an operator=
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	inline copy_general_op(const T & src, T & dst)
+	{
+		op<T,T>::operation(dst,src);
 	}
 };
 

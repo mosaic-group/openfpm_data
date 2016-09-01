@@ -768,6 +768,42 @@ public:
 			cl_n.get(i) = 0;
 	}
 
+	/*! \brief Return the starting point of the neighborhood for the particle p
+	 *
+	 * \param part_id particle id
+	 *
+	 * \return the index
+	 *
+	 */
+	inline size_t getStartId(size_t cell_id)
+	{
+		return cell_id*slot;
+	}
+
+	/*! \brief Return the end point of the neighborhood for the particle p
+	 *
+	 * \param part_id particle id
+	 *
+	 * \return the stop index
+	 *
+	 */
+	inline size_t getStopId(size_t cell_id)
+	{
+		return cell_id*slot+cl_n.get(cell_id);
+	}
+
+	/*! \brief Return the neighborhood id
+	 *
+	 * \param part_id particle id
+	 *
+	 * \return the neighborhood id
+	 *
+	 */
+	inline size_t & get_lin(size_t part_id)
+	{
+		return cl_base.get(part_id);
+	}
+
 //////////////////////////////// POINTLESS BUT REQUIRED TO RESPECT THE INTERFACE //////////////////
 
 	//! Ghost marker

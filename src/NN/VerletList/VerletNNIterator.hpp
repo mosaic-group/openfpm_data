@@ -26,11 +26,16 @@
  */
 template<unsigned int dim, typename Ver> class VerletNNIterator
 {
-	size_t part_id;
+	//! start index for the neighborhood
+	size_t start;
 
-	// actual element id
+	//! stop index for the neighborhood
+	size_t stop;
+
+	//! actual neighborhood
 	size_t ele_id;
 
+	//! verlet list
 	Ver & ver;
 
 public:
@@ -40,26 +45,30 @@ public:
 	 * Cell NN iterator
 	 *
 	 * \param part_id Particle id
-	 * \param NNc Cell neighborhood indexes (relative)
+	 * \param ver Verlet-list
 	 *
 	 */
 	inline VerletNNIterator(size_t part_id, Ver & ver)
-	:part_id(part_id),ele_id(0),ver(ver)
-	{}
+	:start(ver.getStart(part_id)),stop(ver.getStop(part_id)),ver(ver)
+	{ele_id = start;}
 
 	/*! \brief
 	 *
 	 * Check if there is the next element
 	 *
+	 * \return true if there is the next element
+	 *
 	 */
 	inline bool isNext()
 	{
-		if (ele_id < ver.getNNPart(part_id))
+		if (ele_id < stop)
 			return true;
 		return false;
 	}
 
 	/*! \brief take the next element
+	 *
+	 * \return itself
 	 *
 	 */
 	inline VerletNNIterator & operator++()
@@ -76,7 +85,7 @@ public:
 	 */
 	inline size_t get()
 	{
-		return ver.get(part_id,ele_id);
+		return ver.get_lin(ele_id);
 	}
 };
 

@@ -183,9 +183,9 @@ openfpm::vector<Point_test_prp<float>> allocate_openfpm_prp(size_t n_ele)
 	//! [Create add and access]
 	openfpm::vector<Point_test_prp<float>> v_ofp_test;
 
-	//! [Point declaration]
+	//! [Point prp declaration]
 	Point_test_prp<float> p;
-	//! [Point declaration]
+	//! [Point prp declaration]
 
 	p.setx(1.0);
 	p.sety(2.0);
@@ -198,7 +198,7 @@ openfpm::vector<Point_test_prp<float>> allocate_openfpm_prp(size_t n_ele)
 	{
 		// Modify the point
 
-		//! [Point usage]
+		//! [Point prp usage]
 		p.get<P::v>()[0] = 1.0 + i;
 		p.get<P::v>()[1] = 2.0 + i;
 		p.get<P::v>()[2] = 7.0 + i;
@@ -212,7 +212,7 @@ openfpm::vector<Point_test_prp<float>> allocate_openfpm_prp(size_t n_ele)
 		p.get<P::t>()[2][0] = 4.0 + i;
 		p.get<P::t>()[2][1] = 3.0 + i;
 		p.get<P::t>()[2][2] = 11.0 + i;
-		//! [Point usage]
+		//! [Point prp usage]
 
 		// add p
 

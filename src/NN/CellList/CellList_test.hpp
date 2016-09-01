@@ -189,7 +189,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim));
 
-		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),100000000);
+		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),0);
 		total = 0;
 
 		while(NNSym.isNext())
