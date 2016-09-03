@@ -854,8 +854,9 @@ public:
 	 *
 	 */
 	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad)
-	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero_p()),box(box),gr_cell()
+	:t(Matrix<dim,T>::identity(),box.getP1()),box(box),gr_cell()
 	{
+		this->box -= this->box.getP1();
 		Initialize(pad,div);
 	}
 
