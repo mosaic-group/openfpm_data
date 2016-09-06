@@ -54,7 +54,14 @@ template<unsigned int dim ,typename T> class Point;
 #define POINT_RINT 40
 #define POINT_SUB_UNI 41
 
+constexpr unsigned int max_expr(unsigned int dim1, unsigned int dim2)
+{
+	return (dim1 > dim2)?dim1:dim2;
+}
+
 /*! \brief It return the dimansionality of the operation given the dimensionality of the 2 operators
+ *
+ * this is the defailr that return 3
  *
  * \tparam dimansionality operator1
  * \tparam dimensionality operator2
@@ -66,10 +73,11 @@ struct r_type_dim
 {
 	enum
 	{
-		value = 3,
+		value = max_expr(op1_dim,op2_dim),
 	};
 };
 
+//! scalar + scalar = scalar
 template <>
 struct r_type_dim<1,1,POINT_SUM>
 {
@@ -79,6 +87,7 @@ struct r_type_dim<1,1,POINT_SUM>
 	};
 };
 
+//! scalar - scalar = scalar
 template <>
 struct r_type_dim<1,1,POINT_SUB>
 {
@@ -88,6 +97,7 @@ struct r_type_dim<1,1,POINT_SUB>
 	};
 };
 
+//! Point * Point = scalar
 template <unsigned int op1_dim, unsigned int op2_dim>
 struct r_type_dim<op1_dim,op2_dim,POINT_MUL_POINT>
 {
@@ -97,6 +107,7 @@ struct r_type_dim<op1_dim,op2_dim,POINT_MUL_POINT>
 	};
 };
 
+//! scalar * scalar = scalar
 template <>
 struct r_type_dim<1,1,POINT_MUL>
 {
@@ -106,6 +117,7 @@ struct r_type_dim<1,1,POINT_MUL>
 	};
 };
 
+//! scalar / scalar = scalar
 template <>
 struct r_type_dim<1,1,POINT_DIV>
 {
@@ -139,26 +151,28 @@ struct r_type_p<1,orig>
 };
 
 
-/*! \brief Main class that encapsulate a constant number
+/*! \brief Main class that encapsulate a constant number used in a point expression
  *
  *
  */
 template<typename T>
 class point_expression
 {
+	//! constant
 	T d;
 
 public:
 
-	// indicate that init must be called before value
+	//! indicate that init must be called before value
 	typedef int has_init;
 
-	// indicate that this class encapsulate an expression
+	//! indicate that this class encapsulate an expression
 	typedef int is_expression;
 
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = 1;
 
+	//! constructor from a value
 	inline point_expression(T & d)
 	:d(d)
 	{}
@@ -174,7 +188,9 @@ public:
 
 	/*! \brief Evaluate the expression
 	 *
-	 * It just return the velue set in the constructor
+	 * \param k coordinate to evaluate
+	 *
+	 * \return It just return the velue set in the constructor
 	 *
 	 */
 	inline T value(const size_t k) const
@@ -209,17 +225,20 @@ class point_expression_op
 template <typename orig, typename exp1, typename exp2>
 class point_expression_op<orig,exp1,exp2,POINT_SUM>
 {
+	//! first expression
 	const exp1 o1;
+	//! second expression
 	const exp2 o2;
 
 public:
 
+	//! original type of the point expression
 	typedef orig orig_type;
 
-	// indicate that this class encapsulate an expression
+	//! indicate that this class encapsulate an expression
 	typedef int is_expression;
 
-	// indicate that init must be called before value
+	//! indicate that init must be called before value
 	typedef int has_init;
 
 	//! return type of the expression
@@ -228,6 +247,7 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = r_type_dim<exp1::nvals,exp2::nvals,POINT_SUM>::value;
 
+	//! Constructor from 2 point expressions
 	inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -243,9 +263,11 @@ public:
 		o2.init();
 	}
 
-	/*! \brief Evaluate the expression
+	/*! \brief Evaluate the expression at coordinate k
 	 *
-	 * \param k dimension
+	 * \param k coordinate
+	 *
+	 * \return the value of the expression for the coordinate k
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
@@ -273,7 +295,9 @@ public:
 template <typename orig,typename exp1, typename exp2>
 class point_expression_op<orig, exp1,exp2,POINT_SUB>
 {
+	//! expression 1
 	const exp1 o1;
+	//! expression 2
 	const exp2 o2;
 
 public:
@@ -293,6 +317,7 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = r_type_dim<exp1::nvals,exp2::nvals,POINT_SUB>::value;
 
+	//! constructor from 2 expressions
 	inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -308,9 +333,11 @@ public:
 		o2.init();
 	}
 
-	/*! \brief Evaluate the expression
+	/*! \brief Evaluate the expression at coordinate k
 	 *
-	 * \param k dimension
+	 * \param k coordinate
+	 *
+	 * \return the evaluate expression at coordinate k
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
@@ -332,36 +359,47 @@ public:
 template <typename orig, typename exp1, typename exp2>
 class point_expression_op<orig,exp1,exp2, POINT_SUB_UNI >
 {
+	//! expression
 	const exp1 o1;
 
+	//! scalar value produced by the expression
 	mutable typename orig::coord_type scal;
 
 public:
 
+	//! original type
 	typedef orig orig_type;
 
+	//! indicate that is an expression
 	typedef int is_expression;
 
+	//! indicate that this class has an init function
 	typedef int has_init;
 
+	//! return type of the expression evaluation
 	typedef typename orig::coord_type return_type;
 
+	//! result dimensionality of this expression
 	static const unsigned int nvals = exp1::nvals;
 
+	//! constructor from expression
 	inline point_expression_op(const exp1 & o1)
 	:o1(o1)
 	{}
 
+	//! initialize the the expression
 	inline void init() const
 	{
 		o1.init();
 	}
 
+	//! evaluate the expression
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
 	{
 		return -(o1.value(k));
 	}
 
+	//! casting to a type T
 	template <typename T, typename check = typename std::enable_if<!std::is_same<T,orig>::value >::type  >operator T() const
 	{
 		init();
@@ -381,7 +419,9 @@ public:
 template <typename orig, typename exp1, typename exp2>
 class point_expression_op<orig,exp1,exp2,POINT_MUL_POINT>
 {
+	//! first expression
 	const exp1 o1;
+	//! second expression
 	const exp2 o2;
 
 	mutable typename orig::coord_type scal;
@@ -390,10 +430,10 @@ public:
 
 	typedef orig orig_type;
 
-	// indicate that init must be called before value
+	//! indicate that init must be called before value
 	typedef int has_init;
 
-	// indicate that this class encapsulate an expression
+	//! indicate that this class encapsulate an expression
 	typedef int is_expression;
 
 	//! return type of the expression
@@ -402,8 +442,9 @@ public:
 	//! this operation produce a scalar as result
 	static const unsigned int nvals = 1;
 
+	//! constructor from 2 expressions
 	inline point_expression_op(const exp1 & o1, const exp2 & o2)
-	:o1(o1),o2(o2)
+	:o1(o1),o2(o2),scal(0.0)
 	{}
 
 	/*! \brief This function must be called before value
@@ -413,8 +454,6 @@ public:
 	 */
 	inline void init() const
 	{
-		scal = 0.0;
-
 		for (size_t i = 0 ; i < orig::dims ; i++)
 			scal += o1.value(i) * o2.value(i);
 
@@ -424,7 +463,7 @@ public:
 
 	/*! \brief Evaluate the expression
 	 *
-	 * \param key where to evaluate the expression
+	 * \param k where to evaluate the expression
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
@@ -432,6 +471,7 @@ public:
 		return scal;
 	}
 
+	//! cast to other type
 	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value >::type > operator T() const
 	{
 		init();
@@ -450,11 +490,14 @@ public:
 template <typename orig, typename exp1, typename exp2>
 class point_expression_op<orig,exp1,exp2,POINT_MUL>
 {
+	//! expression 1
 	const exp1 o1;
+	//! expression 2
 	const exp2 o2;
 
 public:
 
+	//! origin type
 	typedef orig orig_type;
 
 	//! indicate that init must be called before value
@@ -469,6 +512,7 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = r_type_dim<exp1::nvals,exp2::nvals,POINT_MUL>::value;
 
+	//! constructor from 2 expression
 	inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -515,17 +559,20 @@ public:
 template <typename orig, typename exp1, typename exp2>
 class point_expression_op<orig,exp1,exp2,POINT_DIV>
 {
+	//! expression 1
 	const exp1 o1;
+	//! expression 2
 	const exp2 o2;
 
 public:
 
+	//! original type
 	typedef orig orig_type;
 
-	// indicate that this class encapsulate an expression
+	//! indicate that this class encapsulate an expression
 	typedef int is_expression;
 
-	// indicate that init must be called before value
+	//! indicate that init must be called before value
 	typedef int has_init;
 
 	//! return type of the expression
@@ -534,6 +581,7 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = r_type_dim<exp1::nvals,exp2::nvals,POINT_DIV>::value;
 
+	//! constructor from expression 1 and expression 2
 	inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -551,7 +599,7 @@ public:
 
 	/*! \brief Evaluate the expression
 	 *
-	 * \param key where to evaluate the expression
+	 * \param k where to evaluate the expression
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
@@ -1161,7 +1209,14 @@ public:
 
 	/*! \brief Operator= for point expression
 	 *
+	 * \tparam orig origin type
+	 * \tparam exp1 expression 1
+	 * \tparam exp2 expression 2
+	 * \tparam op operation
+	 *
 	 * \param point expression
+	 *
+	 * \return a point expression
 	 *
 	 */
 	template<typename orig, typename exp1, typename exp2, unsigned int op> point_expression<T[dim]> & operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
@@ -1183,9 +1238,13 @@ public:
 	{
 	}
 
-	/*! \brief Evaluate the expression
+	/*! \brief Evaluate the expression at coordinate k
 	 *
-	 * It just return the velue set in the constructor
+	 * It just return the value set in the constructor
+	 *
+	 * \param k coordinate
+	 *
+	 * \return the value
 	 *
 	 */
 	inline T value(const size_t k) const

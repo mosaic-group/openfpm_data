@@ -261,7 +261,7 @@ public:
 	 */
 
 	grid_key_dx_iterator<dim> & operator++()
-			{
+	{
 #ifdef DEBUG
 		if (initialized == false)
 		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
@@ -274,7 +274,7 @@ public:
 
 		//! check the overflow of all the index with exception of the last dimensionality
 
-		size_t i = 0;
+		long int i = 0;
 		for ( ; i < dim-1 ; i++)
 		{
 			size_t id = this->gk.get(i);
@@ -293,7 +293,7 @@ public:
 		}
 
 		return *this;
-			}
+	}
 
 	/*! \brief Check if there is the next element
 	 *

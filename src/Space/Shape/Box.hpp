@@ -19,7 +19,7 @@ enum Base
 	DOWN
 };
 
-/** \brief This class represent an N-dimensional box
+/*! \brief This class represent an N-dimensional box
  *
  * The box is defined by two points p2 and p1
  *
@@ -72,13 +72,8 @@ public:
 	//! Maximum number of properties
 	static const unsigned int max_prop = 2;
 
+	//! dimensionality of the box
 	static const unsigned int dims = dim;
-
-	// Get method
-	template <int i> inline auto get() -> decltype(boost::fusion::at_c<i>(data))
-	{
-		return boost::fusion::at_c<i>(data);
-	}
 
 	/*! \brief Intersect
 	 *
@@ -576,7 +571,7 @@ public:
 		return data;
 	}
 
-	/* \brief Get the point p1 as grid_key_dx
+	/*! \brief Get the point p1 as grid_key_dx
 	 *
 	 * \return the key
 	 *
@@ -589,7 +584,7 @@ public:
 		return ret;
 	}
 
-	/* \brief Get the point p12 as grid_key_dx
+	/*! \brief Get the point p12 as grid_key_dx
 	 *
 	 * \return the key
 	 *
@@ -602,7 +597,7 @@ public:
 		return ret;
 	}
 
-	/* \brief Get the point p1
+	/*! \brief Get the point p1
 	 *
 	 * \return the point p1
 	 *
@@ -615,7 +610,7 @@ public:
 		return ret;
 	}
 
-	/* \brief Get the point p2
+	/*! \brief Get the point p2
 	 *
 	 * \return the point p2
 	 *
@@ -631,7 +626,7 @@ public:
 
 	/*! \brief Translate the box
 	 *
-	 * \p Point translation vector
+	 * \param p Point translation vector
 	 *
 	 * \return itself
 	 *
@@ -649,7 +644,7 @@ public:
 
 	/*! \brief Translate the box
 	 *
-	 * \p Point translation vector
+	 * \param p Point translation vector
 	 *
 	 * \return itself
 	 *
@@ -665,9 +660,11 @@ public:
 		return *this;
 	}
 
-	/* \brief expand expand the box by a vector
+	/*! \brief expand the box by a vector
 	 *
-	 * \param vector
+	 * only P2 is expanded
+	 *
+	 * \param exp expand vector
 	 *
 	 */
 	inline void expand(T (& exp)[dim])
@@ -796,6 +793,7 @@ public:
 
 	/*! \brief Shrink moving p2 of sh quantity (on each direction)
 	 *
+	 * \param sh
 	 *
 	 */
 	inline void shrinkP2(T sh)
@@ -856,6 +854,8 @@ public:
 	}
 
 	/*! \brief Check if the box is contained
+	 *
+	 * \param b Box
 	 *
 	 * \return true if the box is contained
 	 *
@@ -1005,9 +1005,8 @@ public:
 		return true;
 	}
 
-	/*! \brief Translate P1 of a given vector P1
+	/*! \brief Apply the ceil operation to the point P1
 	 *
-	 * \param p1 vector
 	 *
 	 */
 	inline void ceilP1()
@@ -1018,9 +1017,8 @@ public:
 		}
 	}
 
-	/*! \brief Translate P1 of a unit vector on all directions
+	/*! \brief Apply the ceil operation to the point P2
 	 *
-	 * \param p1 vector
 	 *
 	 */
 	inline void ceilP2()
@@ -1031,7 +1029,9 @@ public:
 		}
 	}
 
-	/*! \brief Shrink the point P2 by one
+	/*! \brief Shrink the point P2 by one vector
+	 *
+	 * \param p vector
 	 *
 	 */
 	inline void shrinkP2(const Point<dim,T> & p)
@@ -1044,7 +1044,7 @@ public:
 
 	/*! \brief exchange the data of two boxes
 	 *
-	 * \param p Point to swap with
+	 * \param b box to switch
 	 *
 	 */
 	void swap(Box<dim,T> & b)
@@ -1091,6 +1091,11 @@ public:
 		return true;
 	}
 
+	/*! \brief Get the volume of the box
+	 *
+	 * \return the box volume
+	 *
+	 */
 	inline T getVolume() const
 	{
 		T vol = 1.0;
@@ -1122,6 +1127,8 @@ public:
 	 *          P1 = {5,7} ; P2  = {5,7}, the sub-grid iterator has one point {5,7}, that mean Volume=1, so
 	 *          the volume formula is (5 - 5 + 1) * (7 - 7 + 1)
 	 *
+	 * \param p1 point p1
+	 * \param p2 point p2
 	 *
 	 * \return The volume
 	 *
@@ -1179,7 +1186,7 @@ public:
 
 	/*! \brief Compare two boxes
 	 *
-	 * \param box
+	 * \param b
 	 *
 	 * \return true if the boxes are equal
 	 *
@@ -1201,7 +1208,7 @@ public:
 
 	/*! \brief Compare two boxes
 	 *
-	 * \param box
+	 * \param b
 	 *
 	 * \return true if the boxes are equal
 	 *

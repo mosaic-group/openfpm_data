@@ -158,18 +158,20 @@ public:
 template <typename orig, typename exp1, typename exp2>
 class point_expression_op<orig,exp1,exp2,POINT_NORM2>
 {
+	//! expression
 	const exp1 o1;
 
+	//! result of the expression
 	mutable typename orig::coord_type scal;
 
 public:
 
 	typedef orig orig_type;
 
-	// indicate that init must be called before value
+	//! indicate that init must be called before value
 	typedef int has_init;
 
-	// indicate that this class encapsulate an expression
+	//! indicate that this class encapsulate an expression
 	typedef int is_expression;
 
 	//! return type of the expression
@@ -178,6 +180,7 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = 1;
 
+	//! constructor from an expression
 	inline point_expression_op(const exp1 & o1)
 	:o1(o1)
 	{}
@@ -207,6 +210,7 @@ public:
 		return scal;
 	}
 
+	//! Cast operator
 	template <typename T>operator T() const
 	{
 		init();
