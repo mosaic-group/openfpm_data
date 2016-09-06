@@ -285,7 +285,7 @@ template<int ... prp> inline void packRequest(size_t & req) const
 	req += sizeof(this->size());
 	
 #ifdef DEBUG
-	std::cout << demangle(typeid(this).name()) << std::endl;
+	//std::cout << demangle(typeid(this).name()) << std::endl;
 	//std::cout << this->size() << std::endl;
 	std::cout << "Inside map_vector.hpp packRequest()" << std::endl;
 #endif

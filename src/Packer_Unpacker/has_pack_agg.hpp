@@ -9,6 +9,7 @@
 #define SRC_PACKER_UNPACKER_HAS_PACK_AGG_HPP_
 
 #include "prp_all_zero.hpp"
+#include "Vector/vect_isel.hpp"
 
 /*! \brief These set of classes generate an array definition at compile-time
  *
@@ -69,6 +70,24 @@ struct has_pack_agg
 	typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type vprp;
 	//typedef typename to_boost_vmpl<prp...>::type vprp;
     typedef typename has_pack_agg_impl<T,number_prop<T,sizeof ... (prp)>::value, boost::mpl::bool_<false> , vprp>::result result;
+};
+
+template<class T, unsigned int sel = openfpm::vect_isel<T>::value == OPENFPM_NATIVE>
+struct has_pack_gen
+{
+	enum
+	{
+		value = has_pack_agg<T>::result::value
+	};
+};
+
+template<class T>
+struct has_pack_gen<T, false>
+{
+	enum
+	{
+		value = has_pack<T>::type::value
+	};
 };
 
 
