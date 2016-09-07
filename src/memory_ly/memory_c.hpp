@@ -27,7 +27,6 @@
  * \see memory_traits_inte memory_traits_lin
  *
  */
-
 template<typename T, typename D = memory>
 class memory_c
 {

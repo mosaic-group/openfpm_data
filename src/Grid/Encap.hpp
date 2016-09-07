@@ -343,6 +343,20 @@ public:
 	 * \param ec encapsulator
 	 *
 	 */
+	template<unsigned int dim2> inline encapc<dim,T,Mem> & set(const encapc<dim2,T,Mem> & ec)
+	{
+		copy_cpu_encap_encap<encapc<dim2,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+		return *this;
+	}
+
+	/*! \brief Assignment
+	 *
+	 * \param ec encapsulator
+	 *
+	 */
 	inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
 		copy_cpu_encap_encap<encapc<dim,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);

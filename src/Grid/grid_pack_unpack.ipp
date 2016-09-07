@@ -112,7 +112,7 @@ struct pack_simple_cond<true, prp ...>
 		while (obj_it.isNext())
 		{
 			// Copy
-			dest.get(id) = obj.get_o(obj_it.get());
+			dest.get(id).set(obj.get_o(obj_it.get()));
 			
 			++obj_it;
 			++id;
@@ -216,7 +216,7 @@ struct unpack_simple_cond<true, prp ...>
 		while (obj_it.isNext())
 		{
 			// Copy
-			obj.get_o(obj_it.get()) = src.get(id);
+			obj.get_o(obj_it.get()).set(src.get(id));
 		
 			++id;
 			++obj_it;

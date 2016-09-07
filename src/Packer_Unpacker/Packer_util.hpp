@@ -273,39 +273,4 @@ struct call_aggregateUnpack
 	}
 };
 
-//A functor for has_aggregatePack
-template<typename Aggr>
-struct has_pack_agg_functor
-{
-	bool at_least_one = false;
-
-	//! It calls the "has_pack" checking for each property
-	template<typename T>
-	inline void operator()(T& t)
-	{
-		typedef typename boost::mpl::at<typename Aggr::type,T>::type obj_type;
-
-		at_least_one |= has_pack<obj_type>::value;
-	}
-};
-
-//Returns true if at least one property of aggregate has "pack()" member, false is not
-template<typename T, int ... prp>
-struct has_aggregatePack
-{
-	static inline bool has_pack()
-	{
-		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
-		typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type b_prp;
-
-		has_pack_agg_functor<T> functor;
-
-		//Apply functor for each property
-		boost::mpl::for_each_ref<b_prp>(functor);
-
-		return functor.at_least_one;
-	}
-};
-
-
 #endif /* PACKER_UTIL_HPP_ */
