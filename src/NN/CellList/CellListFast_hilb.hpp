@@ -76,10 +76,7 @@ private:
 
 		//Array to handle output
 		uint64_t coord[dim];
-<<<<<<< HEAD
 		size_t coord2[dim];
-=======
->>>>>>> origin/hilbert
 
 		this->getKeys().sort();
 
