@@ -278,7 +278,7 @@ template <typename vector> void test_vector_add_test_case()
 	// Duplicate the vector
 	vector v2 = v1.duplicate();
 
-	v1.template add_prp<Point_test<float>,HeapMemory,typename openfpm::grow_policy_double,P::x,P::y,P::z,P::s,P::v,P::t>(v2);
+	v1.template add_prp<Point_test<float>,HeapMemory,typename openfpm::grow_policy_double,OPENFPM_NATIVE,P::x,P::y,P::z,P::s,P::v,P::t>(v2);
 
 	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
 	{

@@ -11,6 +11,75 @@
 #include "se_vector.hpp"
 #include "map_vector_std_ptr.hpp"
 
+#define OBJECT_ADD false
+#define VECTOR_ADD true
+
+template<bool objv, typename vect_dst>
+struct add_prp_impl
+{
+	/*! \brief It add the element of a source vector to this vector
+	 *
+	 * The number of properties in the source vector must be smaller than the destination
+	 * all the properties of S must be mapped so if S has 3 properties
+	 * 3 numbers for args are required
+	 *
+	 * \tparam S Base object of the source vector
+	 * \tparam M memory type of the source vector
+	 * \tparam gp Grow policy of the source vector
+	 * \tparam args one or more number that define which property to set-up
+	 *
+	 * \param v source vector
+	 *
+	 */
+	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		//! Add the element of v
+		for (size_t i = 0 ; i < v_src.size() ; i++)
+		{
+			// Add a new element
+			v_dst.add();
+
+			// equal object
+			v_dst.get(v_dst.size()-1) = v_src.get(i);
+		}
+	}
+};
+
+
+template<typename vect_dst>
+struct add_prp_impl<OBJECT_ADD,vect_dst>
+{
+	/*! \brief It add the element of a source vector to this vector
+	 *
+	 * The number of properties in the source vector must be smaller than the destination
+	 * all the properties of S must be mapped so if S has 3 properties
+	 * 3 numbers for args are required
+	 *
+	 * \tparam S Base object of the source vector
+	 * \tparam M memory type of the source vector
+	 * \tparam gp Grow policy of the source vector
+	 * \tparam args one or more number that define which property to set-up
+	 *
+	 * \param v source vector
+	 *
+	 */
+	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+			// Add a new element
+			v_dst.add();
+
+			// equal object
+			v_dst.get(v_dst.size()-1) = v_src;
+	}
+};
+
+
 /*! \brief Implementation of 1-D std::vector like structure
  *
  * this implementation is just a wrapper for the std::vector in the case
@@ -158,7 +227,6 @@ public:
 	/*! \brief Add an empty object (it call the default constructor () ) at the end of the vector
 	 *
 	 */
-
 	inline void add()
 	{
 #ifdef SE_CLASS2
@@ -265,6 +333,29 @@ public:
 		}
 
 #endif
+	}
+
+	/*! \brief It add the element of a source vector to this vector
+	 *
+	 * The number of properties in the source vector must be smaller than the destination
+	 * all the properties of S must be mapped so if S has 3 properties
+	 * 3 numbers for args are required
+	 *
+	 * \tparam S Base object of the source vector
+	 * \tparam M memory type of the source vector
+	 * \tparam gp Grow policy of the source vector
+	 * \tparam args one or more number that define which property to set-up
+	 *
+	 * \param v source vector
+	 *
+	 */
+	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> void add_prp(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+
+		add_prp_impl<std::is_same<S,T>::value,typename std::remove_pointer<decltype(*this)>::type>::template add<S,M,gp,impl,args...>(v,*this);
 	}
 
 	/*! \brief Erase the elements from start to end
@@ -517,7 +608,6 @@ public:
 	 * \param fl byte to fill
 	 *
 	 */
-
 	inline void fill(unsigned char fl)
 	{
 #ifdef SE_CLASS2
@@ -531,7 +621,6 @@ public:
 	 * \param ns number of element the memory has to store
 	 *
 	 */
-
 	inline void reserve(size_t ns)
 	{
 #ifdef SE_CLASS2
@@ -643,6 +732,8 @@ public:
 
 	/*! \brief Operator= copy the vector into another
 	 *
+	 * \param v vector to copy
+	 *
 	 * \return itself
 	 *
 	 */
@@ -683,7 +774,6 @@ public:
 		base_copy<has_base_to_copy<vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR>>::value,
 		          decltype(*this),
 				  vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR> >::copy(*this,v);
-//		base = v.base;
 
 #ifdef SE_CLASS2
 
@@ -700,6 +790,8 @@ public:
 
 	/*! \brief Operator= copy the vector into another
 	 *
+	 * \param v vector to copy
+	 *
 	 * \return itself
 	 *
 	 */
@@ -714,6 +806,8 @@ public:
 	}
 
 	/*! \brief Operator= copy the vector into another
+	 *
+	 * \param v vector to copy
 	 *
 	 * \return itself
 	 *
@@ -732,6 +826,8 @@ public:
 	 *
 	 * \param vector to compare
 	 *
+	 * \return true if they differs
+	 *
 	 */
 	bool operator!=(const vector<T, HeapMemory, layout, memory_traits_lin,grow_policy_double,STD_VECTOR> & v) const
 	{
@@ -741,6 +837,8 @@ public:
 	/*! \brief Check that two vectors are not equal
 	 *
 	 * \param vector to compare
+	 *
+	 * \return true if the vector match
 	 *
 	 */
 	bool operator==(const vector<T, HeapMemory, layout, memory_traits_lin,grow_policy_double,STD_VECTOR> & v) const
@@ -761,7 +859,9 @@ public:
 		return vector_key_iterator(base.size());
 	}
 
-	/*! \brief Get iterator untill a specified key
+	/*! \brief Get iterator until a specified key
+	 *
+	 * \param k key
 	 *
 	 * \return an iterator
 	 *
@@ -860,6 +960,8 @@ public:
 
 	/*! \brief Return the last error
 	 *
+	 * \return erro code
+	 *
 	 */
 	size_t getLastError()
 	{
@@ -871,7 +973,7 @@ public:
 
 	/*! \brief check that the id does not overflow the buffer
 	 *
-	 * \param id to check
+	 * \param v1 id to check
 	 *
 	 */
 	inline void vector_overflow(size_t v1) const
@@ -888,6 +990,8 @@ public:
 	/* \brief It return the id of structure in the allocation list
 	 *
 	 * \see print_alloc and SE_CLASS2
+	 *
+	 * \return the allocation id of this class
 	 *
 	 */
 	long int who()

@@ -30,7 +30,7 @@ template<class T, int... args> struct ArrayHolder_indexes {
 };
 
 
-template<class T,size_t N, size_t orig_N, template<size_t,size_t> class F, int... args>
+template<class T,long int N, size_t orig_N, template<size_t,size_t> class F, int... args>
 struct generate_indexes_impl {
     typedef typename generate_indexes_impl<T,N-1,orig_N, F, F<N,orig_N>::value, args...>::result result;
 };
@@ -39,6 +39,12 @@ struct generate_indexes_impl {
 template<class T, size_t orig_N, template<size_t,size_t> class F, int... args>
 struct generate_indexes_impl<T,0,orig_N, F, args...> {
     typedef typename ArrayHolder_indexes<T,F<0,orig_N>::value, args...>::type result;
+};
+
+//! In case of an empty list
+template<class T, size_t orig_N, template<size_t,size_t> class F, int... args>
+struct generate_indexes_impl<T,-1,orig_N, F, args...> {
+    typedef index_tuple<> result;
 };
 
 /*! \brief Main class to generate indexes data structure
@@ -54,7 +60,7 @@ struct generate_indexes_impl<T,0,orig_N, F, args...> {
  * \param F Meta function it take two template arguments
  *
  */
-template<class T, size_t N, template<size_t,size_t> class F>
+template<class T, long int N, template<size_t,size_t> class F>
 struct generate_indexes {
     typedef typename generate_indexes_impl<T,N-1, N, F>::result result;
 };
