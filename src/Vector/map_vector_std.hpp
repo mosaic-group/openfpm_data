@@ -358,6 +358,27 @@ public:
 		add_prp_impl<std::is_same<S,T>::value,typename std::remove_pointer<decltype(*this)>::type>::template add<S,M,gp,impl,args...>(v,*this);
 	}
 
+	/*! \brief It add the element it is equivalent to add
+	 *
+	 * exist to respect a general interface template parameters are unused the explanation
+	 * refer to the interface specification, but is unused in this case
+	 *
+	 * \tparam S Base object of the source vector
+	 * \tparam M memory type of the source vector
+	 * \tparam gp Grow policy of the source vector
+	 * \tparam args one or more number that define which property to set-up
+	 *
+	 * \param v source vector
+	 *
+	 */
+	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> void add_prp(const T & v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		add(v);
+	}
+
 	/*! \brief Erase the elements from start to end
 	 *
 	 * \param start element

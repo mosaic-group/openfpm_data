@@ -424,7 +424,7 @@ namespace openfpm
 		 * Merging the second vector v2 to
 		 * the first one v1 starting from the element 2. Mean
 		 *
-		 * \verbarim
+		 * \verbatim
 		 *
 		 * 6   8  3   2  1   0  3    v1 elements
 		 *        |   |  |
