@@ -34,7 +34,8 @@ struct add_prp_impl
 	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
 	{
 #ifdef SE_CLASS2
-		check_valid(this,8);
+		check_valid(&v_src,8);
+		check_valid(&v_dst,8);
 #endif
 		//! Add the element of v
 		for (size_t i = 0 ; i < v_src.size() ; i++)
@@ -69,7 +70,8 @@ struct add_prp_impl<OBJECT_ADD,vect_dst>
 	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
 	{
 #ifdef SE_CLASS2
-		check_valid(this,8);
+		check_valid(v_dst,8);
+		check_valid(v_src,8);
 #endif
 			// Add a new element
 			v_dst.add();
