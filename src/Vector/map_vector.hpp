@@ -1346,6 +1346,7 @@ namespace openfpm
 
 		/*! \brief Internal function
 		 *
+		 * \return the size of the vector
 		 *
 		 */
 		const size_t & getInternal_v_size() const
@@ -1355,6 +1356,7 @@ namespace openfpm
 
 		/*! \brief Internal function
 		 *
+		 * \return the internal 1D grid base
 		 *
 		 */
 		const grid_cpu<1,T,Memory,layout> & getInternal_base() const

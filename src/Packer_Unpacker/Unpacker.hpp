@@ -159,7 +159,7 @@ public:
  *
  */
 template<typename T, typename Mem>
-class Unpacker<T,Mem,PACKER_VECTOR>
+class Unpacker<T,Mem,PACKER_GENERAL>
 {
 public:
 
@@ -209,6 +209,7 @@ public:
 
 	/*! \brief
 	 *
+	 * is this needed
 	 *
 	 */
 /*	void pack(ExtPreAlloc<Mem> & mem, T & eobj)

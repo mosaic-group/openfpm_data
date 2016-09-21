@@ -259,7 +259,7 @@ public:
 	 * \param low array indicating the coordinates of the high point
 	 *
 	 */
-	inline Box(T * high, T * low)
+	inline Box(T * low, T * high)
 	{
 		// copy all the data
 

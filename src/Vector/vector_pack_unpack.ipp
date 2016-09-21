@@ -1,10 +1,10 @@
 /*!
  * This file contains the implemetation of packer and unpacker for vector
  * Created on: Jan 5, 2016
- *     Author: Yaroslav Zaluzhnyi
+ *     Author: Yaroslav Zaluzhnyi and Pietro Incardona
  */
 
-//Functions to check if the packing object is complex
+//! Functions to check if the packing object is complex
 static bool pack()
 {
 	return false;
@@ -272,11 +272,11 @@ struct unpack_simple_cond<true, prp ...>
 };
 
 
-/*! \brief Insert an allocation request into the vector
+/*! \brief Insert an allocation request
  *
  * \tparam prp list of properties
  *
- * \param v vector of allocation sequence
+ * \param req reference to the total counter required to pack the information
  *
  */
 template<int ... prp> inline void packRequest(size_t & req) const
