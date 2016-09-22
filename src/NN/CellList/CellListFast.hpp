@@ -16,8 +16,22 @@
 #include "CellListIterator.hpp"
 #include "CellListNNIteratorRadius.hpp"
 #include <unordered_map>
-
+#include <boost/multiprecision/float128.hpp>
 #include "util/common.hpp"
+
+#include <boost/multiprecision/float128.hpp>
+
+//! Wrapper of the unordered map
+template<typename key,typename val>
+class wrap_unordered_map: public std::unordered_map<key,val>
+{
+};
+
+//! Wrapper of the unordered map
+template<typename val>
+class wrap_unordered_map<boost::multiprecision::float128,val>
+{
+};
 
 #define STARTING_NSLOT 16
 
@@ -107,7 +121,7 @@ private:
 	base cl_base;
 
 	//! Caching of r_cutoff radius
-	std::unordered_map<T,openfpm::vector<long int>> rcache;
+	wrap_unordered_map<T,openfpm::vector<long int>> rcache;
 
 	/*! \brief realloc the data structures
 	 *
