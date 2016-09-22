@@ -43,6 +43,7 @@ class CellList
 
 /*! \brief Calculate parameters for the cell list
  *
+ * \param pbox Processor box
  * \param div Division array
  * \param r_cut interation radius or size of each cell
  * \param enlarge In case of padding particles the cell list must be enlarged, like a ghost. This parameter says how much must be enlarged
