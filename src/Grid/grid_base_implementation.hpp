@@ -535,8 +535,14 @@ public:
 
 			//! N-D copy
 
+			size_t sz_c[dim];
+			for (size_t i = 0 ; i < dim ; i++)
+				sz_c[i] = (g1.size(i) < sz[i])?g1.size(i):sz[i];
+
+			grid_sm<dim,void> g1_c(sz_c);
+
 			//! create a source grid iterator
-			grid_key_dx_iterator<dim> it(g1);
+			grid_key_dx_iterator<dim> it(g1_c);
 
 			while(it.isNext())
 			{

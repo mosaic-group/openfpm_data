@@ -910,6 +910,22 @@ BOOST_AUTO_TEST_CASE(grid_operator_swap)
 	BOOST_REQUIRE_EQUAL(ret,true);
 }
 
+BOOST_AUTO_TEST_CASE(grid_resize_less)
+{
+	size_t sz1[] = {256,256};
+	size_t sz2[] = {5,5};
+
+	grid_cpu<2,Box<2,float>> g1(sz1);
+	g1.setMemory();
+
+	fill_2_grid_data(g1,g1);
+
+
+	g1.resize(sz2);
+
+	BOOST_REQUIRE_EQUAL(g1.size(),25ul);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif
