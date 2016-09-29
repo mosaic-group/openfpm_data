@@ -231,6 +231,31 @@ public:
 		return CellDecomposer_sm<dim,T,transform>::getGrid();
 	}
 
+	/*! Initialize the cell list from a well-define Cell-decomposer
+	 *
+	 * In some cases is needed to have a Cell-list with Cells consistent
+	 * with a well predefined CellDecomposer. In this case we use this function.
+	 * Using this initialization the Cell-list maintain the Cells defined by this
+	 * Cell-decomposer consistently
+	 *
+	 * \param cd_sm Cell-Decomposer
+	 * \param dom_box domain box (carefully this is going to be adjusted)
+	 * \param bc boundary condition
+	 *
+	 */
+	void Initialize(CellDecomposer_sm<dim,T,transform> & cd_sm, Box<dim,T> & dom_box, size_t (& bc)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	{
+		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoGridUnits(dom_box,bc);
+		Box<dim,T> bxd = cd_sm.convertGridUnitsIntoDomainSpace(bx);
+
+		size_t div[dim];
+
+		for (size_t i = 0 ; i < dim ; i++)
+			div[i] = bx.getHigh(i) - bx.getLow(i);
+
+		Initialize(bxd,div,pad,slot);
+	}
+
 	/*! Initialize the cell list
 	 *
 	 * \param box Domain where this cell list is living
@@ -400,6 +425,22 @@ public:
 	{
 		Initialize(box,div,pad,slot);
 	}
+
+	/*! \brief Cell list constructor from a cell decomposer
+	 *
+	 * \see Initialize
+	 *
+	 * \param cd_sm Cell-Decomposer
+	 * \param dom_box domain box (carefully this is going to be adjusted)
+	 * \param bc boundary condition
+	 *
+	 */
+	CellList(CellDecomposer_sm<dim,T,transform> & cd_sm, Box<dim,T> & box, size_t (& bc)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	:slot(slot)
+	{
+		Initialize(cd_sm,box,bc,pad,slot);
+	}
+
 
 	/*! \brief Destructor
 	 *

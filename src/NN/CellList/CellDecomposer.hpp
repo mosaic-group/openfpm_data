@@ -368,13 +368,13 @@ protected:
 	void Initialize(const size_t pad, const size_t (& div)[dim])
 	{
 #ifdef DEBUG
+
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (div[i] == 0)
-			{
 				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of cells on each dimension must be different from zero\n";
-			}
 		}
+
 #endif
 
 		// created a padded div
@@ -394,7 +394,7 @@ protected:
 			tot_n_cell *= gr_cell.size(i);
 
 			// Cell are padded by
-			box_unit.setHigh(i,box.getHigh(i) / (gr_cell.size(i)- 2*pad) );
+			box_unit.setHigh(i,(box.getHigh(i) - box.getLow(i)) / (gr_cell.size(i)- 2*pad) );
 		}
 
 		for (size_t i = 0; i < dim ; i++)
@@ -516,7 +516,7 @@ public:
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (t.transform(pos,0) < box.getLow(0) || t.transform(pos,0) > box.getHigh(0))
+		if (pos[0] < box.getLow(0) || pos[0] > box.getHigh(0))
 		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -528,7 +528,7 @@ public:
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef SE_CLASS1
-			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
+			if (pos[s] < box.getLow(s) || pos[s] > box.getHigh(s))
 			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -558,7 +558,7 @@ public:
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (t.transform(pos,0) < box.getLow(0) || t.transform(pos,0) > box.getHigh(0))
+		if (pos[0] < box.getLow(0) || pos[0] > box.getHigh(0))
 		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -601,7 +601,7 @@ public:
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (t.transform(pos,0) < box.getLow(0) || t.transform(pos,0) > box.getHigh(0))
+		if (pos[0] < box.getLow(0) || pos[0] > box.getHigh(0))
 		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -613,7 +613,7 @@ public:
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef SE_CLASS1
-			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
+			if (pos[s] < box.getLow(s) || pos[s] > box.getHigh(s))
 			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -689,7 +689,6 @@ public:
 		mat.identity();
 		t.setTransform(mat,box.getP1());
 		this->box = box;
-		this->box -= box.getP1();
 		Initialize(pad,div);
 	}
 
@@ -706,7 +705,6 @@ public:
 	{
 		t.setTransform(mat,box.getP1());
 		this->box = box;
-		this->box -= box.getP1();
 		Initialize(pad,div);
 	}
 
@@ -856,7 +854,6 @@ public:
 	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad)
 	:t(Matrix<dim,T>::identity(),box.getP1()),box(box),gr_cell()
 	{
-		this->box -= this->box.getP1();
 		Initialize(pad,div);
 	}
 
@@ -960,6 +957,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	{
 		Box<dim,long int> g_box;
 		Box<dim,T> b = b_d;
+		b -= getOrig();
 
 		// Convert b into grid units
 		b /= getCellBox().getP2();
@@ -1021,6 +1019,71 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		}
 
 		return g_box;
+	}
+
+	/*! \brief Convert a Box in grid units into the domain space (Negative contour included, positive contour excluded)
+	 *
+	 *  Given the following
+	 *
+	 * \verbatim
+
+                      +-----+-----+-----+-----+-----+-----+ (1.0. 1.0) Domain box
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      |   +-----------------+ |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                      |   | |     |     |   | |     |     |
+Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
+(0.1 , 0.42)          |   | |     |     |   | |     |     |
+(0.64, 0.85)          +-----+-----+-----+-----+-----+-----+
+                      |   | |     |     |   | |     |     |
+                      |   | |     |     |   | |     |     |
+                      |   +-----------------+ |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                    (0.0, 0.0)
+
+
+    + = grid points
+
+    \verbatim
+
+    It return a Box with P1 = (1,3), P2 = (3,4)
+
+	 *
+	 * \param b Box in grid units
+	 *
+	 * \return Box in domain space, if P2 < P1 the method return an invalid box
+	 *
+	 */
+	inline Box<dim,T> convertGridUnitsIntoDomainSpace(const Box<dim,long int> & b_d) const
+	{
+		Box<dim,T> be;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if ((long int)gr_cell.size(i) - (long int)off[i] == b_d.getLow(i))
+				be.setLow(i,box.getHigh(i));
+			else if ((long int)off[i] == b_d.getLow(i))
+				be.setLow(i,box.getLow(i));
+			else
+				be.setLow(i,b_d.getLow(i) * box_unit.getP2()[i]);
+
+			if ((long int)gr_cell.size(i) - (long int)off[i] == b_d.getHigh(i))
+				be.setHigh(i,box.getHigh(i));
+			else if ((long int)off[i] == b_d.getHigh(i))
+				be.setHigh(i,box.getLow(i));
+			else
+				be.setHigh(i,b_d.getHigh(i) * box_unit.getP2()[i]);
+		}
+
+		return be;
 	}
 
 	/*! \brief it swap the content of two Cell Decomposer

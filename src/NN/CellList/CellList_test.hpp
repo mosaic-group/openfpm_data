@@ -354,6 +354,35 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 	}
 }
 
+template<typename CellList> void Test_CellDecomposer_consistent()
+{
+	Box<2,float> bx({-1.0/3.0,-1.0/3.0},{1.0/3.0,1.0/3.0});
+
+	size_t div[2] = {36,36};
+
+	CellDecomposer_sm<2,float,shift<2,float>> cd(bx,div,1);
+
+	Box<2,float> bx_sub({-1.0/5.0,-1.0/5.0},{1.0/5.0,1.0/5.0});
+
+	size_t bc[2] = {NON_PERIODIC,NON_PERIODIC};
+	CellList cl(cd,bx_sub,bc);
+	Box<2,long int> bx_int = cd.convertDomainSpaceIntoGridUnits(bx_sub,bc);
+
+	BOOST_REQUIRE_EQUAL(bx_int.getLow(0),8);
+	BOOST_REQUIRE_EQUAL(bx_int.getLow(1),8);
+
+	BOOST_REQUIRE_EQUAL(bx_int.getHigh(0),28);
+	BOOST_REQUIRE_EQUAL(bx_int.getHigh(1),28);
+
+	cd.convertGridUnitsIntoDomainSpace(bx_sub);
+
+	BOOST_REQUIRE_EQUAL(bx_sub.getLow(0),-1.0f/5.0f);
+	BOOST_REQUIRE_EQUAL(bx_sub.getLow(1),-1.0f/5.0f);
+
+	BOOST_REQUIRE_EQUAL(bx_sub.getHigh(0),1.0f/5.0f);
+	BOOST_REQUIRE_EQUAL(bx_sub.getHigh(1),1.0f/5.0f);
+}
+
 BOOST_AUTO_TEST_SUITE( CellList_test )
 
 BOOST_AUTO_TEST_CASE( CellList_use)
@@ -374,6 +403,11 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 	std::cout << "End cell list" << "\n";
 
 	// Test the cell list
+}
+
+BOOST_AUTO_TEST_CASE( CellList_consistent )
+{
+	Test_CellDecomposer_consistent<CellList<2,float,FAST,shift<2,float>>>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
