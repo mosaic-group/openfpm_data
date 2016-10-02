@@ -3,7 +3,6 @@
 
 #include "map_vector.hpp"
 #include "Point_test.hpp"
-#include "memory/PreAllocHeapMemory.hpp"
 #include "memory/ExtPreAlloc.hpp"
 #include "memory/PtrMemory.hpp"
 #include <cstring>
@@ -801,42 +800,6 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 	}
 }
 
-
-// Pre alloc test
-
-struct pre_test
-{
-	//! position vector
-	openfpm::vector<Point<2,float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point<2,float>>::type,memory_traits_lin,openfpm::grow_policy_identity> pos;
-	//! properties vector
-	openfpm::vector<Point_test<float>,PreAllocHeapMemory<2>,typename memory_traits_lin<Point_test<float>>::type,memory_traits_lin,openfpm::grow_policy_identity> prp;
-};
-
-BOOST_AUTO_TEST_CASE( vector_prealloc )
-{
-	openfpm::vector<pre_test> pb(3);
-
-	for (size_t i = 0 ;  i < 3 ; i++)
-	{
-		// Create the size required to store the particles position and properties to communicate
-		openfpm::vector<Point<2,float>> vect1;
-		size_t s1 = vect1.calculateMem(1024,0);
-		openfpm::vector<Point_test<float>> vect2;
-		size_t s2 = vect2.calculateMem(1024,0);
-
-		// Preallocate the memory
-		size_t sz[2] = {s1,s2};
-		PreAllocHeapMemory<2> * mem = new PreAllocHeapMemory<2>(sz);
-
-		// Set the memory allocator
-		pb.get(i).pos.setMemory(*mem);
-		pb.get(i).prp.setMemory(*mem);
-
-		// set the size and allocate, using mem warrant that pos and prp is contiguous
-		pb.get(i).pos.resize(1024);
-		pb.get(i).prp.resize(1024);
-	}
-}
 
 BOOST_AUTO_TEST_SUITE_END()
 
