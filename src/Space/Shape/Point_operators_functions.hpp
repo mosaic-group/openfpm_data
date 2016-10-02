@@ -91,16 +91,18 @@ class point_expression_op<orig,exp1,exp2,POINT_NORM>
 {
 	const exp1 o1;
 
-	mutable typename orig::coord_type scal = 0.0;
+	//! Scalar value
+	mutable typename orig::coord_type scal;
 
 public:
 
+	//! Origin type
 	typedef orig orig_type;
 
-	// indicate that this class encapsulate an expression
+	//! indicate that this class encapsulate an expression
 	typedef int is_expression;
 
-	// indicate that init must be called before value
+	//! indicate that init must be called before value
 	typedef int has_init;
 
 	//! return type of the expression
@@ -109,8 +111,9 @@ public:
 	//! this operation produce a scalar as result
 	static const unsigned int nvals = 1;
 
+	//! Constructor from expression
 	inline point_expression_op(const exp1 & o1)
-	:o1(o1)
+	:o1(o1),scal(0.0)
 	{}
 
 	/*! \brief This function must be called before value
@@ -182,7 +185,7 @@ public:
 
 	//! constructor from an expression
 	inline point_expression_op(const exp1 & o1)
-	:o1(o1)
+	:o1(o1),scal(0.0)
 	{}
 
 	/*! \brief This function must be called before value

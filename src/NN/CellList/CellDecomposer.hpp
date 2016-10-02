@@ -911,6 +911,131 @@ public:
 		return t.getOrig();
 	}
 
+	/*! \brief Convert a Box in the domain space into cell units (Negative contour included, positive contour excluded)
+	 *
+	 *  Given the following
+	 *
+	 * \verbatim
+	 *
+                      +-----+-----+-----+-----+-----+-----+ (1.0. 1.0) Domain box
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      |   +-----------------+ |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                      |   | |     |     |   | |     |     |
+Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
+(0.1 , 0.42)          |   | |     |     |   | |     |     |  Cells (6,5)
+(0.64, 0.85)          +-----+-----+-----+-----+-----+-----+
+                      |   | |     |     |   | |     |     |
+                      |   | |     |     |   | |     |     |
+                      |   +-----------------+ |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                    (0.0, 0.0)
+
+
+    + = grid points
+
+    \verbatim
+
+    It return a Box with P1 = (0,2), P2 = (4,5)
+
+	 *
+	 * \param b Box in domain space
+	 * \param bc boundary conditions
+	 *
+	 * \return Box in grid units, if P2 < P1 the box does not include any grid points
+	 *
+	 */
+	inline Box<dim,long int> convertDomainSpaceIntoCellUnits(const Box<dim,T> & b_d, const size_t (& bc)[dim]) const
+	{
+		Box<dim,long int> g_box;
+		Box<dim,T> b = b_d;
+		b -= getOrig();
+
+		// Convert b into grid units
+		b /= getCellBox().getP2();
+
+		// Considering that we are interested in a box decomposition of the space
+		// where each box does not intersect any other boxes in the decomposition we include the negative
+		// countour and exclude the positive one. So ceilP1 do the job for P1 while ceilP2 - 1
+		// do the job for P2
+
+		b.floorP1();
+		b.ceilP2();
+
+		g_box = b;
+
+		// Translate the box by the offset
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			g_box.setLow(i,g_box.getLow(i) + off[i]);
+			g_box.setHigh(i,g_box.getHigh(i) + off[i]);
+		}
+
+		// on the other hand with non periodic boundary condition, the positive border of the
+		// sub-domain at the edge of the domain must be included
+
+		Point<dim,size_t> p_move;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			// we are at the positive border (We are assuming that there are not rounding error in the decomposition)
+			if (b_d.getHigh(i) == box.getHigh(i))
+			{
+				if (bc[i] == NON_PERIODIC)
+				{
+					// Here the positive boundary is included
+					g_box.setHigh(i,gr_cell.size(i) - off[i]);
+				}
+				else
+				{
+					// Carefull in periodic gr_cell is one bigger than the non-periodic
+					// and the positive boundary is excluded
+					g_box.setHigh(i,gr_cell.size(i)-1 - off[i]);
+				}
+			}
+
+
+			if (b_d.getLow(i) == box.getHigh(i))
+			{
+				if (bc[i] == NON_PERIODIC)
+				{
+					// The instruction is the same but the meaning is different
+					// for this reason there is anyway a branch
+					// Here the border is not included
+					g_box.setLow(i,gr_cell.size(i) - off[i]);
+				}
+				else
+				{
+					// Carefull in periodic gr_cell is one bigger than the non-periodic
+					// Here the border is included
+					g_box.setLow(i,gr_cell.size(i) - off[i]);
+				}
+			}
+
+			/////////// Low boundary
+
+			// we are at the positive border (We are assuming that there are not rounding error in the decomposition)
+			if (b_d.getHigh(i) == box.getLow(i))
+					g_box.setHigh(i,off[i]);
+
+
+			if (b_d.getLow(i) == box.getLow(i))
+				g_box.setLow(i,off[i]);
+		}
+
+		return g_box;
+	}
+
+
 	/*! \brief Convert a Box in the domain space into grid units (Negative contour included, positive contour excluded)
 	 *
 	 *  Given the following
@@ -988,13 +1113,13 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 				if (bc[i] == NON_PERIODIC)
 				{
 					// Here the positive boundary is included
-					g_box.setHigh(i,gr_cell.size(i));
+					g_box.setHigh(i,gr_cell.size(i) - off[i]);
 				}
 				else
 				{
 					// Carefull in periodic gr_cell is one bigger than the non-periodic
 					// and the positive boundary is excluded
-					g_box.setHigh(i,gr_cell.size(i)-1);
+					g_box.setHigh(i,gr_cell.size(i)-1 - off[i]);
 				}
 			}
 
@@ -1006,16 +1131,25 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 					// The instruction is the same but the meaning is different
 					// for this reason there is anyway a branch
 					// Here the border is not included
-					g_box.setLow(i,gr_cell.size(i));
+					g_box.setLow(i,gr_cell.size(i) - off[i]);
 				}
 				else
 				{
 					// Carefull in periodic gr_cell is one bigger than the non-periodic
 					// Here the border is included
-					g_box.setLow(i,gr_cell.size(i));
+					g_box.setLow(i,gr_cell.size(i) - off[i]);
 				}
 			}
 
+			/////////// Low boundary
+
+			// we are at the positive border (We are assuming that there are not rounding error in the decomposition)
+			if (b_d.getHigh(i) == box.getLow(i))
+					g_box.setHigh(i,off[i]);
+
+
+			if (b_d.getLow(i) == box.getLow(i))
+				g_box.setLow(i,off[i]);
 		}
 
 		return g_box;
@@ -1062,7 +1196,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	 * \return Box in domain space, if P2 < P1 the method return an invalid box
 	 *
 	 */
-	inline Box<dim,T> convertGridUnitsIntoDomainSpace(const Box<dim,long int> & b_d) const
+	inline Box<dim,T> convertCellUnitsIntoDomainSpace(const Box<dim,long int> & b_d) const
 	{
 		Box<dim,T> be;
 
@@ -1073,14 +1207,14 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 			else if ((long int)off[i] == b_d.getLow(i))
 				be.setLow(i,box.getLow(i));
 			else
-				be.setLow(i,b_d.getLow(i) * box_unit.getP2()[i]);
+				be.setLow(i,(b_d.getLow(i) - off[i]) * box_unit.getP2()[i]);
 
 			if ((long int)gr_cell.size(i) - (long int)off[i] == b_d.getHigh(i))
 				be.setHigh(i,box.getHigh(i));
 			else if ((long int)off[i] == b_d.getHigh(i))
 				be.setHigh(i,box.getLow(i));
 			else
-				be.setHigh(i,b_d.getHigh(i) * box_unit.getP2()[i]);
+				be.setHigh(i,(b_d.getHigh(i) - off[i]) * box_unit.getP2()[i]);
 		}
 
 		return be;

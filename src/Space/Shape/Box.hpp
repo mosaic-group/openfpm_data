@@ -1009,6 +1009,30 @@ public:
 	 *
 	 *
 	 */
+	inline void floorP1()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setLow(i,std::floor(getLow(i)));
+		}
+	}
+
+	/*! \brief Apply the ceil operation to the point P2
+	 *
+	 *
+	 */
+	inline void floorP2()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setHigh(i,std::floor(getHigh(i)));
+		}
+	}
+
+	/*! \brief Apply the ceil operation to the point P1
+	 *
+	 *
+	 */
 	inline void ceilP1()
 	{
 		for (size_t i = 0 ; i < dim ; i++)

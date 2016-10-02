@@ -36,7 +36,7 @@ struct NNType
 	 * \param r_cut Cutoff radius
 	 *
 	 */
-	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
+	static inline auto get(openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
 	{
 		return cl.template getNNIterator<NO_CHECK>(cl.getCell(xp));
 	}
@@ -63,7 +63,7 @@ struct NNType<dim,T,CellListImpl,WITH_RADIUS>
 	 * \param r_cut Cutoff radius
 	 *
 	 */
-	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
+	static inline auto get(openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
 	{
 		return cl.template getNNIteratorRadius<NO_CHECK>(cl.getCell(xp),r_cut);
 	}
@@ -90,9 +90,9 @@ struct NNType<dim,T,CellListImpl,VL_SYMMETRIC>
 	 * \param r_cut Cutoff radius
 	 *
 	 */
-	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0))
+	static inline auto get(openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,openfpm::vector<Point<dim,T>>()))
 	{
-		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),p);
+		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),p,v);
 	}
 };
 
@@ -195,7 +195,7 @@ private:
 	inline void create(openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cl, const Box<dim,T> & dom, size_t opt)
 	{
 		if (opt == VL_SYMMETRIC)
-			create_<decltype(cli.template getNNIteratorSym<NO_CHECK>(0,0)),VL_SYMMETRIC>(pos,r_cut,g_m,cli,opt);
+			create_<decltype(cli.template getNNIteratorSym<NO_CHECK>(0,0,pos)),VL_SYMMETRIC>(pos,r_cut,g_m,cli,opt);
 		else
 			create_<decltype(cli.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cli,opt);
 	}
@@ -231,17 +231,17 @@ private:
 		// iterate the particles
 		for (size_t i = 0 ; i < end ; i++)
 		{
-			Point<dim,T> p = pos.template get<0>(i);
+			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			NN_type NN = NNType<dim,T,CellListImpl,type>::get(p,i,cli,r_cut);
+			NN_type NN = NNType<dim,T,CellListImpl,type>::get(pos,xp,i,cli,r_cut);
 			while (NN.isNext())
 			{
 				auto nnp = NN.get();
 
-				Point<dim,T> q = pos.template get<0>(nnp);
+				Point<dim,T> xq = pos.template get<0>(nnp);
 
-				if (p.distance2(q) < r_cut2)
+				if (xp.distance2(xq) < r_cut2)
 					addPart(i,nnp);
 
 				// Next particle

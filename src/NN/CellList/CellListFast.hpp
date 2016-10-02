@@ -243,10 +243,13 @@ public:
 	 * \param bc boundary condition
 	 *
 	 */
-	void Initialize(CellDecomposer_sm<dim,T,transform> & cd_sm, Box<dim,T> & dom_box, size_t (& bc)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	void Initialize(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box, const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
-		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoGridUnits(dom_box,bc);
-		Box<dim,T> bxd = cd_sm.convertGridUnitsIntoDomainSpace(bx);
+		size_t bc[dim];
+		for (size_t i = 0 ; i < dim ; i++)	{bc[i] = NON_PERIODIC;}
+
+		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
+		Box<dim,T> bxd = cd_sm.convertCellUnitsIntoDomainSpace(bx);
 
 		size_t div[dim];
 
@@ -435,10 +438,10 @@ public:
 	 * \param bc boundary condition
 	 *
 	 */
-	CellList(CellDecomposer_sm<dim,T,transform> & cd_sm, Box<dim,T> & box, size_t (& bc)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	CellList(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & box, const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	:slot(slot)
 	{
-		Initialize(cd_sm,box,bc,pad,slot);
+		Initialize(cd_sm,box,pad,slot);
 	}
 
 
@@ -772,9 +775,9 @@ public:
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p)
+	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
 	{
-		CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this);
+		CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);
 
 		return cln;
 	}
