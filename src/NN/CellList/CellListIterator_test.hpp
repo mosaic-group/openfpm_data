@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	}
 
 	// Initialize a cell list
-	CellList_hilb<dim,float> NN;
+	CellList_hilb<dim,float,Process_keys_hilb<dim>> NN;
 
 	NN.Initialize(box,div,k*0.9,1);
 
