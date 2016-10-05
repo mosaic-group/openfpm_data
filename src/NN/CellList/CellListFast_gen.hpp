@@ -5,8 +5,8 @@
  *      Author: Yaroslav Zaluzhnyi
  */
 
-#ifndef OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTFAST_HILB_HPP_
-#define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTFAST_HILB_HPP_
+#ifndef OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTFAST_GEN_HPP_
+#define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTFAST_GEN_HPP_
 
 #define HILBERT 1
 
@@ -92,7 +92,7 @@ public:
  */
 
 template<unsigned int dim, typename T, typename Prock, unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
-class CellList_hilb : public CellList<dim,T,impl,transform,base>
+class CellList_gen : public CellList<dim,T,impl,transform,base>
 {
 private:
 	// Ghost marker
@@ -139,7 +139,7 @@ private:
 	 */
 	void linearize_hkeys()
 	{
-		Prock::template linearize_hkeys<CellList_hilb<dim,T,Prock,impl,transform,base>>(m,*this);
+		Prock::template linearize_hkeys<CellList_gen<dim,T,Prock,impl,transform,base>>(m,*this);
 /*
 		//An integer to handle errors
 		int err;
@@ -218,7 +218,7 @@ public:
 		this->linearize_hkeys();
 	}
 
-	CellList_hilb()
+	CellList_gen()
 	:CellList<dim,T,impl,transform,base>(),m(0)
 	{};
 
@@ -257,10 +257,10 @@ public:
 	 * \return an iterator
 	 *
 	 */
-	inline Cell_list_iterator<CellList_hilb<dim,T,Prock,impl,transform,base>> getIterator()
+	inline Cell_list_iterator<CellList_gen<dim,T,Prock,impl,transform,base>> getIterator()
 	{
-		return Cell_list_iterator<CellList_hilb<dim,T,Prock,impl,transform,base>>(*this);
+		return Cell_list_iterator<CellList_gen<dim,T,Prock,impl,transform,base>>(*this);
 	}
 };
 
-#endif /* OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTFAST_HILB_HPP_ */
+#endif /* OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTFAST_GEN_HPP_ */

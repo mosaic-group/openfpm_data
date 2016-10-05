@@ -9,7 +9,8 @@
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTITERATOR_TEST_HPP_
 
 #include "NN/CellList/CellListIterator.hpp"
-#include "NN/CellList/CellListFast_hilb.hpp"
+
+#include "CellListFast_gen.hpp"
 
 BOOST_AUTO_TEST_SUITE( celllist_hilb_and_iterator_tests )
 
@@ -35,7 +36,7 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	}
 
 	// Initialize a cell list
-	CellList_hilb<dim,float,Process_keys_hilb<dim>> NN;
+	CellList_gen<dim,float,Process_keys_hilb<dim>> NN;
 
 	NN.Initialize(box,div,k*0.9,1);
 
