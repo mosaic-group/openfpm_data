@@ -128,22 +128,14 @@ struct copy_cpu_encap_encap_op_prp
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		// Remove the reference from the type to copy
-//		typedef typename boost::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
-
-//		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<T::value>());
-
-		// This is the type of the object we have to copy
-		typedef typename boost::fusion::result_of::at_c<typename e_src::type,T::value>::type copy_type;
-
-		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
-
 		// Convert variadic to boost::vector
 		typedef typename boost::mpl::vector_c<unsigned int,prp...> prpv;
 
 		// element id to copy applying an operation
 		typedef typename boost::mpl::at<prpv,T>::type ele_cop;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(src.template get< ele_cop::value >())>::type copy_rtype;
 
 		meta_copy_op<op,copy_rtype>::meta_copy_op_(src.template get< ele_cop::value >(),dst.template get< ele_cop::value >());
 	}

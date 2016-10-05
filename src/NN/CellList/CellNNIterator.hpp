@@ -170,11 +170,15 @@ template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int imp
 			while (this->start_id < this->stop_id)
 			{
 				size_t q = this->cl.get_lin(this->start_id);
-				for (size_t i = 0 ; i < dim ; i++)
+				for (long int i = dim-1 ; i >= 0 ; i--)
 				{
-					if (v.template get<0>(p)[i] < v.template get<0>(q)[i])	return;
+					if (v.template get<0>(p)[i] < v.template get<0>(q)[i])
+						return;
+					else if (v.template get<0>(p)[i] > v.template get<0>(q)[i])
+						goto next;
 				}
 				if (q >= p)	return;
+next:
 				this->start_id++;
 			}
 

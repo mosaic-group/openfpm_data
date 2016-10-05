@@ -13,9 +13,6 @@
 	{
 		void packing(ExtPreAlloc<Memory1> & mem, const openfpm::vector<T1> & obj, Pack_stat & sts)
 		{
-#ifdef DEBUG
-			std::cout << "No pack() function inside! (packer)" << std::endl;
-#endif
 			//Call an array primitive packer
 			Packer<openfpm::vector<T1>, Memory1, PACKER_ARRAY_PRIMITIVE>::pack(mem,obj,sts,obj.size());		
 		}
@@ -27,10 +24,6 @@
 	{
 		void packing(ExtPreAlloc<Memory1> & mem, const openfpm::vector<T1> & obj, Pack_stat & sts)
 		{
-#ifdef DEBUG
-			std::cout << "There is pack() function inside! (true, map_vector_std)" << std::endl;
-#endif
-
 			//Pack the size of a vector
 			Packer<size_t, Memory1>::pack(mem,obj.size(),sts);
 
@@ -49,10 +42,6 @@
 	{
 		void unpacking(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Unpack_stat & ps)
 		{
-#ifdef DEBUG
-			std::cout << "No pack() function inside! (unpacker_std)" << std::endl;
-#endif
-
 			//Call the array of primitives unpacker
 			Unpacker<openfpm::vector<T1>, Memory1, PACKER_ARRAY_PRIMITIVE>::unpack(mem,obj,ps);
 		}
@@ -65,10 +54,6 @@
 	{
 		void unpacking(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Unpack_stat & ps)
 		{
-#ifdef DEBUG
-			std::cout << "There is pack() function inside! (unpacker_std)" << std::endl;
-#endif
-
 			//Unpacking a size of a source vector
 			size_t u1 = 0;
 			Unpacker<size_t, Memory1>::unpack(mem,u1,ps);
@@ -93,9 +78,6 @@
 	{
 		void packingRequest(const openfpm::vector<T1> & obj, size_t & req)
 		{
-#ifdef DEBUG
-			std::cout << "There is no packRequest() function inside! (packingRequest)" << std::endl;
-#endif
 				//Pushback a size of number of elements of the internal vectors
 				req += sizeof(obj.size());
 
@@ -113,9 +95,6 @@
 	{
 		void packingRequest(const openfpm::vector<T1> & obj, size_t & req)
 		{
-#ifdef DEBUG
-			std::cout << "There is packRequest() function inside! (packingRequest)" << std::endl;
-#endif
 			//Pushback a size of number of elements of the external vectors
 			req += sizeof(obj.size());
 
@@ -135,9 +114,6 @@
 	{
 		size_t packMemory(const T1 & obj, size_t n, size_t e)
 		{
-#ifdef DEBUG
-			std::cout << "There is no packMem() function inside! (packMemory)" << std::endl;
-#endif
 			return obj.size() * sizeof(T);
 		}
 	};
@@ -148,9 +124,6 @@
 	{
 		size_t packMemory(const T1 & obj, size_t n, size_t e)
 		{
-#ifdef DEBUG
-			std::cout << "There is packMem() function inside! (packMemory)" << std::endl;
-#endif
 			size_t res = 0;
 
 			for (size_t i = 0; i < n; i++) {
@@ -187,9 +160,6 @@
 	 */
 	template<int ... prp> void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts) const
 	{
-#ifdef DEBUG
-		std::cout << "Inside pack() function! (map_vector_std)" << std::endl;
-#endif
 		//Call a nested packer
 		pack_cond<has_pack<T>::type::value, T, HeapMemory, prp...> p;
 		p.packing(mem, *this, sts);
@@ -203,9 +173,6 @@
 	 */
 	template<int ... prp> void packRequest(size_t & req) const
 	{
-#ifdef DEBUG
-		std::cout << "Inside packRequest() function! (map_vector_std)" << std::endl;
-#endif
 		//Call a nested pack request
 		packRequest_cond<has_packRequest<T>::value, T, prp...> pr;
 		pr.packingRequest(*this, req);
@@ -222,9 +189,6 @@
 	 */
 	template<unsigned int ... prp> void unpack(ExtPreAlloc<HeapMemory> & mem, Unpack_stat & ps)
 	{
-#ifdef DEBUG
-		std::cout << "Inside unpack function (std)" << std::endl;
-#endif
 		unpack_cond<has_pack<T>::type::value, T, HeapMemory, prp...> unp;
 		unp.unpacking(mem, *this, ps);
 

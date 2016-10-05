@@ -911,10 +911,8 @@ public:
 	{
 		if (n == 0)
 			return 0;
-		else {
-#ifdef DEBUG
-			std::cout << "Inside map_vector_std.hpp packMem()" << std::endl;
-#endif
+		else
+		{
 			packMem_cond<has_packMem<T>::type::value, openfpm::vector<T, HeapMemory, layout, memory_traits_lin, grow_policy_double>, prp...> cm;
 			return cm.packMemory(*this,n,0);
 		}

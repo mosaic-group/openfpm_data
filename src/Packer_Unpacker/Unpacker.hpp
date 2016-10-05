@@ -114,9 +114,6 @@ public:
 	 */
 	static void unpack(ExtPreAlloc<Mem> & ext, T & obj, Unpack_stat & ps)
 	{
-#ifdef DEBUG
-		std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " impossible to check the type " << demangle(typeid(T).name()) << " please consider to add a static method like \"static bool noPointers() {return true;}\" \n" ;
-#endif
 		memcpy(&obj,(T *)ext.getPointerOffset(ps.getOffset()),sizeof(T));
 
 		ps.addOffset(sizeof(T));
@@ -142,10 +139,6 @@ public:
 	 */
 	static void unpack(ExtPreAlloc<Mem> & ext, T & obj, Unpack_stat & ps)
 	{
-#ifdef DEBUG
-		if (obj.noPointers() == false)
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(T).name()) << " has pointers inside, sending pointers values has no sense\n";
-#endif
 		memcpy(&obj,(T *)ext.getPointerOffset(ps.getOffset()),sizeof(T));
 
 		ps.addOffset(sizeof(T));
@@ -165,9 +158,6 @@ public:
 
 	template<unsigned int ... prp> void static unpack(ExtPreAlloc<Mem> & mem, T & obj, Unpack_stat & ps)
 	{
-#ifdef DEBUG
-		std::cout << "Inside vector unpack() function! (unpacker.hpp)" << std::endl;
-#endif
 		obj.template unpack<prp...>(mem, ps);
 	};
 };

@@ -530,7 +530,7 @@ namespace openfpm
 			{
 #ifdef SE_CLASS1
 
-				if (opart.get(i) > size())
+				if (i >= opart.size())
 					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " try to access element " << opart.template get<0>(i) << " but the vector has size " << size() << std::endl;
 
 #endif

@@ -313,7 +313,7 @@ class CellDecomposer_sm
 	 */
 	inline size_t ConvertToID(const T (&x)[dim] ,size_t s) const
 	{
-		size_t id = (size_t)(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
+		size_t id = openfpm::math::size_t_floor(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
 		id = (id >= (gr_cell.size(s) + off[0]))?(gr_cell.size(s)-1):id;
 		return id;
 	}
@@ -516,7 +516,7 @@ public:
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (pos[0] < box.getLow(0) || pos[0] > box.getHigh(0))
+		if (pos[0] < box.getLow(0) - off[0]*box_unit.getP2()[0] || pos[0] > box.getHigh(0) + off[0]*box_unit.getP2()[0])
 		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -528,7 +528,7 @@ public:
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef SE_CLASS1
-			if (pos[s] < box.getLow(s) || pos[s] > box.getHigh(s))
+			if (pos[s] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
 			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -558,7 +558,7 @@ public:
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (pos[0] < box.getLow(0) || pos[0] > box.getHigh(0))
+		if (pos.get(0) < box.getLow(0) - off[0]*box_unit.getP2()[0] || pos.get(0) > box.getHigh(0) + off[0]*box_unit.getP2()[0])
 		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -570,7 +570,7 @@ public:
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef SE_CLASS1
-			if (t.transform(pos,s) < box.getLow(s) || t.transform(pos,s) > box.getHigh(s))
+			if (pos.get(s) < box.getLow(s) || pos.get(s) > box.getHigh(s))
 			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -601,7 +601,7 @@ public:
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (pos[0] < box.getLow(0) || pos[0] > box.getHigh(0))
+		if (pos.template get<0>()[0] < box.getLow(0) || pos.template get<0>()[0] > box.getHigh(0))
 		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -613,7 +613,7 @@ public:
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef SE_CLASS1
-			if (pos[s] < box.getLow(s) || pos[s] > box.getHigh(s))
+			if (pos.template get<0>()[s] < box.getLow(s) || pos.template get<0>()[s] > box.getHigh(s))
 			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
@@ -1207,14 +1207,14 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 			else if ((long int)off[i] == b_d.getLow(i))
 				be.setLow(i,box.getLow(i));
 			else
-				be.setLow(i,(b_d.getLow(i) - off[i]) * box_unit.getP2()[i]);
+				be.setLow(i,(b_d.getLow(i) - off[i]) * box_unit.getP2()[i] + box.getLow(i));
 
 			if ((long int)gr_cell.size(i) - (long int)off[i] == b_d.getHigh(i))
 				be.setHigh(i,box.getHigh(i));
 			else if ((long int)off[i] == b_d.getHigh(i))
 				be.setHigh(i,box.getLow(i));
 			else
-				be.setHigh(i,(b_d.getHigh(i) - off[i]) * box_unit.getP2()[i]);
+				be.setHigh(i,(b_d.getHigh(i) - off[i]) * box_unit.getP2()[i] + box.getLow(i));
 		}
 
 		return be;

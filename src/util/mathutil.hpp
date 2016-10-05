@@ -1,6 +1,8 @@
 #ifndef MATHUTIL_HPP
 #define MATHUTIL_HPP
 
+#include <boost/multiprecision/float128.hpp>
+
 namespace openfpm
 {
 	namespace math
@@ -164,6 +166,36 @@ namespace openfpm
 			}
 
 			return pos_tmp;
+		}
+
+		/*! \brief floor math function
+		 *
+		 *
+		 */
+		inline long int size_t_floor(double x)
+		{
+		  size_t i = (long int)x; /* truncate */
+		  return i - ( i > x ); /* convert trunc to floor */
+		}
+
+		/*! \brief floor math function
+		 *
+		 *
+		 */
+		inline long int size_t_floor(float x)
+		{
+		  size_t i = (long int)x; /* truncate */
+		  return i - ( i > x ); /* convert trunc to floor */
+		}
+
+		/*! \brief floor math function
+		 *
+		 *
+		 */
+		inline long int size_t_floor(boost::multiprecision::float128 x)
+		{
+		  size_t i = (long int)x; /* truncate */
+		  return i - ( i > x ); /* convert trunc to floor */
 		}
 	}
 }

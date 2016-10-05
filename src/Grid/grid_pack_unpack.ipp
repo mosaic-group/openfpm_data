@@ -240,27 +240,16 @@ struct unpack_simple_cond<true, prp ...>
 		{
 			req += sizeof(this->getGrid().size(i));
 		}
-		//std::cout << demangle(typeid(this).name()) << std::endl;
-		//std::cout << this->size() << std::endl;
-#ifdef DEBUG
-		std::cout << "Inside grid_pack_unpack.ipp packRequest()" << std::endl;
-#endif
 		
 		// If all of the aggregate properties do not have a "pack()" member	
 		if (has_pack_agg<T,prp...>::result::value == false)
 		{
-#ifdef DEBUG
-		std::cout << "All of the aggregate members are simple!(packRequest)" << std::endl;
-#endif
 			size_t alloc_ele = this->packMem<prp...>(this->size(),0);
 			req += alloc_ele;
 		}
 		//If at least one property has "pack()"
 		else
-		{			
-#ifdef DEBUG
-			std::cout << "Not all of the aggregate members are simple!(packRequest)" << std::endl;
-#endif
+		{
 			auto key_it = this->getIterator();
 
 			while (key_it.isNext())
@@ -297,10 +286,6 @@ struct unpack_simple_cond<true, prp ...>
 		//If at least one property has a "pack()" member
 		else
 		{
-			
-#ifdef DEBUG
-			std::cout << "Not all of the aggregate members are simple!(pack)" << std::endl;
-#endif
 			//Pack the size of a grid
 			for (size_t i = 0; i < dim; i++)
 			{
@@ -339,9 +324,6 @@ struct unpack_simple_cond<true, prp ...>
 		//If at least one is not simple (has a "pack()" member)
 		else
 		{
-#ifdef DEBUG
-			std::cout << "Not all of the aggregate members are simple!(unpack)" << std::endl;
-#endif
 			size_t dims[dim];
 			
 			//Unpack a size of a source grid
