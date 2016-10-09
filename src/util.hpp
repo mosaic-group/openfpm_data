@@ -145,7 +145,7 @@ static inline struct RGB getColor(int group, SimpleRNG & d)
 		col.G = 0.0;
 		col.B = s/2 + 0.5;
 	}
-	else if (group == 11)
+	else
 	{
 		col.R = s/2 + 0.5;
 		col.G = 0.0;

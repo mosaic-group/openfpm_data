@@ -33,10 +33,10 @@
 template<typename Tobj>
 struct csv_prp
 {
-	// String
+	//! String containing the csv line constructed from an object
 	std::stringstream & str;
 
-	// Object to write
+	//! Object to write
 	Tobj & obj;
 
 	/*! \brief Constructor
@@ -79,8 +79,14 @@ struct csv_prp
 template<typename Tobj, bool attr>
 struct csv_col
 {
+	//! String containing the colums list as string
 	std::stringstream & str;
 
+	/*! \brief Constructor
+	 *
+	 * \str String where to put the colum list
+	 *
+	 */
 	csv_col(std::stringstream & str)
 	:str(str)
 	{
@@ -113,8 +119,14 @@ struct csv_col
 template<typename Tobj>
 struct csv_col<Tobj,false>
 {
+	//! String containing the colums list as string
 	std::stringstream & str;
 
+	/*! \brief Constructor
+	 *
+	 * \str String where to put the colum list
+	 *
+	 */
 	csv_col(std::stringstream & str)
 	:str(str)
 	{
@@ -180,8 +192,8 @@ class CSVWriter
 
 	/*! \brief Get the csv data section
 	 *
-	 * \param v_pos vector that contain the positional information
-	 * \param v_prp vector that contain the property information
+	 * \param vp vector that contain the positional information
+	 * \param vpr vector that contain the property information
 	 * \param offset from where to start
 	 *
 	 */
@@ -228,12 +240,11 @@ public:
 	 * \tparam prp which properties to output [default = -1 (all)]
 	 *
 	 * \param file path where to write
-	 * \param v_pos positional vector
-	 * \param v_prp properties vector
+	 * \param v positional vector
+	 * \param prp properties vector
 	 * \param offset from where to start to write
 	 *
 	 */
-
 	bool write(std::string file, v_pos & v , v_prp & prp, size_t offset=0)
 	{
 		// Header for csv (colums name)

@@ -1,10 +1,21 @@
 <html>
   <head>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script type="text/javascript">
       google.charts.load('current', {'packages':['corechart']});
       google.charts.setOnLoadCallback(drawVisualization);
 
+function exportToSVG(i)
+{
+var e = document.getElementById('chart_div'+i);
+var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;
+var pos = svg.lastIndexOf("</svg>");
+pos += 6;
+svg = svg.substring(0,4)  + " xmlns='http://www.w3.org/2000/svg' xmlns:xlink= 'http://www.w3.org/1999/xlink' " + svg.substring(4,pos);
+svgData = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+$(this).attr({'href': svgData,'target': '_blank'});
+}
 
       function drawVisualization() {
 var data0 = new google.visualization.DataTable();
@@ -67,14 +78,17 @@ vAxis: {title: 'Y Axis'},
 hAxis: {title: 'X Axis'},
 seriesType: 'bars',
 series: {3: {type: 'line'}}};
+$("#export_svg0").on("click", function (event) {exportToSVG.apply(this,[0]);});
 var chart = new google.visualization.ComboChart(document.getElementById('chart_div0'));chart.draw(data0, options0);
+$("#export_svg1").on("click", function (event) {exportToSVG.apply(this,[1]);});
 var chart = new google.visualization.ComboChart(document.getElementById('chart_div1'));chart.draw(data1, options1);
+$("#export_svg2").on("click", function (event) {exportToSVG.apply(this,[2]);});
 var chart = new google.visualization.ComboChart(document.getElementById('chart_div2'));chart.draw(data2, options2);
 }</script>
 </head>
 <body>
-<h2>Before first graph</h2><div id="chart_div0" style="width: 900px; height: 500px;"></div>
-<h2>Before second graph</h2><div id="chart_div1" style="width: 900px; height: 500px;"></div>
-<h2>Before third graph</h2><div id="chart_div2" style="width: 900px; height: 500px;"></div>
+<h2>Before first graph</h2><a href="#" download="graph1.svg" id="export_svg0"><button>Export data into svg</button></a><div id="chart_div0" style="width: 900px; height: 500px;"></div>
+<h2>Before second graph</h2><a href="#" download="graph1.svg" id="export_svg1"><button>Export data into svg</button></a><div id="chart_div1" style="width: 900px; height: 500px;"></div>
+<h2>Before third graph</h2><a href="#" download="graph1.svg" id="export_svg2"><button>Export data into svg</button></a><div id="chart_div2" style="width: 900px; height: 500px;"></div>
 <h2>At the end</h2></body>
 </html>

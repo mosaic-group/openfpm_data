@@ -102,9 +102,6 @@ struct H5_prop_out<ele_v,false>
 template <>
 class HDF5_XdmfWriter<H5_POINTSET>
 {
-	// Time step
-	int t;
-
 	//! HDF5 file
 	hid_t file_id;
 
@@ -116,7 +113,6 @@ public:
 	 *
 	 */
 	HDF5_XdmfWriter()
-	:t(0)
 	{}
 
 

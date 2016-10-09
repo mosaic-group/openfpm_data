@@ -375,19 +375,19 @@ struct edge_prop
 template<typename G>
 struct edge_node
 {
-	// Vertex object container
+	//! Vertex object container
 	typename G::E_container & vo;
 
-	// Properties counter
+	//! Properties counter
 	int cnt = 0;
 
 	// edge node string
 	std::string & e_node;
 
-	// Attribute names
+	//! Attribute names
 	std::string * attributes_names;
 
-	// Number of attributes name defined into the vertex
+	//! Number of attributes name defined into the vertex
 	int n_attr = 0;
 
 	/*! \brief Constructor
@@ -396,8 +396,7 @@ struct edge_node
 	 *
 	 * \param e_node std::string that is filled with the graph node definition in the GraphML format
 	 * \param n_obj object container to access the object properties for example encapc<...>
-	 * \param stub SFINAE, it basically check if G has properties names defined, if yes this
-	 *        constructor is selected over the other one
+	 * \param a_name attributes names
 	 *
 	 */
 	edge_node(std::string & e_node, typename G::E_container & n_obj, typename G::E_type::attributes & a_name)
@@ -413,7 +412,6 @@ struct edge_node
 	 *
 	 * \param e_node std::string that is filled with the graph properties in the GraphML format
 	 * \param n_obj object container to access the object properties for example encapc<...>
-	 * \param n_prop number of properties
 	 *
 	 */
 	edge_node(std::string & e_node, typename G::E_container & n_obj)

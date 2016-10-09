@@ -41,7 +41,10 @@ struct GCoptions
 	//! with a line
 	std::string stypeext;
 
+	//! width of the graph in pixels
 	size_t width=900;
+
+	//! height of the graph in pixels
 	size_t heigh=500;
 
 	//! Flag that specify if the colums are stacked
@@ -65,6 +68,7 @@ struct GCoptions
 	//! curve type
 	std::string curveType = "function";
 
+	//! copy operator
 	GCoptions & operator=(const GCoptions & opt)
 	{
 		title = opt.title;
@@ -85,16 +89,16 @@ struct GCoptions
 
 struct GGraph
 {
-	// TypeOfGraph
+	//! TypeOfGraph
 	size_t type;
 
-	// data
+	//! data
 	std::string data;
 
-	// option
+	//! option
 	std::string option;
 
-	// Google chart option
+	//! Google chart option
 	GCoptions opt;
 };
 
@@ -103,10 +107,21 @@ struct GGraph
 const std::string begin_data ="<html>\n\
   <head>\n\
     <script type=\"text/javascript\" src=\"https://www.gstatic.com/charts/loader.js\"></script>\n\
+	<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js\"></script>\n\
     <script type=\"text/javascript\">\n\
       google.charts.load('current', {'packages':['corechart']});\n\
       google.charts.setOnLoadCallback(drawVisualization);\n\
 \n\
+function exportToSVG(i)\n\
+{\n\
+var e = document.getElementById('chart_div'+i);\n\
+var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;\n\
+var pos = svg.lastIndexOf(\"</svg>\");\n\
+pos += 6;\n\
+svg = svg.substring(0,4)  + \" xmlns='http://www.w3.org/2000/svg' xmlns:xlink= 'http://www.w3.org/1999/xlink' \" + svg.substring(4,pos);\n\
+svgData = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);\n\
+$(this).attr({'href': svgData,'target': '_blank'});\n\
+}\n\
 \n\
       function drawVisualization() {\n";
 
@@ -118,6 +133,10 @@ const std::string begin_div = "}</script>\n\
 
 const std::string div_end = "</body>\n\
 </html>\n";
+
+const std::string saving_javascript = "function save(i)\n\
+										var e = document.getElementById('chart_')\n\
+										e.getElementsByTagName('svg')[0].parentNode.innerHTML";
 
 /////////////////////////////////////////////////////////////////////
 
@@ -152,17 +171,22 @@ const std::string div_end = "</body>\n\
  */
 class GoogleChart
 {
-	// set of graphs
+	//! set of graphs
 	openfpm::vector<GGraph> set_of_graphs;
 
-	// set inject HTML;
+	//! set inject HTML;
 	openfpm::vector<std::string> injectHTML;
 
 	/*! \brief Given X and Y vector return the string representing the data section of the Google Chart
 	 *
-	 * \param X vector
-	 * \param Y vector
-	 * \param i counter
+	 * \tparam X type for the X coordinates
+	 * \tparam Y type for the Y coordinates
+	 *
+	 * \param x vector of points on x
+	 * \param y vector of points on y
+	 * \param yn vector containing the name of each graph
+	 * \param opt options to draw the graph
+	 * \param i index of the graph we are drawing
 	 *
 	 * \return string with the data section
 	 *
@@ -295,6 +319,7 @@ class GoogleChart
 	 */
 	void addDrawDiv(std::ofstream & of, size_t i)
 	{
+		of << "$(\"#export_svg" << i << "\").on(\"click\", function (event) {exportToSVG.apply(this,[" << i << "]);});\n";
 		of << "var chart = new google.visualization.ComboChart(document.getElementById('chart_div";
 		of << i;
 		of << "'));chart.draw(data";
@@ -306,12 +331,14 @@ class GoogleChart
 
 	/*! \brief Add a div section
 	 *
-	 * \param i id
+	 * \param of file ofstream
+	 * \param i id of the graph
 	 * \param gc GoogleChart option
 	 *
 	 */
 	void addDiv(std::ofstream & of, size_t i, const GCoptions & gc)
 	{
+		of << "<a href=\"#\" download=\"graph1.svg\" id=\"export_svg" << i << "\"><button>Export data into svg</button></a>";
 		of << "<div id=\"chart_div";
 		of << i;
 		of << "\" style=\"width: ";

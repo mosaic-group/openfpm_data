@@ -90,17 +90,19 @@ struct vtk_dist_vertex_node_array_scalar_selector<true>
 template<typename G, bool attr>
 struct vtk_dist_vertex_node
 {
-	// Vertex spatial type information
+	//! Vertex spatial type information
 	typedef typename G::V_type::s_type s_type;
 
+	//! indicate if the z coordinate has been set
 	bool z_set;
 
+	//! coordinate of the vertex node
 	s_type (&x)[3];
 
-	// Vertex object container
+	//! Vertex object container
 	typename G::V_container & vo;
 
-	// vertex node string
+	//! vertex position converted to string
 	std::string & v_node;
 
 	/*! \brief Constructor
@@ -109,6 +111,7 @@ struct vtk_dist_vertex_node
 	 *
 	 * \param v_node std::string that is filled with the graph properties in the GraphML format
 	 * \param n_obj object container to access its properties for example encapc<...>
+	 * \param x position of the vertex
 	 *
 	 */
 	vtk_dist_vertex_node(std::string & v_node, typename G::V_container & n_obj, s_type (&x)[3])
@@ -151,10 +154,10 @@ struct vtk_dist_vertex_node
 template<typename G>
 struct vtk_dist_vertex_node<G, false>
 {
-	// Vertex object container
+	//! Vertex object container
 	typename G::V_container & vo;
 
-	// vertex node string
+	//! vertex position string
 	std::string & v_node;
 
 	/*! \brief Constructor
@@ -169,7 +172,6 @@ struct vtk_dist_vertex_node<G, false>
 			vo(n_obj), v_node(v_node)
 	{
 	}
-	;
 
 	//! It call the functor for each member
 	template<typename T>
@@ -191,10 +193,10 @@ struct vtk_dist_vertex_node<G, false>
 template<typename G>
 struct vtk_dist_edge_node
 {
-	// Vertex object container
+	//! Vertex object container
 	typename G::E_container & vo;
 
-	// edge node string
+	//! edge node string
 	std::string & e_node;
 
 	/*! \brief Constructor
@@ -203,21 +205,21 @@ struct vtk_dist_edge_node
 	 *
 	 * \param e_node std::string that is filled with the graph properties in the GraphML format
 	 * \param n_obj object container to access the object properties for example encapc<...>
-	 * \param n_prop number of properties
 	 *
 	 */
-	vtk_dist_edge_node(std::string & e_node, typename G::E_container & n_obj) :
-			vo(n_obj), e_node(e_node)
+	vtk_dist_edge_node(std::string & e_node, typename G::E_container & n_obj)
+	:vo(n_obj), e_node(e_node)
 	{
 	}
-	;
 
-	/*! \brief Create a new node
+	/*! \brief Create an edge
 	 *
-	 * \param vc node number
+	 * \param vc node id
+	 * \param s source node
+	 * \param d destination node
 	 *
 	 */
-	void new_node(size_t v_c, size_t s, size_t d)
+	void new_node(size_t vc, size_t s, size_t d)
 	{
 		// start a new node
 		e_node += "2 " + std::to_string(s) + " " + std::to_string(d) + "\n";
@@ -290,11 +292,11 @@ struct dist_prop_output_array_scalar_selector_edge
 	 *
 	 * \tparam ele_v Property element
 	 * \tparam Graph Graph of reference
-	 * \tparam i Property id
+	 * \tparam i Property id for the edge
 	 *
 	 * \param v_out Buffer to write into
 	 * \param g Graph
-	 * \param p Property id
+	 * \param edge edge object
 	 */
 	template<typename ele_v, typename Graph, unsigned int i>
 	static inline void write(std::string &v_out, const Graph &g, const typename Graph::E_container &edge)
@@ -317,7 +319,7 @@ struct dist_prop_output_array_scalar_selector_edge<true>
 	 *
 	 * \param v_out Buffer to write into
 	 * \param g Graph
-	 * \param p Property id
+	 * \param edge edge object
 	 */
 	template<typename ele_v, typename Graph, unsigned int i>
 	static inline void write(std::string &v_out, const Graph &g, const typename Graph::E_container &edge)
@@ -391,8 +393,9 @@ public:
 	 *
 	 * \tparam i vertex property to print
 	 *
+	 * \param g graph to output
+	 *
 	 */
-
 	static std::string get_point_data(const Graph & g)
 	{
 		//! vertex node output string
@@ -417,6 +420,8 @@ public:
 	/*! \brief For each edge set the value, set 1 on vertices, needed by vtk file format
 	 *
 	 * \tparam i edge property to print
+	 *
+	 * \param g graph to output
 	 *
 	 */
 
@@ -457,11 +462,9 @@ public:
 
 	/*! \brief Given a Graph return the point data header for a typename T
 	 *
-	 * \tparam T type to write
-	 * \param n_node number of the node
+	 * \param prop property id
 	 *
 	 */
-
 	static std::string get_point_property_header(size_t prop)
 	{
 		//! vertex node output string
@@ -508,11 +511,11 @@ public:
 
 	/*! \brief Given a Graph return the cell data header for a typename T
 	 *
-	 * \tparam T type to write
-	 * \param n_node number of the node
+	 * \param prop property number
+	 *
+	 * \return the cell string header
 	 *
 	 */
-
 	static std::string get_cell_property_header(size_t prop)
 	{
 		//! edge node output string
@@ -559,8 +562,9 @@ public:
 
 	/*! \brief Get the attributes name for vertex
 	 *
+	 * \return string with the attribute name
+	 *
 	 */
-
 	static std::string get_attributes_vertex()
 	{
 		return Graph::V_type::attributes::name[i];
@@ -568,8 +572,9 @@ public:
 
 	/*! \brief Get the attributes name for edge
 	 *
+	 * \return the attribute name for the edge
+	 *
 	 */
-
 	static std::string get_attributes_edge()
 	{
 		return Graph::E_type::attributes::name[i];
@@ -592,12 +597,11 @@ public:
 template<typename Graph, unsigned int i>
 class dist_prop_output<false, Graph, i>
 {
-	/*! \brief For each vertex set the value
+	/*! \brief For each vertex output the property string
 	 *
-	 * \tparam i vertex property to print
+	 * \param g graph to print
 	 *
 	 */
-
 	static std::string get_point_data(Graph & g)
 	{
 		//! vertex node output string
@@ -619,9 +623,9 @@ class dist_prop_output<false, Graph, i>
 		return v_out;
 	}
 
-	/*! \brief For each edge set the value
+	/*! \brief For each edge output the property string
 	 *
-	 * \tparam i edge property to print
+	 * \param graph to print
 	 *
 	 */
 
@@ -661,13 +665,11 @@ class dist_prop_output<false, Graph, i>
 
 	/*! \brief Given a Graph return the point data header for a typename T
 	 *
-	 * \tparam T type to write
-	 *
-	 * \param n_node number of the node
 	 * \param prop id of the property
 	 *
+	 * \return the string containing the header
+	 *
 	 */
-
 	static std::string get_point_property_header(size_t prop)
 	{
 		//! vertex node output string
@@ -696,10 +698,11 @@ class dist_prop_output<false, Graph, i>
 
 	/*! \brief Given a Graph return the cell data header for a typename T
 	 *
-	 * \param n_node number of the node
+	 * \param prop property id
+	 *
+	 * \return the string containing the header
 	 *
 	 */
-
 	static std::string get_cell_property_header(size_t prop)
 	{
 		//! edge node output string
@@ -746,8 +749,9 @@ class dist_prop_output<false, Graph, i>
 
 	/*! \brief Get the attributes name for vertex
 	 *
+	 * \return the string containing the vertex attribute name
+	 *
 	 */
-
 	static std::string get_attributes_vertex()
 	{
 		return Graph::V_type::attributes::name[i];
@@ -755,8 +759,9 @@ class dist_prop_output<false, Graph, i>
 
 	/*! \brief Get the attributes name for edge
 	 *
+	 * \return the edge attribute name
+	 *
 	 */
-
 	static std::string get_attributes_edge()
 	{
 		return Graph::E_type::attributes::name[i];
@@ -779,22 +784,22 @@ class dist_prop_output<false, Graph, i>
 template<typename Graph>
 struct dist_prop_out_vertex
 {
-	// property output string
+	//! property output string
 	std::string & v_out;
 
-	// Graph that we are processing
+	//! Graph that we are processing
 	const Graph & g;
 
 	/*! \brief constructor
 	 *
 	 * \param v_out string to fill with the vertex properties
+	 * \param g graph to process
 	 *
 	 */
-	dist_prop_out_vertex(std::string & v_out, const Graph & g) :
-			v_out(v_out), g(g)
+	dist_prop_out_vertex(std::string & v_out, const Graph & g)
+	:v_out(v_out), g(g)
 	{
 	}
-	;
 
 	//! It produce an output for each property
 	template<typename T>
@@ -833,10 +838,10 @@ struct dist_prop_out_vertex
 template<typename Graph>
 struct dist_prop_out_edge
 {
-	// property output string
+	//! property output string
 	std::string & e_out;
 
-	// Graph that we are processing
+	//! Graph that we are processing
 	const Graph & g;
 
 	/*! \brief constructor
@@ -882,6 +887,7 @@ struct dist_prop_out_edge
 template<typename Graph>
 class VTKWriter<Graph, DIST_GRAPH>
 {
+	//! Graph to output
 	Graph & g;
 
 	/*! \brief It get the vertex properties list
