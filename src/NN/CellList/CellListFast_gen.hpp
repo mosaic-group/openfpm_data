@@ -10,34 +10,66 @@
 
 #define HILBERT 1
 
-#include "CellListFast.hpp"
-#include "CellListIterator.hpp"
+#include "CellList.hpp"
 
 extern "C"
 {
 #include "hilbertKey.h"
 }
 
+/* !Brief Class for a linear (1D-like) order processing of cell keys for CellList_gen implementation
+ *
+ * \tparam dim Dimansionality of the space
+ */
 template<unsigned int dim>
-class Process_keys
+class Process_keys_lin
 {
 public:
-	static void get_hkey(grid_key_dx<dim> gk, size_t m, openfpm::vector<size_t> & keys)
-	{
 
+	/*! \brief Get a linear (1D-like) key from the coordinates and add to the getKeys vector
+	 *
+	 * \tparam S Cell list type
+	 *
+	 * \param obj Cell list object
+	 * \param gk grid key
+	 * \param m order of a curve
+	 */
+	template<typename S> static void get_hkey(S & obj, grid_key_dx<dim> gk, size_t m)
+	{
+		size_t point[dim];
+
+		for (size_t i = 0; i < dim; i++)
+		{
+			point[i] = gk.get(i) + obj.getPadding(i);
+		}
+
+		obj.getKeys().add(obj.getGrid().LinIdPtr(static_cast<size_t *>(point)));
 	}
 
-	template<typename S> static void linearize_hkeys(size_t m, S & obj)
+	template<typename S> static void linearize_hkeys(S & obj, size_t m)
 	{
-
+		return;
 	}
 };
 
+/* !Brief Class for an hilbert order processing of cell keys for CellList_gen implementation
+ *
+ * \tparam dim Dimansionality of the space
+ */
 template<unsigned int dim>
 class Process_keys_hilb
 {
 public:
-	static void get_hkey(grid_key_dx<dim> gk, size_t m, openfpm::vector<size_t> & keys)
+
+	/*! \brief Get an hilbert key from the coordinates and add to the getKeys vector
+	 *
+	 * \tparam S Cell list type
+	 *
+	 * \param obj Cell list object
+	 * \param gk grid key
+	 * \param m order of a curve
+	 */
+	template<typename S> static void get_hkey(S & obj, grid_key_dx<dim> gk, size_t m)
 	{
 		//An integer to handle errors
 		int err;
@@ -51,11 +83,17 @@ public:
 
 		size_t hkey = getHKeyFromIntCoord(m, dim, point, &err);
 
-		keys.add(hkey);
+		obj.getKeys().add(hkey);
 	}
 
-
-	template<typename S> static void linearize_hkeys(size_t m, S & obj)
+	/*! \brief Get get the coordinates from hilbert key, linearize and add to the getKeys vector
+	 *
+	 * \tparam S Cell list type
+	 *
+	 * \param obj Cell list object
+	 * \param m order of a curve
+	 */
+	template<typename S> static void linearize_hkeys(S & obj, size_t m)
 	{
 		//An integer to handle errors
 		int err;
@@ -81,7 +119,7 @@ public:
 	}
 };
 
-/* !Brief Class for FAST hilbert cell list implementation
+/* !Brief Class for FAST general (linear (1D-like) and hilbert curve) cell list implementation
  *
  * \see CellList<dim,T,FAST,transform,base>
  *
@@ -90,7 +128,6 @@ public:
  * \tparam base Base structure that store the information
  *
  */
-
 template<unsigned int dim, typename T, typename Prock, unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
 class CellList_gen : public CellList<dim,T,impl,transform,base>
 {
@@ -114,55 +151,15 @@ private:
 	 */
 	void get_hkey(grid_key_dx<dim> gk)
 	{
-		Prock::get_hkey(gk,m,this->getKeys());
-/*
-		//An integer to handle errors
-		int err;
-
-		uint64_t point[dim];
-
-		for (size_t i = 0; i < dim; i++)
-		{
-			point[i] = gk.get(i);
-		}
-
-		size_t hkey = getHKeyFromIntCoord(m, dim, point, &err);
-
-		this->getKeys().add(hkey);
-*/
+		Prock::template get_hkey<CellList_gen<dim,T,Prock,impl,transform,base>>(*this,gk,m);
 	}
 
 	/*! \brief Get get the coordinates from hilbert key, linearize and add to the getKeys vector
 	 *
-	 *
-	 *
 	 */
 	void linearize_hkeys()
 	{
-		Prock::template linearize_hkeys<CellList_gen<dim,T,Prock,impl,transform,base>>(m,*this);
-/*
-		//An integer to handle errors
-		int err;
-
-		//Array to handle output
-		uint64_t coord[dim];
-		size_t coord2[dim];
-
-		this->getKeys().sort();
-
-		openfpm::vector<size_t> keys_new;
-
-		for(size_t i = 0; i < this->getKeys().size(); i++)
-		{
-			getIntCoordFromHKey(coord, m, dim, this->getKeys().get(i), &err);
-
-			for (size_t j = 0 ; j < dim ; j++)	{coord2[j] = coord[j] + this->getPadding(j);}
-
-			keys_new.add(this->getGrid().LinIdPtr(static_cast<size_t *>(coord2)));
-		}
-
-		this->getKeys().swap(keys_new);
-*/
+		Prock::template linearize_hkeys<CellList_gen<dim,T,Prock,impl,transform,base>>(*this,m);
 	}
 
 public:
@@ -184,6 +181,7 @@ public:
 
 		size_t sz[dim];
 
+		//Get grid_sm without padding (gs_small)
 		for (size_t i = 0; i < dim ; i++)
 			sz[i] = this->getGrid().size(i) - 2*pad;
 
@@ -197,6 +195,7 @@ public:
 				a = gs_small.size(i);
 		}
 
+		//Calculate an hilberts curve order
 		for (m = 0; ; m++)
 		{
 			if ((1ul << m) >= a)
@@ -209,12 +208,13 @@ public:
 		{
 			auto gk = it.get();
 
-			// Get an hilbert key of each cell and add to 'keys' vector
+			// Get a key of each cell and add to 'keys' vector
 			this->get_hkey(gk);
 
 			++it;
 		}
-		// Sort and linearize hilbert keys
+
+		// Sort and linearize keys
 		this->linearize_hkeys();
 	}
 
