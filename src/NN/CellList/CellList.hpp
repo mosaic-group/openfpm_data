@@ -66,6 +66,35 @@ template<unsigned int dim, typename St> static inline void cl_param_calculate(Bo
 	}
 }
 
+/*! \brief Calculate parameters for the symmetric cell list
+ *
+ * \param[in] dom Simulation domain
+ * \param[output] cd_sm This cell-decomposer is set according to the needed division
+ * \param[output] pad required padding for the cell-list
+ * \param[in] r_cut interation radius or size of each cell
+ * \param[out] pad padding required for the cell list
+ *
+ * \return the processor bounding box
+ */
+template<unsigned int dim, typename St> static inline void cl_param_calculateSym(const Box<dim,St> & dom, CellDecomposer_sm<dim,St,shift<dim,St>> & cd_sm, Ghost<dim,St> g, St r_cut, size_t & pad)
+{
+	size_t div[dim];
+
+	for (size_t i = 0 ; i < dim ; i++)
+		div[i] = (dom.getHigh(i) - dom.getLow(i)) / r_cut;
+
+	g.magnify(1.013);
+
+	// Calculate the maximum padding
+	for (size_t i = 0 ; i < dim ; i++)
+	{
+		size_t tmp = std::ceil(fabs(g.getLow(i)) / r_cut);
+		pad = (pad > tmp)?pad:tmp;
+	}
+
+	cd_sm.setDimensions(dom,div,pad);
+}
+
 #include "CellListFast.hpp"
 #include "CellListBal.hpp"
 #include "CellListMem.hpp"

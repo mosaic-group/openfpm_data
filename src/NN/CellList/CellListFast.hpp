@@ -240,7 +240,8 @@ public:
 	 *
 	 * \param cd_sm Cell-Decomposer
 	 * \param dom_box domain box (carefully this is going to be adjusted)
-	 * \param bc boundary condition
+	 * \param pad cell-list padding
+	 * \param slot slots for each cell
 	 *
 	 */
 	void Initialize(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box, const size_t pad = 1, size_t slot=STARTING_NSLOT)
@@ -434,8 +435,9 @@ public:
 	 * \see Initialize
 	 *
 	 * \param cd_sm Cell-Decomposer
-	 * \param dom_box domain box (carefully this is going to be adjusted)
-	 * \param bc boundary condition
+	 * \param box domain box (carefully this is going to be adjusted)
+	 * \param pad Cell list padding
+	 * \param slot number of slot for each cell
 	 *
 	 */
 	CellList(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & box, const size_t pad = 1, size_t slot=STARTING_NSLOT)
@@ -771,6 +773,7 @@ public:
 	 *
 	 * \param cell cell id
 	 * \param p particle id
+	 * \param v vector of position of the particles
 	 *
 	 * \return An aiterator across the neighborhood particles
 	 *
@@ -830,11 +833,11 @@ public:
 			cl_n.get(i) = 0;
 	}
 
-	/*! \brief Return the starting point of the neighborhood for the particle p
+	/*! \brief Given a cell it return the starting point of the cell
 	 *
-	 * \param part_id particle id
+	 * \param cell_id cell id
 	 *
-	 * \return the index
+	 * \return the start index
 	 *
 	 */
 	inline size_t getStartId(size_t cell_id)
@@ -842,9 +845,9 @@ public:
 		return cell_id*slot;
 	}
 
-	/*! \brief Return the end point of the neighborhood for the particle p
+	/*! \brief Given a cell it return the end point of the cell
 	 *
-	 * \param part_id particle id
+	 * \param cell_id cell id
 	 *
 	 * \return the stop index
 	 *

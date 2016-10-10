@@ -14,11 +14,14 @@
 
 #define CELL_DECOMPOSER 8001lu
 
-// Shift transformation
+//! Shift transformation
 template<unsigned int dim, typename T>
 class shift
 {
+	//! Shift point
 	Point<dim,T> sh;
+
+	//! Matrix transformation
 	Matrix<dim,T> mat;
 
 public:
@@ -86,8 +89,9 @@ public:
 			sh.get(i) = orig.get(i);
 	}
 
-	/*! \brief Get the origin
+	/*! \brief Get the shift vector
 	 *
+	 * \return the shift vector
 	 *
 	 */
 	inline const Point<dim,T> & getOrig() const
@@ -97,6 +101,7 @@ public:
 
 	/*! \brief Get the transformation Matrix
 	 *
+	 * \return the transformation matrix
 	 *
 	 */
 	inline const Matrix<dim,T> & getMat() const
@@ -106,7 +111,7 @@ public:
 
 	/*! \brief It return true if the shift match
 	 *
-	 * \return true is match
+	 * \return true if it match
 	 *
 	 */
 	inline bool operator==(const shift<dim,T> & s)
@@ -125,11 +130,14 @@ public:
 	}
 };
 
-// No transformation
+//! No transformation
 template<unsigned int dim, typename T>
 class no_transform
 {
+	//! shift transform
 	Point<dim,T> orig;
+
+	//! Matrix transform
 	Matrix<dim,T> mat;
 
 public:
@@ -222,6 +230,7 @@ public:
 
 	/*! \brief Get the origin
 	 *
+	 * \return the shift vector
 	 *
 	 */
 	inline const Point<dim,T> & getOrig() const
@@ -231,6 +240,7 @@ public:
 
 	/*! \brief Get the transformation Matrix
 	 *
+	 * \return get the return the matrix
 	 *
 	 */
 	inline const Matrix<dim,T> & getMat() const
@@ -326,7 +336,7 @@ class CellDecomposer_sm
 	 */
 	inline size_t ConvertToID(const Point<dim,T> & x ,size_t s) const
 	{
-		size_t id = (size_t)(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
+		size_t id = openfpm::math::size_t_floor(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
 		id = (id >= (gr_cell.size(s) + off[0]))?(gr_cell.size(s)-1):id;
 		return id;
 	}

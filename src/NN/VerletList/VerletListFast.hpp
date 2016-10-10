@@ -213,13 +213,7 @@ private:
 	 */
 	template<typename NN_type, int type> inline void create_(openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
 	{
-		size_t end;
-
-		// resize verlet to store the number of particles
-		if (opt == VL_SYMMETRIC)
-			end = pos.size();
-		else
-			end = g_m;
+		size_t end = g_m;
 
 		cl_n.resize(end);
 		cl_base.resize(end*slot);
@@ -294,7 +288,7 @@ private:
 
 	/*! \brief Add to the cell
 	 *
-	 * \param part_id Cell id where to add
+	 * \param part_id part id where to add
 	 * \param ele element to add
 	 *
 	 */
@@ -357,6 +351,37 @@ public:
 
 		// create verlet
 		create(pos,r_cut,g_m,cli,dom,opt);
+	}
+
+	/*! Initialize the symmetric verlet list
+	 *
+	 * \param box Simulation domain
+	 * \param dom Processor domain
+	 * \param r_cut cut-off radius
+	 * \param pos vector of particle positions
+	 * \param g_m Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 * \param opt option to generate Verlet list
+	 *
+	 */
+	void InitializeSym(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t g_m)
+	{
+		// Padding
+		size_t pad = 0;
+
+		// Cell decomposer
+		CellDecomposer_sm<dim,T,shift<dim,T>> cd_sm;
+
+		// Calculate the divisions for the Cell-lists
+		cl_param_calculateSym<dim,T>(box,cd_sm,g,r_cut,pad);
+
+		// Initialize a cell-list
+		cli.Initialize(cd_sm,dom,pad);
+		initCl(cli,pos);
+
+		// create verlet
+		create(pos,r_cut,g_m,cli,dom,VL_SYMMETRIC);
 	}
 
 	/*! \brief update the Verlet list
