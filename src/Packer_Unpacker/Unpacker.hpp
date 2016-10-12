@@ -168,6 +168,9 @@ public:
 #ifdef DEBUG
 		std::cout << "Inside vector unpack() function! (unpacker.hpp)" << std::endl;
 #endif
+		if (mem.size() == 0)
+			return;
+
 		obj.template unpack<prp...>(mem, ps);
 	};
 };

@@ -291,6 +291,8 @@
 	    HeapMemory pmem;
 		ExtPreAlloc<HeapMemory> mem(req,pmem);
 		
+		mem.allocate(pmem.size());
+		
 		// read
 	    input.read((char *)pmem.getPointer(), sz);
 	    
