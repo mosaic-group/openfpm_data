@@ -14,7 +14,10 @@
 
 #define CELL_DECOMPOSER 8001lu
 
-//! Shift transformation
+/*! This Class apply a shift transformation before converting to Cell-ID
+ *
+ *
+ */
 template<unsigned int dim, typename T>
 class shift
 {
@@ -111,6 +114,8 @@ public:
 
 	/*! \brief It return true if the shift match
 	 *
+	 * \param s shift to compare with
+	 *
 	 * \return true if it match
 	 *
 	 */
@@ -121,6 +126,8 @@ public:
 
 	/*! \brief It return true if the shift is different
 	 *
+	 * \param s shift to compare with
+	 *
 	 * \return true if the shift is different
 	 *
 	 */
@@ -129,6 +136,8 @@ public:
 		return !this->operator==(s);
 	}
 };
+
+
 
 //! No transformation
 template<unsigned int dim, typename T>
@@ -208,6 +217,8 @@ public:
 	 *
 	 * There is nothing to compare
 	 *
+	 * \param nt unused
+	 *
 	 * \return true
 	 *
 	 */
@@ -219,6 +230,8 @@ public:
 	/*! \brief It return always false
 	 *
 	 * There is nothing to compare they cannot be differents
+	 *
+	 * \param nt unused
 	 *
 	 * \return false
 	 *
@@ -324,7 +337,7 @@ class CellDecomposer_sm
 	inline size_t ConvertToID(const T (&x)[dim] ,size_t s) const
 	{
 		size_t id = openfpm::math::size_t_floor(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
-		id = (id >= (gr_cell.size(s) + off[0]))?(gr_cell.size(s)-1):id;
+		id = (id >= gr_cell.size(s))?(gr_cell.size(s)-1-cell_shift.get(s)):id-cell_shift.get(s);
 		return id;
 	}
 
@@ -334,10 +347,10 @@ class CellDecomposer_sm
 	 * \param s dimension
 	 *
 	 */
-	inline size_t ConvertToID(const Point<dim,T> & x ,size_t s) const
+	inline size_t ConvertToID(const Point<dim,T> & x ,size_t s, size_t sc = 0) const
 	{
 		size_t id = openfpm::math::size_t_floor(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
-		id = (id >= (gr_cell.size(s) + off[0]))?(gr_cell.size(s)-1):id;
+		id = (id >= gr_cell.size(s))?(gr_cell.size(s)-1-cell_shift.get(s)):id-cell_shift.get(s);
 		return id;
 	}
 
@@ -347,10 +360,10 @@ class CellDecomposer_sm
 	 * \param s dimension
 	 *
 	 */
-	template <typename Mem> inline size_t ConvertToID_(const encapc<1,Point<dim,T>,Mem> & x ,size_t s) const
+	template <typename Mem> inline size_t ConvertToID_(const encapc<1,Point<dim,T>,Mem> & x ,size_t s, size_t sc = 0) const
 	{
 		size_t id = (size_t)(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
-		id = (id >= (gr_cell.size(s) + off[0]))?(gr_cell.size(s)-1):id;
+		id = (id >= gr_cell.size(s))?(gr_cell.size(s)-1-cell_shift.get(s)):id-cell_shift.get(s);
 		return id;
 	}
 
@@ -368,8 +381,14 @@ protected:
 	// Grid structure of the Cell list
 	grid_sm<dim,void> gr_cell;
 
+	// Grid structure of the internal Cell list
+	grid_sm<dim,void> gr_cell2;
+
 	// cell padding on each dimension
 	size_t off[dim];
+
+	// cell_shift
+	Point<dim,long int> cell_shift;
 
 
 	/*! \brief Initialize all the structures
@@ -394,6 +413,7 @@ protected:
 			div_p[i] = div[i] + 2*pad;
 
 		gr_cell.setDimensions(div_p);
+		gr_cell2.setDimensions(div_p);
 
 		tot_n_cell = 1;
 
@@ -508,6 +528,54 @@ public:
 		return key;
 	}
 
+	/*! \brief Get the cell-id enforcing that is NOT a cell from the padding
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-id
+	 *
+	 */
+/*	inline size_t getCellDom(const T (& pos)[dim]) const
+	{
+#ifdef SE_CLASS1
+		if (tot_n_cell == 0)
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+
+		if (pos[0] < box.getLow(0) - off[0]*box_unit.getP2()[0] || pos[0] > box.getHigh(0) + off[0]*box_unit.getP2()[0])
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+#endif
+
+		size_t cell_id = ConvertToID(pos,0);
+		cell_id = (cell_id > gr_cell.size(0) - off[0] - 1)?gr_cell.size(0) - off[0] - 1:cell_id;
+		cell_id = (cell_id < off[0])?off[0]:cell_id;
+
+		for (size_t s = 1 ; s < dim ; s++)
+		{
+#ifdef SE_CLASS1
+			if (pos[s] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
+			{
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
+#endif
+			size_t cell_idt = ConvertToID(pos,s);
+			cell_idt = (cell_idt > gr_cell.size(s) - off[s] - 1)?gr_cell.size(s) - off[s] - 1:cell_idt;
+			cell_idt = (cell_idt < off[s])?off[s]:cell_idt;
+
+			cell_id += gr_cell2.size_s(s-1) * ConvertToID(pos,s);
+		}
+
+		return cell_id;
+	}*/
+
 	/*! \brief Get the cell-id
 	 *
 	 * Convert the point coordinates into the cell id
@@ -544,7 +612,7 @@ public:
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
 			}
 #endif
-			cell_id += gr_cell.size_s(s-1) * ConvertToID(pos,s);
+			cell_id += gr_cell2.size_s(s-1) * ConvertToID(pos,s);
 		}
 
 		return cell_id;
@@ -580,13 +648,13 @@ public:
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef SE_CLASS1
-			if (pos.get(s) < box.getLow(s) || pos.get(s) > box.getHigh(s))
+			if (pos.get(s) < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos.get(s) > box.getHigh(s) + off[s]*box_unit.getP2()[s])
 			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
 			}
 #endif
-			cell_id += gr_cell.size_s(s-1) * ConvertToID(pos,s);
+			cell_id += gr_cell2.size_s(s-1) * ConvertToID(pos,s);
 		}
 
 		return cell_id;
@@ -629,7 +697,7 @@ public:
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
 			}
 #endif
-			cell_id += gr_cell.size_s(s-1) * ConvertToID_(pos,s);
+			cell_id += gr_cell2.size_s(s-1) * ConvertToID_(pos,s);
 		}
 
 		return cell_id;
@@ -693,6 +761,33 @@ public:
 	 * \param pad padding cell
 	 *
 	 */
+	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const size_t (&div2)[dim], const size_t pad, Point<dim,long int> cell_shift)
+	{
+		Matrix<dim,T> mat;
+		mat.identity();
+		t.setTransform(mat,box.getP1());
+		this->box = box;
+
+		Initialize(pad,div);
+
+		size_t cells[dim];
+
+		for (size_t i = 0 ; i < dim ; i++)
+			cells[i] = div2[i] + 2*pad;
+
+		gr_cell2.setDimensions(cells);
+
+		for (size_t i = 0 ; i < dim ; i++)
+			this->cell_shift.get(i) = cell_shift.get(i) - off[i];
+	}
+
+	/*! \brief Set the domain to decompose
+	 *
+	 * \param box Domain to decompose
+	 * \param div array with the number of cells on each dimensions
+	 * \param pad padding cell
+	 *
+	 */
 	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad)
 	{
 		Matrix<dim,T> mat;
@@ -700,6 +795,37 @@ public:
 		t.setTransform(mat,box.getP1());
 		this->box = box;
 		Initialize(pad,div);
+		this->cell_shift = 0;
+	}
+
+	/*! \brief Set the cell decomposition parameters + the nested
+	 *
+	 * \param box Domain to decompose
+	 * \param div array with the number of cells on each dimensions
+	 * \param div2 array with the number of cells on each dimension for the nested decomposer
+	 * \param mat transformation matrix the cell space is transformed by p' = A * p
+	 * \param orig origin of the cell decomposition
+	 * \param pad padding cell
+	 *
+	 */
+	inline void setDimensions(const Box<dim,T> & box, const size_t (&div)[dim], const size_t (&div2)[dim], const Matrix<dim,T> & mat, const size_t pad, Point<dim,long int> cell_shift)
+	{
+		t.setTransform(mat,box.getP1());
+		this->box = box;
+
+		Initialize(pad,div);
+
+		// The nested cell is big div2 + 2*off
+
+		size_t div_with_off[dim];
+
+		for(size_t i = 0 ; i < dim ; i++)
+			div_with_off[i] = div2[i] + 2*off[i];
+
+		gr_cell2.setDimensions(div_with_off);
+
+		for (size_t i = 0 ; i < dim ; i++)
+			this->cell_shift.get(i) = cell_shift.get(i) - off[i];
 	}
 
 	/*! \brief Set the cell decomposition parameters
@@ -716,6 +842,7 @@ public:
 		t.setTransform(mat,box.getP1());
 		this->box = box;
 		Initialize(pad,div);
+		this->cell_shift = 0;
 	}
 
 
@@ -732,6 +859,8 @@ public:
 	 */
 	inline void setDimensions(const CellDecomposer_sm<dim,T,transform> & cd, const Box<dim,size_t> & cell_extension)
 	{
+		this->cell_shift = 0;
+
 		// Get the space transformation
 
 		t.setTransform(cd.getMat(),cd.getOrig());
@@ -1230,8 +1359,29 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		return be;
 	}
 
+	/*! \brief Return the number of divisions of the Cell Decomposer
+	 *
+	 * \return the number of divisions
+	 *
+	 */
+	const size_t (& getDiv() const)[dim]
+	{
+		return gr_cell.getSize();
+	}
+
+	/*! \brief Return the domain where the CellDecomposer is defined
+	 *
+	 * \return The domain of the remote machine
+	 *
+	 */
+	const Box<dim,T> & getDomain() const
+	{
+		return box;
+	}
+
 	/*! \brief it swap the content of two Cell Decomposer
 	 *
+	 * \param cd CellDecomposer to swap with
 	 *
 	 */
 	inline void swap(CellDecomposer_sm<dim,T,transform> & cd)
@@ -1252,12 +1402,17 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		box.swap(cd.box);
 		box_unit.swap(cd.box_unit);
 		gr_cell.swap(cd.gr_cell);
+		gr_cell2.swap(cd.gr_cell2);
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			size_t off_t = off[i];
 			off[i] = cd.off[i];
 			cd.off[i] = off_t;
+
+			size_t cs_t = cell_shift.get(i);
+			cell_shift.get(i) = cd.cell_shift.get(i);
+			cd.cell_shift.get(i) = cs_t;
 		}
 	}
 
@@ -1288,9 +1443,15 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		if (gr_cell != cd.gr_cell)
 			return false;
 
+		if (gr_cell2 != cd.gr_cell2)
+			return false;
+
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (off[i] != cd.off[i])
+				return false;
+
+			if (cell_shift.get(i) != cd.cell_shift.get(i))
 				return false;
 		}
 
