@@ -12,7 +12,9 @@
 
 struct PV_cl
 {
+	//! particle id
 	size_t ele;
+	//! phase id
 	size_t v;
 };
 
@@ -49,7 +51,10 @@ struct PV_cl
 template<unsigned int dim, typename T, unsigned int sh_byte, typename CellBase=CellList<dim,T,FAST,shift<dim, T>> >
 class CellListM : public CellBase
 {
+	//! Mask to get the high bits of a number
 	typedef boost::high_bit_mask_t<sh_byte>  mask_high;
+
+	//! Mask to get the low bits of a number
 	typedef boost::low_bits_mask_t<sizeof(size_t)*8-sh_byte>  mask_low;
 
 public:
@@ -104,11 +109,11 @@ public:
 	~CellListM()
 	{}
 
-
 	/*! \brief Add to the cell
 	 *
 	 * \param cell_id Cell id where to add
 	 * \param ele element to add
+	 * \param v_id phase id
 	 *
 	 */
 	inline void addCell(size_t cell_id, size_t ele, size_t v_id)
@@ -122,6 +127,7 @@ public:
 	 *
 	 * \param pos array that contain the coordinate
 	 * \param ele element to store
+	 * \param v_id phase id
 	 *
 	 */
 	inline void add(const T (& pos)[dim], size_t ele, size_t v_id)
@@ -140,6 +146,7 @@ public:
 	 *
 	 * \param pos array that contain the coordinate
 	 * \param ele element to store
+	 * \param v_id phase id
 	 *
 	 */
 	inline void add(const Point<dim,T> & pos, size_t ele, size_t v_id)
@@ -223,6 +230,8 @@ public:
 	 *
 	 * \param cell cell id
 	 *
+	 * \return an iterator over the particle of the selected cell
+	 *
 	 */
 	template<unsigned int impl=NO_CHECK> inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL,impl> getNNIterator(size_t cell)
 	{
@@ -247,6 +256,8 @@ public:
 	 * * * are the near cell
 	 *
 	 * \param cell cell id
+	 *
+	 * \return Cell-list structure
 	 *
 	 */
 	template<unsigned int impl> inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> getNNIteratorSym(size_t cell)
@@ -273,12 +284,43 @@ public:
 	 *
 	 * \param cell cell id
 	 *
+	 * \return Cell-list structure
+	 *
 	 */
 	template<unsigned int impl> inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,CRS,impl> getNNIteratorCross(size_t cell)
 	{
 		CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,CRS,impl> cln(cell,CellListM<dim,T,sh_byte,CellBase>::NNc_cr,*this);
 
 		return cln;
+	}
+
+
+	/*! \brief operator=
+	 *
+	 * \param clm Cell list to copy
+	 *
+	 * \return Cell-list structure
+	 *
+	 */
+	CellListM<dim,T,sh_byte,CellBase> & operator=(CellListM<dim,T,sh_byte,CellBase> && clm)
+	{
+		CellBase::swap(clm);
+
+		return this;
+	}
+
+	/*! \brief operator=
+	 *
+	 * \param clm Cell list to copy
+	 *
+	 * \return Cell-list structure
+	 *
+	 */
+	CellListM<dim,T,sh_byte,CellBase> & operator=(const CellListM<dim,T,sh_byte,CellBase> & clm)
+	{
+		static_cast<CellBase *>(this)->operator=(*static_cast<const CellBase *>(&clm));
+
+		return *this;
 	}
 };
 

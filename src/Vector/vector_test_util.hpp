@@ -111,7 +111,6 @@ openfpm::vector<Point_test<float>> allocate_openfpm_fill(size_t n, size_t fill)
 
 template<typename vector> vector allocate_openfpm(size_t n_ele)
 {
-	//! [Create add and access]
 	vector v_ofp_test;
 
 	//! [Point declaration]
@@ -173,14 +172,11 @@ template<typename vector> vector allocate_openfpm(size_t n_ele)
 		v_ofp_test.template get<P::t>(last)[2][2] = 11.0 + i;
 	}
 
-	//! [Create add and access]
-
 	return v_ofp_test;
 }
 
 openfpm::vector<Point_test_prp<float>> allocate_openfpm_prp(size_t n_ele)
 {
-	//! [Create add and access]
 	openfpm::vector<Point_test_prp<float>> v_ofp_test;
 
 	//! [Point prp declaration]
@@ -241,8 +237,6 @@ openfpm::vector<Point_test_prp<float>> allocate_openfpm_prp(size_t n_ele)
 		v_ofp_test.get<P::t>(last)[2][1] = 3.0 + i;
 		v_ofp_test.get<P::t>(last)[2][2] = 11.0 + i;
 	}
-
-	//! [Create add and access]
 
 	return v_ofp_test;
 }
