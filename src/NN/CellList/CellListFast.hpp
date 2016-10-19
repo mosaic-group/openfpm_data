@@ -639,7 +639,7 @@ public:
 	 * \return the iterator to the elements inside cell
 	 *
 	 */
-	CellIterator<CellList<dim,T,FAST,transform,base>> getIterator(size_t cell)
+	CellIterator<CellList<dim,T,FAST,transform,base>> getCellIterator(size_t cell)
 	{
 		return CellIterator<CellList<dim,T,FAST,transform,base>>(cell,*this);
 	}

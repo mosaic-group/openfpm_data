@@ -68,29 +68,6 @@ BOOST_AUTO_TEST_CASE( celllist_lin_and_iterator_test )
 	}
 
 	BOOST_REQUIRE_EQUAL(count,NN.get_gm());
-
-	// Save cell keys
-
-	NN.getKeys().save("NN_lin_keys");
-
-	// Load previous results and check equality
-
-	openfpm::vector<size_t> keys_old;
-
-	keys_old.load("NN_lin_keys");
-
-	for (size_t i = 0; i < keys_old.size(); i++)
-	{
-		size_t a1 = keys_old.get(i);
-		size_t a2 = NN.getKeys().get(i);
-
-		BOOST_REQUIRE_EQUAL(a1,a2);
-	}
-
-	size_t s1 = keys_old.size();
-	size_t s2 = NN.getKeys().size();
-
-	BOOST_REQUIRE_EQUAL(s1,s2);
 }
 
 BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
