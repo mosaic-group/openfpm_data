@@ -1,10 +1,10 @@
 /*!
  * This file contains the implemetation of packer and unpacker for vector
  * Created on: Jan 5, 2016
- *     Author: Yaroslav Zaluzhnyi
+ *     Author: Yaroslav Zaluzhnyi and Pietro Incardona
  */
 
-//Functions to check if the packing object is complex
+//! Functions to check if the packing object is complex
 static bool pack()
 {
 	return false;
@@ -272,11 +272,11 @@ struct unpack_simple_cond<true, prp ...>
 };
 
 
-/*! \brief Insert an allocation request into the vector
+/*! \brief Insert an allocation request
  *
  * \tparam prp list of properties
  *
- * \param v vector of allocation sequence
+ * \param req reference to the total counter required to pack the information
  *
  */
 template<int ... prp> inline void packRequest(size_t & req) const
@@ -284,27 +284,15 @@ template<int ... prp> inline void packRequest(size_t & req) const
 	//Pushback a sizeof number of elements of the internal vectors
 	req += sizeof(this->size());
 	
-#ifdef DEBUG
-	//std::cout << demangle(typeid(this).name()) << std::endl;
-	//std::cout << this->size() << std::endl;
-	std::cout << "Inside map_vector.hpp packRequest()" << std::endl;
-#endif
-	
 	// If all of the aggregate properties do not have a "pack()" member	
 	if (has_pack_agg<T,prp...>::result::value == false)
 	{
-#ifdef DEBUG
-			std::cout << "All of the aggregate members are simple!(packRequest)" << std::endl;
-#endif
 		size_t alloc_ele = this->packMem<prp...>(this->size(),0);
 		req += alloc_ele;
 	}
 	//If at least one property has "pack()"
 	else
 	{
-#ifdef DEBUG
-			std::cout << "Not all of the aggregate members are simple!(packRequest)" << std::endl;
-#endif
 		for (size_t i = 0 ; i < this->size() ; i++)
 		{
 			//Call a pack request
@@ -335,9 +323,6 @@ template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & st
 	//If at least one property has a "pack()" member
 	else
 	{
-#ifdef DEBUG
-		std::cout << "Not all of the aggregate members are simple!(pack)" << std::endl;
-#endif
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,this->size(),sts);
 		
@@ -369,9 +354,6 @@ template<int ... prp> inline void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat 
 	//If at least one is not simple (has a "pack()" member)
 	else
 	{
-#ifdef DEBUG
-		std::cout << "Not all of the aggregate members are simple!(unpack)" << std::endl;
-#endif
 		//Unpack a size of a source vector
 		size_t u2 = 0;
 		Unpacker<size_t, Memory>::unpack(mem,u2,ps);

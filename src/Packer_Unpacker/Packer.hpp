@@ -270,7 +270,7 @@ public:
  *
  */
 template<typename T, typename Mem>
-class Packer<T,Mem,PACKER_VECTOR>
+class Packer<T,Mem,PACKER_GENERAL>
 {
 public:
 

@@ -36,7 +36,7 @@ struct NNType
 	 * \param r_cut Cutoff radius
 	 *
 	 */
-	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
+	static inline auto get(const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
 	{
 		return cl.template getNNIterator<NO_CHECK>(cl.getCell(xp));
 	}
@@ -63,7 +63,7 @@ struct NNType<dim,T,CellListImpl,WITH_RADIUS>
 	 * \param r_cut Cutoff radius
 	 *
 	 */
-	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
+	static inline auto get(const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
 	{
 		return cl.template getNNIteratorRadius<NO_CHECK>(cl.getCell(xp),r_cut);
 	}
@@ -90,24 +90,18 @@ struct NNType<dim,T,CellListImpl,VL_SYMMETRIC>
 	 * \param r_cut Cutoff radius
 	 *
 	 */
-	static inline auto get(Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0))
+	static inline auto get(const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,openfpm::vector<Point<dim,T>>()))
 	{
-		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),p);
+		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),p,v);
 	}
 };
 
 
-/*! \brief Class for FAST Verlet list implementation
- *
- * This class implement the FAST Verlet list, fast but memory
- * expensive. The memory allocation is (M * N_nn_max)*sizeof(ele)
+/*! \brief Class for Verlet list implementation
  *
  * * M = number of particles
  * * N_nn_max = maximum number of neighborhood
  * * ele = element the structure is storing
- *
- * Example of a 2D Cell list 6x6 structure with padding 1 without shift, cell indicated with p are padding cell
- * the origin of the cell or point (0,0) is marked with cell number 9
  *
  * \tparam dim Dimensionality of the space
  * \tparam T type of the space float, double ...
@@ -192,12 +186,12 @@ private:
 	 * \param opt options to create the verlet list like VL_SYMMETRIC or VL_NON_SYMMETRIC
 	 *
 	 */
-	inline void create(openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cl, const Box<dim,T> & dom, size_t opt)
+	inline void create(const openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cl, size_t opt)
 	{
 		if (opt == VL_SYMMETRIC)
-			create_<decltype(cli.template getNNIteratorSym<NO_CHECK>(0,0)),VL_SYMMETRIC>(pos,r_cut,g_m,cli,opt);
+			create_<decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,pos)),VL_SYMMETRIC>(pos,r_cut,g_m,cl,opt);
 		else
-			create_<decltype(cli.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cli,opt);
+			create_<decltype(cl.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cl,opt);
 	}
 
 	/*! \brief Create the Verlet list from a given cell-list
@@ -211,15 +205,9 @@ private:
 	 * \param dom Processor domain
 	 *
 	 */
-	template<typename NN_type, int type> inline void create_(openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
+	template<typename NN_type, int type> inline void create_(const openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
 	{
-		size_t end;
-
-		// resize verlet to store the number of particles
-		if (opt == VL_SYMMETRIC)
-			end = pos.size();
-		else
-			end = g_m;
+		size_t end = g_m;
 
 		cl_n.resize(end);
 		cl_base.resize(end*slot);
@@ -231,17 +219,17 @@ private:
 		// iterate the particles
 		for (size_t i = 0 ; i < end ; i++)
 		{
-			Point<dim,T> p = pos.template get<0>(i);
+			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			NN_type NN = NNType<dim,T,CellListImpl,type>::get(p,i,cli,r_cut);
+			NN_type NN = NNType<dim,T,CellListImpl,type>::get(pos,xp,i,cli,r_cut);
 			while (NN.isNext())
 			{
 				auto nnp = NN.get();
 
-				Point<dim,T> q = pos.template get<0>(nnp);
+				Point<dim,T> xq = pos.template get<0>(nnp);
 
-				if (p.distance2(q) < r_cut2)
+				if (xp.distance2(xq) < r_cut2)
 					addPart(i,nnp);
 
 				// Next particle
@@ -294,7 +282,7 @@ private:
 
 	/*! \brief Add to the cell
 	 *
-	 * \param part_id Cell id where to add
+	 * \param part_id part id where to add
 	 * \param ele element to add
 	 *
 	 */
@@ -356,7 +344,37 @@ public:
 		initCl(cli,pos);
 
 		// create verlet
-		create(pos,r_cut,g_m,cli,dom,opt);
+		create(pos,r_cut,g_m,cli,opt);
+	}
+
+	/*! \brief Initialize the symmetric verlet list
+	 *
+	 * \param box Simulation domain
+	 * \param dom Processor domain
+	 * \param r_cut cut-off radius
+	 * \param pos vector of particle positions
+	 * \param g_m Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 *
+	 */
+	void InitializeSym(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t g_m)
+	{
+		// Padding
+		size_t pad = 0;
+
+		// Cell decomposer
+		CellDecomposer_sm<dim,T,shift<dim,T>> cd_sm;
+
+		// Calculate the divisions for the Cell-lists
+		cl_param_calculateSym<dim,T>(box,cd_sm,g,r_cut,pad);
+
+		// Initialize a cell-list
+		cli.Initialize(cd_sm,dom,pad);
+		initCl(cli,pos);
+
+		// create verlet
+		create(pos,r_cut,g_m,cli,VL_SYMMETRIC);
 	}
 
 	/*! \brief update the Verlet list
@@ -371,7 +389,7 @@ public:
 	void update(const Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t & g_m, size_t opt)
 	{
 		initCl(cli,pos);
-		create(pos,r_cut,g_m,cli,dom,opt);
+		create(pos,r_cut,g_m,cli,opt);
 	}
 
 	/*! Initialize the verlet list from an already filled cell-list
@@ -382,9 +400,10 @@ public:
 	 * \param g_m Indicate form which particles to construct the verlet list. For example
 	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
 	 * 			100 particles
+	 * 	\param opt options for the Verlet-list creation
 	 *
 	 */
-	void Initialize(const Box<dim,T> & dom, CellListImpl & cli, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t g_m)
+	void Initialize(CellListImpl & cli, T r_cut, const openfpm::vector<Point<dim,T>> & pos, size_t g_m, size_t opt = VL_NON_SYMMETRIC)
 	{
 		cl_n.resize(g_m);
 		cl_base.resize(g_m*slot);
@@ -397,8 +416,11 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)
 			wr &= r_cut <= spacing.get(i);
 
-		if (wr == true)
-			create_<decltype(cli.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cli,VL_NON_SYMMETRIC);
+		if (wr == true || opt == VL_SYMMETRIC)
+		{
+//			create_<decltype(cli.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cli,VL_NON_SYMMETRIC);
+			create(pos,r_cut,g_m,cli,opt);
+		}
 		else
 			create_<decltype(cli.template getNNIteratorRadius<NO_CHECK>(0,0.0)),WITH_RADIUS>(pos,r_cut,g_m,cli,VL_NON_SYMMETRIC);
 	}

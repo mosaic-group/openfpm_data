@@ -16,8 +16,26 @@
 #include "CellListIterator.hpp"
 #include "CellListNNIteratorRadius.hpp"
 #include <unordered_map>
-
 #include "util/common.hpp"
+
+//! Wrapper of the unordered map
+template<typename key,typename val>
+class wrap_unordered_map: public std::unordered_map<key,val>
+{
+};
+
+#ifdef HAVE_LIBQUADMATH
+
+#include <boost/multiprecision/float128.hpp>
+
+
+//! Wrapper of the unordered map
+template<typename val>
+class wrap_unordered_map<boost::multiprecision::float128,val>
+{
+};
+
+#endif
 
 #define STARTING_NSLOT 16
 
@@ -107,7 +125,7 @@ private:
 	base cl_base;
 
 	//! Caching of r_cutoff radius
-	std::unordered_map<T,openfpm::vector<long int>> rcache;
+	wrap_unordered_map<T,openfpm::vector<long int>> rcache;
 
 	/*! \brief realloc the data structures
 	 *
@@ -196,11 +214,86 @@ private:
 		}
 	}
 
+	//! Initialize the structures of the data structure
+	void InitializeStructures(const size_t (& div)[dim], size_t tot_n_cell)
+	{
+		cl_n.resize(tot_n_cell);
+		cl_n.fill(0);
+
+		// create the array that store the cell id
+
+		cl_base.resize(tot_n_cell * slot);
+
+		// Calculate the NNc_full array, it is a structure to get the neighborhood array
+
+		// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
+
+		typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
+		typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
+		typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
+
+		// Generate the sub-grid iterator
+
+		grid_sm<dim,void> gs(div);
+		grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
+
+		// Calculate the NNc array
+
+		size_t middle = gs.LinId(NNone::data);
+		size_t i = 0;
+		while (gr_sub3.isNext())
+		{
+			NNc_full[i] = (long int)gs.LinId(gr_sub3.get()) - middle;
+
+			++gr_sub3;
+			i++;
+		}
+
+		// Calculate the NNc_sym array
+
+		i = 0;
+		gr_sub3.reset();
+		while (gr_sub3.isNext())
+		{
+			auto key = gr_sub3.get();
+
+			size_t lin = gs.LinId(key);
+
+			// Only the first half is considered
+			if (lin < middle)
+			{
+				++gr_sub3;
+				continue;
+			}
+
+			NNc_sym[i] = lin - middle;
+
+			++gr_sub3;
+			i++;
+		}
+
+		// Calculate the NNc_cross array
+
+		i = 0;
+		grid_key_dx_iterator_sub<dim> gr_sub2(gs,NNzero::data,NNone::data);
+
+		while (gr_sub2.isNext())
+		{
+			auto key = gr_sub2.get();
+
+			NNc_cr[i] = (long int)gs.LinId(key);
+
+			++gr_sub2;
+			i++;
+		}
+	}
+
 public:
 
 	//! Object type that the structure store
 	typedef typename base::value_type value_type;
 
+	//! Type of the coordinate space (double float)
 	typedef T stype;
 
 	/*! \brief Return the underlying grid information of the cell list
@@ -211,6 +304,48 @@ public:
 	const grid_sm<dim,void> & getGrid()
 	{
 		return CellDecomposer_sm<dim,T,transform>::getGrid();
+	}
+
+	/*! Initialize the cell list from a well-define Cell-decomposer
+	 *
+	 * In some cases is needed to have a Cell-list with Cells consistent
+	 * with a well predefined CellDecomposer. In this case we use this function.
+	 * Using this initialization the Cell-list maintain the Cells defined by this
+	 * Cell-decomposer consistently
+	 *
+	 * \param cd_sm Cell-Decomposer
+	 * \param dom_box domain box (carefully this is going to be adjusted)
+	 * \param pad cell-list padding
+	 * \param slot slots for each cell
+	 *
+	 */
+	void Initialize(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box,const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	{
+		size_t bc[dim];
+		for (size_t i = 0 ; i < dim ; i++)	{bc[i] = NON_PERIODIC;}
+
+		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
+//		Box<dim,T> bxd = cd_sm.convertCellUnitsIntoDomainSpace(bx);
+
+		size_t div[dim];
+		size_t div_big[dim];
+		size_t div_w_pad[dim];
+		size_t tot_cell = 1;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			div[i] = bx.getHigh(i) - bx.getLow(i);
+			div_w_pad[i] = bx.getHigh(i) - bx.getLow(i) + 2*pad;
+			tot_cell *= div_w_pad[i];
+			div_big[i] = cd_sm.getDiv()[i] - 2*cd_sm.getPadding(i);
+		}
+
+		CellDecomposer_sm<dim,T,transform>::setDimensions(cd_sm.getDomain(),div_big,div, pad, bx.getP1());
+
+		// here we set the cell-shift for the CellDecomposer
+//		Initialize(cd_sm.getDomain(),div,bx.getP1(),pad,slot);
+
+		InitializeStructures(div_w_pad,tot_cell);
 	}
 
 	/*! Initialize the cell list
@@ -238,7 +373,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	void Initialize(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 
 		Matrix<dim,T> mat;
@@ -247,75 +382,8 @@ public:
 		this->slot = slot;
 
 		// create the array that store the number of particle on each cell and se it to 0
+		InitializeStructures(this->gr_cell.getSize(),this->gr_cell.size());
 
-		cl_n.resize(this->tot_n_cell);
-		cl_n.fill(0);
-
-		// create the array that store the cell id
-
-		cl_base.resize(this->tot_n_cell * slot);
-
-		// Calculate the NNc_full array, it is a structure to get the neighborhood array
-
-		// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
-
-		typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
-		typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-		typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
-
-		// Generate the sub-grid iterator
-
-		grid_key_dx_iterator_sub<dim> gr_sub3(this->gr_cell,NNzero::data,NNtwo::data);
-
-		// Calculate the NNc array
-
-		size_t middle = this->gr_cell.LinId(NNone::data);
-		size_t i = 0;
-		while (gr_sub3.isNext())
-		{
-			NNc_full[i] = (long int)this->gr_cell.LinId(gr_sub3.get()) - middle;
-
-			++gr_sub3;
-			i++;
-		}
-
-		// Calculate the NNc_sym array
-
-		i = 0;
-		gr_sub3.reset();
-		while (gr_sub3.isNext())
-		{
-			auto key = gr_sub3.get();
-
-			size_t lin = this->gr_cell.LinId(key);
-
-			// Only the first half is considered
-			if (lin < middle)
-			{
-				++gr_sub3;
-				continue;
-			}
-
-			NNc_sym[i] = lin - middle;
-
-			++gr_sub3;
-			i++;
-		}
-
-		// Calculate the NNc_cross array
-
-		i = 0;
-		grid_key_dx_iterator_sub<dim> gr_sub2(this->gr_cell,NNzero::data,NNone::data);
-
-		while (gr_sub2.isNext())
-		{
-			auto key = gr_sub2.get();
-
-			NNc_cr[i] = (long int)this->gr_cell.LinId(key);
-
-			++gr_sub2;
-			i++;
-		}
 	}
 
 	//! Default Constructor
@@ -382,6 +450,23 @@ public:
 	{
 		Initialize(box,div,pad,slot);
 	}
+
+	/*! \brief Cell list constructor from a cell decomposer
+	 *
+	 * \see Initialize
+	 *
+	 * \param cd_sm Cell-Decomposer
+	 * \param box domain box (carefully this is going to be adjusted)
+	 * \param pad Cell list padding
+	 * \param slot number of slot for each cell
+	 *
+	 */
+	CellList(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & box, const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	:slot(slot)
+	{
+		Initialize(cd_sm,box,pad,slot);
+	}
+
 
 	/*! \brief Destructor
 	 *
@@ -709,13 +794,14 @@ public:
 	 *
 	 * \param cell cell id
 	 * \param p particle id
+	 * \param v vector of position of the particles
 	 *
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p)
+	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
 	{
-		CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this);
+		CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);
 
 		return cln;
 	}
@@ -768,11 +854,11 @@ public:
 			cl_n.get(i) = 0;
 	}
 
-	/*! \brief Return the starting point of the neighborhood for the particle p
+	/*! \brief Given a cell it return the starting point of the cell
 	 *
-	 * \param part_id particle id
+	 * \param cell_id cell id
 	 *
-	 * \return the index
+	 * \return the start index
 	 *
 	 */
 	inline size_t getStartId(size_t cell_id)
@@ -780,9 +866,9 @@ public:
 		return cell_id*slot;
 	}
 
-	/*! \brief Return the end point of the neighborhood for the particle p
+	/*! \brief Given a cell it return the end point of the cell
 	 *
-	 * \param part_id particle id
+	 * \param cell_id cell id
 	 *
 	 * \return the stop index
 	 *

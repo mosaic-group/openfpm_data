@@ -259,7 +259,7 @@ public:
 	 * \param low array indicating the coordinates of the high point
 	 *
 	 */
-	inline Box(T * high, T * low)
+	inline Box(T * low, T * high)
 	{
 		// copy all the data
 
@@ -1003,6 +1003,30 @@ public:
 		}
 
 		return true;
+	}
+
+	/*! \brief Apply the ceil operation to the point P1
+	 *
+	 *
+	 */
+	inline void floorP1()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setLow(i,std::floor(getLow(i)));
+		}
+	}
+
+	/*! \brief Apply the ceil operation to the point P2
+	 *
+	 *
+	 */
+	inline void floorP2()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setHigh(i,std::floor(getHigh(i)));
+		}
 	}
 
 	/*! \brief Apply the ceil operation to the point P1

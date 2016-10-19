@@ -37,6 +37,7 @@
 #include "Packer_Unpacker/has_pack_agg.hpp"
 #include "timer.hpp"
 #include "map_vector_std_util.hpp"
+#include "data_type/aggregate.hpp"
 
 namespace openfpm
 {
@@ -58,7 +59,9 @@ namespace openfpm
 
 		/*! \brief Constructor require the size of the vector
 		 *
-		 * \param end size of the vector
+		 * \param end point
+		 * \param start starting point
+		 *
 		 */
 		vector_key_iterator(size_t end, size_t start = 0)
 		: end(end),gk(start)
@@ -131,20 +134,16 @@ namespace openfpm
 	 *
 	 * Stub object look at the various implementations
 	 *
-	 * \snippet vector_test_util.hpp Create add and access
-	 *
-	 * \param T type of structure the vector has to store
-	 * \param Memory allocator to use
-	 * \param Memory layout what memory_traits_lin<T>::type produce
-	 * \param Memory layout_base Memory layout base class like memory_traits_lin ...
-	 * \param grow_p grow policy, how this vector should grow
+	 * \tparam T type of object the vector store
+	 * \tparam Memory allocator to use
+	 * \tparam layout layout to use
+	 * \tparam grow_p grow policy for vector in case of reallocation
 	 *
 	 * \see vector<T,HeapMemory,grow_policy_double,STD_VECTOR>
 	 * \see vector<T,Memory,grow_p,OPENFPM_NATIVE>
 	 * \see vector<T,Memory,grow_p,OPENFPM_NATIVE>
 	 *
 	 */
-
 	template<typename T, typename Memory, typename layout, template<typename> class layout_base, typename grow_p, unsigned int impl>
 	class vector
 	{
@@ -423,7 +422,7 @@ namespace openfpm
 		 * Merging the second vector v2 to
 		 * the first one v1 starting from the element 2. Mean
 		 *
-		 * \verbarim
+		 * \verbatim
 		 *
 		 * 6   8  3   2  1   0  3    v1 elements
 		 *        |   |  |
@@ -477,6 +476,127 @@ namespace openfpm
 			}
 		}
 
+
+		/*! \brief It merge the elements of a source vector to this vector
+		 *
+		 * Given 2 vector v1 and v2 of size 7,3. and as merging operation the function add.
+		 * Merging the second vector v2 to
+		 * the first one v1 starting from the element 2. Mean
+		 *
+		 * \verbarim
+		 *
+		 * 6   8  3   2  1   0  3    v1 elements
+		 *        |   |  |
+		 *       op  op  op
+		 *        |   |  |
+		 *        5   1  9           v2 elements
+		 *
+		 *-------------------------------------
+		 * 6   8  8   3  10  0   3   updated v1 elements
+		 *
+		 * This operation is done for each selected property in args
+		 *
+		 * \endverbatim
+		 *
+		 * The number of properties in the source vector must be smaller than the destination
+		 * all the properties of S must be mapped so if S has 3 properties
+		 * 3 numbers for args are required
+		 *
+		 * \tparam op merging operation
+		 * \tparam S Base object of the source vector
+		 * \tparam M memory type of the source vector
+		 * \tparam gp Grow policy of the source vector
+		 * \tparam args one or more number that define which property to set-up
+		 *
+		 * \param v source vector
+		 * \param start index from where to start the merging
+		 *
+		 */
+		template <template<typename,typename> class op, typename S, typename M, typename gp, unsigned int ...args> void merge_prp_v(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v, const openfpm::vector<aggregate<size_t,size_t>> & opart)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+
+			if (v.size() != opart.size())
+				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be the same as o_part.size()" << opart.size() << std::endl;
+
+#endif
+			//! Add the element of v
+			for (size_t i = 0 ; i < v.size() ; i++)
+			{
+#ifdef SE_CLASS1
+
+				if (i >= opart.size())
+					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " try to access element " << opart.template get<0>(i) << " but the vector has size " << size() << std::endl;
+
+#endif
+				// write the object in the last element
+				object_s_di_op<op,decltype(v.get(i)),decltype(get(size()-1)),OBJ_ENCAP,args...>(v.get(i),get(opart.template get<0>(i)));
+			}
+		}
+
+		/*! \brief It merge the elements of a source vector to this vector
+		 *
+		 * Given 2 vector v1 and v2 of size 7,3. and as merging operation the function add.
+		 * Merging the second vector v2 to
+		 * the first one v1 starting from the element 2. Mean
+		 *
+		 * \verbarim
+		 *
+		 * 6   8  3   2  1   0  3    v1 elements
+		 *        |   |  |
+		 *       op  op  op
+		 *        |   |  |
+		 *        5   1  9           v2 elements
+		 *
+		 *-------------------------------------
+		 * 6   8  8   3  10  0   3   updated v1 elements
+		 *
+		 * This operation is done for each selected property in args
+		 *
+		 * \endverbatim
+		 *
+		 * The number of properties in the source vector must be smaller than the destination
+		 * all the properties of S must be mapped so if S has 3 properties
+		 * 3 numbers for args are required
+		 *
+		 * \tparam op merging operation
+		 * \tparam S Base object of the source vector
+		 * \tparam M memory type of the source vector
+		 * \tparam gp Grow policy of the source vector
+		 * \tparam args one or more number that define which property to set-up
+		 *
+		 * \param v source vector
+		 * \param start index from where to start the merging
+		 *
+		 */
+		template <template<typename,typename> class op, typename S, typename M, typename gp, unsigned int ...args> void merge_prp_v(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v, size_t start)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+
+			if (v.size() != opart.size())
+				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be the same as o_part.size()" << opart.size() << std::endl;
+
+#endif
+			//! Add the element of v
+			for (size_t i = 0 ; i < v.size() ; i++)
+			{
+#ifdef SE_CLASS1
+
+				if (i >= opart.size())
+					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " try to access element " << opart.template get<0>(i) << " but the vector has size " << size() << std::endl;
+
+#endif
+				// write the object in the last element
+				object_s_di_op<op,decltype(v.get(0)),decltype(get(0)),OBJ_ENCAP,args...>(v.get(i),get(start+i));
+			}
+		}
+
 		/*! \brief It add the element of a source vector to this vector
 		 *
 		 * The number of properties in the source vector must be smaller than the destination
@@ -491,7 +611,7 @@ namespace openfpm
 		 * \param v source vector
 		 *
 		 */
-		template <typename S, typename M, typename gp, unsigned int ...args> void add_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v)
+		template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> void add_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -943,7 +1063,8 @@ namespace openfpm
 #endif
 			v_size = mv.v_size;
 			size_t rsz[1] = {v_size};
-			base.resize(rsz);
+			if (base.size() < v_size)
+				base.resize(rsz);
 
 			// copy the object
 			for (size_t i = 0 ; i < v_size ; i++ )
@@ -1284,6 +1405,7 @@ namespace openfpm
 
 		/*! \brief Internal function
 		 *
+		 * \return the size of the vector
 		 *
 		 */
 		const size_t & getInternal_v_size() const
@@ -1293,6 +1415,7 @@ namespace openfpm
 
 		/*! \brief Internal function
 		 *
+		 * \return the internal 1D grid base
 		 *
 		 */
 		const grid_cpu<1,T,Memory,layout> & getInternal_base() const

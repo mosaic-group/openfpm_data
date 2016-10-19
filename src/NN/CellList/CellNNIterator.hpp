@@ -157,6 +157,9 @@ template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int imp
 	//! index of the particle p
 	size_t p;
 
+	//! Position of the particle p
+	const openfpm::vector<Point<dim,typename Cell::stype>> & v;
+
 	/*! Select the next valid element
 	 *
 	 */
@@ -166,7 +169,16 @@ template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int imp
 		{
 			while (this->start_id < this->stop_id)
 			{
-				if (this->cl.get_lin(this->start_id) >= p)	return;
+				size_t q = this->cl.get_lin(this->start_id);
+				for (long int i = dim-1 ; i >= 0 ; i--)
+				{
+					if (v.template get<0>(p)[i] < v.template get<0>(q)[i])
+						return;
+					else if (v.template get<0>(p)[i] > v.template get<0>(q)[i])
+						goto next;
+				}
+				if (q >= p)	return;
+next:
 				this->start_id++;
 			}
 
@@ -190,8 +202,8 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIteratorSym(size_t cell, size_t p, const long int (&NNc)[NNc_size], Cell & cl)
-	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),p(p)
+	inline CellNNIteratorSym(size_t cell, size_t p, const long int (&NNc)[NNc_size], Cell & cl, const openfpm::vector<Point<dim,typename Cell::stype>> & v)
+	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),p(p),v(v)
 	{
 		selectValid();
 	}

@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 
 
 	val = Pack_selector< openfpm::vector<Point_test<float>> >::value;
-	BOOST_REQUIRE_EQUAL(val,PACKER_VECTOR);
+	BOOST_REQUIRE_EQUAL(val,PACKER_GENERAL);
 	val = Pack_selector< grid_cpu<3,Point_test<float>> >::value;
 	BOOST_REQUIRE_EQUAL(val,PACKER_GRID);
 	val = Pack_selector< encapc<3,Point_test<float>, memory_traits_lin<Point_test<float>>::type > >::value;

@@ -74,6 +74,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 		offset[i].get(i) += (1.0 / div[i]) / 8.0;
 	}
 
+	openfpm::vector<Point<dim,T>> pos;
 	size_t id = 0;
 
 	while (g_it.isNext())
@@ -88,6 +89,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 		key = Point<dim,T>(g_it.get().toPoint());
 		key = pmul(key,spacing) + offset[1] + box.getP1();
+		pos.add(key);
 
 		cl1.add(key,id);
 		++id;
@@ -104,7 +106,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 	while (g_it.isNext())
 	{
-		// Add 2 particles on each cell
+		// Check that there are 2 particles on each cell
 
 		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = pmul(key,spacing) + offset[2] + box.getP1();
@@ -163,6 +165,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 	grid_key_dx<dim> p1(1,1,1);
 	grid_key_dx<dim> p2(div[0]-2,div[1]-2,div[2]-2);
 	grid_key_dx_iterator_sub<dim> g_it_s(g_info,p1,p2);
+	id = 0;
 
 	while (g_it_s.isNext())
 	{
@@ -189,7 +192,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim));
 
-		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),0);
+		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),id,pos);
 		total = 0;
 
 		while(NNSym.isNext())
@@ -203,6 +206,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
 
+		++id;
 		++g_it_s;
 	}
 
@@ -354,6 +358,35 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 	}
 }
 
+template<typename CellList> void Test_CellDecomposer_consistent()
+{
+	Box<2,float> bx({-1.0/3.0,-1.0/3.0},{1.0/3.0,1.0/3.0});
+
+	size_t div[2] = {36,36};
+
+	CellDecomposer_sm<2,float,shift<2,float>> cd(bx,div,1);
+
+	Box<2,float> bx_sub({-1.0/5.0,-1.0/5.0},{1.0/5.0,1.0/5.0});
+
+	size_t bc[2] = {NON_PERIODIC,NON_PERIODIC};
+	CellList cl(cd,bx_sub);
+	Box<2,long int> bx_int = cd.convertDomainSpaceIntoGridUnits(bx_sub,bc);
+
+	BOOST_REQUIRE_EQUAL(bx_int.getLow(0),8);
+	BOOST_REQUIRE_EQUAL(bx_int.getLow(1),8);
+
+	BOOST_REQUIRE_EQUAL(bx_int.getHigh(0),28);
+	BOOST_REQUIRE_EQUAL(bx_int.getHigh(1),28);
+
+	cd.convertCellUnitsIntoDomainSpace(bx_sub);
+
+	BOOST_REQUIRE_EQUAL(bx_sub.getLow(0),-1.0f/5.0f);
+	BOOST_REQUIRE_EQUAL(bx_sub.getLow(1),-1.0f/5.0f);
+
+	BOOST_REQUIRE_EQUAL(bx_sub.getHigh(0),1.0f/5.0f);
+	BOOST_REQUIRE_EQUAL(bx_sub.getHigh(1),1.0f/5.0f);
+}
+
 BOOST_AUTO_TEST_SUITE( CellList_test )
 
 BOOST_AUTO_TEST_CASE( CellList_use)
@@ -374,6 +407,11 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 	std::cout << "End cell list" << "\n";
 
 	// Test the cell list
+}
+
+BOOST_AUTO_TEST_CASE( CellList_consistent )
+{
+	Test_CellDecomposer_consistent<CellList<2,float,FAST,shift<2,float>>>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

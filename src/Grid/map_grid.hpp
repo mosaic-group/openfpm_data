@@ -104,6 +104,7 @@ class grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> : public grid_base_i
 
 public:
 
+	//! type of layout of the structure
 	typedef typename memory_traits_lin<T>::type layout;
 
 	//! Object container for T, it is the return type of get_o it return a object type trough

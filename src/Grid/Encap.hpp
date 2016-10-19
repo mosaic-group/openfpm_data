@@ -34,18 +34,16 @@
 template<typename e_src, typename e_dst>
 struct copy_cpu_encap_encap
 {
-	//! object we have to store
+	//! encapsulated source object
 	const e_src & src;
+	//! encapsulated destination object
 	e_dst & dst;
 
 
 	/*! \brief constructor
 	 *
-	 * It define the copy parameters.
-	 *
-	 * \param key which element we are modifying
-	 * \param grid_dst grid we are updating
-	 * \param obj object we have to set in grid_dst (encapsulated)
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
 	 *
 	 */
 	inline copy_cpu_encap_encap(const e_src & src, e_dst & dst)
@@ -89,18 +87,17 @@ struct copy_cpu_encap_encap
 template<template<typename,typename> class op,typename e_src, typename e_dst, int ... prp>
 struct copy_cpu_encap_encap_op_prp
 {
-	//! object we have to store
+	//! encapsulated object source
 	const e_src & src;
+	//! encapsulated object destination
 	e_dst & dst;
 
 
 	/*! \brief constructor
 	 *
-	 * It define the copy parameters.
 	 *
-	 * \param key which element we are modifying
-	 * \param grid_dst grid we are updating
-	 * \param obj object we have to set in grid_dst (encapsulated)
+	 * \param src source encapsulated object
+	 * \param dst destination encapsulated object
 	 *
 	 */
 	inline copy_cpu_encap_encap_op_prp(const e_src & src, e_dst & dst)
@@ -131,22 +128,14 @@ struct copy_cpu_encap_encap_op_prp
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		// Remove the reference from the type to copy
-//		typedef typename boost::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
-
-//		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<T::value>());
-
-		// This is the type of the object we have to copy
-		typedef typename boost::fusion::result_of::at_c<typename e_src::type,T::value>::type copy_type;
-
-		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
-
 		// Convert variadic to boost::vector
 		typedef typename boost::mpl::vector_c<unsigned int,prp...> prpv;
 
 		// element id to copy applying an operation
 		typedef typename boost::mpl::at<prpv,T>::type ele_cop;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(src.template get< ele_cop::value >())>::type copy_rtype;
 
 		meta_copy_op<op,copy_rtype>::meta_copy_op_(src.template get< ele_cop::value >(),dst.template get< ele_cop::value >());
 	}
@@ -178,11 +167,9 @@ struct compare_cpu_encap_encap
 
 	/*! \brief constructor
 	 *
-	 * It define the copy parameters.
 	 *
-	 * \param key which element we are modifying
-	 * \param grid_dst grid we are updating
-	 * \param obj object we have to set in grid_dst (encapsulated)
+	 * \param e_src encapsulated object1
+	 * \param e_dst encapsulated object2
 	 *
 	 */
 	inline compare_cpu_encap_encap(const e_src & src, const e_dst & dst)
@@ -198,10 +185,14 @@ struct compare_cpu_encap_encap
 
 
 #ifdef SE_CLASS1
+
 	/*! \brief Constructor
 	 *
 	 * Calling this constructor produce an error. This class store the reference of the object,
 	 * this mean that the object passed must not be a temporal object
+	 *
+	 * \param e_src encapsulated object1
+	 * \param e_dst encapsulated object2
 	 *
 	 */
 	inline compare_cpu_encap_encap(const e_src && src, const e_dst && dst)
@@ -263,8 +254,14 @@ class encapc
  * This structure encapsulate an object of the grid
  * It give the possibility to select the property in a secondary moment
  *
+ * Can be thought as a reference to an object of the grid. So every time we
+ * use the term encapsulated object we mean reference to object
+ *
+ * \note A vector is a 1D grid
+ *
  * \param dim Dimensionality of the grid
  * \param T type of object the grid store
+ *
  *
  */
 
@@ -272,23 +269,30 @@ template<unsigned int dim,typename T>
 class encapc<dim,T,typename memory_traits_lin<T>::type >
 {
 public:
+
+	//! object type the encap object encapsulate
 	typedef typename T::type type;
 
 private:
 
+	//! reference to the encapsulated object
 	type & data_c;
 
+	//! layout of the encapsulated object
 	typedef typename memory_traits_lin<T>::type Mem;
 
 public:
 
+	//! indicate the it is an encapsulated object
 	typedef int yes_i_am_encap;
 
+	//! original object
 	typedef T T_type;
 
+	//! number of properties
 	static const int max_prop = T::max_prop;
 
-	// constructor from a reference object
+	//! constructor from a reference object
 	inline encapc(type & data_c)
 	:data_c(data_c)
 	{}
@@ -329,7 +333,13 @@ public:
 		return boost::fusion::at_c<p>(data_c);
 	}
 
-	// access the data
+	/*! \brief Set one property of the encapsulated object
+	 *
+	 * \tparam p property to set
+	 *
+	 * \param ele value to set
+	 *
+	 */
 	template <unsigned int p> inline void set(decltype(boost::fusion::at_c<p>(data_c)) & ele)
 	{
 #ifdef SE_CLASS2
@@ -338,9 +348,14 @@ public:
 			return boost::fusion::at_c<p>(data_c) = ele;
 	}
 
-	/*! \brief Assignment
+	/*! \brief Set one property of the encapsulated object
 	 *
-	 * \param ec encapsulator
+	 * \tparam dim2 dimensionality of the multy-array
+	 * \tparam p property to set
+	 *
+	 * \param ec value to set as encapsulated object
+	 *
+	 * \return itself
 	 *
 	 */
 	template<unsigned int dim2> inline encapc<dim,T,Mem> & set(const encapc<dim2,T,Mem> & ec)
@@ -354,7 +369,9 @@ public:
 
 	/*! \brief Assignment
 	 *
-	 * \param ec encapsulator
+	 * \param ec object encapsulated to copy
+	 *
+	 * \return itself
 	 *
 	 */
 	inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
@@ -368,7 +385,9 @@ public:
 
 	/*! \brief Assignment
 	 *
-	 * \param ec encapsulator
+	 * \param obj object to copy
+	 *
+	 * \return itself
 	 *
 	 */
 	inline encapc<dim,T,Mem> & operator=(const T & obj)
@@ -425,11 +444,11 @@ public:
 	encapc()
 	{}
 
-	// access the data
+	//! access the data
 	template <unsigned int p> void get()
 	{}
 
-	// access the data
+	//! set the data
 	template <unsigned int p, typename S> void set(S & ele)
 	{}
 };
@@ -439,40 +458,62 @@ public:
  * This structure encapsulate an object of the grid
  * It give the possibility to select the property in a secondary moment
  *
+ * Can be thought as a reference to an object of the grid. So every time we
+ * use the term encapsulated object we mean reference to object
+ *
+ * \note A vector is a 1D grid
+ *
  *	\param dim Dimensionality of the grid
  *	\param T type of object the grid store
  *
  */
-
 template<unsigned int dim,typename T>
 class encapc<dim,T,typename memory_traits_inte<T>::type>
 {
+	//! type of layout
 	typedef typename memory_traits_inte<T>::type Mem;
 
-	// constructor require a key
+	//! reference to the encapsulated object
 	Mem & data;
+
+	//! element id
 	size_t k;
 
 public:
 
+	//! Original list if types
 	typedef typename T::type type;
 
+	//! indicate it is an encapsulated object
 	typedef int yes_i_am_encap;
 
+	//! original object type
 	typedef T T_type;
 
-	// constructor require a key and a memory data
+	//! constructor require a key and a memory data
 	encapc(typename memory_traits_inte<T>::type & data, size_t k)
 	:data(data),k(k)
 	{}
 
-	// access the data
+	/*! \brief Access the data
+	 *
+	 * \tparam p property selected
+	 *
+	 * \return The reference of the data
+	 *
+	 */
 	template <unsigned int p> typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get()
 	{
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
 	}
 
-	// access the data
+	/*! \brief Access the data
+	 *
+	 * \tparam p property selected
+	 *
+	 * \return The reference of the data
+	 *
+	 */
 	template <unsigned int p> const typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get() const
 	{
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
@@ -481,6 +522,8 @@ public:
 	/*! \brief Assignment
 	 *
 	 * \param ec encapsulator
+	 *
+	 * \return itself
 	 *
 	 */
 	inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
@@ -494,7 +537,9 @@ public:
 
 	/*! \brief Assignment
 	 *
-	 * \param ec encapsulator
+	 * \param obj object to copy
+	 *
+	 * \return itself
 	 *
 	 */
 	inline encapc<dim,T,Mem> & operator=(const T & obj)

@@ -152,7 +152,7 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_s(SpaceBo
 		//! [create verlet cell]
 
 		VerS vl1;
-		vl1.Initialize(bt,cli,r_cut,pos,pos.size());
+		vl1.Initialize(cli,r_cut,pos,pos.size());
 
 		//! [create verlet cell]
 

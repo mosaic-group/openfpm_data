@@ -14,6 +14,7 @@
 #include "Grid/Encap.hpp"
 #include "Grid/util.hpp"
 #include "Vector/util.hpp"
+#include "Packer_Unpacker/has_pack_agg.hpp"
 
 //! Primitive packing
 #define PACKER_PRIMITIVE 1
@@ -22,7 +23,7 @@
 //! Encapsulated Object packing
 #define PACKER_ENCAP_OBJECTS 3
 //! Vector of objects packing
-#define PACKER_VECTOR 4
+#define PACKER_GENERAL 4
 //! Grid packing
 #define PACKER_GRID 5
 //! Packer cannot check for pointers
@@ -32,7 +33,7 @@
 
 #define IS_ENCAP 4
 #define IS_GRID 2
-#define IS_VECTOR 1
+#define HAS_PACKER 1
 
 /*! \brief Pack selector for unknown type
  *
@@ -79,11 +80,11 @@ struct Pack_selector_known_type_impl<T,IS_GRID>
 };
 
 template <typename T>
-struct Pack_selector_known_type_impl<T,IS_VECTOR>
+struct Pack_selector_known_type_impl<T,HAS_PACKER>
 {
 	enum
 	{
-		value = PACKER_VECTOR
+		value = PACKER_GENERAL
 	};
 };
 
@@ -105,7 +106,7 @@ struct Pack_selector_impl
 {
 	enum
 	{
-		value = Pack_selector_known_type_impl< T, 4*is_encap<T>::value + is_grid<T>::value * 2 + is_vector<T>::value >::value
+		value = Pack_selector_known_type_impl< T, 4*is_encap<T>::value + is_grid<T>::value * 2 + (has_pack_gen<T>::value)*(!is_grid<T>::value) >::value
 	};
 };
 

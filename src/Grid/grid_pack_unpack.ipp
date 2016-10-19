@@ -29,7 +29,7 @@ struct pack_simple_cond
 {
 	static inline void pack(const grid_base_impl<dim,T,S,layout,layout_base> & obj, ExtPreAlloc<S> & mem, Pack_stat & sts)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (mem.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 #endif
@@ -39,18 +39,6 @@ struct pack_simple_cond
 		{
 			Packer<size_t, S>::pack(mem,obj.getGrid().size(i),sts);
 		}
-		
-#ifdef DEBUG
-		std::cout << "Grid size is " << std::endl;	
-		for (size_t i = 0; i < dim; i++)
-		{
-			std::cout << obj.getGrid().size(i) << std::endl;
-		}
-#endif
-		
-#ifdef DEBUG
-		std::cout << "Inside pack_simple(not 0 prop) function! (grid_pack_unpack)" << std::endl;
-#endif
 
 		// Sending property object and vector
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,prp...>::type> prp_object;
@@ -76,7 +64,7 @@ struct pack_simple_cond<true, prp ...>
 {
 	static inline void pack(const grid_base_impl<dim,T,S,layout,layout_base> & obj, ExtPreAlloc<S> & mem, Pack_stat & sts)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (mem.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 #endif
@@ -86,19 +74,9 @@ struct pack_simple_cond<true, prp ...>
 		{
 			Packer<size_t, S>::pack(mem,obj.getGrid().size(i),sts);
 		}		
-#ifdef DEBUG		
-		std::cout << "Grid size is " << std::endl;	
-		for (size_t i = 0; i < dim; i++)
-		{
-			std::cout << obj.getGrid().size(i) << std::endl;
-		}
-#endif		
+
 		// Sending property object
 		typedef openfpm::vector<T,ExtPreAlloc<S>,typename layout_base<T>::type,layout_base,openfpm::grow_policy_identity> dtype;
-		
-#ifdef DEBUG
-		std::cout << "Inside pack_simple(0 prop) function! (grid_pack_unpack)" << std::endl;
-#endif
 		
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -131,11 +109,6 @@ struct unpack_simple_cond
 {
 	static inline void unpack(grid_base_impl<dim,T,S,layout,layout_base> & obj , ExtPreAlloc<S> & mem, Unpack_stat & ps)
 	{
-		
-#ifdef DEBUG
-		std::cout << "Inside unpack_simple(not 0 prop) function! (grid_pack_unpack)" << std::endl;
-#endif
-	
 		size_t dims[dim];
 	
 	    //Unpack a size of a source grid
@@ -179,9 +152,6 @@ struct unpack_simple_cond<true, prp ...>
 {
 	static inline void unpack(grid_base_impl<dim,T,S,layout,layout_base> & obj , ExtPreAlloc<S> & mem, Unpack_stat & ps)
 	{
-#ifdef DEBUG
-		std::cout << "Inside unpack_simple(0 prop) function! (grid_pack_unpack)" << std::endl;
-#endif
 		size_t dims[dim];
 	
 		//Unpack a size of a source grid
@@ -240,27 +210,16 @@ struct unpack_simple_cond<true, prp ...>
 		{
 			req += sizeof(this->getGrid().size(i));
 		}
-		//std::cout << demangle(typeid(this).name()) << std::endl;
-		//std::cout << this->size() << std::endl;
-#ifdef DEBUG
-		std::cout << "Inside grid_pack_unpack.ipp packRequest()" << std::endl;
-#endif
 		
 		// If all of the aggregate properties do not have a "pack()" member	
 		if (has_pack_agg<T,prp...>::result::value == false)
 		{
-#ifdef DEBUG
-		std::cout << "All of the aggregate members are simple!(packRequest)" << std::endl;
-#endif
 			size_t alloc_ele = this->packMem<prp...>(this->size(),0);
 			req += alloc_ele;
 		}
 		//If at least one property has "pack()"
 		else
-		{			
-#ifdef DEBUG
-			std::cout << "Not all of the aggregate members are simple!(packRequest)" << std::endl;
-#endif
+		{
 			auto key_it = this->getIterator();
 
 			while (key_it.isNext())
@@ -282,25 +241,15 @@ struct unpack_simple_cond<true, prp ...>
 	 */
 	template<int ... prp> inline void pack(ExtPreAlloc<S> & mem, Pack_stat & sts) const
 	{	
-#ifdef DEBUG
-		std::cout << "Inside grid_pack_unpack.ipp pack()" << std::endl;
-#endif
 		//If all of the aggregate properties are simple (don't have "pack()" member)
 		if (has_pack_agg<T,prp...>::result::value == false)
 		{
-	#ifdef DEBUG
-			std::cout << "All of the aggregate members are simple!(pack)" << std::endl;
-	#endif
 			//Call a packer
 			pack_simple_cond<sizeof...(prp) == 0,prp...>::pack(*this,mem,sts);
 		}
 		//If at least one property has a "pack()" member
 		else
 		{
-			
-#ifdef DEBUG
-			std::cout << "Not all of the aggregate members are simple!(pack)" << std::endl;
-#endif
 			//Pack the size of a grid
 			for (size_t i = 0; i < dim; i++)
 			{
@@ -330,18 +279,12 @@ struct unpack_simple_cond<true, prp ...>
 		//if all of the aggregate properties are simple (don't have "pack()" member)
 		if (has_pack_agg<T,prp...>::result::value == false)
 		{
-#ifdef DEBUG
-			std::cout << "All of the aggregate members are simple!(unpack)" << std::endl;
-#endif
 			//Call an unpacker
 			unpack_simple_cond<sizeof...(prp) == 0,prp...>::unpack(*this,mem,ps);
 		}
 		//If at least one is not simple (has a "pack()" member)
 		else
 		{
-#ifdef DEBUG
-			std::cout << "Not all of the aggregate members are simple!(unpack)" << std::endl;
-#endif
 			size_t dims[dim];
 			
 			//Unpack a size of a source grid
@@ -380,7 +323,7 @@ struct unpack_simple_cond<true, prp ...>
 	 */
 	template<int ... prp> void pack(ExtPreAlloc<S> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Pack_stat & sts)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (mem.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 #endif
@@ -468,11 +411,6 @@ struct unpack_simple_cond<true, prp ...>
 			return n * sizeof(typename T::type);
 
 		typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
-
-#ifdef DEBUG
-		std::cout << "Inside packMem() (map_grid)" << std::endl;
-		std::cout << n << "*" << sizeof(prp_object) << " " << demangle(typeid(prp_object).name()) << std::endl;
-#endif
 
 		return n * sizeof(prp_object);
 	}
