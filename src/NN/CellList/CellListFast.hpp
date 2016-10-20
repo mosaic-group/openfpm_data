@@ -325,7 +325,6 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)	{bc[i] = NON_PERIODIC;}
 
 		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
-//		Box<dim,T> bxd = cd_sm.convertCellUnitsIntoDomainSpace(bx);
 
 		size_t div[dim];
 		size_t div_big[dim];
@@ -343,7 +342,6 @@ public:
 		CellDecomposer_sm<dim,T,transform>::setDimensions(cd_sm.getDomain(),div_big,div, pad, bx.getP1());
 
 		// here we set the cell-shift for the CellDecomposer
-//		Initialize(cd_sm.getDomain(),div,bx.getP1(),pad,slot);
 
 		InitializeStructures(div_w_pad,tot_cell);
 	}
@@ -568,6 +566,82 @@ public:
 	 *
 	 */
 	inline void add(const Point<dim,T> & pos, typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = this->getCell(pos);
+
+		// add the element to the cell
+
+		addCell(cell_id,ele);
+	}
+
+	/*! \brief Add an element in the cell list forcing to be in the domain cells
+	 *
+	 * \warning careful is intended to be used ONLY to avoid round-off problems
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void addDom(const T (& pos)[dim], typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = this->getCell(pos);
+
+		// add the element to the cell
+
+		addCell(cell_id,ele);
+	}
+
+	/*! \brief Add an element in the cell list forcing to be in the domain cells
+	 *
+	 * \warning careful is intended to be used ONLY to avoid round-off problems
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void addDom(const Point<dim,T> & pos, typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = this->getCell(pos);
+
+		// add the element to the cell
+
+		addCell(cell_id,ele);
+	}
+
+	/*! \brief Add an element in the cell list forcing to be in the padding cells
+	 *
+	 * \warning careful is intended to be used ONLY to avoid round-off problems
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void addPad(const T (& pos)[dim], typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = this->getCell(pos);
+
+		// add the element to the cell
+
+		addCell(cell_id,ele);
+	}
+
+	/*! \brief Add an element in the cell list forcing to be in the padding cells
+	 *
+	 * \warning careful is intended to be used ONLY to avoid round-off problems
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void addPad(const Point<dim,T> & pos, typename base::value_type ele)
 	{
 		// calculate the Cell id
 

@@ -14,6 +14,9 @@
 
 #define CELL_DECOMPOSER 8001lu
 
+
+
+
 /*! This Class apply a shift transformation before converting to Cell-ID
  *
  *
@@ -367,6 +370,85 @@ class CellDecomposer_sm
 		return id;
 	}
 
+
+	template<typename Ele> inline size_t getCellDom_impl(const Ele & pos) const
+	{
+	#ifdef SE_CLASS1
+			if (tot_n_cell == 0)
+			{
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
+
+			if (pos[0] < box.getLow(0) - off[0]*box_unit.getP2()[0] || pos[0] > box.getHigh(0) + off[0]*box_unit.getP2()[0])
+			{
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
+	#endif
+
+			size_t cell_id = ConvertToID(pos,0);
+			cell_id = (cell_id == gr_cell.size(0) - off[0])?gr_cell.size(0) - off[0] - 1:cell_id;
+			cell_id = (cell_id == off[0]-1)?off[0]:cell_id;
+
+			for (size_t s = 1 ; s < dim ; s++)
+			{
+	#ifdef SE_CLASS1
+				if (pos[s] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
+				{
+					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+					ACTION_ON_ERROR(CELL_DECOMPOSER);
+				}
+	#endif
+				size_t cell_idt = ConvertToID(pos,s);
+				cell_idt = (cell_idt == gr_cell.size(s) - off[s])?gr_cell.size(s) - off[s] - 1:cell_idt;
+				cell_idt = (cell_idt == off[s]-1)?off[s]:cell_idt;
+
+				cell_id += gr_cell2.size_s(s-1) * cell_idt;
+			}
+
+			return cell_id;
+	}
+
+	template<typename Ele> inline size_t getCellPad_impl(const Ele & pos) const
+	{
+	#ifdef SE_CLASS1
+			if (tot_n_cell == 0)
+			{
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
+
+			if (pos[0] < box.getLow(0) - off[0]*box_unit.getP2()[0] || pos[0] > box.getHigh(0) + off[0]*box_unit.getP2()[0])
+			{
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
+	#endif
+
+			size_t cell_id = ConvertToID(pos,0);
+			cell_id = (cell_id == off[0])?off[0]-1:cell_id;
+			cell_id = (cell_id == gr_cell.size(0) - off[0] - 1)?gr_cell.size(0) - off[0]:cell_id;
+
+			for (size_t s = 1 ; s < dim ; s++)
+			{
+	#ifdef SE_CLASS1
+				if (pos[s] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
+				{
+					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+					ACTION_ON_ERROR(CELL_DECOMPOSER);
+				}
+	#endif
+				size_t cell_idt = ConvertToID(pos,s);
+				cell_idt = (cell_idt == off[s])?off[s]-1:cell_idt;
+				cell_idt = (cell_idt == gr_cell.size(s) - off[s] - 1)?gr_cell.size(s) - off[s]:cell_idt;
+
+				cell_id += gr_cell2.size_s(s-1) * cell_idt;
+			}
+
+			return cell_id;
+	}
+
 protected:
 
 	// Total number of cell
@@ -532,49 +614,66 @@ public:
 	 *
 	 * Convert the point coordinates into the cell id
 	 *
+	 * \note this function is in general used to bypass round-off error
+	 *
 	 * \param pos Point position
 	 *
 	 * \return the cell-id
 	 *
 	 */
-/*	inline size_t getCellDom(const T (& pos)[dim]) const
+	inline size_t getCellDom(const Point<dim,T> & pos) const
 	{
-#ifdef SE_CLASS1
-		if (tot_n_cell == 0)
-		{
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
-			ACTION_ON_ERROR(CELL_DECOMPOSER);
-		}
+		return getCellDom_impl<Point<dim,T>>(pos);
+	}
 
-		if (pos[0] < box.getLow(0) - off[0]*box_unit.getP2()[0] || pos[0] > box.getHigh(0) + off[0]*box_unit.getP2()[0])
-		{
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
-			ACTION_ON_ERROR(CELL_DECOMPOSER);
-		}
-#endif
 
-		size_t cell_id = ConvertToID(pos,0);
-		cell_id = (cell_id > gr_cell.size(0) - off[0] - 1)?gr_cell.size(0) - off[0] - 1:cell_id;
-		cell_id = (cell_id < off[0])?off[0]:cell_id;
+	/*! \brief Get the cell-id enforcing that is NOT a cell from the padding
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \note this function is in general used to bypass round-off error
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	inline size_t getCellDom(const T (& pos)[dim]) const
+	{
+		return getCellDom_impl<T[dim]>(pos);
+	}
 
-		for (size_t s = 1 ; s < dim ; s++)
-		{
-#ifdef SE_CLASS1
-			if (pos[s] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
-			{
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
-				ACTION_ON_ERROR(CELL_DECOMPOSER);
-			}
-#endif
-			size_t cell_idt = ConvertToID(pos,s);
-			cell_idt = (cell_idt > gr_cell.size(s) - off[s] - 1)?gr_cell.size(s) - off[s] - 1:cell_idt;
-			cell_idt = (cell_idt < off[s])?off[s]:cell_idt;
+	/*! \brief Get the cell-id enforcing that is from a padding cell
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \note this function is in general used to bypass round-off error
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	inline size_t getCellPad(const Point<dim,T> & pos) const
+	{
+		return getCellPad_impl<Point<dim,T>>(pos);
+	}
 
-			cell_id += gr_cell2.size_s(s-1) * ConvertToID(pos,s);
-		}
-
-		return cell_id;
-	}*/
+	/*! \brief Get the cell-id enforcing that is from a padding cell
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \note this function is in general used to bypass round-off error
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	inline size_t getCellPad(const T (& pos)[dim]) const
+	{
+		return getCellPad_impl<T[dim]>(pos);
+	}
 
 	/*! \brief Get the cell-id
 	 *

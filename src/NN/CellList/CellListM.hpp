@@ -306,7 +306,7 @@ public:
 	{
 		CellBase::swap(clm);
 
-		return this;
+		return *this;
 	}
 
 	/*! \brief operator=

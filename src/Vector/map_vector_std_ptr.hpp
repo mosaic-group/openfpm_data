@@ -12,8 +12,10 @@
 template<typename T,typename gp>
 class vector<T,PtrMemory,typename memory_traits_lin<T>::type,memory_traits_lin,gp,STD_VECTOR>
 {
-	// Memory layout
+	//! Memory layout
 	typedef typename memory_traits_lin<T>::type layout;
+
+	//! function for memory layout
 	template <typename lb> using layout_base = memory_traits_lin<lb>;
 
 	//! Actual size of the vector, warning: it is not the space allocated in grid
@@ -427,6 +429,8 @@ public:
 
 	/*! \brief Operator= copy the vector into another
 	 *
+	 * \param v vector to copy
+	 *
 	 * \return itself
 	 *
 	 */
@@ -444,6 +448,8 @@ public:
 	 *
 	 * \param vector to compare
 	 *
+	 * \return true if the two vector match
+	 *
 	 */
 	bool operator!=(const vector<T, HeapMemory, layout, layout_base,grow_policy_double,STD_VECTOR> & v) const
 	{
@@ -455,6 +461,8 @@ public:
 	/*! \brief Check that two vectors are not equal
 	 *
 	 * \param vector to compare
+	 *
+	 * \return true if the vector match
 	 *
 	 */
 	bool operator==(const vector<T, HeapMemory, layout, layout_base,grow_policy_double,STD_VECTOR> & v) const
@@ -513,6 +521,8 @@ public:
 
 	/*! \brief Return the last error
 	 *
+	 * \return the last error
+	 *
 	 */
 	size_t getLastError()
 	{
@@ -524,7 +534,7 @@ public:
 
 	/*! \brief check that the id does not overflow the buffer
 	 *
-	 * \param id to check
+	 * \param v1 to check
 	 *
 	 */
 	inline void vector_overflow(size_t v1) const
@@ -541,6 +551,8 @@ public:
 	/* \brief It return the id of structure in the allocation list
 	 *
 	 * \see print_alloc and SE_CLASS2
+	 *
+	 * \return the allocation id
 	 *
 	 */
 	long int who()
