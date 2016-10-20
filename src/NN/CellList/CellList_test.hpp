@@ -205,12 +205,6 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 			++NNSym;
 		}
 
-		if (total == 13)
-		{
-			int debug = 0;
-			debug++;
-		}
-
 		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
 
 		++g_it_s;
