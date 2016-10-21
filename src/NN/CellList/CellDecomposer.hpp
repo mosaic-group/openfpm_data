@@ -370,83 +370,72 @@ class CellDecomposer_sm
 		return id;
 	}
 
+	/*! \Check if a particle is outside the domain of the cell-list
+	 *
+	 * \param pos position of the particle
+	 * \param s coordinate to check
+	 *
+	 */
+	template<typename Ele> inline void check_and_print_error(const Ele & pos ,size_t s) const
+	{
+#ifdef SE_CLASS1
+		if (tot_n_cell == 0)
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+
+		if (pos[0] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << Point<dim,T>(pos).toString() << " is not inside the cell space";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+#endif
+	}
+
 
 	template<typename Ele> inline size_t getCellDom_impl(const Ele & pos) const
 	{
-	#ifdef SE_CLASS1
-			if (tot_n_cell == 0)
-			{
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
-				ACTION_ON_ERROR(CELL_DECOMPOSER);
-			}
+		check_and_print_error(pos,0);
 
-			if (pos[0] < box.getLow(0) - off[0]*box_unit.getP2()[0] || pos[0] > box.getHigh(0) + off[0]*box_unit.getP2()[0])
-			{
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
-				ACTION_ON_ERROR(CELL_DECOMPOSER);
-			}
-	#endif
+		size_t cell_id = ConvertToID(pos,0);
+		cell_id = (cell_id == gr_cell.size(0) - off[0])?gr_cell.size(0) - off[0] - 1:cell_id;
+		cell_id = (cell_id == off[0]-1)?off[0]:cell_id;
 
-			size_t cell_id = ConvertToID(pos,0);
-			cell_id = (cell_id == gr_cell.size(0) - off[0])?gr_cell.size(0) - off[0] - 1:cell_id;
-			cell_id = (cell_id == off[0]-1)?off[0]:cell_id;
+		for (size_t s = 1 ; s < dim ; s++)
+		{
+			check_and_print_error(pos,s);
 
-			for (size_t s = 1 ; s < dim ; s++)
-			{
-	#ifdef SE_CLASS1
-				if (pos[s] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
-				{
-					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
-					ACTION_ON_ERROR(CELL_DECOMPOSER);
-				}
-	#endif
-				size_t cell_idt = ConvertToID(pos,s);
-				cell_idt = (cell_idt == gr_cell.size(s) - off[s])?gr_cell.size(s) - off[s] - 1:cell_idt;
-				cell_idt = (cell_idt == off[s]-1)?off[s]:cell_idt;
+			size_t cell_idt = ConvertToID(pos,s);
+			cell_idt = (cell_idt == gr_cell.size(s) - off[s])?gr_cell.size(s) - off[s] - 1:cell_idt;
+			cell_idt = (cell_idt == off[s]-1)?off[s]:cell_idt;
 
-				cell_id += gr_cell2.size_s(s-1) * cell_idt;
-			}
+			cell_id += gr_cell2.size_s(s-1) * cell_idt;
+		}
 
-			return cell_id;
+		return cell_id;
 	}
 
 	template<typename Ele> inline size_t getCellPad_impl(const Ele & pos) const
 	{
-	#ifdef SE_CLASS1
-			if (tot_n_cell == 0)
-			{
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
-				ACTION_ON_ERROR(CELL_DECOMPOSER);
-			}
+		check_and_print_error(pos,0);
 
-			if (pos[0] < box.getLow(0) - off[0]*box_unit.getP2()[0] || pos[0] > box.getHigh(0) + off[0]*box_unit.getP2()[0])
-			{
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
-				ACTION_ON_ERROR(CELL_DECOMPOSER);
-			}
-	#endif
+		size_t cell_id = ConvertToID(pos,0);
+		cell_id = (cell_id == off[0])?off[0]-1:cell_id;
+		cell_id = (cell_id == gr_cell.size(0) - off[0] - 1)?gr_cell.size(0) - off[0]:cell_id;
 
-			size_t cell_id = ConvertToID(pos,0);
-			cell_id = (cell_id == off[0])?off[0]-1:cell_id;
-			cell_id = (cell_id == gr_cell.size(0) - off[0] - 1)?gr_cell.size(0) - off[0]:cell_id;
+		for (size_t s = 1 ; s < dim ; s++)
+		{
+			check_and_print_error(pos,s);
 
-			for (size_t s = 1 ; s < dim ; s++)
-			{
-	#ifdef SE_CLASS1
-				if (pos[s] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
-				{
-					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
-					ACTION_ON_ERROR(CELL_DECOMPOSER);
-				}
-	#endif
-				size_t cell_idt = ConvertToID(pos,s);
-				cell_idt = (cell_idt == off[s])?off[s]-1:cell_idt;
-				cell_idt = (cell_idt == gr_cell.size(s) - off[s] - 1)?gr_cell.size(s) - off[s]:cell_idt;
+			size_t cell_idt = ConvertToID(pos,s);
+			cell_idt = (cell_idt == off[s])?off[s]-1:cell_idt;
+			cell_idt = (cell_idt == gr_cell.size(s) - off[s] - 1)?gr_cell.size(s) - off[s]:cell_idt;
 
-				cell_id += gr_cell2.size_s(s-1) * cell_idt;
-			}
+			cell_id += gr_cell2.size_s(s-1) * cell_idt;
+		}
 
-			return cell_id;
+		return cell_id;
 	}
 
 protected:

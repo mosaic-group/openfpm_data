@@ -134,7 +134,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	inline T get(int i) const
+	inline const T & get(int i) const
 	{
 		return boost::fusion::at_c<x>(data)[i];
 	}
@@ -165,11 +165,26 @@ template<unsigned int dim ,typename T> class Point
 
 	/*! \brief Get the component i
 	 *
+	 * \param i component
+	 *
 	 * \return the i-component
 	 *
 	 */
 
 	inline T& operator[](size_t i)
+	{
+		return get(i);
+	}
+
+	/*! \brief Get the component i
+	 *
+	 * \param i component
+	 *
+	 * \return the i-component
+	 *
+	 */
+
+	inline const T& operator[](size_t i) const
 	{
 		return get(i);
 	}

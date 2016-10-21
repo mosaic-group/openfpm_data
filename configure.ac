@@ -234,6 +234,19 @@ fi
 AX_LIB_HILBERT([],[echo "Cannot detect libhilbert, use the --with-libhilbert option if it is not installed in the default location"
                     exit 210])
 
+#########
+
+## Check for quadmath
+
+AC_LANG_PUSH([C++])
+
+AC_CHECK_HEADER(quadmath.h, , [])
+AC_CHECK_LIB(quadmath, sinq, [  AC_DEFINE(HAVE_LIBQUADMATH,[],[Have quad math lib])
+				LIBQUADMATH=" -lquadmath "
+				], [])
+
+AC_LANG_POP([C++])
+
 ####### include openfpm_devices include path
 
 INCLUDES_PATH+="-I. -Iconfig -I../../openfpm_devices/src -I../../openfpm_io/src"

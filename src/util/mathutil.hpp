@@ -1,7 +1,9 @@
 #ifndef MATHUTIL_HPP
 #define MATHUTIL_HPP
 
+#ifdef HAVE_LIBQUADMATH
 #include <boost/multiprecision/float128.hpp>
+#endif
 
 namespace openfpm
 {
@@ -188,6 +190,8 @@ namespace openfpm
 		  return i - ( i > x ); /* convert trunc to floor */
 		}
 
+#ifdef HAVE_LIBQUADMATH
+
 		/*! \brief floor math function
 		 *
 		 *
@@ -197,6 +201,8 @@ namespace openfpm
 		  size_t i = (long int)x; /* truncate */
 		  return i - ( i > x ); /* convert trunc to floor */
 		}
+
+#endif
 	}
 }
 
