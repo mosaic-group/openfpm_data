@@ -104,9 +104,7 @@ struct pack_simple_cond
 		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
 	
 		typedef openfpm::vector<prp_object,ExtPreAlloc<Memory>,typename memory_traits_lin<prp_object>::type, memory_traits_lin ,openfpm::grow_policy_identity> dtype;
-#ifdef DEBUG
-	std::cout << "Inside pack_simple(not 0 prop) function! (map_vector)" << std::endl;
-#endif
+
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
 		dest.setMemory(mem);
@@ -148,9 +146,7 @@ struct pack_simple_cond<true, prp ...>
 		
 		// Sending property object
 		typedef openfpm::vector<T,ExtPreAlloc<Memory>,layout,layout_base,openfpm::grow_policy_identity> dtype;
-	#ifdef DEBUG
-		std::cout << "Inside pack_simple(0 prop) function! (map_vector)" << std::endl;
-	#endif
+
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
 		dest.setMemory(mem);
@@ -179,9 +175,6 @@ struct unpack_simple_cond
 {
 	static inline void unpack(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
 	{
-#ifdef DEBUG
-	std::cout << "Inside unpack_simple(not 0 prop) function! (map_vector)" << std::endl;
-#endif
 		//Unpack a size of a source vector
 		size_t u2 = 0;
 		Unpacker<size_t, Memory>::unpack(mem,u2,ps);
@@ -226,15 +219,19 @@ struct unpack_simple_cond
 	}
 };
 
-//Without specified properties
+//! unpack Without specified properties
 template<int ... prp>
 struct unpack_simple_cond<true, prp ...>
 {
+	/*! \brief unpack from the memory the data structure and put it into obj
+	 *
+	 * \param obj object to deserialize
+	 * \param mem object containing the raw data to deserialize
+	 * \param ps statistic
+	 *
+	 */
 	static inline void unpack(openfpm::vector<T,Memory,layout,layout_base, grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
 	{
-#ifdef DEBUG
-	std::cout << "Inside unpack_simple(0 prop) function! (map_vector)" << std::endl;
-#endif
 		//Unpack a size of a source vector
 		size_t u2 = 0;
 		Unpacker<size_t, Memory>::unpack(mem,u2,ps);
@@ -314,9 +311,6 @@ template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & st
 	if (has_pack_agg<T,prp...>::result::value == false)
 	//if (has_aggregatePack<T,prp ... >::has_pack() == false)
 	{
-#ifdef DEBUG
-		std::cout << "All of the aggregate members are simple!(pack)" << std::endl;
-#endif
 		//Call a packer
 		pack_simple_cond<sizeof...(prp) == 0,prp...>::pack(*this,mem,sts);
 	}
@@ -345,9 +339,6 @@ template<int ... prp> inline void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat 
 	if (has_pack_agg<T,prp...>::result::value == false)
 	//if (has_aggregatePack<T,prp ... >::has_pack() == false)
 	{
-#ifdef DEBUG
-		std::cout << "All of the aggregate members are simple!(unpack)" << std::endl;
-#endif
 		//Call an unpacker
 		unpack_simple_cond<sizeof...(prp) == 0,prp...>::unpack(*this,mem,ps);
 	}

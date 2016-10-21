@@ -314,6 +314,8 @@ class Graph_CSR
 	 * \param v1 start vertex
 	 * \param v2 end vertex
 	 *
+	 * \return the edge id
+	 *
 	 */
 
 	template<typename CheckPolicy = NoCheck> inline size_t addEdge_(size_t v1, size_t v2)
@@ -749,12 +751,12 @@ public:
 			std::cerr << "Error " << __FILE__ << " line: " << __LINE__ << "    vertex " << v << " does not have edge " << i << std::endl;
 		}
 
-		if (e.size() <= e_l.template get<e_map::vid>(v * v_slot + i))
+		if (i >= v_l.template get<0>(v))
 		{
 			std::cerr << "Error " << __FILE__ << " " << __LINE__ << " vertex " << v << " does not have edge "<< i << std::endl;
 		}
 #endif
-		// Get the edge id
+		// Get the target vertex id
 		return e_l.template get<e_map::vid>(v * v_slot + i);
 	}
 

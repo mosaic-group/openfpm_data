@@ -83,6 +83,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = pmul(key,spacing) + offset[0] + box.getP1();
+		pos.add(key);
 
 		cl1.add(key,id);
 		++id;

@@ -980,10 +980,9 @@ public:
 
 	/*! \brief Constructor
 	 *
-	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
+	 * \param box Space where is defined the cell list
 	 * \param div Reference array to the number of divisions on each dimensions
 	 * \param mat Transformation matrix, the point is transformed as p' = mat * p
-	 * \param orig origin of the cell decomposition
 	 * \param pad cell padding
 	 *
 	 *  Example for div = {6,6} and pad = 1
@@ -1008,8 +1007,8 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
-	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero()),box(box),gr_cell()
+	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, const size_t pad)
+	:t(Matrix<dim,T>::identity(),box.getP1()),box(box),gr_cell()
 	{
 		Initialize(pad);
 	}
@@ -1018,7 +1017,6 @@ public:
 	 *
 	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
 	 * \param div Reference array to the number of divisions on each dimensions
-	 * \param orig origin of the cell decomposition
 	 * \param pad cell padding
 	 *
 	 *  Example for div = {7,7} and pad = 1
@@ -1038,40 +1036,6 @@ public:
      * |p |p |p |p |p |p |p |p |
      * +-----------------------+
 	 *
-	 * \endverbatim
-	 *
-	 * Cell with p are padding cell cell that are around but external the box, the cell number 9 that
-	 * is at the origin of the box is identified with 9
-	 *
-	 */
-	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad)
-	:t(Matrix<dim,T>::identity(),orig),box(box),gr_cell(div)
-	{
-		Initialize(pad,div);
-	}
-
-	/*! \brief Constructor
-	 *
-	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
-	 * \param div Reference array to the number of divisions on each dimensions
-	 * \param pad cell padding
-	 *
-	 *  Example for div = {7,7} and pad = 1
-	 *
-	 * \verbatim
-	 * +-----------------------+
-     * |p |p |p |p |p |p |p |p |
-     * +-----------------------+
-     * |p |  |  |  |  |  |  |p |
-     * +-----------------------+
-     * |p |  |  |  |  |  |  |p |
-     * +-----------------------+
-     * |p |  |  |  |  |  |  |p |
-     * +-----------------------+
-     * |p |9 |  |  |  |  |  |p |
-     * +-----------------------+
-     * |p |p |p |p |p |p |p |p |
-     * +-----------------------+
 	 * \endverbatim
 	 *
 	 * Cell with p are padding cell cell that are around but external the box, the cell number 9 that
@@ -1079,11 +1043,10 @@ public:
 	 *
 	 */
 	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad)
-	:t(Matrix<dim,T>::identity(),box.getP1()),box(box),gr_cell()
+	:t(Matrix<dim,T>::identity(),box.getP1()),box(box),gr_cell(div)
 	{
 		Initialize(pad,div);
 	}
-
 
 	/*! \brief Constructor for a consistent CellDecomposer construction
 	 *
