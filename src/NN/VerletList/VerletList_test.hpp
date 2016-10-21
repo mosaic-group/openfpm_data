@@ -102,12 +102,6 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_s(SpaceBo
 
 				ret &= (dist < r_cut);
 
-				if (ret == false)
-				{
-					std::cout << "Point1 " << p.toString() << "    " << "Point2 " << Point<dim,T>(pos.get(k)).toString() << "  " << r_cut << std::endl;
-					exit(1);
-				}
-
 				++NN;
 			}
 
