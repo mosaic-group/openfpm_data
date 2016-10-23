@@ -19,6 +19,7 @@ m4_ifdef([AX_BOOST_PROGRAM_OPTIONS],,[m4_include([m4/ax_boost_program_options.m4
 m4_ifdef([AX_BOOST_UNIT_TEST_FRAMEWORK],,[m4_include([m4/ax_boost_unit_test_framework.m4])])
 m4_ifdef([AX_BOOST_TIMER],,[m4_include(m4/ax_boost_timer.m4)])
 m4_ifdef([AX_BOOST_SYSTEM],,[m4_include(m4/ax_boost_system.m4)])
+m4_ifdef([AX_LIB_HILBERT],,[m4_include(m4/ax_libhilbert.m4)])
 
 case $host_os in
    *cygwin*)
