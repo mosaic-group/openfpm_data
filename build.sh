@@ -10,7 +10,7 @@ mv /tmp/openfpm_data_$3 openfpm_data
 
 mkdir openfpm_data/src/config
 
-git clone git@ppmcore.mpi-cbg.de:incardon/openfpm_devices.git openfpm_devices
+git clone git@git.mpi-cbg.de:openfpm_devices/openfpm_devices.git openfpm_devices
 
 cd "$1/openfpm_data"
 
