@@ -13,7 +13,7 @@ parallel (
 
                     stage ('run_nyu')
                     {
-                      sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME"
+                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME"
                     }
                   }
                  },
@@ -31,7 +31,7 @@ parallel (
 
                     stage ('run_sb15_val')
                     {
-                      sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME"
+                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME"
                     }
                   }
                  },
@@ -47,7 +47,7 @@ parallel (
 
                     stage ('run_gin')
                     {
-                      sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME"
+                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME"
                     }
                   }
                  }
