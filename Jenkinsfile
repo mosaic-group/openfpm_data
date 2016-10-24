@@ -29,7 +29,7 @@ parallel (
                       sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME"
                     }
 
-                    stage ('run_sb15_val')
+                    stage ('run_sb15')
                     {
                       sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME"
                     }
