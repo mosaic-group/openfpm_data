@@ -4,6 +4,7 @@ parallel (
 
 "nyu_VALGRIND" : {node ('nyu')
                   {
+                    deleteDir()
                     checkout scm
                     stage ('build_nyu_val')
                     {
@@ -20,6 +21,7 @@ parallel (
 
 "nyu_NO" : {node ('nyu')
                   {
+                    deleteDir()
                     checkout scm
                     stage ('build_nyu_nor')
                     {
@@ -35,6 +37,7 @@ parallel (
 
 "nyu_SE" : {node ('nyu')
                   {
+                    deleteDir()
                     checkout scm
                     stage ('build_nyu_se')
                     {
@@ -50,6 +53,7 @@ parallel (
 
 "sb15_VALGRIND" : {node ('sbalzarini-mac-15')
                   {
+                    deleteDir()
                     env.PATH = "/usr/local/bin:${env.PATH}"
                     checkout scm
                     stage ('build_sb15_val')
@@ -67,6 +71,7 @@ parallel (
 
 "sb15_NO" : {node ('sbalzarini-mac-15')
                   {
+                    deleteDir()
                     env.PATH = "/usr/local/bin:${env.PATH}"
                     checkout scm
                     stage ('build_sb15_nor')
@@ -83,6 +88,7 @@ parallel (
 
 "sb15_SE" : {node ('sbalzarini-mac-15')
                   {
+                    deleteDir()
                     env.PATH = "/usr/local/bin:${env.PATH}"
                     checkout scm
                     stage ('build_sb15_se')
