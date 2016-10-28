@@ -13,7 +13,7 @@ parallel (
                         checkout scm
                         ntry = 0
                       }
-                      catch
+                      catch (IOException e)
                       {
                         ntry--
                       }
