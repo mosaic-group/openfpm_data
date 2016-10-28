@@ -49,7 +49,7 @@ parallel (
                     stage ('run_nyu_se')
                     {
                       sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME SE"
-                      sh "./success.sh 1 nyu openfpm_data \"security enhancements\""
+                      sh "cd openfpm_data && ./success.sh 1 nyu openfpm_data \"security enhancements\""
                     }
                   }
                  },
@@ -67,7 +67,7 @@ parallel (
                     stage ('run_sb15_val')
                     {
                       sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME VALGRIND"
-                      sh "./success.sh 1 sbalzarini-mac-15 openfpm_data valgrind"
+                      sh "cd openfpm_data && ./success.sh 1 sbalzarini-mac-15 openfpm_data valgrind"
                     }
                   }
                  },
@@ -86,7 +86,7 @@ parallel (
                     stage ('run_sb15_nor')
                     {
                       sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME NO"
-                      sh "./success.sh 2 sbalzarini-mac-15 openfpm_data"
+                      sh "cd openfpm_data && ./success.sh 2 sbalzarini-mac-15 openfpm_data"
                     }
                   }
                  },
@@ -104,7 +104,7 @@ parallel (
                     stage ('run_sb15_se')
                     {
                       sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME SE"
-                      sh "./success.sh 1 sbalzarini-mac-15 openfpm_data \"security enhancements\""
+                      sh "cd openfpm_data && ./success.sh 1 sbalzarini-mac-15 openfpm_data \"security enhancements\""
                     }
                   }
                  }
