@@ -6,7 +6,7 @@ parallel (
                   {
                     deleteDir()
 
-                    def ntry = 5
+                    int ntry = 5
                     while (ntry != 0)
                     {
                       try {
@@ -15,7 +15,7 @@ parallel (
                       }
                       catch
                       {
-                        ntry = ntry - 1
+                        ntry--
                       }
                     }
 
