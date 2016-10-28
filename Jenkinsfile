@@ -14,7 +14,7 @@ parallel (
                     stage ('run_nyu_val')
                     {
                       sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME VALGRIND"
-                      sh "./success.sh 1 nyu openfpm_data valgrind"
+                      sh "cd openfpm_data && ./success.sh 1 nyu openfpm_data valgrind"
                     }
                   }
                  },
@@ -32,7 +32,7 @@ parallel (
                     stage ('run_nyu_nor')
                     {
                       sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME NO"
-                      sh "./success.sh 2 nyu openfpm_data"
+                      sh "cd openfpm_data && ./success.sh 2 nyu openfpm_data"
                     }
                   }
                  },
