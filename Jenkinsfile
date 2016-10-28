@@ -5,7 +5,20 @@ parallel (
 "nyu_VALGRIND" : {node ('nyu')
                   {
                     deleteDir()
-                    checkout scm
+
+                    def ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch
+                      {
+                        ntry = ntry - 1
+                      }
+                    }
+
                     stage ('build_nyu_val')
                     {
                       sh "./build.sh $WORKSPACE $NODE_NAME VALGRIND"
