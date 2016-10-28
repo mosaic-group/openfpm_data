@@ -14,7 +14,7 @@ parallel (
                     stage ('run_nyu')
                     {
                       sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME"
-                      sh "./success.sh 2 nyu openfpm_io"
+                      sh "cd openfpm_io && ./success.sh 2 nyu openfpm_io"
                     }
                   }
                  },
@@ -33,7 +33,7 @@ parallel (
                     stage ('run_sb15')
                     {
                       sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME"
-                      sh "./success.sh 2 sbalzarini-mac-15 openfpm_io"
+                      sh "cd openfpm_io && ./success.sh 2 sbalzarini-mac-15 openfpm_io"
                     }
                   }
                  },
@@ -50,7 +50,7 @@ parallel (
                     stage ('run_gin')
                     {
                       sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME"
-                      sh "./success.sh 2 gin openfpm_io"
+                      sh "cd openfpm_io && ./success.sh 2 gin openfpm_io"
                     }
                   }
                  }
