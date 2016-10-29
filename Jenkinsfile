@@ -5,7 +5,21 @@ parallel (
 "nyu" : {node ('nyu')
                   {
                     deleteDir()
-                    checkout scm
+
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(5000)
+                      }
+                    }
+
                     stage ('build_nyu')
                     {
                       sh "./build.sh $WORKSPACE $NODE_NAME"
@@ -24,7 +38,21 @@ parallel (
                   {
                     deleteDir()
                     env.PATH = "/usr/local/bin:${env.PATH}"
-                    checkout scm
+
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(5000)
+                      }
+                    }
+
                     stage ('build_sb15')
                     {
                       sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME"
@@ -41,7 +69,21 @@ parallel (
 "gin" : {node ('gin')
                   {
                     deleteDir()
-                    checkout scm
+
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(5000)
+                      }
+                    }
+
                     stage ('build_gin')
                     {
                       sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME"
