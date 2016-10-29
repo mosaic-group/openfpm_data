@@ -37,7 +37,21 @@ parallel (
 "nyu_NO" : {node ('nyu')
                   {
                     deleteDir()
-                    checkout scm
+
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(5000)
+                      }
+                    }
+
                     stage ('build_nyu_nor')
                     {
                       sh "./build.sh $WORKSPACE $NODE_NAME NO"
@@ -54,7 +68,21 @@ parallel (
 "nyu_SE" : {node ('nyu')
                   {
                     deleteDir()
-                    checkout scm
+
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(5000)
+                      }
+                    }
+
                     stage ('build_nyu_se')
                     {
                       sh "./build.sh $WORKSPACE $NODE_NAME SE"
@@ -72,7 +100,21 @@ parallel (
                   {
                     deleteDir()
                     env.PATH = "/usr/local/bin:${env.PATH}"
-                    checkout scm
+                    
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(5000)
+                      }
+                    }
+
                     stage ('build_sb15_val')
                     {
                       sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME VALGRIND"
@@ -91,7 +133,21 @@ parallel (
                   {
                     deleteDir()
                     env.PATH = "/usr/local/bin:${env.PATH}"
-                    checkout scm
+
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(5000)
+                      }
+                    }
+
                     stage ('build_sb15_nor')
                     {
                       sh "./build.sh $WORKSPACE $NODE_NAME NO"
@@ -109,7 +165,21 @@ parallel (
                   {
                     deleteDir()
                     env.PATH = "/usr/local/bin:${env.PATH}"
-                    checkout scm
+                    
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(5000)
+                      }
+                    }
+
                     stage ('build_sb15_se')
                     {
                       sh "./build.sh $WORKSPACE $NODE_NAME SE"
