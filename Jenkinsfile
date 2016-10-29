@@ -16,6 +16,7 @@ parallel (
                       catch (IOException e)
                       {
                         ntry--
+                        sleep(5000)
                       }
                     }
 
