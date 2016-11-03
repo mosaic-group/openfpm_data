@@ -131,7 +131,7 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_s(SpaceBo
 	//! [Fill external cell list]
 
 	// Initialize an external cell-list
-	CellList<dim,T,FAST,shift<3,double>> cli;
+	CellList<dim,T,Mem_fast<3,double>,shift<3,double>> cli;
 	Box<dim,T> bt = box;
 
 	// Calculate the divisions for the Cell-lists

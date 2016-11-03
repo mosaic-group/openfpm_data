@@ -395,8 +395,8 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 
 	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	SpaceBox<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
-	Test_cell_s<3,double,CellList<3,double,FAST>>(box);
-	Test_cell_s<3,double,CellList<3,double,FAST,shift<3,double>> >(box2);
+	Test_cell_s<3,double,CellList<3,double,Mem_fast<3,double>>>(box);
+	Test_cell_s<3,double,CellList<3,double,Mem_fast<3,double>,shift<3,double>> >(box2);
 	Test_cell_sM<3,double,CellListM<3,double,8>>(box);
 	Test_cell_sM<3,double,CellListM<3,double,8>>(box2);
 
@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 
 BOOST_AUTO_TEST_CASE( CellList_consistent )
 {
-	Test_CellDecomposer_consistent<CellList<2,float,FAST,shift<2,float>>>();
+	Test_CellDecomposer_consistent<CellList<2,float,Mem_fast<3,double>,shift<2,float>>>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

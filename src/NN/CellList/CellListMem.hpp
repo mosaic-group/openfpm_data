@@ -9,7 +9,7 @@
 #ifndef CELLISTMEM_HPP_
 #define CELLISTMEM_HPP_
 
-#include <unordered_map>
+#include "CellList.hpp"
 
 /*! \brief Class for MEMORY-WISE cell list implementation
  *
@@ -30,31 +30,9 @@
  * \tparam T type of the space float, double, complex
  *
  */
-template<unsigned int dim, typename T, typename transform, typename base>
-class CellList<dim,T,MEMORY,transform,base> : public CellDecomposer_sm<dim,T,transform>
+template<unsigned int dim, typename T, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
+class Mem_mem
 {
-	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
-	//
-	//    * * *
-	//    * x *
-	//    * * *
-
-	long int NNc_full[openfpm::math::pow(3,dim)];
-
-	// The array contain the neighborhood of the cell-id in case of symmetric interaction
-	//
-	//   * * *
-	//     x *
-	//
-	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
-
-	// The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
-	//
-	//   * *
-	//   x *
-	//
-	long int NNc_cr[openfpm::math::pow(2,dim)];
-
 	// each cell has a dynamic structure
 	// that store the elements in the cell
 	std::unordered_map<size_t,base> cl_base;
@@ -67,264 +45,144 @@ public:
 	// Object type that the structure store
 	typedef T value_type;
 
-	/*! \brief Return the underlying grid information of the cell list
-	 *
-	 * \return the grid infos
-	 *
-	 */
-	grid_sm<dim,void> & getGrid()
+
+	void init_to_zero(size_t slot, size_t tot_n_cell)
 	{
-		CellDecomposer_sm<dim,T>::getGrid();
-	}
+		//resize the map to needed number of cells
 
-	/*! Initialize the cell list
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list
-	 * \param div grid size on each dimension
-	 *
-	 */
-
-	void Initialize(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
-	{
-		SpaceBox<dim,T> sbox;
-		Initialize(sbox,div,orig);
-	}
-
-	/*! Initialize the cell list
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list
-	 * \param div grid size on each dimension
-	 *
-	 */
-
-	void Initialize(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
-	{
-		// Add padding
-		size_t div_pad[dim];
-		for (size_t i = 0 ; i < dim ; i++)
-			div_pad[i] = div[i] + 2;
-
-		CellDecomposer_sm<dim,T>::setDimensions(box,div_pad, pad);
-
-		this->orig = orig;
+		cl_base.rehash(tot_n_cell);
 
 		//filling a map with "base" structures
-		for (int i = 0; i < this->tot_n_cell; i++)
-			cl_base[i] = base();
-
-
-		// Calculate the NNc-arrays (for neighborhood):
-
-		// compile-time array {0,0,0,....} and {3,3,3,...}
-
-		typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
-		typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-		typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
-
-		// Generate the sub-grid iterator
-
-		grid_key_dx_iterator_sub<dim> gr_sub3(this->gr_cell,NNzero::data,NNtwo::data);
-
-		// Calculate the NNc array
-
-		size_t middle = this->gr_cell.LinId(NNone::data);
-		size_t i = 0;
-		while (gr_sub3.isNext())
-		{
-			NNc_full[i] = (long int)this->gr_cell.LinId(gr_sub3.get()) - middle;
-
-			++gr_sub3;
-			i++;
-		}
-
-		// Calculate the NNc_sym array
-
-		i = 0;
-		gr_sub3.reset();
-		while (gr_sub3.isNext())
-		{
-			auto key = gr_sub3.get();
-
-			size_t lin = this->gr_cell.LinId(key);
-
-			// Only the first half is considered
-			if (lin < middle)
-			{
-				++gr_sub3;
-				continue;
-			}
-
-			NNc_sym[i] = lin - middle;
-
-			++gr_sub3;
-			i++;
-		}
-
-		// Calculate the NNc_cross array
-
-		i = 0;
-		grid_key_dx_iterator_sub<dim> gr_sub2(this->gr_cell,NNzero::data,NNone::data);
-
-		while (gr_sub2.isNext())
-		{
-			auto key = gr_sub2.get();
-
-			NNc_cr[i] = (long int)this->gr_cell.LinId(key);
-
-			++gr_sub2;
-			i++;
+		for (int i = 0; i < tot_n_cell; i++)
+		{   base b;
+			cl_base.insert(tot_n_cell, b);
 		}
 	}
 
-		/*! \brief Default constructor
-	 *
-	 */
-	CellList()
+	void swap_cl(CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base> && cell)
 	{
+		cl_base.swap(cell.cl_base);
 	}
 
-
-	/*! \brief Cell list
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param org of the Cell list
-	 * \param div grid size on each dimension
-	 *
-	 */
-	CellList(Box<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
+	void equal_cl(const CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base> & cell)
 	{
-		SpaceBox<dim,T> sbox(box);
-		Initialize(sbox,div,orig,pad);
+		cl_base = cell.cl_base;
 	}
 
-	/*! \brief Cell list
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param origin of the Cell list
-	 * \param div grid size on each dimension
-	 *
-	 */
-	CellList(SpaceBox<dim,T> & box, size_t (&div)[dim], Point<dim,T> & orig, const size_t pad = 1)
+	void cell_add(size_t cell_id, typename base::value_type ele)
 	{
-		Initialize(box,div,orig,pad);
+		//add another neighbor element
+
+		cl_base.get(cell_id) = ele;
 	}
 
-
-	/*! \brief Add an element in the cell list
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	void add(const T (& pos)[dim], typename base::value_type ele)
+	void add_ele(const T (& pos)[dim], typename base::value_type ele)
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos);
+		size_t cell_id = CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>::getCell(pos);
 
-		// Get the number of element the cell is storing
+		// add the element to the cell
 
-		cl_base[cell_id].add(ele);
+		CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>::addCell(cell_id,ele);
 	}
 
-	/*! \brief Add an element in the cell list
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	void add(const Point<dim,T> & pos, typename base::value_type ele)
+	void add_ele(const Point<dim,T> & pos, typename base::value_type ele)
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos);
+		size_t cell_id = CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>::getCell(pos);
 
-		// add a new element
+		// add the element to the cell
 
-		cl_base[cell_id].add(ele);
+		CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>::addCell(cell_id,ele);
 	}
 
-
-	/*! \brief remove an element from the cell
-	 *
-	 * \param cell cell id
-	 * \param ele element id
-	 *
-	 */
-	void remove(size_t cell, size_t ele)
+	void rmv(size_t cell, size_t ele)
 	{
-		cl_base[cell].remove(ele);
+		cl_base.get(cell).remove(ele);
 	}
 
-	/*! \brief Return the number of element in the cell
-	 *
-	 * \param cell_id id of the cell
-	 *
-	 * \return number of elements in the cell
-	 *
-	 */
-	size_t getNelements(size_t cell_id)
+	size_t getNele(const size_t cell_id)
 	{
-		return cl_base[cell_id].size();
+		return cl_base.get(cell_id).size();
 	}
 
-	/*! \brief Get an element in the cell
-	 *
-	 * \param cell cell id
-	 * \param ele element id
-	 *
-	 */
-	auto get(size_t cell, size_t ele) -> decltype(cl_base[cell].get(ele))
+	auto get_ele(size_t cell, size_t ele) -> decltype(cl_base.get(cell).get(ele)) &
 	{
-		return cl_base[cell].get(ele);
+		return cl_base.get(cell).get(ele);
 	}
-	/*! \brief Swap the memory
-	 *
-	 * \param cl Cell list with witch you swap the memory
-	 *
-	 */
-	void swap(CellList<dim,T,MEMORY,base> & cl)
+
+	void swap_mem(CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base> & cl)
 	{
 		cl_base.swap(cl.cl_base);
 	}
 
-		/*! \brief Get the Cell iterator
-	 *
-	 * \param return the iterator to the cell
-	 *
-	 */
-	CellIterator<CellList<dim,T,MEMORY,base>> getIterator(size_t cell)
+	CellIterator<CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>> getCellIt(size_t cell)
 	{
-		return CellIterator<CellList<dim,T,MEMORY,base>>(cell,*this);
+		return CellIterator<CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>>(cell,*this);
 	}
 
-	/*! \brief Get the Nearest Neighborhood iterator
-	 *
-	 * \param cell cell id
-	 *
-	 */
-	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,base>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>,FULL,impl> getNNIt(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,MEMORY,base>,FULL,impl> cln(cell,NNc_full,*this);
+		CellNNIterator<dim,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>,FULL,impl> cln(cell,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>::NNc_full,*this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,base>,SYM,impl> getNNIteratorSym(size_t cell)
+	template<unsigned int impl=NO_CHECK> inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>,impl> getNNItRad(size_t cell, T r_cut, openfpm::vector<long int> & NNc)
 	{
-		CellNNIterator<dim,CellList<dim,T,MEMORY,base>,SYM,impl> cln(cell,NNc_sym,*this);
+		if (NNc.size() == 0)
+			NNcalc(r_cut,NNc);
+
+		CellNNIteratorRadius<dim,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>,impl> cln(cell,NNc,*this);
 
 		return cln;
 	}
 
-	template<unsigned int impl> CellNNIterator<dim,CellList<dim,T,MEMORY,base>,CRS,impl> getNNIteratorCross(size_t cell)
+	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>,SYM,impl> getNNItSym(size_t cell, size_t p)
 	{
-		CellNNIterator<dim,CellList<dim,T,MEMORY,base>,CRS,impl> cln(cell,NNc_cr,*this);
+		CellNNIteratorSym<dim,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>,SYM,impl> cln(cell,p,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>::NNc_sym,*this);
 
 		return cln;
 	}
+
+	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>,CRS,impl> getNNItCross(size_t cell)
+	{
+		CellNNIterator<dim,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>,CRS,impl> cln(cell,CellList<dim,T,Mem_mem<dim,T,transform,base>,transform,base>::NNc_cr,*this);
+
+		return cln;
+	}
+
+	void clr()
+	{
+		for (size_t i = 0 ; i < cl_base.size() ; i++)
+		{
+			for (size_t j = 0; j < cl_base.get(i).size(); j++)
+				cl_base.get(i).get(j) = 0;
+		}
+	}
+
+	inline size_t getStrtId(size_t part_id)
+	{
+		return part_id;
+	}
+
+	inline size_t getStpId(size_t part_id)
+	{
+		return part_id;
+	}
+
+	inline size_t & get_neighb(size_t part_id)
+	{
+		return cl_base.get(part_id);
+	}
+
+public:
+
+	Mem_mem()
+	{}
+
 };
 
 

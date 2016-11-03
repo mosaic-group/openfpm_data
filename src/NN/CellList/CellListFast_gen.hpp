@@ -128,8 +128,8 @@ public:
  * \tparam base Base structure that store the information
  *
  */
-template<unsigned int dim, typename T, typename Prock, unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
-class CellList_gen : public CellList<dim,T,impl,transform,base>
+template<unsigned int dim, typename T, typename Prock, typename Mem_type = Mem_fast<dim,T>, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
+class CellList_gen : public CellList<dim,T,Mem_type,transform,base>
 {
 private:
 	// Ghost marker
@@ -151,7 +151,7 @@ private:
 	 */
 	void get_hkey(grid_key_dx<dim> gk)
 	{
-		Prock::template get_hkey<CellList_gen<dim,T,Prock,impl,transform,base>>(*this,gk,m);
+		Prock::template get_hkey<CellList_gen<dim,T,Prock,Mem_type,transform,base>>(*this,gk,m);
 	}
 
 	/*! \brief Get get the coordinates from hilbert key, linearize and add to the getKeys vector
@@ -159,7 +159,7 @@ private:
 	 */
 	void linearize_hkeys()
 	{
-		Prock::template linearize_hkeys<CellList_gen<dim,T,Prock,impl,transform,base>>(*this,m);
+		Prock::template linearize_hkeys<CellList_gen<dim,T,Prock,Mem_type,transform,base>>(*this,m);
 	}
 
 public:
@@ -175,7 +175,7 @@ public:
 	 */
 	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], size_t g_m_new, const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
-		CellList<dim,T,impl,transform,base>::Initialize(box,div,pad,slot);
+		CellList<dim,T,Mem_type,transform,base>::Initialize(box,div,pad,slot);
 
 		g_m = g_m_new;
 
@@ -219,7 +219,7 @@ public:
 	}
 
 	CellList_gen()
-	:CellList<dim,T,impl,transform,base>(),m(0)
+	:CellList<dim,T,Mem_type,transform,base>(),m(0)
 	{};
 
 
@@ -257,9 +257,9 @@ public:
 	 * \return an iterator
 	 *
 	 */
-	inline Cell_list_iterator<CellList_gen<dim,T,Prock,impl,transform,base>> getIterator()
+	inline Cell_list_iterator<CellList_gen<dim,T,Prock,Mem_type,transform,base>> getIterator()
 	{
-		return Cell_list_iterator<CellList_gen<dim,T,Prock,impl,transform,base>>(*this);
+		return Cell_list_iterator<CellList_gen<dim,T,Prock,Mem_type,transform,base>>(*this);
 	}
 };
 
