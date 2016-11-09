@@ -577,19 +577,13 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#ifdef SE_CLASS1
-
-			if (v.size() != opart.size())
-				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be the same as o_part.size()" << opart.size() << std::endl;
-
-#endif
 			//! Add the element of v
 			for (size_t i = 0 ; i < v.size() ; i++)
 			{
 #ifdef SE_CLASS1
 
-				if (i >= opart.size())
-					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " try to access element " << opart.template get<0>(i) << " but the vector has size " << size() << std::endl;
+				if (start + i >= v_size)
+					std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " try to access element " << start+i << " but the vector has size " << size() << std::endl;
 
 #endif
 				// write the object in the last element

@@ -83,6 +83,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = pmul(key,spacing) + offset[0] + box.getP1();
+		pos.add(key);
 
 		cl1.add(key,id);
 		++id;
@@ -192,6 +193,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim));
 
+		id = cl1.get(cl1.getCell(key),0);
 		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),id,pos);
 		total = 0;
 
@@ -206,7 +208,6 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
 
-		++id;
 		++g_it_s;
 	}
 

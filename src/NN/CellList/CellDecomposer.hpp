@@ -15,6 +15,9 @@
 
 #define CELL_DECOMPOSER 8001lu
 
+
+
+
 /*! This Class apply a shift transformation before converting to Cell-ID
  *
  *
@@ -368,6 +371,74 @@ class CellDecomposer_sm
 		return id;
 	}
 
+	/*! \Check if a particle is outside the domain of the cell-list
+	 *
+	 * \param pos position of the particle
+	 * \param s coordinate to check
+	 *
+	 */
+	template<typename Ele> inline void check_and_print_error(const Ele & pos ,size_t s) const
+	{
+#ifdef SE_CLASS1
+		if (tot_n_cell == 0)
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+
+		if (pos[0] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << Point<dim,T>(pos).toString() << " is not inside the cell space";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+#endif
+	}
+
+
+	template<typename Ele> inline size_t getCellDom_impl(const Ele & pos) const
+	{
+		check_and_print_error(pos,0);
+
+		size_t cell_id = ConvertToID(pos,0);
+		cell_id = (cell_id == gr_cell.size(0) - off[0])?gr_cell.size(0) - off[0] - 1:cell_id;
+		cell_id = (cell_id == off[0]-1)?off[0]:cell_id;
+
+		for (size_t s = 1 ; s < dim ; s++)
+		{
+			check_and_print_error(pos,s);
+
+			size_t cell_idt = ConvertToID(pos,s);
+			cell_idt = (cell_idt == gr_cell.size(s) - off[s])?gr_cell.size(s) - off[s] - 1:cell_idt;
+			cell_idt = (cell_idt == off[s]-1)?off[s]:cell_idt;
+
+			cell_id += gr_cell2.size_s(s-1) * cell_idt;
+		}
+
+		return cell_id;
+	}
+
+	template<typename Ele> inline size_t getCellPad_impl(const Ele & pos) const
+	{
+		check_and_print_error(pos,0);
+
+		size_t cell_id = ConvertToID(pos,0);
+		cell_id = (cell_id == off[0])?off[0]-1:cell_id;
+		cell_id = (cell_id == gr_cell.size(0) - off[0] - 1)?gr_cell.size(0) - off[0]:cell_id;
+
+		for (size_t s = 1 ; s < dim ; s++)
+		{
+			check_and_print_error(pos,s);
+
+			size_t cell_idt = ConvertToID(pos,s);
+			cell_idt = (cell_idt == off[s])?off[s]-1:cell_idt;
+			cell_idt = (cell_idt == gr_cell.size(s) - off[s] - 1)?gr_cell.size(s) - off[s]:cell_idt;
+
+			cell_id += gr_cell2.size_s(s-1) * cell_idt;
+		}
+
+		return cell_id;
+	}
+
 protected:
 
 	// Total number of cell
@@ -533,49 +604,66 @@ public:
 	 *
 	 * Convert the point coordinates into the cell id
 	 *
+	 * \note this function is in general used to bypass round-off error
+	 *
 	 * \param pos Point position
 	 *
 	 * \return the cell-id
 	 *
 	 */
-/*	inline size_t getCellDom(const T (& pos)[dim]) const
+	inline size_t getCellDom(const Point<dim,T> & pos) const
 	{
-#ifdef SE_CLASS1
-		if (tot_n_cell == 0)
-		{
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
-			ACTION_ON_ERROR(CELL_DECOMPOSER);
-		}
+		return getCellDom_impl<Point<dim,T>>(pos);
+	}
 
-		if (pos[0] < box.getLow(0) - off[0]*box_unit.getP2()[0] || pos[0] > box.getHigh(0) + off[0]*box_unit.getP2()[0])
-		{
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
-			ACTION_ON_ERROR(CELL_DECOMPOSER);
-		}
-#endif
 
-		size_t cell_id = ConvertToID(pos,0);
-		cell_id = (cell_id > gr_cell.size(0) - off[0] - 1)?gr_cell.size(0) - off[0] - 1:cell_id;
-		cell_id = (cell_id < off[0])?off[0]:cell_id;
+	/*! \brief Get the cell-id enforcing that is NOT a cell from the padding
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \note this function is in general used to bypass round-off error
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	inline size_t getCellDom(const T (& pos)[dim]) const
+	{
+		return getCellDom_impl<T[dim]>(pos);
+	}
 
-		for (size_t s = 1 ; s < dim ; s++)
-		{
-#ifdef SE_CLASS1
-			if (pos[s] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
-			{
-				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
-				ACTION_ON_ERROR(CELL_DECOMPOSER);
-			}
-#endif
-			size_t cell_idt = ConvertToID(pos,s);
-			cell_idt = (cell_idt > gr_cell.size(s) - off[s] - 1)?gr_cell.size(s) - off[s] - 1:cell_idt;
-			cell_idt = (cell_idt < off[s])?off[s]:cell_idt;
+	/*! \brief Get the cell-id enforcing that is from a padding cell
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \note this function is in general used to bypass round-off error
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	inline size_t getCellPad(const Point<dim,T> & pos) const
+	{
+		return getCellPad_impl<Point<dim,T>>(pos);
+	}
 
-			cell_id += gr_cell2.size_s(s-1) * ConvertToID(pos,s);
-		}
-
-		return cell_id;
-	}*/
+	/*! \brief Get the cell-id enforcing that is from a padding cell
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \note this function is in general used to bypass round-off error
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	inline size_t getCellPad(const T (& pos)[dim]) const
+	{
+		return getCellPad_impl<T[dim]>(pos);
+	}
 
 	/*! \brief Get the cell-id
 	 *
@@ -893,10 +981,9 @@ public:
 
 	/*! \brief Constructor
 	 *
-	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
+	 * \param box Space where is defined the cell list
 	 * \param div Reference array to the number of divisions on each dimensions
 	 * \param mat Transformation matrix, the point is transformed as p' = mat * p
-	 * \param orig origin of the cell decomposition
 	 * \param pad cell padding
 	 *
 	 *  Example for div = {6,6} and pad = 1
@@ -921,8 +1008,8 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, Point<dim,T> & orig, const size_t pad)
-	:t(Matrix<dim,T>::identity(),Point<dim,T>::zero()),box(box),gr_cell()
+	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, const size_t pad)
+	:t(Matrix<dim,T>::identity(),box.getP1()),box(box),gr_cell()
 	{
 		Initialize(pad);
 	}
@@ -931,7 +1018,6 @@ public:
 	 *
 	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
 	 * \param div Reference array to the number of divisions on each dimensions
-	 * \param orig origin of the cell decomposition
 	 * \param pad cell padding
 	 *
 	 *  Example for div = {7,7} and pad = 1
@@ -951,40 +1037,6 @@ public:
      * |p |p |p |p |p |p |p |p |
      * +-----------------------+
 	 *
-	 * \endverbatim
-	 *
-	 * Cell with p are padding cell cell that are around but external the box, the cell number 9 that
-	 * is at the origin of the box is identified with 9
-	 *
-	 */
-	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Point<dim,T> & orig, const size_t pad)
-	:t(Matrix<dim,T>::identity(),orig),box(box),gr_cell(div)
-	{
-		Initialize(pad,div);
-	}
-
-	/*! \brief Constructor
-	 *
-	 * \param box Space where is defined the cell list (it is assumed p1 = {0, .... 0})
-	 * \param div Reference array to the number of divisions on each dimensions
-	 * \param pad cell padding
-	 *
-	 *  Example for div = {7,7} and pad = 1
-	 *
-	 * \verbatim
-	 * +-----------------------+
-     * |p |p |p |p |p |p |p |p |
-     * +-----------------------+
-     * |p |  |  |  |  |  |  |p |
-     * +-----------------------+
-     * |p |  |  |  |  |  |  |p |
-     * +-----------------------+
-     * |p |  |  |  |  |  |  |p |
-     * +-----------------------+
-     * |p |9 |  |  |  |  |  |p |
-     * +-----------------------+
-     * |p |p |p |p |p |p |p |p |
-     * +-----------------------+
 	 * \endverbatim
 	 *
 	 * Cell with p are padding cell cell that are around but external the box, the cell number 9 that
@@ -992,11 +1044,10 @@ public:
 	 *
 	 */
 	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad)
-	:t(Matrix<dim,T>::identity(),box.getP1()),box(box),gr_cell()
+	:t(Matrix<dim,T>::identity(),box.getP1()),box(box),gr_cell(div)
 	{
 		Initialize(pad,div);
 	}
-
 
 	/*! \brief Constructor for a consistent CellDecomposer construction
 	 *

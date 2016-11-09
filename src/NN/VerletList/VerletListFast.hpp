@@ -9,6 +9,7 @@
 #define OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETLISTFAST_HPP_
 
 #include "VerletNNIterator.hpp"
+#include "NN/CellList/CellList_util.hpp"
 
 #define VERLET_STARTING_NSLOT 128
 
@@ -162,16 +163,16 @@ private:
 	 *
 	 * \param cli Cell-list
 	 * \param pos vector of positions
+	 * \param g_m marker
+	 * \param opt VL_SYMMETRIC or VL_NON_SYMMETRIC
 	 *
 	 */
-	void initCl(CellListImpl & cli, openfpm::vector<Point<dim,T>> & pos)
+	void initCl(CellListImpl & cli, openfpm::vector<Point<dim,T>> & pos, size_t g_m, size_t opt)
 	{
-		cli.clear();
-
-		for (size_t i = 0; i < pos.size() ; i++)
-		{
-			cli.add(pos.get(i), i);
-		}
+		if (opt & VL_SYMMETRIC)
+			populate_cell_list(pos,cli,g_m,CL_SYMMETRIC);
+		else
+			populate_cell_list(pos,cli,g_m,CL_NON_SYMMETRIC);
 	}
 
 	/*! \brief Create the Verlet list from a given cell-list
@@ -201,8 +202,8 @@ private:
 	 * \param g_m Indicate form which particles to construct the verlet list. For example
 	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
 	 * 			100 particles
-	 * \param cl Cell-list elements to use to construct the verlet list
-	 * \param dom Processor domain
+	 * \param cli Cell-list elements to use to construct the verlet list
+	 * \param opt options
 	 *
 	 */
 	template<typename NN_type, int type> inline void create_(const openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
@@ -341,7 +342,7 @@ public:
 
 		// Initialize a cell-list
 		cli.Initialize(bt,div);
-		initCl(cli,pos);
+		initCl(cli,pos,g_m,opt);
 
 		// create verlet
 		create(pos,r_cut,g_m,cli,opt);
@@ -371,7 +372,7 @@ public:
 
 		// Initialize a cell-list
 		cli.Initialize(cd_sm,dom,pad);
-		initCl(cli,pos);
+		initCl(cli,pos,g_m,VL_SYMMETRIC);
 
 		// create verlet
 		create(pos,r_cut,g_m,cli,VL_SYMMETRIC);
@@ -388,7 +389,7 @@ public:
 	 */
 	void update(const Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t & g_m, size_t opt)
 	{
-		initCl(cli,pos);
+		initCl(cli,pos,g_m,opt);
 		create(pos,r_cut,g_m,cli,opt);
 	}
 
@@ -418,7 +419,6 @@ public:
 
 		if (wr == true || opt == VL_SYMMETRIC)
 		{
-//			create_<decltype(cli.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cli,VL_NON_SYMMETRIC);
 			create(pos,r_cut,g_m,cli,opt);
 		}
 		else

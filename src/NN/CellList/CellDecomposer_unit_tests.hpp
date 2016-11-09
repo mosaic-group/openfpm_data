@@ -146,9 +146,11 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	//! [Test Cell decomposer with shift]
 	{
 	Point<3,double> sht({1.0,2.0,3.0});
+	Box<3,double> box2 = box;
+	box2+= sht;
 	double psht[3] = {1.5,2.5,3.5};
 
-	CellDecomposer_sm< 3,double,shift<3,double> > cd(box,div,sht,1);
+	CellDecomposer_sm< 3,double,shift<3,double> > cd(box2,div,1);
 	size_t cell = cd.getCell(p + sht);
 	BOOST_REQUIRE_EQUAL(cell,(size_t)(9*18*18 + 9*18 + 9));
 	auto key = cd.getCellGrid(p + sht);
@@ -166,7 +168,18 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 
 	//! [Test Cell decomposer with shift]
 
-
+	//! [Test Cell decomposer getCellDom getCellPad]
+	{
+	CellDecomposer_sm<3,double> cd(box,div,1);
+	size_t cell_cor_dom = cd.getCellDom(Point<3,double>({-0.000001,-0.000001,-0.000001}));
+	size_t cell_cor_pad = cd.getCellPad(Point<3,double>({0.000001,0.000001,0.000001}));
+	size_t cell_not_cor_pad1 = cd.getCell(Point<3,double>({-0.000001,-0.000001,-0.000001}));
+	size_t cell_not_cor_pad2 = cd.getCell(Point<3,double>({0.000001,0.000001,0.000001}));
+	BOOST_REQUIRE_EQUAL(cell_cor_pad,0ul);
+	BOOST_REQUIRE_EQUAL(cell_cor_dom,(size_t)(1*18*18 + 1*18 + 1));
+	BOOST_REQUIRE_EQUAL(cell_not_cor_pad1,0ul);
+	BOOST_REQUIRE_EQUAL(cell_not_cor_pad2,(size_t)(1*18*18 + 1*18 + 1));
+	}
 }
 
 #define N_POINTS 1000
@@ -185,8 +198,10 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_consistent_use )
 
 	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	Point<3,double> sht({1.1,2.1,3.1});
+	SpaceBox<3,double> box2 = box;
+	box2 += sht;
 
-	CellDecomposer_sm< 3,double,shift<3,double> > cd(box,div,sht,1);
+	CellDecomposer_sm< 3,double,shift<3,double> > cd(box2,div,1);
 
 	// Here we create another extended Cell decomposer consistent with the
 	// previous
@@ -251,9 +266,8 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_swap_use )
 	size_t div[3] = {16,16,16};
 
 	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	Point<3,double> sht({1.1,2.1,3.1});
 
-	CellDecomposer_sm< 3,double,shift<3,double> > cd1(box,div,sht,1);
+	CellDecomposer_sm< 3,double,shift<3,double> > cd1(box,div,1);
 
 	// another cell Decomposer
 
@@ -262,9 +276,8 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_swap_use )
 	size_t div2[3] = {15,15,15};
 
 	SpaceBox<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
-	Point<3,double> sht2({1.0,2.0,3.0});
 
-	CellDecomposer_sm< 3,double,shift<3,double> > cd2(box2,div2,sht2,2);
+	CellDecomposer_sm< 3,double,shift<3,double> > cd2(box2,div2,2);
 
 	auto cd1_old = cd1;
 	auto cd2_old = cd2;

@@ -54,6 +54,7 @@ struct number_prop
 	};
 };
 
+//! return the number of properties the type T has
 template<typename T>
 struct number_prop<T,0>
 {
@@ -63,15 +64,17 @@ struct number_prop<T,0>
 	};
 };
 
-
+//! return if true the aggregate type T has a property that has a complex packing(serialization) method
 template<class T, int ... prp>
 struct has_pack_agg
 {
 	typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type vprp;
-	//typedef typename to_boost_vmpl<prp...>::type vprp;
+
+	//! typedef typename to_boost_vmpl<prp...>::type vprp;
     typedef typename has_pack_agg_impl<T,number_prop<T,sizeof ... (prp)>::value, boost::mpl::bool_<false> , vprp>::result result;
 };
 
+//! It return true if the object T require complex serialization
 template<class T, unsigned int sel = openfpm::vect_isel<T>::value == OPENFPM_NATIVE>
 struct has_pack_gen
 {
@@ -81,6 +84,7 @@ struct has_pack_gen
 	};
 };
 
+//! It return true if the object T require complex serialization
 template<class T>
 struct has_pack_gen<T, false>
 {

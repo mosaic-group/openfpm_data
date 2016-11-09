@@ -9,6 +9,8 @@
 #define UTIL_DEBUG_HPP
 
 #include <memory>
+#include <string>
+#include <cstdlib>
 
 /*! \brief check that two array match
  *
