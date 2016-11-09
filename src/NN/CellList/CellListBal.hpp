@@ -58,7 +58,7 @@ public:
 		cl_base.resize(tot_n_cell);
 
 		//filling a vector with "base" structures
-		for (int i = 0; i < tot_n_cell; i++)
+		for (size_t i = 0; i < tot_n_cell; i++)
 		{   base b;
 			cl_base.get(i) = b;
 		}
@@ -81,26 +81,31 @@ public:
 		cl_base.get(cell_id) = ele;
 	}
 
-	void add_ele(const T (& pos)[dim], typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>::getCell(pos);
-
-		// add the element to the cell
-
-		CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>::addCell(cell_id,ele);
-	}
-
 	void add_ele(const Point<dim,T> & pos, typename base::value_type ele)
 	{
+
+		CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base> cl;
+
 		// calculate the Cell id
 
-		size_t cell_id = CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>::getCell(pos);
+		size_t cell_id = cl.getCell(pos);
 
 		// add the element to the cell
 
-		CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>::addCell(cell_id,ele);
+		cl.addCell(cell_id,ele);
+	}
+
+	void add_ele(const T (& pos)[dim], typename base::value_type ele)
+	{
+		CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base> cl;
+
+		// calculate the Cell id
+
+		size_t cell_id = cl.getCell(pos);
+
+		// add the element to the cell
+
+		cl.addCell(cell_id,ele);
 	}
 
 	void rmv(size_t cell, size_t ele)
@@ -108,7 +113,7 @@ public:
 		cl_base.get(cell).remove(ele);
 	}
 
-	size_t getNele(const size_t cell_id)
+	size_t getNele(const size_t cell_id) const
 	{
 		return cl_base.get(cell_id).size();
 	}
@@ -121,42 +126,6 @@ public:
 	void swap_mem(CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base> & cl)
 	{
 		cl_base.swap(cl.cl_base);
-	}
-
-	CellIterator<CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>> getCellIt(size_t cell)
-	{
-		return CellIterator<CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>>(cell,*this);
-	}
-
-	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>,FULL,impl> getNNIt(size_t cell)
-	{
-		CellNNIterator<dim,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>,FULL,impl> cln(cell,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>::NNc_full,*this);
-
-		return cln;
-	}
-
-	template<unsigned int impl=NO_CHECK> inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>,impl> getNNItRad(size_t cell, T r_cut, openfpm::vector<long int> & NNc)
-	{
-		if (NNc.size() == 0)
-			NNcalc(r_cut,NNc);
-
-		CellNNIteratorRadius<dim,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>,impl> cln(cell,NNc,*this);
-
-		return cln;
-	}
-
-	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>,SYM,impl> getNNItSym(size_t cell, size_t p)
-	{
-		CellNNIteratorSym<dim,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>,SYM,impl> cln(cell,p,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>::NNc_sym,*this);
-
-		return cln;
-	}
-
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>,CRS,impl> getNNItCross(size_t cell)
-	{
-		CellNNIterator<dim,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>,CRS,impl> cln(cell,CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base>::NNc_cr,*this);
-
-		return cln;
 	}
 
 	void clr()
@@ -178,14 +147,15 @@ public:
 		return part_id;
 	}
 
+	size_t test;
 	inline size_t & get_neighb(size_t part_id)
 	{
-		return cl_base.get(part_id);
+		return test;
 	}
 
 public:
 
-	Mem_bal()
+	Mem_bal(size_t slot)
 	{}
 };
 

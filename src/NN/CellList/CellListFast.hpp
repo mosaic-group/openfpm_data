@@ -196,7 +196,7 @@ protected:
 
 public:
 
-	Mem_fast(size_t slot = STARTING_NSLOT)
+	Mem_fast(size_t slot)
 	:slot(slot)
 	{}
 };
