@@ -556,7 +556,7 @@ public:
 		std::copy(&NNc_sym_tmp[0],&NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
 		std::copy(&NNc_cr_tmp[0],&NNc_cr_tmp[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
-		Mem_type::swap_mem(cl);
+		Mem_type::template swap_mem<decltype(cl)>(cl);
 
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cl);
 	}

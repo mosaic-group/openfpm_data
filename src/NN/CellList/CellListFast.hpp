@@ -96,7 +96,7 @@ protected:
 		cl_base.swap(cell.cl_base);
 	}
 
-	void equal_cl(const CellList<dim,T,Mem_fast<dim,T,transform,base>,transform,base> & cell)
+	template<typename CellL> void equal_cl(CellL & cell)
 	{
 		slot = cell.slot;
 
@@ -163,7 +163,7 @@ protected:
 		return cl_n.get(cell_id);
 	}
 
-	void swap_mem(CellList<dim,T,Mem_fast<dim,T,transform,base>,transform,base> & cl)
+	template<typename CellL> void swap_mem(CellL & cl)
 	{
 		cl_n.swap(cl.cl_n);
 		cl_base.swap(cl.cl_base);
