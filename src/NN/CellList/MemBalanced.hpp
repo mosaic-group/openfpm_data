@@ -1,6 +1,6 @@
 
 /*
- * CellListBal.hpp
+ * MemBalanced.hpp
  *
  *  Created on: Mar 22, 2015
  *  Last modified: June 25, 2015

@@ -1,5 +1,5 @@
 /*
- * CellListStandard.hpp
+ * MemFast.hpp
  *
  *  Created on: Mar 22, 2015
  *      Author: Pietro Incardona
