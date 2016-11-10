@@ -64,24 +64,19 @@ public:
 		}
 	}
 
-	void swap_cl(CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base> && cell)
-	{
-		cl_base.swap(cell.cl_base);
-	}
-
-	void equal_cl(const CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base> & cell)
+	void operator=(const Mem_bal & cell)
 	{
 		cl_base = cell.cl_base;
 	}
 
-	void cell_add(size_t cell_id, typename base::value_type ele)
+	void addCell(size_t cell_id, typename base::value_type ele)
 	{
 		//add another neighbor element
 
 		cl_base.get(cell_id) = ele;
 	}
 
-	void add_ele(const Point<dim,T> & pos, typename base::value_type ele)
+	void add(const Point<dim,T> & pos, typename base::value_type ele)
 	{
 
 		CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base> cl;
@@ -95,7 +90,7 @@ public:
 		cl.addCell(cell_id,ele);
 	}
 
-	void add_ele(const T (& pos)[dim], typename base::value_type ele)
+	void add(const T (& pos)[dim], typename base::value_type ele)
 	{
 		CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base> cl;
 
@@ -108,27 +103,32 @@ public:
 		cl.addCell(cell_id,ele);
 	}
 
-	void rmv(size_t cell, size_t ele)
+	void remove(size_t cell, size_t ele)
 	{
 		cl_base.get(cell).remove(ele);
 	}
 
-	size_t getNele(const size_t cell_id) const
+	size_t getNelements(const size_t cell_id) const
 	{
 		return cl_base.get(cell_id).size();
 	}
 
-	auto get_ele(size_t cell, size_t ele) -> decltype(cl_base.get(cell).get(ele)) &
+	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell).get(ele)) &
 	{
 		return cl_base.get(cell).get(ele);
 	}
 
-	void swap_mem(CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base> & cl)
+	void swap(Mem_bal & cl)
 	{
 		cl_base.swap(cl.cl_base);
 	}
 
-	void clr()
+	void swap(Mem_bal && cell)
+	{
+		cl_base.swap(cell.cl_base);
+	}
+
+	void clear()
 	{
 		for (size_t i = 0 ; i < cl_base.size() ; i++)
 		{
@@ -137,20 +137,19 @@ public:
 		}
 	}
 
-	inline size_t getStrtId(size_t part_id)
+	inline size_t * getStartId(size_t part_id)
 	{
-		return part_id;
+		return &cl_base.get(part_id).get(0);
 	}
 
-	inline size_t getStpId(size_t part_id)
+	inline size_t * getStopId(size_t part_id)
 	{
-		return part_id;
+		return &cl_base.get(part_id).last();
 	}
 
-	size_t test;
-	inline size_t & get_neighb(size_t part_id)
+	inline size_t & get_lin(size_t * part_id)
 	{
-		return test;
+		return *part_id;
 	}
 
 public:

@@ -14,6 +14,25 @@
 #include "CellListNNIteratorRadius.hpp"
 #include <unordered_map>
 
+//! Wrapper of the unordered map
+template<typename key,typename val>
+class wrap_unordered_map: public std::unordered_map<key,val>
+{
+};
+
+#ifdef HAVE_LIBQUADMATH
+
+#include <boost/multiprecision/float128.hpp>
+
+
+//! Wrapper of the unordered map
+template<typename val>
+class wrap_unordered_map<boost::multiprecision::float128,val>
+{
+};
+
+#endif
+
 //! Point at witch the cell do a reallocation (it should the the maximum for all the implementations)
 #define CELL_REALLOC 16ul
 
@@ -102,7 +121,7 @@ protected:
 private:
 
 	//! Caching of r_cutoff radius
-	std::unordered_map<T,openfpm::vector<long int>> rcache;
+	wrap_unordered_map<T,openfpm::vector<long int>> rcache;
 
 
 	/*! Calculate the neighborhood cells based on the radius
@@ -434,7 +453,7 @@ public:
 		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
 		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
-		Mem_type::swap_cl(cell);
+		Mem_type::swap(static_cast<Mem_type &&>(cell));
 
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this).swap(cell);
 
@@ -454,7 +473,7 @@ public:
 		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
 		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
-		Mem_type::equal_cl(cell);
+		Mem_type::operator=(static_cast<const Mem_type &>(cell));
 
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cell);
 
@@ -469,7 +488,7 @@ public:
 	 */
 	inline void addCell(size_t cell_id, typename base::value_type ele)
 	{
-		Mem_type::cell_add(cell_id,ele);
+		Mem_type::addCell(cell_id,ele);
 	}
 
 	/*! \brief Add an element in the cell list
@@ -480,7 +499,7 @@ public:
 	 */
 	inline void add(const T (& pos)[dim], typename base::value_type ele)
 	{
-		Mem_type::add_ele(pos,ele);
+		Mem_type::add(pos,ele);
 	}
 
 	/*! \brief Add an element in the cell list
@@ -491,7 +510,7 @@ public:
 	 */
 	inline void add(const Point<dim,T> & pos, typename base::value_type ele)
 	{
-		Mem_type::add_ele(pos,ele);
+		Mem_type::add(pos,ele);
 	}
 
 	/*! \brief remove an element from the cell
@@ -502,7 +521,7 @@ public:
 	 */
 	inline void remove(size_t cell, size_t ele)
 	{
-		Mem_type::rmv(cell,ele);
+		Mem_type::remove(cell,ele);
 	}
 
 	/*! \brief Return the number of elements in the cell
@@ -514,7 +533,7 @@ public:
 	 */
 	inline size_t getNelements(const size_t cell_id) const
 	{
-		return Mem_type::getNele(cell_id);
+		return Mem_type::getNelements(cell_id);
 	}
 
 	/*! \brief Get an element in the cell
@@ -527,9 +546,9 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) -> decltype(this->Mem_type::get_ele(cell,ele))
+	inline auto get(size_t cell, size_t ele) -> decltype(this->Mem_type::get(cell,ele))
 	{
-		return Mem_type::get_ele(cell,ele);
+		return Mem_type::get(cell,ele);
 	}
 
 
@@ -556,7 +575,7 @@ public:
 		std::copy(&NNc_sym_tmp[0],&NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
 		std::copy(&NNc_cr_tmp[0],&NNc_cr_tmp[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
-		Mem_type::template swap_mem<decltype(cl)>(cl);
+		Mem_type::swap(static_cast<Mem_type &>(cl));
 
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cl);
 	}
@@ -767,31 +786,31 @@ public:
 	 */
 	void clear()
 	{
-		Mem_type::clr();
+		Mem_type::clear();
 	}
 
-	/*! \brief Return the starting point of the neighborhood for the particle p
+	/*! \brief Return the starting point of the cell p
 	 *
-	 * \param part_id particle id
+	 * \param cell_id cell id
 	 *
 	 * \return the index
 	 *
 	 */
-	inline size_t getStartId(size_t part_id)
+	inline size_t * getStartId(size_t cell_id)
 	{
-		return Mem_type::getStrtId(part_id);
+		return Mem_type::getStartId(cell_id);
 	}
 
-	/*! \brief Return the end point of the neighborhood for the particle p
+	/*! \brief Return the end point of the cell p
 	 *
-	 * \param part_id particle id
+	 * \param cell_id cell id
 	 *
 	 * \return the stop index
 	 *
 	 */
-	inline size_t getStopId(size_t part_id)
+	inline size_t * getStopId(size_t cell_id)
 	{
-		return Mem_type::getStpId(part_id);
+		return Mem_type::getStopId(cell_id);
 	}
 
 	/*! \brief Return the neighborhood id
@@ -801,9 +820,9 @@ public:
 	 * \return the neighborhood id
 	 *
 	 */
-	inline size_t & get_lin(size_t part_id)
+	inline size_t & get_lin(size_t * part_id)
 	{
-		return Mem_type::get_neighb(part_id);
+		return Mem_type::get_lin(part_id);
 	}
 
 //////////////////////////////// POINTLESS BUT REQUIRED TO RESPECT THE INTERFACE //////////////////
@@ -887,8 +906,8 @@ template<unsigned int dim, typename St> static inline void cl_param_calculateSym
 	cd_sm.setDimensions(dom,div,pad);
 }
 
-#include "CellListFast.hpp"
-#include "CellListBal.hpp"
-#include "CellListMem.hpp"
+#include "MemFast.hpp"
+#include "MemBalanced.hpp"
+#include "MemMemoryWise.hpp"
 
 #endif /* CELLLIST_HPP_ */
