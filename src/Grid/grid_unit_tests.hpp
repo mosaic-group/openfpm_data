@@ -32,11 +32,11 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 	{szz[i] = sz;}
 
 	{grid_cpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory();
+	c3.setMemory();
 	test_layout_gridNd<dim>(c3,sz);}
 
 	{grid_cpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory();
+	c3.setMemory();
 	test_layout_gridObjNd<dim>(c3,sz);}
 
 #ifdef CUDA_GPU
@@ -52,21 +52,21 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 #endif
 
 	{grid_cpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory();
+	c3.setMemory();
 	test_layout_gridObjNd<dim>(c3,sz);}
 
 	{grid_cpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory();
+	c3.setMemory();
 	test_layout_gridNd<dim>(c3,sz);}
 
 #ifdef CUDA_GPU
 
 	{grid_gpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory();
+	c3.setMemory();
 	test_layout_gridNd<dim>(c3,sz);}
 
 	{grid_gpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory();
+	c3.setMemory();
 	test_layout_gridObjNd<dim>(c3,sz);}
 
 #endif
@@ -554,7 +554,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 
 	error = false;
 	try
-	{g.template get<p::x>(keyOut);}
+	{g.get<p::x>(keyOut);}
 	catch (size_t e)
 	{
 		error = true;
@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	error = false;
 	g.setMemory();
 	try
-	{g.template get<p::x>(keyOut);}
+	{g.get<p::x>(keyOut);}
 	catch (size_t e)
 	{
 		error = true;
@@ -602,7 +602,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 
 	error = false;
 	try
-	{g.template get<p::x>(keyNeg);}
+	{g.get<p::x>(keyNeg);}
 	catch (size_t e)
 	{
 		error = true;
@@ -827,8 +827,8 @@ BOOST_AUTO_TEST_CASE(grid_operator_equal)
 	{
 		auto key = it.get();
 
-		g1.template get<b::p1>(key)[0] = key.get(0);
-		g1.template get<b::p2>(key)[1] = key.get(1);
+		g1.get<b::p1>(key)[0] = key.get(0);
+		g1.get<b::p2>(key)[1] = key.get(1);
 
 		++it;
 	}
@@ -860,8 +860,8 @@ void fill_2_grid_data(grid_cpu<2,Box<2,float>> & g1, grid_cpu<2,Box<2,float>> & 
 	{
 		auto key = it1.get();
 
-		g1.template get<b::p1>(key)[0] = key.get(0);
-		g1.template get<b::p2>(key)[1] = key.get(1);
+		g1.get<b::p1>(key)[0] = key.get(0);
+		g1.get<b::p2>(key)[1] = key.get(1);
 
 		++it1;
 	}
@@ -872,8 +872,8 @@ void fill_2_grid_data(grid_cpu<2,Box<2,float>> & g1, grid_cpu<2,Box<2,float>> & 
 	{
 		auto key = it2.get();
 
-		g2.template get<b::p1>(key)[0] = key.get(0);
-		g2.template get<b::p2>(key)[1] = key.get(1);
+		g2.get<b::p1>(key)[0] = key.get(0);
+		g2.get<b::p2>(key)[1] = key.get(1);
 
 		++it2;
 	}

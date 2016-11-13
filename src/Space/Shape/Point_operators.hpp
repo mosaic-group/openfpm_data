@@ -384,7 +384,7 @@ public:
 
 	//! constructor from expression
 	inline point_expression_op(const exp1 & o1)
-	:o1(o1)
+	:o1(o1),scal(0.0)
 	{}
 
 	//! initialize the the expression

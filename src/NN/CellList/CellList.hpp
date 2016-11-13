@@ -70,9 +70,8 @@ template<unsigned int dim, typename St> static inline void cl_param_calculate(Bo
  *
  * \param[in] dom Simulation domain
  * \param[output] cd_sm This cell-decomposer is set according to the needed division
+ * \param[in] g Ghost dimensions
  * \param[output] pad required padding for the cell-list
- * \param[in] r_cut interation radius or size of each cell
- * \param[out] pad padding required for the cell list
  *
  * \return the processor bounding box
  */
@@ -91,6 +90,29 @@ template<unsigned int dim, typename St> static inline void cl_param_calculateSym
 		size_t tmp = std::ceil(fabs(g.getLow(i)) / r_cut);
 		pad = (pad > tmp)?pad:tmp;
 	}
+
+	cd_sm.setDimensions(dom,div,pad);
+}
+
+/*! \brief Calculate parameters for the symmetric cell list
+ *
+ * \param[in] dom Simulation domain
+ * \param[out] cd_sm This cell-decomposer is set according to the needed division
+ * \param[in] g Ghost part extension
+ * \param[out] pad required padding for the cell-list
+ *
+ * \return the processor bounding box
+ */
+template<unsigned int dim, typename St> static inline void cl_param_calculateSym(const Box<dim,St> & dom, CellDecomposer_sm<dim,St,shift<dim,St>> & cd_sm, Ghost<dim,St> g, size_t & pad)
+{
+	size_t div[dim];
+
+	for (size_t i = 0 ; i < dim ; i++)
+		div[i] = (dom.getHigh(i) - dom.getLow(i)) / g.getHigh(i);
+
+	g.magnify(1.013);
+
+	pad = 1;
 
 	cd_sm.setDimensions(dom,div,pad);
 }
