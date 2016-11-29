@@ -13,12 +13,14 @@ template<typename T>
 class Cell_list_iterator
 {
 private:
+
+	//! Cell lisy
     T & NN;
 
-	// Cells counter
+	//! Cells counter
 	size_t cell_count;
 
-	// Particles counter
+	//! Particles counter
 	size_t p_count;
 
 

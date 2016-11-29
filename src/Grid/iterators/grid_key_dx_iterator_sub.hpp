@@ -401,6 +401,26 @@ public:
 	{
 		return grid_base;
 	}
+
+	/*! \brief Starting point
+	 *
+	 * \return starting point
+	 *
+	 */
+	grid_key_dx<dim> & getStart()
+	{
+		return gk_start;
+	}
+
+	/*! \brief Stop point
+	 *
+	 * \return stop point
+	 *
+	 */
+	grid_key_dx<dim> & getStop()
+	{
+		return gk_stop;
+	}
 };
 
 

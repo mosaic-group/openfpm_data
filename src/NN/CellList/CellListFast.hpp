@@ -17,6 +17,8 @@
 #include "CellListNNIteratorRadius.hpp"
 #include <unordered_map>
 #include "util/common.hpp"
+#include "CRSComp.hpp"
+#include "ParticleIt_Cells.hpp"
 
 //! Wrapper of the unordered map
 template<typename key,typename val>
@@ -36,6 +38,66 @@ class wrap_unordered_map<boost::multiprecision::float128,val>
 };
 
 #endif
+
+/*! \brief Calculate the the Neighborhood for symmetric interactions
+ *
+ * \param cNN calculated cross neighborhood
+ * \param div Number of divisions in each direction
+ *
+ */
+template<unsigned int dim> void NNcalc_csr(openfpm::vector<std::pair<grid_key_dx<dim>,grid_key_dx<dim>>> & cNN, size_t (& div)[dim])
+{
+	// Calculate the NNc_full array, it is a structure to get the neighborhood array
+
+	// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
+
+	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
+	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
+	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
+
+	// Generate the sub-grid iterator
+
+	grid_sm<dim,void> gs(div);
+	grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
+
+	grid_key_dx<dim> src_; // Source cell
+	for (size_t i = 0; i < dim; i++)
+		src_.set_d(i,1);
+
+	size_t middle = gs.LinId(src_);
+
+	// Calculate the symmetric crs array
+	while (gr_sub3.isNext())
+	{
+		auto dst = gr_sub3.get();
+		grid_key_dx<dim> src = src_;
+
+		if ((long int)middle > gs.LinId(dst))
+		{
+			++gr_sub3;
+			continue;
+		}
+
+		// Here we adjust src and dst to be in the positive quadrant
+
+		for (size_t i = 0 ; i < dim; i++)
+		{
+			if (dst.get(i) == 0)
+			{
+				src.set_d(i,src.get(i) + 1);
+				dst.set_d(i,dst.get(i) + 1);
+			}
+		}
+
+		src -= src_;
+		dst -= src_;
+
+		cNN.add(std::pair<grid_key_dx<dim>,grid_key_dx<dim>>(src,dst));
+
+		++gr_sub3;
+
+	}
+};
 
 #define STARTING_NSLOT 16
 
@@ -105,13 +167,6 @@ protected:
 	//
 	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
 
-	//! The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
-	//
-	//   * *
-	//   x *
-	//
-	long int NNc_cr[openfpm::math::pow(2,dim)];
-
 private:
 
 	//! Number of slot for each cell
@@ -126,6 +181,9 @@ private:
 
 	//! Caching of r_cutoff radius
 	wrap_unordered_map<T,openfpm::vector<long int>> rcache;
+
+	//! True if has been initialized from CellDecomposer
+	bool from_cd;
 
 	/*! \brief realloc the data structures
 	 *
@@ -249,7 +307,7 @@ private:
 			i++;
 		}
 
-		// Calculate the NNc_sym array
+		// Calculate the NNc_sym array and NNc_cr2
 
 		i = 0;
 		gr_sub3.reset();
@@ -269,21 +327,6 @@ private:
 			NNc_sym[i] = lin - middle;
 
 			++gr_sub3;
-			i++;
-		}
-
-		// Calculate the NNc_cross array
-
-		i = 0;
-		grid_key_dx_iterator_sub<dim> gr_sub2(gs,NNzero::data,NNone::data);
-
-		while (gr_sub2.isNext())
-		{
-			auto key = gr_sub2.get();
-
-			NNc_cr[i] = (long int)gs.LinId(key);
-
-			++gr_sub2;
 			i++;
 		}
 	}
@@ -344,6 +387,9 @@ public:
 		// here we set the cell-shift for the CellDecomposer
 
 		InitializeStructures(div_w_pad,tot_cell);
+
+		// Initialized from CellDecomposer
+		from_cd = true;
 	}
 
 	/*! Initialize the cell list
@@ -484,7 +530,6 @@ public:
 	{
 		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
 		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
 		slot = cell.slot;
 
@@ -507,7 +552,6 @@ public:
 	{
 		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
 		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
 		slot = cell.slot;
 
@@ -769,20 +813,17 @@ public:
 		cl_base.swap(cl.cl_base);
 
 		long int NNc_full_tmp[openfpm::math::pow(3,dim)];
-		long int NNc_sym_tmp[openfpm::math::pow(3,dim)];
-		long int NNc_cr_tmp[openfpm::math::pow(3,dim)];
+		long int NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1];
 
 		std::copy(&cl.NNc_full[0],&cl.NNc_full[openfpm::math::pow(3,dim)],&NNc_full_tmp[0]);
 		std::copy(&cl.NNc_sym[0],&cl.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym_tmp[0]);
-		std::copy(&cl.NNc_cr[0],&cl.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr_tmp[0]);
+
 
 		std::copy(&NNc_full[0],&NNc_full[openfpm::math::pow(3,dim)],&cl.NNc_full[0]);
 		std::copy(&NNc_sym[0],&NNc_sym[openfpm::math::pow(3,dim)/2+1],&cl.NNc_sym[0]);
-		std::copy(&NNc_cr[0],&NNc_cr[openfpm::math::pow(2,dim)],&cl.NNc_cr[0]);
 
 		std::copy(&NNc_full_tmp[0],&NNc_full_tmp[openfpm::math::pow(3,dim)],&NNc_full[0]);
 		std::copy(&NNc_sym_tmp[0],&NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-		std::copy(&NNc_cr_tmp[0],&NNc_cr_tmp[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
 		size_t cl_slot_tmp = cl.slot;
 		cl.slot = slot;
@@ -802,6 +843,7 @@ public:
 	{
 		return CellIterator<CellList<dim,T,FAST,transform,base>>(cell,*this);
 	}
+
 
 	/*! \brief Get the Neighborhood iterator
 	 *
@@ -875,36 +917,23 @@ public:
 	 */
 	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
 	{
+#ifdef SE_CLASS1
+		std::cerr << __FILE__ << ":" << __LINE__ << " Error when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
+#endif
+
 		CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);
 
 		return cln;
 	}
 
-
-	/*! \brief Get the Neighborhood iterator
+	/*! \brief Get the symmetric neighborhood
 	 *
-	 * It iterate across all the element of the selected cell and the near cells
-	 *
-	 *  \verbatim
-
-	   * *
-	   x *
-
-	   \endverbatim
-	 *
-	 * * x is the selected cell
-	 * * * are the near cell
-	 *
-	 * \param cell cell id
-	 *
-	 * \return an iterator across the neighborhood params
+	 * \return the symmetric neighborhood
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> getNNIteratorCross(size_t cell)
+	long int (& getNNc_sym())[openfpm::math::pow(3,dim)/2+1]
 	{
-		CellNNIterator<dim,CellList<dim,T,FAST,transform,base>,CRS,impl> cln(cell,NNc_cr,*this);
-
-		return cln;
+		return NNc_sym;
 	}
 
 	/*! \brief Return the number of padding cells of the Cell decomposer
@@ -917,6 +946,17 @@ public:
 	size_t getPadding(size_t i)
 	{
 		return CellDecomposer_sm<dim,T,transform>::getPadding(i);
+	}
+
+	/*! \brief Return the number of padding cells as an array
+	 *
+	 *
+	 * \return the number of padding cells
+	 *
+	 */
+	size_t (& getPadding())[dim]
+	{
+		return CellDecomposer_sm<dim,T,transform>::getPadding();
 	}
 
 	/*! \brief Clear the cell list
@@ -935,9 +975,9 @@ public:
 	 * \return the start index
 	 *
 	 */
-	inline size_t getStartId(size_t cell_id)
+	inline size_t & getStartId(size_t cell_id)
 	{
-		return cell_id*slot;
+		return cl_base.get(cell_id*slot);
 	}
 
 	/*! \brief Given a cell it return the end point of the cell
@@ -947,9 +987,9 @@ public:
 	 * \return the stop index
 	 *
 	 */
-	inline size_t getStopId(size_t cell_id)
+	inline size_t & getStopId(size_t cell_id)
 	{
-		return cell_id*slot+cl_n.get(cell_id);
+		return cl_base.get(cell_id*slot+cl_n.get(cell_id));
 	}
 
 	/*! \brief Return the neighborhood id
@@ -959,9 +999,29 @@ public:
 	 * \return the neighborhood id
 	 *
 	 */
-	inline size_t & get_lin(size_t part_id)
+	inline size_t & get_lin(size_t * part_id)
 	{
-		return cl_base.get(part_id);
+		return *part_id;
+	}
+
+	/*! \brief Get the starting domain Cell
+	 *
+	 * \return
+	 *
+	 */
+	grid_key_dx<dim> getStartDomainCell()
+	{
+		return CellDecomposer_sm<dim,T,transform>::getStartDomainCell();
+	}
+
+	/*! \brief Get the stop domain Cell
+	 *
+	 * \return
+	 *
+	 */
+	grid_key_dx<dim> getStopDomainCell()
+	{
+		return CellDecomposer_sm<dim,T,transform>::getStopDomainCell();
 	}
 
 //////////////////////////////// POINTLESS BUT REQUIRED TO RESPECT THE INTERFACE //////////////////

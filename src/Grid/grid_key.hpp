@@ -62,7 +62,7 @@ public:
 	{
 #ifdef DEBUG
 		if (sizeof...(t) != dim -1)
-			std::cerr << "Error grid_key: " << __FILE__ << " " << __LINE__ << "creating a key of dimension " << dim << " require " << dim << " numbers " << sizeof...(t) + 1 << " provided" << "\n";
+			std::cerr << "Error grid_key: " << __FILE__ << " " << __LINE__ << " creating a key of dimension " << dim << " require " << dim << " numbers " << sizeof...(t) + 1 << " provided" << "\n";
 #endif
 		k[dim-1] = v;
 		invert_assign(t...);

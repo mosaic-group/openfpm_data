@@ -809,7 +809,7 @@ public:
 	 * \param en Box to enclose
 	 *
 	 */
-	inline void enclose(Box<dim,T> & en)
+	inline void enclose(const Box<dim,T> & en)
 	{
 		for (size_t j = 0 ; j < dim ; j++)
 		{

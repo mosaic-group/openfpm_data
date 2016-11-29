@@ -21,15 +21,19 @@ enum PNP
 	UNKNOWN
 };
 
+//! Check if the type T has pointers inside
 template<typename T, bool has_pointer=has_noPointers<T>::type::value >
 struct check_no_pointers_impl
 {
+	//! Return true if the structure T has a pointer
 	static size_t value()	{return T::noPointers();}
 };
 
+//! Check if the type T has pointers inside
 template<typename T>
 struct check_no_pointers_impl<T,false>
 {
+	//! Return PNP::UNKNOWN if the structure T does not specify if it has a pointer
 	static size_t value()	{return PNP::UNKNOWN;};
 };
 

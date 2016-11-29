@@ -415,6 +415,59 @@ BOOST_AUTO_TEST_CASE( CellList_consistent )
 	Test_CellDecomposer_consistent<CellList<2,float,FAST,shift<2,float>>>();
 }
 
+BOOST_AUTO_TEST_CASE( CellList_NNc_csr_calc )
+{
+	openfpm::vector<std::pair<grid_key_dx<3>,grid_key_dx<3>>> cNN;
+	size_t div[3] = {10,10,10};
+
+	NNcalc_csr(cNN,div);
+
+	BOOST_REQUIRE_EQUAL(cNN.size(),14ul);
+
+	BOOST_REQUIRE(cNN.get(0).first == grid_key_dx<3>(0,0,0));
+	BOOST_REQUIRE(cNN.get(0).second == grid_key_dx<3>(0,0,0));
+
+	BOOST_REQUIRE(cNN.get(1).first == grid_key_dx<3>(0,0,0));
+	BOOST_REQUIRE(cNN.get(1).second == grid_key_dx<3>(0,0,1));
+
+	BOOST_REQUIRE(cNN.get(2).first == grid_key_dx<3>(0,0,1));
+	BOOST_REQUIRE(cNN.get(2).second == grid_key_dx<3>(0,1,0));
+
+	BOOST_REQUIRE(cNN.get(3).first == grid_key_dx<3>(0,0,0));
+	BOOST_REQUIRE(cNN.get(3).second == grid_key_dx<3>(0,1,0));
+
+	BOOST_REQUIRE(cNN.get(4).first == grid_key_dx<3>(0,0,0));
+	BOOST_REQUIRE(cNN.get(4).second == grid_key_dx<3>(0,1,1));
+
+	BOOST_REQUIRE(cNN.get(5).first == grid_key_dx<3>(0,1,1));
+	BOOST_REQUIRE(cNN.get(5).second == grid_key_dx<3>(1,0,0));
+
+	BOOST_REQUIRE(cNN.get(6).first == grid_key_dx<3>(0,1,0));
+	BOOST_REQUIRE(cNN.get(6).second == grid_key_dx<3>(1,0,0));
+
+	BOOST_REQUIRE(cNN.get(7).first == grid_key_dx<3>(0,1,0));
+	BOOST_REQUIRE(cNN.get(7).second == grid_key_dx<3>(1,0,1));
+
+	BOOST_REQUIRE(cNN.get(8).first == grid_key_dx<3>(0,0,1));
+	BOOST_REQUIRE(cNN.get(8).second == grid_key_dx<3>(1,0,0));
+
+	BOOST_REQUIRE(cNN.get(9).first == grid_key_dx<3>(0,0,0));
+	BOOST_REQUIRE(cNN.get(9).second == grid_key_dx<3>(1,0,0));
+
+	BOOST_REQUIRE(cNN.get(10).first == grid_key_dx<3>(0,0,0));
+	BOOST_REQUIRE(cNN.get(10).second == grid_key_dx<3>(1,0,1));
+
+	BOOST_REQUIRE(cNN.get(11).first == grid_key_dx<3>(0,0,1));
+	BOOST_REQUIRE(cNN.get(11).second == grid_key_dx<3>(1,1,0));
+
+	BOOST_REQUIRE(cNN.get(12).first == grid_key_dx<3>(0,0,0));
+	BOOST_REQUIRE(cNN.get(12).second == grid_key_dx<3>(1,1,0));
+
+	BOOST_REQUIRE(cNN.get(13).first == grid_key_dx<3>(0,0,0));
+	BOOST_REQUIRE(cNN.get(13).second == grid_key_dx<3>(1,1,1));
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* CELLLIST_TEST_HPP_ */

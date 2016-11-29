@@ -1,12 +1,12 @@
 /*
- * CellNNIterator.hpp
+ * CellNNIteratorRuntime.hpp
  *
- *  Created on: Mar 26, 2015
+ *  Created on: Nov 18, 2016
  *      Author: i-bird
  */
 
-#ifndef CELLNNITERATOR_FULL_HPP_
-#define CELLNNITERATOR_FULL_HPP_
+#ifndef OPENFPM_DATA_SRC_NN_CELLLIST_CELLNNITERATORRUNTIME_HPP_
+#define OPENFPM_DATA_SRC_NN_CELLLIST_CELLNNITERATORRUNTIME_HPP_
 
 #include "util/mathutil.hpp"
 
@@ -16,6 +16,8 @@
 
 #define NO_CHECK 1
 #define SAFE 2
+
+#define RUNTIME -1
 
 /*! \brief Iterator for the neighborhood of the cell structures
  *
@@ -27,12 +29,11 @@
  *
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
- * \tparam NNc_size neighborhood size
  * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int impl>
-class CellNNIterator
+template<unsigned int dim, typename Cell,unsigned int impl>
+class CellNNIterator<dim,Cell,RUNTIME,impl>
 {
 protected:
 
@@ -45,6 +46,9 @@ protected:
 	//! Actual NNc_id;
 	size_t NNc_id;
 
+	//! Size of the neighboring cells
+	size_t NNc_size;
+
 	//! Center cell, or cell for witch we are searching the NN-cell
 	const long int cell;
 
@@ -55,7 +59,7 @@ protected:
 	Cell & cl;
 
 	//! NN cell id
-	const long int (& NNc)[NNc_size];
+	const long int * NNc;
 
 	/*! \brief Select non-empty cell
 	 *
@@ -87,11 +91,12 @@ public:
 	 *
 	 * \param cell Cell id
 	 * \param NNc Cell neighborhood indexes (relative)
+	 * \param NNc_size size of the neighborhood
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIterator(size_t cell, const long int (&NNc)[NNc_size], Cell & cl)
-	:NNc_id(0),cell(cell),cell_id(NNc[NNc_id] + cell),cl(cl),NNc(NNc)
+	inline CellNNIterator(size_t cell, const long int * NNc, size_t NNc_size, Cell & cl)
+	:NNc_id(0),NNc_size(NNc_size),cell(cell),cell_id(NNc[NNc_id] + cell),cl(cl),NNc(NNc)
 	{
 		start_id = &cl.getStartId(cell_id);
 		stop_id = &cl.getStopId(cell_id);
@@ -152,7 +157,8 @@ public:
  * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int impl> class CellNNIteratorSym : public CellNNIterator<dim,Cell,NNc_size,impl>
+template<unsigned int dim, typename Cell,unsigned int impl>
+class CellNNIteratorSym<dim,Cell,RUNTIME,impl> : public CellNNIterator<dim,Cell,RUNTIME,impl>
 {
 	//! index of the particle p
 	size_t p;
@@ -182,11 +188,11 @@ next:
 				this->start_id++;
 			}
 
-			CellNNIterator<dim,Cell,NNc_size,impl>::selectValid();
+			CellNNIterator<dim,Cell,RUNTIME,impl>::selectValid();
 		}
 		else
 		{
-			CellNNIterator<dim,Cell,NNc_size,impl>::selectValid();
+			CellNNIterator<dim,Cell,RUNTIME,impl>::selectValid();
 		}
 	}
 
@@ -202,8 +208,8 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIteratorSym(size_t cell, size_t p, const long int (&NNc)[NNc_size], Cell & cl, const openfpm::vector<Point<dim,typename Cell::stype>> & v)
-	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),p(p),v(v)
+	inline CellNNIteratorSym(size_t cell, size_t p, const long int * NNc, size_t NNc_size, Cell & cl, const openfpm::vector<Point<dim,typename Cell::stype>> & v)
+	:CellNNIterator<dim,Cell,RUNTIME,impl>(cell,NNc,NNc_size,cl),p(p),v(v)
 	{
 		selectValid();
 	}
@@ -214,7 +220,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIteratorSym<dim,Cell,NNc_size,impl> & operator++()
+	inline CellNNIteratorSym<dim,Cell,RUNTIME,impl> & operator++()
 	{
 		this->start_id++;
 
@@ -224,79 +230,4 @@ public:
 	}
 };
 
-
-/*! \brief it iterate through the elements of a cell
- *
- * In general you do not create this object you get it from the CellList structures
- *
- * \tparam Cell cell type
- *
- */
-template<typename Cell> class CellIterator
-{
-	//! Cell list
-	Cell & cl;
-
-	//! actual element id inside the cell
-	size_t ele_id;
-
-	//! selected cell
-	const long int cell;
-
-public:
-
-	/*! \brief Cell iterator
-	 *
-	 * \param cell Cell id
-	 * \param cl Cell on which iterate
-	 *
-	 */
-	inline CellIterator(const size_t cell, Cell & cl)
-	:cl(cl),ele_id(0),cell(cell)
-	{
-	}
-
-	/*! \brief Check if there is the next element
-	 *
-	 * \return true if there are still neighborhood particles
-	 *
-	 */
-	inline bool isNext()
-	{
-		return cl.getNelements(cell) > ele_id;
-	}
-
-	/*! \brief take the next neoghborhood particle
-	 *
-	 * \return itself
-	 *
-	 */
-	inline CellIterator & operator++()
-	{
-		ele_id++;
-
-		return *this;
-	}
-
-	/*! \brief Get the value of the cell
-	 *
-	 * \return  the next element object
-	 *
-	 */
-	inline typename Cell::value_type & get()
-	{
-		return cl.get(cell,ele_id);
-	}
-
-	/*! \brief Get the value of the cell
-	 *
-	 * \return  the next element object
-	 *
-	 */
-	inline const typename Cell::value_type & get() const
-	{
-		return cl.get(cell,ele_id);
-	}
-};
-
-#endif /* CELLNNITERATOR_FULL_HPP_ */
+#endif /* OPENFPM_DATA_SRC_NN_CELLLIST_CELLNNITERATORRUNTIME_HPP_ */

@@ -467,7 +467,7 @@ protected:
 	 */
 	void Initialize(const size_t pad, const size_t (& div)[dim])
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -560,6 +560,90 @@ public:
 		}
 
 		return key;
+	}
+
+	/*! \brief Get the cell-id
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \param cell-id in grid units
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	inline size_t getCellLin(grid_key_dx<dim> && k) const
+	{
+#ifdef SE_CLASS1
+		if (tot_n_cell == 0)
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+
+		if (gr_cell2.size(0) < k.get(0) + off[0] - cell_shift.get(0))
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " cell coordinate 0 = " << k.get(0) + off[0] - cell_shift.get(0) << " bigger than cell space " << gr_cell2.size(0) << std::endl;
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+#endif
+
+		size_t cell_id = k.get(0) + off[0] - cell_shift.get(0);
+
+		for (size_t s = 1 ; s < dim ; s++)
+		{
+#ifdef SE_CLASS1
+			if (gr_cell2.size(s) < k.get(s) + off[s] - cell_shift.get(s))
+			{
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " cell coordinate 0 = " << k.get(0) + off[0] - cell_shift.get(0) << " bigger than cell space " << gr_cell2.size(s) << std::endl;
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
+#endif
+			cell_id += gr_cell2.size_s(s-1) * (k.get(s) + off[s] -cell_shift.get(s));
+		}
+
+		return cell_id;
+	}
+
+	/*! \brief Get the cell-id
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \param cell-id in grid units
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	inline size_t getCellLin(const grid_key_dx<dim> & k) const
+	{
+#ifdef SE_CLASS1
+		if (tot_n_cell == 0)
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer";
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+
+		if (gr_cell2.size(0) < k.get(0) + off[0] - cell_shift.get(0))
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " cell coordinate 0 = " << k.get(0) + off[0] - cell_shift.get(0) << " bigger than cell space " << gr_cell2.size(0) << std::endl;
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+#endif
+
+		size_t cell_id = k.get(0) + off[0] -cell_shift.get(0);
+
+		for (size_t s = 1 ; s < dim ; s++)
+		{
+#ifdef SE_CLASS1
+			if (gr_cell2.size(s) < k.get(s) + off[s] - cell_shift.get(s))
+			{
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " cell coordinate 0 = " << k.get(0) + off[0] - cell_shift.get(0) << " bigger than cell space " << gr_cell2.size(s) << std::endl;
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
+#endif
+			cell_id += gr_cell2.size_s(s-1) * (k.get(s) + off[s] -cell_shift.get(s));
+		}
+
+		return cell_id;
 	}
 
 	/*! \brief Get the cell-ids
@@ -1531,6 +1615,76 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	size_t getPadding(size_t i)
 	{
 		return off[i];
+	}
+
+	/*! \brief Return the number of padding cells of the Cell decomposer as an array
+	 *
+	 *
+	 * \return the number of padding cells
+	 *
+	 */
+	size_t (& getPadding())[dim]
+	{
+		return off;
+	}
+
+	/*! \brief Return the index of the first cell in the domain
+	 *
+	 * \return the first domain cell
+	 *
+	 */
+	grid_key_dx<dim> getStartDomainCell()
+	{
+		grid_key_dx<dim> key;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			key.set_d(i, cell_shift.get(i));
+		}
+
+		return key;
+	}
+
+	/*! \brief Return the index of the first cell in the domain
+	 *
+	 * \return the last domain cell
+	 *
+	 */
+	grid_key_dx<dim> getStopDomainCell()
+	{
+		grid_key_dx<dim> key;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			key.set_d(i,cell_shift.get(i) + gr_cell2.size(i) - 2*getPadding(i) - 1);
+		}
+
+		return key;
+	}
+
+	/*! \brief Return the cell shift
+	 *
+	 * \return the cell shifting
+	 *
+	 */
+	grid_key_dx<dim> getShift()
+	{
+		grid_key_dx<dim> k;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			k.set_d(i,cell_shift.get(i));
+
+		return k;
+	}
+
+	/*! \brief Return the grid structure of the internal cell list
+	 *
+	 * \return the grid information
+	 *
+	 */
+	grid_sm<dim,void> getInternalGrid()
+	{
+		return gr_cell2;
 	}
 };
 

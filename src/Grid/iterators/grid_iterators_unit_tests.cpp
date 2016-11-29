@@ -67,6 +67,8 @@ BOOST_AUTO_TEST_CASE( grid_skin_iterator_test )
 	Box<3,size_t> bx1({20,25,30},{90,93,98});
 	Box<3,size_t> bx2({18,23,28},{92,95,100});
 	Box<3,size_t> bx3({20,25,30},{90,93,30});
+	Box<3,size_t> bx4({20,25,30},{90,93,50});
+	Box<3,size_t> bx5({19,24,29},{90,93,50});
 
 	grid_sm<3,void> g_sm(sz);
 	size_t bc[] = {PERIODIC,PERIODIC,PERIODIC};
@@ -98,6 +100,9 @@ BOOST_AUTO_TEST_CASE( grid_skin_iterator_test )
 
 	test_skin_iterator<3>(bx1,bx2,g_sm,bc,tot);
 	test_skin_iterator<3>(bx2,bx1,g_sm,bc,0);
+
+	test_skin_iterator<3>(bx4,bx4,g_sm,bc,15042);
+	test_skin_iterator<3>(bx5,bx4,g_sm,bc,7679);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

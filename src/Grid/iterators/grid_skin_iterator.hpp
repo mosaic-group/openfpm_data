@@ -51,6 +51,7 @@
 template<unsigned int dim>
 class grid_skin_iterator_bc
 {
+	//! Internal iterator for each faces
 	grid_key_dx_iterator_sub_bc<dim> sub_it[2*dim];
 
 	//! Actual iterator
