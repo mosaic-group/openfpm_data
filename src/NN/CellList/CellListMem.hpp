@@ -33,22 +33,21 @@
 template<unsigned int dim, typename T, typename transform, typename base>
 class CellList<dim,T,MEMORY,transform,base> : public CellDecomposer_sm<dim,T,transform>
 {
-	// The array contain the neighborhood of the cell-id in case of asymmetric interaction
+	//! The array contain the neighborhood of the cell-id in case of asymmetric interaction
 	//
 	//    * * *
 	//    * x *
 	//    * * *
-
 	long int NNc_full[openfpm::math::pow(3,dim)];
 
-	// The array contain the neighborhood of the cell-id in case of symmetric interaction
+	//! The array contain the neighborhood of the cell-id in case of symmetric interaction
 	//
 	//   * * *
 	//     x *
 	//
 	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
 
-	// The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
+	//! The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
 	//
 	//   * *
 	//   x *
