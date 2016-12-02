@@ -133,6 +133,16 @@ public:
 	{
 		return cl.get_lin(start_id);
 	}
+
+	/*! \brief Get the value of the cell
+	 *
+	 * \return  the next element object
+	 *
+	 */
+	inline const typename Cell::value_type & get() const
+	{
+		return cl.get_lin(start_id);
+	}
 };
 
 

@@ -89,6 +89,9 @@ template<unsigned int dim, typename St> static inline void cl_param_calculateSym
 	{
 		size_t tmp = std::ceil(fabs(g.getLow(i)) / r_cut);
 		pad = (pad > tmp)?pad:tmp;
+
+		tmp = std::ceil(fabs(g.getHigh(i)) / r_cut);
+		pad = (pad > tmp)?pad:tmp;
 	}
 
 	cd_sm.setDimensions(dom,div,pad);

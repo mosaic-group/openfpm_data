@@ -104,7 +104,7 @@ namespace openfpm
 		 * \return true if there is the next, false otherwise
 		 *
 		 */
-		bool isNext()
+		bool isNext() const
 		{
 			if (gk < end)
 			{
@@ -124,7 +124,7 @@ namespace openfpm
 		 * \return the actual key
 		 *
 		 */
-		size_t get()
+		size_t get() const
 		{
 			return gk;
 		}

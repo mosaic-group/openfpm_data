@@ -17,7 +17,6 @@
 #include "CellListNNIteratorRadius.hpp"
 #include <unordered_map>
 #include "util/common.hpp"
-#include "CRSComp.hpp"
 #include "ParticleIt_Cells.hpp"
 
 //! Wrapper of the unordered map
@@ -45,7 +44,7 @@ class wrap_unordered_map<boost::multiprecision::float128,val>
  * \param div Number of divisions in each direction
  *
  */
-template<unsigned int dim> void NNcalc_csr(openfpm::vector<std::pair<grid_key_dx<dim>,grid_key_dx<dim>>> & cNN, size_t (& div)[dim])
+template<unsigned int dim> void NNcalc_csr(openfpm::vector<std::pair<grid_key_dx<dim>,grid_key_dx<dim>>> & cNN)
 {
 	// Calculate the NNc_full array, it is a structure to get the neighborhood array
 
@@ -56,6 +55,13 @@ template<unsigned int dim> void NNcalc_csr(openfpm::vector<std::pair<grid_key_dx
 	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 	// Generate the sub-grid iterator
+
+	size_t div[dim];
+
+	// Calculate the divisions
+
+	for (size_t i = 0 ; i < dim ; i++)
+		div[i] = 4;
 
 	grid_sm<dim,void> gs(div);
 	grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
@@ -918,7 +924,8 @@ public:
 	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
 	{
 #ifdef SE_CLASS1
-		std::cerr << __FILE__ << ":" << __LINE__ << " Error when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
+		if (from_cd == false)
+			std::cerr << __FILE__ << ":" << __LINE__ << " Error when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
 #endif
 
 		CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);
@@ -931,7 +938,7 @@ public:
 	 * \return the symmetric neighborhood
 	 *
 	 */
-	long int (& getNNc_sym())[openfpm::math::pow(3,dim)/2+1]
+	const long int (& getNNc_sym() const)[openfpm::math::pow(3,dim)/2+1]
 	{
 		return NNc_sym;
 	}
@@ -943,7 +950,7 @@ public:
 	 * \return the number of padding cells
 	 *
 	 */
-	size_t getPadding(size_t i)
+	size_t getPadding(size_t i) const
 	{
 		return CellDecomposer_sm<dim,T,transform>::getPadding(i);
 	}
@@ -954,7 +961,7 @@ public:
 	 * \return the number of padding cells
 	 *
 	 */
-	size_t (& getPadding())[dim]
+	const size_t (& getPadding() const)[dim]
 	{
 		return CellDecomposer_sm<dim,T,transform>::getPadding();
 	}
@@ -990,6 +997,42 @@ public:
 	inline size_t & getStopId(size_t cell_id)
 	{
 		return cl_base.get(cell_id*slot+cl_n.get(cell_id));
+	}
+
+	/*! \brief Given a cell it return the starting point of the cell
+	 *
+	 * \param cell_id cell id
+	 *
+	 * \return the start index
+	 *
+	 */
+	inline const size_t & getStartId(size_t cell_id) const
+	{
+		return cl_base.get(cell_id*slot);
+	}
+
+	/*! \brief Given a cell it return the end point of the cell
+	 *
+	 * \param cell_id cell id
+	 *
+	 * \return the stop index
+	 *
+	 */
+	inline const size_t & getStopId(size_t cell_id) const
+	{
+		return cl_base.get(cell_id*slot+cl_n.get(cell_id));
+	}
+
+	/*! \brief Return the neighborhood id
+	 *
+	 * \param part_id particle id
+	 *
+	 * \return the neighborhood id
+	 *
+	 */
+	inline const size_t & get_lin(size_t * part_id) const
+	{
+		return *part_id;
 	}
 
 	/*! \brief Return the neighborhood id

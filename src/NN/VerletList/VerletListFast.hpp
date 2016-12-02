@@ -15,88 +15,163 @@
 
 #define VL_NON_SYMMETRIC 0
 #define VL_SYMMETRIC 1
+#define VL_CRS_SYMMETRIC 2
 
 #define WITH_RADIUS 3
 
-/*! \brief Get the heighborhood iterator based on type
+/*! \brief Get the neighborhood iterator based on type
  *
  * \tparam dim dimensionality
  * \tparam T type of space
  * \tparam CellListImpl Cell-list implementation
  * \tparam type of neighborhood
+ * \tparam PartIt Particle iterator
  *
  */
-template<unsigned int dim, typename T, typename CellListImpl, int type>
+template<unsigned int dim, typename T, typename CellListImpl, typename PartIt, int type>
 struct NNType
 {
 	/*! \brief Get the neighborhood
 	 *
+	 * \param v particle positions
 	 * \param xp Position of the particle p
 	 * \param p id of the particle p
 	 * \param cl Cell-list type implementation
 	 * \param r_cut Cutoff radius
 	 *
+	 * \return the NN iterator
+	 *
 	 */
-	static inline auto get(const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
+	static inline auto get(const PartIt & it, const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
 	{
 		return cl.template getNNIterator<NO_CHECK>(cl.getCell(xp));
 	}
 };
 
 
-/*! \brief Get the heighborhood iterator based on type
+/*! \brief Get the neighborhood iterator based on type
  *
- * spacialization for the case with NN with radius
+ * specialization for the case with NN with radius
  *
  * \tparam dim dimensionality
  * \tparam T type of space
  * \tparam CellListImpl Cell-list implementation
+ * \tparam PartIt Particle iterator
  *
  */
-template<unsigned int dim, typename T, typename CellListImpl>
-struct NNType<dim,T,CellListImpl,WITH_RADIUS>
+template<unsigned int dim, typename T, typename CellListImpl, typename PartIt>
+struct NNType<dim,T,CellListImpl,PartIt,WITH_RADIUS>
 {
 	/*! \brief Get the neighborhood
 	 *
+	 * \param v particle position vector
 	 * \param xp Position of the particle p
 	 * \param p id of the particle p
 	 * \param cl Cell-list type implementation
 	 * \param r_cut Cutoff radius
 	 *
+	 * \return the NN iterator
+	 *
 	 */
-	static inline auto get(const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
+	static inline auto get(const PartIt & it, const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
 	{
 		return cl.template getNNIteratorRadius<NO_CHECK>(cl.getCell(xp),r_cut);
 	}
 };
 
 
-/*! \brief Get the heighborhood iterator based on type
+/*! \brief Get the neighborhood iterator based on type
  *
- * spacialization for the case with NN symmetric
+ * specialization for the case with NN symmetric
  *
  * \tparam dim dimensionality
  * \tparam T type of space
  * \tparam CellListImpl Cell-list implementation
+ * \tparam PartIt particle iterator
  *
  */
-template<unsigned int dim, typename T, typename CellListImpl>
-struct NNType<dim,T,CellListImpl,VL_SYMMETRIC>
+template<unsigned int dim, typename T, typename CellListImpl, typename PartIt>
+struct NNType<dim,T,CellListImpl,PartIt,VL_SYMMETRIC>
 {
 	/*! \brief Get the neighborhood
 	 *
+	 * \param v vector of the particles positions
 	 * \param xp Position of the particle p
 	 * \param p id of the particle p
 	 * \param cl Cell-list type implementation
 	 * \param r_cut Cutoff radius
 	 *
+	 * \return the NN iterator
+	 *
 	 */
-	static inline auto get(const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,openfpm::vector<Point<dim,T>>()))
+	static inline auto get(const PartIt & it, const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,openfpm::vector<Point<dim,T>>()))
 	{
 		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),p,v);
 	}
 };
 
+
+/*! \brief Get the neighborhood iterator based on type
+ *
+ * specialization for the case with NN CRS symmetric
+ *
+ * \tparam dim dimensionality
+ * \tparam T type of space
+ * \tparam CellListImpl Cell-list implementation
+ * \tparam PartIt Particle iterator
+ *
+ */
+template<unsigned int dim, typename T, typename CellListImpl, typename PartIt>
+struct NNType<dim,T,CellListImpl,PartIt,VL_CRS_SYMMETRIC>
+{
+	/*! \brief Get the neighborhood
+	 *
+	 * \param it particle iterator
+	 * \param v vector of the particles positions
+	 * \param xp Position of the particle p
+	 * \param p id of the particle p
+	 * \param cl Cell-list type implementation
+	 * \param r_cut Cutoff radius
+	 *
+	 * \return the NN iterator
+	 *
+	 */
+	static inline auto get(const PartIt & it,const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(it.getNNIteratorCSR(v))
+	{
+		return it.getNNIteratorCSR(v);
+	}
+};
+
+/*! \brief In general different NN scheme like full symmetric or CRS require different
+ *         iterators over particles this class select the proper one
+ *
+ * This is the full or symmetric case
+ *
+ */
+template<unsigned int type, unsigned int dim, typename vector, typename CellList>
+class PartItNN
+{
+public:
+
+	//! It return the particle iterator
+	static inline auto get(const vector & pos, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, CellList & cli, size_t g_m, size_t & end) -> decltype(pos.getIteratorTo(0))
+	{
+		end = g_m;
+		return pos.getIteratorTo(end);
+	}
+};
+
+template<unsigned int dim, typename vector, typename CellList>
+class PartItNN<VL_CRS_SYMMETRIC,dim,vector,CellList>
+{
+public:
+	//! It return the particle iterator
+	static inline ParticleItCRS_Cells<dim,CellList> get(const vector & pos, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, CellList & cli, size_t g_m, size_t & end)
+	{
+		end = pos.size();
+		return ParticleItCRS_Cells<dim,CellList>(cli,dom,anom,cli.getNNc_sym());
+	}
+};
 
 /*! \brief Class for Verlet list implementation
  *
@@ -169,7 +244,7 @@ private:
 	 */
 	void initCl(CellListImpl & cli, openfpm::vector<Point<dim,T>> & pos, size_t g_m, size_t opt)
 	{
-		if (opt & VL_SYMMETRIC)
+		if (opt & VL_SYMMETRIC || opt & VL_CRS_SYMMETRIC)
 			populate_cell_list(pos,cli,g_m,CL_SYMMETRIC);
 		else
 			populate_cell_list(pos,cli,g_m,CL_NON_SYMMETRIC);
@@ -183,16 +258,23 @@ private:
 	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
 	 * 			100 particles
 	 * \param cl Cell-list elements to use to construct the verlet list
-	 * \param dom Processor domain
 	 * \param opt options to create the verlet list like VL_SYMMETRIC or VL_NON_SYMMETRIC
 	 *
 	 */
-	inline void create(const openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cl, size_t opt)
+	inline void create(const openfpm::vector<Point<dim,T>> & pos, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cl, size_t opt)
 	{
-		if (opt == VL_SYMMETRIC)
-			create_<decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,pos)),VL_SYMMETRIC>(pos,r_cut,g_m,cl,opt);
+		if (opt == VL_CRS_SYMMETRIC)
+		{
+			create_<CellNNIteratorSym<dim,CellListImpl,RUNTIME,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,dom,anom,r_cut,g_m,cl,opt);
+		}
+		else if (opt == VL_SYMMETRIC)
+		{
+			create_<decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,pos)),VL_SYMMETRIC>(pos,dom,anom,r_cut,g_m,cl,opt);
+		}
 		else
-			create_<decltype(cl.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,r_cut,g_m,cl,opt);
+		{
+			create_<decltype(cl.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,dom,anom,r_cut,g_m,cl,opt);
+		}
 	}
 
 	/*! \brief Create the Verlet list from a given cell-list
@@ -203,12 +285,16 @@ private:
 	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
 	 * 			100 particles
 	 * \param cli Cell-list elements to use to construct the verlet list
+	 * \param dom list of domain cells with normal neighborhood
+	 * \param anom list of domain cells with non-normal neighborhood
 	 * \param opt options
 	 *
 	 */
-	template<typename NN_type, int type> inline void create_(const openfpm::vector<Point<dim,T>> & pos, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
+	template<typename NN_type, int type> inline void create_(const openfpm::vector<Point<dim,T>> & pos, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
 	{
-		size_t end = g_m;
+		size_t end;
+
+		auto it = PartItNN<type,dim,openfpm::vector<Point<dim,T>>,CellListImpl>::get(pos,dom,anom,cli,g_m,end);
 
 		cl_n.resize(end);
 		cl_base.resize(end*slot);
@@ -218,12 +304,13 @@ private:
 		T r_cut2 = r_cut * r_cut;
 
 		// iterate the particles
-		for (size_t i = 0 ; i < end ; i++)
+		while (it.isNext())
 		{
+			size_t i = it.get();
 			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			NN_type NN = NNType<dim,T,CellListImpl,type>::get(pos,xp,i,cli,r_cut);
+			NN_type NN = NNType<dim,T,CellListImpl,decltype(it),type>::get(it,pos,xp,i,cli,r_cut);
 
 			while (NN.isNext())
 			{
@@ -237,6 +324,8 @@ private:
 				// Next particle
 				++NN;
 			}
+
+			++it;
 		}
 	}
 
@@ -345,14 +434,19 @@ public:
 		cli.Initialize(bt,div);
 		initCl(cli,pos,g_m,opt);
 
+		// Unuseful empty vector
+		openfpm::vector<subsub_lin<dim>> anom_c;
+		openfpm::vector<size_t> dom_c;
+
 		// create verlet
-		create(pos,r_cut,g_m,cli,opt);
+		create(pos,dom_c,anom_c,r_cut,g_m,cli,opt);
 	}
 
 	/*! \brief Initialize the symmetric Verlet-list
 	 *
 	 * \param box Simulation domain
 	 * \param dom Processor domain
+	 * \param g ghost size
 	 * \param r_cut cut-off radius
 	 * \param pos vector of particle positions
 	 * \param g_m Indicate form which particles to construct the verlet list. For example
@@ -375,8 +469,59 @@ public:
 		cli.Initialize(cd_sm,dom,pad);
 		initCl(cli,pos,g_m,VL_SYMMETRIC);
 
+		// Unused
+		openfpm::vector<subsub_lin<dim>> anom_c;
+		openfpm::vector<size_t> dom_c;
+
 		// create verlet
-		create(pos,r_cut,g_m,cli,VL_SYMMETRIC);
+		create(pos,dom_c,anom_c,r_cut,g_m,cli,VL_SYMMETRIC);
+	}
+
+
+	/*! \brief Initialize the symmetric Verlet-list CRS scheme
+	 *
+	 * \param box Simulation domain
+	 * \param dom Processor domain
+	 * \param g ghost size
+	 * \param r_cut cut-off radius
+	 * \param pos vector of particle positions
+	 * \param g_m Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 * \param dom_c domain cells with normal symmetric neighborhood
+	 * \param amon_c cells with anomalous neighborhood
+	 *
+	 */
+	void InitializeCrs(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t g_m)
+	{
+		// Padding
+		size_t pad = 0;
+
+		// Cell decomposer
+		CellDecomposer_sm<dim,T,shift<dim,T>> cd_sm;
+
+		// Calculate the divisions for the Cell-lists
+		cl_param_calculateSym<dim,T>(box,cd_sm,g,r_cut,pad);
+
+		// Initialize a cell-list
+		cli.Initialize(cd_sm,dom,pad);
+		initCl(cli,pos,g_m,VL_SYMMETRIC);
+	}
+
+	/*! \brief Create the Verlet-list with the crossing scheme
+	 *
+	 * \param pos vector with the particle positions
+	 * \param g_m ghost marker
+	 * \param pos vector with the particle positions
+	 * \param r_cut cut-off radius
+	 * \param dom domain cells
+	 * \param anom cells with anomalos neighborhood
+	 *
+	 */
+	void createVerletCrs(T r_cut, size_t g_m, openfpm::vector<Point<dim,T>> & pos, openfpm::vector<size_t> & dom_c, openfpm::vector<subsub_lin<dim>> & anom_c)
+	{
+		// create verlet
+		create(pos,dom_c,anom_c,r_cut,g_m,cli,VL_CRS_SYMMETRIC);
 	}
 
 	/*! \brief update the Verlet list
@@ -391,7 +536,27 @@ public:
 	void update(const Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t & g_m, size_t opt)
 	{
 		initCl(cli,pos,g_m,opt);
-		create(pos,r_cut,g_m,cli,opt);
+
+		// Unused
+		openfpm::vector<subsub_lin<dim>> anom_c;
+		openfpm::vector<size_t> dom_c;
+
+		create(pos,dom_c,anom_c,r_cut,g_m,cli,opt);
+	}
+
+	/*! \brief update the Verlet list
+	 *
+	 * \param r_cut cutoff radius
+	 * \param dom Processor domain
+	 * \param pos vector of particle positions
+	 * \param g_m ghost marker
+	 *
+	 */
+	void updateCrs(const Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t & g_m, const openfpm::vector<size_t> & dom_c, const openfpm::vector<subsub_lin<dim>> & anom_c)
+	{
+		initCl(cli,pos,g_m,VL_CRS_SYMMETRIC);
+
+		create(pos,dom_c,anom_c,r_cut,g_m,cli,VL_CRS_SYMMETRIC);
 	}
 
 	/*! Initialize the verlet list from an already filled cell-list
@@ -420,10 +585,18 @@ public:
 
 		if (wr == true || opt == VL_SYMMETRIC)
 		{
-			create(pos,r_cut,g_m,cli,opt);
+			openfpm::vector<subsub_lin<dim>> anom_c;
+			openfpm::vector<size_t> dom_c;
+
+			create(pos,dom_c,anom_c,r_cut,g_m,cli,opt);
 		}
 		else
-			create_<decltype(cli.template getNNIteratorRadius<NO_CHECK>(0,0.0)),WITH_RADIUS>(pos,r_cut,g_m,cli,VL_NON_SYMMETRIC);
+		{
+			openfpm::vector<subsub_lin<dim>> anom_c;
+			openfpm::vector<size_t> dom_c;
+
+			create_<decltype(cli.template getNNIteratorRadius<NO_CHECK>(0,0.0)),WITH_RADIUS>(pos,dom_c,anom_c,r_cut,g_m,cli,VL_NON_SYMMETRIC);
+		}
 	}
 
 	//! Default Constructor
@@ -529,6 +702,8 @@ public:
 	/*! \brief Copy a verlet list
 	 *
 	 * \param vl verlet-list to copy
+	 *
+	 * \return itself
 	 *
 	 */
 	VerletList<dim,T,FAST,transform,CellListImpl> & operator=(const VerletList<dim,T,FAST,transform,CellListImpl> & vl)
@@ -641,6 +816,16 @@ public:
 	inline size_t get_lin(size_t part_id)
 	{
 		return cl_base.get(part_id);
+	}
+
+	/*! \brief Get the internal cell-list used to construct the Verlet-list
+	 *
+	 * \return the internal Cell-list
+	 *
+	 */
+	const CellListImpl & getInternalCellList()
+	{
+		return cli;
 	}
 };
 

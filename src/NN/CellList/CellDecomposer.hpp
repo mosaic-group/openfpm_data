@@ -1612,7 +1612,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	 * \return the number of padding cells
 	 *
 	 */
-	size_t getPadding(size_t i)
+	size_t getPadding(size_t i) const
 	{
 		return off[i];
 	}
@@ -1667,7 +1667,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	 * \return the cell shifting
 	 *
 	 */
-	grid_key_dx<dim> getShift()
+	grid_key_dx<dim> getShift() const
 	{
 		grid_key_dx<dim> k;
 
@@ -1682,7 +1682,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	 * \return the grid information
 	 *
 	 */
-	grid_sm<dim,void> getInternalGrid()
+	const grid_sm<dim,void> & getInternalGrid() const
 	{
 		return gr_cell2;
 	}

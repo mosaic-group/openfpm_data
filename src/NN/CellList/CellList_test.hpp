@@ -418,9 +418,8 @@ BOOST_AUTO_TEST_CASE( CellList_consistent )
 BOOST_AUTO_TEST_CASE( CellList_NNc_csr_calc )
 {
 	openfpm::vector<std::pair<grid_key_dx<3>,grid_key_dx<3>>> cNN;
-	size_t div[3] = {10,10,10};
 
-	NNcalc_csr(cNN,div);
+	NNcalc_csr(cNN);
 
 	BOOST_REQUIRE_EQUAL(cNN.size(),14ul);
 
