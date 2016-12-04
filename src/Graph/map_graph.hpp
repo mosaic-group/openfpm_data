@@ -109,12 +109,17 @@ class edge_key
 {
 public:
 
-	// Actual source node
+	//! Actual source node
 	size_t pos;
 
-	//Actual target node
+	//! Actual target node
 	size_t pos_e;
 
+	/*! \brief Reset the counter
+	 *
+	 *
+	 *
+	 */
 	void begin()
 	{
 		pos = 0;
