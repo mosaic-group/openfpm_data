@@ -37,10 +37,10 @@ class CellNNIterator
 protected:
 
 	//! actual element id
-	size_t start_id;
+	size_t * start_id;
 
 	//! stop id to read the end of the cell
-	size_t stop_id;
+	size_t * stop_id;
 
 	//! Actual NNc_id;
 	size_t NNc_id;

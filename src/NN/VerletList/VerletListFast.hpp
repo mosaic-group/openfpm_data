@@ -224,6 +224,7 @@ private:
 
 			// Get the neighborhood of the particle
 			NN_type NN = NNType<dim,T,CellListImpl,type>::get(pos,xp,i,cli,r_cut);
+
 			while (NN.isNext())
 			{
 				auto nnp = NN.get();
@@ -348,7 +349,7 @@ public:
 		create(pos,r_cut,g_m,cli,opt);
 	}
 
-	/*! \brief Initialize the symmetric verlet list
+	/*! \brief Initialize the symmetric Verlet-list
 	 *
 	 * \param box Simulation domain
 	 * \param dom Processor domain
