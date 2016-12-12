@@ -31,7 +31,7 @@
  * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int impl>
+template<unsigned int dim, typename Cell,int NNc_size, unsigned int impl>
 class CellNNIterator
 {
 protected:
@@ -162,7 +162,7 @@ public:
  * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,unsigned int NNc_size, unsigned int impl> class CellNNIteratorSym : public CellNNIterator<dim,Cell,NNc_size,impl>
+template<unsigned int dim, typename Cell,int NNc_size, unsigned int impl> class CellNNIteratorSym : public CellNNIterator<dim,Cell,NNc_size,impl>
 {
 	//! index of the particle p
 	size_t p;
