@@ -5,12 +5,12 @@
  */
 
 
-// Structures that do a nested packing, depending on the existence of 'pack' function inside of the object
-
+	//! Structures that do a nested packing, depending on the existence of 'pack' function inside of the object
 	//There is no pack() inside
 	template<bool cond, typename T1, typename Memory1, int ... prp>
 	struct pack_cond
 	{
+		//! Serialize the object
 		void packing(ExtPreAlloc<Memory1> & mem, const openfpm::vector<T1> & obj, Pack_stat & sts)
 		{
 			//Call an array primitive packer
@@ -18,10 +18,12 @@
 		}
 	};
 
+	//! Structures that do a nested packing, depending on the existence of 'pack' function inside of the object
 	//There is pack() inside
 	template<typename T1, typename Memory1, int ... prp>
 	struct pack_cond<true, T1, Memory1, prp...>
 	{
+		//! Serialize the object
 		void packing(ExtPreAlloc<Memory1> & mem, const openfpm::vector<T1> & obj, Pack_stat & sts)
 		{
 			//Pack the size of a vector
@@ -34,12 +36,12 @@
 		}
 	};
 
-	// Structures that do a nested unpacking, depending on the existence of 'pack' function inside of the object
-
-	//There is no pack() inside
+	//! Structures that do a nested unpacking, depending on the existence of 'pack' function inside the object
+	// There is no pack() inside
 	template<bool cond, typename T1, typename Memory1, int ... prp>
 	struct unpack_cond
 	{
+		//! De-serialize the object
 		void unpacking(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Unpack_stat & ps)
 		{
 			//Call the array of primitives unpacker
@@ -48,10 +50,12 @@
 
 	};
 
-	//There is pack() inside
+	//! Structures that do a nested unpacking, depending on the existence of 'pack' function inside the object
+	// There is pack() inside
 	template<typename T1, typename Memory1, int ... prp>
 	struct unpack_cond<true, T1, Memory1, prp...>
 	{
+		//! De-serialize the object
 		void unpacking(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Unpack_stat & ps)
 		{
 			//Unpacking a size of a source vector
@@ -70,12 +74,12 @@
 		}
 	};
 
-	// Structures that do a pack request, depending on the existence of 'packRequest' function inside of the object
-
+	//! Structures that do a pack request, depending on the existence of 'packRequest' function inside of the object
 	//There is no packRequest() inside
 	template<bool cond, typename T1, int ... prp>
 	struct packRequest_cond
 	{
+		//! Calculate the size required to serialize the object
 		void packingRequest(const openfpm::vector<T1> & obj, size_t & req)
 		{
 				//Pushback a size of number of elements of the internal vectors
@@ -88,11 +92,12 @@
 
 	};
 
-	
+	//! Structures that do a pack request, depending on the existence of 'packRequest' function inside of the object
 	//There is packRequest() inside
 	template<typename T1, int ... prp>
 	struct packRequest_cond<true, T1, prp...>
 	{
+		//! Calculate the size required to serialize the object
 		void packingRequest(const openfpm::vector<T1> & obj, size_t & req)
 		{
 			//Pushback a size of number of elements of the external vectors
@@ -106,22 +111,24 @@
 		}
 	};
 
-	// Structures that calculate memory for an object, depending on the existence of 'packMem' function inside of the object
-
+	//! Structures that calculate memory for an object, depending on the existence of 'packMem' function inside the object
 	//There is no packMem() inside
 	template<bool cond, typename T1, int ... prp>
 	struct packMem_cond
 	{
+		//! Calculate the bytes required to serialize the vector
 		size_t packMemory(const T1 & obj, size_t n, size_t e)
 		{
 			return obj.size() * sizeof(T);
 		}
 	};
 
-	//There is packMem() inside
+	//! Structures that calculate memory for an object, depending on the existence of 'packMem' function inside the object
+	// There is packMem() inside
 	template<typename T1, int ... prp>
 	struct packMem_cond<true, T1, prp...>
 	{
+		//! Calculate the bytes required to serialize the vector
 		size_t packMemory(const T1 & obj, size_t n, size_t e)
 		{
 			size_t res = 0;
@@ -135,20 +142,22 @@
 	};
 	
 
-	//Meta-functions to check if the packing object is complex
+	//! Indicate that the vector has a packer function
 	static bool pack()
 	{
-		return false;
+		return true;
 	}
 
+	//! Indicate that the vector has the function packRequest
 	static bool packRequest()
 	{
-		return false;
+		return true;
 	}
 
+	//! Indicate that the vector has the function pack Memory
 	static bool packMem()
 	{
-		return false;
+	       return true;
 	}
 
 	
@@ -168,7 +177,9 @@
 
 	/*! \brief Insert an allocation request into the vector
 	 *
-	 * \param v - requests vector
+	 * \tparam prp properties to pack
+	 *
+	 * \param req counter with the byte required to pack the vector
 	 *
 	 */
 	template<int ... prp> void packRequest(size_t & req) const
@@ -183,7 +194,7 @@
 	 *
 	 * \warning the properties should match the packed properties,
 	 *
-	 * \param ext preallocated memory from where to unpack the vector
+	 * \param mem preallocated memory from where to unpack the vector
 	 * \param ps unpack info
 	 *
 	 */

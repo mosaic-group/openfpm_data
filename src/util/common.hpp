@@ -14,7 +14,6 @@
 namespace std
 {
 	// We need the definition of std::to_string that work on string
-
 	inline static std::string to_string(std::string s)
 	{
 		return s;
@@ -22,22 +21,23 @@ namespace std
 }
 
 
-// Compile time array functor needed to generate array at compile-time of type
-// {0,0,0,0,0,.....}
-// {3,3,3,3,3,3,.....}
-
+ //! Compile time array functor needed to generate array at compile-time of type
+ // {3,3,3,3,3,3,.....}
  template<size_t index, size_t N> struct Fill_three {
     enum { value = 3 };
  };
 
+ //! {0,0,0,0,....}
  template<size_t index, size_t N> struct Fill_zero {
     enum { value = 0 };
  };
 
+ //! {2,2,2,2,....}
  template<size_t index, size_t N> struct Fill_two {
     enum { value = 2 };
  };
 
+ //! {1,1,1,1,....}
  template<size_t index, size_t N> struct Fill_one {
     enum { value = 1 };
  };
@@ -274,5 +274,16 @@ template<typename T>
 //struct has_value_type<T, typename Void<decltype( typename T::value_type )>::type> : std::true_type
 struct has_value_type<T, typename Void< typename T::value_type>::type> : std::true_type
 {};
+
+
+//! [Metafunction definition]
+template<size_t index, size_t N> struct MetaFunc {
+   enum { value = index + N };
+};
+
+
+template<size_t index, size_t N> struct MetaFuncOrd {
+   enum { value = index };
+};
 
 #endif

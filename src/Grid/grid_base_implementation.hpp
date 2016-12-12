@@ -10,16 +10,29 @@
 
 #include "grid_base_impl_layout.hpp"
 
+/*! \brief
+ *
+ * Implementation of a N-dimensional grid
+ *
+ * \tparam dim dimansionality of the grid
+ * \tparam T type store by the grid
+ * \tparam S Memory pool from where to take the memory
+ * \tparam layout_ memory layout
+ * \tpaeam layout_base layout memory meta-function (the meta-function used to construct layout_)
+ *
+ */
 template<unsigned int dim, typename T, typename S, typename layout_, template<typename> class layout_base >
 class grid_base_impl
 {
+	//! memory layout
 	typedef layout_ layout;
 
 public:
 
+	//! memory layout
 	typedef layout_ layout_type;
 
-	// expose the dimansionality as a static const
+	//! expose the dimansionality as a static const
 	static constexpr unsigned int dims = dim;
 
 	//! Access key
@@ -136,7 +149,7 @@ public:
 	// you can access all the properties of T
 	typedef encapc<dim,T,layout> container;
 
-	// The object type the grid is storing
+	//! The object type the grid is storing
 	typedef T value_type;
 
 	//! Default constructor
@@ -151,10 +164,8 @@ public:
 
 	/*! \brief create a grid from another grid
 	 *
-	 * \tparam S memory type for allocation
 	 *
 	 * \param g the grid to copy
-	 * \param mem memory object (only used for template deduction)
 	 *
 	 */
 	grid_base_impl(const grid_base_impl & g) THROW
@@ -165,10 +176,7 @@ public:
 
 	/*! \brief create a grid of size sz on each direction
 	 *
-	 * \tparam S memory type for allocation
-	 *
-	 * \param g the grid to copy
-	 * \param mem memory object (only used for template deduction)
+	 * \param sz size of the grid on each dimensions
 	 *
 	 */
 	grid_base_impl(const size_t & sz) THROW
@@ -219,6 +227,8 @@ public:
 	 *
 	 * \param g grid to copy
 	 *
+	 * \return itself
+	 *
 	 */
 	grid_base_impl<dim,T,S,layout,layout_base> & operator=(grid_base_impl<dim,T,S,layout,layout_base> && g)
 	{
@@ -234,7 +244,7 @@ public:
 
 	/*! \brief Compare two grids
 	 *
-	 * \param g1 grid to check
+	 * \param g grid to check
 	 *
 	 * \return true if they match
 	 *
@@ -261,6 +271,8 @@ public:
 	}
 
 	/*! \brief create a duplicated version of the grid
+	 *
+	 * \return a duplicated version of the grid
 	 *
 	 */
 	grid_base_impl<dim,T,S,layout,layout_base> duplicate() const THROW
@@ -733,7 +745,6 @@ public:
 	 * Return the size of the grid
 	 *
 	 */
-
 	inline size_t size() const
 	{
 #ifdef SE_CLASS2
@@ -748,6 +759,8 @@ public:
 	 *
 	 * \param start start point
 	 * \param stop stop point
+	 *
+	 * \return a sub-grid iterator
 	 *
 	 */
 	inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop) const
@@ -764,8 +777,9 @@ public:
 	 *
 	 * \param m Margin
 	 *
+	 * \return a sub-grid iterator
+	 *
 	 */
-
 	inline grid_key_dx_iterator_sub<dim> getSubIterator(size_t m)
 	{
 #ifdef SE_CLASS2
@@ -778,8 +792,9 @@ public:
 	 *
 	 * Return a grid iterator, to iterate through the grid
 	 *
+	 * \return a grid iterator
+	 *
 	 */
-
 	inline grid_key_dx_iterator<dim> getIterator() const
 	{
 #ifdef SE_CLASS2
@@ -794,8 +809,9 @@ public:
 	 * Return a grid iterator over all the point with the exception of the
 	 * ghost part
 	 *
+	 * \return a sub-grid iterator
+	 *
 	 */
-
 	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
 	{
 #ifdef SE_CLASS2
@@ -807,6 +823,8 @@ public:
 	}
 
 	/*! \brief Return the last error
+	 *
+	 * \return the last error
 	 *
 	 */
 	size_t getLastError()
@@ -842,7 +860,6 @@ public:
 	 *
 	 *
 	 */
-
 	size_t packObject(void * mem)
 	{
 #ifdef SE_CLASS2

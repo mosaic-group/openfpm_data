@@ -377,17 +377,6 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 }
 
 
-
-//! [Metafunction definition]
-
-template<size_t index, size_t N> struct MetaFunc {
-   enum { value = index + N };
-};
-
-template<size_t index, size_t N> struct MetaFuncOrd {
-   enum { value = index };
-};
-
 //! [Metafunction definition]
 
 BOOST_AUTO_TEST_CASE( generate_array )

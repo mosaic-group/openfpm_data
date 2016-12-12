@@ -4,29 +4,30 @@
  *     Author: Yaroslav Zaluzhnyi and Pietro Incardona
  */
 
-//! Functions to check if the packing object is complex
+//! This Function to indicate the vector class has a packer function
 static bool pack()
 {
-	return false;
+	return true;
 }
 
+//! This Function indicate that vector class has a packRequest function
 static bool packRequest()
 {
-	return false;
+	return true;
 }
 
+//! This Function indicate that vector class has a packMem function
 static bool packMem()
 {
-	return false;
+       return true;
 }
 
-
-// Structures that do a nested packing, depending on the existence of 'pack()' function inside of the object
-
+//! Structures that do a nested packing, depending on the existence of 'pack()' function inside the object
 //There is no pack() inside
 template<bool cond, typename T1, typename Memory1, int ... prp>
 struct pack_cond
 {
+	//! Trivial case it serialize the vector object as simply an array of objects
 	void packing(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Pack_stat & sts)
 	{
 		Packer<openfpm::vector<T1>, Memory1, PACKER_ARRAY_PRIMITIVE>::pack(mem,obj,sts,obj.size());	
@@ -34,40 +35,40 @@ struct pack_cond
 
 };
 
-
+//! Structures that do a nested packing, depending on the existence of 'pack()' function inside the object
 //There is pack() inside
 template<typename T1, typename Memory1, int ... prp>
 struct pack_cond<true, T1, Memory1, prp...>
 {
+	//! It traverse the type-tree structure to serialize the vector object into memory
 	void packing(ExtPreAlloc<Memory1> & mem, openfpm::vector<T1> & obj, Pack_stat & sts)
 	{
-	   std::cout << "There is packMem() inside TEST" << std::endl;
 	   for (size_t i = 0; i < obj.size(); i++)
 		   obj.get(i).template pack<prp...>(mem, sts);
 	}
 };
 
-// Structures that calculate memory for an object, depending on the existence of 'packMem()' function inside of the object
-
-//There is no packMem() inside
+//! Structures that calculate how many bytes are required to serialize an object
+// depending on the existence of 'packMem()' function inside of the object
+// There is no packMem() inside
 template<bool cond, typename T1>
 struct packMem_cond
 {
+	//! calculate how many bytes are needed to serialize the object
 	size_t packMemory(T1 & obj, size_t n, size_t e)
 	{
-#ifdef DEBUG
-		std::cout << "There is no packMem() inside TEST" << std::endl;
-		std::cout << grow_policy_double::grow(0,n) << "*" << sizeof(T) << " " << demangle(typeid(T).name()) << std::endl;
-#endif
 		return grow_policy_double::grow(0,n) * sizeof(T);
 	}
 
 };
 
-//There is packMem() inside
+//! Structures that calculate memory for an object, depending on the existence of 'packMem()'
+// function inside of the object
+// There is packMem() inside
 template<typename T1>
 struct packMem_cond<true, T1>
 {
+	//! calculate how many bytes are needed to serialize the object
 	size_t packMemory(T1 & obj, size_t n, size_t e)
 	{
 		size_t res = 0;
@@ -75,27 +76,19 @@ struct packMem_cond<true, T1>
 		for (size_t i = 0; i < n; i++) {
 			res += obj.get(i).packMem(n,0);
 		}
-#ifdef DEBUG
-		std::cout << "Inside packMem - true (map_vector)" << std::endl;
-#endif
 		return res+count*sizeof(T);
 	}
 };
 
 
-//These structures do a packing of a simple (no "pack()" inside) object 
-
-//With specified properties
+//! These structures serialize a simple (no "pack()" inside) object
+// With specified properties
 template<bool sel, int ... prp>
 struct pack_simple_cond
 {
+	//! serialize the vector
 	static inline void pack(const openfpm::vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory> & mem, Pack_stat & sts)
 	{
-	#ifdef DEBUG
-		if (mem.ref() == 0)
-			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
-	#endif
-
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
 		
@@ -130,17 +123,14 @@ struct pack_simple_cond
 	}
 };
 
-//Without specified properties
+//! These structures serialize a simple (no "pack()" inside) object
+// Without specified properties
 template<int ... prp>
 struct pack_simple_cond<true, prp ...>
 {
+	//! serialize the vector
 	static inline void pack(const openfpm::vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
 	{
-	#ifdef DEBUG
-		if (mem.ref() == 0)
-			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
-	#endif
-
 		//Pack the size of a vector
 		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
 		
@@ -167,12 +157,12 @@ struct pack_simple_cond<true, prp ...>
 	}
 };
 
-//These structures do an upacking of a simple object (no pack() inside)
-
-//With specified properties
+//! These structures do an de-serialize a simple object (no pack() inside)
+// With specified properties
 template<bool sel, int ... prp>
 struct unpack_simple_cond
 {
+	//! De-serialize an object
 	static inline void unpack(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
 	{
 		//Unpack a size of a source vector
@@ -219,6 +209,7 @@ struct unpack_simple_cond
 	}
 };
 
+//! These structures de-serialize a simple object (no pack() inside)
 //! unpack Without specified properties
 template<int ... prp>
 struct unpack_simple_cond<true, prp ...>
@@ -269,7 +260,7 @@ struct unpack_simple_cond<true, prp ...>
 };
 
 
-/*! \brief Insert an allocation request
+/*! \brief It calculate the number of byte required to serialize the object
  *
  * \tparam prp list of properties
  *
