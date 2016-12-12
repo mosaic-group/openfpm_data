@@ -8,7 +8,7 @@
 #ifndef VTKWRITER_DIST_GRAPH_HPP_
 #define VTKWRITER_DIST_GRAPH_HPP_
 
-#include "VCluster.hpp"
+#include "VCluster/VCluster.hpp"
 
 /*! Property data store for scalar and vector
  *

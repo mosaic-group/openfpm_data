@@ -10,7 +10,7 @@
 
 #include "HDF5_XdmfWriter_util.hpp"
 #include "Vector/map_vector.hpp"
-#include "VCluster.hpp"
+#include "VCluster/VCluster.hpp"
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
