@@ -430,7 +430,6 @@ public:
 	CellList(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & box, const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	:Mem_type(STARTING_NSLOT)
 	{
-		std::cout << "123" << std::endl;
 		Initialize(cd_sm,box,pad,slot);
 	}
 

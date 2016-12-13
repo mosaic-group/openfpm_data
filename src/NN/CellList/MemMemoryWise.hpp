@@ -37,8 +37,7 @@ class Mem_mw
 	// that store the elements in the cell
 	std::unordered_map<size_t,base> cl_base;
 
-	//Origin point
-	Point<dim,T> orig;
+	typename std::remove_reference<decltype(std::declval<base>().get(0))>::type invalid;
 
 public:
 
@@ -48,21 +47,12 @@ public:
 
 	void init_to_zero(size_t slot, size_t tot_n_cell)
 	{
-		//resize the map to needed number of cells
-
-		cl_base.rehash(tot_n_cell);
-
-		//filling a map with "base" structures
-		for (size_t i = 0; i < tot_n_cell; i++)
-		{   base b;
-			//cl_base.insert(tot_n_cell, b);
-			cl_base[i] = b;
-		}
 	}
 
-	void operator=(const Mem_mw & cell)
+	Mem_mw & operator=(const Mem_mw & cell)
 	{
 		cl_base = cell.cl_base;
+		return *this;
 	}
 
 	void addCell(size_t cell_id, typename base::value_type ele)
@@ -84,23 +74,29 @@ public:
 
 	size_t getNelements(const size_t cell_id) const
 	{
-		return cl_base.find(cell_id)->second.size();
+		auto it = cl_base.find(cell_id);
+		if (it == cl_base.end())
+			return 0;
+
+		return it->second.size();
 	}
 
-	auto get(size_t cell, size_t ele) -> decltype(cl_base[cell].get(ele)) &
+	auto get(size_t cell, size_t ele) -> decltype(cl_base[0].get(0)) &
 	{
+		auto it = cl_base.find(cell);
+		if (it == cl_base.end())
+			return invalid;
+
 		return cl_base[cell].get(ele);
 	}
 
 	void swap(Mem_mw & cl)
 	{
-		//cl_base.swap(cl.cl_base);
 		swap(cl_base, cl.cl_base);
 	}
 
 	void swap(Mem_mw && cell)
 	{
-		//cl_base.swap(cell.cl_base);
 		swap(cl_base, cell.cl_base);
 	}
 
@@ -109,13 +105,22 @@ public:
 		cl_base.clear();
 	}
 
-	inline size_t * getStartId(size_t cell_id)
+	inline auto getStartId(size_t cell_id) -> typename std::remove_reference<decltype(cl_base[0].get(0))>::type *
 	{
+		auto it = cl_base.find(cell_id);
+		if (it == cl_base.end())
+			return &invalid;
+
 		return &cl_base[cell_id].get(0);
 	}
 
-	inline size_t * getStopId(size_t cell_id)
+	inline auto getStopId(size_t cell_id) -> typename std::remove_reference<decltype(cl_base[0].get(0))>::type *
 	{
+		auto it = cl_base.find(cell_id);
+		if (it == cl_base.end())
+			return &invalid;
+
+
 		return (&cl_base[cell_id].last()) + 1;
 	}
 

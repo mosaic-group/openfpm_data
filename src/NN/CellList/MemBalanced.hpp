@@ -39,12 +39,9 @@
 template<unsigned int dim, typename T, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
 class Mem_bal
 {
-	// each cell has a pointer to a dynamic structure
+	//! each cell has a pointer to a dynamic structure
 	// that store the elements in the cell
 	openfpm::vector<base> cl_base;
-
-	//Origin point
-	Point<dim,T> orig;
 
 public:
 
@@ -56,17 +53,13 @@ public:
 		//resize the vector to needed number of cells
 
 		cl_base.resize(tot_n_cell);
-
-		//filling a vector with "base" structures
-		for (size_t i = 0; i < tot_n_cell; i++)
-		{   base b;
-			cl_base.get(i) = b;
-		}
 	}
 
-	void operator=(const Mem_bal & cell)
+	Mem_bal & operator=(const Mem_bal & cell)
 	{
 		cl_base = cell.cl_base;
+
+		return *this;
 	}
 
 	void addCell(size_t cell_id, typename base::value_type ele)
@@ -91,7 +84,7 @@ public:
 		return cl_base.get(cell_id).size();
 	}
 
-	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell).get(ele)) &
+	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(0).get(0)) &
 	{
 		return cl_base.get(cell).get(ele);
 	}
@@ -109,18 +102,15 @@ public:
 	void clear()
 	{
 		for (size_t i = 0 ; i < cl_base.size() ; i++)
-		{
-			for (size_t j = 0; j < cl_base.get(i).size(); j++)
-				cl_base.get(i).get(j) = 0;
-		}
+			cl_base.get(i).clear();
 	}
 
-	inline size_t * getStartId(size_t cell_id)
+	inline auto getStartId(size_t cell_id) -> typename std::remove_reference<decltype(cl_base.get(0).get(0))>::type *
 	{
 		return &cl_base.get(cell_id).get(0);
 	}
 
-	inline size_t * getStopId(size_t cell_id)
+	inline auto getStopId(size_t cell_id) -> typename std::remove_reference<decltype(cl_base.get(0).get(0))>::type *
 	{
 		return (&cl_base.get(cell_id).last()) + 1;
 	}
