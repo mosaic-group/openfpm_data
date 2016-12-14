@@ -111,13 +111,13 @@ class memory_c
 	 */
 	void move_copy(memory_c & mem_c)
 	{
-		//if mem is already allocated, deallocate it
-		if (mem != NULL)
-			delete(mem);
-
 		// if mem_r is allocated delete it
 		if (mem_r != NULL)
 			delete(mem_r);
+
+		//if mem is already allocated, deallocate it
+		if (mem != NULL)
+			delete(mem);
 
 		// move the pointer
 		mem = mem_c.mem;
@@ -138,6 +138,7 @@ class memory_c
 	//! destructor
 	~memory_c()
 	{
+		delete(mem_r);
 		if (mem != NULL)
 		{
 			mem->decRef();
@@ -145,7 +146,6 @@ class memory_c
 			if (mem->ref() == 0)
 				delete(mem);
 		}
-		delete(mem_r);
 	}
 
 	/*! \brief swap the memory
@@ -366,13 +366,13 @@ class memory_c<multi_array<T>, D>
 	//! destructor
 	~memory_c()
 	{
+		delete(mem_r);
 		if (mem != NULL)
 		{
 			mem->decRef();
 			if (mem->ref() == 0)
 				delete(mem);
 		}
-		delete(mem_r);
 	}
 
 	//! set the device memory interface, the object that allocate memory

@@ -36,6 +36,9 @@ class memory_array
 
 #endif
 
+	// number of elements
+	size_t sz;
+
 	//! return the i element
 	T get(mem_id i)
 	{
@@ -83,6 +86,22 @@ class memory_array
 
 		if (init == false)
 			new (ptr)T[sz];
+
+		this->sz = sz;
+	};
+
+	/*! \brief Destructor
+	 *
+	 *
+	 *
+	 */
+	~memory_array()
+	{
+		// Call the destructor of every objects
+		for (size_t i = 0 ; i < sz ; i++)
+		{
+			(&ptr[i])->~T();
+		}
 	};
 };
 
