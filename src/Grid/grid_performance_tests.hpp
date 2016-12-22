@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_write_report)
 
 	// Reference time
 	openfpm::vector<openfpm::vector<float>> y_ref;
-	y_ref.load(per_dir + std::string("/ref_timesg"));
+	y_ref.load(per_dir + std::string("/openfpm_data/ref_timesg"));
 
 	load_and_combine(per_dir + std::string("/openfpm_data/previous_measureg"),y,per_timesg);
 
