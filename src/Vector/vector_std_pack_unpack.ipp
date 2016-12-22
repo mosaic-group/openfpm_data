@@ -248,7 +248,10 @@
 	{
 	    std::ifstream fs (file, std::ios::in | std::ios::binary | std::ios::ate );
 	    if (fs.is_open() == false)
+	    {
+	    	std::cerr << __FILE__ << ":" << __LINE__ << " error, opening file: " << file << std::endl;
 	    	return false;
+	    }
 	    
 	    // take the size of the file
 	    size_t sz = fs.tellg();
