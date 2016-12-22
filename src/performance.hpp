@@ -279,7 +279,7 @@ void write_performance_report()
 	std::string per_dir(test_dir);
 
 	// Load the previous git commit SHA1 of the previous tests
-	load_and_combine_commit(per_dir + std::string("/prev_commit"),pcommit);
+	load_and_combine_commit(per_dir + std::string("/openfpm_data/prev_commit"),pcommit);
 
 	std::string config_list;
 
@@ -289,7 +289,7 @@ void write_performance_report()
 		config_list += pcommit.get(i).toHTML(i);
 
 	cg.addHTML(config_list);
-	cg.write(test_dir + std::string("/openfpm_data_performance.html"));
+	cg.write(test_dir + std::string("/openfpm_data/openfpm_data_performance.html"));
 }
 
 #endif

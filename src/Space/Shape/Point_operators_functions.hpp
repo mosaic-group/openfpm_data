@@ -30,7 +30,7 @@ public:\
 	static const unsigned int nvals = exp1::nvals;\
 \
 	inline point_expression_op(const exp1 & o1)\
-	:o1(o1)\
+	:o1(o1),scal(0)\
 	{}\
 \
 	inline void init() const\

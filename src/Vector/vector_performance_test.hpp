@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(vector_performance_write_report)
 	// Get the directory of the performance test files
 	std::string per_dir(test_dir);
 
-	load_and_combine(per_dir + std::string("/previous_measurev"),y,per_timesv);
+	load_and_combine(per_dir + std::string("/openfpm_data/previous_measurev"),y,per_timesv);
 
 	// Adding the dataset names
 	if (y.size() != 0)

@@ -47,8 +47,6 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_obj)
 			t.stop();
 
 			times[i] = t.getwct();
-
-			std::cout << "Time " << times[i] << std::endl;
 		}
 		std::sort(times.begin(),times.end());
 		sleep(5);
@@ -192,7 +190,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_write_report)
 	openfpm::vector<openfpm::vector<float>> y_ref;
 	y_ref.load(per_dir + std::string("/ref_timesg"));
 
-	load_and_combine(per_dir + std::string("/previous_measureg"),y,per_timesg);
+	load_and_combine(per_dir + std::string("/openfpm_data/previous_measureg"),y,per_timesg);
 
 	// Adding the dataset names
 	if (y.size() != 0)
