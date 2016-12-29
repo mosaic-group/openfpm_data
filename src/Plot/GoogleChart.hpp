@@ -15,8 +15,8 @@
 #define GGRAPH_POINTS 2
 
 #define GC_ZOOM std::string("explorer: {actions: ['dragToZoom', 'rightClickToReset'],axis: 'horizontal,vertical',keepInBounds: true, maxZoomIn: 128.0}")
-#define GC_X_LOG std::string("hAxis: { logscale: true }")
-#define GC_Y_LOG std::string("vAxis: { logscale: true }")
+#define GC_X_LOG std::string("hAxis: { logScale: true }")
+#define GC_Y_LOG std::string("vAxis: { logScale: true }")
 
 /*! \brief Google chart options
  *
@@ -553,7 +553,7 @@ public:
 			for (size_t i = 0; i < y.size() ; i++)
 			{
 				if (y.get(i).size() != sz)
-					std::cerr << __FILE__ << ":" << __LINE__ << " error all the elements in the y vector must have the same numbers, element " << i << ": " << y.get(i).size() << " " << " mismatch the numbers of elements at 0: " << sz << "/n";
+					std::cerr << __FILE__ << ":" << __LINE__ << " error all the elements in the y vector must have the same numbers of elements " << y.get(i).size() << " != " << sz << "\n";
 			}
 		}
 
