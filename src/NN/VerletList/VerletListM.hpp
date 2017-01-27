@@ -11,19 +11,6 @@
 #include "NN/VerletList/VerletNNIteratorM.hpp"
 
 
-/*! \brief Structure that contain a reference to a vector of particles
- *
- *
- */
-template<unsigned int dim, typename T>
-struct pos_v
-{
-	const openfpm::vector<Point<dim,T>> & pos;
-
-	pos_v(const openfpm::vector<Point<dim,T>> & pos)
-	:pos(pos)
-	{}
-};
 
 /*! \brief Get the neighborhood iterator based on type
  *
