@@ -78,4 +78,18 @@ template<unsigned int dim, typename T, typename CellList> void populate_cell_lis
 		populate_cell_list_sym(pos,cli,g_m);
 }
 
+/*! \brief Structure that contain a reference to a vector of particles
+ *
+ *
+ */
+template<unsigned int dim, typename T>
+struct pos_v
+{
+	openfpm::vector<Point<dim,T>> & pos;
+
+	pos_v(openfpm::vector<Point<dim,T>> & pos)
+	:pos(pos)
+	{}
+};
+
 #endif /* OPENFPM_DATA_SRC_NN_CELLLIST_CELLLIST_UTIL_HPP_ */

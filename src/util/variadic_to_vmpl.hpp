@@ -49,9 +49,16 @@ struct exit_impl : boost::mpl::equal_to<typename boost::mpl::distance<F,L>::type
 template<template<typename> class H, typename F,typename L, bool exit,typename ...Args>
 struct v_transform_impl
 {
+	//! last element of the vector
    typedef typename boost::mpl::deref<F>::type front_;
+
+   //! next element
    typedef typename boost::mpl::next<F>::type next_;
+
+   //! exit condition
    typedef typename exit_impl<next_,L>::type exit_;
+
+   //! recursive call
    typedef typename v_transform_impl<H,next_,L,exit_::value,typename H<front_>::type,Args...>::type type;
 };
 
@@ -60,14 +67,21 @@ struct v_transform_impl
 template<template<typename> class H,typename F,typename L,typename ...Args>
 struct v_transform_impl<H,F,L,true,Args...>
 {
+   //! required transformed type
    typedef boost::fusion::vector<Args...> type;
 };
 
+//! implementation of seq_traits
 template<typename Seq>
 struct seq_traits_impl
 {
+	//! first element
    typedef typename boost::mpl::begin<Seq>::type first_;
+
+   //! Last element
    typedef typename boost::mpl::end<Seq>::type last_;
+
+   //! exit condition (first == last)
    typedef typename exit_impl<first_,last_>::type exit_;
 };
 
@@ -121,9 +135,16 @@ struct v_transform
 template<template<typename,typename> class H, typename arg0, typename F,typename L, bool exit,typename ...Args>
 struct v_transform_two_impl
 {
+   //! last element of the vector
    typedef typename boost::mpl::deref<F>::type front_;
+
+   //! next element of the vector
    typedef typename boost::mpl::next<F>::type next_;
+
+   //! exit condition
    typedef typename exit_impl<next_,L>::type exit_;
+
+   //! Recursive call
    typedef typename v_transform_two_impl<H,arg0,next_,L,exit_::value,typename H<arg0,front_>::type,Args...>::type type;
 };
 
@@ -132,6 +153,7 @@ struct v_transform_two_impl
 template<template<typename,typename> class H,typename arg0, typename F,typename L,typename ...Args>
 struct v_transform_two_impl<H,arg0,F,L,true,Args...>
 {
+   //! Required type
    typedef boost::fusion::vector<Args...> type;
 };
 
@@ -172,7 +194,7 @@ struct v_transform_two
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+//! implementation of to_boost_vmpl
 template <int a, int... id>
 struct to_boost_vmpl_impl
 {
@@ -184,6 +206,7 @@ struct to_boost_vmpl_impl
 template <int a>
 struct to_boost_vmpl_impl<a>
 {
+	//! create a boost mpl vector with the last number
 	typedef boost::mpl::vector<boost::mpl::int_<a>> type;
 };
 
@@ -201,6 +224,7 @@ struct to_boost_vmpl_impl<a>
 template <int... id>
 struct to_boost_vmpl
 {
+	//! constrict an mpl vector from the variadic
 	typedef typename to_boost_vmpl_impl<id...>::type type;
 };
 
@@ -208,6 +232,7 @@ struct to_boost_vmpl
 template <>
 struct to_boost_vmpl<>
 {
+	//! terminator
 	typedef typename boost::mpl::vector<>::type type;
 };
 

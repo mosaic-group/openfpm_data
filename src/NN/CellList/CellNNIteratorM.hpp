@@ -17,6 +17,116 @@
  *
  * In general you never create it directly but you get it from the CellList structures
  *
+ * It iterate across all the element of the selected cell and the near cells accordingly yo the
+ * symmetric scheme
+ *
+ * \tparam dim dimensionality of the space where the cell live
+ * \tparam Cell cell type on which the iterator is working
+ * \tparam NNc_size neighborhood size
+ * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
+ *
+ */
+template<unsigned int dim, typename Cell, unsigned int sh_byte,unsigned int NNc_size, unsigned int impl>
+class CellNNIteratorSymM : public CellNNIterator<dim,Cell,NNc_size,impl>
+{
+	typedef boost::low_bits_mask_t<sizeof(size_t)*8-sh_byte>  mask_low;
+
+	//! index of the particle p
+	size_t p;
+
+	//! Position of the particles p
+	const openfpm::vector<Point<dim,typename Cell::stype>> & pos;
+
+	//! Position of the particle p
+	const openfpm::vector<pos_v<dim,typename Cell::stype>> & ps;
+
+	/*! Select the next valid element
+	 *
+	 */
+	inline void selectValid()
+	{
+		if (this->NNc[this->NNc_id] == 0)
+		{
+			while (this->start_id < this->stop_id)
+			{
+				size_t q = this->cl.get_lin(this->start_id);
+				for (long int i = dim-1 ; i >= 0 ; i--)
+				{
+					if (pos.template get<0>(p)[i] < ps.get(q >> (sizeof(size_t)*8-sh_byte)).pos.template get<0>(q & mask_low::sig_bits_fast)[i])
+						return;
+					else if (pos.template get<0>(p)[i] > ps.get(q >> (sizeof(size_t)*8-sh_byte)).pos.template get<0>(q & mask_low::sig_bits_fast)[i])
+						goto next;
+				}
+				if (q >= p)	return;
+next:
+				this->start_id++;
+			}
+
+			CellNNIterator<dim,Cell,NNc_size,impl>::selectValid();
+		}
+		else
+		{
+			CellNNIterator<dim,Cell,NNc_size,impl>::selectValid();
+		}
+	}
+
+public:
+
+	/*! \brief
+	 *
+	 * Cell NN iterator
+	 *
+	 * \param cell Cell id
+	 * \param NNc Cell neighborhood indexes (relative)
+	 * \param cl Cell structure
+	 *
+	 */
+	CellNNIteratorSymM(size_t cell, size_t p, const long int (&NNc)[NNc_size], Cell & cl, const openfpm::vector<Point<dim,typename Cell::stype>> & pos, const openfpm::vector<pos_v<dim,typename Cell::stype>> & ps)
+	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),p(p),pos(pos),ps(ps)
+	{
+		selectValid();
+	}
+
+
+	/*! \brief Get the value of the cell
+	 *
+	 * \return  the next element object
+	 *
+	 */
+	inline size_t getP()
+	{
+		return CellNNIterator<dim,Cell,NNc_size,impl>::get() & mask_low::sig_bits_fast;
+	}
+
+	/*! \brief Get the value of the cell
+	 *
+	 * \return  the next element object
+	 *
+	 */
+	inline size_t getV()
+	{
+		return (CellNNIterator<dim,Cell,NNc_size,impl>::get()) >> (sizeof(size_t)*8-sh_byte);
+	}
+
+	/*! \brief take the next element
+	 *
+	 * \return itself
+	 *
+	 */
+	inline CellNNIteratorSymM<dim,Cell,sh_byte,NNc_size,impl> & operator++()
+	{
+		this->start_id++;
+
+		selectValid();
+
+		return *this;
+	}
+};
+
+/*! \brief Iterator for the neighborhood of the cell structures
+ *
+ * In general you never create it directly but you get it from the CellList structures
+ *
  * It iterate across all the element of the selected cell and the near cells
  *
  * \tparam dim dimensionality of the space where the cell live
@@ -111,5 +221,6 @@ public:
 	}
 };
 
+#include "CellNNIteratorRuntimeM.hpp"
 
 #endif /* OPENFPM_DATA_SRC_NN_CELLLIST_CELLNNITERATORM_HPP_ */

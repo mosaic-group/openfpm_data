@@ -677,6 +677,7 @@ public:
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
 			}
 #endif
+			/* coverity[dead_error_line] */
 			key.set_d(s,ConvertToID(pos,s));
 		}
 
@@ -1298,6 +1299,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 			/////////// Low boundary
 
 			// we are at the positive border (We are assuming that there are not rounding error in the decomposition)
+			/* coverity[copy_paste_error] */
 			if (b_d.getHigh(i) == box.getLow(i))
 					g_box.setHigh(i,off[i]);
 
@@ -1418,6 +1420,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 			/////////// Low boundary
 
 			// we are at the positive border (We are assuming that there are not rounding error in the decomposition)
+			/* coverity[copy_paste_error] */
 			if (b_d.getHigh(i) == box.getLow(i))
 					g_box.setHigh(i,off[i]);
 

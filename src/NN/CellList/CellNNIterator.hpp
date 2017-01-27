@@ -309,4 +309,6 @@ public:
 	}
 };
 
+#include "CellNNIteratorRuntime.hpp"
+
 #endif /* CELLNNITERATOR_FULL_HPP_ */

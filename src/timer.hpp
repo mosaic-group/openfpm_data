@@ -24,13 +24,19 @@
 
 class timer
 {
-	// Flag that indicate if the timer is running or not
+	//! Flag that indicate if the timer is running or not
 	bool running;
 
+	//! starting time
     struct timespec tsstart;
+
+    //! start time from epoch
     clock_t cstart;
 
+    // stop time
     struct timespec tsstop;
+
+    //! stop time from epoch
     clock_t cstop;
 
     // Fill the stop point

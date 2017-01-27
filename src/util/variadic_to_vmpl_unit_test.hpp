@@ -17,14 +17,16 @@
 template <typename T>
 struct F
 {
+	//! meta-function implementation
 	typedef scalar<T> type;
 };
-//! [v_transform_two metafunction]
+//! [v_transform metafunction]
 
 //! [v_transform_two metafunction]
 template <typename arg0, typename T>
 struct Ftwo
 {
+	//! meta-function implementation
 	typedef scalar<T> type;
 };
 //! [v_transform_two metafunction]
