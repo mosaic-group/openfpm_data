@@ -4,19 +4,31 @@
  *     Author: Yaroslav Zaluzhnyi and Pietro Incardona
  */
 
-//! This Function to indicate the vector class has a packer function
+/*! This Function to indicate the vector class has a packer function
+ *
+ * \return true vector has a pack function
+ *
+ */
 static bool pack()
 {
 	return true;
 }
 
-//! This Function indicate that vector class has a packRequest function
+/*! This Function indicate that vector class has a packRequest function
+ *
+ * \return true vector has a packRequest function
+ *
+ */
 static bool packRequest()
 {
 	return true;
 }
 
-//! This Function indicate that vector class has a packMem function
+/*! This Function indicate that vector class has a packMem function
+ *
+ * \return true vector has a packMem function
+ *
+ */
 static bool packMem()
 {
        return true;

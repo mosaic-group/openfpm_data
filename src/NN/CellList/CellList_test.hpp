@@ -306,7 +306,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 	}
 
 
-	// Create a grid iterator
+/*	// Create a grid iterator
 	grid_key_dx<dim> p1(1,1,1);
 	grid_key_dx<dim> p2(div[0]-2,div[1]-2,div[2]-2);
 	grid_key_dx_iterator_sub<dim> g_it_s(g_info,p1,p2);
@@ -336,7 +336,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim));
 
 
-		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key));
+		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),);
 		total1 = 0;
 		total2 = 0;
 
@@ -356,7 +356,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
 
 		++g_it_s;
-	}
+	}*/
 }
 
 template<typename CellList> void Test_CellDecomposer_consistent()

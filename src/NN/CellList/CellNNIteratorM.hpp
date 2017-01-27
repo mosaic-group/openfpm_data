@@ -17,6 +17,61 @@
  *
  * In general you never create it directly but you get it from the CellList structures
  *
+ * It iterate across all the element of the selected cell and the near cells accordingly yo the
+ * symmetric scheme
+ *
+ * \tparam dim dimensionality of the space where the cell live
+ * \tparam Cell cell type on which the iterator is working
+ * \tparam NNc_size neighborhood size
+ * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
+ *
+ */
+template<unsigned int dim, typename Cell, unsigned int sh_byte,unsigned int NNc_size, unsigned int impl>
+class CellNNIteratorSymM : public CellNNIteratorSym<dim,Cell,NNc_size,impl>
+{
+	typedef boost::low_bits_mask_t<sizeof(size_t)*8-sh_byte>  mask_low;
+
+public:
+
+	/*! \brief
+	 *
+	 * Cell NN iterator
+	 *
+	 * \param cell Cell id
+	 * \param NNc Cell neighborhood indexes (relative)
+	 * \param cl Cell structure
+	 *
+	 */
+	CellNNIteratorSymM(size_t cell, size_t p, const long int (&NNc)[NNc_size], Cell & cl, const openfpm::vector<Point<dim,typename Cell::stype>> & pos)
+	:CellNNIteratorSym<dim,Cell,NNc_size,impl>(cell,p,NNc,cl,pos)
+	{}
+
+
+	/*! \brief Get the value of the cell
+	 *
+	 * \return  the next element object
+	 *
+	 */
+	inline size_t getP()
+	{
+		return CellNNIteratorSym<dim,Cell,NNc_size,impl>::get() & mask_low::sig_bits_fast;
+	}
+
+	/*! \brief Get the value of the cell
+	 *
+	 * \return  the next element object
+	 *
+	 */
+	inline size_t getV()
+	{
+		return (CellNNIteratorSym<dim,Cell,NNc_size,impl>::get()) >> (sizeof(size_t)*8-sh_byte);
+	}
+};
+
+/*! \brief Iterator for the neighborhood of the cell structures
+ *
+ * In general you never create it directly but you get it from the CellList structures
+ *
  * It iterate across all the element of the selected cell and the near cells
  *
  * \tparam dim dimensionality of the space where the cell live
@@ -111,5 +166,6 @@ public:
 	}
 };
 
+#include "CellNNIteratorRuntimeM.hpp"
 
 #endif /* OPENFPM_DATA_SRC_NN_CELLLIST_CELLNNITERATORM_HPP_ */

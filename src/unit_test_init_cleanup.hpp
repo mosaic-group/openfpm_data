@@ -8,8 +8,11 @@
 #ifndef UNIT_TEST_INIT_CLEANUP_HPP_
 #define UNIT_TEST_INIT_CLEANUP_HPP_
 
+//! boost unit test fixation (start procedure to call before testing)
 struct ut_start
 {
+
+	//! start procedure before running the test
     ut_start()
     {
 #ifdef PERFORMANCE_TEST
@@ -23,6 +26,8 @@ struct ut_start
 #endif
 
     }
+
+    //! post procedure to call after the test
     ~ut_start()
     {
 #ifdef PERFORMANCE_TEST

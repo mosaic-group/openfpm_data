@@ -47,6 +47,41 @@ class grid_key_dx_iterator_sub_bc : public grid_key_dx_iterator_sub<dim,warn>
 
 public:
 
+
+	grid_key_dx_iterator_sub_bc(const grid_key_dx_iterator_sub_bc & tmp)
+	{
+		this->operator=(tmp);
+
+	}
+
+	grid_key_dx_iterator_sub_bc(grid_key_dx_iterator_sub_bc && tmp)
+	{
+		this->operator=(tmp);
+
+	}
+
+	grid_key_dx_iterator_sub_bc & operator=(const grid_key_dx_iterator_sub_bc & tmp)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			bc[i] = tmp.bc[i];
+
+		act = tmp.act;
+		boxes = tmp.boxes;
+
+		return *this;
+	}
+
+	grid_key_dx_iterator_sub_bc & operator=(grid_key_dx_iterator_sub_bc && tmp)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			bc[i] = tmp.bc[i];
+
+		act = tmp.act;
+		boxes.swap(tmp.boxes);
+
+		return *this;
+	}
+
 	/*! \brief Constructor
 	 *
 	 *

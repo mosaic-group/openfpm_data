@@ -18,7 +18,7 @@ struct is_grid: std::false_type {};
  *
  * ### Example
  *
- * \snippet util.hpp Check is_grid
+ * \snippet util_test.hpp Check is_grid
  *
  * return true if T is a grid
  *

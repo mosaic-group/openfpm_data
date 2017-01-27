@@ -13,26 +13,25 @@
 #define STD_VECTOR 1
 #define OPENFPM_NATIVE 2
 
-/*! \brief It analyze the type given and it select correctly the implementation
- *  for vector
- *
- * \tparam type to analyze
- *
- * [Example]
- *
- * vect_isel<T>::value
- *
- * will return 1 for std base implementation
- * will return 2 for openfpm native implementation
- *
- * Basically the openfpm native implementation require that T
- * has some specific structure, this class check for it, if T
- * does not have this structure it fall to the case 1
- *
- */
-
 namespace openfpm
 {
+	/*! \brief It analyze the type given and it select correctly the implementation
+	 *  for vector
+	 *
+	 * \tparam type to analyze
+	 *
+	 * [Example]
+	 *
+	 * vect_isel<T>::value
+	 *
+	 * will return 1 for std base implementation
+	 * will return 2 for openfpm native implementation
+	 *
+	 * Basically the openfpm native implementation require that T
+	 * has some specific structure, this class check for it, if T
+	 * does not have this structure it fall to the case 1
+	 *
+	 */
 	template<typename T>
 	struct vect_isel
 	{

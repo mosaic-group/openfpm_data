@@ -339,6 +339,8 @@ private:
 
 public:
 
+	typedef CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,RUNTIME,NO_CHECK> SymNNIterator;
+
 	//! Object type that the structure store
 	typedef typename base::value_type value_type;
 
@@ -434,6 +436,7 @@ public:
 		// create the array that store the number of particle on each cell and se it to 0
 		InitializeStructures(this->gr_cell.getSize(),this->gr_cell.size());
 
+		from_cd = false;
 	}
 
 	//! Default Constructor

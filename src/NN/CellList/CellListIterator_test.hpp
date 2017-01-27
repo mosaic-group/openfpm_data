@@ -154,8 +154,6 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 
 	while (it_cl.isNext())
 	{
-		auto p_key = it_cl.get();
-
 		count++;
 		++it_cl;
 	}
@@ -211,8 +209,6 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 
 	while (it_cl2.isNext())
 	{
-		auto p_key = it_cl2.get();
-
 		count++;
 		++it_cl2;
 	}
@@ -246,8 +242,6 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_NN_iterator )
 	CellList<dim,float,FAST,shift<dim,float>> NN;
 
 	NN.Initialize(box,div,1);
-
-	float pos[dim];
 
 	grid_key_dx_iterator<3> it(gs2);
 
@@ -321,7 +315,6 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_NN_iterator )
 
 	while (it_cl.isNext())
 	{
-		auto p_key = it_cl.get();
 		auto NN_it = it_cl.getNNIteratorCSR(vp);
 
 		size_t size_NN = 0;

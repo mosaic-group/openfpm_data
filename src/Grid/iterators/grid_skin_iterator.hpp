@@ -39,6 +39,8 @@
 \endverbatim
 
  *
+ * \warning A MUST BE fully contained into B
+ *
  * The skin is the part in between the two boxes A and B
  *
  * More in general is the Box B removed of A without border. This iterator respect the boundary
@@ -51,8 +53,11 @@
 template<unsigned int dim>
 class grid_skin_iterator_bc
 {
+protected:
 	//! Internal iterator for each faces
 	grid_key_dx_iterator_sub_bc<dim> sub_it[2*dim];
+
+private:
 
 	//! Actual iterator
 	size_t act;
@@ -67,7 +72,7 @@ public:
 	 * \param bc boundary conditions
 	 *
 	 */
-	template <typename T> grid_skin_iterator_bc(grid_sm<dim,T> & g_sm, const Box<dim,size_t> & A, const Box<dim,size_t> & B, const size_t (& bc)[dim])
+	template <typename T> grid_skin_iterator_bc(const grid_sm<dim,T> & g_sm, const Box<dim,size_t> & A, const Box<dim,size_t> & B, const size_t (& bc)[dim])
 	:act(0)
 	{
 		for (size_t i = 0 ; i < dim ; i++)

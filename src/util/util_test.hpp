@@ -22,11 +22,14 @@
 #include "mul_array_extents.hpp"
 #include "Packer_Unpacker/has_max_prop.hpp"
 
+//! test type for has_max_prop
 struct test_has_max_prop
 {
+	//! define that the type has 6 properties
 	static const unsigned int max_prop = 6;
 };
 
+//! test type for has_max_prop
 struct test_has_no_max_prop
 {
 };
@@ -35,15 +38,20 @@ typedef openfpm::vector<openfpm::vector<aggregate<float,int,double>>> max_prop_v
 
 //! [Check has_posMask struct definition]
 
+//! test type for has_posMask
 struct test_has_posMask
 {
+	//! unused
 	float data;
 
+	//! staggered mask
 	static constexpr bool stag_mask[] = {true,false,true};
 };
 
+//! test type for has_posMask
 struct test_no_has_posMask
 {
+	//! unused
 	float data;
 };
 
@@ -51,14 +59,18 @@ struct test_no_has_posMask
 
 //! [Declaration of struct with attributes and without]
 
+//! test type for has_attributes
 struct test_has_attributes
 {
+	//! Define attribute names
 	struct attributes
 	{
+		//! This test structure has 2 attribute names
 		static const std::string name[2];
 	};
 };
 
+// attribute names
 const std::string test_has_attributes::attributes::name[]={"attributes1","attributes2"};
 
 struct test_no_attributes

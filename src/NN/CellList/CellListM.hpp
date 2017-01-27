@@ -59,6 +59,8 @@ class CellListM : public CellBase
 
 public:
 
+	typedef CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,RUNTIME,NO_CHECK> SymNNIterator;
+
 	//! Default Constructor
 	CellListM()
 	{};
@@ -260,36 +262,9 @@ public:
 	 * \return Cell-list structure
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> getNNIteratorSym(size_t cell)
+	template<unsigned int impl> inline CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> getNNIteratorSym(size_t cell,size_t p, const openfpm::vector<Point<dim,typename CellBase::stype>> & v)
 	{
-		CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> cln(cell,CellListM<dim,T,sh_byte,CellBase>::NNc_sym,*this);
-
-		return cln;
-	}
-
-
-	/*! \brief Get the Neighborhood iterator
-	 *
-	 * It iterate across all the element of the selected cell and the near cells
-	 *
-	 *  \verbatim
-
-	   * *
-	   x *
-
-	   \endverbatim
-	 *
-	 * * x is the selected cell
-	 * * * are the near cell
-	 *
-	 * \param cell cell id
-	 *
-	 * \return Cell-list structure
-	 *
-	 */
-	template<unsigned int impl> inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,CRS,impl> getNNIteratorCross(size_t cell)
-	{
-		CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,CRS,impl> cln(cell,CellListM<dim,T,sh_byte,CellBase>::NNc_cr,*this);
+		CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> cln(cell,p,CellListM<dim,T,sh_byte,CellBase>::NNc_sym,*this,v);
 
 		return cln;
 	}
