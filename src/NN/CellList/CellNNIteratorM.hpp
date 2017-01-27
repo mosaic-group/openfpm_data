@@ -26,7 +26,7 @@
  * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell, unsigned int sh_byte,unsigned int NNc_size, unsigned int impl>
+template<unsigned int dim, typename Cell, unsigned int sh_byte, int NNc_size, unsigned int impl>
 class CellNNIteratorSymM : public CellNNIterator<dim,Cell,NNc_size,impl>
 {
 	typedef boost::low_bits_mask_t<sizeof(size_t)*8-sh_byte>  mask_low;
