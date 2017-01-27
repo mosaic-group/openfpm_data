@@ -347,7 +347,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim));
 
 
-		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),i,phase1,phases);
+		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),0,i,phase1,phases);
 		total1 = 0;
 		total2 = 0;
 
@@ -376,7 +376,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		//////////////////////////////////////////////////////////////////////////
 
 
-		auto NNSym2 = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),i,phase2,phases);
+		auto NNSym2 = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),1,i,phase2,phases);
 		total1 = 0;
 		total2 = 0;
 

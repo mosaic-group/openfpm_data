@@ -37,6 +37,7 @@ struct NNTypeM
 						   const openfpm::vector<Point<dim,T>> & pos,
 			               const openfpm::vector<pos_v<dim,T>> & v,
 						   Point<dim,T> & xp,
+						   size_t pp,
 						   size_t p,
 						   CellListImpl & cl,
 						   T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
@@ -74,6 +75,7 @@ struct NNTypeM<dim,T,CellListImpl,PartIt,VL_CRS_SYMMETRIC>
 						   const openfpm::vector<Point<dim,T>> & pos,
 			               const openfpm::vector<pos_v<dim,T>> & v,
 						   Point<dim,T> & xp,
+						   size_t pp,
 						   size_t p,
 						   CellListImpl & cl,
 						   T r_cut) -> decltype(it.getNNIteratorCSRM(pos,v))
@@ -110,11 +112,12 @@ struct NNTypeM<dim,T,CellListImpl,PartIt,VL_SYMMETRIC>
 			           const openfpm::vector<Point<dim,T>> & pos,
 					   const openfpm::vector<pos_v<dim,T>> & v,
 					   Point<dim,T> & xp,
+					   size_t pp,
 					   size_t p,
 					   CellListImpl & cl,
-					   T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,openfpm::vector<Point<dim,T>>(),openfpm::vector<pos_v<dim,T>>()))
+					   T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,0,openfpm::vector<Point<dim,T>>(),openfpm::vector<pos_v<dim,T>>()))
 	{
-		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),p,pos,v);
+		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),pp,p,pos,v);
 	}
 };
 
@@ -153,6 +156,7 @@ class VerletListM : public VerletBase
 			           const openfpm::vector<pos_v<dim,T>> & pos2 ,
 					   const openfpm::vector<size_t> & dom,
 					   const openfpm::vector<subsub_lin<dim>> & anom,
+					   size_t pp,
 					   T r_cut,
 					   size_t g_m,
 					   CellListImpl & cl,
@@ -160,15 +164,15 @@ class VerletListM : public VerletBase
 	{
 		if (opt == VL_CRS_SYMMETRIC)
 		{
-			create_<CellNNIteratorSymM<dim,CellListImpl,sh_byte,RUNTIME,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<CellNNIteratorSymM<dim,CellListImpl,sh_byte,RUNTIME,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
 		}
 		else if (opt == VL_SYMMETRIC)
 		{
-			create_<decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,pos,pos2)),VL_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,0,pos,pos2)),VL_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
 		}
 		else
 		{
-			create_<decltype(cl.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<decltype(cl.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
 		}
 	}
 
@@ -190,6 +194,7 @@ class VerletListM : public VerletBase
 			                                                 const openfpm::vector<pos_v<dim,T>> & pos2 ,
 															 const openfpm::vector<size_t> & dom,
 															 const openfpm::vector<subsub_lin<dim>> & anom,
+															 size_t pp,
 															 T r_cut,
 															 size_t g_m,
 															 CellListImpl & cli,
@@ -213,7 +218,7 @@ class VerletListM : public VerletBase
 			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			NN_type NN = NNTypeM<dim,T,CellListImpl,decltype(it),type>::get(it,pos,pos2,xp,i,cli,r_cut);
+			NN_type NN = NNTypeM<dim,T,CellListImpl,decltype(it),type>::get(it,pos,pos2,xp,pp,i,cli,r_cut);
 
 			while (NN.isNext())
 			{
@@ -239,6 +244,7 @@ public:
 	/*! Initialize the verlet list from an already filled cell-list
 	 *
 	 * \param cli external Cell-list
+	 * \param pp phase of pos
 	 * \param r_cut cutoff-radius
 	 * \param pos vector of particle positions
 	 * \param pos2 vector of particle position for the neighborhood
@@ -248,7 +254,7 @@ public:
 	 * 	\param opt options for the Verlet-list creation
 	 *
 	 */
-	void Initialize(CellListImpl & cli, T r_cut, const openfpm::vector<Point<dim,T>> & pos, const openfpm::vector<struct pos_v<dim,T>> & pos2, size_t g_m, size_t opt = VL_NON_SYMMETRIC)
+	void Initialize(CellListImpl & cli, size_t pp, T r_cut, const openfpm::vector<Point<dim,T>> & pos, const openfpm::vector<struct pos_v<dim,T>> & pos2, size_t g_m, size_t opt = VL_NON_SYMMETRIC)
 	{
 		this->cl_n.resize(g_m);
 		this->cl_base.resize(g_m*this->slot);
@@ -266,7 +272,7 @@ public:
 			openfpm::vector<subsub_lin<dim>> anom_c;
 			openfpm::vector<size_t> dom_c;
 
-			create(pos,pos2,dom_c,anom_c,r_cut,g_m,cli,opt);
+			create(pos,pos2,dom_c,anom_c,pp,r_cut,g_m,cli,opt);
 		}
 		else
 		{

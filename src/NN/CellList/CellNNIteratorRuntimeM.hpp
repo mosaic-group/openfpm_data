@@ -86,6 +86,9 @@ class CellNNIteratorSymM<dim,Cell,sh_byte,RUNTIME,impl> : public CellNNIterator<
 {
 	typedef boost::low_bits_mask_t<sizeof(size_t)*8-sh_byte>  mask_low;
 
+	//! phase of the particle p
+	size_t pp;
+
 	//! index of the particle p
 	size_t p;
 
@@ -111,7 +114,8 @@ class CellNNIteratorSymM<dim,Cell,sh_byte,RUNTIME,impl> : public CellNNIterator<
 					else if (pos.template get<0>(p)[i] > ps.get(q >> (sizeof(size_t)*8-sh_byte)).pos.template get<0>(q & mask_low::sig_bits_fast)[i])
 						goto next;
 				}
-				if (q >= p)	return;
+				if (q >> (sizeof(size_t)*8-sh_byte) != pp)	return;
+				if ((q & mask_low::sig_bits_fast) >= p)	return;
 next:
 				this->start_id++;
 			}
@@ -136,13 +140,14 @@ public:
 	 *
 	 */
 	CellNNIteratorSymM(size_t cell,
+					   size_t pp,
 			           size_t p,
 					   const long int * NNc,
 					   size_t NNc_size,
 					   Cell & cl,
 					   const openfpm::vector<Point<dim,typename Cell::stype>> & pos,
 					   const openfpm::vector<pos_v<dim,typename Cell::stype>> & ps)
-	:CellNNIterator<dim,Cell,RUNTIME,impl>(cell,NNc,NNc_size,cl),pos(pos),ps(ps)
+	:CellNNIterator<dim,Cell,RUNTIME,impl>(cell,NNc,NNc_size,cl),pp(pp),p(p),pos(pos),ps(ps)
 	{}
 
 

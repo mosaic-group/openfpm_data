@@ -321,7 +321,7 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_sM(SpaceB
 			innerBox.setHigh(i,1.0-r_cut);
 		}
 
-		vl1.Initialize(cl,r_cut,pos2.get(0).pos,pos2,pos2.get(0).pos.size());
+		vl1.Initialize(cl,0,r_cut,pos2.get(0).pos,pos2,pos2.get(0).pos.size());
 
 		// Check that the verlet is consistent
 		for (size_t i = 0 ; i < pos2.get(0).pos.size() ; i++)
@@ -390,14 +390,14 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_sM(SpaceB
 		//! [create verlet cell]
 
 		VerS vl1;
-		vl1.Initialize(cli,r_cut,pos2.get(0).pos,pos2,pos2.get(0).pos.size());
+		vl1.Initialize(cli,0,r_cut,pos2.get(0).pos,pos2,pos2.get(0).pos.size());
 
 		//! [create verlet cell]
 
 		//! [create verlet]
 
 		VerS vl2;
-		vl2.Initialize(cli,r_cut,pos2.get(0).pos,pos2,pos2.get(0).pos.size());
+		vl2.Initialize(cli,0,r_cut,pos2.get(0).pos,pos2,pos2.get(0).pos.size());
 
 		//! [create verlet]
 
