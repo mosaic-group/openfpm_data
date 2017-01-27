@@ -9,6 +9,7 @@
 #define OPENFPM_DATA_SRC_NN_CELLLIST_PARTICLEIT_CELLS_HPP_
 
 #include "CellNNIteratorRuntime.hpp"
+#include "CellList_util.hpp"
 
 /*! \brief sub-sub-domain
  *
@@ -215,32 +216,10 @@ public:
 		return *start;
 	}
 
-	/*! \brief Get the neighborhood iterator according to the CRS scheme
-	 *
-	 * The CRS scheme use differen neighborhood based on where the cell
-	 * is positioned in the processor domain
-	 *
-	 *
-	 * * * *
-	 *   x *  for a cell x in the center of the domain
-	 *
-	 *  *
-	 *    x   for a cell in the outside right
-	 *
-	 * \return Return an iterator over the neighborhood particles
-	 *
-	 */
-/*	CellNNIteratorSym<dim,CellListType,RUNTIME,NO_CHECK> getNNIteratorCSR(const openfpm::vector<Point<dim,typename CellListType::stype>> & v) const
-	{
-		if (dom_or_anom == 0)
-			return CellNNIteratorSym<dim,CellListType,RUNTIME,NO_CHECK>(dom_cell.get(cid),*start,NNc_sym,openfpm::math::pow(3,dim)/2+1,cli,v);
-		else
-			return CellNNIteratorSym<dim,CellListType,RUNTIME,NO_CHECK>(anom_dom_cell.get(cid).subsub,*start,&anom_dom_cell.get(cid).NN_subsub.get(0),anom_dom_cell.get(cid).NN_subsub.size(),cli,v);
-	}*/
 
 	/*! \brief Get the neighborhood iterator according to the CRS scheme
 	 *
-	 * The CRS scheme use differen neighborhood based on where the cell
+	 * The CRS scheme use different neighborhood based on where the cell
 	 * is positioned in the processor domain
 	 *
 	 *
@@ -259,6 +238,29 @@ public:
 			return typename CellListType::SymNNIterator(dom_cell.get(cid),*start,NNc_sym,openfpm::math::pow(3,dim)/2+1,cli,v);
 		else
 			return typename CellListType::SymNNIterator(anom_dom_cell.get(cid).subsub,*start,&anom_dom_cell.get(cid).NN_subsub.get(0),anom_dom_cell.get(cid).NN_subsub.size(),cli,v);
+	}
+
+	/*! \brief Get the neighborhood iterator according to the CRS scheme Multi-phase case
+	 *
+	 * The CRS scheme use different neighborhood based on where the cell
+	 * is positioned in the processor domain
+	 *
+	 *
+	 * * * *
+	 *   x *  for a cell x in the center of the domain
+	 *
+	 *  *
+	 *    x   for a cell in the outside right
+	 *
+	 * \return Return an iterator over the neighborhood particles
+	 *
+	 */
+	typename CellListType::SymNNIterator getNNIteratorCSRM(const openfpm::vector<Point<dim,typename CellListType::stype>> & pos ,const openfpm::vector<pos_v<dim,typename CellListType::stype>> & v) const
+	{
+		if (dom_or_anom == 0)
+			return typename CellListType::SymNNIterator(dom_cell.get(cid),CellListType::getV(*start),CellListType::getP(*start),NNc_sym,openfpm::math::pow(3,dim)/2+1,cli,pos,v);
+		else
+			return typename CellListType::SymNNIterator(anom_dom_cell.get(cid).subsub,CellListType::getV(*start),CellListType::getP(*start),&anom_dom_cell.get(cid).NN_subsub.get(0),anom_dom_cell.get(cid).NN_subsub.size(),cli,pos,v);
 	}
 };
 

@@ -10,6 +10,7 @@
 
 #include "CellNNIteratorM.hpp"
 
+
 struct PV_cl
 {
 	//! particle id
@@ -163,6 +164,30 @@ public:
 		CellBase::addCell(cell_id,ele_k);
 	}
 
+	/*! \brief Convert an element in particle id
+	 *
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	static inline size_t getP(size_t ele)
+	{
+		return ele & mask_low::sig_bits_fast;
+	}
+
+	/*! \brief Convert an element in phase id
+	 *
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	static inline size_t getV(size_t ele)
+	{
+		return ele >> (sizeof(size_t)*8-sh_byte);
+	}
+
 	/*! \brief Get the element-id in the cell
 	 *
 	 * \tparam i property to get
@@ -262,9 +287,14 @@ public:
 	 * \return Cell-list structure
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> getNNIteratorSym(size_t cell,size_t p, const openfpm::vector<Point<dim,typename CellBase::stype>> & v)
+	template<unsigned int impl> inline CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl>
+	getNNIteratorSym(size_t cell,
+					 size_t pp,
+			         size_t p,
+					 const openfpm::vector<Point<dim,typename CellBase::stype>> & pos,
+					 const openfpm::vector<pos_v<dim,typename CellBase::stype>> & v)
 	{
-		CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> cln(cell,p,CellListM<dim,T,sh_byte,CellBase>::NNc_sym,*this,v);
+		CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> cln(cell,pp,p,CellListM<dim,T,sh_byte,CellBase>::NNc_sym,*this,pos,v);
 
 		return cln;
 	}

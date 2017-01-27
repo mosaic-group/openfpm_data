@@ -257,6 +257,13 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		offset[i].get(i) += (1.0 / div[i]) / 8.0;
 	}
 
+	openfpm::vector<Point<dim,T>> phase1;
+	openfpm::vector<Point<dim,T>> phase2;
+
+	openfpm::vector<pos_v<dim,T>> phases;
+	phases.add(pos_v<dim,T>(phase1));
+	phases.add(pos_v<dim,T>(phase2));
+
 	size_t id = 0;
 
 	while (g_it.isNext())
@@ -266,13 +273,15 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		Point<dim,T> key = Point<dim,T>(g_it.get().toPoint());
 		key = pmul(key,spacing) + offset[0] + box.getP1();
 
-		cl1.add(key,id,1);
-		++id;
+		phase1.add(key);
+
+		cl1.add(key,id,0);
 
 		key = Point<dim,T>(g_it.get().toPoint());
 		key = pmul(key,spacing) + offset[1] + box.getP1();
 
-		cl1.add(key,id,2);
+		phase2.add(key);
+		cl1.add(key,id,1);
 		++id;
 
 		++g_it;
@@ -300,7 +309,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		size_t v2 = cl1.getV(cell,0);
 
 		BOOST_REQUIRE_EQUAL(n_ele,2ul);
-		BOOST_REQUIRE_EQUAL((long int)(p1 - p2),1);
+		BOOST_REQUIRE_EQUAL((long int)(p1 - p2),0);
 		BOOST_REQUIRE_EQUAL((long int)(v1 - v2),1);
 		++g_it;
 	}
@@ -315,6 +324,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 	{
 		Point<dim,T> key = Point<dim,T>(g_it_s.get().toPoint());
 		key = pmul(key,spacing) + offset[0] + box.getP1();
+
+		size_t i = g_info.LinId(g_it_s.get());
 
 		auto NN = cl1.template getNNIterator<NO_CHECK>(cl1.getCell(key));
 		size_t total1 = 0;
@@ -336,7 +347,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim));
 
 
-		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),);
+		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),0,i,phase1,phases);
 		total1 = 0;
 		total2 = 0;
 
@@ -344,7 +355,13 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		{
 			// total
 
-			if (NNSym.getV() == 1)
+			if (NNSym.getV() == 0 && NNSym.getP() == i)
+			{
+				++NNSym;
+				continue;
+			}
+
+			if (NNSym.getV() == 0)
 				total1++;
 			else
 				total2++;
@@ -352,9 +369,39 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 			++NNSym;
 		}
 
-		BOOST_REQUIRE_EQUAL(total1,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
+		BOOST_REQUIRE_EQUAL(total1,(size_t)openfpm::math::pow(3,dim) / 2);
 		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
 
+
+		//////////////////////////////////////////////////////////////////////////
+
+
+		auto NNSym2 = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),1,i,phase2,phases);
+		total1 = 0;
+		total2 = 0;
+
+		while(NNSym2.isNext())
+		{
+			// total
+
+			if (NNSym2.getV() == 1 && NNSym2.getP() == i)
+			{
+				++NNSym2;
+				continue;
+			}
+
+			if (NNSym2.getV() == 0)
+				total1++;
+			else
+				total2++;
+
+			++NNSym2;
+		}
+
+		BOOST_REQUIRE_EQUAL(total1,(size_t)openfpm::math::pow(3,dim) / 2);
+		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim) / 2);
+
+		++i;
 		++g_it_s;
 	}*/
 }
