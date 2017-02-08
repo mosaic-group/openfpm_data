@@ -357,6 +357,28 @@ public:
 		return CellDecomposer_sm<dim,T,transform>::getGrid();
 	}
 
+	void setCellDecomposer(CellDecomposer_sm<dim,T,transform> & cd, const CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box, size_t pad) const
+	{
+		size_t bc[dim];
+
+		for (size_t i = 0 ; i < dim ; i++)
+			bc[i] = NON_PERIODIC;
+
+		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
+
+		size_t div[dim];
+		size_t div_big[dim];
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			div[i] = bx.getHigh(i) - bx.getLow(i);
+			div_big[i] = cd_sm.getDiv()[i] - 2*cd_sm.getPadding(i);
+		}
+
+		cd.setDimensions(cd_sm.getDomain(),div_big,div, pad, bx.getP1());
+	}
+
+
 	/*! Initialize the cell list from a well-define Cell-decomposer
 	 *
 	 * In some cases is needed to have a Cell-list with Cells consistent
@@ -377,20 +399,16 @@ public:
 
 		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
 
-		size_t div[dim];
-		size_t div_big[dim];
+		setCellDecomposer(*this,cd_sm,dom_box,pad);
+
 		size_t div_w_pad[dim];
 		size_t tot_cell = 1;
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			div[i] = bx.getHigh(i) - bx.getLow(i);
 			div_w_pad[i] = bx.getHigh(i) - bx.getLow(i) + 2*pad;
 			tot_cell *= div_w_pad[i];
-			div_big[i] = cd_sm.getDiv()[i] - 2*cd_sm.getPadding(i);
 		}
-
-		CellDecomposer_sm<dim,T,transform>::setDimensions(cd_sm.getDomain(),div_big,div, pad, bx.getP1());
 
 		// here we set the cell-shift for the CellDecomposer
 
@@ -1055,7 +1073,7 @@ public:
 	 * \return
 	 *
 	 */
-	grid_key_dx<dim> getStartDomainCell()
+	grid_key_dx<dim> getStartDomainCell() const
 	{
 		return CellDecomposer_sm<dim,T,transform>::getStartDomainCell();
 	}
@@ -1065,7 +1083,7 @@ public:
 	 * \return
 	 *
 	 */
-	grid_key_dx<dim> getStopDomainCell()
+	grid_key_dx<dim> getStopDomainCell() const
 	{
 		return CellDecomposer_sm<dim,T,transform>::getStopDomainCell();
 	}

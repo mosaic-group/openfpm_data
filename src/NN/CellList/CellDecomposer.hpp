@@ -1636,7 +1636,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	 * \return the first domain cell
 	 *
 	 */
-	grid_key_dx<dim> getStartDomainCell()
+	grid_key_dx<dim> getStartDomainCell() const
 	{
 		grid_key_dx<dim> key;
 
@@ -1648,12 +1648,12 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		return key;
 	}
 
-	/*! \brief Return the index of the first cell in the domain
+	/*! \brief Return the index of the last cell in the domain
 	 *
 	 * \return the last domain cell
 	 *
 	 */
-	grid_key_dx<dim> getStopDomainCell()
+	grid_key_dx<dim> getStopDomainCell() const
 	{
 		grid_key_dx<dim> key;
 

@@ -1004,6 +1004,30 @@ public:
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << v1 << "\n";\
 			size_t * err_code_pointer = (size_t *)&this->err_code;\
 			*err_code_pointer = 2001;\
+
+
+            /////////////// Print stack trace (Candidate) /////////////////
+
+
+//            void *trace[256];
+
+//            int ncall = backtrace(trace,256);
+//            char ** messages = backtrace_symbols(trace, ncall);
+
+//            for (size_t i = 0 ; i < ncall ; i++)
+//            {
+//
+//                    std::cout << "STACK TRACE Address: " << trace[i] << "   " << messages[i] << "   "  << std::endl;
+
+//                    char syscom[256];
+//                    sprintf(syscom,"addr2line %p -e %s", trace[i],__progname); //last parameter is the name of this app
+//                    system(syscom);
+//            }
+
+
+
+            ///////////////////////////////////////////////////
+
 			ACTION_ON_ERROR(VECTOR_ERROR);\
 		}
 	}

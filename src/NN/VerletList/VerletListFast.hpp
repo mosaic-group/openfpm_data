@@ -701,6 +701,8 @@ public:
 		cl_n.swap(vl.cl_n);
 		cl_base.swap(vl.cl_base);
 
+		cli.swap(vl.cli);
+
 		return *this;
 	}
 
@@ -717,6 +719,8 @@ public:
 
 		cl_n = vl.cl_n;
 		cl_base = vl.cl_base;
+
+		cli = vl.cli;
 
 		return *this;
 	}
@@ -759,6 +763,8 @@ public:
 		size_t vl_slot_tmp = vl.slot;
 		vl.slot = slot;
 		slot = vl_slot_tmp;
+
+		cli.swap(vl.cli);
 	}
 
 	/*! \brief Get the Neighborhood iterator
