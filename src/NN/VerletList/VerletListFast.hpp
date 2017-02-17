@@ -209,6 +209,8 @@ protected:
 
 private:
 
+	//! decomposition counter
+	size_t n_dec;
 
 	//! Interlal cell-list
 	CellListImpl cli;
@@ -492,8 +494,6 @@ public:
 	 * \param g_m Indicate form which particles to construct the verlet list. For example
 	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
 	 * 			100 particles
-	 * \param dom_c domain cells with normal symmetric neighborhood
-	 * \param amon_c cells with anomalous neighborhood
 	 *
 	 */
 	void InitializeCrs(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t g_m)
@@ -518,8 +518,8 @@ public:
 	 * \param g_m ghost marker
 	 * \param pos vector with the particle positions
 	 * \param r_cut cut-off radius
-	 * \param dom domain cells
-	 * \param anom cells with anomalos neighborhood
+	 * \param dom_c domain cells
+	 * \param anom_c cells with anomalos neighborhood
 	 *
 	 */
 	void createVerletCrs(T r_cut, size_t g_m, openfpm::vector<Point<dim,T>> & pos, openfpm::vector<size_t> & dom_c, openfpm::vector<subsub_lin<dim>> & anom_c)
@@ -765,6 +765,10 @@ public:
 		slot = vl_slot_tmp;
 
 		cli.swap(vl.cli);
+
+		size_t n_dec_tmp = vl.n_dec;
+		vl.n_dec = n_dec;
+		n_dec = n_dec_tmp;
 	}
 
 	/*! \brief Get the Neighborhood iterator
@@ -837,6 +841,28 @@ public:
 	const CellListImpl & getInternalCellList()
 	{
 		return cli;
+	}
+
+	/*! \brief Set the n_dec number
+	 *
+	 * \param n_dec
+	 *
+	 */
+	void set_ndec(size_t n_dec)
+	{
+		this->n_dec = n_dec;
+
+		cli.set_ndec(n_dec);
+	}
+
+	/*! \brief Set the n_dec number
+	 *
+	 * \return n_dec
+	 *
+	 */
+	size_t get_ndec()
+	{
+		return n_dec;
 	}
 };
 

@@ -134,8 +134,7 @@ public:
 	 *
 	 * \tparam S memory type for allocation
 	 *
-	 * \param g the grid to copy
-	 * \param mem memory object (only used for template deduction)
+	 * \param sz size if the grid on each directions
 	 *
 	 */
 	inline grid_cpu(const size_t & sz) THROW

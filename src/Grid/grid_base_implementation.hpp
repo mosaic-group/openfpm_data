@@ -57,9 +57,6 @@ private:
 	//! The memory allocator is not internally created
 	bool isExternal;
 
-	//! Error code
-	size_t err_code;
-
 #ifdef SE_CLASS1
 
 	/*! \brief Check that the key is inside the grid
@@ -71,9 +68,7 @@ private:
 		if (is_mem_init == false)
 		{
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
-			size_t * err_code_pointer = (size_t *)&this->err_code;
-			*err_code_pointer = 1001;
-			ACTION_ON_ERROR(GRID_ERROR);
+			ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 		}
 	}
 
@@ -89,16 +84,12 @@ private:
 			if (v1.get(i) >= (long int)getGrid().size(i))
 			{
 				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " >= " << getGrid().size(i) << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1002;
-				ACTION_ON_ERROR(GRID_ERROR);
+				ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 			}
 			else if (v1.get(i) < 0)
 			{
 				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << v1.get(i) << " is negative " << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1003;
-				ACTION_ON_ERROR(GRID_ERROR);
+				ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 			}
 		}
 	}
@@ -111,23 +102,19 @@ private:
 	 * \param key2
 	 *
 	 */
-	inline void check_bound(const grid_base_impl<dim,T,S,layout,layout_base> & g,const grid_key_dx<dim> & key2) const
+	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const grid_key_dx<dim> & key2) const
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			if (key2.get(i) >= (long int)g.g1.size(i))
+			if (key2.get(i) >= (long int)g.getGrid().size(i))
 			{
-				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " >= " << g.g1.size(i) << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1004;
-				ACTION_ON_ERROR(GRID_ERROR);
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " >= " << g.getGrid().size(i) << "\n";
+				ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 			}
 			else if (key2.get(i) < 0)
 			{
 				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " is negative " << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 1005;
-				ACTION_ON_ERROR(GRID_ERROR);
+				ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 			}
 		}
 	}
@@ -154,7 +141,7 @@ public:
 
 	//! Default constructor
 	grid_base_impl() THROW
-	:g1(0),isExternal(false),err_code(0)
+	:g1(0),isExternal(false)
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
@@ -169,7 +156,7 @@ public:
 	 *
 	 */
 	grid_base_impl(const grid_base_impl & g) THROW
-	:isExternal(false),err_code(0)
+	:isExternal(false)
 	{
 		this->operator=(g);
 	}
@@ -180,7 +167,7 @@ public:
 	 *
 	 */
 	grid_base_impl(const size_t & sz) THROW
-	:g1(sz),isExternal(false),err_code(0)
+	:g1(sz),isExternal(false)
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
@@ -190,7 +177,7 @@ public:
 
 	//! Constructor allocate memory and give them a representation
 	grid_base_impl(const size_t (& sz)[dim]) THROW
-	:g1(sz),isExternal(false),err_code(0)
+	:g1(sz),isExternal(false)
 	{
 		// Add this pointer
 #ifdef SE_CLASS2
@@ -820,19 +807,6 @@ public:
 		// get the starting point and the end point of the real domain
 
 		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
-	}
-
-	/*! \brief Return the last error
-	 *
-	 * \return the last error
-	 *
-	 */
-	size_t getLastError()
-	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-		return err_code;
 	}
 
 	/*! \brief Return the size of the message needed to pack this object

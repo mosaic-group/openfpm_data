@@ -10,6 +10,7 @@
 #include "boost/multi_array.hpp"
 #include "Point_orig.hpp"
 #include "Grid/Encap.hpp"
+#include "data_type/aggregate.hpp"
 
 
 /*! \brief Test structure used for several test
@@ -38,6 +39,9 @@ public:
 	//! declaration of what the Point2D_test store
 	typedef boost::fusion::vector<T,T,T,T,T[2],T[2][2]> type;
 
+	//! declaration of what the Point2D_test store
+	typedef boost::fusion::vector<T,T,T,T,T[2],T[2][2]> type_real;
+
 	//! in case of usage with staggered grid it define which properties are staggered in the cell grid
 	static constexpr bool stag_mask[]={false,false,false,true,true,true};
 
@@ -64,6 +68,9 @@ public:
 
 	//! number of properties in the boost::fusion::vector
 	static const unsigned int max_prop = 6;
+
+	//! number of properties in the boost::fusion::vector
+	static const unsigned int max_prop_real = 6;
 };
 
 /*! \brief Test structure used for several test
@@ -89,8 +96,23 @@ template<typename T> class Point_test
 {
 public:
 
+#ifdef SE_CLASS3
+
+	//! declaration of what the Point_test store
+	typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3],SE3_ADD_PROP(6)> type;
+
+	//! declaration of what the Point_test store
+	typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3]> type_real;
+
+#else
+
 	//! declaration of what the Point_test store
 	typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3]> type;
+
+	//! declaration of what the Point_test store
+	typedef boost::fusion::vector<T,T,T,T,T[3],T[3][3]> type_real;
+
+#endif
 
 	//! in case usage with a staggered grid indicate which properties are staggered in the cell
 	static constexpr bool stag_mask[]={false,false,false,true,true,true};
@@ -116,8 +138,23 @@ public:
 	//! t property is at position 5 in the boost::fusion::vector
 	static const unsigned int t = 5;
 
+#ifdef SE_CLASS3
+
+	//! number of properties in the boost::fusion::vector
+	static const unsigned int max_prop = SE3_MAX_PROP(6);
+
+	//! number of properties in the boost::fusion::vector
+	static const unsigned int max_prop_real = 6;
+
+#else
+
 	//! number of properties in the boost::fusion::vector
 	static const unsigned int max_prop = 6;
+
+	//! number of properties in the boost::fusion::vector
+	static const unsigned int max_prop_real = 6;
+
+#endif
 
 	// Setter method
 

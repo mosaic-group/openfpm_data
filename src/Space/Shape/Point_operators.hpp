@@ -424,7 +424,7 @@ class point_expression_op<orig,exp1,exp2,POINT_MUL_POINT>
 	//! second expression
 	const exp2 o2;
 
-	mutable typename orig::coord_type scal;
+	mutable typename std::remove_const<typename orig::coord_type>::type scal;
 
 public:
 
@@ -626,9 +626,21 @@ public:
  * \return an object that can be used into an expression
  *
  */
-template<unsigned int dim, typename T> point_expression<T[dim]> getExpr(T (& a)[dim])
+template<unsigned int dim, typename T> point_expression<T[dim]> getExprL(T (& a)[dim])
 {
 	return point_expression<T[dim]>(a);
+}
+
+/*! \brief Transform an array into a point expression
+ *
+ * \param array
+ *
+ * \return an object that can be used into an expression
+ *
+ */
+template<unsigned int dim, typename T> point_expression<const T[dim]> getExprR(T (& a)[dim])
+{
+	return point_expression<const T[dim]>(a);
 }
 
 /*! \brief MACRO that define operator for point template expression parsing
@@ -638,51 +650,69 @@ template<unsigned int dim, typename T> point_expression<T[dim]> getExpr(T (& a)[
 
 #define CREATE_POINT_OPERATOR(operator_name,OP_ID) \
 \
+\
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<T[dim]>,OP_ID>\
-operator_name(const Point<dim,T> & va, const point_expression<T[(unsigned int)dim]> & vb)\
+inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<const T[dim]>,OP_ID>\
+operator_name(const Point<dim,T> & va, const point_expression<const T[(unsigned int)dim]> & vb)\
 {\
-	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<T[dim]>,OP_ID> exp_sum(va,vb);\
+	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<const T[dim]>,OP_ID> exp_sum(va,vb);\
 \
 	return exp_sum;\
 }\
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,Point<dim,T>,OP_ID>\
-operator_name(const point_expression<T[(unsigned int)dim]> & va, const Point<dim,T> & vb)\
+inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,Point<dim,T>,OP_ID>\
+operator_name(const point_expression<const T[(unsigned int)dim]> & va, const Point<dim,T> & vb)\
 {\
-	point_expression_op<Point<dim,T>,point_expression<T[dim]>,Point<dim,T>,OP_ID> exp_sum(va,vb);\
+	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,Point<dim,T>,OP_ID> exp_sum(va,vb);\
 \
 	return exp_sum;\
 }\
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<double>,OP_ID>\
-operator_name(const point_expression<T[dim]> & va, double d)\
+inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<double>,OP_ID>\
+operator_name(const point_expression<const T[dim]> & va, double d)\
 {\
-	point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<double>,OP_ID> exp_sum(va,point_expression<double>(d));\
+	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<double>,OP_ID> exp_sum(va,point_expression<double>(d));\
 \
 	return exp_sum;\
 }\
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<double>,point_expression<T[dim]>,OP_ID>\
-operator_name(double d, const point_expression<T[dim]> & va)\
+inline point_expression_op<Point<dim,T>,point_expression<double>,point_expression<const T[dim]>,OP_ID>\
+operator_name(double d, const point_expression<const T[dim]> & va)\
 {\
-	point_expression_op<Point<dim,T>,point_expression<double>,point_expression<T[dim]>,OP_ID> exp_sum(point_expression<double>(d),va);\
+	point_expression_op<Point<dim,T>,point_expression<double>,point_expression<const T[dim]>,OP_ID> exp_sum(point_expression<double>(d),va);\
 \
 	return exp_sum;\
 }\
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<T[dim]>,OP_ID>\
-operator_name(const point_expression<T[dim]> & va, const point_expression<T[dim]> & vb)\
+inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<const T[dim]>,OP_ID>\
+operator_name(const point_expression<const T[dim]> & va, const point_expression<const T[dim]> & vb)\
 {\
-	point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<T[dim]>,OP_ID> exp_sum(va,vb);\
+	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<const T[dim]>,OP_ID> exp_sum(va,vb);\
 \
 	return exp_sum;\
 }\
 \
+template<unsigned int dim, typename T>\
+inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<T[dim]>,OP_ID>\
+operator_name(const point_expression<const T[dim]> & va, const point_expression<T[dim]> & vb)\
+{\
+	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<T[dim]>,OP_ID> exp_sum(va,vb);\
+\
+	return exp_sum;\
+}\
+\
+template<unsigned int dim, typename T>\
+inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<const T[dim]>,OP_ID>\
+operator_name(const point_expression<T[dim]> & va, const point_expression<const T[dim]> & vb)\
+{\
+	point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<const T[dim]>,OP_ID> exp_sum(va,vb);\
+\
+	return exp_sum;\
+}\
 \
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, unsigned int dim, typename T>\
 inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,OP_ID>\
@@ -1253,6 +1283,56 @@ public:
 	}
 };
 
+
+/*! \brief Specialization for an array of dimension dim
+ *
+ * \tparam type
+ *
+ */
+template<typename T, unsigned int dim>
+class point_expression<const T[dim]>
+{
+	const T (& d)[dim];
+
+public:
+
+	// indicate that init must be called before value
+	typedef int has_init;
+
+	// indicate that this class encapsulate an expression
+	typedef int is_expression;
+
+	//! this operation produce a vector as result of size dims
+	static const unsigned int nvals = dim;
+
+	inline point_expression(const T (& d)[dim])
+	:d(d)
+	{
+	}
+
+	/*! \brief This function must be called before value
+	 *
+	 * it calculate the scalar product before return the values
+	 *
+	 */
+	inline void init() const
+	{
+	}
+
+	/*! \brief Evaluate the expression at coordinate k
+	 *
+	 * It just return the value set in the constructor
+	 *
+	 * \param k coordinate
+	 *
+	 * \return the value
+	 *
+	 */
+	inline T value(const size_t k) const
+	{
+		return d[k];
+	}
+};
 
 #include "Point_operators_functions.hpp"
 

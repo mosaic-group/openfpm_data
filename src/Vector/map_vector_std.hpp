@@ -70,8 +70,8 @@ struct add_prp_impl<OBJECT_ADD,vect_dst>
 	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
 	{
 #ifdef SE_CLASS2
-		check_valid(v_dst,8);
-		check_valid(v_src,8);
+		check_valid((void *)&v_dst,8);
+		check_valid((void *)&v_src,8);
 #endif
 			// Add a new element
 			v_dst.add();
@@ -1005,30 +1005,7 @@ public:
 			size_t * err_code_pointer = (size_t *)&this->err_code;\
 			*err_code_pointer = 2001;\
 
-
-            /////////////// Print stack trace (Candidate) /////////////////
-
-
-//            void *trace[256];
-
-//            int ncall = backtrace(trace,256);
-//            char ** messages = backtrace_symbols(trace, ncall);
-
-//            for (size_t i = 0 ; i < ncall ; i++)
-//            {
-//
-//                    std::cout << "STACK TRACE Address: " << trace[i] << "   " << messages[i] << "   "  << std::endl;
-
-//                    char syscom[256];
-//                    sprintf(syscom,"addr2line %p -e %s", trace[i],__progname); //last parameter is the name of this app
-//                    system(syscom);
-//            }
-
-
-
-            ///////////////////////////////////////////////////
-
-			ACTION_ON_ERROR(VECTOR_ERROR);\
+			ACTION_ON_ERROR(VECTOR_ERROR_OBJECT);\
 		}
 	}
 
@@ -1048,6 +1025,7 @@ public:
 #endif
 	}
 };
+
 
 
 #endif /* MAP_VECTOR_STD_HPP_ */

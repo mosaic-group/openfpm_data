@@ -117,6 +117,8 @@ public:
  * \tparam Mem Memory origin HeapMemory CudaMemory ...
  *
  */
+
+
 template<typename T, typename Mem>
 class Packer<T,Mem,PACKER_ARRAY_PRIMITIVE>
 {
@@ -174,11 +176,12 @@ public:
 	 */
 	static void pack(ExtPreAlloc<Mem> & ext, T & obj, Pack_stat & sts)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (ext.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 
-		std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " impossible to check the type " << demangle(typeid(T).name()) << " please consider to add a static method like \"static bool noPointers() {return true;}\" \n" ;
+		if (!(std::is_array<T>::value == true && std::is_fundamental<T>::value == true))
+			std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " impossible to check the type " << demangle(typeid(T).name()) << " please consider to add a static method like \"static bool noPointers() {return true;}\" \n" ;
 #endif
 		ext.allocate(sizeof(T));
 		memcpy((T *)ext.getPointer(),&obj,sizeof(T));

@@ -178,9 +178,6 @@ namespace openfpm
 		//! 1-D static grid
 		grid_cpu<1,T,Memory,layout> base;
 
-		//! Error code
-		size_t err_code;
-
 		/*! \brief If the argument is zero return 1 otherwise return the argument
 		 *
 		 * \param sz output
@@ -208,9 +205,7 @@ namespace openfpm
 			if (id >= v_size)
 			{
 				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
-				size_t * err_code_pointer = (size_t *)&this->err_code;
-				*err_code_pointer = 2001;
-				ACTION_ON_ERROR(VECTOR_ERROR);
+				ACTION_ON_ERROR(VECTOR_ERROR_OBJECT);
 			}
 		}
 
@@ -899,7 +894,7 @@ namespace openfpm
 		 *
 		 */
 		vector(vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> && v)
-		:v_size(0),err_code(0)
+		:v_size(0)
 		{
 			// Add this pointer
 #ifdef SE_CLASS2
@@ -914,7 +909,7 @@ namespace openfpm
 		 *
 		 */
 		vector(const vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & v) THROW
-		:v_size(0),err_code(0)
+		:v_size(0)
 		{
 #ifdef SE_CLASS2
 			check_new(this,8,VECTOR_EVENT,1);
@@ -924,7 +919,7 @@ namespace openfpm
 
 		//! Constructor, vector of size 0
 		vector() THROW
-		:v_size(0),base(0),err_code(0)
+		:v_size(0),base(0)
 		{
 #ifdef SE_CLASS2
 			check_new(this,8,VECTOR_EVENT,1);
@@ -934,7 +929,7 @@ namespace openfpm
 
 		//! Constructor, vector of size sz
 		vector(size_t sz) THROW
-		:v_size(sz),base(sz),err_code(0)
+		:v_size(sz),base(sz)
 		{
 #ifdef SE_CLASS2
 			check_new(this,8,VECTOR_EVENT,1);
@@ -1360,17 +1355,6 @@ namespace openfpm
 			check_valid(this,8);
 #endif
 			return base.getPointer();
-		}
-
-		/*! \brief Return the last error
-		 *
-		 */
-		size_t getLastError()
-		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
-			return err_code;
 		}
 
 		/*! \brief This class has pointer inside

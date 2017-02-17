@@ -83,7 +83,7 @@ struct copy_cpu_encap_encap
 
 ///////////////////////////////////
 
-
+//! It copy two encap object
 template<template<typename,typename> class op,typename e_src, typename e_dst, int ... prp>
 struct copy_cpu_encap_encap_op_prp
 {
@@ -168,8 +168,8 @@ struct compare_cpu_encap_encap
 	/*! \brief constructor
 	 *
 	 *
-	 * \param e_src encapsulated object1
-	 * \param e_dst encapsulated object2
+	 * \param src encapsulated object1
+	 * \param dst encapsulated object2
 	 *
 	 */
 	inline compare_cpu_encap_encap(const e_src & src, const e_dst & dst)
@@ -200,7 +200,11 @@ struct compare_cpu_encap_encap
 	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object";};
 #endif
 
-	//! It call the copy function for each property
+	/*!  \brief It call the copy function for each property
+	 *
+	 * \param t each member
+	 *
+	 */
 	template<typename T>
 	inline void operator()(T& t) const
 	{
@@ -562,7 +566,7 @@ struct is_encap: std::false_type {};
  *
  * ### Example
  *
- * \snippet util.hpp Check is_encap
+ * \snippet util_test.hpp Check is_encap
  *
  * return true if T is an encap
  *

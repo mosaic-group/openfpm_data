@@ -555,11 +555,10 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	error = false;
 	try
 	{g.get<p::x>(keyOut);}
-	catch (size_t e)
+	catch (std::exception e)
 	{
 		error = true;
-		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1001ul);
+		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -567,11 +566,10 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	g.setMemory();
 	try
 	{g.get<p::x>(keyOut);}
-	catch (size_t e)
+	catch (std::exception e)
 	{
 		error = true;
-		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1002ul);
+		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -579,22 +577,20 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	Point_test<float> t;
 	try
 	{g.set(keyOut,t);}
-	catch (size_t e)
+	catch (std::exception e)
 	{
 		error = true;
-		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1002ul);
+		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
 	error = false;
 	try
 	{g.set(keyGood,g2,keyOut);}
-	catch (size_t e)
+	catch (std::exception e)
 	{
 		error = true;
-		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1004ul);
+		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -603,11 +599,10 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	error = false;
 	try
 	{g.get<p::x>(keyNeg);}
-	catch (size_t e)
+	catch (std::exception e)
 	{
 		error = true;
-		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1003ul);
+		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -615,22 +610,20 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	Point_test<float> t2;
 	try
 	{g.set(keyNeg,t2);}
-	catch (size_t e)
+	catch (std::exception e)
 	{
 		error = true;
-		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1003ul);
+		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
 	error = false;
 	try
 	{g.set(keyGood,g2,keyNeg);}
-	catch (size_t e)
+	catch (std::exception e)
 	{
 		error = true;
-		BOOST_REQUIRE_EQUAL(e,GRID_ERROR);
-		BOOST_REQUIRE_EQUAL(g.getLastError(),1005ul);
+		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
@@ -647,20 +640,20 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 
 	try
 	{gp->size();}
-	catch (size_t e)
+	catch (std::exception e)
 	{
 		error = true;
-		BOOST_REQUIRE_EQUAL(e,MEM_ERROR);
+		BOOST_REQUIRE_EQUAL(e.what(),"Runtime memory error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 
 	error = false;
 	try
 	{grid_cpu<3,scalar<float>> gr = test_error();}
-	catch (size_t e)
+	catch (std::exception e)
 	{
 		error = true;
-		BOOST_REQUIRE_EQUAL(e,MEM_ERROR);
+		BOOST_REQUIRE_EQUAL(e.what(),"Runtime memory error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
 

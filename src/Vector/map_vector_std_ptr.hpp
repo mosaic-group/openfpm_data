@@ -544,7 +544,7 @@ public:
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << v1 << "\n";\
 			size_t * err_code_pointer = (size_t *)&this->err_code;\
 			*err_code_pointer = 2001;\
-			ACTION_ON_ERROR(VECTOR_ERROR);\
+			ACTION_ON_ERROR(VECTOR_ERROR_OBJECT);\
 		}
 	}
 

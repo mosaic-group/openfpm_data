@@ -32,10 +32,18 @@ namespace openfpm
 template<typename encap, typename Mem>
 struct call_packRequest_enc_functor
 {
-
+	//! encap object to pack (serialize)
 	encap & obj;
+
+	//! byte counter
 	size_t & req;
 
+	/* \brief Constructor
+	 *
+	 * \param obj object to pack/serialize
+	 * \param req byte to pack/serialize
+	 *
+	 */
 	call_packRequest_enc_functor(encap & obj, size_t & req)
 	:obj(obj),req(req)
 	{}
@@ -55,6 +63,12 @@ struct call_packRequest_enc_functor
 template<typename encap, typename Mem, int ... prp>
 struct call_encapPackRequest
 {
+	/*! \brief pack/serialize
+	 *
+	 * \param obj object to serialize
+	 * \param req byte counter needed to pack/serialize the object
+	 *
+	 */
 	static inline void call_packRequest(encap & obj, size_t & req)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
@@ -71,8 +85,13 @@ struct call_encapPackRequest
 template<typename encap, typename Mem>
 struct call_pack_enc_functor
 {
+	//! Memory that pack/serialize the object
 	ExtPreAlloc<Mem> & mem;
+
+	//! Object to serialize
 	const encap & obj;
+
+	//! serialization status
 	Pack_stat & sts;
 
 	call_pack_enc_functor(ExtPreAlloc<Mem> & mem,const encap & obj, Pack_stat & sts)

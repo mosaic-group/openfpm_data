@@ -27,6 +27,7 @@
 template<unsigned int dim, typename T, typename S>
 class grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>
 {
+	//! grid layout
 	typedef typename memory_traits_inte<T>::type layout;
 
 public:
@@ -43,10 +44,7 @@ public:
 
 	/*! \brief create a grid from another grid
 	 *
-	 * \tparam S memory type for allocation
-	 *
 	 * \param g the grid to copy
-	 * \param mem memory object (only used for template deduction)
 	 *
 	 */
 	inline grid_cpu(const grid_cpu & g) THROW
@@ -56,10 +54,7 @@ public:
 
 	/*! \brief create a grid of size sz on each direction
 	 *
-	 * \tparam S memory type for allocation
-	 *
-	 * \param g the grid to copy
-	 * \param mem memory object (only used for template deduction)
+	 * \param sz grid size in each direction
 	 *
 	 */
 	inline grid_cpu(const size_t & sz) THROW

@@ -191,6 +191,10 @@ private:
 	//! True if has been initialized from CellDecomposer
 	bool from_cd;
 
+	//! Additional information in general (used to understand if the cell-list)
+	//! has been constructed from an old decomposition
+	size_t n_dec;
+
 	/*! \brief realloc the data structures
 	 *
 	 *
@@ -563,6 +567,8 @@ public:
 		cl_n.swap(cell.cl_n);
 		cl_base.swap(cell.cl_base);
 
+		n_dec = cell.n_dec;
+
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this).swap(cell);
 
 		return *this;
@@ -584,6 +590,8 @@ public:
 
 		cl_n = cell.cl_n;
 		cl_base = cell.cl_base;
+
+		n_dec = cell.n_dec;
 
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cell);
 
@@ -856,6 +864,10 @@ public:
 		cl.slot = slot;
 		slot = cl_slot_tmp;
 
+		size_t n_dec_tmp = cl.n_dec;
+		cl.n_dec = n_dec;
+		n_dec = n_dec_tmp;
+
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cl);
 	}
 
@@ -1111,6 +1123,28 @@ public:
 	inline void set_gm(size_t g_m)
 	{
 		this->g_m = g_m;
+	}
+
+/////////////////////////////////////
+
+	/*! \brief Set the n_dec number
+	 *
+	 * \param n_dec
+	 *
+	 */
+	void set_ndec(size_t n_dec)
+	{
+		this->n_dec = n_dec;
+	}
+
+	/*! \brief Set the n_dec number
+	 *
+	 * \return n_dec
+	 *
+	 */
+	size_t get_ndec() const
+	{
+		return n_dec;
 	}
 
 /////////////////////////////////////

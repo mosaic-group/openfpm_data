@@ -23,7 +23,7 @@ template<unsigned int dim ,typename T> class Point
 {
 	public:
 
-	// Indicate that this object is vtk writable
+	//! Indicate that this object is vtk writable
 	typedef int is_vtk_writable;
 
 	//! coordinate type
@@ -41,6 +41,7 @@ template<unsigned int dim ,typename T> class Point
 
 	/*! \brief Evaluate the expression and save the result on the point
 	 *
+	 * \param p_exp point expression to evaluate
 	 *
 	 */
 	template<typename orig, typename exp1, typename exp2, unsigned int op> Point(const point_expression_op<orig,exp1,exp2,op> & p_exp)
@@ -83,6 +84,8 @@ template<unsigned int dim ,typename T> class Point
 
 	/*! \brief Constructor from scalar
 	 *
+	 * \param d scalar
+	 *
 	 */
 	inline Point(T d)
 	{
@@ -114,6 +117,8 @@ template<unsigned int dim ,typename T> class Point
 	/*! \brief Constructor from a list
 	 *
 	 * [Example] Point<3,float> p({0.0,0.0,1.0})
+	 *
+	 * \param p1 initializer list
 	 *
 	 */
 	inline Point(std::initializer_list<T> p1)
@@ -189,7 +194,7 @@ template<unsigned int dim ,typename T> class Point
 		return get(i);
 	}
 
-	/*! \Brief norm of the vector
+	/*! \brief norm of the vector
 	 *
 	 * \return the norm of the vector
 	 *
@@ -206,9 +211,9 @@ template<unsigned int dim ,typename T> class Point
 
 	/*! \brief  It calculate the distance between 2 points
 	 *
-	 * Itself (p) and the other point (q)
+	 * The distance between itself (p) and the other point (q)
 	 *
-	 * \parameter q target point
+	 * \param q target point
 	 *
 	 * \return the distance
 	 *
@@ -225,9 +230,9 @@ template<unsigned int dim ,typename T> class Point
 
 	/*! \brief  It calculate the square distance between 2 points
 	 *
-	 * Itself (p) and the other point (q)
+	 * The distance between itself (p) and the other point (q)
 	 *
-	 * \parameter q target point
+	 * \param q target point
 	 *
 	 * \return the square of the distance
 	 *
@@ -318,6 +323,8 @@ template<unsigned int dim ,typename T> class Point
 
 	/*! \brief Check if two points match
 	 *
+	 * \param p point to compare with
+	 *
 	 * \return true if two points match
 	 *
 	 */
@@ -333,6 +340,8 @@ template<unsigned int dim ,typename T> class Point
 	}
 
 	/*! \brief Check if two points match
+	 *
+	 * \param p point to compare with
 	 *
 	 * \return true if two points match
 	 *
@@ -364,6 +373,8 @@ template<unsigned int dim ,typename T> class Point
 
 	/*! \brief Return the reference to the value at coordinate i
 	 *
+	 * \param i coordinate to return
+	 *
 	 * \return the reference
 	 *
 	 */
@@ -373,6 +384,8 @@ template<unsigned int dim ,typename T> class Point
 	}
 
 	/*! \brief Return the value at coordinate i
+	 *
+	 * \param i coordinate to return
 	 *
 	 * \return the value
 	 *
@@ -418,9 +431,11 @@ template<unsigned int dim ,typename T> class Point
 	////////////////////// ARITMETIC OPERATORS /////////////////////
 	////////////////////////////////////////////////////////////////
 
-	/*! \brief Fill the vector property with the evaluated expression
+	/*! \brief Fill the vector with the evaluated expression
 	 *
-	 * \param v_exp expression to evaluate
+	 * \param p_exp expression to evaluate
+	 *
+	 * \return itself
 	 *
 	 */
 	template<typename orig, typename exp1, typename exp2, unsigned int op> Point<dim,T> & operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
@@ -435,7 +450,9 @@ template<unsigned int dim ,typename T> class Point
 
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
-	 * \param v_exp expression to evaluate
+	 * \param p_exp expression to evaluate
+	 *
+	 * \return itself
 	 *
 	 */
 	Point<dim,T> & operator=(const point_expression<T[dim]> & p_exp)
@@ -448,9 +465,11 @@ template<unsigned int dim ,typename T> class Point
 		return *this;
 	}
 
-	/*! \brief divide each component
+	/*! \brief divide each component by an array
 	 *
 	 * \param ar Component wise division
+	 *
+	 * \return itself
 	 *
 	 */
 	template<typename aT> inline Point<dim,T> operator/(const aT (&ar)[dim])
@@ -463,9 +482,11 @@ template<unsigned int dim ,typename T> class Point
 		return result;
 	}
 
-	/*! \brief divide each component
+	/*! \brief divide each component by a constant
 	 *
-	 * \param ar Component wise division
+	 * \param c constant
+	 *
+	 * \return itself
 	 *
 	 */
 	template<typename aT> inline Point<dim,T> operator/=(const aT c)
@@ -477,9 +498,11 @@ template<unsigned int dim ,typename T> class Point
 	}
 
 
-	/*! \brief Fill the vector property with the double
+	/*! \brief Fill the vector property with some value
 	 *
 	 * \param d value to fill
+	 *
+	 * \return itself
 	 *
 	 */
 	Point<dim,T> & operator=(T d)
@@ -494,6 +517,8 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 * \param p Point
 	 *
+	 * \return itself
+	 *
 	 */
 	inline Point<dim,T> & operator=(const Point<dim,T> & p)
 	{
@@ -503,9 +528,11 @@ template<unsigned int dim ,typename T> class Point
 		return *this;
 	}
 
-	/*! \brief Subtract each components
+	/*! \brief Subtract two points
 	 *
-	 * \param p Point
+	 * \param p point to subtract
+	 *
+	 * \return itself
 	 *
 	 */
 	inline Point<dim,T> & operator-=(const Point<dim,T> & p)
@@ -516,9 +543,11 @@ template<unsigned int dim ,typename T> class Point
 		return *this;
 	}
 
-	/*! \brief Sum each components
+	/*! \brief Sum two points
 	 *
-	 * \param p Point
+	 * \param p point to sum
+	 *
+	 * \return itself
 	 *
 	 */
 	inline Point<dim,T> & operator+=(const Point<dim,T> & p)
@@ -540,8 +569,14 @@ template<unsigned int dim ,typename T> class Point
 	///////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////
 
+	//! The point has one property
 	static const unsigned int max_prop = 1;
+	static const unsigned int max_prop_real = 1;
+
+	//! expose the dimension
 	static const unsigned int dims = dim;
+
+	//! expose the dimension with a different name
 	static const unsigned int nvals = dim;
 };
 

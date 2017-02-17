@@ -13,14 +13,7 @@
  *
  */
 
-#define VECTOR_ERROR 2000lu
+#define VECTOR_ERROR_OBJECT std::runtime_error("Runtime vector error");
 
-/*#define VECTOR_OVERFLOW_NATIVE(id) if (id >= v_size)\
-		{\
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";\
-			size_t * err_code_pointer = (size_t *)&this->err_code;\
-			*err_code_pointer = 2001;\
-			ACTION_ON_ERROR(VECTOR_ERROR);\
-		}*/
 
 #endif /* OPENFPM_DATA_SRC_VECTOR_SE_VECTOR_HPP_ */

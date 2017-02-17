@@ -29,29 +29,35 @@ extern "C"
 template<unsigned int dim>
 class grid_key_dx_iterator_hilbert
 {
-#ifdef DEBUG
-	// Actual status of the iterator, when the iterator is not initialized cannot be used
-	// and reinitialize must be called
+#ifdef SE_CLASS1
+	//! Actual status of the iterator, when the iterator is not initialized cannot be used
+	//! and reinitialize must be called
 	bool initialized = false;
 #endif
 
-	//A hilbert key
+	//! Actual position
 	uint64_t hkey = 0;
 
-	//Order of a hilbert curve
+	//! Order of a hilbert curve
 	size_t m;
 
+	//! Size of the hilbert grid in each dimension
 	grid_sm<dim,void> grid_base;
 
 protected:
 
+	//! Actual position in the grid
 	grid_key_dx<dim> gk;
 
 public:
 
-	/*! \brief Constructor require a grid_sm<dim,T>
+	/*! \brief Constructor
 	 *
-	 * \param g info of the grid on which iterate
+	 * m is the order of the hilber curve m=2 produce an hilber curve
+	 * passing 2^(2) point in each direction so 4x4 points in 2D 4x4x4 in 3D
+	 *
+	 * \param m order of the hilber curve
+	 *
 	 */
 	grid_key_dx_iterator_hilbert(int32_t m)
 	:m(m)

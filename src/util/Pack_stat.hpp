@@ -14,6 +14,7 @@
  */
 class Unpack_stat
 {
+	//! offset
 	size_t cnt;
 
 public:
@@ -22,9 +23,9 @@ public:
 	:cnt(0)
 	{}
 
-	/*! \brief Increment the request pointer
+	/*! \brief Increment the offset pointer by off
 	 *
-	 * \param cnt counter
+	 * \param off
 	 *
 	 */
 	inline void addOffset(size_t off)
@@ -34,6 +35,7 @@ public:
 
 	/*! \brief Return the actual counter
 	 *
+	 * \return the counter
 	 *
 	 */
 	inline size_t getOffset()
@@ -48,10 +50,14 @@ public:
  */
 class Pack_stat
 {
+	//! marker used to remember some position
 	size_t p_mark;
+
+	//! packing offset
 	size_t un_ele;
 
 public:
+
 
 	inline Pack_stat()
 	:p_mark(0),un_ele(0)

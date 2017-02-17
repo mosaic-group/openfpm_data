@@ -761,7 +761,7 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		val = is_encap< stub_object > ::value;
 		BOOST_REQUIRE_EQUAL( val, false);
 
-		//! [Check is_vector]
+		//! [Check is_encap]
 		}
 
 		{

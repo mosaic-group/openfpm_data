@@ -15,7 +15,7 @@ class point_expression_op<orig,exp1,exp2, OP_ID >\
 {\
 	const exp1 o1;\
 \
-	mutable typename orig::coord_type scal;\
+	mutable typename std::remove_const<typename orig::coord_type>::type scal;\
 \
 public:\
 \
@@ -92,7 +92,7 @@ class point_expression_op<orig,exp1,exp2,POINT_NORM>
 	const exp1 o1;
 
 	//! Scalar value
-	mutable typename orig::coord_type scal;
+	mutable typename std::remove_const<typename orig::coord_type>::type scal;
 
 public:
 
@@ -165,7 +165,7 @@ class point_expression_op<orig,exp1,exp2,POINT_NORM2>
 	const exp1 o1;
 
 	//! result of the expression
-	mutable typename orig::coord_type scal;
+	mutable typename std::remove_const<typename orig::coord_type>::type scal;
 
 public:
 
