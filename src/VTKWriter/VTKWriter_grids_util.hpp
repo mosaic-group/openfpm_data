@@ -62,18 +62,21 @@ template<unsigned int i, typename ele_g, bool has_attributes> std::string get_po
 	// for now we support only scalar of native type
 	if (std::rank<ctype>::value == 1)
 	{
-		//Get type of the property
-		std::string type = getType<typename std::remove_all_extents<ctype>::type>();
-
-		// if the type is not supported skip-it
-		if (type.size() == 0)
+		if (std::extent<ctype>::value <= 3)
 		{
-			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(ctype).name()) << " is not supported by vtk\n";
-			return "";
-		}
+			//Get type of the property
+			std::string type = getType<typename std::remove_all_extents<ctype>::type>();
 
-		// Create point data properties
-		v_out += "VECTORS " + getAttrName<ele_g,has_attributes>::get(i,oprp) + " " + type + "\n";
+			// if the type is not supported skip-it
+			if (type.size() == 0)
+			{
+				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(ctype).name()) << " is not supported by vtk\n";
+				return "";
+			}
+
+			// Create point data properties
+			v_out += "VECTORS " + getAttrName<ele_g,has_attributes>::get(i,oprp) + " " + type + "\n";
+		}
 	}
 	else
 	{

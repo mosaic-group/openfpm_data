@@ -8,11 +8,13 @@
 #ifndef OPENFPM_IO_SRC_VTKWRITER_POINT_SET_HPP_
 #define OPENFPM_IO_SRC_VTKWRITER_POINT_SET_HPP_
 
+#include <cstddef>
 #include <boost/mpl/pair.hpp>
 #include "VTKWriter_grids_util.hpp"
 #include "is_vtk_writable.hpp"
+#include <string>
 
-/*! \brief Store the couple of vector position and properties
+/*! \brief Store a reference to the vector position
  *
  * \tparam Vps Type of vector that store the position of the particles
  *
@@ -22,19 +24,23 @@ class ele_vps
 {
 public:
 
+	//! type of vector that store the particle position
 	typedef Vps value_type;
 
+	//! particle position vector
 	const Vps & g;
 
+	//! ghost marker
 	size_t mark;
 
+	//! constructor
 	ele_vps(const Vps & g, size_t mark)
 	:g(g),mark(mark)
 	{}
 
 };
 
-/*! \brief Store the couple of vector position and properties
+/*! \brief Store a reference to the vector properties
  *
  * \tparam Vpp Type of vector that store the property of the particles
  *
@@ -44,12 +50,17 @@ class ele_vpp
 {
 public:
 
+	//! type of vector that store the particle properties
 	typedef Vpp value_type;
 
+
+	//! Reference to the particle properties
 	const Vpp & g;
 
+	//! ghost marker
 	size_t mark;
 
+	//! constructor
 	ele_vpp(const Vpp & vpp, size_t mark)
 	:g(vpp),mark(mark)
 	{}
@@ -67,19 +78,19 @@ public:
  *
  *
  */
-
 template<typename ele_v, typename St>
 struct prop_out_v
 {
-	// property output string
+	//! property output string
 	std::string & v_out;
 
-	// vector that we are processing
+	//! vector that we are processing
 	const openfpm::vector_std< ele_v > & vv;
 
 	/*! \brief constructor
 	 *
 	 * \param v_out string to fill with the vertex properties
+	 * \param vv vector we are processing
 	 *
 	 */
 	prop_out_v(std::string & v_out, const openfpm::vector_std< ele_v > & vv)
@@ -138,8 +149,9 @@ struct prop_out_v
 template <typename pair>
 class VTKWriter<pair,VECTOR_POINTS>
 {
-	//! Vector of couple, position and properties
+	//! Vector of position
 	openfpm::vector< ele_vps<typename pair::first >> vps;
+	//! Vector of properties
 	openfpm::vector< ele_vpp<typename pair::second>> vpp;
 
 	/*! \brief Get the total number of points
@@ -166,7 +178,6 @@ class VTKWriter<pair,VECTOR_POINTS>
 	 * \return a string that define the vertex properties in graphML format
 	 *
 	 */
-
 	std::string get_vertex_properties_list()
 	{
 		//! vertex property output string
@@ -266,7 +277,6 @@ class VTKWriter<pair,VECTOR_POINTS>
 	 * \return a string with the point data header for VTK format
 	 *
 	 */
-
 	std::string get_point_data_header()
 	{
 		std::string v_out;
@@ -290,7 +300,7 @@ public:
 	 *
 	 * \param vps vector of positions
 	 * \param vpp vector of properties
-	 * \param mark, additional information that divide the dataset into 2
+	 * \param mark additional information that divide the dataset into 2
 	 *        (in general is used to mark real from ghost information)
 	 *
 	 */
@@ -308,11 +318,10 @@ public:
 	 * \tparam prp_out which properties to output [default = -1 (all)]
 	 *
 	 * \param file path where to write
-	 * \param name name of the dataset
-	 * \param file_type specify if it is a VTK BINARY or ASCII file [default = ASCII]
+	 * \param f_name name of the dataset
+	 * \param ft specify if it is a VTK BINARY or ASCII file [default = ASCII]
 	 *
 	 */
-
 	template<int prp = -1> bool write(std::string file, std::string f_name = "points" , file_type ft = file_type::ASCII)
 	{
 		// Header for the vtk

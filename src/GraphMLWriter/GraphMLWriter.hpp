@@ -50,16 +50,16 @@ void create_prop(std::string * str)
 template<typename G>
 struct vertex_prop
 {
-	// Properties counter
+	//! Properties counter
 	int cnt = 0;
 
-	// vertex properties
+	//! vertex properties
 	std::string & v_prop;
 
-	// Attribute names
+	//! Attribute names
 	std::string * attributes_names;
 
-	// Number of attributes name defined into the vertex
+	//! Number of attributes name defined into the vertex
 	int n_attr = 0;
 
 	/*! \brief Constructor
@@ -67,11 +67,9 @@ struct vertex_prop
 	 * Create a vertex properties list
 	 *
 	 * \param v_prop std::string that is filled with the graph properties in the GraphML format
-	 * \param stub SFINAE, it basically check if G has properties names defined, if yes this
-	 *        constructor is selected over the other one
+	 * \param a_name array with the names of the properties
 	 *
 	 */
-
 	vertex_prop(std::string & v_prop, typename G::V_type::attributes & a_name)
 	:v_prop(v_prop),attributes_names(a_name.name)
 	{
@@ -84,7 +82,6 @@ struct vertex_prop
 	 * Create a vertex properties list
 	 *
 	 * \param v_prop std::string that is filled with the graph properties in the GraphML format
-	 * \param n_prop number of properties
 	 *
 	 */
 	vertex_prop(std::string & v_prop)
@@ -100,7 +97,11 @@ struct vertex_prop
 		create_prop<typename G::V_type>(attributes_names);
 	};
 
-	//! It call the functor for each member
+	/*! It call the functor for each member
+	 *
+	 * \param t each member
+	 *
+	 */
     template<typename T>
     void operator()(T& t)
     {
@@ -143,19 +144,19 @@ struct vertex_prop
 template<typename G>
 struct vertex_node
 {
-	// Vertex object container
+	//! Vertex object container
 	const typename G::V_container & vo;
 
-	// Properties counter
+	//! Properties counter
 	int cnt = 0;
 
-	// vertex node string
+	//! vertex node string
 	std::string & v_node;
 
-	// Attribute names
+	//! Attribute names
 	std::string * attributes_names;
 
-	// Number of attributes name defined into the vertex
+	//! Number of attributes name defined into the vertex
 	int n_attr = 0;
 
 	/*! \brief Constructor
@@ -164,7 +165,7 @@ struct vertex_node
 	 *
 	 * \param v_node std::string that is filled with the graph node definition in the GraphML format
 	 * \param n_obj object container to access its properties for example encapc<...>
-	 * \param stub SFINAE, it basically check if G has properties names defined, if yes this
+	 * \param a_name stub SFINAE, it basically check if G has properties names defined, if yes this
 	 *        constructor is selected over the other one
 	 *
 	 */
@@ -227,7 +228,7 @@ struct vertex_node
 
 	/*! \brief Create a new node
 	 *
-	 * Create a new node
+	 * \param v_c id of the node
 	 *
 	 */
 	void new_node(size_t v_c)
@@ -250,7 +251,11 @@ struct vertex_node
 		v_node += "</node>\n";
 	}
 
-	//! It call the functor for each member
+	/*! \brief It call the functor for each member
+	 *
+	 * \param t each member
+	 *
+	 */
     template<typename T>
     void operator()(T& t)
     {
@@ -288,16 +293,16 @@ struct vertex_node
 template<typename G>
 struct edge_prop
 {
-	// Properties counter
+	//! Properties counter
 	int cnt = 0;
 
-	// edge properties
+	//! edge properties
 	std::string & e_prop;
 
-	// Attribute names
+	//! Attribute names
 	std::string * attributes_names;
 
-	// Number of attributes name defined into the vertex
+	//! Number of attributes name defined into the vertex
 	int n_attr = 0;
 
 	/*! \brief Constructor
@@ -305,7 +310,7 @@ struct edge_prop
 	 * Create an edge properties list
 	 *
 	 * \param e_prop std::string that is filled with the graph properties in the GraphML format
-	 * \param stub SFINAE, it basically check if G::E_type has properties names defined, if yes this
+	 * \param a_name stub SFINAE, it basically check if G::E_type has properties names defined, if yes this
 	 *        constructor is selected over the other one
 	 *
 	 */
@@ -321,7 +326,6 @@ struct edge_prop
 	 * Create an edge properties list
 	 *
 	 * \param e_prop std::string that is filled with the graph properties in the GraphML format
-	 * \param n_prop number of properties
 	 *
 	 */
 	edge_prop(std::string & e_prop)
@@ -337,7 +341,11 @@ struct edge_prop
 		create_prop<typename G::E_type>(attributes_names);
 	};
 
-	//! It call the functor for each member
+	/*! \brief It call the functor for each member
+	 *
+	 * \param t each member
+	 *
+	 */
     template<typename T>
     void operator()(T& t)
     {
@@ -381,7 +389,7 @@ struct edge_node
 	//! Properties counter
 	int cnt = 0;
 
-	// edge node string
+	//! edge node string
 	std::string & e_node;
 
 	//! Attribute names
@@ -430,7 +438,9 @@ struct edge_node
 
 	/*! \brief Create a new node
 	 *
-	 * \param vc node number
+	 * \param v_c node number
+	 * \param s source node id
+	 * \param d destination node id
 	 *
 	 */
 	void new_node(size_t v_c, size_t s, size_t d)
@@ -453,7 +463,11 @@ struct edge_node
 		e_node += "</edge>\n";
 	}
 
-	//! It call the functor for each member
+	/*! It call the functor for each member
+	 *
+	 * \param t each member
+	 *
+	 */
     template<typename T>
     void operator()(T& t)
     {
@@ -488,6 +502,7 @@ struct edge_node
 template <typename Graph>
 class GraphMLWriter
 {
+	//! Graph to write
 	Graph & g;
 
 	/*! \brief It get the vertex properties list
@@ -499,7 +514,6 @@ class GraphMLWriter
 	 * \return a string that define the vertex properties in graphML format
 	 *
 	 */
-
 	std::string get_vertex_properties_list()
 	{
 		//! vertex property output string
@@ -522,7 +536,6 @@ class GraphMLWriter
 	 * \return a string that define the edge properties in graphML format
 	 *
 	 */
-
 	std::string get_edge_properties_list()
 	{
 		//! edge property output string
@@ -538,6 +551,11 @@ class GraphMLWriter
 		return e_out;
 	}
 
+	/*! \brief Get the string containing the set of vertices
+	 *
+	 * \return the set of vertices as string
+	 *
+	 */
 	std::string get_vertex_list()
 	{
 		// node counter
@@ -575,6 +593,11 @@ class GraphMLWriter
 		return v_out;
 	}
 
+	/*! \brief return the edge list as a string
+	 *
+	 * \return the edge list as string
+	 *
+	 */
 	std::string get_edge_list()
 	{
 		// node counter
@@ -632,7 +655,6 @@ public:
 	 * \param name of the graph
 	 *
 	 */
-
 	bool write(std::string file, std::string graph_name="Graph")
 	{
 		// Header for the GraphML

@@ -22,10 +22,11 @@
 template <typename Grid>
 struct cell_grid
 {
-	// vector of fused grids
+	//! vector of fused grids
 	openfpm::vector<const Grid *> grids;
 
-	// combination
+	//! combination
+	//! (used to calculate the grid shift from the starting point of the cell)
 	comb<Grid::dims> cmb;
 
 	cell_grid() {}
@@ -35,11 +36,13 @@ struct cell_grid
 	:cmb(cmb)
 	{}
 
+	//! copy contructor
 	cell_grid(const cell_grid<Grid> & cg)
 	{
 		this->operator=(cg);
 	}
 
+	//! copy constructor
 	cell_grid(cell_grid<Grid> && cg)
 	{
 		this->operator=(cg);
@@ -76,27 +79,45 @@ struct cell_grid
 	}
 };
 
+/*! \brief convert a staggered element into a string for vtk write
+ *
+ * \tparam Grid type of the grid
+ * \tparam St space type
+ *
+ */
 template <typename Grid, typename St>
 class ele_g_st
 {
 public:
 
+	//! grid type
 	typedef Grid value_type;
 
+	//! constructor
 	ele_g_st(){};
 
-	ele_g_st(const Point<Grid::dims,St> & offset, const Point<Grid::dims,St> & spacing, const Box<Grid::dims,St> & dom)
+	/*! \brief convert a staggered grid property into a string
+	 *
+	 * \param offset shift of the staggered element
+	 * \param spacing of the grid
+	 * \param Part of the grid that is real domain
+	 *
+	 */
+	ele_g_st(const Point<Grid::dims,St> & offset,
+			 const Point<Grid::dims,St> & spacing,
+			 const Box<Grid::dims,St> & dom)
 	:offset(offset),spacing(spacing),dom(dom)
 	{}
 
+	//! output string
 	std::string dataset;
 	//! fused grids
 	openfpm::vector<cell_grid<Grid>> g;
-	//! offset where it start
+	//! offset where it start the grid
 	Point<Grid::dims,St> offset;
-	// spacing of the grid
+	//! spacing of the grid
 	Point<Grid::dims,St> spacing;
-	// Part of the grid that is real domain
+	//! Part of the grid that is real domain
 	Box<Grid::dims,size_t> dom;
 
 	//! Copy constructor
@@ -113,7 +134,9 @@ public:
 
 	/*! \brief Copy the object
 	 *
-	 * \patam ele ele_g_st to copy
+	 * \param ele ele_g_st to copy
+	 *
+	 * \return itself
 	 *
 	 */
 	ele_g_st<Grid,St> & operator=(const ele_g_st & ele)
@@ -129,7 +152,9 @@ public:
 
 	/*! \brief Copy the object
 	 *
-	 * \patam ele ele_g_st to copy
+	 * \param ele ele_g_st to copy
+	 *
+	 * \return itself
 	 *
 	 */
 	ele_g_st<Grid,St> & operator=(ele_g_st && ele)
@@ -222,6 +247,8 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 
 	/*! \brief Create the VTK point definition
 	 *
+	 * \return the list of points
+	 *
 	 */
 	std::string get_point_list()
 	{
@@ -273,9 +300,11 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 		return v_out.str();
 	}
 
-	/* \brief Get the properties components
+	/* \brief It generate a name for the property cell component
 	 *
-	 * \return the components printed
+	 * \param k component in the cell
+	 *
+	 * \return property name
 	 *
 	 */
 	std::string get_prop_components(size_t k)
@@ -303,6 +332,8 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 	 *
 	 * \param k component
 	 * \param prop property name
+	 *
+	 * \return the property output string for the grid
 	 *
 	 */
 	std::string get_properties_output(size_t k, std::string prop_name)
@@ -463,6 +494,8 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 
 	/*! \brief Create the VTK vertex definition
 	 *
+	 * \return the string with the vertices as string
+	 *
 	 */
 	std::string get_vertex_list()
 	{
@@ -515,7 +548,8 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 	 *         fuse them, otherwise create a new combination and grid
 	 *
 	 * \param id sub-domain id
-	 * \param location in the cell of the grid
+	 * \param g grid to output
+	 * \param cmb position of the grid
 	 *
 	 * \return a valid slot, if does not exist it append the grid at the end with the new combination
 	 *
@@ -555,9 +589,15 @@ public:
 	 * \param offset grid offset
 	 * \param spacing spacing of the grid
 	 * \param dom part of the spacethat is the domain
+	 * \param cmb position of the grid
 	 *
 	 */
-	void add(size_t i, const typename pair::first & g, const Point<pair::first::dims,typename pair::second> & offset, const Point<pair::first::dims,typename pair::second> & spacing, const Box<pair::first::dims,typename pair::second> & dom, const comb<pair::first::dims> & cmb)
+	void add(size_t i,
+			 const typename pair::first & g,
+			 const Point<pair::first::dims,typename pair::second> & offset,
+			 const Point<pair::first::dims,typename pair::second> & spacing,
+			 const Box<pair::first::dims,typename pair::second> & dom,
+			 const comb<pair::first::dims> & cmb)
 	{
 		//! Increase the size
 		if (i >= vg.size())
@@ -577,11 +617,15 @@ public:
 	 *
 	 * \param file path where to write
 	 * \param g_name of the set of grids
-	 * \param file_type specify if it is a VTK BINARY or ASCII file [default = ASCII]
+	 * \param ft specify if it is a VTK BINARY or ASCII file [default = ASCII]
+	 *
+	 * \return true if the file is succeful written
 	 *
 	 */
 
-	template<int prp = -1> bool write(std::string file, std::string g_name = "grids" , file_type ft = file_type::ASCII)
+	template<int prp = -1> bool write(std::string file,
+			                          std::string g_name = "grids",
+									  file_type ft = file_type::ASCII)
 	{
 		// Header for the vtk
 		std::string vtk_header;

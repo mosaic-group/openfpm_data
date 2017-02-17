@@ -361,7 +361,7 @@ public:
 	 *
 	 * \param file path where to write
 	 * \param name of the graph
-	 * \param file_type specify if it is a VTK BINARY or ASCII file [default = ASCII]
+	 * \param ft specify if it is a VTK BINARY or ASCII file [default = ASCII]
 	 *
 	 */
 

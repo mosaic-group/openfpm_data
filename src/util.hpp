@@ -34,12 +34,19 @@ static inline bool compare(std::string file1, std::string file2)
         return false;
 }
 
+//! RGB color struct
 struct RGB
 {
+	//! Red
 	float R;
+
+	//! Green
 	float G;
+
+	//! Blue
 	float B;
 
+	//! Return the color as string
 	std::string toString()
 	{
 		return std::to_string(R) + " " + std::to_string(G) + " " + std::to_string(B);

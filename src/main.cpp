@@ -1,3 +1,6 @@
+#include "config.h"
+#undef VERSION
+
 #include <iostream>
 
 #define BOOST_DISABLE_ASSERTS
