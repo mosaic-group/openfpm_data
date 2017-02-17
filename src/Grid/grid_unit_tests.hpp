@@ -555,7 +555,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	error = false;
 	try
 	{g.get<p::x>(keyOut);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	g.setMemory();
 	try
 	{g.get<p::x>(keyOut);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
@@ -577,7 +577,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	Point_test<float> t;
 	try
 	{g.set(keyOut,t);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
@@ -587,7 +587,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	error = false;
 	try
 	{g.set(keyGood,g2,keyOut);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
@@ -599,7 +599,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	error = false;
 	try
 	{g.get<p::x>(keyNeg);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
@@ -610,7 +610,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	Point_test<float> t2;
 	try
 	{g.set(keyNeg,t2);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
@@ -620,7 +620,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	error = false;
 	try
 	{g.set(keyGood,g2,keyNeg);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
@@ -640,7 +640,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 
 	try
 	{gp->size();}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime memory error");
@@ -650,7 +650,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	error = false;
 	try
 	{grid_cpu<3,scalar<float>> gr = test_error();}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime memory error");
