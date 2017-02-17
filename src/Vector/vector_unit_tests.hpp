@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	error = false;
 	try
 	{v.template get<p::x>(23);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime vector error");
@@ -517,7 +517,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	Point_test<float> t;
 	try
 	{v.set(23,t);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime vector error");
@@ -527,7 +527,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	error = false;
 	try
 	{v.set(6,v2,23);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
@@ -539,7 +539,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	error = false;
 	try
 	{v.template get<p::x>(-1);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime vector error");
@@ -550,7 +550,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	Point_test<float> t2;
 	try
 	{v.set(-1,t2);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime vector error");
@@ -560,7 +560,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	error = false;
 	try
 	{v.set(12,v2,-1);}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
@@ -580,7 +580,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 
 	try
 	{v3->size();}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime memory error");
@@ -591,7 +591,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 	{
 		openfpm::vector<scalar<float>> vr = test_error_v();
 	}
-	catch (std::exception e)
+	catch (std::exception & e)
 	{
 		error = true;
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime memory error");
