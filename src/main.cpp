@@ -1,4 +1,5 @@
 #define BOOST_DISABLE_ASSERTS
+#define FUSION_MAX_VECTOR_SIZE 20
 
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
