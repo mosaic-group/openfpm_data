@@ -193,6 +193,11 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim));
 
+		// in SE1_CLASS the cell list consider this construction as an hack
+		// disable the test
+
+#ifndef SE_CLASS1
+
 		id = cl1.get(cl1.getCell(key),0);
 		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),id,pos);
 		total = 0;
@@ -207,6 +212,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 		}
 
 		BOOST_REQUIRE_EQUAL(total,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
+
+#endif
 
 		++g_it_s;
 	}

@@ -144,16 +144,22 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 	size_total_old = size_total;
 
 	Packer<Point_test<float>,HeapMemory>::packRequest(p,size_total);
+
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(size_total - size_total_old,(sizeof(float)*4 + sizeof(float[3]) + sizeof(float[3][3])));
+#endif
 	size_total_old = size_total;
 
 	Packer<openfpm::vector<Point_test<float>>,HeapMemory>::packRequest<pt::x,pt::v>(v,size_total);
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(size_total - size_total_old,(sizeof(float) + sizeof(float[3])) * v.size() + sizeof(v.size()));
+#endif
 	size_total_old = size_total;
 
 	Packer<grid_cpu<3,Point_test<float>>,HeapMemory>::packRequest<pt::x,pt::v>(g,sub,size_total);
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(size_total - size_total_old,(sizeof(float) + sizeof(float[3])) * sub.getVolume());
-
+#endif
 	// Calculate how much preallocated memory we need to pack all the objects
 	//size_t req = ExtPreAlloc<HeapMemory>::calculateMem(pap_prp);
 

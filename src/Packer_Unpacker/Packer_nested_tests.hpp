@@ -538,7 +538,9 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker )
 	//Pack request
 	Packer<decltype(v4),HeapMemory>::packRequest<>(v4,req);
 
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(req,(((((sizeof(float)*4 + sizeof(float[3]) + sizeof(float[3][3]))*2 + 8) + sizeof(float)*2) * 4 + 8) * 3 + 8));
+#endif
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -619,7 +621,9 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_2 )
 	//Pack request
 	Packer<decltype(v4),HeapMemory>::packRequest<>(v4,req);
 
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(req,((sizeof(float)*4 + sizeof(float[3]) + sizeof(float[3][3]))*7 + sizeof(float)*2) * 50 + sizeof(size_t)*2);
+#endif
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -717,7 +721,10 @@ BOOST_AUTO_TEST_CASE ( vector_smarter_packer_unpacker_3 )
 
 	//Pack request
 	Packer<decltype(v),HeapMemory>::packRequest<1>(v,req);
+
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(req, 3*(sizeof(Point_test<float>)*2+8)+8);
+#endif
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -776,10 +783,12 @@ BOOST_AUTO_TEST_CASE ( vector_aggr_packer_unpacker_zero_prop )
 
 	//Pack request
 	Packer<decltype(v4),HeapMemory>::packRequest<>(v4,req);
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(req, 3*(sizeof(float)*2)+8);
+#endif
 
 	Packer<decltype(v4),HeapMemory>::packRequest<0,1>(v4,req2);
-	BOOST_REQUIRE_EQUAL(req, 3*(sizeof(float)*2)+8);
+	BOOST_REQUIRE_EQUAL(req2, 3*(sizeof(float)*2)+8);
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -864,7 +873,9 @@ BOOST_AUTO_TEST_CASE ( vector_aggr_packer_unpacker_zero_prop_2 )
 
 	//Pack request
 	Packer<decltype(v4),HeapMemory>::packRequest<>(v4,req);
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(req, 3*(sizeof(float)*3 + 8)+8);
+#endif
 
 	Packer<decltype(v4),HeapMemory>::packRequest<0,1>(v4,req2);
 	BOOST_REQUIRE_EQUAL(req2, 3*(sizeof(float)*3 + 8)+8);
@@ -957,7 +968,10 @@ BOOST_AUTO_TEST_CASE ( grid_ptst_packer_unpacker )
 	size_t req = 0;
 	//Pack request
 	Packer<decltype(g),HeapMemory>::packRequest<pt::x,pt::v>(g,req);
+
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(req,(sizeof(float) + sizeof(float[3])) * 16 * 16 * 16 + sizeof(size_t)*3);
+#endif
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -1030,7 +1044,9 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_packer_unpacker )
 	size_t req = 0;
 
 	Packer<decltype(g),HeapMemory>::packRequest<>(g,req);
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(req,(sizeof(float))* 5 * 64*4*16 + sizeof(size_t)*3);
+#endif
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -1118,7 +1134,10 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_grid_packer_unpacker )
 	size_t req = 0;
 
 	Packer<decltype(g),HeapMemory>::packRequest<1,2>(g,req);
+
+#ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(req,(8*7*5*(sizeof(float) + 2*4*13 * 64 + sizeof(size_t)*3) + sizeof(size_t)*3));
+#endif
 
 	// allocate the memory
 	HeapMemory pmem;

@@ -958,7 +958,7 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (from_cd == false)
-			std::cerr << __FILE__ << ":" << __LINE__ << " Error when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
+			std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
 #endif
 
 		CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);

@@ -578,7 +578,9 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		val = has_max_prop<max_prop_vector_test, has_value_type<max_prop_vector_test>::value>::value;
 		BOOST_REQUIRE_EQUAL(val, true);
 		val = has_max_prop<max_prop_vector_test, has_value_type<max_prop_vector_test>::value>::number;
+#ifndef SE_CLASS3
 		BOOST_REQUIRE_EQUAL(val, 3);
+#endif
 
 		//! [Check has_max_prop]
 		}

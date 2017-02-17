@@ -783,6 +783,10 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 		}
 	}
 
+	// In SE_CLASS3 the memory layout is different disable this check
+
+#ifndef SE_CLASS3
+
 	// check that HeapMemory contain ones in the right position
 	float * ptr = (float *) mem.getPointer();
 	size_t offset = 0;
@@ -794,6 +798,8 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 
 		offset += pap[i];
 	}
+
+#endif
 }
 
 

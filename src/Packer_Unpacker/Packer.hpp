@@ -180,7 +180,7 @@ public:
 		if (ext.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 
-		if (!(std::is_array<T>::value == true && std::is_fundamental<T>::value == true))
+		if (!(std::is_array<T>::value == true && std::is_fundamental<typename std::remove_all_extents<T>::type>::value == true))
 			std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " impossible to check the type " << demangle(typeid(T).name()) << " please consider to add a static method like \"static bool noPointers() {return true;}\" \n" ;
 #endif
 		ext.allocate(sizeof(T));
