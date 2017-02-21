@@ -61,16 +61,17 @@ constexpr unsigned int max_expr(unsigned int dim1, unsigned int dim2)
 
 /*! \brief It return the dimansionality of the operation given the dimensionality of the 2 operators
  *
- * this is the defailr that return 3
+ * this is the default that return 3
  *
- * \tparam dimansionality operator1
- * \tparam dimensionality operator2
+ * \tparam op1_dim dimansionality operator1
+ * \tparam op2_dim dimensionality operator2
  * \tparam op operation
  *
  */
 template <unsigned int op1_dim, unsigned int op2_dim, unsigned int op>
 struct r_type_dim
 {
+	//! bigger vector determine the size of the expression
 	enum
 	{
 		value = max_expr(op1_dim,op2_dim),
@@ -81,6 +82,7 @@ struct r_type_dim
 template <>
 struct r_type_dim<1,1,POINT_SUM>
 {
+	//! scalar
 	enum
 	{
 		value = 1,
@@ -91,6 +93,7 @@ struct r_type_dim<1,1,POINT_SUM>
 template <>
 struct r_type_dim<1,1,POINT_SUB>
 {
+	//! scalar
 	enum
 	{
 		value = 1,
@@ -101,6 +104,7 @@ struct r_type_dim<1,1,POINT_SUB>
 template <unsigned int op1_dim, unsigned int op2_dim>
 struct r_type_dim<op1_dim,op2_dim,POINT_MUL_POINT>
 {
+	//! scalar
 	enum
 	{
 		value = 1,
@@ -111,6 +115,7 @@ struct r_type_dim<op1_dim,op2_dim,POINT_MUL_POINT>
 template <>
 struct r_type_dim<1,1,POINT_MUL>
 {
+	//! scalar
 	enum
 	{
 		value = 1,
@@ -121,6 +126,7 @@ struct r_type_dim<1,1,POINT_MUL>
 template <>
 struct r_type_dim<1,1,POINT_DIV>
 {
+	//! scalar
 	enum
 	{
 		value = 1,
@@ -147,6 +153,7 @@ struct r_type_p
 template <typename orig>
 struct r_type_p<1,orig>
 {
+	//! is a vector
 	typedef typename orig::coord_type type;
 };
 
@@ -172,7 +179,11 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = 1;
 
-	//! constructor from a value
+	/*! \brief constructor from a value
+	 *
+	 * \param d value
+	 *
+	 */
 	inline point_expression(T & d)
 	:d(d)
 	{}
@@ -247,7 +258,12 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = r_type_dim<exp1::nvals,exp2::nvals,POINT_SUM>::value;
 
-	//! Constructor from 2 point expressions
+	/*! \brief Constructor from 2 point expressions
+	 *
+	 * \param o1 expression1
+	 * \param o2 expression2
+	 *
+	 */
 	inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -317,7 +333,12 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = r_type_dim<exp1::nvals,exp2::nvals,POINT_SUB>::value;
 
-	//! constructor from 2 expressions
+	/*! \brief constructor from 2 expressions
+	 *
+	 * \param o1 expression1
+	 * \param o2 expression2
+	 *
+	 */
 	inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -382,7 +403,11 @@ public:
 	//! result dimensionality of this expression
 	static const unsigned int nvals = exp1::nvals;
 
-	//! constructor from expression
+	/*! constructor from expression
+	 *
+	 * \param o1 expression1
+	 *
+	 */
 	inline point_expression_op(const exp1 & o1)
 	:o1(o1),scal(0.0)
 	{}
@@ -393,7 +418,13 @@ public:
 		o1.init();
 	}
 
-	//! evaluate the expression
+	/*! \brief evaluate the expression
+	 *
+	 * \param k evaluate in k
+	 *
+	 * \return the result
+	 *
+	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
 	{
 		return -(o1.value(k));
@@ -464,6 +495,8 @@ public:
 	/*! \brief Evaluate the expression
 	 *
 	 * \param k where to evaluate the expression
+	 *
+	 * \return the expression value
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const

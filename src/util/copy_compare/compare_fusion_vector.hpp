@@ -16,16 +16,21 @@
 template<typename bfv>
 struct compare_fusion_vector
 {
+	//! Result of the comparation
 	bool eq;
 
+	//! operator1
 	const bfv & src;
+
+	//! operator2
 	const bfv & dst;
 
 	/*! \brief constructor
 	 *
 	 * It define the elements to compare.
 	 *
-	 * \param obj object we have to set in grid_dst
+	 * \param src operator1
+	 * \param dst operator2
 	 *
 	 */
 	inline compare_fusion_vector(const bfv & src, const bfv & dst)
@@ -43,7 +48,13 @@ struct compare_fusion_vector
 	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object\n";};
 #endif
 
-	//! It call the copy function for each property
+	/*! \brief It call the copy function for each property
+	 *
+	 * \tparam compile-time value
+	 *
+	 * \param t unused
+	 *
+	 */
 	template<typename T>
 	inline void operator()(T& t)
 	{

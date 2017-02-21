@@ -53,7 +53,7 @@ struct add_prp_impl
 template<typename vect_dst>
 struct add_prp_impl<OBJECT_ADD,vect_dst>
 {
-	/*! \brief It add the element of a source vector to this vector
+	/*! \brief It add the element of a source vector to a destination vector
 	 *
 	 * The number of properties in the source vector must be smaller than the destination
 	 * all the properties of S must be mapped so if S has 3 properties
@@ -64,7 +64,8 @@ struct add_prp_impl<OBJECT_ADD,vect_dst>
 	 * \tparam gp Grow policy of the source vector
 	 * \tparam args one or more number that define which property to set-up
 	 *
-	 * \param v source vector
+	 * \param v_src vector to merge
+	 * \param v_dst vector to merge and result of the merge
 	 *
 	 */
 	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
