@@ -57,15 +57,16 @@ public:
 template<typename ele_g, typename St>
 struct prop_out_g
 {
-	// property output string
+	//! property output string
 	std::string & v_out;
 
-	// grid that we are processing
+	//! grid that we are processing
 	const openfpm::vector_std< ele_g > & vg;
 
 	/*! \brief constructor
 	 *
 	 * \param v_out string to fill with the vertex properties
+	 * \param vg vector of elements to write
 	 *
 	 */
 	prop_out_g(std::string & v_out, const openfpm::vector_std< ele_g > & vg)
@@ -79,7 +80,7 @@ struct prop_out_g
     	typedef typename boost::mpl::at<typename ele_g::value_type::value_type::type,boost::mpl::int_<T::value>>::type ptype;
     	typedef typename std::remove_all_extents<ptype>::type base_ptype;
 
-    	meta_prop<boost::mpl::int_<T::value> ,ele_g,St, ptype, is_vtk_writable<base_ptype>::value > m(vg,v_out);
+    	meta_prop<boost::mpl::int_<T::value> ,ele_g,St, ptype, is_vtk_writable<base_ptype>::value > m(vg,v_out,file_type::ASCII);
     }
 
     void lastProp()

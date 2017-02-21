@@ -10,6 +10,7 @@
 
 #include "util/util_debug.hpp"
 #include "is_vtk_writable.hpp"
+#include "byteswap_portable.hpp"
 
 /*! \brief Return the Attributes name (if they have)
  *
@@ -113,40 +114,6 @@ template<unsigned int i, typename ele_g, bool has_attributes> std::string get_po
 	return v_out;
 }
 
-#if 0
-
-/*! \brief This class specialize functions in the case the type T
- * has or not defined attributes
- *
- * In C++ partial specialization of a function is not allowed so we have to
- * encapsulate this function in a class
- *
- * \tparam has_attributes parameter that specialize the function in case the grid
- *         define or not attributes name
- *
- * \tparam Grid type we are processing
- * \tparam i the property we are going to write
- *
- */
-template<bool has_attributes, typename St, typename ele_g, unsigned int i>
-class prop_output_g
-{
-public:
-
-	/*! \brief Return the VTK point data header for a typename T
-	 *
-	 * \tparam T type to write
-	 * \param n_node number of the node
-	 *
-	 */
-	static std::string get_point_property_header(const std::string & oprp)
-	{
-		return get_point_property_header_impl<i,ele_g,has_attributes>(oprp);
-	}
-};
-
-#endif
-
 /*! \brief Write the vectror property
  *
  * \tparam dim Dimensionality of the property
@@ -157,19 +124,38 @@ class prop_write_out
 {
 public:
 
-	template<typename vector, typename iterator, typename I> static void write(std::string & v_out, vector & vg, size_t k, iterator & it)
+	template<typename vector, typename iterator, typename I> static void write(std::string & v_out, vector & vg, size_t k, iterator & it, file_type ft)
 	{
 
-		// Print the properties
-		for (size_t i1 = 0 ; i1 < vtk_dims<T>::value ; i1++)
+		if (ft == file_type::ASCII)
 		{
-			v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>().get_vtk(i1)) + " ";
+			// Print the properties
+			for (size_t i1 = 0 ; i1 < vtk_dims<T>::value ; i1++)
+			{
+				v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>().get_vtk(i1)) + " ";
+			}
+			if (vtk_dims<T>::value == 2)
+			{
+				v_out += "0.0";
+			}
+			v_out += "\n";
 		}
-		if (vtk_dims<T>::value == 2)
+		else
 		{
-			v_out += "0.0";
+			// Print the properties
+			for (size_t i1 = 0 ; i1 < vtk_dims<T>::value ; i1++)
+			{
+				auto tmp = vg.get(k).g.get_o(it.get()).template get<I::value>().get_vtk(i1);
+				tmp = swap_endian_lt(tmp);
+				v_out.append((const char *)&tmp,sizeof(tmp));
+			}
+			if (vtk_dims<T>::value == 2)
+			{
+				decltype(vg.get(k).g.get_o(it.get()).template get<I::value>().get_vtk(0)) zero = 0.0;
+				zero = swap_endian_lt(zero);
+				v_out.append((const char *)&zero,sizeof(zero));
+			}
 		}
-		v_out += "\n";
 	}
 };
 
@@ -182,45 +168,22 @@ class prop_write_out<1,T>
 {
 public:
 
-	template<typename vector, typename iterator, typename I> static void write(std::string & v_out, vector & vg, size_t k, iterator & it)
+	template<typename vector, typename iterator, typename I> static void write(std::string & v_out, vector & vg, size_t k, iterator & it, file_type ft)
 	{
-		// Print the property
-		v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()) + "\n";
+		if (ft == file_type::ASCII)
+		{
+			// Print the property
+			v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()) + "\n";
+		}
+		else
+		{
+			auto tmp = vg.get(k).g.get_o(it.get()).template get<I::value>();
+			tmp = swap_endian_lt(tmp);
+			v_out.append((const char *)&tmp,sizeof(tmp));
+		}
 	}
 };
 
-#if 0
-
-/*! \brief This class specialize functions in the case the type T
- * has not defined attributes
- *
- * In C++ partial specialization of a function is not allowed so we have to
- * encapsulate this function in a class
- *
- * \tparam has_attributes parameter that specialize the function in case the vertex
- *         define or not attributes name
- *
- * \tparam i id of the property we are going to write
- *
- */
-
-template<typename ele_g, typename St, unsigned int i>
-class prop_output_g<false,St,ele_g,i>
-{
-public:
-
-	/*! \brief Get the vtk properties header appending a prefix at the end
-	 *
-	 * \param oprp prefix
-	 *
-	 */
-	static std::string get_point_property_header(const std::string & oprp)
-	{
-		return get_point_property_header_impl<i,ele_g,false>(oprp);
-	}
-};
-
-#endif
 
 /*! \brief This class is an helper to create properties output from scalar and compile-time array elements
  *
@@ -234,7 +197,14 @@ public:
 template<typename I, typename ele_g, typename St, typename T, bool is_writable>
 struct meta_prop
 {
-	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out)
+	/*! \brief Write a vtk compatible type into vtk format
+	 *
+	 * \param vg array of elements to write
+	 * \param v_out string containing the string
+	 * \param ft ASCII or BINARY
+	 *
+	 */
+	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, file_type ft)
 	{
     	// actual string size
     	size_t sz = v_out.size();
@@ -255,12 +225,15 @@ struct meta_prop
 				// if there is the next element
 				while (it.isNext())
 				{
-					prop_write_out<vtk_dims<T>::value,T>::template write<decltype(vg),decltype(it),I>(v_out,vg,k,it);
+					prop_write_out<vtk_dims<T>::value,T>::template write<decltype(vg),decltype(it),I>(v_out,vg,k,it,ft);
 
 					// increment the iterator and counter
 					++it;
 				}
 			}
+
+			if (ft == file_type::BINARY)
+				v_out += "\n";
 		}
 	}
 };
@@ -269,7 +242,14 @@ struct meta_prop
 template<typename I, typename ele_g, typename St, typename T, size_t N1, bool is_writable>
 struct meta_prop<I, ele_g,St,T[N1],is_writable>
 {
-	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out)
+	/*! \brief Write a vtk compatible type into vtk format
+	 *
+	 * \param vg array of elements to write
+	 * \param v_out string containing the string
+	 * \param ft ASCII or BINARY
+	 *
+	 */
+	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, file_type ft)
 	{
 	    // actual string size
 	    size_t sz = v_out.size();
@@ -290,21 +270,44 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
 				// if there is the next element
 				while (it.isNext())
 				{
-					// Print the properties
-					for (size_t i1 = 0 ; i1 < N1 ; i1++)
+					if (ft == file_type::ASCII)
 					{
-						v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()[i1]) + " ";
+						// Print the properties
+						for (size_t i1 = 0 ; i1 < N1 ; i1++)
+						{
+							v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()[i1]) + " ";
+						}
+						if (N1 == 2)
+						{
+							v_out += "0.0";
+						}
+						v_out += "\n";
 					}
-					if (N1 == 2)
+					else
 					{
-						v_out += "0.0";
+						T tmp;
+
+						// Print the properties
+						for (size_t i1 = 0 ; i1 < N1 ; i1++)
+						{
+							tmp = vg.get(k).g.get_o(it.get()).template get<I::value>()[i1];
+							swap_endian_lt(tmp);
+							v_out.append((const char *)&tmp,sizeof(T));
+						}
+						if (N1 == 2)
+						{
+							tmp = 0.0;
+							tmp = swap_endian_lt(tmp);
+							v_out.append((const char *)&tmp,sizeof(T));
+						}
 					}
-					v_out += "\n";
 
 					// increment the iterator and counter
 					++it;
 				}
 			}
+			if (ft == file_type::BINARY)
+				v_out += "\n";
 		}
 	}
 };
@@ -313,7 +316,15 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
 template<typename I, typename ele_g, typename St ,typename T,size_t N1,size_t N2, bool is_writable>
 struct meta_prop<I, ele_g,St, T[N1][N2],is_writable>
 {
-	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out)
+
+	/*! \brief Write a vtk compatible type into vtk format
+	 *
+	 * \param vg array of elements to write
+	 * \param v_out string containing the string
+	 * \param ft ASCII or BINARY
+	 *
+	 */
+	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, file_type ft)
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -338,8 +349,17 @@ struct meta_prop<I, ele_g,St, T[N1][N2],is_writable>
 						// if there is the next element
 						while (it.isNext())
 						{
-							// Print the property
-							v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()[i1][i2]) + "\n";
+							if (ft == file_type::ASCII)
+							{
+								// Print the property
+								v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()[i1][i2]) + "\n";
+							}
+							else
+							{
+								auto tmp = vg.get(k).g.get_o(it.get()).template get<I::value>()[i1][i2];
+								tmp = swap_endian_lt(tmp);
+								v_out.append(tmp,sizeof(tmp));
+							}
 
 							// increment the iterator and counter
 							++it;
@@ -356,7 +376,15 @@ struct meta_prop<I, ele_g,St, T[N1][N2],is_writable>
 template<typename I, typename ele_g, typename St, typename T>
 struct meta_prop<I,ele_g,St,T,false>
 {
-	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out)
+
+	/*! \brief Write a vtk compatible type into vtk format
+	 *
+	 * \param vg array of elements to write
+	 * \param v_out string containing the string
+	 * \param ft ASCII or BINARY
+	 *
+	 */
+	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, file_type ft)
 	{
 	}
 };

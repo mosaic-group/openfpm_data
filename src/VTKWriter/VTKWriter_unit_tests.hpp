@@ -903,6 +903,94 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	}
 }
 
+
+BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
+{
+	{
+		// Create 3 vectors with random particles
+		openfpm::vector<Point<3,double>> v1ps;
+		openfpm::vector<Point<3,double>> v2ps;
+		openfpm::vector<Point<3,double>> v3ps;
+		openfpm::vector<aggregate<float,float[3]>> v1pp;
+		openfpm::vector<aggregate<float,float[3]>> v2pp;
+		openfpm::vector<aggregate<float,float[3]>> v3pp;
+		openfpm::vector<aggregate<float,Point<3,float>>> v4pp;
+
+	    // set the seed
+		// create the random generator engine
+		SimpleRNG rng;
+
+		// fill the vector with random data
+		v1ps.resize(100);
+		v2ps.resize(100);
+		v3ps.resize(100);
+
+		v1pp.resize(100);
+		v2pp.resize(100);
+		v3pp.resize(100);
+		v4pp.resize(100);
+
+		for (size_t i = 0 ; i < v1ps.size(); i++)
+		{
+			v1ps.template get<0>(i)[0] = rng.GetUniform();
+			v1ps.template get<0>(i)[1] = rng.GetUniform();
+			v1ps.template get<0>(i)[2] = rng.GetUniform();
+
+			v2ps.template get<0>(i)[0] = rng.GetUniform()*0.5;
+			v2ps.template get<0>(i)[1] = rng.GetUniform()*0.5;
+			v2ps.template get<0>(i)[2] = rng.GetUniform()*0.5;
+
+			v3ps.template get<0>(i)[0] = rng.GetUniform()*0.3;
+			v3ps.template get<0>(i)[1] = rng.GetUniform()*0.3;
+			v3ps.template get<0>(i)[2] = rng.GetUniform()*0.3;
+
+			v1pp.template get<0>(i) = rng.GetUniform();
+			v1pp.template get<1>(i)[0] = rng.GetUniform();
+			v1pp.template get<1>(i)[1] = rng.GetUniform();
+			v1pp.template get<1>(i)[2] = rng.GetUniform();
+
+			v2pp.template get<0>(i) = rng.GetUniform();
+			v2pp.template get<1>(i)[0] = rng.GetUniform();
+			v2pp.template get<1>(i)[1] = rng.GetUniform();
+			v2pp.template get<1>(i)[2] = rng.GetUniform();
+
+			v3pp.template get<0>(i) = rng.GetUniform();
+			v3pp.template get<1>(i)[0] = rng.GetUniform();
+			v3pp.template get<1>(i)[1] = rng.GetUniform();
+			v3pp.template get<1>(i)[2] = rng.GetUniform();
+
+			v4pp.template get<0>(i) = rng.GetUniform();
+			v4pp.template get<1>(i).get(0) = rng.GetUniform();
+			v4pp.template get<1>(i).get(1) = rng.GetUniform();
+			v4pp.template get<1>(i).get(2) = rng.GetUniform();
+		}
+
+		// Create a writer and write
+		VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,float[3]>>>,VECTOR_POINTS> vtk_v;
+		vtk_v.add(v1ps,v1pp,75);
+		vtk_v.add(v2ps,v2pp,88);
+		vtk_v.add(v3ps,v3pp,90);
+
+		vtk_v.write("vtk_points_bin.vtk","vtk output",file_type::BINARY);
+
+		// Check that match
+		bool test = compare("vtk_points_bin.vtk","vtk_points_bin_test.vtk");
+		BOOST_REQUIRE_EQUAL(test,true);
+
+
+		// Create a writer and write
+		VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,Point<3,float>>>>,VECTOR_POINTS> vtk_v2;
+		vtk_v2.add(v1ps,v4pp,75);
+
+		vtk_v2.write("vtk_points_pp_bin.vtk","vtk output",file_type::BINARY);
+
+		// Check that match
+		test = compare("vtk_points_pp_bin.vtk","vtk_points_pp_bin_test.vtk");
+		BOOST_REQUIRE_EQUAL(test,true);
+
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* VTKWRITER_UNIT_TESTS_HPP_ */

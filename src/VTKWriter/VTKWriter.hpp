@@ -101,6 +101,8 @@ enum file_type
 #define DIST_GRAPH 5
 #define VECTOR_POINTS 6
 #define VTK_WRITER 0x10000
+#define FORMAT_ASCII 0x0
+#define FORMAT_BINARY 0x10000000
 
 template <typename Object, unsigned int imp>
 class VTKWriter

@@ -13,6 +13,7 @@
 #include "VTKWriter_grids_util.hpp"
 #include "is_vtk_writable.hpp"
 #include <string>
+#include "byteswap_portable.hpp"
 
 /*! \brief Store a reference to the vector position
  *
@@ -81,6 +82,9 @@ public:
 template<typename ele_v, typename St>
 struct prop_out_v
 {
+	//! Binary or ASCII
+	file_type ft;
+
 	//! property output string
 	std::string & v_out;
 
@@ -91,10 +95,11 @@ struct prop_out_v
 	 *
 	 * \param v_out string to fill with the vertex properties
 	 * \param vv vector we are processing
+	 * \param ft ASCII or BINARY format
 	 *
 	 */
-	prop_out_v(std::string & v_out, const openfpm::vector_std< ele_v > & vv)
-	:v_out(v_out),vv(vv)
+	prop_out_v(std::string & v_out, const openfpm::vector_std< ele_v > & vv, file_type ft)
+	:ft(ft),v_out(v_out),vv(vv)
 	{};
 
 	//! It produce an output for each property
@@ -104,7 +109,7 @@ struct prop_out_v
     	typedef typename boost::mpl::at<typename ele_v::value_type::value_type::type,boost::mpl::int_<T::value>>::type ptype;
     	typedef typename std::remove_all_extents<ptype>::type base_ptype;
 
-    	meta_prop<boost::mpl::int_<T::value> ,ele_v,St, ptype, is_vtk_writable<base_ptype>::value > m(vv,v_out);
+    	meta_prop<boost::mpl::int_<T::value> ,ele_v,St, ptype, is_vtk_writable<base_ptype>::value > m(vv,v_out,ft);
     }
 
     void lastProp()
@@ -124,10 +129,28 @@ struct prop_out_v
 			// if there is the next element
 			while (it.isNext())
 			{
-				if (it.get() < vv.get(k).mark)
-					v_out += "1.0\n";
+				if (ft == file_type::ASCII)
+				{
+					if (it.get() < vv.get(k).mark)
+						v_out += "1.0\n";
+					else
+						v_out += "0.0\n";
+				}
 				else
-					v_out += "0.0\n";
+				{
+					if (it.get() < vv.get(k).mark)
+					{
+						int one = 1;
+						one = swap_endian_lt(one);
+						v_out.append((const char *)&one,sizeof(int));
+					}
+					else
+					{
+						int zero = 0;
+						zero = swap_endian_lt(zero);
+						v_out.append((const char *)&zero,sizeof(int));
+					}
+				}
 
 				// increment the iterator and counter
 				++it;
@@ -210,10 +233,14 @@ class VTKWriter<pair,VECTOR_POINTS>
 		return v_out;
 	}
 
-	/*! \brief Create the VTK point definition
+	/*! \brief Create the VTK point list
+	 *
+	 * \param ft file_type
+	 *
+	 * \return the list of points
 	 *
 	 */
-	std::string get_point_list()
+	std::string get_point_list(file_type ft)
 	{
 		//! vertex node output string
 		std::stringstream v_out;
@@ -231,26 +258,47 @@ class VTKWriter<pair,VECTOR_POINTS>
 				Point<pair::first::value_type::dims,typename pair::first::value_type::coord_type> p;
 				p = vps.get(i).g.get(it.get());
 
-				if (pair::first::value_type::dims == 2)
-					v_out << p.toString() << " 0.0" << "\n";
+				if (ft == file_type::ASCII)
+				{
+					if (pair::first::value_type::dims == 2)
+						v_out << p.toString() << " 0.0" << "\n";
+					else
+						v_out << p.toString() << "\n";
+				}
 				else
-					v_out << p.toString() << "\n";
+				{
+					for (size_t i = 0 ; i < pair::first::value_type::dims ; i++)
+					{
+						// we use float so we have to convert to float
+						float tmp = p.get(i);
+						tmp = swap_endian_lt(tmp);
+						v_out.write((const char *)&tmp,sizeof(tmp));
+					}
+				}
 
 				// increment the iterator and counter
 				++it;
 			}
 		}
 
+		//! In case of binary we have to add a new line at the end of the list
+		if (ft == file_type::BINARY)
+			v_out << std::endl;
+
 		// return the vertex list
 		return v_out.str();
 	}
 
-	/*! \brief Create the VTK vertex definition
+	/*! \brief Create the VTK vertex list
+	 *
+	 * \param ft file_type
+	 *
+	 * \return the list of vertices
 	 *
 	 */
-	std::string get_vertex_list()
+	std::string get_vertex_list(file_type ft)
 	{
-		//! vertex node output string
+		// vertex node output string
 		std::string v_out;
 
 		size_t k = 0;
@@ -262,12 +310,28 @@ class VTKWriter<pair,VECTOR_POINTS>
 
 			while (it.isNext())
 			{
-				v_out += "1 " + std::to_string(k) + "\n";
+				if (ft == file_type::ASCII)
+					v_out += "1 " + std::to_string(k) + "\n";
+				else
+				{
+					int tmp;
+					tmp = 1;
+					tmp = swap_endian_lt(tmp);
+					v_out.append((const char *)&tmp,sizeof(int));
+					tmp = k;
+					tmp = swap_endian_lt(tmp);
+					v_out.append((const char *)&tmp,sizeof(int));
+				}
 
 				++k;
 				++it;
 			}
 		}
+
+		//! In case of binary we have to add a new line at the end of the list
+		if (ft == file_type::BINARY)
+			v_out += "\n";
+
 		// return the vertex list
 		return v_out;
 	}
@@ -358,20 +422,20 @@ public:
 		point_prop_header = get_point_properties_list();
 
 		// Get point list
-		point_list = get_point_list();
+		point_list = get_point_list(ft);
 
 		// vertex properties header
 		vertex_prop_header = get_vertex_properties_list();
 
 		// Get vertex list
-		vertex_list = get_vertex_list();
+		vertex_list = get_vertex_list(ft);
 
 		// Get the point data header
 		point_data_header = get_point_data_header();
 
 		// For each property in the vertex type produce a point data
 
-		prop_out_v< ele_vpp<typename pair::second>, typename pair::first::value_type::coord_type> pp(point_data, vpp);
+		prop_out_v< ele_vpp<typename pair::second>, typename pair::first::value_type::coord_type> pp(point_data, vpp, ft);
 
 		if (prp == -1)
 			boost::mpl::for_each< boost::mpl::range_c<int,0, pair::second::value_type::max_prop> >(pp);

@@ -31,18 +31,30 @@ struct cell_grid
 
 	cell_grid() {}
 
-	//! construct a cell grid
+	/*! \brief construct a cell grid
+	 *
+	 * \param cmb in which position this grid live
+	 *
+	 */
 	cell_grid(const comb<Grid::dims> & cmb)
 	:cmb(cmb)
 	{}
 
-	//! copy contructor
+	/*! \brief copy contructor
+	 *
+	 * \param cg element to copy
+	 *
+	 */
 	cell_grid(const cell_grid<Grid> & cg)
 	{
 		this->operator=(cg);
 	}
 
-	//! copy constructor
+	/*! \brief copy constructor
+	 *
+	 * \param cg element to copy
+	 *
+	 */
 	cell_grid(cell_grid<Grid> && cg)
 	{
 		this->operator=(cg);
@@ -100,7 +112,7 @@ public:
 	 *
 	 * \param offset shift of the staggered element
 	 * \param spacing of the grid
-	 * \param Part of the grid that is real domain
+	 * \param dom Part of the grid that is real domain
 	 *
 	 */
 	ele_g_st(const Point<Grid::dims,St> & offset,
@@ -120,13 +132,21 @@ public:
 	//! Part of the grid that is real domain
 	Box<Grid::dims,size_t> dom;
 
-	//! Copy constructor
+	/*! \brief Copy constructor
+	 *
+	 * \param ele element to copy
+	 *
+	 */
 	inline ele_g_st(const ele_g_st & ele)
 	{
 		this->operator=(ele);
 	}
 
-	//! Copy constructor
+	/*! \brief Copy constructor
+	 *
+	 * \param ele element to copy
+	 *
+	 */
 	inline ele_g_st(ele_g_st && ele)
 	{
 		this->operator=(ele);
@@ -300,7 +320,7 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 		return v_out.str();
 	}
 
-	/* \brief It generate a name for the property cell component
+	/*! \brief It generate a name for the property cell component
 	 *
 	 * \param k component in the cell
 	 *
@@ -331,7 +351,7 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 	/*! \brief Create the VTK properties output
 	 *
 	 * \param k component
-	 * \param prop property name
+	 * \param prop_name property name
 	 *
 	 * \return the property output string for the grid
 	 *

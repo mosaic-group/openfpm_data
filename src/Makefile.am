@@ -9,7 +9,7 @@ io_LDADD = $(LINKLIBS)
 
 nobase_include_HEADERS = CSVWriter/csv_multiarray.hpp CSVWriter/CSVWriter.hpp CSVWriter/is_csv_writable.hpp \
 GraphMLWriter/GraphMLWriter.hpp util.hpp \
-VTKWriter/VTKWriter.hpp VTKWriter/VTKWriter_dist_graph.hpp VTKWriter/VTKWriter_graph.hpp VTKWriter/VTKWriter_point_set.hpp  VTKWriter/VTKWriter_grids.hpp VTKWriter/VTKWriter_grids_st.hpp VTKWriter/VTKWriter_grids_util.hpp VTKWriter/VTKWriter_vector_box.hpp VTKWriter/is_vtk_writable.hpp HDF5_XdmfWriter/HDF5_XdmfWriter.hpp HDF5_XdmfWriter/HDF5_XdmfWriter_point_set.hpp HDF5_XdmfWriter/HDF5_XdmfWriter_util.hpp  \
+VTKWriter/VTKWriter.hpp VTKWriter/byteswap_portable.hpp VTKWriter/VTKWriter_dist_graph.hpp VTKWriter/VTKWriter_graph.hpp VTKWriter/VTKWriter_point_set.hpp  VTKWriter/VTKWriter_grids.hpp VTKWriter/VTKWriter_grids_st.hpp VTKWriter/VTKWriter_grids_util.hpp VTKWriter/VTKWriter_vector_box.hpp VTKWriter/is_vtk_writable.hpp HDF5_XdmfWriter/HDF5_XdmfWriter.hpp HDF5_XdmfWriter/HDF5_XdmfWriter_point_set.hpp HDF5_XdmfWriter/HDF5_XdmfWriter_util.hpp  \
 Plot/GoogleChart.hpp Plot/util.hpp
 
 
