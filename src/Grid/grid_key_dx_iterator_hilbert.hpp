@@ -75,7 +75,7 @@ public:
 
 		reset();
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		initialized = true;
 #endif
 	}

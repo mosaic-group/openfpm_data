@@ -465,6 +465,25 @@ template<unsigned int dim ,typename T> class Point
 		return *this;
 	}
 
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
+	 * \tparam check disable this method if T is a constant
+	 *
+	 * \param p_exp expression to evaluate
+	 *
+	 * \return itself
+	 *
+	 */
+	template<typename T1, typename check = typename std::enable_if<std::is_const<T1>::value == false>::type> Point<dim,T> & operator=(const point_expression<const T1[dim]> & p_exp)
+	{
+		p_exp.init();
+
+		for (size_t i = 0; i < dim ; i++)
+			get(i) = p_exp.value(i);
+
+		return *this;
+	}
+
 	/*! \brief divide each component by an array
 	 *
 	 * \param ar Component wise division
