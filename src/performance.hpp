@@ -16,10 +16,6 @@
 #define N_STAT_SMALL 32
 #define N_TRY 8
 
-//#define N_STAT 1
-//#define N_STAT_SMALL 1
-//#define N_TRY 1
-
 #ifdef PERFORMANCE_TEST
 
 GoogleChart cg;
@@ -50,7 +46,7 @@ BOOST_AUTO_TEST_SUITE_END()
  * \return the output string
  *
  */
-std::string exec(const char* cmd)
+/*std::string exec(const char* cmd)
 {
     std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
     if (!pipe)
@@ -64,7 +60,7 @@ std::string exec(const char* cmd)
             result += buffer;
     }
     return result;
-}
+}*/
 
 /*! \brief It store the sha-1 git commit
  *
