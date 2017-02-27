@@ -274,6 +274,13 @@ class VTKWriter<pair,VECTOR_POINTS>
 						tmp = swap_endian_lt(tmp);
 						v_out.write((const char *)&tmp,sizeof(tmp));
 					}
+
+					if (pair::first::value_type::dims == 2)
+					{
+						float tmp = 0.0;
+						tmp = swap_endian_lt(tmp);
+						v_out.write((const char *)&tmp,sizeof(tmp));
+					}
 				}
 
 				// increment the iterator and counter
