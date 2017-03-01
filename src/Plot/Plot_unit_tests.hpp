@@ -13,6 +13,60 @@
 
 BOOST_AUTO_TEST_SUITE( plot_unit_test )
 
+
+BOOST_AUTO_TEST_CASE( google_chart )
+{
+	//! [Producing an Histogram graph]
+
+	openfpm::vector<std::string> x;
+	openfpm::vector<openfpm::vector<size_t>> y;
+	openfpm::vector<std::string> yn;
+
+	x.add("colum1");
+	x.add("colum2");
+	x.add("colum3");
+	x.add("colum4");
+	x.add("colum5");
+	x.add("colum6");
+
+	// Each colum can have multiple data set (in this case 4 dataset)
+	// Each dataset can have a name
+	yn.add("dataset1");
+	yn.add("dataset2");
+	yn.add("dataset3");
+	yn.add("dataset4");
+
+	// Each colums can have multiple data-set
+	y.add({2,3,5,6});
+	y.add({5,6,1,6});
+	y.add({2,1,6,9});
+	y.add({1,6,3,2});
+	y.add({3,3,0,6});
+	y.add({2,1,4,6});
+
+	// Google charts options
+	GCoptions options;
+
+	options.title = std::string("Example");
+	options.yAxis = std::string("Y Axis");
+	options.xAxis = std::string("X Axis");
+	options.stype = std::string("bars");
+	options.barWD = true;
+
+	// it say that the colum4 must me represented with a line
+	options.stypeext = std::string("{3: {type: 'line'}}");
+
+	GoogleChart cg;
+	cg.AddHistGraph(x,y,yn,options);
+	cg.write("gc_out_wd.html");
+
+	//! [Producing an Histogram graph]
+
+	bool test = compare("gc_out_wd.html","gc_out_wd_test.html");
+	BOOST_REQUIRE_EQUAL(true,test);
+}
+
+
 BOOST_AUTO_TEST_CASE( google_chart )
 {
 	//! [Producing an Histogram graph]

@@ -68,6 +68,9 @@ struct GCoptions
 	//! curve type
 	std::string curveType = "function";
 
+	//! barWD
+	bool barWD = false;
+
 	//! copy operator
 	GCoptions & operator=(const GCoptions & opt)
 	{
@@ -97,6 +100,9 @@ struct GGraph
 
 	//! option
 	std::string option;
+
+	//! view in case we need a view
+	std::string view;
 
 	//! Google chart option
 	GCoptions opt;
@@ -241,6 +247,33 @@ class GoogleChart
         }
 
 		return data.str();
+	}
+
+	/*! \brief Construct a view option
+	 *
+	 * \param opt GoogleChart option
+	 *
+	 * \return the string
+	 *
+	 */
+	std::string get_view_bar_option(const GCoptions & opt, size_t n_col)
+	{
+		std::stringstream str;
+
+		str << "view.setColumns([0," << std::endl;
+
+		for (size_t i = 0 ; i < n_col ; i++)
+		{
+
+			str << i << ",{ calc: \"stringify\"," << std::endl;
+	        str << "sourceColumn: " << i << "," << std::endl;
+	        str << "type: \"string\"," << std::endl;
+	        str << "role: \"annotation\" }"<< std::endl;
+		}
+
+		str << "]);" << std::endl;
+
+	    return str.str();
 	}
 
 	std::string get_colums_bar_option(const GCoptions & opt)
@@ -438,6 +471,7 @@ public:
 		set_of_graphs.last().type = GGRAPH_COLUMS;
 		set_of_graphs.last().data = get_points_plot_data(x,y,yn,opt,set_of_graphs.size()-1);
 		set_of_graphs.last().option = get_colums_bar_option(opt);
+		set_of_graphs.last().view = get_view_bar_option(opt);
 		set_of_graphs.last().opt = opt;
 	}
 
