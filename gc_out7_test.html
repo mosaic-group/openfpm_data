@@ -79,11 +79,14 @@ hAxis: {title: 'X Axis'},
 seriesType: 'bars',
 series: {3: {type: 'line'}}};
 $("#export_svg0").on("click", function (event) {exportToSVG.apply(this,[0]);});
-var chart = new google.visualization.ComboChart(document.getElementById('chart_div0'));chart.draw(data0, options0);
+var chart = new google.visualization.ComboChart(document.getElementById('chart_div0'));
+chart.draw(data0, options0);
 $("#export_svg1").on("click", function (event) {exportToSVG.apply(this,[1]);});
-var chart = new google.visualization.ComboChart(document.getElementById('chart_div1'));chart.draw(data1, options1);
+var chart = new google.visualization.ComboChart(document.getElementById('chart_div1'));
+chart.draw(data1, options1);
 $("#export_svg2").on("click", function (event) {exportToSVG.apply(this,[2]);});
-var chart = new google.visualization.ComboChart(document.getElementById('chart_div2'));chart.draw(data2, options2);
+var chart = new google.visualization.ComboChart(document.getElementById('chart_div2'));
+chart.draw(data2, options2);
 }</script>
 </head>
 <body>

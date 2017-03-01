@@ -14,7 +14,7 @@
 BOOST_AUTO_TEST_SUITE( plot_unit_test )
 
 
-BOOST_AUTO_TEST_CASE( google_chart )
+BOOST_AUTO_TEST_CASE( google_chart_bar_string )
 {
 	//! [Producing an Histogram graph]
 
@@ -58,11 +58,11 @@ BOOST_AUTO_TEST_CASE( google_chart )
 
 	GoogleChart cg;
 	cg.AddHistGraph(x,y,yn,options);
-	cg.write("gc_out_wd.html");
+	cg.write("gc_out_sc.html");
 
 	//! [Producing an Histogram graph]
 
-	bool test = compare("gc_out_wd.html","gc_out_wd_test.html");
+	bool test = compare("gc_out_sc.html","gc_out_sc_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
