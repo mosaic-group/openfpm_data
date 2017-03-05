@@ -10,6 +10,29 @@
 
 #include "NN/CellList/CellListIterator.hpp"
 #include "NN/CellList/CellListFast_hilb.hpp"
+#include "NN/CellList/ParticleIt_Cells.hpp"
+
+
+/*! \brief Fill the cell-list with particles in the box 0.0,1.0
+ *
+ * \param k Number of particles
+ * \param NN Cell-list
+ *
+ */
+template<unsigned int dim, typename CellList> void FillCellList(size_t k, CellList & NN)
+{
+	float pos[dim];
+
+	//Fill with particles
+	for (size_t i = 0; i < k; i++)
+	{
+		for (size_t j = 0; j < dim; j++)
+		{
+			pos[j] = rand()/double(RAND_MAX);
+		}
+		NN.add(pos,i);
+	}
+}
 
 BOOST_AUTO_TEST_SUITE( celllist_hilb_and_iterator_tests )
 
@@ -39,17 +62,8 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 
 	NN.Initialize(box,div,k*0.9,1);
 
-	float pos[dim];
+	FillCellList<dim>((size_t)k*0.9,NN);
 
-	//Fill with particles
-	for (size_t i = 0; i < k*0.9; i++)
-	{
-		for (size_t j = 0; j < dim; j++)
-		{
-			pos[j] = rand()/double(RAND_MAX);
-		}
-		NN.add(pos,i);
-	}
 
 	//Test the iterator
 	auto it_cl = NN.getIterator();
@@ -88,7 +102,7 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	BOOST_REQUIRE_EQUAL(s1,s2);
 }
 
-BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
+BOOST_AUTO_TEST_CASE( ParticleItCRS_Cells_iterator )
 {
 	///////// INPUT DATA //////////
 
@@ -117,17 +131,9 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 
 	NN.Initialize(box,div,1);
 
-	float pos[dim];
+	FillCellList<dim>(k,NN);
 
-	//Fill with particles
-	for (size_t i = 0; i < k; i++)
-	{
-		for (size_t j = 0; j < dim; j++)
-		{
-			pos[j] = rand()/double(RAND_MAX);
-		}
-		NN.add(pos,i);
-	}
+	float pos[dim];
 
 	grid_key_dx<3> start(0,0,0);
 	grid_key_dx<3> stop(div[2]-1+2*NN.getPadding(2),div[1]-1+2*NN.getPadding(1),div[0]-1+2*NN.getPadding(0));
@@ -333,6 +339,59 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_NN_iterator )
 	}
 
 	BOOST_REQUIRE_EQUAL(count,(div[0]-2)*(div[1]-2)*(div[2]-2));
+}
+
+BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
+{
+	///////// INPUT DATA //////////
+
+	const size_t dim = 3;
+
+	size_t div[dim] = {4,5,6};
+	size_t div_p[dim] = {6,7,8};
+
+	grid_sm<3,void> gs(div_p);
+
+	//Number of particles
+	size_t k = 300;
+
+	///////////////////////////////
+
+	Box<dim,float> box;
+
+	for (size_t i = 0; i < dim; i++)
+	{
+		box.setLow(i,0.0);
+		box.setHigh(i,1.0);
+	}
+
+	// Initialize a cell list
+	CellList<dim,float,FAST,shift<dim,float>> NN;
+
+	NN.Initialize(box,div,1);
+
+	FillCellList<dim>(k,NN);
+
+	grid_key_dx<3> start(0,0,0);
+	grid_key_dx<3> stop(div[2]-1+2*NN.getPadding(2),div[1]-1+2*NN.getPadding(1),div[0]-1+2*NN.getPadding(0));
+
+
+	// No anomalous cells + all domain cells
+	grid_key_dx_iterator_sub<dim> it(gs,start,stop);
+
+
+	//Test the iterator
+	ParticleIt_Cells<dim,CellList<dim,float,FAST,shift<dim,float>>,grid_key_dx_iterator_sub<dim>> it_cl(NN,it);
+
+	size_t count = 0;
+
+	while (it_cl.isNext())
+	{
+		count++;
+		++it_cl;
+	}
+
+	BOOST_REQUIRE_EQUAL(count,k);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

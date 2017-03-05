@@ -16,8 +16,9 @@
 #include "CellListIterator.hpp"
 #include "CellListNNIteratorRadius.hpp"
 #include <unordered_map>
+
+#include "ParticleItCRS_Cells.hpp"
 #include "util/common.hpp"
-#include "ParticleIt_Cells.hpp"
 
 //! Wrapper of the unordered map
 template<typename key,typename val>
