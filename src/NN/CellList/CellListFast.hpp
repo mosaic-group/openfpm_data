@@ -17,6 +17,7 @@
 #include "CellListNNIteratorRadius.hpp"
 #include <unordered_map>
 
+#include "ParticleIt_Cells.hpp"
 #include "ParticleItCRS_Cells.hpp"
 #include "util/common.hpp"
 
@@ -599,6 +600,18 @@ public:
 		return *this;
 	}
 
+	/*! \brief Get an iterator over particles following the cell structure
+	 *
+	 * \return a particle iterator
+	 *
+	 */
+	ParticleIt_Cells<dim,CellList<dim,T,FAST,transform,base>> getDomainIterator(openfpm::vector<size_t> & dom_cells)
+	{
+		ParticleIt_Cells<dim,CellList<dim,T,FAST,transform,base>> it(*this,dom_cells);
+
+		return it;
+	}
+
 	/*! \brief Add to the cell
 	 *
 	 * \param cell_id Cell id where to add
@@ -668,7 +681,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos);
+		size_t cell_id = this->getCellDom(pos);
 
 		// add the element to the cell
 
@@ -687,7 +700,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos);
+		size_t cell_id = this->getCellDom(pos);
 
 		// add the element to the cell
 
@@ -706,7 +719,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos);
+		size_t cell_id = this->getCellPad(pos);
 
 		// add the element to the cell
 
@@ -1082,6 +1095,7 @@ public:
 	}
 
 	/*! \brief Get the starting domain Cell
+	 *
 	 *
 	 * \return
 	 *

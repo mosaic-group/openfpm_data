@@ -399,7 +399,7 @@ class CellDecomposer_sm
 		check_and_print_error(pos,0);
 
 		size_t cell_id = ConvertToID(pos,0);
-		cell_id = (cell_id == gr_cell.size(0) - off[0])?gr_cell.size(0) - off[0] - 1:cell_id;
+		cell_id = (cell_id == gr_cell2.size(0) - off[0])?gr_cell2.size(0) - off[0] - 1:cell_id;
 		cell_id = (cell_id == off[0]-1)?off[0]:cell_id;
 
 		for (size_t s = 1 ; s < dim ; s++)
@@ -407,7 +407,7 @@ class CellDecomposer_sm
 			check_and_print_error(pos,s);
 
 			size_t cell_idt = ConvertToID(pos,s);
-			cell_idt = (cell_idt == gr_cell.size(s) - off[s])?gr_cell.size(s) - off[s] - 1:cell_idt;
+			cell_idt = (cell_idt == gr_cell2.size(s) - off[s])?gr_cell2.size(s) - off[s] - 1:cell_idt;
 			cell_idt = (cell_idt == off[s]-1)?off[s]:cell_idt;
 
 			cell_id += gr_cell2.size_s(s-1) * cell_idt;
@@ -1633,6 +1633,9 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 
 	/*! \brief Return the index of the first cell in the domain
 	 *
+	 * This function make sense if the CellDecomposer has been
+	 * created with setDimensions with div and div2
+	 *
 	 * \return the first domain cell
 	 *
 	 */
@@ -1649,6 +1652,9 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	}
 
 	/*! \brief Return the index of the last cell in the domain
+	 *
+	 * This function make sense if the CellDecomposer has been
+	 * created with setDimensions with div and div2
 	 *
 	 * \return the last domain cell
 	 *

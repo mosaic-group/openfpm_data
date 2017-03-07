@@ -379,9 +379,19 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 	// No anomalous cells + all domain cells
 	grid_key_dx_iterator_sub<dim> it(gs,start,stop);
 
+	openfpm::vector<size_t> dom;
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		dom.add(gs.LinId(key));
+
+		++it;
+	}
 
 	//Test the iterator
-	ParticleIt_Cells<dim,CellList<dim,float,FAST,shift<dim,float>>,grid_key_dx_iterator_sub<dim>> it_cl(NN,it);
+	ParticleIt_Cells<dim,CellList<dim,float,FAST,shift<dim,float>>> it_cl(NN,dom);
 
 	size_t count = 0;
 
