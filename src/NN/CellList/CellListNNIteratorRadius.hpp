@@ -8,6 +8,7 @@
 #ifndef OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTNNITERATORRADIUS_HPP_
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTNNITERATORRADIUS_HPP_
 
+#include "Vector/map_vector.hpp"
 
 /*! \brief Iterator for the neighborhood of the cell structures with free radius
  *

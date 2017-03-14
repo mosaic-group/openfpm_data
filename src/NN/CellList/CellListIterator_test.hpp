@@ -34,7 +34,65 @@ template<unsigned int dim, typename CellList> void FillCellList(size_t k, CellLi
 	}
 }
 
-BOOST_AUTO_TEST_SUITE( celllist_hilb_and_iterator_tests )
+#include "CellListFast_gen.hpp"
+
+BOOST_AUTO_TEST_SUITE( celllist_gen_and_iterator_tests )
+
+BOOST_AUTO_TEST_CASE( celllist_lin_and_iterator_test )
+{
+	///////// INPUT DATA //////////
+
+	const size_t dim = 3;
+
+	size_t div[dim] = {4,5,6};
+
+	//Number of particles
+	size_t k = 300;
+
+	///////////////////////////////
+
+	Box<dim,float> box;
+
+	for (size_t i = 0; i < dim; i++)
+	{
+		box.setLow(i,0.0);
+		box.setHigh(i,1.0);
+	}
+
+	// Initialize a cell list
+	CellList_gen<dim,float,Process_keys_lin<dim>> NN;
+
+	NN.Initialize(box,div,k*0.9,1);
+
+	float pos[dim];
+
+	//Fill with particles
+	for (size_t i = 0; i < k*0.9; i++)
+	{
+		for (size_t j = 0; j < dim; j++)
+		{
+			pos[j] = rand()/double(RAND_MAX);
+		}
+		NN.add(pos,i);
+	}
+
+	//Test the iterator
+	auto it_cl = NN.getIterator();
+
+	size_t count = 0;
+
+	while (it_cl.isNext())
+	{
+		auto p_key = it_cl.get();
+
+		BOOST_REQUIRE(p_key < NN.get_gm());
+
+		count++;
+		++it_cl;
+	}
+
+	BOOST_REQUIRE_EQUAL(count,NN.get_gm());
+}
 
 BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 {
@@ -58,7 +116,7 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	}
 
 	// Initialize a cell list
-	CellList_hilb<dim,float> NN;
+	CellList_gen<dim,float,Process_keys_hilb<dim>> NN;
 
 	NN.Initialize(box,div,k*0.9,1);
 

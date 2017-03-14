@@ -160,6 +160,14 @@ public:
 	{
 		obj.template unpack<prp...>(mem, ps);
 	};
+
+	template<unsigned int ... prp> void static unpack(ExtPreAlloc<Mem> & mem, T & obj, Unpack_stat & ps, size_t n)
+	{
+		if (mem.size() == 0)
+			return;
+
+		obj.template unpack<prp...>(mem, ps);
+	};
 };
 
 /*! \brief Unpacker for grids

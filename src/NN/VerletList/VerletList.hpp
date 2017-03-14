@@ -11,6 +11,8 @@
 #include "Vector/map_vector.hpp"
 #include "NN/CellList/CellList.hpp"
 
+#define FAST 1
+
 
 /*! \brief Cell list structure
  *
@@ -19,7 +21,7 @@
  * \see CellList<dim,T,FAST,transform,base>
  *
  */
-template<unsigned int dim, typename T,  unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename CellListImpl = CellList<dim,T,FAST,transform> >
+template<unsigned int dim, typename T,  unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename CellListImpl = CellList<dim,T,Mem_fast<dim,T>,transform> >
 class VerletList
 {
 };
