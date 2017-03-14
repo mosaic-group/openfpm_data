@@ -706,6 +706,21 @@ public:
 		}
 	}
 
+	/*! \brief Produce a string from the object
+	 *
+	 * \return string
+	 *
+	 */
+	std::string toString() const
+	{
+		std::stringstream str;
+
+		for (size_t i = 0 ; i < N ; i++)
+			str << "sz[" << i << "]=" << size(i) << " ";
+
+		return str.str();
+	}
+
 	//!  It simply mean that all the classes grid are friend of all its specialization
 	template <unsigned int,typename> friend class grid_sm;
 };

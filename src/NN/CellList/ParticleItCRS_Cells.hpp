@@ -8,7 +8,7 @@
 #ifndef OPENFPM_DATA_SRC_NN_CELLLIST_PARTICLEITCRS_CELLS_HPP_
 #define OPENFPM_DATA_SRC_NN_CELLLIST_PARTICLEITCRS_CELLS_HPP_
 
-#include "CellNNIteratorRuntime.hpp"
+#include "CellNNIterator.hpp"
 #include "CellList_util.hpp"
 
 /*! \brief sub-sub-domain
@@ -237,7 +237,12 @@ public:
 		if (dom_or_anom == 0)
 			return typename CellListType::SymNNIterator(dom_cell.get(cid),*start,NNc_sym,openfpm::math::pow(3,dim)/2+1,cli,v);
 		else
-			return typename CellListType::SymNNIterator(anom_dom_cell.get(cid).subsub,*start,&anom_dom_cell.get(cid).NN_subsub.get(0),anom_dom_cell.get(cid).NN_subsub.size(),cli,v);
+			return typename CellListType::SymNNIterator(anom_dom_cell.get(cid).subsub,
+					                                    *start,
+														&anom_dom_cell.get(cid).NN_subsub.get(0),
+														anom_dom_cell.get(cid).NN_subsub.size(),
+														cli,
+														v);
 	}
 
 	/*! \brief Get the neighborhood iterator according to the CRS scheme Multi-phase case

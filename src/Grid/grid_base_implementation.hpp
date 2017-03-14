@@ -336,7 +336,8 @@ public:
 	/*! \brief Get the object that provide memory
 	 *
 	 * An external allocator is useful with allocator like PreAllocHeapMem
-	 * to have contiguous in memory vectors.
+	 * to have contiguous in memory vectors. Or to force the system to retain
+	 * memory
 	 *
 	 * \tparam S memory type
 	 *

@@ -30,6 +30,19 @@ public:
 	inline grid_key_dx()
 	{}
 
+	//! Constructor from initializer list
+	inline grid_key_dx(std::initializer_list<long int> p1)
+	{
+		size_t i = 0;
+		for(long int x : p1)
+		{
+			set_d(i,x);
+			i++;
+			if (i >= dim)
+				break;
+		}
+	}
+
 	//! Constructor from an other key
 	inline grid_key_dx(const grid_key_dx<dim> & key)
 	:grid_key_dx(key.k)
