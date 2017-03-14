@@ -40,7 +40,7 @@ class wrap_unordered_map<boost::multiprecision::float128,val>
 
 #endif
 
-/*! \brief Calculate the the Neighborhood for symmetric interactions
+/*! \brief Calculate the the Neighborhood for symmetric interactions CSR scheme
  *
  * \param cNN calculated cross neighborhood
  * \param div Number of divisions in each direction
@@ -104,6 +104,101 @@ template<unsigned int dim> void NNcalc_csr(openfpm::vector<std::pair<grid_key_dx
 
 		++gr_sub3;
 
+	}
+};
+
+/*! \brief Calculate the the Neighborhood for symmetric interactions
+ *
+ * \param cNN calculated cross neighborhood
+ * \param div Number of divisions in each direction
+ *
+ */
+template<unsigned int dim> void NNcalc_sym(openfpm::vector<grid_key_dx<dim>> & cNN)
+{
+	// Calculate the NNc_full array, it is a structure to get the neighborhood array
+
+	// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
+
+	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
+	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
+	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
+
+	// Generate the sub-grid iterator
+
+	size_t div[dim];
+
+	// Calculate the divisions
+
+	for (size_t i = 0 ; i < dim ; i++)
+		div[i] = 4;
+
+	grid_sm<dim,void> gs(div);
+	grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
+
+	grid_key_dx<dim> src_; // Source cell
+	for (size_t i = 0; i < dim; i++)
+		src_.set_d(i,1);
+
+	size_t middle = gs.LinId(src_);
+
+	// Calculate the symmetric array
+	while (gr_sub3.isNext())
+	{
+		auto dst = gr_sub3.get();
+
+		if ((long int)middle > gs.LinId(dst))
+		{
+			++gr_sub3;
+			continue;
+		}
+
+		cNN.add(dst - src_);
+
+		++gr_sub3;
+
+	}
+};
+
+/*! \brief Calculate the Neighborhood cells
+ *
+ * \param cNN calculated cross neighborhood
+ * \param div Number of divisions in each direction
+ *
+ */
+template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & cNN)
+{
+	// Calculate the NNc_full array, it is a structure to get the neighborhood array
+
+	// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
+
+	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
+	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
+	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
+
+	// Generate the sub-grid iterator
+
+	size_t div[dim];
+
+	// Calculate the divisions
+
+	for (size_t i = 0 ; i < dim ; i++)
+		div[i] = 4;
+
+	grid_sm<dim,void> gs(div);
+	grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
+
+	grid_key_dx<dim> src_; // Source cell
+	for (size_t i = 0; i < dim; i++)
+		src_.set_d(i,1);
+
+	// Calculate the symmetric crs array
+	while (gr_sub3.isNext())
+	{
+		auto dst = gr_sub3.get();
+
+		cNN.add(dst - src_);
+
+		++gr_sub3;
 	}
 };
 
@@ -176,6 +271,9 @@ protected:
 	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
 
 private:
+
+	//! empty stub vector
+	openfpm::vector<grid_key_dx<dim>> stub;
 
 	//! Number of slot for each cell
 	size_t slot;
@@ -979,6 +1077,39 @@ public:
 
 		return cln;
 	}
+
+	/*! \brief Get the Neighborhood iterator for symmetric interactions
+	 *
+	 * This iterator work independently that the vector has been create with
+	 * the option BIND_DEC_TO_GHOST, the only requirement is that the ghost
+	 * is full. Does not require ghost_put
+	 *
+	 * \param cell cell id
+	 * \param v vector of neighborhood cells
+	 *
+	 * \return An aiterator across the neighborhood particles
+	 *
+	 */
+/*	template<unsigned int impl, typename vector>
+	inline CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,RUNTIME,impl>
+	getNNIteratorSym(Point<dim,T> & p,
+			         const vector & v)
+	{
+		auto & dec = v.getDecomposition();
+
+		grid_key_dx<dim> cellg = this->getGridCell(p);
+
+		size_t map_cell = dec.get_mapped_cell(cellg);
+
+		CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,RUNTIME,impl> cln(cell,
+				                                                                    p,
+																					&dec.getDomainCellNNSym().get(map_cell).NN_subsub.get(0),
+																					dec.getDomainCellNNSym().NN_subsub.size(),
+																					*this,
+																					v.getPosVector());
+
+		return cln;
+	}*/
 
 	/*! \brief Get the symmetric neighborhood
 	 *

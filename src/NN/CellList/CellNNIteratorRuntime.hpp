@@ -208,9 +208,17 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIteratorSym(size_t cell, size_t p, const long int * NNc, size_t NNc_size, Cell & cl, const openfpm::vector<Point<dim,typename Cell::stype>> & v)
+	inline CellNNIteratorSym(size_t cell,
+			                 size_t p,
+							 const long int * NNc,
+							 size_t NNc_size,
+							 Cell & cl,
+							 const openfpm::vector<Point<dim,typename Cell::stype>> & v)
 	:CellNNIterator<dim,Cell,RUNTIME,impl>(cell,NNc,NNc_size,cl),p(p),v(v)
 	{
+		if (this->NNc_id >= this->NNc_size)
+			return;
+
 		selectValid();
 	}
 

@@ -232,7 +232,6 @@ namespace openfpm
 		// Implementation of packer and unpacker for vector
 #include "vector_pack_unpack.ipp"
 
-
 		/*! \brief Return the size of the vector
 		 *
 		 * \return the size
