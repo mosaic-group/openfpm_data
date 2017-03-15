@@ -18,7 +18,7 @@
 
 
 
-template<unsigned int dim, typename T, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
+template<unsigned int dim, typename T>
 class Mem_fast
 {
 	//! Number of slot for each cell
@@ -26,6 +26,8 @@ class Mem_fast
 
 	//! number of particle in each cell list
 	openfpm::vector<size_t> cl_n;
+
+	typedef typename openfpm::vector<size_t> base;
 
 	//! elements that each cell store (each cell can store a number
 	//! of elements == slot )
@@ -96,31 +98,11 @@ protected:
 		cl_n.get(cell_id)++;
 	}
 
-	void add(const Point<dim,T> & pos, typename base::value_type ele)
+	void add(size_t cell_id, typename base::value_type ele)
 	{
-
-		CellList<dim,T,Mem_fast<dim,T,transform,base>,transform,base> cl;
-
-		// calculate the Cell id
-
-		size_t cell_id = cl.getCell(pos);
-
 		// add the element to the cell
 
-		cl.addCell(cell_id,ele);
-	}
-
-	void add(const T (& pos)[dim], typename base::value_type ele)
-	{
-		CellList<dim,T,Mem_fast<dim,T,transform,base>,transform,base> cl;
-
-		// calculate the Cell id
-
-		size_t cell_id = cl.getCell(pos);
-
-		// add the element to the cell
-
-		cl.addCell(cell_id,ele);
+		this->addCell(cell_id,ele);
 	}
 
 	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele)) &
@@ -162,17 +144,17 @@ protected:
 			cl_n.get(i) = 0;
 	}
 
-	inline size_t * getStartId(size_t cell_id)
+	inline const size_t & getStartId(size_t cell_id) const
 	{
-		return &cl_base.get(cell_id*slot);
+		return cl_base.get(cell_id*slot);
 	}
 
-	inline size_t * getStopId(size_t cell_id)
+	inline const size_t & getStopId(size_t cell_id) const
 	{
-		return &cl_base.get(cell_id*slot+cl_n.get(cell_id));
+		return cl_base.get(cell_id*slot+cl_n.get(cell_id));
 	}
 
-	inline size_t & get_lin(size_t * part_id)
+	inline const size_t & get_lin(const size_t * part_id) const
 	{
 		return *part_id;
 	}
@@ -182,6 +164,11 @@ public:
 	Mem_fast(size_t slot)
 	:slot(slot)
 	{}
+
+	void set_slot(size_t slot)
+	{
+		this->slot = slot;
+	}
 };
 
 

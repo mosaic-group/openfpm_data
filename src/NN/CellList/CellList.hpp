@@ -10,9 +10,21 @@
 
 #include "Vector/map_vector.hpp"
 #include "CellDecomposer.hpp"
+#include "Space/SpaceBox.hpp"
+#include "util/mathutil.hpp"
 #include "CellNNIterator.hpp"
+#include "Space/Shape/HyperCube.hpp"
 #include "CellListNNIteratorRadius.hpp"
 #include <unordered_map>
+
+#include "CellListIterator.hpp"
+#include "ParticleIt_Cells.hpp"
+#include "ParticleItCRS_Cells.hpp"
+#include "util/common.hpp"
+
+#include "MemFast.hpp"
+#include "MemBalanced.hpp"
+#include "MemMemoryWise.hpp"
 
 //! Wrapper of the unordered map
 template<typename key,typename val>
@@ -37,6 +49,169 @@ class wrap_unordered_map<boost::multiprecision::float128,val>
 #define CELL_REALLOC 16ul
 
 #define STARTING_NSLOT 16
+
+/*! \brief Calculate the the Neighborhood for symmetric interactions CSR scheme
+ *
+ * \param cNN calculated cross neighborhood
+ * \param div Number of divisions in each direction
+ *
+ */
+template<unsigned int dim> void NNcalc_csr(openfpm::vector<std::pair<grid_key_dx<dim>,grid_key_dx<dim>>> & cNN)
+{
+	// Calculate the NNc_full array, it is a structure to get the neighborhood array
+
+	// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
+
+	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
+	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
+	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
+
+	// Generate the sub-grid iterator
+
+	size_t div[dim];
+
+	// Calculate the divisions
+
+	for (size_t i = 0 ; i < dim ; i++)
+		div[i] = 4;
+
+	grid_sm<dim,void> gs(div);
+	grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
+
+	grid_key_dx<dim> src_; // Source cell
+	for (size_t i = 0; i < dim; i++)
+		src_.set_d(i,1);
+
+	size_t middle = gs.LinId(src_);
+
+	// Calculate the symmetric crs array
+	while (gr_sub3.isNext())
+	{
+		auto dst = gr_sub3.get();
+		grid_key_dx<dim> src = src_;
+
+		if ((long int)middle > gs.LinId(dst))
+		{
+			++gr_sub3;
+			continue;
+		}
+
+		// Here we adjust src and dst to be in the positive quadrant
+
+		for (size_t i = 0 ; i < dim; i++)
+		{
+			if (dst.get(i) == 0)
+			{
+				src.set_d(i,src.get(i) + 1);
+				dst.set_d(i,dst.get(i) + 1);
+			}
+		}
+
+		src -= src_;
+		dst -= src_;
+
+		cNN.add(std::pair<grid_key_dx<dim>,grid_key_dx<dim>>(src,dst));
+
+		++gr_sub3;
+
+	}
+};
+
+/*! \brief Calculate the the Neighborhood for symmetric interactions
+ *
+ * \param cNN calculated cross neighborhood
+ * \param div Number of divisions in each direction
+ *
+ */
+template<unsigned int dim> void NNcalc_sym(openfpm::vector<grid_key_dx<dim>> & cNN)
+{
+	// Calculate the NNc_full array, it is a structure to get the neighborhood array
+
+	// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
+
+	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
+	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
+	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
+
+	// Generate the sub-grid iterator
+
+	size_t div[dim];
+
+	// Calculate the divisions
+
+	for (size_t i = 0 ; i < dim ; i++)
+		div[i] = 4;
+
+	grid_sm<dim,void> gs(div);
+	grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
+
+	grid_key_dx<dim> src_; // Source cell
+	for (size_t i = 0; i < dim; i++)
+		src_.set_d(i,1);
+
+	size_t middle = gs.LinId(src_);
+
+	// Calculate the symmetric array
+	while (gr_sub3.isNext())
+	{
+		auto dst = gr_sub3.get();
+
+		if ((long int)middle > gs.LinId(dst))
+		{
+			++gr_sub3;
+			continue;
+		}
+
+		cNN.add(dst - src_);
+
+		++gr_sub3;
+
+	}
+};
+
+/*! \brief Calculate the Neighborhood cells
+ *
+ * \param cNN calculated cross neighborhood
+ * \param div Number of divisions in each direction
+ *
+ */
+template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & cNN)
+{
+	// Calculate the NNc_full array, it is a structure to get the neighborhood array
+
+	// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
+
+	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
+	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
+	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
+
+	// Generate the sub-grid iterator
+
+	size_t div[dim];
+
+	// Calculate the divisions
+
+	for (size_t i = 0 ; i < dim ; i++)
+		div[i] = 4;
+
+	grid_sm<dim,void> gs(div);
+	grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
+
+	grid_key_dx<dim> src_; // Source cell
+	for (size_t i = 0; i < dim; i++)
+		src_.set_d(i,1);
+
+	// Calculate the symmetric crs array
+	while (gr_sub3.isNext())
+	{
+		auto dst = gr_sub3.get();
+
+		cNN.add(dst - src_);
+
+		++gr_sub3;
+	}
+};
+
 
 /* NOTE all the implementations
  *
@@ -93,7 +268,7 @@ class wrap_unordered_map<boost::multiprecision::float128,val>
  *
  */
 template<unsigned int dim, typename T,  typename Mem_type, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
-class CellList : public CellDecomposer_sm<dim,T,transform>, Mem_type
+class CellList : public CellDecomposer_sm<dim,T,transform>, public Mem_type
 {
 protected:
 	//! The array contain the neighborhood of the cell-id in case of asymmetric interaction
@@ -111,18 +286,17 @@ protected:
 	//
 	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
 
-	//! The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
-	//
-	//   * *
-	//   x *
-	//
-	long int NNc_cr[openfpm::math::pow(2,dim)];
-
 private:
 
 	//! Caching of r_cutoff radius
 	wrap_unordered_map<T,openfpm::vector<long int>> rcache;
 
+	//! True if has been initialized from CellDecomposer
+	bool from_cd;
+
+	//! Additional information in general (used to understand if the cell-list)
+	//! has been constructed from an old decomposition
+	size_t n_dec;
 
 	/*! Calculate the neighborhood cells based on the radius
 	 *
@@ -239,21 +413,27 @@ private:
 			++gr_sub3;
 			i++;
 		}
+	}
 
-		// Calculate the NNc_cross array
+	void setCellDecomposer(CellDecomposer_sm<dim,T,transform> & cd, const CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box, size_t pad) const
+	{
+		size_t bc[dim];
 
-		i = 0;
-		grid_key_dx_iterator_sub<dim> gr_sub2(gs,NNzero::data,NNone::data);
+		for (size_t i = 0 ; i < dim ; i++)
+			bc[i] = NON_PERIODIC;
 
-		while (gr_sub2.isNext())
+		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
+
+		size_t div[dim];
+		size_t div_big[dim];
+
+		for (size_t i = 0 ; i < dim ; i++)
 		{
-			auto key = gr_sub2.get();
-
-			NNc_cr[i] = (long int)gs.LinId(key);
-
-			++gr_sub2;
-			i++;
+			div[i] = bx.getHigh(i) - bx.getLow(i);
+			div_big[i] = cd_sm.getDiv()[i] - 2*cd_sm.getPadding(i);
 		}
+
+		cd.setDimensions(cd_sm.getDomain(),div_big,div, pad, bx.getP1());
 	}
 
 public:
@@ -263,6 +443,7 @@ public:
 	//! Object type that the structure store
 	typedef typename base::value_type value_type;
 
+	//! Type of the coordinate space (double float)
 	typedef T stype;
 
 	/*! \brief Return the underlying grid information of the cell list
@@ -294,24 +475,24 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)	{bc[i] = NON_PERIODIC;}
 
 		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
-//		Box<dim,T> bxd = cd_sm.convertCellUnitsIntoDomainSpace(bx);
 
-		size_t div[dim];
-		size_t div_big[dim];
+		setCellDecomposer(*this,cd_sm,dom_box,pad);
+
 		size_t div_w_pad[dim];
 		size_t tot_cell = 1;
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			div[i] = bx.getHigh(i) - bx.getLow(i);
 			div_w_pad[i] = bx.getHigh(i) - bx.getLow(i) + 2*pad;
 			tot_cell *= div_w_pad[i];
-			div_big[i] = cd_sm.getDiv()[i] - 2*cd_sm.getPadding(i);
 		}
 
-		CellDecomposer_sm<dim,T,transform>::setDimensions(cd_sm.getDomain(),div_big,div, pad, bx.getP1());
+		// here we set the cell-shift for the CellDecomposer
 
 		InitializeStructures(div_w_pad,tot_cell);
+
+		// Initialized from CellDecomposer
+		from_cd = true;
 	}
 
 	/*! Initialize the cell list
@@ -341,14 +522,15 @@ public:
 	 */
 	void Initialize(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
-
 		Matrix<dim,T> mat;
 
 		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, pad);
+		Mem_type::set_slot(slot);
 
 		// create the array that store the number of particle on each cell and se it to 0
 		InitializeStructures(this->gr_cell.getSize(),this->gr_cell.size());
 
+		from_cd = false;
 	}
 
 	//! Default Constructor
@@ -450,7 +632,6 @@ public:
 	{
 		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
 		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
 		Mem_type::swap(static_cast<Mem_type &&>(cell));
 
@@ -470,13 +651,24 @@ public:
 	{
 		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
 		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
 		Mem_type::operator=(static_cast<const Mem_type &>(cell));
 
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cell);
 
 		return *this;
+	}
+
+	/*! \brief Get an iterator over particles following the cell structure
+	 *
+	 * \return a particle iterator
+	 *
+	 */
+	ParticleIt_Cells<dim,CellList<dim,T,Mem_fast<dim,T>,transform,base>> getDomainIterator(openfpm::vector<size_t> & dom_cells)
+	{
+		ParticleIt_Cells<dim,CellList<dim,T,Mem_fast<dim,T>,transform,base>> it(*this,dom_cells);
+
+		return it;
 	}
 
 	/*! \brief Add to the cell
@@ -498,7 +690,10 @@ public:
 	 */
 	inline void add(const T (& pos)[dim], typename base::value_type ele)
 	{
-		Mem_type::add(pos,ele);
+		// calculate the Cell id
+		size_t cell_id = this->getCell(pos);
+
+		Mem_type::add(cell_id,ele);
 	}
 
 	/*! \brief Add an element in the cell list
@@ -509,7 +704,87 @@ public:
 	 */
 	inline void add(const Point<dim,T> & pos, typename base::value_type ele)
 	{
-		Mem_type::add(pos,ele);
+		// calculate the Cell id
+		size_t cell_id = this->getCell(pos);
+
+		Mem_type::add(cell_id,ele);
+	}
+
+
+	/*! \brief Add an element in the cell list forcing to be in the domain cells
+	 *
+	 * \warning careful is intended to be used ONLY to avoid round-off problems
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void addDom(const T (& pos)[dim], typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = this->getCellDom(pos);
+
+		// add the element to the cell
+
+		addCell(cell_id,ele);
+	}
+
+	/*! \brief Add an element in the cell list forcing to be in the domain cells
+	 *
+	 * \warning careful is intended to be used ONLY to avoid round-off problems
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void addDom(const Point<dim,T> & pos, typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = this->getCellDom(pos);
+
+		// add the element to the cell
+
+		addCell(cell_id,ele);
+	}
+
+	/*! \brief Add an element in the cell list forcing to be in the padding cells
+	 *
+	 * \warning careful is intended to be used ONLY to avoid round-off problems
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void addPad(const T (& pos)[dim], typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = this->getCellPad(pos);
+
+		// add the element to the cell
+
+		addCell(cell_id,ele);
+	}
+
+	/*! \brief Add an element in the cell list forcing to be in the padding cells
+	 *
+	 * \warning careful is intended to be used ONLY to avoid round-off problems
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void addPad(const Point<dim,T> & pos, typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = this->getCell(pos);
+
+		// add the element to the cell
+
+		addCell(cell_id,ele);
 	}
 
 	/*! \brief remove an element from the cell
@@ -559,20 +834,17 @@ public:
 	inline void swap(CellList<dim,T,Mem_type,transform,base> & cl)
 	{
 		long int NNc_full_tmp[openfpm::math::pow(3,dim)];
-		long int NNc_sym_tmp[openfpm::math::pow(3,dim)];
-		long int NNc_cr_tmp[openfpm::math::pow(3,dim)];
+		long int NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1];
 
 		std::copy(&cl.NNc_full[0],&cl.NNc_full[openfpm::math::pow(3,dim)],&NNc_full_tmp[0]);
 		std::copy(&cl.NNc_sym[0],&cl.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym_tmp[0]);
-		std::copy(&cl.NNc_cr[0],&cl.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr_tmp[0]);
+
 
 		std::copy(&NNc_full[0],&NNc_full[openfpm::math::pow(3,dim)],&cl.NNc_full[0]);
 		std::copy(&NNc_sym[0],&NNc_sym[openfpm::math::pow(3,dim)/2+1],&cl.NNc_sym[0]);
-		std::copy(&NNc_cr[0],&NNc_cr[openfpm::math::pow(2,dim)],&cl.NNc_cr[0]);
 
 		std::copy(&NNc_full_tmp[0],&NNc_full_tmp[openfpm::math::pow(3,dim)],&NNc_full[0]);
 		std::copy(&NNc_sym_tmp[0],&NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-		std::copy(&NNc_cr_tmp[0],&NNc_cr_tmp[openfpm::math::pow(2,dim)],&NNc_cr[0]);
 
 		Mem_type::swap(static_cast<Mem_type &>(cl));
 
@@ -662,34 +934,23 @@ public:
 	 */
 	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
 	{
+#ifdef SE_CLASS1
+		if (from_cd == false)
+			std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
+#endif
+
 		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);
 		return cln;
 	}
 
-
-	/*! \brief Get the Neighborhood iterator
+	/*! \brief Get the symmetric neighborhood
 	 *
-	 * It iterate across all the element of the selected cell and the near cells
-	 *
-	 *  \verbatim
-
-	   * *
-	   x *
-
-	   \endverbatim
-	 *
-	 * * x is the selected cell
-	 * * * are the near cell
-	 *
-	 * \param cell cell id
-	 *
-	 * \return an iterator across the neighborhood params
+	 * \return the symmetric neighborhood
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,CRS,impl> getNNIteratorCross(size_t cell)
+	const long int (& getNNc_sym() const)[openfpm::math::pow(3,dim)/2+1]
 	{
-		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,CRS,impl> cln(cell,NNc_cr,*this);
-		return cln;
+		return NNc_sym;
 	}
 
 	/*! \brief Return the number of padding cells of the Cell decomposer
@@ -699,86 +960,11 @@ public:
 	 * \return the number of padding cells
 	 *
 	 */
-	size_t getPadding(size_t i)
+	size_t getPadding(size_t i) const
 	{
 		return CellDecomposer_sm<dim,T,transform>::getPadding(i);
 	}
 
-	/*! \brief Add an element in the cell list forcing to be in the domain cells
-	 *
-	 * \warning careful is intended to be used ONLY to avoid round-off problems
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	inline void addDom(const T (& pos)[dim], typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCell(pos);
-
-		// add the element to the cell
-
-		addCell(cell_id,ele);
-	}
-
-	/*! \brief Add an element in the cell list forcing to be in the domain cells
-	 *
-	 * \warning careful is intended to be used ONLY to avoid round-off problems
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	inline void addDom(const Point<dim,T> & pos, typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCell(pos);
-
-		// add the element to the cell
-
-		addCell(cell_id,ele);
-	}
-
-	/*! \brief Add an element in the cell list forcing to be in the padding cells
-	 *
-	 * \warning careful is intended to be used ONLY to avoid round-off problems
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	inline void addPad(const T (& pos)[dim], typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCell(pos);
-
-		// add the element to the cell
-
-		addCell(cell_id,ele);
-	}
-
-	/*! \brief Add an element in the cell list forcing to be in the padding cells
-	 *
-	 * \warning careful is intended to be used ONLY to avoid round-off problems
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	inline void addPad(const Point<dim,T> & pos, typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCell(pos);
-
-		// add the element to the cell
-
-		addCell(cell_id,ele);
-	}
 
 	/*! \brief Clear the cell list
 	 *
@@ -795,7 +981,7 @@ public:
 	 * \return the index
 	 *
 	 */
-	inline size_t * getStartId(size_t cell_id)
+	inline const size_t & getStartId(size_t cell_id) const
 	{
 		return Mem_type::getStartId(cell_id);
 	}
@@ -807,7 +993,7 @@ public:
 	 * \return the stop index
 	 *
 	 */
-	inline size_t * getStopId(size_t cell_id)
+	inline const size_t & getStopId(size_t cell_id) const
 	{
 		return Mem_type::getStopId(cell_id);
 	}
@@ -819,7 +1005,7 @@ public:
 	 * \return the neighborhood id
 	 *
 	 */
-	inline size_t & get_lin(size_t * part_id)
+	inline const size_t & get_lin(const size_t * part_id) const
 	{
 		return Mem_type::get_lin(part_id);
 	}
@@ -850,6 +1036,30 @@ public:
 	}
 
 /////////////////////////////////////
+
+	/////////////////////////////////////
+
+		/*! \brief Set the n_dec number
+		 *
+		 * \param n_dec
+		 *
+		 */
+		void set_ndec(size_t n_dec)
+		{
+			this->n_dec = n_dec;
+		}
+
+		/*! \brief Set the n_dec number
+		 *
+		 * \return n_dec
+		 *
+		 */
+		size_t get_ndec() const
+		{
+			return n_dec;
+		}
+
+	/////////////////////////////////////
 };
 
 /*! \brief Calculate parameters for the cell list
@@ -931,8 +1141,5 @@ template<unsigned int dim, typename St> static inline void cl_param_calculateSym
 	cd_sm.setDimensions(dom,div,pad);
 }
 
-#include "MemFast.hpp"
-#include "MemBalanced.hpp"
-#include "MemMemoryWise.hpp"
 
 #endif /* CELLLIST_HPP_ */

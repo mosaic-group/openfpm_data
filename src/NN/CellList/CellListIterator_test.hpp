@@ -9,9 +9,8 @@
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTITERATOR_TEST_HPP_
 
 #include "NN/CellList/CellListIterator.hpp"
-#include "NN/CellList/CellListFast_hilb.hpp"
 #include "NN/CellList/ParticleIt_Cells.hpp"
-
+#include "NN/CellList/ParticleItCRS_Cells.hpp"
 
 /*! \brief Fill the cell-list with particles in the box 0.0,1.0
  *
@@ -60,7 +59,7 @@ BOOST_AUTO_TEST_CASE( celllist_lin_and_iterator_test )
 	}
 
 	// Initialize a cell list
-	CellList_gen<dim,float,Process_keys_lin<dim>> NN;
+	CellList_gen<dim,float,Process_keys_lin> NN;
 
 	NN.Initialize(box,div,k*0.9,1);
 
@@ -116,7 +115,7 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	}
 
 	// Initialize a cell list
-	CellList_gen<dim,float,Process_keys_hilb<dim>> NN;
+	CellList_gen<dim,float,Process_keys_hilb> NN;
 
 	NN.Initialize(box,div,k*0.9,1);
 
@@ -149,13 +148,13 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	for (size_t i = 0; i < keys_old.size(); i++)
 	{
 		size_t a1 = keys_old.get(i);
-		size_t a2 = NN.getKeys().get(i);
+		size_t a2 = NN.getCellSFC().getKeys().get(i);
 
 		BOOST_REQUIRE_EQUAL(a1,a2);
 	}
 
 	size_t s1 = keys_old.size();
-	size_t s2 = NN.getKeys().size();
+	size_t s2 = NN.getCellSFC().getKeys().size();
 
 	BOOST_REQUIRE_EQUAL(s1,s2);
 }
@@ -185,7 +184,7 @@ BOOST_AUTO_TEST_CASE( ParticleItCRS_Cells_iterator )
 	}
 
 	// Initialize a cell list
-	CellList<dim,float,FAST,shift<dim,float>> NN;
+	CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>> NN;
 
 	NN.Initialize(box,div,1);
 
@@ -212,7 +211,7 @@ BOOST_AUTO_TEST_CASE( ParticleItCRS_Cells_iterator )
 	}
 
 	//Test the iterator
-	ParticleItCRS_Cells<dim,CellList<dim,float,FAST,shift<dim,float>>> it_cl(NN,dom,anom,NN.getNNc_sym());
+	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>>> it_cl(NN,dom,anom,NN.getNNc_sym());
 
 	size_t count = 0;
 
@@ -267,7 +266,7 @@ BOOST_AUTO_TEST_CASE( ParticleItCRS_Cells_iterator )
 		++it2;
 	}
 
-	ParticleItCRS_Cells<dim,CellList<dim,float,FAST,shift<dim,float>>> it_cl2(NN,dom,anom,NN.getNNc_sym());
+	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>>> it_cl2(NN,dom,anom,NN.getNNc_sym());
 
 	count = 0;
 
@@ -303,7 +302,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_NN_iterator )
 	}
 
 	// Initialize a cell list
-	CellList<dim,float,FAST,shift<dim,float>> NN;
+	CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>> NN;
 
 	NN.Initialize(box,div,1);
 
@@ -373,7 +372,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_NN_iterator )
 	}
 
 	//Test the iterator
-	ParticleItCRS_Cells<dim,CellList<dim,float,FAST,shift<dim,float>>> it_cl(NN,dom,anom,NN.getNNc_sym());
+	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>>> it_cl(NN,dom,anom,NN.getNNc_sym());
 
 	size_t count = 0;
 
@@ -424,7 +423,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 	}
 
 	// Initialize a cell list
-	CellList<dim,float,FAST,shift<dim,float>> NN;
+	CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>> NN;
 
 	NN.Initialize(box,div,1);
 
@@ -449,7 +448,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 	}
 
 	//Test the iterator
-	ParticleIt_Cells<dim,CellList<dim,float,FAST,shift<dim,float>>> it_cl(NN,dom);
+	ParticleIt_Cells<dim,CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>>> it_cl(NN,dom);
 
 	size_t count = 0;
 

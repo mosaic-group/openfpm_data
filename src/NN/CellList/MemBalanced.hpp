@@ -36,15 +36,14 @@
  *
  */
 
-template<unsigned int dim, typename T, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
+template<unsigned int dim, typename T>
 class Mem_bal
 {
-	// each cell has a pointer to a dynamic structure
+	typedef openfpm::vector<size_t> base;
+
+	//! each cell has a pointer to a dynamic structure
 	// that store the elements in the cell
 	openfpm::vector<base> cl_base;
-
-	//Origin point
-	Point<dim,T> orig;
 
 public:
 
@@ -56,51 +55,25 @@ public:
 		//resize the vector to needed number of cells
 
 		cl_base.resize(tot_n_cell);
-
-		//filling a vector with "base" structures
-		for (size_t i = 0; i < tot_n_cell; i++)
-		{   base b;
-			cl_base.get(i) = b;
-		}
 	}
 
-	void operator=(const Mem_bal & cell)
+	Mem_bal & operator=(const Mem_bal & cell)
 	{
 		cl_base = cell.cl_base;
+
+		return *this;
 	}
 
 	void addCell(size_t cell_id, typename base::value_type ele)
 	{
 		//add another neighbor element
 
-		cl_base.get(cell_id) = ele;
+		cl_base.get(cell_id).add(ele);
 	}
 
-	void add(const Point<dim,T> & pos, typename base::value_type ele)
+	void add(size_t cell_id, typename base::value_type ele)
 	{
-
-		CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base> cl;
-
-		// calculate the Cell id
-
-		size_t cell_id = cl.getCell(pos);
-
-		// add the element to the cell
-
-		cl.addCell(cell_id,ele);
-	}
-
-	void add(const T (& pos)[dim], typename base::value_type ele)
-	{
-		CellList<dim,T,Mem_bal<dim,T,transform,base>,transform,base> cl;
-
-		// calculate the Cell id
-
-		size_t cell_id = cl.getCell(pos);
-
-		// add the element to the cell
-
-		cl.addCell(cell_id,ele);
+		this->addCell(cell_id,ele);
 	}
 
 	void remove(size_t cell, size_t ele)
@@ -113,7 +86,7 @@ public:
 		return cl_base.get(cell_id).size();
 	}
 
-	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell).get(ele)) &
+	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(0).get(0)) &
 	{
 		return cl_base.get(cell).get(ele);
 	}
@@ -131,23 +104,20 @@ public:
 	void clear()
 	{
 		for (size_t i = 0 ; i < cl_base.size() ; i++)
-		{
-			for (size_t j = 0; j < cl_base.get(i).size(); j++)
-				cl_base.get(i).get(j) = 0;
-		}
+			cl_base.get(i).clear();
 	}
 
-	inline size_t * getStartId(size_t part_id)
+	inline const size_t & getStartId(size_t part_id) const
 	{
-		return &cl_base.get(part_id).get(0);
+		return cl_base.get(part_id).get(0);
 	}
 
-	inline size_t * getStopId(size_t part_id)
+	inline const size_t & getStopId(size_t part_id) const
 	{
-		return &cl_base.get(part_id).last();
+		return cl_base.get(part_id).last();
 	}
 
-	inline size_t & get_lin(size_t * part_id)
+	inline const size_t & get_lin(const size_t * part_id) const
 	{
 		return *part_id;
 	}
@@ -155,6 +125,9 @@ public:
 public:
 
 	Mem_bal(size_t slot)
+	{}
+
+	void set_slot(size_t slot)
 	{}
 };
 
