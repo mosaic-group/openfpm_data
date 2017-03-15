@@ -836,7 +836,7 @@ public:
 	{
 		// calculate the Cell id
 
-		size_t cell_id = this->getCell(pos);
+		size_t cell_id = this->getCellPad(pos);
 
 		// add the element to the cell
 
