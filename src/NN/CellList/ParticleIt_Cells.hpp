@@ -34,6 +34,9 @@ private:
 	//! Celllist type
 	CellListType & cli;
 
+	//! Ghost marker
+	size_t g_m;
+
 	/*! \brief Adjust the counters to reach a valid particle element
 	 *
 	 *
@@ -64,14 +67,13 @@ public:
 	 *
 	 * \param cli Cell-list
 	 * \param dom_cell domain cell
-	 * \param anom_dom_cell anomalous domain cell
-	 * \param NNc_sym symmetric neighborhood
-	 *
+	 * \param g_m ghost marker
 	 *
 	 */
 	ParticleIt_Cells(CellListType & cli,
-					 const openfpm::vector<size_t> & dom_cell)
-	:cid(0),dom_cell(dom_cell),cli(cli)
+					 const openfpm::vector<size_t> & dom_cell,
+					 size_t g_m)
+	:cid(0),dom_cell(dom_cell),cli(cli),g_m(g_m)
 	{
 		size_t s_cell;
 		if (dom_cell.size() != 0)
@@ -102,8 +104,13 @@ public:
 	ParticleIt_Cells & operator++()
 	{
 		++start;
-
 		selectValid();
+
+		while (*start >= g_m)
+		{
+			++start;
+			selectValid();
+		}
 
 		return *this;
 	}

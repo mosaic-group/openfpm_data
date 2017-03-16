@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 	}
 
 	//Test the iterator
-	ParticleIt_Cells<dim,CellList<dim,float,FAST,shift<dim,float>>> it_cl(NN,dom);
+	ParticleIt_Cells<dim,CellList<dim,float,FAST,shift<dim,float>>> it_cl(NN,dom,290);
 
 	size_t count = 0;
 
@@ -401,7 +401,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 		++it_cl;
 	}
 
-	BOOST_REQUIRE_EQUAL(count,k);
+	BOOST_REQUIRE_EQUAL(count,290ul);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
