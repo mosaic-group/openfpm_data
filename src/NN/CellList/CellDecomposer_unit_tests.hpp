@@ -172,10 +172,8 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 	{
 	CellDecomposer_sm<3,double> cd(box,div,1);
 	size_t cell_cor_dom = cd.getCellDom(Point<3,double>({-0.000001,-0.000001,-0.000001}));
-	size_t cell_cor_pad = cd.getCellPad(Point<3,double>({0.000001,0.000001,0.000001}));
 	size_t cell_not_cor_pad1 = cd.getCell(Point<3,double>({-0.000001,-0.000001,-0.000001}));
 	size_t cell_not_cor_pad2 = cd.getCell(Point<3,double>({0.000001,0.000001,0.000001}));
-	BOOST_REQUIRE_EQUAL(cell_cor_pad,0ul);
 	BOOST_REQUIRE_EQUAL(cell_cor_dom,(size_t)(1*18*18 + 1*18 + 1));
 	BOOST_REQUIRE_EQUAL(cell_not_cor_pad1,0ul);
 	BOOST_REQUIRE_EQUAL(cell_not_cor_pad2,(size_t)(1*18*18 + 1*18 + 1));

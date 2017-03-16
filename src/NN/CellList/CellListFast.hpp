@@ -805,44 +805,6 @@ public:
 		addCell(cell_id,ele);
 	}
 
-	/*! \brief Add an element in the cell list forcing to be in the padding cells
-	 *
-	 * \warning careful is intended to be used ONLY to avoid round-off problems
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	inline void addPad(const T (& pos)[dim], typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCellPad(pos);
-
-		// add the element to the cell
-
-		addCell(cell_id,ele);
-	}
-
-	/*! \brief Add an element in the cell list forcing to be in the padding cells
-	 *
-	 * \warning careful is intended to be used ONLY to avoid round-off problems
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	inline void addPad(const Point<dim,T> & pos, typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCellPad(pos);
-
-		// add the element to the cell
-
-		addCell(cell_id,ele);
-	}
-
 	/*! \brief remove an element from the cell
 	 *
 	 * \param cell cell id

@@ -54,7 +54,7 @@ template<unsigned int dim, typename T, typename CellList> void populate_cell_lis
 
 	for (size_t i = g_m; i < pos.size() ; i++)
 	{
-		cli.addPad(pos.get(i), i);
+		cli.add(pos.get(i), i);
 	}
 }
 

@@ -357,6 +357,7 @@ class CellDecomposer_sm
 		return id;
 	}
 
+
 	/*! \brief Convert the coordinates into id
 	 *
 	 * \param x point
@@ -416,49 +417,31 @@ class CellDecomposer_sm
 		return cell_id;
 	}
 
-	template<typename Ele> inline size_t getCellPad_impl(const Ele & pos) const
-	{
-		check_and_print_error(pos,0);
-
-		size_t cell_id = ConvertToID(pos,0);
-		cell_id = (cell_id == off[0])?off[0]-1:cell_id;
-		cell_id = (cell_id == gr_cell2.size(0) - off[0] - 1)?gr_cell2.size(0) - off[0]:cell_id;
-
-		for (size_t s = 1 ; s < dim ; s++)
-		{
-			check_and_print_error(pos,s);
-
-			size_t cell_idt = ConvertToID(pos,s);
-			cell_idt = (cell_idt == off[s])?off[s]-1:cell_idt;
-			cell_idt = (cell_idt == gr_cell2.size(s) - off[s] - 1)?gr_cell2.size(s) - off[s]:cell_idt;
-
-			cell_id += gr_cell2.size_s(s-1) * cell_idt;
-		}
-
-		return cell_id;
-	}
 
 protected:
 
-	// Total number of cell
+	//! Total number of cell
 	size_t tot_n_cell;
 
-	// Domain of the cell list
+	//! Domain of the cell list
 	SpaceBox<dim,T> box;
 
-	// Unit box of the Cell list
+	//! Unit box of the Cell list
 	SpaceBox<dim,T> box_unit;
 
-	// Grid structure of the Cell list
+	//! Grid structure of the Cell list
 	grid_sm<dim,void> gr_cell;
 
-	// Grid structure of the internal Cell list
+	//! Grid structure of the internal Cell list
 	grid_sm<dim,void> gr_cell2;
 
-	// cell padding on each dimension
+	//! Box in continuum for the gr_cell2
+	Box<dim,T> box_gr_cell2;
+
+	//! cell padding on each dimension
 	size_t off[dim];
 
-	// cell_shift
+	//! cell_shift
 	Point<dim,long int> cell_shift;
 
 
@@ -717,38 +700,6 @@ public:
 		return getCellDom_impl<T[dim]>(pos);
 	}
 
-	/*! \brief Get the cell-id enforcing that is from a padding cell
-	 *
-	 * Convert the point coordinates into the cell id
-	 *
-	 * \note this function is in general used to bypass round-off error
-	 *
-	 * \param pos Point position
-	 *
-	 * \return the cell-id
-	 *
-	 */
-	inline size_t getCellPad(const Point<dim,T> & pos) const
-	{
-		return getCellPad_impl<Point<dim,T>>(pos);
-	}
-
-	/*! \brief Get the cell-id enforcing that is from a padding cell
-	 *
-	 * Convert the point coordinates into the cell id
-	 *
-	 * \note this function is in general used to bypass round-off error
-	 *
-	 * \param pos Point position
-	 *
-	 * \return the cell-id
-	 *
-	 */
-	inline size_t getCellPad(const T (& pos)[dim]) const
-	{
-		return getCellPad_impl<T[dim]>(pos);
-	}
-
 	/*! \brief Get the cell-id
 	 *
 	 * Convert the point coordinates into the cell id
@@ -942,6 +893,15 @@ public:
 		this->box = box;
 
 		Initialize(pad,div);
+
+		// calculate the box for gr_cell2
+		Box<dim,T> box_gr_cell2;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			box_gr_cell2.setLow(i,cell_shift.get(i) * box_unit.getHigh(i));
+			box_gr_cell2.setHigh(i,(cell_shift.get(i) + div2[i]) * box_unit.getHigh(i));
+		}
 
 		size_t cells[dim];
 
