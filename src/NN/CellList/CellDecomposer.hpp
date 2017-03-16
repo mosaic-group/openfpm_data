@@ -422,7 +422,7 @@ class CellDecomposer_sm
 
 		size_t cell_id = ConvertToID(pos,0);
 		cell_id = (cell_id == off[0])?off[0]-1:cell_id;
-		cell_id = (cell_id == gr_cell.size(0) - off[0] - 1)?gr_cell.size(0) - off[0]:cell_id;
+		cell_id = (cell_id == gr_cell2.size(0) - off[0] - 1)?gr_cell2.size(0) - off[0]:cell_id;
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
@@ -430,7 +430,7 @@ class CellDecomposer_sm
 
 			size_t cell_idt = ConvertToID(pos,s);
 			cell_idt = (cell_idt == off[s])?off[s]-1:cell_idt;
-			cell_idt = (cell_idt == gr_cell.size(s) - off[s] - 1)?gr_cell.size(s) - off[s]:cell_idt;
+			cell_idt = (cell_idt == gr_cell2.size(s) - off[s] - 1)?gr_cell2.size(s) - off[s]:cell_idt;
 
 			cell_id += gr_cell2.size_s(s-1) * cell_idt;
 		}
