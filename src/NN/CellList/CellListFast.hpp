@@ -54,7 +54,6 @@ template<unsigned int dim> void NNcalc_csr(openfpm::vector<std::pair<grid_key_dx
 
 	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
 	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 	// Generate the sub-grid iterator
 
@@ -121,7 +120,6 @@ template<unsigned int dim> void NNcalc_sym(openfpm::vector<grid_key_dx<dim>> & c
 
 	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
 	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 	// Generate the sub-grid iterator
 
@@ -173,7 +171,6 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
 
 	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
 	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 	// Generate the sub-grid iterator
 
@@ -463,12 +460,7 @@ public:
 
 	void setCellDecomposer(CellDecomposer_sm<dim,T,transform> & cd, const CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box, size_t pad) const
 	{
-		size_t bc[dim];
-
-		for (size_t i = 0 ; i < dim ; i++)
-			bc[i] = NON_PERIODIC;
-
-		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
+		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnitsNear(dom_box);
 
 		size_t div[dim];
 		size_t div_big[dim];
@@ -498,10 +490,7 @@ public:
 	 */
 	void Initialize(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box,const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
-		size_t bc[dim];
-		for (size_t i = 0 ; i < dim ; i++)	{bc[i] = NON_PERIODIC;}
-
-		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
+		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnitsNear(dom_box);
 
 		setCellDecomposer(*this,cd_sm,dom_box,pad);
 
@@ -799,6 +788,44 @@ public:
 		// calculate the Cell id
 
 		size_t cell_id = this->getCellDom(pos);
+
+		// add the element to the cell
+
+		addCell(cell_id,ele);
+	}
+
+	/*! \brief Add an element in the cell list forcing to be in the padding cells
+	 *
+	 * \warning careful is intended to be used ONLY to avoid round-off problems
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void addPad(const T (& pos)[dim], typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = this->getCell(pos);
+
+		// add the element to the cell
+
+		addCell(cell_id,ele);
+	}
+
+	/*! \brief Add an element in the cell list forcing to be in the padding cells
+	 *
+	 * \warning careful is intended to be used ONLY to avoid round-off problems
+	 *
+	 * \param pos array that contain the coordinate
+	 * \param ele element to store
+	 *
+	 */
+	inline void addPad(const Point<dim,T> & pos, typename base::value_type ele)
+	{
+		// calculate the Cell id
+
+		size_t cell_id = this->getCell(pos);
 
 		// add the element to the cell
 

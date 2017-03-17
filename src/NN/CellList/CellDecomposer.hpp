@@ -357,6 +357,31 @@ class CellDecomposer_sm
 		return id;
 	}
 
+	/*! \brief Convert the coordinates into id without apply shift
+	 *
+	 * \param x coordinate
+	 * \param s dimension
+	 *
+	 */
+	inline size_t ConvertToID_ns(const T (&x)[dim] ,size_t s) const
+	{
+		size_t id = openfpm::math::size_t_floor(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
+		id = (id >= gr_cell.size(s))?(gr_cell.size(s)-1):id;
+		return id;
+	}
+
+	/*! \brief Convert the coordinates into id without apply shift
+	 *
+	 * \param x point
+	 * \param s dimension
+	 *
+	 */
+	inline size_t ConvertToID_ns(const Point<dim,T> & x ,size_t s, size_t sc = 0) const
+	{
+		size_t id = openfpm::math::size_t_floor(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
+		id = (id >= gr_cell.size(s))?(gr_cell.size(s)-1):id;
+		return id;
+	}
 
 	/*! \brief Convert the coordinates into id
 	 *
@@ -399,17 +424,49 @@ class CellDecomposer_sm
 	{
 		check_and_print_error(pos,0);
 
-		size_t cell_id = ConvertToID(pos,0);
-		cell_id = (cell_id == gr_cell2.size(0) - off[0])?gr_cell2.size(0) - off[0] - 1:cell_id;
+		size_t cell_id = ConvertToID_ns(pos,0);
+
+		cell_id = (cell_id == gr_cell.size(0) - off[0])?gr_cell.size(0) - off[0] - 1:cell_id;
 		cell_id = (cell_id == off[0]-1)?off[0]:cell_id;
+
+		cell_id -= cell_shift.get(0);
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 			check_and_print_error(pos,s);
 
-			size_t cell_idt = ConvertToID(pos,s);
-			cell_idt = (cell_idt == gr_cell2.size(s) - off[s])?gr_cell2.size(s) - off[s] - 1:cell_idt;
+			size_t cell_idt = ConvertToID_ns(pos,s);
+
+			cell_idt = (cell_idt == gr_cell.size(s) - off[s])?gr_cell.size(s) - off[s] - 1:cell_idt;
 			cell_idt = (cell_idt == off[s]-1)?off[s]:cell_idt;
+
+			cell_idt -= cell_shift.get(s);
+
+			cell_id += gr_cell2.size_s(s-1) * cell_idt;
+		}
+
+		return cell_id;
+	}
+
+	template<typename Ele> inline size_t getCellPad_impl(const Ele & pos) const
+	{
+		check_and_print_error(pos,0);
+
+		size_t cell_id = ConvertToID_ns(pos,0);
+		cell_id = (cell_id == off[0])?off[0]-1:cell_id;
+		cell_id = (cell_id == gr_cell.size(0) - off[0] - 1)?gr_cell.size(0) - off[0]:cell_id;
+
+		cell_id -= cell_shift.get(0);
+
+		for (size_t s = 1 ; s < dim ; s++)
+		{
+			check_and_print_error(pos,s);
+
+			size_t cell_idt = ConvertToID_ns(pos,s);
+			cell_idt = (cell_idt == off[s])?off[s]-1:cell_idt;
+			cell_idt = (cell_idt == gr_cell.size(s) - off[s] - 1)?gr_cell.size(s) - off[s]:cell_idt;
+
+			cell_idt -= cell_shift.get(s);
 
 			cell_id += gr_cell2.size_s(s-1) * cell_idt;
 		}
@@ -700,6 +757,38 @@ public:
 		return getCellDom_impl<T[dim]>(pos);
 	}
 
+	/*! \brief Get the cell-id enforcing that is from a padding cell
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \note this function is in general used to bypass round-off error
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	inline size_t getCellPad(const Point<dim,T> & pos) const
+	{
+		return getCellPad_impl<Point<dim,T>>(pos);
+	}
+
+	/*! \brief Get the cell-id enforcing that is from a padding cell
+	 *
+	 * Convert the point coordinates into the cell id
+	 *
+	 * \note this function is in general used to bypass round-off error
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-id
+	 *
+	 */
+	inline size_t getCellPad(const T (& pos)[dim]) const
+	{
+		return getCellPad_impl<T[dim]>(pos);
+	}
+
 	/*! \brief Get the cell-id
 	 *
 	 * Convert the point coordinates into the cell id
@@ -895,13 +984,13 @@ public:
 		Initialize(pad,div);
 
 		// calculate the box for gr_cell2
-		Box<dim,T> box_gr_cell2;
+/*		Box<dim,T> box_gr_cell2;
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			box_gr_cell2.setLow(i,cell_shift.get(i) * box_unit.getHigh(i));
 			box_gr_cell2.setHigh(i,(cell_shift.get(i) + div2[i]) * box_unit.getHigh(i));
-		}
+		}*/
 
 		size_t cells[dim];
 
@@ -1179,7 +1268,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 
     \verbatim
 
-    It return a Box with P1 = (0,2), P2 = (4,5)
+    It return a Box with P1 = (0,2), P2 = (3,4)
 
 	 *
 	 * \param b Box in domain space
@@ -1388,6 +1477,43 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 			if (b_d.getLow(i) == box.getLow(i))
 				g_box.setLow(i,off[i]);
 		}
+
+		return g_box;
+	}
+
+	inline Box<dim,long int> convertDomainSpaceIntoCellUnitsNear(const Box<dim,T> & b_d) const
+	{
+		Box<dim,long int> g_box;
+		Box<dim,T> b = b_d;
+		b -= getOrig();
+
+		// Convert b into grid units
+		b /= getCellBox().getP2();
+
+		// Considering that we are interested in a box decomposition of the space
+		// where each box does not intersect any other boxes in the decomposition we include the negative
+		// countour and exclude the positive one. So ceilP1 do the job for P1 while ceilP2 - 1
+		// do the job for P2
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+				b.setLow(i,b.getLow(i) + 0.125);
+				b.setHigh(i,b.getHigh(i) + 0.125);
+		}
+
+		b.floorP1();
+		b.floorP2();
+
+		g_box = b;
+
+		// Translate the box by the offset
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+				g_box.setLow(i,g_box.getLow(i) + off[i]);
+				g_box.setHigh(i,g_box.getHigh(i) + off[i]);
+		}
+
 
 		return g_box;
 	}
