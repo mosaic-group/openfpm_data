@@ -291,7 +291,7 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
 						for (size_t i1 = 0 ; i1 < N1 ; i1++)
 						{
 							tmp = vg.get(k).g.get_o(it.get()).template get<I::value>()[i1];
-							swap_endian_lt(tmp);
+							tmp = swap_endian_lt(tmp);
 							v_out.append((const char *)&tmp,sizeof(T));
 						}
 						if (N1 == 2)

@@ -40,10 +40,6 @@ template <typename T> std::string getType()
 		return "int";
 	else if (typeid(T) == typeid(unsigned int))
 		return "unsigned_int";
-	else if (typeid(T) == typeid(long int))
-		return "long";
-	else if (typeid(T) == typeid(unsigned long int))
-		return "unsigned_long";
 	else if (typeid(T) == typeid(bool))
 		return "bit";
 

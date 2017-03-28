@@ -185,7 +185,7 @@ struct is_vtk_writable<long int>
 	//! long int is vtk writable
 	enum
 	{
-		value = true
+		value = false
 	};
 };
 
@@ -196,7 +196,7 @@ struct is_vtk_writable<unsigned long int>
 	//! unsigned long int is vtk writable
 	enum
 	{
-		value = true
+		value = false
 	};
 };
 
