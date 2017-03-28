@@ -467,6 +467,21 @@ template<unsigned int dim ,typename T> class Point
 
 	/*! \brief Fill the vector property with the evaluated expression
 	 *
+	 * \param p_exp expression to evaluate
+	 *
+	 * \return itself
+	 *
+	 */
+	Point<dim,T> & operator=(const T (& p)[dim])
+	{
+		for (size_t i = 0; i < dim ; i++)
+			get(i) = p[i];
+
+		return *this;
+	}
+
+	/*! \brief Fill the vector property with the evaluated expression
+	 *
 	 * \tparam check disable this method if T is a constant
 	 *
 	 * \param p_exp expression to evaluate

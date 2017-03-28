@@ -838,7 +838,7 @@ public:
 	 * \return the internal Cell-list
 	 *
 	 */
-	const CellListImpl & getInternalCellList()
+	CellListImpl & getInternalCellList()
 	{
 		return cli;
 	}
