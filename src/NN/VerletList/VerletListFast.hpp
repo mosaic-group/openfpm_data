@@ -19,6 +19,12 @@
 
 #define WITH_RADIUS 3
 
+#ifdef LOCAL_INDEX64
+typedef size_t local_index;
+#else
+typedef unsigned int local_index;
+#endif
+
 /*! \brief Get the neighborhood iterator based on type
  *
  * \tparam dim dimensionality
@@ -45,6 +51,16 @@ struct NNType
 	static inline auto get(const PartIt & it, const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
 	{
 		return cl.template getNNIterator<NO_CHECK>(cl.getCell(xp));
+	}
+
+	/*! \brief Add particle in the list of the domain particles
+	 *
+	 * \param p particle id
+	 * \param pc domain particle sequence
+	 *
+	 */
+	static inline void add(local_index p, openfpm::vector<local_index> & pc)
+	{
 	}
 };
 
@@ -77,6 +93,16 @@ struct NNType<dim,T,CellListImpl,PartIt,WITH_RADIUS>
 	{
 		return cl.template getNNIteratorRadius<NO_CHECK>(cl.getCell(xp),r_cut);
 	}
+
+	/*! \brief Add particle in the list of the domain particles
+	 *
+	 * \param p particle id
+	 * \param pc domain particle sequence
+	 *
+	 */
+	static inline void add(local_index p, openfpm::vector<local_index> & pc)
+	{
+	}
 };
 
 
@@ -107,6 +133,16 @@ struct NNType<dim,T,CellListImpl,PartIt,VL_SYMMETRIC>
 	static inline auto get(const PartIt & it, const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,openfpm::vector<Point<dim,T>>()))
 	{
 		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),p,v);
+	}
+
+	/*! \brief Add particle in the list of the domain particles
+	 *
+	 * \param p particle id
+	 * \param pc domain particle sequence
+	 *
+	 */
+	static inline void add(local_index p, openfpm::vector<local_index> & pc)
+	{
 	}
 };
 
@@ -139,6 +175,17 @@ struct NNType<dim,T,CellListImpl,PartIt,VL_CRS_SYMMETRIC>
 	static inline auto get(const PartIt & it,const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(it.getNNIteratorCSR(v))
 	{
 		return it.getNNIteratorCSR(v);
+	}
+
+	/*! \brief Add particle in the list of the domain particles
+	 *
+	 * \param p particle id
+	 * \param pc domain particle sequence
+	 *
+	 */
+	static inline void add(local_index p, openfpm::vector<local_index> & pc)
+	{
+		pc.add(p);
 	}
 };
 
@@ -198,14 +245,17 @@ class VerletList<dim,T,FAST,transform,CellListImpl>
 protected:
 
 	//! Number of slot for each particle. Or maximum number of particles for each particle
-	size_t slot;
+	local_index slot;
 
 	//! number of neighborhood particles for each particle
-	openfpm::vector<size_t> cl_n;
+	openfpm::vector<local_index> cl_n;
 
 	//! Neighborhood indexes for each particle store (each particle can store a number
 	//! of elements == slot)
-	openfpm::vector<size_t> cl_base;
+	openfpm::vector<local_index> cl_base;
+
+	//! Domain particles
+	openfpm::vector<local_index> dp;
 
 private:
 
@@ -220,7 +270,7 @@ private:
 	{
 		// we do not have enough slots reallocate the basic structure with more
 		// slots
-		openfpm::vector<size_t> cl_base_(2*slot * cl_n.size());
+		openfpm::vector<local_index> cl_base_(2*slot * cl_n.size());
 
 		// copy cl_base
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
@@ -304,17 +354,20 @@ private:
 		cl_base.resize(end*slot);
 		cl_n.fill(0);
 
+		dp.clear();
+
 		// square of the cutting radius
 		T r_cut2 = r_cut * r_cut;
 
 		// iterate the particles
 		while (it.isNext())
 		{
-			size_t i = it.get();
+			local_index i = it.get();
 			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
 			NN_type NN = NNType<dim,T,CellListImpl,decltype(it),type>::get(it,pos,xp,i,cli,r_cut);
+			NNType<dim,T,CellListImpl,decltype(it),type>::add(i,dp);
 
 			while (NN.isNext())
 			{
@@ -376,6 +429,9 @@ private:
 	}
 
 public:
+
+	//! type for the local index
+	typedef local_index local_index_t;
 
 	//! Object type that the structure store
 	typedef size_t value_type;
@@ -702,6 +758,7 @@ public:
 		cl_base.swap(vl.cl_base);
 
 		cli.swap(vl.cli);
+		dp.swap(vl.dp);
 
 		return *this;
 	}
@@ -721,6 +778,8 @@ public:
 		cl_base = vl.cl_base;
 
 		cli = vl.cli;
+
+		dp = vl.dp;
 
 		return *this;
 	}
@@ -759,6 +818,7 @@ public:
 	{
 		cl_n.swap(vl.cl_n);
 		cl_base.swap(vl.cl_base);
+		dp.swap(vl.dp);
 
 		size_t vl_slot_tmp = vl.slot;
 		vl.slot = slot;
@@ -863,6 +923,16 @@ public:
 	size_t get_ndec()
 	{
 		return n_dec;
+	}
+
+	/*! \brief Return the domain particle sequence
+	 *
+	 * \return the particle sequence
+	 *
+	 */
+	openfpm::vector<local_index> & getParticleSeq()
+	{
+		return dp;
 	}
 };
 

@@ -1067,39 +1067,6 @@ public:
 		return cln;
 	}
 
-	/*! \brief Get the Neighborhood iterator for symmetric interactions
-	 *
-	 * This iterator work independently that the vector has been create with
-	 * the option BIND_DEC_TO_GHOST, the only requirement is that the ghost
-	 * is full. Does not require ghost_put
-	 *
-	 * \param cell cell id
-	 * \param v vector of neighborhood cells
-	 *
-	 * \return An aiterator across the neighborhood particles
-	 *
-	 */
-/*	template<unsigned int impl, typename vector>
-	inline CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,RUNTIME,impl>
-	getNNIteratorSym(Point<dim,T> & p,
-			         const vector & v)
-	{
-		auto & dec = v.getDecomposition();
-
-		grid_key_dx<dim> cellg = this->getGridCell(p);
-
-		size_t map_cell = dec.get_mapped_cell(cellg);
-
-		CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,RUNTIME,impl> cln(cell,
-				                                                                    p,
-																					&dec.getDomainCellNNSym().get(map_cell).NN_subsub.get(0),
-																					dec.getDomainCellNNSym().NN_subsub.size(),
-																					*this,
-																					v.getPosVector());
-
-		return cln;
-	}*/
-
 	/*! \brief Get the symmetric neighborhood
 	 *
 	 * \return the symmetric neighborhood
