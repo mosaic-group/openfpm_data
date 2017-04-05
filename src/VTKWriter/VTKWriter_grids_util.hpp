@@ -142,16 +142,19 @@ public:
 		}
 		else
 		{
+			typedef decltype(vg.get(k).g.get_o(it.get()).template get<I::value>().get_vtk(0)) ctype_;
+			typedef typename std::remove_reference<ctype_>::type ctype;
+
 			// Print the properties
 			for (size_t i1 = 0 ; i1 < vtk_dims<T>::value ; i1++)
 			{
-				auto tmp = vg.get(k).g.get_o(it.get()).template get<I::value>().get_vtk(i1);
+				typename is_vtk_writable<ctype>::base tmp = vg.get(k).g.get_o(it.get()).template get<I::value>().get_vtk(i1);
 				tmp = swap_endian_lt(tmp);
 				v_out.append((const char *)&tmp,sizeof(tmp));
 			}
 			if (vtk_dims<T>::value == 2)
 			{
-				decltype(vg.get(k).g.get_o(it.get()).template get<I::value>().get_vtk(0)) zero = 0.0;
+				typename is_vtk_writable<ctype>::base zero = 0.0;
 				zero = swap_endian_lt(zero);
 				v_out.append((const char *)&zero,sizeof(zero));
 			}
@@ -170,6 +173,9 @@ public:
 
 	template<typename vector, typename iterator, typename I> static void write(std::string & v_out, vector & vg, size_t k, iterator & it, file_type ft)
 	{
+		typedef decltype(vg.get(k).g.get_o(it.get()).template get<I::value>()) ctype_;
+		typedef typename std::remove_reference<ctype_>::type ctype;
+
 		if (ft == file_type::ASCII)
 		{
 			// Print the property
@@ -177,7 +183,7 @@ public:
 		}
 		else
 		{
-			auto tmp = vg.get(k).g.get_o(it.get()).template get<I::value>();
+			typename is_vtk_writable<ctype>::base tmp = vg.get(k).g.get_o(it.get()).template get<I::value>();
 			tmp = swap_endian_lt(tmp);
 			v_out.append((const char *)&tmp,sizeof(tmp));
 		}

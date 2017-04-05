@@ -83,6 +83,8 @@ struct is_vtk_vector_dims<ObjType, typename Void< decltype(ObjType::dims) >::typ
 template<typename T>
 struct is_vtk_writable
 {
+	typedef T base;
+
 	//! It check if the object is vtk compatible
 	enum
 	{
@@ -94,6 +96,8 @@ struct is_vtk_writable
 template<>
 struct is_vtk_writable<float>
 {
+	typedef float base;
+
 	//! float is vtk writable
 	enum
 	{
@@ -105,6 +109,8 @@ struct is_vtk_writable<float>
 template<>
 struct is_vtk_writable<double>
 {
+	typedef double base;
+
 	//! double is vtk writable
 	enum
 	{
@@ -116,6 +122,8 @@ struct is_vtk_writable<double>
 template<>
 struct is_vtk_writable<char>
 {
+	typedef char base;
+
 	//! char is vtk writable
 	enum
 	{
@@ -127,6 +135,8 @@ struct is_vtk_writable<char>
 template<>
 struct is_vtk_writable<unsigned char>
 {
+	typedef unsigned char base;
+
 	//! unsigned char is vtk writable
 	enum
 	{
@@ -138,6 +148,8 @@ struct is_vtk_writable<unsigned char>
 template<>
 struct is_vtk_writable<short>
 {
+	typedef short base;
+
 	//! short is vtk writable
 	enum
 	{
@@ -149,6 +161,8 @@ struct is_vtk_writable<short>
 template<>
 struct is_vtk_writable<unsigned short>
 {
+	typedef unsigned short base;
+
 	//! unsigned short is vtk writable
 	enum
 	{
@@ -160,6 +174,8 @@ struct is_vtk_writable<unsigned short>
 template<>
 struct is_vtk_writable<int>
 {
+	typedef int base;
+
 	//! int is vtk writable
 	enum
 	{
@@ -171,6 +187,8 @@ struct is_vtk_writable<int>
 template<>
 struct is_vtk_writable<unsigned int>
 {
+	typedef unsigned int base;
+
 	//! unsigned int is vtk writable
 	enum
 	{
@@ -182,10 +200,12 @@ struct is_vtk_writable<unsigned int>
 template<>
 struct is_vtk_writable<long int>
 {
+	typedef long base;
+
 	//! long int is vtk writable
 	enum
 	{
-		value = false
+		value = true
 	};
 };
 
@@ -193,10 +213,12 @@ struct is_vtk_writable<long int>
 template<>
 struct is_vtk_writable<unsigned long int>
 {
+	typedef unsigned long base;
+
 	//! unsigned long int is vtk writable
 	enum
 	{
-		value = false
+		value = true
 	};
 };
 
@@ -204,6 +226,8 @@ struct is_vtk_writable<unsigned long int>
 template<>
 struct is_vtk_writable<bool>
 {
+	typedef bool base;
+
 	//! bool is vtk writable
 	enum
 	{

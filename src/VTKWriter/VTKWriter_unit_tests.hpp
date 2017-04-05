@@ -972,11 +972,14 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		vtk_v.add(v3ps,v3pp,90);
 
 		vtk_v.write("vtk_points_bin.vtk","vtk output",file_type::BINARY);
+		vtk_v.write("vtk_points_bin2.vtk","vtk output",file_type::BINARY);
+
 
 		// Check that match
 		bool test = compare("vtk_points_bin.vtk","vtk_points_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
-
+		test = compare("vtk_points_bin2.vtk","vtk_points_bin_test.vtk");
+		BOOST_REQUIRE_EQUAL(test,true);
 
 		// Create a writer and write
 		VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,Point<3,float>>>>,VECTOR_POINTS> vtk_v2;
