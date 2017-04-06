@@ -11,6 +11,11 @@
 #include "Vector/map_vector.hpp"
 #include "NN/CellList/CellList.hpp"
 
+#ifdef LOCAL_INDEX64
+typedef size_t local_index_;
+#else
+typedef unsigned int local_index_;
+#endif
 
 /*! \brief Cell list structure
  *
@@ -19,7 +24,12 @@
  * \see CellList<dim,T,FAST,transform,base>
  *
  */
-template<unsigned int dim, typename T,  unsigned int impl=FAST, typename transform = no_transform<dim,T>, typename CellListImpl = CellList<dim,T,FAST,transform> >
+template<unsigned int dim,
+         typename T,
+		 unsigned int impl=FAST,
+		 typename transform = no_transform<dim,T>,
+		 typename local_index=local_index_,
+		 typename CellListImpl = CellList<dim,T,FAST,transform> >
 class VerletList
 {
 };

@@ -512,7 +512,10 @@ protected:
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (div[i] == 0)
+			{
 				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of cells on each dimension must be different from zero\n";
+				ACTION_ON_ERROR(CELL_DECOMPOSER)
+			}
 		}
 
 #endif

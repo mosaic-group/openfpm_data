@@ -19,12 +19,6 @@
 
 #define WITH_RADIUS 3
 
-#ifdef LOCAL_INDEX64
-typedef size_t local_index;
-#else
-typedef unsigned int local_index;
-#endif
-
 /*! \brief Get the neighborhood iterator based on type
  *
  * \tparam dim dimensionality
@@ -34,7 +28,7 @@ typedef unsigned int local_index;
  * \tparam PartIt Particle iterator
  *
  */
-template<unsigned int dim, typename T, typename CellListImpl, typename PartIt, int type>
+template<unsigned int dim, typename T, typename CellListImpl, typename PartIt, int type, typename local_index>
 struct NNType
 {
 	/*! \brief Get the neighborhood
@@ -48,7 +42,12 @@ struct NNType
 	 * \return the NN iterator
 	 *
 	 */
-	static inline auto get(const PartIt & it, const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
+	static inline auto get(const PartIt & it,
+			               const openfpm::vector<Point<dim,T>> & v,
+						   Point<dim,T> & xp,
+						   size_t p,
+						   CellListImpl & cl,
+						   T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
 	{
 		return cl.template getNNIterator<NO_CHECK>(cl.getCell(xp));
 	}
@@ -75,8 +74,8 @@ struct NNType
  * \tparam PartIt Particle iterator
  *
  */
-template<unsigned int dim, typename T, typename CellListImpl, typename PartIt>
-struct NNType<dim,T,CellListImpl,PartIt,WITH_RADIUS>
+template<unsigned int dim, typename T, typename CellListImpl, typename PartIt, typename local_index>
+struct NNType<dim,T,CellListImpl,PartIt,WITH_RADIUS,local_index>
 {
 	/*! \brief Get the neighborhood
 	 *
@@ -89,7 +88,12 @@ struct NNType<dim,T,CellListImpl,PartIt,WITH_RADIUS>
 	 * \return the NN iterator
 	 *
 	 */
-	static inline auto get(const PartIt & it, const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
+	static inline auto get(const PartIt & it,
+			               const openfpm::vector<Point<dim,T>> & v,
+						   Point<dim,T> & xp,
+						   size_t p,
+						   CellListImpl & cl,
+						   T r_cut) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
 	{
 		return cl.template getNNIteratorRadius<NO_CHECK>(cl.getCell(xp),r_cut);
 	}
@@ -116,8 +120,8 @@ struct NNType<dim,T,CellListImpl,PartIt,WITH_RADIUS>
  * \tparam PartIt particle iterator
  *
  */
-template<unsigned int dim, typename T, typename CellListImpl, typename PartIt>
-struct NNType<dim,T,CellListImpl,PartIt,VL_SYMMETRIC>
+template<unsigned int dim, typename T, typename CellListImpl, typename PartIt, typename local_index>
+struct NNType<dim,T,CellListImpl,PartIt,VL_SYMMETRIC,local_index>
 {
 	/*! \brief Get the neighborhood
 	 *
@@ -157,8 +161,8 @@ struct NNType<dim,T,CellListImpl,PartIt,VL_SYMMETRIC>
  * \tparam PartIt Particle iterator
  *
  */
-template<unsigned int dim, typename T, typename CellListImpl, typename PartIt>
-struct NNType<dim,T,CellListImpl,PartIt,VL_CRS_SYMMETRIC>
+template<unsigned int dim, typename T, typename CellListImpl, typename PartIt, typename local_index>
+struct NNType<dim,T,CellListImpl,PartIt,VL_CRS_SYMMETRIC,local_index>
 {
 	/*! \brief Get the neighborhood
 	 *
@@ -239,8 +243,8 @@ public:
  * \snippet VerletList_test.hpp usage of verlet
  *
  */
-template<unsigned int dim, typename T, typename transform, typename CellListImpl>
-class VerletList<dim,T,FAST,transform,CellListImpl>
+template<unsigned int dim, typename T, typename transform, typename local_index, typename CellListImpl>
+class VerletList<dim,T,FAST,transform,local_index,CellListImpl>
 {
 protected:
 
@@ -366,8 +370,8 @@ private:
 			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			NN_type NN = NNType<dim,T,CellListImpl,decltype(it),type>::get(it,pos,xp,i,cli,r_cut);
-			NNType<dim,T,CellListImpl,decltype(it),type>::add(i,dp);
+			NN_type NN = NNType<dim,T,CellListImpl,decltype(it),type,local_index>::get(it,pos,xp,i,cli,r_cut);
+			NNType<dim,T,CellListImpl,decltype(it),type,local_index>::add(i,dp);
 
 			while (NN.isNext())
 			{
@@ -666,14 +670,14 @@ public:
 	{};
 
 	//! Copy constructor
-	VerletList(const VerletList<dim,T,FAST,transform,CellListImpl> & cell)
+	VerletList(const VerletList<dim,T,FAST,transform,local_index,CellListImpl> & cell)
 	:slot(VERLET_STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
 
 	//! Copy constructor
-	VerletList(VerletList<dim,T,FAST,transform,CellListImpl> && cell)
+	VerletList(VerletList<dim,T,FAST,transform,local_index,CellListImpl> && cell)
 	:slot(VERLET_STARTING_NSLOT)
 	{
 		this->operator=(cell);
@@ -750,7 +754,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	VerletList<dim,T,FAST,transform,CellListImpl> & operator=(VerletList<dim,T,FAST,transform,CellListImpl> && vl)
+	VerletList<dim,T,FAST,transform,local_index,CellListImpl> & operator=(VerletList<dim,T,FAST,transform,local_index,CellListImpl> && vl)
 	{
 		slot = vl.slot;
 
@@ -770,7 +774,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	VerletList<dim,T,FAST,transform,CellListImpl> & operator=(const VerletList<dim,T,FAST,transform,CellListImpl> & vl)
+	VerletList<dim,T,FAST,transform,local_index,CellListImpl> & operator=(const VerletList<dim,T,FAST,transform,local_index,CellListImpl> & vl)
 	{
 		slot = vl.slot;
 
@@ -814,7 +818,7 @@ public:
 	 * \param vl Verlet list with witch you swap the memory
 	 *
 	 */
-	inline void swap(VerletList<dim,T,FAST,transform,CellListImpl> & vl)
+	inline void swap(VerletList<dim,T,FAST,transform,local_index,CellListImpl> & vl)
 	{
 		cl_n.swap(vl.cl_n);
 		cl_base.swap(vl.cl_base);
@@ -840,9 +844,9 @@ public:
 	 * \return an interator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline VerletNNIterator<dim,VerletList<dim,T,FAST,transform,CellListImpl>> getNNIterator(size_t part_id)
+	template<unsigned int impl=NO_CHECK> inline VerletNNIterator<dim,VerletList<dim,T,FAST,transform,local_index,CellListImpl>> getNNIterator(size_t part_id)
 	{
-		VerletNNIterator<dim,VerletList<dim,T,FAST,transform,CellListImpl>> vln(part_id,*this);
+		VerletNNIterator<dim,VerletList<dim,T,FAST,transform,local_index,CellListImpl>> vln(part_id,*this);
 
 		return vln;
 	}
