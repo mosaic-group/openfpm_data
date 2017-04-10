@@ -895,9 +895,9 @@ public:
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (pos.template get<0>()[0] < box.getLow(0) || pos.template get<0>()[0] > box.getHigh(0))
+		if (pos.template get<0>()[0] < box.getLow(0) - off[0]*box_unit.getP2()[0] || pos.template get<0>()[0] > box.getHigh(0) + off[0]*box_unit.getP2()[0])
 		{
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space " << box.toString() << std::endl;
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 #endif
@@ -907,7 +907,8 @@ public:
 		for (size_t s = 1 ; s < dim ; s++)
 		{
 #ifdef SE_CLASS1
-			if (pos.template get<0>()[s] < box.getLow(s) || pos.template get<0>()[s] > box.getHigh(s))
+
+			if (pos.template get<0>()[s] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos.template get<0>()[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
 			{
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
