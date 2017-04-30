@@ -19,6 +19,7 @@ typedef unsigned int local_index_;
 
 #define FAST 1
 
+
 /*! \brief Cell list structure
  *
  * Stub object see spacialization
@@ -31,7 +32,7 @@ template<unsigned int dim,
 		 unsigned int impl=FAST,
 		 typename transform = no_transform<dim,T>,
 		 typename local_index=local_index_,
-		 typename CellListImpl = CellList<dim,T,Mem_type_fast,transform> >
+		 typename CellListImpl = CellList<dim,T,Mem_fast,transform> >
 class VerletList
 {
 };

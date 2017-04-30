@@ -170,8 +170,6 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 
 	while (g_it_s.isNext())
 	{
-		// remove 1 particle on each cell
-
 		//! [Usage of the neighborhood iterator]
 
 		Point<dim,T> key = Point<dim,T>(g_it_s.get().toPoint());
@@ -457,7 +455,11 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 
 
 	Test_cell_s<3,double,CellList<3,double,Mem_bal<3,double>>>(box);
+<<<<<<< HEAD
 //	Test_cell_s<3,double,CellList<3,double,MEMORY>>();
+=======
+	Test_cell_s<3,double,CellList<3,double,Mem_mw<3,double>>>(box);
+>>>>>>> Cell_list_refactor
 
 	std::cout << "End cell list" << "\n";
 
@@ -467,6 +469,7 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 BOOST_AUTO_TEST_CASE( CellList_consistent )
 {
 	Test_CellDecomposer_consistent<CellList<2,float,Mem_fast<3,double>,shift<2,float>>>();
+<<<<<<< HEAD
 }
 
 BOOST_AUTO_TEST_CASE( CellList_NNc_csr_calc )
@@ -519,6 +522,8 @@ BOOST_AUTO_TEST_CASE( CellList_NNc_csr_calc )
 	BOOST_REQUIRE(cNN.get(13).first == grid_key_dx<3>(0,0,0));
 	BOOST_REQUIRE(cNN.get(13).second == grid_key_dx<3>(1,1,1));
 
+=======
+>>>>>>> Cell_list_refactor
 }
 
 BOOST_AUTO_TEST_SUITE_END()

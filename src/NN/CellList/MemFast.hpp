@@ -169,6 +169,7 @@ public:
 	{
 		this->slot = slot;
 	}
+
 };
 
 

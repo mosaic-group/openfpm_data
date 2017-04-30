@@ -129,6 +129,7 @@ public:
 
 	void set_slot(size_t slot)
 	{}
+
 };
 
 
