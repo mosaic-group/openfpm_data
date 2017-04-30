@@ -10,7 +10,7 @@
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTITERATOR_HPP_
 
 template<typename T>
-class Cell_list_iterator
+class ParticleIt_CellP
 {
 private:
 
@@ -31,29 +31,29 @@ private:
 	{
 		++p_count;
 
-		if (p_count >= NN.getNelements(NN.getKeys().get(cell_count)))
+		const auto & SFCkeys = NN.getCellSFC().getKeys();
+
+		if (p_count >= NN.getNelements(SFCkeys.get(cell_count)))
 		{
 			p_count = 0;
 			++cell_count;
 
-			while (cell_count < NN.getKeys().size() && NN.getNelements(NN.getKeys().get(cell_count)) == 0)
-			{
+			while (cell_count < SFCkeys.size() && NN.getNelements(SFCkeys.get(cell_count)) == 0)
 				++cell_count;
-			}
 		}
 	}
 
 public:
 
 	// Constructor
-	Cell_list_iterator(T & NN)
+	ParticleIt_CellP(T & NN)
 	:NN(NN)
 	{
 		reset();
 	}
 
 	// Destructor
-	~Cell_list_iterator()
+	~ParticleIt_CellP()
 	{
 	}
 
@@ -64,7 +64,7 @@ public:
 	 * \return cell list iterator
 	 *
 	 */
-	inline Cell_list_iterator operator++()
+	inline ParticleIt_CellP operator++()
 	{
 		fp();
 		while (isNext() && this->get() >= NN.get_gm())
@@ -83,7 +83,7 @@ public:
 	 */
 	inline bool isNext()
 	{
-		if (cell_count >= NN.getKeys().size())
+		if (cell_count >= NN.getCellSFC().getKeys().size())
 		{
 			return false;
 		}
@@ -100,7 +100,7 @@ public:
 	 */
 	inline size_t get()
 	{
-		auto cell_id = NN.getKeys().get(cell_count);
+		auto cell_id = NN.getCellSFC().getKeys().get(cell_count);
 		auto p = NN.get(cell_id,p_count);
 
 		return p;

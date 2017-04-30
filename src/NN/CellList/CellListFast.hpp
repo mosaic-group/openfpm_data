@@ -13,10 +13,10 @@
 #include "util/mathutil.hpp"
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
-#include "CellListIterator.hpp"
 #include "CellListNNIteratorRadius.hpp"
 #include <unordered_map>
 
+#include "ParticleIt_CellP.hpp"
 #include "ParticleIt_Cells.hpp"
 #include "ParticleItCRS_Cells.hpp"
 #include "util/common.hpp"
@@ -979,7 +979,7 @@ public:
 	 * \return the iterator to the elements inside cell
 	 *
 	 */
-	CellIterator<CellList<dim,T,FAST,transform,base>> getIterator(size_t cell)
+	CellIterator<CellList<dim,T,FAST,transform,base>> getCellIterator(size_t cell)
 	{
 		return CellIterator<CellList<dim,T,FAST,transform,base>>(cell,*this);
 	}

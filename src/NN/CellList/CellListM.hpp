@@ -49,7 +49,7 @@ struct PV_cl
  * ### Declaration of a Multi-Phase cell list and usage
  *
  */
-template<unsigned int dim, typename T, unsigned int sh_byte, typename CellBase=CellList<dim,T,FAST,shift<dim, T>> >
+template<unsigned int dim, typename T, unsigned int sh_byte, typename CellBase=CellList<dim,T,Mem_fast<dim,T>,shift<dim, T>> >
 class CellListM : public CellBase
 {
 	//! Mask to get the high bits of a number
@@ -198,7 +198,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline size_t getP(size_t cell, size_t ele) const
+	inline size_t getP(size_t cell, size_t ele)
 	{
 		return CellBase::get(cell,ele) & mask_low::sig_bits_fast;
 	}
@@ -213,7 +213,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline size_t getV(size_t cell, size_t ele) const
+	inline size_t getV(size_t cell, size_t ele)
 	{
 		return (CellBase::get(cell,ele)) >> (sizeof(size_t)*8-sh_byte);
 	}

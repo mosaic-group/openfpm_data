@@ -37,10 +37,10 @@ class CellNNIterator
 protected:
 
 	//! actual element id
-	size_t * start_id;
+	const size_t * start_id;
 
 	//! stop id to read the end of the cell
-	size_t * stop_id;
+	const size_t * stop_id;
 
 	//! Actual NNc_id;
 	size_t NNc_id;
@@ -129,7 +129,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline typename Cell::value_type & get()
+	inline const typename Cell::value_type & get()
 	{
 		return cl.get_lin(start_id);
 	}

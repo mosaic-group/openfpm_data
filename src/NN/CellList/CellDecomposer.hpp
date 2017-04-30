@@ -11,6 +11,7 @@
 #include "Space/SpaceBox.hpp"
 #include "Space/Matrix.hpp"
 #include "util/copy_compare/meta_compare.hpp"
+#include "Grid/grid_sm.hpp"
 
 #define CELL_DECOMPOSER 8001lu
 
