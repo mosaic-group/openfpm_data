@@ -114,7 +114,7 @@ public:
 
 	inline const size_t & getStopId(size_t part_id) const
 	{
-		return cl_base.get(part_id).last();
+		return *(&cl_base.get(part_id).last() + 1);
 	}
 
 	inline const size_t & get_lin(const size_t * part_id) const

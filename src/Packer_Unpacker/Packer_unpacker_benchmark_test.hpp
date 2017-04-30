@@ -125,12 +125,10 @@ BOOST_AUTO_TEST_CASE( bm_test )
 			23441,53703,31551,61990,59981,19355,32417,16169,64680,1600
 		};
 
-	size_t num1 = 50;
-	size_t num2 = 1000000;
+	size_t num1 = 5;
+	size_t num2 = 10;
 	openfpm::vector<double> time;
 
-	std::cout << "Number of serialize/deserialize operations: " << num2 << std::endl;
-	std::cout << "Number of tests: " << num1 << std::endl;
 	for (size_t n = 0; n < num1; n++)
 	{
 		//Timer
@@ -145,9 +143,6 @@ BOOST_AUTO_TEST_CASE( bm_test )
 			Packer<decltype(kIntegers),HeapMemory>::packRequest(kIntegers,req);
 			//Packer<decltype(kStringValue),HeapMemory>::packRequest(kStringValue,req);
 
-
-			if (n == 0 && i == 0)
-				std::cout << "Object size: " << req << std::endl;
 
 			// allocate the memory
 			HeapMemory pmem;
@@ -183,7 +178,6 @@ BOOST_AUTO_TEST_CASE( bm_test )
 	for (size_t m = 0; m < time.size(); m++)
 		sum += time.get(m);
 
-	std::cout << "Time: " << sum/time.size() << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

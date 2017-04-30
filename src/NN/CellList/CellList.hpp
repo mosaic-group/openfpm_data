@@ -10,7 +10,6 @@
 
 #include "Vector/map_vector.hpp"
 #include "CellDecomposer.hpp"
-<<<<<<< HEAD
 #include "Space/SpaceBox.hpp"
 #include "util/mathutil.hpp"
 #include "CellNNIterator.hpp"
@@ -27,12 +26,6 @@
 #include "MemBalanced.hpp"
 #include "MemMemoryWise.hpp"
 
-=======
-#include "CellNNIterator.hpp"
-#include "CellListNNIteratorRadius.hpp"
-#include <unordered_map>
-
->>>>>>> Cell_list_refactor
 //! Wrapper of the unordered map
 template<typename key,typename val>
 class wrap_unordered_map: public std::unordered_map<key,val>
@@ -57,7 +50,6 @@ class wrap_unordered_map<boost::multiprecision::float128,val>
 
 #define STARTING_NSLOT 16
 
-<<<<<<< HEAD
 /*! \brief Calculate the the Neighborhood for symmetric interactions CSR scheme
  *
  * \param cNN calculated cross neighborhood
@@ -221,8 +213,6 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
 };
 
 
-=======
->>>>>>> Cell_list_refactor
 /* NOTE all the implementations
  *
  * has complexity O(1) in getting the cell id and the elements in a cell
@@ -238,19 +228,11 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
  * * M = number of cells
  * * N_cell_max = maximum number of elements in a cell
  * * ele = element the structure is storing
-<<<<<<< HEAD
  *
  * \note Because N_cell_max >= N/M then M * N_cell_max >= O(N)
  *
  * \warning Not not use for high asymmetric distribution
  *
-=======
- *
- * \note Because N_cell_max >= N/M then M * N_cell_max >= O(N)
- *
- * \warning Not not use for high asymmetric distribution
- *
->>>>>>> Cell_list_refactor
  * Example of a 2D Cell list 6x6 structure with padding 1 without shift, cell indicated with p are padding cell
  * the origin of the cell or point (0,0) is marked with cell number 9
  *
@@ -286,11 +268,7 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
  *
  */
 template<unsigned int dim, typename T,  typename Mem_type, typename transform = no_transform<dim,T>, typename base=openfpm::vector<size_t>>
-<<<<<<< HEAD
 class CellList : public CellDecomposer_sm<dim,T,transform>, public Mem_type
-=======
-class CellList : public CellDecomposer_sm<dim,T,transform>, Mem_type
->>>>>>> Cell_list_refactor
 {
 protected:
 	//! The array contain the neighborhood of the cell-id in case of asymmetric interaction
@@ -308,30 +286,17 @@ protected:
 	//
 	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
 
-<<<<<<< HEAD
-=======
-	//! The array contain the neighborhood of the cell-id in case of symmetric interaction (Optimized)
-	//
-	//   * *
-	//   x *
-	//
-	long int NNc_cr[openfpm::math::pow(2,dim)];
-
->>>>>>> Cell_list_refactor
 private:
 
 	//! Caching of r_cutoff radius
 	wrap_unordered_map<T,openfpm::vector<long int>> rcache;
 
-<<<<<<< HEAD
 	//! True if has been initialized from CellDecomposer
 	bool from_cd;
 
 	//! Additional information in general (used to understand if the cell-list)
 	//! has been constructed from an old decomposition
 	size_t n_dec;
-=======
->>>>>>> Cell_list_refactor
 
 	/*! Calculate the neighborhood cells based on the radius
 	 *
@@ -448,7 +413,6 @@ private:
 			++gr_sub3;
 			i++;
 		}
-<<<<<<< HEAD
 	}
 
 	void setCellDecomposer(CellDecomposer_sm<dim,T,transform> & cd, const CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box, size_t pad) const
@@ -470,39 +434,16 @@ private:
 		}
 
 		cd.setDimensions(cd_sm.getDomain(),div_big,div, pad, bx.getP1());
-=======
-
-		// Calculate the NNc_cross array
-
-		i = 0;
-		grid_key_dx_iterator_sub<dim> gr_sub2(gs,NNzero::data,NNone::data);
-
-		while (gr_sub2.isNext())
-		{
-			auto key = gr_sub2.get();
-
-			NNc_cr[i] = (long int)gs.LinId(key);
-
-			++gr_sub2;
-			i++;
-		}
->>>>>>> Cell_list_refactor
 	}
 
 public:
 
-<<<<<<< HEAD
 	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,RUNTIME,NO_CHECK> SymNNIterator;
 
 	//! Object type that the structure store
 	typedef typename base::value_type value_type;
 
 	//! Type of the coordinate space (double float)
-=======
-	//! Object type that the structure store
-	typedef typename base::value_type value_type;
-
->>>>>>> Cell_list_refactor
 	typedef T stype;
 
 	/*! \brief Return the underlying grid information of the cell list
@@ -534,22 +475,14 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)	{bc[i] = NON_PERIODIC;}
 
 		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
-<<<<<<< HEAD
 
 		setCellDecomposer(*this,cd_sm,dom_box,pad);
 
-=======
-//		Box<dim,T> bxd = cd_sm.convertCellUnitsIntoDomainSpace(bx);
-
-		size_t div[dim];
-		size_t div_big[dim];
->>>>>>> Cell_list_refactor
 		size_t div_w_pad[dim];
 		size_t tot_cell = 1;
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-<<<<<<< HEAD
 			div_w_pad[i] = bx.getHigh(i) - bx.getLow(i) + 2*pad;
 			tot_cell *= div_w_pad[i];
 		}
@@ -560,20 +493,6 @@ public:
 
 		// Initialized from CellDecomposer
 		from_cd = true;
-=======
-			div[i] = bx.getHigh(i) - bx.getLow(i);
-			div_w_pad[i] = bx.getHigh(i) - bx.getLow(i) + 2*pad;
-			tot_cell *= div_w_pad[i];
-			div_big[i] = cd_sm.getDiv()[i] - 2*cd_sm.getPadding(i);
-		}
-
-		CellDecomposer_sm<dim,T,transform>::setDimensions(cd_sm.getDomain(),div_big,div, pad, bx.getP1());
-
-		// here we set the cell-shift for the CellDecomposer
-//		Initialize(cd_sm.getDomain(),div,bx.getP1(),pad,slot);
-
-		InitializeStructures(div_w_pad,tot_cell);
->>>>>>> Cell_list_refactor
 	}
 
 	/*! Initialize the cell list
@@ -603,53 +522,32 @@ public:
 	 */
 	void Initialize(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
-<<<<<<< HEAD
 		Matrix<dim,T> mat;
 
 		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, pad);
 		Mem_type::set_slot(slot);
-=======
-
-		Matrix<dim,T> mat;
-
-		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, pad);
->>>>>>> Cell_list_refactor
 
 		// create the array that store the number of particle on each cell and se it to 0
 		InitializeStructures(this->gr_cell.getSize(),this->gr_cell.size());
 
-<<<<<<< HEAD
 		from_cd = false;
 	}
 
 	//! Default Constructor
 	CellList()
-=======
-	}
 
-	//! Default Constructor
-	CellList(size_t slot=STARTING_NSLOT)
->>>>>>> Cell_list_refactor
 	:Mem_type(STARTING_NSLOT)
 	{};
 
 	//! Copy constructor
-<<<<<<< HEAD
 	CellList(const CellList<dim,T,Mem_type,transform,base> & cell)
-=======
-	CellList(const CellList<dim,T,Mem_type,transform,base> & cell, size_t slot=STARTING_NSLOT)
->>>>>>> Cell_list_refactor
 	:Mem_type(STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
 
 	//! Copy constructor
-<<<<<<< HEAD
 	CellList(CellList<dim,T,Mem_type,transform,base> && cell)
-=======
-	CellList(CellList<dim,T,Mem_type,transform,base> && cell, size_t slot=STARTING_NSLOT)
->>>>>>> Cell_list_refactor
 	:Mem_type(STARTING_NSLOT)
 	{
 		this->operator=(cell);
@@ -681,11 +579,7 @@ public:
 	 *
 	 */
 	CellList(Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
-<<<<<<< HEAD
 	:Mem_type(slot)
-=======
-	:Mem_type(STARTING_NSLOT)
->>>>>>> Cell_list_refactor
 	{
 		SpaceBox<dim,T> sbox(box);
 		Initialize(sbox,div,pad,slot);
@@ -700,11 +594,7 @@ public:
 	 *
 	 */
 	CellList(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
-<<<<<<< HEAD
 	:Mem_type(slot)
-=======
-	:Mem_type(STARTING_NSLOT)
->>>>>>> Cell_list_refactor
 	{
 		Initialize(box,div,pad,slot);
 	}
@@ -720,11 +610,7 @@ public:
 	 *
 	 */
 	CellList(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & box, const size_t pad = 1, size_t slot=STARTING_NSLOT)
-<<<<<<< HEAD
 	:Mem_type(slot)
-=======
-	:Mem_type(STARTING_NSLOT)
->>>>>>> Cell_list_refactor
 	{
 		Initialize(cd_sm,box,pad,slot);
 	}
@@ -747,10 +633,6 @@ public:
 	{
 		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
 		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-<<<<<<< HEAD
-=======
-		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
->>>>>>> Cell_list_refactor
 
 		Mem_type::swap(static_cast<Mem_type &&>(cell));
 
@@ -770,10 +652,6 @@ public:
 	{
 		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
 		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-<<<<<<< HEAD
-=======
-		std::copy(&cell.NNc_cr[0],&cell.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr[0]);
->>>>>>> Cell_list_refactor
 
 		Mem_type::operator=(static_cast<const Mem_type &>(cell));
 
@@ -782,7 +660,6 @@ public:
 		return *this;
 	}
 
-<<<<<<< HEAD
 	/*! \brief Get an iterator over particles following the cell structure
 	 *
 	 * \return a particle iterator
@@ -795,8 +672,6 @@ public:
 		return it;
 	}
 
-=======
->>>>>>> Cell_list_refactor
 	/*! \brief Add to the cell
 	 *
 	 * \param cell_id Cell id where to add
@@ -836,7 +711,6 @@ public:
 		Mem_type::add(cell_id,ele);
 	}
 
-<<<<<<< HEAD
 
 	/*! \brief Add an element in the cell list forcing to be in the domain cells
 	 *
@@ -914,8 +788,6 @@ public:
 		addCell(cell_id,ele);
 	}
 
-=======
->>>>>>> Cell_list_refactor
 	/*! \brief remove an element from the cell
 	 *
 	 * \param cell cell id
@@ -963,7 +835,6 @@ public:
 	inline void swap(CellList<dim,T,Mem_type,transform,base> & cl)
 	{
 		long int NNc_full_tmp[openfpm::math::pow(3,dim)];
-<<<<<<< HEAD
 		long int NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1];
 
 		std::copy(&cl.NNc_full[0],&cl.NNc_full[openfpm::math::pow(3,dim)],&NNc_full_tmp[0]);
@@ -975,22 +846,6 @@ public:
 
 		std::copy(&NNc_full_tmp[0],&NNc_full_tmp[openfpm::math::pow(3,dim)],&NNc_full[0]);
 		std::copy(&NNc_sym_tmp[0],&NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-=======
-		long int NNc_sym_tmp[openfpm::math::pow(3,dim)];
-		long int NNc_cr_tmp[openfpm::math::pow(3,dim)];
-
-		std::copy(&cl.NNc_full[0],&cl.NNc_full[openfpm::math::pow(3,dim)],&NNc_full_tmp[0]);
-		std::copy(&cl.NNc_sym[0],&cl.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym_tmp[0]);
-		std::copy(&cl.NNc_cr[0],&cl.NNc_cr[openfpm::math::pow(2,dim)],&NNc_cr_tmp[0]);
-
-		std::copy(&NNc_full[0],&NNc_full[openfpm::math::pow(3,dim)],&cl.NNc_full[0]);
-		std::copy(&NNc_sym[0],&NNc_sym[openfpm::math::pow(3,dim)/2+1],&cl.NNc_sym[0]);
-		std::copy(&NNc_cr[0],&NNc_cr[openfpm::math::pow(2,dim)],&cl.NNc_cr[0]);
-
-		std::copy(&NNc_full_tmp[0],&NNc_full_tmp[openfpm::math::pow(3,dim)],&NNc_full[0]);
-		std::copy(&NNc_sym_tmp[0],&NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
-		std::copy(&NNc_cr_tmp[0],&NNc_cr_tmp[openfpm::math::pow(2,dim)],&NNc_cr[0]);
->>>>>>> Cell_list_refactor
 
 		Mem_type::swap(static_cast<Mem_type &>(cl));
 
@@ -1080,19 +935,15 @@ public:
 	 */
 	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
 	{
-<<<<<<< HEAD
 #ifdef SE_CLASS1
 		if (from_cd == false)
 			std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
 #endif
 
-=======
->>>>>>> Cell_list_refactor
 		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);
 		return cln;
 	}
 
-<<<<<<< HEAD
 	/*! \brief Get the symmetric neighborhood
 	 *
 	 * \return the symmetric neighborhood
@@ -1101,32 +952,6 @@ public:
 	const long int (& getNNc_sym() const)[openfpm::math::pow(3,dim)/2+1]
 	{
 		return NNc_sym;
-=======
-
-	/*! \brief Get the Neighborhood iterator
-	 *
-	 * It iterate across all the element of the selected cell and the near cells
-	 *
-	 *  \verbatim
-
-	   * *
-	   x *
-
-	   \endverbatim
-	 *
-	 * * x is the selected cell
-	 * * * are the near cell
-	 *
-	 * \param cell cell id
-	 *
-	 * \return an iterator across the neighborhood params
-	 *
-	 */
-	template<unsigned int impl> inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,CRS,impl> getNNIteratorCross(size_t cell)
-	{
-		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,CRS,impl> cln(cell,NNc_cr,*this);
-		return cln;
->>>>>>> Cell_list_refactor
 	}
 
 	/*! \brief Return the number of padding cells of the Cell decomposer
@@ -1136,93 +961,11 @@ public:
 	 * \return the number of padding cells
 	 *
 	 */
-<<<<<<< HEAD
 	size_t getPadding(size_t i) const
-=======
-	size_t getPadding(size_t i)
->>>>>>> Cell_list_refactor
 	{
 		return CellDecomposer_sm<dim,T,transform>::getPadding(i);
 	}
 
-<<<<<<< HEAD
-=======
-	/*! \brief Add an element in the cell list forcing to be in the domain cells
-	 *
-	 * \warning careful is intended to be used ONLY to avoid round-off problems
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	inline void addDom(const T (& pos)[dim], typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCell(pos);
-
-		// add the element to the cell
-
-		addCell(cell_id,ele);
-	}
-
-	/*! \brief Add an element in the cell list forcing to be in the domain cells
-	 *
-	 * \warning careful is intended to be used ONLY to avoid round-off problems
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	inline void addDom(const Point<dim,T> & pos, typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCell(pos);
-
-		// add the element to the cell
-
-		addCell(cell_id,ele);
-	}
-
-	/*! \brief Add an element in the cell list forcing to be in the padding cells
-	 *
-	 * \warning careful is intended to be used ONLY to avoid round-off problems
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	inline void addPad(const T (& pos)[dim], typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCell(pos);
-
-		// add the element to the cell
-
-		addCell(cell_id,ele);
-	}
-
-	/*! \brief Add an element in the cell list forcing to be in the padding cells
-	 *
-	 * \warning careful is intended to be used ONLY to avoid round-off problems
-	 *
-	 * \param pos array that contain the coordinate
-	 * \param ele element to store
-	 *
-	 */
-	inline void addPad(const Point<dim,T> & pos, typename base::value_type ele)
-	{
-		// calculate the Cell id
-
-		size_t cell_id = this->getCell(pos);
-
-		// add the element to the cell
-
-		addCell(cell_id,ele);
-	}
->>>>>>> Cell_list_refactor
 
 	/*! \brief Clear the cell list
 	 *
@@ -1239,11 +982,7 @@ public:
 	 * \return the index
 	 *
 	 */
-<<<<<<< HEAD
 	inline const size_t & getStartId(size_t cell_id) const
-=======
-	inline size_t * getStartId(size_t cell_id)
->>>>>>> Cell_list_refactor
 	{
 		return Mem_type::getStartId(cell_id);
 	}
@@ -1255,11 +994,7 @@ public:
 	 * \return the stop index
 	 *
 	 */
-<<<<<<< HEAD
 	inline const size_t & getStopId(size_t cell_id) const
-=======
-	inline size_t * getStopId(size_t cell_id)
->>>>>>> Cell_list_refactor
 	{
 		return Mem_type::getStopId(cell_id);
 	}
@@ -1271,11 +1006,7 @@ public:
 	 * \return the neighborhood id
 	 *
 	 */
-<<<<<<< HEAD
 	inline const size_t & get_lin(const size_t * part_id) const
-=======
-	inline size_t & get_lin(size_t * part_id)
->>>>>>> Cell_list_refactor
 	{
 		return Mem_type::get_lin(part_id);
 	}
@@ -1306,7 +1037,6 @@ public:
 	}
 
 /////////////////////////////////////
-<<<<<<< HEAD
 
 	/////////////////////////////////////
 
@@ -1331,8 +1061,6 @@ public:
 		}
 
 	/////////////////////////////////////
-=======
->>>>>>> Cell_list_refactor
 };
 
 /*! \brief Calculate parameters for the cell list
@@ -1390,12 +1118,6 @@ template<unsigned int dim, typename St> static inline void cl_param_calculateSym
 	cd_sm.setDimensions(dom,div,pad);
 }
 
-<<<<<<< HEAD
-=======
-#include "MemFast.hpp"
-#include "MemBalanced.hpp"
-#include "MemMemoryWise.hpp"
->>>>>>> Cell_list_refactor
 
 /*! \brief Calculate parameters for the symmetric cell list
  *
@@ -1419,9 +1141,6 @@ template<unsigned int dim, typename St> static inline void cl_param_calculateSym
 
 	cd_sm.setDimensions(dom,div,pad);
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> Cell_list_refactor
 
 #endif /* CELLLIST_HPP_ */

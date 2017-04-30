@@ -32,7 +32,7 @@ template<unsigned int dim,
 		 unsigned int impl=FAST,
 		 typename transform = no_transform<dim,T>,
 		 typename local_index=local_index_,
-		 typename CellListImpl = CellList<dim,T,Mem_fast,transform> >
+		 typename CellListImpl = CellList<dim,T,Mem_fast<dim,T>,transform> >
 class VerletList
 {
 };

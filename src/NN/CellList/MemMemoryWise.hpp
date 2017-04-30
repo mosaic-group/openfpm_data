@@ -41,6 +41,8 @@ class Mem_mw
 
 	typename std::remove_reference<decltype(std::declval<openfpm::vector<size_t>>().get(0))>::type invalid;
 
+	openfpm::vector<size_t> invalid_v;
+
 public:
 
 	// Object type that the structure store
@@ -89,7 +91,34 @@ public:
 		if (it == cl_base.end())
 			return invalid;
 
-		return cl_base[cell].get(ele);
+		return it->second.get(ele);
+	}
+
+	auto get_v(size_t cell) -> decltype(cl_base[0]) &
+	{
+		auto it = cl_base.find(cell);
+		if (it == cl_base.end())
+			return invalid_v;
+
+		return it->second;
+	}
+
+	auto get(size_t cell, size_t ele) const -> const decltype(cl_base.find(cell)->second.get(0)) &
+	{
+		auto it = cl_base.find(cell);
+		if (it == cl_base.end())
+			return invalid;
+
+		return it->second.get(ele);
+	}
+
+	auto get_v(size_t cell) const -> const decltype(cl_base.find(cell)->second) &
+	{
+		auto it = cl_base.find(cell);
+		if (it == cl_base.end())
+			return invalid_v;
+
+		return it->second;
 	}
 
 	void swap(Mem_mw & cl)
@@ -107,24 +136,29 @@ public:
 		cl_base.clear();
 	}
 
-	inline size_t getStrtId(size_t part_id)
+	inline const size_t & getStartId(size_t part_id) const
 	{
-		return part_id;
+		return get(part_id,0);
 	}
 
-	inline size_t getStpId(size_t part_id)
+	inline const size_t & getStopId(size_t part_id) const
 	{
-		return part_id;
+		auto & v_ele = get_v(part_id);
+
+		return *(&v_ele.last() + 1);
 	}
 
-/*	inline size_t & get_neighb(size_t part_id)
+	inline const size_t & get_lin(const size_t * part_id) const
 	{
-		return cl_base.get(part_id);
-	}*/
+		return *part_id;
+	}
 
 public:
 
-	Mem_mw()
+	Mem_mw(size_t slot)
+	{}
+
+	void set_slot(size_t slot)
 	{}
 
 };

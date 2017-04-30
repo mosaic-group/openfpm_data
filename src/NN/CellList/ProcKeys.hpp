@@ -43,7 +43,7 @@ public:
 	 * \param gk grid key
 	 * \param m order of a curve
 	 */
-	template<typename S> static void get_hkey(S & obj, grid_key_dx<dim> gk, size_t m)
+	template<typename S> void get_hkey(S & obj, grid_key_dx<dim> gk, size_t m)
 	{
 		size_t point[dim];
 
@@ -52,10 +52,10 @@ public:
 			point[i] = gk.get(i) + obj.getPadding(i);
 		}
 
-		obj.getKeys().add(obj.getGrid().LinIdPtr(static_cast<size_t *>(point)));
+		keys.add(obj.getGrid().LinIdPtr(static_cast<size_t *>(point)));
 	}
 
-	template<typename S> static void linearize_hkeys(S & obj, size_t m)
+	template<typename S> void linearize_hkeys(S & obj, size_t m)
 	{
 		return;
 	}
@@ -114,7 +114,7 @@ public:
 
 		size_t hkey = getHKeyFromIntCoord(m, dim, point, &err);
 
-		obj.getKeys().add(hkey);
+		keys.add(hkey);
 	}
 
 	/*! \brief Get get the coordinates from hilbert key, linearize and add to the getKeys vector
@@ -133,7 +133,7 @@ public:
 		uint64_t coord[dim];
 		size_t coord2[dim];
 
-		obj.getKeys().sort();
+		keys.sort();
 
 		openfpm::vector<size_t> keys_new;
 
@@ -146,7 +146,7 @@ public:
 			keys_new.add(obj.getGrid().LinIdPtr(static_cast<size_t *>(coord2)));
 		}
 
-		obj.getKeys().swap(keys_new);
+		keys.swap(keys_new);
 	}
 };
 

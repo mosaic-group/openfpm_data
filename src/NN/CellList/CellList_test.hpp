@@ -318,97 +318,6 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 		BOOST_REQUIRE_EQUAL((long int)(v1 - v2),1);
 		++g_it;
 	}
-
-
-/*	// Create a grid iterator
-	grid_key_dx<dim> p1(1,1,1);
-	grid_key_dx<dim> p2(div[0]-2,div[1]-2,div[2]-2);
-	grid_key_dx_iterator_sub<dim> g_it_s(g_info,p1,p2);
-
-	while (g_it_s.isNext())
-	{
-		Point<dim,T> key = Point<dim,T>(g_it_s.get().toPoint());
-		key = pmul(key,spacing) + offset[0] + box.getP1();
-
-		size_t i = g_info.LinId(g_it_s.get());
-
-		auto NN = cl1.template getNNIterator<NO_CHECK>(cl1.getCell(key));
-		size_t total1 = 0;
-		size_t total2 = 0;
-
-		while(NN.isNext())
-		{
-			// total
-
-			if (NN.getV() == 1)
-				total1++;
-			else
-				total2++;
-
-			++NN;
-		}
-
-		BOOST_REQUIRE_EQUAL(total1,(size_t)openfpm::math::pow(3,dim));
-		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim));
-
-
-		auto NNSym = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),0,i,phase1,phases);
-		total1 = 0;
-		total2 = 0;
-
-		while(NNSym.isNext())
-		{
-			// total
-
-			if (NNSym.getV() == 0 && NNSym.getP() == i)
-			{
-				++NNSym;
-				continue;
-			}
-
-			if (NNSym.getV() == 0)
-				total1++;
-			else
-				total2++;
-
-			++NNSym;
-		}
-
-		BOOST_REQUIRE_EQUAL(total1,(size_t)openfpm::math::pow(3,dim) / 2);
-		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim) / 2 + 1);
-
-
-		//////////////////////////////////////////////////////////////////////////
-
-
-		auto NNSym2 = cl1.template getNNIteratorSym<NO_CHECK>(cl1.getCell(key),1,i,phase2,phases);
-		total1 = 0;
-		total2 = 0;
-
-		while(NNSym2.isNext())
-		{
-			// total
-
-			if (NNSym2.getV() == 1 && NNSym2.getP() == i)
-			{
-				++NNSym2;
-				continue;
-			}
-
-			if (NNSym2.getV() == 0)
-				total1++;
-			else
-				total2++;
-
-			++NNSym2;
-		}
-
-		BOOST_REQUIRE_EQUAL(total1,(size_t)openfpm::math::pow(3,dim) / 2);
-		BOOST_REQUIRE_EQUAL(total2,(size_t)openfpm::math::pow(3,dim) / 2);
-
-		++i;
-		++g_it_s;
-	}*/
 }
 
 template<typename CellList> void Test_CellDecomposer_consistent()
@@ -455,11 +364,7 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 
 
 	Test_cell_s<3,double,CellList<3,double,Mem_bal<3,double>>>(box);
-<<<<<<< HEAD
-//	Test_cell_s<3,double,CellList<3,double,MEMORY>>();
-=======
 	Test_cell_s<3,double,CellList<3,double,Mem_mw<3,double>>>(box);
->>>>>>> Cell_list_refactor
 
 	std::cout << "End cell list" << "\n";
 
@@ -469,7 +374,6 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 BOOST_AUTO_TEST_CASE( CellList_consistent )
 {
 	Test_CellDecomposer_consistent<CellList<2,float,Mem_fast<3,double>,shift<2,float>>>();
-<<<<<<< HEAD
 }
 
 BOOST_AUTO_TEST_CASE( CellList_NNc_csr_calc )
@@ -522,8 +426,6 @@ BOOST_AUTO_TEST_CASE( CellList_NNc_csr_calc )
 	BOOST_REQUIRE(cNN.get(13).first == grid_key_dx<3>(0,0,0));
 	BOOST_REQUIRE(cNN.get(13).second == grid_key_dx<3>(1,1,1));
 
-=======
->>>>>>> Cell_list_refactor
 }
 
 BOOST_AUTO_TEST_SUITE_END()
