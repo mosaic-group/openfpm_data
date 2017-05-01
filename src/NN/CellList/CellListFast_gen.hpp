@@ -13,11 +13,6 @@
 #include "CellList.hpp"
 #include "ProcKeys.hpp"
 
-extern "C"
-{
-#include "hilbertKey.h"
-}
-
 /* \brief Cell list implementation with particle iterator over cells
  *
  * \see CellList<dim,T,FAST,transform,base>
@@ -46,48 +41,11 @@ private:
 	//! iteration across cells
 	Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>> SFC;
 
-public:
+	//! Init SFC
+	bool init_sfc;
 
-
-	CellList_gen()
-	:CellList<dim,T,Mem_type,transform,base>()
-	{};
-
-
-	/*! \brief Set the ghost marker
-	 *
-	 *
-	 */
-	const Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>> & getCellSFC() const
+	void initialize_sfc(size_t pad)
 	{
-		return SFC;
-	}
-
-	/*! \brief return the celllist iterator (across cells)
-	 *
-	 * \return an iterator
-	 *
-	 */
-	inline typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>>::Pit getIterator()
-	{
-		return typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>>::Pit(*this);
-	}
-
-	/*! Initialize the cell list
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param div grid size on each dimension
-	 * \param g_m_new A ghost marker
-	 * \param pad padding cell
-	 * \param slot maximum number of slot
-	 *
-	 */
-	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], size_t g_m_new, const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	{
-		CellList<dim,T,Mem_type,transform,base>::Initialize(box,div,pad,slot);
-
-		g_m = g_m_new;
-
 		size_t sz[dim];
 
 		//Get grid_sm without padding (gs_small)
@@ -127,6 +85,56 @@ public:
 
 		// Sort and linearize keys
 		SFC.linearize_hkeys(*this,m);
+	}
+
+public:
+
+
+	CellList_gen()
+	:CellList<dim,T,Mem_type,transform,base>(),init_sfc(false)
+	{};
+
+
+	/*! \brief Set the ghost marker
+	 *
+	 *
+	 */
+	const Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>> & getCellSFC() const
+	{
+		return SFC;
+	}
+
+	/*! \brief return the celllist iterator (across cells)
+	 *
+	 * \return an iterator
+	 *
+	 */
+	inline typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>>::Pit getIterator()
+	{
+		// Initialize SFC
+		if (init_sfc == false)
+		{
+			initialize_sfc(this->getPadding(0));
+			init_sfc = true;
+		}
+
+		return typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>>::Pit(*this);
+	}
+
+	/*! Initialize the cell list
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param div grid size on each dimension
+	 * \param g_m_new A ghost marker
+	 * \param pad padding cell
+	 * \param slot maximum number of slot
+	 *
+	 */
+	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], size_t g_m_new, const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	{
+		CellList<dim,T,Mem_type,transform,base>::Initialize(box,div,pad,slot);
+
+		g_m = g_m_new;
 	}
 
 

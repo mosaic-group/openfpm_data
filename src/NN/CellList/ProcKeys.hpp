@@ -8,7 +8,10 @@
 #ifndef OPENFPM_DATA_SRC_NN_CELLLIST_PROCKEYS_HPP_
 #define OPENFPM_DATA_SRC_NN_CELLLIST_PROCKEYS_HPP_
 
-
+extern "C"
+{
+#include "hilbertKey.h"
+}
 
 /* !Brief Class for a linear (1D-like) order processing of cell keys for CellList_gen implementation
  *

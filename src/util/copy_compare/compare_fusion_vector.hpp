@@ -8,6 +8,8 @@
 #ifndef OPENFPM_DATA_SRC_UTIL_COMPARE_FUSION_VECTOR_HPP_
 #define OPENFPM_DATA_SRC_UTIL_COMPARE_FUSION_VECTOR_HPP_
 
+#include "meta_compare.hpp"
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * It compare a boost::fusion::vector with another boost::fusion::vector
