@@ -16,6 +16,11 @@ BOOST_AUTO_TEST_SUITE( plot_unit_test )
 
 BOOST_AUTO_TEST_CASE( google_chart_bar_string )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	//! [Producing an Histogram graph]
 
 	openfpm::vector<std::string> x;
@@ -69,6 +74,11 @@ BOOST_AUTO_TEST_CASE( google_chart_bar_string )
 
 BOOST_AUTO_TEST_CASE( google_chart )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	//! [Producing an Histogram graph]
 
 	openfpm::vector<std::string> x;
@@ -120,6 +130,11 @@ BOOST_AUTO_TEST_CASE( google_chart )
 
 BOOST_AUTO_TEST_CASE( google_chart2 )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<float>> y;
 	openfpm::vector<std::string> yn;
@@ -164,6 +179,11 @@ BOOST_AUTO_TEST_CASE( google_chart2 )
 
 BOOST_AUTO_TEST_CASE( google_chart3 )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<float>> y;
 	openfpm::vector<std::string> yn;
@@ -207,6 +227,11 @@ BOOST_AUTO_TEST_CASE( google_chart3 )
 
 BOOST_AUTO_TEST_CASE( google_chart4 )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<float>> y;
 	openfpm::vector<std::string> yn;
@@ -243,6 +268,11 @@ BOOST_AUTO_TEST_CASE( google_chart4 )
 
 BOOST_AUTO_TEST_CASE( google_chart5 )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<float>> y;
 
@@ -271,6 +301,11 @@ BOOST_AUTO_TEST_CASE( google_chart5 )
 
 BOOST_AUTO_TEST_CASE( google_chart6 )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	openfpm::vector<openfpm::vector<float>> y;
 
 	// Each colums can have multiple data-set
@@ -291,6 +326,11 @@ BOOST_AUTO_TEST_CASE( google_chart6 )
 
 BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	//! [Producing a set of histograms graphs]
 
 	openfpm::vector<std::string> x;
@@ -349,6 +389,11 @@ BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 
 BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	//! [Producing lines graph with style]
 
 	openfpm::vector<std::string> x;
@@ -411,6 +456,11 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 
 BOOST_AUTO_TEST_CASE( google_chart_linear_plot2 )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	//! [Producing lines]
 
 	openfpm::vector<std::string> x;
@@ -464,6 +514,11 @@ double f(double x)
 
 BOOST_AUTO_TEST_CASE( plot_util )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	//! [fill a vector]
 
 	openfpm::vector<double> x;

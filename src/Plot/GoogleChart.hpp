@@ -71,7 +71,11 @@ struct GCoptions
 	//! barWD
 	bool barWD = false;
 
-	//! copy operator
+	/*! \brief copy operator
+	 *
+	 * \param opt object to copy
+	 *
+	 */
 	GCoptions & operator=(const GCoptions & opt)
 	{
 		title = opt.title;

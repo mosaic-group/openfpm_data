@@ -395,4 +395,41 @@ struct meta_prop<I,ele_g,St,T,false>
 	}
 };
 
+template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & p,std::stringstream & v_out, file_type ft)
+{
+	if (ft == file_type::ASCII)
+	{
+		if (dims == 2)
+			v_out << p.toString() << " 0.0" << "\n";
+		else
+			v_out << p.toString() << "\n";
+	}
+	else
+	{
+		for (size_t i = 0 ; i < dims ; i++)
+		{
+			// we use float so we have to convert to float
+			float tmp = p.get(i);
+			tmp = swap_endian_lt(tmp);
+			v_out.write((const char *)&tmp,sizeof(tmp));
+		}
+	}
+}
+
+inline void output_vertex(size_t k,std::string & v_out, file_type ft)
+{
+	if (ft == file_type::ASCII)
+		v_out += "1 " + std::to_string(k) + "\n";
+	else
+	{
+		int tmp;
+		tmp = 1;
+		tmp = swap_endian_lt(tmp);
+		v_out.append((const char *)&tmp,sizeof(int));
+		tmp = k;
+		tmp = swap_endian_lt(tmp);
+		v_out.append((const char *)&tmp,sizeof(int));
+	}
+}
+
 #endif /* SRC_VTKWRITER_GRIDS_UTIL_HPP_ */

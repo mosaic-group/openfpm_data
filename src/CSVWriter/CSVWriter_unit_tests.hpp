@@ -9,6 +9,11 @@ BOOST_AUTO_TEST_SUITE( csv_writer_test )
 
 BOOST_AUTO_TEST_CASE( csv_writer_particles )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	{
 	// Allocate a property vector
 	auto v_prp = allocate_openfpm_prp(16);
@@ -29,7 +34,7 @@ BOOST_AUTO_TEST_CASE( csv_writer_particles )
 	// Write the CSV
 	csv_writer.write("csv_out.csv",v_pos,v_prp);
 
-	bool test = compare("csv_out.csv","csv_out_test.csv");
+	bool test = compare("csv_out.csv","test_data/csv_out_test.csv");
 	BOOST_REQUIRE_EQUAL(true,test);
 	}
 
@@ -53,7 +58,7 @@ BOOST_AUTO_TEST_CASE( csv_writer_particles )
 	// Write the CSV
 	csv_writer.write("csv_out_unk.csv",v_pos,v_prp);
 
-	bool test = compare("csv_out_unk.csv","csv_out_unk_test.csv");
+	bool test = compare("csv_out_unk.csv","test_data/csv_out_unk_test.csv");
 	BOOST_REQUIRE_EQUAL(true,test);
 	}
 

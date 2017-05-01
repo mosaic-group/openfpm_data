@@ -127,6 +127,11 @@ const std::string vertex2::attributes::name[] = {"x","prp1","prp2"};
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	// Create some graphs and output them
 
 	// Graph
@@ -199,12 +204,17 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D )
 
 	// check that match
 
-	bool test = compare("vtk_graph_v2.vtk","vtk_graph_v2_test.vtk");
+	bool test = compare("vtk_graph_v2.vtk","test_data/vtk_graph_v2_test.vtk");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D_edge )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	// Create some graphs and output them
 
 	// Graph
@@ -277,7 +287,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D_edge )
 
 	// check that match
 
-	bool test = compare("vtk_graph_v4.vtk","vtk_graph_v4_test.vtk");
+	bool test = compare("vtk_graph_v4.vtk","test_data/vtk_graph_v4_test.vtk");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -334,6 +344,11 @@ const std::string vertex3::attributes::name[] = {"x","prp1","prp2"};
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_graph2D )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	// Create some graphs and output them
 
 	// Graph
@@ -359,12 +374,17 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph2D )
 
 	// check that match
 
-	bool test = compare("vtk_graph_v3.vtk","vtk_graph_v3_test.vtk");
+	bool test = compare("vtk_graph_v3.vtk","test_data/vtk_graph_v3_test.vtk");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_graph)
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	// Create some graphs and output them
 
 	std::cout << "Graph unit test start" << "\n";
@@ -439,12 +459,17 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph)
 
 	// check that match
 
-	bool test = compare("vtk_graph.vtk","vtk_graph_test.vtk");
+	bool test = compare("vtk_graph.vtk","test_data/vtk_graph_test.vtk");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	// Create a vector of boxes
 	openfpm::vector<Box<2,float>> vb;
 
@@ -461,7 +486,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 	vtk_box.write("vtk_box.vtk");
 
 	// Check that match
-	bool test = compare("vtk_box.vtk","vtk_box_test.vtk");
+	bool test = compare("vtk_box.vtk","test_data/vtk_box_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 
 	// Create a vector of boxes
@@ -480,7 +505,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 	vtk_box2.write("vtk_box_3D.vtk");
 
 	// Check that match
-	test = compare("vtk_box_3D.vtk","vtk_box_3D_test.vtk");
+	test = compare("vtk_box_3D.vtk","test_data/vtk_box_3D_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 
 	// Create a vector of boxes
@@ -499,7 +524,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 	vtk_box3.write("vtk_box_3D_2.vtk");
 
 	// Check that match
-	test = compare("vtk_box_3D_2.vtk","vtk_box_3D_2_test.vtk");
+	test = compare("vtk_box_3D_2.vtk","test_data/vtk_box_3D_2_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 }
 
@@ -596,6 +621,11 @@ void fill_grid_some_data_scal(grid_cpu<2,Point_test_scal<float>> & g)
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	{
 	// Create box grids
 	Point<2,float> offset1({0.0,0.0});
@@ -641,7 +671,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	vtk_g.write("vtk_grids.vtk");
 
 	// Check that match
-	bool test = compare("vtk_grids.vtk","vtk_grids_test.vtk");
+	bool test = compare("vtk_grids.vtk","test_data/vtk_grids_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 	}
 
@@ -696,7 +726,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	vtk_g.write("vtk_grids_st.vtk");
 
 	// Check that match
-	bool test = compare("vtk_grids_st.vtk","vtk_grids_st_test.vtk");
+	bool test = compare("vtk_grids_st.vtk","test_data/vtk_grids_st_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 	}
 
@@ -745,7 +775,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	vtk_g.write("vtk_grids_prp.vtk");
 
 	// Check that match
-	bool test = compare("vtk_grids_prp.vtk","vtk_grids_prp_test.vtk");
+	bool test = compare("vtk_grids_prp.vtk","test_data/vtk_grids_prp_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 	}
 
@@ -794,7 +824,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	vtk_g.write("vtk_grids_unk.vtk");
 
 	// Check that match
-	bool test = compare("vtk_grids_unk.vtk","vtk_grids_test.vtk");
+	bool test = compare("vtk_grids_unk.vtk","test_data/vtk_grids_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 	}
 
@@ -818,6 +848,11 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	{
 	// Create 3 vectors with random particles
 	openfpm::vector<Point<3,double>> v1ps;
@@ -886,7 +921,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	vtk_v.write("vtk_points.vtk");
 
 	// Check that match
-	bool test = compare("vtk_points.vtk","vtk_points_test.vtk");
+	bool test = compare("vtk_points.vtk","test_data/vtk_points_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 
 
@@ -897,7 +932,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	vtk_v2.write("vtk_points_pp.vtk");
 
 	// Check that match
-	test = compare("vtk_points_pp.vtk","vtk_points_pp_test.vtk");
+	test = compare("vtk_points_pp.vtk","test_data/vtk_points_pp_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 
 	}
@@ -906,6 +941,11 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 {
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
 	{
 		// Create 3 vectors with random particles
 		openfpm::vector<Point<3,double>> v1ps;
@@ -976,9 +1016,9 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 
 
 		// Check that match
-		bool test = compare("vtk_points_bin.vtk","vtk_points_bin_test.vtk");
+		bool test = compare("vtk_points_bin.vtk","test_data/vtk_points_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
-		test = compare("vtk_points_bin2.vtk","vtk_points_bin_test.vtk");
+		test = compare("vtk_points_bin2.vtk","test_data/vtk_points_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
 
 		// Create a writer and write
@@ -988,7 +1028,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		vtk_v2.write("vtk_points_pp_bin.vtk","vtk output",file_type::BINARY);
 
 		// Check that match
-		test = compare("vtk_points_pp_bin.vtk","vtk_points_pp_bin_test.vtk");
+		test = compare("vtk_points_pp_bin.vtk","test_data/vtk_points_pp_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
 
 	}

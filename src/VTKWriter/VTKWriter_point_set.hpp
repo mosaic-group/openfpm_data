@@ -258,23 +258,7 @@ class VTKWriter<pair,VECTOR_POINTS>
 				Point<pair::first::value_type::dims,typename pair::first::value_type::coord_type> p;
 				p = vps.get(i).g.get(it.get());
 
-				if (ft == file_type::ASCII)
-				{
-					if (pair::first::value_type::dims == 2)
-						v_out << p.toString() << " 0.0" << "\n";
-					else
-						v_out << p.toString() << "\n";
-				}
-				else
-				{
-					for (size_t i = 0 ; i < pair::first::value_type::dims ; i++)
-					{
-						// we use float so we have to convert to float
-						float tmp = p.get(i);
-						tmp = swap_endian_lt(tmp);
-						v_out.write((const char *)&tmp,sizeof(tmp));
-					}
-				}
+				output_point<pair::first::value_type::dims,typename pair::first::value_type::coord_type>(p,v_out,ft);
 
 				// increment the iterator and counter
 				++it;
@@ -310,18 +294,7 @@ class VTKWriter<pair,VECTOR_POINTS>
 
 			while (it.isNext())
 			{
-				if (ft == file_type::ASCII)
-					v_out += "1 " + std::to_string(k) + "\n";
-				else
-				{
-					int tmp;
-					tmp = 1;
-					tmp = swap_endian_lt(tmp);
-					v_out.append((const char *)&tmp,sizeof(int));
-					tmp = k;
-					tmp = swap_endian_lt(tmp);
-					v_out.append((const char *)&tmp,sizeof(int));
-				}
+				output_vertex(k,v_out,ft);
 
 				++k;
 				++it;
