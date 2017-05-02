@@ -20,5 +20,6 @@ class HDF5_reader
 };
 
 #include "HDF5_reader_vd.hpp"
+#include "HDF5_reader_gd.hpp"
 
 #endif /* OPENFPM_IO_SRC_HDF5_WR_HDF5_READER_HPP_ */

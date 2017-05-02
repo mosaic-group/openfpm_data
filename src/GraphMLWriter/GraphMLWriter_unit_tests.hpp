@@ -12,7 +12,7 @@
 
 #include "GraphMLWriter.hpp"
 #include "Graph/CartesianGraphFactory.hpp"
-#include "util.hpp"
+#include "util/util.hpp"
 
 BOOST_AUTO_TEST_SUITE( graphml_writer_test )
 

@@ -10,6 +10,7 @@
 
 
 #define VECTOR_DIST 1
+#define GRID_DIST 2
 
 #include "HDF5_writer.hpp"
 #include "HDF5_reader.hpp"

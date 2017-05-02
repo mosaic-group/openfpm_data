@@ -23,6 +23,7 @@ class HDF5_writer
 
 };
 
-#include "../HDF5_wr/HDF5_writer_vd.hpp"
+#include "HDF5_writer_vd.hpp"
+#include "HDF5_writer_gd.hpp"
 
 #endif /* OPENFPM_IO_SRC_HDF5_WR_HDF5_WRITER_HPP_ */
