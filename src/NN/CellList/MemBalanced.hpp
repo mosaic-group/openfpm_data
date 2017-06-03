@@ -50,58 +50,63 @@ public:
 	// Object type that the structure store
 	typedef T value_type;
 
-	void init_to_zero(size_t slot, size_t tot_n_cell)
+	inline void init_to_zero(size_t slot, size_t tot_n_cell)
 	{
 		//resize the vector to needed number of cells
 
 		cl_base.resize(tot_n_cell);
 	}
 
-	Mem_bal & operator=(const Mem_bal & cell)
+	inline Mem_bal & operator=(const Mem_bal & cell)
 	{
 		cl_base = cell.cl_base;
 
 		return *this;
 	}
 
-	void addCell(size_t cell_id, typename base::value_type ele)
+	inline void addCell(size_t cell_id, typename base::value_type ele)
 	{
 		//add another neighbor element
 
 		cl_base.get(cell_id).add(ele);
 	}
 
-	void add(size_t cell_id, typename base::value_type ele)
+	inline void add(size_t cell_id, typename base::value_type ele)
 	{
 		this->addCell(cell_id,ele);
 	}
 
-	void remove(size_t cell, size_t ele)
+	inline void remove(size_t cell, size_t ele)
 	{
 		cl_base.get(cell).remove(ele);
 	}
 
-	size_t getNelements(const size_t cell_id) const
+	inline size_t getNelements(const size_t cell_id) const
 	{
 		return cl_base.get(cell_id).size();
 	}
 
-	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(0).get(0)) &
+	inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(0).get(0)) &
 	{
 		return cl_base.get(cell).get(ele);
 	}
 
-	void swap(Mem_bal & cl)
+	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(0).get(0)) &
+	{
+		return cl_base.get(cell).get(ele);
+	}
+
+	inline void swap(Mem_bal & cl)
 	{
 		cl_base.swap(cl.cl_base);
 	}
 
-	void swap(Mem_bal && cell)
+	inline void swap(Mem_bal && cell)
 	{
 		cl_base.swap(cell.cl_base);
 	}
 
-	void clear()
+	inline void clear()
 	{
 		for (size_t i = 0 ; i < cl_base.size() ; i++)
 			cl_base.get(i).clear();
@@ -124,10 +129,10 @@ public:
 
 public:
 
-	Mem_bal(size_t slot)
+	inline Mem_bal(size_t slot)
 	{}
 
-	void set_slot(size_t slot)
+	inline void set_slot(size_t slot)
 	{}
 
 };

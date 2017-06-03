@@ -826,6 +826,20 @@ public:
 		return Mem_type::get(cell,ele);
 	}
 
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	inline auto get(size_t cell, size_t ele) const -> const decltype(this->Mem_type::get(cell,ele))
+	{
+		return Mem_type::get(cell,ele);
+	}
 
 	/*! \brief Swap the memory
 	 *

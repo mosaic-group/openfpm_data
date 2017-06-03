@@ -49,34 +49,34 @@ public:
 	typedef T value_type;
 
 
-	void init_to_zero(size_t slot, size_t tot_n_cell)
+	inline void init_to_zero(size_t slot, size_t tot_n_cell)
 	{
 	}
 
-	Mem_mw & operator=(const Mem_mw & cell)
+	inline Mem_mw & operator=(const Mem_mw & cell)
 	{
 		cl_base = cell.cl_base;
 		return *this;
 	}
 
-	void addCell(size_t cell_id, typename base::value_type ele)
+	inline void addCell(size_t cell_id, typename base::value_type ele)
 	{
 		//add another neighbor element
 
 		cl_base[cell_id].add(ele);
 	}
 
-	void add(size_t cell_id, typename base::value_type ele)
+	inline void add(size_t cell_id, typename base::value_type ele)
 	{
 		this->addCell(cell_id,ele);
 	}
 
-	void remove(size_t cell, size_t ele)
+	inline void remove(size_t cell, size_t ele)
 	{
 		cl_base[cell].remove(ele);
 	}
 
-	size_t getNelements(const size_t cell_id) const
+	inline size_t getNelements(const size_t cell_id) const
 	{
 		auto it = cl_base.find(cell_id);
 		if (it == cl_base.end())
@@ -85,7 +85,7 @@ public:
 		return it->second.size();
 	}
 
-	auto get(size_t cell, size_t ele) -> decltype(cl_base[0].get(0)) &
+	inline auto get(size_t cell, size_t ele) -> decltype(cl_base[0].get(0)) &
 	{
 		auto it = cl_base.find(cell);
 		if (it == cl_base.end())
@@ -94,7 +94,7 @@ public:
 		return it->second.get(ele);
 	}
 
-	auto get_v(size_t cell) -> decltype(cl_base[0]) &
+	inline auto get_v(size_t cell) -> decltype(cl_base[0]) &
 	{
 		auto it = cl_base.find(cell);
 		if (it == cl_base.end())
@@ -103,7 +103,7 @@ public:
 		return it->second;
 	}
 
-	auto get(size_t cell, size_t ele) const -> const decltype(cl_base.find(cell)->second.get(0)) &
+	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.find(cell)->second.get(0)) &
 	{
 		auto it = cl_base.find(cell);
 		if (it == cl_base.end())
@@ -112,7 +112,7 @@ public:
 		return it->second.get(ele);
 	}
 
-	auto get_v(size_t cell) const -> const decltype(cl_base.find(cell)->second) &
+	inline auto get_v(size_t cell) const -> const decltype(cl_base.find(cell)->second) &
 	{
 		auto it = cl_base.find(cell);
 		if (it == cl_base.end())
@@ -121,31 +121,37 @@ public:
 		return it->second;
 	}
 
-	void swap(Mem_mw & cl)
+	inline void swap(Mem_mw & cl)
 	{
-		swap(cl_base, cl.cl_base);
+		cl_base.swap(cl.cl_base);
 	}
 
-	void swap(Mem_mw && cell)
+	inline void swap(Mem_mw && cell)
 	{
-		swap(cl_base, cell.cl_base);
+		cl_base.swap(cell.cl_base);
 	}
 
-	void clear()
+	inline void clear()
 	{
 		cl_base.clear();
 	}
 
 	inline const size_t & getStartId(size_t part_id) const
 	{
-		return get(part_id,0);
+		auto it = cl_base.find(part_id);
+		if (it == cl_base.end())
+			return *(&invalid_v.get(0));
+
+		return it->second.get(0);
 	}
 
 	inline const size_t & getStopId(size_t part_id) const
 	{
-		auto & v_ele = get_v(part_id);
+		auto it = cl_base.find(part_id);
+		if (it == cl_base.end())
+			return *(&invalid_v.get(0));
 
-		return *(&v_ele.last() + 1);
+		return *(&it->second.last() + 1);
 	}
 
 	inline const size_t & get_lin(const size_t * part_id) const
@@ -155,10 +161,10 @@ public:
 
 public:
 
-	Mem_mw(size_t slot)
+	inline Mem_mw(size_t slot)
 	{}
 
-	void set_slot(size_t slot)
+	inline void set_slot(size_t slot)
 	{}
 
 };

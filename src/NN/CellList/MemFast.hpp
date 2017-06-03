@@ -5,8 +5,8 @@
  *      Author: Pietro Incardona
  */
 
-#ifndef CELLLISTSTANDARD_HPP_
-#define CELLLISTSTANDARD_HPP_
+#ifndef MEMFAST_HPP_
+#define MEMFAST_HPP_
 
 #include "CellList.hpp"
 #include "Space/SpaceBox.hpp"
@@ -37,7 +37,7 @@ class Mem_fast
 	 *
 	 *
 	 */
-	void realloc()
+	inline void realloc()
 	{
 		// we do not have enough slots reallocate the basic structure with more
 		// slots
@@ -59,7 +59,7 @@ class Mem_fast
 
 protected:
 
-	void init_to_zero(size_t slot, size_t tot_n_cell)
+	inline void init_to_zero(size_t slot, size_t tot_n_cell)
 	{
 		this->slot = slot;
 
@@ -73,7 +73,7 @@ protected:
 		cl_base.resize(tot_n_cell * slot);
 	}
 
-	void operator=(const Mem_fast & mem)
+	inline void operator=(const Mem_fast & mem)
 	{
 		slot = mem.slot;
 
@@ -81,7 +81,7 @@ protected:
 		cl_base = mem.cl_base;
 	}
 
-	void addCell(size_t cell_id, typename base::value_type ele)
+	inline void addCell(size_t cell_id, typename base::value_type ele)
 	{
 		// Get the number of element the cell is storing
 
@@ -98,29 +98,34 @@ protected:
 		cl_n.get(cell_id)++;
 	}
 
-	void add(size_t cell_id, typename base::value_type ele)
+	inline void add(size_t cell_id, typename base::value_type ele)
 	{
 		// add the element to the cell
 
 		this->addCell(cell_id,ele);
 	}
 
-	auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele)) &
+	inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.get(cell * slot + ele);
 	}
 
-	void remove(size_t cell, size_t ele)
+	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
+	{
+		return cl_base.get(cell * slot + ele);
+	}
+
+	inline void remove(size_t cell, size_t ele)
 	{
 		cl_n.get(cell)--;
 	}
 
-	size_t getNelements(const size_t cell_id) const
+	inline size_t getNelements(const size_t cell_id) const
 	{
 		return cl_n.get(cell_id);
 	}
 
-	void swap(Mem_fast & mem)
+	inline void swap(Mem_fast & mem)
 	{
 		cl_n.swap(mem.cl_n);
 		cl_base.swap(mem.cl_base);
@@ -130,7 +135,7 @@ protected:
 		slot = cl_slot_tmp;
 	}
 
-	void swap(Mem_fast && mem)
+	inline void swap(Mem_fast && mem)
 	{
 		slot = mem.slot;
 
@@ -138,7 +143,7 @@ protected:
 		cl_base.swap(mem.cl_base);
 	}
 
-	void clear()
+	inline void clear()
 	{
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
 			cl_n.get(i) = 0;
@@ -161,11 +166,11 @@ protected:
 
 public:
 
-	Mem_fast(size_t slot)
+	inline Mem_fast(size_t slot)
 	:slot(slot)
 	{}
 
-	void set_slot(size_t slot)
+	inline void set_slot(size_t slot)
 	{
 		this->slot = slot;
 	}
