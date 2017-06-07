@@ -3,7 +3,7 @@ LINKLIBS = $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_IOSTREAMS_LIB)  $(BOOST_LDFLAGS) 
 
 noinst_PROGRAMS = io
 io_SOURCES = main.cpp ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
-io_CXXFLAGS = $(AM_CXXFLAGS) $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include $(HDF5_CPPFLAGS)
+io_CXXFLAGS = $(AM_CXXFLAGS) $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) $(HDF5_CPPFLAGS) -I/usr/local/include
 io_CFLAGS = $(CUDA_CFLAGS)
 io_LDADD = $(LINKLIBS) 
 
