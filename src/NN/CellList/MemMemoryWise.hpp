@@ -103,7 +103,7 @@ public:
 		return it->second;
 	}
 
-	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.find(cell)->second.get(0)) &
+	inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.find(cell)->second.get(0)) &
 	{
 		auto it = cl_base.find(cell);
 		if (it == cl_base.end())

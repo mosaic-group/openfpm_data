@@ -91,7 +91,7 @@ public:
 		return cl_base.get(cell).get(ele);
 	}
 
-	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(0).get(0)) &
+	inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(0).get(0)) &
 	{
 		return cl_base.get(cell).get(ele);
 	}

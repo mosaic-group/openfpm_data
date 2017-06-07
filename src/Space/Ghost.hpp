@@ -96,7 +96,7 @@ public:
  *
  */
 template<unsigned int dim>
-class Padding : public Ghost<dim,size_t>
+class Padding : public Ghost<dim,long int>
 {
 public:
 	/*! \brief Constructor from initializer list
@@ -105,9 +105,9 @@ public:
 	 * \param p2 Padding right, initialized as a list example {1.0,1.0,1.0}
 	 *
 	 */
-	Padding(std::initializer_list<size_t> p1, std::initializer_list<size_t> p2)
+	Padding(std::initializer_list<long int> p1, std::initializer_list<long int> p2)
 	{
-		Box<dim,size_t>::set(p1,p2);
+		Box<dim,long int>::set(p1,p2);
 	}
 };
 

@@ -836,7 +836,7 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) const -> const decltype(this->Mem_type::get(cell,ele))
+	inline auto get(size_t cell, size_t ele) const -> decltype(this->Mem_type::get(cell,ele))
 	{
 		return Mem_type::get(cell,ele);
 	}

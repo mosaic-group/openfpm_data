@@ -110,7 +110,7 @@ protected:
 		return cl_base.get(cell * slot + ele);
 	}
 
-	inline auto get(size_t cell, size_t ele) const -> const decltype(cl_base.get(cell * slot + ele)) &
+	inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(cell * slot + ele)) &
 	{
 		return cl_base.get(cell * slot + ele);
 	}
