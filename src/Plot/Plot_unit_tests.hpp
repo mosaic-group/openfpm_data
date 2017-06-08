@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE( google_chart_bar_string )
 
 	//! [Producing an Histogram graph]
 
-	bool test = compare("gc_out_sc.html","gc_out_sc_test.html");
+	bool test = compare("gc_out_sc.html","test_data/gc_out_sc_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
