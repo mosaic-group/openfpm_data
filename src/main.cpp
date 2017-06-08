@@ -9,7 +9,7 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include "VCluster/VCluster.hpp"
-#include "unit_test_init_cleanup.hpp"
+#include "unit_test_init_cleanup_io.hpp"
 
 #include "VCluster/VCluster.hpp"
 #include "CSVWriter/CSVWriter_unit_tests.hpp"
