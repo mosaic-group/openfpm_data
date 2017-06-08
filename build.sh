@@ -23,6 +23,14 @@ cd openfpm_pdata
 git checkout Release_0.9.0
 cd ..
 
+cd openfpm_data
+git checkout Release_0.9.0
+cd ..
+
+cd openfpm_vcluster
+git checkout Release_0.9.0
+cd ..
+
 cd "$1/openfpm_io"
 
 echo "Compiling on $2"
