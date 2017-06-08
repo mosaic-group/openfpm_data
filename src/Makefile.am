@@ -1,5 +1,5 @@
 
-LINKLIBS = $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_IOSTREAMS_LIB)  $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(HDF5_LDFLAGS) $(HDF5_LIBS)  $(BOOST_THREAD_LIB) 
+LINKLIBS = $(PTHREAD_LIBS) $(HDF5_LDFLAGS) $(HDF5_LIBS)  $(OPT_LIBS) $(BOOST_IOSTREAMS_LIB)  $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB)  $(BOOST_THREAD_LIB) 
 
 noinst_PROGRAMS = io
 io_SOURCES = main.cpp ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
