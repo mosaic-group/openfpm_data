@@ -64,7 +64,7 @@ public:
 	 * \return cell list iterator
 	 *
 	 */
-	inline ParticleIt_CellP operator++()
+	inline ParticleIt_CellP & operator++()
 	{
 		fp();
 		while (isNext() && this->get() >= NN.get_gm())

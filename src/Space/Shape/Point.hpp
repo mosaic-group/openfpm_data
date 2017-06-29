@@ -465,9 +465,9 @@ template<unsigned int dim ,typename T> class Point
 		return *this;
 	}
 
-	/*! \brief Fill the vector property with the evaluated expression
+	/*! \brief Fill the point with the value specified in the array
 	 *
-	 * \param p_exp expression to evaluate
+	 * \param p array
 	 *
 	 * \return itself
 	 *

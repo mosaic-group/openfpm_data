@@ -11,6 +11,7 @@
 #include "grid_key.hpp"
 #include <iostream>
 #include "util/mathutil.hpp"
+#include "iterators/stencil_type.hpp"
 
 #define PERIODIC 1
 #define NON_PERIODIC 0
@@ -50,12 +51,14 @@ public:
 class CheckExistence
 {
 public:
-	/*! \brief Check is performed
+	/*! \brief Check if vertex exist
 	 *
-	 * Check is performed
+	 * Check if exist
 	 *
 	 * \param v_id Vertex id
 	 * \param sz Size limit for the vertex id
+	 *
+	 * \return true if exist
 	 *
 	 */
 	static bool valid(size_t v_id, size_t sz)
@@ -64,11 +67,14 @@ public:
 	}
 };
 
-// Declarations;
-
+//! Declaration grid_sm
 template<unsigned int N, typename T> class grid_sm;
+
+//! Declaration print_warning_on_adjustment
 template <unsigned int dim> class print_warning_on_adjustment;
-template<unsigned int dim,typename warn=print_warning_on_adjustment<dim>> class grid_key_dx_iterator_sub;
+
+//! Declaration grid_key_dx_iterator_sub
+template<unsigned int dim,typename stencil=no_stencil,typename warn=print_warning_on_adjustment<dim>> class grid_key_dx_iterator_sub;
 
 /*! \brief class that store the information of the grid like number of point on each direction and
  *  define the index linearization by stride
@@ -91,21 +97,6 @@ class grid_sm
 
 	//! size of the grid on each stride (used for linearization)
 	size_t sz_s[N];
-
-	/*! \brief It multiplicate two number and return the result
-	 *
-	 * It multiplicate two number and return the result, mainly used for LinId
-	 *
-	 * \param a operand 1
-	 * \param b operand 2
-	 *
-	 */
-
-	inline size_t mulLin(size_t a, size_t b)
-	{
-		return a*b;
-	}
-
 
 	/*! \brief Initialize the basic structure
 	 *
@@ -197,6 +188,8 @@ public:
 
 	/*! \brief Return the box enclosing the grid
 	 *
+	 * \return the box
+	 *
 	 */
 	inline const Box<N,size_t> & getBox() const
 	{
@@ -221,12 +214,13 @@ public:
 	 *
 	 * Linearize(key1 + key2) = Linearize(key1) + Linearize(key2)
 	 *
+	 *
+	 *
 	 */
-
-	inline bool isLinearizeLinear()
+/*	inline bool isLinearizeLinear()
 	{
 		return true;
-	}
+	}*/
 
 	/*! \brief Default constructor
 	 *
@@ -241,6 +235,8 @@ public:
 	}
 
 	/*! \brief construct a grid from another grid
+	 *
+	 * \param g grid info
 	 *
 	 * construct a grid from another grid, type can be different
 	 *

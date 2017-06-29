@@ -60,6 +60,18 @@ namespace openfpm
 	template<typename T, typename Memory, typename layout, template<typename> class layout_base, typename grow_p, unsigned int impl>
 	class vector
 	{
+		/*! \brief Stub size
+		 *
+		 * Report an error
+		 *
+		 * \return 0
+		 *
+		 */
+		size_t size()
+		{
+			std::cerr << __FILE__ << ":" << __LINE__ << " Error stub vector created" << std::endl;
+			return 0;
+		}
 	};
 
 	#include "map_vector_std.hpp"

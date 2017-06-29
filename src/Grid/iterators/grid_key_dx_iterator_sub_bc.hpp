@@ -15,13 +15,13 @@
  * In this case the boundaries are periodic
  *
  */
-template<unsigned int dim, typename warn=print_warning_on_adjustment<dim>>
-class grid_key_dx_iterator_sub_bc : public grid_key_dx_iterator_sub<dim,warn>
+template<unsigned int dim, typename stencil=no_stencil, typename warn=print_warning_on_adjustment<dim>>
+class grid_key_dx_iterator_sub_bc : public grid_key_dx_iterator_sub<dim,stencil,warn>
 {
-	// Boundary condition
+	//! Boundary conditions
 	size_t bc[dim];
 
-	// actual iterator box
+	//! actual iterator box
 	size_t act;
 
 	//! Here we have all the boxes that this iterator produce
@@ -131,7 +131,7 @@ public:
 		// Generate the sub-grid iterator
 
 		grid_sm<dim,void> nn(NNthree::data);
-		grid_key_dx_iterator_sub<dim> it(nn,NNzero::data,NNtwo::data);
+		grid_key_dx_iterator_sub<dim,stencil> it(nn,NNzero::data,NNtwo::data);
 
 		// Box base
 		Box<dim,long int> base_b(start,stop);
@@ -180,7 +180,7 @@ public:
 
 		// initialize the first iterator
 		if (boxes.size() > 0)
-			grid_key_dx_iterator_sub<dim,warn>::reinitialize(grid_key_dx_iterator_sub<dim,warn>(g,boxes[0].getKP1(),boxes[0].getKP2()));
+			grid_key_dx_iterator_sub<dim,stencil,warn>::reinitialize(grid_key_dx_iterator_sub<dim>(g,boxes[0].getKP1(),boxes[0].getKP2()));
 	}
 
 	/*! \brief Get the next element
@@ -191,10 +191,10 @@ public:
 	 *
 	 */
 
-	grid_key_dx_iterator_sub_bc<dim,warn> & operator++()
+	grid_key_dx_iterator_sub_bc<dim,stencil,warn> & operator++()
 	{
-		grid_key_dx_iterator_sub<dim,warn>::operator++();
-		if (grid_key_dx_iterator_sub<dim,warn>::isNext() == true)
+		grid_key_dx_iterator_sub<dim,stencil,warn>::operator++();
+		if (grid_key_dx_iterator_sub<dim,stencil,warn>::isNext() == true)
 		{
 			return *this;
 		}
@@ -202,7 +202,7 @@ public:
 		{
 			act++;
 			if (act < boxes.size())
-				grid_key_dx_iterator_sub<dim,warn>::reinitialize(grid_key_dx_iterator_sub<dim,warn>(this->getGridInfo(),boxes[act].getKP1(),boxes[act].getKP2()));
+				grid_key_dx_iterator_sub<dim,stencil,warn>::reinitialize(grid_key_dx_iterator_sub<dim>(this->getGridInfo(),boxes[act].getKP1(),boxes[act].getKP2()));
 		}
 
 		return *this;
@@ -223,10 +223,12 @@ public:
 
 	/*! \brief Return the actual grid key iterator
 	 *
+	 * \return the actual key
+	 *
 	 */
 	inline const grid_key_dx<dim> get() const
 	{
-		return grid_key_dx_iterator_sub<dim,warn>::get();
+		return grid_key_dx_iterator_sub<dim,stencil,warn>::get();
 	}
 
 	/*! \brief Reset the iterator (it restart from the beginning)

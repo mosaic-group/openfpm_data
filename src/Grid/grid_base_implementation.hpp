@@ -18,7 +18,7 @@
  * \tparam T type store by the grid
  * \tparam S Memory pool from where to take the memory
  * \tparam layout_ memory layout
- * \tpaeam layout_base layout memory meta-function (the meta-function used to construct layout_)
+ * \tparam layout_base layout memory meta-function (the meta-function used to construct layout_)
  *
  */
 template<unsigned int dim, typename T, typename S, typename layout_, template<typename> class layout_base >
@@ -175,7 +175,13 @@ public:
 #endif
 	}
 
-	//! Constructor allocate memory and give them a representation
+	/*! \brief Constructor
+	 *
+	 * It construct a grid of specified size
+	 *
+	 * \param sz array that indicate the size of the grid in each dimension
+	 *
+	 */
 	grid_base_impl(const size_t (& sz)[dim]) THROW
 	:g1(sz),isExternal(false)
 	{
@@ -197,6 +203,8 @@ public:
 	/*! \brief It copy a grid
 	 *
 	 * \param g grid to copy
+	 *
+	 * \return itself
 	 *
 	 */
 	grid_base_impl<dim,T,S,layout,layout_base> & operator=(const grid_base_impl<dim,T,S,layout,layout_base> & g)
@@ -438,11 +446,54 @@ public:
 		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
 	}
 
+	/*! \brief Get the reference of the selected element
+	 *
+	 * \param lin_id linearized element that identify the element in the grid
+	 *
+	 * \return the reference of the element
+	 *
+	 */
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))> inline r_type get(const size_t lin_id)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(lin_id);
+#endif
+		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin(data_,g1,lin_id);
+	}
+
+	/*! \brief Get the const reference of the selected element
+	 *
+	 * \param lin_id linearized element that identify the element in the grid
+	 *
+	 * \return the const reference of the element
+	 *
+	 */
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))> inline const r_type get(size_t lin_id) const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(lin_id);
+#endif
+		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin(data_,g1,lin_id);
+	}
+
+
 	/*! \brief Get the of the selected element as a boost::fusion::vector
 	 *
 	 * Get the selected element as a boost::fusion::vector
 	 *
 	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \see encap_c
+	 *
+	 * \return an encap_c that is the representation of the object (careful is not the object)
 	 *
 	 */
 	inline encapc<dim,T,layout> get_o(const grid_key_dx<dim> & v1)
@@ -462,6 +513,10 @@ public:
 	 * Get the selected element as a boost::fusion::vector
 	 *
 	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \see encap_c
+	 *
+	 * \return an encap_c that is the representation of the object (careful is not the object)
 	 *
 	 */
 	inline const encapc<dim,T,layout> get_o(const grid_key_dx<dim> & v1) const
@@ -564,6 +619,7 @@ public:
 
 	/*! \brief Remove one element valid only on 1D
 	 *
+	 * \param key element to remove
 	 *
 	 */
 	void remove(size_t key)
@@ -599,8 +655,6 @@ public:
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
-		// move the data
-//		data_.swap(grid.data_);
 
 		mem_swap<T,layout_base<T>,decltype(data_),decltype(grid)>::swap(data_,grid.data_);
 
@@ -730,7 +784,7 @@ public:
 
 	/*! \brief return the size of the grid
 	 *
-	 * Return the size of the grid
+	 * \return Return the size of the grid
 	 *
 	 */
 	inline size_t size() const
@@ -791,11 +845,13 @@ public:
 		return grid_key_dx_iterator<dim>(g1);
 	}
 
-	/*! \brief Return a grid iterator over all the point with the exception
-	 *   of the ghost part
+	/*! \brief Return a grid iterator over all points included between start and stop point
 	 *
 	 * Return a grid iterator over all the point with the exception of the
 	 * ghost part
+	 *
+	 * \param start point
+	 * \param stop point
 	 *
 	 * \return a sub-grid iterator
 	 *
@@ -810,42 +866,12 @@ public:
 		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
 	}
 
-	/*! \brief Return the size of the message needed to pack this object
-	 *
-	 * TODO They just return 0 for now
-	 *
-	 * \return The size of the object to pack this object
-	 *
-	 *
-	 */
 
-	size_t packObjectSize()
-	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-		return 0;
-	}
-
-	/*! \brief It fill the message packet
-	 *
-	 * TODO They just return 0 doing nothing
-	 *
-	 * \return The packet size
-	 *
-	 *
-	 */
-	size_t packObject(void * mem)
-	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-		return 0;
-	}
-
-	/* \brief It return the id of structure in the allocation list
+	/*! \brief It return the id of structure in the allocation list
 	 *
 	 * \see print_alloc and SE_CLASS2
+	 *
+	 * \return the id
 	 *
 	 */
 	long int who()

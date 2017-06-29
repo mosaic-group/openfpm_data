@@ -21,10 +21,43 @@ template <unsigned int dim>
 class print_warning_on_adjustment
 {
 public:
+
+	/*! \brief print warning type1
+	 *
+	 * \param gk_start start point
+	 *
+	 */
 	inline static void pw1(size_t i, const grid_key_dx<dim> & gk_start) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " start with index smaller than zero x[" << i << "]=" << gk_start.get(i) << "\n";}
+
+	/*! \brief print warning type2
+	 *
+	 * \param i component
+	 * \param gk_start start point
+	 *
+	 */
 	inline static void pw2(size_t i, const grid_key_dx<dim> & gk_start) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " Cropping start point x[" << i << "]=" << gk_start.get(i) << " to x[" << i << "]=0 \n"  ;}
+
+
+	/*! \brief print warning type3
+	 *
+	 *
+	 */
 	inline static void pw3() {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop with smaller index than start \n";}
+
+
+	/*! \brief print warning type4
+	 *
+	 * \param i component
+	 * \param gk_stop stop point
+	 * \param grid_base grid information
+	 *
+	 */
 	inline static void pw4(size_t i, const grid_key_dx<dim> & gk_stop, const grid_sm<dim,void> & grid_base) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop index bigger than cell domain x[" << i << "]=" << gk_stop.get(i) << " > " << grid_base.size(i) << "\n";}
+
+	/*! \brief print warning type5
+	 *
+	 *
+	 */
 	inline static void pw5() {std::cerr << "Warning grid_key_dx_iterator_sub: " << __FILE__ << ":" << __LINE__ << " the starting point is not smaller or equal than than the stop point in all the coordinates" << "\n";}
 };
 
@@ -39,10 +72,42 @@ template <unsigned int dim>
 class do_not_print_warning_on_adjustment
 {
 public:
+
+	/*! \brief print warning type1
+	 *
+	 * \param i component
+	 * \param gk_start start point
+	 *
+	 */
 	inline static void pw1(size_t i, const grid_key_dx<dim> & gk_start) {}
+
+	/*! \brief print warning type2
+	 *
+	 * \param i component
+	 * \param gk_start start point
+	 *
+	 */
 	inline static void pw2(size_t i, const grid_key_dx<dim> & gk_start) {}
+
+	/*! \brief print warning type3
+	 *
+	 *
+	 */
 	inline static void pw3() {}
+
+	/*! \brief print warning type4
+	 *
+	 * \param i component
+	 * \param gk_stop stop point
+	 * \param grid_base grid information
+	 *
+	 */
 	inline static void pw4(size_t i, const grid_key_dx<dim> & gk_stop, const grid_sm<dim,void> & grid_base) {}
+
+	/*! \brief print warning type5
+	 *
+	 *
+	 */
 	inline static void pw5() {}
 };
 
@@ -60,10 +125,10 @@ public:
  *
  */
 
-template<unsigned int dim, typename warn>
-class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
+template<unsigned int dim, typename stencil, typename warn>
+class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim,stencil>
 {
-#ifdef DEBUG
+#ifdef SE_CLASS1
 	bool initialized = false;
 #endif
 
@@ -88,19 +153,19 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 			// if start smaller than 0
 			if (gk_start.get(i) < 0)
 			{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 				warn::pw1(i,gk_start);
 #endif
 				if (gk_start.get(i) < gk_stop.get(i))
 				{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 					warn::pw2(i,gk_start);
 #endif
 					gk_start.set_d(i,0);
 				}
 				else
 				{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 					warn::pw3();
 #endif
 					// No points are available
@@ -112,7 +177,7 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 			// if stop bigger than the domain
 			if (gk_stop.get(i) >= (long int)grid_base.size(i))
 			{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 				warn::pw4(i,gk_stop,grid_base);
 #endif
 
@@ -133,7 +198,7 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim>
 			this->gk.set_d(i,gk_start.get(i));
 		}
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		initialized = true;
 #endif
 	}
@@ -147,39 +212,18 @@ public:
 	 *
 	 */
 	grid_key_dx_iterator_sub()
-{}
+	{}
 
 	/*! \brief Constructor from another grid_key_dx_iterator_sub
 	 *
-	 * It construct an iterator over an hyper-cube defined by start and stop,
-	 * \warning if start and stop are outside the domain defined by g the intersection
-	 * will be considered
 	 *
 	 * \param g_s_it grid_key_dx_iterator_sub
 	 *
 	 */
-	grid_key_dx_iterator_sub(const grid_key_dx_iterator_sub<dim> & g_s_it)
-	: grid_key_dx_iterator_sub(g_s_it.grid_base,g_s_it.gk_start,g_s_it.gk_stop)
-	{}
-
-
-	/*! \brief Constructor require a grid grid<dim,T>
-	 *
-	 * It construct an iterator over an hyper-cube defined by start and stop,
-	 * \warning if start and stop are outside the domain defined by g the intersection
-	 * will be considered
-	 *
-	 * \tparam T type of object that the grid store
-	 *
-	 * \param g Grid on which iterate
-	 * \param start starting point
-	 * \param stop end point
-	 *
-	 */
-	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
-	: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
+	grid_key_dx_iterator_sub(const grid_key_dx_iterator_sub<dim,stencil> & g_s_it)
+	:grid_key_dx_iterator<dim,stencil>(g_s_it),grid_base(g_s_it.grid_base),gk_start(g_s_it.gk_start), gk_stop(g_s_it.gk_stop)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		//! If we are on debug check that the stop grid_key id bigger than the start
 		//! grid_key
 
@@ -204,13 +248,98 @@ public:
 	 *
 	 * \tparam T type of object that the grid store
 	 *
+	 * \param g Grid on which iterate
+	 * \param start starting point
+	 * \param stop end point
+	 *
+	 */
+	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
+	: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
+	{
+#ifdef SE_CLASS1
+		//! If we are on debug check that the stop grid_key id bigger than the start
+		//! grid_key
+
+		for (unsigned int i = 0 ; i < dim ; i++)
+		{
+			if (gk_start.get(i) > gk_stop.get(i))
+			{
+				warn::pw5();
+			}
+		}
+#endif
+
+		Initialize();
+	}
+
+
+	/*! \brief Constructor require a grid grid<dim,T>
+	 *
+	 * It construct an iterator over an hyper-cube defined by start and stop,
+	 * \warning if start and stop are outside the domain defined by g the intersection
+	 * will be considered
+	 *
+	 * \tparam T type of object that the grid store
+	 *
+	 * \param g Grid on which iterate
+	 * \param start starting point
+	 * \param stop end point
+	 * \param stencil_pnt stencil points
+	 *
+	 */
+	template<typename T>
+	grid_key_dx_iterator_sub(const grid_sm<dim,T> & g,
+			                 const grid_key_dx<dim> & start,
+							 const grid_key_dx<dim> & stop,
+							 const grid_key_dx<dim> (& stencil_pnt)[stencil::nsp])
+	:grid_key_dx_iterator<dim,stencil>(g,stencil_pnt),grid_base(g),gk_start(start), gk_stop(stop)
+	{
+#ifdef SE_CLASS1
+		//! If we are on debug check that the stop grid_key id bigger than the start
+		//! grid_key
+
+		for (unsigned int i = 0 ; i < dim ; i++)
+		{
+			if (gk_start.get(i) > gk_stop.get(i))
+			{
+				warn::pw5();
+			}
+		}
+#endif
+
+		Initialize();
+		grid_key_dx_iterator<dim,stencil>::calc_stencil_offset(this->gk);
+	}
+
+	/*! \brief Constructor
+	 *
+	 * It construct an iterator setting only the stencil point.
+	 *  Require reinitialize to make it work
+	 *
+	 *
+	 * \param stencil_pnt stencil points
+	 *
+	 */
+	grid_key_dx_iterator_sub(const grid_key_dx<dim> (& stencil_pnt)[stencil::nsp])
+	:grid_key_dx_iterator<dim,stencil>(stencil_pnt)
+	{
+	}
+
+	/*! \brief Constructor require a grid grid<dim,T>
+	 *
+	 * It construct an iterator over an hyper-cube defined by start and stop,
+	 * \warning if start and stop are outside the domain defined by g the intersection
+	 * will be considered
+	 *
+	 * \tparam T type of object that the grid store
+	 *
 	 * \param g info of the grid where we are iterating
 	 * \param m Margin of the domain
 	 *
 	 */
 	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const size_t m)
-			: grid_key_dx_iterator<dim>(g),grid_base(g)
-			  {
+	:grid_key_dx_iterator<dim>(g),grid_base(g)
+	{
 		// Initialize the start and stop point
 		for (unsigned int i = 0 ; i < dim ; i++)
 		{
@@ -220,7 +349,7 @@ public:
 
 		//
 		Initialize();
-			  }
+	}
 
 	/*! \brief Constructor require a grid grid<dim,T>
 	 *
@@ -234,9 +363,9 @@ public:
 	 *
 	 */
 	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const size_t (& start)[dim], const size_t (& stop)[dim])
-			: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
-			  {
-#ifdef DEBUG
+	:grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
+	{
+#ifdef SE_CLASS1
 		//! If we are on debug check that the stop grid_key id bigger than the start
 		//! grid_key
 
@@ -250,7 +379,7 @@ public:
 #endif
 
 		Initialize();
-			  }
+	}
 
 	/*! \brief Get the next element
 	 *
@@ -260,9 +389,9 @@ public:
 	 *
 	 */
 
-	grid_key_dx_iterator<dim> & operator++()
+	grid_key_dx_iterator_sub<dim,stencil,warn> & operator++()
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (initialized == false)
 		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
 #endif
@@ -305,7 +434,7 @@ public:
 
 	inline bool isNext()
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (initialized == false)
 		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
 #endif
@@ -323,15 +452,17 @@ public:
 
 	/*! \brief Return the actual grid key iterator
 	 *
+	 * \return the actual key
+	 *
 	 */
 	inline grid_key_dx<dim> get() const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (initialized == false)
 		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
 #endif
 
-		return grid_key_dx_iterator<dim>::get();
+		return grid_key_dx_iterator<dim,stencil>::get();
 	}
 
 	/*! \brief Reinitialize the iterator
@@ -343,17 +474,17 @@ public:
 	 *
 	 */
 
-	inline void reinitialize(const grid_key_dx_iterator_sub<dim,warn> & g_s_it)
+	inline void reinitialize(const grid_key_dx_iterator_sub<dim> & g_s_it)
 	{
 		// Reinitialize the iterator
 
-		grid_key_dx_iterator<dim>::reinitialize(g_s_it);
-		grid_base = g_s_it.grid_base;
-		gk_start = g_s_it.gk_start;
-		gk_stop = g_s_it.gk_stop;
+		grid_key_dx_iterator<dim,stencil>::reinitialize(g_s_it);
+		grid_base = g_s_it.getGridInfo();
+		gk_start = g_s_it.getStart();
+		gk_stop = g_s_it.getStop();
 
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		//! If we are on debug check that the stop grid_key id bigger than the start
 		//! grid_key
 
@@ -369,6 +500,7 @@ public:
 #endif
 
 		Initialize();
+		grid_key_dx_iterator<dim,stencil>::calc_stencil_offset(this->gk);
 	}
 
 	/*! \brief Get the volume spanned by this sub-grid iterator
@@ -397,7 +529,7 @@ public:
 	 *
 	 *
 	 */
-	inline const grid_sm<dim,void> & getGridInfo()
+	inline const grid_sm<dim,void> & getGridInfo() const
 	{
 		return grid_base;
 	}
@@ -407,7 +539,7 @@ public:
 	 * \return starting point
 	 *
 	 */
-	grid_key_dx<dim> & getStart()
+	const grid_key_dx<dim> & getStart() const
 	{
 		return gk_start;
 	}
@@ -417,7 +549,7 @@ public:
 	 * \return stop point
 	 *
 	 */
-	grid_key_dx<dim> & getStop()
+	const grid_key_dx<dim> & getStop() const
 	{
 		return gk_stop;
 	}
@@ -448,15 +580,42 @@ public:
 	grid_key_dx_iterator_sub()
 	{}
 
+	/*! \brief Next point
+	 *
+	 * stub version do nothing
+	 *
+	 * \return itself
+	 *
+	 */
 	grid_key_dx_iterator<0> & operator++()
 	{return *this;}
 
+	/*! \brief Is there a next point
+	 *
+	 * stub version
+	 *
+	 * \return always false
+	 *
+	 */
 	inline bool isNext()
 	{return false;}
 
+	/*! \brief return the volume
+	 *
+	 * stub version
+	 *
+	 * \return always 0
+	 *
+	 */
 	inline size_t getVolume()
 	{return 0;}
 
+	/*! \brief Reset the iterator
+	 *
+	 * stub version, do nothing
+	 *
+	 *
+	 */
 	inline void reset()
 	{}
 };

@@ -44,7 +44,7 @@ namespace openfpm
 		 * \return the next grid_key
 		 *
 		 */
-		vector_key_iterator operator++()
+		vector_key_iterator & operator++()
 		{
 			//! increment the first index
 
@@ -134,7 +134,7 @@ namespace openfpm
 		 * \return the next grid_key
 		 *
 		 */
-		vector_key_iterator_seq<lid> operator++()
+		vector_key_iterator_seq<lid> & operator++()
 		{
 			//! increment the first index
 

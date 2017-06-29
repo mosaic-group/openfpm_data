@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_p )
 
 	grid_sm<3,int> gs(sz);
 
-	grid_key_dx_iterator_sub_bc<3> it(gs,key2,key1,{PERIODIC,PERIODIC,PERIODIC});
+	grid_key_dx_iterator_sub_bc<3,no_stencil> it(gs,key2,key1,{PERIODIC,PERIODIC,PERIODIC});
 
 	size_t cnt = 0;
 
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_p )
 
 	BOOST_REQUIRE_EQUAL(cnt,216ul);
 
-	grid_key_dx_iterator_sub_bc<3> it2(gs,key2,key3,{PERIODIC,PERIODIC,PERIODIC});
+	grid_key_dx_iterator_sub_bc<3,no_stencil> it2(gs,key2,key3,{PERIODIC,PERIODIC,PERIODIC});
 
 	cnt = 0;
 
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_p )
 	const grid_key_dx<3> key4(0,-1,0);
 	const grid_key_dx<3> key5(2,2,2);
 
-	grid_key_dx_iterator_sub_bc<3> it3(gs,key4,key5,{NON_PERIODIC,PERIODIC,NON_PERIODIC});
+	grid_key_dx_iterator_sub_bc<3,no_stencil> it3(gs,key4,key5,{NON_PERIODIC,PERIODIC,NON_PERIODIC});
 
 	while (it3.isNext())
 	{
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_p )
 
 	// bc non periodic with out-of-bound
 
-	grid_key_dx_iterator_sub_bc<3,do_not_print_warning_on_adjustment<3>> it4(gs,key4,key5,{NON_PERIODIC,NON_PERIODIC,NON_PERIODIC});
+	grid_key_dx_iterator_sub_bc<3,no_stencil,do_not_print_warning_on_adjustment<3>> it4(gs,key4,key5,{NON_PERIODIC,NON_PERIODIC,NON_PERIODIC});
 
 	cnt = 0;
 
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_p )
 	const grid_key_dx<3> key6(-1,-1,-1);
 	const grid_key_dx<3> key7(-1,-1,8);
 
-	grid_key_dx_iterator_sub_bc<3,do_not_print_warning_on_adjustment<3>> it5(gs,key6,key7,{NON_PERIODIC,NON_PERIODIC,NON_PERIODIC});
+	grid_key_dx_iterator_sub_bc<3,no_stencil,do_not_print_warning_on_adjustment<3>> it5(gs,key6,key7,{NON_PERIODIC,NON_PERIODIC,NON_PERIODIC});
 
 	cnt = 0;
 

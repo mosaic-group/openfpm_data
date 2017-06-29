@@ -19,7 +19,11 @@ class grid_key_dx
 {
 public:
 
-	// Constructor from expression
+	/*! \brief Constructor from expression
+	 *
+	 * \param exp grid_key_dx expression
+	 *
+	 */
 	template<typename exp1> inline grid_key_dx(const grid_key_dx_expression<dim,exp1> & exp)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
@@ -30,7 +34,11 @@ public:
 	inline grid_key_dx()
 	{}
 
-	//! Constructor from initializer list
+	/*! \brief Constructor from initializer list
+	 *
+	 * \param p1 initializer list
+	 *
+	 */
 	inline grid_key_dx(std::initializer_list<long int> p1)
 	{
 		size_t i = 0;
@@ -43,34 +51,55 @@ public:
 		}
 	}
 
-	//! Constructor from an other key
+	/*! \brief Constructor from an other key
+	 *
+	 * \param key copy constructor
+	 *
+	 */
 	inline grid_key_dx(const grid_key_dx<dim> & key)
 	:grid_key_dx(key.k)
 	{
 	}
 
-	//! Constructor from buffer reference
+	/*! \brief Constructor from buffer reference
+	 *
+	 * \param k reference buffer
+	 *
+	 */
 	inline grid_key_dx(const size_t (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
 	}
 
-	//! Constructor from buffer reference
+	/*! \brief Constructor from buffer reference
+	 *
+	 * \param k reference buffer
+	 *
+	 */
 	inline grid_key_dx(const long int (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
 	}
 
-	//! Construct a grid key from a list of numbers
+	/*! \brief Construct a grid key from a list of numbers
+	 *
+	 * \param cmb combination
+	 *
+	 */
 	template<typename ...T> inline grid_key_dx(const comb<dim> & cmb)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			k[i] = cmb[i];
 	}
 
-	//! Construct a grid key from a list of numbers
+	/*! \brief Construct a grid key from a list of numbers
+	 *
+	 * \param v number
+	 * \param t the other numbers
+	 *
+	 */
 	template<typename ...T> inline grid_key_dx(const size_t v,const T...t)
 	{
 #ifdef DEBUG
@@ -81,7 +110,7 @@ public:
 		invert_assign(t...);
 	}
 
-	/* \brief Set to zero the key
+	/*! \brief Set to zero the key
 	 *
 	 */
 	inline void zero()
@@ -90,7 +119,7 @@ public:
 			k[i] = 0;
 	}
 
-	/* \brief Set to one the key
+	/*! \brief Set to one the key
 	 *
 	 */
 	inline void one()
@@ -99,7 +128,7 @@ public:
 			k[i] = 1;
 	}
 
-	/* \brief Set to invalid the key
+	/*! \brief Set to invalid the key
 	 *
 	 */
 	inline void invalid()
@@ -108,7 +137,7 @@ public:
 			k[i] = -1;
 	}
 
-	/* \brief Check if the key is invalid (all components set to -1)
+	/*! \brief Check if the key is invalid (all components set to -1)
 	 *
 	 * \return true if it is valid
 	 *
@@ -124,9 +153,9 @@ public:
 		return false;
 	}
 
-	/* \brief sum a grid_key
+	/*! \brief sum a grid_key
 	 *
-	 * \param comb combination (or relative movement)
+	 * \param p comb combination (or relative movement)
 	 *
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
@@ -139,9 +168,9 @@ public:
 		return *this;
 	}
 
-	/* \brief sum a grid_key
+	/*! \brief sum a grid_key
 	 *
-	 * \param comb combination (or relative movement)
+	 * \param p comb combination (or relative movement)
 	 *
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
@@ -154,7 +183,7 @@ public:
 		return *this;
 	}
 
-	/* \brief sum a grid_key to the grid_key
+	/*! \brief sum a grid_key to the grid_key
 	 *
 	 * \param p grid_key to sum
 	 *
@@ -168,7 +197,7 @@ public:
 		return exp_sum;
 	}
 
-	/* \brief sum an a combination to the grid_key
+	/*! \brief sum an a combination to the grid_key
 	 *
 	 * \param comb combination (or relative movement)
 	 *
@@ -182,7 +211,7 @@ public:
 		return exp_sum;
 	}
 
-	/* \brief sum an a combination to the grid_key
+	/*! \brief sum an a combination to the grid_key
 	 *
 	 * \param comb combination (or relative movement)
 	 *
@@ -196,7 +225,7 @@ public:
 		return exp_sum;
 	}
 
-	/* \brief sum an a combination to the grid_key
+	/*! \brief sum an a combination to the grid_key
 	 *
 	 * \param comb combination (or relative movement)
 	 *
@@ -210,7 +239,7 @@ public:
 		return exp_sum;
 	}
 
-	/* \brief sum this key to another grid expression
+	/*! \brief sum this key to another grid expression
 	 *
 	 * \param cmb expression
 	 *
@@ -224,7 +253,7 @@ public:
 		return exp_sum;
 	}
 
-	/* \brief Check if two key are the same
+	/*! \brief Check if two key are the same
 	 *
 	 * \param key_t key to check
 	 *
@@ -253,7 +282,7 @@ public:
 	}
 
 
-	/* \brief Check if two key are the same
+	/*! \brief Check if two key are the same
 	 *
 	 * \param key_t key to check
 	 *

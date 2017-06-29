@@ -77,6 +77,11 @@ struct mem_get
 	{
 		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
 	}
+
+	static inline auto get_lin(const data_type & data_, const g1_type & g1, const size_t lin_id) -> decltype(boost::fusion::at_c<p>(data_.mem_r->operator[](lin_id))) &
+	{
+		return boost::fusion::at_c<p>(data_.mem_r->operator[](lin_id));
+	}
 };
 
 //! Case memory_traits_inte
@@ -86,6 +91,11 @@ struct mem_get<p,layout,data_type,g1_type,key_type,1>
 	static inline auto get(const data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(boost::fusion::at_c<p>(data_).mem_r->operator[](g1.LinId(v1)))
 	{
 		return boost::fusion::at_c<p>(data_).mem_r->operator[](g1.LinId(v1));
+	}
+
+	static inline auto get_lin(const data_type & data_, const g1_type & g1, size_t lin_id) -> decltype(boost::fusion::at_c<p>(data_).mem_r->operator[](lin_id))
+	{
+		return boost::fusion::at_c<p>(data_).mem_r->operator[](lin_id);
 	}
 };
 
