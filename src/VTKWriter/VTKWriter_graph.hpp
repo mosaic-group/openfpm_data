@@ -91,17 +91,19 @@ struct vtk_vertex_node_array_scalar_selector<true>
 template<typename G, bool attr>
 struct vtk_vertex_node
 {
-	// Vertex spatial type information
+	//! Vertex spatial type information
 	typedef typename G::V_type::s_type s_type;
 
+	//! Indicate if there is the information about the z coordinate
 	bool z_set;
 
+	//! point to write
 	s_type (&x)[3];
 
-	// Vertex object container
+	//! Vertex object container
 	typename G::V_container & vo;
 
-	// vertex node string
+	//! vertex node string
 	std::string & v_node;
 
 	/*! \brief Constructor
@@ -834,15 +836,16 @@ struct prop_out_vertex
 template<typename Graph>
 struct prop_out_edge
 {
-	// property output string
+	//! property output string
 	std::string & e_out;
 
-	// Graph that we are processing
+	//! Graph that we are processing
 	const Graph & g;
 
 	/*! \brief constructor
 	 *
-	 * \param v_out string to fill with the vertex properties
+	 * \param e_out string to fill with the edge properties
+	 * \param g graph we are writing
 	 *
 	 */
 	prop_out_edge(std::string & e_out, const Graph & g) :
@@ -851,7 +854,11 @@ struct prop_out_edge
 	}
 	;
 
-	//! It produce an output for each property
+	/*! \brief It produce an output for each property
+	 *
+	 * \param t property index
+	 *
+	 */
 	template<typename T>
 	void operator()(T& t) const
 	{
@@ -883,6 +890,7 @@ struct prop_out_edge
 template<typename Graph>
 class VTKWriter<Graph, VTK_GRAPH>
 {
+	//! graph we are writing
 	const Graph & g;
 
 	/*! \brief It get the vertex properties list
@@ -947,11 +955,11 @@ class VTKWriter<Graph, VTK_GRAPH>
 
 	/*! \brief Create the VTK point definition
 	 *
-	 * \tparam s_type spatial type of the data
 	 * \tparam attr false x,y,z are set to 0 for each vertex
 	 *
+	 * \return a string with the point list
+	 *
 	 */
-
 	template<bool attr> std::string get_point_list()
 	{
 		//! VTK spatial information
@@ -988,11 +996,9 @@ class VTKWriter<Graph, VTK_GRAPH>
 
 	/*! \brief Create the VTK vertex definition
 	 *
-	 * \tparam s_type spatial type of the data
-	 * \tparam attr false x,y,z are set to 0 for each vertex
+	 * \return a string with the vertex definition
 	 *
 	 */
-
 	std::string get_vertex_list()
 	{
 		//! vertex node output string
@@ -1090,8 +1096,9 @@ public:
 	 * \param name of the graph
 	 * \param ft specify if it is a VTK BINARY or ASCII file [default = ASCII]
 	 *
+	 * \return true if it write correctly
+	 *
 	 */
-
 	template<int prp = -1> bool write(std::string file, std::string graph_name = "Graph", file_type ft = file_type::ASCII)
 	{
 		// Check that the Vertex type define x y and z attributes
