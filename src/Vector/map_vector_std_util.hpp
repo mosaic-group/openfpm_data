@@ -10,18 +10,45 @@
 
 #include "util/common.hpp"
 
+/*! \brief pack/add function selector
+ *
+ * This in case of error
+ *
+ */
 template<bool,typename T, typename S>
 struct push_back_op_neste
 {
-	static inline void push_back(/*std::vector<T> & base, const S & obj*/)
+	/*! \brief push_back
+	 *
+	 * Print an error
+	 *
+	 * \param base vector where to push_back
+	 * \param obj object to push
+	 *
+	 */
+	static inline void push_back(std::vector<T> & base, const S & obj)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error cannot push " << demangle(typeid(S).name()) << " into a vector of " << demangle(typeid(T).name()) << std::endl;
 	}
 };
 
+/*! \brief pack/add function selector
+ *
+ * This in case normally add an object
+ *
+ */
 template<typename T, typename S>
 struct push_back_op_neste<true,T,S>
 {
+
+	/*! \brief Push_back on a vector
+	 *
+	 * Push on a vector an object
+	 *
+	 * \param base vector where to push_back
+	 * \param obj object to push
+	 *
+	 */
 	static inline void push_back(std::vector<T> & base, const S & obj)
 	{
 		base.push_back(T());
@@ -29,10 +56,24 @@ struct push_back_op_neste<true,T,S>
 	}
 };
 
+/*! \brief pack/add function selector
+ *
+ * In case of error
+ *
+ */
 template<bool,typename T, typename S>
 struct push_back_std_op_neste
 {
-	static inline void push_back(/*std::vector<T> & base, const S & obj*/)
+
+	/*! \brief push_back
+	 *
+	 * Print an error
+	 *
+	 * \param base vector where to push_back
+	 * \param obj object to push
+	 *
+	 */
+	static inline void push_back(std::vector<T> & base, const S & obj)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error cannot push " << demangle(typeid(S).name()) << " into a vector of " << demangle(typeid(T).name()) << std::endl;
 	}

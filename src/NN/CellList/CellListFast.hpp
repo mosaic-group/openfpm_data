@@ -689,6 +689,8 @@ public:
 
 	/*! \brief Get an iterator over particles following the cell structure
 	 *
+	 * \param vector containing the id of the domain cells
+	 *
 	 * \return a particle iterator
 	 *
 	 */
