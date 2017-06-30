@@ -96,6 +96,20 @@ private:
 
 	/*! \brief Check that the key is inside the grid
 	 *
+	 * \param key
+	 *
+	 */
+	inline void check_bound(size_t v1) const
+	{
+		if (v1 >= getGrid().size())
+		{
+			std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << v1<< " >= " << getGrid().size() << "\n";
+			ACTION_ON_ERROR(GRID_ERROR_OBJECT);
+		}
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
 	 * check if key2 is inside the g grid boundary
 	 *
 	 * \param g grid
@@ -453,7 +467,8 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))> inline r_type get(const size_t lin_id)
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))>
+	inline r_type get(const size_t lin_id)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
