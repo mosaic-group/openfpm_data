@@ -379,7 +379,12 @@ private:
 		}
 	}
 
-	//! Initialize the structures of the data structure
+	/*! Initialize the structures of the Cell-list
+	 *
+	 * \param div number of cells on each direction
+	 * \param tot_n_cell total number of cells
+	 *
+	 */
 	void InitializeStructures(const size_t (& div)[dim], size_t tot_n_cell)
 	{
 		cl_n.resize(tot_n_cell);
@@ -440,6 +445,7 @@ private:
 
 public:
 
+	//! Type of symmetric iterator
 	typedef CellNNIteratorSym<dim,CellList<dim,T,FAST,transform,base>,RUNTIME,NO_CHECK> SymNNIterator;
 
 	//! Object type that the structure store
@@ -458,6 +464,17 @@ public:
 		return CellDecomposer_sm<dim,T,transform>::getGrid();
 	}
 
+	/*! \brief Set the cell decomposer for the Cell-list
+	 *
+	 *  The first cell decomposer is the decomposition of the
+	 *  full-domain in cells the second cell-decomposer is the
+	 *  cell-decomposition of only the processor space domain
+	 *
+	 * \param cd First cell-decomposer
+	 * \param cd_sm Second cell-decomposer
+	 * \param pad padding of the second Cell-decomposer
+	 *
+	 */
 	void setCellDecomposer(CellDecomposer_sm<dim,T,transform> & cd, const CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box, size_t pad) const
 	{
 		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnitsNear(dom_box);
@@ -555,14 +572,22 @@ public:
 	:slot(STARTING_NSLOT)
 	{};
 
-	//! Copy constructor
+	/*! \brief Copy constructor
+	 *
+	 * \param cell Cell-list to copy
+	 *
+	 */
 	CellList(const CellList<dim,T,FAST,transform,base> & cell)
 	:slot(STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
 
-	//! Copy constructor
+	/*! Copy constructor
+	 *
+	 * \param cell Cell-list to copy
+	 *
+	 */
 	CellList(CellList<dim,T,FAST,transform,base> && cell)
 	:slot(STARTING_NSLOT)
 	{
@@ -689,7 +714,7 @@ public:
 
 	/*! \brief Get an iterator over particles following the cell structure
 	 *
-	 * \param vector containing the id of the domain cells
+	 * \param dom_cells vector containing the id of the domain cells
 	 *
 	 * \return a particle iterator
 	 *
