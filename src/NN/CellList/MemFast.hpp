@@ -8,14 +8,13 @@
 #ifndef MEMFAST_HPP_
 #define MEMFAST_HPP_
 
-#include "CellList.hpp"
 #include "Space/SpaceBox.hpp"
 #include "util/mathutil.hpp"
 #include "Space/Shape/HyperCube.hpp"
 #include "CellListIterator.hpp"
 #include <unordered_map>
 #include "util/common.hpp"
-
+#include "Vector/map_vector.hpp"
 
 
 template<unsigned int dim, typename T>
