@@ -75,6 +75,8 @@ struct GCoptions
 	 *
 	 * \param opt object to copy
 	 *
+	 * \return itself
+	 *
 	 */
 	GCoptions & operator=(const GCoptions & opt)
 	{
@@ -94,6 +96,9 @@ struct GCoptions
 	}
 };
 
+/*! \brief Google Graph
+ *
+ */
 struct GGraph
 {
 	//! TypeOfGraph

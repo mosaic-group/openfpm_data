@@ -91,6 +91,9 @@ struct prop_out_v
 	//! vector that we are processing
 	const openfpm::vector_std< ele_v > & vv;
 
+	//! properties names
+	const openfpm::vector<std::string> & prop_names;
+
 	/*! \brief constructor
 	 *
 	 * \param v_out string to fill with the vertex properties
@@ -98,18 +101,25 @@ struct prop_out_v
 	 * \param ft ASCII or BINARY format
 	 *
 	 */
-	prop_out_v(std::string & v_out, const openfpm::vector_std< ele_v > & vv, file_type ft)
-	:ft(ft),v_out(v_out),vv(vv)
+	prop_out_v(std::string & v_out,
+			   const openfpm::vector_std< ele_v > & vv,
+			   const openfpm::vector<std::string> & prop_names,
+			   file_type ft)
+	:ft(ft),v_out(v_out),vv(vv),prop_names(prop_names)
 	{};
 
-	//! It produce an output for each property
+	/*! \brief It produce an output for each property
+	 *
+	 * \param t property id
+	 *
+	 */
     template<typename T>
     void operator()(T& t) const
     {
     	typedef typename boost::mpl::at<typename ele_v::value_type::value_type::type,boost::mpl::int_<T::value>>::type ptype;
     	typedef typename std::remove_all_extents<ptype>::type base_ptype;
 
-    	meta_prop<boost::mpl::int_<T::value> ,ele_v,St, ptype, is_vtk_writable<base_ptype>::value > m(vv,v_out,ft);
+    	meta_prop<boost::mpl::int_<T::value> ,ele_v,St, ptype, is_vtk_writable<base_ptype>::value > m(vv,v_out,prop_names,ft);
     }
 
     void lastProp()
@@ -337,11 +347,13 @@ public:
 	 *
 	 * \param vps vector of positions
 	 * \param vpp vector of properties
-	 * \param mark additional information that divide the dataset into 2
-	 *        (in general is used to mark real from ghost information)
+	 * \param mark additional information that divide the dataset into 2 (in general is used to mark real from ghost information)
+	 * \param opt_names optional parameter that indicate the names of the properties
 	 *
 	 */
-	void add(const typename pair::first & vps, const typename pair::second & vpp,size_t mark)
+	void add(const typename pair::first & vps,
+			 const typename pair::second & vpp,
+			 size_t mark)
 	{
 		ele_vps<typename pair::first> t1(vps,mark);
 		ele_vpp<typename pair::second> t2(vpp,mark);
@@ -356,10 +368,16 @@ public:
 	 *
 	 * \param file path where to write
 	 * \param f_name name of the dataset
+	 * \param prop_names properties names
 	 * \param ft specify if it is a VTK BINARY or ASCII file [default = ASCII]
 	 *
+	 * \return true if the write complete successfully
+	 *
 	 */
-	template<int prp = -1> bool write(std::string file, std::string f_name = "points" , file_type ft = file_type::ASCII)
+	template<int prp = -1> bool write(std::string file,
+									  const openfpm::vector<std::string> & prop_names,
+									  std::string f_name = "points" ,
+									  file_type ft = file_type::ASCII)
 	{
 		// Header for the vtk
 		std::string vtk_header;
@@ -408,7 +426,7 @@ public:
 
 		// For each property in the vertex type produce a point data
 
-		prop_out_v< ele_vpp<typename pair::second>, typename pair::first::value_type::coord_type> pp(point_data, vpp, ft);
+		prop_out_v< ele_vpp<typename pair::second>, typename pair::first::value_type::coord_type> pp(point_data, vpp, prop_names,ft);
 
 		if (prp == -1)
 			boost::mpl::for_each< boost::mpl::range_c<int,0, pair::second::value_type::max_prop> >(pp);

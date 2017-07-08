@@ -66,26 +66,40 @@ struct prop_out_g
 	//! File type
 	file_type ft;
 
+	//! list of names for the properties
+	const openfpm::vector<std::string> & prop_names;
+
 	/*! \brief constructor
 	 *
 	 * \param v_out string to fill with the vertex properties
 	 * \param vg vector of elements to write
+	 * \param prop_names properties name
+	 * \param ft file type
 	 *
 	 */
-	prop_out_g(std::string & v_out, const openfpm::vector_std< ele_g > & vg, file_type ft)
-	:v_out(v_out),vg(vg),ft(ft)
+	prop_out_g(std::string & v_out, const openfpm::vector_std< ele_g > & vg, const openfpm::vector<std::string> & prop_names ,file_type ft)
+	:v_out(v_out),vg(vg),ft(ft),prop_names(prop_names)
 	{};
 
-	//! It produce an output for each property
+	/*! It produce an output for each propert
+	 *
+	 * \param t prop-id
+	 *
+	 */
     template<typename T>
     void operator()(T& t) const
     {
     	typedef typename boost::mpl::at<typename ele_g::value_type::value_type::type,boost::mpl::int_<T::value>>::type ptype;
     	typedef typename std::remove_all_extents<ptype>::type base_ptype;
 
-    	meta_prop<boost::mpl::int_<T::value> ,ele_g,St, ptype, is_vtk_writable<base_ptype>::value > m(vg,v_out,ft);
+    	meta_prop<boost::mpl::int_<T::value> ,ele_g,St, ptype, is_vtk_writable<base_ptype>::value > m(vg,v_out,prop_names,ft);
     }
 
+    /*! \brief Write the last property
+     *
+     *
+     *
+     */
     void lastProp()
 	{
 		// Create point data properties
@@ -190,6 +204,8 @@ class VTKWriter<pair,VECTOR_GRIDS>
 	/*! \brief Create the VTK point definition
 	 *
 	 * \param ft file type
+	 *
+	 * \return the string with the point list
 	 *
 	 */
 	std::string get_point_list(file_type ft)
@@ -303,11 +319,16 @@ public:
 	 *
 	 * \param file path where to write
 	 * \param name of the graph
+	 * \param prop_names properties name (can also be a vector of size 0)
 	 * \param ft specify if it is a VTK BINARY or ASCII file [default = ASCII]
 	 *
+	 * \return true if the function write successfully
+	 *
 	 */
-
-	template<int prp = -1> bool write(std::string file, std::string f_name = "grids" , file_type ft = file_type::ASCII)
+	template<int prp = -1> bool write(std::string file,
+									  const openfpm::vector<std::string> & prop_names,
+									  std::string f_name = "grids",
+									  file_type ft = file_type::ASCII)
 	{
 		// Header for the vtk
 		std::string vtk_header;
@@ -356,7 +377,7 @@ public:
 
 		// For each property in the vertex type produce a point data
 
-		prop_out_g< ele_g<typename pair::first,typename pair::second>, typename pair::second > pp(point_data, vg, ft);
+		prop_out_g< ele_g<typename pair::first,typename pair::second>, typename pair::second > pp(point_data, vg, prop_names, ft);
 
 		if (prp == -1)
 			boost::mpl::for_each< boost::mpl::range_c<int,0, pair::first::value_type::max_prop> >(pp);

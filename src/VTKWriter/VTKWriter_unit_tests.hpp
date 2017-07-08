@@ -668,7 +668,8 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	vtk_g.add(g3,offset3,spacing3,d3);
 	vtk_g.add(g4,offset4,spacing4,d4);
 
-	vtk_g.write("vtk_grids.vtk");
+	openfpm::vector<std::string> prp_names;
+	vtk_g.write("vtk_grids.vtk",prp_names);
 
 	// Check that match
 	bool test = compare("vtk_grids.vtk","test_data/vtk_grids_test.vtk");
@@ -772,7 +773,8 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	vtk_g.add(g3,offset3,spacing3,d3);
 	vtk_g.add(g4,offset4,spacing4,d4);
 
-	vtk_g.write("vtk_grids_prp.vtk");
+	openfpm::vector<std::string> prp_names;
+	vtk_g.write("vtk_grids_prp.vtk",prp_names);
 
 	// Check that match
 	bool test = compare("vtk_grids_prp.vtk","test_data/vtk_grids_prp_test.vtk");
@@ -821,7 +823,8 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	vtk_g.add(g3,offset3,spacing3,d3);
 	vtk_g.add(g4,offset4,spacing4,d4);
 
-	vtk_g.write("vtk_grids_unk.vtk");
+	openfpm::vector<std::string> prp_names;
+	vtk_g.write("vtk_grids_unk.vtk",prp_names);
 
 	// Check that match
 	bool test = compare("vtk_grids_unk.vtk","test_data/vtk_grids_test.vtk");
@@ -918,7 +921,8 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	vtk_v.add(v2ps,v2pp,88);
 	vtk_v.add(v3ps,v3pp,90);
 
-	vtk_v.write("vtk_points.vtk");
+	openfpm::vector<std::string> prp_names;
+	vtk_v.write("vtk_points.vtk",prp_names);
 
 	// Check that match
 	bool test = compare("vtk_points.vtk","test_data/vtk_points_test.vtk");
@@ -929,7 +933,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,Point<3,float>>>>,VECTOR_POINTS> vtk_v2;
 	vtk_v2.add(v1ps,v4pp,75);
 
-	vtk_v2.write("vtk_points_pp.vtk");
+	vtk_v2.write("vtk_points_pp.vtk",prp_names);
 
 	// Check that match
 	test = compare("vtk_points_pp.vtk","test_data/vtk_points_pp_test.vtk");
@@ -938,6 +942,53 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	}
 }
 
+BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_properties )
+{
+	Vcluster & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
+	{
+	// Create 3 vectors with random particles
+	openfpm::vector<Point<3,double>> v1ps;
+	openfpm::vector<aggregate<float,float[3]>> v1pp;
+
+    // set the seed
+	// create the random generator engine
+	SimpleRNG rng;
+
+	// fill the vector with random data
+	v1ps.resize(100);
+	v1pp.resize(100);
+
+	for (size_t i = 0 ; i < v1ps.size(); i++)
+	{
+		v1ps.template get<0>(i)[0] = rng.GetUniform();
+		v1ps.template get<0>(i)[1] = rng.GetUniform();
+		v1ps.template get<0>(i)[2] = rng.GetUniform();
+
+
+		v1pp.template get<0>(i) = rng.GetUniform();
+		v1pp.template get<1>(i)[0] = rng.GetUniform();
+		v1pp.template get<1>(i)[1] = rng.GetUniform();
+		v1pp.template get<1>(i)[2] = rng.GetUniform();
+	}
+
+	openfpm::vector<std::string> prop_names;
+
+	// Create a writer and write adding names to the properties
+	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,float[3]>>>,VECTOR_POINTS> vtk_v;
+	vtk_v.add(v1ps,v1pp,75);
+	openfpm::vector<std::string> prp_names({"scalar","vector"});
+	vtk_v.write("vtk_points_with_prp_names.vtk",prp_names);
+
+	// Check that match
+	bool test = compare("vtk_points_with_prp_names.vtk","test_data/vtk_points_with_prp_names_test.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
+
+	}
+}
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 {
@@ -1011,8 +1062,9 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		vtk_v.add(v2ps,v2pp,88);
 		vtk_v.add(v3ps,v3pp,90);
 
-		vtk_v.write("vtk_points_bin.vtk","vtk output",file_type::BINARY);
-		vtk_v.write("vtk_points_bin2.vtk","vtk output",file_type::BINARY);
+		openfpm::vector<std::string> prp_names;
+		vtk_v.write("vtk_points_bin.vtk",prp_names,"vtk output",file_type::BINARY);
+		vtk_v.write("vtk_points_bin2.vtk",prp_names,"vtk output",file_type::BINARY);
 
 
 		// Check that match
@@ -1025,7 +1077,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,Point<3,float>>>>,VECTOR_POINTS> vtk_v2;
 		vtk_v2.add(v1ps,v4pp,75);
 
-		vtk_v2.write("vtk_points_pp_bin.vtk","vtk output",file_type::BINARY);
+		vtk_v2.write("vtk_points_pp_bin.vtk",prp_names,"vtk output",file_type::BINARY);
 
 		// Check that match
 		test = compare("vtk_points_pp_bin.vtk","test_data/vtk_points_pp_bin_test.vtk");

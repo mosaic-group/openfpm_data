@@ -12,7 +12,7 @@
 #include "is_vtk_writable.hpp"
 #include "byteswap_portable.hpp"
 
-/*! \brief Return the Attributes name (if they have)
+/*! \brief Return the Attributes name from the type
  *
  *
  */
@@ -23,14 +23,22 @@ struct getAttrName
 	 *
 	 * \param i id of the attribute
 	 * \param oprp post-fix to add
+	 * \param prop_names properties name
+	 *
+	 * \return the string with the property name
 	 *
 	 */
-	static inline std::string get(size_t i, const std::string & oprp)
+	static inline std::string get(size_t i, const openfpm::vector<std::string> & prop_names, const std::string & oprp)
 	{
 		return ele_g::value_type::value_type::attributes::name[i] + oprp;
 	}
 };
 
+/*! \brief Return the Attributes name from the type
+ *
+ * This is the case when the type has no name
+ *
+ */
 template<typename ele_g>
 struct getAttrName<ele_g,false>
 {
@@ -38,11 +46,21 @@ struct getAttrName<ele_g,false>
 	 *
 	 * \param i id of the attribute
 	 * \param oprp post-fix to add
+	 * \param  prop_names properties name
+	 *
+	 * \return return the string with the property name
 	 *
 	 */
-	static inline std::string get(size_t i, const std::string & oprp)
+	static inline std::string get(size_t i, const openfpm::vector<std::string> & prop_names, const std::string & oprp)
 	{
-		return std::string("attr" + std::to_string(i) + oprp);
+		if (i >= prop_names.size())
+		{
+			return std::string("attr" + std::to_string(i) + oprp);
+		}
+		else
+		{
+			return prop_names.get(i) + oprp;
+		}
 	}
 };
 
@@ -52,7 +70,7 @@ struct getAttrName<ele_g,false>
  * \param oprp prefix
  *
  */
-template<unsigned int i, typename ele_g, bool has_attributes> std::string get_point_property_header_impl(const std::string & oprp)
+template<unsigned int i, typename ele_g, bool has_attributes> std::string get_point_property_header_impl(const std::string & oprp, const openfpm::vector<std::string> & prop_names)
 {
 	//! vertex node output string
 	std::string v_out;
@@ -76,7 +94,7 @@ template<unsigned int i, typename ele_g, bool has_attributes> std::string get_po
 			}
 
 			// Create point data properties
-			v_out += "VECTORS " + getAttrName<ele_g,has_attributes>::get(i,oprp) + " " + type + "\n";
+			v_out += "VECTORS " + getAttrName<ele_g,has_attributes>::get(i,prop_names,oprp) + " " + type + "\n";
 		}
 	}
 	else
@@ -94,16 +112,16 @@ template<unsigned int i, typename ele_g, bool has_attributes> std::string get_po
 
 				// We check if it is a vector or scalar like type
 				if (vtk_dims<ctype>::value == 1)
-					v_out += "SCALARS " + getAttrName<ele_g,has_attributes>::get(i,oprp) + " " + type + "\n";
+					v_out += "SCALARS " + getAttrName<ele_g,has_attributes>::get(i,prop_names,oprp) + " " + type + "\n";
 				else
-					v_out += "VECTORS " + getAttrName<ele_g,has_attributes>::get(i,oprp) + " " + type + "\n";
+					v_out += "VECTORS " + getAttrName<ele_g,has_attributes>::get(i,prop_names,oprp) + " " + type + "\n";
 			}
 
 			return v_out;
 		}
 
 		// Create point data properties
-		v_out += "SCALARS " + getAttrName<ele_g,has_attributes>::get(i,oprp) + " " + type + "\n";
+		v_out += "SCALARS " + getAttrName<ele_g,has_attributes>::get(i,prop_names,oprp) + " " + type + "\n";
 
 		// Default lookup table
 		v_out += "LOOKUP_TABLE default\n";
@@ -171,6 +189,15 @@ class prop_write_out<1,T>
 {
 public:
 
+	/*! \brief Write the property
+	 *
+	 *  \param v_out output string of the property
+	 *  \param vg vector of properties
+	 *  \param k data-set to output
+	 *  \param it iterator with the point to output
+	 *  \param ft output type BINARY or ASCII
+	 *
+	 */
 	template<typename vector, typename iterator, typename I> static void write(std::string & v_out, vector & vg, size_t k, iterator & it, file_type ft)
 	{
 		typedef decltype(vg.get(k).g.get_o(it.get()).template get<I::value>()) ctype_;
@@ -207,16 +234,17 @@ struct meta_prop
 	 *
 	 * \param vg array of elements to write
 	 * \param v_out string containing the string
+	 * \param prop_names property names
 	 * \param ft ASCII or BINARY
 	 *
 	 */
-	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, file_type ft)
+	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, const openfpm::vector<std::string> & prop_names, file_type ft)
 	{
     	// actual string size
     	size_t sz = v_out.size();
 
 		// Produce the point properties header
-    	v_out += get_point_property_header_impl<I::value,ele_g,has_attributes<typename ele_g::value_type::value_type>::value>("");
+    	v_out += get_point_property_header_impl<I::value,ele_g,has_attributes<typename ele_g::value_type::value_type>::value>("",prop_names);
 
 		// If the output has changed, we have to write the properties
 		if (v_out.size() != sz)
@@ -252,16 +280,17 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
 	 *
 	 * \param vg array of elements to write
 	 * \param v_out string containing the string
+	 * \param prop_names properties name
 	 * \param ft ASCII or BINARY
 	 *
 	 */
-	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, file_type ft)
+	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, const openfpm::vector<std::string> & prop_names , file_type ft)
 	{
 	    // actual string size
 	    size_t sz = v_out.size();
 
 		// Produce the point properties header
-		v_out += get_point_property_header_impl<I::value,ele_g,has_attributes<typename ele_g::value_type::value_type>::value>("");
+		v_out += get_point_property_header_impl<I::value,ele_g,has_attributes<typename ele_g::value_type::value_type>::value>("",prop_names);
 
 		// If the output has changed, we have to write the properties
 		if (v_out.size() != sz)
@@ -327,10 +356,11 @@ struct meta_prop<I, ele_g,St, T[N1][N2],is_writable>
 	 *
 	 * \param vg array of elements to write
 	 * \param v_out string containing the string
+	 * \param prop_names property names
 	 * \param ft ASCII or BINARY
 	 *
 	 */
-	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, file_type ft)
+	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, const openfpm::vector<std::string> & prop_names, file_type ft)
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -340,7 +370,7 @@ struct meta_prop<I, ele_g,St, T[N1][N2],is_writable>
 		    	size_t sz = v_out.size();
 
 				// Produce the point properties header
-				v_out += get_point_property_header_impl<I::value,ele_g,has_attributes<typename ele_g::value_type::value_type>::value>("_" + std::to_string(i1) + "_" + std::to_string(i2));
+				v_out += get_point_property_header_impl<I::value,ele_g,has_attributes<typename ele_g::value_type::value_type>::value>("_" + std::to_string(i1) + "_" + std::to_string(i2),prop_names);
 
 				// If the output has changed, we have to write the properties
 				if (v_out.size() != sz)
@@ -387,10 +417,11 @@ struct meta_prop<I,ele_g,St,T,false>
 	 *
 	 * \param vg array of elements to write
 	 * \param v_out string containing the string
+	 * \param prop_names properties name
 	 * \param ft ASCII or BINARY
 	 *
 	 */
-	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, file_type ft)
+	inline meta_prop(const openfpm::vector< ele_g > & vg, std::string & v_out, const openfpm::vector<std::string> & prop_names, file_type ft)
 	{
 	}
 };
