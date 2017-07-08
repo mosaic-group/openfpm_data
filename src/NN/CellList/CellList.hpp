@@ -662,12 +662,14 @@ public:
 
 	/*! \brief Get an iterator over particles following the cell structure
 	 *
+	 * \param dom_cells cells in the domain
+	 *
 	 * \return a particle iterator
 	 *
 	 */
-	ParticleIt_Cells<dim,CellList<dim,T,Mem_fast<dim,T>,transform,base>> getDomainIterator(openfpm::vector<size_t> & dom_cells)
+	ParticleIt_Cells<dim,CellList<dim,T,Mem_fast,transform,base>> getDomainIterator(openfpm::vector<size_t> & dom_cells)
 	{
-		ParticleIt_Cells<dim,CellList<dim,T,Mem_fast<dim,T>,transform,base>> it(*this,dom_cells);
+		ParticleIt_Cells<dim,CellList<dim,T,Mem_fast,transform,base>> it(*this,dom_cells);
 
 		return it;
 	}

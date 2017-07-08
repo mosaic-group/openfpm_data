@@ -35,8 +35,6 @@
  * \tparam T type of the space float, double, complex
  *
  */
-
-template<unsigned int dim, typename T>
 class Mem_bal
 {
 	typedef openfpm::vector<size_t> base;
@@ -46,9 +44,6 @@ class Mem_bal
 	openfpm::vector<base> cl_base;
 
 public:
-
-	// Object type that the structure store
-	typedef T value_type;
 
 	inline void init_to_zero(size_t slot, size_t tot_n_cell)
 	{

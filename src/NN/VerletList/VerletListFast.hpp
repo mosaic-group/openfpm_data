@@ -204,7 +204,18 @@ class PartItNN
 {
 public:
 
-	//! It return the particle iterator
+	/*! \brief It return the particle iterator
+	 *
+	 * \param pos vector with position of the particles
+	 * \param dom list of cells with normal neighborhood
+	 * \param anom list of cells with not-normal neighborhood
+	 * \param cli Cell-list used for Verlet-list construction
+	 * \param g_m ghost marker
+	 * \param end final particle id
+	 *
+	 * \return the particle iterator
+	 *
+	 */
 	static inline auto get(const vector & pos, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, CellList & cli, size_t g_m, size_t & end) -> decltype(pos.getIteratorTo(0))
 	{
 		end = g_m;
@@ -212,11 +223,29 @@ public:
 	}
 };
 
+/*! \brief In general different NN scheme like full symmetric or CRS require different
+ *         iterators over particles this class select the proper one
+ *
+ * This is the CRS scheme
+ *
+ */
 template<unsigned int dim, typename vector, typename CellList>
 class PartItNN<VL_CRS_SYMMETRIC,dim,vector,CellList>
 {
 public:
-	//! It return the particle iterator
+
+	/*! \brief It return the particle iterator
+	 *
+	 * \param pos vector with position of the particles
+	 * \param dom list of cells with normal neighborhood
+	 * \param anom list of cells with not-normal neighborhood
+	 * \param cli Cell-list used for Verlet-list construction
+	 * \param g_m ghost marker
+	 * \param end final particle id
+	 *
+	 * \return the particle iterator
+	 *
+	 */
 	static inline ParticleItCRS_Cells<dim,CellList> get(const vector & pos, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, CellList & cli, size_t g_m, size_t & end)
 	{
 		end = pos.size();
@@ -614,6 +643,8 @@ public:
 	 * \param dom Processor domain
 	 * \param pos vector of particle positions
 	 * \param g_m ghost marker
+	 * \param dom_c list of cells with normal neighborhood
+	 * \param anom_c list of cells with anormal neighborhood
 	 *
 	 */
 	void updateCrs(const Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t & g_m, const openfpm::vector<size_t> & dom_c, const openfpm::vector<subsub_lin<dim>> & anom_c)

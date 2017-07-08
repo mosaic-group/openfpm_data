@@ -197,9 +197,9 @@ public:
 		return exp_sum;
 	}
 
-	/*! \brief sum an a combination to the grid_key
+	/*! \brief sum a point to the grid_key
 	 *
-	 * \param comb combination (or relative movement)
+	 * \param p point (or relative movement)
 	 *
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
@@ -213,7 +213,7 @@ public:
 
 	/*! \brief sum an a combination to the grid_key
 	 *
-	 * \param comb combination (or relative movement)
+	 * \param cmb combination (or relative movement)
 	 *
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
@@ -227,7 +227,7 @@ public:
 
 	/*! \brief sum an a combination to the grid_key
 	 *
-	 * \param comb combination (or relative movement)
+	 * \param cmb combination (or relative movement)
 	 *
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
@@ -295,7 +295,12 @@ public:
 	}
 
 
-	//! set the grid key from a list of numbers
+	/*! \brief set the Key from a list of numbers
+	 *
+	 * \param v list of number
+	 * \param t list of number
+	 *
+	 */
 	template<typename a, typename ...T>void set(a v, T...t)
 	{
 #ifdef SE_CLASS1
@@ -309,6 +314,8 @@ public:
 	/*! \brief Convert to a point the grid_key_dx
 	 *
 	 * \see toPoint
+	 *
+	 * \return a point long int
 	 *
 	 */
 	Point<dim,long int> toPointS() const
@@ -336,6 +343,8 @@ public:
 	/*! \brief Convert to a point the grid_key_dx
 	 *
 	 * \see toPointS
+	 *
+	 * \return a point unsigned long int
 	 *
 	 */
 	Point<dim,size_t> toPoint() const
@@ -402,7 +411,10 @@ private:
 
 	/*! \brief Recursively invert the assignment
 	 *
-	 * Recursively invert the assignment at compile-time
+	 * Recursively invert the assignment at compile-time (hopefully)
+	 *
+	 * \param v list of numbers
+	 * \param t list of numbers
 	 *
 	 */
 	template<typename a, typename ...T>void invert_assign(a v,T...t)
@@ -411,11 +423,17 @@ private:
 		invert_assign(t...);
 	}
 
+	/*! \brief assignment
+	 *
+	 * \param v list of number
+	 *
+	 */
 	template<typename a, typename ...T>void invert_assign(a v)
 	{
 		k[0] = v;
 	}
 
+	//! Constructor
 	void invert_assign()
 	{
 	}

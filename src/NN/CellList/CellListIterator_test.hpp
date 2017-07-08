@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE( ParticleItCRS_Cells_iterator )
 	}
 
 	// Initialize a cell list
-	CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>> NN;
+	CellList<dim,float,Mem_fast,shift<dim,float>> NN;
 
 	NN.Initialize(box,div,1);
 
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE( ParticleItCRS_Cells_iterator )
 	}
 
 	//Test the iterator
-	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>>> it_cl(NN,dom,anom,NN.getNNc_sym());
+	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast,shift<dim,float>>> it_cl(NN,dom,anom,NN.getNNc_sym());
 
 	size_t count = 0;
 
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE( ParticleItCRS_Cells_iterator )
 		++it2;
 	}
 
-	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>>> it_cl2(NN,dom,anom,NN.getNNc_sym());
+	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast,shift<dim,float>>> it_cl2(NN,dom,anom,NN.getNNc_sym());
 
 	count = 0;
 
@@ -302,7 +302,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_NN_iterator )
 	}
 
 	// Initialize a cell list
-	CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>> NN;
+	CellList<dim,float,Mem_fast,shift<dim,float>> NN;
 
 	NN.Initialize(box,div,1);
 
@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_NN_iterator )
 	}
 
 	//Test the iterator
-	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>>> it_cl(NN,dom,anom,NN.getNNc_sym());
+	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast,shift<dim,float>>> it_cl(NN,dom,anom,NN.getNNc_sym());
 
 	size_t count = 0;
 
@@ -423,7 +423,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 	}
 
 	// Initialize a cell list
-	CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>> NN;
+	CellList<dim,float,Mem_fast,shift<dim,float>> NN;
 
 	NN.Initialize(box,div,1);
 
@@ -448,7 +448,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 	}
 
 	//Test the iterator
-	ParticleIt_Cells<dim,CellList<dim,float,Mem_fast<dim,float>,shift<dim,float>>> it_cl(NN,dom,290);
+	ParticleIt_Cells<dim,CellList<dim,float,Mem_fast,shift<dim,float>>> it_cl(NN,dom,290);
 
 	size_t count = 0;
 

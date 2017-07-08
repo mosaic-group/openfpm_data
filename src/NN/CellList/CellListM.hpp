@@ -49,7 +49,7 @@ struct PV_cl
  * ### Declaration of a Multi-Phase cell list and usage
  *
  */
-template<unsigned int dim, typename T, unsigned int sh_byte, typename CellBase=CellList<dim,T,Mem_fast<dim,T>,shift<dim, T>> >
+template<unsigned int dim, typename T, unsigned int sh_byte, typename CellBase=CellList<dim,T,Mem_fast,shift<dim, T>> >
 class CellListM : public CellBase
 {
 	//! Mask to get the high bits of a number
@@ -60,19 +60,28 @@ class CellListM : public CellBase
 
 public:
 
+	//! Type of the iterator for the neighborhood
 	typedef CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,RUNTIME,NO_CHECK> SymNNIterator;
 
 	//! Default Constructor
 	CellListM()
 	{};
 
-	//! Copy constructor
+	/*! \brief Copy constructor
+	 *
+	 * \param cell Cell to copy
+	 *
+	 */
 	CellListM(const CellListM<dim,T,sh_byte,CellBase> & cell)
 	{
 		this->operator=(cell);
 	}
 
-	//! Copy constructor
+	/*! \brief Copy constructor
+	 *
+	 * \param cell Cell to copy
+	 *
+	 */
 	CellListM(CellListM<dim,T,sh_byte,CellBase> && cell)
 	{
 		this->operator=(cell);
