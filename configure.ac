@@ -34,6 +34,11 @@ CXXFLAGS+=" -march=native -mtune=native -Wno-unused-local-typedefs -Wextra -Wno-
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADER(mpi.h,[],[echo "mpi.h not found"
+                          exit 200])
+AC_LANG_POP([C++])
+
 # set default prefix
 if test "$prefix" = "NONE"; then
    prefix="/usr/local"

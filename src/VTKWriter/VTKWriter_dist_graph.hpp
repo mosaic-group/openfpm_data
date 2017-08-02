@@ -125,7 +125,11 @@ struct vtk_dist_vertex_node
 		v_node += std::to_string(x[0]) + " " + std::to_string(x[1]) + " " + std::to_string(x[2]) + "\n";
 	}
 
-	//! It call the functor for each member
+	/*! \brief It call the functor for each attribute
+	 *
+	 * \param t attribute id
+	 *
+	 */
 	template<typename T>
 	void operator()(T& t)
 	{
@@ -173,7 +177,11 @@ struct vtk_dist_vertex_node<G, false>
 	{
 	}
 
-	//! It call the functor for each member
+	/*! \brief It call the functor for each attribute
+	 *
+	 * \param t attribute id
+	 *
+	 */
 	template<typename T>
 	void operator()(T& t)
 	{
@@ -391,9 +399,10 @@ public:
 
 	/*! \brief For each vertex set the value
 	 *
-	 * \tparam i vertex property to print
 	 *
 	 * \param g graph to output
+	 *
+	 * \return get the point data string
 	 *
 	 */
 	static std::string get_point_data(const Graph & g)
@@ -419,9 +428,9 @@ public:
 
 	/*! \brief For each edge set the value, set 1 on vertices, needed by vtk file format
 	 *
-	 * \tparam i edge property to print
-	 *
 	 * \param g graph to output
+	 *
+	 * \return the cell-data string
 	 *
 	 */
 
@@ -463,6 +472,8 @@ public:
 	/*! \brief Given a Graph return the point data header for a typename T
 	 *
 	 * \param prop property id
+	 *
+	 * \return the string with the property header
 	 *
 	 */
 	static std::string get_point_property_header(size_t prop)
@@ -601,6 +612,8 @@ class dist_prop_output<false, Graph, i>
 	 *
 	 * \param g graph to print
 	 *
+	 * \return the string with the point data
+	 *
 	 */
 	static std::string get_point_data(Graph & g)
 	{
@@ -625,10 +638,11 @@ class dist_prop_output<false, Graph, i>
 
 	/*! \brief For each edge output the property string
 	 *
-	 * \param graph to print
+	 * \param g graph to print
+	 *
+	 * \return the string containing cell-data
 	 *
 	 */
-
 	static std::string get_cell_data(const Graph & g)
 	{
 		//! vertex node output string
@@ -801,7 +815,11 @@ struct dist_prop_out_vertex
 	{
 	}
 
-	//! It produce an output for each property
+	/*! \brief It produce an output for each property
+	 *
+	 * \param t property id
+	 *
+	 */
 	template<typename T>
 	void operator()(T& t) const
 	{
@@ -846,16 +864,19 @@ struct dist_prop_out_edge
 
 	/*! \brief constructor
 	 *
-	 * \param v_out string to fill with the vertex properties
+	 * \param e_out string to fill with the edge properties
+	 * \param g graph to write
 	 *
 	 */
 	dist_prop_out_edge(std::string & e_out, const Graph & g) :
 			e_out(e_out), g(g)
-	{
-	}
-	;
+	{};
 
-	//! It produce an output for each property
+	/*! \brief It produce an output for each property
+	 *
+	 * \param t index property
+	 *
+	 */
 	template<typename T>
 	void operator()(T& t) const
 	{
@@ -930,6 +951,11 @@ class VTKWriter<Graph, DIST_GRAPH>
 		return v_out;
 	}
 
+	/*! \brief Get the VTK point info string
+	 *
+	 * \return the point info string
+	 *
+	 */
 	std::string get_point_info()
 	{
 		//! vertex property output string
@@ -977,8 +1003,9 @@ class VTKWriter<Graph, DIST_GRAPH>
 
 	/*! \brief Create the VTK point definition
 	 *
-	 * \tparam s_type spatial type of the data
 	 * \tparam attr false x,y,z are set to 0 for each vertex
+	 *
+	 * \return the point list string
 	 *
 	 */
 
@@ -1018,11 +1045,11 @@ class VTKWriter<Graph, DIST_GRAPH>
 
 	/*! \brief Create the VTK vertex definition
 	 *
-	 * \tparam s_type spatial type of the data
 	 * \tparam attr false x,y,z are set to 0 for each vertex
 	 *
+	 * \return the vertex list string
+	 *
 	 */
-
 	std::string get_vertex_list()
 	{
 		//! vertex node output string
@@ -1114,11 +1141,12 @@ public:
 	 * \tparam prp_out which properties to output [default = -1 (all)]
 	 *
 	 * \param file path where to write
-	 * \param name of the graph
+	 * \param graph_name of the graph
 	 * \param ft specify if it is a VTK BINARY or ASCII file [default = ASCII]
 	 *
+	 * \return true if it succeed
+	 *
 	 */
-
 	template<int prp = -1> bool write(std::string file, std::string graph_name = "Graph", file_type ft = file_type::ASCII)
 	{
 

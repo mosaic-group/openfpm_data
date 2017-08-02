@@ -16,7 +16,7 @@
 #include <boost/mpl/range_c.hpp>
 #include <boost/mpl/for_each.hpp>
 #include "csv_multiarray.hpp"
-#include "util.hpp"
+#include "util/util.hpp"
 #include "is_csv_writable.hpp"
 
 #define CSV_WRITER 0x30000

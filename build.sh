@@ -17,6 +17,20 @@ git clone git@git.mpi-cbg.de:openfpm/openfpm_data.git openfpm_data
 git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git openfpm_pdata
 git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 
+# Go in the right branch
+
+cd openfpm_pdata
+git checkout Release_0.9.0
+cd ..
+
+cd openfpm_data
+git checkout Release_0.9.0
+cd ..
+
+cd openfpm_vcluster
+git checkout Release_0.9.0
+cd ..
+
 cd "$1/openfpm_io"
 
 echo "Compiling on $2"

@@ -11,7 +11,7 @@
 #include <boost/math/special_functions/pow.hpp>
 #include "Space/Shape/HyperCube.hpp"
 #include <random>
-#include "util.hpp"
+#include "util/util.hpp"
 
 template <typename vector>
 class v_box

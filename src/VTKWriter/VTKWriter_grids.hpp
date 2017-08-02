@@ -63,26 +63,43 @@ struct prop_out_g
 	//! grid that we are processing
 	const openfpm::vector_std< ele_g > & vg;
 
+	//! File type
+	file_type ft;
+
+	//! list of names for the properties
+	const openfpm::vector<std::string> & prop_names;
+
 	/*! \brief constructor
 	 *
 	 * \param v_out string to fill with the vertex properties
 	 * \param vg vector of elements to write
+	 * \param prop_names properties name
+	 * \param ft file type
 	 *
 	 */
-	prop_out_g(std::string & v_out, const openfpm::vector_std< ele_g > & vg)
-	:v_out(v_out),vg(vg)
+	prop_out_g(std::string & v_out, const openfpm::vector_std< ele_g > & vg, const openfpm::vector<std::string> & prop_names ,file_type ft)
+	:v_out(v_out),vg(vg),ft(ft),prop_names(prop_names)
 	{};
 
-	//! It produce an output for each property
+	/*! It produce an output for each propert
+	 *
+	 * \param t prop-id
+	 *
+	 */
     template<typename T>
     void operator()(T& t) const
     {
     	typedef typename boost::mpl::at<typename ele_g::value_type::value_type::type,boost::mpl::int_<T::value>>::type ptype;
     	typedef typename std::remove_all_extents<ptype>::type base_ptype;
 
-    	meta_prop<boost::mpl::int_<T::value> ,ele_g,St, ptype, is_vtk_writable<base_ptype>::value > m(vg,v_out,file_type::ASCII);
+    	meta_prop<boost::mpl::int_<T::value> ,ele_g,St, ptype, is_vtk_writable<base_ptype>::value > m(vg,v_out,prop_names,ft);
     }
 
+    /*! \brief Write the last property
+     *
+     *
+     *
+     */
     void lastProp()
 	{
 		// Create point data properties
@@ -186,8 +203,12 @@ class VTKWriter<pair,VECTOR_GRIDS>
 
 	/*! \brief Create the VTK point definition
 	 *
+	 * \param ft file type
+	 *
+	 * \return the string with the point list
+	 *
 	 */
-	std::string get_point_list()
+	std::string get_point_list(file_type ft)
 	{
 		//! vertex node output string
 		std::stringstream v_out;
@@ -209,10 +230,7 @@ class VTKWriter<pair,VECTOR_GRIDS>
 				p = it.get().toPoint();
 				p = pmul(p,vg.get(i).spacing) + vg.get(i).offset;
 
-				if (pair::first::dims == 2)
-					v_out << p.toString() << " 0.0" << "\n";
-				else
-					v_out << p.toString() << "\n";
+				output_point<pair::first::dims,typename pair::second>(p,v_out,ft);
 
 				// increment the iterator and counter
 				++it;
@@ -225,8 +243,10 @@ class VTKWriter<pair,VECTOR_GRIDS>
 
 	/*! \brief Create the VTK vertex definition
 	 *
+	 * \param ft file type
+	 *
 	 */
-	std::string get_vertex_list()
+	std::string get_vertex_list(file_type ft)
 	{
 		//! vertex node output string
 		std::string v_out;
@@ -240,7 +260,7 @@ class VTKWriter<pair,VECTOR_GRIDS>
 
 			while (it.isNext())
 			{
-				v_out += "1 " + std::to_string(k) + "\n";
+				output_vertex(k,v_out,ft);
 
 				++k;
 				++it;
@@ -280,10 +300,13 @@ public:
 	 * \param g Grid to add
 	 * \param offset grid offset
 	 * \param spacing spacing of the grid
-	 * \param dom part of the spacethat is the domain
+	 * \param dom part of the space that is the domain
 	 *
 	 */
-	void add(const typename pair::first & g, const Point<pair::first::dims,typename pair::second> & offset, const Point<pair::first::dims,typename pair::second> & spacing, const Box<pair::first::dims,typename pair::second> & dom)
+	void add(const typename pair::first & g,
+			 const Point<pair::first::dims,typename pair::second> & offset,
+			 const Point<pair::first::dims,typename pair::second> & spacing,
+			 const Box<pair::first::dims,typename pair::second> & dom)
 	{
 		ele_g<typename pair::first,typename pair::second> t(g,offset,spacing,dom);
 
@@ -296,11 +319,16 @@ public:
 	 *
 	 * \param file path where to write
 	 * \param name of the graph
+	 * \param prop_names properties name (can also be a vector of size 0)
 	 * \param ft specify if it is a VTK BINARY or ASCII file [default = ASCII]
 	 *
+	 * \return true if the function write successfully
+	 *
 	 */
-
-	template<int prp = -1> bool write(std::string file, std::string f_name = "grids" , file_type ft = file_type::ASCII)
+	template<int prp = -1> bool write(std::string file,
+									  const openfpm::vector<std::string> & prop_names,
+									  std::string f_name = "grids",
+									  file_type ft = file_type::ASCII)
 	{
 		// Header for the vtk
 		std::string vtk_header;
@@ -336,20 +364,20 @@ public:
 		point_prop_header = get_point_properties_list();
 
 		// Get point list
-		point_list = get_point_list();
+		point_list = get_point_list(ft);
 
 		// vertex properties header
 		vertex_prop_header = get_vertex_properties_list();
 
 		// Get vertex list
-		vertex_list = get_vertex_list();
+		vertex_list = get_vertex_list(ft);
 
 		// Get the point data header
 		point_data_header = get_point_data_header();
 
 		// For each property in the vertex type produce a point data
 
-		prop_out_g< ele_g<typename pair::first,typename pair::second>, typename pair::second > pp(point_data, vg);
+		prop_out_g< ele_g<typename pair::first,typename pair::second>, typename pair::second > pp(point_data, vg, prop_names, ft);
 
 		if (prp == -1)
 			boost::mpl::for_each< boost::mpl::range_c<int,0, pair::first::value_type::max_prop> >(pp);

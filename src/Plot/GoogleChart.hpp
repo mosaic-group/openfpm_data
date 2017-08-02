@@ -68,7 +68,16 @@ struct GCoptions
 	//! curve type
 	std::string curveType = "function";
 
-	//! copy operator
+	//! barWD
+	bool barWD = false;
+
+	/*! \brief copy operator
+	 *
+	 * \param opt object to copy
+	 *
+	 * \return itself
+	 *
+	 */
 	GCoptions & operator=(const GCoptions & opt)
 	{
 		title = opt.title;
@@ -87,6 +96,9 @@ struct GCoptions
 	}
 };
 
+/*! \brief Google Graph
+ *
+ */
 struct GGraph
 {
 	//! TypeOfGraph
@@ -97,6 +109,9 @@ struct GGraph
 
 	//! option
 	std::string option;
+
+	//! view in case we need a view
+	std::string view;
 
 	//! Google chart option
 	GCoptions opt;
@@ -243,6 +258,35 @@ class GoogleChart
 		return data.str();
 	}
 
+	/*! \brief Construct a view option
+	 *
+	 * \param opt GoogleChart option
+	 *
+	 * \return the string
+	 *
+	 */
+	std::string get_view_bar_option(const GCoptions & opt, size_t n_col)
+	{
+		if (opt.barWD == false)
+			return std::string();
+
+		std::stringstream str;
+
+		str << "[0" << std::endl;
+
+		for (size_t i = 1 ; i < n_col ; i++)
+		{
+			str << "," << i << ",{ calc: \"stringify\"," << std::endl;
+	        str << "sourceColumn: " << i << "," << std::endl;
+	        str << "type: \"string\"," << std::endl;
+	        str << "role: \"annotation\" }"<< std::endl;
+		}
+
+		str << "]" << std::endl;
+
+	    return str.str();
+	}
+
 	std::string get_colums_bar_option(const GCoptions & opt)
 	{
 		std::stringstream str;
@@ -311,19 +355,46 @@ class GoogleChart
 		of << "};\n";
 	}
 
+	/*! \brief Add a view data variable
+	 *
+	 * \param of file out
+	 * \param i id
+	 * \param view string
+	 *
+	 */
+	void addView(std::ofstream & of, size_t i, std::string view)
+	{
+		if (view.size() == 0)
+			return;
+
+		of << "var view" << i << " = new google.visualization.DataView(data" << i << ");" << std::endl;
+		of << "view"<< i << ".setColumns(";
+		of << view << ");" << std::endl;
+	}
+
 	/*! \brief Add a draw div section
 	 *
 	 * \param of file out
 	 * \param i id
+	 * \param draw_view draw a chart(true) or view(false)
 	 *
 	 */
-	void addDrawDiv(std::ofstream & of, size_t i)
+	void addDrawDiv(std::ofstream & of, size_t i, bool draw_view)
 	{
 		of << "$(\"#export_svg" << i << "\").on(\"click\", function (event) {exportToSVG.apply(this,[" << i << "]);});\n";
 		of << "var chart = new google.visualization.ComboChart(document.getElementById('chart_div";
 		of << i;
-		of << "'));chart.draw(data";
-		of << i;
+		of << "'));" << std::endl;
+		if (draw_view == true)
+		{
+			of << "chart.draw(data";
+			of << i;
+		}
+		else
+		{
+			of << "chart.draw(view";
+			of << i;
+		}
 		of << ", options";
 		of << i;
 		of << ");\n";
@@ -438,6 +509,7 @@ public:
 		set_of_graphs.last().type = GGRAPH_COLUMS;
 		set_of_graphs.last().data = get_points_plot_data(x,y,yn,opt,set_of_graphs.size()-1);
 		set_of_graphs.last().option = get_colums_bar_option(opt);
+		set_of_graphs.last().view = get_view_bar_option(opt,y.get(0).size());
 		set_of_graphs.last().opt = opt;
 	}
 
@@ -599,7 +671,10 @@ public:
 			addOption(of,i,set_of_graphs.get(i).option);
 
 		for (size_t i = 0 ; i < set_of_graphs.size() ; i++)
-			addDrawDiv(of,i);
+			addView(of,i,set_of_graphs.get(i).view);
+
+		for (size_t i = 0 ; i < set_of_graphs.size() ; i++)
+			addDrawDiv(of,i,set_of_graphs.get(i).view.size() == 0);
 
 		of << begin_div;
 
