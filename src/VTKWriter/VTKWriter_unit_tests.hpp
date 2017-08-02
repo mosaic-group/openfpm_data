@@ -1170,7 +1170,9 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		vtk_v.add(v2ps,v2pp,88);
 		vtk_v.add(v3ps,v3pp,90);
 
-		vtk_v.write("vtk_points_2d_bin.vtk","vtk output",file_type::BINARY);
+		openfpm::vector<std::string> stub;
+
+		vtk_v.write("vtk_points_2d_bin.vtk",stub,"vtk output",file_type::BINARY);
 
 		// Check that match
 		bool test = compare("vtk_points_2d_bin.vtk","vtk_points_2d_bin_test.vtk");
@@ -1181,7 +1183,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		VTKWriter<boost::mpl::pair<openfpm::vector<Point<2,double>>,openfpm::vector<aggregate<float[3],double[2]>>>,VECTOR_POINTS> vtk_v2;
 		vtk_v2.add(v1ps,v4pp,75);
 
-		vtk_v2.write("vtk_points_2d_pp_bin.vtk","vtk output",file_type::BINARY);
+		vtk_v2.write("vtk_points_2d_pp_bin.vtk",stub,"vtk output",file_type::BINARY);
 
 		// Check that match
 		test = compare("vtk_points_2d_pp_bin.vtk","vtk_points_2d_pp_bin_test.vtk");
