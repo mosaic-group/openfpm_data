@@ -231,13 +231,17 @@ class VTKWriter<pair,VECTOR_POINTS>
 	 *
 	 */
 
-	std::string get_point_properties_list()
+	std::string get_point_properties_list(file_type ft)
 	{
 		//! vertex property output string
 		std::string v_out;
 
 		// write the number of vertex
-		v_out += "POINTS " + std::to_string(get_total()) + " float" + "\n";
+
+		if (ft == file_type::ASCII)
+			v_out += "POINTS " + std::to_string(get_total()) + " float" + "\n";
+		else
+			v_out += "POINTS " + std::to_string(get_total()) + " " + getType<typename pair::first::value_type::coord_type>() + "\n";
 
 		// return the vertex properties string
 		return v_out;
@@ -410,7 +414,7 @@ public:
 		vtk_header += "DATASET POLYDATA\n";
 
 		// point properties header
-		point_prop_header = get_point_properties_list();
+		point_prop_header = get_point_properties_list(ft);
 
 		// Get point list
 		point_list = get_point_list(ft);

@@ -1175,7 +1175,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		vtk_v.write("vtk_points_2d_bin.vtk",stub,"vtk output",file_type::BINARY);
 
 		// Check that match
-		bool test = compare("vtk_points_2d_bin.vtk","vtk_points_2d_bin_test.vtk");
+		bool test = compare("vtk_points_2d_bin.vtk","test_data/vtk_points_2d_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
 
 
@@ -1186,7 +1186,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		vtk_v2.write("vtk_points_2d_pp_bin.vtk",stub,"vtk output",file_type::BINARY);
 
 		// Check that match
-		test = compare("vtk_points_2d_pp_bin.vtk","vtk_points_2d_pp_bin_test.vtk");
+		test = compare("vtk_points_2d_pp_bin.vtk","test_data/vtk_points_2d_pp_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
 	}
 }

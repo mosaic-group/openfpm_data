@@ -385,6 +385,8 @@ struct meta_prop<I, ele_g,St, T[N1][N2],is_writable>
 						// if there is the next element
 						while (it.isNext())
 						{
+							T tmp;
+
 							if (ft == file_type::ASCII)
 							{
 								// Print the property
@@ -392,7 +394,7 @@ struct meta_prop<I, ele_g,St, T[N1][N2],is_writable>
 							}
 							else
 							{
-								auto tmp = vg.get(k).g.get_o(it.get()).template get<I::value>()[i1][i2];
+								tmp = vg.get(k).g.get_o(it.get()).template get<I::value>()[i1][i2];
 								tmp = swap_endian_lt(tmp);
 								v_out.append((const char *)&tmp,sizeof(tmp));
 							}
@@ -401,6 +403,9 @@ struct meta_prop<I, ele_g,St, T[N1][N2],is_writable>
 							++it;
 						}
 					}
+
+					if (ft == file_type::BINARY)
+						v_out += "\n";
 				}
 			}
 		}
@@ -437,10 +442,18 @@ template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & 
 	}
 	else
 	{
-		for (size_t i = 0 ; i < dims ; i++)
+		size_t i = 0;
+		for ( ; i < dims ; i++)
 		{
 			// we use float so we have to convert to float
-			float tmp = p.get(i);
+			auto tmp = p.get(i);
+			tmp = swap_endian_lt(tmp);
+			v_out.write((const char *)&tmp,sizeof(tmp));
+		}
+		for ( ; i < 3 ; i++)
+		{
+			// we use float so we have to convert to float
+			auto tmp = p.get(i);
 			tmp = swap_endian_lt(tmp);
 			v_out.write((const char *)&tmp,sizeof(tmp));
 		}
