@@ -27,13 +27,13 @@
 template<typename ele_v, bool has_name>
 struct H5_prop_out
 {
-	// HDF5 file
+	//! HDF5 file
 	hid_t file_id;
 
-	// vector that we are processing
+	//! vector that we are processing
 	ele_v & vv;
 
-	// Up to which element to write
+	//! Up to which element to write
 	size_t stop;
 
 	/*! \brief constructor
@@ -45,7 +45,11 @@ struct H5_prop_out
 	:file_id(file_id),vv(vv),stop(stop)
 	{};
 
-	//! It produce an output for each property
+	/*! \brief It produce an output for each property
+	 *
+	 * \param t property id
+	 *
+	 */
     template<typename T>
     void operator()(T& t) const
     {
@@ -71,25 +75,31 @@ struct H5_prop_out
 template<typename ele_v>
 struct H5_prop_out<ele_v,false>
 {
-	// HDF5 file
+	//! HDF5 file
 	hid_t file_id;
 
-	// vector that we are processing
+	//! vector that we are processing
 	ele_v & vv;
 
-	// Up to which element to write
+	//! Up to which element to write
 	size_t stop;
 
 	/*! \brief constructor
 	 *
-	 * \param v_out string to fill with the vertex properties
+	 * \param file_id handle of the file
+	 * \param vv element to write
+	 * \param stop up to which element to write
 	 *
 	 */
 	H5_prop_out(hid_t file_id, ele_v & vv, size_t stop)
 	:file_id(file_id),vv(vv),stop(stop)
 	{};
 
-	//! It produce an output for each property
+	/*! \brief It produce an output for each property
+	 *
+	 * \param t property id
+	 *
+	 */
     template<typename T>
     void operator()(T& t) const
     {
@@ -99,6 +109,10 @@ struct H5_prop_out<ele_v,false>
     }
 };
 
+/*! \brief HDF5 writer for a point set
+ *
+ *
+ */
 template <>
 class HDF5_XdmfWriter<H5_POINTSET>
 {
@@ -118,18 +132,23 @@ public:
 
 	/*!
 	 *
-	 * \brief Write a set of particle position and properties into HDF5
+	 * \brief Write a set of particle positions and properties into HDF5
 	 *
 	 * \tparam Pos Vector of positions type
 	 * \taparam Prp Vector of properties type
 	 * \tparam prp list of properties to output
 	 *
-	 * \param pos Vector with the positions
-	 * \param prp Vector with the properties
+	 * \param file output file
+	 * \param v_pos Vector with the positions
+	 * \param v_prp Vector with the properties
 	 * \param stop size of the vector to output
 	 *
 	 */
-	template<typename VPos, typename VPrp, int ... prp > bool write(const std::string & file, openfpm::vector<VPos> & v_pos, openfpm::vector<VPrp> & v_prp, size_t stop)
+	template<typename VPos, typename VPrp, int ... prp >
+	bool write(const std::string & file,
+			   openfpm::vector<VPos> & v_pos,
+			   openfpm::vector<VPrp> & v_prp,
+			   size_t stop)
 	{
 		Vcluster & v_cl = create_vcluster();
 

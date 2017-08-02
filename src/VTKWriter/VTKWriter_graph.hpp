@@ -112,6 +112,7 @@ struct vtk_vertex_node
 	 *
 	 * \param v_node std::string that is filled with the graph properties in the GraphML format
 	 * \param n_obj object container to access its properties for example encapc<...>
+	 * \param x temporal buffer to store the point coordinates
 	 *
 	 */
 	vtk_vertex_node(std::string & v_node, typename G::V_container & n_obj, s_type (&x)[3])
@@ -125,7 +126,11 @@ struct vtk_vertex_node
 		v_node += std::to_string(x[0]) + " " + std::to_string(x[1]) + " " + std::to_string(x[2]) + "\n";
 	}
 
-	//! It call the functor for each member
+	/*! \brief It call the functor for each member
+	 *
+	 * \param t property id
+	 *
+	 */
 	template<typename T>
 	void operator()(T& t)
 	{
@@ -154,10 +159,10 @@ struct vtk_vertex_node
 template<typename G>
 struct vtk_vertex_node<G, false>
 {
-	// Vertex object container
+	//! Vertex object container
 	typename G::V_container & vo;
 
-	// vertex node string
+	//! vertex node string
 	std::string & v_node;
 
 	/*! \brief Constructor
@@ -174,7 +179,13 @@ struct vtk_vertex_node<G, false>
 	}
 	;
 
-	//! It call the functor for each member
+	/*! \brief It call the functor for each member
+	 *
+	 * It set the position of vertex to zero
+	 *
+	 * \param t property id
+	 *
+	 */
 	template<typename T>
 	void operator()(T& t)
 	{
@@ -194,10 +205,10 @@ struct vtk_vertex_node<G, false>
 template<typename G>
 struct vtk_edge_node
 {
-	// Vertex object container
+	//! Vertex object container
 	typename G::E_container & vo;
 
-	// edge node string
+	//! edge node string
 	std::string & e_node;
 
 	/*! \brief Constructor
@@ -206,7 +217,6 @@ struct vtk_edge_node
 	 *
 	 * \param e_node std::string that is filled with the graph properties in the GraphML format
 	 * \param n_obj object container to access the object properties for example encapc<...>
-	 * \param n_prop number of properties
 	 *
 	 */
 	vtk_edge_node(std::string & e_node, typename G::E_container & n_obj) :
@@ -217,7 +227,9 @@ struct vtk_edge_node
 
 	/*! \brief Create a new node
 	 *
-	 * \param vc node number
+	 * \param v_c unused
+	 * \param s source of the edge
+	 * \param d destination of the edge
 	 *
 	 */
 	void new_node(size_t v_c, size_t s, size_t d)
@@ -297,7 +309,7 @@ struct prop_output_array_scalar_selector_edge
 	 *
 	 * \param v_out Buffer to write into
 	 * \param g Graph
-	 * \param p Property id
+	 * \param edge to write
 	 */
 	template<typename ele_v, typename Graph, unsigned int i>
 	static inline void write(std::string &v_out, const Graph &g, const typename Graph::E_container &edge)
@@ -320,7 +332,7 @@ struct prop_output_array_scalar_selector_edge<true>
 	 *
 	 * \param v_out Buffer to write into
 	 * \param g Graph
-	 * \param p Property id
+	 * \param edge to write
 	 */
 	template<typename ele_v, typename Graph, unsigned int i>
 	static inline void write(std::string &v_out, const Graph &g, const typename Graph::E_container &edge)
@@ -390,12 +402,13 @@ class prop_output
 {
 public:
 
-	/*! \brief For each vertex set the value
+	/*! \brief Get the vtk point data section for a graph g
 	 *
-	 * \tparam i vertex property to print
+	 * \param g graph
+	 *
+	 * \return point data section string
 	 *
 	 */
-
 	static std::string get_point_data(const Graph & g)
 	{
 		//! vertex node output string
@@ -417,12 +430,13 @@ public:
 		return v_out;
 	}
 
-	/*! \brief For each edge set the value, set 1 on vertices, needed by vtk file format
+	/*! \brief Get the cell data section for a graph g
 	 *
-	 * \tparam i edge property to print
+	 * \param g graph
+	 *
+	 * \return the cell data section
 	 *
 	 */
-
 	static std::string get_cell_data(const Graph & g)
 	{
 		//! vertex node output string
@@ -458,16 +472,17 @@ public:
 		return e_out;
 	}
 
-	/*! \brief Given a Graph return the point data header for a typename T
+	/*! \brief Return the point header for the property prop
 	 *
-	 * \tparam T type to write
-	 * \param n_node number of the node
+	 * \param prop property to write
+	 *
+	 * \return a string containing the header of the properties
 	 *
 	 */
 
 	static std::string get_point_property_header(size_t prop)
 	{
-		//! vertex node output string
+		// vertex node output string
 		std::string v_out;
 
 		// Type of the property
@@ -511,11 +526,11 @@ public:
 
 	/*! \brief Given a Graph return the cell data header for a typename T
 	 *
-	 * \tparam T type to write
-	 * \param n_node number of the node
+	 * \param prop property id
+	 *
+	 * \return the string with the cell property header
 	 *
 	 */
-
 	static std::string get_cell_property_header(size_t prop)
 	{
 		//! edge node output string
@@ -560,19 +575,21 @@ public:
 		return e_out;
 	}
 
-	/*! \brief Get the attributes name for vertex
+	/*! \brief Get the attributes name for the property i (template parameter)
+	 *
+	 * \return vertex attribute name
 	 *
 	 */
-
 	static std::string get_attributes_vertex()
 	{
 		return Graph::V_type::attributes::name[i];
 	}
 
-	/*! \brief Get the attributes name for edge
+	/*! \brief Get the attributes name for edge property i (template parameter)
+	 *
+	 * \return edge attribute name
 	 *
 	 */
-
 	static std::string get_attributes_edge()
 	{
 		return Graph::E_type::attributes::name[i];
@@ -595,12 +612,13 @@ public:
 template<typename Graph, unsigned int i>
 class prop_output<false, Graph, i>
 {
-	/*! \brief For each vertex set the value
+	/*! \brief Return the point data section for a graph g
 	 *
-	 * \tparam i vertex property to print
+	 * \param g graph
+	 *
+	 * \return the point data section string
 	 *
 	 */
-
 	static std::string get_point_data(Graph & g)
 	{
 		//! vertex node output string
@@ -622,18 +640,20 @@ class prop_output<false, Graph, i>
 		return v_out;
 	}
 
-	/*! \brief For each edge set the value
+	/*! \brief Return the cell data section for a graph g
 	 *
-	 * \tparam i edge property to print
+	 * \param g graph
+	 *
+	 * \return the cell data section
 	 *
 	 */
 
 	static std::string get_cell_data(const Graph & g)
 	{
-		//! vertex node output string
+		// vertex node output string
 		std::string e_out;
 
-		//! Get a vertex iterator
+		// Get a vertex iterator
 		auto it_v = g.getVertexIterator();
 
 		// if there is the next element
@@ -662,12 +682,11 @@ class prop_output<false, Graph, i>
 		return e_out;
 	}
 
-	/*! \brief Given a Graph return the point data header for a typename T
+	/*! \brief Given a Graph return the point data header for the property prop
 	 *
-	 * \tparam T type to write
-	 *
-	 * \param n_node number of the node
 	 * \param prop id of the property
+	 *
+	 * \return the string of the property header
 	 *
 	 */
 
@@ -697,9 +716,11 @@ class prop_output<false, Graph, i>
 		return v_out;
 	}
 
-	/*! \brief Given a Graph return the cell data header for a typename T
+	/*! \brief Given a Graph return the cell data header
 	 *
-	 * \param n_node number of the node
+	 * \param prop property id
+	 *
+	 * \return the cell property header
 	 *
 	 */
 
@@ -749,8 +770,9 @@ class prop_output<false, Graph, i>
 
 	/*! \brief Get the attributes name for vertex
 	 *
+	 * \return get attributes vertex name
+	 *
 	 */
-
 	static std::string get_attributes_vertex()
 	{
 		return Graph::V_type::attributes::name[i];
@@ -758,8 +780,9 @@ class prop_output<false, Graph, i>
 
 	/*! \brief Get the attributes name for edge
 	 *
+	 * \return get attributes edge name
+	 *
 	 */
-
 	static std::string get_attributes_edge()
 	{
 		return Graph::E_type::attributes::name[i];
@@ -782,15 +805,16 @@ class prop_output<false, Graph, i>
 template<typename Graph>
 struct prop_out_vertex
 {
-	// property output string
+	//! property output string
 	std::string & v_out;
 
-	// Graph that we are processing
+	//! Graph that we are processing
 	const Graph & g;
 
 	/*! \brief constructor
 	 *
 	 * \param v_out string to fill with the vertex properties
+	 * \param g graph to output
 	 *
 	 */
 	prop_out_vertex(std::string & v_out, const Graph & g) :
@@ -799,7 +823,11 @@ struct prop_out_vertex
 	}
 	;
 
-	//! It produce an output for each property
+	/*! \brief It produce an output for each property
+	 *
+	 * \param t property id
+	 *
+	 */
 	template<typename T>
 	void operator()(T& t) const
 	{
@@ -1093,7 +1121,7 @@ public:
 	 * \tparam prp_out which properties to output [default = -1 (all)]
 	 *
 	 * \param file path where to write
-	 * \param name of the graph
+	 * \param graph_name of the graph
 	 * \param ft specify if it is a VTK BINARY or ASCII file [default = ASCII]
 	 *
 	 * \return true if it write correctly
