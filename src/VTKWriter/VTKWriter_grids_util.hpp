@@ -453,7 +453,7 @@ template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & 
 		for ( ; i < 3 ; i++)
 		{
 			// we use float so we have to convert to float
-			auto tmp = p.get(i);
+			auto tmp = 0.0;
 			tmp = swap_endian_lt(tmp);
 			v_out.write((const char *)&tmp,sizeof(tmp));
 		}
