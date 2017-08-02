@@ -16,14 +16,18 @@
 template<typename bfv>
 struct copy_fusion_vector
 {
+	//! source fusion vector
 	const bfv & src;
+
+	//! destination fusion vector
 	bfv & dst;
 
 	/*! \brief constructor
 	 *
 	 * It define the copy parameters.
 	 *
-	 * \param obj object we have to set in grid_dst
+	 * \param src source fusion vector
+	 * \param dst destination fusion vector
 	 *
 	 */
 	inline copy_fusion_vector(const bfv & src, bfv & dst)
@@ -64,14 +68,18 @@ struct copy_fusion_vector
 template<typename bfv, typename enc>
 struct copy_fusion_vector_encap
 {
+	//! source fusion vector
 	const bfv & src;
+
+	//! destination fusion vector
 	enc & dst;
 
 	/*! \brief constructor
 	 *
 	 * It define the copy parameters.
 	 *
-	 * \param obj object we have to set in grid_dst
+	 * \param src source fusion vector
+	 * \param dst destination fusion vector
 	 *
 	 */
 	inline copy_fusion_vector_encap(const bfv & src, enc & dst)
@@ -93,12 +101,6 @@ struct copy_fusion_vector_encap
 	template<typename T>
 	inline void operator()(T& t)
 	{
-		// This is the type of the object we have to copy
-//		typedef typename boost::fusion::result_of::at_c<bfv,T::value>::type copy_type;
-
-		// Remove the reference from the type to copy
-//		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
-
 		meta_copy_d<typename boost::mpl::at<bfv,boost::mpl::int_<T::value> >::type,decltype(dst.template get<T::value>())>::meta_copy_d_(boost::fusion::at_c<T::value>(src),dst.template get<T::value>());
 	}
 };

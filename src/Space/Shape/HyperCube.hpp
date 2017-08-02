@@ -214,8 +214,7 @@ public:
 	 * \endverbatim
 	 *
      *  combination in the center (*) the down-left vertex (+). down and left edge (#)
-	 *
-	 * \param pos slots inside comb to fill with all permutations
+     *
 	 * \param v vector to fill with the permutations
 	 *
 	 */
@@ -248,7 +247,7 @@ public:
 		}
 	}
 
-	/*! \brief Linearize the Permitation given by BinPermutationSt
+	/*! \brief Linearize the permutation given by BinPermutationSt
 	 *
 	 * Suppose BinPermutation return the following combination
 	 *
@@ -257,6 +256,8 @@ public:
 	 * giving (0,-1) it return 2
 	 *
 	 * \param c combination to linearize
+	 *
+	 * \return the linearized permutation
 	 *
 	 * \see BinPermitationSt
 	 *
@@ -364,6 +365,8 @@ public:
 	 * if the d combination is negative or positive
 	 *
 	 * \param d
+	 *
+	 * \return true if the combination is in positive direction
 	 *
 	 */
 	static bool isPositive(size_t d)

@@ -142,6 +142,7 @@ struct r_type_dim<1,1,POINT_DIV>
 template <unsigned int r, typename orig>
 struct r_type_p
 {
+	//! meta-function return orig or the expression produce a vector
 	typedef orig type;
 };
 
@@ -153,7 +154,7 @@ struct r_type_p
 template <typename orig>
 struct r_type_p<1,orig>
 {
-	//! is a vector
+	//! meta-function return a scalar or the expression produce a scalar
 	typedef typename orig::coord_type type;
 };
 
@@ -377,6 +378,13 @@ public:
 	}
 };
 
+/*! \brief expression that subtract two points
+ *
+ * \tparam orig original vector
+ * \tparam exp1 expression 1
+ * \tparam exp2 expression 2
+ *
+ */
 template <typename orig, typename exp1, typename exp2>
 class point_expression_op<orig,exp1,exp2, POINT_SUB_UNI >
 {
@@ -455,10 +463,12 @@ class point_expression_op<orig,exp1,exp2,POINT_MUL_POINT>
 	//! second expression
 	const exp2 o2;
 
+	//! the expression produce a scalar
 	mutable typename std::remove_const<typename orig::coord_type>::type scal;
 
 public:
 
+	//! base type of the expression
 	typedef orig orig_type;
 
 	//! indicate that init must be called before value
@@ -473,7 +483,12 @@ public:
 	//! this operation produce a scalar as result
 	static const unsigned int nvals = 1;
 
-	//! constructor from 2 expressions
+	/*! \brief constructor from 2 expressions
+	 *
+	 * \param o1 expression 1
+	 * \param o2 expression 2
+	 *
+	 */
 	inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2),scal(0.0)
 	{}
@@ -545,7 +560,12 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = r_type_dim<exp1::nvals,exp2::nvals,POINT_MUL>::value;
 
-	//! constructor from 2 expression
+	/*! \brief constructor from 2 expression
+	 *
+	 * \param o1 expression 1
+	 * \param o2 expression 2
+	 *
+	 */
 	inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -614,7 +634,12 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = r_type_dim<exp1::nvals,exp2::nvals,POINT_DIV>::value;
 
-	//! constructor from expression 1 and expression 2
+	/*! \brief constructor from expression 1 and expression 2
+	 *
+	 * \param o1 expression 1
+	 * \param o2 expression 2
+	 *
+	 */
 	inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
@@ -633,6 +658,8 @@ public:
 	/*! \brief Evaluate the expression
 	 *
 	 * \param k where to evaluate the expression
+	 *
+	 * \return the value of the expression
 	 *
 	 */
 	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
@@ -1244,27 +1271,34 @@ pmul(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression_
 }
 
 
-/*! \brief Specialization for an array of dimension dim
+/*! \brief Specialization for an array of dimension dim as expression
  *
- * \tparam type
+ * \tparam T type of the array
+ * \tparam dim dimensionality of the array
  *
  */
 template<typename T, unsigned int dim>
 class point_expression<T[dim]>
 {
+	//! array of dimension dim
 	T (& d)[dim];
 
 public:
 
-	// indicate that init must be called before value
+	//! indicate that init must be called before value
 	typedef int has_init;
 
-	// indicate that this class encapsulate an expression
+	//! indicate that this class encapsulate an expression
 	typedef int is_expression;
 
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = dim;
 
+	/*! \brief constructor from an array
+	 *
+	 * \param d array of dimension dim
+	 *
+	 */
 	inline point_expression(T (& d)[dim])
 	:d(d)
 	{
@@ -1317,27 +1351,34 @@ public:
 };
 
 
-/*! \brief Specialization for an array of dimension dim
+/*! \brief Specialization for a const array of dimension dim
  *
- * \tparam type
+ * \tparam T type of the array
+ * \tparam dim dimensionality of the array
  *
  */
 template<typename T, unsigned int dim>
 class point_expression<const T[dim]>
 {
+	//! array of dimensions dim
 	const T (& d)[dim];
 
 public:
 
-	// indicate that init must be called before value
+	//! indicate that init must be called before value
 	typedef int has_init;
 
-	// indicate that this class encapsulate an expression
+	//! indicate that this class encapsulate an expression
 	typedef int is_expression;
 
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = dim;
 
+	/*! \brief construct from an array of dimension dim
+	 *
+	 * \param d array
+	 *
+	 */
 	inline point_expression(const T (& d)[dim])
 	:d(d)
 	{
