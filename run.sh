@@ -11,7 +11,7 @@ cd "$1/openfpm_io"
 
 if [ "$2" == "gin" ]
 then
- module load gcc/4.8.2
+ module load gcc/4.9.2
  module load boost/1.54.0
 fi
 
