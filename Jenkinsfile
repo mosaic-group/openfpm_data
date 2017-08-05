@@ -22,12 +22,12 @@ parallel (
 
                     stage ('build_nyu')
                     {
-                      sh "./build.sh $WORKSPACE $NODE_NAME"
+                      sh "./build.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
                     }
 
                     stage ('run_nyu')
                     {
-                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME"
+                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
                       sh "cd openfpm_io && ./success.sh 2 nyu openfpm_io"
                     }
                   }
@@ -55,12 +55,12 @@ parallel (
 
                     stage ('build_sb15')
                     {
-                      sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME"
+                      sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
                     }
 
                     stage ('run_sb15')
                     {
-                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME"
+                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
                       sh "cd openfpm_io && ./success.sh 2 sbalzarini-mac-15 openfpm_io"
                     }
                   }
@@ -86,12 +86,12 @@ parallel (
 
                     stage ('build_gin')
                     {
-                      sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME"
+                      sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
                     }
 
                     stage ('run_gin')
                     {
-                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME"
+                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
                       sh "cd openfpm_io && ./success.sh 2 gin openfpm_io"
                     }
                   }

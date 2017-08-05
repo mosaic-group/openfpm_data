@@ -2,6 +2,8 @@
 
 source $HOME/.bashrc
 
+echo "Branch: $3"
+
 echo "$PATH"
 
 # Make a directory in /tmp/openfpm_data
@@ -27,14 +29,14 @@ echo "Compiling on $2"
 sh ./autogen.sh
 if [ "$2" == "master" ]
 then
- sh ./configure CXX=mpic++ --with-hdf5=$HOME/HDF5/bin/h5pcc --disable-gpu
+ sh ./configure CXX=mpic++ --with-hdf5=$HOME/$3/HDF5/bin/h5pcc --disable-gpu
 elif [ "$2" == "gin" ]
 then
  module load gcc/4.8.2
  module load boost/1.54.0
- sh ./configure CXX=mpic++ --with-boost=/sw/apps/boost/1.54.0/ --with-hdf5=$HOME/HDF5/bin/h5pcc
+ sh ./configure CXX=mpic++ --with-boost=/sw/apps/boost/1.54.0/ --with-hdf5=$HOME/$3/HDF5/bin/h5pcc
 else
- sh ./configure CXX=mpic++ --with-hdf5=$HOME/HDF5/bin/h5pcc
+ sh ./configure CXX=mpic++ --with-hdf5=$HOME/$3/HDF5/bin/h5pcc
 fi
 make
 
