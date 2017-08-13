@@ -14,6 +14,7 @@
 #define OBJECT_ADD false
 #define VECTOR_ADD true
 
+//! struct to merge two vectors
 template<bool objv, typename vect_dst>
 struct add_prp_impl
 {
@@ -28,7 +29,8 @@ struct add_prp_impl
 	 * \tparam gp Grow policy of the source vector
 	 * \tparam args one or more number that define which property to set-up
 	 *
-	 * \param v source vector
+	 * \param v_src source vector
+	 * \param v_dst destination vector
 	 *
 	 */
 	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
@@ -49,7 +51,7 @@ struct add_prp_impl
 	}
 };
 
-
+//! struct to merge two vectors
 template<typename vect_dst>
 struct add_prp_impl<OBJECT_ADD,vect_dst>
 {
@@ -848,7 +850,7 @@ public:
 
 	/*! \brief Check that two vectors are equal
 	 *
-	 * \param vector to compare
+	 * \param v vector to compare
 	 *
 	 * \return true if they differs
 	 *
@@ -860,7 +862,7 @@ public:
 
 	/*! \brief Check that two vectors are not equal
 	 *
-	 * \param vector to compare
+	 * \param v vector to compare
 	 *
 	 * \return true if the vector match
 	 *
@@ -870,7 +872,7 @@ public:
 		return base == v.base;
 	}
 
-	/*! \brief Get iterator
+	/*! \brief Get an iterator over all the elements of the vector
 	 *
 	 * \return an iterator
 	 *
@@ -883,7 +885,7 @@ public:
 		return vector_key_iterator(base.size());
 	}
 
-	/*! \brief Get iterator until a specified key
+	/*! \brief Get iterator until a specified element
 	 *
 	 * \param k key
 	 *

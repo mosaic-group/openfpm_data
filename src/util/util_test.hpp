@@ -389,8 +389,6 @@ BOOST_AUTO_TEST_CASE( object_prop_copy )
 }
 
 
-//! [Metafunction definition]
-
 BOOST_AUTO_TEST_CASE( generate_array )
 {
 	{

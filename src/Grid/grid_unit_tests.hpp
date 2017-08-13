@@ -484,17 +484,29 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 				}
 			}
 
-			auto key_it = c3.getSubIterator(start,stop);
+			bool make_test = true;
 
-			while (key_it.isNext())
+#ifdef SE_CLASS1
+
+			if (c3.size() == 0)
+			{make_test = false;}
+
+#endif
+
+			if (make_test == true)
 			{
-				grid_key_dx<dim> kk = key_it.get();
+				auto key_it = c3.getSubIterator(start,stop);
 
-				BOOST_REQUIRE_EQUAL(c3.template get<P::x>(kk),0.0);
+				while (key_it.isNext())
+				{
+					grid_key_dx<dim> kk = key_it.get();
 
-				c3.template get<P::x>(kk) = 1.0;
+					BOOST_REQUIRE_EQUAL(c3.template get<P::x>(kk),0.0);
 
-				++key_it;
+					c3.template get<P::x>(kk) = 1.0;
+
+					++key_it;
+				}
 			}
 		}
 	}

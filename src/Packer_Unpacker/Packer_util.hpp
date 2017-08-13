@@ -172,8 +172,10 @@ struct call_encapUnpack
 template<typename obj_type, typename Mem>
 struct call_packRequest_agg_functor
 {
-
+	//! object to pack
 	const obj_type & obj;
+
+	//! offset of the packed memory
 	size_t & req;
 
 	call_packRequest_agg_functor(const obj_type & obj, size_t & req)
@@ -196,6 +198,12 @@ struct call_packRequest_agg_functor
 template<typename obj_type, typename Mem, int ... prp>
 struct call_aggregatePackRequest
 {
+	/*! \brief Pack the object
+	 *
+	 * \param obj object to pack
+	 * \param req offset of the packed memory
+	 *
+	 */
 	static inline void call_packRequest(const obj_type & obj, size_t & req)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
@@ -232,10 +240,17 @@ struct call_pack_agg_functor
 	}
 };
 
-//Calls a packer in nested way
+//! Calls a packer in nested way
 template<typename obj_type, typename Mem, int ... prp>
 struct call_aggregatePack
 {
+	/*! \brief Call the packer
+	 *
+	 * \param obj object to pack
+	 * \param mem memory where to pack
+	 * \param sts information about the packing
+	 *
+	 */
 	static inline void call_pack(const obj_type & obj, ExtPreAlloc<Mem> & mem, Pack_stat & sts)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
@@ -253,10 +268,22 @@ struct call_aggregatePack
 template<typename obj_type, typename Mem>
 struct call_unpack_agg_functor
 {
+	//! Memory where to pack
 	ExtPreAlloc<Mem> & mem;
+
+	//! object to pack
 	const obj_type & obj;
+
+	//! statistic about packing
 	Unpack_stat & ps;
 
+	/*! \brief constructor
+	 *
+	 * \param mem memory where to pack
+	 * \param obj object to pack
+	 * \param ps packing statistic
+	 *
+	 */
 	call_unpack_agg_functor(ExtPreAlloc<Mem> & mem, const obj_type & obj, Unpack_stat & ps)
 	:mem(mem), obj(obj), ps(ps)
 	{
@@ -273,10 +300,17 @@ struct call_unpack_agg_functor
 	}
 };
 
-//Calls an unpacker in nested way
+//! Calls an unpacker in nested way
 template<typename obj_type, typename Mem, int ... prp>
 struct call_aggregateUnpack
 {
+	/*! \brief constructor
+	 *
+	 * \param mem memory from where to unpack
+	 * \param obj object to pack
+	 * \param ps packing statistic
+	 *
+	 */
 	static inline void call_unpack(const obj_type & obj, ExtPreAlloc<Mem> & mem, Unpack_stat & ps)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
