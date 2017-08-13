@@ -27,6 +27,8 @@ cd "$1/openfpm_io"
 
 echo "Compiling on $2"
 
+source $HOME/openfpm_vars_$3
+
 sh ./autogen.sh
 if [ "$2" == "master" ]
 then
