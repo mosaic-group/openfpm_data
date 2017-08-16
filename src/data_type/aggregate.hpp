@@ -70,9 +70,13 @@ struct aggregate
 template<typename ... list>
 struct aggregate
 {
+	//! internal type containing the data
 	typedef boost::fusion::vector<list...> type;
+
+	//! real internal type containing the data
 	typedef boost::fusion::vector<list...> type_real;
 
+	//! the data
 	type data;
 
 	/*! \brief get the properties i

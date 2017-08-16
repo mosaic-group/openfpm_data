@@ -158,22 +158,49 @@ public:
 
 	// Setter method
 
-	//! set the x property
+	/*! \brief set the x property
+	 *
+	 * \param x_
+	 *
+	 */
 	inline void setx(T x_)	{boost::fusion::at_c<0>(data) = x_;};
 
-	//! set the y property
+	/*! \brief set the y property
+	 *
+	 * \param y_
+	 *
+	 */
 	inline void sety(T y_)	{boost::fusion::at_c<1>(data) = y_;};
 
-	//! set the z property
+	/*! \brief set the z property
+	 *
+	 * \param z_
+	 *
+	 */
 	inline void setz(T z_)	{boost::fusion::at_c<2>(data) = z_;};
 
-	//! set the s property
+	/*! \brief set the s property
+	 *
+	 * \param s_
+	 *
+	 */
 	inline void sets(T s_)	{boost::fusion::at_c<3>(data) = s_;};
 
-	//! set the v property
+	/*! \brief set the v property
+	 *
+	 * \param i component to set
+	 * \param v_ value
+	 *
+	 */
 	inline void setv(size_t i,T v_)	{boost::fusion::at_c<4>(data)[i] = v_;}
 
-	//! set the t property
+	/*! \brief set the t property
+	 *
+	 * \param i component to set
+	 * \param j component to set
+	 * \param t_ value
+	 *
+	 */
 	inline void sett(size_t i, size_t j,T t_)	{boost::fusion::at_c<5>(data)[i][j] = t_;}
 
 
@@ -184,7 +211,11 @@ public:
 	Point_test()
 	{}
 
-	//! check if two point match
+	/*! \brief check if two point match
+	 *
+	 * \param p point to compare
+	 *
+	 */
 	bool operator==(const Point_test<float> & p) const
 	{
 		if (boost::fusion::at_c<0>(data) != boost::fusion::at_c<0>(p.data))	return false;
@@ -206,7 +237,13 @@ public:
 		return true;
 	}
 
-	//! check if two point match
+	/*! \brief Sum the point
+	 *
+	 * \param p point to sum
+	 *
+	 * \return this
+	 *
+	 */
 	Point_test<float> & operator+=(const Point_test<float> & p)
 	{
 		boost::fusion::at_c<0>(data) += boost::fusion::at_c<0>(p.data);
@@ -226,7 +263,11 @@ public:
 		return *this;
 	}
 
-	//! constructor from encapg
+	/*! \brief Copy constructor from encapc (encapsulated point)
+	 *
+	 * \param p ecapsulated point
+	 *
+	 */
 	template <unsigned int dim, typename Mem> inline Point_test(const encapc<dim,Point_test<T>,Mem> & p)
 	{
 		boost::fusion::at_c<0>(data) = p.template get<0>();
@@ -246,7 +287,11 @@ public:
 		}
 	}
 
-	//! constructor from another point
+	/*! \brief constructor from another point
+	 *
+	 *  \param p point to copy
+	 *
+	 */
 	inline Point_test(const Point_test<T> & p)
 	{
 		boost::fusion::at_c<0>(data) = boost::fusion::at_c<0>(p.data);
@@ -266,7 +311,13 @@ public:
 		}
 	}
 
-	//! constructor from another point
+	/*! \brief Copy the point
+	 *
+	 * \param p point
+	 *
+	 * \return this
+	 *
+	 */
 	inline Point_test<T> operator= (const Point_test<T> & p)
 	{
 		boost::fusion::at_c<0>(data) = boost::fusion::at_c<0>(p.data);
@@ -377,13 +428,32 @@ public:
 
   // Setter method
 
-  //! set the property x
+  /*! \brief set the x property
+   *
+   * \param x_
+   *
+   */
   inline void setx(T x_)	{boost::fusion::at_c<0>(data) = x_;};
-  //! set the property y
+
+  /*! \brief set the y property
+   *
+   * \param y_
+   *
+   */
   inline void sety(T y_)	{boost::fusion::at_c<1>(data) = y_;};
-  //! set the property z
+
+  /*! \brief set the z property
+   *
+   * \param z_
+   *
+   */
   inline void setz(T z_)	{boost::fusion::at_c<2>(data) = z_;};
-  //! set the property s
+
+  /*! \brief set the s property
+   *
+   * \param s_
+   *
+   */
   inline void sets(T s_)	{boost::fusion::at_c<3>(data) = s_;};
 
   //! Attributes name
@@ -440,7 +510,14 @@ public:
 	  }
   }
 
-  //! constructor from another point
+
+	/*! \brief Copy the point
+	 *
+	 * \param p point
+	 *
+	 * \return this
+	 *
+	 */
   inline Point_test_prp<T> operator= (const Point_test<T> & p)
   {
 	  boost::fusion::at_c<0>(data) = boost::fusion::at_c<0>(p.data);

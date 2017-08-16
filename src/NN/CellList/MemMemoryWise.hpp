@@ -32,28 +32,49 @@
  */
 class Mem_mw
 {
+	//! Base type storing information
 	typedef openfpm::vector<size_t> base;
 
-	// each cell has a dynamic structure
-	// that store the elements in the cell
+	//! each cell has a dynamic structure
+	//! that store the elements in the cell
 	std::unordered_map<size_t,base> cl_base;
 
+	//! In case of invalid element return this
 	typename std::remove_reference<decltype(std::declval<openfpm::vector<size_t>>().get(0))>::type invalid;
-
-	openfpm::vector<size_t> invalid_v;
 
 public:
 
+	/*! \brief Initialize the data structure to zeros
+	 *
+	 * In this case it does nothing
+	 *
+	 * \param slots
+	 * \param tot_n_cell total number of cells
+	 *
+	 */
 	inline void init_to_zero(size_t slot, size_t tot_n_cell)
 	{
 	}
 
+	/*! \brief Copy two data-structure
+	 *
+	 * \param cell data-structure to copy
+	 *
+	 * \return itself
+	 *
+	 */
 	inline Mem_mw & operator=(const Mem_mw & cell)
 	{
 		cl_base = cell.cl_base;
 		return *this;
 	}
 
+	/*! \brief Add an element to the cell
+	 *
+	 * \param cell_id cell-id
+	 * \param ele element to add
+	 *
+	 */
 	inline void addCell(size_t cell_id, typename base::value_type ele)
 	{
 		//add another neighbor element
@@ -61,16 +82,35 @@ public:
 		cl_base[cell_id].add(ele);
 	}
 
+	/*! \brief Add an element to the cell
+	 *
+	 * \param cell_id cell-id
+	 * \param ele element to add
+	 *
+	 */
 	inline void add(size_t cell_id, typename base::value_type ele)
 	{
 		this->addCell(cell_id,ele);
 	}
 
+	/*! \brief Remove an element from the cell
+	 *
+	 * \param cell cell-id
+	 * \param ele element to remove
+	 *
+	 */
 	inline void remove(size_t cell, size_t ele)
 	{
 		cl_base[cell].remove(ele);
 	}
 
+	/*! \brief Get the number of elements in the cell
+	 *
+	 * \param cell_id
+	 *
+	 * \return the number of elements
+	 *
+	 */
 	inline size_t getNelements(const size_t cell_id) const
 	{
 		auto it = cl_base.find(cell_id);
@@ -89,14 +129,6 @@ public:
 		return it->second.get(ele);
 	}
 
-	inline auto get_v(size_t cell) -> decltype(cl_base[0]) &
-	{
-		auto it = cl_base.find(cell);
-		if (it == cl_base.end())
-			return invalid_v;
-
-		return it->second;
-	}
 
 	inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.find(cell)->second.get(0)) &
 	{
@@ -105,15 +137,6 @@ public:
 			return invalid;
 
 		return it->second.get(ele);
-	}
-
-	inline auto get_v(size_t cell) const -> const decltype(cl_base.find(cell)->second) &
-	{
-		auto it = cl_base.find(cell);
-		if (it == cl_base.end())
-			return invalid_v;
-
-		return it->second;
 	}
 
 	inline void swap(Mem_mw & cl)
@@ -135,7 +158,7 @@ public:
 	{
 		auto it = cl_base.find(part_id);
 		if (it == cl_base.end())
-			return *(&invalid_v.get(0));
+			return *(&invalid);
 
 		return it->second.get(0);
 	}
@@ -144,7 +167,7 @@ public:
 	{
 		auto it = cl_base.find(part_id);
 		if (it == cl_base.end())
-			return *(&invalid_v.get(0));
+			return *(&invalid);
 
 		return *(&it->second.last() + 1);
 	}
@@ -157,7 +180,8 @@ public:
 public:
 
 	inline Mem_mw(size_t slot)
-	{}
+	{
+	}
 
 	inline void set_slot(size_t slot)
 	{}

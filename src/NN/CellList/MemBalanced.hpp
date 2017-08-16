@@ -37,11 +37,15 @@
  */
 class Mem_bal
 {
+	//! vector that store the information
 	typedef openfpm::vector<size_t> base;
 
 	//! each cell has a pointer to a dynamic structure
 	// that store the elements in the cell
 	openfpm::vector<base> cl_base;
+
+	//! Invalid element
+	size_t invalid;
 
 public:
 
@@ -109,11 +113,17 @@ public:
 
 	inline const size_t & getStartId(size_t part_id) const
 	{
+		if (cl_base.get(part_id).size() == 0)
+			return invalid;
+
 		return cl_base.get(part_id).get(0);
 	}
 
 	inline const size_t & getStopId(size_t part_id) const
 	{
+		if (cl_base.get(part_id).size() == 0)
+			return invalid;
+
 		return *(&cl_base.get(part_id).last() + 1);
 	}
 
