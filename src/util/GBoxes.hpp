@@ -44,6 +44,16 @@ struct GBoxes
 	Box<dim,long int> Dbox;
 	//! origin of GDbox in global grid coordinates
 	Point<dim,long int> origin;
+
+	/*! \brief Indicate that this structure has no pointers inside
+	 *
+	 * \return true
+	 *
+	 */
+	static bool noPointers()
+	{
+		return true;
+	}
 };
 
 

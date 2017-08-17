@@ -58,8 +58,12 @@ BOOST_AUTO_TEST_CASE( csv_writer_particles )
 	// Write the CSV
 	csv_writer.write("csv_out_unk.csv",v_pos,v_prp);
 
+	// In case of SE_CLASS3 enabled the number of properties change
+
+#ifndef SE_CLASS3
 	bool test = compare("csv_out_unk.csv","test_data/csv_out_unk_test.csv");
 	BOOST_REQUIRE_EQUAL(true,test);
+#endif
 	}
 
 }

@@ -23,6 +23,9 @@ BOOST_AUTO_TEST_CASE( raw_reader_read_test )
 	grid_cpu<3,aggregate<float,float[3]>> read_bin_test;
 
 	GridRawReader<3,aggregate<float,float[3]>,int> rr;
+
+#ifndef SE_CLASS3
+
 	rr.read("test_data/raw_read_sv_test.bin",read_bin_test,FORTRAN_STYLE | STRUCT_OF_ARRAY,12);
 
 	auto it = read_bin_test.getIterator();
@@ -39,6 +42,8 @@ BOOST_AUTO_TEST_CASE( raw_reader_read_test )
 
 		++it;
 	}
+
+#endif
 }
 
 

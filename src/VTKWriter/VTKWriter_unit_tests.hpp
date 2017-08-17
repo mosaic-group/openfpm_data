@@ -15,10 +15,9 @@
 
 BOOST_AUTO_TEST_SUITE( vtk_writer_test )
 
-/* \brief Sub-domain vertex graph node
+/*! \brief Sub-domain vertex graph node
  *
  */
-
 struct vertex
 {
 	//! The node contain 3 unsigned long integer for communication computation memory and id
@@ -35,13 +34,22 @@ struct vertex
 
 	//! The data
 	type data;
+
+	//! x
 	static const unsigned int x = 0;
+	//! y
 	static const unsigned int y = 1;
+	//! z
 	static const unsigned int z = 2;
+	//! property 1
 	static const unsigned int prp1 = 3;
+	//! property 2
 	static const unsigned int prp2 = 4;
+	//! property 3
 	static const unsigned int prp3 = 5;
+	//! property 4
 	static const unsigned int prp4 = 6;
+	//! property 5
 	static const unsigned int prp5 = 7;
 
 	//! total number of properties boost::fusion::vector
@@ -58,7 +66,9 @@ struct vertex
 
 	/*! \brief Initialize the VTKVertex
 	 *
-	 * \param
+	 * \param x coordinate x
+	 * \param y coordinate y
+	 * \param z coordinate z
 	 *
 	 */
 	vertex(float x, float y, float z)
@@ -107,7 +117,9 @@ struct vertex2
 
 	/*! \brief Initialize the VTKVertex
 	 *
-	 * \param
+	 * \param x coordinate x
+	 * \param y coordinate y
+	 * \param z coordinate z
 	 *
 	 */
 	vertex2(float x, float y, float z)
@@ -671,9 +683,13 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	openfpm::vector<std::string> prp_names;
 	vtk_g.write("vtk_grids.vtk",prp_names);
 
+#ifndef SE_CLASS3
+
 	// Check that match
 	bool test = compare("vtk_grids.vtk","test_data/vtk_grids_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
+
+#endif
 	}
 
 	{
@@ -826,9 +842,14 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	openfpm::vector<std::string> prp_names;
 	vtk_g.write("vtk_grids_unk.vtk",prp_names);
 
+#ifndef SE_CLASS3
+
 	// Check that match
 	bool test = compare("vtk_grids_unk.vtk","test_data/vtk_grids_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
+
+#endif
+
 	}
 
 	// Try
@@ -924,10 +945,15 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	openfpm::vector<std::string> prp_names;
 	vtk_v.write("vtk_points.vtk",prp_names);
 
+#ifndef SE_CLASS3
+
+	bool test = true;
+
 	// Check that match
-	bool test = compare("vtk_points.vtk","test_data/vtk_points_test.vtk");
+	test = compare("vtk_points.vtk","test_data/vtk_points_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
 
+#endif
 
 	// Create a writer and write
 	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,Point<3,float>>>>,VECTOR_POINTS> vtk_v2;
@@ -935,9 +961,13 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 
 	vtk_v2.write("vtk_points_pp.vtk",prp_names);
 
+#ifndef SE_CLASS3
+
 	// Check that match
 	test = compare("vtk_points_pp.vtk","test_data/vtk_points_pp_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
+
+#endif
 
 	}
 }
@@ -983,9 +1013,13 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_properties )
 	openfpm::vector<std::string> prp_names({"scalar","vector"});
 	vtk_v.write("vtk_points_with_prp_names.vtk",prp_names);
 
+#ifndef SE_CLASS3
+
 	// Check that match
 	bool test = compare("vtk_points_with_prp_names.vtk","test_data/vtk_points_with_prp_names_test.vtk");
 	BOOST_REQUIRE_EQUAL(test,true);
+
+#endif
 
 	}
 }
@@ -1066,12 +1100,17 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		vtk_v.write("vtk_points_bin.vtk",prp_names,"vtk output",file_type::BINARY);
 		vtk_v.write("vtk_points_bin2.vtk",prp_names,"vtk output",file_type::BINARY);
 
+#ifndef SE_CLASS3
+
+		bool test = true;
 
 		// Check that match
-		bool test = compare("vtk_points_bin.vtk","test_data/vtk_points_bin_test.vtk");
+		test = compare("vtk_points_bin.vtk","test_data/vtk_points_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
 		test = compare("vtk_points_bin2.vtk","test_data/vtk_points_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
+
+#endif
 
 		// Create a writer and write
 		VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,Point<3,float>>>>,VECTOR_POINTS> vtk_v2;
@@ -1079,9 +1118,13 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 
 		vtk_v2.write("vtk_points_pp_bin.vtk",prp_names,"vtk output",file_type::BINARY);
 
+#ifndef SE_CLASS3
+
 		// Check that match
 		test = compare("vtk_points_pp_bin.vtk","test_data/vtk_points_pp_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
+
+#endif
 
 	}
 
@@ -1174,10 +1217,15 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 
 		vtk_v.write("vtk_points_2d_bin.vtk",stub,"vtk output",file_type::BINARY);
 
+#ifndef SE_CLASS3
+
+		bool test = true;
+
 		// Check that match
-		bool test = compare("vtk_points_2d_bin.vtk","test_data/vtk_points_2d_bin_test.vtk");
+		test = compare("vtk_points_2d_bin.vtk","test_data/vtk_points_2d_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
 
+#endif
 
 		// Create a writer and write
 		VTKWriter<boost::mpl::pair<openfpm::vector<Point<2,double>>,openfpm::vector<aggregate<float[3],double[2]>>>,VECTOR_POINTS> vtk_v2;
@@ -1185,9 +1233,13 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 
 		vtk_v2.write("vtk_points_2d_pp_bin.vtk",stub,"vtk output",file_type::BINARY);
 
+#ifndef SE_CLASS3
+
 		// Check that match
 		test = compare("vtk_points_2d_pp_bin.vtk","test_data/vtk_points_2d_pp_bin_test.vtk");
 		BOOST_REQUIRE_EQUAL(test,true);
+
+#endif
 	}
 }
 
