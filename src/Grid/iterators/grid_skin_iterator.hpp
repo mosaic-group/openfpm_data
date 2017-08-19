@@ -116,6 +116,7 @@ public:
 				}
 				else
 				{
+					/* coverity[dead_error_line] */
 					if ( j < i )
 					{
 						k1.set_d(j,A.getLow(j)+1);

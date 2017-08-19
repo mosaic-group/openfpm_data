@@ -434,6 +434,7 @@ class CellDecomposer_sm
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
+			/* coverity[dead_error_begin] */
 			check_and_print_error(pos,s);
 
 			size_t cell_idt = ConvertToID_ns(pos,s);
@@ -871,6 +872,7 @@ public:
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
 			}
 #endif
+			/* coverity[dead_error_line] */
 			cell_id += gr_cell2.size_s(s-1) * ConvertToID(pos,s);
 		}
 

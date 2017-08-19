@@ -155,7 +155,7 @@ template<unsigned int dim ,typename T> class Matrix
 
 	/*! \brief Identity matrix
 	 *
-	 * Return the identity matrix
+	 * \return the identity matrix
 	 *
 	 */
 	inline static Matrix<dim,T> identity()
@@ -166,6 +166,7 @@ template<unsigned int dim ,typename T> class Matrix
 		{
 			for (size_t j = 0 ; j < dim ; j++)
 			{
+				/* coverity[dead_error_line] */
 				ret.get(i,j) = (i == j)?1:0;
 			}
 		}
@@ -173,7 +174,10 @@ template<unsigned int dim ,typename T> class Matrix
 		return ret;
 	}
 
+	//! 1 property
 	static const unsigned int max_prop = 1;
+
+	//! dimension of the matrix (it is a square matrix)
 	static const unsigned int dims = dim;
 };
 

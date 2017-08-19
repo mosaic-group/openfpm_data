@@ -325,13 +325,17 @@ public:
 		{
 			// check the out-of-bound, outside is assumed to be -1 so  (- pos_n_zero[i+1] - 1) = 0
 			if (i+1 < (long int)d)
+			{
+				/* coverity[dead_error_line] */
 				val = pos_n_zero[i] - pos_n_zero[i+1] - 1;
+			}
 			else
 				val = pos_n_zero[i];
 
 			for (long int j = 0 ; j < (long int)val; j++)
 			{
 				// C is not safe, check the limit
+				/* coverity[dead_error_line] */
 				if (((long int)dim)-cum_val-j-1 >= 0 && i > 0 && ((long int)dim)-cum_val-j >= i)
 					lin_id += openfpm::math::C(dim-cum_val-j-1,i);
 				else

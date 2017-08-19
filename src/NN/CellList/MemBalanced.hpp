@@ -49,6 +49,12 @@ class Mem_bal
 
 public:
 
+	/*! \brief Initialize all to zero
+	 *
+	 * \param slot number of slot (unused)
+	 * \param tot_n_cell total number of cells
+	 *
+	 */
 	inline void init_to_zero(size_t slot, size_t tot_n_cell)
 	{
 		//resize the vector to needed number of cells
@@ -56,6 +62,13 @@ public:
 		cl_base.resize(tot_n_cell);
 	}
 
+	/*! \brief Copy mem balanced
+	 *
+	 * \param cell memory to copy
+	 *
+	 * \return itself
+	 *
+	 */
 	inline Mem_bal & operator=(const Mem_bal & cell)
 	{
 		cl_base = cell.cl_base;
@@ -63,6 +76,12 @@ public:
 		return *this;
 	}
 
+	/*! \brief Add an element to the cell
+	 *
+	 * \param cell_id id of the cell
+	 * \param ele element to add
+	 *
+	 */
 	inline void addCell(size_t cell_id, typename base::value_type ele)
 	{
 		//add another neighbor element
@@ -70,41 +89,90 @@ public:
 		cl_base.get(cell_id).add(ele);
 	}
 
+	/*! \brief Add an element to the cell
+	 *
+	 * \param cell_id id of the cell
+	 * \param ele element to add
+	 *
+	 */
 	inline void add(size_t cell_id, typename base::value_type ele)
 	{
 		this->addCell(cell_id,ele);
 	}
 
+	/*! \brief Remove an element from the cell
+	 *
+	 * \param cell_id id of the cell
+	 * \param ele element to remove
+	 *
+	 */
 	inline void remove(size_t cell, size_t ele)
 	{
 		cl_base.get(cell).remove(ele);
 	}
 
+	/*! \brief Get the number of elements in the cell
+	 *
+	 * \param cell_id id of the cell
+	 *
+	 * \return the number of elements in the cell
+	 *
+	 */
 	inline size_t getNelements(const size_t cell_id) const
 	{
 		return cl_base.get(cell_id).size();
 	}
 
+	/*! \brief Return an element from the cell
+	 *
+	 * \param cell id of the cell
+	 * \param ele element id
+	 *
+	 * \return reference to the element
+	 *
+	 */
 	inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(0).get(0)) &
 	{
 		return cl_base.get(cell).get(ele);
 	}
 
+	/*! \brief Return an element from the cell
+	 *
+	 * \param cell id of the cell
+	 * \param ele element id
+	 *
+	 * \return reference to the element
+	 *
+	 */
 	inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(0).get(0)) &
 	{
 		return cl_base.get(cell).get(ele);
 	}
 
+	/*! \brief Swap two Mem_bal
+	 *
+	 * \param cl element to swap with
+	 *
+	 */
 	inline void swap(Mem_bal & cl)
 	{
 		cl_base.swap(cl.cl_base);
 	}
 
+	/*! \brief Swap two Mem_bal
+	 *
+	 * \param cl element to swap with
+	 *
+	 */
 	inline void swap(Mem_bal && cell)
 	{
 		cl_base.swap(cell.cl_base);
 	}
 
+	/*! \brief Reset the object
+	 *
+	 *
+	 */
 	inline void clear()
 	{
 		for (size_t i = 0 ; i < cl_base.size() ; i++)
@@ -135,6 +203,7 @@ public:
 public:
 
 	inline Mem_bal(size_t slot)
+	:invalid(0)
 	{}
 
 	inline void set_slot(size_t slot)

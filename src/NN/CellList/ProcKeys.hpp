@@ -64,21 +64,21 @@ public:
 	}
 };
 
-/* !Brief Class for an hilbert order processing of cell keys for CellList_gen implementation
+/*! \brief Class for an hilbert order processing of cell keys for CellList_gen implementation
  *
  * \tparam dim Dimansionality of the space
  */
 template<unsigned int dim, typename CellList>
 class Process_keys_hilb
 {
-	// vector for storing the cell keys
+	//! vector for storing the cell keys
 	openfpm::vector<size_t> keys;
 
-	// vector for storing the particle keys
+	//! vector for storing the particle keys
 	openfpm::vector<size_t> p_keys;
 
-	//Order of an hilbert curve
-	size_t m;
+	//! Order of an hilbert curve
+	size_t m = 0;
 
 public:
 

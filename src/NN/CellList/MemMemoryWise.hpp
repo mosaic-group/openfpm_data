@@ -179,10 +179,21 @@ public:
 
 public:
 
+	/*! \brief constructor
+	 *
+	 * \param slot number of slots (unused)
+	 *
+	 */
 	inline Mem_mw(size_t slot)
+	:invalid(0)
 	{
 	}
 
+	/*! \brief Set the number of slots
+	 *
+	 * \param slot unused
+	 *
+	 */
 	inline void set_slot(size_t slot)
 	{}
 

@@ -800,6 +800,8 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 	}
 
 #endif
+
+	/* coverity[leaked_storage] */
 }
 
 

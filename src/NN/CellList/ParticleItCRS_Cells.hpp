@@ -151,7 +151,7 @@ public:
 					 const openfpm::vector<size_t> & dom_cell,
 					 const openfpm::vector<subsub_lin<dim>> & anom_dom_cell,
 			         const long int (& NNc_sym)[openfpm::math::pow(3,dim)/2+1])
-	:cid(0),dom_or_anom(0),dom_cell(dom_cell),anom_dom_cell(anom_dom_cell),NNc_sym(NNc_sym),cli(cli)
+	:cid(0),NNc(NULL),NNc_size(0),dom_or_anom(0),dom_cell(dom_cell),anom_dom_cell(anom_dom_cell),NNc_sym(NNc_sym),cli(cli)
 	{
 		size_t s_cell;
 		if (dom_cell.size() != 0)
@@ -167,8 +167,6 @@ public:
 
 			start = NULL;
 			stop = NULL;
-			NNc = NULL;
-			NNc_size = 0;
 
 			return;
 		}

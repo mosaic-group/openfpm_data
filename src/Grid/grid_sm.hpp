@@ -119,6 +119,7 @@ class grid_sm
 
 		for (size_t i = 1 ;  i < N ; i++)
 		{
+			/* coverity[dead_error_begin] */
 			sz_s[i] = sz*sz_s[i-1];
 			this->sz[i] = sz;
 
@@ -149,6 +150,7 @@ class grid_sm
 
 		for (size_t i = 1 ;  i < N ; i++)
 		{
+			/* coverity[dead_error_begin] */
 			sz_s[i] = sz[i]*sz_s[i-1];
 			this->sz[i] = sz[i];
 
@@ -377,6 +379,7 @@ public:
 		{
 			// Check the sum produce a valid key
 
+			/* coverity[dead_error_line] */
 			if (bc[i] == NON_PERIODIC)
 			{
 				if (check::valid(gk.k[i] + sum_id[i],sz[i]) == false)
@@ -426,6 +429,7 @@ public:
 		mem_id lid = k[0];
 		for (mem_id i = 1 ; i < N ; i++)
 		{
+			/* coverity[dead_error_line] */
 			lid += k[i] * sz_s[i-1];
 		}
 
@@ -446,6 +450,7 @@ public:
 		mem_id lid = gk.k[0];
 		for (mem_id i = 1 ; i < N ; i++)
 		{
+			/* coverity[dead_error_begin */
 			lid += gk.k[i] * sz_s[i-1];
 		}
 

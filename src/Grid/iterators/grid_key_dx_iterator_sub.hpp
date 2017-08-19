@@ -406,6 +406,7 @@ public:
 		long int i = 0;
 		for ( ; i < dim-1 ; i++)
 		{
+			/* coverity[dead_error_begin] */
 			size_t id = this->gk.get(i);
 			if ((long int)id > gk_stop.get(i))
 			{

@@ -184,6 +184,7 @@ public:
 		size_t i = 0;
 		for ( ; i < dim-1 ; i++)
 		{
+			/* coverity[dead_error_begin] */
 			size_t id = gk.get(i);
 			if (id >= grid_base.size(i))
 			{

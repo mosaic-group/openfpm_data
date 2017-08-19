@@ -351,12 +351,11 @@ public:
 
 	//! Constructor, vector of size 0
 	vector() noexcept
-	:v_size(0),err_code(0)
+	:v_size(0),mem(NULL),err_code(0)
 	{
 #ifdef SE_CLASS2
 		check_new(this,8,VECTOR_STD_EVENT,1);
 #endif
-		v_size = 0;
 	}
 
 	//! Constructor, vector of size sz

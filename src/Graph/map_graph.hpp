@@ -57,10 +57,14 @@
 class no_edge
 {
 public:
+
+	//! type in case of no edge
 	typedef boost::fusion::vector<> type;
 
+	//! empty edge
 	type data;
 
+	//! no properties
 	static const unsigned int max_prop = 0;
 };
 
@@ -478,6 +482,8 @@ public:
 	 *
 	 * Constructor
 	 *
+	 * \param n_vertex number of vertex has a graph
+	 *
 	 */
 	Graph_CSR(size_t n_vertex) :
 			Graph_CSR(n_vertex, 16)
@@ -486,11 +492,14 @@ public:
 
 	/*! \brief Constructor
 	 *
-	 * Constructor
+	 * \param n_vertex number of vertices
+	 * \param n_slot number of slots (around how many edge has
+	 *        a vertex, it is not fundamental parameter is just
+	 *        an indication)
 	 *
 	 */
-	Graph_CSR(size_t n_vertex, size_t n_slot) :
-			v_slot(n_slot)
+	Graph_CSR(size_t n_vertex, size_t n_slot)
+	:v_slot(n_slot)
 	{
 		//! Creating n_vertex into the graph
 		v.resize(n_vertex);
@@ -504,6 +513,8 @@ public:
 
 	/*! \brief Copy constructor
 	 *
+	 * \param g Graph to copy
+	 *
 	 */
 	Graph_CSR(Graph_CSR<V, E, Memory> && g)
 	{
@@ -514,6 +525,8 @@ public:
 	 * 
 	 * \param g graph to copy
 	 * 
+	 * \return itself
+	 *
 	 */
 	Graph_CSR<V, E, Memory> & operator=(Graph_CSR<V, E, Memory> && g)
 	{
@@ -528,11 +541,13 @@ public:
 	/*! \breif Copy the graph
 	 * 
 	 * \param g graph to copy
-	 * 
+	 *
 	 */
 	Graph_CSR<V, E, Memory> & operator=(const Graph_CSR<V, E, Memory> & g)
 	{
 		swap(g.duplicate());
+
+		v_slot = g.v_slot;
 
 		return *this;
 	}
@@ -544,6 +559,8 @@ public:
 	 * \tparam i property to access
 	 * \param id of the vertex to access
 	 *
+	 * \return the reference of the property vertex
+	 *
 	 */
 	template<unsigned int i> auto vertex_p(size_t id) -> decltype( v.template get<i>(id) )
 	{
@@ -553,7 +570,10 @@ public:
 	/*! \brief Access the vertex
 	 *
 	 * \tparam i property to access
+	 *
 	 * \param id of the vertex to access
+	 *
+	 * \return the reference of the property vertex
 	 *
 	 */
 	template<unsigned int i> auto vertex_p(grid_key_dx<1> id) -> decltype( v.template get<i>(id) )
@@ -561,9 +581,11 @@ public:
 		return v.template get<i>(id);
 	}
 
-	/*! \brief Function to access the vertexes
+	/*! \brief Function to access the vertex
 	 *
 	 * \param id of the vertex to access
+	 *
+	 * \return vertex object
 	 *
 	 */
 	auto vertex(size_t id) -> decltype( v.get(id) )
@@ -571,11 +593,11 @@ public:
 		return v.get(id);
 	}
 
-	/*! \brief operator to access the vertex
-	 *
-	 * operator to access the vertex
+	/*! \brief Function to access the vertex
 	 *
 	 * \param id of the vertex to access
+	 *
+	 * \return the vertex object
 	 *
 	 */
 	auto vertex(grid_key_dx<1> id) -> decltype( v.get(id.get(0)) )
@@ -583,11 +605,11 @@ public:
 		return v.get(id.get(0));
 	}
 
-	/*! \brief operator to access the vertex
-	 *
-	 * operator to access the vertex
+	/*! \brief Fuction to access the vertex
 	 *
 	 * \param id of the vertex to access
+	 *
+	 * \return the vertex object
 	 *
 	 */
 	auto vertex(openfpm::vector_key_iterator id) -> decltype( v.get(0) )
@@ -595,9 +617,11 @@ public:
 		return v.get(id.get());
 	}
 
-	/*! \brief Function to access the vertexes
+	/*! \brief Function to access the vertex
 	 *
 	 * \param id of the vertex to access
+	 *
+	 * \return the vertex object
 	 *
 	 */
 	auto vertex(size_t id) const -> const decltype( v.get(id) )
@@ -605,11 +629,13 @@ public:
 		return v.get(id);
 	}
 
-	/*! \brief operator to access the vertex
+	/*! \brief Fuction to access the vertex
 	 *
 	 * operator to access the vertex
 	 *
 	 * \param id of the vertex to access
+	 *
+	 * \return the vertex object
 	 *
 	 */
 	auto vertex(grid_key_dx<1> id) const -> const decltype( v.get(id.get(0)) )
@@ -619,9 +645,9 @@ public:
 
 	/*! \brief operator to access the vertex
 	 *
-	 * operator to access the vertex
-	 *
 	 * \param id of the vertex to access
+	 *
+	 * \return the vertex object
 	 *
 	 */
 	auto vertex(openfpm::vector_key_iterator id) const -> const decltype( v.get(0) )
@@ -648,6 +674,8 @@ public:
 	 * \tparam i property to access
 	 * \param id of the edge to access
 	 *
+	 * \return a reference to the edge property
+	 *
 	 */
 	template<unsigned int i> auto edge_p(grid_key_dx<1> id) -> decltype ( e.template get<i>(id) )
 	{
@@ -658,6 +686,8 @@ public:
 	 *
 	 * \tparam i property to access
 	 * \param id of the edge to access
+	 *
+	 * \return a reference to the edge property
 	 *
 	 */
 	template<unsigned int i> auto edge_p(size_t id) -> decltype ( e.template get<i>(id) )
@@ -670,6 +700,8 @@ public:
 	 *
 	 * \param ek key of the edge
 	 *
+	 * \return the edge object
+	 *
 	 */
 	auto edge(edge_key ek) const -> const decltype ( e.get(0) )
 	{
@@ -678,9 +710,9 @@ public:
 
 	/*! \brief operator to access the edge
 	 *
-	 * operator to access the edge
-	 *
 	 * \param id of the edge to access
+	 *
+	 * \return the edge object
 	 *
 	 */
 	auto edge(size_t id) const -> const decltype ( e.get(id) )
@@ -691,6 +723,8 @@ public:
 	/*! \brief Access the edge
 	 *
 	 * \param id of the edge to access
+	 *
+	 * \return the edge object
 	 *
 	 */
 	auto edge(grid_key_dx<1> id) const -> const decltype ( e.get(id.get(0)) )
@@ -731,6 +765,8 @@ public:
 	 *
 	 * \param v vertex
 	 * \param v_e edge id
+	 *
+	 * \return the edge object
 	 *
 	 */
 	inline auto getChildEdge(size_t v, size_t v_e) -> decltype(e.get(0))
@@ -773,7 +809,6 @@ public:
 	 * \return the target i connected by an edge node, for the node v
 	 *
 	 */
-
 	inline size_t getChild(typename openfpm::vector<V, Memory, layout_v, layout_v_base, grow_p>::iterator_key & v, size_t i)
 	{
 #ifdef SE_CLASS1
@@ -797,7 +832,6 @@ public:
 	 * \param vrt Vertex properties
 	 *
 	 */
-
 	inline void addVertex(const V & vrt)
 	{
 
@@ -815,7 +849,6 @@ public:
 	/*! \brief add an empty vertex
 	 *
 	 */
-
 	inline void addVertex()
 	{
 
@@ -832,10 +865,13 @@ public:
 
 	/*! \brief add edge on the graph
 	 *
-	 * add an edge on the graph
+	 * \param v1 source edge
+	 * \param v2 destination edge
+	 * \param ed edge object to add
+	 *
+	 * \return edge object
 	 *
 	 */
-
 	template<typename CheckPolicy = NoCheck> inline auto addEdge(size_t v1, size_t v2, const E & ed) -> decltype(e.get(0))
 	{
 		long int id_x_end = addEdge_<CheckPolicy>(v1, v2);
@@ -857,8 +893,9 @@ public:
 	 * \param v1 start vertex
 	 * \param v2 end vertex
 	 *
+	 * \return the edge object
+	 *
 	 */
-
 	template<typename CheckPolicy = NoCheck> inline auto addEdge(size_t v1, size_t v2) -> decltype(e.get(0))
 	{
 		//! add an edge
@@ -878,11 +915,16 @@ public:
 	 * \param v1 start vertex
 	 * \param v2 end vertex
 	 *
+	 * \param srcgid source global id
+	 * \param dstgid destination global id
+	 *
 	 * \tparam sgid property id filled with the source vertex global id
 	 * \tparam dgid property id filled with the destination vertex global id
+	 *
+	 * \return the edge object
+	 *
 	 */
-
-	template<typename CheckPolicy = NoCheck, int sgid, int dgid> inline auto addEdge(size_t v1, size_t v2, size_t srdgid, size_t dstgid) -> decltype(e.get(0))
+	template<typename CheckPolicy = NoCheck, int sgid, int dgid> inline auto addEdge(size_t v1, size_t v2, size_t srcgid, size_t dstgid) -> decltype(e.get(0))
 	{
 		//! add an edge
 		long int id_x_end = addEdge_<CheckPolicy>(v1, v2);
@@ -891,7 +933,7 @@ public:
 			return e_invalid.get(0);
 
 		//! set source and destination ids of the edge
-		e.get(id_x_end).template get<sgid>() = srdgid;
+		e.get(id_x_end).template get<sgid>() = srcgid;
 		e.get(id_x_end).template get<dgid>() = dstgid;
 
 		//! return the edge to change the properties
@@ -900,8 +942,9 @@ public:
 
 	/*! \brief swap the memory of g with this graph
 	 *
-	 * swap the memory of g with this graph, it is basically used
-	 * for move semantic
+	 * it is basically used for move semantic
+	 *
+	 * \param g graph to swap
 	 *
 	 */
 
@@ -914,15 +957,19 @@ public:
 		v_l.swap(g.v_l);
 		e_l.swap(g.e_l);
 		e_invalid.swap(g.e_invalid);
+
+		size_t v_slot_tmp = g.v_slot;
+		g.v_slot = v_slot;
+		v_slot = v_slot_tmp;
 	}
 
 	/*! \brief swap the memory of g with this graph
 	 *
-	 * swap the memory of g with this graph, it is basically used
-	 * for move semantic
+	 * it is basically used for move semantic
+	 *
+	 * \param g graph to swap
 	 *
 	 */
-
 	inline void swap(Graph_CSR<V, E> && g)
 	{
 		// switch the memory
@@ -932,6 +979,10 @@ public:
 		v_l.swap(g.v_l);
 		e_l.swap(g.e_l);
 		e_invalid.swap(g.e_invalid);
+
+		size_t v_slot_tmp = g.v_slot;
+		g.v_slot = v_slot;
+		v_slot = v_slot_tmp;
 	}
 
 	/*! \brief Get the vertex iterator

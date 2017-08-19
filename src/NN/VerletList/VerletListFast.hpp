@@ -697,7 +697,7 @@ public:
 
 	//! Default Constructor
 	VerletList()
-	:slot(VERLET_STARTING_NSLOT)
+	:slot(VERLET_STARTING_NSLOT),n_dec(0)
 	{};
 
 	//! Copy constructor
@@ -709,7 +709,7 @@ public:
 
 	//! Copy constructor
 	VerletList(VerletList<dim,T,FAST,transform,local_index,CellListImpl> && cell)
-	:slot(VERLET_STARTING_NSLOT)
+	:slot(VERLET_STARTING_NSLOT),n_dec(0)
 	{
 		this->operator=(cell);
 	}
@@ -795,6 +795,8 @@ public:
 		cli.swap(vl.cli);
 		dp.swap(vl.dp);
 
+		n_dec = vl.n_dec;
+
 		return *this;
 	}
 
@@ -815,6 +817,7 @@ public:
 		cli = vl.cli;
 
 		dp = vl.dp;
+		n_dec = vl.n_dec;
 
 		return *this;
 	}

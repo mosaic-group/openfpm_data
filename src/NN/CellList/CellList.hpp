@@ -579,7 +579,7 @@ public:
 	 *
 	 */
 	CellList(Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	:Mem_type(slot)
+	:Mem_type(slot),n_dec(0)
 	{
 		SpaceBox<dim,T> sbox(box);
 		Initialize(sbox,div,pad,slot);
@@ -610,7 +610,7 @@ public:
 	 *
 	 */
 	CellList(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & box, const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	:Mem_type(slot)
+	:Mem_type(slot),n_dec(0)
 	{
 		Initialize(cd_sm,box,pad,slot);
 	}
@@ -638,6 +638,8 @@ public:
 
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this).swap(cell);
 
+		n_dec = cell.n_dec;
+
 		return *this;
 	}
 
@@ -656,6 +658,8 @@ public:
 		Mem_type::operator=(static_cast<const Mem_type &>(cell));
 
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cell);
+
+		n_dec = cell.n_dec;
 
 		return *this;
 	}
