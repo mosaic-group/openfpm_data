@@ -1165,7 +1165,6 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 
 			v3ps.template get<0>(i)[0] = rng.GetUniform()*0.3;
 			v3ps.template get<0>(i)[1] = rng.GetUniform()*0.3;
-			v3ps.template get<0>(i)[2] = rng.GetUniform()*0.3;
 
 			v1pp.template get<0>(i) = rng.GetUniform();
 			v1pp.template get<1>(i)[0][0] = rng.GetUniform();

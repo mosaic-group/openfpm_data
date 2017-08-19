@@ -122,7 +122,10 @@ public:
 	    for (int i = 0; i < mpi_rank; i++)
 	    {
 	    	if (mpi_rank == 0)
+	    	{
+	    		/* coverity[dead_error_line] */
 				offset[0] = 0;
+	    	}
 	    	else
 	    		offset[0] += sz_others.get(i);
 	    }
