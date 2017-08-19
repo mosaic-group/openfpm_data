@@ -97,6 +97,9 @@ struct vertex_prop
 		create_prop<typename G::V_type>(attributes_names);
 	};
 
+	//! destructor
+	~vertex_prop()	{delete [] attributes_names;}
+
 	/*! It call the functor for each member
 	 *
 	 * \param t each member
@@ -340,6 +343,10 @@ struct edge_prop
 		// Create default property names
 		create_prop<typename G::E_type>(attributes_names);
 	};
+
+	//! destructor
+	~edge_prop()
+	{delete [] attributes_names;}
 
 	/*! \brief It call the functor for each member
 	 *
