@@ -62,6 +62,9 @@ struct vertex_prop
 	//! Number of attributes name defined into the vertex
 	int n_attr = 0;
 
+	//! indicate if attributes_names is to destroy
+	bool to_destroy = false;
+
 	/*! \brief Constructor
 	 *
 	 * Create a vertex properties list
@@ -92,13 +95,18 @@ struct vertex_prop
 
 		// Create default property names
 		attributes_names = new std::string[G::V_type::max_prop];
+		to_destroy = true;
 
 		// Create default property names
 		create_prop<typename G::V_type>(attributes_names);
 	};
 
 	//! destructor
-	~vertex_prop()	{delete [] attributes_names;}
+	~vertex_prop()
+	{
+		if (to_destroy == true)
+		{delete [] attributes_names;}
+	}
 
 	/*! It call the functor for each member
 	 *
@@ -162,6 +170,9 @@ struct vertex_node
 	//! Number of attributes name defined into the vertex
 	int n_attr = 0;
 
+	//! indicate if attributes_names is to destroy
+	bool to_destroy = false;
+
 	/*! \brief Constructor
 	 *
 	 * Create a vertex node
@@ -207,6 +218,7 @@ struct vertex_node
 
 		// Create default property names
 		attributes_names = new std::string[G::V_type::max_prop];
+		to_destroy = true;
 
 		// Create default property names
 		create_prop<typename G::V_type>(attributes_names);
@@ -214,7 +226,8 @@ struct vertex_node
 
 	inline ~vertex_node()
 	{
-		delete [] attributes_names;
+		if (to_destroy == true)
+		{delete [] attributes_names;}
 	}
 
 #ifdef DEBUG
@@ -308,6 +321,9 @@ struct edge_prop
 	//! Number of attributes name defined into the vertex
 	int n_attr = 0;
 
+	//! indicate if attributes_names is to destroy
+	bool to_destroy = false;
+
 	/*! \brief Constructor
 	 *
 	 * Create an edge properties list
@@ -339,14 +355,17 @@ struct edge_prop
 
 		// Create default property names
 		attributes_names = new std::string[G::E_type::max_prop];
+		to_destroy = true;
 
 		// Create default property names
 		create_prop<typename G::E_type>(attributes_names);
 	};
 
-	//! destructor
-	~edge_prop()
-	{delete [] attributes_names;}
+	inline ~edge_prop()
+	{
+		if (to_destroy == true)
+		{delete [] attributes_names;}
+	}
 
 	/*! \brief It call the functor for each member
 	 *
@@ -405,6 +424,9 @@ struct edge_node
 	//! Number of attributes name defined into the vertex
 	int n_attr = 0;
 
+	//! indicate if attributes_names is to destroy
+	bool to_destroy = false;
+
 	/*! \brief Constructor
 	 *
 	 * Create an edge node
@@ -437,11 +459,18 @@ struct edge_node
 
 		// Create a number of default properties name
 		attributes_names  = new std::string[G::E_type::max_prop];
+		to_destroy = true;
 
 		// Create default property names
 		create_prop<typename G::E_type>(attributes_names);
 
 	};
+
+	inline ~edge_node()
+	{
+		if (to_destroy == true)
+		{delete [] attributes_names;}
+	}
 
 	/*! \brief Create a new node
 	 *
@@ -530,7 +559,7 @@ class GraphMLWriter
 		vertex_prop<Graph> vp(v_out);
 
 		// Iterate through all the vertex and create the vertex list
-		boost::mpl::for_each< typename Graph::V_type::type >(vp);
+		boost::mpl::for_each_ref< typename Graph::V_type::type >(vp);
 
 		// return the vertex properties string
 		return v_out;
@@ -552,7 +581,7 @@ class GraphMLWriter
 		edge_prop<Graph> ep(e_out);
 
 		// Iterate through all the vertex and create the vertex list
-		boost::mpl::for_each< typename Graph::E_type::type >(ep);
+		boost::mpl::for_each_ref< typename Graph::E_type::type >(ep);
 
 		// return the edge properties string
 		return e_out;
@@ -629,7 +658,7 @@ class GraphMLWriter
 			en.new_node(nc,it.source(),it.target());
 
 			// Iterate through all the edges and create the edge list
-			boost::mpl::for_each< boost::mpl::range_c<int,0,Graph::E_type::max_prop> >(en);
+			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,Graph::E_type::max_prop> >(en);
 
 			// end new node
 			en.end_node();
