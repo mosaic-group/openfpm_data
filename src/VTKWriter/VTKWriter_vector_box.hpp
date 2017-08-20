@@ -18,11 +18,19 @@ class v_box
 {
 public:
 
+	/*! \brief Constructor
+	 *
+	 * \param v
+	 *
+	 */
 	v_box(const vector & v)
 	:v(v)
 	{}
 
+	//! dataset-name
 	std::string dataset;
+
+	//! vector
 	const vector & v;
 };
 
@@ -37,6 +45,7 @@ public:
 template <typename vector>
 class VTKWriter<vector,VECTOR_BOX>
 {
+	//! data to write
 	openfpm::vector<v_box<vector>> v;
 
 	/*! \brief It get the vertex properties list
@@ -146,6 +155,7 @@ class VTKWriter<vector,VECTOR_BOX>
 						}
 						else
 						{
+							/* coverity[dead_error_line] */
 							v_out += "0.0";
 						}
 					}
@@ -162,11 +172,10 @@ class VTKWriter<vector,VECTOR_BOX>
 
 	/*! \brief Create the VTK vertex definition
 	 *
-	 * \tparam s_type spatial type of the data
-	 * \tparam attr false x,y,z are set to 0 for each vertex
+	 *
+	 * \return the string with the vertex definition
 	 *
 	 */
-
 	std::string get_cell_list()
 	{
 		// base
