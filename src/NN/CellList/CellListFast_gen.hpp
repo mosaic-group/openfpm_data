@@ -104,12 +104,12 @@ public:
 		return SFC;
 	}
 
-	/*! \brief return the celllist iterator (across cells)
+	/*! \brief Initialize Space-filling-curve (SFC)
 	 *
-	 * \return an iterator
+	 *
 	 *
 	 */
-	inline typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>>::Pit getIterator()
+	inline void init_SFC()
 	{
 		// Initialize SFC
 		if (init_sfc == false)
@@ -117,6 +117,16 @@ public:
 			initialize_sfc(this->getPadding(0));
 			init_sfc = true;
 		}
+	}
+
+	/*! \brief return the celllist iterator (across cells)
+	 *
+	 * \return an iterator
+	 *
+	 */
+	inline typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>>::Pit getIterator()
+	{
+		init_SFC();
 
 		return typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>>::Pit(*this);
 	}

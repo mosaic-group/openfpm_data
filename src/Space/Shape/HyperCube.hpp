@@ -17,7 +17,10 @@ template<unsigned int dim> std::ostream& operator<<(std::ostream& str, const com
 {
 	// print the combination of ostream
 	for (size_t i = 0 ; i < dim-1 ; i++)
+	{
+		/* coverity[dead_error_line] */
 		str <<  c.c[i] << ";";
+	}
 
 	str << c.c[dim-1];
 

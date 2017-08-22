@@ -178,6 +178,7 @@ class grid_sm
 
 		for (size_t i = 1 ;  i < N ; i++)
 		{
+			/* coverity[dead_error_begin] */
 			sz_s[i] = sz[i]*sz_s[i-1];
 
 			// set the box
