@@ -20,7 +20,7 @@ extern "C"
 template<unsigned int dim, typename CellList>
 class Process_keys_lin
 {
-	// stub object
+	//! stub object
 	openfpm::vector<size_t> keys;
 
 public:

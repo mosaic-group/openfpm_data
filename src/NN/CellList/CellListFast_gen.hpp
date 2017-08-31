@@ -34,7 +34,7 @@ class CellList_gen : public CellList<dim,T,Mem_type,transform,base>
 {
 private:
 
-	// Ghost marker
+	//! Ghost marker
 	size_t g_m = 0;
 
 	//! It is an object that indicate which space filling curve to use for the
