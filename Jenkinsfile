@@ -22,7 +22,7 @@ parallel (
 
                     stage ('build_nyu_val')
                     {
-                      sh "./build.sh $WORKSPACE $NODE_NAME VALGRIND"
+                      sh "./build.sh $WORKSPACE $NODE_NAME VALGRIND $BRANCH_NAME"
                     }
 
                     stage ('run_nyu_val')
@@ -54,7 +54,7 @@ parallel (
 
                     stage ('build_nyu_nor')
                     {
-                      sh "./build.sh $WORKSPACE $NODE_NAME NO"
+                      sh "./build.sh $WORKSPACE $NODE_NAME NO $BRANCH_NAME"
                     }
 
                     stage ('run_nyu_nor')
@@ -85,7 +85,7 @@ parallel (
 
                     stage ('build_nyu_se')
                     {
-                      sh "./build.sh $WORKSPACE $NODE_NAME SE"
+                      sh "./build.sh $WORKSPACE $NODE_NAME SE $BRANCH_NAME"
                     }
 
                     stage ('run_nyu_se')
@@ -117,7 +117,7 @@ parallel (
 
                     stage ('build_sb15_val')
                     {
-                      sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME VALGRIND"
+                      sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME VALGRIND $BRANCH_NAME"
                     }
 
                     stage ('run_sb15_val')
@@ -150,7 +150,7 @@ parallel (
 
                     stage ('build_sb15_nor')
                     {
-                      sh "./build.sh $WORKSPACE $NODE_NAME NO"
+                      sh "./build.sh $WORKSPACE $NODE_NAME NO $BRANCH_NAME"
                     }
 
                     stage ('run_sb15_nor')
@@ -182,7 +182,7 @@ parallel (
 
                     stage ('build_sb15_se')
                     {
-                      sh "./build.sh $WORKSPACE $NODE_NAME SE"
+                      sh "./build.sh $WORKSPACE $NODE_NAME SE $BRANCH_NAME"
                     }
 
                     stage ('run_sb15_se')
