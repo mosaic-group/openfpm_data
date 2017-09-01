@@ -18,6 +18,8 @@ pre_command=""
 sh ./autogen.sh
 if [ "$2" == "master" ]; then
   options="$options --disable-gpu"
+elif [ "$2" == "sbalzarini-mac-15" ]; then
+  options="$options --with-libhilbert=$HOME/LIBHILBERT"
 fi
 
 if [ x"$3" == x"SE"  ]; then
