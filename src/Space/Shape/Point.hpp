@@ -349,8 +349,6 @@ template<unsigned int dim ,typename T> class Point
 	inline bool operator!=(const Point<dim,T> & p)
 	{
 		return !this->operator==(p);
-
-		return true;
 	}
 
 	/*! \brief Return the string with the point coordinate

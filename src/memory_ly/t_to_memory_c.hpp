@@ -37,6 +37,7 @@
 template<typename T>
 struct remove_attributes_const_ref
 {
+	//! remove all attributes const and reference from the type
 	typedef typename boost::remove_const <typename boost::remove_reference< T >::type >::type type;
 };
 
@@ -44,48 +45,100 @@ struct remove_attributes_const_ref
 template<typename T>
 struct t_to_memory_c_impl
 {
+	//! transform a type T into memory_c<T>
 	typedef memory_c<T> type;
 };
+
+//! Partial specialization for scalar N=0
+template<typename T>
+struct t_to_memory_c_red_impl
+{
+	//! transform a type T into memory_c<T,MEMORY_C_REDUCED>
+	typedef memory_c<T,MEMORY_C_REDUCED> type;
+};
+
 
 //! Partial specialization for N=1
 template<typename T,size_t N1>
 struct t_to_memory_c_impl<T[N1]>
 {
+	//! transfrom a type T into memory_c<T>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>>>> type;
+};
+
+//! Partial specialization for N=1
+template<typename T,size_t N1>
+struct t_to_memory_c_red_impl<T[N1]>
+{
+	//! transform a type T into memory_c<T,MEMORY_C_REDUCED>
+	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>>>,MEMORY_C_REDUCED> type;
 };
 
 //! Partial specialization for N=2
 template<typename T,size_t N1,size_t N2>
 struct t_to_memory_c_impl<T[N1][N2]>
 {
+	//! tranform a type T into a memory_c<multi_array<.......>>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>>>> type;
 };
 
+//! Partial specialization for N=2
+template<typename T,size_t N1,size_t N2>
+struct t_to_memory_c_red_impl<T[N1][N2]>
+{
+	//! transform a type T into a memory_c<multi_array<.......>,MEMORY_C_REDUCED>
+	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
+			                                          boost::mpl::int_<N2>>>,MEMORY_C_REDUCED> type;
+};
 
 //! Partial specialization for N=3
 template<typename T,size_t N1,size_t N2,size_t N3>
 struct t_to_memory_c_impl<T[N1][N2][N3]>
 {
+	//! tranform a type T into a memory_c<multi_array<.......>>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>,
 			                                          boost::mpl::int_<N3>>>> type;
+};
+
+//! Partial specialization for N=3
+template<typename T,size_t N1,size_t N2,size_t N3>
+struct t_to_memory_c_red_impl<T[N1][N2][N3]>
+{
+	//! tranform a type T into a memory_c<multi_array<.......>>
+	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
+			                                          boost::mpl::int_<N2>,
+			                                          boost::mpl::int_<N3>>>,MEMORY_C_REDUCED> type;
 };
 
 //! Partial specialization for N=4
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4>
 struct t_to_memory_c_impl<T[N1][N2][N3][N4]>
 {
+	//! tranform a type T into a memory_c<multi_array<.......>>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>,
 			                                          boost::mpl::int_<N3>,
 			                                          boost::mpl::int_<N4>>>> type;
 };
 
+//! Partial specialization for N=4
+template<typename T,size_t N1,size_t N2,size_t N3,size_t N4>
+struct t_to_memory_c_red_impl<T[N1][N2][N3][N4]>
+{
+	//! tranform a type T into a memory_c<multi_array<.......>,MEMORY_C_REDUCED>
+	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
+			                                          boost::mpl::int_<N2>,
+			                                          boost::mpl::int_<N3>,
+			                                          boost::mpl::int_<N4>>>,MEMORY_C_REDUCED> type;
+};
+
 //! Partial specialization for N=5
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5>
 struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5]>
 {
+	//! tranform a type T into a memory_c<multi_array<.......>>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>,
 			                                          boost::mpl::int_<N3>,
@@ -93,10 +146,23 @@ struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5]>
 			                                          boost::mpl::int_<N5>>>> type;
 };
 
+//! Partial specialization for N=5
+template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5>
+struct t_to_memory_c_red_impl<T[N1][N2][N3][N4][N5]>
+{
+	//! tranform a type T into a memory_c<multi_array<.......>,MEMORY_C_REDUCED>
+	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
+			                                          boost::mpl::int_<N2>,
+			                                          boost::mpl::int_<N3>,
+			                                          boost::mpl::int_<N4>,
+			                                          boost::mpl::int_<N5>>>,MEMORY_C_REDUCED> type;
+};
+
 //! Partial specialization for N=6
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6>
 struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5][N6]>
 {
+	//! tranform a type T into a memory_c<multi_array<.......>>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>,
 			                                          boost::mpl::int_<N3>,
@@ -109,6 +175,7 @@ struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5][N6]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7>
 struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5][N6][N7]>
 {
+	//! tranform a type T into a memory_c<multi_array<.......>>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>,
 			                                          boost::mpl::int_<N3>,
@@ -122,6 +189,7 @@ struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5][N6][N7]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7, size_t N8>
 struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5][N6][N7][N8]>
 {
+	//! tranform a type T into a memory_c<multi_array<.......>>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>,
 			                                          boost::mpl::int_<N3>,
@@ -136,6 +204,7 @@ struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5][N6][N7][N8]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7, size_t N8, size_t N9>
 struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5][N6][N7][N8][N9]>
 {
+	//! tranform a type T into a memory_c<multi_array<.......>>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>,
 			                                          boost::mpl::int_<N3>,
@@ -151,6 +220,7 @@ struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5][N6][N7][N8][N9]>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4,size_t N5, size_t N6, size_t N7, size_t N8, size_t N9, size_t N10>
 struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10]>
 {
+	//! tranform a type T into a memory_c<multi_array<.......>>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>,
 			                                          boost::mpl::int_<N3>,
@@ -177,5 +247,18 @@ struct t_to_memory_c
 	typedef typename t_to_memory_c_impl<typename remove_attributes_const_ref<T>::type>::type type;
 };
 
+/*! \brief Meta-function t_to_memory_c_red
+ *
+ * Meta-function t_to_memory_c, convert the type T into an appropriate memory_c<....,MEMORY_C_REDUCED> type
+ *
+ * basically it convert t_to_memory_c<float> into memory_c<float,MEMORY_C_REDUCED> and array specification like
+ * t_to_memory_c<float[3][3]> into memory_c<multy_array<float,3,3>,MEMORY_C_REDUCED>, and so on for higher dimensionality
+ *
+ */
+template<typename T>
+struct t_to_memory_c_red
+{
+	typedef typename t_to_memory_c_red_impl<typename remove_attributes_const_ref<T>::type>::type type;
+};
 
 #endif /* T_TO_MEMORY_C_HPP_ */

@@ -13,9 +13,19 @@
 #include "util/ct_array.hpp"
 #include "memory_array.hpp"
 #include "memory/memory.hpp"
+#include "util/boost_multi_array_openfpm.hpp"
 
 #ifndef MEMORY_C_HPP_
 #define MEMORY_C_HPP_
+
+#define MEMORY_C_STANDARD 1
+#define MEMORY_C_REDUCED  2
+
+template<typename T, unsigned int impl = MEMORY_C_STANDARD, typename D = memory>
+class memory_c
+{
+
+};
 
 /*!
  * \brief This class is a container for the memory interface like HeapMemory CudaMemory
@@ -27,8 +37,8 @@
  * \see memory_traits_inte memory_traits_lin
  *
  */
-template<typename T, typename D = memory>
-class memory_c
+template<typename T, typename D>
+class memory_c<T,MEMORY_C_STANDARD,D>
 {
 	public:
 
@@ -42,10 +52,10 @@ class memory_c
 	typedef T vtype;
 
 	//! object that allocate memory like HeapMemory or CudaMemory
-	D * mem;
+	memory * mem;
 
 	//! object that represent the memory as an array of objects T
-	memory_array<T> * mem_r;
+	memory_array<T> mem_r;
 
 	/*! \brief This function set the object that allocate memory
 	 *
@@ -99,7 +109,7 @@ class memory_c
 	    mem->resize( sz*sizeof(T) );
 
 	    //! we create the representation for this buffer
-	    mem_r = new memory_array<T>(mem->getPointer(),sz,mem->isInitialized());
+	    mem_r.initialize(mem->getPointer(),sz,mem->isInitialized());
 
 	    return true;
 	}
@@ -109,7 +119,7 @@ class memory_c
 	 * \param mem_c Memory object
 	 *
 	 */
-	void move_copy(memory_c & mem_c)
+/*	void move_copy(memory_c & mem_c)
 	{
 		// if mem_r is allocated delete it
 		if (mem_r != NULL)
@@ -130,15 +140,16 @@ class memory_c
 
 		// Null the pointer to avoid double deallocation
 		mem_c.mem_r = NULL;
-	}
+	}*/
 
 	//! constructor
-	memory_c():mem(NULL),mem_r(NULL){}
+	memory_c():mem(NULL){}
 
 	//! destructor
 	~memory_c()
 	{
-		delete(mem_r);
+		// deinitialixe mem_r
+		mem_r.deinit();
 		if (mem != NULL)
 		{
 			mem->decRef();
@@ -158,17 +169,49 @@ class memory_c
 		// Save on temporal
 
 		void * mem_tmp = static_cast<void*>(mem);
-		void * mem_r_tmp = static_cast<void*>(mem_r);
-
-		// swap the memory between objects
-
 		mem = mem_obj.mem;
-		mem_r = mem_obj.mem_r;
+		mem_obj.mem = static_cast<memory*>(mem_tmp);
 
-		mem_obj.mem = static_cast<D*>(mem_tmp);
-		mem_obj.mem_r = static_cast<memory_array<T>*>(mem_r_tmp);
+		mem_obj.mem_r.swap(mem_r);
 	}
 
+};
+
+
+/*!
+ * \brief This class is a container for the memory interface like HeapMemory CudaMemory
+ *
+ * It store the object used to allocate memory and a representation of this memory as an array of objects T
+ *
+ * It is mainly used by memory_conf to create the correct memory layout
+ *
+ * \see memory_traits_inte memory_traits_lin
+ *
+ */
+template<typename T>
+class memory_c<T,MEMORY_C_REDUCED,memory>
+{
+	public:
+
+	//! define T
+	typedef memory_c<T> type;
+
+	//! define a reference to T
+	typedef T& reference;
+
+	//! define T
+	typedef T vtype;
+
+	//! object that represent the memory as an array of objects T
+	memory_array<T> mem_r;
+
+	//! constructor
+	memory_c() {}
+
+	//! destructor
+	~memory_c()
+	{
+	}
 };
 
 /*! \brief This class is a trick to indicate the compiler a specific
@@ -221,6 +264,19 @@ struct mult<T,1>
 	enum { value = boost::mpl::at<T,boost::mpl::int_<1>>::type::value };
 };
 
+template<typename size_type, unsigned int dim>
+static inline std::array<size_type ,dim> zero_dims()
+{
+	std::array<size_type ,dim> dimensions;
+
+    // fill runtime, and the other dimensions
+    for (size_t i = 0 ; i < dim ; i++)
+    {dimensions[i] = 0;}
+
+	return dimensions;
+}
+
+
 /*! \brief Specialization of memory_c for multi_array
  *
  * Specialization of memory_c for multi_array
@@ -235,12 +291,31 @@ struct mult<T,1>
  * \tparam D object that allocate memory
  *
  */
-
 template<typename T, typename D>
-class memory_c<multi_array<T>, D>
+class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 {
-	//! define T
-//	typedef T type;
+	/*! \brief In combination with generate_array is used to produce array at compile-time
+	 *
+	 * In combination with generate_array is used to produce at compile-time
+	 * arrays like {0,N-1,.........0} used in boost::multi_array for index ordering
+	 *
+	 */
+	template<size_t index,size_t N> struct ordering
+	{
+	    enum { value = (N-index) % N };
+	};
+
+	/*! \brief In combination with generate_array is used to produce array at compile-time
+	 *
+	 * In combination with generate_array is used to produce at compile-time
+	 * arrays like {true,true,.........true} used in boost::multi_array to
+	 * define ascending order
+	 *
+	 */
+	template<size_t index,size_t N> struct ascending
+	{
+	    enum { value = true };
+	};
 
 	//! define boost::mpl::int_ without boost::mpl
 	template<int S> using int_ = boost::mpl::int_<S>;
@@ -256,31 +331,12 @@ class memory_c<multi_array<T>, D>
 	//! define size_type
 	typedef typename boost::multi_array_ref<base,size_p::value>::size_type size_type;
 
+    //! we generate the ordering buffer ord::data = {0,N-1 ...... 1 }
+    typedef typename generate_array<typename boost::multi_array<T,size_p::value>::size_type,size_p::value, ordering>::result ord;
 
-	/*! \brief In combination with generate_array is used to produce array at compile-time
-	 *
-	 * In combination with generate_array is used to produce at compile-time
-	 * arrays like {0,N-1,.........0} used in boost::multi_array for index ordering
-	 *
-	 */
+    // we generate the ascending buffer
+    typedef typename generate_array<bool,size_p::value, ascending>::result asc;
 
-	template<size_t index,size_t N> struct ordering
-	{
-	    enum { value = (N-index) % N };
-	};
-
-	/*! \brief In combination with generate_array is used to produce array at compile-time
-	 *
-	 * In combination with generate_array is used to produce at compile-time
-	 * arrays like {true,true,.........true} used in boost::multi_array to
-	 * define ascending order
-	 *
-	 */
-
-	template<size_t index,size_t N> struct ascending
-	{
-	    enum { value = true };
-	};
 
 	public:
 
@@ -338,14 +394,10 @@ class memory_c<multi_array<T>, D>
 	    for (int i = 0 ; i < size_p::value-1 ; i++)
 	    {dimensions[i+1] = dims::data[i];}
 
-	    //! we generate the ordering buffer ord::data = {0,N-1 ...... 1 }
-	    typedef typename generate_array<typename boost::multi_array<T,size_p::value>::size_type,size_p::value, ordering>::result ord;
-
-	    // we generate the ascending buffer
-	    typedef typename generate_array<bool,size_p::value, ascending>::result asc;
+	    boost::multi_array_ref_openfpm<base,size_p::value> tmp(static_cast<base *>(mem->getPointer()),dimensions,boost::general_storage_order<size_p::value>(ord::data,asc::data));
 
 	    //! we create the representation for the memory buffer
-	    mem_r = new boost::multi_array_ref<base,size_p::value>(static_cast<base *>(mem->getPointer()),dimensions,boost::general_storage_order<size_p::value>(ord::data,asc::data));
+	    mem_r.swap(tmp);
 
 	    return true;
 	}
@@ -357,16 +409,18 @@ class memory_c<multi_array<T>, D>
 	//! Reference to an object to allocate memory
 	D * mem;
 
-	//! object that represent the memory as an multi-dimensional array of objects T
-	boost::multi_array_ref<base,boost::mpl::size<T>::value> * mem_r;
+	//! object that represent the memory as a multi-dimensional array of objects T
+	boost::multi_array_ref_openfpm<base,boost::mpl::size<T>::value> mem_r;
 
 	//! constructor
-	memory_c():mem(NULL),mem_r(NULL){}
+	memory_c()
+	:mem(NULL),
+	 mem_r(static_cast<base *>(NULL),zero_dims<size_type,size_p::value>(),boost::general_storage_order<size_p::value>(ord::data,asc::data))
+	{}
 
 	//! destructor
 	~memory_c()
 	{
-		delete(mem_r);
 		if (mem != NULL)
 		{
 			mem->decRef();
@@ -391,15 +445,10 @@ class memory_c<multi_array<T>, D>
 		// Save on temporal
 
 		void * mem_tmp = static_cast<void*>(mem);
-		void * mem_r_tmp = static_cast<void*>(mem_r);
-
-		// swap the memory between objects
-
 		mem = mem_obj.mem;
-		mem_r = mem_obj.mem_r;
-
 		mem_obj.mem = static_cast<D*>(mem_tmp);
-		mem_obj.mem_r = static_cast<decltype(mem_obj.mem_r)>(mem_r_tmp);
+
+		mem_r.swap(mem_obj.mem_r);
 	}
 };
 

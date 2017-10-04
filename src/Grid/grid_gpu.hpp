@@ -8,6 +8,70 @@
 #ifndef OPENFPM_DATA_SRC_GRID_GRID_GPU_HPP_
 #define OPENFPM_DATA_SRC_GRID_GRID_GPU_HPP_
 
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+
+template<typename T_type>
+struct copy_memory_c
+{
+	//! encapsulated source object
+	const typename memory_traits_inte<T_type>::type & src;
+	//! encapsulated destination object
+	typename memory_traits_inte_red<T_type>::type & dst;
+
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	inline copy_memory_c(const typename memory_traits_inte<T_type>::type & src,
+			                   typename memory_traits_inte_red<T_type>::type & dst)
+	:src(src),dst(dst)
+	{
+	};
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		boost::fusion::at_c<T::value>(dst).mem_r = boost::fusion::at_c<T::value>(src).mem_r;
+	}
+};
+
+struct dim3_
+{
+	//! size in x dimension
+	unsigned int x;
+
+	//! size in y dimension
+	unsigned int y;
+
+	//! size in z dimension
+	unsigned int z;
+};
+
+template<unsigned int dim>
+struct device_grid
+{
+	//! number of treads in each block
+	dim3_ threads;
+
+	//! number of grid for the kernel execution
+	dim3_ grids;
+};
+
+
 /*! \brief This is an N-dimensional grid or an N-dimensional array with memory_traits_inte layout
  *
  * it is basically an N-dimensional Cartesian grid
@@ -66,6 +130,56 @@ public:
 	inline grid_cpu(const size_t (& sz)[dim]) THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(sz)
 	{
+	}
+
+	/*! \brief It return the properties arrays.
+	 *
+	 * In case of Cuda memory it return the device pointers to pass to the kernels
+	 *
+	 *
+	 */
+	template<unsigned int id> void * getDeviceBuffer()
+	{
+		return boost::fusion::at_c<id>(this->data_).mem->getDevicePointer();
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+	 *
+	 *
+	 */
+	template<unsigned int id> void deviceToHost()
+	{
+		return boost::fusion::at_c<id>(this->data_).mem->deviceToHost();
+	}
+
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> toGPU()
+	{
+		grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> g;
+		copy_memory_c<T> cp_mc(this->data_,g.data_);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp_mc);
+
+		return g;
+	}
+
+	/*! \brief When we switch to GPU mode the data-structure can be safely given to
+	 *         a kernel for computation
+	 *
+	 *
+	 */
+	void switchToGPU()
+	{
+
+	}
+
+	void switchToCPU()
+	{
+
 	}
 };
 

@@ -9,17 +9,17 @@
 #define UTIL_TEST_HPP_
 
 #include "config.h"
-#include "object_util.hpp"
+#include "util/object_util.hpp"
 #include "Point_test.hpp"
 #include "util/ct_array.hpp"
 #include "Vector/map_vector.hpp"
-#include "common.hpp"
-#include "check_no_pointers.hpp"
+#include "util/common.hpp"
+#include "util/check_no_pointers.hpp"
 #include "Grid/util.hpp"
 #include "data_type/scalar.hpp"
 #include "util/convert.hpp"
 #include <iostream>
-#include "mul_array_extents.hpp"
+#include "util/mul_array_extents.hpp"
 #include "Packer_Unpacker/has_max_prop.hpp"
 
 //! test type for has_max_prop
@@ -409,7 +409,7 @@ BOOST_AUTO_TEST_CASE( generate_array )
 	// check constexpr compile time array as template parameters
 
 #ifndef COVERTY_SCAN
-
+#if __CUDACC_VER_MAJOR__ >= 9
 	{
 	//! [constexpr array]
 	const size_t count = 5;
@@ -422,6 +422,7 @@ BOOST_AUTO_TEST_CASE( generate_array )
 	//! [constexpr array]
 	}
 
+#endif
 #endif
 
 

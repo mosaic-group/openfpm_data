@@ -102,8 +102,7 @@ template<unsigned int dim ,typename T> class Sphere
 
 		if (dist <= boost::fusion::at_c<r>(data))
 		{return true;}
-		else
-		{return false;}
+
 
 		return false;
 	}
@@ -133,8 +132,6 @@ template<unsigned int dim ,typename T> class Sphere
 
 		if (dist <= boost::fusion::at_c<r>(data))
 		{return true;}
-		else
-		{return false;}
 
 		return false;
 	}

@@ -508,7 +508,7 @@ public:
 	 */
 	template <unsigned int p> typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get()
 	{
-		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
+		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
 
 	/*! \brief Access the data
@@ -520,7 +520,7 @@ public:
 	 */
 	template <unsigned int p> const typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get() const
 	{
-		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
+		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
 
 	/*! \brief Assignment

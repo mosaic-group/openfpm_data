@@ -4,6 +4,7 @@
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
+#include "util/math_util_complex.hpp"
 
 // initialization function:
 bool init_unit_test()
@@ -11,10 +12,13 @@ bool init_unit_test()
   return true;
 }
 
+std::vector<int> sieve_spf;
+
 // entry point:
 int main(int argc, char* argv[])
 {
-  return boost::unit_test::unit_test_main( &init_unit_test, argc, argv );
+	openfpm::math::init_getFactorization();
+	return boost::unit_test::unit_test_main( &init_unit_test, argc, argv );
 }
 
 #include <boost/fusion/include/mpl.hpp>
@@ -28,12 +32,12 @@ int main(int argc, char* argv[])
 #include "Packer_Unpacker/Packer_nested_tests.hpp"
 #include "Packer_Unpacker/Packer_unpacker_benchmark_test.hpp"
 #include "util/copy_compare/meta_cc_unit_tests.hpp"
-#include "util/variadic_to_vmpl_unit_test.hpp"
+#include "util/test/variadic_to_vmpl_unit_test.hpp"
 #include "Space/Shape/Point_unit_test.hpp"
 #include "timer_util_test.hpp"
 #include "Grid/grid_key_dx_expression_unit_tests.hpp"
 #include "Point_test_unit_tests.hpp"
-#include "util/util_test.hpp"
+#include "util/test/util_test.hpp"
 #include "Space/SpaceBox_unit_tests.hpp"
 #include "Space/Shape/Box_unit_tests.hpp"
 #include "NN/CellList/CellList_test.hpp"
@@ -42,12 +46,13 @@ int main(int argc, char* argv[])
 #include "Graph/graph_unit_tests.hpp"
 #include "Grid/grid_unit_tests.hpp"
 #include "Grid/grid_sm_unit_tests.hpp"
-#include "util/mathutil_unit_test.hpp"
+#include "util/test/mathutil_unit_test.hpp"
 #include "NN/CellList/CellDecomposer_unit_tests.hpp"
 #include "NN/CellList/CellListIterator_test.hpp"
 #include "Vector/map_vector_std_util_unit_test.hpp"
 #include "NN/VerletList/VerletList_test.hpp"
 #include "Grid/iterators/grid_iterators_unit_tests.cpp"
+#include "util/test/compute_optimal_device_grid_unit_tests.hpp"
 #ifdef PERFORMANCE_TEST
 #include "performance.hpp"
 #endif

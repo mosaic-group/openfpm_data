@@ -9,6 +9,7 @@
 #define SRC_GRID_UTIL_HPP_
 
 #include "util/common.hpp"
+#include<bits/stdc++.h>
 
 template<typename T, typename Sfinae = void>
 struct is_grid: std::false_type {};
@@ -26,6 +27,8 @@ struct is_grid: std::false_type {};
 template<typename T>
 struct is_grid<T, typename Void< typename T::yes_i_am_grid>::type> : std::true_type
 {};
+
+
 
 
 #endif /* SRC_GRID_UTIL_HPP_ */

@@ -73,6 +73,7 @@ struct generate_indexes {
 ///////////////////////////////////////////////////
 
 #ifndef COVERTY_SCAN
+#if __CUDACC_VER_MAJOR__ >= 9
 
 //! the array itself
 template<class T, unsigned long... args> struct ArrayHolder_constexpr {
@@ -120,6 +121,7 @@ struct generate_array_constexpr {
     typedef typename generate_array_constexpr_impl<T,N-1, N, F>::result result;
 };
 
+#endif
 #endif
 
 //////////////////////////////////////////////////

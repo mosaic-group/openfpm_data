@@ -8,7 +8,7 @@
 #ifndef OPENFPM_DATA_SRC_UTIL_MATHUTIL_UNIT_TEST_HPP_
 #define OPENFPM_DATA_SRC_UTIL_MATHUTIL_UNIT_TEST_HPP_
 
-#include "mathutil.hpp"
+#include "util/mathutil.hpp"
 
 BOOST_AUTO_TEST_SUITE( mathutil_test )
 

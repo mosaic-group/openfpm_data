@@ -7,6 +7,7 @@
 #include "Space/Shape/HyperCube.hpp"
 #include "timer.hpp"
 #include "grid_util_test.hpp"
+#include "cuda_gpu_compute.cuh"
 
 #ifdef TEST_COVERAGE_MODE
 #define GS_SIZE 8
@@ -23,7 +24,6 @@ template<typename g> void test_layout_grid3d(g & c3, size_t sz);
  * Test all grid with dimensionality dim and size sz on all dimensions
  *
  */
-
 template<unsigned int dim> void test_all_grid(size_t sz)
 {
 	size_t szz[dim];
@@ -751,6 +751,44 @@ BOOST_AUTO_TEST_CASE( grid_use)
 	}
 
 	std::cout << "Grid unit test end" << "\n";
+}
+
+
+
+BOOST_AUTO_TEST_CASE (gpu_computation)
+{
+	#ifdef CUDA_GPU
+
+	{
+	size_t sz[3] = {64,64,64};
+	grid_gpu<3, Point_test<float> > c3(sz);
+
+	c3.setMemory();
+	test_layout_gridNd<3>(c3,sz[0]);
+
+	gpu_grid_3D_compute(c3);
+
+	c3.deviceToHost<0>();
+
+	auto it = c3.getIterator();
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c3.getGrid().LinId(key) == c3.template get<0>(key);
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+
+	gpu_grid_3D_fill(c3);
+
+	}
+
+	#endif
 }
 
 /* \brief This is an ordinary test simple 3D with plain C array
