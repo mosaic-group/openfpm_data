@@ -181,6 +181,8 @@ void test_stencil_sub_iterator(grid_sm<3,void> & g_sm)
 
 	while (gsi.isNext() == true)
 	{
+		auto key = gsi.get();
+
 		size_t lin1 = gsi.getStencil<0>();
 		size_t lin2 = gsi.getStencil<1>();
 		size_t lin3 = gsi.getStencil<2>();
@@ -199,6 +201,8 @@ void test_stencil_sub_iterator(grid_sm<3,void> & g_sm)
 					 gtest.get<0>(lin7);
 
 		ret &= (sum == 0);
+
+		ret &= g_sm.LinId(key) == (long int)lin1;
 
 		++gsi;
 	}

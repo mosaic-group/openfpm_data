@@ -401,6 +401,8 @@ public:
 		size_t id = this->gk.get(0);
 		this->gk.set_d(0,id+1);
 
+		this->stl_code.increment();
+
 		//! check the overflow of all the index with exception of the last dimensionality
 
 		long int i = 0;
@@ -412,9 +414,12 @@ public:
 			{
 				// ! overflow, increment the next index
 
+				size_t idr = this->gk.get(i) - gk_start.get(i);
 				this->gk.set_d(i,gk_start.get(i));
 				id = this->gk.get(i+1);
 				this->gk.set_d(i+1,id+1);
+
+				this->stl_code.adjust_offset(i,idr,grid_base);
 			}
 			else
 			{
