@@ -59,6 +59,25 @@ struct aggregate
 
 #else
 
+/*! \brief An aggregate that accept a boost fusion vector as type
+ *
+ *
+ *
+ */
+template<typename T>
+struct aggregate_bfv
+{
+	//! type the object store
+	typedef T type;
+
+	//! real type the object store
+	typedef T type_real;
+
+	//! data to store
+	type data;
+
+	static const unsigned int max_prop = boost::mpl::size<type>::type::value;
+};
 
 /*! \brief aggregate of properties, from a list of object if create a struct that follow the OPENFPM native structure
  *
