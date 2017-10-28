@@ -36,10 +36,6 @@ class grid_key_dx_iterator
 	//! information of the grid where this iterator iterate
 	grid_sm<dim,void> grid_base;
 
-	//! Additional operation and information in case we do stencil
-	//! operations
-	stencil stl_code;
-
 	/*! \brief return the index i of the gk key
 	 *
 	 * \param i index to get
@@ -57,6 +53,10 @@ protected:
 
 	//! Actual key
 	grid_key_dx<dim> gk;
+
+	//! Additional operation and information in case we do stencil
+	//! operations
+	stencil stl_code;
 
 public:
 
