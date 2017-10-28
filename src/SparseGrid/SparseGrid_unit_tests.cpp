@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fill_all_test)
 
 	auto it = grid.getDomainIterator();
 
-	size_t count;
+	size_t count = 0;
 
 	bool match = true;
 

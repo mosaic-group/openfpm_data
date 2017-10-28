@@ -144,7 +144,7 @@ public:
 
 	grid_key_sparse_dx_iterator(openfpm::vector<cheader<dim,n_ele>> & header,
 								grid_key_dx<dim> (& lin_id_pos)[n_ele])
-	:header(header),lin_id_pos(lin_id_pos),chunk_id(0),mask_it_pnt(0)
+	:header(header),lin_id_pos(lin_id_pos),chunk_id(0),mask_it_pnt(0),mask_nele(0)
 	{
 		SelectValidAndFill_mask_it();
 	}

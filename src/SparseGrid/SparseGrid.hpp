@@ -221,6 +221,8 @@ public:
 		else
 		{
 			active_cnk = cached_id[id-1];
+			cache_pnt = id;
+			cache_pnt = (cache_pnt == SGRID_CACHE)?0:cache_pnt;
 		}
 
 		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
