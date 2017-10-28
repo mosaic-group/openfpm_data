@@ -287,7 +287,7 @@ struct sublin<2,chunk>
 {
 	inline static size_t lin(grid_key_dx<2> & k)
 	{
-		return k.get(0) + k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value;
+		return k.get(0) + (k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value);
 	}
 };
 
@@ -352,9 +352,9 @@ struct sublin<4,chunk>
 {
 	inline static size_t lin(grid_key_dx<4> & k)
 	{
-		return k.get(0) + k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value +
-			   k.get(2) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value +
-			   k.get(3) << boost::mpl::at<chunk,boost::mpl::int_<2>>::type::value;
+		return k.get(0) + (k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value) +
+			   (k.get(2) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value) +
+			   (k.get(3) << boost::mpl::at<chunk,boost::mpl::int_<2>>::type::value);
 	}
 };
 
@@ -391,10 +391,10 @@ struct sublin<5,chunk>
 {
 	inline static size_t lin(grid_key_dx<5> & k)
 	{
-		return k.get(0) + k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value +
-			   k.get(2) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value +
-			   k.get(3) << boost::mpl::at<chunk,boost::mpl::int_<2>>::type::value +
-			   k.get(4) << boost::mpl::at<chunk,boost::mpl::int_<3>>::type::value;
+		return k.get(0) + (k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value) +
+			   (k.get(2) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value) +
+			   (k.get(3) << boost::mpl::at<chunk,boost::mpl::int_<2>>::type::value) +
+			   (k.get(4) << boost::mpl::at<chunk,boost::mpl::int_<3>>::type::value);
 	}
 };
 
@@ -433,11 +433,11 @@ struct sublin<6,chunk>
 {
 	inline static size_t lin(grid_key_dx<6> & k)
 	{
-		return k.get(0) + k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value +
-			   k.get(2) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value +
-			   k.get(3) << boost::mpl::at<chunk,boost::mpl::int_<2>>::type::value +
-			   k.get(4) << boost::mpl::at<chunk,boost::mpl::int_<3>>::type::value +
-			   k.get(5) << boost::mpl::at<chunk,boost::mpl::int_<4>>::type::value;
+		return k.get(0) + (k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value) +
+			   (k.get(2) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value) +
+			   (k.get(3) << boost::mpl::at<chunk,boost::mpl::int_<2>>::type::value) +
+			   (k.get(4) << boost::mpl::at<chunk,boost::mpl::int_<3>>::type::value) +
+			   (k.get(5) << boost::mpl::at<chunk,boost::mpl::int_<4>>::type::value);
 
 	}
 };
@@ -481,12 +481,12 @@ struct sublin<7,chunk>
 {
 	inline static size_t lin(grid_key_dx<7> & k)
 	{
-		return k.get(0) + k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value +
-			   k.get(2) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value +
-			   k.get(3) << boost::mpl::at<chunk,boost::mpl::int_<2>>::type::value +
-			   k.get(4) << boost::mpl::at<chunk,boost::mpl::int_<3>>::type::value +
-			   k.get(5) << boost::mpl::at<chunk,boost::mpl::int_<4>>::type::value +
-			   k.get(6) << boost::mpl::at<chunk,boost::mpl::int_<5>>::type::value;
+		return k.get(0) + (k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value) +
+			   (k.get(2) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value) +
+			   (k.get(3) << boost::mpl::at<chunk,boost::mpl::int_<2>>::type::value) +
+			   (k.get(4) << boost::mpl::at<chunk,boost::mpl::int_<3>>::type::value) +
+			   (k.get(5) << boost::mpl::at<chunk,boost::mpl::int_<4>>::type::value) +
+			   (k.get(6) << boost::mpl::at<chunk,boost::mpl::int_<5>>::type::value);
 	}
 };
 
@@ -531,13 +531,13 @@ struct sublin<8,chunk>
 {
 	inline static size_t lin(grid_key_dx<8> & k)
 	{
-		return k.get(0) + k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value +
-			   k.get(2) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value +
-			   k.get(3) << boost::mpl::at<chunk,boost::mpl::int_<2>>::type::value +
-			   k.get(4) << boost::mpl::at<chunk,boost::mpl::int_<3>>::type::value +
-			   k.get(5) << boost::mpl::at<chunk,boost::mpl::int_<4>>::type::value +
-			   k.get(6) << boost::mpl::at<chunk,boost::mpl::int_<5>>::type::value +
-			   k.get(7) << boost::mpl::at<chunk,boost::mpl::int_<6>>::type::value;
+		return k.get(0) + (k.get(1) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value) +
+			   (k.get(2) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value) +
+			   (k.get(3) << boost::mpl::at<chunk,boost::mpl::int_<2>>::type::value) +
+			   (k.get(4) << boost::mpl::at<chunk,boost::mpl::int_<3>>::type::value) +
+			   (k.get(5) << boost::mpl::at<chunk,boost::mpl::int_<4>>::type::value) +
+			   (k.get(6) << boost::mpl::at<chunk,boost::mpl::int_<5>>::type::value) +
+			   (k.get(7) << boost::mpl::at<chunk,boost::mpl::int_<6>>::type::value);
 	}
 };
 

@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_use_test)
 
 	auto it = grid.getDomainIterator();
 
-	size_t count;
+	size_t count = 0;
 
 	while (it.isNext())
 	{
