@@ -92,10 +92,10 @@ template<typename T>
 struct aggregate_bfv
 {
 	//! type the object store
-	typedef T::type type;
+	typedef T type;
 
 	//! real type the object store
-	typedef T::type type_real;
+	typedef T type_real;
 
 	//! data to store
 	type data;
