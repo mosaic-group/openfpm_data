@@ -94,6 +94,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fill_all_test)
 	}
 
 	BOOST_REQUIRE_EQUAL(count,171*171*171);
+	BOOST_REQUIRE_EQUAL(match,true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

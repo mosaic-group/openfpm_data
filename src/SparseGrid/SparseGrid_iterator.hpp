@@ -101,8 +101,6 @@ class grid_key_sparse_dx_iterator
 	 */
 	void SelectValidAndFill_mask_it()
 	{
-#ifdef __GNUC__
-
 		mask_nele = 0;
 
 		while (mask_nele == 0 && chunk_id < header.size())
@@ -119,8 +117,19 @@ class grid_key_sparse_dx_iterator
 
 				do
 				{
+#if defined(__GNUC__) || defined(__clang__)
 					index = __builtin_ffs(mi);
-
+#elif defined(__INTEL_COMPILER)
+					_BitScanForward64(&index,mi)
+					index += 1;
+#else
+					index = 0;
+					if (mi != 0)
+					{
+						while (mi >> index & 0x1 == 0)	{index++;}
+						index += 1;
+					}
+#endif
 					if (index != 0)
 					{
 						mask_it[mask_nele] = (index - 1 + tot_idx) + i*sizeof(size_t)*8;
@@ -136,8 +145,6 @@ class grid_key_sparse_dx_iterator
 			chunk_id = (mask_nele == 0)?chunk_id + 1:chunk_id;
 
 		}
-
-#endif
 	}
 
 public:
