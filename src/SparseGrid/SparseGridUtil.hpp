@@ -13,7 +13,7 @@
 template <typename n_ele, typename T>
 struct Ft_chunk
 {
-	typedef std::array<T,n_ele::value> type;
+	typedef std::array<typename std::remove_const<typename std::remove_reference<T>::type>::type,n_ele::value> type;
 };
 
 template<unsigned int dim>

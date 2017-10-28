@@ -9,12 +9,36 @@
 #define OPENFPM_DATA_SRC_UTIL_AGGREGATE_HPP_
 
 #include <boost/fusion/container/vector.hpp>
+#include <boost/fusion/include/push_back.hpp>
 
 #ifdef SE_CLASS3
 
 #define SE3_MAX_PROP(i) i+2
 #define SE3_ADD_PROP(i) size_t[i+1],size_t
 #define SE3_SUB_MAX_PROP -2
+
+/*! \brief An aggregate that accept a boost fusion vector as type
+ *
+ *
+ *
+ */
+template<typename T>
+struct aggregate_bfv
+{
+	//! type the object store
+	typedef T type;
+
+	//! real type the object store
+	typedef T type_real;
+
+	//! data to store
+	type data;
+
+	aggregate_bfv()	{};
+
+	static const unsigned int max_prop = boost::mpl::size<type>::type::value;
+	static const unsigned int max_prop_real = boost::mpl::size<type>::type::value + SE3_SUB_MAX_PROP;
+};
 
 /*! \brief aggregate of properties, from a list of object if create a struct that follow the OPENFPM native structure
  *
@@ -68,10 +92,10 @@ template<typename T>
 struct aggregate_bfv
 {
 	//! type the object store
-	typedef T type;
+	typedef T::type type;
 
 	//! real type the object store
-	typedef T type_real;
+	typedef T::type type_real;
 
 	//! data to store
 	type data;
