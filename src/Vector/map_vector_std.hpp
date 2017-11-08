@@ -415,6 +415,51 @@ public:
 		base.erase(base.begin() + key);
 	}
 
+	/*! \brief Remove several entries from the vector
+	 *
+	 * \warning the keys in the vector MUST be sorted
+	 *
+	 * \param keys objects id to remove
+	 * \param start key starting point
+	 *
+	 */
+	void remove(openfpm::vector<size_t> & keys, size_t start = 0)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		// Nothing to remove return
+		if (keys.size() <= start )
+			return;
+
+		size_t a_key = start;
+		size_t d_k = keys.get(a_key);
+		size_t s_k = keys.get(a_key) + 1;
+
+		// keys
+		while (s_k < size())
+		{
+			// s_k should always point to a key that is not going to be deleted
+			while (a_key+1 < keys.size() && s_k == keys.get(a_key+1))
+			{
+				a_key++;
+				s_k = keys.get(a_key) + 1;
+			}
+
+			// In case of overflow
+			if (s_k >= size())
+				break;
+
+			base[d_k] = base[s_k];
+			d_k++;
+			s_k++;
+		}
+
+		// re-calculate the vector size
+
+		base.resize(base.size() - (keys.size() - start));
+	}
+
 	/*! \brief Return an std compatible iterator to the first element
 	 *
 	 * \return an iterator to the first element

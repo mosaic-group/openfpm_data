@@ -18,6 +18,38 @@
 #include "data_type/aggregate.hpp"
 #include "SparseGridUtil.hpp"
 #include "SparseGrid_iterator.hpp"
+// We do not want parallel writer
+#define NO_PARALLEL
+#include "VTKWriter/VTKWriter.hpp"
+
+
+template<typename Tsrc,typename Tdst>
+class copy_prop_to_vector
+{
+	//! source
+	Tsrc src;
+
+	//! destination
+	Tdst dst;
+
+	size_t pos;
+
+public:
+
+	copy_prop_to_vector(Tsrc src, Tdst dst,size_t pos)
+	:src(src),dst(dst),pos(pos)
+	{}
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		typedef typename std::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>()[pos],dst.template get<T::value>());
+	}
+
+};
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -58,16 +90,16 @@ template<unsigned int dim, typename T, typename S, typename chunking>
 class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 {
 	//! cache pointer
-	size_t cache_pnt;
+	mutable size_t cache_pnt;
 
 	//! background values
 	T background;
 
 	//! cache
-	long int cache[SGRID_CACHE];
+	mutable long int cache[SGRID_CACHE];
 
 	//! cached id
-	long int cached_id[SGRID_CACHE];
+	mutable long int cached_id[SGRID_CACHE];
 
 	//! Map to convert from grid coordinates to chunk
 	tsl::hopscotch_map<size_t, size_t> map;
@@ -89,6 +121,61 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 
 	//! conversion position in the chunks
 	grid_key_dx<dim> pos_chunk[chunking::size::value];
+
+	openfpm::vector<size_t> empty_v;
+
+	/*! \brief Eliminate empty chunks
+	 *
+	 * \warning Because this operation is time consuming it perform the operation once
+	 *          we reach a critical size in the list of the empty chunks
+	 *
+	 */
+	inline void remove_empty()
+	{
+		if (empty_v.size() >= FLUSH_REMOVE)
+		{
+			// eliminate double entry
+
+			empty_v.sort();
+			empty_v.unique();
+
+			// Because chunks can be refilled the empty list can contain chunks that are
+			// filled so before remove we have to check that they are really empty
+
+			for (int i = empty_v.size() - 1 ; i >= 0  ; i--)
+			{
+				if (header.get(empty_v.get(i)).nele != 0)
+				{empty_v.remove(i);}
+			}
+
+			header.remove(empty_v);
+			chunks.remove(empty_v);
+
+			// reconstruct map
+
+			map.clear();
+			for (size_t i = 0 ; i < header.size() ; i++)
+			{
+				grid_key_dx<dim> kh = header.get(i).pos;
+				grid_key_dx<dim> kl;
+
+				// shift the key
+				key_shift<dim,chunking>::shift(kh,kl);
+
+				long int lin_id = g_sm_shift.LinId(kh);
+
+				map[lin_id] = i;
+			}
+
+			empty_v.clear();
+
+			// cache must be cleared
+
+			cache_pnt = 0;
+			for (size_t i = 0 ; i < SGRID_CACHE ; i++)
+			{cache[i] = -1;}
+		}
+	}
 
 public:
 
@@ -233,9 +320,11 @@ public:
 		auto & h = header.get(active_cnk);
 
 		// we set the mask
-		h.nele++;
 
-		h.mask[sub_id >> BIT_SHIFT_SIZE_T] |= (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+		h.nele = (h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check)?h.nele:h.nele + 1;
+		h.mask[sub_id >> BIT_SHIFT_SIZE_T] |= mask_check;
 
 		return chunks.template get<p>(active_cnk)[sub_id];
 	}
@@ -247,8 +336,8 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(chunks.template get<p>(0)[0])>
-	inline r_type get(const grid_key_dx<dim> & v1)
+	template <unsigned int p>
+	inline auto get(const grid_key_dx<dim> & v1) const -> decltype(openfpm::as_const(chunks.template get<p>(0))[0])
 	{
 		grid_key_dx<dim> kh = v1;
 		grid_key_dx<dim> kl;
@@ -273,7 +362,7 @@ public:
 
 			// Add on cache the chunk
 			cache[cache_pnt] = lin_id;
-			cached_id[cache_pnt] = chunks.size() - 1;
+			cached_id[cache_pnt] = it->second;
 			cache_pnt++;
 			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
 
@@ -306,6 +395,141 @@ public:
 	grid_key_sparse_dx_iterator<dim,chunking::size::value> getDomainIterator()
 	{
 		return grid_key_sparse_dx_iterator<dim,chunking::size::value>(header,pos_chunk);
+	}
+
+	/*! \brief Remove the point
+	 *
+	 * \param v1 element to remove
+	 *
+	 */
+	void remove(const grid_key_dx<dim> & v1)
+	{
+		size_t active_cnk = 0;
+
+		grid_key_dx<dim> kh = v1;
+		grid_key_dx<dim> kl;
+
+		// shift the key
+		key_shift<dim,chunking>::shift(kh,kl);
+
+		long int lin_id = g_sm_shift.LinId(kh);
+
+		size_t id = 0;
+		for (size_t k = 0 ; k < SGRID_CACHE; k++)
+		{id += (cache[k] == lin_id)?k+1:0;}
+
+		if (id == 0)
+		{
+			// we do not have it in cache we check if we have it in the map
+
+			auto fnd = map.find(lin_id);
+			if (fnd == map.end())
+			{return;}
+			else
+			{active_cnk = fnd->second;}
+
+			// Add on cache the chunk
+			cache[cache_pnt] = lin_id;
+			cached_id[cache_pnt] = active_cnk;
+			cache_pnt++;
+			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
+		}
+		else
+		{
+			active_cnk = cached_id[id-1];
+			cache_pnt = id;
+			cache_pnt = (cache_pnt == SGRID_CACHE)?0:cache_pnt;
+		}
+
+		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
+
+		// eliminate the element
+
+		// set the mask to null
+		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+		auto & h = header.get(active_cnk);
+		size_t swt = h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check;
+
+		h.nele = (swt)?h.nele-1:h.nele;
+
+		h.mask[sub_id >> BIT_SHIFT_SIZE_T] &= ~mask_check;
+
+		if (h.nele == 0 && swt != 0)
+		{
+			// Add the chunks in the empty list
+			empty_v.add(active_cnk);
+
+			remove_empty();
+		}
+	}
+
+
+	/*! \number of element inserted
+	 *
+	 * \warning this function is not as fast as the size in other structures
+	 *
+	 * \return the total number of elements inserted
+	 *
+	 */
+	size_t size()
+	{
+		size_t tot = 0;
+
+		for (size_t i = 0 ; i < header.size() ; i++)
+		{
+			tot += header.get(i).nele;
+		}
+
+		return tot;
+	}
+
+
+	/*! \brief write the sparse grid into VTK
+	 *
+	 * \param out VTK output
+	 *
+	 */
+	template<typename Tw = float> bool write(const std::string & output)
+	{
+		file_type ft = file_type::BINARY;
+
+		openfpm::vector<Point<dim,Tw>> tmp_pos;
+		openfpm::vector<T> tmp_prp;
+
+		// copy position and properties
+
+		auto it = getDomainIterator();
+
+		while(it.isNext())
+		{
+			auto key = it.getKey();
+			auto keyg = it.getKeyF();
+
+			Point<dim,Tw> p;
+
+			for (size_t i = 0 ; i < dim ; i++)
+			{p.get(i) = keyg.get(i);}
+
+			tmp_pos.add(p);
+
+			tmp_prp.add();
+			copy_prop_to_vector<decltype(chunks.template get_o(key.getChunk())),decltype(tmp_prp.last())>
+			cp(chunks.template get_o(key.getChunk()),tmp_prp.last(),key.getPos());
+
+			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+			++it;
+		}
+
+		// VTKWriter for a set of points
+		VTKWriter<boost::mpl::pair<openfpm::vector<Point<dim,Tw>>, openfpm::vector<T>>, VECTOR_POINTS> vtk_writer;
+		vtk_writer.add(tmp_pos,tmp_prp,tmp_pos.size());
+
+		openfpm::vector<std::string> prp_names;
+
+		// Write the VTK file
+		return vtk_writer.write(output,prp_names,"sparse_grid",ft);
 	}
 };
 

@@ -449,8 +449,8 @@ public:
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
-	inline const r_type get(const grid_key_dx<dim> & v1) const
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_const(data_,g1,grid_key_dx<dim>()))>
+	inline r_type get(const grid_key_dx<dim> & v1) const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -459,7 +459,7 @@ public:
 		check_init();
 		check_bound(v1);
 #endif
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
+		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_const(data_,g1,v1);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -489,8 +489,8 @@ public:
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))>
-	inline const r_type get(size_t lin_id) const
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin_const(data_,g1,0))>
+	inline r_type get(size_t lin_id) const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -499,7 +499,7 @@ public:
 		check_init();
 		check_bound(lin_id);
 #endif
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin(data_,g1,lin_id);
+		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin_const(data_,g1,lin_id);
 	}
 
 

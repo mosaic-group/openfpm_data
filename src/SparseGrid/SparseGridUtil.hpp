@@ -8,6 +8,11 @@
 #ifndef OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRIDUTIL_HPP_
 #define OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRIDUTIL_HPP_
 
+//! sizeof the cache
+#define SGRID_CACHE 4
+
+//! When we have more that 1024 to remove remove them
+#define FLUSH_REMOVE 1024
 
 //! transform T=aggregate<float,double,int> into aggregate<float[n_ele],double[n_ele],int[n_ele]>
 template <typename n_ele, typename T>
@@ -216,8 +221,6 @@ class sgrid_cpu
 {
 
 };
-
-#define SGRID_CACHE 4
 
 
 template<unsigned int dim, typename chunk>

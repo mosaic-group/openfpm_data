@@ -118,7 +118,7 @@ class grid_key_sparse_dx_iterator
 				do
 				{
 #if defined(__GNUC__) || defined(__clang__)
-					index = __builtin_ffs(mi);
+					index = __builtin_ffsl(mi);
 #elif defined(__INTEL_COMPILER)
 					_BitScanForward64(&index,mi)
 					index += 1;
@@ -135,7 +135,7 @@ class grid_key_sparse_dx_iterator
 						mask_it[mask_nele] = (index - 1 + tot_idx) + i*sizeof(size_t)*8;
 						mask_nele++;
 
-						mi = mi >> index;
+						mi = (index == 64)?0:mi >> index;
 						tot_idx += index;
 					}
 				}
@@ -151,7 +151,7 @@ public:
 
 	grid_key_sparse_dx_iterator(openfpm::vector<cheader<dim,n_ele>> & header,
 								grid_key_dx<dim> (& lin_id_pos)[n_ele])
-	:header(header),lin_id_pos(lin_id_pos),chunk_id(0),mask_it_pnt(0),mask_nele(0)
+	:header(header),lin_id_pos(lin_id_pos),chunk_id(0),mask_nele(0),mask_it_pnt(0)
 	{
 		SelectValidAndFill_mask_it();
 	}

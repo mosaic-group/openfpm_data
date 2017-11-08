@@ -32,7 +32,7 @@ case $host_os in
         ;;
 esac
 
-CXXFLAGS+=" -march=native -mtune=native -Wno-unused-local-typedefs -Wextra -Wno-unused-parameter "
+CXXFLAGS+=" -Wno-unused-local-typedefs -Wextra -Wno-unused-parameter "
 NVCCFLAGS=" "
 INCLUDES_PATH=" "
 
