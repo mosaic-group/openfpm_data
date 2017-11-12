@@ -67,9 +67,10 @@ struct object_s_di_e
     void operator()(T& t)
     {
 		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type copy_rtype;
+		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type copy_dtype;
+		typedef typename std::remove_reference<decltype(src.template get<T::value>())>::type copy_stype;
 
-    	meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>());
+    	meta_copy_d<copy_stype,copy_dtype>::meta_copy_d_(src.template get<T::value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>());
     }
 };
 
@@ -127,9 +128,10 @@ struct object_s_di_e_op
     void operator()(T& t)
     {
 		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type copy_rtype;
+		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type copy_dtype;
+		typedef typename std::remove_reference<decltype(src.template get<T::value>())>::type copy_stype;
 
-    	meta_copy_op<op,copy_rtype>::meta_copy_op_(src.template get<T::value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>());
+    	meta_copy_op_d<op,copy_stype,copy_dtype>::meta_copy_op_d_(src.template get<T::value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>());
     }
 };
 

@@ -110,6 +110,44 @@ struct meta_copy_d<Tsrc[N1],Tdst>
 	}
 };
 
+//! Partial specialization for N=1 1D-Array
+template<typename Tsrc, typename Tdst, size_t N1>
+struct meta_copy_d<Tsrc,Tdst[N1]>
+{
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_d_(const Tsrc & src, Tdst dst[N1])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general<Tdst>(static_cast<const Tdst&>(src[i1]),dst[i1]);
+		}
+	}
+};
+
+//! Partial specialization for N=1 1D-Array
+template<typename Tsrc, typename Tdst, size_t N1>
+struct meta_copy_d<Tsrc[N1],Tdst[N1]>
+{
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_d_(const Tsrc src[N1], Tdst dst[N1])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general<Tsrc>(src[i1],dst[i1]);
+		}
+	}
+};
+
 //! Partial specialization for N=2 2D-Array
 template<typename T,size_t N1,size_t N2>
 struct meta_copy<T[N1][N2]>
@@ -149,6 +187,52 @@ struct meta_copy_d<Tsrc[N1][N2],Tdst>
 			for (size_t i2 = 0 ; i2 < N2 ; i2++)
 			{
 				copy_general<Tsrc>(src[i1][i2],static_cast<Tsrc&>(dst[i1][i2]));
+			}
+		}
+	}
+};
+
+//! Partial specialization for N=2 2D-Array
+template<typename Tsrc, typename Tdst, size_t N1, size_t N2>
+struct meta_copy_d<Tsrc,Tdst[N1][N2]>
+{
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_d_(const Tsrc & src, Tdst dst[N1][N2])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < N2 ; i2++)
+			{
+				copy_general<Tdst>(static_cast<const Tdst&>(src[i1][i2]),dst[i1][i2]);
+			}
+		}
+	}
+};
+
+
+
+//! Partial specialization for N=1 1D-Array
+template<typename Tsrc, typename Tdst, size_t N1, size_t N2>
+struct meta_copy_d<Tsrc[N1][N2],Tdst[N1][N2]>
+{
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_d_(const Tsrc src[N1][N2], Tdst dst[N1][N2])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < N2 ; i2++)
+			{
+				copy_general<Tsrc>(src[i1][i2],dst[i1][i2]);
 			}
 		}
 	}
@@ -552,6 +636,90 @@ struct meta_copy_op<op,T[N1][N2][N3]>
 					copy_general_op<op,T>(src[i1][i2][i3],dst[i1][i2][i3]);
 				}
 			}
+		}
+	}
+};
+
+
+template<template<typename,typename> class op, typename Tsrc, typename Tdst>
+struct meta_copy_op_d
+{
+	/*! \brief Meta-copy applying an operation
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_d_(const Tsrc & src, Tdst & dst)
+	{
+		copy_general_op<op,Tsrc>(src,dst);
+	}
+
+	/*! \brief Meta-copy applying an operation
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_d_(const Tsrc & src, Tdst && dst)
+	{
+		copy_general_op<op,Tsrc>(src,dst);
+	}
+};
+
+//! Partial specialization for N=1 1D-Array
+template<template<typename,typename> class op,typename Tsrc, typename Tdst, size_t N1>
+struct meta_copy_op_d<op,Tsrc[N1],Tdst>
+{
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_d_(const Tsrc src[N1], Tdst && dst)
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general_op<op,Tsrc>(src[i1],static_cast<Tsrc&>(dst[i1]));
+		}
+	}
+};
+
+//! Partial specialization for N=1 1D-Array
+template<template<typename,typename> class op, typename Tsrc, typename Tdst, size_t N1>
+struct meta_copy_op_d<op,Tsrc,Tdst[N1]>
+{
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_d_(const Tsrc & src, Tdst dst[N1])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general_op<op,Tdst>(static_cast<const Tdst&>(src[i1]),dst[i1]);
+		}
+	}
+};
+
+//! Partial specialization for N=1 1D-Array
+template<template<typename,typename> class op, typename Tsrc, typename Tdst, size_t N1>
+struct meta_copy_op_d<op,Tsrc[N1],Tdst[N1]>
+{
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_d_(const Tsrc src[N1], Tdst dst[N1])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general_op<op,Tdst>(src[i1],dst[i1]);
 		}
 	}
 };

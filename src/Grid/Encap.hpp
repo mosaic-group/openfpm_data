@@ -518,7 +518,7 @@ public:
 	 * \return The reference of the data
 	 *
 	 */
-	template <unsigned int p> const typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get() const
+	template <unsigned int p> typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get() const
 	{
 		return boost::fusion::at_c<p>(data).mem_r->operator[](k);
 	}

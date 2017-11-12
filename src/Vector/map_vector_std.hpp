@@ -354,7 +354,13 @@ public:
 	 * \param v source vector
 	 *
 	 */
-	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> void add_prp(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v)
+	template <typename S,
+	          typename M,
+			  typename gp,
+			  unsigned int impl,
+			  template <typename> class layout_base,
+			  unsigned int ...args>
+	void add_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
