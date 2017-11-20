@@ -140,7 +140,7 @@ public:
 	// Implementation of packer and unpacker for grid
 	#include "grid_pack_unpack.ipp"
 
-	//! it define that it is a grid
+	//! it define that this data-structure is a grid
 	typedef int yes_i_am_grid;
 
 	//! Definition of the layout
@@ -564,11 +564,40 @@ public:
 		memset(getPointer(),fl,size() * sizeof(T));
 	}
 
-	/*! \brief Resize the space
+	/*! \brief copy an external grid into a specific place into this grid
 	 *
-	 * Resize the space to a new grid, the element are retained on the new grid,
-	 * if the new grid is bigger the new element are now initialized, if is smaller
-	 * the data are cropped
+	 * It copy the area indicated by the  box_src from grid_src into this grid
+	 * at the place box_dst. The volume of box_src and box_dst
+	 *
+	 * \param grid_src source grid
+	 * \param box_src source box
+	 * \param box_dst destination box
+	 *
+	 */
+	void copy_to(const grid_base_impl<dim,T,S,layout_,layout_base> & grid_src,
+			     const Box<dim,size_t> & box_src,
+				 const Box<dim,size_t> & box_dst)
+	{
+		// sub-grid where to unpack
+		grid_key_dx_iterator_sub<dim> src(grid_src.getGrid(),box_src.getKP1(),box_src.getKP2());
+		grid_key_dx_iterator_sub<dim> dst(getGrid(),box_dst.getKP1(),box_dst.getKP2());
+
+		while (src.isNext())
+		{
+			auto key_src = src.get();
+			auto key_dst = dst.get();
+
+			get_o(key_dst) = grid_src.get_o(key_src);
+
+			++src;
+			++dst;
+		}
+	}
+
+	/*! \brief Resize the grid
+	 *
+	 * Resize the grid to the old information is retained on the new grid,
+	 * if the new grid is bigger. if is smaller the data are cropped
 	 *
 	 * \param sz reference to an array of dimension dim
 	 *

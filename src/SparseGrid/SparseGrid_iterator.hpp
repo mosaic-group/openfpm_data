@@ -50,6 +50,50 @@ public:
 	}
 };
 
+/*! \brief This function fill the set of all non zero elements
+ *
+ *
+ */
+template<unsigned int n_ele>
+inline void fill_mask(short unsigned int (& mask_it)[n_ele],
+		       size_t (& mask)[n_ele / (sizeof(size_t)*8) + (n_ele % (sizeof(size_t)*8) != 0) + 1],
+		       size_t & mask_nele)
+{
+	mask_nele = 0;
+	size_t index = 0;
+
+	for (size_t i = 0 ; i < n_ele / (sizeof(size_t) * 8) ; i++)
+	{
+		size_t mi = mask[i];
+		size_t tot_idx = 0;
+
+		do
+		{
+#if defined(__GNUC__) || defined(__clang__)
+			index = __builtin_ffsl(mi);
+#elif defined(__INTEL_COMPILER)
+			_BitScanForward64(&index,mi)
+			index += 1;
+#else
+			index = 0;
+			if (mi != 0)
+			{
+				while (mi >> index & 0x1 == 0)	{index++;}
+				index += 1;
+			}
+#endif
+			if (index != 0)
+			{
+				mask_it[mask_nele] = (index - 1 + tot_idx) + i*sizeof(size_t)*8;
+				mask_nele++;
+
+				mi = (index == 64)?0:mi >> index;
+				tot_idx += index;
+			}
+		}
+		while (index != 0);
+	}
+}
 
 /*! \brief This structure contain the information of a chunk
  *
@@ -105,42 +149,9 @@ class grid_key_sparse_dx_iterator
 
 		while (mask_nele == 0 && chunk_id < header.size())
 		{
-			mask_nele = 0;
-
-			size_t index = 0;
 			auto & mask = header.get(chunk_id).mask;
 
-			for (size_t i = 0 ; i < n_ele / (sizeof(size_t) * 8) ; i++)
-			{
-				size_t mi = mask[i];
-				size_t tot_idx = 0;
-
-				do
-				{
-#if defined(__GNUC__) || defined(__clang__)
-					index = __builtin_ffsl(mi);
-#elif defined(__INTEL_COMPILER)
-					_BitScanForward64(&index,mi)
-					index += 1;
-#else
-					index = 0;
-					if (mi != 0)
-					{
-						while (mi >> index & 0x1 == 0)	{index++;}
-						index += 1;
-					}
-#endif
-					if (index != 0)
-					{
-						mask_it[mask_nele] = (index - 1 + tot_idx) + i*sizeof(size_t)*8;
-						mask_nele++;
-
-						mi = (index == 64)?0:mi >> index;
-						tot_idx += index;
-					}
-				}
-				while (index != 0);
-			}
+			fill_mask<n_ele>(mask_it,mask,mask_nele);
 
 			chunk_id = (mask_nele == 0)?chunk_id + 1:chunk_id;
 

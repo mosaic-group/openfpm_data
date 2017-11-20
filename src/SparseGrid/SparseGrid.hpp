@@ -124,6 +124,49 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 
 	openfpm::vector<size_t> empty_v;
 
+	/*! \brief Remove
+	 *
+	 *
+	 */
+	template<unsigned int n_ele>
+	inline void remove_from_chunk(size_t sub_id,
+			 	 	 	 	 	  size_t & nele,
+								  size_t (& mask)[n_ele / (sizeof(size_t)*8) + (n_ele % (sizeof(size_t)*8) != 0) + 1])
+	{
+		// set the mask to null
+		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+		size_t swt = mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check;
+
+		nele = (swt)?nele-1:nele;
+
+		mask[sub_id >> BIT_SHIFT_SIZE_T] &= ~mask_check;
+	}
+
+	/*! \brief reconstruct the map
+	 *
+	 *
+	 *
+	 */
+	inline void reconstruct_map()
+	{
+		// reconstruct map
+
+		map.clear();
+		for (size_t i = 0 ; i < header.size() ; i++)
+		{
+			grid_key_dx<dim> kh = header.get(i).pos;
+			grid_key_dx<dim> kl;
+
+			// shift the key
+			key_shift<dim,chunking>::shift(kh,kl);
+
+			long int lin_id = g_sm_shift.LinId(kh);
+
+			map[lin_id] = i;
+		}
+	}
+
 	/*! \brief Eliminate empty chunks
 	 *
 	 * \warning Because this operation is time consuming it perform the operation once
@@ -153,45 +196,50 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 
 			// reconstruct map
 
-			map.clear();
-			for (size_t i = 0 ; i < header.size() ; i++)
-			{
-				grid_key_dx<dim> kh = header.get(i).pos;
-				grid_key_dx<dim> kl;
-
-				// shift the key
-				key_shift<dim,chunking>::shift(kh,kl);
-
-				long int lin_id = g_sm_shift.LinId(kh);
-
-				map[lin_id] = i;
-			}
+			reconstruct_map();
 
 			empty_v.clear();
 
 			// cache must be cleared
 
-			cache_pnt = 0;
-			for (size_t i = 0 ; i < SGRID_CACHE ; i++)
-			{cache[i] = -1;}
+			clear_cache();
 		}
 	}
 
-public:
-
-	/*! \brief Constructor for sparse grid
+	/*! \brief add on cache
 	 *
-	 * \param sz size in each direction of the sparse grid
+	 * \param lin_id linearized id
+	 * \param active_cnk active chunk
 	 *
 	 */
-	sgrid_cpu(const size_t (& sz)[dim])
-	:cache_pnt(0),g_sm(sz)
+	inline void add_on_cache(size_t lin_id, size_t active_cnk)
 	{
+		// Add on cache the chunk
+		cache[cache_pnt] = lin_id;
+		cached_id[cache_pnt] = active_cnk;
+		cache_pnt++;
+		cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
+	}
+
+	/*! \brief reset the cache
+	 *
+	 *
+	 */
+	inline void clear_cache()
+	{
+		cache_pnt = 0;
 		for (size_t i = 0 ; i < SGRID_CACHE ; i++)
 		{cache[i] = -1;}
+	}
 
-		// calculate the chunks grid
-
+	/*! \brief set the grid shift from size
+	 *
+	 * \param sz size of the grid
+	 * \param g_sm_shift chunks grid size
+	 *
+	 */
+	void set_g_shift_from_size(const size_t (& sz)[dim], grid_sm<dim,void> & g_sm_shift)
+	{
 		grid_key_dx<dim> cs;
 		grid_key_dx<dim> unused;
 
@@ -206,6 +254,16 @@ public:
 		{sz_i[i] = cs.get(i) + 1;}
 
 		g_sm_shift.setDimensions(sz_i);
+	}
+
+	/*! \brief initialize
+	 *
+	 *
+	 */
+	void init()
+	{
+		for (size_t i = 0 ; i < SGRID_CACHE ; i++)
+		{cache[i] = -1;}
 
 		// fill pos_g
 
@@ -233,6 +291,122 @@ public:
 		}
 	}
 
+	/*! \brief Before insert data you have to do this
+	 *
+	 * \param v1 grid key where you want to insert data
+	 * \param active_cnk output which chunk is competent for this data
+	 * \param sub_id element inside the chunk
+	 *
+	 */
+	inline void pre_insert(const grid_key_dx<dim> & v1, size_t & active_cnk, size_t & sub_id)
+	{
+		active_cnk = 0;
+
+		grid_key_dx<dim> kh = v1;
+		grid_key_dx<dim> kl;
+
+		// shift the key
+		key_shift<dim,chunking>::shift(kh,kl);
+
+		long int lin_id = g_sm_shift.LinId(kh);
+
+		size_t id = 0;
+		for (size_t k = 0 ; k < SGRID_CACHE; k++)
+		{id += (cache[k] == lin_id)?k+1:0;}
+
+		if (id == 0)
+		{
+			// we do not have it in cache we check if we have it in the map
+
+			auto fnd = map.find(lin_id);
+			if (fnd == map.end())
+			{
+				// we do not have it in the map create a chunk
+
+				map[lin_id] = chunks.size();
+				chunks.add();
+				header.add();
+				header.last().pos = kh;
+				header.last().nele = 0;
+
+				// set the mask to null
+				auto & h = header.last().mask;
+
+				for (size_t i = 0 ; i < chunking::size::value / (sizeof(size_t)*8) + (chunking::size::value % (sizeof(size_t)*8) != 0) + 1 ; i++)
+				{h[i] = 0;}
+
+				key_shift<dim,chunking>::cpos(header.last().pos);
+
+				active_cnk = chunks.size() - 1;
+			}
+			else
+			{
+				// we have it in the map
+
+				active_cnk = fnd->second;
+			}
+
+			// Add on cache the chunk
+			cache[cache_pnt] = lin_id;
+			cached_id[cache_pnt] = active_cnk;
+			cache_pnt++;
+			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
+		}
+		else
+		{
+			active_cnk = cached_id[id-1];
+			cache_pnt = id;
+			cache_pnt = (cache_pnt == SGRID_CACHE)?0:cache_pnt;
+		}
+
+		sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
+
+		// the chunk is in cache, solve
+
+		// we notify that we added one element
+		auto & h = header.get(active_cnk);
+
+		// we set the mask
+
+		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+		h.nele = (h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check)?h.nele:h.nele + 1;
+		h.mask[sub_id >> BIT_SHIFT_SIZE_T] |= mask_check;
+	}
+
+public:
+
+	//! it define that this data-structure is a grid
+	typedef int yes_i_am_grid;
+
+	//! expose the dimansionality as a static const
+	static constexpr unsigned int dims = dim;
+
+	/*! \brief Trivial constructor
+	 *
+	 *
+	 */
+	inline sgrid_cpu()
+	:cache_pnt(0)
+	{}
+
+	/*! \brief Constructor for sparse grid
+	 *
+	 * \param sz size in each direction of the sparse grid
+	 *
+	 */
+	sgrid_cpu(const size_t (& sz)[dim])
+	:cache_pnt(0),g_sm(sz)
+	{
+		// calculate the chunks grid
+
+		set_g_shift_from_size(sz,g_sm_shift);
+
+		// fill pos_g
+
+		init();
+	}
+
 	/*! \brief Get the background value
 	 *
 	 * \return background value
@@ -241,6 +415,20 @@ public:
 	T & getBackgroundValue()
 	{
 		return background;
+	}
+
+	/*! \brief Insert a full element (with all properties)
+	 *
+	 * \param v1 where you want to insert the element
+	 *
+	 */
+	inline auto insert_o(const grid_key_dx<dim> & v1, size_t & ele_id) -> decltype(chunks.template get_o(0))
+	{
+		size_t active_cnk;
+
+		pre_insert(v1,active_cnk,ele_id);
+
+		return chunks.template get_o(active_cnk);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -360,11 +548,13 @@ public:
 
 			size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
 
+			add_on_cache(sub_id,it->second);
+
 			// Add on cache the chunk
-			cache[cache_pnt] = lin_id;
+/*			cache[cache_pnt] = lin_id;
 			cached_id[cache_pnt] = it->second;
 			cache_pnt++;
-			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
+			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;*/
 
 			return chunks.template get<p>(it->second)[sub_id];
 		}
@@ -381,8 +571,55 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(chunks.template get<p>(0)[0])>
-	inline r_type get(const grid_key_sparse_lin_dx & v1)
+	template <unsigned int p>
+	inline auto get(const grid_key_dx<dim> & v1) -> decltype(openfpm::as_const(chunks.template get<p>(0))[0])
+	{
+		grid_key_dx<dim> kh = v1;
+		grid_key_dx<dim> kl;
+
+		// shift the key
+		key_shift<dim,chunking>::shift(kh,kl);
+
+		long int lin_id = g_sm_shift.LinId(kh);
+
+		size_t id = 0;
+		for (size_t k = 0 ; k < SGRID_CACHE; k++)
+		{id += (cache[k] == lin_id)?k+1:0;}
+
+		if (id == 0)
+		{
+			auto it = map.find(lin_id);
+
+			if (it == map.end())
+			{return background.template get<p>();}
+
+			size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
+
+			add_on_cache(sub_id,it->second);
+
+			// Add on cache the chunk
+/*			cache[cache_pnt] = lin_id;
+			cached_id[cache_pnt] = it->second;
+			cache_pnt++;
+			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;*/
+
+			return chunks.template get<p>(it->second)[sub_id];
+		}
+
+		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
+
+		return chunks.template get<p>(cached_id[id-1])[sub_id];
+	}
+
+	/*! \brief Get the reference of the selected element
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return the reference of the element
+	 *
+	 */
+	template <unsigned int p>
+	inline auto get(const grid_key_sparse_lin_dx & v1) -> decltype(chunks.template get<p>(0)[0])
 	{
 		return chunks.template get<p>(v1.getChunk())[v1.getPos()];
 	}
@@ -395,6 +632,21 @@ public:
 	grid_key_sparse_dx_iterator<dim,chunking::size::value> getDomainIterator()
 	{
 		return grid_key_sparse_dx_iterator<dim,chunking::size::value>(header,pos_chunk);
+	}
+
+	/*! \brief Return the internal grid information
+	 *
+	 * Return the internal grid information
+	 *
+	 * \return the internal grid
+	 *
+	 */
+	const grid_sm<dim,T> & getGrid() const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		return g_sm;
 	}
 
 	/*! \brief Remove the point
@@ -464,6 +716,132 @@ public:
 		}
 	}
 
+	/*! \brief Resize the grid
+	 *
+	 * The old information is retained on the new grid if the new grid is bigger.
+	 * When smaller the data are cropped
+	 *
+	 * \param sz reference to an array of dimension dim
+	 *
+	 */
+	void resize(const size_t (& sz)[dim])
+	{
+		bool is_bigger = true;
+
+		// we check if we are resizing bigger, because if is the case we do not have to do
+		// much
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (sz[i] < g_sm.size(i))
+			{is_bigger = false;}
+		}
+
+		g_sm.setDimensions(sz);
+
+		// set g_sm_shift
+
+		set_g_shift_from_size(sz,g_sm_shift);
+
+		clear_cache();
+
+		if (is_bigger == true)
+		{
+
+			// if we resize bigger we do not have to do anything in the headers
+			// and in the chunks we just have to update g_sm and reset the cache
+			// and reconstruct the map. So we reconstruct the map and we just
+			// finish
+
+			reconstruct_map();
+
+			return;
+		}
+
+		// create a box that is as big as the grid
+
+		Box<dim,size_t> gs_box;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			gs_box.setLow(i,0);
+			gs_box.setHigh(i,g_sm.size(i));
+		}
+
+		size_t sz_cnk[dim];
+
+		copy_sz<dim,typename chunking::type> cpsz(sz_cnk);
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,dim> >(cpsz);
+
+		// we take a list of all chunks to remove
+		openfpm::vector<size_t> rmh;
+
+		// in this case we have to crop data, we go through all the headers
+
+		for (size_t i = 0 ; i < header.size() ; i++)
+		{
+			Box<dim,size_t> cnk;
+
+			for (size_t j = 0 ; j < dim ; j++)
+			{
+				cnk.setLow(j,header.get(i).pos.get(j));
+				cnk.setHigh(j,sz_cnk[j] + header.get(i).pos.get(j));
+			}
+
+			// if the chunk is not fully contained in the new smaller sparse grid
+			// we have to crop it
+			if (!cnk.isContained(gs_box))
+			{
+				// We check if the chunks is fully out or only partially in
+				// cheking the intersection between the new grid and the box
+				// enclosing the chunk as it was before
+				Box<dim,size_t> inte;
+
+				if (gs_box.Intersect(cnk,inte))
+				{
+					// part of the chunk is in, part is out
+
+					// shift P1 to the origin
+					// this is the valid box everything out must me reset
+					inte -= inte.getP1();
+
+					size_t mask_nele;
+					short unsigned int mask_it[chunking::size::value];
+
+					auto & mask = header.get(i).mask;
+					auto & n_ele = header.get(i).nele;
+
+					// ok so the box is not fully contained so we must crop data
+
+					fill_mask(mask_it,mask,mask_nele);
+
+					// now we have the mask of all the filled elements
+
+					for (size_t j = 0 ; j < mask_nele ; j++)
+					{
+						if (!inte.isInside(pos_chunk[mask_it[j]].toPoint()))
+						{
+							// if is not inside, the point must be deleted
+
+							remove_from_chunk<chunking::size::value>(mask_it[j],n_ele,mask);
+						}
+					}
+				}
+				else
+				{
+					// the chunk is completely out and must be removed completely
+					// we add it to the list of the chunks to remove
+
+					rmh.add(i);
+				}
+			}
+		}
+
+		header.remove(rmh,0);
+		chunks.remove(rmh,0);
+
+		reconstruct_map();
+	}
 
 	/*! \number of element inserted
 	 *
@@ -484,6 +862,65 @@ public:
 		return tot;
 	}
 
+	void copy_to(const sgrid_cpu<dim,T,S,chunking> & grid_src,
+		         const Box<dim,size_t> & box_src,
+			     const Box<dim,size_t> & box_dst)
+	{
+		size_t sz_cnk[dim];
+
+		copy_sz<dim,typename chunking::type> cpsz(sz_cnk);
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,dim> >(cpsz);
+
+		// we go across all the source chunks and we identify all the chunks in src that must be copied
+
+		for (size_t i = 0 ; i < grid_src.header.size() ; i++)
+		{
+			Box<dim,size_t> cnk;
+			Box<dim,size_t> inte;
+
+			for (size_t j = 0 ; j < dim ; j++)
+			{
+				cnk.setLow(j,grid_src.header.get(i).pos.get(j));
+				cnk.setHigh(j,sz_cnk[j] + grid_src.header.get(i).pos.get(j));
+			}
+
+			// now we check if a chunk is inside box_src
+
+			if (cnk.Intersect(box_src,inte))
+			{
+				size_t mask_nele;
+				short int mask_it[chunking::data::size];
+				auto & h = grid_src.header.get(i).mask;
+
+				// Fill the mask_it for the source grid
+
+				fill_mask_it(mask_it,h.mask,mask_nele);
+
+				// calculate the index of the element to insert
+/*				for (size_t i)
+
+				// now we insert all the elements
+
+				insert_o()
+
+				// It insersect we must move the information*/
+
+/*				if (inte == cnk)
+				{
+					// we can just copy the chunk
+
+					header.add(grid_src.header.get(i));
+					chunks.add(grid_src.chunks.get(i));
+				}
+				else
+				{
+					// we only have to copy part of the chunk
+
+
+				}*/
+			}
+		}
+	}
 
 	/*! \brief write the sparse grid into VTK
 	 *
