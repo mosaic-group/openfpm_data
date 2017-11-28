@@ -203,6 +203,37 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim,stencil>
 #endif
 	}
 
+	/*! \brief After incremented we have to check we did not overflo
+	 *         any dimension and in case adjust the dimensions
+	 *
+	 */
+	inline void post_increment()
+	{
+		//! check the overflow of all the index with exception of the last dimensionality
+
+		long int i = 0;
+		for ( ; i < dim-1 ; i++)
+		{
+			/* coverity[dead_error_begin] */
+			size_t id = this->gk.get(i);
+			if ((long int)id > gk_stop.get(i))
+			{
+				// ! overflow, increment the next index
+
+				size_t idr = this->gk.get(i) - gk_start.get(i);
+				this->gk.set_d(i,gk_start.get(i));
+				id = this->gk.get(i+1);
+				this->gk.set_d(i+1,id+1);
+
+				this->stl_code.adjust_offset(i,idr,grid_base);
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
 public:
 
 	/*! \brief Default constructor
@@ -254,7 +285,7 @@ public:
 	 *
 	 */
 	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
-	: grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
+	: grid_key_dx_iterator<dim,stencil>(g),grid_base(g),gk_start(start), gk_stop(stop)
 	{
 #ifdef SE_CLASS1
 		//! If we are on debug check that the stop grid_key id bigger than the start
@@ -388,7 +419,6 @@ public:
 	 * \return the next grid_key
 	 *
 	 */
-
 	grid_key_dx_iterator_sub<dim,stencil,warn> & operator++()
 	{
 #ifdef SE_CLASS1
@@ -403,28 +433,26 @@ public:
 
 		this->stl_code.increment();
 
-		//! check the overflow of all the index with exception of the last dimensionality
+		post_increment();
 
-		long int i = 0;
-		for ( ; i < dim-1 ; i++)
+		return *this;
+	}
+
+	/*! \brief increment the operator by more than one
+	 *
+	 * \return the next grid_key
+	 *
+	 */
+	grid_key_dx_iterator_sub<dim,stencil,warn> & operator+=(int nsteps)
+	{
+#ifdef SE_CLASS1
+		if (initialized == false)
+		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
+#endif
+
+		for (size_t i = 0 ; i < nsteps ; i++)
 		{
-			/* coverity[dead_error_begin] */
-			size_t id = this->gk.get(i);
-			if ((long int)id > gk_stop.get(i))
-			{
-				// ! overflow, increment the next index
-
-				size_t idr = this->gk.get(i) - gk_start.get(i);
-				this->gk.set_d(i,gk_start.get(i));
-				id = this->gk.get(i+1);
-				this->gk.set_d(i+1,id+1);
-
-				this->stl_code.adjust_offset(i,idr,grid_base);
-			}
-			else
-			{
-				break;
-			}
+			this->operator ++();
 		}
 
 		return *this;
@@ -437,7 +465,6 @@ public:
 	 * \return true if there is the next, false otherwise
 	 *
 	 */
-
 	inline bool isNext()
 	{
 #ifdef SE_CLASS1

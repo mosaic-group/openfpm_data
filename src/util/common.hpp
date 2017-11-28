@@ -20,6 +20,23 @@ namespace std
 	}
 }
 
+/*! \brief convert a type into constant type
+ *
+ * \param T type tp convert
+ *
+ * \return a constant of the type T
+ *
+ */
+namespace openfpm
+{
+        template <class T>
+        constexpr typename std::add_const<T>::type & as_const(T& t) noexcept
+        {
+                return t;
+        }
+
+        template <typename> struct Debug;
+}
 
  //! Compile time array functor needed to generate array at compile-time of type
  // {3,3,3,3,3,3,.....}

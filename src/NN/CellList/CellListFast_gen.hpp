@@ -44,6 +44,11 @@ private:
 	//! Init SFC
 	bool init_sfc;
 
+	/*! \brief Initialize the space-filling-curve
+	 *
+	 * \param pad padding of the cell-list
+	 *
+	 */
 	void initialize_sfc(size_t pad)
 	{
 		size_t sz[dim];
@@ -95,8 +100,9 @@ public:
 	{};
 
 
-	/*! \brief Set the ghost marker
+	/*! \brief Get the space filling curve object
 	 *
+	 * \return the SFC object
 	 *
 	 */
 	const Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>> & getCellSFC() const
@@ -105,8 +111,6 @@ public:
 	}
 
 	/*! \brief Initialize Space-filling-curve (SFC)
-	 *
-	 *
 	 *
 	 */
 	inline void init_SFC()
@@ -140,11 +144,9 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], size_t g_m_new, const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 		CellList<dim,T,Mem_type,transform,base>::Initialize(box,div,pad,slot);
-
-		g_m = g_m_new;
 	}
 
 

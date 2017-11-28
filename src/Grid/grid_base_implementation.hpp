@@ -547,6 +547,52 @@ public:
 		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(const_cast<decltype(this->data_) &>(data_),g1,v1);
 	}
 
+	/*! \brief Get the of the selected element as a boost::fusion::vector
+	 *
+	 * Get the selected element as a boost::fusion::vector
+	 *
+	 * \param v1 linearized id that identify the element in the grid
+	 *
+	 * \see encap_c
+	 *
+	 * \return an encap_c that is the representation of the object (careful is not the object)
+	 *
+	 */
+	inline encapc<dim,T,layout> get_o(size_t v1)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(v1);
+#endif
+		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_lin(data_,v1);
+	}
+
+	/*! \brief Get the of the selected element as a boost::fusion::vector
+	 *
+	 * Get the selected element as a boost::fusion::vector
+	 *
+	 * \param v1 linearized id that identify the element in the grid
+	 *
+	 * \see encap_c
+	 *
+	 * \return an encap_c that is the representation of the object (careful is not the object)
+	 *
+	 */
+	inline const encapc<dim,T,layout> get_o(size_t v1) const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(v1);
+#endif
+		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_lin(const_cast<decltype(this->data_) &>(data_),v1);
+	}
+
 	/*! \brief Fill the memory with the selected byte
 	 *
 	 * \warning It is a low level memory operation it ignore any type and semantic safety
@@ -762,7 +808,33 @@ public:
 	 *
 	 */
 
-	inline void set(const grid_key_dx<dim> & key1,const grid_base_impl<dim,T,S,layout,layout_base> & g, const grid_key_dx<dim> & key2)
+	inline void set(const grid_key_dx<dim> & key1,
+			        const grid_base_impl<dim,T,S,layout,layout_base> & g,
+					const grid_key_dx<dim> & key2)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(key1);
+		check_bound(g,key2);
+#endif
+
+		this->get_o(key1) = g.get_o(key2);
+	}
+
+	/*! \brief Set an element of the grid from another element of another grid
+	 *
+	 * \param key1 element of the grid to set
+	 * \param g source grid
+	 * \param key2 element of the source grid to copy
+	 *
+	 */
+
+	inline void set(const size_t key1,
+			        const grid_base_impl<dim,T,S,layout,layout_base> & g,
+					const size_t key2)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -859,6 +931,23 @@ public:
 		check_valid(this,8);
 #endif
 		return grid_key_dx_iterator<dim>(g1);
+	}
+
+	/*! \brief Return a grid iterator
+	 *
+	 * Return a grid iterator, to iterate through the grid with stencil calculation
+	 *
+	 * \return a grid iterator with stencil calculation
+	 *
+	 */
+	template<unsigned int Np>
+	inline grid_key_dx_iterator<dim,stencil_offset_compute<dim,Np>>
+	getIteratorStencil(const grid_key_dx<dim> (& stencil_pnt)[Np]) const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		return grid_key_dx_iterator<dim,stencil_offset_compute<dim,Np>>(g1,stencil_pnt);
 	}
 
 	/*! \brief Return a grid iterator over all points included between start and stop point

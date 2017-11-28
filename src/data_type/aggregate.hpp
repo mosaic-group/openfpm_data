@@ -9,6 +9,7 @@
 #define OPENFPM_DATA_SRC_UTIL_AGGREGATE_HPP_
 
 #include <boost/fusion/container/vector.hpp>
+#include <Packer_Unpacker/has_pack_agg.hpp>
 
 #ifdef SE_CLASS3
 
@@ -39,6 +40,15 @@ struct aggregate
 	template<unsigned int i> typename boost::mpl::at<type,boost::mpl::int_<i>>::type & get()
 	{
 		return boost::fusion::at_c<i>(data);
+	}
+
+	/*! \brief it return false if this aggregate has no pointers
+	 *
+	 *
+	 */
+	static bool noPointers()
+	{
+		return !has_pack_gen<aggregate<list ...>>::value;
 	}
 
 	/*! \brief get the properties i
@@ -87,6 +97,15 @@ struct aggregate
 	template<unsigned int i> typename boost::mpl::at<type,boost::mpl::int_<i>>::type & get()
 	{
 		return boost::fusion::at_c<i>(data);
+	}
+
+	/*! \brief it return false if this aggregate has no pointers
+	 *
+	 *
+	 */
+	static bool noPointers()
+	{
+		return !has_pack_gen<aggregate<list ...>>::value;
 	}
 
 	/*! \brief get the properties i

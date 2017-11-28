@@ -70,6 +70,17 @@ struct meta_copy_d
 	{
 		copy_general<Tsrc>(src,dst);
 	}
+
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_d_(const Tsrc & src, Tdst && dst)
+	{
+		copy_general<Tsrc>(src,dst);
+	}
 };
 
 //! Partial specialization for N=1 1D-Array

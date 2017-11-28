@@ -15,6 +15,8 @@
 #include <boost/mpl/range_c.hpp>
 #include <boost/fusion/include/size.hpp>
 
+template <typename> struct Debug;
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -69,6 +71,8 @@ struct object_s_di_e
 		// Remove the reference from the type to copy
 		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type copy_dtype;
 		typedef typename std::remove_reference<decltype(src.template get<T::value>())>::type copy_stype;
+
+//		Debug<decltype(src.template get<T::value>())> a;
 
     	meta_copy_d<copy_stype,copy_dtype>::meta_copy_d_(src.template get<T::value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>());
     }

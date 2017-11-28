@@ -56,7 +56,7 @@ public:
 	/*! \brief Error, no implementation
 	 *
 	 */
-	static size_t packRequest(T & obj, size_t & req)
+	static size_t packRequest(const T & obj, size_t & req)
 	{
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " packing for the type " << demangle(typeid(T).name()) << " is not implemented\n";
 		return 0;
@@ -95,7 +95,7 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(T & obj, size_t & req)
+	static void packRequest(const T & obj, size_t & req)
 	{
 		req += sizeof(T);
 	}
@@ -174,7 +174,7 @@ public:
 	 * \param sts pack-stat info
 	 *
 	 */
-	static void pack(ExtPreAlloc<Mem> & ext, T & obj, Pack_stat & sts)
+	static void pack(ExtPreAlloc<Mem> & ext, const T & obj, Pack_stat & sts)
 	{
 #ifdef SE_CLASS1
 		if (ext.ref() == 0)
@@ -195,7 +195,7 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(T & obj,size_t & req)
+	static void packRequest(const T & obj,size_t & req)
 	{
 		req += sizeof(T);
 	}
@@ -229,7 +229,7 @@ public:
 	 * \param sts pack-stat info
 	 *
 	 */
-	static void pack(ExtPreAlloc<Mem> & ext, T & obj, Pack_stat & sts)
+	static void pack(ExtPreAlloc<Mem> & ext, const T & obj, Pack_stat & sts)
 	{
 #ifdef DEBUG
 		if (ext.ref() == 0)
@@ -250,7 +250,7 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	static void packRequest(T & obj,size_t & req)
+	static void packRequest(const T & obj,size_t & req)
 	{
 		req += sizeof(T);
 	}
@@ -299,22 +299,22 @@ class Packer<T,Mem,PACKER_GRID>
 {
 public:
 
-	template<int ... prp> static void packRequest(T & obj, size_t & req)
+	template<int ... prp> static void packRequest(const T & obj, size_t & req)
 	{
 		obj.template packRequest<prp...>(req);
 	};
 
-	template<int ... prp> static void packRequest(T & obj, grid_key_dx_iterator_sub<T::dims> & sub, size_t & req)
+	template<int ... prp> static void packRequest(T & obj, grid_key_dx_iterator_sub<T::dims,stencil_offset_compute<T::dims,1>> & sub, size_t & req)
 	{
 		obj.template packRequest<prp...>(sub, req);
 	};
 
-	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, Pack_stat & sts)
+	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, const T & obj, Pack_stat & sts)
 	{
 		obj.template pack<prp...>(mem, sts);
 	}
 
-	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, grid_key_dx_iterator_sub<T::dims> & sub_it, Pack_stat & sts)
+	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, grid_key_dx_iterator_sub<T::dims,stencil_offset_compute<T::dims,1>> & sub_it, Pack_stat & sts)
 	{
 		obj.template pack<prp...>(mem, sub_it, sts);
 	}

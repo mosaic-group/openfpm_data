@@ -272,7 +272,7 @@ struct call_unpack_agg_functor
 	ExtPreAlloc<Mem> & mem;
 
 	//! object to pack
-	const obj_type & obj;
+	obj_type & obj;
 
 	//! statistic about packing
 	Unpack_stat & ps;
@@ -284,7 +284,7 @@ struct call_unpack_agg_functor
 	 * \param ps packing statistic
 	 *
 	 */
-	call_unpack_agg_functor(ExtPreAlloc<Mem> & mem, const obj_type & obj, Unpack_stat & ps)
+	call_unpack_agg_functor(ExtPreAlloc<Mem> & mem, obj_type & obj, Unpack_stat & ps)
 	:mem(mem), obj(obj), ps(ps)
 	{
 	}
@@ -311,7 +311,7 @@ struct call_aggregateUnpack
 	 * \param ps packing statistic
 	 *
 	 */
-	static inline void call_unpack(const obj_type & obj, ExtPreAlloc<Mem> & mem, Unpack_stat & ps)
+	static inline void call_unpack(obj_type && obj, ExtPreAlloc<Mem> & mem, Unpack_stat & ps)
 	{
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<obj_type,sizeof...(prp) == 0,prp...>::type b_prp;

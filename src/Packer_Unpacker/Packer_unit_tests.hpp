@@ -94,7 +94,11 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 	grid_cpu<3,Point_test<float>> g(sz);
 	g.setMemory();
 	fill_grid<3>(g);
-	grid_key_dx_iterator_sub<3> sub(g.getGrid(),{1,2,3},{5,6,7});
+
+	grid_key_dx<3> cnt[1];
+	cnt[0].zero();
+
+	grid_key_dx_iterator_sub<3,stencil_offset_compute<3,1>> sub(g.getGrid(),{1,2,3},{5,6,7},cnt);
 
 	// Here we start to push all the allocations required to pack all the data
 
@@ -263,7 +267,8 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 	size_t sz2[] = {16,16,16};
 	grid_cpu<3,Point_test<float>> g_test(sz2);
 	g_test.setMemory();
-	grid_key_dx_iterator_sub<3> sub2(g_test.getGrid(),{1,2,3},{5,6,7});
+
+	grid_key_dx_iterator_sub<3,stencil_offset_compute<3,1>> sub2(g_test.getGrid(),{1,2,3},{5,6,7},cnt);
 
 	Unpacker<grid_cpu<3,Point_test<float>>,HeapMemory>::unpack<pt::x,pt::v>(mem,sub2,g_test,ps);
 

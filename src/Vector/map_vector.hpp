@@ -500,8 +500,13 @@ namespace openfpm
 		 * \param start index from where to start the merging
 		 *
 		 */
-		template <template<typename,typename> class op, typename S, typename M, typename gp, unsigned int ...args>
-		void merge_prp_v(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v,
+		template <template<typename,typename> class op,
+		          typename S,
+				  typename M,
+				  typename gp,
+				  template <typename> class layout_base2,
+				  unsigned int ...args>
+		void merge_prp_v(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
 				         size_t start)
 		{
 #ifdef SE_CLASS2

@@ -169,7 +169,7 @@ struct no_stencil
 
 	/*! \brief Set the stencil points
 	 *
-	 * \param stencil points
+	 * \param stencil_pnt stencil points
 	 *
 	 */
 	template<unsigned int dim2> void set_stencil(const grid_key_dx<dim2> (& stencil_pnt)[1])
