@@ -9,7 +9,6 @@
 #define SRC_UTIL_VARIADIC_TO_VMPL_UNIT_TEST_HPP_
 
 #include "util/variadic_to_vmpl.hpp"
-#include "data_type/scalar.hpp"
 #include "util/util_debug.hpp"
 #include <typeinfo>
 
@@ -18,7 +17,7 @@ template <typename T>
 struct F
 {
 	//! meta-function implementation
-	typedef scalar<T> type;
+	typedef aggregate<T> type;
 };
 //! [v_transform metafunction]
 
@@ -27,7 +26,7 @@ template <typename arg0, typename T>
 struct Ftwo
 {
 	//! meta-function implementation
-	typedef scalar<T> type;
+	typedef aggregate<T> type;
 };
 //! [v_transform_two metafunction]
 
@@ -41,13 +40,13 @@ BOOST_AUTO_TEST_CASE( variadic_to_vmpl_test)
 	// tbvf is boost::fusion::vector<scalar<float>,scalar<float>,scalar<float[3]>>
 	typedef v_transform<F,bfv>::type tbfv;
 
-	bool val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<0>>::type,scalar<float>>::value;
+	bool val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<0>>::type,aggregate<float>>::value;
 	BOOST_REQUIRE_EQUAL(val,true);
 
-	val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<1>>::type,scalar<float>>::value;
+	val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<1>>::type,aggregate<float>>::value;
 	BOOST_REQUIRE_EQUAL(val,true);
 
-	val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<2>>::type,scalar<float[3]>>::value;
+	val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<2>>::type,aggregate<float[3]>>::value;
 	BOOST_REQUIRE_EQUAL(val,true);
 
 	//! [v_transform usage]
@@ -61,13 +60,13 @@ BOOST_AUTO_TEST_CASE( variadic_to_vmpl_test)
 	// tbvf is boost::fusion::vector<scalar<float>,scalar<float>,scalar<float[3]>>
 	typedef v_transform_two<Ftwo,float,bfv>::type tbfv;
 
-	bool val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<0>>::type,scalar<float>>::value;
+	bool val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<0>>::type,aggregate<float>>::value;
 	BOOST_REQUIRE_EQUAL(val,true);
 
-	val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<1>>::type,scalar<float>>::value;
+	val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<1>>::type,aggregate<float>>::value;
 	BOOST_REQUIRE_EQUAL(val,true);
 
-	val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<2>>::type,scalar<float[3]>>::value;
+	val = std::is_same<boost::mpl::at<tbfv,boost::mpl::int_<2>>::type,aggregate<float[3]>>::value;
 	BOOST_REQUIRE_EQUAL(val,true);
 
 	//! [v_transform_two usage]

@@ -61,7 +61,8 @@ BOOST_AUTO_TEST_CASE( celllist_lin_and_iterator_test )
 	// Initialize a cell list
 	CellList_gen<dim,float,Process_keys_lin> NN;
 
-	NN.Initialize(box,div,k*0.9,1);
+	NN.Initialize(box,div,1);
+	NN.set_gm(k*0.9);
 
 	float pos[dim];
 
@@ -117,7 +118,8 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	// Initialize a cell list
 	CellList_gen<dim,float,Process_keys_hilb> NN;
 
-	NN.Initialize(box,div,k*0.9,1);
+	NN.Initialize(box,div,1);
+	NN.set_gm(k*0.9);
 
 	FillCellList<dim>((size_t)k*0.9,NN);
 

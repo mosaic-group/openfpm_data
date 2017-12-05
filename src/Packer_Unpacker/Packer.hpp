@@ -304,7 +304,7 @@ public:
 		obj.template packRequest<prp...>(req);
 	};
 
-	template<int ... prp> static void packRequest(T & obj, grid_key_dx_iterator_sub<T::dims,stencil_offset_compute<T::dims,1>> & sub, size_t & req)
+	template<int ... prp> static void packRequest(T & obj, grid_key_dx_iterator_sub<T::dims> & sub, size_t & req)
 	{
 		obj.template packRequest<prp...>(sub, req);
 	};
@@ -314,7 +314,7 @@ public:
 		obj.template pack<prp...>(mem, sts);
 	}
 
-	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, grid_key_dx_iterator_sub<T::dims,stencil_offset_compute<T::dims,1>> & sub_it, Pack_stat & sts)
+	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, grid_key_dx_iterator_sub<T::dims> & sub_it, Pack_stat & sts)
 	{
 		obj.template pack<prp...>(mem, sub_it, sts);
 	}

@@ -9,6 +9,7 @@
 #define OPENFPM_DATA_SRC_GRID_GRID_BASE_IMPLEMENTATION_HPP_
 
 #include "grid_base_impl_layout.hpp"
+#include "copy_grid_fast.hpp"
 
 /*! \brief
  *
@@ -379,7 +380,7 @@ public:
 		data_.setMemory(m);
 
 		//! Allocate the memory and create the reppresentation
-		if (g1.size() != 0) data_.allocate(g1.size());
+		if (g1.size() != 0) data_.allocate(g1.size(),T::noPointers());
 
 		is_mem_init = true;
 	}

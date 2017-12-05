@@ -49,12 +49,22 @@ struct pack_simple_cond
 		dest.setMemory(mem);
 		dest.resize(obj.size());
 
-		grid_key_dx<dim> cnt[1];
-		cnt[0].zero();
+		auto it = obj.getIterator();
 
-		auto it = obj.getIteratorStencil(cnt);
+		// copy all the object in the send buffer
+		typedef encapc<dims,value_type,layout > encap_src;
+		// destination object type
+		typedef encapc<1,prp_object,typename dtype::layout_type > encap_dst;
 
-		obj.pack_with_iterator<decltype(it),dtype,prp...>(it,dest);
+		pack_with_iterator<!is_contiguos<prp...>::type::value || has_pack_gen<prp_object>::value,
+							dim,
+							decltype(obj),
+							   encap_src,
+		 	 	 	 	 	   encap_dst,
+							   typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,
+							   decltype(it),
+							   dtype,
+							   prp...>::pack(obj,it,dest);
 
 		// Update statistic
 		sts.incReq();
@@ -141,12 +151,22 @@ struct unpack_simple_cond
 		src.setMemory(ptr);
 		src.resize(obj.size());
 
-		grid_key_dx<dim> cnt[1];
-		cnt[0].zero();
+		auto it = obj.getIterator();
 
-		auto it = obj.getIteratorStencil(cnt);
+		// copy all the object in the send buffer
+		typedef encapc<dim,grid_base_impl<dim,T,S,layout,layout_base>::value_type,layout > encap_dst;
+		// destination object type
+		typedef encapc<1,prp_object,typename memory_traits_lin<prp_object>::type > encap_src;
 
-		obj.unpack_with_iterator<decltype(it),stype,prp...>(it,src);
+
+		unpack_with_iterator<dim,
+							 decltype(obj),
+							 encap_src,
+							 encap_dst,
+							 typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,
+							 decltype(it),
+							 stype,
+							 prp...>::unpack(obj,it,src);
 
 		ps.addOffset(size);
 	}
@@ -327,7 +347,7 @@ struct unpack_simple_cond<true, prp ...>
 	 * \param sts pack statistic
 	 *
 	 */
-	template<int ... prp> void pack(ExtPreAlloc<S> & mem, grid_key_dx_iterator_sub<dims,stencil_offset_compute<dims,1>> & sub_it, Pack_stat & sts)
+	template<int ... prp> void pack(ExtPreAlloc<S> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Pack_stat & sts)
 	{
 #ifdef SE_CLASS1
 		if (mem.ref() == 0)
@@ -343,7 +363,20 @@ struct unpack_simple_cond<true, prp ...>
 		dest.setMemory(mem);
 		dest.resize(sub_it.getVolume());
 
-		pack_with_iterator<grid_key_dx_iterator_sub<dims,stencil_offset_compute<dims,1>>,dtype,prp...>(sub_it,dest);
+		// copy all the object in the send buffer
+		typedef encapc<dims,value_type,layout > encap_src;
+		// destination object type
+		typedef encapc<1,prp_object,typename dtype::layout_type > encap_dst;
+
+		pack_with_iterator<!is_contiguos<prp...>::type::value || has_pack_gen<prp_object>::value,
+						   dims,
+						   decltype(*this),
+						   encap_src,
+						   encap_dst,
+						   typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,
+						   grid_key_dx_iterator_sub<dims>,
+						   dtype,
+						   prp...>::pack(*this,sub_it,dest);
 
 		// Update statistic
 		sts.incReq();
@@ -359,7 +392,7 @@ struct unpack_simple_cond<true, prp ...>
 	 * \param vector of requests
 	 *
 	 */
-	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims,stencil_offset_compute<dim,1>> & sub, size_t & req)
+	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims> & sub, size_t & req)
 	{
 		typedef openfpm::vector<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type,ExtPreAlloc<S>,layout,layout_base,openfpm::grow_policy_identity> dtype;
 		dtype dvect;
@@ -380,7 +413,7 @@ struct unpack_simple_cond<true, prp ...>
 	 * \param obj object where to unpack
 	 *
 	 */
-	template<unsigned int ... prp> void unpack(ExtPreAlloc<S> & mem, grid_key_dx_iterator_sub<dims,stencil_offset_compute<dims,1>> & sub_it, Unpack_stat & ps)
+	template<unsigned int ... prp> void unpack(ExtPreAlloc<S> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Unpack_stat & ps)
 	{
 		// object that store the information in mem
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,prp...>::type> prp_object;
@@ -396,7 +429,19 @@ struct unpack_simple_cond<true, prp ...>
 		src.setMemory(ptr);
 		src.resize(sub_it.getVolume());
 
-		unpack_with_iterator<grid_key_dx_iterator_sub<dims,stencil_offset_compute<dims,1>>,stype,prp...>(sub_it,src);
+		// copy all the object in the send buffer
+		typedef encapc<dims,grid_base_impl<dim,T,S,layout,layout_base>::value_type,layout > encap_dst;
+		// destination object type
+		typedef encapc<1,prp_object,typename memory_traits_lin<prp_object>::type > encap_src;
+
+		unpack_with_iterator<dims,
+							 decltype(*this),
+							 encap_src,
+							 encap_dst,
+							 typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,
+							 grid_key_dx_iterator_sub<dims>,
+							 stype,
+							 prp...>::unpack(*this,sub_it,src);
 
 		ps.addOffset(size);
 	}
@@ -421,66 +466,4 @@ struct unpack_simple_cond<true, prp ...>
 		return n * sizeof(prp_object);
 	}
 	
-	/*! \brief Pack an N-dimensional grid into a vector like structure B given an iterator of the grid
-	 *
-	 * \tparam it type of iterator of the grid-structure
-	 * \tparam dtype type of the structure B
-	 * \tparam dim Dimensionality of the grid
-	 * \tparam properties to pack
-	 *
-	 * \param it Grid iterator
-	 * \param obj object to pack
-	 * \param dest where to pack
-	 *
-	 */
-	template <typename it, typename dtype, int ... prp> void pack_with_iterator(it & sub_it, dtype & dest) const
-	{
-		// Sending property object
-		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,prp...>::type> prp_object;
 
-		size_t id = 0;
-
-		// Packing the information
-		while (sub_it.isNext())
-		{
-			// copy all the object in the send buffer
-			typedef encapc<dims,value_type,layout > encap_src;
-			// destination object type
-			typedef encapc<1,prp_object,typename dtype::layout_type > encap_dst;
-
-			// Copy only the selected properties
-			object_si_d<encap_src,encap_dst,OBJ_ENCAP,prp...>(this->get_o(sub_it.template getStencil<0>()),dest.get(id));
-
-			++id;
-			++sub_it;
-		}
-	}
-	
-	/*! \brief unpack the grid given an iterator
-	 *
-	 * \tparam it type of iterator
-	 * \tparam prp of the grid object to unpack
-	 *
-	 */
-	template <typename it, typename stype, unsigned int ... prp> void unpack_with_iterator(it & sub_it, stype & src)
-	{
-		size_t id = 0;
-
-		// Sending property object
-		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,prp...>::type> prp_object;
-
-		// unpacking the information
-		while (sub_it.isNext())
-		{
-			// copy all the object in the send buffer
-			typedef encapc<dims,grid_base_impl<dim,T,S,layout,layout_base>::value_type,layout > encap_dst;
-			// destination object type
-			typedef encapc<1,prp_object,typename memory_traits_lin<prp_object>::type > encap_src;
-
-			// Copy only the selected properties
-			object_s_di<encap_src,encap_dst,OBJ_ENCAP,prp...>(src.get(id),this->get_o(sub_it.template getStencil<0>()));
-
-			++id;
-			++sub_it;
-		}
-	}

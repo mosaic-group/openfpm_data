@@ -71,6 +71,16 @@ public:
 
 	//! number of properties in the boost::fusion::vector
 	static const unsigned int max_prop_real = 6;
+
+	/*! \brief indicate that this structure has no pointers
+	 *
+	 * \return true
+	 *
+	 */
+	static inline bool noPointers()
+	{
+		return true;
+	}
 };
 
 /*! \brief Test structure used for several test
@@ -371,7 +381,6 @@ public:
 			}
 		}
 	}
-
 };
 
 
@@ -538,6 +547,11 @@ public:
 
 	  return *this;
   }
+
+	static inline bool noPointers()
+	{
+		return true;
+	}
 };
 
 template<typename T> const std::string Point_test_prp<T>::attributes::name[] = {"x","y","z","s","v","t"};
@@ -621,6 +635,11 @@ public:
 
 	  return *this;
   }
+
+	static inline bool noPointers()
+	{
+		return true;
+	}
 };
 
 template<typename T> const std::string Point_test_scal<T>::attributes::name[] = {"x","y","z","s"};

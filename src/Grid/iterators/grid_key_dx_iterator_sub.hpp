@@ -111,6 +111,39 @@ public:
 	inline static void pw5() {}
 };
 
+template<unsigned int dim, typename stl_type>
+struct post_increment_sub_impl
+{
+	static inline void inc(grid_key_dx<dim> & gk,
+										grid_key_dx<dim> & gk_start,
+										grid_key_dx<dim> & gk_stop,
+										stl_type & stl_code,
+										grid_sm<dim,void> & grid_base)
+	{
+		long int i = 0;
+		for ( ; i < dim-1 ; i++)
+		{
+			/* coverity[dead_error_begin] */
+			size_t id = gk.get(i);
+			if ((long int)id > gk_stop.get(i))
+			{
+				// ! overflow, increment the next index
+
+				size_t idr = gk.get(i) - gk_start.get(i);
+				gk.set_d(i,gk_start.get(i));
+				id = gk.get(i+1);
+				gk.set_d(i+1,id+1);
+
+				stl_code.adjust_offset(i,idr,grid_base);
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+};
+
 
 /**
  *
@@ -207,9 +240,11 @@ class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim,stencil>
 	 *         any dimension and in case adjust the dimensions
 	 *
 	 */
-	inline void post_increment()
+	void post_increment()
 	{
 		//! check the overflow of all the index with exception of the last dimensionality
+
+//		post_increment_sub_impl<dim,stencil>::inc(this->gk,gk_start,gk_stop,this->stl_code,grid_base);
 
 		long int i = 0;
 		for ( ; i < dim-1 ; i++)

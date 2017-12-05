@@ -171,6 +171,16 @@ public:
 
 		return *this;
 	}
+
+	/*! \brief This structure has pointers
+	 *
+	 * \return false
+	 *
+	 */
+	static bool noPointers()
+	{
+		return false;
+	}
 };
 
 #include "grid_gpu.hpp"

@@ -10,6 +10,8 @@
 
 #include "SpaceBox.hpp"
 
+#define INVALID_GHOST 9223372036854775807
+
 /*! Ghost
  *
  * it indicate the ghost extension
@@ -84,6 +86,22 @@ public:
 		Box<dim,T>::operator/=(p);
 
 		return *this;
+	}
+
+	/*! \brief check if the Ghost is valid
+	 *
+	 *
+	 *
+	 */
+	inline bool isInvalidGhost()
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (this->getLow(i) == -INVALID_GHOST)	return true;
+			if (this->getHigh(i) == INVALID_GHOST)	return true;
+		}
+
+		return false;
 	}
 
 };

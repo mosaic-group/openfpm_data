@@ -91,7 +91,7 @@ class memory_c
 	/*! \brief This function allocate memory
 	 *
 	 */
-	bool allocate(const size_t sz)
+	bool allocate(const size_t sz, bool skip_initialization = false)
 	{
 		memory * mem = this->mem;
 
@@ -99,7 +99,7 @@ class memory_c
 	    mem->resize( sz*sizeof(T) );
 
 	    //! we create the representation for this buffer
-	    mem_r = new memory_array<T>(mem->getPointer(),sz,mem->isInitialized());
+	    mem_r = new memory_array<T>(mem->getPointer(),sz,mem->isInitialized() | skip_initialization);
 
 	    return true;
 	}
