@@ -114,7 +114,9 @@ class VTKWriter
 #include "VTKWriter_vector_box.hpp"
 #include "VTKWriter_grids.hpp"
 #include "VTKWriter_grids_st.hpp"
+#ifndef NO_PARALLEL
 #include "VTKWriter_dist_graph.hpp"
+#endif
 #include "VTKWriter_point_set.hpp"
 
 #endif /* VTKWRITER_HPP_ */

@@ -200,17 +200,17 @@ public:
 	 */
 	template<typename vector, typename iterator, typename I> static void write(std::string & v_out, vector & vg, size_t k, iterator & it, file_type ft)
 	{
-		typedef decltype(vg.get(k).g.get_o(it.get()).template get<I::value>()) ctype_;
-		typedef typename std::remove_reference<ctype_>::type ctype;
+		typedef decltype(vg.get(k).g.template get<I::value>(it.get())) ctype_;
+		typedef typename std::remove_const<typename std::remove_reference<ctype_>::type>::type ctype;
 
 		if (ft == file_type::ASCII)
 		{
 			// Print the property
-			v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()) + "\n";
+			v_out += std::to_string(vg.get(k).g.template get<I::value>(it.get())) + "\n";
 		}
 		else
 		{
-			typename is_vtk_writable<ctype>::base tmp = vg.get(k).g.get_o(it.get()).template get<I::value>();
+			typename is_vtk_writable<ctype>::base tmp = vg.get(k).g.template get<I::value>(it.get());
 			tmp = swap_endian_lt(tmp);
 			v_out.append((const char *)&tmp,sizeof(tmp));
 		}
@@ -310,7 +310,7 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
 						// Print the properties
 						for (size_t i1 = 0 ; i1 < N1 ; i1++)
 						{
-							v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()[i1]) + " ";
+							v_out += std::to_string(vg.get(k).g.template get<I::value>(it.get())[i1]) + " ";
 						}
 						if (N1 == 2)
 						{
@@ -325,7 +325,7 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
 						// Print the properties
 						for (size_t i1 = 0 ; i1 < N1 ; i1++)
 						{
-							tmp = vg.get(k).g.get_o(it.get()).template get<I::value>()[i1];
+							tmp = vg.get(k).g.template get<I::value>(it.get())[i1];
 							tmp = swap_endian_lt(tmp);
 							v_out.append((const char *)&tmp,sizeof(T));
 						}
@@ -390,11 +390,11 @@ struct meta_prop<I, ele_g,St, T[N1][N2],is_writable>
 							if (ft == file_type::ASCII)
 							{
 								// Print the property
-								v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()[i1][i2]) + "\n";
+								v_out += std::to_string(vg.get(k).g.template get<I::value>(it.get())[i1][i2]) + "\n";
 							}
 							else
 							{
-								tmp = vg.get(k).g.get_o(it.get()).template get<I::value>()[i1][i2];
+								tmp = vg.get(k).g.template get<I::value>(it.get())[i1][i2];
 								tmp = swap_endian_lt(tmp);
 								v_out.append((const char *)&tmp,sizeof(tmp));
 							}
