@@ -111,6 +111,12 @@ public:
 	// you can access all the properties of T
 	typedef typename grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>::container container;
 
+	//! type that identify one point in the grid
+	typedef grid_key_dx<dim> base_key;
+
+	//! sub-grid iterator type
+	typedef grid_key_dx_iterator_sub<dim> sub_grid_iterator_type;
+
 	//! Default constructor
 	inline grid_cpu() THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_lin>()
@@ -170,6 +176,29 @@ public:
 		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g);
 
 		return *this;
+	}
+
+	/*! \brief This is a meta-function return which type of sub iterator a grid produce
+	 *
+	 * \return the type of the sub-grid iterator
+	 *
+	 */
+	template <typename stencil = no_stencil>
+	static grid_key_dx_iterator_sub<dim, stencil> type_of_subiterator()
+	{
+		return grid_key_dx_iterator_sub<dim, stencil>();
+	}
+
+	/*! \brief In this case it just copy the key_in in key_out
+	 *
+	 * \param key_out output key
+	 * \param key_in input key
+	 *
+	 */
+	void convert_key(grid_key_dx<dim> & key_out, const grid_key_dx<dim> & key_in) const
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{key_out.set_d(i,key_in.get(i));}
 	}
 };
 

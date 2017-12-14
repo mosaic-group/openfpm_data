@@ -264,4 +264,65 @@ struct object_creator<v>
 	typedef v type;
 };
 
+///////////////////////// Object creator for chunking data structure
+
+/*! \brief Implementation of object creator
+ *
+ * \tparam v boost::fusion::vector
+ * \tparam vc basic boost::fusion::vector object from where start to push
+ * \tparam prp properties to push
+ *
+ */
+template<typename v, typename vc, int... prp>
+struct object_creator_chunking_impl
+{
+};
+
+/*! \brief Implementation of object creator
+ *
+ * \tparam v original boost::fusion::vector
+ * \tparam vc basic boost::fusion::vector object from where start to push
+ * \tparam p1 actual property
+ * \tparam remaining properties to push
+ *
+ */
+template<typename v, typename vc, int p1, int... prp>
+struct object_creator_chunking_impl<v,vc,p1,prp...>
+{
+	typedef typename object_creator_chunking_impl<v,vc,prp... >::type vc_step;
+
+	typedef typename boost::remove_reference< typename boost::mpl::at< v,boost::mpl::int_<p1> >::type>::type ele_array;
+
+	// Element without array
+	typedef typename ele_array::value_type ele;
+
+	// push on the vector the element p1
+	typedef typename boost::mpl::push_front<vc_step, ele >::type type;
+};
+
+/*! \brief Implementation of object creator
+ *
+ * \tparam v original boost::fusion::vector
+ * \tparam vc basic boost::fusion::vector object from where start to push
+ * \tparam prp property to push
+ */
+template<typename v, typename vc, int prp>
+struct object_creator_chunking_impl<v,vc,prp>
+{
+	typedef typename boost::remove_reference< typename boost::mpl::at< v,boost::mpl::int_<prp> >::type>::type ele_array;
+
+	// Element without array
+	typedef typename ele_array::value_type ele;
+
+	// push on the vector the element p1
+	typedef typename boost::mpl::push_front<vc, ele >::type type;
+};
+
+
+template<typename v, int... prp>
+struct object_creator_chunking
+{
+	typedef typename boost::fusion::result_of::as_vector<typename object_creator_chunking_impl<v,boost::mpl::vector<>,prp... >::type>::type type;
+};
+
 #endif

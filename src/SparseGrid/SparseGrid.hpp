@@ -51,6 +51,39 @@ public:
 
 };
 
+
+template<unsigned int dim, typename Tsrc,typename Tdst>
+class copy_sparse_to_sparse
+{
+	//! source
+	const Tsrc & src;
+
+	//! destination
+	Tdst & dst;
+
+	//! source position
+	grid_key_dx<dim> & pos_src;
+
+	//! destination position
+	grid_key_dx<dim> & pos_dst;
+
+public:
+
+	copy_sparse_to_sparse(const Tsrc & src, Tdst & dst,grid_key_dx<dim> & pos_src, grid_key_dx<dim> & pos_dst)
+	:src(src),dst(dst),pos_src(pos_src),pos_dst(pos_dst)
+	{}
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		typedef typename std::remove_reference<decltype(dst.template insert<T::value>(pos_dst))>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(pos_src),dst.template insert<T::value>(pos_dst));
+	}
+
+};
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -121,6 +154,9 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 
 	//! conversion position in the chunks
 	grid_key_dx<dim> pos_chunk[chunking::size::value];
+
+	//! size of the chunk
+	size_t sz_cnk[dim];
 
 	openfpm::vector<size_t> empty_v;
 
@@ -212,7 +248,7 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 	 * \param active_cnk active chunk
 	 *
 	 */
-	inline void add_on_cache(size_t lin_id, size_t active_cnk)
+	inline void add_on_cache(size_t lin_id, size_t active_cnk) const
 	{
 		// Add on cache the chunk
 		cache[cache_pnt] = lin_id;
@@ -266,8 +302,6 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 		{cache[i] = -1;}
 
 		// fill pos_g
-
-		size_t sz_cnk[dim];
 
 		copy_sz<dim,typename chunking::type> cpsz(sz_cnk);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,dim> >(cpsz);
@@ -379,8 +413,18 @@ public:
 	//! it define that this data-structure is a grid
 	typedef int yes_i_am_grid;
 
+	//! base_key for the grid
+	typedef grid_key_dx<dim> base_key;
+
 	//! expose the dimansionality as a static const
 	static constexpr unsigned int dims = dim;
+
+	//! value that the grid store
+	//! The object type the grid is storing
+	typedef T value_type;
+
+	//! sub-grid iterator type
+	typedef grid_key_sparse_dx_iterator_sub<dim, chunking::size::value> sub_grid_iterator_type;
 
 	/*! \brief Trivial constructor
 	 *
@@ -388,7 +432,29 @@ public:
 	 */
 	inline sgrid_cpu()
 	:cache_pnt(0)
-	{}
+	{
+		init();
+	}
+
+	/*! \brief create a sparse grid from another grid
+	 *
+	 * \param g the grid to copy
+	 *
+	 */
+	inline sgrid_cpu(const sgrid_cpu & g) THROW
+	{
+		this->operator=(g);
+	}
+
+	/*! \brief create a sparse grid from another grid
+	 *
+	 * \param g the grid to copy
+	 *
+	 */
+	inline sgrid_cpu(const sgrid_cpu && g) THROW
+	{
+		this->operator=(g);
+	}
 
 	/*! \brief Constructor for sparse grid
 	 *
@@ -517,6 +583,35 @@ public:
 		return chunks.template get<p>(active_cnk)[sub_id];
 	}
 
+
+	/*! \brief Get the reference of the selected element
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return the reference of the element
+	 *
+	 */
+	template <unsigned int p, typename r_type=decltype(chunks.template get<p>(0)[0])>
+	inline r_type insert(const grid_key_sparse_lin_dx & v1)
+	{
+		size_t active_cnk = v1.getChunk();
+		size_t sub_id = v1.getPos();
+
+		// the chunk is in cache, solve
+
+		// we notify that we added one element
+		auto & h = header.get(active_cnk);
+
+		// we set the mask
+
+		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+		h.nele = (h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check)?h.nele:h.nele + 1;
+		h.mask[sub_id >> BIT_SHIFT_SIZE_T] |= mask_check;
+
+		return chunks.template get<p>(active_cnk)[sub_id];
+	}
+
 	/*! \brief Get the reference of the selected element
 	 *
 	 * \param v1 grid_key that identify the element in the grid
@@ -548,13 +643,7 @@ public:
 
 			size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
 
-			add_on_cache(sub_id,it->second);
-
-			// Add on cache the chunk
-/*			cache[cache_pnt] = lin_id;
-			cached_id[cache_pnt] = it->second;
-			cache_pnt++;
-			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;*/
+			add_on_cache(lin_id,it->second);
 
 			return chunks.template get<p>(it->second)[sub_id];
 		}
@@ -595,13 +684,7 @@ public:
 
 			size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
 
-			add_on_cache(sub_id,it->second);
-
-			// Add on cache the chunk
-/*			cache[cache_pnt] = lin_id;
-			cached_id[cache_pnt] = it->second;
-			cache_pnt++;
-			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;*/
+			add_on_cache(lin_id,it->second);
 
 			return chunks.template get<p>(it->second)[sub_id];
 		}
@@ -629,9 +712,21 @@ public:
 	 * \return return the domain iterator
 	 *
 	 */
-	grid_key_sparse_dx_iterator<dim,chunking::size::value> getDomainIterator()
+	grid_key_sparse_dx_iterator<dim,chunking::size::value>
+	getIterator() const
 	{
 		return grid_key_sparse_dx_iterator<dim,chunking::size::value>(header,pos_chunk);
+	}
+
+	/*! \brief Return an iterator over a sub-grid
+	 *
+	 * \return return an iterator over a sub-grid
+	 *
+	 */
+	grid_key_sparse_dx_iterator_sub<dim,chunking::size::value>
+	getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
+	{
+		return grid_key_sparse_dx_iterator_sub<dim,chunking::size::value>(header,pos_chunk,start,stop,sz_cnk);
 	}
 
 	/*! \brief Return the internal grid information
@@ -641,7 +736,7 @@ public:
 	 * \return the internal grid
 	 *
 	 */
-	const grid_sm<dim,T> & getGrid() const
+	const grid_sm<dim,void> & getGrid() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -768,11 +863,6 @@ public:
 			gs_box.setHigh(i,g_sm.size(i));
 		}
 
-		size_t sz_cnk[dim];
-
-		copy_sz<dim,typename chunking::type> cpsz(sz_cnk);
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,dim> >(cpsz);
-
 		// we take a list of all chunks to remove
 		openfpm::vector<size_t> rmh;
 
@@ -843,6 +933,260 @@ public:
 		reconstruct_map();
 	}
 
+	/*! \brief Calculate the memory size required to pack n elements
+	 *
+	 * Calculate the total size required to store n-elements in a vector
+	 *
+	 * \param n number of elements
+	 * \param e unused
+	 *
+	 * \return the size of the allocation number e
+	 *
+	 */
+	template<int ... prp> static inline size_t packMem(size_t n, size_t e)
+	{
+		if (sizeof...(prp) == 0)
+		{return n * sizeof(typename T::type);}
+
+		typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
+
+		return n * sizeof(prp_object);
+	}
+
+	/*! \brief Insert an allocation request
+	 *
+	 * \tparam prp set of properties to pack
+	 *
+
+	 * \param sub sub-grid iterator
+	 * \param vector of requests
+	 *
+	 */
+	template<int ... prp> inline
+	void packRequest(grid_key_sparse_dx_iterator_sub<dim,chunking::size::value> & sub_it,
+					 size_t & req) const
+	{
+		grid_sm<dim,void> gs_cnk(sz_cnk);
+
+		// For sure we have to pack the number of chunk we want to pack
+
+		req += sizeof(size_t);
+
+		// Here we have to calculate the number of points to pack
+
+		Box<dim,size_t> section_to_pack;
+
+		for (size_t i = 0; i < dim ; i++)
+		{
+			section_to_pack.setLow(i,sub_it.getStart().get(i));
+			section_to_pack.setHigh(i,sub_it.getStop().get(i));
+		}
+
+		for (size_t i = 0 ; i < header.size() ; i++)
+		{
+			auto & h = header.get(i);
+
+			Box<dim,size_t> bc;
+
+			for (size_t j = 0 ; j < dim ; j++)
+			{
+				bc.setLow(j,header.get(i).pos.get(j));
+				bc.setHigh(j,header.get(i).pos.get(j) + sz_cnk[j] - 1);
+			}
+
+			// now we intersect the chunk box with the box
+
+			Box<dim,size_t> inte;
+			bool stp = bc.Intersect(section_to_pack,inte);
+
+			if (stp == true)
+			{
+				// If it is intersect ok we have to check if there are points to pack
+				// we shift inte to be relative to the chunk origin
+
+				inte -= header.get(i).pos.toPoint();
+
+				// we iterate all the points
+
+				size_t old_req = req;
+				grid_key_dx_iterator_sub<dim> sit(gs_cnk,inte.getKP1(),inte.getKP2());
+
+				while (sit.isNext())
+				{
+					auto key = sit.get();
+
+					size_t sub_id = gs_cnk.LinId(key);
+
+					size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+					if (h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check)
+					{
+						// If all of the aggregate properties do not have a "pack()" member
+						if (has_pack_agg<T,prp...>::result::value == false)
+						{
+							// here we count how many chunks must be sent
+
+							size_t alloc_ele = this->packMem<prp...>(1,0);
+							req += alloc_ele;
+						}
+						//If at least one property has "pack()"
+						else
+						{
+							//Call a pack request
+							call_aggregatePackRequestChunking<decltype(chunks.template get_o(i)),
+																  S,prp ... >
+																  ::call_packRequest(chunks.template get_o(i),sub_id,req);
+						}
+					}
+
+					++sit;
+				}
+
+				if (old_req != req)
+				{
+					// There are point to send. So we have to save the mask chunk
+					req += sizeof(header.get(i).mask);
+					// the chunk position
+					req += sizeof(header.get(i).pos);
+					// and the number of element
+					req += sizeof(header.get(i).nele);
+				}
+			}
+		}
+	}
+
+	/*! \brief Pack the object into the memory given an iterator
+	 *
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 * \param sub_it sub grid iterator ( or the elements in the grid to pack )
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void pack(ExtPreAlloc<S> & mem,
+									grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> & sub_it,
+									Pack_stat & sts)
+	{
+		grid_sm<dim,void> gs_cnk(sz_cnk);
+
+		// Here we allocate a size_t that indicate the number of chunk we are packing,
+		// because we do not know a priory, we will fill it later
+
+		mem.allocate(sizeof(size_t));
+		size_t * number_of_chunks = (size_t *)mem.getPointer();
+
+		// Here we have to calculate the number of points to pack
+
+		Box<dim,size_t> section_to_pack;
+
+		for (size_t i = 0; i < dim ; i++)
+		{
+			section_to_pack.setLow(i,sub_it.getStart().get(i));
+			section_to_pack.setHigh(i,sub_it.getStop().get(i));
+		}
+
+		size_t n_packed_chunk = 0;
+
+		for (size_t i = 0 ; i < header.size() ; i++)
+		{
+			auto & h = header.get(i);
+
+			Box<dim,size_t> bc;
+
+			for (size_t j = 0 ; j < dim ; j++)
+			{
+				bc.setLow(j,header.get(i).pos.get(j));
+				bc.setHigh(j,header.get(i).pos.get(j) + sz_cnk[j] - 1);
+			}
+
+			// now we intersect the chunk box with the box
+
+			Box<dim,size_t> inte;
+			bool stp = bc.Intersect(section_to_pack,inte);
+
+			if (stp == true)
+			{
+				// This flag indicate if something has been packed from this chunk
+				bool has_packed = false;
+
+				size_t mask_to_pack[chunking::size::value / (sizeof(size_t)*8) + (chunking::size::value % (sizeof(size_t)*8) != 0) + 1];
+				memset(mask_to_pack,0,sizeof(mask_to_pack));
+				mem.allocate(sizeof(header.get(i).mask) + sizeof(header.get(i).pos) + sizeof(header.get(i).nele));
+
+				// here we get the pointer of the memory in case we have to pack the header
+				// and we also shift the memory pointer by an offset equal to the header
+				// to pack
+				unsigned char * ptr_start = (unsigned char *)mem.getPointer();
+
+				// If it is intersect ok we have to check if there are points to pack
+				// we shift inte intp the chunk origin
+
+				inte -= header.get(i).pos.toPoint();
+
+				// we iterate all the points
+
+				grid_key_dx_iterator_sub<dim> sit(gs_cnk,inte.getKP1(),inte.getKP2());
+
+				while (sit.isNext())
+				{
+					auto key = sit.get();
+
+					size_t sub_id = gs_cnk.LinId(key);
+
+					size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+					if (h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check)
+					{
+						Packer<decltype(chunks.template get_o(i)),
+									S,
+									PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<prp...>(mem,chunks.template get_o(i),sub_id,sts);
+
+						mask_to_pack[sub_id >> BIT_SHIFT_SIZE_T] |= mask_check;
+						has_packed = true;
+
+					}
+
+					++sit;
+				}
+
+				if (has_packed == true)
+				{
+					unsigned char * ptr_final = (unsigned char *)mem.getPointer();
+					unsigned char * ptr_final_for = (unsigned char *)mem.getPointerEnd();
+
+					// Ok we packed something so we have to pack the header
+					 size_t shift = ptr_final - ptr_start;
+
+					 mem.shift_backward(shift);
+
+					 // The position of the chunks
+
+					 grid_key_dx<dim> pos = header.get(i).pos - sub_it.getStart();
+
+					 Packer<decltype(header.get(i).mask),S>::pack(mem,mask_to_pack,sts);
+					 Packer<decltype(header.get(i).pos),S>::pack(mem,pos,sts);
+					 Packer<decltype(header.get(i).nele),S>::pack(mem,header.get(i).nele,sts);
+
+					 size_t shift_for = ptr_final_for - (unsigned char *)mem.getPointer();
+
+					 mem.shift_forward(shift_for);
+
+					 n_packed_chunk++;
+				}
+				else
+				{
+					// This just reset the last allocation
+					mem.shift_backward(0);
+				}
+			}
+		}
+
+		// Now we fill the number of packed chunks
+		*number_of_chunks = n_packed_chunk;
+	}
+
+
 	/*! \number of element inserted
 	 *
 	 * \warning this function is not as fast as the size in other structures
@@ -850,7 +1194,7 @@ public:
 	 * \return the total number of elements inserted
 	 *
 	 */
-	size_t size()
+	size_t size() const
 	{
 		size_t tot = 0;
 
@@ -862,64 +1206,181 @@ public:
 		return tot;
 	}
 
-	void copy_to(const sgrid_cpu<dim,T,S,chunking> & grid_src,
+	void copy_to(const sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking> & grid_src,
 		         const Box<dim,size_t> & box_src,
 			     const Box<dim,size_t> & box_dst)
 	{
-		size_t sz_cnk[dim];
+		auto it = grid_src.getIterator(box_src.getKP1(),box_src.getKP2());
 
-		copy_sz<dim,typename chunking::type> cpsz(sz_cnk);
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,dim> >(cpsz);
-
-		// we go across all the source chunks and we identify all the chunks in src that must be copied
-
-		for (size_t i = 0 ; i < grid_src.header.size() ; i++)
+		while (it.isNext())
 		{
-			Box<dim,size_t> cnk;
-			Box<dim,size_t> inte;
+			auto key_src = it.get();
+			grid_key_dx<dim> key_dst = key_src + box_dst.getKP1();
 
-			for (size_t j = 0 ; j < dim ; j++)
-			{
-				cnk.setLow(j,grid_src.header.get(i).pos.get(j));
-				cnk.setHigh(j,sz_cnk[j] + grid_src.header.get(i).pos.get(j));
-			}
+			typedef typename std::remove_const<typename std::remove_reference<decltype(grid_src)>::type>::type gcopy;
 
-			// now we check if a chunk is inside box_src
+			copy_sparse_to_sparse<dim,gcopy,gcopy> caps(grid_src,*this,key_src,key_dst);
+			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(caps);
 
-			if (cnk.Intersect(box_src,inte))
-			{
-				size_t mask_nele;
-				short int mask_it[chunking::data::size];
-				auto & h = grid_src.header.get(i).mask;
-
-				// Fill the mask_it for the source grid
-
-				fill_mask_it(mask_it,h.mask,mask_nele);
-
-				// calculate the index of the element to insert
-/*				for (size_t i)
-
-				// now we insert all the elements
-
-				insert_o()
-
-				// It insersect we must move the information*/
-
-/*				if (inte == cnk)
-				{
-					// we can just copy the chunk
-
-					header.add(grid_src.header.get(i));
-					chunks.add(grid_src.chunks.get(i));
-				}
-				else
-				{
-					// we only have to copy part of the chunk
-
-
-				}*/
-			}
+			++it;
 		}
+	}
+
+	/*! \brief unpack the sub-grid object
+	 *
+	 * \tparam prp properties to unpack
+	 *
+	 * \param mem preallocated memory from where to unpack the object
+	 * \param sub sub-grid iterator
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<unsigned int ... prp>
+	void unpack(ExtPreAlloc<S> & mem,
+				grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> & sub_it,
+				Unpack_stat & ps)
+	{
+		short unsigned int mask_it[chunking::size::value];
+
+		// first we unpack the number of chunks
+
+		size_t n_chunks;
+
+		Unpacker<size_t,S>::unpack(mem,n_chunks,ps);
+
+		header.resize(n_chunks);
+		chunks.resize(n_chunks);
+
+		for (size_t i = 0 ; i < n_chunks ; i++)
+		{
+			auto & h = header.get(i);
+
+			Unpacker<decltype(header.get(i).mask),S>::unpack(mem,h.mask,ps);
+			Unpacker<decltype(header.get(i).pos),S>::unpack(mem,h.pos,ps);
+			Unpacker<decltype(header.get(i).nele),S>::unpack(mem,h.nele,ps);
+
+			// fill the mask_it
+
+			fill_mask(mask_it,h.mask,h.nele);
+
+			// now we unpack the information
+
+			for (size_t k = 0 ; k < h.nele ; k++)
+			{
+				Unpacker<decltype(chunks.template get_o(mask_it[k])),
+							S,
+							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack<prp...>(mem,chunks.template get_o(i),mask_it[k],ps);
+
+			}
+
+			header.get(i).pos += sub_it.getStart();
+		}
+
+		// create a map again
+		reconstruct_map();
+	}
+
+	/*! \brief This is a meta-function return which type of sub iterator a grid produce
+	 *
+	 * \return the type of the sub-grid iterator
+	 *
+	 */
+	template <typename stencil = no_stencil>
+	static grid_key_sparse_dx_iterator_sub<dim, chunking::size::value>
+	type_of_subiterator()
+	{
+		return  grid_key_sparse_dx_iterator_sub<dim, chunking::size::value>();
+	}
+
+	/*! \brief Here we convert the linearized sparse key into the grid_key_dx
+	 *
+	 * \param key_out output key
+	 * \param key_in input key
+	 *
+	 */
+	void convert_key(grid_key_dx<dim> & key_out, const grid_key_sparse_lin_dx & key_in) const
+	{
+		auto & ph = header.get(key_in.getChunk()).pos;
+		auto & pos_h = pos_chunk[key_in.getPos()];
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			key_out.set_d(i,ph.get(i) + pos_h.get(i));
+		}
+	}
+
+	/*! \brief copy an sparse grid
+	 *
+	 * \param tmp sparse grdi to copy
+	 *
+	 */
+	sgrid_cpu & operator=(const sgrid_cpu & sg)
+	{
+		cache_pnt = sg.cache_pnt;
+		meta_copy<T>::meta_copy_(sg.background,background);
+
+		for (size_t i = 0 ; i < SGRID_CACHE ; i++)
+		{
+			cache[i] = sg.cache[i];
+			cached_id[i] = sg.cached_id[i];
+		}
+
+		//! Map to convert from grid coordinates to chunk
+		map = sg.map;
+		header = sg.header;
+		chunks = sg.chunks;
+		g_sm = sg.g_sm;
+		g_sm_shift = sg.g_sm_shift;
+
+		for (size_t i = 0 ; i < chunking::size::value ; i++)
+		{
+			pos_chunk[i] = sg.pos_chunk[i];
+		}
+
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{sz_cnk[i] = sg.sz_cnk[i];}
+
+		empty_v = sg.empty_v;
+
+		return *this;
+	}
+
+	/*! \brief copy an sparse grid
+	 *
+	 * \param tmp sparse grdi to copy
+	 *
+	 */
+	sgrid_cpu & operator=(sgrid_cpu && sg)
+	{
+		cache_pnt = sg.cache_pnt;
+		meta_copy<T>::meta_copy_(sg.background,background);
+
+		for (size_t i = 0 ; i < SGRID_CACHE ; i++)
+		{
+			cache[i] = sg.cache[i];
+			cached_id[i] = sg.cached_id[i];
+		}
+
+		//! Map to convert from grid coordinates to chunk
+		map.swap(sg.map);
+		header.swap(sg.header);
+		chunks.swap(sg.chunks);
+		g_sm = sg.g_sm;
+		g_sm_shift = sg.g_sm_shift;
+
+		for (size_t i = 0 ; i < chunking::size::value ; i++)
+		{
+			pos_chunk[i] = sg.pos_chunk[i];
+		}
+
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{sz_cnk[i] = sg.sz_cnk[i];}
+
+		empty_v = sg.empty_v;
+
+		return *this;
 	}
 
 	/*! \brief write the sparse grid into VTK
@@ -936,7 +1397,7 @@ public:
 
 		// copy position and properties
 
-		auto it = getDomainIterator();
+		auto it = getIterator();
 
 		while(it.isNext())
 		{

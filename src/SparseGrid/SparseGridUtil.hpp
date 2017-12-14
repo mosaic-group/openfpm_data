@@ -248,13 +248,13 @@ struct key_shift<1,chunk>
 {
 	inline static void shift(grid_key_dx<1> & kh, grid_key_dx<1> &kl)
 	{
-		kl.set_d(0,kh.get(0) & (boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value -1));
-		kh.set_d(0,kh.get(0) >> boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value);
+		kl.set_d(0,kh.get(0) & (boost::mpl::at<typename chunk::type,boost::mpl::int_<0>>::type::value -1));
+		kh.set_d(0,kh.get(0) >> boost::mpl::at<typename chunk::shift,boost::mpl::int_<0>>::type::value);
 	}
 
 	inline static void cpos(grid_key_dx<1> & kh)
 	{
-		kh.set_d(0,kh.get(0) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value);
+		kh.set_d(0,kh.get(0) << boost::mpl::at<typename chunk::shift,boost::mpl::int_<0>>::type::value);
 	}
 };
 
@@ -272,16 +272,16 @@ struct key_shift<2,chunk>
 {
 	inline static void shift(grid_key_dx<2> & kh, grid_key_dx<2> &kl)
 	{
-		kl.set_d(0,kh.get(0) & (boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value-1));
-		kh.set_d(0,kh.get(0) >> boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value);
-		kl.set_d(1,kh.get(1) & (boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value-1));
-		kh.set_d(1,kh.get(1) >> boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value);
+		kl.set_d(0,kh.get(0) & (boost::mpl::at<typename chunk::type,boost::mpl::int_<0>>::type::value-1));
+		kh.set_d(0,kh.get(0) >> boost::mpl::at<typename chunk::shift,boost::mpl::int_<0>>::type::value);
+		kl.set_d(1,kh.get(1) & (boost::mpl::at<typename chunk::type,boost::mpl::int_<1>>::type::value-1));
+		kh.set_d(1,kh.get(1) >> boost::mpl::at<typename chunk::shift,boost::mpl::int_<1>>::type::value);
 	}
 
 	inline static void cpos(grid_key_dx<2> & kh)
 	{
-		kh.set_d(0,kh.get(0) << boost::mpl::at<chunk,boost::mpl::int_<0>>::type::value);
-		kh.set_d(1,kh.get(1) << boost::mpl::at<chunk,boost::mpl::int_<1>>::type::value);
+		kh.set_d(0,kh.get(0) << boost::mpl::at<typename chunk::shift,boost::mpl::int_<0>>::type::value);
+		kh.set_d(1,kh.get(1) << boost::mpl::at<typename chunk::shift,boost::mpl::int_<1>>::type::value);
 	}
 };
 

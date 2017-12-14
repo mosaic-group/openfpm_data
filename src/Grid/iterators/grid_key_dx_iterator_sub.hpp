@@ -479,7 +479,6 @@ public:
 	 * \param g_s_it grid_key_dx_iterator_sub
 	 *
 	 */
-
 	inline void reinitialize(const grid_key_dx_iterator_sub<dim> & g_s_it)
 	{
 		// Reinitialize the iterator

@@ -30,6 +30,8 @@
 #define PACKER_OBJECTS_WITH_WARNING_POINTERS 6
 //! Packer error structure has pointers
 #define PACKER_OBJECTS_WITH_POINTER_CHECK 7
+//! Packer in case of ENCAP with chunking
+#define PACKER_ENCAP_OBJECTS_CHUNKING 8
 
 #define IS_ENCAP 4
 #define IS_GRID 2

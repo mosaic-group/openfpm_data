@@ -20,7 +20,7 @@ struct has_pack_encap
 {
 	typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type vprp;
 	//typedef typename to_boost_vmpl<prp...>::type vprp;
-    typedef typename has_pack_agg_impl<typename T::type,sizeof ... (prp), boost::mpl::bool_<false> , vprp>::result result;
+    typedef typename has_pack_agg_impl<typename T::T_type,sizeof ... (prp), boost::mpl::bool_<false> , vprp>::result result;
 };
 
 

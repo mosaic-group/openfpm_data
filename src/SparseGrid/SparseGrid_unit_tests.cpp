@@ -16,6 +16,50 @@
 
 BOOST_AUTO_TEST_SUITE( sparse_grid_test )
 
+template <typename grid_type, typename cell_decomposer>
+size_t fill_sphere(grid_type & grid, cell_decomposer & cdsm)
+{
+	size_t tot_count = 0;
+	double r = 0.3;
+	double omega = 0.0;
+	double phi = 0.0;
+
+	// 3D sphere
+
+	for (r = 0.3 ; r < 0.35 ;r += 0.001)
+	{
+		for (omega = 0.0; omega < M_PI ; omega += 0.006)
+		{
+			for (phi = 0.0; phi < 2.0*M_PI ; phi += 0.006)
+			{
+				Point<3,float> p;
+
+				p.get(0) = r*sin(omega)*sin(phi) + 0.5;
+				p.get(1) = r*sin(omega)*cos(phi) + 0.5;
+				p.get(2) = r*cos(omega) + 0.5;
+
+				// convert point into grid point
+
+				grid_key_dx<3> kd = cdsm.getCellGrid(p);
+
+				grid.template insert<0>(kd) = sin(omega)*sin(omega)*sin(2*phi);
+				grid.template insert<1>(kd) = 0;
+			}
+		}
+	}
+
+	auto it = grid.getIterator();
+
+	while (it.isNext())
+	{
+		tot_count++;
+
+		++it;
+	}
+
+	return tot_count;
+}
+
 BOOST_AUTO_TEST_CASE( sparse_grid_use_test)
 {
 	size_t sz[3] = {10000,10000,10000};
@@ -38,7 +82,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_use_test)
 	BOOST_REQUIRE_EQUAL(grid.template get<0>(key2),2.0);
 	BOOST_REQUIRE_EQUAL(grid.template get<0>(key3),3.0);
 
-	auto it = grid.getDomainIterator();
+	auto it = grid.getIterator();
 
 	size_t count = 0;
 
@@ -73,7 +117,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fill_all_test)
 		++kit;
 	}
 
-	auto it = grid.getDomainIterator();
+	auto it = grid.getIterator();
 
 	size_t count = 0;
 
@@ -81,12 +125,12 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fill_all_test)
 
 	while (it.isNext())
 	{
-		auto key = it.getKey();
+		auto key = it.get();
 
 		// return a grid_key_dx
 		auto key_pos = it.getKeyF();
 
-		match &= (grid.template get<0>(key) == g_sm.LinId(key_pos));
+		match &= (grid.template get<0>(key_pos) == g_sm.LinId(key));
 
 		count++;
 
@@ -129,33 +173,11 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fill_sparse_test)
 
 	cdsm.setDimensions(domain, sz, 0);
 
+	fill_sphere(grid,cdsm);
+
 	double r = 0.3;
 	double omega = 0.0;
 	double phi = 0.0;
-
-	// 3D sphere
-
-	for (r = 0.3 ; r < 0.35 ;r += 0.001)
-	{
-		for (omega = 0.0; omega < M_PI ; omega += 0.006)
-		{
-			for (phi = 0.0; phi < 2.0*M_PI ; phi += 0.006)
-			{
-				Point<3,float> p;
-
-				p.get(0) = r*sin(omega)*sin(phi) + 0.5;
-				p.get(1) = r*sin(omega)*cos(phi) + 0.5;
-				p.get(2) = r*cos(omega) + 0.5;
-
-				// convert point into grid point
-
-				grid_key_dx<3> kd = cdsm.getCellGrid(p);
-
-				grid.template insert<0>(kd) = sin(omega)*sin(omega)*sin(2*phi);
-				grid.template insert<1>(kd) = 0;
-			}
-		}
-	}
 
 	for (r = 0.3 ; r < 0.35 ;r += 0.001)
 	{
@@ -182,13 +204,13 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fill_sparse_test)
 		}
 	}
 
-	auto it = grid.getDomainIterator();
+	auto it = grid.getIterator();
 
 	bool match = true;
 
 	while(it.isNext())
 	{
-		auto key = it.getKey();
+		auto key = it.get();
 
 		if (grid.template get<1>(key) == 0)
 		{match = false;}
@@ -281,13 +303,13 @@ BOOST_AUTO_TEST_CASE( sparse_grid_resize_test)
 
 	// Check that both grid contain the same information
 
-	auto it = grid2.getDomainIterator();
+	auto it = grid2.getIterator();
 
 	bool match = true;
 
 	while(it.isNext())
 	{
-		auto key = it.getKey();
+		auto key = it.get();
 
 		if (grid.template get<0>(key) != grid2.template get<0>(key))
 		{match = false;}
@@ -304,13 +326,13 @@ BOOST_AUTO_TEST_CASE( sparse_grid_resize_test)
 
 	//
 
-	auto it2 = grid.getDomainIterator();
+	auto it2 = grid.getIterator();
 
 	match = true;
 
 	while(it2.isNext())
 	{
-		auto key = it2.getKeyF();
+		auto key = it2.get();
 
 		// we check if the key is inside
 
@@ -361,7 +383,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fill_all_with_resize_test)
 	// now we increase the size
 	grid.resize(sz_b);
 
-	auto it = grid.getDomainIterator();
+	auto it = grid.getIterator();
 
 	size_t count = 0;
 
@@ -369,12 +391,12 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fill_all_with_resize_test)
 
 	while (it.isNext())
 	{
-		auto key = it.getKey();
+		auto key = it.get();
 
 		// return a grid_key_dx
 		auto key_pos = it.getKeyF();
 
-		match &= (grid.template get<0>(key) == g_sm.LinId(key_pos));
+		match &= (grid.template get<0>(key_pos) == g_sm.LinId(key));
 
 		count++;
 
@@ -400,7 +422,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fill_all_with_resize_test)
 		++kit2;
 	}
 
-	auto it2 = grid.getDomainIterator();
+	auto it2 = grid.getIterator();
 
 	count = 0;
 
@@ -408,12 +430,12 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fill_all_with_resize_test)
 
 	while (it2.isNext())
 	{
-		auto key = it2.getKey();
+		auto key = it2.get();
 
 		// return a grid_key_dx
 		auto key_pos = it2.getKeyF();
 
-		match &= (grid.template get<0>(key) == g_sm2.LinId(key_pos));
+		match &= (grid.template get<0>(key_pos) == g_sm2.LinId(key));
 
 		count++;
 
@@ -440,6 +462,335 @@ BOOST_AUTO_TEST_CASE( sparse_grid_insert_o_test)
 	flt[ele] = 117.0;
 
 	BOOST_REQUIRE_EQUAL(grid.template get<0>(key),117.0);
+}
+
+
+BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it)
+{
+	size_t sz[3] = {171,171,171};
+
+	sgrid_cpu<3,aggregate<float>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	grid_sm<3,void> g_sm(sz);
+
+	grid_key_dx_iterator<3> kit(g_sm);
+
+	while (kit.isNext())
+	{
+		auto key = kit.get();
+
+		grid.template insert<0>(key) = g_sm.LinId(key);
+
+		++kit;
+	}
+
+	grid_key_dx<3> start({21,21,21});
+	grid_key_dx<3> stop({90,90,90});
+
+	bool error = false;
+	size_t count = 0;
+	auto it_sub = grid.getIterator(start,stop);
+
+	while (it_sub.isNext())
+	{
+		auto gkey = it_sub.get();
+
+		if (gkey.get(0) < start.get(0) ||
+			gkey.get(1) < start.get(1) ||
+			gkey.get(2) < start.get(2) ||
+			gkey.get(0) > stop.get(0) ||
+			gkey.get(1) > stop.get(1) ||
+			gkey.get(2) > stop.get(2))
+		{
+			error = true;
+		}
+
+		count++;
+
+		++it_sub;
+	}
+
+	size_t tot = (stop.get(2) - start.get(2) + 1)*(stop.get(1) - start.get(1) + 1)*(stop.get(0) - start.get(0) + 1);
+	BOOST_REQUIRE_EQUAL(error,false);
+	BOOST_REQUIRE_EQUAL(count,tot);
+}
+
+
+BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_quarter_sphere)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere(grid,cdsm);
+
+	grid_key_dx<3> start({0,0,0});
+	grid_key_dx<3> stop({250,250,250});
+
+	bool error = false;
+	size_t count = 0;
+	auto it_sub = grid.getIterator(start,stop);
+
+	while (it_sub.isNext())
+	{
+		auto gkey = it_sub.get();
+
+		if (gkey.get(0) < start.get(0) ||
+			gkey.get(1) < start.get(1) ||
+			gkey.get(2) < start.get(2) ||
+			gkey.get(0) > stop.get(0) ||
+			gkey.get(1) > stop.get(1) ||
+			gkey.get(2) > stop.get(2))
+		{
+			error = true;
+		}
+
+		// Check that the point is in the sphere
+
+		double radius = (gkey.get(0) - 250)*(gkey.get(0) - 250) +
+						(gkey.get(1) - 250)*(gkey.get(1) - 250) +
+						(gkey.get(2) - 250)*(gkey.get(2) - 250);
+
+		radius = sqrt(radius);
+
+		if (radius < 150 || radius >= 175)
+		{
+			// if is not in the radius remove it
+			grid.remove(gkey);
+		}
+
+		count++;
+
+		++it_sub;
+	}
+
+	BOOST_REQUIRE_EQUAL(error,false);
+
+	// We go again across the point now every point out the sphere is an error
+
+	count = 0;
+	auto it_sub2 = grid.getIterator(start,stop);
+
+	while (it_sub2.isNext())
+	{
+		auto gkey = it_sub2.get();
+
+		if (gkey.get(0) < start.get(0) ||
+			gkey.get(1) < start.get(1) ||
+			gkey.get(2) < start.get(2) ||
+			gkey.get(0) > stop.get(0) ||
+			gkey.get(1) > stop.get(1) ||
+			gkey.get(2) > stop.get(2))
+		{
+			error = true;
+		}
+
+		// Check that the point is in the sphere
+
+		double radius = (gkey.get(0) - 250)*(gkey.get(0) - 250) +
+						(gkey.get(1) - 250)*(gkey.get(1) - 250) +
+						(gkey.get(2) - 250)*(gkey.get(2) - 250);
+
+		radius = sqrt(radius);
+
+		if (radius < 150 || radius >= 175)
+		{
+			error = true;
+		}
+
+		count++;
+
+		++it_sub2;
+	}
+
+	BOOST_REQUIRE_EQUAL(error,false);
+}
+
+BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_packing)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid(sz);
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid2(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere(grid,cdsm);
+
+	grid_key_dx<3> start({0,0,0});
+	grid_key_dx<3> stop({250,250,250});
+
+	Box<3,size_t> bx({0,0,0},{250,250,250});
+
+	auto sub_it = grid.getIterator(start,stop);
+	size_t req = 0;
+	grid.packRequest<0>(sub_it,req);
+
+	// allocate the memory
+	HeapMemory pmem;
+	pmem.allocate(req);
+	ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(req,pmem));
+	mem.incRef();
+
+	Pack_stat sts;
+
+	grid.pack<0>(mem,sub_it,sts);
+
+	// now we unpack on another grid
+
+	Unpack_stat usts;
+	grid2.unpack<0>(mem,sub_it,usts);
+
+	bool match = true;
+	auto it = grid.getIterator();
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		if (bx.isInside(key.toPoint()) == true)
+		{match &= grid.template get<0>(key) == grid2.template get<0>(key);}
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+}
+
+
+BOOST_AUTO_TEST_CASE( sparse_grid_copy_to)
+{
+	size_t sz[3] = {501,501,501};
+
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	size_t sz_g2[3] = {259,27,27};
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid2(sz_g2);
+
+	grid_key_dx_iterator<3> key_it(grid2.getGrid());
+	auto gs = grid2.getGrid();
+
+	while (key_it.isNext())
+	{
+		auto key = key_it.get();
+
+		grid2.insert<0>(key) = gs.LinId(key);
+
+		++key_it;
+	}
+
+	Box<3,size_t> bx_src({1,1,1},{255,23,23});
+	Box<3,size_t> bx_dst({5,5,5},{259,27,27});
+
+	grid.copy_to(grid2,bx_src,bx_dst);
+
+	BOOST_REQUIRE(grid.size() != 0);
+	BOOST_REQUIRE_EQUAL(grid.size(),bx_dst.getVolumeKey());
+
+	bool match = true;
+	auto it_check = grid.getIterator(bx_dst.getKP1(),bx_dst.getKP2());
+
+	while (it_check.isNext())
+	{
+		auto key = it_check.get();
+
+		grid_key_dx<3> key2 = key - bx_dst.getKP1();
+		key += bx_src.getKP1();
+
+		if (grid.template get<0>(key) != gs.LinId(key2))
+		{match = false;}
+
+		++it_check;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+
+	bx_dst += Point<3,size_t>({0,40,40});
+	grid.copy_to(grid2,bx_src,bx_dst);
+
+	BOOST_REQUIRE(grid.size() != 0);
+	BOOST_REQUIRE_EQUAL(grid.size(),2*bx_dst.getVolumeKey());
+
+	match = true;
+	auto it_check2 = grid.getIterator(bx_dst.getKP1(),bx_dst.getKP2());
+
+	while (it_check2.isNext())
+	{
+		auto key = it_check2.get();
+
+		grid_key_dx<3> key2 = key - bx_dst.getKP1();
+		key += bx_src.getKP1();
+
+		if (grid.template get<0>(key) != gs.LinId(key2))
+		{match = false;}
+
+		++it_check2;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+}
+
+
+BOOST_AUTO_TEST_CASE( sparse_operator_equal )
+{
+	size_t sz[3] = {270,270,270};
+
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid2;
+
+	grid_key_dx_iterator<3> key_it(grid.getGrid());
+	auto gs = grid.getGrid();
+
+	while (key_it.isNext())
+	{
+		auto key = key_it.get();
+
+		grid.insert<0>(key) = gs.LinId(key);
+
+		++key_it;
+	}
+
+	grid2 = grid;
+
+	BOOST_REQUIRE(grid.size() == grid2.size());
+
+	bool match = true;
+	auto it_check = grid.getIterator();
+
+	while (it_check.isNext())
+	{
+		auto key = it_check.get();
+
+		if (grid.template get<0>(key) != grid2.template get<0>(key))
+		{match = false;}
+
+		++it_check;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

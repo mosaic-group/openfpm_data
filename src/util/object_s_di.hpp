@@ -28,6 +28,56 @@
  */
 
 template<typename v_src,typename v_dst, int... prp>
+struct object_s_di_e_cnk
+{
+	//! Convert the packed properties into an MPL vector
+	typedef typename to_boost_vmpl<prp...>::type v_prp;
+
+	//! Source object
+	const v_src & src;
+
+	//! Destination object
+	v_dst & dst;
+
+	//! element id
+	size_t sub_id;
+
+	/*! \brief Constructor
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	object_s_di_e_cnk(const v_src & src, v_dst & dst,size_t sub_id)
+	:src(src),dst(dst),sub_id(sub_id)
+	{
+	};
+
+	//! It call the functor for each member
+    template<typename T>
+    void operator()(T& t)
+    {
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type::value_type copy_rtype;
+
+    	meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>()[sub_id]);
+    }
+};
+
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy the selected properties
+ *
+ * \tparam v_src source object
+ * \tparam d_src destination object
+ * \tparam prp properties
+ *
+ */
+
+template<typename v_src,typename v_dst, int... prp>
 struct object_s_di_e
 {
 	//! Convert the packed properties into an MPL vector
@@ -249,6 +299,7 @@ struct object_s_di_f_op
 
 #define OBJ_ENCAP 1
 #define OBJ_NORMAL 2
+#define OBJ_ENCAP_CHUNKING 3
 
 /*! \brief It copy the properties from one object to another
  *
@@ -346,6 +397,36 @@ struct object_s_di<v_src,v_dst,OBJ_ENCAP,prp...>
 	inline object_s_di(const v_src & vs, v_dst & vd)
 	{
 		object_s_di_e<v_src,v_dst,prp...> obj(vs,vd);
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(obj);
+	}
+};
+
+
+
+template<typename v_src, typename v_dst, int... prp>
+struct object_s_di<v_src,v_dst,OBJ_ENCAP_CHUNKING,prp...>
+{
+	/*! \brief Implementation of the copy
+	 *
+	 * \param vs source object
+	 * \param vd destination object
+	 *
+	 */
+	inline object_s_di(const v_src & vs, v_dst && vd, size_t sub_id)
+	{
+		object_s_di_e_cnk<v_src,v_dst,prp...> obj(vs,vd,sub_id);
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(obj);
+	}
+
+	/*! \brief Implementation of the copy
+	 *
+	 * \param vs source object
+	 * \param vd destination object
+	 *
+	 */
+	inline object_s_di(const v_src & vs, v_dst & vd, size_t sub_id)
+	{
+		object_s_di_e_cnk<v_src,v_dst,prp...> obj(vs,vd,sub_id);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(obj);
 	}
 };
