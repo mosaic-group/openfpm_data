@@ -15,7 +15,7 @@ mem_map_LDADD = $(LINKLIBS)
 
 nobase_include_HEADERS= data_type/scalar.hpp data_type/aggregate.hpp \
 Graph/graph_unit_tests.hpp Graph/map_graph.hpp \
-hash_map/hopscotch_hash.h hash_map/hopschotch_map.h hash_map/hopschotch_sc_map.h hash_map/hopschotch_sc_set.h hash_map/hopschotch_set.h \
+hash_map/hopscotch_hash.h hash_map/hopscotch_map.h hash_map/hopscotch_sc_map.h hash_map/hopscotch_sc_set.h hash_map/hopscotch_set.h \
 SparseGrid/SparseGrid.hpp SparseGrid/SparseGrid_iterator.hpp SparseGrid/SparseGridUtil.hpp  Grid/comb.hpp Grid/grid_base_implementation.hpp Grid/grid_pack_unpack.ipp  Grid/grid_base_impl_layout.hpp Grid/grid_common.hpp Grid/grid_gpu.hpp Grid/Encap.hpp Grid/grid_key.hpp Grid/grid_key_dx_expression_unit_tests.hpp Grid/grid_key_expression.hpp Grid/grid_sm.hpp Grid/grid_unit_tests.hpp Grid/grid_util_test.hpp Grid/map_grid.hpp Grid/se_grid.hpp Grid/util.hpp \
 Grid/iterators/grid_key_dx_iterator_sp.hpp Grid/grid_key_dx_iterator_hilbert.hpp Grid/iterators/stencil_type.hpp  Grid/iterators/grid_key_dx_iterator_sub_bc.hpp Grid/iterators/grid_key_dx_iterator_sub.hpp Grid/iterators/grid_key_dx_iterator.hpp Grid/iterators/grid_skin_iterator.hpp  \
 Point_test.hpp \
