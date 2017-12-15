@@ -531,11 +531,11 @@ BOOST_AUTO_TEST_SUITE( grid_test )
 
 #ifdef SE_CLASS2
 
-grid_cpu<3,scalar<float>> & test_error()
+grid_cpu<3,aggregate<float>> & test_error()
 {
 	size_t sz[] = {16,16,16};
 
-	grid_cpu<3,scalar<float>> g(sz);
+	grid_cpu<3,aggregate<float>> g(sz);
 
 	return g;
 }
@@ -645,7 +645,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 
 	// Create a grid
 
-	grid_cpu<3,scalar<float>> * gp = new grid_cpu<3,scalar<float>>(sz);
+	grid_cpu<3,aggregate<float>> * gp = new grid_cpu<3,aggregate<float>>(sz);
 	delete gp;
 
 	// Try to access the class
@@ -661,7 +661,7 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 
 	error = false;
 	try
-	{grid_cpu<3,scalar<float>> gr = test_error();}
+	{grid_cpu<3,aggregate<float>> gr = test_error();}
 	catch (std::exception & e)
 	{
 		error = true;
