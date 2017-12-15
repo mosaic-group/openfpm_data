@@ -778,7 +778,8 @@ namespace openfpm
 		 *
 		 */
 
-		template <unsigned int p, typename r_type=decltype(std::declval<grid_cpu<1,T,Memory,layout>>().template get<p>(grid_key_dx<1>(0)))> inline r_type get(size_t id)
+		template <unsigned int p>
+		inline auto get(size_t id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
