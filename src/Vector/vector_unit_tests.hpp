@@ -481,9 +481,9 @@ BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
 
 #ifdef SE_CLASS2
 
-openfpm::vector<scalar<float>> & test_error_v()
+openfpm::vector<aggregate<float>> & test_error_v()
 {
-	openfpm::vector<scalar<float>> v(16);
+	openfpm::vector<aggregate<float>> v(16);
 
 	return v;
 }
@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 
 	// Create a vector
 
-	openfpm::vector<scalar<float>> * v3 = new openfpm::vector<scalar<float>>(16);
+	openfpm::vector<aggregate<float>> * v3 = new openfpm::vector<aggregate<float>>(16);
 	delete v3;
 
 	// Try to access the class
@@ -589,7 +589,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 
 	try
 	{
-		openfpm::vector<scalar<float>> vr = test_error_v();
+		openfpm::vector<aggregate<float>> vr = test_error_v();
 	}
 	catch (std::exception & e)
 	{
