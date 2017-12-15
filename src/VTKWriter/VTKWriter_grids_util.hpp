@@ -435,7 +435,9 @@ template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & 
 {
 	if (ft == file_type::ASCII)
 	{
-		if (dims == 2)
+		if (dims == 1)
+			v_out << p.toString() << " 0.0" << " 0.0" << "\n";
+		else if (dims == 2)
 			v_out << p.toString() << " 0.0" << "\n";
 		else
 			v_out << p.toString() << "\n";
