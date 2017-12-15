@@ -64,7 +64,6 @@ template<unsigned int dim> void NNcalc_csr(openfpm::vector<std::pair<grid_key_dx
 
 	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
 	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 	// Generate the sub-grid iterator
 
@@ -131,7 +130,6 @@ template<unsigned int dim> void NNcalc_sym(openfpm::vector<grid_key_dx<dim>> & c
 
 	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
 	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 	// Generate the sub-grid iterator
 
@@ -183,7 +181,6 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
 
 	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
 	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 	// Generate the sub-grid iterator
 
