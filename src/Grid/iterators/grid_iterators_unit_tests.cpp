@@ -10,7 +10,6 @@
 #include "Grid/iterators/grid_skin_iterator.hpp"
 #include "Grid/map_grid.hpp"
 #include "data_type/aggregate.hpp"
-#include "Grid/iterators/grid_key_dx_iterator_stencil.hpp"
 
 BOOST_AUTO_TEST_SUITE( grid_iterators_tests )
 

@@ -621,6 +621,27 @@ public:
 	{
 		return gk_stop;
 	}
+
+	/*! \brief Sum a template constant
+	 *
+	 * \tparam compile-time offset
+	 *
+	 */
+	template<unsigned int tot_add>
+	inline void private_sum()
+	{
+		this->stl_code.template private_sum<tot_add>();
+	}
+
+	/*! \brief Sum a template constant
+	 *
+	 * \param tot_add Add an offset to all the pointer
+	 *
+	 */
+	inline void private_adjust(size_t tot_add)
+	{
+		this->stl_code.template private_adjust(tot_add);
+	}
 };
 
 
