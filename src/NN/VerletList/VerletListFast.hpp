@@ -10,6 +10,9 @@
 
 #include "VerletNNIterator.hpp"
 #include "NN/CellList/CellList_util.hpp"
+#include "NN/CellList/MemFast.hpp"
+#include "NN/CellList/MemBalanced.hpp"
+#include "NN/CellList/MemMemoryWise.hpp"
 
 #define VERLET_STARTING_NSLOT 128
 
@@ -274,10 +277,10 @@ public:
  */
 template<unsigned int dim,
 		 typename T,
-		 typename Mem_type = Mem_fast,
+		 typename Mem_type = Mem_fast<>,
 		 typename transform = no_transform<dim,T>,
 		 typename local_index = local_index_,
-		 typename CellListImpl = CellList<dim,T,Mem_fast,transform> >
+		 typename CellListImpl = CellList<dim,T,Mem_fast<>,transform> >
 class VerletList/*: private Mem_type*/
 {
 protected:

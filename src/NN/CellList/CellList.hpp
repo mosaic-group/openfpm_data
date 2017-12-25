@@ -668,9 +668,9 @@ public:
 	 * \return a particle iterator
 	 *
 	 */
-	ParticleIt_Cells<dim,CellList<dim,T,Mem_fast,transform,base>> getDomainIterator(openfpm::vector<size_t> & dom_cells)
+	ParticleIt_Cells<dim,CellList<dim,T,Mem_fast<>,transform,base>> getDomainIterator(openfpm::vector<size_t> & dom_cells)
 	{
-		ParticleIt_Cells<dim,CellList<dim,T,Mem_fast,transform,base>> it(*this,dom_cells);
+		ParticleIt_Cells<dim,CellList<dim,T,Mem_fast<>,transform,base>> it(*this,dom_cells);
 
 		return it;
 	}

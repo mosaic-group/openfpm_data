@@ -27,7 +27,7 @@
 template<unsigned int dim,
          typename T,
 		 template <unsigned int, typename> class Prock,
-		 typename Mem_type = Mem_fast,
+		 typename Mem_type = Mem_fast<>,
 		 typename transform = no_transform<dim,T>,
 		 typename base=openfpm::vector<size_t>>
 class CellList_gen : public CellList<dim,T,Mem_type,transform,base>

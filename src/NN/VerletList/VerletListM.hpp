@@ -137,7 +137,7 @@ template<unsigned int dim,
 		 unsigned int sh_byte ,
 		 typename CellListImpl=CellListM<dim,T,sh_byte>,
 		 typename transform = shift<dim,T>,
-		 typename VerletBase=VerletList<dim,T,Mem_fast,transform, size_t> >
+		 typename VerletBase=VerletList<dim,T,Mem_fast<>,transform, size_t> >
 class VerletListM : public VerletBase
 {
 
