@@ -22,9 +22,9 @@
 #include "ParticleItCRS_Cells.hpp"
 #include "util/common.hpp"
 
-#include "MemFast.hpp"
-#include "MemBalanced.hpp"
-#include "MemMemoryWise.hpp"
+#include "NN/Mem_type/MemFast.hpp"
+#include "NN/Mem_type/MemBalanced.hpp"
+#include "NN/Mem_type/MemMemoryWise.hpp"
 
 //! Wrapper of the unordered map
 template<typename key,typename val>

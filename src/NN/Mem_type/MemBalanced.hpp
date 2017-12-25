@@ -10,10 +10,10 @@
 #ifndef CELLLISTBAL_HPP_
 #define CELLLISTBAL_HPP_
 
-#include "CellList.hpp"
+#include "NN/CellList/CellList.hpp"
 #include "Space/SpaceBox.hpp"
 #include "util/mathutil.hpp"
-#include "CellNNIterator.hpp"
+#include "NN/CellList/CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
 
 /*! \brief Class for BALANCED cell list implementation
@@ -60,6 +60,7 @@ public:
 		//resize the vector to needed number of cells
 
 		cl_base.resize(tot_n_cell);
+		clear();
 	}
 
 	/*! \brief Copy mem balanced

@@ -17,8 +17,9 @@ typedef size_t local_index_;
 typedef unsigned int local_index_;
 #endif
 
-#define FAST 1
-
+#define VERLETLIST_FAST() VerletList<dim,St,Mem_fast<>,shift<dim,St> >
+#define VERLETLIST_BAL VerletList<dim,St,Mem_bal,shift<dim,St> >
+#define VERLETLIST_MEM VerletList<dim,St,Mem_mem<>,shift<dim,St> >
 
 /*! \brief Cell list structure
  *

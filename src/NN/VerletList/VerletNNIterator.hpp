@@ -27,13 +27,13 @@
 template<unsigned int dim, typename Ver> class VerletNNIterator
 {
 	//! start index for the neighborhood
-	size_t start;
+	const size_t * start;
 
 	//! stop index for the neighborhood
-	size_t stop;
+	const size_t * stop;
 
 	//! actual neighborhood
-	size_t ele_id;
+	const size_t * ele_id;
 
 	//! verlet list
 	Ver & ver;
@@ -49,7 +49,7 @@ public:
 	 *
 	 */
 	inline VerletNNIterator(size_t part_id, Ver & ver)
-	:start(ver.getStart(part_id)),stop(ver.getStop(part_id)),ver(ver)
+	:start(&ver.getStart(part_id)),stop(&ver.getStop(part_id)),ver(ver)
 	{ele_id = start;}
 
 	/*! \brief

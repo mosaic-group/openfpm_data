@@ -211,9 +211,11 @@ class VerletListM : public VerletBase
 
 		auto it = PartItNN<type,dim,openfpm::vector<Point<dim,T>>,CellListImpl>::get(pos,dom,anom,cli,g_m,end);
 
-		this->cl_n.resize(end);
+/*		this->cl_n.resize(end);
 		this->cl_base.resize(end*this->slot);
-		this->cl_n.fill(0);
+		this->cl_n.fill(0);*/
+
+		this->init_to_zero(this->slot,end);
 
 		// square of the cutting radius
 		T r_cut2 = r_cut * r_cut;
@@ -263,8 +265,8 @@ public:
 	 */
 	void Initialize(CellListImpl & cli, size_t pp, T r_cut, const openfpm::vector<Point<dim,T>> & pos, const openfpm::vector<struct pos_v<dim,T>> & pos2, size_t g_m, size_t opt = VL_NON_SYMMETRIC)
 	{
-		this->cl_n.resize(g_m);
-		this->cl_base.resize(g_m*this->slot);
+//		this->cl_n.resize(g_m);
+//		this->cl_base.resize(g_m*this->slot);
 
 		Point<dim,T> spacing = cli.getCellBox().getP2();
 

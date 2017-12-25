@@ -11,7 +11,7 @@
 #include "Space/SpaceBox.hpp"
 #include "util/mathutil.hpp"
 #include "Space/Shape/HyperCube.hpp"
-#include "CellListIterator.hpp"
+#include "NN/CellList/CellListIterator.hpp"
 #include <unordered_map>
 #include "util/common.hpp"
 #include "Vector/map_vector.hpp"
@@ -66,7 +66,18 @@ class Mem_fast
 		cl_base.swap(cl_base_);
 	}
 
-protected:
+
+public:
+
+	/*! \brief return the number of elements
+	 *
+	 * \return the number of elements
+	 *
+	 */
+	inline size_t size()
+	{
+		return cl_n.size();
+	}
 
 	/*! \brief Initialize the data to zero
 	 *

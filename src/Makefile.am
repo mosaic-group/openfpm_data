@@ -8,7 +8,7 @@ else
 endif
 
 noinst_PROGRAMS = mem_map
-mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp Grid/copy_grid_unit_test.cpp $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
+mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp  $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
 mem_map_CXXFLAGS = $(AM_CXXFLAGS) $(LIBHILBERT_INCLUDE) $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include -I/usr/local/libhilbert/include
 mem_map_CFLAGS = $(CUDA_CFLAGS)
 mem_map_LDADD = $(LINKLIBS)
@@ -20,7 +20,7 @@ Grid/iterators/grid_key_dx_iterator_sp.hpp Grid/grid_key_dx_iterator_hilbert.hpp
 Point_test.hpp \
 Point_orig.hpp \
 memory_ly/memory_array.hpp memory_ly/memory_c.hpp memory_ly/memory_conf.hpp memory_ly/t_to_memory_c.hpp \
-NN/CellList/MemBalanced.hpp NN/CellList/MemFast.hpp NN/CellList/MemMemoryWise.hpp NN/CellList/CellNNIteratorRuntime.hpp NN/CellList/ParticleItCRS_Cells.hpp NN/CellList/ParticleIt_Cells.hpp NN/CellList/CellDecomposer.hpp NN/VerletList/VerletList.hpp NN/VerletList/VerletListFast.hpp NN/VerletList/VerletNNIterator.hpp NN/CellList/CellListNNIteratorRadius.hpp NN/CellList/CellListIterator.hpp NN/CellList/CellListM.hpp NN/CellList/CellNNIteratorM.hpp NN/CellList/CellList.hpp NN/CellList/CellList_test.hpp NN/CellList/CellListFast_gen.hpp NN/CellList/CellNNIterator.hpp NN/CellList/ProcKeys.hpp  \
+NN/Mem_type/MemBalanced.hpp NN/Mem_type/MemFast.hpp NN/Mem_type/MemMemoryWise.hpp NN/CellList/CellNNIteratorRuntime.hpp NN/CellList/ParticleItCRS_Cells.hpp NN/CellList/ParticleIt_Cells.hpp NN/CellList/CellDecomposer.hpp NN/VerletList/VerletList.hpp NN/VerletList/VerletListFast.hpp NN/VerletList/VerletNNIterator.hpp NN/CellList/CellListNNIteratorRadius.hpp NN/CellList/CellListIterator.hpp NN/CellList/CellListM.hpp NN/CellList/CellNNIteratorM.hpp NN/CellList/CellList.hpp NN/CellList/CellList_test.hpp NN/CellList/CellListFast_gen.hpp NN/CellList/CellNNIterator.hpp NN/CellList/ProcKeys.hpp  \
 Space/Ghost.hpp Space/Matrix.hpp Space/SpaceBox.hpp Space/SpaceBox_unit_tests.hpp \
 Space/Shape/AdaptiveCylinderCone.hpp Space/Shape/Box.hpp Space/Shape/Box_unit_tests.hpp Space/Shape/HyperCube.hpp Space/Shape/HyperCube_unit_test.hpp Space/Shape/Point.hpp Space/Shape/Point_unit_test.hpp Space/Shape/Point_operators_functions.hpp Space/Shape/Point_operators.hpp  Space/Shape/Sphere.hpp \
 util/check_no_pointers.hpp util/common.hpp util/convert.hpp util/create_vmpl_sequence.hpp util/ct_array.hpp util/for_each_ref.hpp util/mathutil.hpp util/object_creator.hpp util/object_s_di.hpp util/object_si_d.hpp util/object_util.hpp util/util_debug.hpp util/util_test.hpp util/variadic_to_vmpl.hpp util/variadic_to_vmpl_unit_test.hpp util/Pack_stat.hpp \
