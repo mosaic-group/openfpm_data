@@ -199,6 +199,28 @@ public:
 		return box;
 	}
 
+	/*! \brief Return the box enclosing the grid
+	 *
+	 * While getBox return as P2 the size of the grid
+	 * getBoxKey return the size - 1 equivalent to the maximum valid point
+	 * that does not overflow the grid
+	 *
+	 * \return the box
+	 *
+	 */
+	inline const Box<N,size_t> getBoxKey() const
+	{
+		Box<N,size_t> bx;
+
+		for (size_t i = 0 ; i < N ; i++)
+		{
+			bx.setLow(i,box.getLow(i));
+			bx.setHigh(i,box.getHigh(i) - 1);
+		}
+
+		return bx;
+	}
+
 	/*! \brief Reset the dimension of the grid
 	 *
 	 * \param dims store on each dimension the size of the grid
@@ -209,21 +231,6 @@ public:
 		Initialize(dims);
 		size_tot = totalSize(dims);
 	}
-
-	/*! \brief Is linearize additive
-	 *
-	 * Is linearize a linear function, in this case for stride return true
-	 * because linearize respect the property
-	 *
-	 * Linearize(key1 + key2) = Linearize(key1) + Linearize(key2)
-	 *
-	 *
-	 *
-	 */
-/*	inline bool isLinearizeLinear()
-	{
-		return true;
-	}*/
 
 	/*! \brief Default constructor
 	 *

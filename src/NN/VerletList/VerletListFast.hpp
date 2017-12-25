@@ -272,8 +272,13 @@ public:
  * \snippet VerletList_test.hpp usage of verlet
  *
  */
-template<unsigned int dim, typename T, typename transform, typename local_index, typename CellListImpl>
-class VerletList<dim,T,FAST,transform,local_index,CellListImpl>
+template<unsigned int dim,
+		 typename T,
+		 typename Mem_type = Mem_fast,
+		 typename transform = no_transform<dim,T>,
+		 typename local_index = local_index_,
+		 typename CellListImpl = CellList<dim,T,Mem_fast,transform> >
+class VerletList/*: private Mem_type*/
 {
 protected:
 
@@ -701,14 +706,14 @@ public:
 	{};
 
 	//! Copy constructor
-	VerletList(const VerletList<dim,T,FAST,transform,local_index,CellListImpl> & cell)
+	VerletList(const VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> & cell)
 	:slot(VERLET_STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
 
 	//! Copy constructor
-	VerletList(VerletList<dim,T,FAST,transform,local_index,CellListImpl> && cell)
+	VerletList(VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> && cell)
 	:slot(VERLET_STARTING_NSLOT),n_dec(0)
 	{
 		this->operator=(cell);
@@ -785,7 +790,8 @@ public:
 	 * \return itself
 	 *
 	 */
-	VerletList<dim,T,FAST,transform,local_index,CellListImpl> & operator=(VerletList<dim,T,FAST,transform,local_index,CellListImpl> && vl)
+	VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> &
+	operator=(VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> && vl)
 	{
 		slot = vl.slot;
 
@@ -807,7 +813,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	VerletList<dim,T,FAST,transform,local_index,CellListImpl> & operator=(const VerletList<dim,T,FAST,transform,local_index,CellListImpl> & vl)
+	VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> & operator=(const VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> & vl)
 	{
 		slot = vl.slot;
 
@@ -852,7 +858,7 @@ public:
 	 * \param vl Verlet list with witch you swap the memory
 	 *
 	 */
-	inline void swap(VerletList<dim,T,FAST,transform,local_index,CellListImpl> & vl)
+	inline void swap(VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> & vl)
 	{
 		cl_n.swap(vl.cl_n);
 		cl_base.swap(vl.cl_base);
@@ -878,9 +884,10 @@ public:
 	 * \return an interator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline VerletNNIterator<dim,VerletList<dim,T,FAST,transform,local_index,CellListImpl>> getNNIterator(size_t part_id)
+	template<unsigned int impl=NO_CHECK>
+	inline VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,local_index,CellListImpl>> getNNIterator(size_t part_id)
 	{
-		VerletNNIterator<dim,VerletList<dim,T,FAST,transform,local_index,CellListImpl>> vln(part_id,*this);
+		VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,local_index,CellListImpl>> vln(part_id,*this);
 
 		return vln;
 	}

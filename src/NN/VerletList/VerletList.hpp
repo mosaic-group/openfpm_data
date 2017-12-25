@@ -27,15 +27,15 @@ typedef unsigned int local_index_;
  * \see CellList<dim,T,FAST,transform,base>
  *
  */
-template<unsigned int dim,
+/*template<unsigned int dim,
          typename T,
-		 unsigned int impl=FAST,
+		 typename impl=Mem_fast,
 		 typename transform = no_transform<dim,T>,
 		 typename local_index=local_index_,
 		 typename CellListImpl = CellList<dim,T,Mem_fast,transform> >
 class VerletList
 {
-};
+};*/
 
 #include "VerletListFast.hpp"
 

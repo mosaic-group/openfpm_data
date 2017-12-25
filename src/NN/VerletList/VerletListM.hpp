@@ -132,7 +132,12 @@ struct NNTypeM<dim,T,CellListImpl,PartIt,VL_SYMMETRIC>
  * \tparam CellListImpl Base structure that store the information
  *
  */
-template<unsigned int dim, typename T, unsigned int sh_byte , typename CellListImpl=CellListM<dim,T,sh_byte>, typename transform = shift<dim,T>, typename VerletBase=VerletList<dim,T,FAST,transform, size_t> >
+template<unsigned int dim,
+		 typename T,
+		 unsigned int sh_byte ,
+		 typename CellListImpl=CellListM<dim,T,sh_byte>,
+		 typename transform = shift<dim,T>,
+		 typename VerletBase=VerletList<dim,T,Mem_fast,transform, size_t> >
 class VerletListM : public VerletBase
 {
 

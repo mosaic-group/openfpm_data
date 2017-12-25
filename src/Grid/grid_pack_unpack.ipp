@@ -368,7 +368,7 @@ struct unpack_simple_cond<true, prp ...>
 		// destination object type
 		typedef encapc<1,prp_object,typename dtype::layout_type > encap_dst;
 
-		pack_with_iterator<!is_contiguos<prp...>::type::value || has_pack_gen<prp_object>::value,
+		pack_with_iterator<sizeof...(prp) != T::max_prop || has_pack_gen<prp_object>::value,
 						   dims,
 						   decltype(*this),
 						   encap_src,
