@@ -277,26 +277,18 @@ public:
  */
 template<unsigned int dim,
 		 typename T,
-		 typename Mem_type = Mem_fast<>,
+		 typename Mem_type = Mem_fast<local_index_>,
 		 typename transform = no_transform<dim,T>,
-		 typename local_index = local_index_,
-		 typename CellListImpl = CellList<dim,T,Mem_fast<>,transform> >
+		 typename CellListImpl = CellList<dim,T,Mem_fast<typename Mem_type::loc_index>,transform> >
 class VerletList: public Mem_type
 {
 protected:
 
 	//! Number of slot for each particle. Or maximum number of particles for each particle
-	local_index slot;
-
-	//! number of neighborhood particles for each particle
-/*	openfpm::vector<local_index> cl_n;
-
-	//! Neighborhood indexes for each particle store (each particle can store a number
-	//! of elements == slot)
-	openfpm::vector<local_index> cl_base;*/
+	typename Mem_type::loc_index slot;
 
 	//! Domain particles
-	openfpm::vector<local_index> dp;
+	openfpm::vector<typename Mem_type::loc_index> dp;
 
 private:
 
@@ -381,12 +373,12 @@ private:
 		// iterate the particles
 		while (it.isNext())
 		{
-			local_index i = it.get();
+			typename Mem_type::loc_index i = it.get();
 			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			NN_type NN = NNType<dim,T,CellListImpl,decltype(it),type,local_index>::get(it,pos,xp,i,cli,r_cut);
-			NNType<dim,T,CellListImpl,decltype(it),type,local_index>::add(i,dp);
+			NN_type NN = NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::loc_index>::get(it,pos,xp,i,cli,r_cut);
+			NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::loc_index>::add(i,dp);
 
 			while (NN.isNext())
 			{
@@ -448,7 +440,7 @@ private:
 public:
 
 	//! type for the local index
-	typedef local_index local_index_t;
+	typedef Mem_type Mem_type_type;
 
 	//! Object type that the structure store
 	typedef size_t value_type;
@@ -640,11 +632,12 @@ public:
 	 * 	\param opt options for the Verlet-list creation
 	 *
 	 */
-	void Initialize(CellListImpl & cli, T r_cut, const openfpm::vector<Point<dim,T>> & pos, const openfpm::vector<Point<dim,T>> & pos2, size_t g_m, size_t opt = VL_NON_SYMMETRIC)
+	void Initialize(CellListImpl & cli,
+					T r_cut,
+					const openfpm::vector<Point<dim,T>> & pos,
+					const openfpm::vector<Point<dim,T>> & pos2,
+					size_t g_m, size_t opt = VL_NON_SYMMETRIC)
 	{
-//		cl_n.resize(g_m);
-//		cl_base.resize(g_m*slot);
-
 		Point<dim,T> spacing = cli.getCellBox().getP2();
 
 		// Create with radius or not
@@ -675,14 +668,14 @@ public:
 	{};
 
 	//! Copy constructor
-	VerletList(const VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> & cell)
+	VerletList(const VerletList<dim,T,Mem_type,transform,CellListImpl> & cell)
 	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
 
 	//! Copy constructor
-	VerletList(VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> && cell)
+	VerletList(VerletList<dim,T,Mem_type,transform,CellListImpl> && cell)
 	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT),n_dec(0)
 	{
 		this->operator=(cell);
@@ -759,8 +752,8 @@ public:
 	 * \return itself
 	 *
 	 */
-	VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> &
-	operator=(VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> && vl)
+	VerletList<dim,T,Mem_type,transform,CellListImpl> &
+	operator=(VerletList<dim,T,Mem_type,transform,CellListImpl> && vl)
 	{
 		slot = vl.slot;
 
@@ -779,7 +772,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> & operator=(const VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> & vl)
+	VerletList<dim,T,Mem_type,transform,CellListImpl> & operator=(const VerletList<dim,T,Mem_type,transform,CellListImpl> & vl)
 	{
 		slot = vl.slot;
 
@@ -823,7 +816,7 @@ public:
 	 * \param vl Verlet list with witch you swap the memory
 	 *
 	 */
-	inline void swap(VerletList<dim,T,Mem_type,transform,local_index,CellListImpl> & vl)
+	inline void swap(VerletList<dim,T,Mem_type,transform,CellListImpl> & vl)
 	{
 		Mem_type::swap(vl);
 		dp.swap(vl.dp);
@@ -849,10 +842,10 @@ public:
 	 *
 	 */
 	template<unsigned int impl=NO_CHECK>
-	inline VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,local_index,CellListImpl>>
+	inline VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,CellListImpl>>
 	getNNIterator(size_t part_id)
 	{
-		VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,local_index,CellListImpl>> vln(part_id,*this);
+		VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,CellListImpl>> vln(part_id,*this);
 
 		return vln;
 	}
@@ -872,7 +865,8 @@ public:
 	 * \return the index
 	 *
 	 */
-	inline const size_t & getStart(size_t part_id)
+	inline const typename Mem_type::loc_index &
+	getStart(typename Mem_type::loc_index part_id)
 	{
 		return Mem_type::getStartId(part_id);
 	}
@@ -884,7 +878,8 @@ public:
 	 * \return the stop index
 	 *
 	 */
-	inline const size_t & getStop(size_t part_id)
+	inline const typename Mem_type::loc_index &
+	getStop(typename Mem_type::loc_index part_id)
 	{
 		return Mem_type::getStopId(part_id);
 	}
@@ -896,7 +891,8 @@ public:
 	 * \return the neighborhood id
 	 *
 	 */
-	inline const size_t & get_lin(const size_t * part_id)
+	inline const typename Mem_type::loc_index &
+	get_lin(const typename Mem_type::loc_index * part_id)
 	{
 		return Mem_type::get_lin(part_id);
 	}
@@ -938,7 +934,7 @@ public:
 	 * \return the particle sequence
 	 *
 	 */
-	openfpm::vector<local_index> & getParticleSeq()
+	openfpm::vector<typename Mem_type::loc_index> & getParticleSeq()
 	{
 		return dp;
 	}

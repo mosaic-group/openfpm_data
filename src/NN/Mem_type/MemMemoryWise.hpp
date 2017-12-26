@@ -30,19 +30,23 @@
  * \tparam T type of the space float, double, complex
  *
  */
+template<typename local_index = size_t>
 class Mem_mw
 {
 	//! Base type storing information
-	typedef openfpm::vector<size_t> base;
+	typedef openfpm::vector<local_index> base;
 
 	//! each cell has a dynamic structure
 	//! that store the elements in the cell
-	std::unordered_map<size_t,base> cl_base;
+	std::unordered_map<local_index,base> cl_base;
 
 	//! In case of invalid element return this
-	typename std::remove_reference<decltype(std::declval<openfpm::vector<size_t>>().get(0))>::type invalid;
+	typename std::remove_reference<decltype(std::declval<openfpm::vector<local_index>>().get(0))>::type invalid;
 
 public:
+
+	//! expose the type of the local index
+	typedef local_index loc_index;
 
 	/*! \brief Initialize the data structure to zeros
 	 *
@@ -52,8 +56,9 @@ public:
 	 * \param tot_n_cell total number of cells
 	 *
 	 */
-	inline void init_to_zero(size_t slot, size_t tot_n_cell)
+	inline void init_to_zero(local_index slot, local_index tot_n_cell)
 	{
+		clear();
 	}
 
 	/*! \brief Copy two data-structure
@@ -75,7 +80,7 @@ public:
 	 * \param ele element to add
 	 *
 	 */
-	inline void addCell(size_t cell_id, typename base::value_type ele)
+	inline void addCell(local_index cell_id, typename base::value_type ele)
 	{
 		//add another neighbor element
 
@@ -88,7 +93,7 @@ public:
 	 * \param ele element to add
 	 *
 	 */
-	inline void add(size_t cell_id, typename base::value_type ele)
+	inline void add(local_index cell_id, typename base::value_type ele)
 	{
 		this->addCell(cell_id,ele);
 	}
@@ -99,7 +104,7 @@ public:
 	 * \param ele element to remove
 	 *
 	 */
-	inline void remove(size_t cell, size_t ele)
+	inline void remove(local_index cell, local_index ele)
 	{
 		cl_base[cell].remove(ele);
 	}
@@ -111,7 +116,7 @@ public:
 	 * \return the number of elements
 	 *
 	 */
-	inline size_t getNelements(const size_t cell_id) const
+	inline size_t getNelements(const local_index cell_id) const
 	{
 		auto it = cl_base.find(cell_id);
 		if (it == cl_base.end())
@@ -120,7 +125,7 @@ public:
 		return it->second.size();
 	}
 
-	inline auto get(size_t cell, size_t ele) -> decltype(cl_base[0].get(0)) &
+	inline auto get(local_index cell, local_index ele) -> decltype(cl_base[0].get(0)) &
 	{
 		auto it = cl_base.find(cell);
 		if (it == cl_base.end())
@@ -130,7 +135,7 @@ public:
 	}
 
 
-	inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.find(cell)->second.get(0)) &
+	inline auto get(local_index cell, local_index ele) const -> decltype(cl_base.find(cell)->second.get(0)) &
 	{
 		auto it = cl_base.find(cell);
 		if (it == cl_base.end())
@@ -154,7 +159,7 @@ public:
 		cl_base.clear();
 	}
 
-	inline const size_t & getStartId(size_t part_id) const
+	inline const local_index & getStartId(size_t part_id) const
 	{
 		auto it = cl_base.find(part_id);
 		if (it == cl_base.end())
@@ -163,7 +168,7 @@ public:
 		return it->second.get(0);
 	}
 
-	inline const size_t & getStopId(size_t part_id) const
+	inline const local_index & getStopId(size_t part_id) const
 	{
 		auto it = cl_base.find(part_id);
 		if (it == cl_base.end())
@@ -172,7 +177,7 @@ public:
 		return *(&it->second.last() + 1);
 	}
 
-	inline const size_t & get_lin(const size_t * part_id) const
+	inline const local_index & get_lin(const local_index * part_id) const
 	{
 		return *part_id;
 	}

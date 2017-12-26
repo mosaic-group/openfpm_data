@@ -280,12 +280,15 @@ public:
 	 * \return the value pointed by part_id
 	 *
 	 */
-	inline const local_index & get_lin(const size_t * part_id) const
+	inline const local_index & get_lin(const local_index * part_id) const
 	{
 		return *part_id;
 	}
 
 public:
+
+	//! expose the type of the local index
+	typedef local_index loc_index;
 
 	/*! \brief Constructor
 	 *

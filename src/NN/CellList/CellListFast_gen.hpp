@@ -8,7 +8,7 @@
 #ifndef OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTFAST_GEN_HPP_
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTFAST_GEN_HPP_
 
-#define HILBERT 1
+//#define HILBERT 1
 
 #include "CellList.hpp"
 #include "ProcKeys.hpp"

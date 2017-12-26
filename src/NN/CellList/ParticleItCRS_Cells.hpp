@@ -53,10 +53,10 @@ template<unsigned int dim,typename CellListType> class ParticleItCRS_Cells
 private:
 
 	//! starting position
-	const size_t * start;
+	const typename CellListType::Mem_type_type::loc_index * start;
 
 	//! stop position
-	const size_t * stop;
+	const typename CellListType::Mem_type_type::loc_index * stop;
 
 	//! Actual cell
 	size_t cid;

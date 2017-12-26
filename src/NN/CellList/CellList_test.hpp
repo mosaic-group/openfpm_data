@@ -363,8 +363,8 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 	Test_cell_sM<3,double,CellListM<3,double,8>>(box2);
 
 
-	Test_cell_s<3,double,CellList<3,double,Mem_bal>>(box);
-	Test_cell_s<3,double,CellList<3,double,Mem_mw>>(box);
+	Test_cell_s<3,double,CellList<3,double,Mem_bal<>>>(box);
+	Test_cell_s<3,double,CellList<3,double,Mem_mw<>>>(box);
 
 	std::cout << "End cell list" << "\n";
 

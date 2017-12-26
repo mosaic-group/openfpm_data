@@ -9,7 +9,7 @@
 #include <boost/test/unit_test.hpp>
 #include "NN/Mem_type/MemFast.hpp"
 #include "NN/Mem_type/MemBalanced.hpp"
-
+#include "NN/Mem_type/MemMemoryWise.hpp"
 
 BOOST_AUTO_TEST_SUITE( Mem_type_test )
 
@@ -36,7 +36,8 @@ void test_mem_type()
 BOOST_AUTO_TEST_CASE ( Mem_type_check )
 {
 	test_mem_type<Mem_fast<>>();
-	test_mem_type<Mem_bal>();
+	test_mem_type<Mem_bal<>>();
+	test_mem_type<Mem_mw<>>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

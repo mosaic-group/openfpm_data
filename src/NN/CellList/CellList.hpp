@@ -435,6 +435,9 @@ private:
 
 public:
 
+	//! Type of internal memory structure
+	typedef Mem_type Mem_type_type;
+
 	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,RUNTIME,NO_CHECK> SymNNIterator;
 
 	//! Object type that the structure store
@@ -999,7 +1002,7 @@ public:
 	 * \return the index
 	 *
 	 */
-	inline const size_t & getStartId(size_t cell_id) const
+	inline const typename Mem_type::loc_index & getStartId(typename Mem_type::loc_index cell_id) const
 	{
 		return Mem_type::getStartId(cell_id);
 	}
@@ -1011,7 +1014,7 @@ public:
 	 * \return the stop index
 	 *
 	 */
-	inline const size_t & getStopId(size_t cell_id) const
+	inline const typename Mem_type::loc_index & getStopId(typename Mem_type::loc_index cell_id) const
 	{
 		return Mem_type::getStopId(cell_id);
 	}
@@ -1023,7 +1026,7 @@ public:
 	 * \return the neighborhood id
 	 *
 	 */
-	inline const size_t & get_lin(const size_t * part_id) const
+	inline const typename Mem_type::loc_index & get_lin(const typename Mem_type::loc_index * part_id) const
 	{
 		return Mem_type::get_lin(part_id);
 	}

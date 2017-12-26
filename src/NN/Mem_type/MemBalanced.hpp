@@ -18,6 +18,8 @@
 
 /*! \brief Class for BALANCED cell list implementation
  *
+ * \tparam local_index type of local index
+ *
  * This class implement the BALANCED cell list is fast (not best)
  * The memory allocation is small (not best).
  * The memory allocation is (in byte) Size = M*16 + N*sizeof(ele)
@@ -35,19 +37,23 @@
  * \tparam T type of the space float, double, complex
  *
  */
+template<typename local_index = size_t>
 class Mem_bal
 {
 	//! vector that store the information
-	typedef openfpm::vector<size_t> base;
+	typedef openfpm::vector<local_index> base;
 
 	//! each cell has a pointer to a dynamic structure
 	// that store the elements in the cell
 	openfpm::vector<base> cl_base;
 
 	//! Invalid element
-	size_t invalid;
+	local_index invalid;
 
 public:
+
+	//! expose the type of the local index
+	typedef local_index loc_index;
 
 	/*! \brief Initialize all to zero
 	 *
@@ -107,7 +113,7 @@ public:
 	 * \param ele element to remove
 	 *
 	 */
-	inline void remove(size_t cell, size_t ele)
+	inline void remove(local_index cell, local_index ele)
 	{
 		cl_base.get(cell).remove(ele);
 	}
@@ -119,7 +125,7 @@ public:
 	 * \return the number of elements in the cell
 	 *
 	 */
-	inline size_t getNelements(const size_t cell_id) const
+	inline local_index getNelements(const local_index cell_id) const
 	{
 		return cl_base.get(cell_id).size();
 	}
@@ -132,7 +138,7 @@ public:
 	 * \return reference to the element
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) -> decltype(cl_base.get(0).get(0)) &
+	inline auto get(local_index cell, local_index ele) -> decltype(cl_base.get(0).get(0)) &
 	{
 		return cl_base.get(cell).get(ele);
 	}
@@ -145,7 +151,7 @@ public:
 	 * \return reference to the element
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) const -> decltype(cl_base.get(0).get(0)) &
+	inline auto get(local_index cell, local_index ele) const -> decltype(cl_base.get(0).get(0)) &
 	{
 		return cl_base.get(cell).get(ele);
 	}
@@ -180,7 +186,7 @@ public:
 			cl_base.get(i).clear();
 	}
 
-	inline const size_t & getStartId(size_t part_id) const
+	inline const local_index & getStartId(local_index part_id) const
 	{
 		if (cl_base.get(part_id).size() == 0)
 			return invalid;
@@ -188,7 +194,7 @@ public:
 		return cl_base.get(part_id).get(0);
 	}
 
-	inline const size_t & getStopId(size_t part_id) const
+	inline const local_index & getStopId(local_index part_id) const
 	{
 		if (cl_base.get(part_id).size() == 0)
 			return invalid;
@@ -196,7 +202,7 @@ public:
 		return *(&cl_base.get(part_id).last() + 1);
 	}
 
-	inline const size_t & get_lin(const size_t * part_id) const
+	inline const local_index & get_lin(const local_index * part_id) const
 	{
 		return *part_id;
 	}
