@@ -9,6 +9,7 @@
 #define CELLNNITERATOR_FULL_HPP_
 
 #include "util/mathutil.hpp"
+#include "NN/CellList/NNc_array.hpp"
 
 #define FULL openfpm::math::pow(3,dim)
 #define SYM  openfpm::math::pow(3,dim)/2 + 1
@@ -55,7 +56,7 @@ protected:
 	Cell & cl;
 
 	//! NN cell id
-	const long int (& NNc)[NNc_size];
+	const NNc_array<dim,NNc_size> & NNc;
 
 	/*! \brief Select non-empty cell
 	 *
@@ -90,7 +91,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIterator(size_t cell, const long int (&NNc)[NNc_size], Cell & cl)
+	inline CellNNIterator(size_t cell, const NNc_array<dim,NNc_size> &NNc, Cell & cl)
 	:NNc_id(0),cell(cell),cell_id(NNc[NNc_id] + cell),cl(cl),NNc(NNc)
 	{
 		start_id = &cl.getStartId(cell_id);
@@ -212,7 +213,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIteratorSym(size_t cell, size_t p, const long int (&NNc)[NNc_size], Cell & cl, const openfpm::vector<Point<dim,typename Cell::stype>> & v)
+	inline CellNNIteratorSym(size_t cell, size_t p, const NNc_array<dim,NNc_size> &NNc, Cell & cl, const openfpm::vector<Point<dim,typename Cell::stype>> & v)
 	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),p(p),v(v)
 	{
 		selectValid();

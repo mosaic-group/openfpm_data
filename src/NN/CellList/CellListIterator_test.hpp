@@ -365,7 +365,7 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_NN_iterator )
 			anom.last().subsub = gs.LinId(key);
 
 			for(size_t j = 0 ; j < openfpm::math::pow(3,dim)/2+1 ; j++)
-				anom.last().NN_subsub.add(NN.getNNc_sym()[j]);
+			{anom.last().NN_subsub.add(NN.getNNc_sym()[j]);}
 
 			alternate = false;
 		}

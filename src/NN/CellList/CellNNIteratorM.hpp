@@ -88,7 +88,7 @@ public:
 	CellNNIteratorSymM(size_t cell,
 			           size_t pp,
 					   size_t p,
-					   const long int (&NNc)[NNc_size],
+					   const NNc_array<dim,NNc_size> & NNc,
 					   Cell & cl,
 					   const openfpm::vector<Point<dim,typename Cell::stype>> & pos,
 					   const openfpm::vector<pos_v<dim,typename Cell::stype>> & ps)
@@ -160,7 +160,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	CellNNIteratorM(size_t cell, const long int (&NNc)[NNc_size], Cell & cl)
+	CellNNIteratorM(size_t cell, const NNc_array<dim,NNc_size> &NNc, Cell & cl)
 	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl)
 	{}
 

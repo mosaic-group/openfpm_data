@@ -25,6 +25,7 @@
 #include "NN/Mem_type/MemFast.hpp"
 #include "NN/Mem_type/MemBalanced.hpp"
 #include "NN/Mem_type/MemMemoryWise.hpp"
+#include "NN/CellList/NNc_array.hpp"
 
 //! Wrapper of the unordered map
 template<typename key,typename val>
@@ -189,7 +190,7 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
 	// Calculate the divisions
 
 	for (size_t i = 0 ; i < dim ; i++)
-		div[i] = 4;
+	{div[i] = 4;}
 
 	grid_sm<dim,void> gs(div);
 	grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
@@ -274,14 +275,17 @@ protected:
 	//    * x *
 	//    * * *
 
-	long int NNc_full[openfpm::math::pow(3,dim)];
+
+	NNc_array<dim,openfpm::math::pow(3,dim)> NNc_full;
+//	long int NNc_full[openfpm::math::pow(3,dim)];
 
 	//! The array contain the neighborhood of the cell-id in case of symmetric interaction
 	//
 	//   * * *
 	//     x *
 	//
-	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
+//	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
+	NNc_array<dim,openfpm::math::pow(3,dim)/2+1> NNc_sym;
 
 private:
 
@@ -363,53 +367,11 @@ private:
 	{
 		Mem_type::init_to_zero(slot,tot_n_cell);
 
-		// Calculate the NNc_full array, it is a structure to get the neighborhood array
+		NNc_full.set_size(div);
+		NNc_full.init_full();
 
-		// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
-
-		typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
-		typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-		typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
-
-		// Generate the sub-grid iterator
-
-		grid_sm<dim,void> gs(div);
-		grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
-
-		// Calculate the NNc array
-
-		size_t middle = gs.LinId(NNone::data);
-		size_t i = 0;
-		while (gr_sub3.isNext())
-		{
-			NNc_full[i] = (long int)gs.LinId(gr_sub3.get()) - middle;
-
-			++gr_sub3;
-			i++;
-		}
-
-		// Calculate the NNc_sym array
-
-		i = 0;
-		gr_sub3.reset();
-		while (gr_sub3.isNext())
-		{
-			auto key = gr_sub3.get();
-
-			size_t lin = gs.LinId(key);
-
-			// Only the first half is considered
-			if (lin < middle)
-			{
-				++gr_sub3;
-				continue;
-			}
-
-			NNc_sym[i] = lin - middle;
-
-			++gr_sub3;
-			i++;
-		}
+		NNc_sym.set_size(div);
+		NNc_sym.init_sym();
 	}
 
 	void setCellDecomposer(CellDecomposer_sm<dim,T,transform> & cd, const CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box, size_t pad) const
@@ -652,8 +614,8 @@ public:
 	 */
 	CellList<dim,T,Mem_type,transform,base> & operator=(const CellList<dim,T,Mem_type,transform,base> & cell)
 	{
-		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
-		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
+		NNc_full = cell.NNc_full;
+		NNc_sym = cell.NNc_sym;
 
 		Mem_type::operator=(static_cast<const Mem_type &>(cell));
 
@@ -854,18 +816,8 @@ public:
 	 */
 	inline void swap(CellList<dim,T,Mem_type,transform,base> & cl)
 	{
-		long int NNc_full_tmp[openfpm::math::pow(3,dim)];
-		long int NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1];
-
-		std::copy(&cl.NNc_full[0],&cl.NNc_full[openfpm::math::pow(3,dim)],&NNc_full_tmp[0]);
-		std::copy(&cl.NNc_sym[0],&cl.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym_tmp[0]);
-
-
-		std::copy(&NNc_full[0],&NNc_full[openfpm::math::pow(3,dim)],&cl.NNc_full[0]);
-		std::copy(&NNc_sym[0],&NNc_sym[openfpm::math::pow(3,dim)/2+1],&cl.NNc_sym[0]);
-
-		std::copy(&NNc_full_tmp[0],&NNc_full_tmp[openfpm::math::pow(3,dim)],&NNc_full[0]);
-		std::copy(&NNc_sym_tmp[0],&NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
+		NNc_full.swap(cl.NNc_full);
+		NNc_sym.swap(cl.NNc_sym);
 
 		Mem_type::swap(static_cast<Mem_type &>(cl));
 
@@ -969,7 +921,7 @@ public:
 	 * \return the symmetric neighborhood
 	 *
 	 */
-	const long int (& getNNc_sym() const)[openfpm::math::pow(3,dim)/2+1]
+	const NNc_array<dim,openfpm::math::pow(3,dim)/2+1> & getNNc_sym() const
 	{
 		return NNc_sym;
 	}

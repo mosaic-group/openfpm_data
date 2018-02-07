@@ -44,6 +44,7 @@ int main(int argc, char* argv[])
 #include "Grid/grid_sm_unit_tests.hpp"
 #include "util/mathutil_unit_test.hpp"
 #include "NN/CellList/CellDecomposer_unit_tests.hpp"
+#include "NN/CellList/tests/NNc_array_tests.hpp"
 #include "NN/CellList/CellListIterator_test.hpp"
 #include "Vector/map_vector_std_util_unit_test.hpp"
 #include "NN/VerletList/VerletList_test.hpp"

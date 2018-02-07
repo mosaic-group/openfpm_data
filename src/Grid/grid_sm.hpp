@@ -241,6 +241,10 @@ public:
 	inline grid_sm()
 	:size_tot(0)
 	{
+		// Initialize sz
+		for (size_t i = 0 ; i < N ; i++)
+		{sz[i] = 0;}
+
 		Initialize();
 	}
 

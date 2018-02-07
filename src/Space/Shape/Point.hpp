@@ -358,6 +358,16 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the string
 	 *
 	 */
+	std::string to_string() const
+	{
+		return toString();
+	}
+
+	/*! \brief Return the string with the point coordinate
+	 *
+	 * \return the string
+	 *
+	 */
 	std::string toString() const
 	{
 		std::string str;

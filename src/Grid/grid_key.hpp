@@ -80,7 +80,7 @@ public:
 	inline grid_key_dx(const long int (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
-			this->k[i] = k[i];
+		{this->k[i] = k[i];}
 	}
 
 	/*! \brief Construct a grid key from a list of numbers
