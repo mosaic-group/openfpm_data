@@ -1420,6 +1420,7 @@ public:
 		chunks.clear();
 
 		clear_cache();
+		reconstruct_map();
 	}
 
 	/*! \brief write the sparse grid into VTK
