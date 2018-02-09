@@ -1383,6 +1383,28 @@ public:
 		return *this;
 	}
 
+	/*! \brief Get the number of inserted points
+	 *
+	 * \return the number of inserted points
+	 *
+	 */
+	size_t size_inserted()
+	{
+		return size();
+	}
+
+	/*! \brief delete all the points
+	 *
+	 *
+	 */
+	void clear()
+	{
+		header.clear();
+		chunks.clear();
+
+		clear_cache();
+	}
+
 	/*! \brief write the sparse grid into VTK
 	 *
 	 * \param out VTK output
