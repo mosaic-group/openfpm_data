@@ -102,6 +102,8 @@ template<unsigned int dim, typename T, typename S>
 class grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>
 {
 
+	T background;
+
 public:
 
 	//! type of layout of the structure
@@ -159,9 +161,11 @@ public:
 	 * \param g grid to copy
 	 *
 	 */
-	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_base_impl<dim,T,S,layout,memory_traits_lin> & g)
+	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & g)
 	{
 		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g.duplicate());
+
+		meta_copy<T>::meta_copy_(g.background,background);
 
 		return *this;
 	}
@@ -171,9 +175,11 @@ public:
 	 * \param g grid to copy
 	 *
 	 */
-	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_base_impl<dim,T,S,layout,memory_traits_lin> && g)
+	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> && g)
 	{
 		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g);
+
+		meta_copy<T>::meta_copy_(g.background,background);
 
 		return *this;
 	}
@@ -199,6 +205,18 @@ public:
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{key_out.set_d(i,key_in.get(i));}
+	}
+
+	/*! \brief Get the background value
+	 *
+	 * For dense grid this function is useless
+	 *
+	 * \return background value
+	 *
+	 */
+	T & getBackgroundValue()
+	{
+		return background;
 	}
 };
 

@@ -650,6 +650,14 @@ public:
 
 		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
 
+		// we check the mask
+		auto & h = header.get(cached_id[id-1]);
+
+		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+		if ((h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check) == 0)
+		{return background.template get<p>();}
+
 		return chunks.template get<p>(cached_id[id-1])[sub_id];
 	}
 
@@ -690,6 +698,15 @@ public:
 		}
 
 		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
+
+		// we check the mask
+		auto & h = header.get(cached_id[id-1]);
+
+		// We check the mask
+		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+		if ((h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check) == 0)
+		{return background.template get<p>();}
 
 		return chunks.template get<p>(cached_id[id-1])[sub_id];
 	}
