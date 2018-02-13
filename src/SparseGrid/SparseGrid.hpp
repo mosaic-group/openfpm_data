@@ -622,6 +622,7 @@ public:
 	template <unsigned int p>
 	inline auto get(const grid_key_dx<dim> & v1) const -> decltype(openfpm::as_const(chunks.template get<p>(0))[0])
 	{
+		size_t active_cnk;
 		grid_key_dx<dim> kh = v1;
 		grid_key_dx<dim> kl;
 
@@ -641,24 +642,27 @@ public:
 			if (it == map.end())
 			{return background.template get<p>();}
 
-			size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
-
 			add_on_cache(lin_id,it->second);
 
-			return chunks.template get<p>(it->second)[sub_id];
+			active_cnk = it->second;
+		}
+		else
+		{
+			active_cnk = cached_id[id-1];
 		}
 
 		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
 
 		// we check the mask
-		auto & h = header.get(cached_id[id-1]);
+		auto & h = header.get(active_cnk);
 
+		// We check the mask
 		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
 
 		if ((h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check) == 0)
 		{return background.template get<p>();}
 
-		return chunks.template get<p>(cached_id[id-1])[sub_id];
+		return chunks.template get<p>(active_cnk)[sub_id];
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -671,6 +675,7 @@ public:
 	template <unsigned int p>
 	inline auto get(const grid_key_dx<dim> & v1) -> decltype(openfpm::as_const(chunks.template get<p>(0))[0])
 	{
+		size_t active_cnk;
 		grid_key_dx<dim> kh = v1;
 		grid_key_dx<dim> kl;
 
@@ -690,17 +695,19 @@ public:
 			if (it == map.end())
 			{return background.template get<p>();}
 
-			size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
-
 			add_on_cache(lin_id,it->second);
 
-			return chunks.template get<p>(it->second)[sub_id];
+			active_cnk = it->second;
+		}
+		else
+		{
+			active_cnk = cached_id[id-1];
 		}
 
 		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
 
 		// we check the mask
-		auto & h = header.get(cached_id[id-1]);
+		auto & h = header.get(active_cnk);
 
 		// We check the mask
 		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
@@ -708,7 +715,7 @@ public:
 		if ((h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check) == 0)
 		{return background.template get<p>();}
 
-		return chunks.template get<p>(cached_id[id-1])[sub_id];
+		return chunks.template get<p>(active_cnk)[sub_id];
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -1421,6 +1428,16 @@ public:
 
 		clear_cache();
 		reconstruct_map();
+	}
+
+	/*! \brief This is an internal function to clear the cache
+	 *
+	 *
+	 *
+	 */
+	void internal_clear_cache()
+	{
+		clear_cache();
 	}
 
 	/*! \brief write the sparse grid into VTK
