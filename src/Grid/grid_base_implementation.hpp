@@ -134,6 +134,23 @@ private:
 		}
 	}
 
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * check if key2 is inside the g grid boundary
+	 *
+	 * \param g grid
+	 * \param key2
+	 *
+	 */
+	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const size_t & key2) const
+	{
+		if (key2 >= g.getGrid().size())
+		{
+			std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << key2 << " >= " << getGrid().size() << "\n";
+			ACTION_ON_ERROR(GRID_ERROR_OBJECT);
+		}
+	}
+
 #endif
 
 public:
