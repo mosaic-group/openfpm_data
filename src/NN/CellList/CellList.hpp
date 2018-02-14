@@ -276,7 +276,7 @@ protected:
 	//    * * *
 
 
-	NNc_array<dim,openfpm::math::pow(3,dim)> NNc_full;
+	NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)> NNc_full;
 //	long int NNc_full[openfpm::math::pow(3,dim)];
 
 	//! The array contain the neighborhood of the cell-id in case of symmetric interaction
@@ -285,7 +285,7 @@ protected:
 	//     x *
 	//
 //	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
-	NNc_array<dim,openfpm::math::pow(3,dim)/2+1> NNc_sym;
+	NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)/2+1> NNc_sym;
 
 private:
 
@@ -856,9 +856,9 @@ public:
 	 * \return An iterator across the neighhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,(int)FULL,impl> getNNIterator(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,FULL,impl> cln(cell,NNc_full,*this);
+		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,(int)FULL,impl> cln(cell,NNc_full,*this);
 		return cln;
 
 	}
@@ -905,7 +905,9 @@ public:
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
+	template<unsigned int impl>
+	inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,(unsigned int)SYM,impl>
+	getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
 	{
 #ifdef SE_CLASS1
 		if (from_cd == false)
