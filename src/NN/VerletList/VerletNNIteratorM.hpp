@@ -8,6 +8,7 @@
 #ifndef OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETNNITERATORM_HPP_
 #define OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETNNITERATORM_HPP_
 
+#include "VerletNNIterator.hpp"
 
 /*! \brief Iterator for the neighborhood of the cell structures
  *

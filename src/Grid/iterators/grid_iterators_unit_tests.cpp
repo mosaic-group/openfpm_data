@@ -10,6 +10,7 @@
 #include "Grid/iterators/grid_skin_iterator.hpp"
 #include "Grid/map_grid.hpp"
 #include "data_type/aggregate.hpp"
+#include "Grid/iterators/grid_key_dx_iterator_sub_bc.hpp"
 
 BOOST_AUTO_TEST_SUITE( grid_iterators_tests )
 
@@ -215,6 +216,133 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_stencil_test )
 	size_t sz[] = {52,52,52};
 	grid_sm<3,void> g_sm(sz);
 	test_stencil_sub_iterator(g_sm);
+}
+
+
+
+BOOST_AUTO_TEST_CASE( grid_iterator_sub_bc )
+{
+	{
+	size_t sz[] = {52,52,52};
+	grid_sm<3,void> g_sm(sz);
+
+	grid_key_dx<3> start({51,51,51});
+	grid_key_dx<3> stop({52,52,52});
+
+	size_t bc[3] = {PERIODIC,PERIODIC,PERIODIC};
+
+	grid_key_dx_iterator_sub_bc<3> it(g_sm,start,stop,bc);
+
+	bool is_ok = true;
+	size_t cnt = 0;
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		if ((p.get(0) != 51 && p.get(0) != 0) ||
+			(p.get(1) != 51 && p.get(1) != 0) ||
+			(p.get(2) != 51 && p.get(2) != 0))
+		{
+			is_ok = false;
+		}
+
+		cnt++;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(is_ok,true);
+	BOOST_REQUIRE_EQUAL(cnt,8ul);
+	}
+
+	{
+	size_t sz[] = {52,52,52};
+	grid_sm<3,void> g_sm(sz);
+
+	grid_key_dx<3> start({-1,-1,-1});
+	grid_key_dx<3> stop({0,0,0});
+
+	size_t bc[3] = {PERIODIC,PERIODIC,PERIODIC};
+
+	grid_key_dx_iterator_sub_bc<3> it(g_sm,start,stop,bc);
+
+	bool is_ok = true;
+	size_t cnt = 0;
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		if ((p.get(0) != 51 && p.get(0) != 0) ||
+			(p.get(1) != 51 && p.get(1) != 0) ||
+			(p.get(2) != 51 && p.get(2) != 0))
+		{
+			is_ok = false;
+		}
+
+		cnt++;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(is_ok,true);
+	BOOST_REQUIRE_EQUAL(cnt,8ul);
+	}
+}
+
+BOOST_AUTO_TEST_CASE( grid_iterator_sub_bc_hd )
+{
+	grid_key_dx<50> start;
+	grid_key_dx<50> stop;
+	size_t sz[50];
+	size_t bc[50];
+	for (size_t i = 0 ; i < 50 ; i++)
+	{
+		sz[i] = 1;
+		start.set_d(i,0);
+		stop.set_d(i,0);
+		bc[i] = NON_PERIODIC;
+	}
+
+	sz[0] = 52;
+	sz[11] = 52;
+	sz[23] = 52;
+
+	bc[0] = PERIODIC;
+	bc[11] = PERIODIC;
+	bc[23] = PERIODIC;
+
+	start.set_d(0,51);
+	start.set_d(11,51);
+	start.set_d(23,51);
+
+	stop.set_d(0,52);
+	stop.set_d(11,52);
+	stop.set_d(23,52);
+
+	grid_sm<50,void> g_sm(sz);
+
+	grid_key_dx_iterator_sub_bc<50> it(g_sm,start,stop,bc);
+
+	bool is_ok = true;
+	size_t cnt = 0;
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		if ((p.get(0) != 51 && p.get(0) != 0) ||
+			(p.get(11) != 51 && p.get(11) != 0) ||
+			(p.get(23) != 51 && p.get(23) != 0))
+		{
+			is_ok = false;
+		}
+
+		cnt++;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(is_ok,true);
+	BOOST_REQUIRE_EQUAL(cnt,8);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -11,6 +11,8 @@
 #define CL_SYMMETRIC 1
 #define CL_NON_SYMMETRIC 2
 
+#include "Vector/map_vector.hpp"
+
 /*! \brief populate the Cell-list with particles non symmetric case
  *
  * \tparam dim dimensionality of the space

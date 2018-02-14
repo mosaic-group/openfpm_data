@@ -139,7 +139,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	inline const T & get(int i) const
+	inline const T & get(size_t i) const
 	{
 		return boost::fusion::at_c<x>(data)[i];
 	}
@@ -151,7 +151,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	inline T get_vtk(int i) const
+	inline T get_vtk(size_t i) const
 	{
 		return boost::fusion::at_c<x>(data)[i];
 	}
@@ -163,7 +163,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	inline T& get(int i)
+	inline T& get(size_t i)
 	{
 		return boost::fusion::at_c<x>(data)[i];
 	}

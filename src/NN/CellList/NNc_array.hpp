@@ -170,14 +170,23 @@ public:
 
 /* \brief NNc_array
  *
- * \param size
+ * It encapsulate a 3^{dim} array containing the neighborhood cells-id
+ *
+ * \tparam dim dimensionality
+ * \tparam size total number of neighborhood cells
  *
  */
 template<unsigned int dim, unsigned int size>
 class NNc_array<dim,size,false>
 {
+	//! NNc_array is a grid in general 3^{dim}, this object contain the information
+	//! about this grid
 	grid_sm<dim,void> gs;
+
+	//! Information about the grid in the reduced space
 	grid_sm<dim,void> gs_base;
+
+	//!
 	size_t sub_off;
 	size_t sym_mid;
 

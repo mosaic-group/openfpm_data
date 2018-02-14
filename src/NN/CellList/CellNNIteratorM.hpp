@@ -12,6 +12,7 @@
 #include "util/mathutil.hpp"
 #include <boost/integer/integer_mask.hpp>
 #include "CellList_util.hpp"
+#include "CellNNIterator.hpp"
 
 /*! \brief Iterator for the neighborhood of the cell structures
  *

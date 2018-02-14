@@ -16,9 +16,6 @@
 
 #define VERLET_STARTING_NSLOT 128
 
-#define VL_NON_SYMMETRIC 0
-#define VL_SYMMETRIC 1
-#define VL_CRS_SYMMETRIC 2
 
 #define WITH_RADIUS 3
 

@@ -34,7 +34,6 @@ int main(int argc, char* argv[])
 #include "Grid/grid_key_dx_expression_unit_tests.hpp"
 #include "Point_test_unit_tests.hpp"
 #include "util/util_test.hpp"
-#include "Space/SpaceBox_unit_tests.hpp"
 #include "Space/Shape/Box_unit_tests.hpp"
 #include "NN/CellList/CellList_test.hpp"
 #include "Vector/vector_unit_tests.hpp"

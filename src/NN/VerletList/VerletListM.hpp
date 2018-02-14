@@ -9,7 +9,7 @@
 #define OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETLISTM_HPP_
 
 #include "NN/VerletList/VerletNNIteratorM.hpp"
-
+#include "VerletList.hpp"
 
 
 /*! \brief Get the neighborhood iterator based on type

@@ -141,6 +141,75 @@ public:
 		return v;
 	}
 
+	/*! brief Calculate the position (combinations) of all the elements of size d
+	 *
+	 * \param d dimensionality of the object returned in the combinations
+	 * \return all the combinations
+	 *
+	 */
+
+	static std::vector<comb<dim>> getCombinations_R_bc(size_t d, const size_t (& bc)[dim])
+	{
+#ifdef SE_CLASS1
+		if (d > dim)
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " " << d << " must be smaller than " << "\n";
+#endif
+
+		size_t dg[dim];
+
+		size_t k = 0;
+		// get the indexes of the free degree of freedom
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (bc[i] == PERIODIC)
+			{
+				dg[k] = i;
+				k++;
+			}
+		}
+
+		// Create an Iterator_g_const
+		// And a vector that store all the combination
+
+		std::vector<comb<dim>> v;
+		Iterator_g_const it(k-(d-(dim - k)),k);
+
+		// for each non-zero elements
+		// basically the key will store the position of the
+		// non zero elements, while BinPermutations will
+		// fill the array of all the permutations
+		//
+
+		while (it.isNext())
+		{
+			grid_key_dx_r key = it.get();
+
+			// Now we adjust the non zero position
+
+			for (size_t i = 0 ; i < key.getDim() ; i++)
+			{key.set_d(i,dg[key.get(i)]);}
+
+			// Calculate the permutation
+
+			BinPermutations(key,v);
+			++it;
+		}
+
+		// case when d == dim
+
+		if (d == dim)
+		{
+			comb<dim> c;
+			c.zero();
+
+			v.push_back(c);
+		}
+
+		// return the combinations
+
+		return v;
+	}
+
 	/*! \brief Binary permutations
 	 *
 	 * Fill v with all the possible binary permutations

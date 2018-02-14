@@ -14,6 +14,7 @@
 #include "Vector/map_vector_grow_p.hpp"
 #include "Vector/vect_isel.hpp"
 #include "memory_ly/memory_conf.hpp"
+#include "util/Pack_stat.hpp"
 
 template<typename T, typename Mem, int pack_type=Pack_selector<T>::value > class Packer;
 template<typename T, typename Mem, int pack_type=Pack_selector<T>::value > class Unpacker;

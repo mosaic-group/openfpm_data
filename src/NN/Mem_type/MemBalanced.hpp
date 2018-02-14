@@ -109,7 +109,7 @@ public:
 
 	/*! \brief Remove an element from the cell
 	 *
-	 * \param cell_id id of the cell
+	 * \param cell id of the cell
 	 * \param ele element to remove
 	 *
 	 */
@@ -168,7 +168,7 @@ public:
 
 	/*! \brief Swap two Mem_bal
 	 *
-	 * \param cl element to swap with
+	 * \param cell element to swap with
 	 *
 	 */
 	inline void swap(Mem_bal && cell)
@@ -186,6 +186,11 @@ public:
 			cl_base.get(i).clear();
 	}
 
+	/*! \brief Get the start index of the selected element
+	 *
+	 * \param part_id element
+	 *
+	 */
 	inline const local_index & getStartId(local_index part_id) const
 	{
 		if (cl_base.get(part_id).size() == 0)
@@ -194,6 +199,11 @@ public:
 		return cl_base.get(part_id).get(0);
 	}
 
+	/*! \brief Get the stop index of the selected element
+	 *
+	 * \param part_id element
+	 *
+	 */
 	inline const local_index & getStopId(local_index part_id) const
 	{
 		if (cl_base.get(part_id).size() == 0)
@@ -202,6 +212,15 @@ public:
 		return *(&cl_base.get(part_id).last() + 1);
 	}
 
+	/*! \brief get_lin
+	 *
+	 * It just return the element pointed by part_id
+	 *
+	 * \param part_id element
+	 *
+	 * \return the element pointed
+	 *
+	 */
 	inline const local_index & get_lin(const local_index * part_id) const
 	{
 		return *part_id;

@@ -12,6 +12,10 @@
 #define NO_CHECK 1
 #define SAFE 2
 
+#define VL_NON_SYMMETRIC 0
+#define VL_SYMMETRIC 1
+#define VL_CRS_SYMMETRIC 2
+
 /*! \brief Iterator for the neighborhood of the cell structures
  *
  * In general you never create it directly but you get it from the CellList structures
