@@ -342,7 +342,7 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_bc_hd )
 	}
 
 	BOOST_REQUIRE_EQUAL(is_ok,true);
-	BOOST_REQUIRE_EQUAL(cnt,8);
+	BOOST_REQUIRE_EQUAL(cnt,8ul);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
