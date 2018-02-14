@@ -921,7 +921,7 @@ public:
 	 * \return the symmetric neighborhood
 	 *
 	 */
-	const NNc_array<dim,openfpm::math::pow(3,dim)/2+1> & getNNc_sym() const
+	const NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)/2+1> & getNNc_sym() const
 	{
 		return NNc_sym;
 	}
