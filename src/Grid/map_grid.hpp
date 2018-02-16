@@ -195,6 +195,16 @@ public:
 		return grid_key_dx_iterator_sub<dim, stencil>();
 	}
 
+	/*! \brief This is a meta-function return which type of iterator a grid produce
+	 *
+	 * \return the type of the sub-grid iterator
+	 *
+	 */
+	static grid_key_dx_iterator<dim> type_of_iterator()
+	{
+		return grid_key_dx_iterator<dim>();
+	}
+
 	/*! \brief In this case it just copy the key_in in key_out
 	 *
 	 * \param key_out output key

@@ -739,7 +739,7 @@ public:
 	grid_key_sparse_dx_iterator<dim,chunking::size::value>
 	getIterator() const
 	{
-		return grid_key_sparse_dx_iterator<dim,chunking::size::value>(header,pos_chunk);
+		return grid_key_sparse_dx_iterator<dim,chunking::size::value>(&header,&pos_chunk);
 	}
 
 	/*! \brief Return an iterator over a sub-grid
@@ -1314,6 +1314,17 @@ public:
 	type_of_subiterator()
 	{
 		return  grid_key_sparse_dx_iterator_sub<dim, chunking::size::value>();
+	}
+
+	/*! \brief This is a meta-function return which type of sub iterator a grid produce
+	 *
+	 * \return the type of the sub-grid iterator
+	 *
+	 */
+	static grid_key_sparse_dx_iterator<dim, chunking::size::value>
+	type_of_iterator()
+	{
+		return  grid_key_sparse_dx_iterator<dim, chunking::size::value>();
 	}
 
 	/*! \brief Here we convert the linearized sparse key into the grid_key_dx
