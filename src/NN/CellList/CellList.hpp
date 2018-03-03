@@ -863,7 +863,7 @@ public:
 
 	}
 
-	/*! \brief Get the Neighborhood iterator
+	/*! \brief Get the symmetric Neighborhood iterator
 	 *
 	 * It iterate across all the element of the selected cell and the near cells up to some selected radius
 	 *
@@ -885,7 +885,9 @@ public:
 		return cln;
 	}
 
-	/*! \brief Get the Neighborhood iterator
+
+
+	/*! \brief Get the symmetric Neighborhood iterator
 	 *
 	 * It iterate across all the element of the selected cell and the near cells
 	 *
@@ -915,6 +917,41 @@ public:
 #endif
 
 		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);
+		return cln;
+	}
+
+	/*! \brief Get the symmetric Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
+
+	   * * *
+	     x *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
+	 *
+	 * \param cell cell id
+	 * \param p particle id
+	 * \param v_p1 first phase for particle p
+	 * \param v_p2 second phase for particle q
+	 *
+	 * \return An aiterator across the neighborhood particles
+	 *
+	 */
+	template<unsigned int impl>
+	inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,base>,(unsigned int)SYM,impl>
+	getNNIteratorSymMP(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v_p1, const openfpm::vector<Point<dim,T>> & v_p2)
+	{
+#ifdef SE_CLASS1
+		if (from_cd == false)
+			std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
+#endif
+
+		CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v_p1,v_p2);
 		return cln;
 	}
 
