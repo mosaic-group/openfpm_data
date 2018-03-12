@@ -578,7 +578,7 @@ public:
 	 */
 	inline size_t getVolume()
 	{
-		return Box<dim,long int>::getVolumeKey(gk_start.k, gk_stop.k);
+		return Box<dim,long int>::getVolumeKey(gk_start.get_k(), gk_stop.get_k());
 	}
 
 	/*! \brief Reset the iterator (it restart from the beginning)

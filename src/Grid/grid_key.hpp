@@ -301,7 +301,8 @@ public:
 	 * \param t list of number
 	 *
 	 */
-	template<typename a, typename ...T>void set(a v, T...t)
+	template<typename a, typename ...T>
+	inline void set(a v, T...t)
 	{
 #ifdef SE_CLASS1
 		if (sizeof...(t) != dim -1)
@@ -309,6 +310,16 @@ public:
 #endif
 		k[dim-1] = v;
 		invert_assign(t...);
+	}
+
+	/*! \brief Return the internal k structure
+	 *
+	 * \return k
+	 *
+	 */
+	const long int(& get_k() const)[dim]
+	{
+		return k;
 	}
 
 	/*! \brief Convert to a point the grid_key_dx
@@ -367,7 +378,7 @@ public:
 	 * \return the index value
 	 *
 	 */
-	mem_id value(size_t i) const
+	inline mem_id value(size_t i) const
 	{
 		return k[i];
 	}
@@ -380,7 +391,7 @@ public:
 	 * \return the index value
 	 *
 	 */
-	mem_id get(size_t i) const
+	inline mem_id get(size_t i) const
 	{
 		return k[i];
 	}
@@ -393,7 +404,7 @@ public:
 	 * \param id value to set
 	 *
 	 */
-	void set_d(size_t i, mem_id id)
+	inline void set_d(size_t i, mem_id id)
 	{
 #ifdef SE_CLASS1
 
@@ -404,10 +415,10 @@ public:
 		k[i] = id;
 	}
 
+private:
+
 	//! structure that store all the index
 	mem_id k[dim];
-
-private:
 
 	/*! \brief Recursively invert the assignment
 	 *

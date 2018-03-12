@@ -601,6 +601,7 @@ public:
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this).swap(cell);
 
 		n_dec = cell.n_dec;
+		from_cd = cell.from_cd;
 
 		return *this;
 	}
@@ -622,6 +623,7 @@ public:
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cell);
 
 		n_dec = cell.n_dec;
+		from_cd = cell.from_cd;
 
 		return *this;
 	}
@@ -913,7 +915,7 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (from_cd == false)
-			std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
+		{std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;}
 #endif
 
 		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);

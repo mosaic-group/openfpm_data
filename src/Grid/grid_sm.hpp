@@ -340,20 +340,20 @@ public:
 
 		// Check the sum produce a valid key
 
-		if (check::valid(gk.k[0] + sum_id[0],sz[0]) == false)
+		if (check::valid(gk.get(0) + sum_id[0],sz[0]) == false)
 			return -1;
 
-		lid = gk.k[0] + sum_id[0];
+		lid = gk.get(0) + sum_id[0];
 
 
 		for (mem_id i = 1 ; i < N ; i++)
 		{
 			// Check the sum produce a valid key
 
-			if (check::valid(gk.k[i] + sum_id[i],sz[i]) == false)
+			if (check::valid(gk.get(i) + sum_id[i],sz[i]) == false)
 				return -1;
 
-			lid += (gk.k[i] + sum_id[i]) * sz_s[i-1];
+			lid += (gk.get(i) + sum_id[i]) * sz_s[i-1];
 		}
 
 		return lid;
@@ -377,14 +377,14 @@ public:
 
 		if (bc[0] == NON_PERIODIC)
 		{
-			if (check::valid(gk.k[0] + sum_id[0],sz[0]) == false)
+			if (check::valid(gk.get(0) + sum_id[0],sz[0]) == false)
 				return -1;
 
-			lid = gk.k[0] + sum_id[0];
+			lid = gk.get(0) + sum_id[0];
 		}
 		else
 		{
-			lid = openfpm::math::positive_modulo(gk.k[0] + sum_id[0],sz[0]);
+			lid = openfpm::math::positive_modulo(gk.get(0) + sum_id[0],sz[0]);
 		}
 
 		for (mem_id i = 1 ; i < N ; i++)
@@ -394,14 +394,14 @@ public:
 			/* coverity[dead_error_line] */
 			if (bc[i] == NON_PERIODIC)
 			{
-				if (check::valid(gk.k[i] + sum_id[i],sz[i]) == false)
+				if (check::valid(gk.get(i) + sum_id[i],sz[i]) == false)
 					return -1;
 
-				lid += (gk.k[i] + sum_id[i]) * sz_s[i-1];
+				lid += (gk.get(i) + sum_id[i]) * sz_s[i-1];
 			}
 			else
 			{
-				lid += (openfpm::math::positive_modulo(gk.k[i] + sum_id[i],sz[i])) * sz_s[i-1];
+				lid += (openfpm::math::positive_modulo(gk.get(i) + sum_id[i],sz[i])) * sz_s[i-1];
 			}
 		}
 
@@ -459,11 +459,11 @@ public:
 
 	inline mem_id LinId(const grid_key_dx<N> & gk) const
 	{
-		mem_id lid = gk.k[0];
+		mem_id lid = gk.get(0);
 		for (mem_id i = 1 ; i < N ; i++)
 		{
 			/* coverity[dead_error_begin */
-			lid += gk.k[i] * sz_s[i-1];
+			lid += gk.get(i) * sz_s[i-1];
 		}
 
 		return lid;
