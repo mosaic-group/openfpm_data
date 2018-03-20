@@ -223,6 +223,7 @@ class grid_key_sparse_dx_iterator_sub
 	 */
 	void SelectValidAndFill_mask_it()
 	{
+		mask_it_pnt = 0;
 		mask_nele = 0;
 
 		while (mask_nele == 0 && chunk_id < header->size())
@@ -473,6 +474,7 @@ class grid_key_sparse_dx_iterator
 	void SelectValidAndFill_mask_it()
 	{
 		mask_nele = 0;
+		mask_it_pnt = 0;
 
 		while (mask_nele == 0 && chunk_id < header->size())
 		{
@@ -553,11 +555,9 @@ public:
 	{
 		header = g_s_it.private_get_header();
 		lin_id_pos = g_s_it.private_get_lin_id_pos();
-		chunk_id = g_s_it.private_get_chunk_id();
-		mask_nele = g_s_it.private_get_mask_nele();
-		mask_it_pnt = g_s_it.private_get_mask_it_pnt();
+		chunk_id = 0;
 
-		memcpy(mask_it,g_s_it.private_get_mask_it(),sizeof(short unsigned int)*n_ele);
+		SelectValidAndFill_mask_it();
 	}
 
 	/*! \brief Return the actual point
