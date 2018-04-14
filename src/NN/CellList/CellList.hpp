@@ -979,6 +979,16 @@ public:
 		return CellDecomposer_sm<dim,T,transform>::getPadding(i);
 	}
 
+	/*! \brief Return the number of padding cells of the Cell decomposer as an array
+	 *
+	 *
+	 * \return the number of padding cells
+	 *
+	 */
+	size_t (& getPadding())[dim]
+	{
+		return CellDecomposer_sm<dim,T,transform>::getPadding();
+	}
 
 	/*! \brief Clear the cell list
 	 *
@@ -1109,7 +1119,12 @@ template<unsigned int dim, typename St> static inline void cl_param_calculate(Bo
  *
  * \return the processor bounding box
  */
-template<unsigned int dim, typename St> static inline void cl_param_calculateSym(const Box<dim,St> & dom, CellDecomposer_sm<dim,St,shift<dim,St>> & cd_sm, Ghost<dim,St> g, St r_cut, size_t & pad)
+template<unsigned int dim, typename St> static
+inline void cl_param_calculateSym(const Box<dim,St> & dom,
+								  CellDecomposer_sm<dim,St,shift<dim,St>> & cd_sm,
+								  Ghost<dim,St> g,
+								  St r_cut,
+								  size_t & pad)
 {
 	size_t div[dim];
 
@@ -1141,7 +1156,11 @@ template<unsigned int dim, typename St> static inline void cl_param_calculateSym
  *
  * \return the processor bounding box
  */
-template<unsigned int dim, typename St> static inline void cl_param_calculateSym(const Box<dim,St> & dom, CellDecomposer_sm<dim,St,shift<dim,St>> & cd_sm, Ghost<dim,St> g, size_t & pad)
+template<unsigned int dim, typename St>
+static inline void cl_param_calculateSym(const Box<dim,St> & dom,
+										 CellDecomposer_sm<dim,St,shift<dim,St>> & cd_sm,
+										 Ghost<dim,St> g,
+										 size_t & pad)
 {
 	size_t div[dim];
 

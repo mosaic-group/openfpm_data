@@ -503,6 +503,8 @@ protected:
 	//! cell_shift
 	Point<dim,long int> cell_shift;
 
+	// temporal buffer
+	mutable size_t div_wp[dim];
 
 	/*! \brief Initialize all the structures
 	 *
@@ -1590,7 +1592,7 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		return be;
 	}
 
-	/*! \brief Return the number of divisions of the Cell Decomposer
+	/*! \brief Return the number of divisions of the Cell Decomposer (including padding)
 	 *
 	 * \return the number of divisions
 	 *
@@ -1598,6 +1600,20 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 	const size_t (& getDiv() const)[dim]
 	{
 		return gr_cell.getSize();
+	}
+
+
+	/*! \brief Return the number of divisions of the Cell Decomposer (without padding)
+	 *
+	 * \return the number of divisions
+	 *
+	 */
+	const size_t (& getDivWP() const)[dim]
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{div_wp[i] = gr_cell.getSize()[i] - 2*getPadding(i);}
+
+		return div_wp;
 	}
 
 	/*! \brief Return the domain where the CellDecomposer is defined
