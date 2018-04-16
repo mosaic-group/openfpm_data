@@ -1,7 +1,7 @@
 #! /bin/bash
 
 source $HOME/.bashrc
-source $HOME/openfpm_vars_{$3}
+source $HOME/openfpm_vars_$3
 
 echo "Branch: $3"
 
