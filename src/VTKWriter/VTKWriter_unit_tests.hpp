@@ -569,7 +569,10 @@ template<typename grid_type> void fill_grid_some_data(grid_type & g)
 	while (it.isNext())
 	{
 		g.template get<p::x>(it.get()) = it.get().get(0);
-		g.template get<p::y>(it.get()) = it.get().get(1);
+		if (grid_type::dims != 1)
+		{g.template get<p::y>(it.get()) = it.get().get(1);}
+		else
+		{g.template get<p::y>(it.get()) = 0.0;}
 		g.template get<p::z>(it.get()) = 0;
 		g.template get<p::s>(it.get()) = 1.0;
 		g.template get<p::v>(it.get())[0] = g.getGrid().LinId(it.get());
