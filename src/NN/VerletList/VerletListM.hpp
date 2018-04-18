@@ -274,7 +274,7 @@ public:
 		bool wr = true;
 
 		for (size_t i = 0 ; i < dim ; i++)
-			wr &= r_cut <= spacing.get(i);
+		{wr &= r_cut <= spacing.get(i);}
 
 		if (wr == true || opt == VL_SYMMETRIC)
 		{

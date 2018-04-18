@@ -54,7 +54,17 @@ public:
 	 * \return element i
 	 *
 	 */
-	inline long int operator[](size_t i) const
+	inline const long int & operator[](size_t i) const
+	{
+		return NNc_arr[i];
+	}
+
+	/*! \brief return the element i
+	 *
+	 * \return element i
+	 *
+	 */
+	inline long int & operator[](size_t i)
 	{
 		return NNc_arr[i];
 	}
