@@ -84,6 +84,42 @@ public:
 
 };
 
+template< template<typename,typename> class op,unsigned int dim, typename Tsrc,typename Tdst, unsigned int ... prp>
+class copy_sparse_to_sparse_op
+{
+	//! source
+	const Tsrc & src;
+
+	//! destination
+	Tdst & dst;
+
+	//! source position
+	grid_key_dx<dim> & pos_src;
+
+	//! destination position
+	grid_key_dx<dim> & pos_dst;
+
+	//! Convert the packed properties into an MPL vector
+	typedef typename to_boost_vmpl<prp...>::type v_prp;
+
+public:
+
+	copy_sparse_to_sparse_op(const Tsrc & src, Tdst & dst,grid_key_dx<dim> & pos_src, grid_key_dx<dim> & pos_dst)
+	:src(src),dst(dst),pos_src(pos_src),pos_dst(pos_dst)
+	{}
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		typedef typename boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type idx_type;
+		typedef typename std::remove_reference<decltype(dst.template insert<idx_type::value>(pos_dst))>::type copy_rtype;
+
+		meta_copy_op<op,copy_rtype>::meta_copy_op_(src.template get<T::value>(pos_src),dst.template insert<T::value>(pos_dst));
+	}
+
+};
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -1261,6 +1297,27 @@ public:
 		}
 	}
 
+	template<template <typename,typename> class op, unsigned int ... prp >
+	void copy_to_op(const sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking> & grid_src,
+		         const Box<dim,size_t> & box_src,
+			     const Box<dim,size_t> & box_dst)
+	{
+		auto it = grid_src.getIterator(box_src.getKP1(),box_src.getKP2());
+
+		while (it.isNext())
+		{
+			auto key_src = it.get();
+			grid_key_dx<dim> key_dst = key_src + box_dst.getKP1();
+			key_dst -= box_src.getKP1();
+
+			typedef typename std::remove_const<typename std::remove_reference<decltype(grid_src)>::type>::type gcopy;
+
+			copy_sparse_to_sparse_op<op,dim,gcopy,gcopy,prp ...> caps(grid_src,*this,key_src,key_dst);
+			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(caps);
+
+			++it;
+		}
+	}
 
 	/*! \brief unpack the sub-grid object
 	 *
