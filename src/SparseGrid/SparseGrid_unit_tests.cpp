@@ -617,23 +617,9 @@ BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_quarter_sphere)
 	BOOST_REQUIRE_EQUAL(error,false);
 }
 
-BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_packing)
+template<typename sgrid> void Test_unpack_and_check(sgrid & grid, sgrid & grid2, size_t (& sz_cell)[3])
 {
-	size_t sz[3] = {501,501,501};
-	size_t sz_cell[3] = {500,500,500};
-
-	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid(sz);
-	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid2(sz);
-
 	grid.getBackgroundValue().template get<0>() = 0.0;
-
-	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
-
-	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
-
-	cdsm.setDimensions(domain, sz_cell, 0);
-
-	fill_sphere(grid,cdsm);
 
 	grid_key_dx<3> start({0,0,0});
 	grid_key_dx<3> stop({250,250,250});
@@ -642,7 +628,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_packing)
 
 	auto sub_it = grid.getIterator(start,stop);
 	size_t req = 0;
-	grid.packRequest<0>(sub_it,req);
+	grid.template packRequest<0>(sub_it,req);
 
 	// allocate the memory
 	HeapMemory pmem;
@@ -652,12 +638,12 @@ BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_packing)
 
 	Pack_stat sts;
 
-	grid.pack<0>(mem,sub_it,sts);
+	grid.template pack<0>(mem,sub_it,sts);
 
 	// now we unpack on another grid
 
 	Unpack_stat usts;
-	grid2.unpack<0>(mem,sub_it,usts);
+	grid2.template unpack<0>(mem,sub_it,usts);
 
 	bool match = true;
 	auto it = grid.getIterator();
@@ -673,6 +659,72 @@ BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_packing)
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);
+}
+
+BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_packing)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid(sz);
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid2(sz);
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid3(sz);
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere(grid,cdsm);
+
+	Test_unpack_and_check(grid,grid2,sz_cell);
+
+	grid_key_dx<3> start({251,251,251});
+	grid_key_dx<3> stop({490,490,490});
+
+
+	size_t cnt2 = 0;
+
+	auto sub_it = grid.getIterator(start,stop);
+
+	while (sub_it.isNext())
+	{
+		auto p = sub_it.get();
+
+		grid3.template insert<0>(p) = grid.template get<0>(p);
+		grid3.template insert<1>(p) = grid.template get<1>(p);
+
+		cnt2++;
+
+		++sub_it;
+	}
+
+	Test_unpack_and_check(grid,grid3,sz_cell);
+
+	grid_key_dx<3> start2({251,251,251});
+	grid_key_dx<3> stop2({490,490,490});
+
+	size_t cnt = 0;
+
+	auto sub_it2 = grid.getIterator(start2,stop2);
+
+	bool match = true;
+
+	while (sub_it2.isNext())
+	{
+		auto p = sub_it.get();
+
+		match &= grid3.template insert<0>(p) == grid.template get<0>(p);
+		match &= grid3.template insert<1>(p) == grid.template get<1>(p);
+
+		cnt++;
+
+		++sub_it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+	BOOST_REQUIRE_EQUAL(cnt,cnt2);
 }
 
 
@@ -715,7 +767,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_copy_to)
 		auto key = it_check.get();
 
 		grid_key_dx<3> key2 = key - bx_dst.getKP1();
-		key += bx_src.getKP1();
+		key2 += bx_src.getKP1();
 
 		if (grid.template get<0>(key) != gs.LinId(key2))
 		{match = false;}
@@ -739,7 +791,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_copy_to)
 		auto key = it_check2.get();
 
 		grid_key_dx<3> key2 = key - bx_dst.getKP1();
-		key += bx_src.getKP1();
+		key2 += bx_src.getKP1();
 
 		if (grid.template get<0>(key) != gs.LinId(key2))
 		{match = false;}

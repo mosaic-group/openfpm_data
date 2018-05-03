@@ -614,6 +614,49 @@ public:
 		}
 	}
 
+	/*! \brief copy an external grid into a specific place into this grid
+	 *
+	 * It copy the area indicated by the  box_src from grid_src into this grid
+	 * at the place box_dst. The volume of box_src and box_dst
+	 *
+	 * \param grid_src source grid
+	 * \param box_src source box
+	 * \param box_dst destination box
+	 *
+	 */
+	template<template<typename,typename> class op, unsigned int ... prp>
+	void copy_to_op(const grid_base_impl<dim,T,S,layout_,layout_base> & gs,
+			     const Box<dim,size_t> & bx_src,
+				 const Box<dim,size_t> & bx_dst)
+	{
+		grid_key_dx_iterator_sub<dim> sub_src(gs.getGrid(),bx_src.getKP1(),bx_src.getKP2());
+		grid_key_dx_iterator_sub<dim> sub_dst(this->getGrid(),bx_dst.getKP1(),bx_dst.getKP2());
+
+		while (sub_src.isNext())
+		{
+			// write the object in the last element
+			object_s_di_op<op,decltype(gs.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(gs.get_o(sub_src.get()),this->get_o(sub_dst.get()));
+
+			++sub_src;
+			++sub_dst;
+		}
+
+/*		grid_key_dx_iterator_sub<dim> sub_src(grid_src.getGrid(),box_src.getKP1(),box_src.getKP2());
+		grid_key_dx_iterator_sub<dim> sub_dst(this->getGrid(),box_dst.getKP1(),box_dst.getKP2());
+
+//		const auto & gs = loc_grid.get(i);
+//		auto & gd = loc_grid.get(sub_id_dst);
+
+		while (sub_src.isNext())
+		{
+			// write the object in the last element
+			object_s_di_op<op,decltype(grid_src.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(grid_src.get_o(sub_src.get()),this->get_o(sub_dst.get()));
+
+			++sub_src;
+			++sub_dst;
+		}*/
+	}
+
 	/*! \brief Resize the grid
 	 *
 	 * Resize the grid to the old information is retained on the new grid,

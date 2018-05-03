@@ -374,7 +374,7 @@ struct unpack_simple_cond<true, prp ...>
 	 * \param obj object where to unpack
 	 *
 	 */
-	template<unsigned int ... prp> void unpack(ExtPreAlloc<S> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Unpack_stat & ps)
+	template<unsigned int ... prp,typename S2> void unpack(ExtPreAlloc<S2> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Unpack_stat & ps)
 	{
 		// object that store the information in mem
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,prp...>::type> prp_object;
@@ -393,6 +393,66 @@ struct unpack_simple_cond<true, prp ...>
 		unpack_with_iterator<grid_key_dx_iterator_sub<dims>,stype,prp...>(sub_it,src);
 
 		ps.addOffset(size);
+	}
+
+	/*! \brief unpack the sub-grid object applying an operation
+	 *
+	 * \tparam op operation
+	 * \tparam prp properties to unpack
+	 *
+	 * \param mem preallocated memory from where to unpack the object
+	 * \param sub sub-grid iterator
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<template<typename,typename> class op, typename S2, unsigned int ... prp>
+	void unpack_with_op(ExtPreAlloc<S2> & mem, grid_key_dx_iterator_sub<dim> & sub2, Unpack_stat & ps)
+	{
+		PtrMemory * ptr1;
+
+		size_t sz[dim];
+
+		for (size_t i = 0 ; i < dim ; i++)
+			sz[i] = sub2.getStop().get(i) - sub2.getStart().get(i) + 1;
+
+		size_t tot = 1;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{tot *= sz[i];}
+
+		tot *= sizeof(T);
+
+#ifdef SE_CLASS1
+
+		if (ps.getOffset() + tot > mem.size())
+			std::cerr << __FILE__ << ":" << __LINE__ << " Error: overflow in the receiving buffer for ghost_put" << std::endl;
+
+#endif
+
+		// add the received particles to the vector
+		ptr1 = new PtrMemory(((char *)mem.getPointerBase()+ps.getOffset()),tot);
+
+		// create vector representation to a piece of memory already allocated
+		grid_base_impl<dim,T,PtrMemory,typename memory_traits_lin<T>::type,memory_traits_lin> gs;
+
+		gs.setMemory(*ptr1);
+
+		// resize with the number of elements
+		gs.resize(sz);
+
+		// Merge the information
+
+		auto it_src = gs.getIterator();
+
+		while (sub2.isNext())
+		{
+			object_s_di_op<op,decltype(gs.get_o(it_src.get())),decltype(this->get_o(sub2.get())),OBJ_ENCAP,prp...>(gs.get_o(it_src.get()),this->get_o(sub2.get()));
+
+			++sub2;
+			++it_src;
+		}
+
+		ps.addOffset(tot);
 	}
 
 	/*! \brief Calculate the memory size required to pack n elements

@@ -302,6 +302,40 @@ public:
 
 		// update statistic
 	}
+
+	/*! \brief
+	 *
+	 * is this needed
+	 *
+	 */
+	template<template<typename,typename> class op, unsigned int ... prp>
+	static void unpack_op(ExtPreAlloc<Mem> & mem,
+						T & obj,
+						size_t sub_id,
+						Unpack_stat & ps)
+	{
+		if (has_pack_encap<T,prp ...>::result::value == true)
+		{call_encapUnpackChunking<T,Mem,prp ...>::call_unpack(obj,sub_id,mem,ps);}
+		else
+		{
+			if (sizeof...(prp) == 0)
+			{
+				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
+				copy_unpacker_chunk<encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type>,
+									decltype(obj)>(enc,obj,sub_id);
+				ps.addOffset(sizeof(typename T::T_type));
+			}
+			else
+			{
+				typedef object<typename object_creator_chunking<typename T::type,prp...>::type> prp_object;
+				encapc<1,prp_object,typename memory_traits_lin< prp_object >::type> enc(*static_cast<typename prp_object::type *>((void *)((unsigned char *)mem.getPointerBase() + ps.getOffset())));
+				object_s_di_op<op,decltype(enc),T,OBJ_ENCAP_CHUNKING,prp ... >(enc,obj,sub_id);
+				ps.addOffset(sizeof(prp_object));
+			}
+		}
+
+		// update statistic
+	}
 };
 
 

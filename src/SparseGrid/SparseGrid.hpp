@@ -483,6 +483,16 @@ public:
 		return background;
 	}
 
+	/*! \brief This is a multiresolution sparse grid so is a compressed format
+	 *
+	 * \return true
+	 *
+	 */
+	static bool isCompressed()
+	{
+		return true;
+	}
+
 	/*! \brief Insert a full element (with all properties)
 	 *
 	 * \param v1 where you want to insert the element
@@ -1240,6 +1250,7 @@ public:
 		{
 			auto key_src = it.get();
 			grid_key_dx<dim> key_dst = key_src + box_dst.getKP1();
+			key_dst -= box_src.getKP1();
 
 			typedef typename std::remove_const<typename std::remove_reference<decltype(grid_src)>::type>::type gcopy;
 
@@ -1250,6 +1261,7 @@ public:
 		}
 	}
 
+
 	/*! \brief unpack the sub-grid object
 	 *
 	 * \tparam prp properties to unpack
@@ -1259,8 +1271,8 @@ public:
 	 * \param obj object where to unpack
 	 *
 	 */
-	template<unsigned int ... prp>
-	void unpack(ExtPreAlloc<S> & mem,
+	template<unsigned int ... prp, typename S2>
+	void unpack(ExtPreAlloc<S2> & mem,
 				grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> & sub_it,
 				Unpack_stat & ps)
 	{
@@ -1270,38 +1282,107 @@ public:
 
 		size_t n_chunks;
 
-		Unpacker<size_t,S>::unpack(mem,n_chunks,ps);
+		Unpacker<size_t,S2>::unpack(mem,n_chunks,ps);
 
-		header.resize(n_chunks);
-		chunks.resize(n_chunks);
+		openfpm::vector<cheader<dim,chunking::size::value>> header_tmp;
+		openfpm::vector<aggregate_bfv<chunk_def>> chunks_tmp;
+
+		header_tmp.resize(n_chunks);
+		chunks_tmp.resize(n_chunks);
 
 		for (size_t i = 0 ; i < n_chunks ; i++)
 		{
-			auto & h = header.get(i);
+			auto & h = header_tmp.get(i);
 
-			Unpacker<decltype(header.get(i).mask),S>::unpack(mem,h.mask,ps);
-			Unpacker<decltype(header.get(i).pos),S>::unpack(mem,h.pos,ps);
-			Unpacker<decltype(header.get(i).nele),S>::unpack(mem,h.nele,ps);
+			Unpacker<decltype(header.get(i).mask),S2>::unpack(mem,h.mask,ps);
+			Unpacker<decltype(header.get(i).pos),S2>::unpack(mem,h.pos,ps);
+			Unpacker<decltype(header.get(i).nele),S2>::unpack(mem,h.nele,ps);
 
 			// fill the mask_it
 
 			fill_mask(mask_it,h.mask,h.nele);
 
 			// now we unpack the information
+			size_t active_cnk;
+			size_t ele_id;
 
 			for (size_t k = 0 ; k < h.nele ; k++)
 			{
+				// construct v1
+				grid_key_dx<dim> v1;
+				for (size_t i = 0 ; i < dim ; i++)
+				{v1.set_d(i,h.pos.get(i) + pos_chunk[mask_it[k]].get(i) + sub_it.getStart().get(i));}
+
+				pre_insert(v1,active_cnk,ele_id);
+
 				Unpacker<decltype(chunks.template get_o(mask_it[k])),
-							S,
-							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack<prp...>(mem,chunks.template get_o(i),mask_it[k],ps);
+							S2,
+							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack<prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
 
 			}
-
-			header.get(i).pos += sub_it.getStart();
 		}
+	}
 
-		// create a map again
-		reconstruct_map();
+	/*! \brief unpack the sub-grid object applying an operation
+	 *
+	 * \tparam op operation
+	 * \tparam prp properties to unpack
+	 *
+	 * \param mem preallocated memory from where to unpack the object
+	 * \param sub sub-grid iterator
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<template<typename,typename> class op, typename S2, unsigned int ... prp>
+	void unpack_with_op(ExtPreAlloc<S2> & mem,
+						grid_key_sparse_dx_iterator_sub<dim,chunking::size::value> & sub2,
+						Unpack_stat & ps)
+	{
+		short unsigned int mask_it[chunking::size::value];
+
+		// first we unpack the number of chunks
+
+		size_t n_chunks;
+
+		Unpacker<size_t,S2>::unpack(mem,n_chunks,ps);
+
+		openfpm::vector<cheader<dim,chunking::size::value>> header_tmp;
+		openfpm::vector<aggregate_bfv<chunk_def>> chunks_tmp;
+
+		header_tmp.resize(n_chunks);
+		chunks_tmp.resize(n_chunks);
+
+		for (size_t i = 0 ; i < n_chunks ; i++)
+		{
+			auto & h = header_tmp.get(i);
+
+			Unpacker<decltype(header.get(i).mask),S2>::unpack(mem,h.mask,ps);
+			Unpacker<decltype(header.get(i).pos),S2>::unpack(mem,h.pos,ps);
+			Unpacker<decltype(header.get(i).nele),S2>::unpack(mem,h.nele,ps);
+
+			// fill the mask_it
+
+			fill_mask(mask_it,h.mask,h.nele);
+
+			// now we unpack the information
+			size_t active_cnk;
+			size_t ele_id;
+
+			for (size_t k = 0 ; k < h.nele ; k++)
+			{
+				// construct v1
+				grid_key_dx<dim> v1;
+				for (size_t i = 0 ; i < dim ; i++)
+				{v1.set_d(i,h.pos.get(i) + pos_chunk[mask_it[k]].get(i) + sub2.getStart().get(i));}
+
+				pre_insert(v1,active_cnk,ele_id);
+
+				Unpacker<decltype(chunks.template get_o(mask_it[k])),
+							S2,
+							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+
+			}
+		}
 	}
 
 	/*! \brief This is a meta-function return which type of sub iterator a grid produce

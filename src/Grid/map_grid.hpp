@@ -195,6 +195,16 @@ public:
 		return grid_key_dx_iterator_sub<dim, stencil>();
 	}
 
+	/*! \brief Return if in this representation data are stored is a compressed way
+	 *
+	 * \return false this is a normal grid no compression
+	 *
+	 */
+	static bool isCompressed()
+	{
+		return false;
+	}
+
 	/*! \brief This is a meta-function return which type of iterator a grid produce
 	 *
 	 * \return the type of the sub-grid iterator
