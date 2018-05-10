@@ -284,12 +284,15 @@ public:
 		{call_encapUnpackChunking<T,Mem,prp ...>::call_unpack(obj,sub_id,mem,ps);}
 		else
 		{
+			// get the first element to get the chunking size
+			typedef typename boost::mpl::at<typename T::T_type::type,boost::mpl::int_<0>>::type cnk_size;
+
 			if (sizeof...(prp) == 0)
 			{
 				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
 				copy_unpacker_chunk<encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type>,
 									decltype(obj)>(enc,obj,sub_id);
-				ps.addOffset(sizeof(typename T::T_type));
+				ps.addOffset(sizeof(typename T::T_type) / std::tuple_size<cnk_size>::value);
 			}
 			else
 			{

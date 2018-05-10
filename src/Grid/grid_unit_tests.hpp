@@ -495,7 +495,7 @@ template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz
 
 			if (make_test == true)
 			{
-				auto key_it = c3.getSubIterator(start,stop);
+				auto key_it = c3.getIterator(start,stop);
 
 				while (key_it.isNext())
 				{

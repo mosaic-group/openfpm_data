@@ -200,7 +200,7 @@ public:
 	 * \return false this is a normal grid no compression
 	 *
 	 */
-	static bool isCompressed()
+	static constexpr bool isCompressed()
 	{
 		return false;
 	}

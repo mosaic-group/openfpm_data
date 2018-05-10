@@ -524,7 +524,7 @@ public:
 	 * \return true
 	 *
 	 */
-	static bool isCompressed()
+	static constexpr bool isCompressed()
 	{
 		return true;
 	}
@@ -1033,6 +1033,64 @@ public:
 	 *
 	 */
 	template<int ... prp> inline
+	void packRequest(size_t & req) const
+	{
+		grid_sm<dim,void> gs_cnk(sz_cnk);
+
+		// For sure we have to pack the number of chunk we want to pack
+
+		req += sizeof(size_t);
+		req += dim*sizeof(size_t);
+
+		// Here we have to calculate the number of points to pack
+
+		for (size_t i = 0 ; i < header.size() ; i++)
+		{
+			auto & h = header.get(i);
+
+			size_t mask_nele;
+			short unsigned int mask_it[chunking::size::value];
+
+			fill_mask(mask_it,h.mask,mask_nele);
+
+			for (size_t j = 0 ; j < mask_nele ; j++)
+			{
+				// If all of the aggregate properties do not have a "pack()" member
+				if (has_pack_agg<T,prp...>::result::value == false)
+				{
+					// here we count how many chunks must be sent
+
+					size_t alloc_ele = this->packMem<prp...>(1,0);
+					req += alloc_ele;
+				}
+				else
+				{
+					//Call a pack request
+					call_aggregatePackRequestChunking<decltype(chunks.template get_o(i)),
+																  S,prp ... >
+																  ::call_packRequest(chunks.template get_o(i),mask_it[j],req);
+				}
+			}
+
+			// There are point to send. So we have to save the mask chunk
+			req += sizeof(header.get(i).mask);
+			// the chunk position
+			req += sizeof(header.get(i).pos);
+			// and the number of element
+			req += sizeof(header.get(i).nele);
+		}
+	}
+
+	/*! \brief Insert an allocation request
+	 *
+	 * \tparam prp set of properties to pack
+	 *
+
+	 * \param sub sub-grid to pack
+	 * \param vector of requests
+	 *
+	 */
+	template<int ... prp> inline
 	void packRequest(grid_key_sparse_dx_iterator_sub<dim,chunking::size::value> & sub_it,
 					 size_t & req) const
 	{
@@ -1041,6 +1099,7 @@ public:
 		// For sure we have to pack the number of chunk we want to pack
 
 		req += sizeof(size_t);
+		req += dim*sizeof(size_t);
 
 		// Here we have to calculate the number of points to pack
 
@@ -1145,6 +1204,11 @@ public:
 
 		mem.allocate(sizeof(size_t));
 		size_t * number_of_chunks = (size_t *)mem.getPointer();
+
+		// Pack the size of the grid
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{Packer<size_t,S>::pack(mem,getGrid().size(i),sts);}
 
 		// Here we have to calculate the number of points to pack
 
@@ -1256,6 +1320,60 @@ public:
 		*number_of_chunks = n_packed_chunk;
 	}
 
+	/*! \brief Pack the object into the memory given an iterator
+	 *
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 * \param sub_it sub grid iterator ( or the elements in the grid to pack )
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void pack(ExtPreAlloc<S> & mem,
+									Pack_stat & sts)
+	{
+		grid_sm<dim,void> gs_cnk(sz_cnk);
+
+		// Here we allocate a size_t that indicate the number of chunk we are packing,
+		// because we do not know a priory, we will fill it later
+
+		Packer<size_t,S>::pack(mem,header.size(),sts);
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{Packer<size_t,S>::pack(mem,getGrid().size(i),sts);}
+
+		// Here we have to calculate the number of points to pack
+
+		for (size_t i = 0 ; i < header.size() ; i++)
+		{
+			auto & h = header.get(i);
+
+			Packer<decltype(header.get(i).mask),S>::pack(mem,h.mask,sts);
+			Packer<decltype(header.get(i).pos),S>::pack(mem,h.pos,sts);
+			Packer<decltype(header.get(i).nele),S>::pack(mem,h.nele,sts);
+
+			// we iterate all the points
+
+			size_t mask_nele;
+			short unsigned int mask_it[chunking::size::value];
+
+			fill_mask(mask_it,h.mask,mask_nele);
+
+			for (size_t j = 0 ; j < mask_nele ; j++)
+			{
+				Packer<decltype(chunks.template get_o(i)),
+								S,
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<prp...>(mem,chunks.template get_o(i),mask_it[j],sts);
+			};
+		}
+	}
+
+	/*! \brief It does materially nothing
+	 *
+	 */
+	void setMemory()
+	{}
+
 
 	/*! \number of element inserted
 	 *
@@ -1341,6 +1459,10 @@ public:
 
 		Unpacker<size_t,S2>::unpack(mem,n_chunks,ps);
 
+		size_t sz[dim];
+		for (size_t i = 0 ; i < dim ; i++)
+		{Unpacker<size_t,S2>::unpack(mem,sz[i],ps);}
+
 		openfpm::vector<cheader<dim,chunking::size::value>> header_tmp;
 		openfpm::vector<aggregate_bfv<chunk_def>> chunks_tmp;
 
@@ -1378,6 +1500,48 @@ public:
 
 			}
 		}
+	}
+
+	/*! \brief unpack the sub-grid object
+	 *
+	 * \tparam prp properties to unpack
+	 *
+	 * \param mem preallocated memory from where to unpack the object
+	 * \param sub sub-grid iterator
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<unsigned int ... prp, typename S2>
+	void unpack(ExtPreAlloc<S2> & mem,
+				Unpack_stat & ps)
+	{
+		this->clear();
+
+		grid_key_dx<dim> start;
+		grid_key_dx<dim> stop;
+
+		// We preunpack some data
+		Unpack_stat ps_tmp;
+
+		size_t unused;
+		Unpacker<size_t,S2>::unpack(mem,unused,ps_tmp);
+
+		size_t sz[dim];
+		for (size_t i = 0 ; i < dim ; i++)
+		{Unpacker<size_t,S2>::unpack(mem,sz[i],ps_tmp);}
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			start.set_d(i,0);
+			stop.set_d(i,getGrid().size(i)-1);
+		}
+
+		g_sm.setDimensions(sz);
+		set_g_shift_from_size(sz,g_sm_shift);
+
+		grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> sub_it;
+
+		unpack(mem,sub_it,ps);
 	}
 
 	/*! \brief unpack the sub-grid object applying an operation
@@ -1634,6 +1798,22 @@ public:
 
 		// Write the VTK file
 		return vtk_writer.write(output,prp_names,"sparse_grid",ft);
+	}
+
+	//Functions to check if the packing object is complex
+	static bool pack()
+	{
+		return false;
+	}
+
+	static bool packRequest()
+	{
+		return false;
+	}
+
+	static bool packMem()
+	{
+		return false;
 	}
 };
 

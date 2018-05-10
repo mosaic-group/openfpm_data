@@ -428,6 +428,34 @@ struct copy_packer_chunk
 
 template <typename> struct Debug;
 
+template<bool is_zero, typename T, int ... prp>
+struct selector_chunking_prp_has_zero_size
+{
+	template<typename Mem> static inline void select(ExtPreAlloc<Mem> & mem,  const T & eobj, size_t sub_id)
+	{
+		// get the first element to get the chunking size
+		typedef typename boost::mpl::at<typename T::T_type::type,boost::mpl::int_<0>>::type cnk_size;
+		mem.allocate(sizeof(typename T::T_type) / std::tuple_size<cnk_size>::value);
+		encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
+		copy_packer_chunk<decltype(eobj),
+		encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type>>(eobj,sub_id,enc);
+		//enc = eobj[sub_id];
+	}
+};
+
+template<typename T, int ... prp>
+struct selector_chunking_prp_has_zero_size<true,T,prp...>
+{
+	template<typename Mem> static inline void select(ExtPreAlloc<Mem> & mem,  const T & eobj, size_t sub_id)
+	{
+		// Here we create an encap without array extent
+		typedef object<typename object_creator_chunking<typename T::type,prp...>::type> prp_object;
+		mem.allocate(sizeof(prp_object));
+		encapc<1,prp_object,typename memory_traits_lin< prp_object>::type> enc(*static_cast<typename prp_object::type *>(mem.getPointer()));
+		object_si_d<T,decltype(enc),OBJ_ENCAP_CHUNKING,prp ... >(eobj,sub_id,enc);
+	}
+};
+
 template<typename T, typename Mem>
 class Packer<T,Mem,PACKER_ENCAP_OBJECTS_CHUNKING>
 {
@@ -448,12 +476,14 @@ public:
 		{call_encapPackChunking<T,Mem,prp ...>::call_pack(eobj,sub_id,mem,sts);}
 		else
 		{
-			if (sizeof...(prp) == 0)
+			selector_chunking_prp_has_zero_size<sizeof...(prp),T, prp ...>::select(mem,eobj,sub_id);
+
+/*			if (sizeof...(prp) == 0)
 			{
 				mem.allocate(sizeof(typename T::T_type));
 				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
 				copy_packer_chunk<decltype(eobj),
-									encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type>>(eobj,sub_id,enc);
+				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type>>(eobj,sub_id,enc);
 				//enc = eobj[sub_id];
 			}
 			else
@@ -463,7 +493,7 @@ public:
 				mem.allocate(sizeof(prp_object));
 				encapc<1,prp_object,typename memory_traits_lin< prp_object>::type> enc(*static_cast<typename prp_object::type *>(mem.getPointer()));
 				object_si_d<T,decltype(enc),OBJ_ENCAP_CHUNKING,prp ... >(eobj,sub_id,enc);
-			}
+			}*/
 		}
 
 		// update statistic

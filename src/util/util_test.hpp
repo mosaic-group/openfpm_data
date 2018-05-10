@@ -21,6 +21,7 @@
 #include <iostream>
 #include "mul_array_extents.hpp"
 #include "Packer_Unpacker/has_max_prop.hpp"
+#include "SparseGrid/SparseGrid.hpp"
 
 //! test type for has_max_prop
 struct test_has_max_prop
@@ -809,6 +810,12 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 
 			BOOST_REQUIRE_EQUAL(val,false);
 
+			typedef aggregate<sgrid_cpu<3,aggregate<int>,HeapMemory>,Box<3,float>> aggr3;
+
+			val = has_pack_agg<aggr3>::result::value;
+
+			BOOST_REQUIRE_EQUAL(val,true);
+
 		}
 		//! [Check has_pack_agg]
 
@@ -848,6 +855,33 @@ BOOST_AUTO_TEST_CASE( check_convert_function )
 
 	//! [Convert combination to Point3]
 	}
+}
+
+BOOST_AUTO_TEST_CASE( dyn_struct_check )
+{
+	typedef grid_cpu<3,aggregate<int>> gs;
+
+	bool test = isDynStruct<gs>::value();
+
+	BOOST_REQUIRE_EQUAL(test,false);
+
+	typedef openfpm::vector<aggregate<int>> va;
+
+	test = isDynStruct<gs>::value();
+
+	BOOST_REQUIRE_EQUAL(test,false);
+
+	typedef sgrid_cpu<3,aggregate<int>,HeapMemory> sg;
+
+	test = isDynStruct<sg>::value();
+
+	BOOST_REQUIRE_EQUAL(test,true);
+
+	typedef openfpm::vector<int> vi;
+
+	test = isDynStruct<vi>::value();
+
+	BOOST_REQUIRE_EQUAL(test,false);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

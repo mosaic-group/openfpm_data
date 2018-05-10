@@ -325,4 +325,12 @@ struct object_creator_chunking
 	typedef typename boost::fusion::result_of::as_vector<typename object_creator_chunking_impl<v,boost::mpl::vector<>,prp... >::type>::type type;
 };
 
+
+//! specialization when no properties are passed
+template<typename v>
+struct object_creator_chunking<v>
+{
+	typedef v type;
+};
+
 #endif

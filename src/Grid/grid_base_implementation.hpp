@@ -915,13 +915,13 @@ public:
 	 * \return a sub-grid iterator
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<dim> getSubIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
+/*	inline grid_key_dx_iterator_sub<dim> getSubIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
 		return g1.getSubIterator(start,stop);
-	}
+	}*/
 
 	/*! \brief Return a sub-grid iterator
 	 *

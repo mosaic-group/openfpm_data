@@ -370,8 +370,7 @@ struct call_pack_agg_functor
 	{
 		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_t;
 
-		//for (size_t i = 0; i < obj.size(); i++)
-			Packer<obj_t,Mem>::pack(mem,obj.template get<T::value>(),sts);
+		Packer<obj_t,Mem>::pack(mem,obj.template get<T::value>(),sts);
 	}
 };
 

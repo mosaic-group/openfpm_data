@@ -617,6 +617,83 @@ BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_quarter_sphere)
 	BOOST_REQUIRE_EQUAL(error,false);
 }
 
+template<typename sgrid> void Test_unpack_and_check_full(sgrid & grid)
+{
+	grid_key_dx<3> end;
+	grid_key_dx<3> zero({0,0,0});
+	size_t req2 = 0;
+	size_t req3 = 0;
+	size_t sz[3];
+
+	for (size_t i = 0 ; i < 3 ; i++)
+	{
+		end.set_d(i,grid.getGrid().size(i) - 1);
+		sz[i] = 0;
+	}
+
+	grid.template packRequest<0>(req2);
+	auto sub_it = grid.getIterator(zero,end);
+	grid.template packRequest<0>(sub_it,req3);
+
+	BOOST_REQUIRE_EQUAL(req2,req3);
+
+	Pack_stat sts2;
+	Pack_stat sts3;
+
+	// allocate the memory 2
+	HeapMemory pmem2;
+	pmem2.allocate(req2);
+	ExtPreAlloc<HeapMemory> & mem2 = *(new ExtPreAlloc<HeapMemory>(req2,pmem2));
+	mem2.incRef();
+
+	// allocate the memory 3
+	HeapMemory pmem3;
+	pmem3.allocate(req3);
+	ExtPreAlloc<HeapMemory> & mem3 = *(new ExtPreAlloc<HeapMemory>(req3,pmem3));
+	mem3.incRef();
+
+	grid.template pack<0>(mem2,sts2);
+	grid.template pack<0>(mem3,sub_it,sts3);
+
+	BOOST_REQUIRE_EQUAL(mem2.size(),mem3.size());
+
+	bool check = true;
+
+	char * p2 = (char *)pmem2.getPointer();
+	char * p3 = (char *)pmem3.getPointer();
+
+	for (size_t i = 0 ; i < mem2.size(); i++)
+	{
+		check &= (p2[i] == p3[i]);
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+
+	// Unpack on a Sparse grid without information
+
+	Unpack_stat ps;
+	sgrid empty(sz);
+
+	empty.template unpack<0>(mem3,ps);
+
+	BOOST_REQUIRE_EQUAL(empty.getGrid().size(0),grid.getGrid().size(0));
+	BOOST_REQUIRE_EQUAL(empty.getGrid().size(1),grid.getGrid().size(1));
+	BOOST_REQUIRE_EQUAL(empty.getGrid().size(2),grid.getGrid().size(2));
+
+	auto it = empty.getIterator();
+
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		check &= (grid.template get<0>(p) == empty.template get<0>(p));
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+}
+
 template<typename sgrid> void Test_unpack_and_check(sgrid & grid, sgrid & grid2, size_t (& sz_cell)[3])
 {
 	grid.getBackgroundValue().template get<0>() = 0.0;
@@ -802,6 +879,23 @@ BOOST_AUTO_TEST_CASE( sparse_grid_copy_to)
 	BOOST_REQUIRE_EQUAL(match,true);
 }
 
+BOOST_AUTO_TEST_CASE( sparse_pack_full )
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_cpu<3,aggregate<double,int>,HeapMemory> grid(sz);
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere(grid,cdsm);
+
+	Test_unpack_and_check_full(grid);
+}
 
 BOOST_AUTO_TEST_CASE( sparse_operator_equal )
 {
