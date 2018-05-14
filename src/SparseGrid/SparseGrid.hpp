@@ -1521,7 +1521,7 @@ public:
 		grid_key_dx<dim> stop;
 
 		// We preunpack some data
-		Unpack_stat ps_tmp;
+		Unpack_stat ps_tmp = ps;
 
 		size_t unused;
 		Unpacker<size_t,S2>::unpack(mem,unused,ps_tmp);
@@ -1530,16 +1530,16 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)
 		{Unpacker<size_t,S2>::unpack(mem,sz[i],ps_tmp);}
 
+		g_sm.setDimensions(sz);
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			start.set_d(i,0);
 			stop.set_d(i,getGrid().size(i)-1);
 		}
 
-		g_sm.setDimensions(sz);
 		set_g_shift_from_size(sz,g_sm_shift);
 
-		grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> sub_it;
+		auto sub_it = this->getIterator(start,stop);
 
 		unpack(mem,sub_it,ps);
 	}
