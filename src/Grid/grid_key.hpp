@@ -294,6 +294,10 @@ public:
 		return !this->operator==(key_t);
 	}
 
+	static bool noPointers()
+	{
+		return true;
+	}
 
 	/*! \brief set the Key from a list of numbers
 	 *

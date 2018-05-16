@@ -115,7 +115,10 @@ public:
 		typedef typename boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type idx_type;
 		typedef typename std::remove_reference<decltype(dst.template insert<idx_type::value>(pos_dst))>::type copy_rtype;
 
-		meta_copy_op<op,copy_rtype>::meta_copy_op_(src.template get<T::value>(pos_src),dst.template insert<T::value>(pos_dst));
+		if (dst.existPoint(pos_dst) == false)
+		{meta_copy_op<replace_,copy_rtype>::meta_copy_op_(src.template get<idx_type::value>(pos_src),dst.template insert<idx_type::value>(pos_dst));}
+		else
+		{meta_copy_op<op,copy_rtype>::meta_copy_op_(src.template get<idx_type::value>(pos_src),dst.template insert<idx_type::value>(pos_dst));}
 	}
 
 };
@@ -368,8 +371,9 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 	 * \param sub_id element inside the chunk
 	 *
 	 */
-	inline void pre_insert(const grid_key_dx<dim> & v1, size_t & active_cnk, size_t & sub_id)
+	inline bool pre_insert(const grid_key_dx<dim> & v1, size_t & active_cnk, size_t & sub_id)
 	{
+		bool exist = true;
 		active_cnk = 0;
 
 		grid_key_dx<dim> kh = v1;
@@ -440,8 +444,11 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 
 		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
 
-		h.nele = (h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check)?h.nele:h.nele + 1;
+		exist = h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check;
+		h.nele = (exist)?h.nele:h.nele + 1;
 		h.mask[sub_id >> BIT_SHIFT_SIZE_T] |= mask_check;
+
+		return exist;
 	}
 
 public:
@@ -629,7 +636,6 @@ public:
 		return chunks.template get<p>(active_cnk)[sub_id];
 	}
 
-
 	/*! \brief Get the reference of the selected element
 	 *
 	 * \param v1 grid_key that identify the element in the grid
@@ -762,6 +768,58 @@ public:
 		{return background.template get<p>();}
 
 		return chunks.template get<p>(active_cnk)[sub_id];
+	}
+
+	/*! \brief Check if the point exist
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return the true if the point exist
+	 *
+	 */
+	inline bool existPoint(const grid_key_dx<dim> & v1) const
+	{
+		size_t active_cnk;
+		grid_key_dx<dim> kh = v1;
+		grid_key_dx<dim> kl;
+
+		// shift the key
+		key_shift<dim,chunking>::shift(kh,kl);
+
+		long int lin_id = g_sm_shift.LinId(kh);
+
+		size_t id = 0;
+		for (size_t k = 0 ; k < SGRID_CACHE; k++)
+		{id += (cache[k] == lin_id)?k+1:0;}
+
+		if (id == 0)
+		{
+			auto it = map.find(lin_id);
+
+			if (it == map.end())
+			{return false;}
+
+			add_on_cache(lin_id,it->second);
+
+			active_cnk = it->second;
+		}
+		else
+		{
+			active_cnk = cached_id[id-1];
+		}
+
+		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
+
+		// we check the mask
+		auto & h = header.get(active_cnk);
+
+		// We check the mask
+		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+		if ((h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check) == 0)
+		{return false;}
+
+		return true;
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -1246,7 +1304,7 @@ public:
 
 				size_t mask_to_pack[chunking::size::value / (sizeof(size_t)*8) + (chunking::size::value % (sizeof(size_t)*8) != 0) + 1];
 				memset(mask_to_pack,0,sizeof(mask_to_pack));
-				mem.allocate(sizeof(header.get(i).mask) + sizeof(header.get(i).pos) + sizeof(header.get(i).nele));
+				mem.allocate_nocheck(sizeof(header.get(i).mask) + sizeof(header.get(i).pos) + sizeof(header.get(i).nele));
 
 				// here we get the pointer of the memory in case we have to pack the header
 				// and we also shift the memory pointer by an offset equal to the header
@@ -1274,7 +1332,7 @@ public:
 					{
 						Packer<decltype(chunks.template get_o(i)),
 									S,
-									PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<prp...>(mem,chunks.template get_o(i),sub_id,sts);
+									PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<T,prp...>(mem,chunks.template get_o(i),sub_id,sts);
 
 						mask_to_pack[sub_id >> BIT_SHIFT_SIZE_T] |= mask_check;
 						has_packed = true;
@@ -1363,7 +1421,7 @@ public:
 			{
 				Packer<decltype(chunks.template get_o(i)),
 								S,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<prp...>(mem,chunks.template get_o(i),mask_it[j],sts);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<T,prp...>(mem,chunks.template get_o(i),mask_it[j],sts);
 			};
 		}
 	}
@@ -1392,6 +1450,75 @@ public:
 		}
 
 		return tot;
+	}
+
+	/*! \brief Remove all the points in this region
+	 *
+	 * \param box_src box to kill the points
+	 *
+	 */
+	void remove(Box<dim,size_t> & section_to_delete)
+	{
+		grid_sm<dim,void> gs_cnk(sz_cnk);
+
+		for (size_t i = 0 ; i < header.size() ; i++)
+		{
+			auto & h = header.get(i);
+
+			if (i == 9672)
+			{
+				int debug = 0;
+				debug++;
+			}
+
+			Box<dim,size_t> bc;
+
+			for (size_t j = 0 ; j < dim ; j++)
+			{
+				bc.setLow(j,header.get(i).pos.get(j));
+				bc.setHigh(j,header.get(i).pos.get(j) + sz_cnk[j] - 1);
+			}
+
+			// now we intersect the chunk box with the box
+
+			Box<dim,size_t> inte;
+			bool stp = bc.Intersect(section_to_delete,inte);
+
+			if (stp == true)
+			{
+				// If it is intersect ok we have to check if there are points to pack
+				// we shift inte intp the chunk origin
+
+				inte -= header.get(i).pos.toPoint();
+
+				// we iterate all the points
+
+				grid_key_dx_iterator_sub<dim> sit(gs_cnk,inte.getKP1(),inte.getKP2());
+
+				while (sit.isNext())
+				{
+					auto key = sit.get();
+
+					size_t sub_id = gs_cnk.LinId(key);
+					size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+					size_t swt = header.get(i).mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check;
+
+					h.nele = (swt)?h.nele-1:h.nele;
+					h.mask[sub_id >> BIT_SHIFT_SIZE_T] &= ~mask_check;
+
+					if (h.nele == 0 && swt != 0)
+					{
+						// Add the chunks in the empty list
+						empty_v.add(i);
+					}
+
+					++sit;
+				}
+			}
+		}
+
+		remove_empty();
 	}
 
 	void copy_to(const sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking> & grid_src,
@@ -1496,7 +1623,7 @@ public:
 
 				Unpacker<decltype(chunks.template get_o(mask_it[k])),
 							S2,
-							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack<prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack<T,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
 
 			}
 		}
@@ -1541,7 +1668,7 @@ public:
 
 		auto sub_it = this->getIterator(start,stop);
 
-		unpack(mem,sub_it,ps);
+		unpack<prp...>(mem,sub_it,ps);
 	}
 
 	/*! \brief unpack the sub-grid object applying an operation
@@ -1566,6 +1693,10 @@ public:
 		size_t n_chunks;
 
 		Unpacker<size_t,S2>::unpack(mem,n_chunks,ps);
+
+		size_t sz[dim];
+		for (size_t i = 0 ; i < dim ; i++)
+		{Unpacker<size_t,S2>::unpack(mem,sz[i],ps);}
 
 		openfpm::vector<cheader<dim,chunking::size::value>> header_tmp;
 		openfpm::vector<aggregate_bfv<chunk_def>> chunks_tmp;
@@ -1596,11 +1727,20 @@ public:
 				for (size_t i = 0 ; i < dim ; i++)
 				{v1.set_d(i,h.pos.get(i) + pos_chunk[mask_it[k]].get(i) + sub2.getStart().get(i));}
 
-				pre_insert(v1,active_cnk,ele_id);
+				bool exist = pre_insert(v1,active_cnk,ele_id);
 
-				Unpacker<decltype(chunks.template get_o(mask_it[k])),
-							S2,
-							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+				if (exist == false)
+				{
+					Unpacker<decltype(chunks.template get_o(mask_it[k])),
+								S2,
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<replace_,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+				}
+				else
+				{
+					Unpacker<decltype(chunks.template get_o(mask_it[k])),
+								S2,
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+				}
 
 			}
 		}

@@ -384,7 +384,7 @@ public:
 ///////////////////////////////////
 
 //! It copy one element of the chunk for each property
-template<typename e_src, typename e_dst, int ... prp>
+template<typename e_src, typename e_dst>
 struct copy_packer_chunk
 {
 	//! encapsulated object source
@@ -413,38 +413,31 @@ struct copy_packer_chunk
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		// Convert variadic to boost::vector
-		typedef typename boost::mpl::vector_c<unsigned int,prp...> prpv;
-
-		// element id to copy applying an operation
-		typedef typename boost::mpl::at<prpv,T>::type ele_cop;
-
 		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<decltype(src.template get< ele_cop::value >())>::type copy_rtype;
+		typedef typename boost::remove_reference<decltype(dst.template get< T::value >())>::type copy_rtype;
 
-		meta_copy<copy_rtype>::meta_copy_(src.template get< ele_cop::value >()[sub_id],dst.template get< ele_cop::value >());
+		meta_copy<copy_rtype>::meta_copy_(src.template get< T::value >()[sub_id],dst.template get< T::value >());
 	}
 };
 
 template <typename> struct Debug;
 
-template<bool is_zero, typename T, int ... prp>
+template<bool is_not_zero, typename T, typename T_nc, int ... prp>
 struct selector_chunking_prp_has_zero_size
 {
 	template<typename Mem> static inline void select(ExtPreAlloc<Mem> & mem,  const T & eobj, size_t sub_id)
 	{
-		// get the first element to get the chunking size
-		typedef typename boost::mpl::at<typename T::T_type::type,boost::mpl::int_<0>>::type cnk_size;
-		mem.allocate(sizeof(typename T::T_type) / std::tuple_size<cnk_size>::value);
-		encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
+		mem.allocate(sizeof(T_nc));
+		encapc<1,T_nc,typename memory_traits_lin< T_nc >::type> enc(*static_cast<typename T_nc::type *>(mem.getPointer()));
 		copy_packer_chunk<decltype(eobj),
-		encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type>>(eobj,sub_id,enc);
+		                  encapc<1,T_nc,typename memory_traits_lin< T_nc >::type>> cp(eobj,sub_id,enc);
+		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::T_type::max_prop>>(cp);
 		//enc = eobj[sub_id];
 	}
 };
 
-template<typename T, int ... prp>
-struct selector_chunking_prp_has_zero_size<true,T,prp...>
+template<typename T,  typename T_nc, int ... prp>
+struct selector_chunking_prp_has_zero_size<true,T,T_nc,prp...>
 {
 	template<typename Mem> static inline void select(ExtPreAlloc<Mem> & mem,  const T & eobj, size_t sub_id)
 	{
@@ -461,11 +454,12 @@ class Packer<T,Mem,PACKER_ENCAP_OBJECTS_CHUNKING>
 {
 public:
 
-	/*! \brief
+	/*! \brief Pack the encapsulkated object
 	 *
+	 * \tparam Base object without chunking
 	 *
 	 */
-	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, const T & eobj, size_t sub_id, Pack_stat & sts)
+	template<typename T_nc, int ... prp> static void pack(ExtPreAlloc<Mem> & mem, const T & eobj, size_t sub_id, Pack_stat & sts)
 	{
 #ifdef SE_CLASS1
 		if (mem.ref() == 0)
@@ -476,24 +470,7 @@ public:
 		{call_encapPackChunking<T,Mem,prp ...>::call_pack(eobj,sub_id,mem,sts);}
 		else
 		{
-			selector_chunking_prp_has_zero_size<sizeof...(prp),T, prp ...>::select(mem,eobj,sub_id);
-
-/*			if (sizeof...(prp) == 0)
-			{
-				mem.allocate(sizeof(typename T::T_type));
-				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
-				copy_packer_chunk<decltype(eobj),
-				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type>>(eobj,sub_id,enc);
-				//enc = eobj[sub_id];
-			}
-			else
-			{
-				// Here we create an encap without array extent
-				typedef object<typename object_creator_chunking<typename T::type,prp...>::type> prp_object;
-				mem.allocate(sizeof(prp_object));
-				encapc<1,prp_object,typename memory_traits_lin< prp_object>::type> enc(*static_cast<typename prp_object::type *>(mem.getPointer()));
-				object_si_d<T,decltype(enc),OBJ_ENCAP_CHUNKING,prp ... >(eobj,sub_id,enc);
-			}*/
+			selector_chunking_prp_has_zero_size<sizeof...(prp),T, T_nc, prp ...>::select(mem,eobj,sub_id);
 		}
 
 		// update statistic

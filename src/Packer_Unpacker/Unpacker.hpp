@@ -216,7 +216,50 @@ public:
 
 
 //! It copy one element of the chunk for each property
-template<typename e_src, typename e_dst, int ... prp>
+/*template<typename e_src, typename e_dst, int ... prp>
+struct copy_unpacker_chunk
+{
+	//! encapsulated object source
+	const e_src & src;
+	//! encapsulated object destination
+	e_dst & dst;
+
+	//! element to copy
+	size_t sub_id;*/
+
+	/*! \brief constructor
+	 *
+	 *
+	 * \param src source encapsulated object
+	 * \param dst destination encapsulated object
+	 *
+	 */
+/*	inline copy_unpacker_chunk(const e_src & src, e_dst & dst, size_t sub_id)
+	:src(src),dst(dst),sub_id(sub_id)
+	{
+	};
+
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		// Convert variadic to boost::vector
+		typedef typename boost::mpl::vector_c<unsigned int,prp...> prpv;
+
+		// element id to copy applying an operation
+		typedef typename boost::mpl::at<prpv,T>::type ele_cop;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(src.template get< ele_cop::value >())>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get< ele_cop::value >(),dst.template get< ele_cop::value >()[sub_id]);
+	}
+};*/
+
+//! It copy one element of the chunk for each property
+template<typename e_src, typename e_dst>
 struct copy_unpacker_chunk
 {
 	//! encapsulated object source
@@ -245,16 +288,10 @@ struct copy_unpacker_chunk
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		// Convert variadic to boost::vector
-		typedef typename boost::mpl::vector_c<unsigned int,prp...> prpv;
-
-		// element id to copy applying an operation
-		typedef typename boost::mpl::at<prpv,T>::type ele_cop;
-
 		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<decltype(src.template get< ele_cop::value >())>::type copy_rtype;
+		typedef typename boost::remove_reference<decltype(src.template get< T::value >())>::type copy_rtype;
 
-		meta_copy<copy_rtype>::meta_copy_(src.template get< ele_cop::value >(),dst.template get< ele_cop::value >()[sub_id]);
+		meta_copy<copy_rtype>::meta_copy_(src.template get< T::value >(),dst.template get< T::value >()[sub_id]);
 	}
 };
 
@@ -274,7 +311,7 @@ public:
 	 * is this needed
 	 *
 	 */
-	template<unsigned int ... prp>
+	template<typename T_nc, unsigned int ... prp>
 	static void unpack(ExtPreAlloc<Mem> & mem,
 						T & obj,
 						size_t sub_id,
@@ -289,10 +326,12 @@ public:
 
 			if (sizeof...(prp) == 0)
 			{
-				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
-				copy_unpacker_chunk<encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type>,
-									decltype(obj)>(enc,obj,sub_id);
-				ps.addOffset(sizeof(typename T::T_type) / std::tuple_size<cnk_size>::value);
+				encapc<1,T_nc,typename memory_traits_lin< T_nc >::type> enc(*static_cast<typename T_nc::type *>((void *)((unsigned char *)mem.getPointerBase() + ps.getOffset())));
+				copy_unpacker_chunk<encapc<1,T_nc,typename memory_traits_lin< T_nc >::type>,
+									decltype(obj)> cp(enc,obj,sub_id);
+
+				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::T_type::max_prop>>(cp);
+				ps.addOffset(sizeof(T_nc));
 			}
 			else
 			{

@@ -584,6 +584,16 @@ public:
 		memset(getPointer(),fl,size() * sizeof(T));
 	}
 
+	/*! \brief Remove all the points in this region
+	 *
+	 * For this case this function does nothing
+	 *
+	 * \param box_src box to kill the points
+	 *
+	 */
+	void remove(Box<dim,size_t> & section_to_delete)
+	{}
+
 	/*! \brief copy an external grid into a specific place into this grid
 	 *
 	 * It copy the area indicated by the  box_src from grid_src into this grid
