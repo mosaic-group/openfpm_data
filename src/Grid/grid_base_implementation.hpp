@@ -624,6 +624,14 @@ public:
 		}
 	}
 
+	/*! \brief It does nothing
+	 *
+	 *
+	 *
+	 */
+	void clear()
+	{}
+
 	/*! \brief copy an external grid into a specific place into this grid
 	 *
 	 * It copy the area indicated by the  box_src from grid_src into this grid

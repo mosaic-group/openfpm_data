@@ -451,6 +451,66 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 		return exist;
 	}
 
+	inline void remove_point(const grid_key_dx<dim> & v1)
+	{
+		size_t active_cnk = 0;
+
+		grid_key_dx<dim> kh = v1;
+		grid_key_dx<dim> kl;
+
+		// shift the key
+		key_shift<dim,chunking>::shift(kh,kl);
+
+		long int lin_id = g_sm_shift.LinId(kh);
+
+		size_t id = 0;
+		for (size_t k = 0 ; k < SGRID_CACHE; k++)
+		{id += (cache[k] == lin_id)?k+1:0;}
+
+		if (id == 0)
+		{
+			// we do not have it in cache we check if we have it in the map
+
+			auto fnd = map.find(lin_id);
+			if (fnd == map.end())
+			{return;}
+			else
+			{active_cnk = fnd->second;}
+
+			// Add on cache the chunk
+			cache[cache_pnt] = lin_id;
+			cached_id[cache_pnt] = active_cnk;
+			cache_pnt++;
+			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
+		}
+		else
+		{
+			active_cnk = cached_id[id-1];
+			cache_pnt = id;
+			cache_pnt = (cache_pnt == SGRID_CACHE)?0:cache_pnt;
+		}
+
+		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
+
+		// eliminate the element
+
+		// set the mask to null
+		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+
+		auto & h = header.get(active_cnk);
+		size_t swt = h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check;
+
+		h.nele = (swt)?h.nele-1:h.nele;
+
+		h.mask[sub_id >> BIT_SHIFT_SIZE_T] &= ~mask_check;
+
+		if (h.nele == 0 && swt != 0)
+		{
+			// Add the chunks in the empty list
+			empty_v.add(active_cnk);
+		}
+	}
+
 public:
 
 	//! it define that this data-structure is a grid
@@ -879,64 +939,28 @@ public:
 	 */
 	void remove(const grid_key_dx<dim> & v1)
 	{
-		size_t active_cnk = 0;
+		remove_point(v1);
+		remove_empty();
+	}
 
-		grid_key_dx<dim> kh = v1;
-		grid_key_dx<dim> kl;
+	/*! \brief Remove the point but do not flush the remove
+	 *
+	 * \param v1 element to remove
+	 *
+	 */
+	void remove_no_flush(const grid_key_dx<dim> & v1)
+	{
+		remove_point(v1);
+	}
 
-		// shift the key
-		key_shift<dim,chunking>::shift(kh,kl);
-
-		long int lin_id = g_sm_shift.LinId(kh);
-
-		size_t id = 0;
-		for (size_t k = 0 ; k < SGRID_CACHE; k++)
-		{id += (cache[k] == lin_id)?k+1:0;}
-
-		if (id == 0)
-		{
-			// we do not have it in cache we check if we have it in the map
-
-			auto fnd = map.find(lin_id);
-			if (fnd == map.end())
-			{return;}
-			else
-			{active_cnk = fnd->second;}
-
-			// Add on cache the chunk
-			cache[cache_pnt] = lin_id;
-			cached_id[cache_pnt] = active_cnk;
-			cache_pnt++;
-			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
-		}
-		else
-		{
-			active_cnk = cached_id[id-1];
-			cache_pnt = id;
-			cache_pnt = (cache_pnt == SGRID_CACHE)?0:cache_pnt;
-		}
-
-		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
-
-		// eliminate the element
-
-		// set the mask to null
-		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
-
-		auto & h = header.get(active_cnk);
-		size_t swt = h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check;
-
-		h.nele = (swt)?h.nele-1:h.nele;
-
-		h.mask[sub_id >> BIT_SHIFT_SIZE_T] &= ~mask_check;
-
-		if (h.nele == 0 && swt != 0)
-		{
-			// Add the chunks in the empty list
-			empty_v.add(active_cnk);
-
-			remove_empty();
-		}
+	/*! \brief Remove the point
+	 *
+	 * \param v1 element to remove
+	 *
+	 */
+	void flush_remove()
+	{
+		remove_empty();
 	}
 
 	/*! \brief Resize the grid
