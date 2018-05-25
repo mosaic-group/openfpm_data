@@ -103,6 +103,7 @@ enum file_type
 #define VTK_WRITER 0x10000
 #define FORMAT_ASCII 0x0
 #define FORMAT_BINARY 0x10000000
+#define PRINT_GHOST 1
 
 template <typename Object, unsigned int imp>
 class VTKWriter
