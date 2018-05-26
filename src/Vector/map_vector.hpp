@@ -204,6 +204,20 @@ namespace openfpm
 			resize(0);
 		}
 
+		/*! \brief Clear the vector
+		 *
+		 * Eliminate all the elements for from the vector
+		 *
+		 */
+		void shrink_to_fit()
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			size_t sz[1] = {size()};
+			base.resize(sz);
+		}
+
 		/*! \brief Resize the vector
 		 *
 		 * Resize the vector and allocate n elements

@@ -235,6 +235,20 @@ protected:
 			cl_n.get(i) = 0;
 	}
 
+	/*! \brief Destroy the memory
+	 *
+	 *
+	 *
+	 */
+	inline void destroy()
+	{
+		cl_n.resize(0);
+		cl_base.resize(0);
+
+		cl_n.shrink_to_fit();
+		cl_base.shrink_to_fit();
+	}
+
 	/*! \brief Get the first element of a cell (as reference)
 	 *
 	 * \param cell_id cell-id

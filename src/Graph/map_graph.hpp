@@ -669,6 +669,26 @@ public:
 		e_invalid.clear();
 	}
 
+
+	/*! \brief operator to clear the whole graph
+	 *
+	 * operator to clear all
+	 *
+	 */
+	void destroy()
+	{
+		v.clear();
+		v.shrink_to_fit();
+		e.clear();
+		e.shrink_to_fit();
+		v_l.clear();
+		v_l.shrink_to_fit();
+		e_l.clear();
+		e_l.shrink_to_fit();
+		e_invalid.clear();
+		e_invalid.shrink_to_fit();
+	}
+
 	/*! \brief Access the edge
 	 *
 	 * \tparam i property to access

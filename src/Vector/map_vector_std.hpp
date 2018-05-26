@@ -96,8 +96,8 @@ struct add_prp_impl<OBJECT_ADD,vect_dst>
  * \param T base type
  *
  */
-template<typename T>
-class vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,grow_policy_double,STD_VECTOR>
+template<typename T, typename grow_p>
+class vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,grow_p,STD_VECTOR>
 {
 	// Memory layout
 	typedef typename memory_traits_lin<T>::type layout;
@@ -171,6 +171,17 @@ public:
 		base.clear();
 	}
 
+	/*! \brief Fit the memory to the size of the vector
+	 *
+	 */
+	inline void shrink_to_fit()
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		base.shrink_to_fit();
+	}
+
 	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 	 *
 	 * \param v element to add
@@ -186,6 +197,12 @@ public:
 		check_valid(this,8);
 		void * ptr_old = &base[0];
 #endif
+
+		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
+		{
+			// we reserve just one space more to avoid the capacity to increase by two
+			base.reserve(base.size()+1);
+		}
 
 		base.push_back(v);
 
@@ -215,6 +232,12 @@ public:
 		check_valid(this,8);
 		void * ptr_old = &base[0];
 #endif
+
+		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
+		{
+			// we reserve just one space more to avoid the capacity to increase by two
+			base.reserve(base.size()+1);
+		}
 
 		base.emplace_back(v);
 
@@ -265,6 +288,12 @@ public:
 		void * ptr_old = &base[0];
 #endif
 
+		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
+		{
+			// we reserve just one space more to avoid the capacity to increase by two
+			base.reserve(base.size() + eles.size());
+		}
+
 		size_t start = base.size();
 		base.resize(base.size() + eles.size());
 
@@ -282,7 +311,7 @@ public:
 #endif
 	}
 
-	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
+	/*! \brief It insert a new object on the vector, eventually it reallocate the object
 	 *
 	 * \param v element to add
 	 *
@@ -326,6 +355,12 @@ public:
 		check_valid(this,8);
 		void * ptr_old = &base[0];
 #endif
+
+		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
+		{
+			// we reserve just one space more to avoid the capacity to increase by two
+			base.reserve(base.size() + 1);
+		}
 
 		base.push_back(v);
 
