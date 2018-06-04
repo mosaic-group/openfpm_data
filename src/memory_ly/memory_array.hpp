@@ -98,6 +98,16 @@ class memory_array
 		return ptr;
 	}
 
+	/*! \brief Set from another memory array
+	 *
+	 * \param the other memory_array
+	 *
+	 */
+	void bind_ref(const memory_array<T> & ref)
+	{
+		ptr = ref.ptr;
+	}
+
 	/*! \brief Access element an element of the array
 	 *
 	 * \param i element to access

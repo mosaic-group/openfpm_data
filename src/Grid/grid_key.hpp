@@ -31,7 +31,7 @@ public:
 	}
 
 	//! Constructor
-	inline grid_key_dx()
+	__device__ __host__  inline grid_key_dx()
 	{}
 
 	/*! \brief Constructor from initializer list
@@ -56,7 +56,7 @@ public:
 	 * \param key copy constructor
 	 *
 	 */
-	inline grid_key_dx(const grid_key_dx<dim> & key)
+	__device__ __host__ inline grid_key_dx(const grid_key_dx<dim> & key)
 	:grid_key_dx(key.k)
 	{
 	}
@@ -66,7 +66,7 @@ public:
 	 * \param k reference buffer
 	 *
 	 */
-	inline grid_key_dx(const size_t (&k)[dim])
+	__device__ __host__ inline grid_key_dx(const size_t (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
@@ -77,7 +77,7 @@ public:
 	 * \param k reference buffer
 	 *
 	 */
-	inline grid_key_dx(const long int (&k)[dim])
+	__device__ __host__ inline grid_key_dx(const long int (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = k[i];
@@ -108,6 +108,15 @@ public:
 #endif
 		k[dim-1] = v;
 		invert_assign(t...);
+	}
+
+	__device__ __host__ inline  grid_key_dx<dim> move(int i, int m)
+	{
+		grid_key_dx<dim> tmp = *this;
+
+		tmp.k[i] += m;
+
+		return tmp;
 	}
 
 	/*! \brief Set to zero the key
@@ -380,7 +389,7 @@ public:
 	 * \return the index value
 	 *
 	 */
-	mem_id get(size_t i) const
+	__device__ __host__  mem_id get(size_t i) const
 	{
 		return k[i];
 	}
@@ -393,9 +402,9 @@ public:
 	 * \param id value to set
 	 *
 	 */
-	void set_d(size_t i, mem_id id)
+	__device__ __host__   void set_d(size_t i, mem_id id)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 
 		if (i >= dim)
 			std::cerr << "grid_key_dx error: " << __FILE__ << " " << __LINE__ << " try to access dimension " << i << " on a grid_key_dx of size " << dim << "\n";

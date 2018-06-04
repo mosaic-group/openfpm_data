@@ -76,6 +76,23 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 		this->mem = &mem;
 	}
 
+	/*! \brief This function bind the memory_c to this memory_c as reference
+	 *
+	 * Bind ad reference it mean this this object does not create new memory but use the one from ref
+	 * as a reference.
+	 *
+	 */
+	bool bind_ref(const memory_c<T,MEMORY_C_STANDARD,D> & ref)
+	{
+	    mem = ref.mem;
+	    mem->incRef();
+
+	    //! we create the representation for the memory buffer
+	    mem_r = ref.mem_r;
+
+	    return true;
+	}
+
 	/*! \brief This function get the object that allocate memory
 	 *
 	 * \return memory object to allocate memory
@@ -85,6 +102,14 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 	memory& getMemory()
 	{
 		return *this->mem;
+	}
+
+	/*! \brief Switch the pointer to device pointer
+	 *
+	 */
+	void switchToDevicePtr()
+	{
+		mem_r.set_pointer(mem->getDevicePointer());
 	}
 
 	/*! \brief This function get the object that allocate memory
@@ -276,6 +301,52 @@ static inline std::array<size_type ,dim> zero_dims()
 	return dimensions;
 }
 
+template<unsigned int dim, typename size_type>
+struct array_ord
+{
+};
+
+template<typename size_type>
+struct array_ord<4,size_type>
+{
+	static constexpr size_type data[4] = {0,3,2,1};
+};
+
+template<typename size_type>
+struct array_ord<3,size_type>
+{
+	static constexpr size_type data[3] = {0,2,1};
+};
+
+template<typename size_type>
+struct array_ord<2,size_type>
+{
+	static constexpr size_type data[2] = {0,1};
+};
+
+template<unsigned int dim>
+struct array_asc
+{
+};
+
+template<>
+struct array_asc<4>
+{
+	static constexpr bool data[4] = {true,true,true,true};
+};
+
+template<>
+struct array_asc<3>
+{
+	static constexpr bool data[3] = {true,true,true};
+};
+
+template<>
+struct array_asc<2>
+{
+	static constexpr bool data[2] = {true,true};
+};
+
 
 /*! \brief Specialization of memory_c for multi_array
  *
@@ -331,12 +402,21 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	//! define size_type
 	typedef typename boost::multi_array_ref<base,size_p::value>::size_type size_type;
 
+//#ifdef __NVCC__
+
+	array_ord<size_p::value,typename boost::multi_array<T,size_p::value>::size_type> ord;
+
+	array_asc<size_p::value> asc;
+
+//#else
+
     //! we generate the ordering buffer ord::data = {0,N-1 ...... 1 }
-    typedef typename generate_array<typename boost::multi_array<T,size_p::value>::size_type,size_p::value, ordering>::result ord;
+//    typedef typename generate_array<typename boost::multi_array<T,size_p::value>::size_type,size_p::value, ordering>::result ord;
 
     // we generate the ascending buffer
-    typedef typename generate_array<bool,size_p::value, ascending>::result asc;
+//    typedef typename generate_array<bool,size_p::value, ascending>::result asc;
 
+//#endif
 
 	public:
 
@@ -370,6 +450,31 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 		return *this->mem;
 	}
 
+	/*! \brief Switch the pointer to device pointer
+	 *
+	 */
+	void switchToDevicePtr()
+	{
+		mem_r.set_pointer(mem->getDevicePointer());
+	}
+
+	/*! \brief This function bind the memory_c to this memory_c as reference
+	 *
+	 * Bind ad reference it mean this this object does not create new memory but use the one from ref
+	 * as a reference.
+	 *
+	 */
+	bool bind_ref(const memory_c<multi_array<T>, MEMORY_C_STANDARD, D> & ref)
+	{
+	    mem = ref.mem;
+	    mem->incRef();
+
+	    //! we create the representation for the memory buffer
+	    mem_r = ref.mem_r;
+
+	    return true;
+	}
+
 	/*! \brief This function allocate memory and associate the representation to mem_r
 	 *
 	 * This function allocate memory and associate the representation of that chunk of
@@ -394,7 +499,7 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	    for (int i = 0 ; i < size_p::value-1 ; i++)
 	    {dimensions[i+1] = dims::data[i];}
 
-	    boost::multi_array_ref_openfpm<base,size_p::value> tmp(static_cast<base *>(mem->getPointer()),dimensions,boost::general_storage_order<size_p::value>(ord::data,asc::data));
+	    boost::multi_array_ref_openfpm<base,size_p::value> tmp(static_cast<base *>(mem->getPointer()),dimensions,boost::general_storage_order<size_p::value>(boost::ofp_storage_order()));
 
 	    //! we create the representation for the memory buffer
 	    mem_r.swap(tmp);
@@ -415,7 +520,8 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	//! constructor
 	memory_c()
 	:mem(NULL),
-	 mem_r(static_cast<base *>(NULL),zero_dims<size_type,size_p::value>(),boost::general_storage_order<size_p::value>(ord::data,asc::data))
+	 mem_r(static_cast<base *>(NULL),zero_dims<size_type,size_p::value>(),
+		   boost::ofp_storage_order())
 	{}
 
 	//! destructor

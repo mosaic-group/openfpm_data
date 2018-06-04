@@ -1,7 +1,7 @@
 
 LINKLIBS = $(LIBHILBERT_LIB) $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(CUDA_LIBS) $(BOOST_IOSTREAMS_LIB) $(LOCAL_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(BOOST_CHRONO_LIB) $(BOOST_TIMER_LIB) $(BOOST_SYSTEM_LIB)
 
-NVCCFLAGS:=$(NVCCFLAGS) -ccbin=g++-5.4.0 --std=c++11
+NVCCFLAGS:=$(NVCCFLAGS) -g --std=c++11
 
 if BUILDCUDA
  CUDA_SOURCES=../../openfpm_devices/src/memory/CudaMemory.cu
@@ -10,14 +10,14 @@ else
 endif
 
 noinst_PROGRAMS = mem_map
-mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp Grid/cuda_gpu_compute.cu
+mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp Grid/gpu_test/cuda_gpu_func.cpp  $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp Grid/gpu_test/cuda_grid_unit_tests.cu
 mem_map_CXXFLAGS = $(AM_CXXFLAGS) $(LIBHILBERT_INCLUDE) $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include -I/usr/local/libhilbert/include
 mem_map_CFLAGS = $(CUDA_CFLAGS)
 mem_map_LDADD = $(LINKLIBS)
 
 nobase_include_HEADERS= data_type/scalar.hpp data_type/aggregate.hpp \
 Graph/graph_unit_tests.hpp Graph/map_graph.hpp \
-Grid/comb.hpp Grid/grid_base_implementation.hpp Grid/grid_pack_unpack.ipp  Grid/grid_base_impl_layout.hpp Grid/grid_common.hpp Grid/grid_gpu.hpp Grid/Encap.hpp Grid/grid_key.hpp Grid/grid_key_dx_expression_unit_tests.hpp Grid/grid_key_expression.hpp Grid/grid_sm.hpp Grid/grid_unit_tests.hpp Grid/grid_util_test.hpp Grid/map_grid.hpp Grid/se_grid.hpp Grid/util.hpp \
+Grid/comb.hpp Grid/grid_base_implementation.hpp Grid/grid_pack_unpack.ipp  Grid/grid_base_impl_layout.hpp Grid/grid_common.hpp Grid/Encap.hpp Grid/grid_key.hpp Grid/grid_key_dx_expression_unit_tests.hpp Grid/grid_key_expression.hpp Grid/grid_sm.hpp Grid/grid_unit_tests.hpp Grid/grid_util_test.hpp Grid/map_grid.hpp Grid/se_grid.hpp Grid/util.hpp \
 Grid/iterators/grid_key_dx_iterator_sp.hpp Grid/grid_key_dx_iterator_hilbert.hpp Grid/iterators/stencil_type.hpp  Grid/iterators/grid_key_dx_iterator_sub_bc.hpp Grid/iterators/grid_key_dx_iterator_sub.hpp Grid/iterators/grid_key_dx_iterator.hpp Grid/iterators/grid_skin_iterator.hpp  \
 Point_test.hpp \
 Point_orig.hpp \

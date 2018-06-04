@@ -10,7 +10,45 @@
 
 #include "grid_base_impl_layout.hpp"
 
-#ifdef __NVCC__
+
+#ifdef CUDA_GPU
+
+#ifndef __NVCC__
+#undef __host__
+#undef __device__
+#include <vector_types.h>
+#endif
+
+#define GRID_ID_3_RAW(start,stop) int x[3] = {threadIdx.x + blockIdx.x * blockDim.x + start.get(0),\
+    									 threadIdx.y + blockIdx.y * blockDim.y + start.get(1),\
+										 threadIdx.z + blockIdx.z * blockDim.z + start.get(2)};\
+										 \
+										 if (x[0] > stop.get(0) || x[1] > stop.get(1) || x[2] > stop.get(2))\
+    									 {return;}
+
+#define GRID_ID_3_TRAW(start,stop) int tx = threadIdx.x + blockIdx.x * blockDim.x + start.get(0);\
+    							   int ty = threadIdx.y + blockIdx.y * blockDim.y + start.get(1);\
+								   int tz = threadIdx.z + blockIdx.z * blockDim.z + start.get(2);\
+										 \
+										 if (tx > stop.get(0) || ty > stop.get(1) || tz > stop.get(2))\
+    									 {return;}
+
+#define GRID_ID_3(ite_gpu) grid_key_dx<3> key;\
+							  key.set_d(0,threadIdx.x + blockIdx.x * blockDim.x + ite_gpu.start.get(0));\
+    						  key.set_d(1,threadIdx.y + blockIdx.y * blockDim.y + ite_gpu.start.get(1));\
+							  key.set_d(2,threadIdx.z + blockIdx.z * blockDim.z + ite_gpu.start.get(2));\
+										 \
+										 if (key.get(0) > ite_gpu.stop.get(0) || key.get(1) > ite_gpu.stop.get(1) || key.get(2) > ite_gpu.stop.get(2))\
+    									 {return;}
+
+struct ite_gpu
+{
+	dim3 thr;
+	dim3 wthr;
+
+	grid_key_dx<3> start;
+	grid_key_dx<3> stop;
+};
 #else
 #define __host__
 #define __device__
@@ -327,6 +365,45 @@ public:
 
 		return grid_new;
 	}
+
+#ifdef CUDA_GPU
+	struct ite_gpu getGPUIterator(grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024)
+	{
+		size_t n = n_thr;
+
+		// Work to do
+		ite_gpu ig;
+
+		ig.thr.x = 1;
+		ig.thr.y = 1;
+		ig.thr.z = 1;
+
+		int dir = 0;
+
+		while (n != 1)
+		{
+			if (dir % 3 == 0)
+			{ig.thr.x = ig.thr.x << 1;}
+			else if (dir % 3 == 1)
+			{ig.thr.y = ig.thr.y << 1;}
+			else if (dir % 3 == 2)
+			{ig.thr.z = ig.thr.z << 1;}
+
+			n = n >> 1;
+
+			dir++;
+		}
+
+		ig.wthr.x = (key2.get(0) - key1.get(0) + 1) / ig.thr.x + (((key2.get(0) - key1.get(0) + 1)%ig.thr.x != 0)?1:0);
+		ig.wthr.y = (key2.get(1) - key1.get(1) + 1) / ig.thr.y + (((key2.get(1) - key1.get(1) + 1)%ig.thr.y != 0)?1:0);
+		ig.wthr.z = (key2.get(2) - key1.get(2) + 1) / ig.thr.z + (((key2.get(2) - key1.get(2) + 1)%ig.thr.z != 0)?1:0);
+
+		ig.start = key1;
+		ig.stop = key2;
+
+		return ig;
+	}
+#endif
 
 	/*! \brief Return the internal grid information
 	 *

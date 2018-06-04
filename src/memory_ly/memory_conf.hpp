@@ -94,7 +94,7 @@ struct memory_traits_inte
  *
  *
  */
-template<typename T>
+/*template<typename T>
 struct memory_traits_inte_red
 {
 	//! for each element in the vector interleave memory_c
@@ -102,7 +102,7 @@ struct memory_traits_inte_red
 
 	//! indicate that it change the memory layout from the original
 	typedef int yes_is_inte;
-};
+};*/
 
 /*! \brief small meta-function to get the type of the memory
  *

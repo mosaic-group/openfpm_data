@@ -295,7 +295,8 @@ public:
 	 * \return The linearization of the gk key shifted by c, or -1 if the check fail
 	 */
 
-	template<typename check=NoCheck> inline mem_id LinId(const grid_key_dx<N> & gk, const char sum_id[N]) const
+	template<typename check=NoCheck>
+	inline mem_id LinId(const grid_key_dx<N> & gk, const char sum_id[N]) const
 	{
 		mem_id lid;
 
@@ -330,7 +331,8 @@ public:
 	 * \return The linearization of the gk key shifted by c, or -1 if the check fail
 	 */
 
-	template<typename check=NoCheck> inline mem_id LinId(const grid_key_dx<N> & gk, const char sum_id[N], const size_t (&bc)[N]) const
+	template<typename check=NoCheck>
+	inline mem_id LinId(const grid_key_dx<N> & gk, const char sum_id[N], const size_t (&bc)[N]) const
 	{
 		mem_id lid;
 
@@ -397,7 +399,7 @@ public:
 	 *
 	 */
 
-	inline mem_id LinId(const size_t (& k)[N]) const
+	__device__ __host__ inline mem_id LinId(const size_t (& k)[N]) const
 	{
 		mem_id lid = k[0];
 		for (mem_id i = 1 ; i < N ; i++)
@@ -418,7 +420,7 @@ public:
 	 *
 	 */
 
-	inline mem_id LinId(const grid_key_dx<N> & gk) const
+	__device__ __host__ inline mem_id LinId(const grid_key_dx<N> & gk) const
 	{
 		mem_id lid = gk.k[0];
 		for (mem_id i = 1 ; i < N ; i++)

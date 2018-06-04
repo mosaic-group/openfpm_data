@@ -18,6 +18,7 @@
 #ifndef CT_ARRAY_HPP_
 #define CT_ARRAY_HPP_
 
+
 #include <boost/fusion/mpl.hpp>
 
 /////////////////////////////////////////////////// Make indexes ///////////////////////
@@ -73,13 +74,13 @@ struct generate_indexes {
 ///////////////////////////////////////////////////
 
 #ifndef COVERTY_SCAN
-#if __CUDACC_VER_MAJOR__ >= 9
 
 //! the array itself
 template<class T, unsigned long... args> struct ArrayHolder_constexpr {
 	//! compile-time array
-    static constexpr T data[sizeof...(args)] = { args... };
+    constexpr static T data[sizeof...(args)] = { args... };
 };
+
 
 //! recursive meta-function to generate compile-time array
 template<class T,size_t N, size_t orig_N, template<size_t,size_t> class F, unsigned... args>
@@ -121,7 +122,6 @@ struct generate_array_constexpr {
     typedef typename generate_array_constexpr_impl<T,N-1, N, F>::result result;
 };
 
-#endif
 #endif
 
 //////////////////////////////////////////////////

@@ -68,11 +68,6 @@ struct frswap
 	}
 };
 
-#ifdef __NVCC__
-#else
-#define __host__
-#define __device__
-#endif
 
 //! Case memory_traits_lin
 template<unsigned int p, typename layout, typename data_type, typename g1_type, typename key_type, unsigned int sel = 2*is_layout_mlin<layout>::value + is_layout_inte<layout>::value >

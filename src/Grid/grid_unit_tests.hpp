@@ -7,7 +7,7 @@
 #include "Space/Shape/HyperCube.hpp"
 #include "timer.hpp"
 #include "grid_util_test.hpp"
-#include "cuda_gpu_compute.cuh"
+#include "gpu_test/cuda_grid_unit_tests.cuh"
 
 #ifdef TEST_COVERAGE_MODE
 #define GS_SIZE 8
@@ -784,7 +784,165 @@ BOOST_AUTO_TEST_CASE (gpu_computation)
 
 	BOOST_REQUIRE_EQUAL(good,true);
 
-	gpu_grid_3D_fill(c3);
+	}
+
+	#endif
+}
+
+BOOST_AUTO_TEST_CASE (gpu_computation_stencil)
+{
+	#ifdef CUDA_GPU
+
+	{
+	size_t sz[3] = {64,64,64};
+	grid_gpu<3, Point_test<float> > c3(sz);
+	grid_gpu<3, Point_test<float> > c2(sz);
+	grid_key_dx<3> key1({1,1,1});
+	grid_key_dx<3> key2({62,62,62});
+
+
+	c3.setMemory();
+	c2.setMemory();
+	test_layout_gridNd<3>(c3,sz[0]);
+	test_layout_gridNd<3>(c2,sz[0]);
+
+	gpu_grid_3D_one(c2);
+
+	// Check property 1 is 1.0
+	c2.deviceToHost<0>();
+
+	{
+	auto it = c2.getIterator();
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c2.get<0>(key) == 1.0;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+	}
+
+	gpu_grid_3D_compute(c3);
+	c3.deviceToHost<0>();
+
+	{
+	auto it = c3.getIterator();
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c3.getGrid().LinId(key) == c3.get<0>(key);
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+	}
+
+	gpu_grid_3D_compute_stencil(c3,c2,key1,key2);
+
+	c2.deviceToHost<0>();
+
+	auto it = c2.getIterator(key1,key2);
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c2.get<0>(key) == 0;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+
+	}
+
+	#endif
+}
+
+BOOST_AUTO_TEST_CASE (gpu_computation_grid_stencil)
+{
+	#ifdef CUDA_GPU
+
+	{
+	size_t sz[3] = {64,64,64};
+	grid_gpu<3, Point_test<float> > c3(sz);
+	grid_gpu<3, Point_test<float> > c2(sz);
+	grid_key_dx<3> key1({1,1,1});
+	grid_key_dx<3> key2({62,62,62});
+
+
+	c3.setMemory();
+	c2.setMemory();
+	test_layout_gridNd<3>(c3,sz[0]);
+	test_layout_gridNd<3>(c2,sz[0]);
+
+	gpu_grid_3D_one(c2);
+
+	// Check property 1 is 1.0
+	c2.deviceToHost<0>();
+
+	{
+	auto it = c2.getIterator();
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c2.get<0>(key) == 1.0;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+	}
+
+	gpu_grid_3D_compute(c3);
+	c3.deviceToHost<0>();
+
+	{
+	auto it = c3.getIterator();
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c3.getGrid().LinId(key) == c3.get<0>(key);
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+	}
+
+	gpu_grid_3D_compute_grid_stencil(c3,c2,key1,key2);
+
+	c2.deviceToHost<0>();
+
+	auto it = c2.getIterator(key1,key2);
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c2.get<0>(key) == 0;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
 
 	}
 
