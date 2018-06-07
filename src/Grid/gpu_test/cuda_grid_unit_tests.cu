@@ -1,17 +1,23 @@
 #include "config.h"
 #include <Grid/map_grid.hpp>
 #include "Point_test.hpp"
+#include <stdio.h>
 
-__global__ void compute_stencil_grid(grid_gpu_ker<3,Point_test<float>> g1, grid_gpu_ker<3,Point_test<float>> g2, ite_gpu & ite_gpu)
+/*__global__ void grid_fill_vector(grid_gpu_ker<3,Point_test<float>> g1,  ite_gpu ite_gpu)
 {
-
 	GRID_ID_3(ite_gpu);
 
-/*	g2.template get<0>(key) = g1.template get<0>(key.move(0,1)) + g1.template get<0>(key.move(0,-1)) +
+	g1.template get<4>(key)[0] = 1.0;
+}*/
+
+__global__ void compute_stencil_grid(grid_gpu_ker<3,Point_test<float>> g1, grid_gpu_ker<3,Point_test<float>> g2, ite_gpu ite_gpu)
+{
+	GRID_ID_3(ite_gpu);
+
+	g2.template get<0>(key) = g1.template get<0>(key.move(0,1)) + g1.template get<0>(key.move(0,-1)) +
 			                  g1.template get<0>(key.move(1,1)) + g1.template get<0>(key.move(1,-1)) +
 							  g1.template get<0>(key.move(2,1)) + g1.template get<0>(key.move(2,-1)) -
-							  6.0*g1.template get<0>(key);*/
-
+							  6.0*g1.template get<0>(key);
 }
 
 __global__ void compute_stencil(float * prp_0, float * prp_1, int sz, grid_key_dx<3> start, grid_key_dx<3> stop)
@@ -89,7 +95,15 @@ void gpu_grid_3D_compute_grid_stencil(grid_gpu<3,Point_test<float>> & g1, grid_g
 	auto gpu_it = g2.getGPUIterator(start,stop);
 
 	auto g1k = g1.toGPU();
+	auto g2k = g2.toGPU();
 
-	compute_stencil_grid<<< gpu_it.thr, gpu_it.wthr >>>(g1k,g1k,gpu_it);
+	compute_stencil_grid<<< gpu_it.thr, gpu_it.wthr >>>(g1k,g2k,gpu_it);
 }
+
+/*void gpu_grid_fill_vector(grid_gpu<3,Point_test<float>> & g1, grid_key_dx<3> & start, grid_key_dx<3> & stop)
+{
+	auto gpu_it = g1.getGPUIterator(start,stop);
+
+	grid_fill_vector<<< gpu_it.thr, gpu_it.wthr >>>(g1.toGPU(),gpu_it);
+}*/
 

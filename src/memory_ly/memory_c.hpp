@@ -10,10 +10,11 @@
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/mpl/vector.hpp>
 #include <array>
+
+#include "util/boost_multi_array_openfpm.hpp"
 #include "util/ct_array.hpp"
 #include "memory_array.hpp"
 #include "memory/memory.hpp"
-#include "util/boost_multi_array_openfpm.hpp"
 
 #ifndef MEMORY_C_HPP_
 #define MEMORY_C_HPP_

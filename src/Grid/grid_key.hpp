@@ -39,7 +39,7 @@ public:
 	 * \param p1 initializer list
 	 *
 	 */
-	inline grid_key_dx(std::initializer_list<long int> p1)
+	__device__ __host__ inline grid_key_dx(std::initializer_list<long int> p1)
 	{
 		size_t i = 0;
 		for(long int x : p1)

@@ -227,7 +227,7 @@ struct compare_cpu_encap_encap
  *
  */
 
-template<unsigned int p,typename Mem>
+/*template<unsigned int p,typename Mem>
 struct type_gpu_prop
 {
 	//! return a boost::fusion::vector<memory_c<....>....>
@@ -238,7 +238,7 @@ struct type_gpu_prop
 	typedef typename boost::remove_reference<rtype>::type mtype;
 	//! get the base type that the buffer is storing
 	typedef typename mtype::type type;
-};
+};*/
 
 /*! Stub encap
  *
@@ -506,7 +506,7 @@ public:
 	 * \return The reference of the data
 	 *
 	 */
-	template <unsigned int p> typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get()
+	template <unsigned int p> auto get() -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
 	{
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
@@ -518,7 +518,7 @@ public:
 	 * \return The reference of the data
 	 *
 	 */
-	template <unsigned int p> const typename type_gpu_prop<p,typename memory_traits_inte<T>::type>::type::reference get() const
+	template <unsigned int p> auto get() const -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
 	{
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}

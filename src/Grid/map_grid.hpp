@@ -219,6 +219,8 @@ struct copy_switch_memory_c
 	inline void operator()(T& t) const
 	{
 		boost::fusion::at_c<T::value>(dst).mem = boost::fusion::at_c<T::value>(src).mem;
+		// Increment the reference of mem
+		boost::fusion::at_c<T::value>(dst).mem->incRef();
 		boost::fusion::at_c<T::value>(dst).mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
 		boost::fusion::at_c<T::value>(dst).switchToDevicePtr();
 	}
@@ -245,12 +247,28 @@ struct grid_gpu_ker
 	grid_gpu_ker()
 	{}
 
+	grid_gpu_ker(const grid_sm<dim,void> & g1)
+	:g1(g1)
+	{}
+
 	grid_gpu_ker(const grid_gpu_ker & cpy)
 	:g1(cpy.g1)
 	{
 		copy_switch_memory_c<T> bp_mc(cpy.data_,this->data_);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(bp_mc);
+	}
+
+	/*! \brief Return the internal grid information
+	 *
+	 * Return the internal grid information
+	 *
+	 * \return the internal grid
+	 *
+	 */
+	__device__ __host__ const grid_sm<dim,void> & getGrid() const
+	{
+		return g1;
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -261,7 +279,7 @@ struct grid_gpu_ker
 	 *
 	 */
 	template <unsigned int p, typename r_type=decltype(mem_get<p,memory_traits_inte<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
-	__device__ inline r_type get(const grid_key_dx<dim> & v1)
+	__device__ __host__ inline r_type get(const grid_key_dx<dim> & v1)
 	{
 		return mem_get<p,memory_traits_inte<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
 	}
@@ -274,7 +292,7 @@ struct grid_gpu_ker
 	 *
 	 */
 	template <unsigned int p, typename r_type=decltype(mem_get<p,memory_traits_inte<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
-	__device__ inline const r_type get(const grid_key_dx<dim> & v1) const
+	__device__ __host__ inline const r_type get(const grid_key_dx<dim> & v1) const
 	{
 		return mem_get<p,memory_traits_inte<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
 	}
@@ -287,7 +305,7 @@ struct grid_gpu_ker
 	 *
 	 */
 	template <unsigned int p, typename r_type=decltype(mem_get<p,memory_traits_inte<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))>
-	__device__ inline r_type get(const size_t lin_id)
+	__device__ __host__ inline r_type get(const size_t lin_id)
 	{
 		return mem_get<p,memory_traits_inte<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin(data_,g1,lin_id);
 	}
@@ -300,7 +318,7 @@ struct grid_gpu_ker
 	 *
 	 */
 	template <unsigned int p, typename r_type=decltype(mem_get<p,memory_traits_inte<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))>
-	__device__ inline const r_type get(size_t lin_id) const
+	__device__ __host__ inline const r_type get(size_t lin_id) const
 	{
 		return mem_get<p,memory_traits_inte<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin(data_,g1,lin_id);
 	}
@@ -420,7 +438,7 @@ public:
 	 */
 	grid_gpu_ker<dim,T> toGPU()
 	{
-		grid_gpu_ker<dim,T> g;
+		grid_gpu_ker<dim,T> g(this->g1);
 		copy_switch_memory_c<T> cp_mc(this->data_,g.data_);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp_mc);

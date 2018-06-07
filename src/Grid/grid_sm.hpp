@@ -439,7 +439,7 @@ public:
 	 */
 	template<typename a, typename ...lT> inline mem_id Lin(a v,lT...t) const
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (sizeof...(t)+1 > N)
 		{
 			std::cerr << "Error incorrect grid cannot linearize more index than its dimensionality" << "\n";
@@ -532,7 +532,7 @@ public:
 	 * \return the size of the grid
 	 *
 	 */
-	inline size_t size() const
+	__device__ __host__ inline size_t size() const
 	{
 		return size_tot;
 	};
@@ -623,7 +623,7 @@ public:
 	 *
 	 */
 
-	inline size_t size(unsigned int i) const
+	__device__ __host__ inline size_t size(unsigned int i) const
 	{
 		return sz[i];
 	}

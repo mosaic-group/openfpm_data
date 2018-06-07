@@ -878,7 +878,9 @@ BOOST_AUTO_TEST_CASE (gpu_computation_grid_stencil)
 	grid_gpu<3, Point_test<float> > c3(sz);
 	grid_gpu<3, Point_test<float> > c2(sz);
 	grid_key_dx<3> key1({1,1,1});
+	grid_key_dx<3> zero({0,0,0});
 	grid_key_dx<3> key2({62,62,62});
+	grid_key_dx<3> keyl({63,63,63});
 
 
 	c3.setMemory();
@@ -936,13 +938,16 @@ BOOST_AUTO_TEST_CASE (gpu_computation_grid_stencil)
 	while(it.isNext())
 	{
 		auto key = it.get();
-
 		good &= c2.get<0>(key) == 0;
 
 		++it;
 	}
 
 	BOOST_REQUIRE_EQUAL(good,true);
+
+	// We also try to fill a vectorial quantity
+
+//	gpu_grid_fill_vector(c3,zero,keyl);
 
 	}
 
