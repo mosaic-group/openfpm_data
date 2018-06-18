@@ -577,7 +577,7 @@ public:
 	 * \return the position
 	 *
 	 */
-	inline grid_key_dx<dim> get()
+	inline grid_key_dx<dim> get() const
 	{
 		grid_key_dx<dim> k_pos;
 

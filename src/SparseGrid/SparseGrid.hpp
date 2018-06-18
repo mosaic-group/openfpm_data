@@ -901,7 +901,7 @@ public:
 	 *
 	 */
 	grid_key_sparse_dx_iterator<dim,chunking::size::value>
-	getIterator() const
+	getIterator(size_t opt = 0) const
 	{
 		return grid_key_sparse_dx_iterator<dim,chunking::size::value>(&header,&pos_chunk);
 	}
@@ -912,7 +912,7 @@ public:
 	 *
 	 */
 	grid_key_sparse_dx_iterator_sub<dim,chunking::size::value>
-	getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
+	getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop, size_t opt = 0) const
 	{
 		return grid_key_sparse_dx_iterator_sub<dim,chunking::size::value>(header,pos_chunk,start,stop,sz_cnk);
 	}
