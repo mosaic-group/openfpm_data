@@ -150,13 +150,13 @@ struct prop_out_v
 				{
 					if (it.get() < vv.get(k).mark)
 					{
-						int one = 1;
+						float one = 1;
 						one = swap_endian_lt(one);
 						v_out.append((const char *)&one,sizeof(int));
 					}
 					else
 					{
-						int zero = 0;
+						float zero = 0;
 						zero = swap_endian_lt(zero);
 						v_out.append((const char *)&zero,sizeof(int));
 					}
