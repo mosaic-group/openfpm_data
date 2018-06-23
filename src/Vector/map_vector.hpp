@@ -39,6 +39,7 @@
 #include "map_vector_std_util.hpp"
 #include "data_type/aggregate.hpp"
 #include "vector_map_iterator.hpp"
+#include "util/cuda_util.hpp"
 
 namespace openfpm
 {
@@ -149,7 +150,7 @@ namespace openfpm
 
 		//! Object container for T, it is the return type of get_o it return a object type trough
 		// you can access all the properties of T
-		typedef typename grid_cpu<1,T,Memory,layout>::container container;
+		typedef typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container container;
 
 		//! Type of the value the vector is storing
 		typedef T value_type;
@@ -168,6 +169,20 @@ namespace openfpm
 			check_valid(this,8);
 #endif
 			return v_size;
+		}
+
+		/*! \brief return the maximum capacity of the vector before reallocation
+		 *
+		 * \return the capacity of the vector
+		 *
+		 */
+
+		size_t capacity()
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			return base.size();
 		}
 
 		/*! \brief Reserve slots in the vector to avoid reallocation
@@ -298,7 +313,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		void add(const typename grid_cpu<1,T,Memory,layout>::container & v)
+		void add(const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -736,12 +751,31 @@ namespace openfpm
 			return base.get_o(key);
 		}
 
+		/*! \brief It return the properties arrays.
+		 *
+		 * In case of Cuda memory it return the device pointers to pass to the kernels
+		 *
+		 *
+		 */
+		template<unsigned int id> void * getDeviceBuffer()
+		{
+			return base.template getDeviceBuffer<id>();
+		}
+
+		/*! \brief Synchronize the memory buffer in the device with the memory in the host
+		 *
+		 *
+		 */
+		template<unsigned int id> void deviceToHost()
+		{
+			base.template deviceToHost<id>();
+		}
+
 		/*! \brief Get the last element of the vector
 		 *
 		 * \return the last element (encapsulated)
 		 *
 		 */
-
 		inline const typename grid_cpu<1,T,Memory,layout>::container last() const
 		{
 #ifdef SE_CLASS2
@@ -1162,6 +1196,21 @@ namespace openfpm
 			return vector_key_iterator(v_size);
 		}
 
+#ifdef CUDA_GPU
+
+		/*! \brief Get an iterator for the GPU
+		 *
+		 *
+		 */
+		ite_gpu<1> getGPUIterator(size_t n_thr = 1024)
+		{
+			grid_key_dx<1> start(0);
+			grid_key_dx<1> stop(size()-1);
+
+			return base.getGPUIterator(start,stop,n_thr);
+		}
+
+#endif
 		/*! \brief Return the size of the message needed to pack this object
 		 *
 		 * \return The size

@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 
 	auto gcf2 = c3.getGPUIterator(k3,k4);
 
-	BOOST_REQUIRE_EQUAL(gcf2.thr.x,16ul);
+	BOOST_REQUIRE_EQUAL(gcf2.thr.x,13ul);
 	BOOST_REQUIRE_EQUAL(gcf2.thr.y,8ul);
 	BOOST_REQUIRE_EQUAL(gcf2.thr.z,8ul);
 

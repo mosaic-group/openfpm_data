@@ -193,7 +193,7 @@ public:
  */
 
 template<typename T_type>
-struct copy_switch_memory_c
+struct copy_switch_memory_c_no_cpy
 {
 	//! encapsulated source object
 	const typename memory_traits_inte<T_type>::type & src;
@@ -207,7 +207,7 @@ struct copy_switch_memory_c
 	 * \param dst source encapsulated object
 	 *
 	 */
-	inline copy_switch_memory_c(const typename memory_traits_inte<T_type>::type & src,
+	inline copy_switch_memory_c_no_cpy(const typename memory_traits_inte<T_type>::type & src,
 			                   typename memory_traits_inte<T_type>::type & dst)
 	:src(src),dst(dst)
 	{
@@ -222,7 +222,47 @@ struct copy_switch_memory_c
 		// Increment the reference of mem
 		boost::fusion::at_c<T::value>(dst).mem->incRef();
 		boost::fusion::at_c<T::value>(dst).mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
-		boost::fusion::at_c<T::value>(dst).switchToDevicePtr();
+		boost::fusion::at_c<T::value>(dst).switchToDevicePtrNoCopy();
+	}
+};
+
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+template<typename T_type, unsigned int ... prp>
+struct copy_host_to_device
+{
+	//! encapsulated destination object
+	typename memory_traits_inte<T_type>::type & dst;
+
+	//! Convert the packed properties into an MPL vector
+	typedef typename to_boost_vmpl<prp...>::type v_prp;
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	inline copy_host_to_device(typename memory_traits_inte<T_type>::type & dst)
+	:dst(dst)
+	{
+	};
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).switchToDevicePtr();
 	}
 };
 
@@ -254,7 +294,7 @@ struct grid_gpu_ker
 	grid_gpu_ker(const grid_gpu_ker & cpy)
 	:g1(cpy.g1)
 	{
-		copy_switch_memory_c<T> bp_mc(cpy.data_,this->data_);
+		copy_switch_memory_c_no_cpy<T> bp_mc(cpy.data_,this->data_);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(bp_mc);
 	}
@@ -436,12 +476,15 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	grid_gpu_ker<dim,T> toGPU()
+	template<unsigned int ... prp> grid_gpu_ker<dim,T> toGPU()
 	{
 		grid_gpu_ker<dim,T> g(this->g1);
-		copy_switch_memory_c<T> cp_mc(this->data_,g.data_);
+		copy_switch_memory_c_no_cpy<T> cp_mc(this->data_,g.data_);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp_mc);
+
+		copy_host_to_device<T,prp...> cpod(g.data_);
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(cpod);
 
 		return g;
 	}

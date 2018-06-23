@@ -11,7 +11,7 @@
 #include <boost/mpl/vector.hpp>
 #include <array>
 
-#include "util/boost_multi_array_openfpm.hpp"
+#include "util/boost/boost_multi_array_openfpm.hpp"
 #include "util/ct_array.hpp"
 #include "memory_array.hpp"
 #include "memory/memory.hpp"
@@ -111,6 +111,14 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 	void switchToDevicePtr()
 	{
 		mem_r.set_pointer(mem->getDevicePointer());
+	}
+
+	/*! \brief Switch the pointer to device pointer
+	 *
+	 */
+	void switchToDevicePtrNoCopy()
+	{
+		mem_r.set_pointer(mem->getDevicePointerNoCopy());
 	}
 
 	/*! \brief This function get the object that allocate memory
@@ -457,6 +465,14 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	void switchToDevicePtr()
 	{
 		mem_r.set_pointer(mem->getDevicePointer());
+	}
+
+	/*! \brief Switch the pointer to device pointer
+	 *
+	 */
+	void switchToDevicePtrNoCopy()
+	{
+		mem_r.set_pointer(mem->getDevicePointerNoCopy());
 	}
 
 	/*! \brief This function bind the memory_c to this memory_c as reference

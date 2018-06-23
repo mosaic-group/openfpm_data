@@ -8,6 +8,11 @@
 #ifndef OPENFPM_DATA_SRC_UTIL_BOOST_MULTI_ARRAY_OPENFPM_HPP_
 #define OPENFPM_DATA_SRC_UTIL_BOOST_MULTI_ARRAY_OPENFPM_HPP_
 
+#ifdef __NVCC__
+#else
+#define __host__
+#define __device__
+#endif
 
 //
 // multi_array.hpp - contains the multi_array class template
@@ -27,10 +32,8 @@
 #include <functional>
 #include <numeric>
 #include <vector>
-#include "boost/boost_multi_array_base_openfpm.hpp"
-#include "boost/boost_multi_array_iterator_openfpm.hpp"
-
-
+#include "util/boost/boost_multi_array_base_openfpm.hpp"
+#include "util/boost/boost_multi_array_iterator_openfpm.hpp"
 
 namespace boost {
   namespace detail {

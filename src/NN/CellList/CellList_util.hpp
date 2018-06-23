@@ -11,6 +11,23 @@
 #define CL_SYMMETRIC 1
 #define CL_NON_SYMMETRIC 2
 
+/*! \brief populate the Cell-list with particles non symmetric case on GPU
+ *
+ * \tparam dim dimensionality of the space
+ * \tparam T type of the space
+ * \tparam CellList type of cell-list
+ *
+ * \param pos vector of positions
+ * \param cli Cell-list
+ * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
+ *
+ */
+template<unsigned int dim, typename T, typename CellList> void populate_cell_list_no_sym_gpu(openfpm::vector<Point<dim,T>> & pos, CellList & cli, size_t g_m)
+{
+	// First we have to set the counter to zero
+	cli.PopulateOnGPU(pos);
+}
+
 /*! \brief populate the Cell-list with particles non symmetric case
  *
  * \tparam dim dimensionality of the space

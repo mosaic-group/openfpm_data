@@ -947,7 +947,78 @@ BOOST_AUTO_TEST_CASE (gpu_computation_grid_stencil)
 
 	// We also try to fill a vectorial quantity
 
-//	gpu_grid_fill_vector(c3,zero,keyl);
+	gpu_grid_fill_vector(c3,zero,keyl);
+
+	}
+
+	#endif
+}
+
+BOOST_AUTO_TEST_CASE (gpu_computation_grid_stencil_vector)
+{
+	#ifdef CUDA_GPU
+
+	{
+	size_t sz[3] = {64,64,64};
+	grid_gpu<3, Point_test<float> > c3(sz);
+	grid_gpu<3, Point_test<float> > c2(sz);
+	grid_key_dx<3> key1({1,1,1});
+	grid_key_dx<3> zero({0,0,0});
+	grid_key_dx<3> key2({62,62,62});
+	grid_key_dx<3> keyl({63,63,63});
+
+
+	c3.setMemory();
+	c2.setMemory();
+
+	gpu_grid_fill_vector(c3,zero,keyl);
+
+	// Check property 1 is 1.0
+	c3.deviceToHost<4>();
+
+	{
+	auto it = c3.getIterator(key1,key2);
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c3.get<4>(key)[0] == 1.0;
+		good &= c3.get<4>(key)[1] == 2.0;
+		good &= c3.get<4>(key)[2] == 3.0;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+	}
+
+	// Fill c3
+
+	gpu_grid_3D_compute(c3);
+	gpu_grid_gradient_vector(c3,c2,key1,key2);
+
+	// Check property 1 is 1.0
+	c2.deviceToHost<4>();
+
+	{
+	auto it = c2.getIterator(key1,key2);
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c2.get<4>(key)[0] == 1.0;
+		good &= c2.get<4>(key)[1] == 64.0;
+		good &= c2.get<4>(key)[2] == 4096.0;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+	}
 
 	}
 

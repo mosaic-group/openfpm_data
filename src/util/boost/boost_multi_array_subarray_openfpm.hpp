@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <functional>
-#include "boost/boost_multi_array_base_openfpm.hpp"
+#include "util/boost/boost_multi_array_base_openfpm.hpp"
 
 namespace boost {
 namespace detail {
@@ -72,7 +72,7 @@ public:
 
   // const_sub_array always returns const types, regardless of its own
   // constness.
-  const_reference operator[](index idx) const {
+  __device__ __host__  const_reference operator[](index idx) const {
     return super_type::access(boost::type<const_reference>(),
                               idx,base_,shape(),strides(),index_bases());
   }
@@ -88,7 +88,7 @@ public:
 
   // see generate_array_view in base.hpp
   template <int NDims>
-  typename const_array_view<NDims>::type 
+  __device__ __host__   typename const_array_view<NDims>::type
   operator[](const boost::detail::multi_array::
              index_gen<NumDims,NDims>& indices)
     const {
@@ -157,9 +157,9 @@ public:
   size_type max_size() const { return num_elements(); }
   bool empty() const { return size() == 0; }
   size_type num_dimensions() const { return NumDims; }
-  const size_type*  shape() const { return extents_; }
-  const index* strides() const { return strides_; }
-  const index* index_bases() const { return index_base_; }
+  __host__ __device__ const size_type* shape() const { return extents_; }
+  __host__ __device__ const index* strides() const { return strides_; }
+  __host__ __device__ const index* index_bases() const { return index_base_; }
 
   size_type num_elements() const { 
     return std::accumulate(shape(),shape() + num_dimensions(),
@@ -175,7 +175,7 @@ protected:
 public:  // Should be protected
 #endif
 
-  const_sub_array_openfpm (TPtr base,
+  __device__ __host__ const_sub_array_openfpm (TPtr base,
                  const size_type* extents,
                  const index* strides,
                  const index* index_base) :
@@ -256,7 +256,7 @@ public:
   T* origin() { return this->base_; }
   const T* origin() const { return this->base_; }
 
-  reference operator[](index idx) {
+  __device__ __host__ reference operator[](index idx) {
     return super_type::access(boost::type<reference>(),
                               idx,this->base_,this->shape(),this->strides(),
                               this->index_bases());
@@ -264,7 +264,7 @@ public:
 
   // see generate_array_view in base.hpp
   template <int NDims>
-  typename array_view<NDims>::type 
+  __device__ __host__ typename array_view<NDims>::type
   operator[](const boost::detail::multi_array::
              index_gen<NumDims,NDims>& indices) {
     typedef typename array_view<NDims>::type return_type;
@@ -355,7 +355,7 @@ private:
 public: // should be private
 #endif
 
-  sub_array_openfpm (T* base,
+  __device__ __host__ sub_array_openfpm (T* base,
             const size_type* extents,
             const index* strides,
             const index* index_base) :

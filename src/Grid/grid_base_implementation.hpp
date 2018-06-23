@@ -41,13 +41,14 @@
 										 if (key.get(0) > ite_gpu.stop.get(0) || key.get(1) > ite_gpu.stop.get(1) || key.get(2) > ite_gpu.stop.get(2))\
     									 {return;}
 
+template<unsigned int dim>
 struct ite_gpu
 {
 	dim3 thr;
 	dim3 wthr;
 
-	grid_key_dx<3> start;
-	grid_key_dx<3> stop;
+	grid_key_dx<dim> start;
+	grid_key_dx<dim> stop;
 };
 #else
 #define __host__
@@ -367,12 +368,23 @@ public:
 	}
 
 #ifdef CUDA_GPU
-	struct ite_gpu getGPUIterator(grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024)
+
+	/*! \brief Get an iterator for the GPU
+	 *
+	 * \param start starting point
+	 * \param stop end point
+	 *
+	 */
+	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024)
 	{
-		size_t n = n_thr;
+		size_t tot_work = 1;
+		for (size_t i = 0 ; i < dim ; i++)
+		{tot_work *= key2.get(i) - key1.get(i) + 1;}
+
+		size_t n = (tot_work <= n_thr)?openfpm::math::round_big_2(tot_work):n_thr;
 
 		// Work to do
-		ite_gpu ig;
+		ite_gpu<dim> ig;
 
 		ig.thr.x = 1;
 		ig.thr.y = 1;
@@ -392,11 +404,37 @@ public:
 			n = n >> 1;
 
 			dir++;
+			dir %= dim;
 		}
 
-		ig.wthr.x = (key2.get(0) - key1.get(0) + 1) / ig.thr.x + (((key2.get(0) - key1.get(0) + 1)%ig.thr.x != 0)?1:0);
-		ig.wthr.y = (key2.get(1) - key1.get(1) + 1) / ig.thr.y + (((key2.get(1) - key1.get(1) + 1)%ig.thr.y != 0)?1:0);
-		ig.wthr.z = (key2.get(2) - key1.get(2) + 1) / ig.thr.z + (((key2.get(2) - key1.get(2) + 1)%ig.thr.z != 0)?1:0);
+		if (dim >= 1)
+		{ig.wthr.x = (key2.get(0) - key1.get(0) + 1) / ig.thr.x + (((key2.get(0) - key1.get(0) + 1)%ig.thr.x != 0)?1:0);}
+
+		if (dim >= 2)
+		{ig.wthr.y = (key2.get(1) - key1.get(1) + 1) / ig.thr.y + (((key2.get(1) - key1.get(1) + 1)%ig.thr.y != 0)?1:0);}
+		else
+		{ig.wthr.y = 1;}
+
+		if (dim >= 3)
+		{
+			// Roll the other dimensions on z
+			ig.wthr.z = 1;
+			for (size_t i = 2 ; i < dim ; i++)
+			{ig.wthr.z *= (key2.get(i) - key1.get(i) + 1) / ig.thr.z + (((key2.get(i) - key1.get(i) + 1)%ig.thr.z != 0)?1:0);}
+		}
+		else
+		{ig.wthr.z = 1;}
+
+		// crop if wthr == 1
+
+		if (dim >= 1 && ig.wthr.x == 1)
+		{ig.thr.x = (key2.get(0) - key1.get(0) + 1);}
+
+		if (dim >= 2 && ig.wthr.y == 1)
+		{ig.wthr.y = key2.get(1) - key1.get(1) + 1;}
+
+		if (dim == 3 && ig.wthr.z == 1)
+		{ig.wthr.z = key2.get(2) - key1.get(2) + 1;}
 
 		ig.start = key1;
 		ig.stop = key2;

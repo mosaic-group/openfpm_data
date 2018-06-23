@@ -3,14 +3,25 @@
 #include "Point_test.hpp"
 #include <stdio.h>
 
-/*__global__ void grid_fill_vector(grid_gpu_ker<3,Point_test<float>> g1,  ite_gpu ite_gpu)
+__global__ void grid_gradient_vector(grid_gpu_ker<3,Point_test<float>> g1, grid_gpu_ker<3,Point_test<float>> g2, ite_gpu<3> ite_gpu)
+{
+	GRID_ID_3(ite_gpu);
+
+	g2.template get<4>(key)[0] = (g1.template get<0>(key.move(0,1)) - g1.template get<0>(key.move(0,-1))) / 2.0;
+	g2.template get<4>(key)[1] = (g1.template get<0>(key.move(1,1)) - g1.template get<0>(key.move(1,-1))) / 2.0;
+	g2.template get<4>(key)[2] = (g1.template get<0>(key.move(2,1)) - g1.template get<0>(key.move(2,-1))) / 2.0;
+}
+
+__global__ void grid_fill_vector(grid_gpu_ker<3,Point_test<float>> g1,  ite_gpu<3> ite_gpu)
 {
 	GRID_ID_3(ite_gpu);
 
 	g1.template get<4>(key)[0] = 1.0;
-}*/
+	g1.template get<4>(key)[1] = 2.0;
+	g1.template get<4>(key)[2] = 3.0;
+}
 
-__global__ void compute_stencil_grid(grid_gpu_ker<3,Point_test<float>> g1, grid_gpu_ker<3,Point_test<float>> g2, ite_gpu ite_gpu)
+__global__ void compute_stencil_grid(grid_gpu_ker<3,Point_test<float>> g1, grid_gpu_ker<3,Point_test<float>> g2, ite_gpu<3> ite_gpu)
 {
 	GRID_ID_3(ite_gpu);
 
@@ -100,10 +111,17 @@ void gpu_grid_3D_compute_grid_stencil(grid_gpu<3,Point_test<float>> & g1, grid_g
 	compute_stencil_grid<<< gpu_it.thr, gpu_it.wthr >>>(g1k,g2k,gpu_it);
 }
 
-/*void gpu_grid_fill_vector(grid_gpu<3,Point_test<float>> & g1, grid_key_dx<3> & start, grid_key_dx<3> & stop)
+void gpu_grid_fill_vector(grid_gpu<3,Point_test<float>> & g1, grid_key_dx<3> & start, grid_key_dx<3> & stop)
 {
 	auto gpu_it = g1.getGPUIterator(start,stop);
 
 	grid_fill_vector<<< gpu_it.thr, gpu_it.wthr >>>(g1.toGPU(),gpu_it);
-}*/
+}
+
+void gpu_grid_gradient_vector(grid_gpu<3,Point_test<float>> & g1, grid_gpu<3,Point_test<float>> & g2, grid_key_dx<3> & start, grid_key_dx<3> & stop)
+{
+	auto gpu_it = g1.getGPUIterator(start,stop);
+
+	grid_gradient_vector<<< gpu_it.thr, gpu_it.wthr >>>(g1.toGPU(),g2.toGPU(),gpu_it);
+}
 

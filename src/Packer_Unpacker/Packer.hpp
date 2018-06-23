@@ -280,12 +280,12 @@ public:
 	template<int ... prp> static void packRequest(const T & obj, size_t & req)
 	{
 		obj.template packRequest<prp...>(req);
-	};
+	}
 
 	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, const T & obj, Pack_stat & sts)
 	{
 		obj.template pack<prp...>(mem, sts);
-	};
+	}
 };
 
 /*! \brief Packer for grids and sub-grids
@@ -302,12 +302,12 @@ public:
 	template<int ... prp> static void packRequest(T & obj, size_t & req)
 	{
 		obj.template packRequest<prp...>(req);
-	};
+	}
 
 	template<int ... prp> static void packRequest(T & obj, grid_key_dx_iterator_sub<T::dims> & sub, size_t & req)
 	{
 		obj.template packRequest<prp...>(sub, req);
-	};
+	}
 
 	template<int ... prp> static void pack(ExtPreAlloc<Mem> & mem, T & obj, Pack_stat & sts)
 	{

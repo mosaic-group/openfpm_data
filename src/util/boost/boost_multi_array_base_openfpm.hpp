@@ -123,7 +123,7 @@ public:
 protected:
   // used by array operator[] and iterators to get reference types.
   template <typename Reference, typename TPtr>
-  Reference access(boost::type<Reference>,index idx,TPtr base,
+  __device__ __host__ Reference access(boost::type<Reference>,index idx,TPtr base,
                    const size_type* extents,
                    const index* strides,
                    const index* index_bases) const {
@@ -136,11 +136,11 @@ protected:
 
   }
 
-  value_accessor_n_openfpm() { }
-  ~value_accessor_n_openfpm() { }
+  __device__ __host__ value_accessor_n_openfpm() { }
+  __device__ __host__ ~value_accessor_n_openfpm() { }
 };
 
-
+template <class T> inline __device__ __host__ void ignore_unused_variable_warning_ofp(T const&) {}
 
 //
 // value_accessor_one
@@ -163,20 +163,20 @@ public:
 protected:
   // used by array operator[] and iterators to get reference types.
   template <typename Reference, typename TPtr>
-  Reference access(boost::type<Reference>,index idx,TPtr base,
+  __device__ __host__ Reference access(boost::type<Reference>,index idx,TPtr base,
                    const size_type* extents,
                    const index* strides,
                    const index* index_bases) const {
 
-    ignore_unused_variable_warning(index_bases);
-    ignore_unused_variable_warning(extents);
+    ignore_unused_variable_warning_ofp(index_bases);
+    ignore_unused_variable_warning_ofp(extents);
     BOOST_ASSERT(idx - index_bases[0] >= 0);
     BOOST_ASSERT(size_type(idx - index_bases[0]) < extents[0]);
     return *(base + idx * strides[0]);
   }
 
-  value_accessor_one_openfpm() { }
-  ~value_accessor_one_openfpm() { }
+  __device__ __host__ value_accessor_one_openfpm() { }
+  __device__ __host__ ~value_accessor_one_openfpm() { }
 };
 
 
@@ -288,8 +288,8 @@ public:
   BOOST_STATIC_CONSTANT(std::size_t, dimensionality = NumDims);
 protected:
 
-  multi_array_impl_base_openfpm() { }
-  ~multi_array_impl_base_openfpm() { }
+  __device__ __host__ multi_array_impl_base_openfpm() { }
+  __device__ __host__ ~multi_array_impl_base_openfpm() { }
 
   // Used by operator() in our array classes
   template <typename Reference, typename IndexList, typename TPtr>

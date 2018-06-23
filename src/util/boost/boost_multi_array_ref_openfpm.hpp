@@ -28,7 +28,7 @@
 #include "boost/multi_array/algorithm.hpp"
 #include "boost/type_traits/is_integral.hpp"
 #include "boost/utility/enable_if.hpp"
-#include "boost/array.hpp"
+#include "boost_array_openfpm.hpp"
 #include "boost/concept_check.hpp"
 #include "boost/functional.hpp"
 #include "boost/limits.hpp"
@@ -37,9 +37,9 @@
 #include <functional>
 #include <numeric>
 
-#include "boost/boost_multi_array_base_openfpm.hpp"
-#include "boost/boost_multi_array_iterator_openfpm.hpp"
-#include "boost_multi_array_subarray_openfpm.hpp"
+#include "util/boost/boost_multi_array_base_openfpm.hpp"
+#include "util/boost/boost_multi_array_iterator_openfpm.hpp"
+#include "util/boost/boost_multi_array_subarray_openfpm.hpp"
 
 namespace boost {
 
@@ -117,8 +117,10 @@ namespace boost {
       boost::array<size_type,NumDims> ordering;
       boost::array<bool,NumDims> ascending;
 
-      for (size_type i=0; i != NumDims; ++i) {
-        ordering[i] = NumDims - 1 - i;
+      ordering[0] = 0;
+      ascending[0] = true;
+      for (size_type i=1; i != NumDims; ++i) {
+        ordering[i] = NumDims - i;
         ascending[i] = true;
       }
       return general_storage_order<NumDims>(ordering.begin(),
@@ -280,20 +282,20 @@ class const_multi_array_ref_openfpm : public detail::multi_array::multi_array_im
 
     bool empty() const { return size() == 0; }
 
-    const size_type* shape() const {
+    __device__ __host__ const size_type* shape() const {
       return extent_list_.data();
     }
 
-    const index* strides() const {
+    __device__ __host__ const index* strides() const {
       return stride_list_.data();
     }
 
-    const element* origin() const { return base_+origin_offset_; }
-    const element* data() const { return base_; }
+    __device__ __host__ const element* origin() const { return base_+origin_offset_; }
+    __device__ __host__ const element* data() const { return base_; }
 
     size_type num_elements() const { return num_elements_; }
 
-    const index* index_bases() const {
+    __device__ __host__ const index* index_bases() const {
       return index_base_list_.data();
     }
 
@@ -312,7 +314,7 @@ class const_multi_array_ref_openfpm : public detail::multi_array::multi_array_im
     }
 
     // Only allow const element access
-    const_reference operator[](index idx) const {
+    __device__ __host__ const_reference operator[](index idx) const {
       return super_type::access(boost::type<const_reference>(),
                                 idx,origin(),
                                 shape(),strides(),index_bases());
@@ -320,7 +322,7 @@ class const_multi_array_ref_openfpm : public detail::multi_array::multi_array_im
 
     // see generate_array_view in base.hpp
     template <int NDims>
-    typename const_array_view_openfpm<NDims>::type
+    __device__ __host__ typename const_array_view_openfpm<NDims>::type
     operator[](const detail::multi_array::
                index_gen<NumDims,NDims>& indices)
       const {
@@ -406,8 +408,8 @@ class const_multi_array_ref_openfpm : public detail::multi_array::multi_array_im
   public:
   #endif
 
-    typedef boost::array<size_type,NumDims> size_list;
-    typedef boost::array<index,NumDims> index_list;
+    typedef boost::array_openfpm<size_type,NumDims> size_list;
+    typedef boost::array_openfpm<index,NumDims> index_list;
 
     // This is used by multi_array, which is a subclass of this
     void set_base_ptr(TPtr new_base) { base_ = new_base; }
@@ -670,7 +672,7 @@ public:
     other.num_elements_ = num_elements_tmp;
   }
 
-  element* origin() { return super_type::base_+super_type::origin_offset_; }
+  __device__ __host__ element* origin() { return super_type::base_+super_type::origin_offset_; }
 
   element* data() { return super_type::base_; }
 
@@ -685,7 +687,7 @@ public:
   }
 
 
-  reference operator[](index idx) {
+  __device__ __host__ reference operator[](index idx) {
     return super_type::access(boost::type<reference>(),
                               idx,origin(),
                               this->shape(),this->strides(),

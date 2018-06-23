@@ -450,7 +450,7 @@ public:
 	}
 
 	//! Linearize a set of index
-	template<typename a> inline mem_id Lin(a v) const
+	template<typename a> __device__ __host__ inline mem_id Lin(a v) const
 	{
 		return v;
 	}

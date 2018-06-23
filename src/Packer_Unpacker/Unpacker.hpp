@@ -159,7 +159,7 @@ public:
 	template<unsigned int ... prp> void static unpack(ExtPreAlloc<Mem> & mem, T & obj, Unpack_stat & ps)
 	{
 		obj.template unpack<prp...>(mem, ps);
-	};
+	}
 
 	template<unsigned int ... prp> void static unpack(ExtPreAlloc<Mem> & mem, T & obj, Unpack_stat & ps, size_t n)
 	{
@@ -167,7 +167,7 @@ public:
 			return;
 
 		obj.template unpack<prp...>(mem, ps);
-	};
+	}
 };
 
 /*! \brief Unpacker for grids
@@ -184,12 +184,12 @@ public:
 	template<unsigned int ... prp> static void unpack(ExtPreAlloc<Mem> & mem, T & obj, Unpack_stat & ps)
 	{
 		obj.template unpack<prp...>(mem, ps);
-	};
+	}
 
 	template<unsigned int ... prp> static void unpack(ExtPreAlloc<Mem> & mem, grid_key_dx_iterator_sub<T::dims> & sub_it, T & obj, Unpack_stat & ps)
 	{
 		obj.template unpack<prp...>(mem, sub_it, ps);
-	};
+	}
 };
 
 /*! \brief Unpacker for encapsulated objects

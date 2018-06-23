@@ -420,7 +420,7 @@ private:
 		size_t bc[dim];
 
 		for (size_t i = 0 ; i < dim ; i++)
-			bc[i] = NON_PERIODIC;
+		{bc[i] = NON_PERIODIC;}
 
 		Box<dim,long int> bx = cd_sm.convertDomainSpaceIntoCellUnits(dom_box,bc);
 

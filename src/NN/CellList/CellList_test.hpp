@@ -320,6 +320,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 	}
 }
 
+
+
 template<typename CellList> void Test_CellDecomposer_consistent()
 {
 	Box<2,float> bx({-1.0/3.0,-1.0/3.0},{1.0/3.0,1.0/3.0});

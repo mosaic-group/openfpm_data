@@ -805,6 +805,39 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 }
 
 
+BOOST_AUTO_TEST_CASE ( test_gpu_iterator )
+{
+	openfpm::vector<Point<3,float>> pl;
+
+	pl.resize(10);
+
+	{
+	auto ite = pl.getGPUIterator();
+
+	BOOST_REQUIRE_EQUAL(ite.wthr.x,1ul);
+	BOOST_REQUIRE_EQUAL(ite.wthr.x,1ul);
+	BOOST_REQUIRE_EQUAL(ite.wthr.x,1ul);
+
+	BOOST_REQUIRE_EQUAL(ite.thr.x,10ul);
+	BOOST_REQUIRE_EQUAL(ite.thr.y,1ul);
+	BOOST_REQUIRE_EQUAL(ite.thr.z,1ul);
+	}
+
+	pl.resize(33);
+
+	{
+	auto ite = pl.getGPUIterator(32);
+
+	BOOST_REQUIRE_EQUAL(ite.wthr.x,2ul);
+	BOOST_REQUIRE_EQUAL(ite.wthr.y,1ul);
+	BOOST_REQUIRE_EQUAL(ite.wthr.z,1ul);
+
+	BOOST_REQUIRE_EQUAL(ite.thr.x,32ul);
+	BOOST_REQUIRE_EQUAL(ite.thr.y,1ul);
+	BOOST_REQUIRE_EQUAL(ite.thr.z,1ul);
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif
