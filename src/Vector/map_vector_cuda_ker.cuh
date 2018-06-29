@@ -73,13 +73,13 @@ public:
 	 * \return the element value requested
 	 *
 	 */
-//	template <unsigned int p>
-//	inline auto get(size_t id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
-//	{
-//		grid_key_dx<1> key(id);
+	template <unsigned int p>
+	__device__ inline auto get(size_t id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+	{
+		grid_key_dx<1> key(id);
 
-//		return base.template get<p>(key);
-//	}
+		return base.template get<p>(key);
+	}
 
 	/*! \brief Get an element of the vector
 	 *
@@ -90,12 +90,12 @@ public:
 	 * \return the element (encapsulated)
 	 *
 	 */
-/*	inline auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>(id)))
+	inline auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>(id)))
 	{
 		grid_key_dx<1> key(id);
 
 		return base.get_o(key);
-	}*/
+	}
 
 	/*! \brief Get an element of the vector
 	 *
@@ -106,12 +106,12 @@ public:
 	 * \return the element (encapsulated)
 	 *
 	 */
-/*	inline auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
+	inline auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
 	{
 		grid_key_dx<1> key(id);
 
 		return base.get_o(key);
-	}*/
+	}
 
 	/*! \brief Get an element of the vector
 	 *
@@ -125,12 +125,12 @@ public:
 	 *
 	 */
 
-/*	inline auto get_o(size_t id) const -> decltype(base.get_o(id))
+	inline auto get_o(size_t id) const -> decltype(base.get_o(id))
 	{
 		grid_key_dx<1> key(id);
 
 		return base.get_o(key);
-	}*/
+	}
 
 
 	/*! \brief Get the last element of the vector
@@ -138,12 +138,12 @@ public:
 	 * \return the last element (encapsulated)
 	 *
 	 */
-/*	inline auto last() const -> decltype(base.get_o(0))
+	inline auto last() const -> decltype(base.get_o(0))
 	{
 		grid_key_dx<1> key(size()-1);
 
 		return base.get_o(key);
-	}*/
+	}
 
 	/*! \brief Get an element of the vector
 	 *
@@ -155,27 +155,25 @@ public:
 	 * \return the element value requested
 	 *
 	 */
-/*
 	template <unsigned int p>
-	inline auto get(size_t id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+	__device__ __host__ inline auto get(size_t id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 	{
 		grid_key_dx<1> key(id);
 
 		return base.template get<p>(key);
-	}*/
+	}
 
 	/*! \brief Get the last element of the vector
 	 *
 	 * \return the element (encapsulated)
 	 *
 	 */
-
-/*	inline auto last() -> decltype(base.get_o(0))
+	inline auto last() -> decltype(base.get_o(0))
 	{
 		grid_key_dx<1> key(size()-1);
 
 		return base.get_o(key);
-	}*/
+	}
 
 	vector_gpu_ker()
 	{}
@@ -212,11 +210,11 @@ public:
 	 * \param v source vector
 	 *
 	 */
-/*	template <typename encap_S, unsigned int ...args> void set_o(size_t i, const encap_S & obj)
+	template <typename encap_S, unsigned int ...args> void set_o(size_t i, const encap_S & obj)
 	{
 		// write the object in the last element
 		object_s_di<encap_S,decltype(get(i)),OBJ_ENCAP,args...>(obj,get(i));
-	}*/
+	}
 
 	/*! \brief Set the element of the vector v from another element of another vector
 	 *

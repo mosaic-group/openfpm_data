@@ -100,8 +100,6 @@ struct mem_get<p,layout,data_type,g1_type,key_type,1>
 {
 	__host__ __device__ static inline auto get(data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(boost::fusion::at_c<p>(data_).mem_r.operator[](g1.LinId(v1)))
 	{
-		auto diocane2 = g1.LinId(v1);
-		boost::fusion::at_c<p>(data_).mem_r.operator[](diocane2);
 		return boost::fusion::at_c<p>(data_).mem_r.operator[](g1.LinId(v1));
 	}
 

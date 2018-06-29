@@ -415,8 +415,8 @@ protected:
 
     index offset = 0;
     size_type dim = 0;
-    for (size_type n = 0; n != NumDims; ++n) {
-
+    for (size_type n = 0; n != NumDims; ++n)
+    {
       // Use array specs and input specs to produce real specs.
       const index default_start = index_bases[n];
       const index default_finish = default_start+extents[n];
@@ -435,11 +435,14 @@ protected:
       // by type index, then overflow may result.
 
       index len;
-      if ((finish - start) / stride < 0) {
+      if ((finish - start) / stride < 0)
+      {
         // [start,finish) is empty according to the direction imposed by
         // the stride.
         len = 0;
-      } else {
+      }
+      else
+      {
         // integral trick for ceiling((finish-start) / stride)
         // taking into account signs.
         index shrinkage = stride > 0 ? 1 : -1;

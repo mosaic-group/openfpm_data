@@ -688,6 +688,9 @@ public:
 
 
   __device__ __host__ reference operator[](index idx) {
+
+	  printf("Strides ORIG: %d %d %d \n",this->strides()[0],this->strides()[1], this->num_dimensions());
+
     return super_type::access(boost::type<reference>(),
                               idx,origin(),
                               this->shape(),this->strides(),

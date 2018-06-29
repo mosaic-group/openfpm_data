@@ -218,28 +218,6 @@ struct compare_cpu_encap_encap
 	}
 };
 
-/*! \brief This class is an helper to get the return type of get for each property
- *
- * This class is an helper to get the return type of get for each property
- *
- * \param p id of the property
- * \param T original boost fusion vector, T is suppose to be a boost::fusion::vector<memory_c<...>,.....>
- *
- */
-
-/*template<unsigned int p,typename Mem>
-struct type_gpu_prop
-{
-	//! return a boost::fusion::vector<memory_c<....>....>
-	typedef Mem vtype;
-	//! return a memory_c<...>
-	typedef typename boost::fusion::result_of::at< vtype,boost::mpl::int_<p> >::type rtype;
-	//! remove the reference
-	typedef typename boost::remove_reference<rtype>::type mtype;
-	//! get the base type that the buffer is storing
-	typedef typename mtype::type type;
-};*/
-
 /*! Stub encap
  *
  * \tparam dim dimension

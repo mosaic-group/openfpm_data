@@ -341,8 +341,8 @@ void test_reorder_parts(size_t n_part)
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> starts;
 	openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
 
-	openfpm::vector<Point_test<float>,CudaMemory,typename memory_traits_inte<Point_test<float>>::type,memory_traits_inte> parts_prp;
-	openfpm::vector<Point_test<float>,CudaMemory,typename memory_traits_inte<Point_test<float>>::type,memory_traits_inte> parts_prp_out;
+	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float,float[3],float[3][3]>>::type,memory_traits_inte> parts_prp;
+	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float,float[3],float[3][3]>>::type,memory_traits_inte> parts_prp_out;
 
 	// CellList to check the result
 
@@ -368,6 +368,35 @@ void test_reorder_parts(size_t n_part)
 	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
 
 	create_n_part(n_part,pl,cl);
+	parts_prp.resize(n_part);
+	parts_prp_out.resize(n_part);
+
+	auto p_it = parts_prp.getIterator();
+	while (p_it.isNext())
+	{
+		auto p = p_it.get();
+
+		parts_prp.template get<0>(p) = 10000 + p;
+		parts_prp.template get<1>(p) = 20000 + p;
+
+		parts_prp.template get<2>(p)[0] = 30000 + p;
+		parts_prp.template get<2>(p)[1] = 40000 + p;
+		parts_prp.template get<2>(p)[2] = 50000 + p;
+
+		parts_prp.template get<3>(p)[0][0] = 60000 + p;
+		parts_prp.template get<3>(p)[0][1] = 70000 + p;
+		parts_prp.template get<3>(p)[0][2] = 80000 + p;
+		parts_prp.template get<3>(p)[1][0] = 90000 + p;
+		parts_prp.template get<3>(p)[1][1] = 100000 + p;
+		parts_prp.template get<3>(p)[1][2] = 110000 + p;
+		parts_prp.template get<3>(p)[2][0] = 120000 + p;
+		parts_prp.template get<3>(p)[2][1] = 130000 + p;
+		parts_prp.template get<3>(p)[0][2] = 140000 + p;
+
+		++p_it;
+	}
+
+	parts_prp_out.set(0,parts_prp,0);
 
 	grid_sm<dim,void> gr(div_host);
 
@@ -379,10 +408,13 @@ void test_reorder_parts(size_t n_part)
 	starts.template hostToDevice<0>();
 
 	// Here we test fill cell
-	reorder_parts<decltype(parts_prp.template toGPU<0,1,2,3,4,5>()),cnt_type,shift_ph<0,cnt_type>><<<itgg.wthr,itgg.thr>>>(pl.size(),
-			                                                                                                               parts_prp.template toGPU<0,1,2,3,4,5>(),
+	reorder_parts<decltype(parts_prp.template toGPU<0,1,2,3>()),cnt_type,shift_ph<0,cnt_type>><<<1,1>>>(pl.size(),
+			                                                                                                               parts_prp.template toGPU<0,1,2,3>(),
 			                                                                                                               parts_prp_out.template toGPU<>(),
 			                                                                                                               static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()));
+
+	parts_prp_out.template deviceToHost<0>();
+
 }
 
 BOOST_AUTO_TEST_CASE ( test_reorder_particles )

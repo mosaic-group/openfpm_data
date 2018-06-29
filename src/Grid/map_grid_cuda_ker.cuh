@@ -74,10 +74,10 @@ struct grid_gpu_ker
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,memory_traits_inte<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	template <unsigned int p, typename r_type=decltype(mem_get<p,memory_traits_inte<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline const r_type get(const grid_key_dx<dim> & v1) const
 	{
-		return mem_get<p,memory_traits_inte<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
+		return mem_get<p,memory_traits_inte<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
 	}
 
 	/*! \brief Get the reference of the selected element
