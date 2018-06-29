@@ -99,19 +99,19 @@ public:
   size_type max_size() const { return num_elements(); }
   bool empty() const { return size() == 0; }
 
-  const size_type* shape() const {
+  __device__ __host__  const size_type* shape() const {
     return extent_list_.data();
   }
 
-  const index* strides() const {
+  __device__ __host__  const index* strides() const {
     return stride_list_.data();
   }
 
-  const T* origin() const { return base_+origin_offset_; }
+  __device__ __host__  const T* origin() const { return base_+origin_offset_; }
 
   size_type num_elements() const { return num_elements_; }
 
-  const index* index_bases() const {
+  __device__ __host__  const index* index_bases() const {
     return index_base_list_.data();
   }
 
@@ -125,7 +125,7 @@ public:
   }
 
   // Only allow const element access
-  const_reference operator[](index idx) const {
+  __device__ __host__ const_reference operator[](index idx) const {
     return super_type::access(boost::type<const_reference>(),
                               idx,origin(),
                               shape(),strides(),
@@ -134,7 +134,7 @@ public:
 
   // see generate_array_view in base.hpp
   template <int NDims>
-  typename const_array_view_openfpm<NDims>::type
+  __device__ __host__  typename const_array_view_openfpm<NDims>::type
   operator[](const boost::detail::multi_array::
              index_gen<NumDims,NDims>& indices)
     const {

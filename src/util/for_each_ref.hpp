@@ -1,6 +1,10 @@
 #ifndef OPENFPM_FOR_EACH_HPP_INCLUDED
 #define OPENFPM_FOR_EACH_HPP_INCLUDED
 
+#ifndef BOOST_GPU_ENABLED
+#define BOOST_GPU_ENABLED __device__ __host__
+#endif
+
 // Copyright Aleksey Gurtovoy 2000-2008
 //
 // Distributed under the Boost Software License, Version 1.0.
@@ -14,6 +18,7 @@
 // $Revision: 55648 $
 // Changed from Pietro incardona to handle reference functor
 
+#include "util/cuda_util.hpp"
 #include <boost/mpl/is_sequence.hpp>
 #include <boost/mpl/begin_end.hpp>
 #include <boost/mpl/apply.hpp>
@@ -40,7 +45,7 @@ struct for_each_ref_impl
         , typename TransformFunc
         , typename F
         >
-    static void execute(
+    BOOST_GPU_ENABLED static void execute(
           Iterator*
         , LastIterator*
         , TransformFunc*
@@ -59,7 +64,7 @@ struct for_each_ref_impl<false>
         , typename TransformFunc
         , typename F
         >
-    static void execute(
+    BOOST_GPU_ENABLED static void execute(
           Iterator*
         , LastIterator*
         , TransformFunc*
@@ -89,8 +94,7 @@ template<
     , typename TransformOp
     , typename F
     >
-inline
-void for_each_ref(F & f, Sequence* = 0, TransformOp* = 0)
+BOOST_GPU_ENABLED inline void for_each_ref(F & f, Sequence* = 0, TransformOp* = 0)
 {
     BOOST_MPL_ASSERT(( is_sequence<Sequence> ));
 
@@ -105,7 +109,7 @@ template<
       typename Sequence
     , typename F
     >
-inline
+BOOST_GPU_ENABLED inline
 void for_each_ref(F & f, Sequence* = 0)
 {
     for_each_ref<Sequence, identity<> >(f);

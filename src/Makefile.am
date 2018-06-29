@@ -1,7 +1,7 @@
 
 LINKLIBS = $(LIBHILBERT_LIB) $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(CUDA_LIBS) $(BOOST_IOSTREAMS_LIB) $(LOCAL_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(BOOST_CHRONO_LIB) $(BOOST_TIMER_LIB) $(BOOST_SYSTEM_LIB)
 
-NVCCFLAGS:=$(NVCCFLAGS) -g --std=c++11
+FLAGS_NVCC = $(NVCCFLAGS) -g
 
 if BUILDCUDA
  CUDA_SOURCES=../../openfpm_devices/src/memory/CudaMemory.cu
@@ -10,7 +10,7 @@ else
 endif
 
 noinst_PROGRAMS = mem_map
-mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp NN/CellList/CellList_gpu_test.cu  Grid/gpu_test/cuda_gpu_func.cpp  $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp Grid/gpu_test/cuda_grid_unit_tests.cu
+mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu  Grid/gpu_test/cuda_gpu_func.cpp  $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp Grid/gpu_test/cuda_grid_unit_tests.cu
 mem_map_CXXFLAGS = $(AM_CXXFLAGS) $(LIBHILBERT_INCLUDE) $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include -I/usr/local/libhilbert/include
 mem_map_CFLAGS = $(CUDA_CFLAGS)
 mem_map_LDADD = $(LINKLIBS)
@@ -32,7 +32,7 @@ util/copy_compare/compare_fusion_vector.hpp util/SimpleRNG.hpp util/copy_compare
 Packer_Unpacker/Pack_selector.hpp Packer_Unpacker/Packer_nested_tests.hpp Packer_Unpacker/Packer_unit_tests.hpp Packer_Unpacker/Packer.hpp Packer_Unpacker/Unpacker.hpp Packer_Unpacker/Packer_util.hpp Packer_Unpacker/prp_all_zero.hpp Packer_Unpacker/has_pack_encap.hpp Packer_Unpacker/has_pack_agg.hpp Packer_Unpacker/has_max_prop.hpp
 
 .cu.o :
-	$(NVCC) $(NVCCFLAGS) $(INCLUDES_PATH) -o $@ -c $<
+	$(NVCC) $(FLAGS_NVCC) $(INCLUDES_PATH) -o $@ -c $<
 
 test: mem_map
 	source $(HOME)/openfpm_vars && cd .. && ./src/mem_map

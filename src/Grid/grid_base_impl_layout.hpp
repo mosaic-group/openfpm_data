@@ -161,7 +161,7 @@ struct mem_setm<S,layout,data_type,g1_type,1>
 template<unsigned int dim , typename T, typename layout, typename data_type, typename g1_type, typename key_type, unsigned int sel = 2*is_layout_mlin<layout>::value + is_layout_inte<layout>::value >
 struct mem_geto
 {
-	static inline encapc<dim,T,typename layout::type> get(data_type & data_, const g1_type & g1, const key_type & v1)
+	__device__ __host__ static inline encapc<dim,T,typename layout::type> get(data_type & data_, const g1_type & g1, const key_type & v1)
 	{
 		return encapc<dim,T,typename layout::type>(data_.mem_r.operator[](g1.LinId(v1)));
 	}
@@ -171,7 +171,7 @@ struct mem_geto
 template<unsigned int dim, typename T,typename layout, typename data_type, typename g1_type, typename key_type>
 struct mem_geto<dim,T,layout,data_type,g1_type,key_type,1>
 {
-	static inline encapc<dim,T,typename layout::type> get(data_type & data_, const g1_type & g1, const key_type & v1)
+	__device__ __host__ static inline encapc<dim,T,typename layout::type> get(data_type & data_, const g1_type & g1, const key_type & v1)
 	{
 		return encapc<dim,T,typename layout::type>(data_,g1.LinId(v1));
 	}

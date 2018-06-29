@@ -46,7 +46,7 @@ struct copy_cpu_encap_encap
 	 * \param dst source encapsulated object
 	 *
 	 */
-	inline copy_cpu_encap_encap(const e_src & src, e_dst & dst)
+	__device__ __host__ inline copy_cpu_encap_encap(const e_src & src, e_dst & dst)
 	:src(src),dst(dst)
 	{
 #ifdef SE_CLASS1
@@ -72,7 +72,7 @@ struct copy_cpu_encap_encap
 
 	//! It call the copy function for each property
 	template<typename T>
-	inline void operator()(T& t) const
+	__device__ __host__ inline void operator()(T& t) const
 	{
 		// Remove the reference from the type to copy
 		typedef typename boost::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
@@ -506,7 +506,7 @@ public:
 	 * \return The reference of the data
 	 *
 	 */
-	template <unsigned int p> auto get() -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
+	template <unsigned int p> __device__ __host__  auto get() -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
 	{
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
@@ -518,7 +518,7 @@ public:
 	 * \return The reference of the data
 	 *
 	 */
-	template <unsigned int p> auto get() const -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
+	template <unsigned int p> __device__ __host__ auto get() const -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
 	{
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
@@ -530,7 +530,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
+	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
 		copy_cpu_encap_encap<encapc<dim,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
 

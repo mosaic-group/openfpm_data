@@ -100,9 +100,9 @@ public:
 	 * \param t the other numbers
 	 *
 	 */
-	template<typename ...T> inline grid_key_dx(const size_t v,const T...t)
+	template<typename ...T> __device__ __host__ inline grid_key_dx(const size_t v,const T...t)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (sizeof...(t) != dim -1)
 			std::cerr << "Error grid_key: " << __FILE__ << " " << __LINE__ << " creating a key of dimension " << dim << " require " << dim << " numbers " << sizeof...(t) + 1 << " provided" << "\n";
 #endif

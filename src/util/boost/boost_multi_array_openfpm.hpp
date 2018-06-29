@@ -127,18 +127,21 @@ public:
 
 
   template <std::size_t NDims>
-  struct const_array_view {
+  struct const_array_view
+  {
     typedef boost::detail::multi_array::const_multi_array_view_openfpm<T,NDims> type;
   };
 
   template <std::size_t NDims>
-  struct array_view {
+  struct array_view
+  {
     typedef boost::detail::multi_array::multi_array_view_openfpm<T,NDims> type;
   };
 
-  explicit multi_array_openfpm() :
-    super_type((T*)initial_base_,c_storage_order(),
-               /*index_bases=*/0, /*extents=*/0) {
+  explicit multi_array_openfpm()
+  :super_type((T*)initial_base_,c_storage_order(),
+               /*index_bases=*/0, /*extents=*/0)
+  {
     allocate_space();
   }
 
@@ -151,7 +154,8 @@ public:
       int&,int>::type* = 0
 #endif
       ) :
-    super_type((T*)initial_base_,extents) {
+    super_type((T*)initial_base_,extents)
+  {
     boost::function_requires<
       detail::multi_array::CollectionConcept<ExtentList> >();
     allocate_space();

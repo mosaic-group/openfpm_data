@@ -77,6 +77,7 @@ namespace openfpm
 
 	#include "map_vector_std.hpp"
 	#include "map_vector_std_ptr.hpp"
+	#include "map_vector_cuda_ker.cuh"
 
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
@@ -757,6 +758,28 @@ namespace openfpm
 		 *
 		 *
 		 */
+		template<unsigned int id> void * getDeviceBufferCopy()
+		{
+			return base.template getDeviceBuffer<id>();
+		}
+
+		/*! \brief Copy the memory from host to device
+		 *
+		 *
+		 */
+		template<unsigned int id> void hostToDevice()
+		{
+			base.template hostToDevice<id>();
+		}
+
+		/*! \brief It return the properties arrays.
+		 *
+		 * In case of Cuda memory it return the device pointers to pass to the kernels
+		 *
+		 * This variant does not copy the host memory to the device memory
+		 *
+		 *
+		 */
 		template<unsigned int id> void * getDeviceBuffer()
 		{
 			return base.template getDeviceBuffer<id>();
@@ -1381,6 +1404,24 @@ namespace openfpm
 		{
 			return base;
 		}
+
+#ifdef CUDA_GPU
+
+		/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+		 *
+		 *  The object created can be considered like a reference of the original
+		 *
+		 * \return an usable vector in the kernel
+		 *
+		 */
+		template<unsigned int ... prp> vector_gpu_ker<T> toGPU()
+		{
+			vector_gpu_ker<T> v(this->base.template toGPU<prp ...>());
+			return v;
+		}
+
+#endif
+
 	};
 
 	template <typename T> using vector_std = vector<T, HeapMemory, typename memory_traits_lin<T>::type, memory_traits_lin, openfpm::grow_policy_double, STD_VECTOR>;

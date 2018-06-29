@@ -99,7 +99,7 @@ struct copy_fusion_vector_encap
 
 	//! It call the copy function for each property
 	template<typename T>
-	inline void operator()(T& t)
+	__device__ __host__ inline void operator()(T& t)
 	{
 		meta_copy_d<typename boost::mpl::at<bfv,boost::mpl::int_<T::value> >::type,decltype(dst.template get<T::value>())>::meta_copy_d_(boost::fusion::at_c<T::value>(src),dst.template get<T::value>());
 	}

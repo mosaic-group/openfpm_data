@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <iterator>
 #include "util/boost/boost_multi_array_base_openfpm.hpp"
+#include "util/cuda_util.hpp"
 
 namespace boost {
 namespace detail {
@@ -88,9 +89,9 @@ public:
   typedef typename facade_type::value_type value_type;
   typedef typename facade_type::difference_type difference_type;
 
-  array_iterator_openfpm() {}
+  __device__ __host__ array_iterator_openfpm() {}
 
-  array_iterator_openfpm(index idx, TPtr base, const size_type* extents,
+  __device__ __host__ array_iterator_openfpm(index idx, TPtr base, const size_type* extents,
                 const index* strides,
                 const index* index_base) :
     idx_(idx), base_(base), extents_(extents),

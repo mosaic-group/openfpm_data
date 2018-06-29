@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_consistent_use )
 	// we create 2 grid_sm for the 2 CellDecomposer (used to check the consistency)
 	size_t div_ext[3] = {6+16,6+16,6+16};
 	// The old one has a padding 1 the new padding 3, result is padding 2
-	grid_key_dx<3> key_base(2,2,2);
+	grid_key_dx<3> key_base({2,2,2});
 
 	grid_sm<3,void> cd_gr(div);
 	grid_sm<3,void> cd2_gr(div_ext);

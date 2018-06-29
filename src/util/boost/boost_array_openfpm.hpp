@@ -57,7 +57,7 @@
 
 namespace boost {
 
-    template<class T, std::size_t N>
+    template<class T, std::size_t N, typename ids_type = std::size_t>
     class array_openfpm {
       public:
         T elems[N];    // fixed-size array of elements of type T
@@ -69,7 +69,7 @@ namespace boost {
         typedef const T*       const_iterator;
         typedef T&             reference;
         typedef const T&       const_reference;
-        typedef std::size_t    size_type;
+        typedef ids_type       size_type;
         typedef std::ptrdiff_t difference_type;
 
         // iterator support
@@ -113,12 +113,12 @@ namespace boost {
         }
 
         // operator[]
-        reference operator[](size_type i)
+        __device__ __host__ reference operator[](size_type i)
         {
             return BOOST_ASSERT_MSG( i < N, "out of range" ), elems[i];
         }
 
-        /*BOOST_CONSTEXPR*/ const_reference operator[](size_type i) const
+        /*BOOST_CONSTEXPR*/ __device__ __host__ const_reference operator[](size_type i) const
         {
             return BOOST_ASSERT_MSG( i < N, "out of range" ), elems[i];
         }
@@ -155,7 +155,7 @@ namespace boost {
         enum { static_size = N };
 
         // swap (note: linear complexity)
-        void swap (array<T,N>& y) {
+        void swap (array_openfpm<T,N>& y) {
             for (size_type i = 0; i < N; ++i)
                 boost::swap(elems[i],y.elems[i]);
         }
@@ -169,7 +169,7 @@ namespace boost {
 
         // assignment with type conversion
         template <typename T2>
-        array<T,N>& operator= (const array<T2,N>& rhs) {
+        array_openfpm<T,N>& operator= (const array_openfpm<T2,N>& rhs) {
             std::copy(rhs.begin(),rhs.end(), begin());
             return *this;
         }
@@ -283,7 +283,7 @@ namespace boost {
         static BOOST_CONSTEXPR size_type max_size() { return 0; }
         enum { static_size = 0 };
 
-        void swap (array<T,0>& /*y*/) {
+        void swap (array_openfpm<T,0>& /*y*/) {
         }
 
         // direct access to data (read-only)
@@ -295,7 +295,7 @@ namespace boost {
 
         // assignment with type conversion
         template <typename T2>
-        array<T,0>& operator= (const array<T2,0>& ) {
+        array_openfpm<T,0>& operator= (const array_openfpm<T2,0>& ) {
             return *this;
         }
 

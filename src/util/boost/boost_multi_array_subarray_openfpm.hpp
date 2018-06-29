@@ -25,6 +25,7 @@
 #include <cstddef>
 #include <functional>
 #include "util/boost/boost_multi_array_base_openfpm.hpp"
+#include "util/cuda_util.hpp"
 
 namespace boost {
 namespace detail {
@@ -153,7 +154,7 @@ public:
   }
 
   TPtr origin() const { return base_; }
-  size_type size() const { return extents_[0]; }
+  __host__ __device__ size_type size() const { return extents_[0]; }
   size_type max_size() const { return num_elements(); }
   bool empty() const { return size() == 0; }
   size_type num_dimensions() const { return NumDims; }
@@ -192,7 +193,6 @@ private:
   const_sub_array_openfpm& operator=(const const_sub_array_openfpm&);
 };
 
-
 //
 // sub_array
 //    multi_array's proxy class to allow multiple overloads of
@@ -227,34 +227,41 @@ public:
   // Assignment from other ConstMultiArray types.
   template <typename ConstMultiArray>
   sub_array_openfpm& operator=(const ConstMultiArray& other) {
+
+#ifdef SE_CLASS1
     function_requires< boost::multi_array_concepts::ConstMultiArrayConcept< 
         ConstMultiArray, NumDims> >();
 
     // make sure the dimensions agree
     BOOST_ASSERT(other.num_dimensions() == this->num_dimensions());
-    BOOST_ASSERT(std::equal(other.shape(),other.shape()+this->num_dimensions(),
-                            this->shape()));
+//    BOOST_ASSERT(std::equal(other.shape(),other.shape()+this->num_dimensions(),
+//                            this->shape()));
+
+#endif
     // iterator-based copy
     std::copy(other.begin(),other.end(),begin());
     return *this;
   }
 
-
-  sub_array_openfpm& operator=(const sub_array_openfpm& other) {
+  __device__ __host__ sub_array_openfpm& operator=(const sub_array_openfpm& other) {
     if (&other != this) {
+#ifdef SE_CLASS1
       // make sure the dimensions agree
       BOOST_ASSERT(other.num_dimensions() == this->num_dimensions());
-      BOOST_ASSERT(std::equal(other.shape(),
-                              other.shape()+this->num_dimensions(),
-                              this->shape()));
+//      BOOST_ASSERT(std::equal(other.shape(),
+//                              other.shape()+this->num_dimensions(),
+//                              this->shape()));
+#endif
       // iterator-based copy
-      std::copy(other.begin(),other.end(),begin());
+      //std::copy(other.begin(),other.end(),begin());
+      for (int i = 0 ; i < (int)other.size() ; i++)
+      {this->operator[](i) = other[i];}
     }
     return *this;
   }
 
-  T* origin() { return this->base_; }
-  const T* origin() const { return this->base_; }
+  __device__ __host__ T* origin() { return this->base_; }
+  __device__ __host__ const T* origin() const { return this->base_; }
 
   __device__ __host__ reference operator[](index idx) {
     return super_type::access(boost::type<reference>(),
@@ -287,12 +294,14 @@ public:
                                       this->index_bases());
   }
 
-  iterator begin() {
+  __device__ __host__ iterator begin()
+  {
     return iterator(*this->index_bases(),origin(),
                     this->shape(),this->strides(),this->index_bases());
   }
 
-  iterator end() {
+  __device__ __host__ iterator end()
+  {
     return iterator(*this->index_bases()+(index)*this->shape(),origin(),
                     this->shape(),this->strides(),this->index_bases());
   }

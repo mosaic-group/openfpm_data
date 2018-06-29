@@ -10,6 +10,10 @@
 
 #ifdef CUDA_GPU
 
+#ifndef __NVCC__
+#define __host__
+#define __device__
+#endif
 
 #define CUDA_SAFE(cuda_call) \
 cuda_call; \

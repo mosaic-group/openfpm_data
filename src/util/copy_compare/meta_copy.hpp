@@ -2,7 +2,7 @@
 #define META_COPY_HPP
 
 #include "copy_general.hpp"
-
+#include "util/cuda_util.hpp"
 
 /*! \brief This class copy general objects
  *
@@ -34,7 +34,7 @@ struct meta_copy
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_(const T & src, T & dst)
+	__device__ __host__ static inline void meta_copy_(const T & src, T & dst)
 	{
 		copy_general<T>(src,dst);
 	}
@@ -45,7 +45,7 @@ struct meta_copy
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_(const T & src, T && dst)
+	__device__ __host__  static inline void meta_copy_(const T & src, T && dst)
 	{
 		copy_general<T>(src,dst);
 	}
@@ -82,7 +82,7 @@ struct meta_copy<T[N1]>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_(const T src[N1], T dst[N1])
+	__device__ __host__ static inline void meta_copy_(const T src[N1], T dst[N1])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -120,7 +120,7 @@ struct meta_copy<T[N1][N2]>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_(const T src[N1][N2], T dst[N1][N2])
+	__device__ __host__ static inline void meta_copy_(const T src[N1][N2], T dst[N1][N2])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{

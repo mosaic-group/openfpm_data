@@ -222,10 +222,10 @@ if test x"$debuger" = x"yes"; then
 	AC_DEFINE([DEBUG_MODE],[],[Debug])
 	AC_DEFINE([DEBUG],[],[Debug])
 	CXXFLAGS="$CXXFLAGS -g3  -Wall -O0 "
-	NVCCFLAGS+="$NVCCFLAGS -g -O0 "
+	NVCCFLAGS="$NVCCFLAGS --std=c++11  -g -O0 "
 else
 	CXXFLAGS="$CXXFLAGS -Wall -O3 -g3 -funroll-loops "
-	NVCCFLAGS+="$NVCCFLAGS -O3 "
+	NVCCFLAGS="$NVCCFLAGS --std=c++11 -O3 "
 fi
 
 ##########
@@ -287,7 +287,6 @@ fi
 
 #
 
-NVCCFLAGS="--std=c++11"
 
 if test x$gpu_support = x"no"; then
      CUDA_LIBS=""

@@ -14,6 +14,7 @@
 #include "util/for_each_ref.hpp"
 #include <boost/mpl/range_c.hpp>
 #include <iostream>
+#include "util/cuda_util.hpp"
 
 /*! \brief This structure define the operation add to use with copy general
  *
@@ -108,7 +109,7 @@ struct copy_general<T,1>
 	 * \param dst destination object
 	 *
 	 */
-	inline copy_general(const T & src, T & dst)
+	__device__ __host__ inline copy_general(const T & src, T & dst)
 	{
 		dst = src;
 	}
