@@ -53,22 +53,23 @@ public:
 
   // template typedefs
   template <std::size_t NDims>
-  struct const_array_view_openfpm {
+  struct const_array_view_openfpm
+  {
     typedef boost::detail::multi_array::const_multi_array_view_openfpm<T,NDims> type;
   };
 
   template <std::size_t NDims>
-  struct array_view_openfpm {
+  struct array_view_openfpm
+  {
     typedef boost::detail::multi_array::multi_array_view_openfpm<T,NDims> type;
   };
 
   template <typename OPtr>
-  const_multi_array_view_openfpm(const
-                         const_multi_array_view_openfpm<T,NumDims,OPtr>& other) :
-    base_(other.base_), origin_offset_(other.origin_offset_),
-    num_elements_(other.num_elements_), extent_list_(other.extent_list_),
-    stride_list_(other.stride_list_), index_base_list_(other.index_base_list_)
-  { }
+  const_multi_array_view_openfpm(const const_multi_array_view_openfpm<T,NumDims,OPtr>& other)
+  :base_(other.base_), origin_offset_(other.origin_offset_),
+   num_elements_(other.num_elements_), extent_list_(other.extent_list_),
+   stride_list_(other.stride_list_), index_base_list_(other.index_base_list_)
+  {}
 
 
   template <class BaseList>

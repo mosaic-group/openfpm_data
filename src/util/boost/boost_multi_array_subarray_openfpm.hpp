@@ -162,7 +162,7 @@ public:
   __host__ __device__ const index* strides() const { return strides_; }
   __host__ __device__ const index* index_bases() const { return index_base_; }
 
-  size_type num_elements() const { 
+  size_type num_elements() const {
     return std::accumulate(shape(),shape() + num_dimensions(),
                            size_type(1), std::multiplies<size_type>());
   }
@@ -191,30 +191,6 @@ public:  // Should be protected
 private:
   // const_sub_array cannot be assigned to (no deep copies!)
   const_sub_array_openfpm& operator=(const const_sub_array_openfpm&);
-};
-
-template<unsigned int NumDims>
-struct print_debug
-{
-	template<typename T, typename T2> static void print(const T & obj1, const T2 & obj2)
-	{
-		printf("HELLO 1 \n");
-	}
-};
-
-template<>
-struct print_debug<2>
-{
-	template<typename T, typename T2> static void print(T && obj1,const T2 & obj2)
-	{
-		float * ptr = obj1.origin();
-		printf("ORIGIN DST: %p \n",ptr);
-
-		const float * ptr2 = obj2.origin();
-		printf("ORIGIN SRC: %p \n",ptr2);
-
-		obj1 = obj2;
-	}
 };
 
 //
@@ -264,8 +240,6 @@ public:
 #endif
     // iterator-based copy
 //    std::copy(other.begin(),other.end(),begin());
-      printf("CHECK: %p \n",other.origin());
-      printf("CHECK SIZE: %p \n",other.size());
 
       this->operator[](0) = other[0];
       this->operator[](1) = other[1];
@@ -274,24 +248,6 @@ public:
 //      int temp = other.size();
 //	  for (int i = 0 ; i < (int)temp ; i++) {}
 //	  {/*this->operator[](i) = other[i];*/}
-    return *this;
-  }
-
-  __device__ __host__ sub_array_openfpm& copy_secondary(const sub_array_openfpm& other) {
-    if (&other != this) {
-#ifdef SE_CLASS1
-      // make sure the dimensions agree
-      BOOST_ASSERT(other.num_dimensions() == this->num_dimensions());
-//      BOOST_ASSERT(std::equal(other.shape(),
-//                              other.shape()+this->num_dimensions(),
-//                              this->shape()));
-#endif
-      // iterator-based copy
-      //std::copy(other.begin(),other.end(),begin());
-
-    	  for (int i = 0 ; i < (int)other.size() ; i++)
-    	  {this->operator[](i) = other[i];}
-    }
     return *this;
   }
 
@@ -308,26 +264,8 @@ public:
       // iterator-based copy
       //std::copy(other.begin(),other.end(),begin());
 
-      if (this->num_dimensions() < 2)
-      {
     	  for (int i = 0 ; i < (int)other.size() ; i++)
     	  {this->operator[](i) = other[i];}
-      }
-      else
-      {
-    	  const T * test1 = other.origin();
-    	  const T * test2 = this->origin();
-
-    	  printf("ORIGIN: %p DESTINATION: %p \n",test1,test2);
-    	  printf("S0: %d S1: %d \n",other.strides()[0],other.strides()[1]);
-    	  printf("S_0: %d S_1: %d \n",this->strides()[0],this->strides()[1]);
-    	  printf("S0_p: %p S1_p: %p \n",&other.strides()[0],&other.strides()[1]);
-    	  printf("dims %d \n",other.num_dimensions());
-
-    	  auto a = other[0];
-
-    	  print_debug<NumDims>::print(this->operator[](1),other[1]);
-      }
     }
     return *this;
   }

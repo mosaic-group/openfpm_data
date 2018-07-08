@@ -3,6 +3,7 @@
 
 #include "copy_general.hpp"
 #include "util/cuda_util.hpp"
+#include "util/multi_array_openfpm/multi_array_ref_openfpm.hpp"
 
 /*! \brief This class copy general objects
  *

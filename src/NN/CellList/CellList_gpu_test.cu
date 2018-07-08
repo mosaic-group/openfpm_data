@@ -82,6 +82,8 @@ void test_sub_index()
 
 	auto ite = pl.getGPUIterator();
 
+	pl.template hostToDevice<0>();
+
 	subindex<dim,T,cnt_type,ids_type><<<ite.wthr,ite.thr>>>(*static_cast<ids_type (*)[dim]>(div.getDevicePointer()),
 																	*static_cast<T (*)[dim]>(spacing.getDevicePointer()),
 																	pl.capacity(),
@@ -181,12 +183,14 @@ void create_starts_and_parts_ids(CellList<dim,T, Mem_fast> & cl,
 								 size_t n_part,
 								 size_t n_cell,
 								 openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & starts,
-								 openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> & part_ids)
+								 openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> & part_ids,
+								 openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & cells)
 {
 	// Construct starts and part_ids
 
 	part_ids.resize(n_part);
 	starts.resize(n_cell);
+	cells.resize(n_part);
 
 	grid_key_dx_iterator<dim> itg(gr);
 
@@ -206,6 +210,8 @@ void create_starts_and_parts_ids(CellList<dim,T, Mem_fast> & cl,
 			{part_ids.template get<0>(p_id)[k] = cell.get(k);}
 
 			part_ids.template get<0>(p_id)[dim] = j;
+
+			cells.template get<0>(start+j) = p_id;
 		}
 
 		starts.template get<0>(clin) = start;
@@ -219,8 +225,10 @@ template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
 void test_fill_cell()
 {
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells_out;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> starts;
 	openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
+
 
 	// CellList to check the result
 
@@ -249,7 +257,7 @@ void test_fill_cell()
 
 	grid_sm<dim,void> gr(div_host);
 
-	create_starts_and_parts_ids(cl,gr,pl.size(),tot,starts,part_ids);
+	create_starts_and_parts_ids(cl,gr,pl.size(),tot,starts,part_ids,cells_out);
 
 	bool check = true;
 	cells.resize(pl.size());
@@ -338,6 +346,7 @@ void test_reorder_parts(size_t n_part)
 {
 	// Create n_part
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells_out;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> starts;
 	openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
 
@@ -396,25 +405,41 @@ void test_reorder_parts(size_t n_part)
 		++p_it;
 	}
 
-	parts_prp_out.set(0,parts_prp,0);
-
 	grid_sm<dim,void> gr(div_host);
 
-	create_starts_and_parts_ids(cl,gr,pl.size(),tot,starts,part_ids);
+	create_starts_and_parts_ids(cl,gr,pl.size(),tot,starts,part_ids,cells_out);
 
 
 	auto itgg = pl.getGPUIterator();
 
-	starts.template hostToDevice<0>();
+	cells_out.template hostToDevice<0>();
+
+	auto ite = pl.getGPUIterator();
 
 	// Here we test fill cell
-	reorder_parts<decltype(parts_prp.template toGPU<0,1,2,3>()),cnt_type,shift_ph<0,cnt_type>><<<1,1>>>(pl.size(),
+	reorder_parts<decltype(parts_prp.template toGPU<0,1,2,3>()),cnt_type,shift_ph<0,cnt_type>><<<ite.wthr,ite.thr>>>(pl.size(),
 			                                                                                                               parts_prp.template toGPU<0,1,2,3>(),
 			                                                                                                               parts_prp_out.template toGPU<>(),
-			                                                                                                               static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()));
+			                                                                                                               static_cast<cnt_type *>(cells_out.template getDeviceBuffer<0>()));
 
+	bool check = true;
 	parts_prp_out.template deviceToHost<0>();
 
+	size_t st = 0;
+	for (size_t i = 0 ; i < tot ; i++)
+	{
+		size_t n = cl.getNelements(i);
+
+		for (size_t j = 0 ; j < n ; j++)
+		{
+			size_t p = cl.get(i,j);
+
+			check &= parts_prp_out.template get<0>(st) == parts_prp.template get<0>(p);
+			st++;
+		}
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
 }
 
 BOOST_AUTO_TEST_CASE ( test_reorder_particles )

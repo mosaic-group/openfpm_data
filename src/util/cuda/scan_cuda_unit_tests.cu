@@ -39,6 +39,8 @@ void test_compress()
 	auto ite = cl_n.getGPUIterator();
 	ite.thr.x /= 4;
 
+	cl_n.template hostToDevice<0>();
+
 	compress4<cnt_type,ids_type><<<ite.wthr,ite.thr>>>(cl_n.size(),
 														  static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 														  static_cast<ids_type *>(compressed.template getDeviceBuffer<0>()));
@@ -79,6 +81,8 @@ void test_breduce()
 
 	red.resize(nblocks);
 
+	cl_n.template hostToDevice<0>();
+
 	breduce<THREADS/32,cnt_type,ids_type,ratio_reduction<cnt_type,ids_type>><<<nblocks,THREADS>>>(cl_n.size()/ratio,
 														  static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 														  static_cast<cnt_type *>(red.template getDeviceBuffer<0>()));
@@ -106,6 +110,8 @@ void test_bexscan()
 	{base.template get<0>(i) = 1;}
 
 	int nblocks = base.size();
+
+	base.template hostToDevice<0>();
 
 	bexscan<THREADS,cnt_type><<<1,THREADS,nblocks*sizeof(unsigned int)>>>(nblocks,
 														  	  	  	  	  static_cast<cnt_type *>(base.template getDeviceBuffer<0>()));
@@ -142,6 +148,9 @@ void test_gexscan()
 	{cl_n.template get<0>(i) = i%16;}
 
 	int nblocks = cl_n.size() / 16;
+
+	cl_n.template hostToDevice<0>();
+	base.template hostToDevice<0>();
 
 	gexscan<THREADS/32,ratio_extend<unsigned int,unsigned char>> <<< cl_n.size() / 16 / THREADS, THREADS >>>(nblocks,
 																									  static_cast<ratio_extend<unsigned int,unsigned char>::cnt_type4 *>(cl_n.template getDeviceBuffer<0>()),

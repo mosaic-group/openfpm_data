@@ -32,6 +32,8 @@
 #include <boost/type_traits/is_same.hpp>
 #include <boost/utility/value_init.hpp>
 
+#pragma hd_warning_disable
+
 namespace boost { namespace mpl {
 
 namespace aux {
@@ -116,5 +118,7 @@ void for_each_ref(F & f, Sequence* = 0)
 }
 
 }}
+
+#pragma hd_warning_enable
 
 #endif // OPENFPM_FOR_EACH_HPP_INCLUDED

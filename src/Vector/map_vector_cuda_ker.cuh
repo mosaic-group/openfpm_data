@@ -90,7 +90,7 @@ public:
 	 * \return the element (encapsulated)
 	 *
 	 */
-	inline auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>(id)))
+	inline __device__ auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>(id)))
 	{
 		grid_key_dx<1> key(id);
 
@@ -106,7 +106,7 @@ public:
 	 * \return the element (encapsulated)
 	 *
 	 */
-	inline auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
+	inline __device__ auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
 	{
 		grid_key_dx<1> key(id);
 
@@ -125,13 +125,31 @@ public:
 	 *
 	 */
 
-	inline auto get_o(size_t id) const -> decltype(base.get_o(id))
+	inline __device__ auto get_o(size_t id) const -> decltype(base.get_o(id))
 	{
 		grid_key_dx<1> key(id);
 
 		return base.get_o(key);
 	}
 
+	/*! \brief Get an element of the vector
+	 *
+	 * \deprecated
+	 *
+	 * exactly as get, exist to keep the compatibility with grid
+	 *
+	 * \param id Element to get
+	 *
+	 * \return the element (encapsulated)
+	 *
+	 */
+
+	inline __device__ auto get_o(size_t id) -> decltype(base.get_o(id))
+	{
+		grid_key_dx<1> key(id);
+
+		return base.get_o(key);
+	}
 
 	/*! \brief Get the last element of the vector
 	 *

@@ -268,9 +268,7 @@ class const_multi_array_ref_openfpm : public detail::multi_array::multi_array_im
       std::copy(extents.begin(),extents.end(),extent_list_.begin());
       this->compute_strides(stride_list_,extent_list_,storage_);
 
-      origin_offset_ =
-        this->calculate_origin_offset(stride_list_,extent_list_,
-                                storage_,index_base_list_);
+      origin_offset_ = this->calculate_origin_offset(stride_list_,extent_list_, storage_,index_base_list_);
     }
 
     size_type num_dimensions() const { return NumDims; }
@@ -688,9 +686,6 @@ public:
 
 
   __device__ __host__ reference operator[](index idx) {
-
-	  printf("Strides ORIG: %d %d %d \n",this->strides()[0],this->strides()[1], this->num_dimensions());
-
     return super_type::access(boost::type<reference>(),
                               idx,origin(),
                               this->shape(),this->strides(),

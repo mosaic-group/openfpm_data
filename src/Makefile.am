@@ -10,7 +10,7 @@ else
 endif
 
 noinst_PROGRAMS = mem_map
-mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu  Grid/gpu_test/cuda_gpu_func.cpp  $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp Grid/gpu_test/cuda_grid_unit_tests.cu
+mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp NN/CellList/CellList_gpu_test.cu util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp  util/cuda/scan_cuda_unit_tests.cu  Grid/gpu_test/cuda_gpu_func.cpp  $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp Grid/gpu_test/cuda_grid_unit_tests.cu
 mem_map_CXXFLAGS = $(AM_CXXFLAGS) $(LIBHILBERT_INCLUDE) $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include -I/usr/local/libhilbert/include
 mem_map_CFLAGS = $(CUDA_CFLAGS)
 mem_map_LDADD = $(LINKLIBS)

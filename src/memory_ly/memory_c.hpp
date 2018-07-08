@@ -10,8 +10,11 @@
 #include <boost/fusion/include/mpl.hpp>
 #include <boost/mpl/vector.hpp>
 #include <array>
+#include <boost/mpl/pop_front.hpp>
+#include <boost/mpl/push_front.hpp>
 
 #include "util/boost/boost_multi_array_openfpm.hpp"
+#include "util/multi_array_openfpm/multi_array_ref_openfpm.hpp"
 #include "util/ct_array.hpp"
 #include "memory_array.hpp"
 #include "memory/memory.hpp"
@@ -397,6 +400,9 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	    enum { value = true };
 	};
 
+	//! Remove the first element
+	typedef typename boost::mpl::push_front<typename boost::mpl::pop_front<T>::type,boost::mpl::int_<-1>>::type Tv;
+
 	//! define boost::mpl::int_ without boost::mpl
 	template<int S> using int_ = boost::mpl::int_<S>;
 
@@ -409,7 +415,7 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	typedef typename at<T,0>::type base;
 
 	//! define size_type
-	typedef typename boost::multi_array_ref<base,size_p::value>::size_type size_type;
+	typedef typename openfpm::multi_array_ref_openfpm<base,size_p::value,Tv>::size_type size_type;
 
 //#ifdef __NVCC__
 
@@ -508,15 +514,9 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	    // We create an array dims from the boost::mpl::vector
 	    typedef typename generate_array_vector<size_type,T>::result dims;
 
-	    //! buffer to store the dimensions of the full multi_array buffer
-	    std::array<size_type ,size_p::value> dimensions;
-
-	    // fill runtime, and the other dimensions
-	    dimensions[0] = sz;
-	    for (int i = 0 ; i < size_p::value-1 ; i++)
-	    {dimensions[i+1] = dims::data[i];}
-
-	    boost::multi_array_ref_openfpm<base,size_p::value> tmp(static_cast<base *>(mem->getPointer()),dimensions,boost::general_storage_order<size_p::value>(boost::ofp_storage_order()));
+	    openfpm::multi_array_ref_openfpm<base,size_p::value,Tv> tmp(static_cast<base *>(mem->getPointer()),
+	    		                                                                        sz,
+	    		                                                                        openfpm::general_storage_order<size_p::value>(openfpm::ofp_storage_order()));
 
 	    //! we create the representation for the memory buffer
 	    mem_r.swap(tmp);
@@ -532,13 +532,12 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	D * mem;
 
 	//! object that represent the memory as a multi-dimensional array of objects T
-	boost::multi_array_ref_openfpm<base,boost::mpl::size<T>::value> mem_r;
+	openfpm::multi_array_ref_openfpm<base,boost::mpl::size<T>::value,Tv> mem_r;
 
 	//! constructor
 	memory_c()
 	:mem(NULL),
-	 mem_r(static_cast<base *>(NULL),zero_dims<size_type,size_p::value>(),
-		   boost::ofp_storage_order())
+	 mem_r(static_cast<base *>(NULL),0,openfpm::ofp_storage_order())
 	{}
 
 	//! destructor
