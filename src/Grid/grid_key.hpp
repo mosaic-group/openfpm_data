@@ -14,7 +14,7 @@
  * \tparam dim dimensionality of the grid
  *
  */
-template<unsigned int dim>
+template<unsigned int dim, typename index_type>
 class grid_key_dx
 {
 public:
@@ -414,7 +414,7 @@ public:
 	}
 
 	//! structure that store all the index
-	mem_id k[dim];
+	index_type k[dim];
 
 private:
 

@@ -53,39 +53,38 @@ void test_sub_index()
 	pl.add(p9);
 	pl.add(p10);
 
-	CudaMemory spacing;
-	CudaMemory div;
-
-	spacing.allocate(sizeof(T)*dim);
-	div.allocate(dim*sizeof(ids_type));
-
-	ids_type (& div_p)[dim] = *static_cast<ids_type (*)[dim]>(div.getPointer());
-	T (& spacing_p)[dim] = *static_cast<T (*)[dim]>(spacing.getPointer());
+	openfpm::array<T,dim,cnt_type> spacing;
+	openfpm::array<ids_type,dim,cnt_type> div;
+	openfpm::array<ids_type,dim,cnt_type> off;
 
 	for (size_t i = 0 ; i < dim ; i++)
 	{
-		div_p[i] = 17;
-		spacing_p[i] = 0.1;
+		div[i] = 17;
+		spacing[i] = 0.1;
+		off[i] = 0;
 	}
 
 	cl_n.resize(17*17*17);
 	CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
-	part_ids.resize(9);
+	part_ids.resize(pl.size());
 
 	size_t sz[3] = {17,17,17};
 	grid_sm<3,void> gr(sz);
-
-	// Force to copy into device
-	spacing.getDevicePointer();
-	div.getDevicePointer();
 
 	auto ite = pl.getGPUIterator();
 
 	pl.template hostToDevice<0>();
 
-	subindex<dim,T,cnt_type,ids_type><<<ite.wthr,ite.thr>>>(*static_cast<ids_type (*)[dim]>(div.getDevicePointer()),
-																	*static_cast<T (*)[dim]>(spacing.getDevicePointer()),
+	Matrix<dim,T> mt;
+	Point<dim,T> pt;
+
+	no_transform_only<dim,T> t(mt,pt);
+
+	subindex<dim,T,cnt_type,ids_type,no_transform_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
+																	spacing,
+																	off,
+																	t,
 																	pl.capacity(),
 																	pl.size(),
 																	static_cast<T *>(pl.template getDeviceBuffer<0>()),
@@ -234,8 +233,8 @@ void test_fill_cell()
 
 	Box<dim,T> domain;
 
-	typename boost::array_openfpm<T,dim> spacing;
-	typename boost::array_openfpm<ids_type,dim,cnt_type> div_c;
+	typename openfpm::array<T,dim> spacing;
+	typename openfpm::array<ids_type,dim,cnt_type> div_c;
 
 	size_t div_host[dim];
 
@@ -243,7 +242,7 @@ void test_fill_cell()
 	for (size_t i = 0 ; i < dim ; i++)
 	{
 		div_host[i] = 10;
-		div_c[i] = tot;
+		div_c[i] = 10;
 		tot *= div_host[i];
 		spacing[i] = 0.1;
 		domain.setLow(i,0.0);
@@ -348,6 +347,7 @@ void test_reorder_parts(size_t n_part)
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells_out;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> starts;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> sort_to_not_sort;
 	openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
 
 	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float,float[3],float[3][3]>>::type,memory_traits_inte> parts_prp;
@@ -379,6 +379,7 @@ void test_reorder_parts(size_t n_part)
 	create_n_part(n_part,pl,cl);
 	parts_prp.resize(n_part);
 	parts_prp_out.resize(n_part);
+	sort_to_not_sort.resize(n_part);
 
 	auto p_it = parts_prp.getIterator();
 	while (p_it.isNext())
@@ -417,13 +418,18 @@ void test_reorder_parts(size_t n_part)
 	auto ite = pl.getGPUIterator();
 
 	// Here we test fill cell
-	reorder_parts<decltype(parts_prp.template toGPU<0,1,2,3>()),cnt_type,shift_ph<0,cnt_type>><<<ite.wthr,ite.thr>>>(pl.size(),
-			                                                                                                               parts_prp.template toGPU<0,1,2,3>(),
-			                                                                                                               parts_prp_out.template toGPU<>(),
-			                                                                                                               static_cast<cnt_type *>(cells_out.template getDeviceBuffer<0>()));
+	reorder_parts<decltype(parts_prp.template toGPU<0,1,2,3>()),
+			      decltype(sort_to_not_sort.template toGPU<>()),
+			      cnt_type,
+			      shift_ph<0,cnt_type>><<<ite.wthr,ite.thr>>>(pl.size(),
+			                                                  parts_prp.template toGPU<0,1,2,3>(),
+			                                                  parts_prp_out.template toGPU<>(),
+			                                                  sort_to_not_sort.template toGPU<>(),
+			                                                  static_cast<cnt_type *>(cells_out.template getDeviceBuffer<0>()));
 
 	bool check = true;
 	parts_prp_out.template deviceToHost<0>();
+	sort_to_not_sort.template deviceToHost<0>();
 
 	size_t st = 0;
 	for (size_t i = 0 ; i < tot ; i++)
@@ -435,9 +441,12 @@ void test_reorder_parts(size_t n_part)
 			size_t p = cl.get(i,j);
 
 			check &= parts_prp_out.template get<0>(st) == parts_prp.template get<0>(p);
+			check &= sort_to_not_sort.template get<0>(st) == p;
+
 			st++;
 		}
 	}
+
 
 	BOOST_REQUIRE_EQUAL(check,true);
 }
@@ -469,6 +478,10 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 
 	openfpm::vector<Point<dim,double>,CudaMemory,typename memory_traits_inte<Point<dim,double>>::type,memory_traits_inte> pl;
 
+	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float[3],float[3][3]>>::type,memory_traits_inte> pl_prp;
+	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float[3],float[3][3]>>::type,memory_traits_inte> pl_prp_out;
+
+
 	// create 3 particles
 
 	Point<dim,double> p1({0.2,0.2,0.2});
@@ -491,7 +504,76 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 	pl.add(p8);
 	pl.add(p9);
 
-	cl2.construct(pl);
+	pl_prp.resize(pl.size());
+	pl_prp_out.resize(pl.size());
+
+	for (size_t i = 0 ; i < pl.size() ; i++)
+	{
+		pl_prp.template get<0>(i) = pl.template get<0>(i)[0];
+
+		pl_prp.template get<1>(i)[0] = pl.template get<0>(i)[0]+100.0;
+		pl_prp.template get<1>(i)[1] = pl.template get<0>(i)[1]+100.0;
+		pl_prp.template get<1>(i)[2] = pl.template get<0>(i)[2]+100.0;
+
+		pl_prp.template get<2>(i)[0][0] = pl.template get<0>(i)[0]+1000.0;
+		pl_prp.template get<2>(i)[0][1] = pl.template get<0>(i)[1]+1000.0;
+		pl_prp.template get<2>(i)[0][2] = pl.template get<0>(i)[2]+1000.0;
+
+		pl_prp.template get<2>(i)[1][0] = pl.template get<0>(i)[0]+2000.0;
+		pl_prp.template get<2>(i)[1][1] = pl.template get<0>(i)[1]+3000.0;
+		pl_prp.template get<2>(i)[1][2] = pl.template get<0>(i)[2]+4000.0;
+
+		pl_prp.template get<2>(i)[2][0] = pl.template get<0>(i)[0]+5000.0;
+		pl_prp.template get<2>(i)[2][1] = pl.template get<0>(i)[1]+6000.0;
+		pl_prp.template get<2>(i)[2][2] = pl.template get<0>(i)[2]+7000.0;
+	}
+
+	pl_prp.resize(pl.size());
+	pl_prp_out.resize(pl.size());
+
+	pl.template hostToDevice<0>();
+	pl_prp.template hostToDevice<0>();
+	pl_prp.template hostToDevice<1>();
+	pl_prp.template hostToDevice<2>();
+
+	cl2.template construct<decltype(pl),decltype(pl_prp),0,1,2>(pl,pl_prp,pl_prp_out);
+
+	// Check
+
+	pl_prp_out.deviceToHost<0>();
+	pl_prp_out.deviceToHost<1>();
+	pl_prp_out.deviceToHost<2>();
+
+	////// Correct order ////////////
+
+	openfpm::vector<Point<dim,double>,CudaMemory,typename memory_traits_inte<Point<dim,double>>::type,memory_traits_inte> pl_correct;
+
+	pl_correct.add(p9);
+	pl_correct.add(p1);
+	pl_correct.add(p2);
+	pl_correct.add(p3);
+	pl_correct.add(p5);
+	pl_correct.add(p4);
+	pl_correct.add(p6);
+	pl_correct.add(p7);
+	pl_correct.add(p8);
+
+	for (size_t i = 0 ; i < pl_correct.size() ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<0>(i),(float)pl_correct.template get<0>(i)[0]);
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<1>(i)[0],(float)(pl_correct.template get<0>(i)[0]+100.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<1>(i)[1],(float)(pl_correct.template get<0>(i)[1]+100.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<1>(i)[2],(float)(pl_correct.template get<0>(i)[2]+100.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[0][0],(float)(pl_correct.template get<0>(i)[0] + 1000.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[0][1],(float)(pl_correct.template get<0>(i)[1] + 1000.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[0][2],(float)(pl_correct.template get<0>(i)[2] + 1000.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[1][0],(float)(pl_correct.template get<0>(i)[0] + 2000.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[1][1],(float)(pl_correct.template get<0>(i)[1] + 3000.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[1][2],(float)(pl_correct.template get<0>(i)[2] + 4000.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[2][0],(float)(pl_correct.template get<0>(i)[0] + 5000.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[2][1],(float)(pl_correct.template get<0>(i)[1] + 6000.0));
+		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[2][2],(float)(pl_correct.template get<0>(i)[2] + 7000.0));
+	}
 }
 
 
@@ -503,7 +585,182 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use)
 	SpaceBox<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
 
 	Test_cell_gpu<3,double,CellList_gpu<3,double,CudaMemory>>(box);
-	Test_cell_gpu<3,double,CellList_gpu<3,double,CudaMemory>>(box2);
+
+	std::cout << "End cell list GPU" << "\n";
+
+	// Test the cell list
+}
+
+template<unsigned int dim, typename vector_ps, typename vector_pr>
+void fill_random_parts(vector_ps & vd_pos, vector_pr & vd_prp, size_t n)
+{
+	for (size_t i = 0 ; i < n ; i++)
+	{
+		Point<dim,float> p;
+
+		p.get(0) = (0.7999*(float)rand()/RAND_MAX)+0.1;
+		p.get(1) = (0.7999*(float)rand()/RAND_MAX)+0.1;
+		p.get(2) = (0.7999*(float)rand()/RAND_MAX)+0.1;
+
+		vd_pos.add(p);
+		vd_prp.add();
+		vd_prp.last().template get<0>() = i % 3;
+	}
+}
+
+
+template<typename vector_pos, typename vector_prp, typename vector_ns, typename CellList_type,typename vector_n_type>
+__global__ void calc_force_number(vector_pos pos, vector_prp prp, vector_ns s_t_ns, CellList_type cl, vector_n_type vn)
+{
+    int p = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (p != 0 /* pos.size()*/) return;
+
+    vn.template get<0>(p) = 0;
+
+    Point<3,float> xp = pos.template get<0>(p);
+
+    printf("POS: %f %f %f \n",xp.get(0),xp.get(1),xp.get(2) );
+
+    auto it = cl.getNNIterator(cl.getCell(xp));
+
+    while (it.isNext())
+    {
+    	auto q = it.get();
+
+    	int s1 = s_t_ns.template get<0>(q);
+
+    	printf("q= %d\n",s1);
+
+    	vn.template get<0>(p)++;
+
+    	++it;
+    }
+}
+
+template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(SpaceBox<dim,T> & box)
+{
+	//Space where is living the Cell list
+	//SpaceBox<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+
+	// Subdivisions
+	size_t div[dim] = {16,16,16};
+
+	// Origin
+	Point<dim,T> org({0.0,0.0,0.0});
+
+	// id Cell list
+	CellS cl2(box,div);
+
+	// vector of particles
+
+	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
+
+	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> pl_prp;
+	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> pl_prp_out;
+
+	openfpm::vector<aggregate<int>,CudaMemory,typename memory_traits_inte<aggregate<int>>::type,memory_traits_inte> n_out;
+
+	// create random particles
+
+	fill_random_parts<3>(pl,pl_prp,1000);
+
+	pl_prp_out.resize(pl.size());
+	n_out.resize(pl.size());
+
+	pl_prp.resize(pl.size());
+	pl_prp_out.resize(pl.size());
+
+	pl.template hostToDevice<0>();
+	pl_prp.template hostToDevice<0>();
+	pl_prp.template hostToDevice<1>();
+
+	// Construct an equivalent CPU cell-list
+
+	CellList<dim,T,Mem_fast> cl_cpu(box,div);
+
+	// construct
+
+	auto it2 = pl.getIterator();
+
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		Point<3,T> xp = pl.get(p);
+
+		cl_cpu.add(xp,p);
+
+		++it2;
+	}
+
+	cl2.template construct<decltype(pl),decltype(pl_prp),0,1>(pl,pl_prp,pl_prp_out);
+	auto & s_t_ns = cl2.getSortToNonSort();
+
+	auto ite = pl.getGPUIterator();
+
+	calc_force_number<decltype(pl.template toGPU<0>()),
+			          decltype(pl_prp.template toGPU<0>()),
+			          decltype(s_t_ns.template toGPU<>()),
+			          decltype(cl2.toGPU()),
+			          decltype(n_out.template toGPU<>())>
+	<<<ite.wthr,ite.thr>>>(pl.template toGPU<0>(),
+						   pl_prp.template toGPU<0>(),
+						   s_t_ns.template toGPU<>(),
+						   cl2.toGPU(),
+						   n_out.template toGPU<>());
+
+	// Check
+
+	n_out.deviceToHost<0>();
+	s_t_ns.template deviceToHost<0>();
+
+	auto it = n_out.getIterator();
+
+	while(it.isNext())
+	{
+		auto p = it.get();
+
+		Point<dim,T> xp = pl.get(p);
+
+		// Get NN iterator
+
+		if (p == 0)
+		{
+			std::cout << "CID=" << cl_cpu.getCell(xp) << " " << xp.toString() << std::endl;
+		}
+
+		auto NN_it = cl_cpu.getNNIterator(cl_cpu.getCell(xp));
+
+		size_t n_ele = 0;
+		while (NN_it.isNext())
+		{
+			auto q = NN_it.get();
+
+			if (p == 0)
+			{
+				std::cout << "NN part=" << q << std::endl;
+			}
+
+			n_ele++;
+
+			++NN_it;
+		}
+
+//		std::cout << "NELE: " << n_ele << " " << n_out.template get<0>(p) << std::endl;
+
+		++it;
+	}
+}
+
+BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force)
+{
+	std::cout << "Test cell list GPU" << "\n";
+
+	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	SpaceBox<3,float> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory>>(box);
 
 	std::cout << "End cell list GPU" << "\n";
 

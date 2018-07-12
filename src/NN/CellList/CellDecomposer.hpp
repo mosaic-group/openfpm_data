@@ -141,7 +141,128 @@ public:
 	}
 };
 
+/*! This Class apply a shift transformation before converting to Cell-ID
+ *
+ *
+ */
+template<unsigned int dim, typename T>
+class shift_only
+{
+	//! Shift point
+	Point<dim,T> sh;
 
+public:
+
+	/*! \brief Constructor
+	 *
+	 * \param t Matrix transformation
+	 * \param s shift
+	 *
+	 */
+	shift_only(const Matrix<dim,T> & t, const Point<dim,T> & s)
+	:sh(s)
+	{
+	}
+
+	/*! \brief Shift the point transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the transformed coordinate
+	 *
+	 */
+	__device__ __host__  inline T transform(const T * s, const int i) const
+	{
+		return s[i] - sh.get(i);
+	}
+
+	/*! \brief Shift the point transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the transformed coordinate
+	 *
+	 */
+	__device__ __host__  inline T transform(const T(&s)[dim], const int i) const
+	{
+		return s[i] - sh.get(i);
+	}
+
+	/*! \brief Shift the point transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the transformed coordinate
+	 *
+	 */
+	__device__ __host__  inline T transform(const Point<dim,T> & s, const int i) const
+	{
+		return s.get(i) - sh.get(i);
+	}
+
+	/*! \brief Shift the point transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the transformed coordinate
+	 *
+	 */
+	template<typename Mem> __device__ __host__   inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const int i) const
+	{
+		return s.template get<0>()[i] - sh.get(i);
+	}
+
+	/*! \brief Set the transformation Matrix and shift
+	 *
+	 * \param mat Matrix transformation
+	 * \param orig origin point
+	 *
+	 */
+	inline void setTransform(const Matrix<dim,T> & mat, const Point<dim,T> & orig)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+			sh.get(i) = orig.get(i);
+	}
+
+	/*! \brief Get the shift vector
+	 *
+	 * \return the shift vector
+	 *
+	 */
+	inline const Point<dim,T> & getOrig() const
+	{
+		return sh;
+	}
+
+
+	/*! \brief It return true if the shift match
+	 *
+	 * \param s shift to compare with
+	 *
+	 * \return true if it match
+	 *
+	 */
+	inline bool operator==(const shift<dim,T> & s)
+	{
+		return sh == s.sh;
+	}
+
+	/*! \brief It return true if the shift is different
+	 *
+	 * \param s shift to compare with
+	 *
+	 * \return true if the shift is different
+	 *
+	 */
+	inline bool operator!=(const shift<dim,T> & s)
+	{
+		return !this->operator==(s);
+	}
+};
 
 //! No transformation
 template<unsigned int dim, typename T>
@@ -266,6 +387,114 @@ public:
 	}
 };
 
+//! No transformation
+template<unsigned int dim, typename T>
+class no_transform_only
+{
+
+public:
+
+	/*! \brief Constructor
+	 *
+	 * \param t Matrix transformation
+	 * \param s shift
+	 *
+	 */
+	no_transform_only(const Matrix<dim,T> & t, const Point<dim,T> & s)
+	{
+	}
+
+	/*! \brief Shift the point transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the transformed coordinate
+	 *
+	 */
+	__device__ __host__ inline T transform(const T * s, const int i) const
+	{
+		return s[i];
+	}
+
+	/*! \brief Shift the point transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the transformed coordinate
+	 *
+	 */
+	__device__ __host__ inline T transform(const T(&s)[dim], const int i) const
+	{
+		return s[i];
+	}
+
+	/*! \brief No transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the source point coordinate
+	 *
+	 */
+	__device__ __host__  inline T transform(const Point<dim,T> & s, const int i) const
+	{
+		return s.get(i);
+	}
+
+	/*! \brief No transformation
+	 *
+	 * \param s source point
+	 * \param i coordinate
+	 *
+	 * \return the point coordinate
+	 *
+	 */
+	template<typename Mem> __device__ __host__ inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const int i) const
+	{
+		return s.template get<Point<dim,T>::x>()[i];
+	}
+
+	/*! \brief Set the transformation Matrix and shift
+	 *
+	 * \param mat Matrix transformation
+	 * \param orig origin point
+	 *
+	 */
+	inline void setTransform(const Matrix<dim,T> & mat, const Point<dim,T> & orig)
+	{
+
+	}
+
+	/*! \brief It return always true true
+	 *
+	 * There is nothing to compare
+	 *
+	 * \param nt unused
+	 *
+	 * \return true
+	 *
+	 */
+	inline bool operator==(const no_transform<dim,T> & nt)
+	{
+		return true;
+	}
+
+	/*! \brief It return always false
+	 *
+	 * There is nothing to compare they cannot be differents
+	 *
+	 * \param nt unused
+	 *
+	 * \return false
+	 *
+	 */
+	inline bool operator!=(const no_transform<dim,T> & nt)
+	{
+		return false;
+	}
+};
 
 /*! \brief Decompose a space into cells
  *
@@ -553,6 +782,16 @@ protected:
 	}
 
 public:
+
+	/*! \brief Return the transformation
+	 *
+	 * \return the transform
+	 *
+	 */
+	const transform & getTransform()
+	{
+		return t;
+	}
 
 	/*! \brief Return the underlying grid information of the cell list
 	 *

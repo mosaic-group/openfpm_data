@@ -3,7 +3,7 @@
 
 #include "util/common.hpp"
 
-template<unsigned int dim> class grid_key_dx;
+template<unsigned int dim, typename index_type = long int> class grid_key_dx;
 template<int dim, typename exp1, typename exp2> class grid_key_dx_sum;
 template<int dim, typename exp1, typename exp2> class grid_key_dx_sub;
 

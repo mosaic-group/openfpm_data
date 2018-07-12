@@ -190,6 +190,26 @@ namespace openfpm
 		  return i - ( i > x ); /* convert trunc to floor */
 		}
 
+		/*! \brief floor math function
+		 *
+		 *
+		 */
+		__device__ __host__ inline int uint_floor(double x)
+		{
+		 unsigned  int i = (int)x; /* truncate */
+		  return i - ( i > x ); /* convert trunc to floor */
+		}
+
+		/*! \brief floor math function
+		 *
+		 *
+		 */
+		__device__ __host__ inline int uint_floor(float x)
+		{
+		  unsigned int i = (int)x; /* truncate */
+		  return i - ( i > x ); /* convert trunc to floor */
+		}
+
 		const int tab64[64] = {
 		    63,  0, 58,  1, 59, 47, 53,  2,
 		    60, 39, 48, 27, 54, 33, 42,  3,

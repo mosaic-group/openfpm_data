@@ -72,18 +72,62 @@ void test_breduce()
 	constexpr int THREADS = 128;
 	constexpr int ratio = 4*sizeof(cnt_type)/sizeof(ids_type);
 
+	int nblocks = ((cl_n.size() / (ratio) ) + THREADS - 1 ) / THREADS;
+
 	// fill with some data
 
-	for (size_t i = 0 ; i < cl_n.size() ; i++)
-	{cl_n.template get<0>(i) = i%16;}
+	openfpm::vector<cnt_type> block_red;
+	block_red.resize(nblocks);
 
-	int nblocks = ((cl_n.size() / (ratio) ) + THREADS - 1 ) / THREADS;
+	for (size_t i = 0 ; i < cl_n.size() ; i++)
+	{
+		if ((i % 2048)/256  == 0)
+		{
+			cl_n.template get<0>(i) = i%256;
+			block_red.get(i/2048) += cl_n.template get<0>(i);
+		}
+		else if ((i % 2048)/256  == 1)
+		{
+			cl_n.template get<0>(i) = i%7;
+			block_red.get(i/2048) += cl_n.template get<0>(i);
+		}
+		else if ((i % 2048)/256  == 2)
+		{
+			cl_n.template get<0>(i) = i%13;
+			block_red.get(i/2048) += cl_n.template get<0>(i);
+		}
+		else if ((i % 2048)/256  == 3)
+		{
+			cl_n.template get<0>(i) = i%17;
+			block_red.get(i/2048) += cl_n.template get<0>(i);
+		}
+		else if ((i % 2048)/256  == 4)
+		{
+			cl_n.template get<0>(i) = i%256;
+			block_red.get(i/2048) += cl_n.template get<0>(i);
+		}
+		else if ((i % 2048)/256  == 5)
+		{
+			cl_n.template get<0>(i) = i%7;
+			block_red.get(i/2048) += cl_n.template get<0>(i);
+		}
+		else if ((i % 2048)/256  == 6)
+		{
+			cl_n.template get<0>(i) = i%13;
+			block_red.get(i/2048) += cl_n.template get<0>(i);
+		}
+		else if ((i % 2048)/256  == 7)
+		{
+			cl_n.template get<0>(i) = i%17;
+			block_red.get(i/2048) += cl_n.template get<0>(i);
+		}
+	}
 
 	red.resize(nblocks);
 
 	cl_n.template hostToDevice<0>();
 
-	breduce<THREADS/32,cnt_type,ids_type,ratio_reduction<cnt_type,ids_type>><<<nblocks,THREADS>>>(cl_n.size()/ratio,
+	breduce<THREADS/32,cnt_type,ids_type,ratio_reduction<cnt_type,ids_type>><<<nblocks,THREADS>>>(cl_n.size()/ratio*4,
 														  static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 														  static_cast<cnt_type *>(red.template getDeviceBuffer<0>()));
 
@@ -91,7 +135,7 @@ void test_breduce()
 
 	for (size_t i = 0 ; i < red.size() ; i++)
 	{
-		BOOST_REQUIRE_EQUAL(red.template get<0>(i),120*128);
+		BOOST_REQUIRE_EQUAL(red.template get<0>(i),block_red.get(i));
 	}
 }
 
@@ -169,13 +213,16 @@ void test_gexscan()
 	}
 }
 
+BOOST_AUTO_TEST_CASE (test_breduce_func )
+{
+	test_breduce<unsigned int, unsigned char>();
+}
+
 BOOST_AUTO_TEST_CASE( test_base_funcs )
 {
 	std::cout << "Test cell list GPU base func" << "\n";
 
 	test_compress<int,unsigned char>();
-
-	test_breduce<unsigned int, unsigned char>();
 
 	test_bexscan<unsigned int>();
 
@@ -197,7 +244,7 @@ void test_scan(size_t num)
 	// fill with some data
 
 	for (size_t i = 0 ; i < cl_n.size() ; i++)
-	{cl_n.template get<0>(i) = i%16;}
+	{cl_n.template get<0>(i) = 255.0*rand()/RAND_MAX;}
 
 	cl_n.template hostToDevice<0>();
 
@@ -211,6 +258,7 @@ void test_scan(size_t num)
 	for (size_t i = 1 ; i < cl_n_scan.size() ; i++)
 	{
 		scan += cl_n.template get<0>(i-1);
+
 		BOOST_REQUIRE_EQUAL(cl_n_scan.template get<0>(i),scan);
 	}
 }

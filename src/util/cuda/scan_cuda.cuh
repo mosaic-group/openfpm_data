@@ -243,7 +243,7 @@ __global__ void breduce(int n, const cnt_type *vin, cnt_type *vout)
 {
     const int wid = threadIdx.x/32;
     const int lid = threadIdx.x%32;
-    const int tid = blockDim.x*blockIdx.x + threadIdx.x;
+    const int tid = 4*(blockDim.x*blockIdx.x + threadIdx.x);
     cnt_type val[4] = {0,0,0,0};
 
     __shared__ unsigned int shtmp[NWARP];
@@ -275,7 +275,10 @@ __global__ void breduce(int n, const cnt_type *vin, cnt_type *vout)
         {val[0] += __shfl_down_sync(0xFFFFFFFF,(int)val[0], i);}
     }
 
-    if (0 == threadIdx.x) {vout[blockIdx.x] = val[0];}
+    if (0 == threadIdx.x)
+    {
+    	vout[blockIdx.x] = val[0];
+    }
 }
 
 template <int BDIM, typename cnt_type>
@@ -408,7 +411,7 @@ void scan(openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_
 			                                           static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 													   static_cast<ids_type *>(compressed.template getDeviceBuffer<0>()));
 
-    breduce<THREADS/32,cnt_type,ids_type,ratio_reduction<cnt_type,ids_type>><<<nblocks, THREADS                >>>(cl_n.size() / ratio,
+    breduce<THREADS/32,cnt_type,ids_type,ratio_reduction<cnt_type,ids_type>><<<nblocks, THREADS                >>>(cl_n.size() / ratio * 4,
     														  (cnt_type *)compressed.template getDeviceBuffer<0>(),
 															  static_cast<cnt_type *>(red.template getDeviceBuffer<0>()));
 

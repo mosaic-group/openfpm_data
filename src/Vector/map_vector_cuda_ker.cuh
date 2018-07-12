@@ -21,7 +21,7 @@ struct vector_gpu_ker
 	//! Actual size of the vector, warning: it is not the space allocated in grid
 	//! grid size increase by a fixed amount every time we need a vector bigger than
 	//! the actually allocated space
-	size_t v_size;
+	unsigned int v_size;
 
 	//! 1-D static grid
 	grid_gpu_ker<1,T> base;
@@ -46,7 +46,7 @@ public:
 	 * \return the size
 	 *
 	 */
-	size_t size() const
+	__device__ unsigned int size() const
 	{
 		return v_size;
 	}
@@ -57,7 +57,7 @@ public:
 	 *
 	 */
 
-	size_t capacity()
+	__device__ unsigned int capacity()
 	{
 		return base.size();
 	}
@@ -196,8 +196,8 @@ public:
 	vector_gpu_ker()
 	{}
 
-	vector_gpu_ker(const grid_gpu_ker<1,T> & cpy)
-	:base(cpy)
+	vector_gpu_ker(int v_size, const grid_gpu_ker<1,T> & cpy)
+	:v_size(v_size),base(cpy)
 	{}
 
 

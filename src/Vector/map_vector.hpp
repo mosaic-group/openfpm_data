@@ -1419,7 +1419,7 @@ namespace openfpm
 			if (base.size() == 0)
 			{std::cout << __FILE__ << ":" << __LINE__ << " Warning you are off-loading with toGPU a vector that seem to be empty or not initialized" << std::endl; }
 
-			vector_gpu_ker<T> v(this->base.template toGPU<prp ...>());
+			vector_gpu_ker<T> v(v_size,this->base.template toGPU<prp ...>());
 
 			return v;
 		}

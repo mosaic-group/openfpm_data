@@ -119,6 +119,4 @@ void for_each_ref(F & f, Sequence* = 0)
 
 }}
 
-#pragma hd_warning_enable
-
 #endif // OPENFPM_FOR_EACH_HPP_INCLUDED
