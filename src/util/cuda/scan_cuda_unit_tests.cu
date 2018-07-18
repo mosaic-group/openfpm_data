@@ -71,6 +71,7 @@ void test_breduce()
 
 	constexpr int THREADS = 128;
 	constexpr int ratio = 4*sizeof(cnt_type)/sizeof(ids_type);
+	constexpr int red_tot = THREADS * ratio;
 
 	int nblocks = ((cl_n.size() / (ratio) ) + THREADS - 1 ) / THREADS;
 
@@ -81,45 +82,45 @@ void test_breduce()
 
 	for (size_t i = 0 ; i < cl_n.size() ; i++)
 	{
-		if ((i % 2048)/256  == 0)
+		if ((i % red_tot)/256  == 0)
 		{
-			cl_n.template get<0>(i) = i%256;
-			block_red.get(i/2048) += cl_n.template get<0>(i);
+			cl_n.template get<0>(i) = i%128;
+			block_red.get(i/red_tot) += cl_n.template get<0>(i);
 		}
-		else if ((i % 2048)/256  == 1)
+		else if ((i % red_tot)/256  == 1)
 		{
 			cl_n.template get<0>(i) = i%7;
-			block_red.get(i/2048) += cl_n.template get<0>(i);
+			block_red.get(i/red_tot) += cl_n.template get<0>(i);
 		}
-		else if ((i % 2048)/256  == 2)
+		else if ((i % red_tot)/256  == 2)
 		{
 			cl_n.template get<0>(i) = i%13;
-			block_red.get(i/2048) += cl_n.template get<0>(i);
+			block_red.get(i/red_tot) += cl_n.template get<0>(i);
 		}
-		else if ((i % 2048)/256  == 3)
+		else if ((i % red_tot)/256  == 3)
 		{
 			cl_n.template get<0>(i) = i%17;
-			block_red.get(i/2048) += cl_n.template get<0>(i);
+			block_red.get(i/red_tot) += cl_n.template get<0>(i);
 		}
-		else if ((i % 2048)/256  == 4)
+		else if ((i % red_tot)/256  == 4)
 		{
-			cl_n.template get<0>(i) = i%256;
-			block_red.get(i/2048) += cl_n.template get<0>(i);
+			cl_n.template get<0>(i) = i%128;
+			block_red.get(i/red_tot) += cl_n.template get<0>(i);
 		}
-		else if ((i % 2048)/256  == 5)
+		else if ((i % red_tot)/256  == 5)
 		{
 			cl_n.template get<0>(i) = i%7;
-			block_red.get(i/2048) += cl_n.template get<0>(i);
+			block_red.get(i/red_tot) += cl_n.template get<0>(i);
 		}
-		else if ((i % 2048)/256  == 6)
+		else if ((i % red_tot)/256  == 6)
 		{
 			cl_n.template get<0>(i) = i%13;
-			block_red.get(i/2048) += cl_n.template get<0>(i);
+			block_red.get(i/red_tot) += cl_n.template get<0>(i);
 		}
-		else if ((i % 2048)/256  == 7)
+		else if ((i % red_tot)/256  == 7)
 		{
 			cl_n.template get<0>(i) = i%17;
-			block_red.get(i/2048) += cl_n.template get<0>(i);
+			block_red.get(i/red_tot) += cl_n.template get<0>(i);
 		}
 	}
 
@@ -171,35 +172,37 @@ void test_bexscan()
 template<typename cnt_type, typename ids_type>
 void test_gexscan()
 {
-	size_t nb = 4;
+	size_t nb = 16;
 
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> base;
 	openfpm::vector<aggregate<ids_type>,CudaMemory,typename memory_traits_inte<aggregate<ids_type>>::type,memory_traits_inte> cl_n;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cl_n_scan;
 
-	base.resize(nb);
-	cl_n.resize(2048*nb);
-	cl_n_scan.resize(2048*nb);
-
+	constexpr int ratio = sizeof(cnt_type)/sizeof(ids_type);
 	constexpr int THREADS = 128;
+	constexpr int expand = THREADS * ratio;
+
+	base.resize(nb);
+	cl_n.resize(expand*nb);
+	cl_n_scan.resize(expand*nb);
 
 	// fill with some data
 
 	for (size_t i = 0 ; i < base.size() ; i++)
-	{base.template get<0>(i) = (i+1)*120*128;}
+	{base.template get<0>(i) = (i+1)*120*THREADS/4*ratio;}
 
 	for (size_t i = 0 ; i < cl_n.size() ; i++)
 	{cl_n.template get<0>(i) = i%16;}
 
-	int nblocks = cl_n.size() / 16;
+	int nblocks = cl_n.size() / ratio;
 
 	cl_n.template hostToDevice<0>();
 	base.template hostToDevice<0>();
 
-	gexscan<THREADS/32,ratio_extend<unsigned int,unsigned char>> <<< cl_n.size() / 16 / THREADS, THREADS >>>(nblocks,
-																									  static_cast<ratio_extend<unsigned int,unsigned char>::cnt_type4 *>(cl_n.template getDeviceBuffer<0>()),
+	gexscan<THREADS/32,ratio_extend<cnt_type,ids_type>> <<< cl_n.size() / ratio / THREADS, THREADS >>>(nblocks,
+																									  static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(cl_n.template getDeviceBuffer<0>()),
 																									  static_cast<cnt_type *>(base.template getDeviceBuffer<0>()),
-												                                                      static_cast<ratio_extend<unsigned int,unsigned char>::cnt_type4 *>(cl_n_scan.template getDeviceBuffer<0>()));
+												                                                      static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(cl_n_scan.template getDeviceBuffer<0>()));
 
 	cl_n_scan.template deviceToHost<0>();
 
@@ -216,17 +219,79 @@ void test_gexscan()
 BOOST_AUTO_TEST_CASE (test_breduce_func )
 {
 	test_breduce<unsigned int, unsigned char>();
+
+	test_breduce<unsigned int, unsigned short>();
+
+	test_breduce<unsigned int, unsigned int>();
+
+	test_breduce<unsigned int, char>();
+
+	test_breduce<unsigned int, short>();
+
+	test_breduce<unsigned int, int>();
+
+	test_breduce<int, unsigned char>();
+
+	test_breduce<int, unsigned short>();
+
+	test_breduce<int, unsigned int>();
+
+	test_breduce<int, char>();
+
+	test_breduce<int, short>();
+
+	test_breduce<int, int>();
 }
 
-BOOST_AUTO_TEST_CASE( test_base_funcs )
+BOOST_AUTO_TEST_CASE(test_compress_functions)
+{
+	test_compress<unsigned int, unsigned char>();
+
+	test_compress<unsigned int, unsigned short>();
+
+	test_compress<unsigned int, unsigned int>();
+
+	test_compress<unsigned int, char>();
+
+	test_compress<unsigned int, short>();
+
+	test_compress<unsigned int, int>();
+
+	test_compress<int, unsigned char>();
+
+	test_compress<int, unsigned short>();
+
+	test_compress<int, unsigned int>();
+
+	test_compress<int, char>();
+
+	test_compress<int, short>();
+
+	test_compress<int, int>();
+}
+
+BOOST_AUTO_TEST_CASE(test_bexscan_functions)
+{
+	test_bexscan<unsigned int>();
+
+	test_bexscan<int>();
+}
+
+BOOST_AUTO_TEST_CASE( test_gexscan_funcs )
 {
 	std::cout << "Test cell list GPU base func" << "\n";
 
-	test_compress<int,unsigned char>();
-
-	test_bexscan<unsigned int>();
-
 	test_gexscan<unsigned int, unsigned char>();
+
+	test_gexscan<unsigned int, unsigned short>();
+
+	test_gexscan<unsigned int, unsigned int>();
+
+	test_gexscan<int, unsigned char>();
+
+	test_gexscan<int, unsigned short>();
+
+	test_gexscan<int, unsigned int>();
 
 	std::cout << "End cell list GPU" << "\n";
 
@@ -258,7 +323,6 @@ void test_scan(size_t num)
 	for (size_t i = 1 ; i < cl_n_scan.size() ; i++)
 	{
 		scan += cl_n.template get<0>(i-1);
-
 		BOOST_REQUIRE_EQUAL(cl_n_scan.template get<0>(i),scan);
 	}
 }
@@ -274,6 +338,22 @@ BOOST_AUTO_TEST_CASE( test_scan_algo )
 	test_scan<unsigned int, unsigned char>(139);
 
 	test_scan<unsigned int, unsigned char>(1025);
+
+	test_scan<unsigned int, unsigned short>(8192);
+
+	test_scan<unsigned int, unsigned short>(25);
+
+	test_scan<unsigned int, unsigned short>(139);
+
+	test_scan<unsigned int, unsigned short>(1025);
+
+	test_scan<unsigned int, unsigned int>(8192);
+
+	test_scan<unsigned int, unsigned int>(25);
+
+	test_scan<unsigned int, unsigned int>(139);
+
+	test_scan<unsigned int, unsigned int>(1025);
 
 	std::cout << "End cell list GPU" << "\n";
 

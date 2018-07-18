@@ -43,7 +43,6 @@
 
 namespace openfpm
 {
-
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
 	 * Stub object look at the various implementations
@@ -752,6 +751,16 @@ namespace openfpm
 			return base.get_o(key);
 		}
 
+		/*! \brief Fill the buffer with a byte
+		 *
+		 * \param c char to fill the buffer with
+		 *
+		 */
+		template<unsigned int id> void fill(unsigned char c)
+		{
+			base.template fill<id>(c);
+		}
+
 		/*! \brief It return the properties arrays.
 		 *
 		 * In case of Cuda memory it return the device pointers to pass to the kernels
@@ -1429,6 +1438,8 @@ namespace openfpm
 	};
 
 	template <typename T> using vector_std = vector<T, HeapMemory, typename memory_traits_lin<T>::type, memory_traits_lin, openfpm::grow_policy_double, STD_VECTOR>;
+	template<typename T> using vector_gpu = openfpm::vector<T,CudaMemory,typename memory_traits_inte<T>::type,memory_traits_inte>;
+
 
 }
 

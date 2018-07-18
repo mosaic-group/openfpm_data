@@ -10,16 +10,102 @@
 
 #include "Vector/map_vector.hpp"
 
-template<typename cnt_type, typename ids_type>
+////////////////// Ratio reduction ///////////////////////////////////////////////////////////////
+
+template<typename cnt_type, typename ids_type, unsigned int rt = sizeof(cnt_type)/sizeof(ids_type)>
 struct ratio_reduction
 {
-	static inline __device__ cnt_type reduction(ids_type * rd)
+	static inline __device__ cnt_type reduction(cnt_type * rd)
 	{
 		return -1;
 	}
 };
 
 template<typename cnt_type, typename ids_type>
+struct ratio_reduction<cnt_type,ids_type,1>
+{
+	static inline __device__ unsigned int reduction(cnt_type * val)
+	{
+		return val[0] + val[1] + val[2] + val[3];
+	}
+};
+
+template<typename cnt_type, typename ids_type>
+struct ratio_reduction<cnt_type,ids_type,2>
+{
+	static inline __device__ unsigned int reduction(cnt_type * val)
+	{
+	    val[0] = ((val[0] & 0xFFFF0000) >> 16) + (val[0] & 0xFFFF);
+	    val[1] = ((val[1] & 0xFFFF0000) >> 16) + (val[1] & 0xFFFF);
+	    val[2] = ((val[2] & 0xFFFF0000) >> 16) + (val[2] & 0xFFFF);
+	    val[3] = ((val[3] & 0xFFFF0000) >> 16) + (val[3] & 0xFFFF);
+	    return val[0] + val[1] + val[2] + val[3];
+	}
+};
+
+template<typename cnt_type, typename ids_type>
+struct ratio_reduction<cnt_type,ids_type,4>
+{
+	static inline __device__ unsigned int reduction(cnt_type * val)
+	{
+	    val[0] = ((val[0] & 0xFF000000) >> 24) + ((val[0] & 0xFF0000) >> 16) + ((val[0] & 0xFF00) >> 8) + (val[0] & 0xFF);
+	    val[1] = ((val[1] & 0xFF000000) >> 24) + ((val[1] & 0xFF0000) >> 16) + ((val[1] & 0xFF00) >> 8) + (val[1] & 0xFF);
+	    val[2] = ((val[2] & 0xFF000000) >> 24) + ((val[2] & 0xFF0000) >> 16) + ((val[2] & 0xFF00) >> 8) + (val[2] & 0xFF);
+	    val[3] = ((val[3] & 0xFF000000) >> 24) + ((val[3] & 0xFF0000) >> 16) + ((val[3] & 0xFF00) >> 8) + (val[3] & 0xFF);
+	    return val[0] + val[1] + val[2] + val[3];
+	}
+};
+
+
+///////////////////////// Ratio extends ////////////////////////////////////////////////////////////////////
+
+
+template<typename T>
+struct to_four_type
+{
+	typedef T type;
+};
+
+template<>
+struct to_four_type<unsigned int>
+{
+	typedef uint4 type;
+};
+
+template<>
+struct to_four_type<int>
+{
+	typedef int4 type;
+};
+
+template<typename T>
+struct make4
+{
+	__device__ inline static T make()
+	{
+		return 0;
+	}
+};
+
+template<>
+struct make4<uint4>
+{
+	__device__ inline static uint4 make()
+	{
+		return make_uint4(0,0,0,0);
+	}
+};
+
+template<>
+struct make4<int4>
+{
+	__device__ inline static int4 make()
+	{
+		return make_int4(0,0,0,0);
+	}
+};
+
+template<typename cnt_type, typename ids_type, unsigned int rt = sizeof(cnt_type)/sizeof(ids_type)>
 struct ratio_extend
 {
 	static inline __device__ cnt_type reduction(ids_type * rd)
@@ -28,30 +114,31 @@ struct ratio_extend
 	}
 };
 
-template<>
-struct ratio_reduction<unsigned int,unsigned int>
+template<typename cnt_type, typename ids_type>
+struct ratio_extend<cnt_type,ids_type,1>
 {
-	static inline __device__ unsigned int reduction(unsigned int * val)
-	{
-		return val[0];
-	}
-};
+	typedef boost::mpl::int_<1> size;
 
-template<>
-struct ratio_extend<unsigned int,unsigned int>
-{
-	static inline __device__ void extend(uint4 * val)
+	typedef cnt_type cnt_type_;
+	typedef typename to_four_type<cnt_type>::type cnt_type4;
+
+	static inline __device__ void extend(cnt_type4 * val)
 	{
+		unsigned int tmp = val[0].w;
+	    val[0].w = val[0].z;
+	    val[0].z = val[0].y;
+	    val[0].y = val[0].x;
+	    val[0].x = tmp;
 	}
 
-	static inline __device__ unsigned int reduce(uint4 * tu4, uint4 * val)
+	static inline __device__ unsigned int reduce(cnt_type4 * tu4, cnt_type4 * val)
 	{
 		tu4->x = val[0].x + val[0].y + val[0].z + val[0].w;
 
 	    return tu4->x;
 	}
 
-	static inline __device__ void scan(unsigned int woff_w, uint4 tu4, uint4 * val)
+	static inline __device__ void scan(unsigned int woff_w, cnt_type4 tu4, cnt_type4 * val)
 	{
 		unsigned int lps;
 	    lps = woff_w + tu4.w;
@@ -65,38 +152,39 @@ struct ratio_extend<unsigned int,unsigned int>
 	    val[0].w += val[0].z;
 	}
 
-	static inline __device__ uint4 zero()
+	static inline __device__ cnt_type4 zero()
 	{
-		return make_uint4(0,0,0,0);
-	}
-
-	typedef boost::mpl::int_<1> size;
-};
-
-template<>
-struct ratio_reduction<unsigned int,unsigned short>
-{
-	static inline __device__ unsigned int reduction(unsigned int * val)
-	{
-	    val[0] = ((val[0] & 0xFFFF0000) >> 16) + (val[0] & 0xFFFF);
-	    val[1] = ((val[1] & 0xFF000000) >> 16) + (val[1] & 0xFFFF);
-	    return val[0] + val[1];
+		return make4<cnt_type4>::make();
 	}
 };
 
-template<>
-struct ratio_extend<unsigned int,unsigned short int>
-{
-	static inline __device__ void extend(uint4 * val)
-	{
-	    val[1].y = (val[0].w & 0x0000FFFF);
-	    val[1].z = (val[0].w & 0xFFFF0000) >>  16;
 
+
+template<typename cnt_type, typename ids_type>
+struct ratio_extend<cnt_type,ids_type,2>
+{
+	typedef boost::mpl::int_<2> size;
+
+	typedef cnt_type cnt_type_;
+	typedef typename to_four_type<cnt_type>::type cnt_type4;
+
+	static inline __device__ void extend(cnt_type4 * val)
+	{
+	    val[1].w = (val[0].w & 0x0000FFFF);
+	    val[1].z = (val[0].z & 0xFFFF0000) >>  16;
+
+	    val[1].y = (val[0].z & 0x0000FFFF);
+	    val[1].x = (val[0].w & 0xFFFF0000) >>  16;
+
+	    val[0].w = (val[0].y & 0x0000FFFF);
+	    val[0].z = (val[0].x & 0xFFFF0000) >>  16;
+
+	    short int tmp = (val[0].y & 0xFFFF0000) >>  16;
 	    val[0].y = (val[0].x & 0x0000FFFF);
-	    val[0].x = (val[0].x & 0xFFFF0000) >>  16;
+	    val[0].x = tmp;
 	}
 
-	static inline __device__ unsigned int reduce(uint4 * tu4, uint4 * val)
+	static inline __device__ unsigned int reduce(cnt_type4 * tu4, cnt_type4 * val)
 	{
 	    tu4->x = val[0].x + val[0].y + val[0].z + val[0].w;
 	    tu4->y = val[1].x + val[1].y + val[1].z + val[1].w;
@@ -104,7 +192,7 @@ struct ratio_extend<unsigned int,unsigned short int>
 	    return tu4->x + tu4->y;
 	}
 
-	static inline __device__ void scan(unsigned int woff_w, uint4 tu4, uint4 * val)
+	static inline __device__ void scan(unsigned int woff_w, cnt_type4 tu4, cnt_type4 * val)
 	{
 		uint2 lps;
 	    lps.x = woff_w + tu4.w;
@@ -123,34 +211,21 @@ struct ratio_extend<unsigned int,unsigned short int>
 	    val[1].w += val[1].z;
 	}
 
-	static inline __device__ uint4 zero()
+	static inline __device__ cnt_type4 zero()
 	{
-		return make_uint4(0,0,0,0);
-	}
-
-	typedef boost::mpl::int_<2> size;
-
-	typedef uint cnt_type;
-	typedef uint4 cnt_type4;
-};
-
-template<>
-struct ratio_reduction<unsigned int, unsigned char>
-{
-	static inline __device__ unsigned int reduction(unsigned int * val)
-	{
-	    val[0] = ((val[0] & 0xFF000000) >> 24) + ((val[0] & 0xFF0000) >> 16) + ((val[0] & 0xFF00) >> 8) + (val[0] & 0xFF);
-	    val[1] = ((val[1] & 0xFF000000) >> 24) + ((val[1] & 0xFF0000) >> 16) + ((val[1] & 0xFF00) >> 8) + (val[1] & 0xFF);
-	    val[2] = ((val[2] & 0xFF000000) >> 24) + ((val[2] & 0xFF0000) >> 16) + ((val[2] & 0xFF00) >> 8) + (val[2] & 0xFF);
-	    val[3] = ((val[3] & 0xFF000000) >> 24) + ((val[3] & 0xFF0000) >> 16) + ((val[3] & 0xFF00) >> 8) + (val[3] & 0xFF);
-	    return val[0] + val[1] + val[2] + val[3];
+		return make4<cnt_type4>::make();
 	}
 };
 
-template<>
-struct ratio_extend<unsigned int,unsigned char>
+template<typename cnt_type, typename ids_type>
+struct ratio_extend<cnt_type,ids_type,4>
 {
-	static inline __device__ void extend(uint4 * val)
+	typedef boost::mpl::int_<4> size;
+
+	typedef cnt_type cnt_type_;
+	typedef typename to_four_type<cnt_type>::type cnt_type4;
+
+	static inline __device__ void extend(cnt_type4 * val)
 	{
 	    val[3].y = (val[0].w & 0x000000FF);
 	    val[3].z = (val[0].w & 0x0000FF00) >>  8;
@@ -173,7 +248,7 @@ struct ratio_extend<unsigned int,unsigned char>
 	    val[0].x = (val[0].x & 0xFF000000) >> 24;
 	}
 
-	static inline __device__ unsigned int reduce(uint4 * tu4, uint4 * val)
+	static inline __device__ unsigned int reduce(cnt_type4 * tu4, cnt_type4 * val)
 	{
 	    tu4->x = val[0].x + val[0].y + val[0].z + val[0].w;
 	    tu4->y = val[1].x + val[1].y + val[1].z + val[1].w;
@@ -183,7 +258,7 @@ struct ratio_extend<unsigned int,unsigned char>
 	    return tu4->x + tu4->y + tu4->z + tu4->w;
 	}
 
-	static inline __device__ void scan(unsigned int woff_w, uint4 tu4, uint4 * val)
+	static inline __device__ void scan(unsigned int woff_w, cnt_type4 tu4, cnt_type4 * val)
 	{
 		uint4 lps;
 	    lps.x = woff_w + tu4.w;
@@ -212,17 +287,13 @@ struct ratio_extend<unsigned int,unsigned char>
 	    val[3].w += val[3].z;
 	}
 
-	static inline __device__ uint4 zero()
+	static inline __device__ cnt_type4 zero()
 	{
-		return make_uint4(0,0,0,0);
+		return make4<cnt_type4>::make();
 	}
-
-	typedef boost::mpl::int_<4> size;
-
-	typedef uint cnt_type;
-	typedef uint4 cnt_type4;
 };
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename cnt_type, typename ids_type>
 __global__ void compress4(const cnt_type n_cell, const cnt_type *const count, ids_type *const compressed)
@@ -336,7 +407,7 @@ __global__ void bexscan(int n, cnt_type *v)
 template <int NWARP, typename extend>
 __global__ void gexscan(int n,
 		                const typename extend::cnt_type4 *vin,
-		                typename extend::cnt_type *offs,
+		                typename extend::cnt_type_ *offs,
 						typename extend::cnt_type4 *vout)
 {
     const int wid = threadIdx.x/32;
@@ -352,7 +423,7 @@ __global__ void gexscan(int n,
     extend::extend(val);
 
     typename extend::cnt_type4 tu4;
-    typename extend::cnt_type tmp = extend::reduce(&tu4,val);
+    typename extend::cnt_type_ tmp = extend::reduce(&tu4,val);
 
     tu4.w = tmp;
 #pragma unroll
@@ -401,7 +472,7 @@ void scan(openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> red;
 	openfpm::vector<aggregate<ids_type>,CudaMemory,typename memory_traits_inte<aggregate<ids_type>>::type,memory_traits_inte> compressed;
 
-	int nblocks = ((cl_n.size() / (ratio) ) + THREADS - 1 ) / THREADS;
+	int nblocks = (cl_n.size() + THREADS * ratio - 1 ) / (THREADS * ratio);
 	red.resize(nblocks);
 
 	auto ite = cl_n.getGPUIterator();
@@ -415,6 +486,7 @@ void scan(openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_
     														  (cnt_type *)compressed.template getDeviceBuffer<0>(),
 															  static_cast<cnt_type *>(red.template getDeviceBuffer<0>()));
 
+
     bexscan<THREADS,cnt_type><<<1, THREADS, nblocks*sizeof(uint)>>>(nblocks,
     													   static_cast<cnt_type *>(red.template getDeviceBuffer<0>()));
 
@@ -422,13 +494,13 @@ void scan(openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_
 
     // resize to be multiple of 16
 
-    size_t ml = ((raw_size + 15) / 16) *16;
+    size_t ml = ((raw_size + ratio - 1) / ratio) *ratio;
     cl_n_scan.resize(ml);
 
-	gexscan<THREADS/32,ratio_extend<unsigned int,unsigned char>> <<< nblocks, THREADS >>>((cl_n.size() + 16 - 1 ) / 16,
-																						  static_cast<ratio_extend<unsigned int,unsigned char>::cnt_type4 *>(compressed.template getDeviceBuffer<0>()),
+	gexscan<THREADS/32,ratio_extend<cnt_type,ids_type>> <<< nblocks, THREADS >>>((cl_n.size() + ratio - 1 ) / ratio,
+																						  static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(compressed.template getDeviceBuffer<0>()),
 																						  static_cast<cnt_type *>(red.template getDeviceBuffer<0>()),
-												                                          static_cast<ratio_extend<unsigned int,unsigned char>::cnt_type4 *>(cl_n_scan.template getDeviceBuffer<0>()));
+												                                          static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(cl_n_scan.template getDeviceBuffer<0>()));
 
 	cl_n_scan.resize(raw_size);
 }

@@ -353,6 +353,14 @@ public:
 	{
 	}
 
+	/*! \brief Fill the memory with a byte
+	 *
+	 */
+	template<unsigned int id> void fill(unsigned char c)
+	{
+		boost::fusion::at_c<id>(this->data_).mem->fill(c);
+	}
+
 	/*! \brief Copy the memory from host to device
 	 *
 	 */

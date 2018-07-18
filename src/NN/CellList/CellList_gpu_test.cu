@@ -16,6 +16,7 @@
 #include "CellList.hpp"
 #include "util/boost/boost_array_openfpm.hpp"
 #include  "Point_test.hpp"
+#include "util/cuda/moderngpu/kernel_load_balance.hxx"
 
 BOOST_AUTO_TEST_SUITE( CellList_gpu_test )
 
@@ -82,6 +83,148 @@ void test_sub_index()
 	no_transform_only<dim,T> t(mt,pt);
 
 	subindex<dim,T,cnt_type,ids_type,no_transform_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
+																	spacing,
+																	off,
+																	t,
+																	pl.capacity(),
+																	pl.size(),
+																	static_cast<T *>(pl.template getDeviceBuffer<0>()),
+																	static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
+																	static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
+
+	cl_n.template deviceToHost<0>();
+	part_ids.template deviceToHost<0>();
+
+	// I have to find != 0 in the cell with particles
+
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[0],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[1],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[2],2);
+
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[0],9);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[1],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[2],2);
+
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[0],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[1],9);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[2],2);
+
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[0],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[1],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[2],9);
+
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[0],9);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[1],9);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[2],2);
+
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[0],9);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[1],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[2],9);
+
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[0],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[1],9);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[2],9);
+
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[0],9);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[1],9);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[2],9);
+
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[0],0);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[1],0);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[2],0);
+
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[0],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[1],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[2],2);
+
+	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({2,2,2})),2);
+	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({9,2,2})),1);
+	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({2,9,2})),1);
+	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({2,2,9})),1);
+	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({9,9,2})),1);
+	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({9,2,9})),1);
+	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({2,9,9})),1);
+	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({9,9,9})),1);
+	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({0,0,0})),1);
+}
+
+
+template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
+void test_sub_index2()
+{
+	openfpm::vector<aggregate<cnt_type,cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type,cnt_type>>::type,memory_traits_inte> cl_n;
+	openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
+
+	// fill with some particles
+
+	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
+
+	// create 3 particles
+
+	Point<dim,T> p1({0.2,0.2,0.2});
+	Point<dim,T> p2({0.9,0.2,0.2});
+	Point<dim,T> p3({0.2,0.9,0.2});
+	Point<dim,T> p4({0.2,0.2,0.9});
+	Point<dim,T> p5({0.9,0.9,0.2});
+	Point<dim,T> p6({0.9,0.2,0.9});
+	Point<dim,T> p7({0.2,0.9,0.9});
+	Point<dim,T> p8({0.9,0.9,0.9});
+	Point<dim,T> p9({0.0,0.0,0.0});
+	Point<dim,T> p10({0.205,0.205,0.205});
+
+	Point<dim,T> pt({-0.3,-0.3,-0.3});
+
+	p1 += pt;
+	p2 += pt;
+	p3 += pt;
+	p4 += pt;
+	p5 += pt;
+	p6 += pt;
+	p7 += pt;
+	p8 += pt;
+	p9 += pt;
+	p10 += pt;
+
+
+	pl.add(p1);
+	pl.add(p2);
+	pl.add(p3);
+	pl.add(p4);
+	pl.add(p5);
+	pl.add(p6);
+	pl.add(p7);
+	pl.add(p8);
+	pl.add(p9);
+	pl.add(p10);
+
+	openfpm::array<T,dim,cnt_type> spacing;
+	openfpm::array<ids_type,dim,cnt_type> div;
+	openfpm::array<ids_type,dim,cnt_type> off;
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{
+		div[i] = 17;
+		spacing[i] = 0.1;
+		off[i] = 0;
+	}
+
+	cl_n.resize(17*17*17);
+	CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
+
+	part_ids.resize(pl.size());
+
+	size_t sz[3] = {17,17,17};
+	grid_sm<3,void> gr(sz);
+
+	auto ite = pl.getGPUIterator();
+
+	pl.template hostToDevice<0>();
+
+	Matrix<dim,T> mt;
+
+	shift_only<dim,T> t(mt,pt);
+
+	subindex<dim,T,cnt_type,ids_type,shift_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
 																	spacing,
 																	off,
 																	t,
@@ -235,6 +378,7 @@ void test_fill_cell()
 
 	typename openfpm::array<T,dim> spacing;
 	typename openfpm::array<ids_type,dim,cnt_type> div_c;
+	typename openfpm::array<ids_type,dim,cnt_type> off;
 
 	size_t div_host[dim];
 
@@ -247,6 +391,7 @@ void test_fill_cell()
 		spacing[i] = 0.1;
 		domain.setLow(i,0.0);
 		domain.setHigh(i,1.0);
+		off[i] = 0;
 	}
 
 	CellList<dim,T, Mem_fast> cl(domain,div_host,0);
@@ -289,6 +434,7 @@ void test_fill_cell()
 	// Here we test fill cell
 	fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>><<<itgg.wthr,itgg.thr>>>(0,
 																				   div_c,
+																				   off,
 																				   part_ids.size(),
 																				   part_ids.capacity(),
 																				   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
@@ -325,6 +471,7 @@ BOOST_AUTO_TEST_CASE( test_subindex_funcs )
 	std::cout << "Test cell list GPU base func" << "\n";
 
 	test_sub_index<3,float,int,unsigned char>();
+	test_sub_index2<3,float,int,unsigned char>();
 
 	std::cout << "End cell list GPU" << "\n";
 
@@ -592,15 +739,15 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use)
 }
 
 template<unsigned int dim, typename vector_ps, typename vector_pr>
-void fill_random_parts(vector_ps & vd_pos, vector_pr & vd_prp, size_t n)
+void fill_random_parts(Box<dim,float> & box, vector_ps & vd_pos, vector_pr & vd_prp, size_t n)
 {
 	for (size_t i = 0 ; i < n ; i++)
 	{
 		Point<dim,float> p;
 
-		p.get(0) = (0.7999*(float)rand()/RAND_MAX)+0.1;
-		p.get(1) = (0.7999*(float)rand()/RAND_MAX)+0.1;
-		p.get(2) = (0.7999*(float)rand()/RAND_MAX)+0.1;
+		p.get(0) = ((box.getHigh(0) - box.getLow(0) - 0.0001)*(float)rand()/RAND_MAX) + box.getLow(0);
+		p.get(1) = ((box.getHigh(1) - box.getLow(1) - 0.0001)*(float)rand()/RAND_MAX) + box.getLow(1);
+		p.get(2) = ((box.getHigh(2) - box.getLow(2) - 0.0001)*(float)rand()/RAND_MAX) + box.getLow(2);
 
 		vd_pos.add(p);
 		vd_prp.add();
@@ -609,18 +756,16 @@ void fill_random_parts(vector_ps & vd_pos, vector_pr & vd_prp, size_t n)
 }
 
 
-template<typename vector_pos, typename vector_prp, typename vector_ns, typename CellList_type,typename vector_n_type>
-__global__ void calc_force_number(vector_pos pos, vector_prp prp, vector_ns s_t_ns, CellList_type cl, vector_n_type vn)
+template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
+__global__ void calc_force_number(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type vn)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x;
 
-    if (p != 0 /* pos.size()*/) return;
+    if (p >= pos.size()) return;
 
     vn.template get<0>(p) = 0;
 
     Point<3,float> xp = pos.template get<0>(p);
-
-    printf("POS: %f %f %f \n",xp.get(0),xp.get(1),xp.get(2) );
 
     auto it = cl.getNNIterator(cl.getCell(xp));
 
@@ -630,19 +775,40 @@ __global__ void calc_force_number(vector_pos pos, vector_prp prp, vector_ns s_t_
 
     	int s1 = s_t_ns.template get<0>(q);
 
-    	printf("q= %d\n",s1);
-
-    	vn.template get<0>(p)++;
+    	atomicAdd(&vn.template get<0>(s1), 1);
 
     	++it;
     }
 }
 
-template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(SpaceBox<dim,T> & box)
-{
-	//Space where is living the Cell list
-	//SpaceBox<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 
+template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
+__global__ void calc_force_list(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type v_nscan ,vector_n_type v_list)
+{
+    int p = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (p >= pos.size()) return;
+
+    Point<3,float> xp = pos.template get<0>(p);
+    int start_list = v_nscan.template get<0>(p);
+
+    auto it = cl.getNNIterator(cl.getCell(xp));
+
+    while (it.isNext())
+    {
+    	auto q = it.get();
+
+    	int s1 = s_t_ns.template get<0>(q);
+
+    	v_list.template get<0>(start_list) = s1;
+
+    	++start_list;
+    	++it;
+    }
+}
+
+template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart)
+{
 	// Subdivisions
 	size_t div[dim] = {16,16,16};
 
@@ -659,14 +825,15 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> pl_prp;
 	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> pl_prp_out;
 
-	openfpm::vector<aggregate<int>,CudaMemory,typename memory_traits_inte<aggregate<int>>::type,memory_traits_inte> n_out;
+	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out;
 
 	// create random particles
 
-	fill_random_parts<3>(pl,pl_prp,1000);
+	fill_random_parts<3>(box,pl,pl_prp,npart);
 
 	pl_prp_out.resize(pl.size());
-	n_out.resize(pl.size());
+	n_out.resize(pl.size()+1);
+	n_out.fill<0>(0);
 
 	pl_prp.resize(pl.size());
 	pl_prp_out.resize(pl.size());
@@ -677,7 +844,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 	// Construct an equivalent CPU cell-list
 
-	CellList<dim,T,Mem_fast> cl_cpu(box,div);
+	CellList<dim,T,Mem_fast,shift<dim,T>> cl_cpu(box,div);
 
 	// construct
 
@@ -700,12 +867,10 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 	auto ite = pl.getGPUIterator();
 
 	calc_force_number<decltype(pl.template toGPU<0>()),
-			          decltype(pl_prp.template toGPU<0>()),
 			          decltype(s_t_ns.template toGPU<>()),
 			          decltype(cl2.toGPU()),
 			          decltype(n_out.template toGPU<>())>
 	<<<ite.wthr,ite.thr>>>(pl.template toGPU<0>(),
-						   pl_prp.template toGPU<0>(),
 						   s_t_ns.template toGPU<>(),
 						   cl2.toGPU(),
 						   n_out.template toGPU<>());
@@ -713,9 +878,10 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 	// Check
 
 	n_out.deviceToHost<0>();
-	s_t_ns.template deviceToHost<0>();
 
-	auto it = n_out.getIterator();
+	{
+	bool check = true;
+	auto it = pl.getIterator();
 
 	while(it.isNext())
 	{
@@ -725,10 +891,69 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 		// Get NN iterator
 
-		if (p == 0)
+		auto NN_it = cl_cpu.getNNIterator(cl_cpu.getCell(xp));
+
+		size_t n_ele = 0;
+		while (NN_it.isNext())
 		{
-			std::cout << "CID=" << cl_cpu.getCell(xp) << " " << xp.toString() << std::endl;
+			auto q = NN_it.get();
+
+			n_ele++;
+
+			++NN_it;
 		}
+
+		check &= n_ele == n_out.template get<0>(p);
+
+		++it;
+	}
+	BOOST_REQUIRE_EQUAL(check,true);
+	}
+
+	// now we scan the buffer
+
+	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out_scan;
+	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> nn_list;
+
+	scan<unsigned int,unsigned char>(n_out,n_out_scan);
+	n_out_scan.template deviceToHost<0>();
+
+	if (n_out_scan.template get<0>(pl.size()) == 0)
+	{return;}
+
+	nn_list.resize(n_out_scan.template get<0>(pl.size()));
+
+	// Now for each particle we construct the list
+
+	calc_force_list<decltype(pl.template toGPU<0>()),
+			          decltype(s_t_ns.template toGPU<>()),
+			          decltype(cl2.toGPU()),
+			          decltype(nn_list.template toGPU<>())>
+	<<<ite.wthr,ite.thr>>>(pl.template toGPU<0>(),
+						   s_t_ns.template toGPU<>(),
+						   cl2.toGPU(),
+						   n_out_scan.template toGPU<>(),
+						   nn_list.template toGPU<>());
+
+	nn_list.template deviceToHost<0>();
+
+	// Check
+
+	n_out.deviceToHost<0>();
+
+	{
+	bool check = true;
+	auto it = pl.getIterator();
+
+	while(it.isNext())
+	{
+		auto p = it.get();
+
+		Point<dim,T> xp = pl.get(p);
+
+		// Get NN iterator
+
+		openfpm::vector<int> cpu_list;
 
 		auto NN_it = cl_cpu.getNNIterator(cl_cpu.getCell(xp));
 
@@ -737,19 +962,31 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 		{
 			auto q = NN_it.get();
 
-			if (p == 0)
-			{
-				std::cout << "NN part=" << q << std::endl;
-			}
-
-			n_ele++;
+			cpu_list.add(q);
 
 			++NN_it;
 		}
 
-//		std::cout << "NELE: " << n_ele << " " << n_out.template get<0>(p) << std::endl;
+		openfpm::vector<int> gpu_list;
+
+		for (size_t i = n_out_scan.template get<0>(p) ; i < n_out_scan.template get<0>(p+1) ; i++)
+		{
+			gpu_list.add(nn_list.template get<0>(i));
+		}
+
+		// sort bost vector
+
+		cpu_list.sort();
+		gpu_list.sort();
+
+		for (size_t j = 0 ; j < cpu_list.size() ; j++)
+		{check &= cpu_list.get(j) == gpu_list.get(j);}
 
 		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+
 	}
 }
 
@@ -758,9 +995,13 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force)
 	std::cout << "Test cell list GPU" << "\n";
 
 	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,float> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
+	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
 
-	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory>>(box);
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>>(box,1000);
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>>(box,10000);
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>>(box2,1000);
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>>(box2,10000);
 
 	std::cout << "End cell list GPU" << "\n";
 

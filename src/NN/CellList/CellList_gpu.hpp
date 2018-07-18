@@ -24,10 +24,10 @@ constexpr int start = 1;
 template<unsigned int dim, typename cnt_type, typename ids_type>
 class NN_gpu_it
 {
-	grid_key_dx<dim,cnt_type> cell_act;
+	grid_key_dx<dim,ids_type> cell_act;
 
-	grid_key_dx<dim,cnt_type> cell_start;
-	grid_key_dx<dim,cnt_type> cell_stop;
+	grid_key_dx<dim,ids_type> cell_start;
+	grid_key_dx<dim,ids_type> cell_stop;
 
 	const openfpm::vector_gpu_ker<aggregate<cnt_type>> & starts;
 
@@ -38,38 +38,8 @@ class NN_gpu_it
 	cnt_type p_id;
 	cnt_type c_id;
 
-public:
-
-	__device__ NN_gpu_it(const grid_key_dx<dim,cnt_type> & cell_pos,
-			             const openfpm::vector_gpu_ker<aggregate<cnt_type>> & starts,
-			             const openfpm::array<ids_type,dim,cnt_type> & div_c,
-			             const openfpm::array<ids_type,dim,cnt_type> & off)
-	:starts(starts),div_c(div_c),off(off)
+	__device__ void SelectValid()
 	{
-		// calculate start and stop
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			cell_start.set_d(i,cell_pos.get(i) - 1);
-			cell_stop.set_d(i,cell_pos.get(i) + 1);
-			cell_act.set_d(i,cell_pos.get(i) - 1);
-		}
-
-		c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,off,cell_start);
-		p_id = starts.template get<0>(c_id);
-
-		printf("CID: %d\n",c_id);
-	}
-
-	__device__ cnt_type get()
-	{
-		return p_id;
-	}
-
-	__device__ NN_gpu_it<dim,cnt_type,ids_type> & operator++()
-	{
-		++p_id;
-
 		while (p_id >= starts.template get<0>(c_id+1) && isNext())
 		{
 			cnt_type id = cell_act.get(0);
@@ -95,16 +65,51 @@ public:
 				}
 			}
 
-			c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,off,cell_act);
+			c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_act);
 			p_id = starts.template get<0>(c_id);
 		}
+	}
+
+public:
+
+	__device__ NN_gpu_it(const grid_key_dx<dim,ids_type> & cell_pos,
+			             const openfpm::vector_gpu_ker<aggregate<cnt_type>> & starts,
+			             const openfpm::array<ids_type,dim,cnt_type> & div_c,
+			             const openfpm::array<ids_type,dim,cnt_type> & off)
+	:starts(starts),div_c(div_c),off(off)
+	{
+		// calculate start and stop
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			cell_start.set_d(i,cell_pos.get(i) - 1);
+			cell_stop.set_d(i,cell_pos.get(i) + 1);
+			cell_act.set_d(i,cell_pos.get(i) - 1);
+		}
+
+		c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_start);
+		p_id = starts.template get<0>(c_id);
+
+		SelectValid();
+	}
+
+	__device__ cnt_type get()
+	{
+		return p_id;
+	}
+
+	__device__ NN_gpu_it<dim,cnt_type,ids_type> & operator++()
+	{
+		++p_id;
+
+		SelectValid();
 
 		return *this;
 	}
 
 	__device__ bool isNext()
 	{
-		return cell_act.get(dim-1) < cell_stop.get(dim-1);
+		return cell_act.get(dim-1) <= cell_stop.get(dim-1);
 	}
 };
 
@@ -135,16 +140,12 @@ public:
 	:starts(starts),spacing_c(spacing_c),div_c(div_c),off(off),t(t)
 	{}
 
-	inline __device__ grid_key_dx<dim,cnt_type> getCell(const Point<dim,T> & xp)
+	inline __device__ grid_key_dx<dim,ids_type> getCell(const Point<dim,T> & xp)
 	{
-		grid_key_dx<dim,cnt_type> k;
- 		for (int i = 0 ; i < dim ; i++)
-		{k.set_d(i,xp.get(i)/spacing_c[i]);}
-
-		return k;
+		return cid_<3,cnt_type,ids_type,transform>::get_cid_key(spacing_c,off,t,xp);
 	}
 
-	__device__ NN_gpu_it<dim,cnt_type,ids_type> getNNIterator(const grid_key_dx<dim,cnt_type> & cid)
+	__device__ NN_gpu_it<dim,cnt_type,ids_type> getNNIterator(const grid_key_dx<dim,ids_type> & cid)
 	{
 		NN_gpu_it<dim,cnt_type,ids_type> ngi(cid,starts,div_c,off);
 
@@ -152,7 +153,7 @@ public:
 	}
 };
 
-template<unsigned int dim, typename T,  typename Memory, typename cnt_type = unsigned int, typename ids_type = unsigned char, typename transform = no_transform_only<dim,T>>
+template<unsigned int dim, typename T,  typename Memory, typename transform = no_transform_only<dim,T>, typename cnt_type = unsigned int, typename ids_type = unsigned char>
 class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 {
 	typedef openfpm::vector<aggregate<cnt_type>,Memory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> vector_cnt_type;
@@ -281,12 +282,12 @@ public:
 
 		fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>><<<itgg.wthr,itgg.thr>>>(0,
 																					   div_c,
+																					   off,
 																					   part_ids.size(),
 																					   part_ids.capacity(),
 																					   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
 																					   static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()),
 																					   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
-
 
 		sorted_to_not_sorted.resize(pl.size());
 		auto ite = pl.getGPUIterator();
