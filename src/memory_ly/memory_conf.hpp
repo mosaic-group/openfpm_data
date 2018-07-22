@@ -11,6 +11,7 @@
 #include "util/variadic_to_vmpl.hpp"
 #include "t_to_memory_c.hpp"
 #include "Vector/vect_isel.hpp"
+#include "Vector/util.hpp"
 
 /*! \brief This class convert a boost::mpl::fusion/vector to a boost::mpl::fusion/vector with memory_c interleaved
  *
@@ -181,6 +182,25 @@ struct is_layout_inte: std::false_type {};
  */
 template<typename T>
 struct is_layout_inte<T, typename Void< typename T::yes_is_inte>::type> : std::true_type
+{};
+
+/*! \brief is_multiple_buffer_each_prp
+ *
+ * return if each property is splitted on a separate buffer. This class make sense to be used if T is
+ * a vector in case it is not it always return 0
+ *
+ * ### Example
+ *
+ * \snippet util_test.hpp Check if the vector has multiple buffers for each vector
+ *
+ *
+ */
+template<typename T, unsigned int impl = is_vector<T>::value >
+struct is_multiple_buffer_each_prp: std::false_type
+{};
+
+template<typename T>
+struct is_multiple_buffer_each_prp<T,true>: is_layout_inte<typename T::layout_base_>
 {};
 
 #endif

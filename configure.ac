@@ -293,8 +293,6 @@ if test x$gpu_support = x"no"; then
      CUDA_CFLAGS=""
 fi
 
-AC_SUBST(NVCCFLAGS)
-
 AM_CONDITIONAL(BUILDCUDA, test x$gpu_support = x"yes")
 
 ##### CHECK FOR BOOST ##############

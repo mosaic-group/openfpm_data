@@ -145,6 +145,9 @@ namespace openfpm
 		//! Type of the encapsulation memory parameter
 		typedef layout layout_type;
 
+		//! Type of the encapsulation memory parameter
+		typedef layout_base<T> layout_base_;
+
 		//! iterator for the vector
 		typedef vector_key_iterator iterator_key;
 
@@ -154,6 +157,12 @@ namespace openfpm
 
 		//! Type of the value the vector is storing
 		typedef T value_type;
+
+		template<typename Tobj>
+		struct layout_base__
+		{
+			typedef layout_base<Tobj> type;
+		};
 
 		// Implementation of packer and unpacker for vector
 #include "vector_pack_unpack.ipp"
@@ -545,7 +554,8 @@ namespace openfpm
 		 * \param v source vector
 		 *
 		 */
-		template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> void add_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
+		template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args>
+		void add_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -1346,15 +1356,17 @@ namespace openfpm
 
 		/*! \brief Return the pointer that store the data
 		 *
+		 * \tparam property from which take the pointer
+		 *
 		 * \return the pointer that store the data
 		 *
 		 */
-		void * getPointer()
+		template<unsigned int p = 0> void * getPointer()
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-			return base.getPointer();
+			return base.template getPointer<p>();
 		}
 
 		/*! \brief Return the pointer that store the data
@@ -1362,7 +1374,7 @@ namespace openfpm
 		 * \return the pointer that store the data
 		 *
 		 */
-		const void * getPointer() const
+		template<unsigned int p = 0> const void * getPointer() const
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);

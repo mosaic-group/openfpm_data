@@ -115,6 +115,8 @@ public:
 	//! it define that it is a vector
 	typedef int yes_i_am_vector;
 
+	typedef memory_traits_lin<T> layout_base_;
+
 	//! iterator for the vector
 	typedef vector_key_iterator iterator_key;
 	//! Type of the value the vector is storing

@@ -32,7 +32,9 @@
 #include <boost/type_traits/is_same.hpp>
 #include <boost/utility/value_init.hpp>
 
+#ifdef __NVCC__
 #pragma hd_warning_disable
+#endif
 
 namespace boost { namespace mpl {
 

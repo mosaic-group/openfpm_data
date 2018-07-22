@@ -30,6 +30,8 @@
 #define PACKER_OBJECTS_WITH_WARNING_POINTERS 6
 //! Packer error structure has pointers
 #define PACKER_OBJECTS_WITH_POINTER_CHECK 7
+//! Compile time array packing
+#define PACKER_ARRAY_CP_PRIMITIVE 8
 
 #define IS_ENCAP 4
 #define IS_GRID 2
@@ -110,6 +112,24 @@ struct Pack_selector_impl
 	};
 };
 
+template<typename T, bool impl = std::is_array<T>::value>
+struct Pack_selector_array_prim
+{
+	enum
+	{
+		value = PACKER_PRIMITIVE
+	};
+};
+
+template<typename T>
+struct Pack_selector_array_prim<T,true>
+{
+	enum
+	{
+		value = PACKER_ARRAY_CP_PRIMITIVE
+	};
+};
+
 /*! \brief Select the primitive packing
  *
  */
@@ -118,7 +138,7 @@ struct Pack_selector_impl<T,true>
 {
 	enum
 	{
-		value = PACKER_PRIMITIVE
+		value = Pack_selector_array_prim<T>::value
 	};
 };
 
@@ -133,7 +153,7 @@ struct Pack_selector
 {
 	enum
 	{
-		value = Pack_selector_impl< T,std::is_fundamental<T>::value >::value
+		value = Pack_selector_impl< T,std::is_fundamental<T>::value  || std::is_fundamental< typename std::remove_all_extents<T>::type >::value >::value
 	};
 };
 

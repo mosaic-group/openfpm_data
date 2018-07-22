@@ -167,6 +167,31 @@ struct call_encapUnpack
 /////////////////////////////// FUNCTORS FOR AGGREGATE ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
 
+
+template<bool inte_layout, typename obj_type, typename Mem>
+struct pack_request_op
+{
+	template<unsigned int p> static inline void call_pack_req(const obj_type & obj,size_t & req)
+	{
+		typedef typename boost::mpl::at<typename obj_type::type,boost::mpl::int_<p>>::type obj_t;
+
+		Packer<obj_t,Mem>::packRequest(obj.template get<p>(),req);
+	}
+};
+
+template<typename obj_type, typename Mem>
+struct pack_request_op<true,obj_type,Mem>
+{
+	template<unsigned int p> static inline void call_pack_req(const obj_type & obj,size_t & req)
+	{
+		typedef typename boost::mpl::at<typename obj_type::type,boost::mpl::int_<p>>::type obj_t;
+
+		Packer<obj_t,Mem>::packRequest(obj.template get<p>(),req);
+	}
+};
+
+template<typename> struct Debug;
+
 //A functor for call_aggregatePackRequest
 
 template<typename obj_type, typename Mem>
@@ -186,10 +211,7 @@ struct call_packRequest_agg_functor
 	template<typename T>
 	inline void operator()(T& t)
 	{
-		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_t;
-
-		//for (size_t i = 0; i < obj_type::max_prop ; i++)
-		Packer<obj_t,Mem>::packRequest(obj.template get<T::value>(),req);
+		pack_request_op<openfpm::is_multi_array<decltype(obj.template get<T::value>())>::value,obj_type,Mem>::template call_pack_req<T::value>(obj,req);
 	}
 };
 
@@ -216,6 +238,17 @@ struct call_aggregatePackRequest
 	}
 };
 
+template<bool inte_layout, typename obj_type, typename Mem>
+struct pack_pack_op
+{
+	template<unsigned int p> static inline void call_pack_pack(ExtPreAlloc<Mem> & mem, const obj_type & obj,Pack_stat & sts)
+	{
+		typedef typename boost::mpl::at<typename obj_type::type,boost::mpl::int_<p>>::type obj_t;
+
+		Packer<obj_t,Mem>::pack(mem,obj.template get<p>(),sts);
+	}
+};
+
 //A functor for call_aggregatePack
 template<typename obj_type, typename Mem>
 struct call_pack_agg_functor
@@ -233,10 +266,11 @@ struct call_pack_agg_functor
 	template<typename T>
 	inline void operator()(T& t)
 	{
-		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_t;
+//		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_t;
 
-		//for (size_t i = 0; i < obj.size(); i++)
-			Packer<obj_t,Mem>::pack(mem,obj.template get<T::value>(),sts);
+		pack_pack_op<openfpm::is_multi_array<decltype(obj.template get<T::value>())>::value,obj_type,Mem>::template call_pack_pack<T::value>(mem,obj,sts);
+
+//		Packer<obj_t,Mem>::pack(mem,obj.template get<T::value>(),sts);
 	}
 };
 

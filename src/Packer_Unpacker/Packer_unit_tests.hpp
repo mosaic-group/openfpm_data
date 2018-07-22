@@ -297,6 +297,63 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 	}
 }
 
+BOOST_AUTO_TEST_CASE ( packer_selector_test )
+{
+	BOOST_REQUIRE_EQUAL(Pack_selector<int>::value,PACKER_PRIMITIVE);
+	BOOST_REQUIRE_EQUAL(Pack_selector<float>::value,PACKER_PRIMITIVE);
+	BOOST_REQUIRE_EQUAL(Pack_selector<double>::value,PACKER_PRIMITIVE);
+	BOOST_REQUIRE_EQUAL(Pack_selector<long int>::value,PACKER_PRIMITIVE);
+
+	BOOST_REQUIRE_EQUAL(Pack_selector<int[3]>::value,PACKER_ARRAY_CP_PRIMITIVE);
+	BOOST_REQUIRE_EQUAL(Pack_selector<float[3][3]>::value,PACKER_ARRAY_CP_PRIMITIVE);
+	BOOST_REQUIRE_EQUAL(Pack_selector<double[5][6]>::value,PACKER_ARRAY_CP_PRIMITIVE);
+	BOOST_REQUIRE_EQUAL(Pack_selector<long int[5][8][9]>::value,PACKER_ARRAY_CP_PRIMITIVE);
+
+	BOOST_REQUIRE_EQUAL(Pack_selector<openfpm::vector<float>>::value,PACKER_GENERAL);
+	int aa = Pack_selector<openfpm::vector<aggregate<float,float[3]>>>::value;
+	BOOST_REQUIRE_EQUAL(aa,PACKER_GENERAL);
+	aa = Pack_selector<openfpm::vector_gpu<aggregate<float,float[3]>>>::value;
+	BOOST_REQUIRE_EQUAL(aa,PACKER_GENERAL);
+
+	aa = Pack_selector<grid_cpu<3,aggregate<float,float[3]>>>::value;
+	BOOST_REQUIRE_EQUAL(aa,PACKER_GRID);
+
+
+	openfpm::vector<aggregate<float,float[3]>> vd;
+	aa = Pack_selector<decltype(vd.get(0))>::value;
+	BOOST_REQUIRE_EQUAL(aa,PACKER_ENCAP_OBJECTS);
+
+	size_t sz[3] = {6,6,6};
+	grid_cpu<3,aggregate<float,float[3]>> gd(sz);
+	aa = Pack_selector<decltype(gd.get_o(grid_key_dx<3>({0,0,0})))>::value;
+	BOOST_REQUIRE_EQUAL(aa,PACKER_ENCAP_OBJECTS);
+
+	struct a_test
+	{
+		int a;
+		int b;
+		int c;
+	};
+
+	BOOST_REQUIRE_EQUAL(Pack_selector<a_test>::value,PACKER_OBJECTS_WITH_WARNING_POINTERS);
+
+	struct b_test
+	{
+		int a;
+		int b;
+		int c;
+
+		static bool noPointers()	{return true;}
+	};
+
+	BOOST_REQUIRE_EQUAL(Pack_selector<b_test>::value,PACKER_OBJECTS_WITH_POINTER_CHECK);
+}
+
+BOOST_AUTO_TEST_CASE ( packer_memory_traits_inte )
+{
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

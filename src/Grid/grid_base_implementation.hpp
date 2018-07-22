@@ -86,6 +86,9 @@ public:
 	//! boost::vector that describe the data type
 	typedef typename T::type T_type;
 
+	//! base layout type
+	typedef layout_base<T> layout_base_;
+
 protected:
 
 	//! Memory layout specification + memory chunk pointer
@@ -487,8 +490,7 @@ public:
 	 * \param m external memory allocator
 	 *
 	 */
-
-	void setMemory(S & m)
+	template<unsigned int p = 0> void setMemory(S & m)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -497,10 +499,12 @@ public:
 		isExternal = true;
 
 		//! Create and set the memory allocator
-		data_.setMemory(m);
+//		data_.setMemory(m);
 
 		//! Allocate the memory and create the reppresentation
-		if (g1.size() != 0) data_.allocate(g1.size());
+//		if (g1.size() != 0) data_.allocate(g1.size());
+
+		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemory<p>(data_,m,g1.size());
 
 		is_mem_init = true;
 	}
@@ -513,13 +517,13 @@ public:
 	 *
 	 */
 
-	void * getPointer()
+	template<unsigned int p = 0> void * getPointer()
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
 
-		return data_.mem_r.get_pointer();
+		return mem_getpointer<decltype(data_),layout_base_>::template getPointer<p>(data_);
 	}
 
 	/*! \brief Return a plain pointer to the internal data
@@ -530,13 +534,13 @@ public:
 	 *
 	 */
 
-	const void * getPointer() const
+	template<unsigned int p = 0> const void * getPointer() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
 
-		return data_.mem_r.get_pointer();
+		return mem_getpointer<decltype(data_),layout_base_>::template getPointer<p>(data_);
 	}
 
 	/*! \brief Get the reference of the selected element

@@ -95,6 +95,28 @@ public:
 };
 
 
+template<typename T, typename Mem>
+class Unpacker<T,Mem,PACKER_ARRAY_CP_PRIMITIVE>
+{
+public:
+
+	/*! \brief It packs arrays of C++ primitives
+	 *
+	 * \param ext preallocated memory where to pack the object
+	 * \param obj object to pack
+	 * \param sts pack-stat info
+	 *
+	 */
+	inline static void unpack(ExtPreAlloc<Mem> & ext, T & obj, Unpack_stat & ps)
+	{
+		typedef typename std::remove_extent<T>::type prim_type;
+
+		meta_copy<T>::meta_copy_((prim_type *)ext.getPointer(),obj);
+
+		ps.addOffset(sizeof(T));
+	}
+};
+
 /*! \brief Unpacker for objects with no possibility to check for internal pointers
  *
  * \tparam T object type to unpack

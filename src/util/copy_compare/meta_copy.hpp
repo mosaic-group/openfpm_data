@@ -90,6 +90,40 @@ struct meta_copy<T[N1]>
 			copy_general<T>(src[i1],dst[i1]);
 		}
 	}
+
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	__device__ __host__
+	template<typename v_mpl>
+	static inline void meta_copy_(const openfpm::detail::multi_array::sub_array_openfpm<T,1,v_mpl> src,
+			                            openfpm::detail::multi_array::sub_array_openfpm<T,1,v_mpl> dst)
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general<T>(src[i1],dst[i1]);
+		}
+	}
+
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	__device__ __host__
+	template<typename v_mpl>
+	static inline void meta_copy_(const openfpm::detail::multi_array::sub_array_openfpm<T,1,v_mpl> src,
+			                            T * dst)
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general<T>(src[i1],dst[i1]);
+		}
+	}
 };
 
 //! Partial specialization for N=1 1D-Array

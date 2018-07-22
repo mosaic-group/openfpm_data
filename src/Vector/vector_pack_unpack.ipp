@@ -99,16 +99,16 @@ template<bool sel, int ... prp>
 struct pack_simple_cond
 {
 	//! serialize the vector
-	static inline void pack(const openfpm::vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+	template<typename Memory2> static inline void pack(const openfpm::vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory2> & mem, Pack_stat & sts)
 	{
 		//Pack the size of a vector
-		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
+		Packer<size_t, Memory2>::pack(mem,obj.size(),sts);
 		
 		// Sending property object
-		typedef openfpm::vector<T> vctr;
+		typedef openfpm::vector<T,Memory,layout,layout_base,grow_p> vctr;
 		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
 	
-		typedef openfpm::vector<prp_object,ExtPreAlloc<Memory>,typename memory_traits_lin<prp_object>::type, memory_traits_lin ,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<Memory2>,typename layout_base<prp_object>::type, layout_base ,openfpm::grow_policy_identity> dtype;
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -308,7 +308,7 @@ template<int ... prp> inline void packRequest(size_t & req) const
  * \param sts pack-stat info
  *
  */
-template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & sts) const
+template<int ... prp, typename Memory2> inline void pack(ExtPreAlloc<Memory2> & mem, Pack_stat & sts) const
 {
 	//If all of the aggregate properties are simple (don't have "pack()" member)
 	if (has_pack_agg<T,prp...>::result::value == false)
@@ -321,12 +321,12 @@ template<int ... prp> inline void pack(ExtPreAlloc<Memory> & mem, Pack_stat & st
 	else
 	{
 		//Pack the size of a vector
-		Packer<size_t, Memory>::pack(mem,this->size(),sts);
+		Packer<size_t, Memory2>::pack(mem,this->size(),sts);
 		
 		for (size_t i = 0 ; i < this->size() ; i++)
 		{
 			//Call a packer in nested way
-			call_aggregatePack<decltype(this->get(i)),Memory,prp ... >::call_pack(this->get(i),mem,sts);
+			call_aggregatePack<decltype(this->get(i)),Memory2,prp ... >::call_pack(this->get(i),mem,sts);
 		}
 	}
 }

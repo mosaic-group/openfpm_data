@@ -156,6 +156,77 @@ public:
 };
 
 
+template<typename T, typename Mem>
+class Packer<T,Mem,PACKER_ARRAY_CP_PRIMITIVE>
+{
+public:
+
+	/*! \brief It packs arrays of C++ primitives
+	 *
+	 * \param ext preallocated memory where to pack the object
+	 * \param obj object to pack
+	 * \param sts pack-stat info
+	 *
+	 */
+	inline static void pack(ExtPreAlloc<Mem> & ext, const T & obj, Pack_stat & sts)
+	{
+		typedef typename std::remove_extent<T>::type prim_type;
+
+		//Pack a vector
+		ext.allocate(sizeof(T));
+
+		meta_copy<T>::meta_copy_(obj,(prim_type *)ext.getPointer());
+
+		// update statistic
+		sts.incReq();
+	}
+
+	/*! \brief It packs arrays of C++ primitives
+	 *
+	 * \param ext preallocated memory where to pack the object
+	 * \param obj object to pack
+	 * \param sts pack-stat info
+	 *
+	 */
+	template<typename tp, long unsigned int dim, typename vmpl>
+	inline static void pack(ExtPreAlloc<Mem> & ext,
+		                  	const openfpm::detail::multi_array::sub_array_openfpm<tp,dim,vmpl> & obj,
+		                  	Pack_stat & sts)
+	{
+		typedef typename std::remove_extent<T>::type prim_type;
+
+		//Pack a vector
+		ext.allocate(sizeof(T));
+
+		meta_copy<T>::meta_copy_(obj,(prim_type *)ext.getPointer());
+
+		// update statistic
+		sts.incReq();
+	}
+
+	/*! \brief It add a request to pack a C++ primitive
+	 *
+	 * \param req requests vector
+	 *
+	 */
+	static void packRequest(T & obj,size_t & req)
+	{
+		req += sizeof(T);
+	}
+
+	/*! \brief It add a request to pack a C++ primitive
+	 *
+	 * \param req requests vector
+	 *
+	 */
+	template<typename tp, long unsigned int dim, typename vmpl>
+	static void packRequest(const openfpm::detail::multi_array::sub_array_openfpm<tp,dim,vmpl> & obj,
+			                size_t & req)
+	{
+		req += sizeof(T);
+	}
+};
+
 /*! \brief Packer for objects, with impossibility to check for internal pointers
  *
  * \tparam T object type to pack

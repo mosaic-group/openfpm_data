@@ -472,6 +472,9 @@ public:
 	//! original object type
 	typedef T T_type;
 
+	//! number of properties
+	static const int max_prop = T::max_prop;
+
 	//! constructor require a key and a memory data
 	encapc(typename memory_traits_inte<T>::type & data, size_t k)
 	:data(data),k(k)
