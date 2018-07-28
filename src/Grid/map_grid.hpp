@@ -5,8 +5,6 @@
 
 #ifndef CUDA_GPU
 #include <boost/config/compiler/nvcc.hpp>
-#define BOOST_FUSION_GPU_ENABLED
-#define BOOST_GPU_ENABLED
 #endif
 
 //! Warning: apparently you cannot used nested boost::mpl with boost::fusion
@@ -118,11 +116,14 @@ public:
 	// you can access all the properties of T
 	typedef typename grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>::container container;
 
+	//! Grid_cpu has no grow policy
+	typedef void grow_policy;
+
+
 	//! Default constructor
 	inline grid_cpu() THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_lin>()
-	{
-	}
+	{}
 
 	/*! \brief create a grid from another grid
 	 *

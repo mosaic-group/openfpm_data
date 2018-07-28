@@ -27,8 +27,12 @@ cuda_call; \
 }
 
 #else
+
+#ifndef __host__
 #define __host__
 #define __device__
+#endif
+
 #endif
 
 #endif /* OPENFPM_DATA_SRC_UTIL_CUDA_UTIL_HPP_ */

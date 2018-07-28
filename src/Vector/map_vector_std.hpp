@@ -124,6 +124,9 @@ public:
 
 	typedef void base_to_copy;
 
+	//! growing policy of this vector
+	typedef grow_policy_double grow_policy;
+
 	//This file implements a pack and unpack for std vector
 #include "vector_std_pack_unpack.ipp"
 

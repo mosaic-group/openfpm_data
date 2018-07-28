@@ -9,7 +9,7 @@
 #define OPENFPM_DATA_SRC_GRID_GRID_BASE_IMPLEMENTATION_HPP_
 
 #include "grid_base_impl_layout.hpp"
-
+#include "util/cuda_util.hpp"
 
 #ifdef CUDA_GPU
 
@@ -50,9 +50,6 @@ struct ite_gpu
 	grid_key_dx<dim> start;
 	grid_key_dx<dim> stop;
 };
-#else
-#define __host__
-#define __device__
 #endif
 
 /*! \brief

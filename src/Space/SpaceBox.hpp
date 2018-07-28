@@ -220,6 +220,18 @@ class SpaceBox : public Box<dim,T>
 	SpaceBox<dim,T>()	{}
 };
 
+
+///// Unfortunately it seem that nvcc it specialize incorrectly this data structure so we have to specialize for the broken cases
+
+template<unsigned int dim, typename St>
+struct is_typedef_and_data_same<true,SpaceBox<dim,St>>
+{
+	enum
+	{
+		value = 1
+	};
+};
+
 #include "Grid/Encap.hpp"
 
 

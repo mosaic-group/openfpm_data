@@ -138,7 +138,7 @@ struct is_typedef_and_data_same
 {
 	enum
 	{
-		value = std::is_same<decltype(T().data),typename T::type>::value
+		value = std::is_same<decltype(std::declval<T>().data),typename T::type>::value
 	};
 };
 

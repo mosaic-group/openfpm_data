@@ -121,7 +121,7 @@ template<unsigned int dim ,typename T> class Point
 	 */
 	template <typename vmpl> inline __device__ __host__  Point(const openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> & mar)
 	{
-		for (int i = 0 ; i < dim ; i++)
+		for (unsigned int i = 0 ; i < dim ; i++)
 		{get(i) = mar[i];}
 	}
 

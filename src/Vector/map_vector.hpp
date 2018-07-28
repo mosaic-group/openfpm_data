@@ -158,6 +158,9 @@ namespace openfpm
 		//! Type of the value the vector is storing
 		typedef T value_type;
 
+		//! growing policy of this vector
+		typedef grow_p grow_policy;
+
 		template<typename Tobj>
 		struct layout_base__
 		{
@@ -1346,12 +1349,12 @@ namespace openfpm
 		 * \param mem Memory object to use for allocation
 		 *
 		 */
-		void setMemory(Memory & mem)
+		template<unsigned int p = 0> void setMemory(Memory & mem)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-			base.setMemory(mem);
+			base.template setMemory<p>(mem);
 		}
 
 		/*! \brief Return the pointer that store the data
@@ -1451,7 +1454,7 @@ namespace openfpm
 
 	template <typename T> using vector_std = vector<T, HeapMemory, typename memory_traits_lin<T>::type, memory_traits_lin, openfpm::grow_policy_double, STD_VECTOR>;
 	template<typename T> using vector_gpu = openfpm::vector<T,CudaMemory,typename memory_traits_inte<T>::type,memory_traits_inte>;
-
+	template<typename T> using vector_gpu_single = openfpm::vector<T,CudaMemory,typename memory_traits_inte<T>::type,memory_traits_inte,openfpm::grow_policy_identity>;
 
 }
 

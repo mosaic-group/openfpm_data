@@ -190,13 +190,55 @@ struct mem_setext
 	}
 };
 
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to set each property with external memory
+ *
+ *
+ */
+template<typename grid_type, typename data_type, typename S>
+struct mem_setext_prp
+{
+	grid_type & grid_new;
+
+	grid_type & old;
+
+	data_type & data_;
+
+	/*! \brief constructor
+	 *
+	 *
+	 *
+	 */
+	inline mem_setext_prp(grid_type & g_new, grid_type & old, data_type & data_)
+	:grid_new(g_new),old(old),data_(data_)
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t)
+	{
+		grid_new.template setMemory<T::value>(static_cast<S&>(boost::fusion::at_c<T::value>(data_).getMemory()));
+
+
+	}
+};
+
 //! Case memory_traits_inte
 template<typename grid_type, typename S , typename layout, typename data_type>
 struct mem_setext<grid_type,S,layout,data_type,1>
 {
 	static inline void set(grid_type & grid_new, grid_type & old, data_type & data_)
 	{
-		std::cerr << __FILE__ << ":" << "__LINE__" << " Error, " << demangle(typeid(grid_type).name()) << " this structure does not support setting from external memory" << std::endl;
+//		std::cerr << __FILE__ << ":" << "__LINE__" << " Error, " << demangle(typeid(grid_type).name()) << " this structure does not support setting from external memory" << std::endl;
+		mem_setext_prp<grid_type,data_type,S> mst(grid_new,old,data_);
+
+		// Create an empty memory allocator for the actual structure
+		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,grid_type::value_type::max_prop>>(mst);
+
+		old.setMemory();
 	}
 };
 
