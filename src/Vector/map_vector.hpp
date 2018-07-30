@@ -1226,6 +1226,22 @@ namespace openfpm
 			return vector_key_iterator(stop,0);
 		}
 
+#ifdef CUDA_GPU
+
+		/*! \brief Get an iterator for the GPU
+		 *
+		 *
+		 */
+		ite_gpu<1> getGPUIteratorTo(size_t stop, size_t n_thr = 1024) const
+		{
+			grid_key_dx<1> start(0);
+			grid_key_dx<1> stop_(stop);
+
+			return base.getGPUIterator(start,stop_,n_thr);
+		}
+
+#endif
+
 		/*! \brief Get the vector elements iterator
 		 *
 		 *

@@ -375,7 +375,7 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024)
+	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024) const
 	{
 		size_t tot_work = 1;
 		for (size_t i = 0 ; i < dim ; i++)
