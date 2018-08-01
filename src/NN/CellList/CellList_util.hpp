@@ -39,7 +39,10 @@ template<unsigned int dim, typename T, typename CellList> void populate_cell_lis
  * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
  *
  */
-template<unsigned int dim, typename T, typename CellList> void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>> & pos, CellList & cli, size_t g_m)
+template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base , typename CellList>
+void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
+							   CellList & cli,
+							   size_t g_m)
 {
 	cli.clear();
 
@@ -60,7 +63,10 @@ template<unsigned int dim, typename T, typename CellList> void populate_cell_lis
  * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
  *
  */
-template<unsigned int dim, typename T, typename CellList> void populate_cell_list_sym(openfpm::vector<Point<dim,T>> & pos, CellList & cli, size_t g_m)
+template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base ,typename CellList>
+void populate_cell_list_sym(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
+		      	  	  	    CellList & cli,
+		      	  	  	    size_t g_m)
 {
 	cli.clear();
 
@@ -87,7 +93,11 @@ template<unsigned int dim, typename T, typename CellList> void populate_cell_lis
  * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
  *
  */
-template<unsigned int dim, typename T, typename CellList> void populate_cell_list(openfpm::vector<Point<dim,T>> & pos, CellList & cli, size_t g_m, size_t opt)
+template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base, typename CellList>
+void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base> & pos,
+						CellList & cli,
+						size_t g_m,
+						size_t opt)
 {
 	if (opt == CL_NON_SYMMETRIC)
 		populate_cell_list_no_sym(pos,cli,g_m);

@@ -44,7 +44,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p_exp point expression to evaluate
 	 *
 	 */
-	template<typename orig, typename exp1, typename exp2, unsigned int op> Point(const point_expression_op<orig,exp1,exp2,op> & p_exp)
+	template<typename orig, typename exp1, typename exp2, unsigned int op> __device__ __host__ Point(const point_expression_op<orig,exp1,exp2,op> & p_exp)
 	{
 		this->operator=(p_exp);
 	}
@@ -54,7 +54,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p the point
 	 *
 	 */
-	inline Point(const Point<dim,T> && p)
+	__device__ __host__ inline Point(const Point<dim,T> && p)
 	{
 	    for(size_t i = 0; i < dim ; i++)
 	    {get(i) = p.get(i);}
@@ -65,7 +65,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p the point
 	 *
 	 */
-	inline Point(const Point<dim,T> & p)
+	__device__ __host__ inline Point(const Point<dim,T> & p)
 	{
 	    for(size_t i = 0; i < dim ; i++)
 	    {get(i) = p.get(i);}
@@ -76,7 +76,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p array with the coordinate of the point
 	 *
 	 */
-	inline Point(const T (&p)[dim])
+	__device__ __host__ inline Point(const T (&p)[dim])
 	{
 	    for(size_t i = 0; i < dim ; i++)
 	    {get(i) = p[i];}
@@ -87,7 +87,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param d scalar
 	 *
 	 */
-	inline Point(T d)
+	__device__ __host__ inline Point(T d)
 	{
 		this->operator=(d);
 	}
@@ -100,7 +100,7 @@ template<unsigned int dim ,typename T> class Point
 	template <typename S> inline Point(const Point<dim,S> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
-			get(i) = static_cast<S>(p.get(i));
+		{get(i) = static_cast<S>(p.get(i));}
 	}
 
 	/*! \brief Point constructor
@@ -132,7 +132,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p1 initializer list
 	 *
 	 */
-	inline Point(std::initializer_list<T> p1)
+	__device__ __host__ inline Point(std::initializer_list<T> p1)
 	{
 		size_t i = 0;
 	    for(T x : p1)
@@ -140,7 +140,7 @@ template<unsigned int dim ,typename T> class Point
 	}
 
 	//! Default contructor
-	inline Point()
+	__device__ __host__  inline Point()
 	{}
 
 	/*! \brief Get coordinate
@@ -210,7 +210,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the norm of the vector
 	 *
 	 */
-	T norm()
+	__device__ __host__ T norm()
 	{
 		T n = 0.0;
 
@@ -339,7 +339,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return true if two points match
 	 *
 	 */
-	inline bool operator==(const Point<dim,T> & p)
+	__device__ __host__ inline bool operator==(const Point<dim,T> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -357,7 +357,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return true if two points match
 	 *
 	 */
-	inline bool operator!=(const Point<dim,T> & p)
+	__device__ __host__ inline bool operator!=(const Point<dim,T> & p)
 	{
 		return !this->operator==(p);
 	}
@@ -447,7 +447,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	template<typename orig, typename exp1, typename exp2, unsigned int op> Point<dim,T> & operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
+	template<typename orig, typename exp1, typename exp2, unsigned int op> __device__ __host__ Point<dim,T> & operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
 	{
 		p_exp.init();
 
@@ -464,7 +464,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	Point<dim,T> & operator=(const point_expression<T[dim]> & p_exp)
+	__device__ __host__ Point<dim,T> & operator=(const point_expression<T[dim]> & p_exp)
 	{
 		p_exp.init();
 
@@ -481,7 +481,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	Point<dim,T> & operator=(const T (& p)[dim])
+	__device__ __host__ Point<dim,T> & operator=(const T (& p)[dim])
 	{
 		for (size_t i = 0; i < dim ; i++)
 			get(i) = p[i];
@@ -498,7 +498,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	template<typename T1, typename check = typename std::enable_if<std::is_const<T1>::value == false>::type> Point<dim,T> & operator=(const point_expression<const T1[dim]> & p_exp)
+	template<typename T1, typename check = typename std::enable_if<std::is_const<T1>::value == false>::type> __device__ __host__ Point<dim,T> & operator=(const point_expression<const T1[dim]> & p_exp)
 	{
 		p_exp.init();
 
@@ -515,7 +515,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> operator/(const aT (&ar)[dim])
+	template<typename aT> __device__ __host__ inline Point<dim,T> operator/(const aT (&ar)[dim])
 	{
 		Point<dim,T> result;
 
@@ -532,7 +532,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	template<typename aT> inline Point<dim,T> operator/=(const aT c)
+	template<typename aT> __device__ __host__ inline Point<dim,T> operator/=(const aT c)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			get(i) = get(i) / c;
@@ -548,7 +548,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	Point<dim,T> & operator=(T d)
+	__device__ __host__ Point<dim,T> & operator=(T d)
 	{
 		for (size_t i = 0; i < dim ; i++)
 			get(i) = d;
@@ -563,7 +563,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	inline Point<dim,T> & operator=(const Point<dim,T> & p)
+	__device__ __host__ inline Point<dim,T> & operator=(const Point<dim,T> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			get(i) = p.get(i);
@@ -578,7 +578,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	inline Point<dim,T> & operator-=(const Point<dim,T> & p)
+	__device__ __host__ inline Point<dim,T> & operator-=(const Point<dim,T> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			get(i) -= p.get(i);
@@ -593,10 +593,10 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	inline Point<dim,T> & operator+=(const Point<dim,T> & p)
+	__device__ __host__ inline Point<dim,T> & operator+=(const Point<dim,T> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
-			get(i) += p.get(i);
+		{get(i) += p.get(i);}
 
 		return *this;
 	}
@@ -606,7 +606,7 @@ template<unsigned int dim ,typename T> class Point
 	 * Required to make the code compilable
 	 *
 	 */
-	inline void init() const
+	__device__ __host__ inline void init() const
 	{}
 
 	///////////////////////////////////////////////////////////////////////

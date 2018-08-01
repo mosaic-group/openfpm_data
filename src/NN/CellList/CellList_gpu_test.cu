@@ -12,7 +12,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "util/cuda_util.hpp"
-#include "CellList_gpu.hpp"
+#include "cuda/CellList_gpu.hpp"
 #include "CellList.hpp"
 #include "util/boost/boost_array_openfpm.hpp"
 #include  "Point_test.hpp"
@@ -522,10 +522,12 @@ void test_reorder_parts(size_t n_part)
 
 	CellList<dim,T, Mem_fast> cl(domain,div_host,0);
 	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
+	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl_out;
 
 	create_n_part(n_part,pl,cl);
 	parts_prp.resize(n_part);
 	parts_prp_out.resize(n_part);
+	pl_out.resize(n_part);
 	sort_to_not_sort.resize(n_part);
 
 	auto p_it = parts_prp.getIterator();
@@ -564,14 +566,19 @@ void test_reorder_parts(size_t n_part)
 
 	auto ite = pl.getGPUIterator();
 
+	parts_prp.template hostToDevice<0,1,2,3>();
+
 	// Here we test fill cell
-	reorder_parts<decltype(parts_prp.template toGPU<0,1,2,3>()),
-			      decltype(sort_to_not_sort.template toGPU<>()),
+	reorder_parts<decltype(parts_prp.toKernel()),
+			      decltype(pl.toKernel()),
+			      decltype(sort_to_not_sort.toKernel()),
 			      cnt_type,
 			      shift_ph<0,cnt_type>><<<ite.wthr,ite.thr>>>(pl.size(),
-			                                                  parts_prp.template toGPU<0,1,2,3>(),
-			                                                  parts_prp_out.template toGPU<>(),
-			                                                  sort_to_not_sort.template toGPU<>(),
+			                                                  parts_prp.toKernel(),
+			                                                  parts_prp_out.toKernel(),
+			                                                  pl.toKernel(),
+			                                                  pl_out.toKernel(),
+			                                                  sort_to_not_sort.toKernel(),
 			                                                  static_cast<cnt_type *>(cells_out.template getDeviceBuffer<0>()));
 
 	bool check = true;
@@ -624,6 +631,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 	// vector of particles
 
 	openfpm::vector<Point<dim,double>,CudaMemory,typename memory_traits_inte<Point<dim,double>>::type,memory_traits_inte> pl;
+	openfpm::vector<Point<dim,double>,CudaMemory,typename memory_traits_inte<Point<dim,double>>::type,memory_traits_inte> pl_out;
 
 	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float[3],float[3][3]>>::type,memory_traits_inte> pl_prp;
 	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float[3],float[3][3]>>::type,memory_traits_inte> pl_prp_out;
@@ -653,6 +661,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 
 	pl_prp.resize(pl.size());
 	pl_prp_out.resize(pl.size());
+	pl_out.resize(pl.size());
 
 	for (size_t i = 0 ; i < pl.size() ; i++)
 	{
@@ -679,11 +688,9 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 	pl_prp_out.resize(pl.size());
 
 	pl.template hostToDevice<0>();
-	pl_prp.template hostToDevice<0>();
-	pl_prp.template hostToDevice<1>();
-	pl_prp.template hostToDevice<2>();
+	pl_prp.template hostToDevice<0,1,2>();
 
-	cl2.template construct<decltype(pl),decltype(pl_prp),0,1,2>(pl,pl_prp,pl_prp_out);
+	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out);
 
 	// Check
 
@@ -721,6 +728,24 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[2][1],(float)(pl_correct.template get<0>(i)[1] + 6000.0));
 		BOOST_REQUIRE_EQUAL(pl_prp_out.template get<2>(i)[2][2],(float)(pl_correct.template get<0>(i)[2] + 7000.0));
 	}
+
+	// Check the sort to non sort buffer
+
+	auto & vsrt = cl2.private_get_sort_to_not_sorted();
+	vsrt.template deviceToHost<0>();
+
+	BOOST_REQUIRE_EQUAL(vsrt.size(),9);
+
+	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(0),8);
+	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(1),0);
+	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(2),1);
+	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(3),2);
+	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(4),4);
+	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(5),3);
+	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(6),5);
+	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(7),6);
+	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(8),7);
+
 }
 
 
@@ -821,6 +846,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 	// vector of particles
 
 	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
+	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl_out;
 
 	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> pl_prp;
 	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> pl_prp_out;
@@ -832,15 +858,15 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 	fill_random_parts<3>(box,pl,pl_prp,npart);
 
 	pl_prp_out.resize(pl.size());
-	n_out.resize(pl.size()+1);
+	pl_out.resize(pl.size());
+	pl_out.resize(pl.size()+1);
 	n_out.fill<0>(0);
 
 	pl_prp.resize(pl.size());
 	pl_prp_out.resize(pl.size());
 
 	pl.template hostToDevice<0>();
-	pl_prp.template hostToDevice<0>();
-	pl_prp.template hostToDevice<1>();
+	pl_prp.template hostToDevice<0,1>();
 
 	// Construct an equivalent CPU cell-list
 
@@ -861,19 +887,21 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 		++it2;
 	}
 
-	cl2.template construct<decltype(pl),decltype(pl_prp),0,1>(pl,pl_prp,pl_prp_out);
+	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out);
 	auto & s_t_ns = cl2.getSortToNonSort();
+
+	pl.template hostToDevice<0>();
 
 	auto ite = pl.getGPUIterator();
 
-	calc_force_number<decltype(pl.template toGPU<0>()),
-			          decltype(s_t_ns.template toGPU<>()),
-			          decltype(cl2.toGPU()),
-			          decltype(n_out.template toGPU<>())>
-	<<<ite.wthr,ite.thr>>>(pl.template toGPU<0>(),
-						   s_t_ns.template toGPU<>(),
-						   cl2.toGPU(),
-						   n_out.template toGPU<>());
+	calc_force_number<decltype(pl.toKernel()),
+			          decltype(s_t_ns.toKernel()),
+			          decltype(cl2.toKernel()),
+			          decltype(n_out.toKernel())>
+	<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+						   s_t_ns.toKernel(),
+						   cl2.toKernel(),
+						   n_out.toKernel());
 
 	// Check
 
@@ -925,15 +953,17 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 	// Now for each particle we construct the list
 
-	calc_force_list<decltype(pl.template toGPU<0>()),
-			          decltype(s_t_ns.template toGPU<>()),
-			          decltype(cl2.toGPU()),
-			          decltype(nn_list.template toGPU<>())>
-	<<<ite.wthr,ite.thr>>>(pl.template toGPU<0>(),
-						   s_t_ns.template toGPU<>(),
-						   cl2.toGPU(),
-						   n_out_scan.template toGPU<>(),
-						   nn_list.template toGPU<>());
+	pl.template hostToDevice<0>();
+
+	calc_force_list<decltype(pl.toKernel()),
+			          decltype(s_t_ns.toKernel()),
+			          decltype(cl2.toKernel()),
+			          decltype(nn_list.toKernel())>
+	<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+						   s_t_ns.toKernel(),
+						   cl2.toKernel(),
+						   n_out_scan.toKernel(),
+						   nn_list.toKernel());
 
 	nn_list.template deviceToHost<0>();
 

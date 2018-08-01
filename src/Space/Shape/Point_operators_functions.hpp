@@ -38,12 +38,12 @@ public:\
 		o1.init();\
 	}\
 \
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const\
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const\
 	{\
 		return fun_base(o1.value(k));\
 	}\
 \
-	template <typename T>operator T() const\
+	template <typename T> __device__ __host__  operator T() const\
 	{\
 		init();\
 		return fun_base(o1.value(0));\
@@ -59,7 +59,7 @@ public:\
 #define CREATE_ARG_FUNC(fun_base,fun_name,OP_ID) \
 \
 template<typename orig,typename exp1, typename exp_2, unsigned int op1>\
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp_2,op1>,void, OP_ID >\
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp_2,op1>,void, OP_ID >\
 fun_name(const point_expression_op<orig,exp1,exp_2,op1> & va)\
 {\
 	point_expression_op<orig,point_expression_op<orig,exp1,exp_2,op1>,void,OP_ID> exp_sum(va);\
@@ -69,7 +69,7 @@ fun_name(const point_expression_op<orig,exp1,exp_2,op1> & va)\
 \
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,Point<dim,T>,void, OP_ID >\
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,void, OP_ID >\
 fun_name(const Point<dim,T> & va)\
 {\
 	point_expression_op<Point<dim,T>,Point<dim,T>,void,OP_ID> exp_sum(va);\
@@ -112,7 +112,7 @@ public:
 	static const unsigned int nvals = 1;
 
 	//! Constructor from expression
-	inline point_expression_op(const exp1 & o1)
+	__device__ __host__ inline point_expression_op(const exp1 & o1)
 	:o1(o1),scal(0.0)
 	{}
 
@@ -121,7 +121,7 @@ public:
 	 * it calculate the scalar product before return the values
 	 *
 	 */
-	inline void init() const
+	__device__ __host__ inline void init() const
 	{
 		scal = 0.0;
 
@@ -138,12 +138,12 @@ public:
 	 * \param key where to evaluate the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__ inline r_type value(size_t k) const
 	{
 		return scal;
 	}
 
-	template <typename T>operator T() const
+	template <typename T>__device__ __host__  operator T() const
 	{
 		init();
 		return scal;
@@ -184,7 +184,7 @@ public:
 	static const unsigned int nvals = 1;
 
 	//! constructor from an expression
-	inline point_expression_op(const exp1 & o1)
+	__device__ __host__  inline point_expression_op(const exp1 & o1)
 	:o1(o1),scal(0.0)
 	{}
 
@@ -193,7 +193,7 @@ public:
 	 * it calculate the scalar product before return the values
 	 *
 	 */
-	inline void init() const
+	__device__ __host__ inline void init() const
 	{
 		scal = 0.0;
 
@@ -208,13 +208,13 @@ public:
 	 * \param key where to evaluate the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__ inline r_type value(size_t k) const
 	{
 		return scal;
 	}
 
 	//! Cast operator
-	template <typename T>operator T() const
+	template <typename T> __device__ __host__  operator T() const
 	{
 		init();
 		return scal;
@@ -265,7 +265,7 @@ CREATE_ARG_FUNC_CLASS(std::rint,rint,POINT_RINT)
  *
  */
 template<typename orig,typename exp1, typename exp2, unsigned int op1>
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_NORM>
+__device__ __host__  inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_NORM>
 norm(const point_expression_op<orig,exp1,exp2,op1> & va)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_NORM> exp_sum(va);
@@ -281,7 +281,7 @@ norm(const point_expression_op<orig,exp1,exp2,op1> & va)
  * \return d
  *
  */
-template <typename T>T norm(T d)
+template <typename T>__device__ __host__  T norm(T d)
 {
 	return d;
 }
@@ -295,7 +295,7 @@ template <typename T>T norm(T d)
  *
  */
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM>
+__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM>
 norm(const point_expression<T[dim]> & d)
 {
         point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM> exp_sum( (point_expression<T[dim]>(d)) );
@@ -313,7 +313,7 @@ norm(const point_expression<T[dim]> & d)
  *
  */
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM>
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM>
 norm(const Point<dim,T> & va)
 {
 	point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM> exp_sum(va);
@@ -332,7 +332,7 @@ norm(const Point<dim,T> & va)
  *
  */
 template<typename orig,typename exp1, typename exp2, unsigned int op1>
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_NORM2>
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_NORM2>
 norm2(const point_expression_op<orig,exp1,exp2,op1> & va)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_NORM2> exp_sum(va);
@@ -348,7 +348,7 @@ norm2(const point_expression_op<orig,exp1,exp2,op1> & va)
  * \return d
  *
  */
-template <typename T>T norm2(T d)
+template <typename T>__device__ __host__ T norm2(T d)
 {
 	return d*d;
 }
@@ -362,7 +362,7 @@ template <typename T>T norm2(T d)
  *
  */
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM2>
+__device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM2>
 norm2(const point_expression<T[dim]> & d)
 {
         point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM2> exp_sum( (point_expression<T[dim]>(d)) );
@@ -380,7 +380,7 @@ norm2(const point_expression<T[dim]> & d)
  *
  */
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM2>
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM2>
 norm2(const Point<dim,T> & va)
 {
 	point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM2> exp_sum(va);
@@ -392,7 +392,7 @@ norm2(const Point<dim,T> & va)
  *
  *
  */
-template <typename T, typename P> auto distance(T exp1, P exp2) -> decltype(norm(exp1 - exp2))
+template <typename T, typename P> __device__ __host__  auto distance(T exp1, P exp2) -> decltype(norm(exp1 - exp2))
 {
 	return norm(exp1 - exp2);
 }

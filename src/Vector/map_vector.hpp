@@ -785,15 +785,6 @@ namespace openfpm
 			return base.template getDeviceBuffer<id>();
 		}
 
-		/*! \brief Copy the memory from host to device
-		 *
-		 *
-		 */
-		template<unsigned int id> void hostToDevice()
-		{
-			base.template hostToDevice<id>();
-		}
-
 		/*! \brief It return the properties arrays.
 		 *
 		 * In case of Cuda memory it return the device pointers to pass to the kernels
@@ -807,14 +798,6 @@ namespace openfpm
 			return base.template getDeviceBuffer<id>();
 		}
 
-		/*! \brief Synchronize the memory buffer in the device with the memory in the host
-		 *
-		 *
-		 */
-		template<unsigned int id> void deviceToHost()
-		{
-			base.template deviceToHost<id>();
-		}
 
 		/*! \brief Get the last element of the vector
 		 *
@@ -1447,6 +1430,24 @@ namespace openfpm
 
 #ifdef CUDA_GPU
 
+		/*! \brief Copy the memory from host to device
+		 *
+		 *
+		 */
+		template<unsigned int ... prp> void hostToDevice()
+		{
+			base.template hostToDevice<prp ...>();
+		}
+
+		/*! \brief Synchronize the memory buffer in the device with the memory in the host
+		 *
+		 *
+		 */
+		template<unsigned int ... prp> void deviceToHost()
+		{
+			base.template deviceToHost<prp ...>();
+		}
+
 		/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 		 *
 		 *  The object created can be considered like a reference of the original
@@ -1454,12 +1455,12 @@ namespace openfpm
 		 * \return an usable vector in the kernel
 		 *
 		 */
-		template<unsigned int ... prp> vector_gpu_ker<T> toGPU()
+		vector_gpu_ker<T> toKernel()
 		{
 			if (base.size() == 0)
 			{std::cout << __FILE__ << ":" << __LINE__ << " Warning you are off-loading with toGPU a vector that seem to be empty or not initialized" << std::endl; }
 
-			vector_gpu_ker<T> v(v_size,this->base.template toGPU<prp ...>());
+			vector_gpu_ker<T> v(v_size,this->base.toKernel());
 
 			return v;
 		}

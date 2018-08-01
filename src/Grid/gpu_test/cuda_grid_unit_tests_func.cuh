@@ -18,6 +18,8 @@ void gpu_grid_3D_compute_grid_stencil(grid_gpu<3,Point_test<float>> & g1, grid_g
 
 void gpu_grid_fill_vector(grid_gpu<3,Point_test<float>> & g1, grid_key_dx<3> & start, grid_key_dx<3> & stop);
 
+void gpu_grid_fill_vector2(grid_gpu<3,Point_test<float>> & g1, grid_key_dx<3> & start, grid_key_dx<3> & stop);
+
 void gpu_grid_gradient_vector(grid_gpu<3,Point_test<float>> & g1, grid_gpu<3,Point_test<float>> & g2, grid_key_dx<3> & start, grid_key_dx<3> & stop);
 
 

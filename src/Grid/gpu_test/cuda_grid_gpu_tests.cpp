@@ -366,5 +366,112 @@ BOOST_AUTO_TEST_CASE (gpu_computation_grid_stencil_vector)
 	#endif
 }
 
+BOOST_AUTO_TEST_CASE (gpu_swap_vector)
+{
+	#ifdef CUDA_GPU
+
+	{
+	size_t sz[3] = {64,64,64};
+	grid_gpu<3, Point_test<float> > c3(sz);
+	grid_gpu<3, Point_test<float> > c2(sz);
+	grid_key_dx<3> key1({1,1,1});
+	grid_key_dx<3> zero({0,0,0});
+	grid_key_dx<3> key2({62,62,62});
+	grid_key_dx<3> keyl({63,63,63});
+
+
+	c3.setMemory();
+	c2.setMemory();
+
+	gpu_grid_fill_vector(c2,zero,keyl);
+	gpu_grid_fill_vector2(c3,zero,keyl);
+
+	auto it4 = c3.getIterator(zero,keyl);
+
+	// fill CPU
+	while(it4.isNext())
+	{
+		auto key = it4.get();
+
+		c2.get<4>(key)[0] = 1.0;
+		c2.get<4>(key)[1] = 2.0;
+		c2.get<4>(key)[2] = 3.0;
+
+		c3.get<4>(key)[0] = 1001.0;
+		c3.get<4>(key)[1] = 1002.0;
+		c3.get<4>(key)[2] = 1003.0;
+
+		++it4;
+	}
+
+	// now we swap
+
+	// Check property 1 is 1.0
+	c3.swap(c2);
+
+	{
+	auto it = c3.getIterator(zero,keyl);
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c3.get<4>(key)[0] == 1.0;
+		good &= c3.get<4>(key)[1] == 2.0;
+		good &= c3.get<4>(key)[2] == 3.0;
+
+		good &= c2.get<4>(key)[0] == 1001.0;
+		good &= c2.get<4>(key)[1] == 1002.0;
+		good &= c2.get<4>(key)[2] == 1003.0;
+
+		if (good == false)	{break;}
+
+		// Set to zero
+
+		c3.get<4>(key)[0] = 0.0;
+		c3.get<4>(key)[1] = 0.0;
+		c3.get<4>(key)[2] = 0.0;
+
+		c2.get<4>(key)[0] = 0.0;
+		c2.get<4>(key)[1] = 0.0;
+		c2.get<4>(key)[2] = 0.0;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+
+	c2.template deviceToHost<4>();
+	c3.template deviceToHost<4>();
+
+	auto it2 = c3.getIterator(zero,keyl);
+
+	good = true;
+	while(it2.isNext())
+	{
+		auto key = it2.get();
+
+		good &= c3.get<4>(key)[0] == 1.0;
+		good &= c3.get<4>(key)[1] == 2.0;
+		good &= c3.get<4>(key)[2] == 3.0;
+
+		good &= c2.get<4>(key)[0] == 1001.0;
+		good &= c2.get<4>(key)[1] == 1002.0;
+		good &= c2.get<4>(key)[2] == 1003.0;
+
+		if (good == false)	{break;}
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+	}
+
+
+	}
+
+	#endif
+}
 
 BOOST_AUTO_TEST_SUITE_END()

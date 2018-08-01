@@ -185,7 +185,7 @@ public:
 	 * \param d value
 	 *
 	 */
-	inline point_expression(T & d)
+	__device__ __host__ inline point_expression(T & d)
 	:d(d)
 	{}
 
@@ -194,7 +194,7 @@ public:
 	 * it calculate the scalar product before return the values
 	 *
 	 */
-	inline void init() const
+	__device__ __host__  inline void init() const
 	{
 	}
 
@@ -205,7 +205,7 @@ public:
 	 * \return It just return the velue set in the constructor
 	 *
 	 */
-	inline T value(const size_t k) const
+	__device__ __host__  inline T value(const size_t k) const
 	{
 		return d;
 	}
@@ -265,7 +265,7 @@ public:
 	 * \param o2 expression2
 	 *
 	 */
-	inline point_expression_op(const exp1 & o1, const exp2 & o2)
+	__device__ __host__ inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
 
@@ -274,7 +274,7 @@ public:
 	 * it calculate the scalar product before return the values
 	 *
 	 */
-	inline void init() const
+	__device__ __host__  inline void init() const
 	{
 		o1.init();
 		o2.init();
@@ -287,7 +287,7 @@ public:
 	 * \return the value of the expression for the coordinate k
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
 	{
 		return o1.value(k) + o2.value(k);
 	}
@@ -296,7 +296,7 @@ public:
 	 *
 	 *
 	 */
-	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > inline operator T() const
+	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > __device__ __host__  inline operator T() const
 	{
 		init();
 		return o1.value(0) + o2.value(0);
@@ -340,7 +340,7 @@ public:
 	 * \param o2 expression2
 	 *
 	 */
-	inline point_expression_op(const exp1 & o1, const exp2 & o2)
+	__device__ __host__  inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
 
@@ -349,7 +349,7 @@ public:
 	 * it calculate the scalar product before return the values
 	 *
 	 */
-	inline void init() const
+	__device__ __host__  inline void init() const
 	{
 		o1.init();
 		o2.init();
@@ -362,7 +362,7 @@ public:
 	 * \return the evaluate expression at coordinate k
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
 	{
 		return o1.value(k) - o2.value(k);
 	}
@@ -371,7 +371,7 @@ public:
 	 *
 	 *
 	 */
-	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > operator T() const
+	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > __device__ __host__  operator T() const
 	{
 		init();
 		return o1.value(0) - o2.value(0);
@@ -416,12 +416,12 @@ public:
 	 * \param o1 expression1
 	 *
 	 */
-	inline point_expression_op(const exp1 & o1)
+	__device__ __host__  inline point_expression_op(const exp1 & o1)
 	:o1(o1),scal(0.0)
 	{}
 
 	//! initialize the the expression
-	inline void init() const
+	__device__ __host__  inline void init() const
 	{
 		o1.init();
 	}
@@ -433,13 +433,13 @@ public:
 	 * \return the result
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
 	{
 		return -(o1.value(k));
 	}
 
 	//! casting to a type T
-	template <typename T, typename check = typename std::enable_if<!std::is_same<T,orig>::value >::type  >operator T() const
+	template <typename T, typename check = typename std::enable_if<!std::is_same<T,orig>::value >::type  > __device__ __host__  operator T() const
 	{
 		init();
 		return -(o1.value(0));
@@ -489,7 +489,7 @@ public:
 	 * \param o2 expression 2
 	 *
 	 */
-	inline point_expression_op(const exp1 & o1, const exp2 & o2)
+	__device__ __host__  inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2),scal(0.0)
 	{}
 
@@ -498,7 +498,7 @@ public:
 	 * it calculate the scalar product before return the values
 	 *
 	 */
-	inline void init() const
+	__device__ __host__  inline void init() const
 	{
 		for (size_t i = 0 ; i < orig::dims ; i++)
 			scal += o1.value(i) * o2.value(i);
@@ -514,13 +514,13 @@ public:
 	 * \return the expression value
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
 	{
 		return scal;
 	}
 
 	//! cast to other type
-	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value >::type > operator T() const
+	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value >::type > __device__ __host__  operator T() const
 	{
 		init();
 		return scal;
@@ -566,7 +566,7 @@ public:
 	 * \param o2 expression 2
 	 *
 	 */
-	inline point_expression_op(const exp1 & o1, const exp2 & o2)
+	__device__ __host__  inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
 
@@ -575,7 +575,7 @@ public:
 	 * it calculate the scalar product before return the values
 	 *
 	 */
-	inline void init() const
+	__device__ __host__  inline void init() const
 	{
 		o1.init();
 		o2.init();
@@ -586,7 +586,7 @@ public:
 	 * \param key where to evaluate the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
 	{
 		return o1.value(k) * o2.value(k);
 	}
@@ -595,7 +595,7 @@ public:
 	 *
 	 *
 	 */
-	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > operator T() const
+	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > __device__ __host__  operator T() const
 	{
 		init();
 		return o1.value(0) * o2.value(0);
@@ -640,7 +640,7 @@ public:
 	 * \param o2 expression 2
 	 *
 	 */
-	inline point_expression_op(const exp1 & o1, const exp2 & o2)
+	__device__ __host__  inline point_expression_op(const exp1 & o1, const exp2 & o2)
 	:o1(o1),o2(o2)
 	{}
 
@@ -649,7 +649,7 @@ public:
 	 * it calculate the scalar product before return the values
 	 *
 	 */
-	inline void init() const
+	__device__ __host__  inline void init() const
 	{
 		o1.init();
 		o2.init();
@@ -662,7 +662,7 @@ public:
 	 * \return the value of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > inline r_type value(size_t k) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
 	{
 		return o1.value(k) / o2.value(k);
 	}
@@ -672,7 +672,7 @@ public:
 	 *
 	 *
 	 */
-	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > operator T() const
+	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > __device__ __host__  operator T() const
 	{
 		init();
 		return o1.value(0) / o2.value(0);
@@ -686,7 +686,7 @@ public:
  * \return an object that can be used into an expression
  *
  */
-template<unsigned int dim, typename T> point_expression<T[dim]> getExprL(T (& a)[dim])
+template<unsigned int dim, typename T> __device__ __host__  point_expression<T[dim]> getExprL(T (& a)[dim])
 {
 	return point_expression<T[dim]>(a);
 }
@@ -698,7 +698,7 @@ template<unsigned int dim, typename T> point_expression<T[dim]> getExprL(T (& a)
  * \return an object that can be used into an expression
  *
  */
-template<unsigned int dim, typename T> point_expression<const T[dim]> getExprR(T (& a)[dim])
+template<unsigned int dim, typename T> __device__ __host__  point_expression<const T[dim]> getExprR(T (& a)[dim])
 {
 	return point_expression<const T[dim]>(a);
 }
@@ -712,7 +712,7 @@ template<unsigned int dim, typename T> point_expression<const T[dim]> getExprR(T
 \
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<const T[dim]>,OP_ID>\
+__device__ __host__  inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<const T[dim]>,OP_ID>\
 operator_name(const Point<dim,T> & va, const point_expression<const T[(unsigned int)dim]> & vb)\
 {\
 	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<const T[dim]>,OP_ID> exp_sum(va,vb);\
@@ -721,7 +721,7 @@ operator_name(const Point<dim,T> & va, const point_expression<const T[(unsigned 
 }\
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,Point<dim,T>,OP_ID>\
+__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,Point<dim,T>,OP_ID>\
 operator_name(const point_expression<const T[(unsigned int)dim]> & va, const Point<dim,T> & vb)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,Point<dim,T>,OP_ID> exp_sum(va,vb);\
@@ -730,7 +730,7 @@ operator_name(const point_expression<const T[(unsigned int)dim]> & va, const Poi
 }\
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<double>,OP_ID>\
+__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<double>,OP_ID>\
 operator_name(const point_expression<const T[dim]> & va, double d)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<double>,OP_ID> exp_sum(va,point_expression<double>(d));\
@@ -739,7 +739,7 @@ operator_name(const point_expression<const T[dim]> & va, double d)\
 }\
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<double>,point_expression<const T[dim]>,OP_ID>\
+__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<double>,point_expression<const T[dim]>,OP_ID>\
 operator_name(double d, const point_expression<const T[dim]> & va)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<double>,point_expression<const T[dim]>,OP_ID> exp_sum(point_expression<double>(d),va);\
@@ -748,7 +748,7 @@ operator_name(double d, const point_expression<const T[dim]> & va)\
 }\
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<const T[dim]>,OP_ID>\
+__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<const T[dim]>,OP_ID>\
 operator_name(const point_expression<const T[dim]> & va, const point_expression<const T[dim]> & vb)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<const T[dim]>,OP_ID> exp_sum(va,vb);\
@@ -757,7 +757,7 @@ operator_name(const point_expression<const T[dim]> & va, const point_expression<
 }\
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<T[dim]>,OP_ID>\
+__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<T[dim]>,OP_ID>\
 operator_name(const point_expression<const T[dim]> & va, const point_expression<T[dim]> & vb)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<T[dim]>,OP_ID> exp_sum(va,vb);\
@@ -766,7 +766,7 @@ operator_name(const point_expression<const T[dim]> & va, const point_expression<
 }\
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<const T[dim]>,OP_ID>\
+__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<const T[dim]>,OP_ID>\
 operator_name(const point_expression<T[dim]> & va, const point_expression<const T[dim]> & vb)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<const T[dim]>,OP_ID> exp_sum(va,vb);\
@@ -775,7 +775,7 @@ operator_name(const point_expression<T[dim]> & va, const point_expression<const 
 }\
 \
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, unsigned int dim, typename T>\
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,OP_ID>\
+__device__ __host__  inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,OP_ID>\
 operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression<T[dim]> & vb)\
 {\
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,OP_ID> exp_sum(va,vb);\
@@ -784,7 +784,7 @@ operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, const point_ex
 }\
 \
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, unsigned int dim, typename T>\
-inline point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,OP_ID>\
+__device__ __host__ inline point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,OP_ID>\
 operator_name(const point_expression<T[dim]> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)\
 {\
 	point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,OP_ID> exp_sum(va,vb);\
@@ -794,7 +794,7 @@ operator_name(const point_expression<T[dim]> & va, const point_expression_op<ori
 \
 \
 template<unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,Point<dim,T>,Point<dim,T>,OP_ID>\
+__device__ __host__  inline point_expression_op<Point<dim,T>,Point<dim,T>,Point<dim,T>,OP_ID>\
 operator_name(const Point<dim,T> & va, const Point<dim,T> & vb)\
 {\
 	point_expression_op<Point<dim,T>,Point<dim,T>,Point<dim,T>,OP_ID> exp_sum(va,vb);\
@@ -803,7 +803,7 @@ operator_name(const Point<dim,T> & va, const Point<dim,T> & vb)\
 }\
 \
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, unsigned int dim, typename T>\
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,OP_ID>\
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,OP_ID>\
 operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, const Point<dim,T> & vb)\
 {\
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,OP_ID> exp_sum(va,vb);\
@@ -812,7 +812,7 @@ operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, const Point<di
 }\
 \
 template<typename orig,typename exp1 , typename exp2, unsigned int op1, unsigned int dim, typename T>\
-inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,OP_ID>\
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,OP_ID>\
 operator_name(const Point<dim,T> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)\
 {\
 	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,OP_ID> exp_sum(va,vb);\
@@ -821,7 +821,7 @@ operator_name(const Point<dim,T> & va, const point_expression_op<orig,exp1,exp2,
 }\
 \
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T>\
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T>,OP_ID>\
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T>,OP_ID>\
 operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, T d)\
 {\
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T>,OP_ID> exp_sum(va,d);\
@@ -830,7 +830,7 @@ operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, T d)\
 }\
 \
 template<typename orig,typename exp1 , typename exp2, unsigned int op1, typename T>\
-inline point_expression_op<orig,point_expression<T>,point_expression_op<orig,exp1,exp2,op1>,OP_ID>\
+__device__ __host__ inline point_expression_op<orig,point_expression<T>,point_expression_op<orig,exp1,exp2,op1>,OP_ID>\
 operator_name(T d, const point_expression_op<orig,exp1,exp2,op1> & vb)\
 {\
 	point_expression_op<orig,point_expression<T>,point_expression_op<orig,exp1,exp2,op1>,OP_ID> exp_sum(d,vb);\
@@ -839,7 +839,7 @@ operator_name(T d, const point_expression_op<orig,exp1,exp2,op1> & vb)\
 }\
 \
 template<typename orig,typename exp1 , typename exp2, unsigned int op1, typename exp3 , typename exp4, unsigned int op2>\
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,OP_ID>\
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,OP_ID>\
 operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression_op<orig,exp3,exp4,op2> & vb)\
 {\
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,OP_ID> exp_sum(va,vb);\
@@ -848,7 +848,7 @@ operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, const point_ex
 }\
 \
 template<unsigned int dim , typename T, typename check=typename std::enable_if< !std::is_same<T,double>::value >::type >\
-inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<T>,OP_ID>\
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<T>,OP_ID>\
 operator_name(const Point<dim,T> & va, T d)\
 {\
 	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<T>,OP_ID> exp_sum(va,point_expression<T>(d));\
@@ -857,7 +857,7 @@ operator_name(const Point<dim,T> & va, T d)\
 }\
 \
 template<unsigned int dim , typename T>\
-inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<double>,OP_ID>\
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<double>,OP_ID>\
 operator_name(const Point<dim,T> & va, double d)\
 {\
 	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<double>,OP_ID> exp_sum(va,point_expression<double>(d));\
@@ -866,7 +866,7 @@ operator_name(const Point<dim,T> & va, double d)\
 }\
 \
 template<unsigned int dim , typename T, typename check=typename std::enable_if< !std::is_same<T,double>::value >::type >\
-inline point_expression_op<Point<dim,T>,point_expression<T>,Point<dim,T>,OP_ID>\
+__device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<T>,Point<dim,T>,OP_ID>\
 operator_name(T d, const Point<dim,T> & vb)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<T>,Point<dim,T>,OP_ID> exp_sum(point_expression<T>(d),vb);\
@@ -875,7 +875,7 @@ operator_name(T d, const Point<dim,T> & vb)\
 }\
 \
 template<unsigned int dim, typename T, typename check=typename std::enable_if< !std::is_same<T,double>::value >::type>\
-inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,Point<dim,T>,OP_ID>\
+__device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,Point<dim,T>,OP_ID>\
 operator_name(T (& d)[dim], const Point<dim,T> & vb)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<T[dim]>,Point<dim,T>,OP_ID> exp_sum(point_expression<T[dim]>(d),vb);\
@@ -884,7 +884,7 @@ operator_name(T (& d)[dim], const Point<dim,T> & vb)\
 }\
 \
 template<unsigned int dim , typename T>\
-inline point_expression_op<Point<dim,T>,point_expression<double>,Point<dim,T>,OP_ID>\
+__device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<double>,Point<dim,T>,OP_ID>\
 operator_name(double d, const Point<dim,T> & vb)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<double>,Point<dim,T>,OP_ID> exp_sum(point_expression<double>(d),vb);\
@@ -893,7 +893,7 @@ operator_name(double d, const Point<dim,T> & vb)\
 }\
 \
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T, typename check=typename std::enable_if< !std::is_same<T,double>::value >::type >\
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T>,OP_ID>\
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T>,OP_ID>\
 operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, T d)\
 {\
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T>,OP_ID> exp_sum(va,point_expression<T>(d));\
@@ -902,7 +902,7 @@ operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, T d)\
 }\
 \
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T>\
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<double>,OP_ID>\
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<double>,OP_ID>\
 operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, double d)\
 {\
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<double>,OP_ID> exp_sum(va,point_expression<double>(d));\
@@ -924,7 +924,7 @@ CREATE_POINT_OPERATOR(operator/,POINT_DIV)
  *
  */
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T, typename check=typename std::enable_if< ! std::is_same<T,orig>::value >::type >
-inline T &
+__device__ __host__ inline T &
 operator+=(T & d, const point_expression_op<orig,exp1,exp2,op1> & va)
 {
 	va.init();
@@ -944,7 +944,7 @@ operator+=(T & d, const point_expression_op<orig,exp1,exp2,op1> & va)
  *
  */
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T>
-inline T &
+__device__ __host__ inline T &
 operator+=(orig & d, const point_expression_op<orig,exp1,exp2,op1> & va)
 {
 	va.init();
@@ -962,7 +962,7 @@ operator+=(orig & d, const point_expression_op<orig,exp1,exp2,op1> & va)
  *
  */
 template<typename orig, typename exp1, typename exp2, unsigned int op1>
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void, POINT_SUB_UNI >
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void, POINT_SUB_UNI >
 operator-(const point_expression_op<orig,exp1,exp2,op1> & va)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_SUB_UNI> exp_sum(va);
@@ -978,7 +978,7 @@ operator-(const point_expression_op<orig,exp1,exp2,op1> & va)
  *
  */
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,Point<dim,T>,void, POINT_SUB_UNI >
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,void, POINT_SUB_UNI >
 operator-(const Point<dim,T> & va)
 {
 	point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_SUB_UNI> exp_sum(va);
@@ -992,7 +992,7 @@ operator-(const Point<dim,T> & va)
 
 
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<double>,POINT_MUL>
+__device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<double>,POINT_MUL>
 operator*(const point_expression<T[dim]> & va, double d)
 {
 	point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<double>,POINT_MUL> exp_sum(va,point_expression<double>(d));
@@ -1001,7 +1001,7 @@ operator*(const point_expression<T[dim]> & va, double d)
 }
 
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,point_expression<double>,point_expression<T[dim]>,POINT_MUL>
+__device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<double>,point_expression<T[dim]>,POINT_MUL>
 operator*(double d, const point_expression<T[dim]> & va)
 {
 	point_expression_op<Point<dim,T>,point_expression<double>,point_expression<T[dim]>,POINT_MUL> exp_sum(point_expression<double>(d),va);
@@ -1010,7 +1010,7 @@ operator*(double d, const point_expression<T[dim]> & va)
 }
 
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<T[dim]>,POINT_MUL_POINT>
+__device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<T[dim]>,POINT_MUL_POINT>
 operator*(const point_expression<T[dim]> & va, const point_expression<T[dim]> & vb)
 {
 	point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<T[dim]>,POINT_MUL_POINT> exp_sum(va,vb);
@@ -1019,7 +1019,7 @@ operator*(const point_expression<T[dim]> & va, const point_expression<T[dim]> & 
 }
 
 template<unsigned int dim, typename T, typename check=typename std::enable_if< !std::is_same<T,double>::value >::type>
-inline point_expression_op<Point<dim,T>,point_expression<T>,Point<dim,T>,POINT_MUL>
+__device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<T>,Point<dim,T>,POINT_MUL>
 operator*(T d, const Point<dim,T> & vb)
 {
 	point_expression_op<Point<dim,T>,point_expression<T>,Point<dim,T>,POINT_MUL> exp_sum(point_expression<T>(d),vb);
@@ -1028,7 +1028,7 @@ operator*(T d, const Point<dim,T> & vb)
 }
 
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, unsigned int dim, typename T>
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,POINT_MUL_POINT>
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,POINT_MUL_POINT>
 operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression<T[dim]> & vb)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,POINT_MUL_POINT> exp_sum(va,vb);
@@ -1037,7 +1037,7 @@ operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expres
 }
 
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, unsigned int dim, typename T>
-inline point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL_POINT>
+__device__ __host__ inline point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL_POINT>
 operator*(const point_expression<T[dim]> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)
 {
 	point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL_POINT> exp_sum(va,vb);
@@ -1054,7 +1054,7 @@ operator*(const point_expression<T[dim]> & va, const point_expression_op<orig,ex
  *
  */
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,point_expression<double>,Point<dim,T>,POINT_MUL>
+__device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<double>,Point<dim,T>,POINT_MUL>
 operator*(double d, const Point<dim,T> & vb)
 {
 	point_expression_op<Point<dim,T>,point_expression<double>,Point<dim,T>,POINT_MUL> exp_sum(point_expression<double>(d),vb);
@@ -1071,7 +1071,7 @@ operator*(double d, const Point<dim,T> & vb)
  *
  */
 template<unsigned int dim, typename T, typename check=typename std::enable_if< !std::is_same<T,double>::value >::type >
-inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<T>,POINT_MUL>
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<T>,POINT_MUL>
 operator*(const Point<dim,T> & va, T d)
 {
 	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<T>,POINT_MUL> exp_sum(va,point_expression<T>(d));
@@ -1088,7 +1088,7 @@ operator*(const Point<dim,T> & va, T d)
  *
  */
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<double>,POINT_MUL>
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<double>,POINT_MUL>
 operator*(const Point<dim,T> & va, double d)
 {
 	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<double>,POINT_MUL> exp_sum(va,point_expression<double>(d));
@@ -1105,7 +1105,7 @@ operator*(const Point<dim,T> & va, double d)
  *
  */
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,Point<dim,T>,Point<dim,T>,POINT_MUL_POINT>
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,Point<dim,T>,POINT_MUL_POINT>
 operator*(const Point<dim,T> & va, const Point<dim,T> & vb)
 {
 	point_expression_op<Point<dim,T>,Point<dim,T>,Point<dim,T>,POINT_MUL_POINT> exp_sum(va,vb);
@@ -1122,7 +1122,7 @@ operator*(const Point<dim,T> & va, const Point<dim,T> & vb)
  *
  */
 template<typename orig, unsigned int dim, typename T, typename exp1, typename exp2, unsigned int op1>
-inline point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL_POINT>
+__device__ __host__ inline point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL_POINT>
 operator*(const Point<dim,T> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)
 {
 	point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL_POINT> exp_sum(va,vb);
@@ -1139,7 +1139,7 @@ operator*(const Point<dim,T> & va, const point_expression_op<orig,exp1,exp2,op1>
  *
  */
 template<typename orig,unsigned int dim, typename T, typename exp1, typename exp2, unsigned int op1>
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,POINT_MUL_POINT>
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,POINT_MUL_POINT>
 operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const Point<dim,T> & vb)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,POINT_MUL_POINT> exp_sum(va,vb);
@@ -1156,7 +1156,7 @@ operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const Point<dim,T>
  *
  */
 template<typename orig, typename T, typename exp1, typename exp2, unsigned int op1>
-inline point_expression_op<orig,point_expression<T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL>
+__device__ __host__ inline point_expression_op<orig,point_expression<T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL>
 operator*(T d, const point_expression_op<orig,exp1,exp2,op1> & vb)
 {
 	point_expression_op<orig,point_expression<T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL> exp_sum(point_expression<T>(d),vb);
@@ -1174,7 +1174,7 @@ operator*(T d, const point_expression_op<orig,exp1,exp2,op1> & vb)
  *
  */
 template<typename orig, typename exp1, typename exp2, unsigned int op1, typename T>
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T>,POINT_MUL>
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T>,POINT_MUL>
 operator*(const point_expression_op<orig,exp1,exp2,op1> & va, T d)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T>,POINT_MUL> exp_sum(va,point_expression<T>(d));
@@ -1192,7 +1192,7 @@ operator*(const point_expression_op<orig,exp1,exp2,op1> & va, T d)
  *
  */
 template<typename orig, typename exp1, typename exp2, unsigned int op1, typename exp3 , typename exp4, unsigned int op2>
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL_POINT>
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL_POINT>
 operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression_op<orig,exp3,exp4,op2> & vb)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL_POINT> exp_sum(va,vb);
@@ -1211,7 +1211,7 @@ operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expres
  *
  */
 template<unsigned int dim, typename T>
-inline point_expression_op<Point<dim,T>,Point<dim,T>,Point<dim,T>,POINT_MUL>
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,Point<dim,T>,POINT_MUL>
 pmul(const Point<dim,T> & va, const Point<dim,T> & vb)
 {
 	point_expression_op<Point<dim,T>,Point<dim,T>,Point<dim,T>,POINT_MUL> exp_sum(va,vb);
@@ -1228,7 +1228,7 @@ pmul(const Point<dim,T> & va, const Point<dim,T> & vb)
  *
  */
 template<typename orig, unsigned int dim, typename T, typename exp1, typename exp2, unsigned int op1>
-inline point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL>
+__device__ __host__ inline point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL>
 pmul(const Point<dim,T> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)
 {
 	point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL> exp_sum(va,vb);
@@ -1245,7 +1245,7 @@ pmul(const Point<dim,T> & va, const point_expression_op<orig,exp1,exp2,op1> & vb
  *
  */
 template<typename orig,unsigned int dim, typename T, typename exp1, typename exp2, unsigned int op1>
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,POINT_MUL>
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,POINT_MUL>
 pmul(const point_expression_op<orig,exp1,exp2,op1> & va, const Point<dim,T> & vb)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,POINT_MUL> exp_sum(va,vb);
@@ -1262,7 +1262,7 @@ pmul(const point_expression_op<orig,exp1,exp2,op1> & va, const Point<dim,T> & vb
  *
  */
 template<typename orig, typename exp1, typename exp2, unsigned int op1, typename exp3 , typename exp4, unsigned int op2>
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL>
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL>
 pmul(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression_op<orig,exp3,exp4,op2> & vb)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL> exp_sum(va,vb);
@@ -1316,7 +1316,7 @@ public:
 	 * \return a point expression
 	 *
 	 */
-	template<typename orig, typename exp1, typename exp2, unsigned int op> point_expression<T[dim]> & operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
+	template<typename orig, typename exp1, typename exp2, unsigned int op> __device__ __host__  point_expression<T[dim]> & operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
 	{
 		p_exp.init();
 
@@ -1331,7 +1331,7 @@ public:
 	 * it calculate the scalar product before return the values
 	 *
 	 */
-	inline void init() const
+	__device__ __host__ inline void init() const
 	{
 	}
 
@@ -1344,7 +1344,7 @@ public:
 	 * \return the value
 	 *
 	 */
-	inline T value(const size_t k) const
+	__device__ __host__ inline T value(const size_t k) const
 	{
 		return d[k];
 	}
@@ -1379,7 +1379,7 @@ public:
 	 * \param d array
 	 *
 	 */
-	inline point_expression(const T (& d)[dim])
+	__device__ __host__ inline point_expression(const T (& d)[dim])
 	:d(d)
 	{
 	}
@@ -1389,7 +1389,7 @@ public:
 	 * it calculate the scalar product before return the values
 	 *
 	 */
-	inline void init() const
+	__device__ __host__ inline void init() const
 	{
 	}
 
@@ -1402,7 +1402,7 @@ public:
 	 * \return the value
 	 *
 	 */
-	inline T value(const size_t k) const
+	__device__ __host__ inline T value(const size_t k) const
 	{
 		return d[k];
 	}

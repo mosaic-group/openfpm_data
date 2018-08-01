@@ -239,7 +239,7 @@ struct copy_switch_memory_c_no_cpy
  *
  */
 template<typename T_type, unsigned int ... prp>
-struct copy_host_to_device
+struct switch_copy_host_to_device
 {
 	//! encapsulated destination object
 	typename memory_traits_inte<T_type>::type & dst;
@@ -253,7 +253,7 @@ struct copy_host_to_device
 	 * \param dst source encapsulated object
 	 *
 	 */
-	inline copy_host_to_device(typename memory_traits_inte<T_type>::type & dst)
+	inline switch_copy_host_to_device(typename memory_traits_inte<T_type>::type & dst)
 	:dst(dst)
 	{
 	};
@@ -266,6 +266,85 @@ struct copy_host_to_device
 		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).switchToDevicePtr();
 	}
 };
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+template<typename T_type, unsigned int ... prp>
+struct host_to_device_impl
+{
+	//! encapsulated destination object
+	typename memory_traits_inte<T_type>::type & dst;
+
+	//! Convert the packed properties into an MPL vector
+	typedef typename to_boost_vmpl<prp...>::type v_prp;
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	inline host_to_device_impl(typename memory_traits_inte<T_type>::type & dst)
+	:dst(dst)
+	{
+	};
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem->getDevicePointer();
+	}
+};
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+template<typename T_type, unsigned int ... prp>
+struct device_to_host_impl
+{
+	//! encapsulated destination object
+	typename memory_traits_inte<T_type>::type & dst;
+
+	//! Convert the packed properties into an MPL vector
+	typedef typename to_boost_vmpl<prp...>::type v_prp;
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	inline device_to_host_impl(typename memory_traits_inte<T_type>::type & dst)
+	:dst(dst)
+	{
+	};
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem->deviceToHost();
+	}
+};
+
 
 #include "map_grid_cuda_ker.cuh"
 
@@ -362,12 +441,16 @@ public:
 		boost::fusion::at_c<id>(this->data_).mem->fill(c);
 	}
 
+#ifdef CUDA_GPU
+
 	/*! \brief Copy the memory from host to device
 	 *
 	 */
-	template<unsigned int id> void hostToDevice()
+	template<unsigned int ... prp> void hostToDevice()
 	{
-		boost::fusion::at_c<id>(this->data_).mem->getDevicePointer();
+		host_to_device_impl<T,prp ...> htd(this->data_);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(htd);
 	}
 
 	/*! \brief It return the properties arrays.
@@ -397,29 +480,24 @@ public:
 	 *
 	 *
 	 */
-	template<unsigned int id> void deviceToHost()
+	template<unsigned int ... prp> void deviceToHost()
 	{
-		return boost::fusion::at_c<id>(this->data_).mem->deviceToHost();
+		device_to_host_impl<T, prp ...> dth(this->data_);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(dth);
 	}
-
-
-
-#ifdef CUDA_GPU
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 	 *
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	template<unsigned int ... prp> grid_gpu_ker<dim,T> toGPU()
+	grid_gpu_ker<dim,T> toKernel()
 	{
 		grid_gpu_ker<dim,T> g(this->g1);
 		copy_switch_memory_c_no_cpy<T> cp_mc(this->data_,g.data_);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp_mc);
-
-		copy_host_to_device<T,prp...> cpod(g.data_);
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(cpod);
 
 		return g;
 	}

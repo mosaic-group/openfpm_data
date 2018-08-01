@@ -21,6 +21,16 @@ __global__ void grid_fill_vector(grid_gpu_ker<3,Point_test<float>> g1,  ite_gpu<
 	g1.template get<4>(key)[2] = 3.0;
 }
 
+__global__ void grid_fill_vector2(grid_gpu_ker<3,Point_test<float>> g1,  ite_gpu<3> ite_gpu)
+{
+	GRID_ID_3(ite_gpu);
+
+	g1.template get<4>(key)[0] = 1001.0;
+	g1.template get<4>(key)[1] = 1002.0;
+	g1.template get<4>(key)[2] = 1003.0;
+}
+
+
 __global__ void compute_stencil_grid(grid_gpu_ker<3,Point_test<float>> g1, grid_gpu_ker<3,Point_test<float>> g2, ite_gpu<3> ite_gpu)
 {
 	GRID_ID_3(ite_gpu);
@@ -105,8 +115,8 @@ void gpu_grid_3D_compute_grid_stencil(grid_gpu<3,Point_test<float>> & g1, grid_g
 {
 	auto gpu_it = g2.getGPUIterator(start,stop);
 
-	auto g1k = g1.toGPU();
-	auto g2k = g2.toGPU();
+	auto g1k = g1.toKernel();
+	auto g2k = g2.toKernel();
 
 	compute_stencil_grid<<< gpu_it.thr, gpu_it.wthr >>>(g1k,g2k,gpu_it);
 }
@@ -115,13 +125,20 @@ void gpu_grid_fill_vector(grid_gpu<3,Point_test<float>> & g1, grid_key_dx<3> & s
 {
 	auto gpu_it = g1.getGPUIterator(start,stop);
 
-	grid_fill_vector<<< gpu_it.thr, gpu_it.wthr >>>(g1.toGPU(),gpu_it);
+	grid_fill_vector<<< gpu_it.thr, gpu_it.wthr >>>(g1.toKernel(),gpu_it);
+}
+
+void gpu_grid_fill_vector2(grid_gpu<3,Point_test<float>> & g1, grid_key_dx<3> & start, grid_key_dx<3> & stop)
+{
+	auto gpu_it = g1.getGPUIterator(start,stop);
+
+	grid_fill_vector2<<< gpu_it.thr, gpu_it.wthr >>>(g1.toKernel(),gpu_it);
 }
 
 void gpu_grid_gradient_vector(grid_gpu<3,Point_test<float>> & g1, grid_gpu<3,Point_test<float>> & g2, grid_key_dx<3> & start, grid_key_dx<3> & stop)
 {
 	auto gpu_it = g1.getGPUIterator(start,stop);
 
-	grid_gradient_vector<<< gpu_it.thr, gpu_it.wthr >>>(g1.toGPU(),g2.toGPU(),gpu_it);
+	grid_gradient_vector<<< gpu_it.thr, gpu_it.wthr >>>(g1.toKernel(),g2.toKernel(),gpu_it);
 }
 
