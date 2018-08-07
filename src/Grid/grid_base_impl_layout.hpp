@@ -163,6 +163,11 @@ struct mem_geto
 	{
 		return encapc<dim,T,typename layout::type>(data_.mem_r.operator[](g1.LinId(v1)));
 	}
+
+	static inline encapc<dim,T,typename layout::type> get_lin(data_type & data_, const size_t & v1)
+	{
+		return encapc<dim,T,typename layout::type>(data_.mem_r->operator[](v1));
+	}
 };
 
 //! Case memory_traits_inte
@@ -172,6 +177,11 @@ struct mem_geto<dim,T,layout,data_type,g1_type,key_type,1>
 	__device__ __host__ static inline encapc<dim,T,typename layout::type> get(data_type & data_, const g1_type & g1, const key_type & v1)
 	{
 		return encapc<dim,T,typename layout::type>(data_,g1.LinId(v1));
+	}
+
+	static inline encapc<dim,T,typename layout::type> get_lin(data_type & data_, const size_t & v1)
+	{
+		return encapc<dim,T,typename layout::type>(data_,v1);
 	}
 };
 
@@ -288,26 +298,26 @@ struct mem_getpointer<data_type,layout,1>
 template<typename data_type, typename Mem_type, typename layout, unsigned int sel = 2*is_layout_mlin<layout>::value + is_layout_inte<layout>::value>
 struct mem_setmemory
 {
-	template<unsigned int d> static void setMemory(data_type & data_, Mem_type & m, size_t sz)
+	template<unsigned int d> static void setMemory(data_type & data_, Mem_type & m, size_t sz, bool np)
 	{
 		//! Create and set the memory allocator
 		data_.setMemory(m);
 
 		//! Allocate the memory and create the reppresentation
-		if (sz != 0) data_.allocate(sz);
+		if (sz != 0) data_.allocate(sz,np);
 	}
 };
 
 template<typename data_type, typename Mem_type, typename layout>
 struct mem_setmemory<data_type,Mem_type,layout,1>
 {
-	template<unsigned int p> static void setMemory(data_type & data_, Mem_type & m, size_t sz)
+	template<unsigned int p> static void setMemory(data_type & data_, Mem_type & m, size_t sz,bool np)
 	{
 		//! Create and set the memory allocator
 		boost::fusion::at_c<p>(data_).setMemory(m);
 
 		//! Allocate the memory and create the reppresentation
-		if (sz != 0) boost::fusion::at_c<p>(data_).allocate(sz);
+		if (sz != 0) boost::fusion::at_c<p>(data_).allocate(sz,np);
 	}
 };
 

@@ -80,7 +80,7 @@ public:
 	__device__ __host__ inline grid_key_dx(const long int (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
-			this->k[i] = k[i];
+		{this->k[i] = k[i];}
 	}
 
 	/*! \brief Construct a grid key from a list of numbers
@@ -104,7 +104,7 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (sizeof...(t) != dim -1)
-			std::cerr << "Error grid_key: " << __FILE__ << " " << __LINE__ << " creating a key of dimension " << dim << " require " << dim << " numbers " << sizeof...(t) + 1 << " provided" << "\n";
+		{std::cerr << "Error grid_key: " << __FILE__ << " " << __LINE__ << " creating a key of dimension " << dim << " require " << dim << " numbers " << sizeof...(t) + 1 << " provided" << "\n";}
 #endif
 		k[dim-1] = v;
 		invert_assign(t...);
@@ -310,7 +310,8 @@ public:
 	 * \param t list of number
 	 *
 	 */
-	template<typename a, typename ...T>void set(a v, T...t)
+	template<typename a, typename ...T>
+	inline void set(a v, T...t)
 	{
 #ifdef SE_CLASS1
 		if (sizeof...(t) != dim -1)
@@ -318,6 +319,16 @@ public:
 #endif
 		k[dim-1] = v;
 		invert_assign(t...);
+	}
+
+	/*! \brief Return the internal k structure
+	 *
+	 * \return k
+	 *
+	 */
+	const long int(& get_k() const)[dim]
+	{
+		return k;
 	}
 
 	/*! \brief Convert to a point the grid_key_dx
@@ -376,7 +387,7 @@ public:
 	 * \return the index value
 	 *
 	 */
-	mem_id value(size_t i) const
+	inline mem_id value(size_t i) const
 	{
 		return k[i];
 	}
@@ -413,10 +424,10 @@ public:
 		k[i] = id;
 	}
 
+private:
+
 	//! structure that store all the index
 	index_type k[dim];
-
-private:
 
 	/*! \brief Recursively invert the assignment
 	 *

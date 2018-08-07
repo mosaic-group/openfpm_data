@@ -12,6 +12,10 @@
 #define NO_CHECK 1
 #define SAFE 2
 
+#define VL_NON_SYMMETRIC 0
+#define VL_SYMMETRIC 1
+#define VL_CRS_SYMMETRIC 2
+
 /*! \brief Iterator for the neighborhood of the cell structures
  *
  * In general you never create it directly but you get it from the CellList structures
@@ -27,13 +31,13 @@
 template<unsigned int dim, typename Ver> class VerletNNIterator
 {
 	//! start index for the neighborhood
-	size_t start;
+	const typename Ver::Mem_type_type::loc_index  * start;
 
 	//! stop index for the neighborhood
-	size_t stop;
+	const typename Ver::Mem_type_type::loc_index  * stop;
 
 	//! actual neighborhood
-	size_t ele_id;
+	const typename Ver::Mem_type_type::loc_index  * ele_id;
 
 	//! verlet list
 	Ver & ver;
@@ -49,7 +53,7 @@ public:
 	 *
 	 */
 	inline VerletNNIterator(size_t part_id, Ver & ver)
-	:start(ver.getStart(part_id)),stop(ver.getStop(part_id)),ver(ver)
+	:start(&ver.getStart(part_id)),stop(&ver.getStop(part_id)),ver(ver)
 	{ele_id = start;}
 
 	/*! \brief
@@ -83,7 +87,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline size_t get()
+	inline typename Ver::Mem_type_type::loc_index get()
 	{
 		return ver.get_lin(ele_id);
 	}

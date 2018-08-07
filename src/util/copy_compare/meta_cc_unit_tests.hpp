@@ -339,6 +339,180 @@ BOOST_AUTO_TEST_CASE( meta_copy_test_op )
 	}
 }
 
+BOOST_AUTO_TEST_CASE( meta_copy_d_compare_test )
+{
+	{
+	//! [Usage of meta_copy_d for primitives]
+
+	float f_src = 1.0;
+	float f_dst;
+
+	meta_copy_d<float,float>::meta_copy_d_(f_src,f_dst);
+
+	BOOST_REQUIRE_EQUAL(f_src,f_dst);
+
+	//! [Usage of meta_copy_d for primitives]
+
+	}
+
+	{
+	//! [Usage of meta_copy_d for array of primitives]
+
+	float f_src[2][3] = {{1.0,2.9,4.0},{2.3,4.4,9.0}};
+	float f_dst[2][3];
+
+	meta_copy_d<float[2][3],float[2][3]>::meta_copy_d_(f_src,f_dst);
+
+	BOOST_REQUIRE_EQUAL(f_src[0][0],f_dst[0][0]);
+	BOOST_REQUIRE_EQUAL(f_src[0][1],f_dst[0][1]);
+	BOOST_REQUIRE_EQUAL(f_src[0][2],f_dst[0][2]);
+	BOOST_REQUIRE_EQUAL(f_src[1][0],f_dst[1][0]);
+	BOOST_REQUIRE_EQUAL(f_src[1][1],f_dst[1][1]);
+	BOOST_REQUIRE_EQUAL(f_src[1][2],f_dst[1][2]);
+
+	//! [Usage of meta_copy_d for array of primitives]
+
+	}
+
+	{
+	//! [Usage of meta_copy_d for openfpm aggregates]
+
+	aggregate<float,int,float[3]> agg1;
+	aggregate<float,int,float[3]> agg2;
+
+	boost::fusion::at_c<0>(agg1.data) = 1.0;
+	boost::fusion::at_c<1>(agg1.data) = 2.0;
+	boost::fusion::at_c<2>(agg1.data)[0] = 3.0;
+	boost::fusion::at_c<2>(agg1.data)[1] = 4.0;
+	boost::fusion::at_c<2>(agg1.data)[2] = 5.0;
+
+	meta_copy_d<aggregate<float,int,float[3]>,aggregate<float,int,float[3]>>::meta_copy_d_(agg1,agg2);
+
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<0>(agg1.data),boost::fusion::at_c<0>(agg2.data));
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<1>(agg1.data),boost::fusion::at_c<1>(agg2.data));
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<2>(agg1.data)[0],boost::fusion::at_c<2>(agg2.data)[0]);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<2>(agg1.data)[1],boost::fusion::at_c<2>(agg2.data)[1]);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<2>(agg1.data)[2],boost::fusion::at_c<2>(agg2.data)[2]);
+
+	//! [Usage of meta_copy_d for openfpm aggregates]
+
+	}
+
+	{
+	//! [Usage of meta_copy_d for complex object]
+
+	std::string s_src("Test string");
+	std::string s_dst;
+
+	meta_copy_d<std::string,std::string>::meta_copy_d_(s_src,s_dst);
+
+	BOOST_REQUIRE_EQUAL(s_src,s_dst);
+
+	//! [Usage of meta_copy_d and compare for complex object]
+
+	}
+
+	{
+	//! [Usage of meta_copy_d for complex aggregates object]
+
+	aggregate<std::string,std::vector<float>,std::map<size_t,std::string>,std::string[3]> a_src;
+
+	// fill the complex aggregates
+	a_src.template get<0>() = std::string("Test string");
+
+	a_src.template get<1>().push_back(5.0);
+	a_src.template get<1>().push_back(15.0);
+	a_src.template get<1>().push_back(45.0);
+	a_src.template get<1>().push_back(7.0);
+
+	a_src.template get<2>()[0] = std::string("Test string 2");
+	a_src.template get<2>()[10] = std::string("Test string 3");
+	a_src.template get<2>()[9] = std::string("Test string 4");
+	a_src.template get<2>()[1] = std::string("Test string 5");
+
+	a_src.template get<3>()[0] = std::string("Last string 9");
+	a_src.template get<3>()[1] = std::string("Last string 10");
+	a_src.template get<3>()[2] = std::string("Last string 11");
+
+	aggregate<std::string,std::vector<float>,std::map<size_t,std::string>,std::string[3]> a_dst;
+
+	meta_copy_d<aggregate<std::string,std::vector<float>,std::map<size_t,std::string>,std::string[3]>,
+                aggregate<std::string,std::vector<float>,std::map<size_t,std::string>,std::string[3]>>::meta_copy_d_(a_src,a_dst);
+
+
+	BOOST_REQUIRE_EQUAL(a_src.template get<0>(),a_dst.template get<0>());
+	BOOST_REQUIRE_EQUAL(a_src.template get<1>()[0],a_dst.template get<1>()[0]);
+	BOOST_REQUIRE_EQUAL(a_src.template get<1>()[1],a_dst.template get<1>()[1]);
+	BOOST_REQUIRE_EQUAL(a_src.template get<1>()[2],a_dst.template get<1>()[2]);
+	BOOST_REQUIRE_EQUAL(a_src.template get<1>()[3],a_dst.template get<1>()[3]);
+
+	BOOST_REQUIRE_EQUAL(a_src.template get<2>()[0],a_dst.template get<2>()[0]);
+	BOOST_REQUIRE_EQUAL(a_src.template get<2>()[10],a_dst.template get<2>()[10]);
+	BOOST_REQUIRE_EQUAL(a_src.template get<2>()[9],a_dst.template get<2>()[9]);
+	BOOST_REQUIRE_EQUAL(a_src.template get<2>()[1],a_dst.template get<2>()[1]);
+
+	BOOST_REQUIRE_EQUAL(a_src.template get<3>()[0],a_dst.template get<3>()[0]);
+	BOOST_REQUIRE_EQUAL(a_src.template get<3>()[1],a_dst.template get<3>()[1]);
+	BOOST_REQUIRE_EQUAL(a_src.template get<3>()[2],a_dst.template get<3>()[2]);
+
+	//! [Usage of meta_copy_d for complex aggregates object]
+
+	}
+
+
+	{
+
+	//! [Usage of meta_copy_d and compare for Point_test]
+
+	typedef Point_test<float> p;
+
+	Point_test<float> p_src;
+	Point_test<float> p_dst;
+
+	// fill p_src
+	p_src.template get<p::x>() = 1;
+	p_src.template get<p::y>() = 567;
+	p_src.template get<p::z>() = 341;
+	p_src.template get<p::s>() = 5670;
+	p_src.template get<p::v>()[0] = 921;
+	p_src.template get<p::v>()[1] = 5675;
+	p_src.template get<p::v>()[2] = 117;
+	p_src.template get<p::t>()[0][0] = 1921;
+	p_src.template get<p::t>()[0][1] = 25675;
+	p_src.template get<p::t>()[0][2] = 3117;
+	p_src.template get<p::t>()[1][0] = 4921;
+	p_src.template get<p::t>()[1][1] = 55675;
+	p_src.template get<p::t>()[1][2] = 6117;
+	p_src.template get<p::t>()[2][0] = 7921;
+	p_src.template get<p::t>()[2][1] = 85675;
+	p_src.template get<p::t>()[2][2] = 9117;
+
+	meta_copy_d<Point_test<float>,Point_test<float>>::meta_copy_d_(p_src,p_dst);
+
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::x>(),p_dst.template get<p::x>());
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::y>(),p_dst.template get<p::y>());
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::z>(),p_dst.template get<p::z>());
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::s>(),p_dst.template get<p::s>());
+
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::v>()[0],p_dst.template get<p::v>()[0]);
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::v>()[1],p_dst.template get<p::v>()[1]);
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::v>()[2],p_dst.template get<p::v>()[2]);
+
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::t>()[0][0],p_dst.template get<p::t>()[0][0]);
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::t>()[0][1],p_dst.template get<p::t>()[0][1]);
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::t>()[0][2],p_dst.template get<p::t>()[0][2]);
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::t>()[1][0],p_dst.template get<p::t>()[1][0]);
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::t>()[1][1],p_dst.template get<p::t>()[1][1]);
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::t>()[1][2],p_dst.template get<p::t>()[1][2]);
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::t>()[2][0],p_dst.template get<p::t>()[2][0]);
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::t>()[2][1],p_dst.template get<p::t>()[2][1]);
+	BOOST_REQUIRE_EQUAL(p_src.template get<p::t>()[2][2],p_dst.template get<p::t>()[2][2]);
+
+	//! [Usage of meta_copy_d and compare for Point_test]
+
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* OPENFPM_DATA_SRC_UTIL_META_CC_UNIT_TESTS_HPP_ */

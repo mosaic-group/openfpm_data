@@ -102,7 +102,7 @@ namespace openfpm
 		size_t v_size;
 
 		//! 1-D static grid
-		grid_cpu<1,T,Memory,layout> base;
+		grid_cpu<1,T,Memory,typename layout_base<T>::type> base;
 
 		/*! \brief If the argument is zero return 1 otherwise return the argument
 		 *
@@ -460,8 +460,13 @@ namespace openfpm
 		 * \param start index from where to start the merging
 		 *
 		 */
-		template <template<typename,typename> class op, typename S, typename M, typename gp, unsigned int ...args>
-		void merge_prp_v(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v,
+		template <template<typename,typename> class op,
+		          typename S,
+				  typename M,
+				  typename gp,
+				  template <typename> class layout_base2,
+				  unsigned int ...args>
+		void merge_prp_v(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
 						 const openfpm::vector<aggregate<size_t,size_t>> & opart)
 		{
 #ifdef SE_CLASS2
@@ -522,8 +527,13 @@ namespace openfpm
 		 * \param start index from where to start the merging
 		 *
 		 */
-		template <template<typename,typename> class op, typename S, typename M, typename gp, unsigned int ...args>
-		void merge_prp_v(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v,
+		template <template<typename,typename> class op,
+		          typename S,
+				  typename M,
+				  typename gp,
+				  template <typename> class layout_base2,
+				  unsigned int ...args>
+		void merge_prp_v(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
 				         size_t start)
 		{
 #ifdef SE_CLASS2
@@ -557,8 +567,13 @@ namespace openfpm
 		 * \param v source vector
 		 *
 		 */
-		template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args>
-		void add_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
+		template <typename S,
+		          typename M,
+				  typename gp,
+				  unsigned int impl,
+				  template <typename> class layout_base2,
+				  unsigned int ...args>
+		void add_prp(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -751,7 +766,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline const typename grid_cpu<1,T,Memory,layout>::container get_o(size_t id) const
+		inline const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container get_o(size_t id) const
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -845,7 +860,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline typename grid_cpu<1,T,Memory,layout>::container last()
+		inline typename grid_cpu<1,T,Memory,typename layout_base<T>::type >::container last()
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -937,7 +952,7 @@ namespace openfpm
 		 * \param obj object (encapsulated)
 		 *
 		 */
-		void set(size_t id, const typename grid_cpu<1,T,Memory,layout>::container & obj)
+		void set(size_t id, const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container & obj)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);

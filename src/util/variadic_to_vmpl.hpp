@@ -21,8 +21,10 @@
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/reverse.hpp>
 #include <boost/mpl/vector.hpp>
+#include <boost/mpl/range_c.hpp>
 #include <boost/fusion/sequence/intrinsic/at_c.hpp>
 #include <boost/fusion/include/at_c.hpp>
+#include <boost/mpl/accumulate.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -214,7 +216,7 @@ struct to_boost_vmpl_impl<a>
 *
 * It convert a variadic template into a boost::mpl::vector
 *
-* to_boost_mpl<3,4,7,10>::type is converted into
+* to_boost_vmpl<3,4,7,10>::type is converted into
 *
 * boost::mpl::vector<int_<3>,int_<4>,int_<7>,int_<10>>
 *
@@ -234,6 +236,50 @@ struct to_boost_vmpl<>
 {
 	//! terminator
 	typedef typename boost::mpl::vector<>::type type;
+};
+
+///////////////////// Meta-code to restrieve first and last of variadic template
+
+template <unsigned T1, unsigned int ...T>
+struct first_variadic
+{
+    typedef boost::mpl::int_<T1> type;
+};
+
+template <unsigned int T1, unsigned int ...T>
+struct last_variadic
+{
+    typedef typename last_variadic<T...>::type type;
+};
+
+template <unsigned int T1>
+struct last_variadic<T1>
+{
+    typedef boost::mpl::int_<T1> type;
+};
+
+template <unsigned int ... prp>
+struct is_contiguos
+{
+	typedef boost::mpl::range_c<int,first_variadic<prp...>::type::value,last_variadic<prp...>::type::value + 1> rangec;
+
+	typedef typename boost::mpl::size<rangec>::type size_range;
+
+	typedef typename boost::mpl::accumulate<rangec,
+								   boost::mpl::int_<0>,
+								   boost::mpl::plus<typename boost::mpl::placeholders::_2,
+								                    typename boost::mpl::placeholders::_1>
+								  >::type accum;
+
+	typedef typename to_boost_vmpl<prp...>::type prop_vector;
+
+	typedef typename boost::mpl::accumulate<prop_vector,
+								   boost::mpl::int_<0>,
+								   boost::mpl::plus<typename boost::mpl::placeholders::_2,
+								                    typename boost::mpl::placeholders::_1>
+								  >::type accum_prp;
+
+	typedef boost::mpl::bool_<sizeof...(prp) == size_range::value && accum_prp::value == accum::value > type;
 };
 
 #endif

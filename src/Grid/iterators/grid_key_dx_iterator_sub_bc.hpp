@@ -120,7 +120,7 @@ public:
 		// copy the boundary conditions
 
 		for (size_t i = 0 ; i < dim ; i++)
-			this->bc[i] = bc[i];
+		{this->bc[i] = bc[i];}
 
 		// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
 
@@ -128,10 +128,25 @@ public:
 		typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
 		typedef typename generate_array<size_t,dim, Fill_three>::result NNthree;
 
+		// In case of high dimension grid_key_dx_iterator_sub can become exponentially
+		// expensive, on the other hand we are expecting that some of the dimensions
+		// are cropped by non periodicity, so we adjust the iteration
+
+		size_t end_p[dim];
+		size_t start_p[dim];
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (this->bc[i] == NON_PERIODIC && g.size(i) == 1)
+			{start_p[i] = 1; end_p[i] = 1;}
+			else
+			{start_p[i] = 0; end_p[i] = 2;}
+		}
+
 		// Generate the sub-grid iterator
 
 		grid_sm<dim,void> nn(NNthree::data);
-		grid_key_dx_iterator_sub<dim,stencil> it(nn,NNzero::data,NNtwo::data);
+		grid_key_dx_iterator_sub<dim,stencil> it(nn,start_p,end_p);
 
 		// Box base
 		Box<dim,long int> base_b(start,stop);
@@ -202,7 +217,7 @@ public:
 		{
 			act++;
 			if (act < boxes.size())
-				grid_key_dx_iterator_sub<dim,stencil,warn>::reinitialize(grid_key_dx_iterator_sub<dim>(this->getGridInfo(),boxes[act].getKP1(),boxes[act].getKP2()));
+			{grid_key_dx_iterator_sub<dim,stencil,warn>::reinitialize(grid_key_dx_iterator_sub<dim>(this->getGridInfo(),boxes[act].getKP1(),boxes[act].getKP2()));}
 		}
 
 		return *this;

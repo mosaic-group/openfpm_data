@@ -16,7 +16,7 @@
 #include "util/common.hpp"
 #include "util/check_no_pointers.hpp"
 #include "Grid/util.hpp"
-#include "data_type/scalar.hpp"
+
 #include "util/convert.hpp"
 #include <iostream>
 #include "util/mul_array_extents.hpp"
@@ -681,14 +681,14 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 			double b;
 		};
 
-		bool val = is_grid< grid_cpu<2,scalar<float> > >::value;
+		bool val = is_grid< grid_cpu<2,aggregate<float> > >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 		val = is_grid< grid_cpu<3,object< boost::fusion::vector<float,double> > > >::value;
 		BOOST_REQUIRE_EQUAL( val , true);
 		val = is_grid< grid_cpu<4,Point_test<float>> >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 
-		val = is_grid< grid_gpu<2,scalar<float> > >::value;
+		val = is_grid< grid_gpu<2,aggregate<float> > >::value;
 		BOOST_REQUIRE_EQUAL(val ,true);
 		val = is_grid< grid_gpu<3,object< boost::fusion::vector<float,double>>> >::value;
 		BOOST_REQUIRE_EQUAL(val, true);
@@ -712,14 +712,14 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 			double b;
 		};
 
-		bool val = is_vector< openfpm::vector<scalar<float> > >::value;
+		bool val = is_vector< openfpm::vector<aggregate<float> > >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 		val = is_vector< openfpm::vector<object< boost::fusion::vector<float,double> > > >::value;
 		BOOST_REQUIRE_EQUAL( val , true);
 		val = is_vector< openfpm::vector<Point_test<float>> >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 
-		val = is_vector< openfpm::vector<scalar<float> > >::value;
+		val = is_vector< openfpm::vector<aggregate<float> > >::value;
 		BOOST_REQUIRE_EQUAL(val ,true);
 		val = is_vector< openfpm::vector<object< boost::fusion::vector<float,double>>> >::value;
 		BOOST_REQUIRE_EQUAL(val, true);
@@ -743,14 +743,14 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 			double b;
 		};
 
-		bool val = is_encap< encapc<2,scalar<float>,memory_traits_lin<scalar<float>>::type > >::value;
+		bool val = is_encap< encapc<2,aggregate<float>,memory_traits_lin<aggregate<float>>::type > >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 		val = is_encap< encapc<3,object<boost::fusion::vector<float,double> >,memory_traits_lin<object< boost::fusion::vector<float,double>>>::type >  >::value;
 		BOOST_REQUIRE_EQUAL( val , true);
 		val = is_encap< encapc<4,Point_test<float>,memory_traits_lin<Point_test<float>>::type > >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 
-		val = is_encap< encapc<2,scalar<float>,memory_traits_inte<scalar<float>>::type > >::value;
+		val = is_encap< encapc<2,aggregate<float>,memory_traits_inte<aggregate<float>>::type > >::value;
 		BOOST_REQUIRE_EQUAL( val ,true);
 		val = is_encap< encapc<3,object<boost::fusion::vector<float,double> >,memory_traits_inte<object< boost::fusion::vector<float,double>>>::type >  >::value;
 		BOOST_REQUIRE_EQUAL( val , true);
@@ -783,14 +783,14 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		{
 		//! [Check memory layout]
 
-		bool val = is_layout_mlin<memory_traits_lin<scalar<float>>>::value;
+		bool val = is_layout_mlin<memory_traits_lin<aggregate<float>>>::value;
 		BOOST_REQUIRE_EQUAL(val,true);
-		val = is_layout_mlin<memory_traits_inte<scalar<float>>>::value;
+		val = is_layout_mlin<memory_traits_inte<aggregate<float>>>::value;
 		BOOST_REQUIRE_EQUAL(val,false);
 
-		val = is_layout_inte<memory_traits_lin<scalar<float>>>::value;
+		val = is_layout_inte<memory_traits_lin<aggregate<float>>>::value;
 		BOOST_REQUIRE_EQUAL(val,false);
-		val = is_layout_inte<memory_traits_inte<scalar<float>>>::value;
+		val = is_layout_inte<memory_traits_inte<aggregate<float>>>::value;
 		BOOST_REQUIRE_EQUAL(val,true);
 
 		//! [Check memory layout]
@@ -850,6 +850,37 @@ BOOST_AUTO_TEST_CASE( check_convert_function )
 	//! [Convert combination to Point3]
 	}
 }
+
+
+BOOST_AUTO_TEST_CASE( is_contiguos_test)
+{
+	{
+		bool test = is_contiguos<1,2>::type::value;
+
+		BOOST_REQUIRE_EQUAL(test,true);
+
+		test = is_contiguos<1,3>::type::value;
+
+		BOOST_REQUIRE_EQUAL(test,false);
+
+		test = is_contiguos<1,2,3,4,5>::type::value;
+
+		BOOST_REQUIRE_EQUAL(test,true);
+
+		test = is_contiguos<1,2,3,4,5,7>::type::value;
+
+		BOOST_REQUIRE_EQUAL(test,false);
+
+		test = is_contiguos<1,3,2>::type::value;
+
+		BOOST_REQUIRE_EQUAL(test,false);
+
+		test = is_contiguos<1,5,3>::type::value;
+
+		BOOST_REQUIRE_EQUAL(test,false);
+	}
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

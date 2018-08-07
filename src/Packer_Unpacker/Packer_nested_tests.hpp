@@ -1020,10 +1020,9 @@ BOOST_AUTO_TEST_CASE ( grid_ptst_packer_unpacker )
 
 }
 
-BOOST_AUTO_TEST_CASE ( grid_aggr_packer_unpacker )
+template <unsigned int dim>
+void test_packer_aggr_smp(grid_cpu<dim, aggregate<float, float, float, float, float>> & g, size_t (& sz)[dim])
 {
-	size_t sz[] = {64,4,16};
-	grid_cpu<3,aggregate<float, float, float, float, float>> g(sz);
 	g.setMemory();
 
 	auto key_it = g.getIterator();
@@ -1043,9 +1042,16 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_packer_unpacker )
 
 	size_t req = 0;
 
-	Packer<decltype(g),HeapMemory>::packRequest<>(g,req);
+	size_t sz_tot = 1;
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{
+		sz_tot *= sz[i];
+	}
+
+	Packer<typename std::remove_reference<decltype(g)>::type,HeapMemory>::template packRequest<>(g,req);
 #ifndef SE_CLASS3
-	BOOST_REQUIRE_EQUAL(req,(sizeof(float))* 5 * 64*4*16 + sizeof(size_t)*3);
+	BOOST_REQUIRE_EQUAL(req,(sizeof(float))* 5 * sz_tot + sizeof(size_t)*dim);
 #endif
 
 	// allocate the memory
@@ -1057,16 +1063,15 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_packer_unpacker )
 	//Packing
 	Pack_stat sts;
 
-	Packer<decltype(g),HeapMemory>::pack<>(mem,g,sts);
+	Packer<typename std::remove_reference<decltype(g)>::type,HeapMemory>::template pack<>(mem,g,sts);
 
 	//Unpacking
 
 	Unpack_stat ps;
 
-	//size_t sz2[] = {16,16,16};
-	grid_cpu<3,aggregate<float, float, float, float, float>> g_unp;
+	grid_cpu<dim,aggregate<float, float, float, float, float>> g_unp;
 
-	Unpacker<decltype(g_unp),HeapMemory>::unpack<>(mem,g_unp,ps);
+	Unpacker<decltype(g_unp),HeapMemory>::template unpack<>(mem,g_unp,ps);
 
 	// Check the unpacked grid
 	auto it = g_unp.getIterator();
@@ -1106,16 +1111,37 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_packer_unpacker )
 	delete &mem;
 }
 
-BOOST_AUTO_TEST_CASE ( grid_aggr_grid_packer_unpacker )
+BOOST_AUTO_TEST_CASE ( grid_aggr_packer_unpacker_3D )
 {
-	size_t sz[] = {8,7,5};
-	size_t sz2[] = {2,4,13};
+	size_t sz[] = {64,4,16};
+	grid_cpu<3,aggregate<float, float, float, float, float>> g(sz);
 
-	grid_cpu<3, Point_test<float>> g2 (sz2);
+	test_packer_aggr_smp<3>(g,sz);
+}
+
+BOOST_AUTO_TEST_CASE ( grid_aggr_packer_unpacker_2D )
+{
+	size_t sz[] = {64,4};
+	grid_cpu<2,aggregate<float, float, float, float, float>> g(sz);
+
+	test_packer_aggr_smp<2>(g,sz);
+}
+
+BOOST_AUTO_TEST_CASE ( grid_aggr_packer_unpacker_4D )
+{
+	size_t sz[] = {64,4,3,3};
+	grid_cpu<4,aggregate<float, float, float, float, float>> g(sz);
+
+	test_packer_aggr_smp<4>(g,sz);
+}
+
+template <unsigned int dim>
+void test_packer_aggr_nd(grid_cpu<dim, Point_test<float>> & g2, size_t (& sz)[dim], size_t (& sz2)[dim])
+{
 	g2.setMemory();
-	fill_grid<3>(g2);
+	fill_grid<dim>(g2);
 
-	grid_cpu<3,aggregate<float, float, grid_cpu<3, Point_test<float>>>> g(sz);
+	grid_cpu<dim,aggregate<float, float, grid_cpu<dim, Point_test<float>>>> g(sz);
 	g.setMemory();
 
 	auto key_it = g.getIterator();
@@ -1133,10 +1159,18 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_grid_packer_unpacker )
 
 	size_t req = 0;
 
-	Packer<decltype(g),HeapMemory>::packRequest<1,2>(g,req);
+	Packer<decltype(g),HeapMemory>::template packRequest<1,2>(g,req);
+
+	size_t sz_tot = 1;
+	size_t sz2_tot = 1;
+	for (size_t i = 0 ; i < dim ; i++)
+	{
+		sz_tot *= sz[i];
+		sz2_tot *= sz2[i];
+	}
 
 #ifndef SE_CLASS3
-	BOOST_REQUIRE_EQUAL(req,(8*7*5*(sizeof(float) + 2*4*13 * 64 + sizeof(size_t)*3) + sizeof(size_t)*3));
+	BOOST_REQUIRE_EQUAL(req,(sz_tot*(sizeof(float) + sz2_tot * 64 + sizeof(size_t)*dim) + sizeof(size_t)*dim));
 #endif
 
 	// allocate the memory
@@ -1148,15 +1182,15 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_grid_packer_unpacker )
 	//Packing
 	Pack_stat sts;
 
-	Packer<decltype(g),HeapMemory>::pack<1,2>(mem,g,sts);
+	Packer<decltype(g),HeapMemory>::template pack<1,2>(mem,g,sts);
 
 	//Unpacking
 
 	Unpack_stat ps;
 
-	grid_cpu<3,aggregate<float, float, grid_cpu<3, Point_test<float>>>> g_unp;
+	grid_cpu<dim,aggregate<float, float, grid_cpu<dim, Point_test<float>>>> g_unp;
 
-	Unpacker<decltype(g_unp),HeapMemory>::unpack<1,2>(mem,g_unp,ps);
+	Unpacker<decltype(g_unp),HeapMemory>::template unpack<1,2>(mem,g_unp,ps);
 
 	typedef Point_test<float> pt;
 
@@ -1165,10 +1199,6 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_grid_packer_unpacker )
 
 	while (it.isNext())
 	{
-		/*float f1 = g_unp.template get<0>(it.get());
-		float f2 = g.template get<0>(it.get());
-		BOOST_REQUIRE_EQUAL(f1,f2);*/
-
 		float f1 = g_unp.template get<1>(it.get());
 		float f2 = g.template get<1>(it.get());
 		BOOST_REQUIRE_EQUAL(f1,f2);
@@ -1222,9 +1252,41 @@ BOOST_AUTO_TEST_CASE ( grid_aggr_grid_packer_unpacker )
 	mem.decRef();
 	delete &mem;
 
-	std::cout << "Grid pack/unpack test stop" << "\n";
+	std::cout << "Grid pack/unpack test stop " << dim << "D" << "\n";
 }
 
+BOOST_AUTO_TEST_CASE ( grid_aggr_grid_packer_unpacker_3D )
+{
+	size_t sz[] = {8,7,5};
+	size_t sz2[] = {2,4,13};
+
+	grid_cpu<3, Point_test<float>> g2 (sz2);
+
+	test_packer_aggr_nd<3>(g2,sz,sz2);
+}
+
+// Test 2D
+
+
+BOOST_AUTO_TEST_CASE ( grid_aggr_grid_packer_unpacker_2D )
+{
+	size_t sz[] = {8,7};
+	size_t sz2[] = {2,4};
+
+	grid_cpu<2, Point_test<float>> g2 (sz2);
+
+	test_packer_aggr_nd<2>(g2,sz,sz2);
+}
+
+BOOST_AUTO_TEST_CASE ( grid_aggr_grid_packer_unpacker_4D )
+{
+	size_t sz[] = {8,7,2,2};
+	size_t sz2[] = {2,4,2,2};
+
+	grid_cpu<4, Point_test<float>> g2 (sz2);
+
+	test_packer_aggr_nd<4>(g2,sz,sz2);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

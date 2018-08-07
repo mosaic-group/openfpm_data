@@ -66,6 +66,11 @@ public:
 
 	//! no properties
 	static const unsigned int max_prop = 0;
+
+	static inline bool noPointers()
+	{
+		return true;
+	}
 };
 
 template<typename V, typename E,
@@ -101,12 +106,16 @@ public:
 	{
 		boost::fusion::at_c<0>(data) = vid_;
 	}
-	;
+
 	inline void seteid(size_t eid_)
 	{
 		boost::fusion::at_c<1>(data) = eid_;
 	}
-	;
+
+	static inline bool noPointers()
+	{
+		return true;
+	}
 };
 
 class edge_key

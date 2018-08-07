@@ -500,11 +500,11 @@ public:
 	 */
 	__device__ __host__  inline void init() const
 	{
-		for (size_t i = 0 ; i < orig::dims ; i++)
-			scal += o1.value(i) * o2.value(i);
-
 		o1.init();
 		o2.init();
+
+		for (size_t i = 0 ; i < orig::dims ; i++)
+			scal += o1.value(i) * o2.value(i);
 	}
 
 	/*! \brief Evaluate the expression
@@ -1121,8 +1121,14 @@ operator*(const Point<dim,T> & va, const Point<dim,T> & vb)
  * \return an object that encapsulate the expression
  *
  */
-template<typename orig, unsigned int dim, typename T, typename exp1, typename exp2, unsigned int op1>
-__device__ __host__ inline point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL_POINT>
+template<typename orig,
+         unsigned int dim,
+		 typename T,
+		 typename exp1,
+		 typename exp2,
+		 unsigned int op1,
+		 typename sfinae = typename std::enable_if<point_expression_op<orig,exp1,exp2,op1>::nvals != 1>::type >
+__device__ __host__  inline point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL_POINT>
 operator*(const Point<dim,T> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)
 {
 	point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL_POINT> exp_sum(va,vb);
@@ -1138,11 +1144,63 @@ operator*(const Point<dim,T> & va, const point_expression_op<orig,exp1,exp2,op1>
  * \return an object that encapsulate the expression
  *
  */
-template<typename orig,unsigned int dim, typename T, typename exp1, typename exp2, unsigned int op1>
+template<typename orig,
+         unsigned int dim,
+		 typename T,
+		 typename exp1,
+		 typename exp2,
+		 unsigned int op1,
+		 typename sfinae = typename std::enable_if<point_expression_op<orig,exp1,exp2,op1>::nvals == 1>::type >
+__device__ __host__ inline point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL>
+operator*(const Point<dim,T> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)
+{
+	point_expression_op<orig,Point<dim,T>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL> exp_sum(va,vb);
+
+	return exp_sum;
+}
+
+/* \brief Multiply two points expression
+ *
+ * \param va point expression one
+ * \param vb point expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename orig,
+         unsigned int dim,
+		 typename T,
+		 typename exp1,
+		 typename exp2,
+		 unsigned int op1,
+		 typename sfinae = typename std::enable_if<point_expression_op<orig,exp1,exp2,op1>::nvals != 1>::type >
 __device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,POINT_MUL_POINT>
 operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const Point<dim,T> & vb)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,POINT_MUL_POINT> exp_sum(va,vb);
+
+	return exp_sum;
+}
+
+/* \brief Multiply two points expression
+ *
+ * \param va point expression one
+ * \param vb point expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename orig,
+         unsigned int dim,
+		 typename T,
+		 typename exp1,
+		 typename exp2,
+		 unsigned int op1,
+		 typename check = typename std::enable_if<point_expression_op<orig,exp1,exp2,op1>::nvals == 1>::type >
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,POINT_MUL>
+operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const Point<dim,T> & vb)
+{
+	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,Point<dim,T>,POINT_MUL> exp_sum(va,vb);
 
 	return exp_sum;
 }
@@ -1191,11 +1249,42 @@ operator*(const point_expression_op<orig,exp1,exp2,op1> & va, T d)
  * \return an object that encapsulate the expression
  *
  */
-template<typename orig, typename exp1, typename exp2, unsigned int op1, typename exp3 , typename exp4, unsigned int op2>
+template<typename orig,
+         typename exp1,
+		 typename exp2,
+		 unsigned int op1,
+		 typename exp3 ,
+		 typename exp4,
+		 unsigned int op2,
+		 typename check = typename std::enable_if<point_expression_op<orig,exp1,exp2,op1>::nvals != 1 && point_expression_op<orig,exp3,exp4,op2>::nvals != 1>::type >
 __device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL_POINT>
 operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression_op<orig,exp3,exp4,op2> & vb)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL_POINT> exp_sum(va,vb);
+
+	return exp_sum;
+}
+
+/* \brief Multiply two points expression
+ *
+ * \param va point expression one
+ * \param vb point expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename orig,
+         typename exp1,
+		 typename exp2,
+		 unsigned int op1,
+		 typename exp3 ,
+		 typename exp4,
+		 unsigned int op2,
+		 typename check = typename std::enable_if<point_expression_op<orig,exp1,exp2,op1>::nvals == 1 || point_expression_op<orig,exp3,exp4,op2>::nvals == 1 >::type >
+inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL>
+operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression_op<orig,exp3,exp4,op2> & vb)
+{
+	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL> exp_sum(va,vb);
 
 	return exp_sum;
 }

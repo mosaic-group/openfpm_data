@@ -17,8 +17,9 @@ typedef size_t local_index_;
 typedef unsigned int local_index_;
 #endif
 
-#define FAST 1
-
+#define VERLETLIST_FAST(dim,St) VerletList<dim,St,Mem_fast<>,shift<dim,St> >
+#define VERLETLIST_BAL(dim,St) VerletList<dim,St,Mem_bal<>,shift<dim,St> >
+#define VERLETLIST_MEM(dim,St) VerletList<dim,St,Mem_mem<>,shift<dim,St> >
 
 /*! \brief Cell list structure
  *
@@ -27,15 +28,15 @@ typedef unsigned int local_index_;
  * \see CellList<dim,T,FAST,transform,base>
  *
  */
-template<unsigned int dim,
+/*template<unsigned int dim,
          typename T,
-		 unsigned int impl=FAST,
+		 typename impl=Mem_fast,
 		 typename transform = no_transform<dim,T>,
 		 typename local_index=local_index_,
 		 typename CellListImpl = CellList<dim,T,Mem_fast,transform> >
 class VerletList
 {
-};
+};*/
 
 #include "VerletListFast.hpp"
 

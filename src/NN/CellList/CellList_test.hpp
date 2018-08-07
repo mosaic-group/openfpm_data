@@ -359,14 +359,14 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 
 	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	SpaceBox<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
-	Test_cell_s<3,double,CellList<3,double,Mem_fast>>(box);
-	Test_cell_s<3,double,CellList<3,double,Mem_fast,shift<3,double>> >(box2);
+	Test_cell_s<3,double,CellList<3,double,Mem_fast<>>>(box);
+	Test_cell_s<3,double,CellList<3,double,Mem_fast<>,shift<3,double>> >(box2);
 	Test_cell_sM<3,double,CellListM<3,double,8>>(box);
 	Test_cell_sM<3,double,CellListM<3,double,8>>(box2);
 
 
-	Test_cell_s<3,double,CellList<3,double,Mem_bal>>(box);
-	Test_cell_s<3,double,CellList<3,double,Mem_mw>>(box);
+	Test_cell_s<3,double,CellList<3,double,Mem_bal<>>>(box);
+	Test_cell_s<3,double,CellList<3,double,Mem_mw<>>>(box);
 
 	std::cout << "End cell list" << "\n";
 
@@ -375,7 +375,7 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 
 BOOST_AUTO_TEST_CASE( CellList_consistent )
 {
-	Test_CellDecomposer_consistent<CellList<2,float,Mem_fast,shift<2,float>>>();
+	Test_CellDecomposer_consistent<CellList<2,float,Mem_fast<>,shift<2,float>>>();
 }
 
 BOOST_AUTO_TEST_CASE( CellList_NNc_csr_calc )

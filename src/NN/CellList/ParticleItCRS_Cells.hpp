@@ -10,6 +10,7 @@
 
 #include "CellNNIterator.hpp"
 #include "CellList_util.hpp"
+#include "NN/CellList/NNc_array.hpp"
 
 /*! \brief sub-sub-domain
  *
@@ -53,10 +54,10 @@ template<unsigned int dim,typename CellListType> class ParticleItCRS_Cells
 private:
 
 	//! starting position
-	const size_t * start;
+	const typename CellListType::Mem_type_type::loc_index * start;
 
 	//! stop position
-	const size_t * stop;
+	const typename CellListType::Mem_type_type::loc_index * stop;
 
 	//! Actual cell
 	size_t cid;
@@ -82,7 +83,7 @@ private:
 	//   * * *
 	//     x *
 	//
-	const long int (& NNc_sym)[openfpm::math::pow(3,dim)/2+1];
+	const NNc_array<dim,openfpm::math::pow(3,dim)/2+1> & NNc_sym;
 
 	//! Celllist type
 	CellListType & cli;
@@ -150,7 +151,7 @@ public:
 	ParticleItCRS_Cells(CellListType & cli,
 					 const openfpm::vector<size_t> & dom_cell,
 					 const openfpm::vector<subsub_lin<dim>> & anom_dom_cell,
-			         const long int (& NNc_sym)[openfpm::math::pow(3,dim)/2+1])
+			         const NNc_array<dim,openfpm::math::pow(3,dim)/2+1> & NNc_sym)
 	:cid(0),NNc(NULL),NNc_size(0),dom_or_anom(0),dom_cell(dom_cell),anom_dom_cell(anom_dom_cell),NNc_sym(NNc_sym),cli(cli)
 	{
 		size_t s_cell;
@@ -233,7 +234,7 @@ public:
 	typename CellListType::SymNNIterator getNNIteratorCSR(const openfpm::vector<Point<dim,typename CellListType::stype>> & v) const
 	{
 		if (dom_or_anom == 0)
-			return typename CellListType::SymNNIterator(dom_cell.get(cid),*start,NNc_sym,openfpm::math::pow(3,dim)/2+1,cli,v);
+			return typename CellListType::SymNNIterator(dom_cell.get(cid),*start,NNc_sym.getPointer(),openfpm::math::pow(3,dim)/2+1,cli,v);
 		else
 			return typename CellListType::SymNNIterator(anom_dom_cell.get(cid).subsub,
 					                                    *start,
@@ -261,7 +262,7 @@ public:
 	typename CellListType::SymNNIterator getNNIteratorCSRM(const openfpm::vector<Point<dim,typename CellListType::stype>> & pos ,const openfpm::vector<pos_v<dim,typename CellListType::stype>> & v) const
 	{
 		if (dom_or_anom == 0)
-			return typename CellListType::SymNNIterator(dom_cell.get(cid),CellListType::getV(*start),CellListType::getP(*start),NNc_sym,openfpm::math::pow(3,dim)/2+1,cli,pos,v);
+			return typename CellListType::SymNNIterator(dom_cell.get(cid),CellListType::getV(*start),CellListType::getP(*start),NNc_sym.getPointer(),openfpm::math::pow(3,dim)/2+1,cli,pos,v);
 		else
 			return typename CellListType::SymNNIterator(anom_dom_cell.get(cid).subsub,CellListType::getV(*start),CellListType::getP(*start),&anom_dom_cell.get(cid).NN_subsub.get(0),anom_dom_cell.get(cid).NN_subsub.size(),cli,pos,v);
 	}

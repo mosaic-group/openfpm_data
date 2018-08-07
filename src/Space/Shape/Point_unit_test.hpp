@@ -96,6 +96,7 @@ BOOST_AUTO_TEST_CASE( Point_use )
 
 }
 
+
 BOOST_AUTO_TEST_CASE( Point_expression_usage )
 {
 	float scal = 0.0;
@@ -153,6 +154,7 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage )
 	p3 = p2 * (p1 + p2);
 	for (size_t i = 0 ; i < 3 ; i++)	{scal += p2.get(i) * (p2.get(i) + p1.get(i));}
 	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),scal) ;}
+
 	p3 = (p1 + p2) * p2;
 	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),scal) ;}
 	scal = 0;
@@ -296,7 +298,40 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage )
 	s += p1+(p1+p2);
 	BOOST_REQUIRE_EQUAL(s,4.0);
 
+	// Scalar product
 
+	Point<3,float> p5({1.0,2.0,3.0});
+
+	p4 = (p1*p2) * p5;
+
+	BOOST_REQUIRE_EQUAL(p4.get(0),9.0);
+	BOOST_REQUIRE_EQUAL(p4.get(1),18.0);
+	BOOST_REQUIRE_EQUAL(p4.get(2),27.0);
+
+	p4 = p5 * (p1*p2);
+
+	BOOST_REQUIRE_EQUAL(p4.get(0),9.0);
+	BOOST_REQUIRE_EQUAL(p4.get(1),18.0);
+	BOOST_REQUIRE_EQUAL(p4.get(2),27.0);
+
+
+	p4 = p2 * (p1*p2);
+
+	BOOST_REQUIRE_EQUAL(p4.get(0),18.0);
+	BOOST_REQUIRE_EQUAL(p4.get(1),27.0);
+	BOOST_REQUIRE_EQUAL(p4.get(2),36.0);
+
+	p4 = (p1*p2) * p2;
+
+	BOOST_REQUIRE_EQUAL(p4.get(0),18.0);
+	BOOST_REQUIRE_EQUAL(p4.get(1),27.0);
+	BOOST_REQUIRE_EQUAL(p4.get(2),36.0);
+
+	p4 = (p1*p2) * (p2*p1);
+
+	BOOST_REQUIRE_EQUAL(p4.get(0),81.0);
+	BOOST_REQUIRE_EQUAL(p4.get(1),81.0);
+	BOOST_REQUIRE_EQUAL(p4.get(2),81.0);
 }
 
 

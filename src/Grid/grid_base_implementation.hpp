@@ -52,6 +52,9 @@ struct ite_gpu
 };
 #endif
 
+#include "copy_grid_fast.hpp"
+
+
 /*! \brief
  *
  * Implementation of a N-dimensional grid
@@ -175,6 +178,23 @@ private:
 				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " is negative " << "\n";
 				ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 			}
+		}
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * check if key2 is inside the g grid boundary
+	 *
+	 * \param g grid
+	 * \param key2
+	 *
+	 */
+	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const size_t & key2) const
+	{
+		if (key2 >= g.getGrid().size())
+		{
+			std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << key2 << " >= " << getGrid().size() << "\n";
+			ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 		}
 	}
 
@@ -501,7 +521,7 @@ public:
 		//! Allocate the memory and create the reppresentation
 //		if (g1.size() != 0) data_.allocate(g1.size());
 
-		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemory<p>(data_,m,g1.size());
+		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemory<p>(data_,m,g1.size(),T::noPointers);
 
 		is_mem_init = true;
 	}
@@ -665,6 +685,52 @@ public:
 		check_bound(v1);
 #endif
 		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(const_cast<decltype(this->data_) &>(data_),g1,v1);
+	}
+
+	/*! \brief Get the of the selected element as a boost::fusion::vector
+	 *
+	 * Get the selected element as a boost::fusion::vector
+	 *
+	 * \param v1 linearized id that identify the element in the grid
+	 *
+	 * \see encap_c
+	 *
+	 * \return an encap_c that is the representation of the object (careful is not the object)
+	 *
+	 */
+	inline encapc<dim,T,layout> get_o(size_t v1)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(v1);
+#endif
+		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_lin(data_,v1);
+	}
+
+	/*! \brief Get the of the selected element as a boost::fusion::vector
+	 *
+	 * Get the selected element as a boost::fusion::vector
+	 *
+	 * \param v1 linearized id that identify the element in the grid
+	 *
+	 * \see encap_c
+	 *
+	 * \return an encap_c that is the representation of the object (careful is not the object)
+	 *
+	 */
+	inline const encapc<dim,T,layout> get_o(size_t v1) const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(v1);
+#endif
+		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_lin(const_cast<decltype(this->data_) &>(data_),v1);
 	}
 
 	/*! \brief Fill the memory with the selected byte
@@ -882,7 +948,33 @@ public:
 	 *
 	 */
 
-	inline void set(const grid_key_dx<dim> & key1,const grid_base_impl<dim,T,S,layout,layout_base> & g, const grid_key_dx<dim> & key2)
+	inline void set(const grid_key_dx<dim> & key1,
+			        const grid_base_impl<dim,T,S,layout,layout_base> & g,
+					const grid_key_dx<dim> & key2)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(key1);
+		check_bound(g,key2);
+#endif
+
+		this->get_o(key1) = g.get_o(key2);
+	}
+
+	/*! \brief Set an element of the grid from another element of another grid
+	 *
+	 * \param key1 element of the grid to set
+	 * \param g source grid
+	 * \param key2 element of the source grid to copy
+	 *
+	 */
+
+	inline void set(const size_t key1,
+			        const grid_base_impl<dim,T,S,layout,layout_base> & g,
+					const size_t key2)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -979,6 +1071,23 @@ public:
 		check_valid(this,8);
 #endif
 		return grid_key_dx_iterator<dim>(g1);
+	}
+
+	/*! \brief Return a grid iterator
+	 *
+	 * Return a grid iterator, to iterate through the grid with stencil calculation
+	 *
+	 * \return a grid iterator with stencil calculation
+	 *
+	 */
+	template<unsigned int Np>
+	inline grid_key_dx_iterator<dim,stencil_offset_compute<dim,Np>>
+	getIteratorStencil(const grid_key_dx<dim> (& stencil_pnt)[Np]) const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		return grid_key_dx_iterator<dim,stencil_offset_compute<dim,Np>>(g1,stencil_pnt);
 	}
 
 	/*! \brief Return a grid iterator over all points included between start and stop point

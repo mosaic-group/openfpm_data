@@ -237,7 +237,7 @@ template <typename vector> void test_vector_clear()
 	BOOST_REQUIRE_EQUAL(v1.size(),V_REM_PUSH);
 }
 
-template <typename vector> void test_vector_add_test_case()
+template <typename vector, template <typename> class layout_base> void test_vector_add_test_case()
 {
 	// create two vector
 	vector v1;
@@ -277,7 +277,7 @@ template <typename vector> void test_vector_add_test_case()
 	// Duplicate the vector
 	vector v2 = v1.duplicate();
 
-	v1.template add_prp<Point_test<float>,HeapMemory,typename openfpm::grow_policy_double,OPENFPM_NATIVE,P::x,P::y,P::z,P::s,P::v,P::t>(v2);
+	v1.template add_prp<Point_test<float>,HeapMemory,typename openfpm::grow_policy_double,OPENFPM_NATIVE,layout_base,P::x,P::y,P::z,P::s,P::v,P::t>(v2);
 
 	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
 	{
@@ -420,7 +420,7 @@ template <typename vector> void test_vector_load_and_save_check()
 BOOST_AUTO_TEST_CASE (vector_iterator_test)
 {
 	test_iterator< openfpm::vector<Point_test<float>> >();
-	test_iterator< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+	test_iterator< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type,memory_traits_inte> >();
 }
 
 // Test the openfpm vector
@@ -430,7 +430,7 @@ BOOST_AUTO_TEST_CASE( vector_use)
 	std::cout << "Vector unit test start" << "\n";
 
 	test_vector_use<openfpm::vector<Point_test<float>>>();
-	test_vector_use< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type> >();
+	test_vector_use< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type,memory_traits_inte> >();
 
 	std::cout << "Vector unit test end" << "\n";
 }
@@ -460,8 +460,8 @@ BOOST_AUTO_TEST_CASE(vector_clear )
 
 BOOST_AUTO_TEST_CASE( vector_add_test_case )
 {
-	test_vector_add_test_case<openfpm::vector<Point_test<float>>>();
-	test_vector_add_test_case<openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type,memory_traits_inte> >();
+	test_vector_add_test_case<openfpm::vector<Point_test<float>>,memory_traits_lin>();
+	test_vector_add_test_case<openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type,memory_traits_inte>, memory_traits_inte >();
 }
 
 BOOST_AUTO_TEST_CASE( vector_copy_and_compare )
@@ -481,9 +481,9 @@ BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
 
 #ifdef SE_CLASS2
 
-openfpm::vector<scalar<float>> & test_error_v()
+openfpm::vector<aggregate<float>> & test_error_v()
 {
-	openfpm::vector<scalar<float>> v(16);
+	openfpm::vector<aggregate<float>> v(16);
 
 	return v;
 }
@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 
 	// Create a vector
 
-	openfpm::vector<scalar<float>> * v3 = new openfpm::vector<scalar<float>>(16);
+	openfpm::vector<aggregate<float>> * v3 = new openfpm::vector<aggregate<float>>(16);
 	delete v3;
 
 	// Try to access the class
@@ -589,7 +589,7 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 
 	try
 	{
-		openfpm::vector<scalar<float>> vr = test_error_v();
+		openfpm::vector<aggregate<float>> vr = test_error_v();
 	}
 	catch (std::exception & e)
 	{

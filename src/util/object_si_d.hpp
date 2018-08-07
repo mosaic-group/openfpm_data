@@ -26,13 +26,13 @@
 template<typename v_src,typename v_dst, int... prp>
 struct object_si_d_e
 {
-	// Convert the packed properties into an MPL vector
+	//! Convert the packed properties into an MPL vector
 	typedef typename to_boost_vmpl<prp...>::type v_prp;
 
-	// Source object
+	//! Source object
 	const v_src & src;
 
-	// Destination object
+	//! Destination object
 	v_dst & dst;
 
 	/*! \brief Constructor
@@ -50,9 +50,10 @@ struct object_si_d_e
     template<typename T>
     void operator()(T& t)
     {
-    	typedef typename boost::mpl::at<typename v_dst::type,typename boost::mpl::int_<T::value>>::type ctype;
+    	typedef typename boost::mpl::at<typename v_dst::type,typename boost::mpl::int_<T::value>>::type dtype;
+    	typedef decltype(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>()) stype;
 
-    	meta_copy<ctype>::meta_copy_(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(),dst.template get<T::value>());
+    	meta_copy_d<stype,dtype>::meta_copy_d_(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(),dst.template get<T::value>());
     }
 };
 

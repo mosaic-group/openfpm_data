@@ -1173,7 +1173,7 @@ public:
 	 * \return The volume
 	 *
 	 */
-	inline static T getVolumeKey(T (&p1)[dim], T(&p2)[dim])
+	inline static T getVolumeKey(const T (&p1)[dim], const T(&p2)[dim])
 	{
 		T vol = 1.0;
 

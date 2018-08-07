@@ -149,7 +149,6 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the i-coordinate of the point
 	 *
 	 */
-
 	__device__ __host__ inline const T & get(int i) const
 	{
 		return boost::fusion::at_c<x>(data)[i];
@@ -162,7 +161,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	inline T get_vtk(int i) const
+	inline T get_vtk(size_t i) const
 	{
 		return boost::fusion::at_c<x>(data)[i];
 	}
@@ -173,7 +172,6 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the i-coordinate of the point
 	 *
 	 */
-
 	__device__ __host__ inline T& get(int i)
 	{
 		return boost::fusion::at_c<x>(data)[i];
@@ -360,6 +358,16 @@ template<unsigned int dim ,typename T> class Point
 	__device__ __host__ inline bool operator!=(const Point<dim,T> & p)
 	{
 		return !this->operator==(p);
+	}
+
+	/*! \brief Return the string with the point coordinate
+	 *
+	 * \return the string
+	 *
+	 */
+	std::string to_string() const
+	{
+		return toString();
 	}
 
 	/*! \brief Return the string with the point coordinate

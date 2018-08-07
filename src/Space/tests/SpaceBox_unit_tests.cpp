@@ -4,11 +4,11 @@
  *  Created on: May 8, 2015
  *      Author: i-bird
  */
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
 
-#ifndef SPACEBOX_UNIT_TESTS_HPP_
-#define SPACEBOX_UNIT_TESTS_HPP_
 
-#include "SpaceBox.hpp"
+#include "Space/SpaceBox.hpp"
 
 #define N_RANDOM_POINT 1024
 
@@ -159,4 +159,4 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-#endif /* SPACEBOX_UNIT_TESTS_HPP_ */
+

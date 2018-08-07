@@ -121,6 +121,30 @@ struct stencil_offset_compute
 		for (size_t k = 0 ; k < Np ; k++)
 		{stencil_offset[k] += -str_dw*idr + grid_base.size_s(i);}
 	}
+
+	/*! \brief Sum a template constant
+	 *
+	 * \tparam compile-time offset
+	 *
+	 */
+	template<unsigned int tot_add>
+	inline void private_sum()
+	{
+		for (size_t i = 0 ; i < Np ; i++)
+		{stencil_offset[i] += tot_add;}
+	}
+
+	/*! \brief Sum a template constant
+	 *
+	 * \param tot_add Add an offset to all the pointer
+	 *
+	 */
+	inline void private_adjust(size_t tot_add)
+	{
+		for (size_t i = 0 ; i < Np ; i++)
+		{stencil_offset[i] += tot_add;}
+	}
+
 };
 
 /*! \brief no stencil
@@ -169,7 +193,7 @@ struct no_stencil
 
 	/*! \brief Set the stencil points
 	 *
-	 * \param stencil points
+	 * \param stencil_pnt stencil points
 	 *
 	 */
 	template<unsigned int dim2> void set_stencil(const grid_key_dx<dim2> (& stencil_pnt)[1])

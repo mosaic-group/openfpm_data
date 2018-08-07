@@ -36,10 +36,6 @@ class grid_key_dx_iterator
 	//! information of the grid where this iterator iterate
 	grid_sm<dim,void> grid_base;
 
-	//! Additional operation and information in case we do stencil
-	//! operations
-	stencil stl_code;
-
 	/*! \brief return the index i of the gk key
 	 *
 	 * \param i index to get
@@ -57,6 +53,10 @@ protected:
 
 	//! Actual key
 	grid_key_dx<dim> gk;
+
+	//! Additional operation and information in case we do stencil
+	//! operations
+	stencil stl_code;
 
 public:
 
@@ -319,6 +319,47 @@ public:
 		// calculate the offsets for the stencil code
 		stl_code.calc_offsets(grid_base,start_p);
 	}
+
+	/*! \brief Return the starting point of the iteration
+	 *
+	 * it is always the point (0,0) in 2D (0,0,0) in 3D ...
+	 *
+	 */
+	grid_key_dx<dim> getStart()
+	{
+		grid_key_dx<dim> zero;
+		zero.zero();
+		return zero;
+	}
+
+
+	/*! \brief Return the stop point of the iteration
+	 *
+	 *
+	 */
+	grid_key_dx<dim> getStop()
+	{
+		grid_key_dx<dim> stop;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			stop.set_d(i,grid_base.size(i) - 1);
+		}
+
+		return stop;
+	}
+
+	/*! \brief Get the volume spanned by this sub-grid iterator
+	 *
+	 * \return the volume
+	 *
+	 */
+	inline size_t getVolume()
+	{
+		return Box<dim,long int>::getVolumeKey(getStart().k, getStop().k);
+	}
+
+
 };
 
 

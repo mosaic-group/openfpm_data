@@ -101,7 +101,10 @@ struct copy_fusion_vector_encap
 	template<typename T>
 	__device__ __host__ inline void operator()(T& t)
 	{
-		meta_copy_d<typename boost::mpl::at<bfv,boost::mpl::int_<T::value> >::type,decltype(dst.template get<T::value>())>::meta_copy_d_(boost::fusion::at_c<T::value>(src),dst.template get<T::value>());
+		typedef typename boost::mpl::at<bfv,boost::mpl::int_<T::value> >::type copy_src;
+		typedef typename std::remove_reference<decltype(dst.template get<T::value>())>::type copy_dst;
+
+		meta_copy_d<copy_src,copy_dst>::meta_copy_d_(boost::fusion::at_c<T::value>(src),dst.template get<T::value>());
 	}
 };
 

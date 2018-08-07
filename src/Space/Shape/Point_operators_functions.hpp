@@ -388,6 +388,7 @@ norm2(const Point<dim,T> & va)
 	return exp_sum;
 }
 
+
 /*! \brief General distance formula
  *
  *
@@ -396,6 +397,7 @@ template <typename T, typename P> __device__ __host__  auto distance(T exp1, P e
 {
 	return norm(exp1 - exp2);
 }
+
 
 ///// Here we define point operator functions
 

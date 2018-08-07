@@ -38,10 +38,10 @@ class CellNNIterator<dim,Cell,RUNTIME,impl>
 protected:
 
 	//! actual element id
-	const size_t * start_id;
+	const typename Cell::Mem_type_type::loc_index * start_id;
 
 	//! stop id to read the end of the cell
-	const size_t * stop_id;
+	const typename Cell::Mem_type_type::loc_index * stop_id;
 
 	//! Actual NNc_id;
 	size_t NNc_id;
@@ -134,7 +134,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline const typename Cell::value_type & get()
+	inline const typename Cell::Mem_type_type::loc_index & get()
 	{
 		return cl.get_lin(start_id);
 	}

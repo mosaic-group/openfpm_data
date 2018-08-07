@@ -8,6 +8,8 @@
 #ifndef OPENFPM_DATA_SRC_PACKER_UNPACKER_PRP_ALL_ZERO_HPP_
 #define OPENFPM_DATA_SRC_PACKER_UNPACKER_PRP_ALL_ZERO_HPP_
 
+#include "util/variadic_to_vmpl.hpp"
+
 //! Structure to convert a variadic template into boost::mpl::vector
 template<typename T, bool is_zero, int ... prp>
 struct prp_all_zero

@@ -28,6 +28,8 @@ template<unsigned int dim, typename T, typename CellList> void populate_cell_lis
 	cli.PopulateOnGPU(pos);
 }
 
+#include "Vector/map_vector.hpp"
+
 /*! \brief populate the Cell-list with particles non symmetric case
  *
  * \tparam dim dimensionality of the space

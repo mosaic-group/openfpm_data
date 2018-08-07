@@ -186,6 +186,28 @@ public:
 		return box;
 	}
 
+	/*! \brief Return the box enclosing the grid
+	 *
+	 * While getBox return as P2 the size of the grid
+	 * getBoxKey return the size - 1 equivalent to the maximum valid point
+	 * that does not overflow the grid
+	 *
+	 * \return the box
+	 *
+	 */
+	inline const Box<N,size_t> getBoxKey() const
+	{
+		Box<N,size_t> bx;
+
+		for (size_t i = 0 ; i < N ; i++)
+		{
+			bx.setLow(i,box.getLow(i));
+			bx.setHigh(i,box.getHigh(i) - 1);
+		}
+
+		return bx;
+	}
+
 	/*! \brief Reset the dimension of the grid
 	 *
 	 * \param dims store on each dimension the size of the grid
@@ -197,7 +219,6 @@ public:
 		size_tot = totalSize(dims);
 	}
 
-
 	/*! \brief Default constructor
 	 *
 	 * It produce a grid of size 0 on each dimension
@@ -207,6 +228,10 @@ public:
 	inline grid_sm()
 	:size_tot(0)
 	{
+		// Initialize sz
+		for (size_t i = 0 ; i < N ; i++)
+		{sz[i] = 0;}
+
 		Initialize();
 	}
 
@@ -302,20 +327,20 @@ public:
 
 		// Check the sum produce a valid key
 
-		if (check::valid(gk.k[0] + sum_id[0],sz[0]) == false)
+		if (check::valid(gk.get(0) + sum_id[0],sz[0]) == false)
 			return -1;
 
-		lid = gk.k[0] + sum_id[0];
+		lid = gk.get(0) + sum_id[0];
 
 
 		for (mem_id i = 1 ; i < N ; i++)
 		{
 			// Check the sum produce a valid key
 
-			if (check::valid(gk.k[i] + sum_id[i],sz[i]) == false)
+			if (check::valid(gk.get(i) + sum_id[i],sz[i]) == false)
 				return -1;
 
-			lid += (gk.k[i] + sum_id[i]) * sz_s[i-1];
+			lid += (gk.get(i) + sum_id[i]) * sz_s[i-1];
 		}
 
 		return lid;
@@ -340,14 +365,14 @@ public:
 
 		if (bc[0] == NON_PERIODIC)
 		{
-			if (check::valid(gk.k[0] + sum_id[0],sz[0]) == false)
+			if (check::valid(gk.get(0) + sum_id[0],sz[0]) == false)
 				return -1;
 
-			lid = gk.k[0] + sum_id[0];
+			lid = gk.get(0) + sum_id[0];
 		}
 		else
 		{
-			lid = openfpm::math::positive_modulo(gk.k[0] + sum_id[0],sz[0]);
+			lid = openfpm::math::positive_modulo(gk.get(0) + sum_id[0],sz[0]);
 		}
 
 		for (mem_id i = 1 ; i < N ; i++)
@@ -357,14 +382,14 @@ public:
 			/* coverity[dead_error_line] */
 			if (bc[i] == NON_PERIODIC)
 			{
-				if (check::valid(gk.k[i] + sum_id[i],sz[i]) == false)
+				if (check::valid(gk.get(i) + sum_id[i],sz[i]) == false)
 					return -1;
 
-				lid += (gk.k[i] + sum_id[i]) * sz_s[i-1];
+				lid += (gk.get(i) + sum_id[i]) * sz_s[i-1];
 			}
 			else
 			{
-				lid += (openfpm::math::positive_modulo(gk.k[i] + sum_id[i],sz[i])) * sz_s[i-1];
+				lid += (openfpm::math::positive_modulo(gk.get(i) + sum_id[i],sz[i])) * sz_s[i-1];
 			}
 		}
 
@@ -422,11 +447,11 @@ public:
 
 	__device__ __host__ inline mem_id LinId(const grid_key_dx<N> & gk) const
 	{
-		mem_id lid = gk.k[0];
+		mem_id lid = gk.get(0);
 		for (mem_id i = 1 ; i < N ; i++)
 		{
 			/* coverity[dead_error_begin */
-			lid += gk.k[i] * sz_s[i-1];
+			lid += gk.get(i) * sz_s[i-1];
 		}
 
 		return lid;

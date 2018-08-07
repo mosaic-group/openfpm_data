@@ -22,9 +22,10 @@
 #include "ParticleItCRS_Cells.hpp"
 #include "util/common.hpp"
 
-#include "MemFast.hpp"
-#include "MemBalanced.hpp"
-#include "MemMemoryWise.hpp"
+#include "NN/Mem_type/MemFast.hpp"
+#include "NN/Mem_type/MemBalanced.hpp"
+#include "NN/Mem_type/MemMemoryWise.hpp"
+#include "NN/CellList/NNc_array.hpp"
 
 //! Wrapper of the unordered map
 template<typename key,typename val>
@@ -64,7 +65,6 @@ template<unsigned int dim> void NNcalc_csr(openfpm::vector<std::pair<grid_key_dx
 
 	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
 	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 	// Generate the sub-grid iterator
 
@@ -131,7 +131,6 @@ template<unsigned int dim> void NNcalc_sym(openfpm::vector<grid_key_dx<dim>> & c
 
 	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
 	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 	// Generate the sub-grid iterator
 
@@ -183,7 +182,6 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
 
 	typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
 	typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-	typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
 
 	// Generate the sub-grid iterator
 
@@ -192,7 +190,7 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
 	// Calculate the divisions
 
 	for (size_t i = 0 ; i < dim ; i++)
-		div[i] = 4;
+	{div[i] = 4;}
 
 	grid_sm<dim,void> gs(div);
 	grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
@@ -277,14 +275,17 @@ protected:
 	//    * x *
 	//    * * *
 
-	long int NNc_full[openfpm::math::pow(3,dim)];
+
+	NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)> NNc_full;
+//	long int NNc_full[openfpm::math::pow(3,dim)];
 
 	//! The array contain the neighborhood of the cell-id in case of symmetric interaction
 	//
 	//   * * *
 	//     x *
 	//
-	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
+//	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
+	NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)/2+1> NNc_sym;
 
 private:
 
@@ -366,53 +367,11 @@ private:
 	{
 		Mem_type::init_to_zero(slot,tot_n_cell);
 
-		// Calculate the NNc_full array, it is a structure to get the neighborhood array
+		NNc_full.set_size(div);
+		NNc_full.init_full();
 
-		// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
-
-		typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
-		typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
-		typedef typename generate_array<size_t,dim, Fill_one>::result NNone;
-
-		// Generate the sub-grid iterator
-
-		grid_sm<dim,void> gs(div);
-		grid_key_dx_iterator_sub<dim> gr_sub3(gs,NNzero::data,NNtwo::data);
-
-		// Calculate the NNc array
-
-		size_t middle = gs.LinId(NNone::data);
-		size_t i = 0;
-		while (gr_sub3.isNext())
-		{
-			NNc_full[i] = (long int)gs.LinId(gr_sub3.get()) - middle;
-
-			++gr_sub3;
-			i++;
-		}
-
-		// Calculate the NNc_sym array
-
-		i = 0;
-		gr_sub3.reset();
-		while (gr_sub3.isNext())
-		{
-			auto key = gr_sub3.get();
-
-			size_t lin = gs.LinId(key);
-
-			// Only the first half is considered
-			if (lin < middle)
-			{
-				++gr_sub3;
-				continue;
-			}
-
-			NNc_sym[i] = lin - middle;
-
-			++gr_sub3;
-			i++;
-		}
+		NNc_sym.set_size(div);
+		NNc_sym.init_sym();
 	}
 
 	void setCellDecomposer(CellDecomposer_sm<dim,T,transform> & cd, const CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box, size_t pad) const
@@ -437,6 +396,9 @@ private:
 	}
 
 public:
+
+	//! Type of internal memory structure
+	typedef Mem_type Mem_type_type;
 
 	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,RUNTIME,NO_CHECK> SymNNIterator;
 
@@ -639,6 +601,7 @@ public:
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this).swap(cell);
 
 		n_dec = cell.n_dec;
+		from_cd = cell.from_cd;
 
 		return *this;
 	}
@@ -652,14 +615,15 @@ public:
 	 */
 	CellList<dim,T,Mem_type,transform,base> & operator=(const CellList<dim,T,Mem_type,transform,base> & cell)
 	{
-		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
-		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
+		NNc_full = cell.NNc_full;
+		NNc_sym = cell.NNc_sym;
 
 		Mem_type::operator=(static_cast<const Mem_type &>(cell));
 
 		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cell);
 
 		n_dec = cell.n_dec;
+		from_cd = cell.from_cd;
 
 		return *this;
 	}
@@ -671,9 +635,9 @@ public:
 	 * \return a particle iterator
 	 *
 	 */
-	ParticleIt_Cells<dim,CellList<dim,T,Mem_fast,transform,base>> getDomainIterator(openfpm::vector<size_t> & dom_cells)
+	ParticleIt_Cells<dim,CellList<dim,T,Mem_fast<>,transform,base>> getDomainIterator(openfpm::vector<size_t> & dom_cells)
 	{
-		ParticleIt_Cells<dim,CellList<dim,T,Mem_fast,transform,base>> it(*this,dom_cells);
+		ParticleIt_Cells<dim,CellList<dim,T,Mem_fast<>,transform,base>> it(*this,dom_cells);
 
 		return it;
 	}
@@ -854,18 +818,8 @@ public:
 	 */
 	inline void swap(CellList<dim,T,Mem_type,transform,base> & cl)
 	{
-		long int NNc_full_tmp[openfpm::math::pow(3,dim)];
-		long int NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1];
-
-		std::copy(&cl.NNc_full[0],&cl.NNc_full[openfpm::math::pow(3,dim)],&NNc_full_tmp[0]);
-		std::copy(&cl.NNc_sym[0],&cl.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym_tmp[0]);
-
-
-		std::copy(&NNc_full[0],&NNc_full[openfpm::math::pow(3,dim)],&cl.NNc_full[0]);
-		std::copy(&NNc_sym[0],&NNc_sym[openfpm::math::pow(3,dim)/2+1],&cl.NNc_sym[0]);
-
-		std::copy(&NNc_full_tmp[0],&NNc_full_tmp[openfpm::math::pow(3,dim)],&NNc_full[0]);
-		std::copy(&NNc_sym_tmp[0],&NNc_sym_tmp[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
+		NNc_full.swap(cl.NNc_full);
+		NNc_sym.swap(cl.NNc_sym);
 
 		Mem_type::swap(static_cast<Mem_type &>(cl));
 
@@ -904,14 +858,14 @@ public:
 	 * \return An iterator across the neighhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,(int)FULL,impl> getNNIterator(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,FULL,impl> cln(cell,NNc_full,*this);
+		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,base>,(int)FULL,impl> cln(cell,NNc_full,*this);
 		return cln;
 
 	}
 
-	/*! \brief Get the Neighborhood iterator
+	/*! \brief Get the symmetric Neighborhood iterator
 	 *
 	 * It iterate across all the element of the selected cell and the near cells up to some selected radius
 	 *
@@ -933,7 +887,9 @@ public:
 		return cln;
 	}
 
-	/*! \brief Get the Neighborhood iterator
+
+
+	/*! \brief Get the symmetric Neighborhood iterator
 	 *
 	 * It iterate across all the element of the selected cell and the near cells
 	 *
@@ -953,14 +909,51 @@ public:
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
+	template<unsigned int impl>
+	inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,(unsigned int)SYM,impl>
+	getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
+	{
+#ifdef SE_CLASS1
+		if (from_cd == false)
+		{std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;}
+#endif
+
+		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);
+		return cln;
+	}
+
+	/*! \brief Get the symmetric Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
+
+	   * * *
+	     x *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
+	 *
+	 * \param cell cell id
+	 * \param p particle id
+	 * \param v_p1 first phase for particle p
+	 * \param v_p2 second phase for particle q
+	 *
+	 * \return An aiterator across the neighborhood particles
+	 *
+	 */
+	template<unsigned int impl>
+	inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,base>,(unsigned int)SYM,impl>
+	getNNIteratorSymMP(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v_p1, const openfpm::vector<Point<dim,T>> & v_p2)
 	{
 #ifdef SE_CLASS1
 		if (from_cd == false)
 			std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
 #endif
 
-		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v);
+		CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,base>,SYM,impl> cln(cell,p,NNc_sym,*this,v_p1,v_p2);
 		return cln;
 	}
 
@@ -969,7 +962,7 @@ public:
 	 * \return the symmetric neighborhood
 	 *
 	 */
-	const long int (& getNNc_sym() const)[openfpm::math::pow(3,dim)/2+1]
+	const NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)/2+1> & getNNc_sym() const
 	{
 		return NNc_sym;
 	}
@@ -986,6 +979,16 @@ public:
 		return CellDecomposer_sm<dim,T,transform>::getPadding(i);
 	}
 
+	/*! \brief Return the number of padding cells of the Cell decomposer as an array
+	 *
+	 *
+	 * \return the number of padding cells
+	 *
+	 */
+	size_t (& getPadding())[dim]
+	{
+		return CellDecomposer_sm<dim,T,transform>::getPadding();
+	}
 
 	/*! \brief Clear the cell list
 	 *
@@ -1002,7 +1005,7 @@ public:
 	 * \return the index
 	 *
 	 */
-	inline const size_t & getStartId(size_t cell_id) const
+	inline const typename Mem_type::loc_index & getStartId(typename Mem_type::loc_index cell_id) const
 	{
 		return Mem_type::getStartId(cell_id);
 	}
@@ -1014,7 +1017,7 @@ public:
 	 * \return the stop index
 	 *
 	 */
-	inline const size_t & getStopId(size_t cell_id) const
+	inline const typename Mem_type::loc_index & getStopId(typename Mem_type::loc_index cell_id) const
 	{
 		return Mem_type::getStopId(cell_id);
 	}
@@ -1026,7 +1029,7 @@ public:
 	 * \return the neighborhood id
 	 *
 	 */
-	inline const size_t & get_lin(const size_t * part_id) const
+	inline const typename Mem_type::loc_index & get_lin(const typename Mem_type::loc_index * part_id) const
 	{
 		return Mem_type::get_lin(part_id);
 	}
@@ -1116,7 +1119,12 @@ template<unsigned int dim, typename St> static inline void cl_param_calculate(Bo
  *
  * \return the processor bounding box
  */
-template<unsigned int dim, typename St> static inline void cl_param_calculateSym(const Box<dim,St> & dom, CellDecomposer_sm<dim,St,shift<dim,St>> & cd_sm, Ghost<dim,St> g, St r_cut, size_t & pad)
+template<unsigned int dim, typename St> static
+inline void cl_param_calculateSym(const Box<dim,St> & dom,
+								  CellDecomposer_sm<dim,St,shift<dim,St>> & cd_sm,
+								  Ghost<dim,St> g,
+								  St r_cut,
+								  size_t & pad)
 {
 	size_t div[dim];
 
@@ -1148,7 +1156,11 @@ template<unsigned int dim, typename St> static inline void cl_param_calculateSym
  *
  * \return the processor bounding box
  */
-template<unsigned int dim, typename St> static inline void cl_param_calculateSym(const Box<dim,St> & dom, CellDecomposer_sm<dim,St,shift<dim,St>> & cd_sm, Ghost<dim,St> g, size_t & pad)
+template<unsigned int dim, typename St>
+static inline void cl_param_calculateSym(const Box<dim,St> & dom,
+										 CellDecomposer_sm<dim,St,shift<dim,St>> & cd_sm,
+										 Ghost<dim,St> g,
+										 size_t & pad)
 {
 	size_t div[dim];
 

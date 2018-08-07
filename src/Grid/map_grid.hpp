@@ -133,7 +133,7 @@ public:
 	 * \param mem memory object (only used for template deduction)
 	 *
 	 */
-	inline grid_cpu(const grid_cpu & g) THROW
+	inline grid_cpu(const grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & g) THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_lin>(g)
 	{
 	}
@@ -178,6 +178,16 @@ public:
 		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g);
 
 		return *this;
+	}
+
+	/*! \brief This structure has pointers
+	 *
+	 * \return false
+	 *
+	 */
+	static bool noPointers()
+	{
+		return false;
 	}
 };
 
