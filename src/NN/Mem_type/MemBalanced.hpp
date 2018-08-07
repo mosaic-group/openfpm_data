@@ -52,6 +52,8 @@ class Mem_bal
 
 public:
 
+	typedef void toKernel_type;
+
 	//! expose the type of the local index
 	typedef local_index loc_index;
 

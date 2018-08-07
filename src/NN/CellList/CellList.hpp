@@ -26,6 +26,7 @@
 #include "NN/Mem_type/MemBalanced.hpp"
 #include "NN/Mem_type/MemMemoryWise.hpp"
 #include "NN/CellList/NNc_array.hpp"
+#include "cuda/CellList_cpu_ker.cuh"
 
 //! Wrapper of the unordered map
 template<typename key,typename val>
@@ -1059,31 +1060,43 @@ public:
 		this->g_m = g_m;
 	}
 
+#ifdef CUDA_GPU
+
+	CellList_cpu_ker<dim,T,typename Mem_type::toKernel_type,transform> toKernel()
+	{
+		CellList_cpu_ker<dim,T,typename Mem_type::toKernel_type,transform> cl(Mem_type::toKernel());
+
+		return cl;
+	}
+
+
+#endif
+
 /////////////////////////////////////
 
-	/////////////////////////////////////
+/////////////////////////////////////
 
-		/*! \brief Set the n_dec number
-		 *
-		 * \param n_dec
-		 *
-		 */
-		void set_ndec(size_t n_dec)
-		{
-			this->n_dec = n_dec;
-		}
+	/*! \brief Set the n_dec number
+	 *
+	 * \param n_dec
+	 *
+	 */
+	void set_ndec(size_t n_dec)
+	{
+		this->n_dec = n_dec;
+	}
 
-		/*! \brief Set the n_dec number
-		 *
-		 * \return n_dec
-		 *
-		 */
-		size_t get_ndec() const
-		{
-			return n_dec;
-		}
+	/*! \brief Set the n_dec number
+	 *
+	 * \return n_dec
+	 *
+	 */
+	size_t get_ndec() const
+	{
+		return n_dec;
+	}
 
-	/////////////////////////////////////
+/////////////////////////////////////
 };
 
 /*! \brief Calculate parameters for the cell list

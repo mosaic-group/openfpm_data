@@ -5,6 +5,8 @@
 #include <boost/multiprecision/float128.hpp>
 #endif
 
+#include "util/cuda_util.hpp"
+
 namespace openfpm
 {
 	namespace math

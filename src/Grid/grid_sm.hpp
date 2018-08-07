@@ -86,6 +86,9 @@ template<unsigned int dim,typename stencil=no_stencil,typename warn=print_warnin
 template<unsigned int N, typename T>
 class grid_sm
 {
+	//! Box enclosing the grid
+	Box<N,size_t> box;
+
 	//! total number of the elements in the grid
 	size_t size_tot;
 
@@ -110,11 +113,19 @@ class grid_sm
 		sz_s[0] = sz;
 		this->sz[0] = sz;
 
+		// set the box
+		box.setHigh(0,sz);
+		box.setLow(0,0);
+
 		for (size_t i = 1 ;  i < N ; i++)
 		{
 			/* coverity[dead_error_begin] */
 			sz_s[i] = sz*sz_s[i-1];
 			this->sz[i] = sz;
+
+			// set the box
+			box.setHigh(i,sz);
+			box.setLow(i,0);
 		}
 	}
 
@@ -133,11 +144,19 @@ class grid_sm
 		sz_s[0] = sz[0];
 		this->sz[0] = sz[0];
 
+		// set the box
+		box.setHigh(0,sz[0]);
+		box.setLow(0,0);
+
 		for (size_t i = 1 ;  i < N ; i++)
 		{
 			/* coverity[dead_error_begin] */
 			sz_s[i] = sz[i]*sz_s[i-1];
 			this->sz[i] = sz[i];
+
+			// set the box
+			box.setHigh(i,sz[i]);
+			box.setLow(i,0);
 		}
 	}
 
@@ -153,10 +172,18 @@ class grid_sm
 		sz_s[0] = 0;
 		this->sz[0] = 0;
 
+		// set the box
+		box.setHigh(0,0);
+		box.setLow(0,0);
+
 		for (size_t i = 1 ;  i < N ; i++)
 		{
 			/* coverity[dead_error_begin] */
 			sz_s[i] = sz[i]*sz_s[i-1];
+
+			// set the box
+			box.setHigh(i,sz[i]);
+			box.setLow(i,0);
 		}
 	}
 
@@ -169,20 +196,6 @@ public:
 	 */
 	inline Box<N,size_t> getBox() const
 	{
-		//! Box enclosing the grid
-		Box<N,size_t> box;
-
-		// set the box
-		box.setHigh(0,sz[0]);
-		box.setLow(0,0);
-
-		for (size_t i = 1 ;  i < N ; i++)
-		{
-			// set the box
-			box.setHigh(i,sz[i]);
-			box.setLow(i,0);
-		}
-
 		return box;
 	}
 
@@ -577,6 +590,8 @@ public:
 			sz[i] = g.sz[i];
 			sz_s[i] = g.sz_s[i];
 		}
+
+		box = g.box;
 
 		return *this;
 	}

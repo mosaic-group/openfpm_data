@@ -57,6 +57,7 @@
 #include "Packer_Unpacker/Packer_util.hpp"
 #include "Packer_Unpacker/has_pack_agg.hpp"
 #include "grid_base_implementation.hpp"
+#include "map_grid_cuda_ker.cuh"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;
@@ -189,53 +190,69 @@ public:
 	{
 		return false;
 	}
-};
 
+#ifdef CUDA_GPU
 
-/*! \brief this class is a functor for "for_each" algorithm
- *
- * This class is a functor for "for_each" algorithm. For each
- * element of the boost::vector the operator() is called.
- * Is mainly used to copy one encap into another encap object
- *
- * \tparam encap source
- * \tparam encap dst
- *
- */
-
-template<typename T_type>
-struct copy_switch_memory_c_no_cpy
-{
-	//! encapsulated source object
-	const typename memory_traits_inte<T_type>::type & src;
-	//! encapsulated destination object
-	typename memory_traits_inte<T_type>::type & dst;
-
-
-	/*! \brief constructor
+	/*! \brief Copy the memory from host to device
 	 *
-	 * \param src source encapsulated object
-	 * \param dst source encapsulated object
+	 * \tparam (all properties are copied to prp is useless in this case)
 	 *
 	 */
-	inline copy_switch_memory_c_no_cpy(const typename memory_traits_inte<T_type>::type & src,
-			                   typename memory_traits_inte<T_type>::type & dst)
-	:src(src),dst(dst)
+	template<unsigned int ... prp> void hostToDevice()
 	{
-	};
-
-
-	//! It call the copy function for each property
-	template<typename T>
-	inline void operator()(T& t) const
-	{
-		boost::fusion::at_c<T::value>(dst).mem = boost::fusion::at_c<T::value>(src).mem;
-		// Increment the reference of mem
-		boost::fusion::at_c<T::value>(dst).mem->incRef();
-		boost::fusion::at_c<T::value>(dst).mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
-		boost::fusion::at_c<T::value>(dst).switchToDevicePtrNoCopy();
+		this->mem->getDevicePointer();
 	}
+
+	/*! \brief It return the properties arrays.
+	 *
+	 * In case of Cuda memory it return the device pointers to pass to the kernels
+	 *
+	 *
+	 */
+	template<unsigned int id> void * getDeviceBufferCopy()
+	{
+		return this->mem->getDevicePointer();
+	}
+
+	/*! \brief It return the properties arrays.
+	 *
+	 * In case of Cuda memory it return the device pointers to pass to the kernels
+	 *
+	 * This variant does not copy the host memory to the device memory
+	 *
+	 */
+	template<unsigned int id> void * getDeviceBuffer()
+	{
+		return this->mem->getDevicePointerNoCopy();
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+	 *
+	 *
+	 */
+	template<unsigned int ... prp> void deviceToHost()
+	{
+		this->mem->deviceToHost();
+	}
+
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	grid_gpu_ker<dim,T> toKernel()
+	{
+		grid_gpu_ker<dim,T> g(this->g1);
+//		copy_switch_memory_c_no_cpy<T,memory_traits_lin> cp_mc(this->data_,g.data_);
+
+//		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,1> >(cp_mc);
+
+		return g;
+	}
+
+#endif
 };
+
 
 
 /*! \brief this class is a functor for "for_each" algorithm
@@ -354,10 +371,6 @@ struct device_to_host_impl
 		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem->deviceToHost();
 	}
 };
-
-
-#include "map_grid_cuda_ker.cuh"
-
 
 
 struct dim3_

@@ -11,6 +11,24 @@
 #include "grid_base_impl_layout.hpp"
 #include "util/cuda_util.hpp"
 
+template<bool np,typename T>
+struct skip_init
+{
+	static bool skip_()
+	{
+		return true;
+	}
+};
+
+template<typename T>
+struct skip_init<true,T>
+{
+	static bool skip_()
+	{
+		return T::noPointers();
+	}
+};
+
 #ifdef CUDA_GPU
 
 #ifndef __NVCC__
@@ -521,7 +539,9 @@ public:
 		//! Allocate the memory and create the reppresentation
 //		if (g1.size() != 0) data_.allocate(g1.size());
 
-		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemory<p>(data_,m,g1.size(),T::noPointers);
+		bool skip_ini = skip_init<has_noPointers<T>::value,T>::skip_();
+
+		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemory<p>(data_,m,g1.size(),skip_ini);
 
 		is_mem_init = true;
 	}
@@ -740,11 +760,17 @@ public:
 	 * \param fl byte pattern to fill
 	 *
 	 */
+	template<int prp>
 	void fill(unsigned char fl)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
+		if (prp != 0 || is_layout_mlin<layout_base<T>>::type::value == false)
+		{
+			std::cout << "Error: " << __FILE__ << ":" << __LINE__ << " unsupported fill operation " << std::endl;
+		}
+
 		memset(getPointer(),fl,size() * sizeof(T));
 	}
 

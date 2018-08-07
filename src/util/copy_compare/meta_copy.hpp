@@ -212,6 +212,44 @@ struct meta_copy<T[N1][N2]>
 			}
 		}
 	}
+
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	template<typename v_mpl>
+	__device__ __host__ static inline void meta_copy_(const openfpm::detail::multi_array::sub_array_openfpm<T,2,v_mpl> src,
+			                            openfpm::detail::multi_array::sub_array_openfpm<T,2,v_mpl> dst)
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < N2 ; i2++)
+			{
+				copy_general<T>(src[i1][i2],dst[i1][i2]);
+			}
+		}
+	}
+
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	template<typename v_mpl>
+	__device__ __host__ static inline void meta_copy_(const openfpm::detail::multi_array::sub_array_openfpm<T,2,v_mpl> src,
+			                            T dst[N1][N2])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < N2 ; i2++)
+			{
+				copy_general<T>(src[i1][i2],dst[i1][i2]);
+			}
+		}
+	}
 };
 
 //! Partial specialization for N=2 2D-Array

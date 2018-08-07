@@ -8,6 +8,7 @@
 #ifndef MEMFAST_HPP_
 #define MEMFAST_HPP_
 
+#include "config.h"
 #include "Space/SpaceBox.hpp"
 #include "util/mathutil.hpp"
 #include "Space/Shape/HyperCube.hpp"
@@ -15,6 +16,29 @@
 #include <unordered_map>
 #include "util/common.hpp"
 #include "Vector/map_vector.hpp"
+
+template <typename Memory, typename local_index>
+class Mem_fast_ker
+{
+	//! Number of slot for each cell
+	local_index slot;
+
+	//! number of particle in each cell list
+	openfpm::vector_gpu_ker<aggregate<local_index>> cl_n;
+
+	//! base that store the data
+	typedef openfpm::vector_gpu_ker<aggregate<local_index>> base;
+
+	//! elements that each cell store (each cell can store a number
+	//! of elements == slot )
+	base cl_base;
+
+public:
+
+	Mem_fast_ker(openfpm::vector_gpu_ker<aggregate<local_index>> cl_n, openfpm::vector_gpu_ker<aggregate<local_index>> cl_base)
+	:cl_n(cl_n),cl_base(cl_base)
+	{}
+};
 
 /*! \brief It is a class that work like a vector of vector
  *
@@ -26,17 +50,17 @@
  * is the maximum number of elements across the vectors
  *
  */
-template <typename local_index = size_t>
+template <typename Memory = HeapMemory, typename local_index = size_t>
 class Mem_fast
 {
 	//! Number of slot for each cell
 	local_index slot;
 
 	//! number of particle in each cell list
-	openfpm::vector<local_index> cl_n;
+	openfpm::vector<aggregate<local_index>,Memory> cl_n;
 
 	//! base that store the data
-	typedef typename openfpm::vector<local_index> base;
+	typedef typename openfpm::vector<aggregate<local_index>,Memory> base;
 
 	//! elements that each cell store (each cell can store a number
 	//! of elements == slot )
@@ -55,8 +79,8 @@ class Mem_fast
 		// copy cl_base
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
 		{
-			for (size_t j = 0 ; j < cl_n.get(i) ; j++)
-				cl_base_.get(2*i*slot + j) = cl_base.get(slot * i + j);
+			for (local_index j = 0 ; j < cl_n.template get<0>(i) ; j++)
+			{cl_base_.template get<0>(2*i*slot + j) = cl_base.template get<0>(slot * i + j);}
 		}
 
 		// Double the number of slots
@@ -68,6 +92,8 @@ class Mem_fast
 
 
 public:
+
+	typedef Mem_fast_ker<Memory,local_index> toKernel_type;
 
 	/*! \brief return the number of elements
 	 *
@@ -92,7 +118,7 @@ public:
 		// create the array that store the number of particle on each cell and se it to 0
 
 		cl_n.resize(tot_n_cell);
-		cl_n.fill(0);
+		cl_n.template fill<0>(0);
 
 		// create the array that store the cell id
 
@@ -104,7 +130,7 @@ public:
 	 * \param mem Mem_fast to copy
 	 *
 	 */
-	inline void operator=(const Mem_fast<local_index> & mem)
+	inline void operator=(const Mem_fast<Memory,local_index> & mem)
 	{
 		slot = mem.slot;
 
@@ -117,7 +143,7 @@ public:
 	 * \param mem Mem_fast to copy
 	 *
 	 */
-	inline void operator=(Mem_fast<local_index> && mem)
+	inline void operator=(Mem_fast<Memory,local_index> && mem)
 	{
 		this->swap(mem);
 	}
@@ -128,11 +154,11 @@ public:
 	 * \param ele element to add
 	 *
 	 */
-	inline void addCell(local_index cell_id, typename base::value_type ele)
+	inline void addCell(local_index cell_id, local_index ele)
 	{
 		// Get the number of element the cell is storing
 
-		size_t nl = getNelements(cell_id);
+		local_index nl = getNelements(cell_id);
 
 		if (nl + 1 >= slot)
 		{
@@ -141,8 +167,8 @@ public:
 
 		// we have enough slot to store another neighbor element
 
-		cl_base.get(slot * cell_id + cl_n.get(cell_id)) = ele;
-		cl_n.get(cell_id)++;
+		cl_base.template get<0>(slot * cell_id + cl_n.template get<0>(cell_id)) = ele;
+		cl_n.template get<0>(cell_id)++;
 	}
 
 	/*! \brief Add an element to the cell
@@ -151,7 +177,7 @@ public:
 	 * \param ele element to add
 	 *
 	 */
-	inline void add(local_index cell_id, typename base::value_type ele)
+	inline void add(local_index cell_id, local_index ele)
 	{
 		// add the element to the cell
 
@@ -166,9 +192,9 @@ public:
 	 * \return the reference to the selected element
 	 *
 	 */
-	inline auto get(local_index cell, local_index ele) -> decltype(cl_base.get(cell * slot + ele)) &
+	inline auto get(local_index cell, local_index ele) -> decltype(cl_base.template get<0>(cell * slot + ele)) &
 	{
-		return cl_base.get(cell * slot + ele);
+		return cl_base.template get<0>(cell * slot + ele);
 	}
 
 
@@ -180,9 +206,9 @@ public:
 	 * \return the reference to the selected element
 	 *
 	 */
-	inline auto get(local_index cell, local_index ele) const -> decltype(cl_base.get(cell * slot + ele)) &
+	inline auto get(local_index cell, local_index ele) const -> decltype(cl_base.template get<0>(cell * slot + ele)) &
 	{
-		return cl_base.get(cell * slot + ele);
+		return cl_base.template get<0>(cell * slot + ele);
 	}
 
 
@@ -194,7 +220,7 @@ public:
 	 */
 	inline void remove(local_index cell, local_index ele)
 	{
-		cl_n.get(cell)--;
+		cl_n.template get<0>(cell)--;
 	}
 
 	/*! \brief Get the number of elements in the cell
@@ -206,7 +232,7 @@ public:
 	 */
 	inline size_t getNelements(const local_index cell_id) const
 	{
-		return cl_n.get(cell_id);
+		return cl_n.template get<0>(cell_id);
 	}
 
 
@@ -215,7 +241,7 @@ public:
 	 * \param mem object to swap the memory with
 	 *
 	 */
-	inline void swap(Mem_fast<local_index> & mem)
+	inline void swap(Mem_fast<Memory,local_index> & mem)
 	{
 		cl_n.swap(mem.cl_n);
 		cl_base.swap(mem.cl_base);
@@ -230,7 +256,7 @@ public:
 	 * \param mem object to swap the memory with
 	 *
 	 */
-	inline void swap(Mem_fast<local_index> && mem)
+	inline void swap(Mem_fast<Memory,local_index> && mem)
 	{
 		slot = mem.slot;
 
@@ -246,7 +272,7 @@ public:
 	inline void clear()
 	{
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
-			cl_n.get(i) = 0;
+		{cl_n.template get<0>(i) = 0;}
 	}
 
 	/*! \brief Get the first element of a cell (as reference)
@@ -258,7 +284,7 @@ public:
 	 */
 	inline const local_index & getStartId(local_index cell_id) const
 	{
-		return cl_base.get(cell_id*slot);
+		return cl_base.template get<0>(cell_id*slot);
 	}
 
 	/*! \brief Get the last element of a cell (as reference)
@@ -270,7 +296,7 @@ public:
 	 */
 	inline const local_index & getStopId(local_index cell_id) const
 	{
-		return cl_base.get(cell_id*slot+cl_n.get(cell_id));
+		return cl_base.template get<0>(cell_id*slot+cl_n.template get<0>(cell_id));
 	}
 
 	/*! \brief Just return the value pointed by part_id
@@ -307,6 +333,18 @@ public:
 	inline void set_slot(local_index slot)
 	{
 		this->slot = slot;
+	}
+
+	/*! \brief Convert the structure to a structure usable into a kernel
+	 *
+	 * \return an object usable in the kernel
+	 *
+	 */
+	Mem_fast_ker<Memory,local_index> toKernel()
+	{
+		Mem_fast_ker<Memory,local_index> mfk(cl_n.toKernel(),cl_base.toKernel());
+
+		return mfk;
 	}
 
 };

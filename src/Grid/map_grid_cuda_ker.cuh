@@ -9,6 +9,51 @@
 #define MAP_GRID_CUDA_KER_HPP_
 
 
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+
+template<typename T_type>
+struct copy_switch_memory_c_no_cpy
+{
+	//! encapsulated source object
+	const typename memory_traits_inte<T_type>::type & src;
+	//! encapsulated destination object
+	typename memory_traits_inte<T_type>::type & dst;
+
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	inline copy_switch_memory_c_no_cpy(const typename memory_traits_inte<T_type>::type & src,
+			                   typename memory_traits_inte<T_type>::type & dst)
+	:src(src),dst(dst)
+	{
+	};
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		boost::fusion::at_c<T::value>(dst).mem = boost::fusion::at_c<T::value>(src).mem;
+		// Increment the reference of mem
+		boost::fusion::at_c<T::value>(dst).mem->incRef();
+		boost::fusion::at_c<T::value>(dst).mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
+		boost::fusion::at_c<T::value>(dst).switchToDevicePtrNoCopy();
+	}
+};
+
 /*! \brief grid interface available when on gpu
  *
  * \tparam n_buf number of template buffers

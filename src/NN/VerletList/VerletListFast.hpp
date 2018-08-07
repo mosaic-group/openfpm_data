@@ -274,9 +274,9 @@ public:
  */
 template<unsigned int dim,
 		 typename T,
-		 typename Mem_type = Mem_fast<local_index_>,
+		 typename Mem_type = Mem_fast<HeapMemory,local_index_>,
 		 typename transform = no_transform<dim,T>,
-		 typename CellListImpl = CellList<dim,T,Mem_fast<typename Mem_type::loc_index>,transform> >
+		 typename CellListImpl = CellList<dim,T,Mem_fast<HeapMemory,typename Mem_type::loc_index>,transform> >
 class VerletList: public Mem_type
 {
 protected:

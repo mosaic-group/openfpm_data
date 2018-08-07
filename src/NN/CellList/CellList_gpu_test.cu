@@ -293,7 +293,7 @@ void test_sub_index2()
 template<unsigned int dim, typename T>
 void create_n_part(int n_part,
 		           openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> & pl,
-		           CellList<dim,T, Mem_fast> & cl)
+		           CellList<dim,T, Mem_fast<>> & cl)
 {
 	pl.resize(n_part);
 
@@ -320,7 +320,7 @@ void create_n_part(int n_part,
 }
 
 template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
-void create_starts_and_parts_ids(CellList<dim,T, Mem_fast> & cl,
+void create_starts_and_parts_ids(CellList<dim,T, Mem_fast<>> & cl,
 								 grid_sm<dim,void> & gr,
 								 size_t n_part,
 								 size_t n_cell,
@@ -394,7 +394,7 @@ void test_fill_cell()
 		off[i] = 0;
 	}
 
-	CellList<dim,T, Mem_fast> cl(domain,div_host,0);
+	CellList<dim,T, Mem_fast<>> cl(domain,div_host,0);
 	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
 
 	create_n_part(5000,pl,cl);
@@ -520,7 +520,7 @@ void test_reorder_parts(size_t n_part)
 		domain.setHigh(i,1.0);
 	}
 
-	CellList<dim,T, Mem_fast> cl(domain,div_host,0);
+	CellList<dim,T, Mem_fast<>> cl(domain,div_host,0);
 	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
 	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl_out;
 
@@ -870,7 +870,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 	// Construct an equivalent CPU cell-list
 
-	CellList<dim,T,Mem_fast,shift<dim,T>> cl_cpu(box,div);
+	CellList<dim,T,Mem_fast<>,shift<dim,T>> cl_cpu(box,div);
 
 	// construct
 
@@ -1034,6 +1034,50 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force)
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>>(box2,10000);
 
 	std::cout << "End cell list GPU" << "\n";
+
+	// Test the cell list
+}
+
+__global__ void cl_offload_gpu()
+{
+
+}
+
+BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
+{
+	std::cout << "Test cell list offload gpu" << "\n";
+
+	// Subdivisions
+	size_t div[3] = {10,10,10};
+
+	// grid info
+	grid_sm<3,void> g_info(div);
+
+	Box<3,float> box({-1.0,-1.0,-1.0},{1.0,1.0,1.0});
+
+	// CellS = CellListM<dim,T,8>
+	CellList<3,float,Mem_fast<CudaMemory,int>> cl1(box,div);
+
+	openfpm::vector<Point<3,float>> v;
+	v.resize(10000);
+
+	for (size_t i = 0 ; i < v.size() ; i++)
+	{
+		v.template get<0>(i)[0] = 2.0 * (float)rand() / RAND_MAX - 1.0;
+		v.template get<0>(i)[1] = 2.0 * (float)rand() / RAND_MAX - 1.0;
+		v.template get<0>(i)[2] = 2.0 * (float)rand() / RAND_MAX - 1.0;
+
+		Point<3,float> xp = v.template get<0>(i);
+
+		size_t cl = cl1.getCell(xp);
+		cl1.add(cl,i);
+	}
+
+	auto test = cl1.toKernel();
+
+
+
+	std::cout << "End cell list offload gpu" << "\n";
 
 	// Test the cell list
 }

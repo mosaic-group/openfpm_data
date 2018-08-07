@@ -53,7 +53,10 @@ struct object_si_d_e
     	typedef typename boost::mpl::at<typename v_dst::type,typename boost::mpl::int_<T::value>>::type dtype;
     	typedef decltype(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>()) stype;
 
-    	meta_copy_d<stype,dtype>::meta_copy_d_(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(),dst.template get<T::value>());
+    	// In case of layout switch use this
+    	//meta_copy_d<stype,dtype>::meta_copy_d_(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(),dst.template get<T::value>());
+
+    	meta_copy<typename std::remove_reference<stype>::type>::meta_copy_(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(),dst.template get<T::value>());
     }
 };
 

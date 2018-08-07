@@ -166,7 +166,7 @@ struct mem_geto
 
 	static inline encapc<dim,T,typename layout::type> get_lin(data_type & data_, const size_t & v1)
 	{
-		return encapc<dim,T,typename layout::type>(data_.mem_r->operator[](v1));
+		return encapc<dim,T,typename layout::type>(data_.mem_r.operator[](v1));
 	}
 };
 

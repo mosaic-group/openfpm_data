@@ -146,7 +146,7 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 	    mem->resize( sz*sizeof(T) );
 
 	    //! we create the representation for this buffer
-	    mem_r = new memory_array<T>(mem->getPointer(),sz,mem->isInitialized() | skip_initialization);
+	    mem_r.initialize(mem->getPointer(),sz,mem->isInitialized() | skip_initialization);
 
 	    return true;
 	}
@@ -504,7 +504,7 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	 * memory to mem_r
 	 *
 	 */
-	bool allocate(const size_t sz)
+	bool allocate(const size_t sz, bool skip_initialization = false)
 	{
 		memory * mem = this->mem;
 
