@@ -412,7 +412,7 @@ class CellDecomposer_sm
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (pos[0] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
+		if (pos[s] < box.getLow(s) - off[s]*box_unit.getP2()[s] || pos[s] > box.getHigh(s) + off[s]*box_unit.getP2()[s])
 		{
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << Point<dim,T>(pos).toString() << " is not inside the cell space";
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
