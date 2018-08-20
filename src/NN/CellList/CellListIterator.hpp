@@ -21,7 +21,7 @@ private:
 	size_t cell_count;
 
 	//! Particles counter
-	size_t p_count;
+	long int p_count;
 
 
 	/*! \brief Handles incrementing of cells and particles counters
@@ -33,7 +33,7 @@ private:
 
 		const auto & SFCkeys = NN.getCellSFC().getKeys();
 
-		if (p_count >= NN.getNelements(SFCkeys.get(cell_count)))
+		if (p_count >= (long int)NN.getNelements(SFCkeys.get(cell_count)))
 		{
 			p_count = 0;
 			++cell_count;

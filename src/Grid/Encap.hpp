@@ -358,7 +358,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
+	__device__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
 		copy_cpu_encap_encap<encapc<dim,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
 
@@ -374,7 +374,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline encapc<dim,T,Mem> & operator=(const T & obj)
+	__device__  inline encapc<dim,T,Mem> & operator=(const T & obj)
 	{
 		copy_fusion_vector<typename T::type> cp(obj.data,data_c);
 

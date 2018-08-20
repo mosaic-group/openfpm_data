@@ -10,6 +10,10 @@
 
 #include "grid_base_impl_layout.hpp"
 #include "util/cuda_util.hpp"
+#include "cuda/cuda_grid_gpu_funcs.cuh"
+
+#define DATA_ON_HOST 32
+#define DATA_ON_DEVICE 64
 
 template<bool np,typename T>
 struct skip_init
@@ -57,6 +61,13 @@ struct skip_init<true,T>
 							  key.set_d(2,threadIdx.z + blockIdx.z * blockDim.z + ite_gpu.start.get(2));\
 										 \
 										 if (key.get(0) > ite_gpu.stop.get(0) || key.get(1) > ite_gpu.stop.get(1) || key.get(2) > ite_gpu.stop.get(2))\
+    									 {return;}
+
+#define GRID_ID_2(ite_gpu) grid_key_dx<2> key;\
+							  key.set_d(0,threadIdx.x + blockIdx.x * blockDim.x + ite_gpu.start.get(0));\
+    						  key.set_d(1,threadIdx.y + blockIdx.y * blockDim.y + ite_gpu.start.get(1));\
+										 \
+										 if (key.get(0) > ite_gpu.stop.get(0) || key.get(1) > ite_gpu.stop.get(1))\
     									 {return;}
 
 template<unsigned int dim>
@@ -781,9 +792,11 @@ public:
 	 * the data are cropped
 	 *
 	 * \param sz reference to an array of dimension dim
+	 * \param opt options for resize. In case we know that the data are only on device memory we can use DATA_ONLY_DEVICE,
+	 *                                In case we know that the data are only on host memory we can use DATA_ONLY_HOST
 	 *
 	 */
-	void resize(const size_t (& sz)[dim])
+	void resize(const size_t (& sz)[dim], size_t opt = DATA_ON_HOST | DATA_ON_DEVICE)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -818,9 +831,11 @@ public:
 
 			//! N-D copy
 
+		if (opt & DATA_ON_HOST)
+		{
 			size_t sz_c[dim];
 			for (size_t i = 0 ; i < dim ; i++)
-				sz_c[i] = (g1.size(i) < sz[i])?g1.size(i):sz[i];
+			{sz_c[i] = (g1.size(i) < sz[i])?g1.size(i):sz[i];}
 
 			grid_sm<dim,void> g1_c(sz_c);
 
@@ -838,6 +853,40 @@ public:
 
 				++it;
 			}
+		}
+
+		if (opt & DATA_ON_DEVICE && S::isDeviceHostSame() == false)
+		{
+#if defined(CUDA_GPU) && defined(__NVCC__)
+
+			grid_key_dx<dim> start;
+			grid_key_dx<dim> stop;
+
+			for (size_t i = 0 ; i < dim ; i++)
+			{
+				start.set_d(i,0);
+				stop.set_d(i,g1.size(i)-1);
+			}
+
+			auto ite = this->getGPUIterator(start,stop);
+
+			if (dim == 1)
+			{
+				copy_fast_1d_device_memory<is_layout_mlin<layout_base<T>>::value,decltype(grid_new.data_),S> cf1dm(grid_new.data_,data_);
+
+				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cf1dm);
+			}
+			else
+			{copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());}
+#else
+
+			std::cout << __FILE__ << ":" << __LINE__ << " error: the function resize require the launch of a kernel, but it seem that this" <<
+					                                    " file (grid_base_implementation.hpp) has not been compiled with NVCC  " << std::endl;
+
+#endif
+
+		}
+
 //		}
 
 		// copy grid_new to the base
@@ -1099,6 +1148,30 @@ public:
 		return grid_key_dx_iterator<dim>(g1);
 	}
 
+#ifdef CUDA_GPU
+
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	grid_gpu_ker<dim,T,layout_base> toKernel()
+	{
+		return grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+	}
+
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	const grid_gpu_ker<dim,T,layout_base> toKernel() const
+	{
+		return grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+	}
+
+#endif
+
 	/*! \brief Return a grid iterator
 	 *
 	 * Return a grid iterator, to iterate through the grid with stencil calculation
@@ -1137,6 +1210,25 @@ public:
 		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
 	}
 
+	/*! \brief return the internal data_
+	 *
+	 * return the internal data_
+	 *
+	 */
+	layout & get_internal_data_()
+	{
+		return data_;
+	}
+
+	/*! \brief return the internal data_
+	 *
+	 * return the internal data_
+	 *
+	 */
+	const layout & get_internal_data_() const
+	{
+		return data_;
+	}
 
 	/*! \brief It return the id of structure in the allocation list
 	 *

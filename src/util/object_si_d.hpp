@@ -50,7 +50,7 @@ struct object_si_d_e
     template<typename T>
     void operator()(T& t)
     {
-    	typedef typename boost::mpl::at<typename v_dst::type,typename boost::mpl::int_<T::value>>::type dtype;
+//    	typedef typename boost::mpl::at<typename v_dst::type,typename boost::mpl::int_<T::value>>::type dtype;
     	typedef decltype(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>()) stype;
 
     	// In case of layout switch use this

@@ -66,7 +66,7 @@ struct object_s_di_e
 
 	//! It call the functor for each member
     template<typename T>
-    void operator()(T& t)
+    __device__ __host__ void operator()(T& t)
     {
 		// Remove the reference from the type to copy
 		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type copy_dtype;
@@ -335,10 +335,10 @@ struct object_s_di<v_src,v_dst,OBJ_ENCAP,prp...>
 	 * \param vd destination object
 	 *
 	 */
-	inline object_s_di(const v_src & vs, v_dst && vd)
+	__host__ __device__ inline object_s_di(const v_src & vs, v_dst && vd)
 	{
 		object_s_di_e<v_src,v_dst,prp...> obj(vs,vd);
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(obj);
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,(int)sizeof...(prp)> >(obj);
 	}
 
 	/*! \brief Implementation of the copy
@@ -347,7 +347,7 @@ struct object_s_di<v_src,v_dst,OBJ_ENCAP,prp...>
 	 * \param vd destination object
 	 *
 	 */
-	inline object_s_di(const v_src & vs, v_dst & vd)
+	__host__ __device__ inline object_s_di(const v_src & vs, v_dst & vd)
 	{
 		object_s_di_e<v_src,v_dst,prp...> obj(vs,vd);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(obj);

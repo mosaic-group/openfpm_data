@@ -56,8 +56,8 @@
 #include "iterators/grid_key_dx_iterator_sub_bc.hpp"
 #include "Packer_Unpacker/Packer_util.hpp"
 #include "Packer_Unpacker/has_pack_agg.hpp"
+#include "cuda/cuda_grid_gpu_funcs.cuh"
 #include "grid_base_implementation.hpp"
-#include "map_grid_cuda_ker.cuh"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;
@@ -71,7 +71,6 @@ template<unsigned int dim, typename T, typename S=HeapMemory, typename layout = 
 class grid_cpu
 {
 };
-
 
 /*!
  *
@@ -200,7 +199,7 @@ public:
 	 */
 	template<unsigned int ... prp> void hostToDevice()
 	{
-		this->mem->getDevicePointer();
+		this->data_.mem->getDevicePointer();
 	}
 
 	/*! \brief It return the properties arrays.
@@ -211,7 +210,7 @@ public:
 	 */
 	template<unsigned int id> void * getDeviceBufferCopy()
 	{
-		return this->mem->getDevicePointer();
+		return this->data_.mem->getDevicePointer();
 	}
 
 	/*! \brief It return the properties arrays.
@@ -223,16 +222,32 @@ public:
 	 */
 	template<unsigned int id> void * getDeviceBuffer()
 	{
-		return this->mem->getDevicePointerNoCopy();
+		return this->data_.mem->getDevicePointerNoCopy();
 	}
 
 	/*! \brief Synchronize the memory buffer in the device with the memory in the host
 	 *
+	 * \tparam ingored
+	 *
+	 * All properties are transfered
 	 *
 	 */
 	template<unsigned int ... prp> void deviceToHost()
 	{
-		this->mem->deviceToHost();
+		this->data_.mem->deviceToHost();
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+	 *
+	 * \param start starting element to transfer
+	 * \param stop stop element to transfer
+	 *
+	 * \tparam properties to transfer (ignored all properties are trasfert)
+	 *
+	 */
+	template<unsigned int ... prp> void deviceToHost(size_t start, size_t stop)
+	{
+		this->data_.mem->deviceToHost(start*sizeof(T),(stop+1)*sizeof(T));
 	}
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
@@ -240,14 +255,35 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	grid_gpu_ker<dim,T> toKernel()
+	grid_gpu_ker<dim,T,memory_traits_lin> toKernel()
 	{
-		grid_gpu_ker<dim,T> g(this->g1);
-//		copy_switch_memory_c_no_cpy<T,memory_traits_lin> cp_mc(this->data_,g.data_);
+/*		grid_gpu_ker<dim,T,memory_traits_lin> g(this->g1);
 
-//		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,1> >(cp_mc);
+		g.data_.mem = this->data_.mem;
+		// Increment the reference of mem
+		g.data_.mem->incRef();
+		g.data_.mem_r.bind_ref(this->data_.mem_r);
+		g.data_.switchToDevicePtrNoCopy();*/
 
-		return g;
+		return grid_toKernelImpl<is_layout_inte<memory_traits_lin<T>>::value,dim,T>::toKernel(*this);
+	}
+
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	const grid_gpu_ker<dim,T,memory_traits_lin> toKernel() const
+	{
+/*		grid_gpu_ker<dim,T,memory_traits_lin> g(this->g1);
+
+		g.data_.mem = this->data_.mem;
+		// Increment the reference of mem
+		g.data_.mem->incRef();
+		g.data_.mem_r.bind_ref(this->data_.mem_r);
+		g.data_.switchToDevicePtrNoCopy();*/
+
+		return grid_toKernelImpl<is_layout_inte<memory_traits_lin<T>>::value,dim,T>::toKernel(*this);
 	}
 
 #endif
@@ -372,6 +408,52 @@ struct device_to_host_impl
 	}
 };
 
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+template<typename T_type, unsigned int ... prp>
+struct device_to_host_start_stop_impl
+{
+	//! encapsulated destination object
+	typename memory_traits_inte<T_type>::type & dst;
+
+	//! Convert the packed properties into an MPL vector
+	typedef typename to_boost_vmpl<prp...>::type v_prp;
+
+	//! start
+	size_t start;
+
+	//! stop
+	size_t stop;
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	inline device_to_host_start_stop_impl(typename memory_traits_inte<T_type>::type & dst,size_t start,size_t stop)
+	:dst(dst),start(start),stop(stop)
+	{
+	};
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		typedef typename boost::mpl::at<typename T_type::type,T>::type p_type;
+
+		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem->deviceToHost(start*sizeof(p_type),(stop+1)*sizeof(p_type));
+	}
+};
 
 struct dim3_
 {
@@ -510,19 +592,39 @@ public:
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(dth);
 	}
 
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+	 *
+	 * \param start starting element to transfer
+	 * \param stop stop element to transfer
+	 *
+	 * \tparam properties to transfer
+	 *
+	 */
+	template<unsigned int ... prp> void deviceToHost(size_t start, size_t stop)
+	{
+		device_to_host_start_stop_impl<T, prp ...> dth(this->data_,start,stop);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(dth);
+	}
+
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 	 *
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	grid_gpu_ker<dim,T> toKernel()
+	grid_gpu_ker<dim,T,memory_traits_inte> toKernel()
 	{
-		grid_gpu_ker<dim,T> g(this->g1);
-		copy_switch_memory_c_no_cpy<T> cp_mc(this->data_,g.data_);
+		return grid_toKernelImpl<is_layout_inte<memory_traits_inte<T>>::value,dim,T>::toKernel(*this);
+	}
 
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp_mc);
-
-		return g;
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	const grid_gpu_ker<dim,T,memory_traits_inte> toKernel() const
+	{
+		return grid_toKernelImpl<is_layout_inte<memory_traits_inte<T>>::value,dim,T>::toKernel(*this);
 	}
 
 #endif

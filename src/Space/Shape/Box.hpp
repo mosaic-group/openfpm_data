@@ -212,7 +212,7 @@ public:
 	 *
 	 */
 
-	Box<dim,T> & operator=(const Box<dim,T> & box)
+	__device__ __host__ Box<dim,T> & operator=(const Box<dim,T> & box)
 	{
 	    for(size_t i = 0 ; i < dim ; i++)
 	    {setLow(i,box.getLow(i));}
@@ -277,7 +277,7 @@ public:
 	 * \param box from which to construct
 	 *
 	 */
-	inline Box(const Box<dim,T> & box)
+	__device__ __host__ inline Box(const Box<dim,T> & box)
 	{
 		// we copy the data
 
@@ -453,7 +453,7 @@ public:
 	 * \param val value to set
 	 *
 	 */
-	inline void setLow(int i, T val)
+	__device__ __host__  inline void setLow(int i, T val)
 	{
 		boost::fusion::at_c<p1>(data)[i] = val;
 	}
@@ -464,7 +464,7 @@ public:
 	 * \param val value to set
 	 *
 	 */
-	inline void setHigh(int i, T val)
+	__device__ __host__  inline void setHigh(int i, T val)
 	{
 		boost::fusion::at_c<p2>(data)[i] = val;
 	}
@@ -476,7 +476,7 @@ public:
 	 * \return i-coordinate
 	 *
 	 */
-	inline T getLow(int i) const
+	__device__ __host__  inline T getLow(int i) const
 	{
 		return boost::fusion::at_c<p1>(data)[i];
 	}
@@ -487,7 +487,7 @@ public:
 	 * \return i coordinate of the high interval
 	 *
 	 */
-	inline T getHigh(int i) const
+	__device__ __host__ inline T getHigh(int i) const
 	{
 		return boost::fusion::at_c<p2>(data)[i];
 	}
@@ -907,7 +907,7 @@ public:
 	 * \return true if the point is inside the space
 	 *
 	 */
-	inline bool isInsideNP(const Point<dim,T> & p) const
+	__device__ __host__ inline bool isInsideNP(const Point<dim,T> & p) const
 	{
 		// check if bound
 

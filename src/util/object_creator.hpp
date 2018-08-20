@@ -33,8 +33,6 @@ struct check_types
 	template<typename T>
 	void operator()(T& t)
 	{
-
-
 		typedef typename std::remove_all_extents< typename boost::mpl::at<v,boost::mpl::int_<T::value> >::type>::type tpy;
 
 		// if it is a pointer make no sense
@@ -50,7 +48,7 @@ struct check_types
 		{ret = PNP::POINTERS;return;}
 
 		if (std::is_fundamental<tpy>::value == true)
-			return;
+		{return;}
 
 		// check that T has a method called noPointers
 		switch (check_no_pointers<tpy>::value())

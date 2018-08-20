@@ -501,7 +501,7 @@ public:
 	 * \return key of the grid that id identify
 	 *
 	 */
-	inline grid_key_dx<N> InvLinId(mem_id id) const
+	__device__ inline grid_key_dx<N> InvLinId(mem_id id) const
 	{
 		// Inversion of linearize
 

@@ -7,10 +7,11 @@
 #include "util/cuda_util.hpp"
 #include "Vector/map_vector.hpp"
 #include "util/cuda/moderngpu/kernel_load_balance.hxx"
+#include "util/cuda/moderngpu/kernel_mergesort.hxx"
 
 BOOST_AUTO_TEST_SUITE( modern_gpu_tests )
 
-BOOST_AUTO_TEST_CASE( make_vector_compatible_with_modern_gpu_transform_lbs )
+BOOST_AUTO_TEST_CASE( modern_gpu_transform_lbs )
 {
 	std::cout << "Test modern gpu test tansform_lbs" << "\n";
 
@@ -45,6 +46,49 @@ BOOST_AUTO_TEST_CASE( make_vector_compatible_with_modern_gpu_transform_lbs )
 	// Test the cell list
 }
 
+BOOST_AUTO_TEST_CASE( modern_gpu_sort )
+{
+	std::cout << "Test modern gpu test tansform_lbs" << "\n";
+
+	mgpu::standard_context_t context(false);
+
+	int count = 200030;
+
+	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> vgpu;
+	openfpm::vector_gpu<aggregate<unsigned int>> gpu_ns;
+
+	vgpu.resize(count);
+	gpu_ns.resize(count);
+
+	for (size_t i = 0 ; i < count ; i++)
+	{
+		vgpu.template get<0>(i) = ((float)rand() / RAND_MAX) * 17;
+		vgpu.template get<1>(i) = i;
+
+		gpu_ns.template get<0>(i) = vgpu.template get<0>(i);
+	}
+
+	vgpu.hostToDevice<0,1>();
+
+    mergesort((unsigned int *)vgpu.getDeviceBuffer<0>(),(unsigned int *)vgpu.getDeviceBuffer<1>(), count, mgpu::less_t<unsigned int>(), context);
+
+    vgpu.deviceToHost<0,1>();
+
+    // print
+
+    bool match = true;
+    for (int i = 0 ; i < count - 1 ; i++)
+    {
+    	match &= vgpu.template get<0>(i) <= vgpu.template get<0>(i+1);
+    	match &= gpu_ns.template get<0>(vgpu.template get<1>(i)) == vgpu.template get<0>(i);
+    }
+
+    BOOST_REQUIRE_EQUAL(match,true);
+
+	std::cout << "End test modern gpu test tansform_lbs" << "\n";
+
+	// Test the cell list
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

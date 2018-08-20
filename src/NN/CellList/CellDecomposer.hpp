@@ -39,7 +39,7 @@ public:
 	 * \param s shift
 	 *
 	 */
-	shift(const Matrix<dim,T> & t, const Point<dim,T> & s)
+	__device__ __host__ shift(const Matrix<dim,T> & t, const Point<dim,T> & s)
 	:sh(s)
 	{
 		mat.identity();
@@ -53,7 +53,7 @@ public:
 	 * \return the transformed coordinate
 	 *
 	 */
-	inline T transform(const T(&s)[dim], const size_t i) const
+	__device__ __host__  inline T transform(const T(&s)[dim], const size_t i) const
 	{
 		return s[i] - sh.get(i);
 	}
@@ -66,7 +66,7 @@ public:
 	 * \return the transformed coordinate
 	 *
 	 */
-	inline T transform(const Point<dim,T> & s, const size_t i) const
+	__device__ __host__  inline T transform(const Point<dim,T> & s, const size_t i) const
 	{
 		return s.get(i) - sh.get(i);
 	}
@@ -79,7 +79,7 @@ public:
 	 * \return the transformed coordinate
 	 *
 	 */
-	template<typename Mem> inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i) const
+	template<typename Mem> inline __device__ __host__  T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i) const
 	{
 		return s.template get<0>()[i] - sh.get(i);
 	}
@@ -90,7 +90,7 @@ public:
 	 * \param orig origin point
 	 *
 	 */
-	inline void setTransform(const Matrix<dim,T> & mat, const Point<dim,T> & orig)
+	__device__ __host__  inline void setTransform(const Matrix<dim,T> & mat, const Point<dim,T> & orig)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			sh.get(i) = orig.get(i);
@@ -282,7 +282,7 @@ public:
 	 * \param s shift
 	 *
 	 */
-	no_transform(const Matrix<dim,T> & t, const Point<dim,T> & s)
+	__device__ __host__ no_transform(const Matrix<dim,T> & t, const Point<dim,T> & s)
 	{
 		orig.zero();
 		mat.identity();
@@ -296,7 +296,7 @@ public:
 	 * \return the transformed coordinate
 	 *
 	 */
-	inline T transform(const T(&s)[dim], const size_t i) const
+	__device__ __host__ inline T transform(const T(&s)[dim], const size_t i) const
 	{
 		return s[i];
 	}
@@ -309,7 +309,7 @@ public:
 	 * \return the source point coordinate
 	 *
 	 */
-	inline T transform(const Point<dim,T> & s, const size_t i) const
+	__device__ __host__ inline T transform(const Point<dim,T> & s, const size_t i) const
 	{
 		return s.get(i);
 	}
@@ -322,7 +322,7 @@ public:
 	 * \return the point coordinate
 	 *
 	 */
-	template<typename Mem> inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i) const
+	template<typename Mem> __device__ __host__ inline T transform(const encapc<1,Point<dim,T>,Mem> & s, const size_t i) const
 	{
 		return s.template get<Point<dim,T>::x>()[i];
 	}
@@ -1230,15 +1230,6 @@ public:
 		this->box = box;
 
 		Initialize(pad,div);
-
-		// calculate the box for gr_cell2
-/*		Box<dim,T> box_gr_cell2;
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			box_gr_cell2.setLow(i,cell_shift.get(i) * box_unit.getHigh(i));
-			box_gr_cell2.setHigh(i,(cell_shift.get(i) + div2[i]) * box_unit.getHigh(i));
-		}*/
 
 		size_t cells[dim];
 

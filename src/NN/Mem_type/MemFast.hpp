@@ -17,17 +17,17 @@
 #include "util/common.hpp"
 #include "Vector/map_vector.hpp"
 
-template <typename Memory, typename local_index>
+template <typename Memory, template <typename> class layout_base,typename local_index>
 class Mem_fast_ker
 {
 	//! Number of slot for each cell
 	local_index slot;
 
 	//! number of particle in each cell list
-	openfpm::vector_gpu_ker<aggregate<local_index>> cl_n;
+	openfpm::vector_gpu_ker<aggregate<local_index>,layout_base> cl_n;
 
 	//! base that store the data
-	typedef openfpm::vector_gpu_ker<aggregate<local_index>> base;
+	typedef openfpm::vector_gpu_ker<aggregate<local_index>,layout_base> base;
 
 	//! elements that each cell store (each cell can store a number
 	//! of elements == slot )
@@ -35,9 +35,43 @@ class Mem_fast_ker
 
 public:
 
-	Mem_fast_ker(openfpm::vector_gpu_ker<aggregate<local_index>> cl_n, openfpm::vector_gpu_ker<aggregate<local_index>> cl_base)
-	:cl_n(cl_n),cl_base(cl_base)
+	typedef local_index local_index_type;
+
+	Mem_fast_ker(local_index slot,openfpm::vector_gpu_ker<aggregate<local_index>,layout_base> cl_n, openfpm::vector_gpu_ker<aggregate<local_index>,layout_base> cl_base)
+	:slot(slot),cl_n(cl_n),cl_base(cl_base)
 	{}
+
+	inline __device__ int getNelements(int id) const
+	{
+		return (int)cl_n.template get<0>(id);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \param cell id of the cell
+	 * \param ele element id in the cell
+	 *
+	 * \return the reference to the selected element
+	 *
+	 */
+	inline __device__ unsigned int get(unsigned int cell, unsigned int ele)
+	{
+		return cl_base.template get<0>(cell * slot + ele);
+	}
+
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \param cell id of the cell
+	 * \param ele element id in the cell
+	 *
+	 * \return the reference to the selected element
+	 *
+	 */
+	inline unsigned int get(unsigned int cell, unsigned int ele) const
+	{
+		return cl_base.template get<0>(cell * slot + ele);
+	}
 };
 
 /*! \brief It is a class that work like a vector of vector
@@ -93,7 +127,9 @@ class Mem_fast
 
 public:
 
-	typedef Mem_fast_ker<Memory,local_index> toKernel_type;
+	typedef Mem_fast_ker<Memory,memory_traits_lin,local_index> toKernel_type;
+
+	typedef local_index local_index_type;
 
 	/*! \brief return the number of elements
 	 *
@@ -335,17 +371,27 @@ public:
 		this->slot = slot;
 	}
 
+#ifdef CUDA_GPU
+
 	/*! \brief Convert the structure to a structure usable into a kernel
 	 *
 	 * \return an object usable in the kernel
 	 *
 	 */
-	Mem_fast_ker<Memory,local_index> toKernel()
+	Mem_fast_ker<Memory,memory_traits_lin,local_index> toKernel()
 	{
-		Mem_fast_ker<Memory,local_index> mfk(cl_n.toKernel(),cl_base.toKernel());
+		Mem_fast_ker<Memory,memory_traits_lin,local_index> mfk(slot,cl_n.toKernel(),cl_base.toKernel());
 
 		return mfk;
 	}
+
+	void hostToDevice()
+	{
+		cl_n.template hostToDevice<0>();
+		cl_base.template hostToDevice<0>();
+	}
+
+#endif
 
 };
 

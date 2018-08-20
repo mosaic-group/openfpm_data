@@ -122,10 +122,8 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)
 		{this->bc[i] = bc[i];}
 
-		// compile-time array {0,0,0,....}  {2,2,2,...} {1,1,1,...}
+		// compile-time array {3,3,3,....}
 
-		typedef typename generate_array<size_t,dim, Fill_zero>::result NNzero;
-		typedef typename generate_array<size_t,dim, Fill_two>::result NNtwo;
 		typedef typename generate_array<size_t,dim, Fill_three>::result NNthree;
 
 		// In case of high dimension grid_key_dx_iterator_sub can become exponentially

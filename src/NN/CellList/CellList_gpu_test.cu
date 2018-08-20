@@ -17,6 +17,7 @@
 #include "util/boost/boost_array_openfpm.hpp"
 #include  "Point_test.hpp"
 #include "util/cuda/moderngpu/kernel_load_balance.hxx"
+#include "util/cuda/scan_cuda.cuh"
 
 BOOST_AUTO_TEST_SUITE( CellList_gpu_test )
 
@@ -987,7 +988,6 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 		auto NN_it = cl_cpu.getNNIterator(cl_cpu.getCell(xp));
 
-		size_t n_ele = 0;
 		while (NN_it.isNext())
 		{
 			auto q = NN_it.get();
@@ -1038,8 +1038,35 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force)
 	// Test the cell list
 }
 
-__global__ void cl_offload_gpu()
+template<typename CellList_type, typename Vector_type, typename Vector_out>
+__global__ void cl_offload_gpu(CellList_type cl, Vector_type parts, Vector_out output)
 {
+    int p = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (p >= parts.size()) return;
+
+    Point<3,float> xp = parts.template get<0>(p);
+
+    output.template get<0>(p) = cl.getNelements(cl.getCell(xp));
+}
+
+template<typename CellList_type, typename Vector_type, typename Vector_scan_type, typename Vector_list_type>
+__global__ void cl_offload_gpu_list(CellList_type cl, Vector_type parts, Vector_scan_type scan, Vector_list_type list)
+{
+    int p = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (p >= parts.size()) return;
+
+    Point<3,float> xp = parts.template get<0>(p);
+
+    int id = cl.getCell(xp);
+    int n_ele = cl.getNelements(id);
+    int start = scan.template get<0>(p);
+
+    for (int j = 0 ; j < n_ele ; j++)
+    {
+    	list.template get<0>(start+j) = cl.get(id,j);
+    }
 
 }
 
@@ -1056,10 +1083,12 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	Box<3,float> box({-1.0,-1.0,-1.0},{1.0,1.0,1.0});
 
 	// CellS = CellListM<dim,T,8>
-	CellList<3,float,Mem_fast<CudaMemory,int>> cl1(box,div);
+	CellList<3,float,Mem_fast<CudaMemory,int>,shift<3,float>> cl1(box,div);
 
-	openfpm::vector<Point<3,float>> v;
+	openfpm::vector_gpu<Point<3,float>> v;
+	openfpm::vector_gpu<aggregate<int>> os;
 	v.resize(10000);
+	os.resize(v.size());
 
 	for (size_t i = 0 ; i < v.size() ; i++)
 	{
@@ -1069,13 +1098,60 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 
 		Point<3,float> xp = v.template get<0>(i);
 
-		size_t cl = cl1.getCell(xp);
-		cl1.add(cl,i);
+		cl1.add(xp,i);
 	}
 
-	auto test = cl1.toKernel();
+	auto ite = v.getGPUIterator();
 
+	cl1.hostToDevice();
+	v.hostToDevice<0>();
 
+	cl_offload_gpu<decltype(cl1.toKernel()),decltype(v.toKernel()),decltype(os.toKernel())><<<ite.wthr,ite.thr>>>(cl1.toKernel(),v.toKernel(),os.toKernel());
+
+	os.deviceToHost<0>();
+
+	bool match = true;
+	for (size_t i = 0 ; i < os.size() ; i++)
+	{
+		Point<3,float> xp = v.template get<0>(i);
+
+		match &= os.template get<0>(i) == cl1.getNelements(cl1.getCell(xp));
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+
+	// now we scan the vector out
+
+	openfpm::vector_gpu<aggregate<int>> os_scan;
+	os_scan.resize(v.size());
+
+	scan<int,int>(os,os_scan);
+
+	os_scan.deviceToHost<0>();
+	os.deviceToHost<0>(os.size()-1,os.size()-1);
+	size_t size_list = os_scan.template get<0>(os_scan.size()-1) + os.template get<0>(os.size()-1);
+
+	openfpm::vector_gpu<aggregate<int>> os_list;
+	os_list.resize(size_list);
+
+	cl_offload_gpu_list<decltype(cl1.toKernel()),decltype(v.toKernel()),
+			            decltype(os_scan.toKernel()),decltype(os_list.toKernel())><<<ite.wthr,ite.thr>>>
+			            (cl1.toKernel(),v.toKernel(),os_scan.toKernel(),os_list.toKernel());
+
+	os_list.deviceToHost<0>();
+
+	match = true;
+	for (size_t i = 0 ; i < os.size() ; i++)
+	{
+		Point<3,float> xp = v.template get<0>(i);
+
+		for (size_t j = 0 ; j < cl1.getNelements(cl1.getCell(xp)) ; j++)
+		{
+			match &= os_list.template get<0>(os_scan.template get<0>(i)+j) == cl1.get(cl1.getCell(xp),j);
+		}
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
 
 	std::cout << "End cell list offload gpu" << "\n";
 

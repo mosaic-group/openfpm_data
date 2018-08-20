@@ -1,17 +1,17 @@
 
 LINKLIBS = $(LIBHILBERT_LIB) $(PTHREAD_LIBS) $(OPT_LIBS) $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB) $(CUDA_LIBS) $(BOOST_IOSTREAMS_LIB) $(LOCAL_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(BOOST_CHRONO_LIB) $(BOOST_TIMER_LIB) $(BOOST_SYSTEM_LIB)
 
-FLAGS_NVCC = $(NVCCFLAGS) -g --expt-extended-lambda
+FLAGS_NVCC = $(NVCCFLAGS) -Xcudafe "--display_error_number --diag_suppress=2888 --diag_suppress=2885 --diag_suppress=186" -g --expt-extended-lambda
 
 if BUILDCUDA
- CUDA_SOURCES=../../openfpm_devices/src/memory/CudaMemory.cu NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu  Grid/gpu_test/cuda_grid_unit_tests_func.cu  util/cuda/modern_gpu_tests.cu
+ CUDA_SOURCES= Grid/cuda/cuda_grid_gpu_tests.cu  Vector/cuda/map_vector_cuda_funcs_tests.cu  ../../openfpm_devices/src/memory/CudaMemory.cu NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu  Grid/cuda/cuda_grid_unit_tests_func.cu  util/cuda/modern_gpu_tests.cu
 else
  CUDA_SOURCES=
 endif
 
 noinst_PROGRAMS = mem_map
-mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp Grid/gpu_test/cuda_grid_gpu_tests.cpp util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp memory_ly/memory_conf_unit_tests.cpp  Space/tests/SpaceBox_unit_tests.cpp  Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp  $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
-mem_map_CXXFLAGS = $(AM_CXXFLAGS) $(LIBHILBERT_INCLUDE) $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include
+mem_map_SOURCES = ../../openfpm_devices/src/Memleak_check.cpp main.cpp util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp memory_ly/memory_conf_unit_tests.cpp  Space/tests/SpaceBox_unit_tests.cpp  Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp  $(CUDA_SOURCES) ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
+mem_map_CXXFLAGS = $(AM_CXXFLAGS) -Wno-unknown-pragmas $(LIBHILBERT_INCLUDE) $(CUDA_CFLAGS) $(INCLUDES_PATH) $(BOOST_CPPFLAGS) -I/usr/local/include
 mem_map_CFLAGS = $(CUDA_CFLAGS)
 mem_map_LDADD = $(LINKLIBS)
 

@@ -194,9 +194,6 @@ public:
 	 */
 	template<typename S> inline void get_hkey(S & obj, grid_key_dx<dim> gk, size_t m)
 	{
-		//An integer to handle errors
-		int err;
-
 		uint64_t point[dim];
 
 		for (size_t i = 0; i < dim; i++)

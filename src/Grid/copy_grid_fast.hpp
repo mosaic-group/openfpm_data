@@ -10,6 +10,84 @@
 
 #include "Grid/iterators/grid_key_dx_iterator.hpp"
 
+
+//////////////////////////////////// Functor to copy 1D grid in device memory ////////////
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one device memory into another device memory
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+template<bool lin_or_inte,typename data_type,typename S>
+struct copy_fast_1d_device_memory
+{
+	//! set of pointers
+	data_type & data_src;
+
+	data_type & data_dst;
+
+	/*! \brief constructor
+	 *
+	 * \param v set of pointer buffers to set
+	 *
+	 */
+	inline copy_fast_1d_device_memory(data_type & data_src, data_type & data_dst)
+	:data_src(data_src),data_dst(data_dst)
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		static_cast<S *>(boost::fusion::at_c<T::value>(data_dst).mem)->copyDeviceToDevice(*static_cast<S *>(boost::fusion::at_c<T::value>(data_src).mem));
+	}
+};
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one device memory into another device memory
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+template<typename data_type,typename S>
+struct copy_fast_1d_device_memory<true,data_type,S>
+{
+	//! set of pointers
+	data_type & data_src;
+
+	data_type & data_dst;
+
+	/*! \brief constructor
+	 *
+	 * \param v set of pointer buffers to set
+	 *
+	 */
+	inline copy_fast_1d_device_memory(data_type & data_src, data_type & data_dst)
+	:data_src(data_src),data_dst(data_dst)
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		if (T::value == 0)
+		{
+			static_cast<S *>(data_dst.mem)->copyDeviceToDevice(*static_cast<S *>(data_src.mem));
+		}
+	}
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
 /*! \brief This is a way to quickly copy a grid into another grid
  *
  *
@@ -476,12 +554,6 @@ struct pack_with_iterator
 	 */
 	static void pack(grid & gr, it & sub_it, dtype & dest)
 	{
-		// Sending property object
-		typedef object<typename object_creator<
-										boost_vct,
-										prp...>::type
-					  > prp_object;
-
 		size_t id = 0;
 
 		// Packing the information
@@ -525,12 +597,6 @@ struct pack_with_iterator<true,3,grid,encap_src,encap_dst,boost_vct,it,dtype,prp
 	 */
 	static void pack(grid & gr, it & sub_it, dtype & dest)
 	{
-		// Sending property object
-		typedef object<typename object_creator<
-										boost_vct,
-										prp...>::type
-					  > prp_object;
-
 		size_t id = 0;
 
 		size_t lin_src = 0;
@@ -589,12 +655,6 @@ struct pack_with_iterator<true,2,grid,encap_src,encap_dst,boost_vct,it,dtype,prp
 	 */
 	static void pack(grid & gr, it & sub_it, dtype & dest)
 	{
-		// Sending property object
-		typedef object<typename object_creator<
-										boost_vct,
-										prp...>::type
-					  > prp_object;
-
 		size_t id = 0;
 
 		size_t lin_src = 0;
@@ -931,12 +991,6 @@ struct pack_with_iterator<true,1,grid,encap_src,encap_dst,boost_vct,it,dtype,prp
 	 */
 	static void pack(grid & gr, it & sub_it, dtype & dest)
 	{
-		// Sending property object
-		typedef object<typename object_creator<
-										boost_vct,
-										prp...>::type
-					  > prp_object;
-
 		size_t id = 0;
 
 		size_t lin_src = 0;
@@ -992,9 +1046,6 @@ struct unpack_with_iterator
 	{
 		size_t id = 0;
 
-		// Sending property object
-		typedef object<typename object_creator<boost_vct,prp...>::type> prp_object;
-
 		// unpacking the information
 		while (sub_it.isNext())
 		{
@@ -1042,9 +1093,6 @@ struct unpack_with_iterator<3,grid,
 	static void unpack(grid & gr, it & sub_it, stype & src)
 	{
 		size_t id = 0;
-
-		// Sending property object
-		typedef object<typename object_creator<boost_vct,prp...>::type> prp_object;
 
 		size_t lin_dst = 0;
 

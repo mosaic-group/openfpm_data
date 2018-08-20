@@ -1064,11 +1064,34 @@ public:
 
 	CellList_cpu_ker<dim,T,typename Mem_type::toKernel_type,transform> toKernel()
 	{
-		CellList_cpu_ker<dim,T,typename Mem_type::toKernel_type,transform> cl(Mem_type::toKernel());
+		typedef typename Mem_type::local_index_type ids_type;
+		typedef typename Mem_type::local_index_type cnt_type;
+
+		openfpm::array<T,dim,cnt_type> spacing_c;
+		openfpm::array<ids_type,dim,cnt_type> div_c;
+		openfpm::array<ids_type,dim,cnt_type> off;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			spacing_c[i] = CellDecomposer_sm<dim,T,transform>::getCellBox().getHigh(i);
+			div_c[i] = CellDecomposer_sm<dim,T,transform>::getDiv()[i];
+			off[i] = CellDecomposer_sm<dim,T,transform>::getPadding(i);
+		}
+
+		CellList_cpu_ker<dim,T,typename Mem_type::toKernel_type,transform> cl(Mem_type::toKernel(),
+																			  spacing_c,
+																			  div_c,
+																			  off,
+				                      	  	  	  	  	  	  	  	  	  	  CellDecomposer_sm<dim,T,transform>::getTransform());
 
 		return cl;
 	}
 
+
+	void hostToDevice()
+	{
+		Mem_type::hostToDevice();
+	}
 
 #endif
 

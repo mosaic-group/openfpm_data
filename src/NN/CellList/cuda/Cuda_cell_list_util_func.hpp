@@ -150,6 +150,7 @@ struct cid_<3,cnt_type,ids_type,transform>
 		return e;
 	}
 
+	template <typename U = cnt_type, typename sfinae=typename std::enable_if<std::is_same<ids_type,U>::value >::type >
 	static inline __device__ cnt_type get_cid(const openfpm::array<ids_type,3,cnt_type> & div_c,
 			                                  const grid_key_dx<3,cnt_type> & e)
 	{

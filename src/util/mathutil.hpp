@@ -151,7 +151,7 @@ namespace openfpm
 		 * \return the bound number
 		 *
 		 */
-		template<typename T> static inline T periodic_l(const T & pos, const T & p2, const T & p1)
+		template<typename T> __device__ __host__ static inline T periodic_l(const T & pos, const T & p2, const T & p1)
 		{
 			T pos_tmp = pos;
 

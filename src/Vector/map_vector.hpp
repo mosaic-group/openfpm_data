@@ -76,7 +76,7 @@ namespace openfpm
 
 	#include "map_vector_std.hpp"
 	#include "map_vector_std_ptr.hpp"
-	#include "map_vector_cuda_ker.cuh"
+	#include "cuda/map_vector_cuda_ker.cuh"
 
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
@@ -587,6 +587,54 @@ namespace openfpm
 				// write the object in the last element
 				object_s_di<decltype(v.get(i)),decltype(get(size()-1)),OBJ_ENCAP,args...>(v.get(i),get(size()-1));
 			}
+		}
+
+		/*! \brief It add the element of a source vector to this vector
+		 *
+		 * The number of properties in the source vector must be smaller than the destination
+		 * all the properties of S must be mapped so if S has 3 properties
+		 * 3 numbers for args are required
+		 *
+		 * \tparam S Base object of the source vector
+		 * \tparam M memory type of the source vector
+		 * \tparam gp Grow policy of the source vector
+		 * \tparam args one or more number that define which property to set-up
+		 *
+		 * \param v source vector
+		 *
+		 */
+		template <typename S,
+		          typename M,
+				  typename gp,
+				  unsigned int impl,
+				  template <typename> class layout_base2,
+				  unsigned int ...args>
+		void add_prp_device(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			// merge the data on device
+
+#if defined(CUDA_GPU) && defined(__NVCC__)
+
+			size_t old_sz = size();
+			this->resize(size() + v.size());
+
+			auto ite = v.getGPUIterator();
+
+			merge_add_prp_device_impl<decltype(v.toKernel()),decltype(this->toKernel()),args...><<<ite.wthr,ite.thr>>>(v.toKernel(),this->toKernel(),(unsigned int)old_sz);
+
+			this->deviceToHost<0,1>();
+
+			for (size_t i = 0 ; i < this->size() ; i++)
+			{
+				std::cout << "TEST: " << this->template get<0>(i) << std::endl;
+			}
+
+#else
+			std::cout << __FILE__ << ":" << __LINE__ << " Error the function add_prp_device only work when map_vector is compiled with nvcc" << std::endl;
+#endif
 		}
 
 		/*! \brief Insert an entry in the vector
@@ -1261,7 +1309,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		ite_gpu<1> getGPUIterator(size_t n_thr = 1024)
+		ite_gpu<1> getGPUIterator(size_t n_thr = 1024) const
 		{
 			grid_key_dx<1> start(0);
 			grid_key_dx<1> stop(size()-1);
@@ -1463,6 +1511,16 @@ namespace openfpm
 			base.template deviceToHost<prp ...>();
 		}
 
+
+		/*! \brief Synchronize the memory buffer in the device with the memory in the host
+		 *
+		 *
+		 */
+		template<unsigned int ... prp> void deviceToHost(size_t start, size_t stop)
+		{
+			base.template deviceToHost<prp ...>(start,stop);
+		}
+
 		/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 		 *
 		 *  The object created can be considered like a reference of the original
@@ -1470,12 +1528,29 @@ namespace openfpm
 		 * \return an usable vector in the kernel
 		 *
 		 */
-		vector_gpu_ker<T> toKernel()
+		vector_gpu_ker<T,layout_base> toKernel()
 		{
 			if (base.size() == 0)
 			{std::cout << __FILE__ << ":" << __LINE__ << " Warning you are off-loading with toGPU a vector that seem to be empty or not initialized" << std::endl; }
 
-			vector_gpu_ker<T> v(v_size,this->base.toKernel());
+			vector_gpu_ker<T,layout_base> v(v_size,this->base.toKernel());
+
+			return v;
+		}
+
+		/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+		 *
+		 *  The object created can be considered like a reference of the original
+		 *
+		 * \return an usable vector in the kernel
+		 *
+		 */
+		const vector_gpu_ker<T,layout_base> toKernel() const
+		{
+			if (base.size() == 0)
+			{std::cout << __FILE__ << ":" << __LINE__ << " Warning you are off-loading with toGPU a vector that seem to be empty or not initialized" << std::endl; }
+
+			vector_gpu_ker<T,layout_base> v(v_size,this->base.toKernel());
 
 			return v;
 		}

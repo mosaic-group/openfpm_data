@@ -484,6 +484,28 @@ public:
 		return vector_key_iterator(v_size);
 	}
 
+#ifdef CUDA_GPU
+
+	/*! \brief Do nothing
+	 *
+	 */
+	template<unsigned int ... prp> void hostToDevice()
+	{}
+
+	/*! \brief Do nothing
+	 *
+	 */
+	template<unsigned int ... prp> void deviceToHost()
+	{}
+
+	/*! \brief Do nothing
+	 *
+	 *
+	 */
+	template<unsigned int ... prp> void deviceToHost(size_t start, size_t stop)
+	{}
+
+#endif
 
 	/*! \brief Return the pointer to the chunk of memory
 	 *

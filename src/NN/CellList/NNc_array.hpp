@@ -271,7 +271,7 @@ public:
 		sub_off = nnc.sub_off;
 		sym_mid = nnc.sym_mid;
 
-		bool full_or_sym;
+		full_or_sym = nnc.full_or_sym;
 	}
 
 	/*! \brief swap the NNc_array

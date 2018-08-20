@@ -127,6 +127,12 @@ public:
 	//! growing policy of this vector
 	typedef grow_policy_double grow_policy;
 
+	template<typename Tobj>
+	struct layout_base__
+	{
+		typedef memory_traits_lin<Tobj> type;
+	};
+
 	//This file implements a pack and unpack for std vector
 #include "vector_std_pack_unpack.ipp"
 
@@ -366,6 +372,35 @@ public:
 			  template <typename> class layout_base,
 			  unsigned int ...args>
 	void add_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+
+		add_prp_impl<std::is_same<S,T>::value,typename std::remove_pointer<decltype(*this)>::type>::template add<S,M,gp,impl,args...>(v,*this);
+	}
+
+	/*! \brief It add the element of a source vector to this vector
+	 *
+	 * The number of properties in the source vector must be smaller than the destination
+	 * all the properties of S must be mapped so if S has 3 properties
+	 * 3 numbers for args are required
+	 *
+	 * \tparam S Base object of the source vector
+	 * \tparam M memory type of the source vector
+	 * \tparam gp Grow policy of the source vector
+	 * \tparam args one or more number that define which property to set-up
+	 *
+	 * \param v source vector
+	 *
+	 */
+	template <typename S,
+	          typename M,
+			  typename gp,
+			  unsigned int impl,
+			  template <typename> class layout_base,
+			  unsigned int ...args>
+	void add_prp_device(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -978,6 +1013,29 @@ public:
 #endif
 		return &base[0];
 	}
+
+#ifdef CUDA_GPU
+
+	/*! \brief Do nothing
+	 *
+	 */
+	template<unsigned int ... prp> void hostToDevice()
+	{}
+
+	/*! \brief Do nothing
+	 *
+	 */
+	template<unsigned int ... prp> void deviceToHost()
+	{}
+
+	/*! \brief Do nothing
+	 *
+	 *
+	 */
+	template<unsigned int ... prp> void deviceToHost(size_t start, size_t stop)
+	{}
+
+#endif
 
 	/*! \brief Return the pointer to the chunk of memory
 	 *

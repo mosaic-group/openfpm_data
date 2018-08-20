@@ -511,9 +511,6 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 		//! We create a chunk of memory
 	    mem->resize( sz*mult<T,size_p::value-1>::value*sizeof(base) );
 
-	    // We create an array dims from the boost::mpl::vector
-	    typedef typename generate_array_vector<size_type,T>::result dims;
-
 	    openfpm::multi_array_ref_openfpm<base,size_p::value,Tv> tmp(static_cast<base *>(mem->getPointer()),
 	    		                                                                        sz,
 	    		                                                                        openfpm::general_storage_order<size_p::value>(openfpm::ofp_storage_order()));
