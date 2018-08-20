@@ -474,12 +474,17 @@ BOOST_AUTO_TEST_CASE (gpu_swap_vector)
 	#endif
 }
 
-BOOST_AUTO_TEST_CASE (gpu_copy_device)
+template<unsigned int dim>
+void gpu_copy_device_test()
 {
-	size_t sz[3] = {64,64,64};
-	grid_gpu<3, Point_test<float> > c3(sz);
+	size_t sz[dim];
 
-	grid_sm<3,void> g(sz);
+	for (size_t i = 0 ; i < dim ; i++)
+	{sz[i] = 13;}
+
+	grid_gpu<dim, Point_test<float> > c3(sz);
+
+	grid_sm<dim,void> g(sz);
 	c3.setMemory();
 
 	auto it4 = c3.getIterator();
@@ -492,9 +497,13 @@ BOOST_AUTO_TEST_CASE (gpu_copy_device)
 		++it4;
 	}
 
-	c3.hostToDevice<0>();
+	c3.template hostToDevice<0>();
 
-	size_t sz2[3] = {117,117,117};
+	size_t sz2[dim];
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{sz2[i] = 17;}
+
 	c3.resize(sz2);
 
 	auto it = c3.getIterator();
@@ -504,7 +513,14 @@ BOOST_AUTO_TEST_CASE (gpu_copy_device)
 	{
 		auto key = it.get();
 
-		if (key.get(0) < (unsigned int)sz[0] && key.get(1) < (unsigned int)sz[2] && key.get(2) < (unsigned int)sz[2])
+		bool to_check = true;
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			if (key.get(j) >= (unsigned int)sz[j])
+			{to_check = false;}
+		}
+
+		if (to_check == true)
 		{
 			match = c3.template get<0>(key) == g.LinId(key);
 		}
@@ -523,15 +539,14 @@ BOOST_AUTO_TEST_CASE (gpu_copy_device)
 	{
 		auto key = it2.get();
 
-		if (key.get(0) < (unsigned int)sz[0] && key.get(1) < (unsigned int)sz[2] && key.get(2) < (unsigned int)sz[2])
-		{c3.template get<0>(key) = 0;}
+		c3.template get<0>(key) = 0;
 
 		++it2;
 	}
 
 	// brint to CPU
 
-	c3.deviceToHost<0>();
+	c3.template deviceToHost<0>();
 
 	auto it3 = c3.getIterator();
 
@@ -540,7 +555,14 @@ BOOST_AUTO_TEST_CASE (gpu_copy_device)
 	{
 		auto key = it3.get();
 
-		if (key.get(0) < (unsigned int)sz[0] && key.get(1) < (unsigned int)sz[2] && key.get(2) < (unsigned int)sz[2])
+		bool to_check = true;
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			if (key.get(j) >= (unsigned int)sz[j])
+			{to_check = false;}
+		}
+
+		if (to_check == true)
 		{
 			match = c3.template get<0>(key) == g.LinId(key);
 		}
@@ -549,6 +571,14 @@ BOOST_AUTO_TEST_CASE (gpu_copy_device)
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);
+}
+
+BOOST_AUTO_TEST_CASE (gpu_copy_device)
+{
+	gpu_copy_device_test<4>();
+	gpu_copy_device_test<3>();
+	gpu_copy_device_test<2>();
+	gpu_copy_device_test<1>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

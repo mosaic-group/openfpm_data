@@ -30,7 +30,7 @@ struct copy_fusion_vector
 	 * \param dst destination fusion vector
 	 *
 	 */
-	inline copy_fusion_vector(const bfv & src, bfv & dst)
+	__device__ inline copy_fusion_vector(const bfv & src, bfv & dst)
 	:src(src),dst(dst){};
 
 #ifdef SE_CLASS1
@@ -47,7 +47,7 @@ struct copy_fusion_vector
 
 	//! It call the copy function for each property
 	template<typename T>
-	inline void operator()(T& t)
+	__device__ inline void operator()(T& t)
 	{
 		// This is the type of the object we have to copy
 		typedef typename boost::fusion::result_of::at_c<bfv,T::value>::type copy_type;

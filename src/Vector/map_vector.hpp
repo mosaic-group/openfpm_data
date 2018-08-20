@@ -625,13 +625,6 @@ namespace openfpm
 
 			merge_add_prp_device_impl<decltype(v.toKernel()),decltype(this->toKernel()),args...><<<ite.wthr,ite.thr>>>(v.toKernel(),this->toKernel(),(unsigned int)old_sz);
 
-			this->deviceToHost<0,1>();
-
-			for (size_t i = 0 ; i < this->size() ; i++)
-			{
-				std::cout << "TEST: " << this->template get<0>(i) << std::endl;
-			}
-
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " Error the function add_prp_device only work when map_vector is compiled with nvcc" << std::endl;
 #endif

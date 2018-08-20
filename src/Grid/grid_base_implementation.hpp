@@ -83,6 +83,73 @@ struct ite_gpu
 
 #include "copy_grid_fast.hpp"
 
+template<unsigned int dim, typename T>
+ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T> & g1, grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024)
+{
+	size_t tot_work = 1;
+	for (size_t i = 0 ; i < dim ; i++)
+	{tot_work *= key2.get(i) - key1.get(i) + 1;}
+
+	size_t n = (tot_work <= n_thr)?openfpm::math::round_big_2(tot_work):n_thr;
+
+	// Work to do
+	ite_gpu<dim> ig;
+
+	ig.thr.x = 1;
+	ig.thr.y = 1;
+	ig.thr.z = 1;
+
+	int dir = 0;
+
+	while (n != 1)
+	{
+		if (dir % 3 == 0)
+		{ig.thr.x = ig.thr.x << 1;}
+		else if (dir % 3 == 1)
+		{ig.thr.y = ig.thr.y << 1;}
+		else if (dir % 3 == 2)
+		{ig.thr.z = ig.thr.z << 1;}
+
+		n = n >> 1;
+
+		dir++;
+		dir %= dim;
+	}
+
+	if (dim >= 1)
+	{ig.wthr.x = (key2.get(0) - key1.get(0) + 1) / ig.thr.x + (((key2.get(0) - key1.get(0) + 1)%ig.thr.x != 0)?1:0);}
+
+	if (dim >= 2)
+	{ig.wthr.y = (key2.get(1) - key1.get(1) + 1) / ig.thr.y + (((key2.get(1) - key1.get(1) + 1)%ig.thr.y != 0)?1:0);}
+	else
+	{ig.wthr.y = 1;}
+
+	if (dim >= 3)
+	{
+		// Roll the other dimensions on z
+		ig.wthr.z = 1;
+		for (size_t i = 2 ; i < dim ; i++)
+		{ig.wthr.z *= (key2.get(i) - key1.get(i) + 1) / ig.thr.z + (((key2.get(i) - key1.get(i) + 1)%ig.thr.z != 0)?1:0);}
+	}
+	else
+	{ig.wthr.z = 1;}
+
+	// crop if wthr == 1
+
+	if (dim >= 1 && ig.wthr.x == 1)
+	{ig.thr.x = (key2.get(0) - key1.get(0) + 1);}
+
+	if (dim >= 2 && ig.wthr.y == 1)
+	{ig.wthr.y = key2.get(1) - key1.get(1) + 1;}
+
+	if (dim == 3 && ig.wthr.z == 1)
+	{ig.wthr.z = key2.get(2) - key1.get(2) + 1;}
+
+	ig.start = key1;
+	ig.stop = key2;
+
+	return ig;
+}
 
 /*! \brief
  *
@@ -426,69 +493,7 @@ public:
 	 */
 	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024) const
 	{
-		size_t tot_work = 1;
-		for (size_t i = 0 ; i < dim ; i++)
-		{tot_work *= key2.get(i) - key1.get(i) + 1;}
-
-		size_t n = (tot_work <= n_thr)?openfpm::math::round_big_2(tot_work):n_thr;
-
-		// Work to do
-		ite_gpu<dim> ig;
-
-		ig.thr.x = 1;
-		ig.thr.y = 1;
-		ig.thr.z = 1;
-
-		int dir = 0;
-
-		while (n != 1)
-		{
-			if (dir % 3 == 0)
-			{ig.thr.x = ig.thr.x << 1;}
-			else if (dir % 3 == 1)
-			{ig.thr.y = ig.thr.y << 1;}
-			else if (dir % 3 == 2)
-			{ig.thr.z = ig.thr.z << 1;}
-
-			n = n >> 1;
-
-			dir++;
-			dir %= dim;
-		}
-
-		if (dim >= 1)
-		{ig.wthr.x = (key2.get(0) - key1.get(0) + 1) / ig.thr.x + (((key2.get(0) - key1.get(0) + 1)%ig.thr.x != 0)?1:0);}
-
-		if (dim >= 2)
-		{ig.wthr.y = (key2.get(1) - key1.get(1) + 1) / ig.thr.y + (((key2.get(1) - key1.get(1) + 1)%ig.thr.y != 0)?1:0);}
-		else
-		{ig.wthr.y = 1;}
-
-		if (dim >= 3)
-		{
-			// Roll the other dimensions on z
-			ig.wthr.z = 1;
-			for (size_t i = 2 ; i < dim ; i++)
-			{ig.wthr.z *= (key2.get(i) - key1.get(i) + 1) / ig.thr.z + (((key2.get(i) - key1.get(i) + 1)%ig.thr.z != 0)?1:0);}
-		}
-		else
-		{ig.wthr.z = 1;}
-
-		// crop if wthr == 1
-
-		if (dim >= 1 && ig.wthr.x == 1)
-		{ig.thr.x = (key2.get(0) - key1.get(0) + 1);}
-
-		if (dim >= 2 && ig.wthr.y == 1)
-		{ig.wthr.y = key2.get(1) - key1.get(1) + 1;}
-
-		if (dim == 3 && ig.wthr.z == 1)
-		{ig.wthr.z = key2.get(2) - key1.get(2) + 1;}
-
-		ig.start = key1;
-		ig.stop = key2;
-
-		return ig;
+		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}
 #endif
 
@@ -868,16 +873,34 @@ public:
 				stop.set_d(i,g1.size(i)-1);
 			}
 
-			auto ite = this->getGPUIterator(start,stop);
-
 			if (dim == 1)
 			{
-				copy_fast_1d_device_memory<is_layout_mlin<layout_base<T>>::value,decltype(grid_new.data_),S> cf1dm(grid_new.data_,data_);
+				copy_fast_1d_device_memory<is_layout_mlin<layout_base<T>>::value,decltype(grid_new.data_),S> cf1dm(data_,grid_new.data_);
 
 				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cf1dm);
 			}
+			else if (dim == 2 || dim == 3)
+			{
+				auto ite = this->getGPUIterator(start,stop);
+
+				copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());
+			}
 			else
-			{copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());}
+			{
+				grid_key_dx<1> start;
+				start.set_d(0,0);
+				grid_key_dx<1> stop({});
+				stop.set_d(0,this->g1.size());
+
+				size_t sz[1];
+				sz[0]= this->g1.size();
+
+				grid_sm<1,void> g_sm_copy(sz);
+
+				auto ite = getGPUIterator_impl<1,void>(g_sm_copy,start,stop);
+
+				copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());
+			}
 #else
 
 			std::cout << __FILE__ << ":" << __LINE__ << " error: the function resize require the launch of a kernel, but it seem that this" <<

@@ -19,6 +19,9 @@ struct copy_ndim_grid_impl
 	{
 		unsigned int i = threadIdx.x + blockIdx.x * blockDim.x;
 
+		if (i >= src.getGrid().size())
+		{return;}
+
 		auto key_src = src.getGrid().InvLinId(i);
 
 		dst.get_o(key_src) = src.get_o(key_src);
