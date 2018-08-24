@@ -494,6 +494,10 @@ void gpu_copy_device_test()
 
 		c3.template get<0>(key) = g.LinId(key);
 
+		c3.template get<4>(key)[0] = g.LinId(key) + 2000;
+		c3.template get<4>(key)[1] = g.LinId(key) + 6000;
+		c3.template get<4>(key)[2] = g.LinId(key) + 56000;
+
 		++it4;
 	}
 
@@ -522,7 +526,11 @@ void gpu_copy_device_test()
 
 		if (to_check == true)
 		{
-			match = c3.template get<0>(key) == g.LinId(key);
+			match &= c3.template get<0>(key) == g.LinId(key);
+
+			match &= c3.template get<4>(key)[0] == g.LinId(key) + 2000;
+			match &= c3.template get<4>(key)[1] == g.LinId(key) + 6000;
+			match &= c3.template get<4>(key)[2] == g.LinId(key) + 56000;
 		}
 
 		++it;
@@ -565,6 +573,10 @@ void gpu_copy_device_test()
 		if (to_check == true)
 		{
 			match = c3.template get<0>(key) == g.LinId(key);
+
+			match &= c3.template get<4>(key)[0] == g.LinId(key) + 2000;
+			match &= c3.template get<4>(key)[1] == g.LinId(key) + 6000;
+			match &= c3.template get<4>(key)[2] == g.LinId(key) + 56000;
 		}
 
 		++it3;

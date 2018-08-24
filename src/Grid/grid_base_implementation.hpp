@@ -79,9 +79,7 @@ struct ite_gpu
 	grid_key_dx<dim> start;
 	grid_key_dx<dim> stop;
 };
-#endif
 
-#include "copy_grid_fast.hpp"
 
 template<unsigned int dim, typename T>
 ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T> & g1, grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024)
@@ -94,6 +92,19 @@ ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T> & g1, grid_key_dx<dim> & k
 
 	// Work to do
 	ite_gpu<dim> ig;
+
+	if (tot_work == 0)
+	{
+		ig.thr.x = 0;
+		ig.thr.y = 0;
+		ig.thr.z = 0;
+
+		ig.wthr.x = 0;
+		ig.wthr.y = 0;
+		ig.wthr.z = 0;
+
+		return ig;
+	}
 
 	ig.thr.x = 1;
 	ig.thr.y = 1;
@@ -150,6 +161,11 @@ ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T> & g1, grid_key_dx<dim> & k
 
 	return ig;
 }
+
+#endif
+
+#include "copy_grid_fast.hpp"
+
 
 /*! \brief
  *
@@ -873,13 +889,13 @@ public:
 				stop.set_d(i,g1.size(i)-1);
 			}
 
-			if (dim == 1)
-			{
-				copy_fast_1d_device_memory<is_layout_mlin<layout_base<T>>::value,decltype(grid_new.data_),S> cf1dm(data_,grid_new.data_);
+//			if (dim == 1)
+//			{
+//				copy_fast_1d_device_memory<is_layout_mlin<layout_base<T>>::value,decltype(grid_new.data_),S> cf1dm(data_,grid_new.data_);
 
-				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cf1dm);
-			}
-			else if (dim == 2 || dim == 3)
+//				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cf1dm);
+//			}
+			if (dim <= 3)
 			{
 				auto ite = this->getGPUIterator(start,stop);
 

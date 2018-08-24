@@ -236,9 +236,10 @@ namespace openfpm
 		 * Resize the vector and allocate n elements
 		 *
 		 * \param slot number of elements
+		 * \param opt options
 		 *
 		 */
-		void resize(size_t slot)
+		void resize(size_t slot, size_t opt = DATA_ON_DEVICE | DATA_ON_HOST)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -251,7 +252,7 @@ namespace openfpm
 
 				//! Resize the memory
 				size_t sz[1] = {gr};
-				base.resize(sz);
+				base.resize(sz,opt);
 			}
 
 			// update the vector size
@@ -619,7 +620,7 @@ namespace openfpm
 #if defined(CUDA_GPU) && defined(__NVCC__)
 
 			size_t old_sz = size();
-			this->resize(size() + v.size());
+			this->resize(size() + v.size(),DATA_ON_DEVICE);
 
 			auto ite = v.getGPUIterator();
 
