@@ -276,16 +276,16 @@ template<unsigned int dim,
 		 typename T,
 		 typename Mem_type = Mem_fast<HeapMemory,local_index_>,
 		 typename transform = no_transform<dim,T>,
-		 typename CellListImpl = CellList<dim,T,Mem_fast<HeapMemory,typename Mem_type::loc_index>,transform> >
+		 typename CellListImpl = CellList<dim,T,Mem_fast<HeapMemory,typename Mem_type::local_index_type>,transform> >
 class VerletList: public Mem_type
 {
 protected:
 
 	//! Number of slot for each particle. Or maximum number of particles for each particle
-	typename Mem_type::loc_index slot;
+	typename Mem_type::local_index_type slot;
 
 	//! Domain particles
-	openfpm::vector<typename Mem_type::loc_index> dp;
+	openfpm::vector<typename Mem_type::local_index_type> dp;
 
 private:
 
@@ -370,12 +370,12 @@ private:
 		// iterate the particles
 		while (it.isNext())
 		{
-			typename Mem_type::loc_index i = it.get();
+			typename Mem_type::local_index_type i = it.get();
 			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			NN_type NN = NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::loc_index>::get(it,pos,xp,i,cli,r_cut);
-			NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::loc_index>::add(i,dp);
+			NN_type NN = NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::get(it,pos,xp,i,cli,r_cut);
+			NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::add(i,dp);
 
 			while (NN.isNext())
 			{
@@ -862,8 +862,8 @@ public:
 	 * \return the index
 	 *
 	 */
-	inline const typename Mem_type::loc_index &
-	getStart(typename Mem_type::loc_index part_id)
+	inline const typename Mem_type::local_index_type &
+	getStart(typename Mem_type::local_index_type part_id)
 	{
 		return Mem_type::getStartId(part_id);
 	}
@@ -875,8 +875,8 @@ public:
 	 * \return the stop index
 	 *
 	 */
-	inline const typename Mem_type::loc_index &
-	getStop(typename Mem_type::loc_index part_id)
+	inline const typename Mem_type::local_index_type &
+	getStop(typename Mem_type::local_index_type part_id)
 	{
 		return Mem_type::getStopId(part_id);
 	}
@@ -888,8 +888,8 @@ public:
 	 * \return the neighborhood id
 	 *
 	 */
-	inline const typename Mem_type::loc_index &
-	get_lin(const typename Mem_type::loc_index * part_id)
+	inline const typename Mem_type::local_index_type &
+	get_lin(const typename Mem_type::local_index_type * part_id)
 	{
 		return Mem_type::get_lin(part_id);
 	}
@@ -931,7 +931,7 @@ public:
 	 * \return the particle sequence
 	 *
 	 */
-	openfpm::vector<typename Mem_type::loc_index> & getParticleSeq()
+	openfpm::vector<typename Mem_type::local_index_type> & getParticleSeq()
 	{
 		return dp;
 	}

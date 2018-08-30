@@ -21,23 +21,6 @@ typedef unsigned int local_index_;
 #define VERLETLIST_BAL(dim,St) VerletList<dim,St,Mem_bal<>,shift<dim,St> >
 #define VERLETLIST_MEM(dim,St) VerletList<dim,St,Mem_mem<>,shift<dim,St> >
 
-/*! \brief Cell list structure
- *
- * Stub object see spacialization
- *
- * \see CellList<dim,T,FAST,transform,base>
- *
- */
-/*template<unsigned int dim,
-         typename T,
-		 typename impl=Mem_fast,
-		 typename transform = no_transform<dim,T>,
-		 typename local_index=local_index_,
-		 typename CellListImpl = CellList<dim,T,Mem_fast,transform> >
-class VerletList
-{
-};*/
-
 #include "VerletListFast.hpp"
 
 

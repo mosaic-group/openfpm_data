@@ -31,13 +31,13 @@
 template<unsigned int dim, typename Ver> class VerletNNIterator
 {
 	//! start index for the neighborhood
-	const typename Ver::Mem_type_type::loc_index  * start;
+	const typename Ver::Mem_type_type::local_index_type  * start;
 
 	//! stop index for the neighborhood
-	const typename Ver::Mem_type_type::loc_index  * stop;
+	const typename Ver::Mem_type_type::local_index_type  * stop;
 
 	//! actual neighborhood
-	const typename Ver::Mem_type_type::loc_index  * ele_id;
+	const typename Ver::Mem_type_type::local_index_type  * ele_id;
 
 	//! verlet list
 	Ver & ver;
@@ -87,7 +87,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline typename Ver::Mem_type_type::loc_index get()
+	inline typename Ver::Mem_type_type::local_index_type get()
 	{
 		return ver.get_lin(ele_id);
 	}

@@ -48,7 +48,7 @@ public:
 	typedef void toKernel_type;
 
 	//! expose the type of the local index
-	typedef local_index loc_index;
+	typedef local_index local_index_type;
 
 	/*! \brief Initialize the data structure to zeros
 	 *

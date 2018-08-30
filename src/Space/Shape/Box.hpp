@@ -340,7 +340,7 @@ public:
 	 * \param box_data fusion vector from which to construct the vector
 	 *
 	 */
-	template<unsigned int dimS> inline Box(boost::fusion::vector<T[dimS],T[dimS]> & box_data)
+	template<unsigned int dimS> __device__ inline Box(boost::fusion::vector<T[dimS],T[dimS]> & box_data)
 	{
 		// we copy the data
 
@@ -356,7 +356,7 @@ public:
 	 * \param b box from which to construct the vector (encapsulated)
 	 *
 	 */
-	template<typename Mem> inline Box(const encapc<1,Box<dim,T>,Mem> & b)
+	template<typename Mem> __device__ __host__ inline Box(const encapc<1,Box<dim,T>,Mem> & b)
 	{
 		// we copy the data
 

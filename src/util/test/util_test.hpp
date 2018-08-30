@@ -881,6 +881,12 @@ BOOST_AUTO_TEST_CASE( is_contiguos_test)
 	}
 }
 
+BOOST_AUTO_TEST_CASE( tree_recursive_to_kernel_test)
+{
+	{
+
+	}
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

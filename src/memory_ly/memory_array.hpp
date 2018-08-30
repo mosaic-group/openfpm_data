@@ -61,6 +61,9 @@ class memory_array
 
 	public:
 
+	//! type returned by this structure
+	typedef T value_type;
+
 	/*! \brief Initialize the memory array
 	 *
 	 * \param ptr pointer
@@ -86,6 +89,12 @@ class memory_array
 		this->sz = sz;
 	}
 
+	//! return the size of the array
+	size_t size()
+	{
+		return sz;
+	}
+
 	//! Set the internal pointer to the indicated chunk of memory
 	void set_pointer(void * ptr_)
 	{
@@ -93,7 +102,7 @@ class memory_array
 	}
 
 	//! Return the pointer
-	void * get_pointer()
+	void * get_pointer() const
 	{
 		return ptr;
 	}
@@ -103,9 +112,9 @@ class memory_array
 	 * \param the other memory_array
 	 *
 	 */
-	void bind_ref(const memory_array<T> & ref)
+	template<typename Tbind> void bind_ref(const memory_array<Tbind> & ref)
 	{
-		ptr = ref.ptr;
+		ptr = static_cast<T *>(ref.get_pointer());
 	}
 
 	/*! \brief Access element an element of the array

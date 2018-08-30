@@ -38,10 +38,10 @@ class CellNNIterator
 protected:
 
 	//! actual element id
-	const typename Cell::Mem_type_type::loc_index * start_id;
+	const typename Cell::Mem_type_type::local_index_type * start_id;
 
 	//! stop id to read the end of the cell
-	const typename Cell::Mem_type_type::loc_index * stop_id;
+	const typename Cell::Mem_type_type::local_index_type * stop_id;
 
 	//! Actual NNc_id;
 	size_t NNc_id;
@@ -130,7 +130,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline const typename Cell::Mem_type_type::loc_index & get()
+	inline const typename Cell::Mem_type_type::local_index_type & get()
 	{
 		return cl.get_lin(start_id);
 	}
@@ -140,7 +140,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline const typename Cell::Mem_type_type::loc_index & get() const
+	inline const typename Cell::Mem_type_type::local_index_type & get() const
 	{
 		return cl.get_lin(start_id);
 	}

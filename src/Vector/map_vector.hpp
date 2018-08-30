@@ -40,6 +40,8 @@
 #include "data_type/aggregate.hpp"
 #include "vector_map_iterator.hpp"
 #include "util/cuda_util.hpp"
+#include "util/tokernel_transformation.hpp"
+#include "cuda/map_vector_cuda_ker.cuh"
 
 namespace openfpm
 {
@@ -76,7 +78,6 @@ namespace openfpm
 
 	#include "map_vector_std.hpp"
 	#include "map_vector_std_ptr.hpp"
-	#include "cuda/map_vector_cuda_ker.cuh"
 
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
@@ -96,6 +97,8 @@ namespace openfpm
 	template<typename T,typename Memory, typename layout, template <typename> class layout_base, typename grow_p>
 	class vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE>
 	{
+		typedef vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> self_type;
+
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
 		//! the actually allocated space
@@ -141,6 +144,9 @@ namespace openfpm
 
 		//! it define that it is a vector
 		typedef int yes_i_am_vector;
+
+		//! it define that it is a vector
+		typedef int yes_i_am_vector_native;
 
 		//! Type of the encapsulation memory parameter
 		typedef layout layout_type;
@@ -253,6 +259,35 @@ namespace openfpm
 				//! Resize the memory
 				size_t sz[1] = {gr};
 				base.resize(sz,opt);
+			}
+
+			// update the vector size
+			v_size = slot;
+		}
+
+
+		/*! \brief Resize the vector ()
+		 *
+		 * Resize the vector and allocate n elements
+		 *
+		 * \param slot number of elements
+		 * \param opt options
+		 *
+		 */
+		void resize_no_device(size_t slot)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			// If we need more space than what we allocated, allocate new memory
+
+			if (slot > base.size())
+			{
+				size_t gr = grow_p::grow(base.size(),slot);
+
+				//! Resize the memory
+				size_t sz[1] = {gr};
+				base.resize_no_device(sz);
 			}
 
 			// update the vector size
@@ -1515,6 +1550,16 @@ namespace openfpm
 			base.template deviceToHost<prp ...>(start,stop);
 		}
 
+		/*! \brief Synchronize the memory buffer in the device with the memory in the host
+		 *
+		 *
+		 */
+		template<unsigned int ... prp> void hostToDevice(size_t start, size_t stop)
+		{
+			base.template hostToDevice<prp ...>(start,stop);
+		}
+
+
 		/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 		 *
 		 *  The object created can be considered like a reference of the original
@@ -1522,12 +1567,12 @@ namespace openfpm
 		 * \return an usable vector in the kernel
 		 *
 		 */
-		vector_gpu_ker<T,layout_base> toKernel()
+		vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> toKernel()
 		{
 			if (base.size() == 0)
 			{std::cout << __FILE__ << ":" << __LINE__ << " Warning you are off-loading with toGPU a vector that seem to be empty or not initialized" << std::endl; }
 
-			vector_gpu_ker<T,layout_base> v(v_size,this->base.toKernel());
+			vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> v(v_size,this->base.toKernel());
 
 			return v;
 		}
@@ -1539,12 +1584,12 @@ namespace openfpm
 		 * \return an usable vector in the kernel
 		 *
 		 */
-		const vector_gpu_ker<T,layout_base> toKernel() const
+		const vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base>  toKernel() const
 		{
 			if (base.size() == 0)
 			{std::cout << __FILE__ << ":" << __LINE__ << " Warning you are off-loading with toGPU a vector that seem to be empty or not initialized" << std::endl; }
 
-			vector_gpu_ker<T,layout_base> v(v_size,this->base.toKernel());
+			vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> v(v_size,this->base.toKernel());
 
 			return v;
 		}

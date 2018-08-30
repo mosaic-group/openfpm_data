@@ -28,9 +28,8 @@ template<unsigned int dim,
          typename T,
 		 template <unsigned int, typename> class Prock,
 		 typename Mem_type = Mem_fast<>,
-		 typename transform = no_transform<dim,T>,
-		 typename base=openfpm::vector<size_t>>
-class CellList_gen : public CellList<dim,T,Mem_type,transform,base>
+		 typename transform = no_transform<dim,T>>
+class CellList_gen : public CellList<dim,T,Mem_type,transform>
 {
 private:
 
@@ -39,7 +38,7 @@ private:
 
 	//! It is an object that indicate which space filling curve to use for the
 	//! iteration across cells
-	Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>> SFC;
+	Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform>> SFC;
 
 	//! Init SFC
 	bool init_sfc;
@@ -96,7 +95,7 @@ public:
 
 
 	CellList_gen()
-	:CellList<dim,T,Mem_type,transform,base>(),init_sfc(false)
+	:CellList<dim,T,Mem_type,transform>(),init_sfc(false)
 	{};
 
 
@@ -105,7 +104,7 @@ public:
 	 * \return the SFC object
 	 *
 	 */
-	const Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>> & getCellSFC() const
+	const Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform>> & getCellSFC() const
 	{
 		return SFC;
 	}
@@ -128,11 +127,11 @@ public:
 	 * \return an iterator
 	 *
 	 */
-	inline typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>>::Pit getIterator()
+	inline typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform>>::Pit getIterator()
 	{
 		init_SFC();
 
-		return typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,base>>::Pit(*this);
+		return typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform>>::Pit(*this);
 	}
 
 	/*! Initialize the cell list
@@ -146,7 +145,7 @@ public:
 	 */
 	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
-		CellList<dim,T,Mem_type,transform,base>::Initialize(box,div,pad,slot);
+		CellList<dim,T,Mem_type,transform>::Initialize(box,div,pad,slot);
 	}
 
 

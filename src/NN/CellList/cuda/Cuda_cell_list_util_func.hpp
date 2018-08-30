@@ -117,6 +117,7 @@ struct cid_<3,cnt_type,ids_type,transform>
 			                                                       const transform & t,
 			                                                       const Point<3,T> & p)
 	{
+
 		return openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0] +
 				  (openfpm::math::uint_floor(t.transform(p,1)/spacing[1]) + off[1] +
 				  (openfpm::math::uint_floor(t.transform(p,2)/spacing[2]) + off[2])*div_c[1])*div_c[0];

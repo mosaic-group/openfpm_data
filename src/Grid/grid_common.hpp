@@ -8,7 +8,55 @@
 #ifndef OPENFPM_DATA_SRC_GRID_GRID_COMMON_HPP_
 #define OPENFPM_DATA_SRC_GRID_GRID_COMMON_HPP_
 
-// Debugging macro
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to call hostToDevice for each properties
+ *
+ */
+template<typename Tv>
+struct host_to_dev_all_prp
+{
+	Tv & p;
+
+	inline host_to_dev_all_prp(Tv & p)
+	:p(p)
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		p.template hostToDevice<T::value>();
+	}
+};
+
+template<typename T, bool is_vector>
+struct call_recursive_host_device_if_vector
+{
+	//! It is a vector recursively call deviceToHost
+	template<typename obj_type>
+	static void call(obj_type & obj, size_t start, size_t stop)
+	{
+		T * ptr = static_cast<T *>(obj.get_pointer());
+
+		for(size_t i = start ; i < stop ; i++)
+		{
+			host_to_dev_all_prp<T> hdap(ptr[i]);
+
+			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::value_type::max_prop>>(hdap);
+		}
+	}
+};
+
+template<typename T>
+struct call_recursive_host_device_if_vector<T,false>
+{
+	//! It is not a vector nothing to do
+	template<typename obj_type>
+	static void call(obj_type & obj, size_t start, size_t stop) {}
+};
 
 /*! \brief this class is a functor for "for_each" algorithm
  *

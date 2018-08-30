@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 #ifdef CUDA_GPU
 
 	size_t sz[3] = {64,64,64};
-	grid_gpu<3, Point_test<float> > c3(sz);
+	grid_gpu<3, Point_aggr_test > c3(sz);
 
 	grid_key_dx<3> k1({1,1,1});
 	grid_key_dx<3> k2({62,62,62});
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE (gpu_computation)
 
 	{
 	size_t sz[3] = {64,64,64};
-	grid_gpu<3, Point_test<float> > c3(sz);
+	grid_gpu<3, Point_aggr_test > c3(sz);
 
 	c3.setMemory();
 	test_layout_gridNd<3>(c3,sz[0]);
@@ -136,8 +136,8 @@ BOOST_AUTO_TEST_CASE (gpu_computation_stencil)
 
 	{
 	size_t sz[3] = {64,64,64};
-	grid_gpu<3, Point_test<float> > c3(sz);
-	grid_gpu<3, Point_test<float> > c2(sz);
+	grid_gpu<3, Point_aggr_test > c3(sz);
+	grid_gpu<3, Point_aggr_test > c2(sz);
 	grid_key_dx<3> key1({1,1,1});
 	grid_key_dx<3> key2({62,62,62});
 
@@ -216,8 +216,8 @@ BOOST_AUTO_TEST_CASE (gpu_computation_grid_stencil)
 
 	{
 	size_t sz[3] = {64,64,64};
-	grid_gpu<3, Point_test<float> > c3(sz);
-	grid_gpu<3, Point_test<float> > c2(sz);
+	grid_gpu<3, Point_aggr_test > c3(sz);
+	grid_gpu<3, Point_aggr_test > c2(sz);
 	grid_key_dx<3> key1({1,1,1});
 	grid_key_dx<3> zero({0,0,0});
 	grid_key_dx<3> key2({62,62,62});
@@ -301,8 +301,8 @@ BOOST_AUTO_TEST_CASE (gpu_computation_grid_stencil_vector)
 
 	{
 	size_t sz[3] = {64,64,64};
-	grid_gpu<3, Point_test<float> > c3(sz);
-	grid_gpu<3, Point_test<float> > c2(sz);
+	grid_gpu<3, Point_aggr_test > c3(sz);
+	grid_gpu<3, Point_aggr_test > c2(sz);
 	grid_key_dx<3> key1({1,1,1});
 	grid_key_dx<3> zero({0,0,0});
 	grid_key_dx<3> key2({62,62,62});
@@ -372,8 +372,8 @@ BOOST_AUTO_TEST_CASE (gpu_swap_vector)
 
 	{
 	size_t sz[3] = {64,64,64};
-	grid_gpu<3, Point_test<float> > c3(sz);
-	grid_gpu<3, Point_test<float> > c2(sz);
+	grid_gpu<3, Point_aggr_test > c3(sz);
+	grid_gpu<3, Point_aggr_test > c2(sz);
 	grid_key_dx<3> key1({1,1,1});
 	grid_key_dx<3> zero({0,0,0});
 	grid_key_dx<3> key2({62,62,62});
@@ -482,7 +482,7 @@ void gpu_copy_device_test()
 	for (size_t i = 0 ; i < dim ; i++)
 	{sz[i] = 13;}
 
-	grid_gpu<dim, Point_test<float> > c3(sz);
+	grid_gpu<dim, Point_aggr_test > c3(sz);
 
 	grid_sm<dim,void> g(sz);
 	c3.setMemory();

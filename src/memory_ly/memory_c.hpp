@@ -116,14 +116,6 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 		mem_r.set_pointer(mem->getDevicePointer());
 	}
 
-	/*! \brief Switch the pointer to device pointer
-	 *
-	 */
-	void switchToDevicePtrNoCopy()
-	{
-		mem_r.set_pointer(mem->getDevicePointerNoCopy());
-	}
-
 	/*! \brief This function get the object that allocate memory
 	 *
 	 * \return memory object to allocate memory
@@ -473,13 +465,6 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 		mem_r.set_pointer(mem->getDevicePointer());
 	}
 
-	/*! \brief Switch the pointer to device pointer
-	 *
-	 */
-	void switchToDevicePtrNoCopy()
-	{
-		mem_r.set_pointer(mem->getDevicePointerNoCopy());
-	}
 
 	/*! \brief This function bind the memory_c to this memory_c as reference
 	 *

@@ -312,6 +312,90 @@ private:
 
 #endif
 
+	void resize_impl_device(const size_t (& sz)[dim],grid_base_impl<dim,T,S,layout,layout_base> & grid_new)
+	{
+#if defined(CUDA_GPU) && defined(__NVCC__)
+
+			grid_key_dx<dim> start;
+			grid_key_dx<dim> stop;
+
+			for (size_t i = 0 ; i < dim ; i++)
+			{
+				start.set_d(i,0);
+				stop.set_d(i,g1.size(i)-1);
+			}
+
+//			if (dim == 1)
+//			{
+//				copy_fast_1d_device_memory<is_layout_mlin<layout_base<T>>::value,decltype(grid_new.data_),S> cf1dm(data_,grid_new.data_);
+
+//				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cf1dm);
+//			}
+			if (dim <= 3)
+			{
+				auto ite = this->getGPUIterator(start,stop);
+
+				copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());
+			}
+			else
+			{
+				grid_key_dx<1> start;
+				start.set_d(0,0);
+				grid_key_dx<1> stop({});
+				stop.set_d(0,this->g1.size());
+
+				size_t sz[1];
+				sz[0]= this->g1.size();
+
+				grid_sm<1,void> g_sm_copy(sz);
+
+				auto ite = getGPUIterator_impl<1,void>(g_sm_copy,start,stop);
+
+				copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());
+			}
+#else
+
+			std::cout << __FILE__ << ":" << __LINE__ << " error: the function resize require the launch of a kernel, but it seem that this" <<
+					                                    " file (grid_base_implementation.hpp) has not been compiled with NVCC  " << std::endl;
+
+#endif
+	}
+
+	void resize_impl_host(const size_t (& sz)[dim], grid_base_impl<dim,T,S,layout,layout_base> & grid_new)
+	{
+		size_t sz_c[dim];
+		for (size_t i = 0 ; i < dim ; i++)
+		{sz_c[i] = (g1.size(i) < sz[i])?g1.size(i):sz[i];}
+
+		grid_sm<dim,void> g1_c(sz_c);
+
+		//! create a source grid iterator
+		grid_key_dx_iterator<dim> it(g1_c);
+
+		while(it.isNext())
+		{
+			// get the grid key
+			grid_key_dx<dim> key = it.get();
+
+			// create a copy element
+
+			grid_new.get_o(key) = this->get_o(key);
+
+			++it;
+		}
+	}
+
+	void resize_impl_memset(grid_base_impl<dim,T,S,layout,layout_base> & grid_new)
+	{
+		//! Set the allocator and allocate the memory
+		if (isExternal == true)
+		{
+			mem_setext<typename std::remove_reference<decltype(grid_new)>::type,S,layout_base<T>,decltype(data_)>::set(grid_new,*this,this->data_);
+		}
+		else
+			grid_new.setMemory();
+	}
+
 public:
 
 	// Implementation of packer and unpacker for grid
@@ -826,18 +910,7 @@ public:
 
 		grid_base_impl<dim,T,S,layout,layout_base> grid_new(sz);
 
-		//! Set the allocator and allocate the memory
-		if (isExternal == true)
-		{
-/*			grid_new.setMemory(static_cast<S&>(data_.getMemory()));
-
-			// Create an empty memory allocator for the actual structure
-
-			setMemory();*/
-			mem_setext<decltype(grid_new),S,layout_base<T>,decltype(data_)>::set(grid_new,*this,this->data_);
-		}
-		else
-			grid_new.setMemory();
+		resize_impl_memset(grid_new);
 
 
 		// We know that, if it is 1D we can safely copy the memory
@@ -853,82 +926,40 @@ public:
 			//! N-D copy
 
 		if (opt & DATA_ON_HOST)
-		{
-			size_t sz_c[dim];
-			for (size_t i = 0 ; i < dim ; i++)
-			{sz_c[i] = (g1.size(i) < sz[i])?g1.size(i):sz[i];}
-
-			grid_sm<dim,void> g1_c(sz_c);
-
-			//! create a source grid iterator
-			grid_key_dx_iterator<dim> it(g1_c);
-
-			while(it.isNext())
-			{
-				// get the grid key
-				grid_key_dx<dim> key = it.get();
-
-				// create a copy element
-
-				grid_new.get_o(key) = this->get_o(key);
-
-				++it;
-			}
-		}
+		{resize_impl_host(sz,grid_new);}
 
 		if (opt & DATA_ON_DEVICE && S::isDeviceHostSame() == false)
-		{
-#if defined(CUDA_GPU) && defined(__NVCC__)
-
-			grid_key_dx<dim> start;
-			grid_key_dx<dim> stop;
-
-			for (size_t i = 0 ; i < dim ; i++)
-			{
-				start.set_d(i,0);
-				stop.set_d(i,g1.size(i)-1);
-			}
-
-//			if (dim == 1)
-//			{
-//				copy_fast_1d_device_memory<is_layout_mlin<layout_base<T>>::value,decltype(grid_new.data_),S> cf1dm(data_,grid_new.data_);
-
-//				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cf1dm);
-//			}
-			if (dim <= 3)
-			{
-				auto ite = this->getGPUIterator(start,stop);
-
-				copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());
-			}
-			else
-			{
-				grid_key_dx<1> start;
-				start.set_d(0,0);
-				grid_key_dx<1> stop({});
-				stop.set_d(0,this->g1.size());
-
-				size_t sz[1];
-				sz[0]= this->g1.size();
-
-				grid_sm<1,void> g_sm_copy(sz);
-
-				auto ite = getGPUIterator_impl<1,void>(g_sm_copy,start,stop);
-
-				copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());
-			}
-#else
-
-			std::cout << __FILE__ << ":" << __LINE__ << " error: the function resize require the launch of a kernel, but it seem that this" <<
-					                                    " file (grid_base_implementation.hpp) has not been compiled with NVCC  " << std::endl;
-
-#endif
-
-		}
+		{resize_impl_device(sz,grid_new);}
 
 //		}
 
 		// copy grid_new to the base
+
+		this->swap(grid_new);
+	}
+
+	/*! \brief Resize the space
+	 *
+	 * Resize the space to a new grid, the element are retained on the new grid,
+	 * if the new grid is bigger the new element are now initialized, if is smaller
+	 * the data are cropped
+	 *
+	 * \param sz reference to an array of dimension dim
+	 * \param opt options for resize. In case we know that the data are only on device memory we can use DATA_ONLY_DEVICE,
+	 *                                In case we know that the data are only on host memory we can use DATA_ONLY_HOST
+	 *
+	 */
+	void resize_no_device(const size_t (& sz)[dim])
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		//! Create a completely new grid with sz
+
+		grid_base_impl<dim,T,S,layout,layout_base> grid_new(sz);
+
+		resize_impl_memset(grid_new);
+		resize_impl_host(sz,grid_new);
 
 		this->swap(grid_new);
 	}

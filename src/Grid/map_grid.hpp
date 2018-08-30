@@ -106,6 +106,7 @@ class grid_cpu
 template<unsigned int dim, typename T, typename S>
 class grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>
 {
+	typedef typename apply_transform<memory_traits_inte,T>::type T_;
 
 public:
 
@@ -199,18 +200,7 @@ public:
 	 */
 	template<unsigned int ... prp> void hostToDevice()
 	{
-		this->data_.mem->getDevicePointer();
-	}
-
-	/*! \brief It return the properties arrays.
-	 *
-	 * In case of Cuda memory it return the device pointers to pass to the kernels
-	 *
-	 *
-	 */
-	template<unsigned int id> void * getDeviceBufferCopy()
-	{
-		return this->data_.mem->getDevicePointer();
+		this->data_.mem->hostToDevice();
 	}
 
 	/*! \brief It return the properties arrays.
@@ -222,7 +212,7 @@ public:
 	 */
 	template<unsigned int id> void * getDeviceBuffer()
 	{
-		return this->data_.mem->getDevicePointerNoCopy();
+		return this->data_.mem->getDevicePointer();
 	}
 
 	/*! \brief Synchronize the memory buffer in the device with the memory in the host
@@ -255,17 +245,9 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	grid_gpu_ker<dim,T,memory_traits_lin> toKernel()
+	grid_gpu_ker<dim,T_,memory_traits_lin> toKernel()
 	{
-/*		grid_gpu_ker<dim,T,memory_traits_lin> g(this->g1);
-
-		g.data_.mem = this->data_.mem;
-		// Increment the reference of mem
-		g.data_.mem->incRef();
-		g.data_.mem_r.bind_ref(this->data_.mem_r);
-		g.data_.switchToDevicePtrNoCopy();*/
-
-		return grid_toKernelImpl<is_layout_inte<memory_traits_lin<T>>::value,dim,T>::toKernel(*this);
+		return grid_toKernelImpl<is_layout_inte<memory_traits_lin<T_>>::value,dim,T_>::toKernel(*this);
 	}
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
@@ -273,17 +255,9 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	const grid_gpu_ker<dim,T,memory_traits_lin> toKernel() const
+	const grid_gpu_ker<dim,T_,memory_traits_lin> toKernel() const
 	{
-/*		grid_gpu_ker<dim,T,memory_traits_lin> g(this->g1);
-
-		g.data_.mem = this->data_.mem;
-		// Increment the reference of mem
-		g.data_.mem->incRef();
-		g.data_.mem_r.bind_ref(this->data_.mem_r);
-		g.data_.switchToDevicePtrNoCopy();*/
-
-		return grid_toKernelImpl<is_layout_inte<memory_traits_lin<T>>::value,dim,T>::toKernel(*this);
+		return grid_toKernelImpl<is_layout_inte<memory_traits_lin<T_>>::value,dim,T_>::toKernel(*this);
 	}
 
 #endif
@@ -349,23 +323,35 @@ struct host_to_device_impl
 	//! Convert the packed properties into an MPL vector
 	typedef typename to_boost_vmpl<prp...>::type v_prp;
 
+	//! starting element
+	size_t start;
+
+	//! stop element
+	size_t stop;
+
 	/*! \brief constructor
 	 *
 	 * \param src source encapsulated object
 	 * \param dst source encapsulated object
 	 *
 	 */
-	inline host_to_device_impl(typename memory_traits_inte<T_type>::type & dst)
-	:dst(dst)
-	{
-	};
+	inline host_to_device_impl(typename memory_traits_inte<T_type>::type & dst,size_t start, size_t stop)
+	:dst(dst),start(start),stop(stop)
+	{};
 
 
 	//! It call the copy function for each property
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem->getDevicePointer();
+		typedef decltype(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r) mem_r_type;
+
+		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem->hostToDevice();
+
+		// here we have to recursively call hostToDevice for each nested vector
+		call_recursive_host_device_if_vector<typename mem_r_type::value_type,
+											 is_vector<typename mem_r_type::value_type>::value>
+		::call(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r,start,stop);
 	}
 };
 
@@ -455,6 +441,53 @@ struct device_to_host_start_stop_impl
 	}
 };
 
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+template<typename T_type, unsigned int ... prp>
+struct host_to_device_start_stop_impl
+{
+	//! encapsulated destination object
+	typename memory_traits_inte<T_type>::type & dst;
+
+	//! Convert the packed properties into an MPL vector
+	typedef typename to_boost_vmpl<prp...>::type v_prp;
+
+	//! start
+	size_t start;
+
+	//! stop
+	size_t stop;
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	inline host_to_device_start_stop_impl(typename memory_traits_inte<T_type>::type & dst,size_t start,size_t stop)
+	:dst(dst),start(start),stop(stop)
+	{
+	};
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		typedef typename boost::mpl::at<typename T_type::type,T>::type p_type;
+
+		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem->hostToDevice(start*sizeof(p_type),(stop+1)*sizeof(p_type));
+	}
+};
+
 struct dim3_
 {
 	//! size in x dimension
@@ -497,6 +530,8 @@ struct device_grid
 template<unsigned int dim, typename T, typename S>
 class grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>
 {
+	typedef typename apply_transform<memory_traits_inte,T>::type T_;
+
 	//! grid layout
 	typedef typename memory_traits_inte<T>::type layout;
 
@@ -553,20 +588,9 @@ public:
 	 */
 	template<unsigned int ... prp> void hostToDevice()
 	{
-		host_to_device_impl<T,prp ...> htd(this->data_);
+		host_to_device_impl<T,prp ...> htd(this->data_,0,this->getGrid().size());
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(htd);
-	}
-
-	/*! \brief It return the properties arrays.
-	 *
-	 * In case of Cuda memory it return the device pointers to pass to the kernels
-	 *
-	 *
-	 */
-	template<unsigned int id> void * getDeviceBufferCopy()
-	{
-		return boost::fusion::at_c<id>(this->data_).mem->getDevicePointer();
 	}
 
 	/*! \brief It return the properties arrays.
@@ -578,7 +602,7 @@ public:
 	 */
 	template<unsigned int id> void * getDeviceBuffer()
 	{
-		return boost::fusion::at_c<id>(this->data_).mem->getDevicePointerNoCopy();
+		return boost::fusion::at_c<id>(this->data_).mem->getDevicePointer();
 	}
 
 	/*! \brief Synchronize the memory buffer in the device with the memory in the host
@@ -607,14 +631,19 @@ public:
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(dth);
 	}
 
-	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
 	 *
-	 *  The object created can be considered like a reference of the original
+	 * \param start starting element to transfer
+	 * \param stop stop element to transfer
+	 *
+	 * \tparam properties to transfer
 	 *
 	 */
-	grid_gpu_ker<dim,T,memory_traits_inte> toKernel()
+	template<unsigned int ... prp> void hostToDevice(size_t start, size_t stop)
 	{
-		return grid_toKernelImpl<is_layout_inte<memory_traits_inte<T>>::value,dim,T>::toKernel(*this);
+		host_to_device_start_stop_impl<T, prp ...> dth(this->data_,start,stop);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(dth);
 	}
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
@@ -622,9 +651,19 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	const grid_gpu_ker<dim,T,memory_traits_inte> toKernel() const
+	grid_gpu_ker<dim,T_,memory_traits_inte> toKernel()
 	{
-		return grid_toKernelImpl<is_layout_inte<memory_traits_inte<T>>::value,dim,T>::toKernel(*this);
+		return grid_toKernelImpl<is_layout_inte<memory_traits_inte<T_>>::value,dim,T_>::toKernel(*this);
+	}
+
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	const grid_gpu_ker<dim,T_,memory_traits_inte> toKernel() const
+	{
+		return grid_toKernelImpl<is_layout_inte<memory_traits_inte<T>>::value,dim,T_>::toKernel(*this);
 	}
 
 #endif
