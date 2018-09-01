@@ -203,6 +203,19 @@ public:
 		this->data_.mem->hostToDevice();
 	}
 
+	/*! \brief Copy the memory from host to device
+	 *
+	 * \tparam (all properties are copied to prp is useless in this case)
+	 *
+	 * \param start start point
+	 * \param stop stop point
+	 *
+	 */
+	template<unsigned int ... prp> void hostToDevice(size_t start, size_t stop)
+	{
+		this->data_.mem->hostToDevice(start,stop);
+	}
+
 	/*! \brief It return the properties arrays.
 	 *
 	 * In case of Cuda memory it return the device pointers to pass to the kernels
@@ -314,7 +327,7 @@ struct switch_copy_host_to_device
  * \tparam encap dst
  *
  */
-template<typename T_type, unsigned int ... prp>
+template<typename T_type, template<typename> class layout_base , typename Memory, unsigned int ... prp>
 struct host_to_device_impl
 {
 	//! encapsulated destination object
@@ -346,10 +359,21 @@ struct host_to_device_impl
 	{
 		typedef decltype(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r) mem_r_type;
 
-		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem->hostToDevice();
+		typedef typename toKernel_transform<layout_base,typename mem_r_type::value_type>::type kernel_type;
+
+		call_recursive_host_device_if_vector<typename mem_r_type::value_type,
+											 kernel_type,
+											 layout_base,
+											 is_vector<typename mem_r_type::value_type>::value>
+		::template transform<Memory,mem_r_type>(static_cast<CudaMemory *>(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem),
+									 boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r,
+				                       start,
+				                       stop);
 
 		// here we have to recursively call hostToDevice for each nested vector
 		call_recursive_host_device_if_vector<typename mem_r_type::value_type,
+											 kernel_type,
+											 layout_base,
 											 is_vector<typename mem_r_type::value_type>::value>
 		::call(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r,start,stop);
 	}
@@ -441,52 +465,7 @@ struct device_to_host_start_stop_impl
 	}
 };
 
-/*! \brief this class is a functor for "for_each" algorithm
- *
- * This class is a functor for "for_each" algorithm. For each
- * element of the boost::vector the operator() is called.
- * Is mainly used to copy one encap into another encap object
- *
- * \tparam encap source
- * \tparam encap dst
- *
- */
-template<typename T_type, unsigned int ... prp>
-struct host_to_device_start_stop_impl
-{
-	//! encapsulated destination object
-	typename memory_traits_inte<T_type>::type & dst;
 
-	//! Convert the packed properties into an MPL vector
-	typedef typename to_boost_vmpl<prp...>::type v_prp;
-
-	//! start
-	size_t start;
-
-	//! stop
-	size_t stop;
-
-	/*! \brief constructor
-	 *
-	 * \param src source encapsulated object
-	 * \param dst source encapsulated object
-	 *
-	 */
-	inline host_to_device_start_stop_impl(typename memory_traits_inte<T_type>::type & dst,size_t start,size_t stop)
-	:dst(dst),start(start),stop(stop)
-	{
-	};
-
-
-	//! It call the copy function for each property
-	template<typename T>
-	inline void operator()(T& t) const
-	{
-		typedef typename boost::mpl::at<typename T_type::type,T>::type p_type;
-
-		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem->hostToDevice(start*sizeof(p_type),(stop+1)*sizeof(p_type));
-	}
-};
 
 struct dim3_
 {
@@ -588,7 +567,7 @@ public:
 	 */
 	template<unsigned int ... prp> void hostToDevice()
 	{
-		host_to_device_impl<T,prp ...> htd(this->data_,0,this->getGrid().size());
+		host_to_device_impl<T,memory_traits_inte,S,prp ...> htd(this->data_,0,this->getGrid().size());
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(htd);
 	}
@@ -641,7 +620,7 @@ public:
 	 */
 	template<unsigned int ... prp> void hostToDevice(size_t start, size_t stop)
 	{
-		host_to_device_start_stop_impl<T, prp ...> dth(this->data_,start,stop);
+		host_to_device_impl<T,memory_traits_inte,S, prp ...> dth(this->data_,start,stop);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(dth);
 	}

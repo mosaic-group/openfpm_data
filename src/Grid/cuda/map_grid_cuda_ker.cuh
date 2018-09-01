@@ -228,6 +228,30 @@ struct grid_gpu_ker
 	{
 		this->get_o(key1) = obj;
 	}
+
+	/*! \brief Get the pointer for the property p
+	 *
+	 * \tparam property p
+	 *
+	 */
+	template<unsigned int p> __device__ void * getPointer()
+	{
+		return mem_getpointer<decltype(data_),layout_base<T>>::template getPointer<p>(data_);
+	}
+
+	/*! \brief operator= this operator absorb the pointers, consider that this object wrap device pointers
+	 *
+	 * \param object to copy
+	 *
+	 */
+	grid_gpu_ker<dim,T,layout_base> & operator=(const grid_gpu_ker<dim,T,layout_base> & g)
+	{
+		g1 = g.g1;
+
+		grid_gpu_ker_constructor_impl<is_layout_inte<layout_base<T_>>::value,T_>::construct(g,*this);
+
+		return *this;
+	}
 };
 
 

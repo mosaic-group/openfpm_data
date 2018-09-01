@@ -40,7 +40,6 @@
 #include "data_type/aggregate.hpp"
 #include "vector_map_iterator.hpp"
 #include "util/cuda_util.hpp"
-#include "util/tokernel_transformation.hpp"
 #include "cuda/map_vector_cuda_ker.cuh"
 
 namespace openfpm
@@ -1528,7 +1527,7 @@ namespace openfpm
 		 */
 		template<unsigned int ... prp> void hostToDevice()
 		{
-			base.template hostToDevice<prp ...>();
+			base.template hostToDevice<prp ...>(0,v_size);
 		}
 
 		/*! \brief Synchronize the memory buffer in the device with the memory in the host
@@ -1595,6 +1594,15 @@ namespace openfpm
 		}
 
 #endif
+
+		void * internal_get_size_pointer()	{return &v_size;}
+
+		void print_size()
+		{
+			std::cout << "the size of: " << demangle(typeid(self_type).name()) << " is " << sizeof(self_type) << std::endl;
+			std::cout << "    " << demangle(typeid(decltype(v_size)).name()) << ":" << sizeof(decltype(v_size)) << std::endl;
+			std::cout << "    " << demangle(typeid(decltype(base)).name()) << ":" << sizeof(decltype(base)) << std::endl;
+		}
 
 	};
 

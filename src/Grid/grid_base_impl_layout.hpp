@@ -280,7 +280,7 @@ struct mem_swap<T,layout,data_type,grid_type,1>
 template<typename data_type, typename layout, unsigned int sel = 2*is_layout_mlin<layout>::value + is_layout_inte<layout>::value>
 struct mem_getpointer
 {
-	template<unsigned int d> static void * getPointer(data_type & data_)
+	template<unsigned int d> __device__ __host__ static void * getPointer(data_type & data_)
 	{
 		return data_.mem_r.get_pointer();
 	}
@@ -289,7 +289,7 @@ struct mem_getpointer
 template<typename data_type, typename layout>
 struct mem_getpointer<data_type,layout,1>
 {
-	template<unsigned int p> static void * getPointer(data_type & data_)
+	template<unsigned int p> __device__ __host__ static void * getPointer(data_type & data_)
 	{
 		return boost::fusion::at_c<p>(data_).mem_r.get_pointer();
 	}

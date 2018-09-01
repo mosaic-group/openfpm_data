@@ -8,6 +8,8 @@
 #ifndef OPENFPM_DATA_SRC_GRID_GRID_COMMON_HPP_
 #define OPENFPM_DATA_SRC_GRID_GRID_COMMON_HPP_
 
+#include "util/tokernel_transformation.hpp"
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -32,9 +34,30 @@ struct host_to_dev_all_prp
 	}
 };
 
-template<typename T, bool is_vector>
+template<typename T, typename T_ker, template<typename> class layout_base , bool is_vector>
 struct call_recursive_host_device_if_vector
 {
+	template<typename mem_type, typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
+	{
+		// The type of device and the type on host does not match (in general)
+		// So we have to convert before transfer
+
+		T * ptr = static_cast<T *>(obj.get_pointer());
+
+		mem_type tmp;
+
+		tmp.allocate(mem->size());
+
+		T_ker * ptr_tt = static_cast<T_ker *>(tmp.getPointer());
+
+		for(size_t i = start ; i < stop ; i++)
+		{
+			ptr_tt[i] = ptr[i].toKernel();
+		}
+
+		mem->hostToDevice(tmp);
+	}
+
 	//! It is a vector recursively call deviceToHost
 	template<typename obj_type>
 	static void call(obj_type & obj, size_t start, size_t stop)
@@ -50,9 +73,14 @@ struct call_recursive_host_device_if_vector
 	}
 };
 
-template<typename T>
-struct call_recursive_host_device_if_vector<T,false>
+template<typename T, typename T_ker ,template<typename> class layout_base>
+struct call_recursive_host_device_if_vector<T,T_ker,layout_base,false>
 {
+	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
+	{
+		mem->hostToDevice();
+	}
+
 	//! It is not a vector nothing to do
 	template<typename obj_type>
 	static void call(obj_type & obj, size_t start, size_t stop) {}
