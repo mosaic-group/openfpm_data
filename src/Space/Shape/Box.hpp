@@ -62,6 +62,9 @@ public:
 	//! type of the box
 	typedef T btype;
 
+	//! Indicate that this is a box
+	typedef int yes_is_box;
+
 	//! It store the two point bounding the box
 	type data;
 
@@ -1258,5 +1261,18 @@ public:
 		return ! this->operator==(b);
 	}
 };
+
+template<typename T, typename Sfinae = void>
+struct is_Box: std::false_type {};
+
+
+/*! \brief Check if a type T is an aggregate
+ *
+ * return true if T is an aggregate
+ *
+ */
+template<typename T>
+struct is_Box<T, typename Void< typename T::yes_is_box>::type> : std::true_type
+{};
 
 #endif

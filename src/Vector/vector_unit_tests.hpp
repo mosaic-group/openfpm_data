@@ -842,15 +842,33 @@ BOOST_AUTO_TEST_CASE( vector_cuda_to_kernel_recursive )
 {
 	typedef openfpm::vector_gpu<aggregate<int,long int>> test1_type;
 	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<aggregate<long int>>>> test2_type;
+	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<aggregate<Box<2,float>>>>> test3_type;
+	typedef openfpm::vector<Box<3,float>,CudaMemory,typename memory_traits_inte<Box<3,float>>::type,memory_traits_inte> test4_type;
+	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<Box<2,float>>>> test5_type;
 
 	typedef typename toKernel_transform<memory_traits_inte,test1_type>::type tker1;
 	typedef typename toKernel_transform<memory_traits_inte,test2_type>::type tker2;
+	typedef typename toKernel_transform<memory_traits_inte,test3_type>::type tker3;
+	typedef typename toKernel_transform<memory_traits_inte,test4_type>::type tker4;
+	typedef typename toKernel_transform<memory_traits_inte,test5_type>::type tker5;
 
 	bool test = std::is_same<tker1,openfpm::vector_gpu_ker<aggregate<int, long>, memory_traits_inte>>::value;
 
 	BOOST_REQUIRE_EQUAL(test,true);
 
 	test = std::is_same<tker2,openfpm::vector_gpu_ker<aggregate<int, openfpm::vector_gpu_ker<aggregate<long>, memory_traits_inte> >, memory_traits_inte>>::value;
+
+	BOOST_REQUIRE_EQUAL(test,true);
+
+	test = std::is_same<tker3,openfpm::vector_gpu_ker<aggregate<int, openfpm::vector_gpu_ker<aggregate<Box<2,float>>, memory_traits_inte> >, memory_traits_inte>>::value;
+
+	BOOST_REQUIRE_EQUAL(test,true);
+
+	test = std::is_same<tker4,openfpm::vector_gpu_ker<Box<3,float>,memory_traits_inte>>::value;
+
+	BOOST_REQUIRE_EQUAL(test,true);
+
+	test = std::is_same<tker5,openfpm::vector_gpu_ker<aggregate<int, openfpm::vector_gpu_ker<Box<2,float>, memory_traits_inte> >, memory_traits_inte>>::value;
 
 	BOOST_REQUIRE_EQUAL(test,true);
 }

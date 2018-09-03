@@ -32,6 +32,9 @@ template<unsigned int dim ,typename T> class Point
 	//! boost fusion that store the point
 	typedef boost::fusion::vector<T[dim]> type;
 
+	//! Indicate that is a Point
+	typedef int yes_is_point;
+
 	//! structure that store the data of the point
 	type data;
 
@@ -673,5 +676,18 @@ template <unsigned int N, typename T, typename Mem> std::string toPointString(co
 //! A point is a vector on a computer (But do not say this to a Mathematician)
 
 template<unsigned int dim, typename T>  using VectorS = Point<dim,T>;
+
+template<typename T, typename Sfinae = void>
+struct is_Point: std::false_type {};
+
+
+/*! \brief Check if a type T is an aggregate
+ *
+ * return true if T is an aggregate
+ *
+ */
+template<typename T>
+struct is_Point<T, typename Void< typename T::yes_is_point>::type> : std::true_type
+{};
 
 #endif

@@ -30,6 +30,8 @@ struct aggregate
 	typedef boost::fusion::vector<list... , SE3_ADD_PROP(sizeof...(list))> type;
 	typedef boost::fusion::vector<list... > type_real;
 
+	typedef int yes_is_aggregate;
+
 	type data;
 
 	/*! \brief get the properties i
@@ -67,6 +69,8 @@ struct aggregate
 	static const unsigned int max_prop_real = boost::mpl::size<type>::type::value + SE3_SUB_MAX_PROP;
 };
 
+
+
 #else
 
 
@@ -85,6 +89,8 @@ struct aggregate
 
 	//! real internal type containing the data
 	typedef boost::fusion::vector<list...> type_real;
+
+	typedef int yes_is_aggregate;
 
 	//! the data
 	type data;
@@ -125,5 +131,19 @@ struct aggregate
 };
 
 #endif
+
+template<typename T, typename Sfinae = void>
+struct is_aggregate: std::false_type {};
+
+
+/*! \brief Check if a type T is an aggregate
+ *
+ * return true if T is an aggregate
+ *
+ */
+template<typename T>
+struct is_aggregate<T, typename Void< typename T::yes_is_aggregate>::type> : std::true_type
+{};
+
 
 #endif /* OPENFPM_DATA_SRC_UTIL_AGGREGATE_HPP_ */

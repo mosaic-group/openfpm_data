@@ -57,62 +57,7 @@ __global__ void vv_test_data_get(vector_vector_type vvt, vector_out_type out, in
 
 BOOST_AUTO_TEST_SUITE( vector_cuda_tests )
 
-//BOOST_AUTO_TEST_CASE (test_size_of_vector_and_vector_gpu_ker)
-//{
-//	typedef openfpm::vector<Box<3,float>,CudaMemory,typename memory_traits_inte<Box<3,float>>::type,memory_traits_inte> proc_boxes;
-//	typedef openfpm::vector_gpu_ker<Box<3,float>,memory_traits_inte> proc_boxes_ker;
-//
-///*	BOOST_REQUIRE_EQUAL(sizeof(openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte>),
-//			            sizeof(openfpm::vector<aggregate<int>,CudaMemory,typename memory_traits_inte<aggregate<int>>::type,memory_traits_inte>));
-//
-//
-//	BOOST_REQUIRE_EQUAL(sizeof(openfpm::vector_gpu_ker<aggregate<int,int>,memory_traits_inte>),
-//			            sizeof(openfpm::vector<aggregate<int,int>,CudaMemory,typename memory_traits_inte<aggregate<int,int>>::type,memory_traits_inte>));
-//
-//	BOOST_REQUIRE_EQUAL(sizeof(openfpm::vector_gpu_ker<aggregate<int,int,float>,memory_traits_inte>),
-//			            sizeof(openfpm::vector<aggregate<int,int,float>,CudaMemory,typename memory_traits_inte<aggregate<int,int,float>>::type,memory_traits_inte>));
-//
-//
-//	BOOST_REQUIRE_EQUAL(sizeof(openfpm::vector_gpu_ker<aggregate<proc_boxes_ker>,memory_traits_inte>),
-//			            sizeof(openfpm::vector<aggregate<proc_boxes>,CudaMemory,typename memory_traits_inte<aggregate<proc_boxes>>::type,memory_traits_inte>));*/
-//
-//
-//
-////	BOOST_REQUIRE_EQUAL(sizeof(proc_boxes),sizeof(proc_boxes_ker));
-//
-//	openfpm::vector<aggregate<proc_boxes>,CudaMemory,typename memory_traits_inte<aggregate<proc_boxes>>::type,memory_traits_inte> v_test;
-//
-//	v_test.print_size();
-//
-//	auto v_test_ker = v_test.toKernel();
-//
-//	std::cout << std::endl << std::endl << std::endl;
-//
-//	v_test_ker.print_size();
-//
-///*	v_test.resize_no_device(5);
-//
-//	for (size_t i = 0 ; i< v_test.size() ; i++)
-//	{
-//		v_test.template get<0>(i).resize(7);
-//	}
-//
-//	auto v_test_ker = v_test.toKernel();
-//
-//	std::cout << "SIZE: " << sizeof(proc_boxes) << "    " << sizeof(proc_boxes_ker) << std::endl;
-//
-//	size_t base = reinterpret_cast<size_t>(v_test.template get<0>(1).internal_get_size_pointer()) - reinterpret_cast<size_t>(v_test.template get<0>(0).internal_get_size_pointer());
-//	std::cout << std::hex << "BASE: " << base << "   " << reinterpret_cast<size_t>(v_test.template get<0>(0).internal_get_size_pointer()) << std::endl;
-//
-//	base = reinterpret_cast<size_t>(v_test_ker.template get<0>(1).internal_get_size_pointer()) - reinterpret_cast<size_t>(v_test_ker.template get<0>(0).internal_get_size_pointer());
-//	std::cout << "BASE: " << base << std::endl;
-//
-//	base = reinterpret_cast<size_t>(v_test.template get<0>(2).internal_get_size_pointer()) - reinterpret_cast<size_t>(v_test.template get<0>(0).internal_get_size_pointer());
-//	std::cout << "BASE: " << base << std::endl;
-//
-//	base = reinterpret_cast<size_t>(v_test_ker.template get<0>(2).internal_get_size_pointer()) - reinterpret_cast<size_t>(v_test_ker.template get<0>(0).internal_get_size_pointer());
-//	std::cout << "BASE: " << base << std::endl;*/
-//}
+
 
 BOOST_AUTO_TEST_CASE ( test_vector_of_vector_gpu )
 {
