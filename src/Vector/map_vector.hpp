@@ -1527,7 +1527,7 @@ namespace openfpm
 		 */
 		template<unsigned int ... prp> void hostToDevice()
 		{
-			base.template hostToDevice<prp ...>(0,v_size);
+			base.template hostToDevice<prp ...>(0,v_size-1);
 		}
 
 		/*! \brief Synchronize the memory buffer in the device with the memory in the host

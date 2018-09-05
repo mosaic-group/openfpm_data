@@ -213,7 +213,7 @@ public:
 	 */
 	template<unsigned int ... prp> void hostToDevice(size_t start, size_t stop)
 	{
-		this->data_.mem->hostToDevice(start,stop);
+		this->data_.mem->hostToDevice(start*sizeof(T),(stop+1)*sizeof(T));
 	}
 
 	/*! \brief It return the properties arrays.

@@ -50,7 +50,7 @@ struct call_recursive_host_device_if_vector
 
 		T_ker * ptr_tt = static_cast<T_ker *>(tmp.getPointer());
 
-		for(size_t i = start ; i < stop ; i++)
+		for(size_t i = start ; i <= stop ; i++)
 		{
 			ptr_tt[i] = ptr[i].toKernel();
 		}
