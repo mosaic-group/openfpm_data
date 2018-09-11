@@ -167,7 +167,7 @@ MGPU_DEVICE type_t shfl_down(type_t x, int offset, int width = warp_size) {
   u.t = x;
 
   iterate<num_words>([&](int i) {
-    u.x[i] = __shfl_down(u.x[i], offset, width);
+    u.x[i] = __shfl_down_sync(0xFFFFFFFF,u.x[i], offset, width);
   });
   return u.t;
 }
@@ -176,7 +176,7 @@ template<typename type_t, typename op_t>
 MGPU_DEVICE type_t shfl_up_op(type_t x, int offset, op_t op, 
   int width = warp_size) {
 
-  type_t y = shfl_up(x, offset, width);
+  type_t y = shfl_up_sync(0xFFFFFFFF,x, offset, width);
   int lane = (width - 1) & threadIdx.x;
   if(lane >= offset) x = op(x, y);
   return x;
@@ -186,7 +186,7 @@ template<typename type_t, typename op_t>
 MGPU_DEVICE type_t shfl_down_op(type_t x, int offset, op_t op, 
   int width = warp_size) {
 
-  type_t y = shfl_down(x, offset, width);
+  type_t y = shfl_down_sync(0xFFFFFFFF,x, offset, width);
   int lane = (width - 1) & threadIdx.x;
   if(lane < width - offset) x = op(x, y);
   return x;
@@ -200,7 +200,7 @@ MGPU_DEVICE inline c_type shfl_##dir##_op(c_type x, int offset, \
   asm( \
     "{.reg ."#ptx_type" r0;" \
     ".reg .pred p;" \
-    "shfl."#dir".b32 r0|p, %1, %2, %3;" \
+    "shfl.sync."#dir".b32 r0|p, %1, %2, %3,0xFFFFFFFF;" \
     "@p "#ptx_op"."#ptx_type" r0, r0, %4;" \
     "mov."#ptx_type" %0, r0; }" \
     : "="#r(result) : #r(x), "r"(offset), "r"(mask), #r(x)); \

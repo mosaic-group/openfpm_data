@@ -41,16 +41,15 @@ struct object_si_d_e
 	 * \param dst destination object
 	 *
 	 */
-	object_si_d_e(const v_src & src, v_dst & dst)
+	__device__ __host__ object_si_d_e(const v_src & src, v_dst & dst)
 	:src(src),dst(dst)
 	{
 	};
 
 	//! It call the functor for each member
     template<typename T>
-    void operator()(T& t)
+    __device__ __host__ void operator()(T& t)
     {
-//    	typedef typename boost::mpl::at<typename v_dst::type,typename boost::mpl::int_<T::value>>::type dtype;
     	typedef decltype(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>()) stype;
 
     	// In case of layout switch use this
@@ -167,13 +166,13 @@ struct object_si_d<v_src,v_dst,OBJ_NORMAL,prp...>
 template<typename v_src, typename v_dst, int... prp>
 struct object_si_d<v_src,v_dst,OBJ_ENCAP,prp...>
 {
-	inline object_si_d(const v_src && vs, v_dst && vd)
+	__device__ __host__ inline object_si_d(const v_src && vs, v_dst && vd)
 	{
 		object_si_d_e<v_src,v_dst,prp...> obj(vs,vd);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_dst::max_prop> >(obj);
 	}
 
-	inline object_si_d(const v_src & vs, v_dst & vd)
+	__device__ __host__ inline object_si_d(const v_src & vs, v_dst & vd)
 	{
 		object_si_d_e<v_src,v_dst,prp...> obj(vs,vd);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_dst::max_prop> >(obj);
@@ -183,11 +182,11 @@ struct object_si_d<v_src,v_dst,OBJ_ENCAP,prp...>
 template<typename v_src, typename v_dst>
 struct object_si_d<v_src,v_dst,OBJ_ENCAP>
 {
-	inline object_si_d(const v_src && vs, v_dst && vd)
+	__device__ __host__  inline object_si_d(const v_src && vs, v_dst && vd)
 	{
 	}
 
-	inline object_si_d(const v_src & vs, v_dst & vd)
+	__device__ __host__  inline object_si_d(const v_src & vs, v_dst & vd)
 	{
 	}
 };
