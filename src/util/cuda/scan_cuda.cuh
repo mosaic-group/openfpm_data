@@ -507,6 +507,7 @@ void scan(openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_
 	cl_n_scan.resize(raw_size);
 }
 
+
 #endif
 
 #endif /* SCAN_CUDA_CUH_ */

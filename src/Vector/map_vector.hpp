@@ -44,6 +44,57 @@
 
 namespace openfpm
 {
+
+	template<bool is_ok_cuda,typename T, typename Memory,
+			 typename layout, template<typename> class layout_base,
+			 typename grow_p>
+	struct add_prp_device_impl
+	{
+		template <typename S,
+				  typename M,
+				  typename gp,
+				  unsigned int impl,
+				  template <typename> class layout_base2,
+				  unsigned int ...args>
+		static void run(openfpm::vector<T,Memory,layout,layout_base,grow_p,impl> & this_ ,const openfpm::vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " Error the function add_prp_device only work with cuda enabled vector" << std::endl;
+		}
+	};
+
+	template<typename T, typename Memory,
+			 typename layout, template<typename> class layout_base,
+			 typename grow_p>
+	struct add_prp_device_impl<true,T,Memory,layout,layout_base,grow_p>
+	{
+		template <typename S,
+				  typename M,
+				  typename gp,
+				  unsigned int impl,
+				  template <typename> class layout_base2,
+				  unsigned int ...args>
+		static void run(vector<T,Memory,layout,layout_base,grow_p,impl> & this_ ,const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
+		{
+	#ifdef SE_CLASS2
+				check_valid(&this_,8);
+	#endif
+				// merge the data on device
+
+	#if defined(CUDA_GPU) && defined(__NVCC__)
+
+				size_t old_sz = this_.size();
+				this_.resize(this_.size() + v.size(),DATA_ON_DEVICE);
+
+				auto ite = v.getGPUIterator();
+
+				merge_add_prp_device_impl<decltype(v.toKernel()),decltype(this_.toKernel()),args...><<<ite.wthr,ite.thr>>>(v.toKernel(),this_.toKernel(),(unsigned int)old_sz);
+
+	#else
+				std::cout << __FILE__ << ":" << __LINE__ << " Error the function add_prp_device only work when map_vector is compiled with nvcc" << std::endl;
+	#endif
+		}
+	};
+
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
 	 * Stub object look at the various implementations
@@ -646,6 +697,9 @@ namespace openfpm
 				  unsigned int ...args>
 		void add_prp_device(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
 		{
+			add_prp_device_impl<std::is_same<Memory,CudaMemory>::value,T,Memory,layout,layout_base,grow_p>
+			::template run<S,M,gp,impl,layout_base2,args...>(*this,v);
+/*
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
@@ -662,7 +716,7 @@ namespace openfpm
 
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " Error the function add_prp_device only work when map_vector is compiled with nvcc" << std::endl;
-#endif
+#endif*/
 		}
 
 		/*! \brief Insert an entry in the vector
@@ -1198,6 +1252,60 @@ namespace openfpm
 			return *this;
 		}
 
+		/*! \brief Assignment operator
+		 *
+		 * move semantic movement operator=
+		 *
+		 * \param mv vector
+		 *
+		 * \return itself
+		 *
+		 */
+		template<typename Mem, template <typename> class layout_base2>
+		vector<T, Memory,layout,layout_base2,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Mem, layout, layout_base2,grow_p,OPENFPM_NATIVE> && mv)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			v_size = mv.v_size;
+			base.swap(mv.base);
+
+			return *this;
+		}
+
+		/*! \brief Assignment operator
+		 *
+		 *
+		 * \param mv vector to copy
+		 *
+		 * \return itself
+		 *
+		 *
+		 */
+		template<typename Mem,
+		         typename layout2,
+		         template <typename> class layout_base2,
+		         typename check = typename std::enable_if<!std::is_same<layout2,layout>::value >::type>
+		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> &
+		operator=(const vector<T, Mem, layout2, layout_base2 ,grow_p,OPENFPM_NATIVE> & mv)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			v_size = mv.getInternal_v_size();
+			size_t rsz[1] = {v_size};
+			base.resize(rsz);
+
+			// copy the object
+			for (size_t i = 0 ; i < v_size ; i++ )
+			{
+				grid_key_dx<1> key(i);
+				base.set_general(key,mv.getInternal_base(),key);
+			}
+
+			return *this;
+		}
+
 		/*! \brief Check that two vectors are equal
 		 *
 		 * \param vector to compare
@@ -1527,7 +1635,7 @@ namespace openfpm
 		 */
 		template<unsigned int ... prp> void hostToDevice()
 		{
-			base.template hostToDevice<prp ...>(0,v_size-1);
+			base.template hostToDevice<prp ...>();
 		}
 
 		/*! \brief Synchronize the memory buffer in the device with the memory in the host

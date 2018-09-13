@@ -263,6 +263,9 @@ private:
 	//! layout of the encapsulated object
 	typedef typename memory_traits_lin<T>::type Mem;
 
+	//! layout of the encapsulated object
+	typedef typename memory_traits_inte<T>::type Mem2;
+
 public:
 
 	//! indicate the it is an encapsulated object
@@ -358,9 +361,25 @@ public:
 	 * \return itself
 	 *
 	 */
-	__device__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
+	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
 		copy_cpu_encap_encap<encapc<dim,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+		return *this;
+	}
+
+	/*! \brief Assignment
+	 *
+	 * \param ec object encapsulated to copy
+	 *
+	 * \return itself
+	 *
+	 */
+	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem2> & ec)
+	{
+		copy_cpu_encap_encap<encapc<dim,T,Mem2>,encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 
@@ -374,7 +393,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	__device__  inline encapc<dim,T,Mem> & operator=(const T & obj)
+	__device__  __host__ inline encapc<dim,T,Mem> & operator=(const T & obj)
 	{
 		copy_fusion_vector<typename T::type> cp(obj.data,data_c);
 
@@ -457,6 +476,9 @@ class encapc<dim,T,typename memory_traits_inte<T>::type>
 	//! type of layout
 	typedef typename memory_traits_inte<T>::type Mem;
 
+	//! layout of the encapsulated object
+	typedef typename memory_traits_lin<T>::type Mem2;
+
 	//! reference to the encapsulated object
 	Mem & data;
 
@@ -516,6 +538,22 @@ public:
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
 		copy_cpu_encap_encap<encapc<dim,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+		return *this;
+	}
+
+	/*! \brief Assignment
+	 *
+	 * \param ec encapsulator
+	 *
+	 * \return itself
+	 *
+	 */
+	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem2> & ec)
+	{
+		copy_cpu_encap_encap<encapc<dim,T,Mem2>,encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 

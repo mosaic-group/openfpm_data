@@ -184,6 +184,20 @@ public:
 		this->swap(mem);
 	}
 
+	/*! \brief copy an object Mem_fast
+	 *
+	 * \param mem Mem_fast to copy
+	 *
+	 */
+	template<typename Memory2>
+	inline void copy_general(const Mem_fast<Memory2,local_index> & mem)
+	{
+		slot = mem.private_get_slot();
+
+		cl_n = mem.private_get_cl_n();
+		cl_base = mem.private_get_cl_base();
+	}
+
 	/*! \brief Add an element to the cell
 	 *
 	 * \param cell_id id of the cell
@@ -392,6 +406,36 @@ public:
 	}
 
 #endif
+
+	/*! \brief Return the private data-structure cl_n
+	 *
+	 * \return cl_n
+	 *
+	 */
+	const openfpm::vector<aggregate<local_index>,Memory> & private_get_cl_n() const
+	{
+		return cl_n;
+	}
+
+	/*! \brief Return the private slot
+	 *
+	 * \return slot
+	 *
+	 */
+	const int & private_get_slot() const
+	{
+		return slot;
+	}
+
+	/*! \brief Return the private data-structure cl_base
+	 *
+	 * \return cl_base
+	 *
+	 */
+	const base & private_get_cl_base() const
+	{
+		return cl_base;
+	}
 
 };
 

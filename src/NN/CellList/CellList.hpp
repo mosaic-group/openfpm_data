@@ -629,6 +629,29 @@ public:
 		return *this;
 	}
 
+	/*! \brief Constructor from a temporal object
+	 *
+	 * \param cell Cell list structure
+	 *
+	 * \return itself
+	 *
+	 */
+	template<typename Mem_type2>
+	CellList<dim,T,Mem_type,transform> & operator=(const CellList<dim,T,Mem_type2,transform> & cell)
+	{
+		NNc_full = cell.private_get_NNc_full();
+		NNc_sym = cell.private_get_NNc_sym();
+
+		Mem_type::copy_general(static_cast<const Mem_type2 &>(cell));
+
+		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cell);
+
+		n_dec = cell.get_ndec();
+		from_cd = cell.private_get_from_cd();
+
+		return *this;
+	}
+
 	/*! \brief Get an iterator over particles following the cell structure
 	 *
 	 * \param dom_cells cells in the domain
@@ -1094,6 +1117,21 @@ public:
 	}
 
 #endif
+
+	const NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)> & private_get_NNc_full () const
+	{
+		return NNc_full;
+	}
+
+	const NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)/2+1> & private_get_NNc_sym () const
+	{
+		return NNc_sym;
+	}
+
+	bool private_get_from_cd() const
+	{
+		return from_cd;
+	}
 
 /////////////////////////////////////
 
