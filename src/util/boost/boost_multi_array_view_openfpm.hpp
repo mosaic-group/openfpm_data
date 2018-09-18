@@ -27,9 +27,6 @@
 #include <functional>
 #include <numeric>
 
-#include "util/boost/boost_multi_array_base_openfpm.hpp"
-#include "util/boost/boost_multi_array_subarray_openfpm.hpp"
-
 namespace boost {
 namespace detail {
 namespace multi_array {

@@ -12,7 +12,6 @@
 
 #ifdef CUDA_GPU
 
-#include <cuda_runtime_api.h>
 #include "NN/CellList/CellDecomposer.hpp"
 #include "Vector/map_vector.hpp"
 #include "Cuda_cell_list_util_func.hpp"
@@ -53,6 +52,10 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	//! \brief cell padding
 	openfpm::array<ids_type,dim,cnt_type> off;
 
+	//! Additional information in general (used to understand if the cell-list)
+	//! has been constructed from an old decomposition
+	size_t n_dec;
+
 	//! Initialize the structures of the data structure
 	void InitializeStructures(const size_t (& div)[dim], size_t tot_n_cell, size_t pad)
 	{
@@ -67,6 +70,9 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	}
 
 public:
+
+	//! Indicate that this cell list is a gpu type cell-list
+	typedef int yes_is_gpu_celllist;
 
 	/*! \brief Copy constructor
 	 *
@@ -228,7 +234,70 @@ public:
 	{
 		return sorted_to_not_sorted;
 	}
+
+	/*! \brief Clear the structure
+	 *
+	 *
+	 */
+	void clear()
+	{
+		cl_n.clear();
+		cells.clear();
+		starts.clear();
+		part_ids.clear();
+		sorted_to_not_sorted.clear();
+	}
+
+	/////////////////////////////////////
+
+	//! Ghost marker
+	size_t g_m = 0;
+
+	/*! \brief return the ghost marker
+	 *
+	 * \return ghost marker
+	 *
+	 */
+	inline size_t get_gm()
+	{
+		return g_m;
+	}
+
+	/*! \brief Set the ghost marker
+	 *
+	 * \param g_m marker
+	 *
+	 */
+	inline void set_gm(size_t g_m)
+	{
+		this->g_m = g_m;
+	}
+
+	/////////////////////////////////////
+
+	/*! \brief Set the n_dec number
+	 *
+	 * \param n_dec
+	 *
+	 */
+	void set_ndec(size_t n_dec)
+	{
+		this->n_dec = n_dec;
+	}
+
+	/*! \brief Set the n_dec number
+	 *
+	 * \return n_dec
+	 *
+	 */
+	size_t get_ndec() const
+	{
+		return n_dec;
+	}
+
+	/////////////////////////////////////
 };
+
 
 #endif
 

@@ -138,7 +138,7 @@ public:
 	:starts(starts),srt(srt),spacing_c(spacing_c),div_c(div_c),off(off),t(t)
 	{}
 
-	inline __device__ grid_key_dx<dim,ids_type> getCell(const Point<dim,T> & xp)
+	inline __device__ grid_key_dx<dim,ids_type> getCell(const Point<dim,T> & xp) const
 	{
 		return cid_<dim,cnt_type,ids_type,transform>::get_cid_key(spacing_c,off,t,xp);
 	}

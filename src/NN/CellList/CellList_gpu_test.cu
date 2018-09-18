@@ -18,6 +18,7 @@
 #include  "Point_test.hpp"
 #include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "util/cuda/scan_cuda.cuh"
+#include "util/cuda_util.hpp"
 
 BOOST_AUTO_TEST_SUITE( CellList_gpu_test )
 

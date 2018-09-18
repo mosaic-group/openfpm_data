@@ -3,12 +3,6 @@
 
 #include "config.h"
 
-#ifndef CUDA_GPU
-#include <boost/config/compiler/nvcc.hpp>
-#endif
-
-//! Warning: apparently you cannot used nested boost::mpl with boost::fusion
-//! can create template circularity, this include avoid the problem
 #include "util/object_util.hpp"
 #include "Grid/util.hpp"
 #include "Vector/vect_isel.hpp"

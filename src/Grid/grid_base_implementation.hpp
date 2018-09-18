@@ -35,12 +35,6 @@ struct skip_init<true,T>
 
 #ifdef CUDA_GPU
 
-#ifndef __NVCC__
-#undef __host__
-#undef __device__
-#include <vector_types.h>
-#endif
-
 #define GRID_ID_3_RAW(start,stop) int x[3] = {threadIdx.x + blockIdx.x * blockDim.x + start.get(0),\
     									 threadIdx.y + blockIdx.y * blockDim.y + start.get(1),\
 										 threadIdx.z + blockIdx.z * blockDim.z + start.get(2)};\
@@ -160,6 +154,28 @@ ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T> & g1, grid_key_dx<dim> & k
 	ig.stop = key2;
 
 	return ig;
+}
+
+template<unsigned int dim>
+bool has_work_gpu(ite_gpu<dim> & ite)
+{
+	size_t tot_work = 1;
+
+	if (dim == 1)
+	{tot_work *= ite.wthr.x * ite.thr.x;}
+	else if(dim == 2)
+	{
+		tot_work *= ite.wthr.x * ite.thr.x;
+		tot_work *= ite.wthr.y * ite.thr.y;
+	}
+	else
+	{
+		tot_work *= ite.wthr.x * ite.thr.x;
+		tot_work *= ite.wthr.y * ite.thr.y;
+		tot_work *= ite.wthr.z * ite.thr.z;
+	}
+
+	return tot_work != 0;
 }
 
 #endif
@@ -334,8 +350,10 @@ private:
 			if (dim <= 3)
 			{
 				auto ite = this->getGPUIterator(start,stop);
+				bool has_work = has_work_gpu(ite);
 
-				copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());
+				if (has_work == true)
+				{copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());}
 			}
 			else
 			{
