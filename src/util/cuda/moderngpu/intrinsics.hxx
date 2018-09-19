@@ -241,8 +241,8 @@ MGPU_DEVICE inline c_type shfl_##dir##_op(c_type x, int offset, \
     ".reg .u32 hi;" \
     ".reg .pred p;" \
     "mov.b64 {lo, hi}, %1;" \
-    "shfl."#dir".b32 lo|p, lo, %2, %3;" \
-    "shfl."#dir".b32 hi  , hi, %2, %3;" \
+    "shfl.sync."#dir".b32 lo|p, lo, %2, %3,0xFFFFFFFF;" \
+    "shfl.sync."#dir".b32 hi  , hi, %2, %3,0xFFFFFFFF;" \
     "mov.b64 r0, {lo, hi};" \
     "@p "#ptx_op"."#ptx_type" r0, r0, %4;" \
     "mov."#ptx_type" %0, r0; }" \

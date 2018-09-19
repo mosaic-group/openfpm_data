@@ -81,9 +81,20 @@ public:
 	 */
 	CellList_gpu(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
 	{
+		cl_n = clg.cl_n;
+		cells = clg.cells;
+		starts = clg.starts;
+		part_ids = clg.part_ids;
+		sorted_to_not_sorted = clg.sorted_to_not_sorted;
+
+		spacing_c = clg.spacing_c;
+		div_c = clg.div_c;
+		off = clg.off;
+		g_m = clg.g_m;
+		n_dec = clg.n_dec;
 	}
 
-	/*! \brief Copy constructor
+	/*! \brief Copy constructor from temporal
 	 *
 	 *
 	 *
@@ -99,6 +110,8 @@ public:
 		spacing_c = clg.spacing_c;
 		div_c = clg.div_c;
 		off = clg.off;
+		g_m = clg.g_m;
+		n_dec = clg.n_dec;
 	}
 
 	CellList_gpu(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1)
@@ -209,6 +222,7 @@ public:
 				                                                           pl_out.toKernel(),
 				                                                           sorted_to_not_sorted.toKernel(),
 				                                                           static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
+
 
 #else
 

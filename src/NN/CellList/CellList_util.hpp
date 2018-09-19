@@ -49,8 +49,8 @@ struct populate_cell_list_no_sym_impl
 	template<unsigned int dim, typename T, typename prop, typename Memory, template <typename> class layout_base , typename CellList>
 	static void populate(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
 						   openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & v_pos_out,
-						   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 						   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
+						   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 			   	   	   	   CellList & cli,
 			   	   	   	   size_t g_m)
 	{
@@ -69,8 +69,8 @@ struct populate_cell_list_no_sym_impl<true>
 	template<unsigned int dim, typename T, typename prop, typename Memory, template <typename> class layout_base , typename CellList>
 	static void populate(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
 						 openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & v_pos_out,
-						 openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 						 openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
+						 openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 			   	   	   	   CellList & cli,
 			   	   	   	   size_t g_m)
 	{
@@ -130,12 +130,12 @@ struct populate_cell_list_sym_impl<true>
 template<unsigned int dim, typename T, typename prop, typename Memory, template <typename> class layout_base , typename CellList>
 void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
 		 	 	 	 	 	   openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & v_pos_out,
-		 	 	 	 	 	   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 		 	 	 	 	 	   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
+		 	 	 	 	 	   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 							   CellList & cli,
 							   size_t g_m)
 {
-	populate_cell_list_no_sym_impl<is_gpu_celllist<CellList>::value>::populate(pos,v_pos_out,v_prp_out,v_prp,cli,g_m);
+	populate_cell_list_no_sym_impl<is_gpu_celllist<CellList>::value>::populate(pos,v_pos_out,v_prp,v_prp_out,cli,g_m);
 }
 
 /*! \brief populate the Cell-list with particles symmetric case
@@ -172,14 +172,14 @@ void populate_cell_list_sym(openfpm::vector<Point<dim,T>,Memory,typename layout_
 template<unsigned int dim, typename T, typename prop, typename Memory, template <typename> class layout_base, typename CellList>
 void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base> & pos,
  	 	   	   	   	    openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & v_pos_out,
- 	 	   	   	   	    openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
  	 	   	   	   	    openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
+ 	 	   	   	   	    openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 						CellList & cli,
 						size_t g_m,
 						size_t opt)
 {
 	if (opt == CL_NON_SYMMETRIC)
-	{populate_cell_list_no_sym(pos,v_pos_out,v_prp_out,v_prp,cli,g_m);}
+	{populate_cell_list_no_sym(pos,v_pos_out,v_prp,v_prp_out,cli,g_m);}
 	else
 	{populate_cell_list_sym(pos,cli,g_m);}
 }
