@@ -464,49 +464,68 @@ __global__ void gexscan(int n,
     {vout[i] = val[i];}
 }
 
+/*! \brief Scan is a class because it use internally temporary buffers that are heavy to reconstruct
+ *
+ *
+ *
+ */
 template<typename cnt_type, typename ids_type>
-void scan(openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & cl_n,
-		  openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & cl_n_scan)
+class scan
 {
-	constexpr int THREADS = 128;
-	constexpr int ratio = 4*sizeof(cnt_type)/sizeof(ids_type);
-
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> red;
 	openfpm::vector<aggregate<ids_type>,CudaMemory,typename memory_traits_inte<aggregate<ids_type>>::type,memory_traits_inte> compressed;
 
-	int nblocks = (cl_n.size() + THREADS * ratio - 1 ) / (THREADS * ratio);
-	red.resize(nblocks);
+public:
 
-	auto ite = cl_n.getGPUIterator();
+	void scan_(openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & cl_n,
+			  openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & cl_n_scan)
+	{
+		constexpr int THREADS = 128;
+		constexpr int ratio = 4*sizeof(cnt_type)/sizeof(ids_type);
 
-	compressed.resize(cl_n.size());
-	compress4<cnt_type,ids_type><<<ite.wthr,ite.thr>>>((cnt_type)cl_n.size(),
-			                                           static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
-													   static_cast<ids_type *>(compressed.template getDeviceBuffer<0>()));
+		int nblocks = (cl_n.size() + THREADS * ratio - 1 ) / (THREADS * ratio);
+		red.resize(nblocks);
 
-    breduce<THREADS/32,cnt_type,ids_type,ratio_reduction<cnt_type,ids_type>><<<nblocks, THREADS                >>>(cl_n.size() / ratio * 4,
-    														  (cnt_type *)compressed.template getDeviceBuffer<0>(),
-															  static_cast<cnt_type *>(red.template getDeviceBuffer<0>()));
+		auto ite = cl_n.getGPUIterator();
+
+		compressed.resize(cl_n.size());
+		compress4<cnt_type,ids_type><<<ite.wthr,ite.thr>>>((cnt_type)cl_n.size(),
+														   static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
+														   static_cast<ids_type *>(compressed.template getDeviceBuffer<0>()));
+
+		breduce<THREADS/32,cnt_type,ids_type,ratio_reduction<cnt_type,ids_type>><<<nblocks, THREADS                >>>(cl_n.size() / ratio * 4,
+																  (cnt_type *)compressed.template getDeviceBuffer<0>(),
+																  static_cast<cnt_type *>(red.template getDeviceBuffer<0>()));
 
 
-    bexscan<THREADS,cnt_type><<<1, THREADS, nblocks*sizeof(uint)>>>(nblocks,
-    													   static_cast<cnt_type *>(red.template getDeviceBuffer<0>()));
+		bexscan<THREADS,cnt_type><<<1, THREADS, nblocks*sizeof(uint)>>>(nblocks,
+															   static_cast<cnt_type *>(red.template getDeviceBuffer<0>()));
 
-    size_t raw_size = cl_n.size();
+		size_t raw_size = cl_n.size();
 
-    // resize to be multiple of 16
+		// resize to be multiple of 16
 
-    size_t ml = ((raw_size + ratio - 1) / ratio) *ratio;
-    cl_n_scan.resize(ml);
+		size_t ml = ((raw_size + ratio - 1) / ratio) *ratio;
+		cl_n_scan.resize(ml);
 
-	gexscan<THREADS/32,ratio_extend<cnt_type,ids_type>> <<< nblocks, THREADS >>>((cl_n.size() + ratio - 1 ) / ratio,
-																						  static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(compressed.template getDeviceBuffer<0>()),
-																						  static_cast<cnt_type *>(red.template getDeviceBuffer<0>()),
-												                                          static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(cl_n_scan.template getDeviceBuffer<0>()));
+		gexscan<THREADS/32,ratio_extend<cnt_type,ids_type>> <<< nblocks, THREADS >>>((cl_n.size() + ratio - 1 ) / ratio,
+																							  static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(compressed.template getDeviceBuffer<0>()),
+																							  static_cast<cnt_type *>(red.template getDeviceBuffer<0>()),
+																							  static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(cl_n_scan.template getDeviceBuffer<0>()));
 
-	cl_n_scan.resize(raw_size);
-}
+		cl_n_scan.resize(raw_size);
+	}
 
+};
+
+#else
+
+// In case we do not have NVCC we create a stub
+
+template<typename cnt_type, typename ids_type>
+class scan
+{
+};
 
 #endif
 

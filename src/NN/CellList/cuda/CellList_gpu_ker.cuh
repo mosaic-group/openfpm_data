@@ -83,12 +83,12 @@ public:
 		SelectValid();
 	}
 
-	__device__ cnt_type get()
+	__device__ cnt_type get_sort()
 	{
 		return p_id;
 	}
 
-	__device__ cnt_type get_orig()
+	__device__ cnt_type get()
 	{
 		return srt.template get<0>(p_id);
 	}

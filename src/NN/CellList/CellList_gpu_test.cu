@@ -798,7 +798,7 @@ __global__ void calc_force_number(vector_pos pos, vector_ns s_t_ns, CellList_typ
 
     while (it.isNext())
     {
-    	auto q = it.get();
+    	auto q = it.get_sort();
 
     	int s1 = s_t_ns.template get<0>(q);
 
@@ -823,7 +823,7 @@ __global__ void calc_force_list(vector_pos pos, vector_ns s_t_ns, CellList_type 
 
     while (it.isNext())
     {
-    	auto q = it.get();
+    	auto q = it.get_sort();
 
     	int s1 = s_t_ns.template get<0>(q);
 
@@ -945,7 +945,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out_scan;
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> nn_list;
 
-	scan<unsigned int,unsigned char>(n_out,n_out_scan);
+	scan<unsigned int,unsigned char> sc;
+	sc.scan_(n_out,n_out_scan);
 	n_out_scan.template deviceToHost<0>();
 
 	if (n_out_scan.template get<0>(pl.size()) == 0)
@@ -1126,7 +1127,8 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	openfpm::vector_gpu<aggregate<int>> os_scan;
 	os_scan.resize(v.size());
 
-	scan<int,int>(os,os_scan);
+	scan<int,int>sc;
+	sc.scan_(os,os_scan);
 
 	os_scan.deviceToHost<0>();
 	os.deviceToHost<0>(os.size()-1,os.size()-1);

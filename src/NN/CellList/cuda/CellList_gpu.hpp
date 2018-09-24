@@ -52,6 +52,9 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	//! \brief cell padding
 	openfpm::array<ids_type,dim,cnt_type> off;
 
+	//! scan object
+	scan<cnt_type,ids_type> sc;
+
 	//! Additional information in general (used to understand if the cell-list)
 	//! has been constructed from an old decomposition
 	size_t n_dec;
@@ -191,8 +194,7 @@ public:
 																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
 
 		// now we scan
-
-		scan<cnt_type,ids_type>(cl_n,starts);
+		sc.scan_(cl_n,starts);
 
 		// now we construct the cells
 

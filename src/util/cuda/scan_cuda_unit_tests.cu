@@ -313,7 +313,8 @@ void test_scan(size_t num)
 
 	cl_n.template hostToDevice<0>();
 
-	scan<cnt_type,ids_type>(cl_n,cl_n_scan);
+	scan<cnt_type,ids_type>sc;
+	sc.scan_(cl_n,cl_n_scan);
 
 	cl_n_scan.template deviceToHost<0>();
 

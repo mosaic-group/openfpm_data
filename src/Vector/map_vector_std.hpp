@@ -1104,6 +1104,115 @@ public:
 	}
 };
 
+/*! \brief Implementation of 1-D std::vector like structure
+ *
+ * this implementation is just a wrapper for the std::vector. It work a little different from vector.
+ * In general for a normal vector of objects A vector<A> if you resize to zero, the destructor  of
+ * the object A is called.This vector differ in this behaviour. the destructor is not called. This give the possibility
+ * to have a set of fully retained objects. This class is just a simple wrapper for the normal openfpm::vector where
+ * size and resize are redefined to change the behaviour. A destructive resize is callable with resize_base(), and the internal
+ * size of the base vactor can be querried with size_base()
+ *
+ * \param T base type
+ *
+ */
+template<typename T>
+class vector_fr
+:private vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,grow_policy_double,STD_VECTOR>
+{
+	typedef vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,grow_policy_double,STD_VECTOR> base_type;
 
+	//! size of the vector
+	size_t v_size = 0;
+
+public:
+
+	/*! \brief return the size of the vector
+	 *
+	 * \return the size
+	 *
+	 */
+	size_t size()
+	{
+		return v_size;
+	}
+
+	/*! \brief return the base size of the vector
+	 *
+	 * \return the size
+	 *
+	 */
+	size_t size_base()
+	{
+		return base_type::size();
+	}
+
+	/*! \brief resize the vector retaining the objects
+	 *
+	 * \param new size of the vector
+	 *
+	 */
+	void resize(size_t sz)
+	{
+		if (sz <= base_type::size())
+		{
+			v_size = sz;
+			return;
+		}
+
+		base_type::resize(sz);
+
+		v_size = sz;
+	}
+
+	/*! \brief resize the base vector (this kill the objects)
+	 *
+	 * \param new size of the vector
+	 *
+	 */
+	size_t resize_base(size_t sz)
+	{
+		base_type::resize(sz);
+		v_size = sz;
+	}
+
+	/*! \brief Get an element of the vector
+	 *
+	 * \param id element to get
+	 *
+	 * \return the element reference
+	 *
+	 */
+	inline T & get(size_t id)
+	{
+		return base_type::get(id);
+	}
+
+	/*! \brief Get an element of the vector
+	 *
+	 * \param id element to get
+	 *
+	 * \return the element reference
+	 *
+	 */
+	inline T & last()
+	{
+		return base_type::get(size()-1);
+	}
+
+	/*! swap the content of the vector
+	 *
+	 * \param v vector to be swapped with
+	 *
+	 */
+	void swap(openfpm::vector_fr<T> & v)
+	{
+		size_t v_size_tmp = v.v_size;
+		v.v_size = v_size;
+		v_size = v_size_tmp;
+
+		base_type::swap(v);
+	}
+};
 
 #endif /* MAP_VECTOR_STD_HPP_ */
