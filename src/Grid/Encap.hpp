@@ -30,7 +30,69 @@
  * \tparam encap dst
  *
  */
+template<typename e_src, typename e_dst, unsigned int ... prp>
+struct copy_cpu_encap_encap_prp
+{
+	//! encapsulated source object
+	const e_src & src;
+	//! encapsulated destination object
+	e_dst & dst;
 
+	typedef typename to_boost_vmpl<prp...>::type vprp;
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	__device__ __host__ inline copy_cpu_encap_encap_prp(const e_src & src, e_dst & dst)
+	:src(src),dst(dst)
+	{
+#ifdef SE_CLASS1
+		// e_src and e_dst must have the same number of properties
+
+		if (e_src::T_type::max_prop != e_dst::T_type::max_prop)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of properties between src and dst must match";
+#endif
+	};
+
+
+#ifdef SE_CLASS1
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	inline copy_cpu_encap_encap_prp(const e_src && src, const e_dst && dst)
+	:src(src),dst(dst)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object";};
+#endif
+
+	//! It call the copy function for each property
+	template<typename T>
+	__device__ __host__ inline void operator()(T& t) const
+	{
+		typedef typename boost::mpl::at<vprp,T>::type prp_cp;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(dst.template get<prp_cp::value>())>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get<prp_cp::value>(),dst.template get<prp_cp::value>());
+	}
+};
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
 template<typename e_src, typename e_dst>
 struct copy_cpu_encap_encap
 {

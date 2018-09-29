@@ -59,6 +59,38 @@ class NN_gpu_it
 		}
 	}
 
+	__device__ void SelectValid_debug()
+	{
+		while (p_id >= starts.template get<0>(c_id+1) && isNext())
+		{
+			cnt_type id = cell_act.get(0);
+			cell_act.set_d(0,id+1);
+
+			//! check the overflow of all the index with exception of the last dimensionality
+
+			int i = 0;
+			for ( ; i < dim-1 ; i++)
+			{
+				size_t id = cell_act.get(i);
+				if ((int)id > cell_stop.get(i))
+				{
+					// ! overflow, increment the next index
+
+					cell_act.set_d(i,cell_start.get(i));
+					id = cell_act.get(i+1);
+					cell_act.set_d(i+1,id+1);
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_act);
+			p_id = starts.template get<0>(c_id);
+		}
+	}
+
 public:
 
 	__device__ NN_gpu_it(const grid_key_dx<dim,ids_type> & cell_pos,
@@ -100,6 +132,25 @@ public:
 		SelectValid();
 
 		return *this;
+	}
+
+	__device__ NN_gpu_it<dim,cnt_type,ids_type> & plusplus()
+	{
+		++p_id;
+
+		SelectValid_debug();
+
+		return *this;
+	}
+
+	__device__ cnt_type get_start(unsigned int ce_id)
+	{
+		return starts.template get<0>(ce_id);
+	}
+
+	__device__ cnt_type get_cid()
+	{
+		return c_id;
 	}
 
 	__device__ bool isNext()

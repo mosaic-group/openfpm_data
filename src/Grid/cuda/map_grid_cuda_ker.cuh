@@ -216,6 +216,13 @@ struct grid_gpu_ker
 		this->get_o(key1) = g.get_o(key2);
 	}
 
+	template<unsigned int ... prp> __device__ inline void set(const grid_key_dx<dim> & key1,const grid_gpu_ker<dim,T_,layout_base> & g, const grid_key_dx<dim> & key2)
+	{
+		copy_cpu_encap_encap_prp<decltype(this->get_o(key1)),decltype(g.get_o(key2)),prp...> ec(this->get_o(key1),g.get_o(key2));
+
+		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(ec);
+	}
+
 	/*! \brief set an element of the grid
 	 *
 	 * set an element of the grid

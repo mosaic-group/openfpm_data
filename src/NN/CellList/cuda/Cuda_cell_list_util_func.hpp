@@ -275,6 +275,7 @@ __global__ void reorder_parts(int n,
 		                      const vector_pos input_pos,
 		                      vector_pos output_pos,
 		                      vector_ns sorted_non_sorted,
+		                      vector_ns non_sorted_to_sorted,
 		                      const cnt_type * cells)
 {
     cnt_type i = threadIdx.x + blockIdx.x * blockDim.x;
@@ -285,6 +286,7 @@ __global__ void reorder_parts(int n,
     reorder(input_pos,output_pos,code,i);
 
     sorted_non_sorted.template get<0>(i) = code;
+    non_sorted_to_sorted.template get<0>(code) = i;
 }
 
 template<typename T>

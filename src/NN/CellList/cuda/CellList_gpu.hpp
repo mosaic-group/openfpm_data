@@ -23,7 +23,7 @@ constexpr int count = 0;
 constexpr int start = 1;
 
 
-template<unsigned int dim, typename T,  typename Memory, typename transform = no_transform_only<dim,T>, typename cnt_type = unsigned int, typename ids_type = unsigned char>
+template<unsigned int dim, typename T,  typename Memory, typename transform = no_transform_only<dim,T>, typename cnt_type = unsigned int, typename ids_type = unsigned short>
 class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 {
 	typedef openfpm::vector<aggregate<cnt_type>,Memory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> vector_cnt_type;
@@ -42,6 +42,9 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 	//! \brief for each sorted index it show the index in the unordered
 	vector_cnt_type sorted_to_not_sorted;
+
+	//! \brief for each non sorted index it show the index in the ordered vector
+	vector_cnt_type non_sorted_to_sorted;
 
 	//! Spacing
 	openfpm::array<T,dim,cnt_type> spacing_c;
@@ -161,6 +164,11 @@ public:
 		return sorted_to_not_sorted;
 	}
 
+	vector_cnt_type & getNonSortedToSorted()
+	{
+		return non_sorted_to_sorted;
+	}
+
 	/*! \brief construct from a list of particles
 	 *
 	 * \warning pl is assumed to be already be in device memory
@@ -211,6 +219,7 @@ public:
 																					   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
 
 		sorted_to_not_sorted.resize(pl.size());
+		non_sorted_to_sorted.resize(pl.size());
 		auto ite = pl.getGPUIterator();
 
 		// Here we test fill cell
@@ -223,6 +232,7 @@ public:
 				                                                           pl.toKernel(),
 				                                                           pl_out.toKernel(),
 				                                                           sorted_to_not_sorted.toKernel(),
+				                                                           non_sorted_to_sorted.toKernel(),
 				                                                           static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
 
 

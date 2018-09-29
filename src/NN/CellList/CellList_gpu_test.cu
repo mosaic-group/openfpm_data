@@ -497,6 +497,7 @@ void test_reorder_parts(size_t n_part)
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells_out;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> starts;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> sort_to_not_sort;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> non_sort_to_sort;
 	openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
 
 	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float,float[3],float[3][3]>>::type,memory_traits_inte> parts_prp;
@@ -531,6 +532,7 @@ void test_reorder_parts(size_t n_part)
 	parts_prp_out.resize(n_part);
 	pl_out.resize(n_part);
 	sort_to_not_sort.resize(n_part);
+	non_sort_to_sort.resize(n_part);
 
 	auto p_it = parts_prp.getIterator();
 	while (p_it.isNext())
@@ -581,6 +583,7 @@ void test_reorder_parts(size_t n_part)
 			                                                  pl.toKernel(),
 			                                                  pl_out.toKernel(),
 			                                                  sort_to_not_sort.toKernel(),
+			                                                  non_sort_to_sort.toKernel(),
 			                                                  static_cast<cnt_type *>(cells_out.template getDeviceBuffer<0>()));
 
 	bool check = true;
