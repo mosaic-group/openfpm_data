@@ -289,6 +289,18 @@ __global__ void reorder_parts(int n,
     non_sorted_to_sorted.template get<0>(code) = i;
 }
 
+template<typename vector_sort_index, typename vector_out_type>
+__global__ void mark_domain_particles(vector_sort_index vsi, vector_out_type vout_ids, vector_out_type vout_dg, int g_m)
+{
+	int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+	if (i >= vsi.size()) return;
+
+	vout_dg.template get<0>(i) = (vsi.template get<0>(i) < g_m)?0:1;
+	vout_ids.template get<0>(i) = i;
+
+}
+
 template<typename T>
 struct to_type4
 {

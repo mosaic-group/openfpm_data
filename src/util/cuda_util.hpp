@@ -32,6 +32,16 @@
 		#endif /* __cplusplus */
 		};
 
+		namespace mgpu
+		{
+			// Stub class for modern gpu
+
+			struct standard_context_t
+			{
+				standard_context_t(bool init)
+				{}
+			};
+		}
 
 	#else
 

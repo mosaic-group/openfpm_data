@@ -589,6 +589,7 @@ void test_reorder_parts(size_t n_part)
 	bool check = true;
 	parts_prp_out.template deviceToHost<0>();
 	sort_to_not_sort.template deviceToHost<0>();
+	non_sort_to_sort.template deviceToHost<0>();
 
 	size_t st = 0;
 	for (size_t i = 0 ; i < tot ; i++)
@@ -601,6 +602,7 @@ void test_reorder_parts(size_t n_part)
 
 			check &= parts_prp_out.template get<0>(st) == parts_prp.template get<0>(p);
 			check &= sort_to_not_sort.template get<0>(st) == p;
+			check &= non_sort_to_sort.template get<0>(p) == st;
 
 			st++;
 		}
@@ -695,7 +697,9 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 	pl.template hostToDevice<0>();
 	pl_prp.template hostToDevice<0,1,2>();
 
-	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out);
+	// create an mgpu context
+	mgpu::standard_context_t context(false);
+	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context);
 
 	// Check
 
@@ -736,7 +740,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 
 	// Check the sort to non sort buffer
 
-	auto & vsrt = cl2.private_get_sort_to_not_sorted();
+	auto & vsrt = cl2.getSortToNonSort();
 	vsrt.template deviceToHost<0>();
 
 	BOOST_REQUIRE_EQUAL(vsrt.size(),9);
@@ -751,6 +755,19 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(7),6);
 	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(8),7);
 
+	auto & vnsrt = cl2.getNonSortToSort();
+
+	BOOST_REQUIRE_EQUAL(vnsrt.size(),9);
+
+	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(8),0);
+	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(0),1);
+	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(1),2);
+	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(2),3);
+	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(4),4);
+	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(3),5);
+	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(5),6);
+	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(6),7);
+	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(7),8);
 }
 
 
@@ -864,7 +881,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 	pl_prp_out.resize(pl.size());
 	pl_out.resize(pl.size());
-	pl_out.resize(pl.size()+1);
+	n_out.resize(pl.size()+1);
 	n_out.fill<0>(0);
 
 	pl_prp.resize(pl.size());
@@ -892,7 +909,10 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 		++it2;
 	}
 
-	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out);
+	size_t g_m = pl.size() / 2;
+
+	mgpu::standard_context_t context(false);
+	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
 	auto & s_t_ns = cl2.getSortToNonSort();
 
 	pl.template hostToDevice<0>();
@@ -907,6 +927,21 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 						   s_t_ns.toKernel(),
 						   cl2.toKernel(),
 						   n_out.toKernel());
+
+	// Domain particles
+
+	auto & gdsi = cl2.getDomainSortIds();
+	gdsi.template deviceToHost<0>();
+
+	bool match = true;
+	for (size_t i = 0 ; i < g_m ; i++)
+	{
+		unsigned int p = gdsi.template get<0>(i);
+
+		match &= (s_t_ns.template get<0>(p) < g_m);
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
 
 	// Check
 

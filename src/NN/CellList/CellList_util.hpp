@@ -11,6 +11,11 @@
 #define CL_SYMMETRIC 1
 #define CL_NON_SYMMETRIC 2
 
+#if defined(CUDA_GPU) && defined(__NVCC__)
+#include "util/cuda/moderngpu/context.hxx"
+#include "util/cuda/moderngpu/kernel_mergesort.hxx"
+#endif
+
 /*! \brief Check this is a gpu or cpu type cell-list
  *
  */
@@ -52,6 +57,7 @@ struct populate_cell_list_no_sym_impl
 						   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
 						   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 			   	   	   	   CellList & cli,
+			   	   	   	   mgpu::standard_context_t & context,
 			   	   	   	   size_t g_m)
 	{
 		cli.clear();
@@ -72,12 +78,13 @@ struct populate_cell_list_no_sym_impl<true>
 						 openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
 						 openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 			   	   	   	   CellList & cli,
+			   	   	   	   mgpu::standard_context_t & context,
 			   	   	   	   size_t g_m)
 	{
 		v_prp_out.resize(pos.size());
 		v_pos_out.resize(pos.size());
 
-		cli.template construct<decltype(pos),decltype(v_prp)>(pos,v_pos_out,v_prp,v_prp_out);
+		cli.template construct<decltype(pos),decltype(v_prp)>(pos,v_pos_out,v_prp,v_prp_out,context,g_m);
 
 	}
 };
@@ -133,9 +140,10 @@ void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,typename layo
 		 	 	 	 	 	   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
 		 	 	 	 	 	   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 							   CellList & cli,
+							   mgpu::standard_context_t & mgpu,
 							   size_t g_m)
 {
-	populate_cell_list_no_sym_impl<is_gpu_celllist<CellList>::value>::populate(pos,v_pos_out,v_prp,v_prp_out,cli,g_m);
+	populate_cell_list_no_sym_impl<is_gpu_celllist<CellList>::value>::populate(pos,v_pos_out,v_prp,v_prp_out,cli,mgpu,g_m);
 }
 
 /*! \brief populate the Cell-list with particles symmetric case
@@ -175,11 +183,12 @@ void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,typename layout_base
  	 	   	   	   	    openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
  	 	   	   	   	    openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
 						CellList & cli,
+						mgpu::standard_context_t & context,
 						size_t g_m,
 						size_t opt)
 {
 	if (opt == CL_NON_SYMMETRIC)
-	{populate_cell_list_no_sym(pos,v_pos_out,v_prp,v_prp_out,cli,g_m);}
+	{populate_cell_list_no_sym(pos,v_pos_out,v_prp,v_prp_out,cli,context,g_m);}
 	else
 	{populate_cell_list_sym(pos,cli,g_m);}
 }
@@ -201,6 +210,7 @@ void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,typename layout_base
 template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base, typename CellList>
 void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base> & pos,
 						CellList & cli,
+						mgpu::standard_context_t & context,
 						size_t g_m,
 						size_t opt)
 {
@@ -211,7 +221,7 @@ void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,typename layout_base
 
 	openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base> stub3;
 
-	populate_cell_list(pos,stub3,stub1,stub2,cli,g_m,opt);
+	populate_cell_list(pos,stub3,stub1,stub2,cli,context,g_m,opt);
 }
 
 /*! \brief Structure that contain a reference to a vector of particles

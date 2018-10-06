@@ -162,9 +162,14 @@ public:
 template<unsigned int dim, typename T, typename cnt_type, typename ids_type, typename transform>
 class CellList_gpu_ker
 {
+	//! starting point for each cell
 	openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> starts;
 
+	//! Sorted to non sorted ids conversion
 	openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt;
+
+	//! Domain particles ids
+	openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt;
 
 	//! Spacing
 	openfpm::array<T,dim,cnt_type> spacing_c;
@@ -182,11 +187,12 @@ public:
 
 	CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> starts,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt,
+					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt,
 					 openfpm::array<T,dim,cnt_type> & spacing_c,
 			         openfpm::array<ids_type,dim,cnt_type> & div_c,
 			         openfpm::array<ids_type,dim,cnt_type> & off,
 			         const transform & t)
-	:starts(starts),srt(srt),spacing_c(spacing_c),div_c(div_c),off(off),t(t)
+	:starts(starts),srt(srt),dprt(dprt),spacing_c(spacing_c),div_c(div_c),off(off),t(t)
 	{}
 
 	inline __device__ grid_key_dx<dim,ids_type> getCell(const Point<dim,T> & xp) const
@@ -194,11 +200,21 @@ public:
 		return cid_<dim,cnt_type,ids_type,transform>::get_cid_key(spacing_c,off,t,xp);
 	}
 
-	__device__ NN_gpu_it<dim,cnt_type,ids_type> getNNIterator(const grid_key_dx<dim,ids_type> & cid)
+	inline __device__ NN_gpu_it<dim,cnt_type,ids_type> getNNIterator(const grid_key_dx<dim,ids_type> & cid)
 	{
 		NN_gpu_it<dim,cnt_type,ids_type> ngi(cid,starts,srt,div_c,off);
 
 		return ngi;
+	}
+
+	inline __device__ openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & getDomainSortIds()
+	{
+		return dprt;
+	}
+
+	inline __device__ openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & getSortToNonSort()
+	{
+		return srt;
 	}
 };
 

@@ -18,6 +18,7 @@
 #include "util/cuda/scan_cuda.cuh"
 #include "NN/CellList/cuda/CellList_gpu_ker.cuh"
 #include "util/cuda_util.hpp"
+#include "NN/CellList/CellList_util.hpp"
 
 constexpr int count = 0;
 constexpr int start = 1;
@@ -42,6 +43,12 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 	//! \brief for each sorted index it show the index in the unordered
 	vector_cnt_type sorted_to_not_sorted;
+
+	//! Sorted domain particles domain or ghost
+	vector_cnt_type sorted_domain_particles_dg;
+
+	//! \brief the index of all the domain particles in the sorted vector
+	vector_cnt_type sorted_domain_particles_ids;
 
 	//! \brief for each non sorted index it show the index in the ordered vector
 	vector_cnt_type non_sorted_to_sorted;
@@ -164,9 +171,14 @@ public:
 		return sorted_to_not_sorted;
 	}
 
-	vector_cnt_type & getNonSortedToSorted()
+	vector_cnt_type & getNonSortToSort()
 	{
 		return non_sorted_to_sorted;
+	}
+
+	vector_cnt_type & getDomainSortIds()
+	{
+		return sorted_domain_particles_ids;
 	}
 
 	/*! \brief construct from a list of particles
@@ -176,7 +188,7 @@ public:
 	 * \param pl Particles list
 	 *
 	 */
-	template<typename vector, typename vector_prp> void construct(vector & pl, vector & pl_out, vector_prp & pl_prp, vector_prp & pl_prp_out)
+	template<typename vector, typename vector_prp> void construct(vector & pl, vector & pl_out, vector_prp & pl_prp, vector_prp & pl_prp_out, mgpu::standard_context_t & mgpuContext, size_t g_m = 0)
 	{
 #ifdef __NVCC__
 
@@ -220,6 +232,10 @@ public:
 
 		sorted_to_not_sorted.resize(pl.size());
 		non_sorted_to_sorted.resize(pl.size());
+
+		sorted_domain_particles_ids.resize(pl.size());
+		sorted_domain_particles_dg.resize(pl.size());
+
 		auto ite = pl.getGPUIterator();
 
 		// Here we test fill cell
@@ -236,6 +252,15 @@ public:
 				                                                           static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
 
 
+		ite = sorted_domain_particles_ids.getGPUIterator();
+
+		mark_domain_particles<<<ite.wthr,ite.thr>>>(sorted_to_not_sorted.toKernel(),sorted_domain_particles_ids.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
+
+
+		// now we sort the particles
+		mergesort((int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),(int *)sorted_domain_particles_ids.template getDeviceBuffer<0>(),
+				         sorted_domain_particles_dg.size(), mgpu::template less_t<int>(), mgpuContext);
+
 #else
 
 		std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
@@ -249,16 +274,11 @@ public:
 		return CellList_gpu_ker<dim,T,cnt_type,ids_type,transform>
 		       (starts.toKernel(),
 		    	sorted_to_not_sorted.toKernel(),
+		    	sorted_domain_particles_ids.toKernel(),
 		        spacing_c,
 		        div_c,
 		        off,
 		        this->getTransform());
-	}
-
-
-	vector_cnt_type & private_get_sort_to_not_sorted()
-	{
-		return sorted_to_not_sorted;
 	}
 
 	/*! \brief Clear the structure

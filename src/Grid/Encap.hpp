@@ -34,7 +34,7 @@ template<typename e_src, typename e_dst, unsigned int ... prp>
 struct copy_cpu_encap_encap_prp
 {
 	//! encapsulated source object
-	const e_src & src;
+	e_src & src;
 	//! encapsulated destination object
 	e_dst & dst;
 
@@ -46,7 +46,7 @@ struct copy_cpu_encap_encap_prp
 	 * \param dst source encapsulated object
 	 *
 	 */
-	__device__ __host__ inline copy_cpu_encap_encap_prp(const e_src & src, e_dst & dst)
+	__device__ __host__ inline copy_cpu_encap_encap_prp(e_src & src, e_dst & dst)
 	:src(src),dst(dst)
 	{
 #ifdef SE_CLASS1

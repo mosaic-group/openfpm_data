@@ -1054,6 +1054,22 @@ public:
 		swap(grid);
 	}
 
+	/*! \brief set only some properties
+	 *
+	 * \param key1 destination point
+	 * \param g source
+	 * \param key2 source point
+	 */
+	template<unsigned int ... prp>
+	__device__ inline void set(const grid_key_dx<dim> & key1,const grid_base_impl & g, const grid_key_dx<dim> & key2)
+	{
+		auto edest = this->get_o(key1);
+
+		copy_cpu_encap_encap_prp<decltype(g.get_o(key2)),decltype(this->get_o(key1)),prp...> ec(g.get_o(key2),edest);
+
+		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(ec);
+	}
+
 	/*! \brief set an element of the grid
 	 *
 	 * set an element of the grid
@@ -1062,7 +1078,6 @@ public:
 	 * \param obj value to set
 	 *
 	 */
-
 	template<typename Memory> inline void set(grid_key_dx<dim> dx, const encapc<1,T,Memory> & obj)
 	{
 #ifdef SE_CLASS2

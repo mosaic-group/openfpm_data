@@ -332,6 +332,8 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	grid_cpu<3,Point_test<float>> g(sz);
 	grid_cpu<3,Point_test<float>> g2(sz);
 
+
+
 	// try to access uninitialized grid
 	grid_key_dx<3> keyOut(23,1,1);
 	grid_key_dx<3> keyGood(15,1,1);
@@ -445,6 +447,22 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 	#endif
 
 #endif
+}
+
+BOOST_AUTO_TEST_CASE( grid_set_prp_check )
+{
+	size_t szz[2] = {8,8};
+
+	grid_cpu<2, Point_test<float> > c2(szz);
+	grid_cpu<2, Point_test<float> > c1(szz);
+
+	grid_key_dx<2> k1({0,0});
+
+	c2.template get<1>(k1) = 5.0;
+
+	c1.template set<1>(k1,c2,k1);
+
+	BOOST_REQUIRE_EQUAL(c1.template get<1>(k1),5.0);
 }
 
 BOOST_AUTO_TEST_CASE( grid_use)
