@@ -125,7 +125,7 @@ namespace openfpm
 		enum { static_size = N };
 
 		// swap (note: linear complexity)
-		void swap (array<T,N>& y)
+		void swap (array<T,N,ids_type>& y)
 		{
 			for (size_type i = 0; i < N; ++i)
 			{boost::swap(elems[i],y.elems[i]);}

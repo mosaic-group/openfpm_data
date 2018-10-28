@@ -152,6 +152,20 @@ struct meta_copy_d<Tsrc[N1],Tdst>
 			copy_general<Tsrc>(src[i1],static_cast<Tsrc&>(dst[i1]));
 		}
 	}
+
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_d_(const Tsrc src[N1], Tdst & dst)
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general<Tsrc>(src[i1],static_cast<Tsrc&>(dst[i1]));
+		}
+	}
 };
 
 //! Partial specialization for N=1 1D-Array
@@ -257,6 +271,23 @@ template<typename Tsrc, typename Tdst,size_t N1,size_t N2>
 struct meta_copy_d<Tsrc[N1][N2],Tdst>
 {
 	static inline void meta_copy_d_(const Tsrc src[N1][N2], Tdst && dst)
+	{
+		/*! \brief copy and object from src to dst
+		 *
+		 * \param src source object to copy
+		 * \param dst destination object
+		 *
+		 */
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < N2 ; i2++)
+			{
+				copy_general<Tsrc>(src[i1][i2],static_cast<Tsrc&>(dst[i1][i2]));
+			}
+		}
+	}
+
+	static inline void meta_copy_d_(const Tsrc src[N1][N2], Tdst & dst)
 	{
 		/*! \brief copy and object from src to dst
 		 *

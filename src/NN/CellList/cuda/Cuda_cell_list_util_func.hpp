@@ -185,6 +185,7 @@ __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
 						 transform t,
 						 int n_cap,
 						 int n_part,
+						 int n_cap2,
 						 pos_type * p_pos,
 						 cnt_type *counts,
 						 ids_type * p_ids)
@@ -205,7 +206,7 @@ __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
     e[dim] = atomicAdd(counts + cid, 1);
 
     for (size_t k = 0 ; k <= dim ; k++)
-    {p_ids[i+k*(n_cap)] = e[k];}
+    {p_ids[i+k*(n_cap2)] = e[k];}
 }
 
 template<unsigned int dim, typename cnt_type, typename ids_type, typename ph>

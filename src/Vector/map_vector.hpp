@@ -214,6 +214,9 @@ namespace openfpm
 		//! Type of the value the vector is storing
 		typedef T value_type;
 
+		//! Type of memory this vector use
+		typedef Memory Memory_type;
+
 		//! growing policy of this vector
 		typedef grow_p grow_policy;
 
@@ -832,7 +835,7 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
@@ -854,7 +857,7 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
@@ -876,7 +879,7 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
@@ -901,7 +904,7 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
@@ -976,7 +979,7 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);

@@ -330,8 +330,7 @@ struct call_unpack_agg_functor
 	{
 		typedef typename boost::mpl::at<typename obj_type::type,T>::type obj_t;
 
-		//for (size_t i = 0; i < obj.size(); i++)
-			Unpacker<obj_t,Mem>::unpack(mem,obj.template get<T::value>(),ps);
+		Unpacker<obj_t,Mem>::unpack(mem,obj.template get<T::value>(),ps);
 	}
 };
 

@@ -556,5 +556,54 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	}
 };
 
+//! Partial specialization for scalar N=0
+template<typename T>
+struct array_to_vmpl
+{
+};
+
+
+//! Partial specialization for N=1
+template<typename T,size_t N1>
+struct array_to_vmpl<T[N1]>
+{
+	//! the internal array primitive information represented into a boost mpl vector
+	typedef boost::mpl::vector<T,boost::mpl::int_<N1>> prim_vmpl;
+};
+
+
+//! Partial specialization for N=2
+template<typename T,size_t N1,size_t N2>
+struct array_to_vmpl<T[N1][N2]>
+{
+	//! the internal array primitive information represented into a boost mpl vector
+	typedef boost::mpl::vector<T,boost::mpl::int_<N1>,
+			                     boost::mpl::int_<N2>> prim_vmpl;
+};
+
+/*! \brief OpenFPM use memory_c<multi_array<T> ..... > to implement the structure of array layout
+ *
+ * This mean that the object returned by mem_r are complex objects that represent the memory view, these view has
+ * the purpose to hook at compile time the operator[] to give the feeling of using an array
+ *
+ * This view depend from the template parameter Tv in the member mem_r, that as you can see is difficult to reconstruct
+ * In some case deduction does not work because too complex. So we have to compute this type. this function does this
+ * given a type like float[3], it produce the Tv parameter
+ *
+ *
+ */
+template<typename T>
+struct to_memory_multi_array_ref_view
+{
+	// first we convert the type into a boost vector containing the primitive, followed by array dimension
+	typedef typename array_to_vmpl<T>::prim_vmpl prim_vmpl;
+
+	// Than we operate at compile-time the same operation memory_c<multi_array does
+	//! Remove the first element (this is the Tv parameter of )
+	typedef typename boost::mpl::push_front<typename boost::mpl::pop_front<prim_vmpl>::type,boost::mpl::int_<-1>>::type vmpl;
+
+
+};
+
 #endif
 

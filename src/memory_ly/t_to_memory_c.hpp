@@ -64,6 +64,9 @@ struct t_to_memory_c_impl<T[N1]>
 {
 	//! transfrom a type T into memory_c<T>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>>>> type;
+
+	//! the internal array primitive information represented into a boost mpl vector
+	typedef boost::mpl::vector<T,boost::mpl::int_<N1>> prim_vmpl;
 };
 
 //! Partial specialization for N=1
@@ -72,6 +75,9 @@ struct t_to_memory_c_red_impl<T[N1]>
 {
 	//! transform a type T into memory_c<T,MEMORY_C_REDUCED>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>>>,MEMORY_C_REDUCED> type;
+
+	//! the internal array primitive information represented into a boost mpl vector
+	typedef boost::mpl::vector<T,boost::mpl::int_<N1>> prim_vmpl;
 };
 
 //! Partial specialization for N=2
@@ -81,6 +87,11 @@ struct t_to_memory_c_impl<T[N1][N2]>
 	//! tranform a type T into a memory_c<multi_array<.......>>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>>>> type;
+
+
+	//! the internal array primitive information represented into a boost mpl vector
+	typedef boost::mpl::vector<T,boost::mpl::int_<N1>,
+			                     boost::mpl::int_<N2>> prim_vmpl;
 };
 
 //! Partial specialization for N=2
@@ -90,6 +101,10 @@ struct t_to_memory_c_red_impl<T[N1][N2]>
 	//! transform a type T into a memory_c<multi_array<.......>,MEMORY_C_REDUCED>
 	typedef memory_c<multi_array<boost::mpl::vector<T,boost::mpl::int_<N1>,
 			                                          boost::mpl::int_<N2>>>,MEMORY_C_REDUCED> type;
+
+	//! the internal array primitive information represented into a boost mpl vector
+	typedef boost::mpl::vector<T,boost::mpl::int_<N1>,
+			                     boost::mpl::int_<N2>> prim_vmpl;
 };
 
 //! Partial specialization for N=3
@@ -238,7 +253,7 @@ struct t_to_memory_c_impl<T[N1][N2][N3][N4][N5][N6][N7][N8][N9][N10]>
  * Meta-function t_to_memory_c, convert the type T into an appropriate memory_c type
  *
  * basically it convert t_to_memory_c<float> into memory_c<float> and array specification like
- * t_to_memory_c<float[3][3]> into memory_c<multy_array<float,3,3>>, and so on for higher dimensionality
+ * t_to_memory_c<float[3][3]> into memory_c<multi_array<float,3,3>>, and so on for higher dimensionality
  *
  */
 template<typename T>

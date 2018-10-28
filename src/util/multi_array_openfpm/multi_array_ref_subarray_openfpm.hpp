@@ -174,13 +174,9 @@ public:
   __device__ __host__ inline sub_array_openfpm& operator=(const ConstMultiArray& other)
   {
 #ifdef SE_CLASS1
-    function_requires< boost::multi_array_concepts::ConstMultiArrayConcept<
-        ConstMultiArray, NumDims> >();
 
     // make sure the dimensions agree
     BOOST_ASSERT(other.num_dimensions() == this->num_dimensions());
-//    BOOST_ASSERT(std::equal(other.shape(),other.shape()+this->num_dimensions(),
-//                            this->shape()));
 
 #endif
     // iterator-based copy

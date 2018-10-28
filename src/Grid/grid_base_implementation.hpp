@@ -241,11 +241,13 @@ private:
 	 */
 	inline void check_init() const
 	{
+#ifndef __NVCC__
 		if (is_mem_init == false)
 		{
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
 			ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 		}
+#endif
 	}
 
 	/*! \brief Check that the key is inside the grid
@@ -255,6 +257,7 @@ private:
 	 */
 	inline void check_bound(const grid_key_dx<dim> & v1) const
 	{
+#ifndef __NVCC__
 		for (long int i = 0 ; i < dim ; i++)
 		{
 			if (v1.get(i) >= (long int)getGrid().size(i))
@@ -268,6 +271,7 @@ private:
 				ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 			}
 		}
+#endif
 	}
 
 	/*! \brief Check that the key is inside the grid
@@ -277,11 +281,13 @@ private:
 	 */
 	inline void check_bound(size_t v1) const
 	{
+#ifndef __NVCC__
 		if (v1 >= getGrid().size())
 		{
 			std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << v1<< " >= " << getGrid().size() << "\n";
 			ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 		}
+#endif
 	}
 
 	/*! \brief Check that the key is inside the grid
@@ -294,6 +300,7 @@ private:
 	 */
 	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const grid_key_dx<dim> & key2) const
 	{
+#ifndef __NVCC__
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (key2.get(i) >= (long int)g.getGrid().size(i))
@@ -307,6 +314,35 @@ private:
 				ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 			}
 		}
+#endif
+	}
+
+	/*! \brief Check that the key is inside the grid
+	 *
+	 * check if key2 is inside the g grid boundary
+	 *
+	 * \param g grid
+	 * \param key2
+	 *
+	 */
+	template<typename Mem, typename layout2, template <typename>
+	class layout_base2> inline void check_bound(const grid_base_impl<dim,T,Mem,layout2,layout_base2> & g,const grid_key_dx<dim> & key2) const
+	{
+#ifndef __NVCC__
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (key2.get(i) >= (long int)g.getGrid().size(i))
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " >= " << g.getGrid().size(i) << "\n";
+				ACTION_ON_ERROR(GRID_ERROR_OBJECT);
+			}
+			else if (key2.get(i) < 0)
+			{
+				std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << "x=[" << i << "]=" << key2.get(i) << " is negative " << "\n";
+				ACTION_ON_ERROR(GRID_ERROR_OBJECT);
+			}
+		}
+#endif
 	}
 
 	/*! \brief Check that the key is inside the grid
@@ -319,11 +355,13 @@ private:
 	 */
 	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const size_t & key2) const
 	{
+#ifndef __NVCC__
 		if (key2 >= g.getGrid().size())
 		{
 			std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << key2 << " >= " << getGrid().size() << "\n";
 			ACTION_ON_ERROR(GRID_ERROR_OBJECT);
 		}
+#endif
 	}
 
 #endif

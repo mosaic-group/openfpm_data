@@ -130,14 +130,15 @@ public:
 	 *
 	 * \brief Check if the sphere intersect the box
 	 *
-	 *
-	 *
-	 *   p1 _____
-	 *      |    |
-	 * p.   |    |
-	 *      |____|
-	 *            p2
-	 *
+	 * \verbatim
+
+	    p1 _____
+	       |    |
+	  p.   |    |
+	       |____|
+	             p2
+
+	 \endverbatim
 	 * Given a point p and we search for the distance of the nearest point of the box
 	 * from p. In this case the distance is p1.x-p0.x the Y dimension is alligned with p
 	 * In general for each dimension we check if the point is in the interval if it is
@@ -180,6 +181,66 @@ public:
 
 		// return if there is intersection
 		return distance_r < sphere.radius();
+	}
+
+	/* \brief return the minimum distance between two boxes
+	 *
+	 * Consider two box in space like in the figure below. Given two points P and Q in the two boxes 1 and 2.
+	 * The minimum distance, is the distance that satify min( dist(P,Q) ). There P and Q is the standard euclidean distance
+	 *
+	 * \verbatim b box 2
+	 *
+	 * \verbatim
+
+
+
+	                   _____ p2
+	                  |    |
+	                  |    |   Box 2
+	                  |p1__|
+	                 /
+                    /
+                   /    <----------- min distance
+                  /
+	        _____/
+	       |  p2|
+	       |    |  Box 1
+	       |____|
+	      p1
+
+	 \endverbatim
+	 *
+	 *
+	 */
+	T min_distance(Box<dim,T> & b) const
+	{
+		Point<dim,T> dist;
+
+		for (unsigned int i = 0 ; i < dim ; i++)
+		{
+			if (getHigh(i) <= b.getLow(i))
+			{dist.get(i) = b.getLow(i) - getHigh(i);}
+			else if (b.getHigh(i) <= getLow(i))
+			{dist.get(i) = getLow(i) - b.getHigh(i);}
+			else
+			{
+				T d1 = fabs(getHigh(i) - b.getLow(i) );
+				T d2 = fabs(getLow(i) - b.getLow(i));
+
+				if (d1 <= d2)
+				{
+					T d3 = fabs(getHigh(i) - b.getHigh(i));
+					dist.get(i) = (d3 < d1)?d3:d1;
+				}
+				else
+				{
+					T d3 = fabs(getHigh(i) - b.getHigh(i));
+					dist.get(i) = (d3 < d1)?d3:d2;
+				}
+			}
+		}
+
+		return dist.norm();
 	}
 
 	/*! \brief Get the coordinate of the bounding point

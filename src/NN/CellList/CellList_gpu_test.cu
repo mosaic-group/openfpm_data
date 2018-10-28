@@ -90,6 +90,7 @@ void test_sub_index()
 																	t,
 																	pl.capacity(),
 																	pl.size(),
+																	part_ids.capacity(),
 																	static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																	static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 																	static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
@@ -160,6 +161,10 @@ void test_sub_index2()
 	// fill with some particles
 
 	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
+
+	// Make the test more complicated the test to pass because make different capacity of pl and part_ids
+	pl.resize(256);
+	pl.resize(0);
 
 	// create 3 particles
 
@@ -232,6 +237,7 @@ void test_sub_index2()
 																	t,
 																	pl.capacity(),
 																	pl.size(),
+																	part_ids.capacity(),
 																	static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																	static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 																	static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
@@ -810,8 +816,6 @@ __global__ void calc_force_number(vector_pos pos, vector_ns s_t_ns, CellList_typ
 
     if (p >= pos.size()) return;
 
-    vn.template get<0>(p) = 0;
-
     Point<3,float> xp = pos.template get<0>(p);
 
     auto it = cl.getNNIterator(cl.getCell(xp));
@@ -828,6 +832,76 @@ __global__ void calc_force_number(vector_pos pos, vector_ns s_t_ns, CellList_typ
     }
 }
 
+template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
+__global__ void calc_force_number_box(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type vn)
+{
+    int p = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (p >= pos.size()) return;
+
+    Point<3,float> xp = pos.template get<0>(p);
+
+    auto it = cl.getNNIteratorBox(cl.getCell(xp));
+
+    while (it.isNext())
+    {
+    	auto q = it.get_sort();
+
+    	int s1 = s_t_ns.template get<0>(q);
+
+    	atomicAdd(&vn.template get<0>(s1), 1);
+
+    	++it;
+    }
+}
+
+template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
+__global__ void calc_force_number_rad(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type vn)
+{
+    int p = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (p >= pos.size()) return;
+
+    Point<3,float> xp = pos.template get<0>(p);
+
+    auto it = cl.getNNIteratorRadius(cl.getCell(xp));
+
+    while (it.isNext())
+    {
+    	auto q = it.get_sort();
+
+    	int s1 = s_t_ns.template get<0>(q);
+
+    	atomicAdd(&vn.template get<0>(s1), 1);
+
+    	++it;
+    }
+}
+
+template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
+__global__ void calc_force_list_box(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type v_nscan ,vector_n_type v_list)
+{
+    int p = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (p >= pos.size()) return;
+
+    Point<3,float> xp = pos.template get<0>(p);
+    int start_list = v_nscan.template get<0>(p);
+
+    auto it = cl.getNNIteratorBox(cl.getCell(xp));
+
+    while (it.isNext())
+    {
+    	auto q = it.get_sort();
+
+    	int s1 = s_t_ns.template get<0>(q);
+
+    	v_list.template get<0>(start_list) = s1;
+
+    	++start_list;
+    	++it;
+    }
+}
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
 __global__ void calc_force_list(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type v_nscan ,vector_n_type v_list)
@@ -854,16 +928,185 @@ __global__ void calc_force_list(vector_pos pos, vector_ns s_t_ns, CellList_type 
     }
 }
 
-template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart)
+template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
+__global__ void calc_force_list_rad(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type v_nscan ,vector_n_type v_list)
 {
-	// Subdivisions
-	size_t div[dim] = {16,16,16};
+    int p = threadIdx.x + blockIdx.x * blockDim.x;
 
+    if (p >= pos.size()) return;
+
+    Point<3,float> xp = pos.template get<0>(p);
+    int start_list = v_nscan.template get<0>(p);
+
+    auto it = cl.getNNIteratorRadius(cl.getCell(xp));
+
+    while (it.isNext())
+    {
+    	auto q = it.get_sort();
+
+    	int s1 = s_t_ns.template get<0>(q);
+
+    	v_list.template get<0>(start_list) = s1;
+
+    	++start_list;
+    	++it;
+    }
+}
+
+template<unsigned int impl>
+struct execute_cl_test
+{
+	template<typename CellS, typename Cells_cpu_type, typename T>
+	static void set_radius(CellS & cl2, Cells_cpu_type & cl_cpu, T & radius)
+	{
+	}
+
+	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_type>
+	static void calc_num(pl_type & pl, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_type & n_out)
+	{
+		auto ite = pl.getGPUIterator();
+
+		calc_force_number<decltype(pl.toKernel()),
+				          decltype(s_t_ns.toKernel()),
+				          decltype(cl2.toKernel()),
+				          decltype(n_out.toKernel())>
+		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+							   s_t_ns.toKernel(),
+							   cl2.toKernel(),
+							   n_out.toKernel());
+	}
+
+	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
+	static void calc_list(pl_type & pl, s_t_ns_type & s_t_ns, cl2_type & cl2,n_out_scan_type & n_out_scan, nn_list_type & nn_list)
+	{
+		auto ite = pl.getGPUIterator();
+
+		calc_force_list<decltype(pl.toKernel()),
+				          decltype(s_t_ns.toKernel()),
+				          decltype(cl2.toKernel()),
+				          decltype(nn_list.toKernel())>
+		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+							   s_t_ns.toKernel(),
+							   cl2.toKernel(),
+							   n_out_scan.toKernel(),
+							   nn_list.toKernel());
+	}
+
+	template<typename NN_type>
+	static auto getNN(NN_type & nn, size_t cell) -> decltype(nn.getNNIterator(cell))
+	{
+		return nn.getNNIterator(cell);
+	}
+};
+
+template<>
+struct execute_cl_test<1>
+{
+	template<typename CellS, typename Cells_cpu_type, typename T>
+	static void set_radius(CellS & cl2, Cells_cpu_type & cl_cpu, T & radius)
+	{
+		cl2.setRadius(radius);
+		cl_cpu.setRadius(radius);
+	}
+
+	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_type>
+	static void calc_num(pl_type & pl, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_type & n_out)
+	{
+		auto ite = pl.getGPUIterator();
+
+		calc_force_number_rad<decltype(pl.toKernel()),
+				          decltype(s_t_ns.toKernel()),
+				          decltype(cl2.toKernel()),
+				          decltype(n_out.toKernel())>
+		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+							   s_t_ns.toKernel(),
+							   cl2.toKernel(),
+							   n_out.toKernel());
+	}
+
+	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
+	static void calc_list(pl_type & pl, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_scan_type & n_out_scan, nn_list_type & nn_list)
+	{
+		auto ite = pl.getGPUIterator();
+
+		calc_force_list_rad<decltype(pl.toKernel()),
+				          decltype(s_t_ns.toKernel()),
+				          decltype(cl2.toKernel()),
+				          decltype(nn_list.toKernel())>
+		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+							   s_t_ns.toKernel(),
+							   cl2.toKernel(),
+							   n_out_scan.toKernel(),
+							   nn_list.toKernel());
+	}
+
+	template<typename NN_type>
+	static auto getNN(NN_type & nn, size_t cell) -> decltype(nn.getNNIteratorRadius(cell))
+	{
+		return nn.getNNIteratorRadius(cell);
+	}
+};
+
+template<>
+struct execute_cl_test<2>
+{
+	template<typename CellS, typename Cells_cpu_type, typename T>
+	static void set_radius(CellS & cl2, Cells_cpu_type & cl_cpu, T & radius)
+	{
+		cl2.setRadius(radius);
+		cl_cpu.setRadius(radius);
+	}
+
+	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_type>
+	static void calc_num(pl_type & pl, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_type & n_out)
+	{
+		auto ite = pl.getGPUIterator();
+
+		calc_force_number_box<decltype(pl.toKernel()),
+				          decltype(s_t_ns.toKernel()),
+				          decltype(cl2.toKernel()),
+				          decltype(n_out.toKernel())>
+		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+							   s_t_ns.toKernel(),
+							   cl2.toKernel(),
+							   n_out.toKernel());
+	}
+
+	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
+	static void calc_list(pl_type & pl, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_scan_type & n_out_scan, nn_list_type & nn_list)
+	{
+		auto ite = pl.getGPUIterator();
+
+		calc_force_list_box<decltype(pl.toKernel()),
+				          decltype(s_t_ns.toKernel()),
+				          decltype(cl2.toKernel()),
+				          decltype(nn_list.toKernel())>
+		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+							   s_t_ns.toKernel(),
+							   cl2.toKernel(),
+							   n_out_scan.toKernel(),
+							   nn_list.toKernel());
+	}
+
+	template<typename NN_type>
+	static auto getNN(NN_type & nn, size_t cell) -> decltype(nn.getNNIteratorRadius(cell))
+	{
+		return nn.getNNIteratorRadius(cell);
+	}
+};
+
+template<unsigned int dim, typename T, typename CellS, int impl> void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& div)[dim])
+{
 	// Origin
 	Point<dim,T> org({0.0,0.0,0.0});
 
 	// id Cell list
-	CellS cl2(box,div);
+	CellS cl2(box,div,2);
+
+	CellList<dim,T,Mem_fast<>,shift<dim,T>> cl_cpu(box,div,2);
+
+	T radius = (box.getHigh(0) - box.getLow(0))/div[0] * 2.0;
+	execute_cl_test<impl>::set_radius(cl2,cl_cpu,radius);
 
 	// vector of particles
 
@@ -892,8 +1135,6 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 	// Construct an equivalent CPU cell-list
 
-	CellList<dim,T,Mem_fast<>,shift<dim,T>> cl_cpu(box,div);
-
 	// construct
 
 	auto it2 = pl.getIterator();
@@ -917,16 +1158,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 	pl.template hostToDevice<0>();
 
-	auto ite = pl.getGPUIterator();
-
-	calc_force_number<decltype(pl.toKernel()),
-			          decltype(s_t_ns.toKernel()),
-			          decltype(cl2.toKernel()),
-			          decltype(n_out.toKernel())>
-	<<<ite.wthr,ite.thr>>>(pl.toKernel(),
-						   s_t_ns.toKernel(),
-						   cl2.toKernel(),
-						   n_out.toKernel());
+	execute_cl_test<impl>::calc_num(pl,s_t_ns,cl2,n_out);
 
 	// Domain particles
 
@@ -959,7 +1191,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 		// Get NN iterator
 
-		auto NN_it = cl_cpu.getNNIterator(cl_cpu.getCell(xp));
+		auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIterator(cl_cpu.getCell(xp))*/;
 
 		size_t n_ele = 0;
 		while (NN_it.isNext())
@@ -996,15 +1228,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 	pl.template hostToDevice<0>();
 
-	calc_force_list<decltype(pl.toKernel()),
-			          decltype(s_t_ns.toKernel()),
-			          decltype(cl2.toKernel()),
-			          decltype(nn_list.toKernel())>
-	<<<ite.wthr,ite.thr>>>(pl.toKernel(),
-						   s_t_ns.toKernel(),
-						   cl2.toKernel(),
-						   n_out_scan.toKernel(),
-						   nn_list.toKernel());
+	execute_cl_test<impl>::calc_list(pl,s_t_ns,cl2,n_out_scan,nn_list);
 
 	nn_list.template deviceToHost<0>();
 
@@ -1026,7 +1250,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 
 		openfpm::vector<int> cpu_list;
 
-		auto NN_it = cl_cpu.getNNIterator(cl_cpu.getCell(xp));
+		auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIterator(cl_cpu.getCell(xp));*/
 
 		while (NN_it.isNext())
 		{
@@ -1060,6 +1284,42 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu_force(
 	}
 }
 
+BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box)
+{
+	std::cout << "Test cell list GPU" << "\n";
+
+	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,2>(box,1000,{32,32,32});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,2>(box,10000,{32,32,32});
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,2>(box2,1000,{32,32,32});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,2>(box2,10000,{32,32,32});
+
+	std::cout << "End cell list GPU" << "\n";
+
+	// Test the cell list
+}
+
+BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_radius)
+{
+	std::cout << "Test cell list GPU" << "\n";
+
+	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,1>(box,1000,{32,32,32});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,1>(box,10000,{32,32,32});
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,1>(box2,1000,{32,32,32});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,1>(box2,10000,{32,32,32});
+
+	std::cout << "End cell list GPU" << "\n";
+
+	// Test the cell list
+}
+
 BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force)
 {
 	std::cout << "Test cell list GPU" << "\n";
@@ -1067,11 +1327,11 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force)
 	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
 
-	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>>(box,1000);
-	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>>(box,10000);
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box,1000,{16,16,16});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box,10000,{16,16,16});
 
-	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>>(box2,1000);
-	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>>(box2,10000);
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box2,1000,{16,16,16});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box2,10000,{16,16,16});
 
 	std::cout << "End cell list GPU" << "\n";
 
@@ -1197,6 +1457,87 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	std::cout << "End cell list offload gpu" << "\n";
 
 	// Test the cell list
+}
+
+BOOST_AUTO_TEST_CASE( CellList_swap_test )
+{
+	size_t npart = 4096;
+
+	Box<3,float> box({-1.0,-1.0,-1.0},{1.0,1.0,1.0});
+
+	// Subdivisions
+	size_t div[3] = {10,10,10};
+
+	// Origin
+	Point<3,float> org({0.0,0.0,0.0});
+
+	// id Cell list
+	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cl2(box,div,2);
+	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cl3(box,div,2);
+	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cl4(box,div,2);
+
+	// vector of particles
+
+	openfpm::vector<Point<3,float>,CudaMemory,typename memory_traits_inte<Point<3,float>>::type,memory_traits_inte> pl;
+	openfpm::vector<Point<3,float>,CudaMemory,typename memory_traits_inte<Point<3,float>>::type,memory_traits_inte> pl_out;
+
+	openfpm::vector<aggregate<float,float[3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float[3]>>::type,memory_traits_inte> pl_prp;
+	openfpm::vector<aggregate<float,float[3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float[3]>>::type,memory_traits_inte> pl_prp_out;
+
+	// create random particles
+
+	fill_random_parts<3>(box,pl,pl_prp,npart);
+
+	pl_prp_out.resize(pl.size());
+	pl_out.resize(pl.size());
+
+	pl_prp.resize(pl.size());
+	pl_prp_out.resize(pl.size());
+
+	pl.template hostToDevice<0>();
+	pl_prp.template hostToDevice<0,1>();
+
+	size_t g_m = pl.size() / 2;
+
+	mgpu::standard_context_t context(false);
+	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
+	cl4.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
+
+	cl3.swap(cl2);
+
+	// move device to host
+
+	cl3.debug_deviceToHost();
+	cl4.debug_deviceToHost();
+
+	BOOST_REQUIRE_EQUAL(cl3.getNCells(),cl4.getNCells());
+
+	openfpm::vector<size_t> s1;
+	openfpm::vector<size_t> s2;
+
+	bool check = true;
+	for (size_t i = 0 ; i < cl3.getNCells() ; i++)
+	{
+		check &= cl3.getNelements(i) == cl4.getNelements(i);
+
+		for (size_t j = 0 ; j < cl3.getNelements(i) ; j++)
+		{
+			s1.add(cl3.get(i,j));
+			s2.add(cl4.get(i,j));
+		}
+
+		s1.sort();
+		s2.sort();
+
+		for (size_t j = 0 ; j < s1.size() ; j++)
+		{
+			check &= s1.get(j) == s2.get(j);
+		}
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+
+	//////////////// We check now that cl3 and cl4 match
 }
 
 BOOST_AUTO_TEST_SUITE_END()

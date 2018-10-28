@@ -62,6 +62,9 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	//! \brief cell padding
 	openfpm::array<ids_type,dim,cnt_type> off;
 
+	//! Radius neighborhood
+	openfpm::vector<aggregate<int>,Memory,typename memory_traits_inte<aggregate<int>>::type,memory_traits_inte> nnc_rad;
+
 	//! scan object
 	scan<cnt_type,ids_type> sc;
 
@@ -99,6 +102,9 @@ public:
 		starts = clg.starts;
 		part_ids = clg.part_ids;
 		sorted_to_not_sorted = clg.sorted_to_not_sorted;
+		sorted_domain_particles_dg = clg.sorted_domain_particles_dg;
+		sorted_domain_particles_ids = clg.sorted_domain_particles_ids;
+		non_sorted_to_sorted = clg.non_sorted_to_sorted;
 
 		spacing_c = clg.spacing_c;
 		div_c = clg.div_c;
@@ -119,6 +125,9 @@ public:
 		starts.swap(clg.starts);
 		part_ids.swap(clg.part_ids);
 		sorted_to_not_sorted.swap(clg.sorted_to_not_sorted);
+		sorted_domain_particles_dg.swap(clg.sorted_domain_particles_dg);
+		sorted_domain_particles_ids.swap(clg.sorted_domain_particles_ids);
+		non_sorted_to_sorted.swap(clg.non_sorted_to_sorted);
 
 		spacing_c = clg.spacing_c;
 		div_c = clg.div_c;
@@ -181,6 +190,28 @@ public:
 		return sorted_domain_particles_ids;
 	}
 
+
+	/*! \brief Set the radius for the getNNIteratorRadius
+	 *
+	 * \param radius
+	 *
+	 */
+	void setRadius(T radius)
+	{
+		openfpm::vector<long int> nnc_rad_;
+
+		NNcalc_rad(radius,nnc_rad_,this->getCellBox(),this->getGrid());
+
+		nnc_rad.resize(nnc_rad_.size());
+
+		// copy to nnc_rad
+
+		for (unsigned int i = 0 ; i < nnc_rad_.size() ; i++)
+		{nnc_rad.template get<0>(i) = nnc_rad_.template get<0>(i);}
+
+		nnc_rad.template hostToDevice<0>();
+	}
+
 	/*! \brief construct from a list of particles
 	 *
 	 * \warning pl is assumed to be already be in device memory
@@ -209,6 +240,7 @@ public:
 																		this->getTransform(),
 																		pl.capacity(),
 																		pl.size(),
+																		part_ids.capacity(),
 																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																		static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
@@ -271,14 +303,23 @@ public:
 
 	CellList_gpu_ker<dim,T,cnt_type,ids_type,transform> toKernel()
 	{
+		if (nnc_rad.size() == 0)
+		{
+			// set the radius equal the cell spacing on direction X
+			// (must be initialized to something to avoid warnings)
+			setRadius(this->getCellBox().getHigh(0));
+		}
+
 		return CellList_gpu_ker<dim,T,cnt_type,ids_type,transform>
 		       (starts.toKernel(),
 		    	sorted_to_not_sorted.toKernel(),
 		    	sorted_domain_particles_ids.toKernel(),
+		    	nnc_rad.toKernel(),
 		        spacing_c,
 		        div_c,
 		        off,
-		        this->getTransform());
+		        this->getTransform(),
+		        g_m);
 	}
 
 	/*! \brief Clear the structure
@@ -342,6 +383,95 @@ public:
 	}
 
 	/////////////////////////////////////
+
+	/*! \brief Transfer the information computed on gpu to construct the cell-list on gpu
+	 *
+	 */
+	void debug_deviceToHost()
+	{
+		cl_n.template deviceToHost<0>();
+		cells.template deviceToHost<0>();
+		starts.template deviceToHost<0>();
+	}
+
+	/*! \brief Return the numbers of cells contained in this cell-list
+	 *
+	 * \return the number of cells
+	 *
+	 */
+	size_t getNCells()
+	{
+		return cl_n.size();
+	}
+
+	/*! \brief Return the numbers of elements in the cell
+	 *
+	 * \return the number of elements in the cell
+	 *
+	 */
+	size_t getNelements(size_t i)
+	{
+		return cl_n.template get<0>(i);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	inline auto get(size_t cell, size_t ele) -> decltype(cells.template get<0>(starts.template get<0>(cell)+ele))
+	{
+		return cells.template get<0>(starts.template get<0>(cell)+ele);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	inline auto get(size_t cell, size_t ele) const -> decltype(cells.template get<0>(starts.template get<0>(cell)+ele))
+	{
+		return cells.template get<0>(starts.template get<0>(cell)+ele);
+	}
+
+	/*! \brief swap the information of the two cell-lists
+	 *
+	 *
+	 *
+	 */
+	void swap(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
+	{
+		cl_n.swap(clg.cl_n);
+		cells.swap(clg.cells);
+		starts.swap(clg.starts);
+		part_ids.swap(clg.part_ids);
+		sorted_to_not_sorted.swap(clg.sorted_to_not_sorted);
+		sorted_domain_particles_dg.swap(clg.sorted_domain_particles_dg);
+		sorted_domain_particles_ids.swap(clg.sorted_domain_particles_ids);
+		non_sorted_to_sorted.swap(clg.non_sorted_to_sorted);
+
+		spacing_c.swap(clg.spacing_c);
+		div_c.swap(clg.div_c);
+		off.swap(clg.off);
+
+		size_t g_m_tmp = g_m;
+		g_m = clg.g_m;
+		clg.g_m = g_m_tmp;
+
+		size_t n_dec_tmp = n_dec;
+		n_dec = clg.n_dec;
+		clg.n_dec = n_dec_tmp;
+	}
 };
 
 

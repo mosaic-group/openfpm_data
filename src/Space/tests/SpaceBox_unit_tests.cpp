@@ -157,6 +157,7 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 	std::cout << "SpaceBox unit test stop" << "\n";
 }
 
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

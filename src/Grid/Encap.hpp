@@ -49,7 +49,7 @@ struct copy_cpu_encap_encap_prp
 	__device__ __host__ inline copy_cpu_encap_encap_prp(e_src & src, e_dst & dst)
 	:src(src),dst(dst)
 	{
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && !defined(__NVCC__)
 		// e_src and e_dst must have the same number of properties
 
 		if (e_src::T_type::max_prop != e_dst::T_type::max_prop)
@@ -111,7 +111,7 @@ struct copy_cpu_encap_encap
 	__device__ __host__ inline copy_cpu_encap_encap(const e_src & src, e_dst & dst)
 	:src(src),dst(dst)
 	{
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && !defined(__NVCC__)
 		// e_src and e_dst must have the same number of properties
 
 		if (e_src::T_type::max_prop != e_dst::T_type::max_prop)
@@ -142,6 +142,133 @@ struct copy_cpu_encap_encap
 		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<T::value>());
 	}
 };
+
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+template<typename e_src, typename e_dst>
+struct copy_cpu_encap_encap_general
+{
+	//! encapsulated source object
+	const e_src & src;
+	//! encapsulated destination object
+	e_dst & dst;
+
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	__device__ __host__ inline copy_cpu_encap_encap_general(const e_src & src, e_dst & dst)
+	:src(src),dst(dst)
+	{
+#if defined(SE_CLASS1) && !defined(__NVCC__)
+		// e_src and e_dst must have the same number of properties
+
+		if (e_src::T_type::max_prop != e_dst::T_type::max_prop)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of properties between src and dst must match";
+#endif
+	};
+
+
+#ifdef SE_CLASS1
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	inline copy_cpu_encap_encap_general(const e_src && src, const e_dst && dst)
+	:src(src),dst(dst)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object";};
+#endif
+
+	//! It call the copy function for each property
+	template<typename T>
+	__device__ __host__ inline void operator()(T& t) const
+	{
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(dst.template get<T::value>())>::type copy_dtype;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(src.template get<T::value>())>::type copy_stype;
+
+		meta_copy_d<copy_stype,copy_dtype>::meta_copy_d_(src.template get<T::value>(),dst.template get<T::value>());
+	}
+};
+
+
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
+template<typename e_src>
+struct copy_cpu_encap_single
+{
+	//! encapsulated source object
+	const e_src & src;
+	//! encapsulated destination object
+	e_src & dst;
+
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	__device__ __host__ inline copy_cpu_encap_single(const e_src & src, e_src & dst)
+	:src(src),dst(dst)
+	{
+#if defined(SE_CLASS1) && !defined(__NVCC__)
+		// e_src and e_dst must have the same number of properties
+
+		if (e_src::T_type::max_prop != e_dst::T_type::max_prop)
+			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of properties between src and dst must match";
+#endif
+	};
+
+
+#ifdef SE_CLASS1
+	/*! \brief Constructor
+	 *
+	 * Calling this constructor produce an error. This class store the reference of the object,
+	 * this mean that the object passed must not be a temporal object
+	 *
+	 */
+	inline copy_cpu_encap_encap(const e_src && src, const e_dst && dst)
+	:src(src),dst(dst)
+	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object";};
+#endif
+
+	//! It call the copy function for each property
+	template<typename T>
+	__device__ __host__ inline void operator()(T& t) const
+	{
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<T::value>());
+	}
+};
+
 
 ///////////////////////////////////
 
@@ -425,7 +552,7 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
-		copy_cpu_encap_encap<encapc<dim,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
+		copy_cpu_encap_single<encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 
@@ -441,7 +568,7 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem2> & ec)
 	{
-		copy_cpu_encap_encap<encapc<dim,T,Mem2>,encapc<dim,T,Mem>> cp(ec,*this);
+		copy_cpu_encap_encap_general<encapc<dim,T,Mem2>,encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 
@@ -599,7 +726,7 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
-		copy_cpu_encap_encap<encapc<dim,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
+		copy_cpu_encap_single<encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 
@@ -615,7 +742,7 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem2> & ec)
 	{
-		copy_cpu_encap_encap<encapc<dim,T,Mem2>,encapc<dim,T,Mem>> cp(ec,*this);
+		copy_cpu_encap_encap_general<encapc<dim,T,Mem2>,encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 

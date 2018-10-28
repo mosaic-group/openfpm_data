@@ -212,6 +212,90 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
 };
 
 
+/*! Calculate the neighborhood cells based on the radius
+ *
+ * \note To the calculated neighborhood cell you have to add the id of the central cell
+ *
+	\verbatim
+   +-----------------------+
+   |p |p |p |p |p |p |p |p |
+   +-----------------------+
+   |p |  |  |  |  |  |  |p |
+   +-----------------------+
+   |p |  |  |7 |8 |9 |  |p |
+   +-----------------------+
+   |p |  |  |-1|0 |1 |  |p |
+   +-----------------------+
+   |p |9 |  |-9|-8|-7|  |p |
+   +-----------------------+
+   |p |p |p |p |p |p |p |p |
+   +-----------------------+
+	\endverbatim
+ *
+ * The number indicate the cell id calculated
+ *
+ * -9,-8,-7,-1,0,1,7,8,9
+ *
+ * The cell 0 has id = 22 in the big cell matrix, so to calculate the
+ * neighborhood cells you have to sum the id of the center cell
+ *
+ * 13,14,15,21,22,23,29,30,31
+ *
+ * \param r_cut Cutoff-radius
+ * \param NNcell vector containing the neighborhood cells ids
+ *
+ */
+template<unsigned int dim, typename T>
+void NNcalc_rad(T r_cut, openfpm::vector<long int> & NNcell, const Box<dim,T> & cell_box, const grid_sm<dim,void> & gs)
+{
+	size_t n_cell[dim];
+	size_t n_cell_mid[dim];
+
+	Point<dim,T> spacing = cell_box.getP2();
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{
+		n_cell[i] = 2*(std::ceil(r_cut / spacing.get(i)))+1;
+		n_cell_mid[i] = n_cell[i] / 2;
+	}
+
+	grid_sm<dim,void> gsc(n_cell);
+	grid_key_dx_iterator<dim> gkdi(gsc);
+
+	Box<dim,T> cell_zero;
+
+	for (unsigned int i = 0 ; i < dim ; i++)
+	{
+		cell_zero.setLow(i,n_cell_mid[i]*spacing.get(i));
+		cell_zero.setHigh(i,(n_cell_mid[i]+1)*spacing.get(i));
+	}
+
+	while (gkdi.isNext())
+	{
+		auto key = gkdi.get();
+
+		Box<dim,T> cell;
+
+		for (unsigned int i = 0 ; i < dim ; i++)
+		{
+			cell.setLow(i,key.get(i)*spacing.get(i));
+			cell.setHigh(i,(key.get(i)+1)*spacing.get(i));
+		}
+
+		// here we check if the cell is in the radius.
+		T min_distance = cell.min_distance(cell_zero);
+		if (min_distance > r_cut)
+		{++gkdi;continue;}
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{key.set_d(i,key.get(i) - n_cell_mid[i]);}
+
+		NNcell.add(gs.LinId(key));
+
+		++gkdi;
+	}
+}
+
 /* NOTE all the implementations
  *
  * has complexity O(1) in getting the cell id and the elements in a cell
@@ -300,68 +384,10 @@ private:
 	//! has been constructed from an old decomposition
 	size_t n_dec;
 
-	/*! Calculate the neighborhood cells based on the radius
-	 *
-	 * \note To the calculated neighborhood cell you have to add the id of the central cell
-	 *
-		\verbatim
-       +-----------------------+
-       |p |p |p |p |p |p |p |p |
-       +-----------------------+
-       |p |  |  |  |  |  |  |p |
-       +-----------------------+
-       |p |  |  |7 |8 |9 |  |p |
-       +-----------------------+
-       |p |  |  |-1|0 |1 |  |p |
-       +-----------------------+
-       |p |9 |  |-9|-8|-7|  |p |
-       +-----------------------+
-       |p |p |p |p |p |p |p |p |
-       +-----------------------+
-		\endverbatim
-	 *
-	 * The number indicate the cell id calculated
-	 *
-	 * -9,-8,-7,-1,0,1,7,8,9
-	 *
-	 * The cell 0 has id = 22 in the big cell matrix, so to calculate the
-	 * neighborhood cells you have to sum the id of the center cell
-	 *
-	 * 13,14,15,21,22,23,29,30,31
-	 *
-	 * \param r_cut Cutoff-radius
-	 * \param NNcell vector containing the neighborhood cells ids
-	 *
-	 */
-	void NNcalc(T r_cut, openfpm::vector<long int> & NNcell)
-	{
-		size_t n_cell[dim];
-		size_t n_cell_mid[dim];
+	//! Cells for the neighborhood radius
+	openfpm::vector<long int> nnc_rad;
 
-		Point<dim,T> spacing = this->getCellBox().getP2();
-		const grid_sm<dim,void> & gs = this->getGrid();
 
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			n_cell[i] = 2*(std::ceil(r_cut / spacing.get(i)))+1;
-			n_cell_mid[i] = n_cell[i] / 2;
-		}
-
-		grid_sm<dim,void> gsc(n_cell);
-		grid_key_dx_iterator<dim> gkdi(gsc);
-
-		while (gkdi.isNext())
-		{
-			auto key = gkdi.get();
-
-			for (size_t i = 0 ; i < dim ; i++)
-				key.set_d(i,key.get(i) - n_cell_mid[i]);
-
-			NNcell.add(gs.LinId(key));
-
-			++gkdi;
-		}
-	}
 
 	//! Initialize the structures of the data structure
 	void InitializeStructures(const size_t (& div)[dim], size_t tot_n_cell, size_t slot=STARTING_NSLOT)
@@ -652,6 +678,16 @@ public:
 		return *this;
 	}
 
+	/*! \brief Set the radius for the getNNIteratorRadius
+	 *
+	 * \param radius
+	 *
+	 */
+	void setRadius(T radius)
+	{
+		NNcalc_rad(radius,nnc_rad,this->getCellBox(),this->getGrid());
+	}
+
 	/*! \brief Get an iterator over particles following the cell structure
 	 *
 	 * \param dom_cells cells in the domain
@@ -793,6 +829,15 @@ public:
 		Mem_type::remove(cell,ele);
 	}
 
+	/*! \brief Get the number of cells this cell-list contain
+	 *
+	 * \return number of cells
+	 */
+	inline size_t getNCells() const
+	{
+		return Mem_type::size();
+	}
+
 	/*! \brief Return the number of elements in the cell
 	 *
 	 * \param cell_id id of the cell
@@ -882,6 +927,32 @@ public:
 	 * \return An iterator across the neighhood particles
 	 *
 	 */
+	template<unsigned int impl=NO_CHECK> inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>,impl> getNNIteratorRadius(size_t cell)
+	{
+		CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>,impl> cln(cell,nnc_rad,*this);
+		return cln;
+	}
+
+	/*! \brief Get the Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
+
+	     * * *
+	     * x *
+	     * * *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
+	 *
+	 * \param cell cell id
+	 *
+	 * \return An iterator across the neighhood particles
+	 *
+	 */
 	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform>,(int)FULL,impl> getNNIterator(size_t cell)
 	{
 		CellNNIterator<dim,CellList<dim,T,Mem_type,transform>,(int)FULL,impl> cln(cell,NNc_full,*this);
@@ -904,7 +975,7 @@ public:
 		openfpm::vector<long int> & NNc = rcache[r_cut];
 
 		if (NNc.size() == 0)
-			NNcalc(r_cut,NNc);
+		{NNcalc_rad(r_cut,NNc,this->getCellBox(),this->getGrid());}
 
 		CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>,impl> cln(cell,NNc,*this);
 

@@ -351,7 +351,159 @@ template<typename CellList> void Test_CellDecomposer_consistent()
 	BOOST_REQUIRE_EQUAL(bx_sub.getHigh(1),1.0f/5.0f);
 }
 
+/*! \brief Test cell structure
+ *
+ * \tparam CellS
+ *
+ */
+template<unsigned int dim, typename T, typename CellS> void Test_NN_iterator_radius(SpaceBox<dim,T> & box)
+{
+	//Space where is living the Cell list
+	//SpaceBox<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+
+	// Subdivisions
+	size_t div[dim];
+	size_t div2[dim];
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{
+		div[i] = 17;
+		div2[i] = 34;
+	}
+
+	// grid info
+	grid_sm<dim,void> g_info(div);
+	grid_sm<dim,void> g_info2(div2);
+
+	//! [Usage of cell list multi]
+
+	// CellS = CellListM<dim,T,8>
+	CellS cl1(box,div);
+	CellS cl2(box,div2,2);
+
+	T radius = (box.getHigh(0) - box.getLow(0))/div[0];
+
+	cl2.setRadius( radius );
+
+	// create a vector of random point
+
+	openfpm::vector<Point<dim,float>> vrp;
+
+	for (size_t j = 0 ; j < 10000 ; j++)
+	{
+		vrp.add();
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			vrp.template get<0>(j)[i] = ((float)rand() / RAND_MAX)*(box.getHigh(i) - box.getLow(i)) + box.getLow(i);
+		}
+	}
+
+	auto g_it = vrp.getIterator();
+
+	while (g_it.isNext())
+	{
+		Point<dim,T> xp = vrp.get(g_it.get());
+
+		size_t debug = cl1.getCell(xp);
+
+		cl1.add(xp,g_it.get());
+		cl2.add(xp,g_it.get());
+
+		++g_it;
+	}
+
+	// Get the neighborhood of each particle and compare the numbers of cell
+
+	bool match = true;
+	auto g_it2 = vrp.getIterator();
+
+	size_t number_of_nn = 0;
+	size_t number_of_nn2 = 0;
+
+	while (g_it2.isNext())
+	{
+		Point<dim,T> xp = vrp.get(g_it2.get());
+
+		openfpm::vector<size_t> ids1;
+		openfpm::vector<size_t> ids2;
+
+		size_t local1 = 0;
+		size_t local2 = 0;
+
+		auto NNit = cl1.getNNIterator(cl1.getCell(xp));
+
+		while (NNit.isNext())
+		{
+			auto q = NNit.get();
+
+			// calculate distance
+
+			Point<dim,T> xq = vrp.get(q);
+			Point<dim,T> r = xq - xp;
+
+			if (r.norm() <= radius)
+			{ids1.add(q);}
+
+			number_of_nn++;
+			local1++;
+
+			++NNit;
+		}
+
+		auto NN2it = cl2.getNNIteratorRadius(cl2.getCell(xp));
+
+		while (NN2it.isNext())
+		{
+			auto q = NN2it.get();
+
+			Point<dim,T> xq = vrp.get(q);
+			Point<dim,T> r = xq - xp;
+
+			if (r.norm() <= radius)
+			{ids2.add(q);}
+
+			number_of_nn2++;
+			local2++;
+
+			++NN2it;
+		}
+
+		// Sort ids1
+		ids1.sort();
+		ids2.sort();
+
+		match &= ids1.size() == ids2.size();
+
+		for (size_t i = 0 ; i < ids1.size() ; i++)
+		{match &= ids1.get(i) == ids2.get(i);}
+
+		if (match == false)
+		{break;}
+
+		++g_it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+	BOOST_REQUIRE(number_of_nn2 < number_of_nn);
+}
+
 BOOST_AUTO_TEST_SUITE( CellList_test )
+
+BOOST_AUTO_TEST_CASE ( NN_radius_check )
+{
+	SpaceBox<2,float> box1({0.1,0.1},{0.3,0.5});
+	SpaceBox<3,float> box2({0.0,0.1,0.2},{0.3,0.7,0.5});
+	SpaceBox<3,float> box3({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	std::cout << "Test cell list radius" << "\n";
+
+	Test_NN_iterator_radius<2,float,CellList<2,float,Mem_fast<>,shift<2,float>>>(box1);
+	Test_NN_iterator_radius<3,float,CellList<3,float,Mem_fast<>,shift<3,float>>>(box2);
+	Test_NN_iterator_radius<3,float,CellList<3,float,Mem_fast<>,shift<3,float>>>(box3);
+
+	std::cout << "End cell list" << "\n";
+}
 
 BOOST_AUTO_TEST_CASE( CellList_use)
 {
@@ -429,6 +581,8 @@ BOOST_AUTO_TEST_CASE( CellList_NNc_csr_calc )
 	BOOST_REQUIRE(cNN.get(13).second == grid_key_dx<3>(1,1,1));
 
 }
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

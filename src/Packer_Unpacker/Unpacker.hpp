@@ -17,6 +17,7 @@
 #include "util/Pack_stat.hpp"
 #include "memory/PtrMemory.hpp"
 #include "Packer_util.hpp"
+#include "util/multi_array_openfpm/multi_array_ref_openfpm.hpp"
 
 /*! \brief Unpacker class
  *
@@ -69,6 +70,8 @@ public:
 template<typename T, typename Mem>
 class Unpacker<T,Mem,PACKER_ARRAY_PRIMITIVE>
 {
+
+
 public:
 
 
@@ -98,6 +101,14 @@ public:
 template<typename T, typename Mem>
 class Unpacker<T,Mem,PACKER_ARRAY_CP_PRIMITIVE>
 {
+	//! base type of the primitive arrat
+	typedef typename std::remove_all_extents<T>::type base_type;
+
+	//! numver of extents in the primitive array
+	typedef typename boost::mpl::int_<std::rank<T>::value> n_ext;
+
+	typedef typename to_memory_multi_array_ref_view<T>::vmpl vmpl;
+
 public:
 
 	/*! \brief It packs arrays of C++ primitives
@@ -112,6 +123,22 @@ public:
 		typedef typename std::remove_extent<T>::type prim_type;
 
 		meta_copy<T>::meta_copy_((prim_type *)ext.getPointer(),obj);
+
+		ps.addOffset(sizeof(T));
+	}
+
+	/*! \brief It unpack C++ primitives
+	 *
+	 * \param ext preallocated memory from where to unpack the object
+	 * \param obj object where to unpack
+	 *
+	 */
+	static void unpack(ExtPreAlloc<Mem> & ext,
+					   typename openfpm::multi_array_ref_openfpm<base_type,n_ext::value+1,vmpl>::reference obj,
+					   Unpack_stat & ps)
+	{
+		meta_copy_d<T,typename openfpm::multi_array_ref_openfpm<base_type,n_ext::value+1,vmpl>::reference>
+								::meta_copy_d_(*static_cast<T *>(ext.getPointerOffset(ps.getOffset())),obj);
 
 		ps.addOffset(sizeof(T));
 	}

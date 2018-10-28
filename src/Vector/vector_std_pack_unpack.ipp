@@ -170,7 +170,7 @@
 	template<int ... prp> void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts) const
 	{
 		//Call a nested packer
-		pack_cond<has_pack<T>::type::value, T, HeapMemory, prp...> p;
+		pack_cond<has_pack<T>::type::value, T,HeapMemory, prp...> p;
 		p.packing(mem, *this, sts);
 
 	}

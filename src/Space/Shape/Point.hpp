@@ -128,6 +128,17 @@ template<unsigned int dim ,typename T> class Point
 		{get(i) = mar[i];}
 	}
 
+	/*! \brief Point constructor from multi array
+	 *
+	 *
+	 *
+	 */
+	template <typename vmpl> inline __device__ __host__  Point(const openfpm::detail::multi_array::const_sub_array_openfpm<T,1,vmpl> & mar)
+	{
+		for (unsigned int i = 0 ; i < dim ; i++)
+		{get(i) = mar[i];}
+	}
+
 	/*! \brief Constructor from a list
 	 *
 	 * [Example] Point<3,float> p({0.0,0.0,1.0})

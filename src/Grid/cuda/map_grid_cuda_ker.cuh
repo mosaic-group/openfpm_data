@@ -100,15 +100,15 @@ struct grid_gpu_ker
 	//! layout data
 	layout data_;
 
-	grid_gpu_ker()
+	__device__ __host__ grid_gpu_ker()
 	{}
 
-	grid_gpu_ker(const grid_sm<dim,void> & g1)
+	__device__ __host__ grid_gpu_ker(const grid_sm<dim,void> & g1)
 	:g1(g1)
 	{
 	}
 
-	grid_gpu_ker(const grid_gpu_ker & cpy)
+	__device__ __host__ grid_gpu_ker(const grid_gpu_ker & cpy)
 	:g1(cpy.g1)
 	{
 		grid_gpu_ker_constructor_impl<is_layout_inte<layout_base<T_>>::value,T_>::construct(cpy,*this);

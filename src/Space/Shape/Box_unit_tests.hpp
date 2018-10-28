@@ -289,6 +289,83 @@ BOOST_AUTO_TEST_CASE( box_use)
 	std::cout << "Box unit test stop" << "\n";
 }
 
+BOOST_AUTO_TEST_CASE( box_min_distance_test )
+{
+	// 2D
+
+	Box<2,float> b1({0.0,0.0},{1.0,1.0});
+
+	// Tounching boxes
+	Box<2,float> b2({-1.0,-1.0},{0.0,0.0});
+	Box<2,float> b3({-1.0, 0.0},{0.0,1.0});
+	Box<2,float> b4({-1.0, 1.0},{0.0,2.0});
+	Box<2,float> b5({ 0.0,-1.0},{1.0,0.0});
+	Box<2,float> b6({ 0.0, 0.0},{1.0,1.0});
+	Box<2,float> b7({ 0.0, 1.0},{1.0,2.0});
+	Box<2,float> b8({ 1.0,-1.0},{2.0,0.0});
+	Box<2,float> b9({ 1.0, 0.0},{2.0,1.0});
+	Box<2,float> b10({1.0, 1.0},{2.0,2.0});
+
+	BOOST_REQUIRE_EQUAL(b1.min_distance(b2),0.0);
+	BOOST_REQUIRE_EQUAL(b1.min_distance(b3),0.0);
+	BOOST_REQUIRE_EQUAL(b1.min_distance(b4),0.0);
+	BOOST_REQUIRE_EQUAL(b1.min_distance(b5),0.0);
+	BOOST_REQUIRE_EQUAL(b1.min_distance(b6),0.0);
+	BOOST_REQUIRE_EQUAL(b1.min_distance(b7),0.0);
+	BOOST_REQUIRE_EQUAL(b1.min_distance(b8),0.0);
+	BOOST_REQUIRE_EQUAL(b1.min_distance(b9),0.0);
+	BOOST_REQUIRE_EQUAL(b1.min_distance(b10),0.0);
+
+	// shift 0.1 on X
+
+	Point<2,float> p({-0.1,0.0});
+
+	b2 += p;
+	b3 += p;
+	b4 += p;
+	b5 += p;
+	b6 += p;
+	b7 += p;
+	b8 += p;
+	b9 += p;
+	b10 += p;
+
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b2),0.1,0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b3),0.1,0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b4),0.1,0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b5),0.1,0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b6),0.1,0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b7),0.1,0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b8),0.1,0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b9),0.1,0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b10),0.1,0.01);
+
+	// shift out -0.1 on Y
+
+	Point<2,float> p2({0.0,-0.1});
+
+	// Tounching boxes
+	b2 += p2;
+	b3 += p2;
+	b4 += p2;
+	b5 += p2;
+	b6 += p2;
+	b7 += p2;
+	b8 += p2;
+	b9 += p2;
+	b10 += p2;
+
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b2),sqrt(0.01 + 0.01),0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b3),sqrt(0.01 + 0.01),0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b4),sqrt(0.01 + 0.01),0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b5),sqrt(0.01 + 0.01),0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b6),sqrt(0.01 + 0.01),0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b7),sqrt(0.01 + 0.01),0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b8),sqrt(0.01 + 0.01),0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b9),sqrt(0.01 + 0.01),0.01);
+	BOOST_REQUIRE_CLOSE(b1.min_distance(b10),sqrt(0.01 + 0.01),0.01);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

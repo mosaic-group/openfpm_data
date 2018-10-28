@@ -141,13 +141,14 @@ template<int ... prp>
 struct pack_simple_cond<true, prp ...>
 {
 	//! serialize the vector
-	static inline void pack(const openfpm::vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Pack_stat & sts)
+	template<typename Memory2>
+	static inline void pack(const openfpm::vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory2> & mem, Pack_stat & sts)
 	{
 		//Pack the size of a vector
-		Packer<size_t, Memory>::pack(mem,obj.size(),sts);
+		Packer<size_t, Memory2>::pack(mem,obj.size(),sts);
 		
 		// Sending property object
-		typedef openfpm::vector<T,ExtPreAlloc<Memory>,layout,layout_base,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<T,ExtPreAlloc<Memory2>,typename memory_traits_lin<T>::type,memory_traits_lin,openfpm::grow_policy_identity> dtype;
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -175,11 +176,12 @@ template<bool sel, int ... prp>
 struct unpack_simple_cond
 {
 	//! De-serialize an object
-	static inline void unpack(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
+	template<typename Memory2>
+	static inline void unpack(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory2> & mem, Unpack_stat & ps)
 	{
 		//Unpack a size of a source vector
 		size_t u2 = 0;
-		Unpacker<size_t, Memory>::unpack(mem,u2,ps);
+		Unpacker<size_t, Memory2>::unpack(mem,u2,ps);
 		
 		//Resize a destination vector
 		obj.resize(u2);
@@ -233,11 +235,12 @@ struct unpack_simple_cond<true, prp ...>
 	 * \param ps statistic
 	 *
 	 */
-	static inline void unpack(openfpm::vector<T,Memory,layout,layout_base, grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
+	template<typename Memory2>
+	static inline void unpack(openfpm::vector<T,Memory,layout,layout_base, grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory2> & mem, Unpack_stat & ps)
 	{
 		//Unpack a size of a source vector
 		size_t u2 = 0;
-		Unpacker<size_t, Memory>::unpack(mem,u2,ps);
+		Unpacker<size_t, Memory2>::unpack(mem,u2,ps);
 		
 		//Resize a destination vector
 		obj.resize(u2);
@@ -245,7 +248,7 @@ struct unpack_simple_cond<true, prp ...>
 		size_t id = 0;
 		
 		// Sending property object
-		typedef openfpm::vector<T,PtrMemory,layout,layout_base,openfpm::grow_policy_identity> stype;
+		typedef openfpm::vector<T,PtrMemory,typename memory_traits_lin<T>::type,memory_traits_lin,openfpm::grow_policy_identity> stype;
 
 		// Calculate the size to pack the object
 		size_t size = obj.packMem<prp...>(obj.size(),0);
@@ -308,25 +311,25 @@ template<int ... prp> inline void packRequest(size_t & req) const
  * \param sts pack-stat info
  *
  */
-template<int ... prp, typename Memory2> inline void pack(ExtPreAlloc<Memory2> & mem, Pack_stat & sts) const
+template<int ... prp> inline void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts) const
 {
 	//If all of the aggregate properties are simple (don't have "pack()" member)
 	if (has_pack_agg<T,prp...>::result::value == false)
 	//if (has_aggregatePack<T,prp ... >::has_pack() == false)
 	{
 		//Call a packer
-		pack_simple_cond<sizeof...(prp) == 0,prp...>::pack(*this,mem,sts);
+		pack_simple_cond<sizeof...(prp) == 0,prp...>::template pack(*this,mem,sts);
 	}
 	//If at least one property has a "pack()" member
 	else
 	{
 		//Pack the size of a vector
-		Packer<size_t, Memory2>::pack(mem,this->size(),sts);
+		Packer<size_t, HeapMemory>::pack(mem,this->size(),sts);
 		
 		for (size_t i = 0 ; i < this->size() ; i++)
 		{
 			//Call a packer in nested way
-			call_aggregatePack<decltype(this->get(i)),Memory2,prp ... >::call_pack(this->get(i),mem,sts);
+			call_aggregatePack<decltype(this->get(i)),HeapMemory,prp ... >::call_pack(this->get(i),mem,sts);
 		}
 	}
 }
@@ -336,7 +339,7 @@ template<int ... prp, typename Memory2> inline void pack(ExtPreAlloc<Memory2> & 
  * \param mem preallocated memory from where to unpack the vector
  * \param ps unpack-stat info
  */
-template<int ... prp> inline void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat & ps)
+template<int ... prp> inline void unpack(ExtPreAlloc<HeapMemory> & mem, Unpack_stat & ps)
 {
 	//if all of the aggregate properties are simple (don't have "pack()" member)
 	if (has_pack_agg<T,prp...>::result::value == false)
@@ -350,7 +353,7 @@ template<int ... prp> inline void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat 
 	{
 		//Unpack a size of a source vector
 		size_t u2 = 0;
-		Unpacker<size_t, Memory>::unpack(mem,u2,ps);
+		Unpacker<size_t, HeapMemory>::unpack(mem,u2,ps);
 		
 		//Resize a destination vector
 		this->resize(u2);
@@ -358,7 +361,7 @@ template<int ... prp> inline void unpack(ExtPreAlloc<Memory> & mem, Unpack_stat 
 		for (size_t i = 0 ; i < this->size() ; i++)
 		{
 			//Call an unpacker in nested way
-			call_aggregateUnpack<decltype(this->get(i)),Memory,prp ... >::call_unpack(this->get(i),mem,ps);
+			call_aggregateUnpack<decltype(this->get(i)),HeapMemory,prp ... >::call_unpack(this->get(i),mem,ps);
 		}
 	}
 }

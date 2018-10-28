@@ -102,7 +102,7 @@ public:
 	 */
 	template<typename ...T> __device__ __host__ inline grid_key_dx(const size_t v,const T...t)
 	{
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && !defined(__NVCC__)
 		if (sizeof...(t) != dim -1)
 		{std::cerr << "Error grid_key: " << __FILE__ << " " << __LINE__ << " creating a key of dimension " << dim << " require " << dim << " numbers " << sizeof...(t) + 1 << " provided" << "\n";}
 #endif
@@ -415,7 +415,7 @@ public:
 	 */
 	__device__ __host__   void set_d(size_t i, mem_id id)
 	{
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && !defined(__NVCC__)
 
 		if (i >= dim)
 			std::cerr << "grid_key_dx error: " << __FILE__ << " " << __LINE__ << " try to access dimension " << i << " on a grid_key_dx of size " << dim << "\n";
