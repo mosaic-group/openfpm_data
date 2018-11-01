@@ -2,12 +2,6 @@
 
 # Make a directory in /tmp/openfpm_data
 
-pwd
-echo "$HOME"
-ls
-
-exit 0
-
 echo "Build on: $2 with $3"
 
 mkdir /tmp/openfpm_data_$3
@@ -19,6 +13,8 @@ mkdir openfpm_data/src/config
 git clone git@git.mpi-cbg.de:openfpm/openfpm_devices.git openfpm_devices
 
 cd "$1/openfpm_data"
+
+exit 0
 
 pre_command=""
 sh ./autogen.sh
