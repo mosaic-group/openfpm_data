@@ -5,9 +5,6 @@
  *      Author: i-bird
  */
 
-#ifndef OPENFPM_DATA_SRC_GRID_ITERATORS_COPY_GRID_UNIT_TEST_HPP_
-#define OPENFPM_DATA_SRC_GRID_ITERATORS_COPY_GRID_UNIT_TEST_HPP_
-
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 #include "Grid/map_grid.hpp"
@@ -238,4 +235,3 @@ BOOST_AUTO_TEST_CASE( copy_grid_test_use)
 BOOST_AUTO_TEST_SUITE_END()
 
 
-#endif /* OPENFPM_DATA_SRC_GRID_ITERATORS_COPY_GRID_UNIT_TEST_HPP_ */
