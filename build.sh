@@ -2,7 +2,7 @@
 
 # Make a directory in /tmp/openfpm_data
 
-yes y |ssh-keygen -q -t rsa -N '' >/dev/null
+ssh-keygen -q -t rsa -N ''
 ls -la $HOME/
 ls -la $HOME/.ssh
 
