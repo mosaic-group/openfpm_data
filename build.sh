@@ -3,8 +3,9 @@
 # Make a directory in /tmp/openfpm_data
 
 pwd
-
+touch test_create_a_file
 echo "$HOME"
+ls
 
 exit 0
 
