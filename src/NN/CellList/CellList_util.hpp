@@ -14,14 +14,6 @@
 #if defined(CUDA_GPU) && defined(__NVCC__)
 #include "util/cuda/moderngpu/context.hxx"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
-#else
-
-//! unused stub to make the code compile
-namespace mgpu
-{
-	typedef int standard_context_t;
-}
-
 #endif
 
 /*! \brief Check this is a gpu or cpu type cell-list

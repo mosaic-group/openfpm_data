@@ -69,6 +69,17 @@
 #define __device__
 #endif
 
+namespace mgpu
+{
+	// Stub class for modern gpu
+
+	struct standard_context_t
+	{
+		standard_context_t(bool init)
+		{}
+	};
+}
+
 #endif
 
 

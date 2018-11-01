@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
-project(openfpm_pdata LANGUAGES C CXX CUDA)
+project(openfpm_pdata LANGUAGES C CXX)
 
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/CMakeFiles/)
@@ -11,9 +11,12 @@ set(SE_CLASS2 CACHE BOOL "Activate compilation with SE_CLASS2")
 set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
 set(ENABLE_GPU CACHE BOOL "Disable the GPU code independently that a cuda compiler is found")
 
+if (ENABLE_GPU)
+	enable_language(CUDA)
+	find_package(CUDA)
+endif()
 
 find_package(Boost 1.52.0 REQUIRED unit_test_framework iostreams program_options)
-find_package(CUDA)
 find_package(LibHilbert REQUIRED)
 
 
@@ -31,7 +34,7 @@ if(SE_CLASS3)
 	set(DEFINE_SE_CLASS3 "#define SE_CLASS3")
 endif()
 
-if(CUDA_FOUND AND ENABLE_GPU)
+if(CUDA_FOUND)
 	set(DEFINE_CUDA_GPU "#define CUDA_GPU")
 endif()
 
