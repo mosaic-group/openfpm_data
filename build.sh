@@ -2,7 +2,7 @@
 
 # Make a directory in /tmp/openfpm_data
 
-echo "Build on: $2 with $3"
+echo "Build on: $2 with $3 branch $4"
 
 # Check if libHilbert is installed
 
