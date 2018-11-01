@@ -17,7 +17,9 @@ mv /tmp/openfpm_data_$3 openfpm_data
 mkdir openfpm_data/src/config
 
 git clone https://git.mpi-cbg.de/openfpm/openfpm_devices.git openfpm_devices
+cd openfpm_devices
 git checkout GPU_test
+cd ..
 
 cd "$1/openfpm_data"
 
