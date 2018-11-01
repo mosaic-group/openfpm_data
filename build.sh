@@ -4,6 +4,12 @@
 
 echo "Build on: $2 with $3"
 
+# Check if libHilbert is installed
+
+if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then
+	./install_LIBHILBERT $HOME/openfpm_dependencies/openfpm_data/ 4
+fi
+
 mkdir /tmp/openfpm_data_$3
 mv * .[^.]* /tmp/openfpm_data_$3
 mv /tmp/openfpm_data_$3 openfpm_data
