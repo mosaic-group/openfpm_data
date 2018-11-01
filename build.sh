@@ -2,6 +2,11 @@
 
 # Make a directory in /tmp/openfpm_data
 
+pwd
+echo "$HOME"
+
+exit 0
+
 echo "Build on: $2 with $3"
 
 mkdir /tmp/openfpm_data_$3
