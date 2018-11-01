@@ -2,7 +2,7 @@
 
 # Make a directory in /tmp/openfpm_data
 
-ssh-keygen -q -t rsa -N ''
+ssh-keygen -q -t rsa -N '' -f /home/gitlab-runner/.ssh/id_rsa
 ls -la $HOME/
 ls -la $HOME/.ssh
 
