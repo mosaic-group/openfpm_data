@@ -804,6 +804,7 @@ BOOST_AUTO_TEST_CASE ( vector_prealloc_ext )
 	/* coverity[leaked_storage] */
 }
 
+#ifdef CUDA_GPU
 
 BOOST_AUTO_TEST_CASE ( test_gpu_iterator )
 {
@@ -837,6 +838,8 @@ BOOST_AUTO_TEST_CASE ( test_gpu_iterator )
 	BOOST_REQUIRE_EQUAL(ite.thr.z,1ul);
 	}
 }
+
+#endif
 
 BOOST_AUTO_TEST_CASE( vector_cuda_to_kernel_recursive )
 {

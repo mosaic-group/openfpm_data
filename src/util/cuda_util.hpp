@@ -62,6 +62,13 @@
 		}
 
 	#endif
+#else
+
+#ifndef __host__
+#define __host__
+#define __device__
+#endif
+
 #endif
 
 
