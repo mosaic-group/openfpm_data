@@ -3,6 +3,7 @@
 # Make a directory in /tmp/openfpm_data
 
 ls -la $HOME/
+ls -la $HOME/.ssh
 
 exit 0
 
