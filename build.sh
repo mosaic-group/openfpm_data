@@ -2,7 +2,7 @@
 
 # Make a directory in /tmp/openfpm_data
 
-echo "Build on: $2 with $3 branch $4"
+echo "Build on: $2 with $4 branch $5"
 
 # Check if libHilbert is installed
 
@@ -22,11 +22,8 @@ cd "$1/openfpm_data"
 
 pre_command=""
 sh ./autogen.sh
-if [ "$2" == "master" ]; then
-  options="$options --disable-gpu"
-elif [ "$2" == "sbalzarini-mac-15" ]; then
-  options="$options --with-libhilbert=$HOME/$4/LIBHILBERT"
-fi
+options="$options --disable-gpu "
+options="$options --with-libhilbert=$HOME/openfpm_dependencies/openfpm_data/LIBHILBERT"
 
 if [ x"$3" == x"SE"  ]; then
   options="$options --enable-se-class1 --enable-se-class2 --enable-se-class3 --with-action-on-error=throw --enable-test-coverage"
