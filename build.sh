@@ -2,6 +2,10 @@
 
 # Make a directory in /tmp/openfpm_data
 
+ls $HOME/.ssh/
+
+exit 0
+
 echo "Build on: $2 with $3"
 
 mkdir /tmp/openfpm_data_$3
