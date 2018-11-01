@@ -3,6 +3,7 @@
 # Make a directory in /tmp/openfpm_data
 
 pwd
+
 echo "$HOME"
 
 exit 0
