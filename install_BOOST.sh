@@ -12,6 +12,6 @@ tar -xvf boost_1_63_0.tar.bz2
 cd boost_1_63_0
 ./bootstrap.sh --with-toolset=$3
 mkdir $1/BOOST
-./b2 -j $2 install --prefix=$1/BOOST
+./b2 -j $2 install link=shared --prefix=$1/BOOST
 rm -rf boost_1_63_0
 
