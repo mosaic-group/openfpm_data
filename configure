@@ -496,6 +496,11 @@ done
 cd build
 echo "Calling cmake ../. $conf_options"
 cmake ../. $conf_options
+if [ $? != 0]
+	cat CMakeFiles/CMakeError.log
+	exit 1
+fi
+
 cd ..
 
 echo "SUBDIRS := build
