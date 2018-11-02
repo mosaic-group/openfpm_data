@@ -55,6 +55,8 @@ ubuntu_run:
   dependencies:
     - ubuntu_build
   script:
+    - ls
+    - pwd
     - .openfpm_data/build/src/mem_map
     - ./success.sh 2 ubuntu openfpm_devices
 
