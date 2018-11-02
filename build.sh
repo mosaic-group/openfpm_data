@@ -10,15 +10,14 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then
 	./install_LIBHILBERT.sh $HOME/openfpm_dependencies/openfpm_data/ 4
 fi
 
-if [ "$2"==x"mac," ]; then
-	echo "REMOVING"
-	rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
-fi
+rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
 
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
-	if [ "$2"==x"mac," ]; then
+	if [ "$2" == x"mac," ]; then
+		echo "Compiling for OSX"
         	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data/ 4 darwin
 	else
+		echo "Compiling for Linux"
 		./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data 4 gcc
 	fi
 fi
