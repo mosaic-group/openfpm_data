@@ -18,6 +18,8 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 	fi
 fi
 
+ls $HOME/openfpm_dependencies/openfpm_data/BOOST/lib
+
 mkdir /tmp/openfpm_data_$3
 mv * .[^.]* /tmp/openfpm_data_$3
 mv /tmp/openfpm_data_$3 openfpm_data
