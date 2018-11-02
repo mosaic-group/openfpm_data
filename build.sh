@@ -34,7 +34,7 @@ cd "$1/openfpm_data"
 pre_command=""
 sh ./autogen.sh
 options="$options --disable-gpu "
-options="$options --with-libhilbert=$HOME/openfpm_dependencies/openfpm_data/LIBHILBERT"
+options="$options --with-boost=$HOME/openfpm_dependencies/openfpm_data/BOOST  --with-libhilbert=$HOME/openfpm_dependencies/openfpm_data/LIBHILBERT"
 
 if [ x"$3" == x"SE"  ]; then
   options="$options --enable-se-class1 --enable-se-class2 --enable-se-class3 --with-action-on-error=throw --enable-test-coverage"
