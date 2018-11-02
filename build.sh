@@ -15,14 +15,12 @@ rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 	if [ x"$2" == x"mac," ]; then
 		echo "Compiling for OSX"
-#        	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data/ 4 darwin
+        	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data/ 4 darwin
 	else
 		echo "Compiling for Linux"
-#		./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data 4 gcc
+		./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data 4 gcc
 	fi
 fi
-
-exit 1
 
 ls $HOME/openfpm_dependencies/openfpm_data/BOOST/lib
 
