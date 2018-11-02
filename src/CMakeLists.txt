@@ -23,6 +23,7 @@ target_include_directories (mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../ope
 target_include_directories (mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
 target_include_directories (mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories (mem_map PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
+target_include_directories (mem_map PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(mem_map ${Boost_LIBRARIES})
 target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
