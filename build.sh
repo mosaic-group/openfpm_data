@@ -10,8 +10,6 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then
 	./install_LIBHILBERT.sh $HOME/openfpm_dependencies/openfpm_data/ 4
 fi
 
-rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
-
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 	if [ x"$2" == x"mac," ]; then
 		echo "Compiling for OSX"
@@ -58,7 +56,7 @@ if [ $? -ne 0 ]; then
     curl -X POST --data "payload={\"icon_emoji\": \":jenkins:\", \"username\": \"jenkins\"  , \"attachments\":[{ \"title\":\"Error:\", \"color\": \"#FF0000\", \"text\":\"$2 failed to comfigure openfpm_data test $opt_comp \" }] }" https://hooks.slack.com/services/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
     exit 1
 fi
-make VERBOSE=1
+make
 
 if [ $? -ne 0 ]; then
     curl -X POST --data "payload={\"icon_emoji\": \":jenkins:\", \"username\": \"jenkins\"  , \"attachments\":[{ \"title\":\"Error:\", \"color\": \"#FF0000\", \"text\":\"$2 failed to compile the openfpm_data test $opt_comp \" }] }" https://hooks.slack.com/services/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
