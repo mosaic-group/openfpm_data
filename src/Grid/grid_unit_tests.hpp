@@ -456,6 +456,9 @@ BOOST_AUTO_TEST_CASE( grid_set_prp_check )
 	grid_cpu<2, Point_test<float> > c2(szz);
 	grid_cpu<2, Point_test<float> > c1(szz);
 
+	c1.setMemory();
+	c2.setMemory();
+
 	grid_key_dx<2> k1({0,0});
 
 	c2.template get<1>(k1) = 5.0;

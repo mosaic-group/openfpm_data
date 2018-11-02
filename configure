@@ -497,6 +497,8 @@ Try \`$0 --help' for more information"
 done
 
 cd build
+
+## remove enerything
 echo "Calling cmake ../. $conf_options"
 cmake ../. $conf_options
 if [ $? != 0 ]; then
@@ -512,4 +514,7 @@ all: \$(SUBDIRS)
 	\$(MAKE) -C \$@
 
 .PHONY: all \$(SUBDIRS)" > Makefile
+
+echo "$0 $@" > config.log
+
 
