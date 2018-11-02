@@ -9,7 +9,6 @@
 #define SRC_GRID_UTIL_HPP_
 
 #include "util/common.hpp"
-#include<bits/stdc++.h>
 
 template<typename T, typename Sfinae = void>
 struct is_grid: std::false_type {};
