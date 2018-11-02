@@ -11,6 +11,7 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then
 fi
 
 if [ "$2" == x"mac" ]; then
+	echo "REMOVING"
 	rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
 fi
 
