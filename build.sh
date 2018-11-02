@@ -61,4 +61,4 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-pwd
+ls openfpm_data/src/mem_map
