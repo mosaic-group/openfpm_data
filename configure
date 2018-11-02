@@ -497,7 +497,7 @@ cd build
 echo "Calling cmake ../. $conf_options"
 cmake ../. $conf_options
 if [ $? != 0 ]; then
-	ls
+	ls CMakeFiles/
 	cat CMakeFiles/CMakeError.log
 	exit 1
 fi
