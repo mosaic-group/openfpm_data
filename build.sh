@@ -11,6 +11,7 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then
 fi
 
 rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
+echo "name is $2VVVVV"
 
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 	if [ "$2" == x"mac," ]; then
