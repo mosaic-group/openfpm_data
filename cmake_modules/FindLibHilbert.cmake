@@ -86,7 +86,7 @@ try_run(
       RUN_OUTPUT_VARIABLE LIBHILBERT_TEST_LIB_OUTPUT)
 
 if (NOT LIBHILBERT_TEST_LIB_COMPILED)
-	message("Error in compiling libhilbert test: ${LIBHILBERT_TEST_LIB_COMPILED}")
+	message("Error in compiling libhilbert test: ${COMPILE_OUTPUT_VARIABLE}")
 endif()
 
 if (LIBHILBERT_TEST_LIB_COMPILED AND LIBHILBERT_TEST_LIB_EXITCODE EQUAL 0)
