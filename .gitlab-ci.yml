@@ -44,7 +44,7 @@ ubuntu_build:
     - ubuntu
   artifacts:
     paths:
-      - .openfpm_data/build/src/mem_map
+      - ./openfpm_data/build/src/mem_map
   script:
     - ./build.sh $CI_PROJECT_DIR $CI_RUNNER_EXECUTABLE_TAGS NO $CI_COMMIT_REF_NAME
 
