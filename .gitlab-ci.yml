@@ -15,7 +15,7 @@ centos_run:
   dependencies:
     - centos_build
   script:
-    - .openfpm_data/src/mem_map
+    - ./openfpm_data/build/src/mem_map
     - ./success.sh 2 centos openfpm_devices
 
 mac_build:
@@ -24,7 +24,7 @@ mac_build:
     - mac
   artifacts:
     paths:
-      - .openfpm_data/build/src/mem_map
+      - ./openfpm_data/build/src/mem_map
   script:
     - ./build.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
 
@@ -35,7 +35,7 @@ mac_run:
   dependencies:
     - mac_build
   script:
-    - .openfpm_data/build/src/mem_map
+    - ./openfpm_data/build/src/mem_map
     - ./success.sh 2 mac openfpm_devices
 
 ubuntu_build:
@@ -55,8 +55,6 @@ ubuntu_run:
   dependencies:
     - ubuntu_build
   script:
-    - ls
-    - pwd
     - ./openfpm_data/build/src/mem_map
     - ./success.sh 2 ubuntu openfpm_devices
 
