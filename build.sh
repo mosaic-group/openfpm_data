@@ -10,6 +10,14 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then
 	./install_LIBHILBERT.sh $HOME/openfpm_dependencies/openfpm_data/ 4
 fi
 
+if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
+	if [ "$2" == x"mac" ]; then
+        	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data/ 4 darwin
+	else
+		./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data 4 gcc
+	fi
+fi
+
 mkdir /tmp/openfpm_data_$3
 mv * .[^.]* /tmp/openfpm_data_$3
 mv /tmp/openfpm_data_$3 openfpm_data
