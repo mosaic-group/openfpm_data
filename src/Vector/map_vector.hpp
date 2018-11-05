@@ -702,24 +702,6 @@ namespace openfpm
 		{
 			add_prp_device_impl<std::is_same<Memory,CudaMemory>::value,T,Memory,layout,layout_base,grow_p>
 			::template run<S,M,gp,impl,layout_base2,args...>(*this,v);
-/*
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
-			// merge the data on device
-
-#if defined(CUDA_GPU) && defined(__NVCC__)
-
-			size_t old_sz = size();
-			this->resize(size() + v.size(),DATA_ON_DEVICE);
-
-			auto ite = v.getGPUIterator();
-
-			merge_add_prp_device_impl<decltype(v.toKernel()),decltype(this->toKernel()),args...><<<ite.wthr,ite.thr>>>(v.toKernel(),this->toKernel(),(unsigned int)old_sz);
-
-#else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error the function add_prp_device only work when map_vector is compiled with nvcc" << std::endl;
-#endif*/
 		}
 
 		/*! \brief Insert an entry in the vector
@@ -1630,8 +1612,6 @@ namespace openfpm
 			return base;
 		}
 
-#ifdef CUDA_GPU
-
 		/*! \brief Copy the memory from host to device
 		 *
 		 *
@@ -1703,8 +1683,6 @@ namespace openfpm
 
 			return v;
 		}
-
-#endif
 
 		void * internal_get_size_pointer()	{return &v_size;}
 

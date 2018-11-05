@@ -13,7 +13,7 @@ add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp main.cpp util
 
 ###########################
 
-if (CUDA_fOUND)
+if (CUDA_FOUND)
 	target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=2885 --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
 endif()
 

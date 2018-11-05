@@ -185,8 +185,6 @@ public:
 		return false;
 	}
 
-#ifdef CUDA_GPU
-
 	/*! \brief Copy the memory from host to device
 	 *
 	 * \tparam (all properties are copied to prp is useless in this case)
@@ -246,6 +244,8 @@ public:
 	{
 		this->data_.mem->deviceToHost(start*sizeof(T),(stop+1)*sizeof(T));
 	}
+
+#ifdef CUDA_GPU
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 	 *
@@ -554,8 +554,6 @@ public:
 		boost::fusion::at_c<id>(this->data_).mem->fill(c);
 	}
 
-#ifdef CUDA_GPU
-
 	/*! \brief Copy the memory from host to device
 	 *
 	 */
@@ -618,6 +616,8 @@ public:
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(dth);
 	}
+
+#ifdef CUDA_GPU
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 	 *

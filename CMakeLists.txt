@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
-project(openfpm_pdata LANGUAGES C CXX)
+project(openfpm_pdata LANGUAGES C CXX CUDA)
 
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules/)
@@ -12,7 +12,6 @@ set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
 set(ENABLE_GPU CACHE BOOL "Disable the GPU code independently that a cuda compiler is found")
 
 if (ENABLE_GPU)
-	enable_language(CUDA)
 	find_package(CUDA)
 endif()
 

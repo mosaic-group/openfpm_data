@@ -167,7 +167,7 @@ struct copy_general_op
 	 */
 	inline copy_general_op(const T & src, T & dst)
 	{
-		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << "  " << demangle(typeid(T).name()) << " does not have an operator= and is not an aggregate or an openfpm native structure, copy is not possible" << "\n";
+		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << "  " << demangle(typeid(T).name()) << " does not have an operator " << demangle(typeid(op<T,T>).name()) << "defined" << std::endl;
 	}
 };
 

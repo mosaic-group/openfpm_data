@@ -837,4 +837,26 @@ struct meta_copy_op_d<op,Tsrc[N1],Tdst[N1]>
 	}
 };
 
+//! Partial specialization for N=2 2D-Array
+template<template<typename,typename> class op, typename Tsrc, typename Tdst, size_t N1, size_t N2>
+struct meta_copy_op_d<op,Tsrc[N1][N2],Tdst[N1][N2]>
+{
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_d_(const Tsrc src[N1][N2], Tdst dst[N1][N2])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < N2 ; i2)
+			{
+				copy_general_op<op,Tdst>(src[i1][i2],dst[i1][i2]);
+			}
+		}
+	}
+};
+
 #endif
