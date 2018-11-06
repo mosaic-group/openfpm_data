@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
-project(openfpm_pdata LANGUAGES C CXX CUDA)
+project(openfpm_pdata LANGUAGES C CXX)
 
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules/)
@@ -17,8 +17,12 @@ endif()
 set(ENV{PATH} "$ENV{PATH}:${HDF5_ROOT}/bin")
 set(HDF5_PREFER_PARALLEL TRUE)
 
+if(ENABLE_GPU)
+	enable_language(CUDA)
+	find_package(CUDA)
+endif()
+
 find_package(Boost 1.52.0 REQUIRED unit_test_framework iostreams program_options)
-find_package(CUDA)
 find_package(MPI REQUIRED)
 find_package(HDF5 REQUIRED)
 find_package(TinyObjLoader )
