@@ -24,9 +24,6 @@
 #include "vect_isel.hpp"
 #include "util/object_s_di.hpp"
 #include "util.hpp"
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
 #include "util/Pack_stat.hpp"
 #include "memory/ExtPreAlloc.hpp"
 #include <string.h>
