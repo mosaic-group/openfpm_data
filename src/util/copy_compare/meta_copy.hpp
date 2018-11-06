@@ -851,7 +851,7 @@ struct meta_copy_op_d<op,Tsrc[N1][N2],Tdst[N1][N2]>
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
-			for (size_t i2 = 0 ; i2 < N2 ; i2)
+			for (size_t i2 = 0 ; i2 < N2 ; i2++)
 			{
 				copy_general_op<op,Tdst>(src[i1][i2],dst[i1][i2]);
 			}
