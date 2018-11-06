@@ -9,6 +9,7 @@ add_executable(io main.cpp HDF5_wr/HDF5_writer_cuda.cu ObjReader/ObjReader_unit_
 
 if (CUDA_FOUND)
 	target_compile_options(io PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=2885 --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
+	target_include_directories (io PUBLIC ${MPI_C_INCLUDE_DIRS})
 endif()
 
 target_include_directories (io PUBLIC ${CUDA_INCLUDE_DIRS})
