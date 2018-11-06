@@ -88,7 +88,7 @@ public:
 													openfpm::vector<device_grid> & loc_grid_old,
 													openfpm::vector<GBoxes<device_grid::dims>> & gdb_ext_old)
 	{
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 
 		MPI_Comm comm = v_cl.getMPIComm();
 		MPI_Info info  = MPI_INFO_NULL;

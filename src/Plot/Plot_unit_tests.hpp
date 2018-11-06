@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_SUITE( plot_unit_test )
 
 BOOST_AUTO_TEST_CASE( google_chart_bar_string )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( google_chart_bar_string )
 
 BOOST_AUTO_TEST_CASE( google_chart )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE( google_chart )
 
 BOOST_AUTO_TEST_CASE( google_chart2 )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE( google_chart2 )
 
 BOOST_AUTO_TEST_CASE( google_chart3 )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE( google_chart3 )
 
 BOOST_AUTO_TEST_CASE( google_chart4 )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE( google_chart4 )
 
 BOOST_AUTO_TEST_CASE( google_chart5 )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE( google_chart5 )
 
 BOOST_AUTO_TEST_CASE( google_chart6 )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -326,7 +326,7 @@ BOOST_AUTO_TEST_CASE( google_chart6 )
 
 BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -389,7 +389,7 @@ BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 
 BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 
 BOOST_AUTO_TEST_CASE( google_chart_linear_plot2 )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -514,7 +514,7 @@ double f(double x)
 
 BOOST_AUTO_TEST_CASE( plot_util )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;

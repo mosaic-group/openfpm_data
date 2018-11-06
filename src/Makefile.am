@@ -1,11 +1,11 @@
 
-LINKLIBS = $(PTHREAD_LIBS) $(HDF5_LDFLAGS) $(HDF5_LIBS)  $(OPT_LIBS) $(BOOST_IOSTREAMS_LIB)  $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB)  $(BOOST_THREAD_LIB) 
+LINKLIBS = $(PTHREAD_LIBS) $(HDF5_LDFLAGS) $(HDF5_LIBS)  $(OPT_LIBS) $(BOOST_IOSTREAMS_LIB)  $(BOOST_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIB)  $(BOOST_THREAD_LIB) $(CUDA_LIBS) 
 
 noinst_PROGRAMS = io
-io_SOURCES = main.cpp ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
+io_SOURCES = main.cpp ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/CudaMemory.cu ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp
 io_CXXFLAGS = $(AM_CXXFLAGS) $(CUDA_CFLAGS) $(INCLUDES_PATH) $(HDF5_CPPFLAGS) $(BOOST_CPPFLAGS)  -I/usr/local/include
 io_CFLAGS = $(CUDA_CFLAGS)
-io_LDADD = $(LINKLIBS) 
+io_LDADD = $(LINKLIBS)
 
 nobase_include_HEADERS = RawReader/RawReader.hpp RawReader/RawReader_unit_tests.hpp CSVWriter/csv_multiarray.hpp CSVWriter/CSVWriter.hpp CSVWriter/is_csv_writable.hpp \
 GraphMLWriter/GraphMLWriter.hpp util/util.hpp util/GBoxes.hpp \

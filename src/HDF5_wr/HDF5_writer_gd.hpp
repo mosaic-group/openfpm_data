@@ -24,7 +24,7 @@ public:
 			         const openfpm::vector<device_grid> & loc_grid,
 					 const openfpm::vector<GBoxes<device_grid::dims>> & gdb_ext) const
 	{
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 
 		//Pack_request vector
 		size_t req = 0;

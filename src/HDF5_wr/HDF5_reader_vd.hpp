@@ -14,7 +14,7 @@ class HDF5_reader<VECTOR_DIST>
 {
 private:
 
-	template<unsigned int dim, typename St,typename prp>
+	template<typename vector_pos_type, typename vector_prp_type>
 	bool load_block(long int bid,
 			        hssize_t mpi_size_old,
 					int * metadata_out,
@@ -22,8 +22,8 @@ private:
 					hid_t plist_id,
 					hid_t dataset_2,
 					size_t & g_m,
-					openfpm::vector<Point<dim,St>> & v_pos,
-					openfpm::vector<prp> & v_prp)
+					vector_pos_type & v_pos,
+					vector_prp_type & v_prp)
 	{
 		hsize_t offset[1];
 		hsize_t block[1];
@@ -75,9 +75,9 @@ private:
 
 		Unpack_stat ps;
 
-		openfpm::vector<Point<dim, St>> v_pos_unp;
+		vector_pos_type v_pos_unp;
 
-		openfpm::vector<prp> v_prp_unp;
+		vector_prp_type v_prp_unp;
 
 		Unpacker<decltype(v_pos_unp),HeapMemory>::unpack(mem,v_pos_unp,ps,1);
 		Unpacker<decltype(v_prp_unp),HeapMemory>::unpack(mem,v_prp_unp,ps,1);
@@ -101,12 +101,12 @@ private:
 
 public:
 
-	template<unsigned int dim, typename St, typename prp> inline bool load(const std::string & filename,
-			                                                               openfpm::vector<Point<dim,St>> & v_pos,
-																		   openfpm::vector<prp> & v_prp,
+	template<typename vector_pos_type, typename vector_prp_type> inline bool load(const std::string & filename,
+			                                                               vector_pos_type & v_pos,
+																		   vector_prp_type & v_prp,
 																		   size_t & g_m)
 	{
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 
 		v_pos.clear();
 		v_prp.clear();
@@ -214,16 +214,16 @@ public:
 	  	stop_block = start_block + n_block.get(v_cl.getProcessUnitID());
 
 	  	if (mpi_rank >= mpi_size_old)
-	  		load_block(start_block,mpi_size_old,metadata_out,metadata_accum,plist_id,dataset_2,g_m,v_pos,v_prp);
+	  	{load_block(start_block,mpi_size_old,metadata_out,metadata_accum,plist_id,dataset_2,g_m,v_pos,v_prp);}
 	  	else
 	  	{
 	  		size_t n_bl = 0;
 	  		size_t lb = start_block;
 			for ( ; lb < stop_block ; lb++, n_bl++)
-				load_block(lb,mpi_size_old,metadata_out,metadata_accum,plist_id,dataset_2,g_m,v_pos,v_prp);
+			{load_block(lb,mpi_size_old,metadata_out,metadata_accum,plist_id,dataset_2,g_m,v_pos,v_prp);}
 
 			if (n_bl < max_block)
-				load_block(-1,mpi_size_old,metadata_out,metadata_accum,plist_id,dataset_2,g_m,v_pos,v_prp);
+			{load_block(-1,mpi_size_old,metadata_out,metadata_accum,plist_id,dataset_2,g_m,v_pos,v_prp);}
 	  	}
 
 	  	// Close open object

@@ -9,7 +9,7 @@ BOOST_AUTO_TEST_SUITE( csv_writer_test )
 
 BOOST_AUTO_TEST_CASE( csv_writer_particles )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;

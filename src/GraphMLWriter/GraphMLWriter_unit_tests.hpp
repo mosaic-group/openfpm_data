@@ -77,7 +77,7 @@ const std::string ne_cp::attributes::name[] = {"x","y","z","double_num","long_nu
 
 BOOST_AUTO_TEST_CASE( graphml_writer_use)
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;

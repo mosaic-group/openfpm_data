@@ -139,7 +139,7 @@ const std::string vertex2::attributes::name[] = {"x","prp1","prp2"};
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D )
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D_edge )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -356,7 +356,7 @@ const std::string vertex3::attributes::name[] = {"x","prp1","prp2"};
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_graph2D )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph2D )
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_graph)
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -477,7 +477,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph)
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -633,7 +633,7 @@ void fill_grid_some_data_scal(grid_cpu<2,Point_test_scal<float>> & g)
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -872,7 +872,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -974,7 +974,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_properties )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
@@ -1026,7 +1026,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_properties )
 
 BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;

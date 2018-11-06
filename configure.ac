@@ -186,7 +186,7 @@ AC_ARG_WITH([pdata],
              AS_HELP_STRING([--with-pdata=directory],
              [specify where is located the pdata project]),
              [pdata_dir="$withval"],
-             [pdata_dir="../../openfpm_pdata/src"])
+             [pdata_dir="../../src"])
 
 ####### HDF5 
 

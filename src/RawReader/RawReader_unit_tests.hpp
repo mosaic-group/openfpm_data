@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_SUITE( raw_reader_unit_test )
 
 BOOST_AUTO_TEST_CASE( raw_reader_read_test )
 {
-	Vcluster & v_cl = create_vcluster();
+	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;

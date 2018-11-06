@@ -17,12 +17,12 @@ class HDF5_writer<VECTOR_DIST>
 {
 public:
 
-	template<unsigned int dim, typename St, typename prp>
+	template<typename vector_pos_type, typename vector_prp_type>
 	inline void save(const std::string & filename,
-			         const openfpm::vector<Point<dim,St>> & v_pos,
-					 const openfpm::vector<prp> & v_prp) const
+			         const vector_pos_type & v_pos,
+					 const vector_prp_type & v_prp) const
 	{
-		Vcluster & v_cl = create_vcluster();
+		Vcluster<> & v_cl = create_vcluster();
 
 		//Pack_request vector
 		size_t req = 0;
