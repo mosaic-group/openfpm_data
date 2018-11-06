@@ -17,6 +17,7 @@ endif()
 set(ENV{PATH} "$ENV{PATH}:${HDF5_ROOT}/bin")
 set(HDF5_PREFER_PARALLEL TRUE)
 
+message("AAAAAAAAAAAAAAAAAAAAAAA ${ENABLE_GPU}")
 if(ENABLE_GPU)
 	enable_language(CUDA)
 	find_package(CUDA)
