@@ -1033,6 +1033,12 @@ public:
 	template<unsigned int ... prp> void deviceToHost(size_t start, size_t stop)
 	{}
 
+	/*! \brief Do nothing
+	 *
+	 *
+	 */
+	template<unsigned int ... prp> void hostToDevice(size_t start, size_t stop)
+	{}
 
 	/*! \brief Return the pointer to the chunk of memory
 	 *
