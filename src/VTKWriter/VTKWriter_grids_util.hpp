@@ -435,10 +435,11 @@ template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & 
 {
 	if (ft == file_type::ASCII)
 	{
-		if (dims == 2)
-			v_out << p.toString() << " 0.0" << "\n";
-		else
-			v_out << p.toString() << "\n";
+		v_out << p.toString();
+		size_t i = dims;
+		for ( ; i < 3 ; i++)
+		{v_out << " 0.0";}
+		v_out << "\n";
 	}
 	else
 	{
@@ -455,7 +456,7 @@ template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & 
 			// we use float so we have to convert to float
 
 			/* coverity[dead_error_begin] */
-			auto tmp = 0.0;
+			T tmp = 0.0;
 			tmp = swap_endian_lt(tmp);
 			v_out.write((const char *)&tmp,sizeof(tmp));
 		}

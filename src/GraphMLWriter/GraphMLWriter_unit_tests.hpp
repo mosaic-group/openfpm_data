@@ -68,6 +68,11 @@ struct ne_cp
 		static const std::string name[max_prop];
 	};
 
+	static inline bool noPointers()
+	{
+		return true;
+	}
+
 	//! type of the spatial information
 	typedef float s_type;
 };

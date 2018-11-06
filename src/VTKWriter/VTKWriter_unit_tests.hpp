@@ -64,6 +64,11 @@ struct vertex
 
 	}
 
+	static inline bool noPointers()
+	{
+		return true;
+	}
+
 	/*! \brief Initialize the VTKVertex
 	 *
 	 * \param x coordinate x
@@ -113,6 +118,11 @@ struct vertex2
 	vertex2()
 	{
 
+	}
+
+	static inline bool noPointers()
+	{
+		return true;
 	}
 
 	/*! \brief Initialize the VTKVertex
@@ -337,6 +347,11 @@ struct vertex3
 
 	}
 
+	static inline bool noPointers()
+	{
+		return true;
+	}
+
 	/*! \brief Initialize the VTKVertex
 	 *
 	 * \param
@@ -554,7 +569,10 @@ template<typename grid_type> void fill_grid_some_data(grid_type & g)
 	while (it.isNext())
 	{
 		g.template get<p::x>(it.get()) = it.get().get(0);
-		g.template get<p::y>(it.get()) = it.get().get(1);
+		if (grid_type::dims != 1)
+		{g.template get<p::y>(it.get()) = it.get().get(1);}
+		else
+		{g.template get<p::y>(it.get()) = 0.0;}
 		g.template get<p::z>(it.get()) = 0;
 		g.template get<p::s>(it.get()) = 1.0;
 		g.template get<p::v>(it.get())[0] = g.getGrid().LinId(it.get());
@@ -636,60 +654,116 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	Vcluster<> & v_cl = create_vcluster();
 
 	if (v_cl.getProcessUnitID() != 0)
-		return;
+	{return;}
 
 	{
-	// Create box grids
-	Point<2,float> offset1({0.0,0.0});
-	Point<2,float> spacing1({0.1,0.2});
-	Box<2,size_t> d1({1,2},{14,15});
 
-	// Create box grids
-	Point<2,float> offset2({5.0,7.0});
-	Point<2,float> spacing2({0.2,0.1});
-	Box<2,size_t> d2({2,1},{13,15});
+		// Create box grids
+		Point<1,float> offset1({0.0});
+		Point<1,float> spacing1({0.1});
+		Box<1,size_t> d1({1},{14});
 
-	// Create box grids
-	Point<2,float> offset3({0.0,7.0});
-	Point<2,float> spacing3({0.05,0.07});
-	Box<2,size_t> d3({3,2},{11,10});
+		// Create box grids
+		Point<1,float> offset2({5.0,7.0});
+		Point<1,float> spacing2({0.2,0.1});
+		Box<1,size_t> d2({2},{13});
 
-	// Create box grids
-	Point<2,float> offset4({5.0,0.0});
-	Point<2,float> spacing4({0.1,0.1});
-	Box<2,size_t> d4({1,1},{7,7});
+		// Create box grids
+		Point<1,float> offset3({0.0});
+		Point<1,float> spacing3({0.05});
+		Box<1,size_t> d3({3},{11});
 
-	size_t sz[] = {16,16};
-	grid_cpu<2,Point_test<float>> g1(sz);
-	g1.setMemory();
-	fill_grid_some_data(g1);
-	grid_cpu<2,Point_test<float>> g2(sz);
-	g2.setMemory();
-	fill_grid_some_data(g2);
-	grid_cpu<2,Point_test<float>> g3(sz);
-	g3.setMemory();
-	fill_grid_some_data(g3);
-	grid_cpu<2,Point_test<float>> g4(sz);
-	g4.setMemory();
-	fill_grid_some_data(g4);
+		// Create box grids
+		Point<1,float> offset4({5.0});
+		Point<1,float> spacing4({0.1});
+		Box<1,size_t> d4({1},{7});
 
-	// Create a writer and write
-	VTKWriter<boost::mpl::pair<grid_cpu<2,Point_test<float>>,float>,VECTOR_GRIDS> vtk_g;
-	vtk_g.add(g1,offset1,spacing1,d1);
-	vtk_g.add(g2,offset2,spacing2,d2);
-	vtk_g.add(g3,offset3,spacing3,d3);
-	vtk_g.add(g4,offset4,spacing4,d4);
+		size_t sz[] = {16};
+		grid_cpu<1,Point_test<float>> g1(sz);
+		g1.setMemory();
+		fill_grid_some_data(g1);
+		grid_cpu<1,Point_test<float>> g2(sz);
+		g2.setMemory();
+		fill_grid_some_data(g2);
+		grid_cpu<1,Point_test<float>> g3(sz);
+		g3.setMemory();
+		fill_grid_some_data(g3);
+		grid_cpu<1,Point_test<float>> g4(sz);
+		g4.setMemory();
+		fill_grid_some_data(g4);
 
-	openfpm::vector<std::string> prp_names;
-	vtk_g.write("vtk_grids.vtk",prp_names);
+		// Create a writer and write
+		VTKWriter<boost::mpl::pair<grid_cpu<1,Point_test<float>>,float>,VECTOR_GRIDS> vtk_g;
+		vtk_g.add(g1,offset1,spacing1,d1);
+		vtk_g.add(g2,offset2,spacing2,d2);
+		vtk_g.add(g3,offset3,spacing3,d3);
+		vtk_g.add(g4,offset4,spacing4,d4);
 
-#ifndef SE_CLASS3
+		openfpm::vector<std::string> prp_names;
+		vtk_g.write("vtk_grids_1d.vtk",prp_names);
 
-	// Check that match
-	bool test = compare("vtk_grids.vtk","test_data/vtk_grids_test.vtk");
-	BOOST_REQUIRE_EQUAL(test,true);
+	#ifndef SE_CLASS3
 
-#endif
+		// Check that match
+		bool test = compare("vtk_grids_1d.vtk","test_data/vtk_grids_test_1d.vtk");
+		BOOST_REQUIRE_EQUAL(test,true);
+
+	#endif
+	}
+
+	{
+
+		// Create box grids
+		Point<2,float> offset1({0.0,0.0});
+		Point<2,float> spacing1({0.1,0.2});
+		Box<2,size_t> d1({1,2},{14,15});
+
+		// Create box grids
+		Point<2,float> offset2({5.0,7.0});
+		Point<2,float> spacing2({0.2,0.1});
+		Box<2,size_t> d2({2,1},{13,15});
+
+		// Create box grids
+		Point<2,float> offset3({0.0,7.0});
+		Point<2,float> spacing3({0.05,0.07});
+		Box<2,size_t> d3({3,2},{11,10});
+
+		// Create box grids
+		Point<2,float> offset4({5.0,0.0});
+		Point<2,float> spacing4({0.1,0.1});
+		Box<2,size_t> d4({1,1},{7,7});
+
+		size_t sz[] = {16,16};
+		grid_cpu<2,Point_test<float>> g1(sz);
+		g1.setMemory();
+		fill_grid_some_data(g1);
+		grid_cpu<2,Point_test<float>> g2(sz);
+		g2.setMemory();
+		fill_grid_some_data(g2);
+		grid_cpu<2,Point_test<float>> g3(sz);
+		g3.setMemory();
+		fill_grid_some_data(g3);
+		grid_cpu<2,Point_test<float>> g4(sz);
+		g4.setMemory();
+		fill_grid_some_data(g4);
+
+		// Create a writer and write
+		VTKWriter<boost::mpl::pair<grid_cpu<2,Point_test<float>>,float>,VECTOR_GRIDS> vtk_g;
+		vtk_g.add(g1,offset1,spacing1,d1);
+		vtk_g.add(g2,offset2,spacing2,d2);
+		vtk_g.add(g3,offset3,spacing3,d3);
+		vtk_g.add(g4,offset4,spacing4,d4);
+
+		openfpm::vector<std::string> prp_names;
+		vtk_g.write("vtk_grids.vtk",prp_names);
+
+	#ifndef SE_CLASS3
+
+		// Check that match
+		bool test = compare("vtk_grids.vtk","test_data/vtk_grids_test.vtk");
+		BOOST_REQUIRE_EQUAL(test,true);
+
+	#endif
 	}
 
 	{
