@@ -1014,8 +1014,6 @@ public:
 		return &base[0];
 	}
 
-#ifdef CUDA_GPU
-
 	/*! \brief Do nothing
 	 *
 	 */
@@ -1035,7 +1033,6 @@ public:
 	template<unsigned int ... prp> void deviceToHost(size_t start, size_t stop)
 	{}
 
-#endif
 
 	/*! \brief Return the pointer to the chunk of memory
 	 *
