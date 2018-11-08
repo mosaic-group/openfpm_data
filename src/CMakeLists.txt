@@ -5,13 +5,13 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 add_executable(io main.cpp HDF5_wr/HDF5_writer_cuda.cu ObjReader/ObjReader_unit_test.cpp  ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/CudaMemory.cu ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp)
 
 if ( CMAKE_COMPILER_IS_GNUCC )
-    target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
+    target_compile_options(io PRIVATE "-Wno-deprecated-declarations")
 endif()
 
 ###########################
 
 if (CUDA_FOUND)
-	target_compile_options(io PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
+	target_compile_options(io PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
 	target_include_directories (io PUBLIC ${MPI_C_INCLUDE_DIRS})
 endif()
 
