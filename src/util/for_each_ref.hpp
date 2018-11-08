@@ -1,9 +1,6 @@
 #ifndef OPENFPM_FOR_EACH_HPP_INCLUDED
 #define OPENFPM_FOR_EACH_HPP_INCLUDED
 
-#ifndef BOOST_GPU_ENABLED
-#define BOOST_GPU_ENABLED __device__ __host__
-#endif
 
 // Copyright Aleksey Gurtovoy 2000-2008
 //
