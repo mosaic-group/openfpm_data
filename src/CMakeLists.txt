@@ -10,11 +10,14 @@ endif()
 
 add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp main.cpp util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp memory_ly/memory_conf_unit_tests.cpp  Space/tests/SpaceBox_unit_tests.cpp  Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp  ${CUDA_SOURCES} ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp)
 
+if ( CMAKE_COMPILER_IS_GNUCC )
+    target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
+endif()
 
 ###########################
 
 if (CUDA_FOUND)
-	target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=2885 --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
+	target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
 endif()
 
 target_include_directories (mem_map PUBLIC ${CUDA_INCLUDE_DIRS})
