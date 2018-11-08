@@ -21,6 +21,7 @@ target_include_directories (io PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../src/)
 target_include_directories (io PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories (io PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (io PUBLIC ${TINYOBJLOADER_INCLUDE_DIRS} )
+target_include_directories (io PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(io ${Boost_LIBRARIES})
 target_link_libraries(io -L${HDF5_ROOT}/lib hdf5 hdf5_hl)
