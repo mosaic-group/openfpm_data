@@ -38,7 +38,7 @@
 
 			struct ofp_context_t
 			{
-				ofp_context_t(bool init)
+				ofp_context_t(bool print_prop = true, int dev_num = 0)
 				{}
 			};
 		}
@@ -75,7 +75,7 @@ namespace mgpu
 
 	struct ofp_context_t
 	{
-		ofp_context_t(bool init, int dev_num)
+		ofp_context_t(bool print_prop = true, int dev_num = 0)
 		{}
 	};
 }
