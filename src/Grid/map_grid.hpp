@@ -353,6 +353,8 @@ struct host_to_device_impl
 	{
 		typedef decltype(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r) mem_r_type;
 
+		typedef typename boost::mpl::at<typename T_type::type,boost::mpl::int_<T::value>>::type type_prp;
+
 		typedef typename toKernel_transform<layout_base,typename mem_r_type::value_type>::type kernel_type;
 
 		call_recursive_host_device_if_vector<typename mem_r_type::value_type,
@@ -361,8 +363,8 @@ struct host_to_device_impl
 											 is_vector<typename mem_r_type::value_type>::value>
 		::template transform<Memory,mem_r_type>(static_cast<Memory *>(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem),
 									 boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r,
-				                       start,
-				                       stop);
+				                       start*sizeof(type_prp),
+				                       (stop+1)*sizeof(type_prp));
 
 		// here we have to recursively call hostToDevice for each nested vector
 		call_recursive_host_device_if_vector<typename mem_r_type::value_type,
@@ -559,7 +561,7 @@ public:
 	 */
 	template<unsigned int ... prp> void hostToDevice()
 	{
-		host_to_device_impl<T,memory_traits_inte,S,prp ...> htd(this->data_,0,this->getGrid().size());
+		host_to_device_impl<T,memory_traits_inte,S,prp ...> htd(this->data_,0,this->getGrid().size()-1);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(htd);
 	}

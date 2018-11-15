@@ -78,7 +78,7 @@ struct call_recursive_host_device_if_vector<T,T_ker,layout_base,false>
 {
 	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
 	{
-		mem->hostToDevice();
+		mem->hostToDevice(start,stop);
 	}
 
 	//! It is not a vector nothing to do

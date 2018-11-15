@@ -306,7 +306,7 @@ private:
 	 */
 	void initCl(CellListImpl & cli, openfpm::vector<Point<dim,T>> & pos, size_t g_m, size_t opt)
 	{
-		mgpu::standard_context_t context(false);
+		mgpu::ofp_context_t context(false);
 		if (opt & VL_SYMMETRIC || opt & VL_CRS_SYMMETRIC)
 		{populate_cell_list(pos,cli,context,g_m,CL_SYMMETRIC);}
 		else

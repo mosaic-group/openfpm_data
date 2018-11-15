@@ -36,9 +36,9 @@
 		{
 			// Stub class for modern gpu
 
-			struct standard_context_t
+			struct ofp_context_t
 			{
-				standard_context_t(bool init)
+				ofp_context_t(bool init)
 				{}
 			};
 		}
@@ -73,9 +73,9 @@ namespace mgpu
 {
 	// Stub class for modern gpu
 
-	struct standard_context_t
+	struct ofp_context_t
 	{
-		standard_context_t(bool init)
+		ofp_context_t(bool init, int dev_num)
 		{}
 	};
 }

@@ -219,7 +219,7 @@ public:
 	 * \param pl Particles list
 	 *
 	 */
-	template<typename vector, typename vector_prp> void construct(vector & pl, vector & pl_out, vector_prp & pl_prp, vector_prp & pl_prp_out, mgpu::standard_context_t & mgpuContext, size_t g_m = 0)
+	template<typename vector, typename vector_prp> void construct(vector & pl, vector & pl_out, vector_prp & pl_prp, vector_prp & pl_prp_out, mgpu::ofp_context_t & mgpuContext, size_t g_m = 0)
 	{
 #ifdef __NVCC__
 

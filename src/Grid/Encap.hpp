@@ -240,7 +240,7 @@ struct copy_cpu_encap_single
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 		// e_src and e_dst must have the same number of properties
 
-		if (e_src::T_type::max_prop != e_dst::T_type::max_prop)
+		if (e_src::T_type::max_prop != e_src::T_type::max_prop)
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the number of properties between src and dst must match";
 #endif
 	};
@@ -253,7 +253,7 @@ struct copy_cpu_encap_single
 	 * this mean that the object passed must not be a temporal object
 	 *
 	 */
-	inline copy_cpu_encap_encap(const e_src && src, const e_dst && dst)
+	inline copy_cpu_encap_single(const e_src && src, const e_src && dst)
 	:src(src),dst(dst)
 	{std::cerr << "Error: " <<__FILE__ << ":" << __LINE__ << " Passing a temporal object";};
 #endif
