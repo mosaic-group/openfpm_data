@@ -10,7 +10,6 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then
 	./install_LIBHILBERT.sh $HOME/openfpm_dependencies/openfpm_data/ 4
 fi
 
-rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
 
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 	if [ x"$2" == x"mac," ]; then
