@@ -28,8 +28,9 @@ template<unsigned int dim,
          typename T,
 		 template <unsigned int, typename> class Prock,
 		 typename Mem_type = Mem_fast<>,
-		 typename transform = no_transform<dim,T>>
-class CellList_gen : public CellList<dim,T,Mem_type,transform>
+		 typename transform = no_transform<dim,T>,
+		 typename vector_pos_type = openfpm::vector<Point<dim,T>>>
+class CellList_gen : public CellList<dim,T,Mem_type,transform,vector_pos_type>
 {
 private:
 
@@ -38,7 +39,7 @@ private:
 
 	//! It is an object that indicate which space filling curve to use for the
 	//! iteration across cells
-	Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform>> SFC;
+	Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,vector_pos_type>> SFC;
 
 	//! Init SFC
 	bool init_sfc;
@@ -93,9 +94,8 @@ private:
 
 public:
 
-
 	CellList_gen()
-	:CellList<dim,T,Mem_type,transform>(),init_sfc(false)
+	:CellList<dim,T,Mem_type,transform,vector_pos_type>(),init_sfc(false)
 	{};
 
 
@@ -104,7 +104,7 @@ public:
 	 * \return the SFC object
 	 *
 	 */
-	const Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform>> & getCellSFC() const
+	const Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,vector_pos_type>> & getCellSFC() const
 	{
 		return SFC;
 	}
@@ -127,11 +127,11 @@ public:
 	 * \return an iterator
 	 *
 	 */
-	inline typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform>>::Pit getIterator()
+	inline typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,vector_pos_type>>::Pit getIterator()
 	{
 		init_SFC();
 
-		return typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform>>::Pit(*this);
+		return typename Prock<dim,CellList_gen<dim,T,Prock,Mem_type,transform,vector_pos_type>>::Pit(*this);
 	}
 
 	/*! Initialize the cell list
@@ -145,7 +145,7 @@ public:
 	 */
 	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
-		CellList<dim,T,Mem_type,transform>::Initialize(box,div,pad,slot);
+		CellList<dim,T,Mem_type,transform,vector_pos_type>::Initialize(box,div,pad,slot);
 	}
 
 

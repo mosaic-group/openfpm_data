@@ -350,7 +350,7 @@ void NNcalc_rad(T r_cut, openfpm::vector<long int> & NNcell, const Box<dim,T> & 
  * \snippet CellList_test.hpp Usage of the neighborhood iterator
  *
  */
-template<unsigned int dim, typename T,  typename Mem_type, typename transform = no_transform<dim,T>>
+template<unsigned int dim, typename T,  typename Mem_type, typename transform = no_transform<dim,T>, typename vector_pos_type = openfpm::vector<Point<dim,T>>>
 class CellList : public CellDecomposer_sm<dim,T,transform>, public Mem_type
 {
 protected:
@@ -362,7 +362,6 @@ protected:
 
 
 	NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)> NNc_full;
-//	long int NNc_full[openfpm::math::pow(3,dim)];
 
 	//! The array contain the neighborhood of the cell-id in case of symmetric interaction
 	//
@@ -427,7 +426,7 @@ public:
 	//! Type of internal memory structure
 	typedef Mem_type Mem_type_type;
 
-	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform>,RUNTIME,NO_CHECK> SymNNIterator;
+	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,RUNTIME,vector_pos_type,NO_CHECK> SymNNIterator;
 
 	//! Object type that the structure store
 	typedef typename Mem_type::local_index_type value_type;
@@ -529,14 +528,14 @@ public:
 	{};
 
 	//! Copy constructor
-	CellList(const CellList<dim,T,Mem_type,transform> & cell)
+	CellList(const CellList<dim,T,Mem_type,transform,vector_pos_type> & cell)
 	:Mem_type(STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
 
 	//! Copy constructor
-	CellList(CellList<dim,T,Mem_type,transform> && cell)
+	CellList(CellList<dim,T,Mem_type,transform,vector_pos_type> && cell)
 	:Mem_type(STARTING_NSLOT)
 	{
 		this->operator=(cell);
@@ -640,7 +639,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	CellList<dim,T,Mem_type,transform> & operator=(const CellList<dim,T,Mem_type,transform> & cell)
+	CellList<dim,T,Mem_type,transform,vector_pos_type> & operator=(const CellList<dim,T,Mem_type,transform,vector_pos_type> & cell)
 	{
 		NNc_full = cell.NNc_full;
 		NNc_sym = cell.NNc_sym;
@@ -663,7 +662,7 @@ public:
 	 *
 	 */
 	template<typename Mem_type2>
-	CellList<dim,T,Mem_type,transform> & operator=(const CellList<dim,T,Mem_type2,transform> & cell)
+	CellList<dim,T,Mem_type,transform,vector_pos_type> & operator=(const CellList<dim,T,Mem_type2,transform,vector_pos_type> & cell)
 	{
 		NNc_full = cell.private_get_NNc_full();
 		NNc_sym = cell.private_get_NNc_sym();
@@ -885,7 +884,7 @@ public:
 	 * \param cl Cell list with witch you swap the memory
 	 *
 	 */
-	inline void swap(CellList<dim,T,Mem_type,transform> & cl)
+	inline void swap(CellList<dim,T,Mem_type,transform,vector_pos_type> & cl)
 	{
 		NNc_full.swap(cl.NNc_full);
 		NNc_sym.swap(cl.NNc_sym);
@@ -953,9 +952,9 @@ public:
 	 * \return An iterator across the neighhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform>,(int)FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL,impl> getNNIterator(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,Mem_type,transform>,(int)FULL,impl> cln(cell,NNc_full,*this);
+		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL,impl> cln(cell,NNc_full,*this);
 		return cln;
 
 	}
@@ -1005,15 +1004,15 @@ public:
 	 *
 	 */
 	template<unsigned int impl>
-	inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform>,(unsigned int)SYM,impl>
-	getNNIteratorSym(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v)
+	inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(unsigned int)SYM,vector_pos_type,impl>
+	getNNIteratorSym(size_t cell, size_t p, const vector_pos_type & v)
 	{
 #ifdef SE_CLASS1
 		if (from_cd == false)
 		{std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;}
 #endif
 
-		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform>,SYM,impl> cln(cell,p,NNc_sym,*this,v);
+		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,SYM,vector_pos_type,impl> cln(cell,p,NNc_sym,*this,v);
 		return cln;
 	}
 

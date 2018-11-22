@@ -157,14 +157,14 @@ public:
  * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,unsigned int impl>
-class CellNNIteratorSym<dim,Cell,RUNTIME,impl> : public CellNNIterator<dim,Cell,RUNTIME,impl>
+template<unsigned int dim, typename Cell,typename vector_pos_type, unsigned int impl>
+class CellNNIteratorSym<dim,Cell,RUNTIME,vector_pos_type,impl> : public CellNNIterator<dim,Cell,RUNTIME,impl>
 {
 	//! index of the particle p
 	size_t p;
 
 	//! Position of the particle p
-	const openfpm::vector<Point<dim,typename Cell::stype>> & v;
+	const vector_pos_type & v;
 
 	/*! Select the next valid element
 	 *
@@ -213,7 +213,7 @@ public:
 							 const long int * NNc,
 							 size_t NNc_size,
 							 Cell & cl,
-							 const openfpm::vector<Point<dim,typename Cell::stype>> & v)
+							 const vector_pos_type & v)
 	:CellNNIterator<dim,Cell,RUNTIME,impl>(cell,NNc,NNc_size,cl),p(p),v(v)
 	{
 		if (this->NNc_id >= this->NNc_size)
@@ -228,7 +228,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIteratorSym<dim,Cell,RUNTIME,impl> & operator++()
+	inline CellNNIteratorSym<dim,Cell,RUNTIME,vector_pos_type,impl> & operator++()
 	{
 		this->start_id++;
 

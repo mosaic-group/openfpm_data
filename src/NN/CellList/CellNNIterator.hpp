@@ -163,13 +163,14 @@ public:
  * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,int NNc_size, unsigned int impl> class CellNNIteratorSym : public CellNNIterator<dim,Cell,NNc_size,impl>
+template<unsigned int dim, typename Cell,int NNc_size, typename vector_pos_type, unsigned int impl>
+class CellNNIteratorSym : public CellNNIterator<dim,Cell,NNc_size,impl>
 {
 	//! index of the particle p
 	size_t p;
 
 	//! Position of the particle p
-	const openfpm::vector<Point<dim,typename Cell::stype>> & v;
+	const vector_pos_type & v;
 
 	/*! Select the next valid element
 	 *
@@ -213,7 +214,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIteratorSym(size_t cell, size_t p, const NNc_array<dim,NNc_size> &NNc, Cell & cl, const openfpm::vector<Point<dim,typename Cell::stype>> & v)
+	inline CellNNIteratorSym(size_t cell, size_t p, const NNc_array<dim,NNc_size> &NNc, Cell & cl, const vector_pos_type & v)
 	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),p(p),v(v)
 	{
 		selectValid();
@@ -225,7 +226,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIteratorSym<dim,Cell,NNc_size,impl> & operator++()
+	inline CellNNIteratorSym<dim,Cell,NNc_size,vector_pos_type,impl> & operator++()
 	{
 		this->start_id++;
 

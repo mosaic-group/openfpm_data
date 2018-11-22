@@ -42,8 +42,9 @@ struct NNType
 	 * \return the NN iterator
 	 *
 	 */
+	template<typename vector_pos_type>
 	static inline auto get(const PartIt & it,
-			               const openfpm::vector<Point<dim,T>> & v,
+			               const vector_pos_type & v,
 						   Point<dim,T> & xp,
 						   size_t p,
 						   CellListImpl & cl,
@@ -88,8 +89,9 @@ struct NNType<dim,T,CellListImpl,PartIt,WITH_RADIUS,local_index>
 	 * \return the NN iterator
 	 *
 	 */
+	template<typename vector_pos_type>
 	static inline auto get(const PartIt & it,
-			               const openfpm::vector<Point<dim,T>> & v,
+			               const vector_pos_type & v,
 						   Point<dim,T> & xp,
 						   size_t p,
 						   CellListImpl & cl,
@@ -134,7 +136,13 @@ struct NNType<dim,T,CellListImpl,PartIt,VL_SYMMETRIC,local_index>
 	 * \return the NN iterator
 	 *
 	 */
-	static inline auto get(const PartIt & it, const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,openfpm::vector<Point<dim,T>>()))
+	template<typename vector_pos_type>
+	static inline auto get(const PartIt & it,
+						   const vector_pos_type & v,
+						   Point<dim,T> & xp,
+						   size_t p,
+						   CellListImpl & cl,
+						   T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,vector_pos_type()))
 	{
 		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),p,v);
 	}
@@ -176,10 +184,17 @@ struct NNType<dim,T,CellListImpl,PartIt,VL_CRS_SYMMETRIC,local_index>
 	 * \return the NN iterator
 	 *
 	 */
-	static inline auto get(const PartIt & it,const openfpm::vector<Point<dim,T>> & v, Point<dim,T> & xp, size_t p, CellListImpl & cl, T r_cut) -> decltype(it.getNNIteratorCSR(v))
+	template<typename vector_pos_type>
+	static inline auto get(const PartIt & it,
+			 	 	 	   const vector_pos_type & v,
+			 	 	 	   Point<dim,T> & xp,
+			 	 	 	   size_t p,
+			 	 	 	   CellListImpl & cl,
+			 	 	 	   T r_cut) -> decltype(it.getNNIteratorCSR(v))
 	{
 		return it.getNNIteratorCSR(v);
 	}
+
 
 	/*! \brief Add particle in the list of the domain particles
 	 *
@@ -246,10 +261,10 @@ public:
 	 * \return the particle iterator
 	 *
 	 */
-	static inline ParticleItCRS_Cells<dim,CellList> get(const vector & pos, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, CellList & cli, size_t g_m, size_t & end)
+	static inline ParticleItCRS_Cells<dim,CellList,vector> get(const vector & pos, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, CellList & cli, size_t g_m, size_t & end)
 	{
 		end = pos.size();
-		return ParticleItCRS_Cells<dim,CellList>(cli,dom,anom,cli.getNNc_sym());
+		return ParticleItCRS_Cells<dim,CellList,vector>(cli,dom,anom,cli.getNNc_sym());
 	}
 };
 
@@ -276,7 +291,8 @@ template<unsigned int dim,
 		 typename T,
 		 typename Mem_type = Mem_fast<HeapMemory,local_index_>,
 		 typename transform = no_transform<dim,T>,
-		 typename CellListImpl = CellList<dim,T,Mem_fast<HeapMemory,typename Mem_type::local_index_type>,transform> >
+		 typename vector_pos_type = openfpm::vector<Point<dim,T>>,
+		 typename CellListImpl = CellList<dim,T,Mem_fast<HeapMemory,typename Mem_type::local_index_type>,transform,vector_pos_type> >
 class VerletList: public Mem_type
 {
 protected:
@@ -304,7 +320,7 @@ private:
 	 * \param opt VL_SYMMETRIC or VL_NON_SYMMETRIC
 	 *
 	 */
-	void initCl(CellListImpl & cli, openfpm::vector<Point<dim,T>> & pos, size_t g_m, size_t opt)
+	void initCl(CellListImpl & cli, vector_pos_type & pos, size_t g_m, size_t opt)
 	{
 		mgpu::ofp_context_t context(false);
 		if (opt & VL_SYMMETRIC || opt & VL_CRS_SYMMETRIC)
@@ -325,11 +341,11 @@ private:
 	 * \param opt options to create the verlet list like VL_SYMMETRIC or VL_NON_SYMMETRIC
 	 *
 	 */
-	inline void create(const openfpm::vector<Point<dim,T>> & pos, const openfpm::vector<Point<dim,T>> & pos2, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cl, size_t opt)
+	inline void create(const vector_pos_type & pos, const vector_pos_type & pos2, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cl, size_t opt)
 	{
 		if (opt == VL_CRS_SYMMETRIC)
 		{
-			create_<CellNNIteratorSym<dim,CellListImpl,RUNTIME,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<CellNNIteratorSym<dim,CellListImpl,RUNTIME,vector_pos_type,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
 		}
 		else if (opt == VL_SYMMETRIC)
 		{
@@ -355,11 +371,11 @@ private:
 	 * \param opt options
 	 *
 	 */
-	template<typename NN_type, int type> inline void create_(const openfpm::vector<Point<dim,T>> & pos, const openfpm::vector<Point<dim,T>> & pos2 , const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
+	template<typename NN_type, int type> inline void create_(const vector_pos_type & pos, const vector_pos_type & pos2 , const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
 	{
 		size_t end;
 
-		auto it = PartItNN<type,dim,openfpm::vector<Point<dim,T>>,CellListImpl>::get(pos,dom,anom,cli,g_m,end);
+		auto it = PartItNN<type,dim,vector_pos_type,CellListImpl>::get(pos,dom,anom,cli,g_m,end);
 
 		Mem_type::init_to_zero(slot,end);
 
@@ -479,7 +495,7 @@ public:
 	 * \param opt option to generate Verlet list
 	 *
 	 */
-	void Initialize(const Box<dim,T> & box, const Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t g_m, size_t opt = VL_NON_SYMMETRIC)
+	void Initialize(const Box<dim,T> & box, const Box<dim,T> & dom, T r_cut, vector_pos_type & pos, size_t g_m, size_t opt = VL_NON_SYMMETRIC)
 	{
 		// Number of divisions
 		size_t div[dim];
@@ -666,14 +682,14 @@ public:
 	{};
 
 	//! Copy constructor
-	VerletList(const VerletList<dim,T,Mem_type,transform,CellListImpl> & cell)
+	VerletList(const VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> & cell)
 	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
 
 	//! Copy constructor
-	VerletList(VerletList<dim,T,Mem_type,transform,CellListImpl> && cell)
+	VerletList(VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> && cell)
 	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT),n_dec(0)
 	{
 		this->operator=(cell);
@@ -750,8 +766,8 @@ public:
 	 * \return itself
 	 *
 	 */
-	VerletList<dim,T,Mem_type,transform,CellListImpl> &
-	operator=(VerletList<dim,T,Mem_type,transform,CellListImpl> && vl)
+	VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> &
+	operator=(VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> && vl)
 	{
 		slot = vl.slot;
 
@@ -770,7 +786,8 @@ public:
 	 * \return itself
 	 *
 	 */
-	VerletList<dim,T,Mem_type,transform,CellListImpl> & operator=(const VerletList<dim,T,Mem_type,transform,CellListImpl> & vl)
+	VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> &
+	operator=(const VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> & vl)
 	{
 		slot = vl.slot;
 
@@ -814,7 +831,7 @@ public:
 	 * \param vl Verlet list with witch you swap the memory
 	 *
 	 */
-	inline void swap(VerletList<dim,T,Mem_type,transform,CellListImpl> & vl)
+	inline void swap(VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> & vl)
 	{
 		Mem_type::swap(vl);
 		dp.swap(vl.dp);
@@ -840,10 +857,10 @@ public:
 	 *
 	 */
 	template<unsigned int impl=NO_CHECK>
-	inline VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,CellListImpl>>
+	inline VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl>>
 	getNNIterator(size_t part_id)
 	{
-		VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,CellListImpl>> vln(part_id,*this);
+		VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl>> vln(part_id,*this);
 
 		return vln;
 	}

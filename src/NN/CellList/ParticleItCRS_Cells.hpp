@@ -49,7 +49,7 @@ struct subsub_lin
  * \tparam CellListType type of the cell-list
  *
  */
-template<unsigned int dim,typename CellListType> class ParticleItCRS_Cells
+template<unsigned int dim,typename CellListType, typename vector_pos_type> class ParticleItCRS_Cells
 {
 private:
 
@@ -231,17 +231,17 @@ public:
 	 * \return Return an iterator over the neighborhood particles
 	 *
 	 */
-	typename CellListType::SymNNIterator getNNIteratorCSR(const openfpm::vector<Point<dim,typename CellListType::stype>> & v) const
+	typename CellListType::SymNNIterator getNNIteratorCSR(const vector_pos_type & v) const
 	{
 		if (dom_or_anom == 0)
-			return typename CellListType::SymNNIterator(dom_cell.get(cid),*start,NNc_sym.getPointer(),openfpm::math::pow(3,dim)/2+1,cli,v);
+		{return typename CellListType::SymNNIterator(dom_cell.get(cid),*start,NNc_sym.getPointer(),openfpm::math::pow(3,dim)/2+1,cli,v);}
 		else
-			return typename CellListType::SymNNIterator(anom_dom_cell.get(cid).subsub,
+		{return typename CellListType::SymNNIterator(anom_dom_cell.get(cid).subsub,
 					                                    *start,
 														&anom_dom_cell.get(cid).NN_subsub.get(0),
 														anom_dom_cell.get(cid).NN_subsub.size(),
 														cli,
-														v);
+														v);}
 	}
 
 	/*! \brief Get the neighborhood iterator according to the CRS scheme Multi-phase case

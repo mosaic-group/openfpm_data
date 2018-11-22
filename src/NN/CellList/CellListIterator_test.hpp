@@ -212,8 +212,10 @@ BOOST_AUTO_TEST_CASE( ParticleItCRS_Cells_iterator )
 		++it;
 	}
 
+	typedef openfpm::vector<Point<3,float>> vector_type;
+
 	//Test the iterator
-	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<>,shift<dim,float>>> it_cl(NN,dom,anom,NN.getNNc_sym());
+	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<>,shift<dim,float>,vector_type>,vector_type> it_cl(NN,dom,anom,NN.getNNc_sym());
 
 	size_t count = 0;
 
@@ -268,7 +270,9 @@ BOOST_AUTO_TEST_CASE( ParticleItCRS_Cells_iterator )
 		++it2;
 	}
 
-	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<>,shift<dim,float>>> it_cl2(NN,dom,anom,NN.getNNc_sym());
+	typedef openfpm::vector<Point<dim,float>> vector_type;
+
+	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<>,shift<dim,float>,vector_type>,vector_type> it_cl2(NN,dom,anom,NN.getNNc_sym());
 
 	count = 0;
 
@@ -373,8 +377,10 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_NN_iterator )
 		++it2;
 	}
 
+	typedef openfpm::vector<Point<dim,float>> vector_type;
+
 	//Test the iterator
-	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<>,shift<dim,float>>> it_cl(NN,dom,anom,NN.getNNc_sym());
+	ParticleItCRS_Cells<dim,CellList<dim,float,Mem_fast<>,shift<dim,float>,vector_type>,vector_type> it_cl(NN,dom,anom,NN.getNNc_sym());
 
 	size_t count = 0;
 

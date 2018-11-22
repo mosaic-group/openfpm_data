@@ -173,5 +173,70 @@ BOOST_AUTO_TEST_CASE( vector_cuda_host_to_device_check )
 	}
 }
 
+
+BOOST_AUTO_TEST_CASE( vector_cuda_host_to_device_vector_and_point_tensor )
+{
+	openfpm::vector_gpu<aggregate<float[3],float[3][3]>> v1;
+
+	v1.resize(100);
+
+	for (size_t i = 0 ; i < 50 ; i++)
+	{
+		v1.template get<0>(i)[0] = i+1500;
+		v1.template get<0>(i)[1] = i+2200;
+		v1.template get<0>(i)[2] = i+2600;
+
+		v1.template get<1>(i)[0][0] = i+6000;
+		v1.template get<1>(i)[0][1] = i+7200;
+		v1.template get<1>(i)[0][2] = i+8600;
+		v1.template get<1>(i)[1][0] = i+9000;
+		v1.template get<1>(i)[1][1] = i+10200;
+		v1.template get<1>(i)[1][2] = i+11600;
+		v1.template get<1>(i)[2][0] = i+12800;
+		v1.template get<1>(i)[2][1] = i+22200;
+		v1.template get<1>(i)[2][2] = i+23600;
+	}
+
+	v1.hostToDevice<0,1>(0,50);
+
+	for (size_t i = 50 ; i < 100 ; i++)
+	{
+		v1.template get<0>(i)[0] = i+1500;
+		v1.template get<0>(i)[1] = i+2200;
+		v1.template get<0>(i)[2] = i+2600;
+
+		v1.template get<1>(i)[0][0] = i+6000;
+		v1.template get<1>(i)[0][1] = i+7200;
+		v1.template get<1>(i)[0][2] = i+8600;
+		v1.template get<1>(i)[1][0] = i+9000;
+		v1.template get<1>(i)[1][1] = i+10200;
+		v1.template get<1>(i)[1][2] = i+11600;
+		v1.template get<1>(i)[2][0] = i+12800;
+		v1.template get<1>(i)[2][1] = i+22200;
+		v1.template get<1>(i)[2][2] = i+23600;
+	}
+
+	v1.hostToDevice<0,1>(50,99);
+
+	v1.deviceToHost<0,1>();
+
+	for (size_t i = 0 ; i < 100 ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(v1.template get<0>(i)[0],i+1500);
+		BOOST_REQUIRE_EQUAL(v1.template get<0>(i)[1],i+2200);
+		BOOST_REQUIRE_EQUAL(v1.template get<0>(i)[2],i+2600);
+
+		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[0][0],i+6000);
+		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[0][1],i+7200);
+		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[0][2],i+8600);
+		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[1][0],i+9000);
+		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[1][1],i+10200);
+		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[1][2],i+11600);
+		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[2][0],i+12800);
+		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[2][1],i+22200);
+		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[2][2],i+23600);
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
