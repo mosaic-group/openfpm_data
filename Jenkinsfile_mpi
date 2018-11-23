@@ -35,7 +35,7 @@ parallel (
 
 
 
-"centos" : {node ('cifarm-mac-node')
+"macosx" : {node ('cifarm-mac-node')
                   {
                     deleteDir()
                     env.PATH = "/usr/local/bin:${env.PATH}"
@@ -66,5 +66,40 @@ parallel (
                     }
                   }
                  },
+
+"centos" : {node ('cifarm-centos-node')
+                  {
+                    deleteDir()
+                    env.PATH = "/usr/local/bin:${env.PATH}"
+
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(10)
+                      }
+                    }
+
+                    stage ('centos build')
+                    {
+                      sh "./build.sh $WORKSPACE $NODE_NAME NO $BRANCH_NAME"
+                    }
+
+                    stage ('macos run')
+                    {
+                      sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME NO"
+                      sh "cd openfpm_data && ./success.sh 2 centos openfpm_data"
+                    }
+                  }
+                 },
+
+
+
 )
 
