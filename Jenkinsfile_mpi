@@ -35,7 +35,7 @@ parallel (
 
 
 
-"centos" : {node ('cifarm-macos-node')
+"centos" : {node ('cifarm-mac-node')
                   {
                     deleteDir()
                     env.PATH = "/usr/local/bin:${env.PATH}"
