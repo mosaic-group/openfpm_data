@@ -2,7 +2,12 @@
 
 # Make a directory in /tmp/openfpm_data
 
-echo "Build on: $2 with $4 branch $5"
+host_name=$(hostname)
+branch=$5
+
+echo "Build on: $hostname with $4 branch: $branch"
+
+exit 1
 
 # Check if libHilbert is installed
 
