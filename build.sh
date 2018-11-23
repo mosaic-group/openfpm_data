@@ -2,10 +2,11 @@
 
 # Make a directory in /tmp/openfpm_data
 
-host_name=$(hostname)
-branch=$5
+host_name=$HOSTNAME
+type_compile=$3
+branch=$4
 
-echo "Build on: $hostname with $4 branch: $branch"
+echo "Build on: $hostname with $type_compile branch: $branch"
 
 exit 1
 
