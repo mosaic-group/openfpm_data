@@ -2,7 +2,7 @@
 
 # Make a directory in /tmp/openfpm_data
 
-host_name=$HOSTNAME
+host_name=$(hostname)
 type_compile=$3
 branch=$4
 
