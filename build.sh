@@ -2,15 +2,12 @@
 
 # Make a directory in /tmp/openfpm_data
 
-hostname
-
-host_name=$(hostname)
+workspace=$1
+hostname=$(hostname)
 type_compile=$3
 branch=$4
 
 echo "Build on: $hostname with $type_compile branch: $branch"
-
-exit 1
 
 # Check if libHilbert is installed
 
@@ -20,7 +17,7 @@ fi
 
 
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
-	if [ x"$2" == x"mac," ]; then
+	if [ x"$hostname" == x"cifarm-mac-node" ]; then
 		echo "Compiling for OSX"
         	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data/ 4 darwin
 	else
@@ -29,9 +26,9 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 	fi
 fi
 
-mkdir /tmp/openfpm_data_$3
-mv * .[^.]* /tmp/openfpm_data_$3
-mv /tmp/openfpm_data_$3 openfpm_data
+mkdir /tmp/openfpm_data_$type_compile
+mv * .[^.]* /tmp/openfpm_data_$type_compile
+mv /tmp/openfpm_data_$type_compile openfpm_data
 
 mkdir openfpm_data/src/config
 
@@ -40,7 +37,7 @@ cd openfpm_devices
 git checkout GPU_test
 cd ..
 
-cd "$1/openfpm_data"
+cd "$workspace/openfpm_data"
 
 pre_command=""
 sh ./autogen.sh
@@ -60,13 +57,13 @@ fi
 
 sh ./configure $options
 if [ $? -ne 0 ]; then
-    curl -X POST --data "payload={\"icon_emoji\": \":jenkins:\", \"username\": \"jenkins\"  , \"attachments\":[{ \"title\":\"Error:\", \"color\": \"#FF0000\", \"text\":\"$2 failed to comfigure openfpm_data test $opt_comp \" }] }" https://hooks.slack.com/services/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
+    curl -X POST --data "payload={\"icon_emoji\": \":jenkins:\", \"username\": \"jenkins\"  , \"attachments\":[{ \"title\":\"Error:\", \"color\": \"#FF0000\", \"text\":\"$hostname failed to comfigure openfpm_data test $opt_comp \" }] }" https://hooks.slack.com/services/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
     exit 1
 fi
 make
 
 if [ $? -ne 0 ]; then
-    curl -X POST --data "payload={\"icon_emoji\": \":jenkins:\", \"username\": \"jenkins\"  , \"attachments\":[{ \"title\":\"Error:\", \"color\": \"#FF0000\", \"text\":\"$2 failed to compile the openfpm_data test $opt_comp \" }] }" https://hooks.slack.com/services/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
+    curl -X POST --data "payload={\"icon_emoji\": \":jenkins:\", \"username\": \"jenkins\"  , \"attachments\":[{ \"title\":\"Error:\", \"color\": \"#FF0000\", \"text\":\"$hostname failed to compile the openfpm_data test $opt_comp \" }] }" https://hooks.slack.com/services/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
     exit 1
 fi
 
