@@ -1,4 +1,3 @@
-exit 1
 
 $pre_command ./src/mem_map
 if [ $? -ne 0 ]; then
