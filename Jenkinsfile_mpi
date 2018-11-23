@@ -22,13 +22,13 @@ parallel (
 
                     stage ('ubuntu build')
                     {
-                      bash "./build.sh $WORKSPACE $NODE_NAME NO $BRANCH_NAME"
+                      sh "./build.sh $WORKSPACE $NODE_NAME NO $BRANCH_NAME"
                     }
 
-                    stage ('run_nyu_nor')
+                    stage ('ubuntu run')
                     {
-                      bash "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME NO"
-                      bash "cd openfpm_data && ./success.sh 2 ubuntu openfpm_data"
+                      sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME NO"
+                      sh "cd openfpm_data && ./success.sh 2 ubuntu openfpm_data"
                     }
                   }
                  },
@@ -56,13 +56,13 @@ parallel (
 
                     stage ('macos build')
                     {
-                      bash "./build.sh $WORKSPACE $NODE_NAME NO $BRANCH_NAME"
+                      sh "./build.sh $WORKSPACE $NODE_NAME NO $BRANCH_NAME"
                     }
 
                     stage ('macos run')
                     {
-                      bash "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME NO"
-                      bash "cd openfpm_data && ./success.sh 2 centos openfpm_data"
+                      sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME NO"
+                      sh "cd openfpm_data && ./success.sh 2 centos openfpm_data"
                     }
                   }
                  },
@@ -88,13 +88,13 @@ parallel (
 
                     stage ('centos build')
                     {
-                      bash "./build.sh $WORKSPACE $NODE_NAME NO $BRANCH_NAME"
+                      sh "./build.sh $WORKSPACE $NODE_NAME NO $BRANCH_NAME"
                     }
 
-                    stage ('macos run')
+                    stage ('centos run')
                     {
-                      bash "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME NO"
-                      bash "cd openfpm_data && ./success.sh 2 centos openfpm_data"
+                      sh "cd openfpm_data && ./run.sh $WORKSPACE $NODE_NAME NO"
+                      sh "cd openfpm_data && ./success.sh 2 centos openfpm_data"
                     }
                   }
                  },
