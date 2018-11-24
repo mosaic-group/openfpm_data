@@ -1,3 +1,4 @@
+otool -L ./build/src/mem_map
 
 $pre_command ./build/src/mem_map
 if [ $? -ne 0 ]; then
