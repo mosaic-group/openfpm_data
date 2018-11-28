@@ -26,9 +26,16 @@ target_include_directories (io PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (io PUBLIC ${TINYOBJLOADER_INCLUDE_DIRS} )
 target_include_directories (io PUBLIC ${Boost_INCLUDE_DIRS})
 
+if (PETSC_FOUND)
+	target_include_directories(io PUBLIC ${PETSC_INCLUDES})
+endif()
+
 target_link_libraries(io ${Boost_LIBRARIES})
 target_link_libraries(io -L${HDF5_ROOT}/lib hdf5 hdf5_hl)
 target_link_libraries(io -L${TINYOBJLOADER_LIBRARY_DIRS} -ltinyobjloader )
+if (PETSC_FOUND)
+	target_link_libraries(io ${PETSC_LIBRARIES})
+endif()
 
 # Request that particles be built with -std=c++11
 # As this is a public compile feature anything that links to particles
