@@ -19,12 +19,13 @@
 #include "NN/CellList/cuda/CellList_gpu_ker.cuh"
 #include "util/cuda_util.hpp"
 #include "NN/CellList/CellList_util.hpp"
+#include "NN/CellList/CellList.hpp"
 
 constexpr int count = 0;
 constexpr int start = 1;
 
 
-template<unsigned int dim, typename T,  typename Memory, typename transform = no_transform_only<dim,T>, typename cnt_type = unsigned int, typename ids_type = unsigned short>
+template<unsigned int dim, typename T,  typename Memory, typename transform = no_transform_only<dim,T>, typename cnt_type = unsigned int, typename ids_type = int>
 class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 {
 	typedef openfpm::vector<aggregate<cnt_type>,Memory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> vector_cnt_type;

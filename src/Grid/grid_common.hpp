@@ -41,6 +41,9 @@ struct call_recursive_host_device_if_vector
 {
 	template<typename mem_type, typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
 	{
+		start /= sizeof(type_prp);
+		stop /= sizeof(type_prp);
+
 		// The type of device and the type on host does not match (in general)
 		// So we have to convert before transfer
 
@@ -52,7 +55,7 @@ struct call_recursive_host_device_if_vector
 
 		T_ker * ptr_tt = static_cast<T_ker *>(tmp.getPointer());
 
-		for(size_t i = start ; i <= stop ; i++)
+		for(size_t i = start ; i < stop ; i++)
 		{
 			ptr_tt[i] = ptr[i].toKernel();
 		}

@@ -49,7 +49,7 @@ struct skip_init<true,T>
 										 if (tx > stop.get(0) || ty > stop.get(1) || tz > stop.get(2))\
     									 {return;}
 
-#define GRID_ID_3(ite_gpu) grid_key_dx<3> key;\
+#define GRID_ID_3(ite_gpu) grid_key_dx<3,int> key;\
 							  key.set_d(0,threadIdx.x + blockIdx.x * blockDim.x + ite_gpu.start.get(0));\
     						  key.set_d(1,threadIdx.y + blockIdx.y * blockDim.y + ite_gpu.start.get(1));\
 							  key.set_d(2,threadIdx.z + blockIdx.z * blockDim.z + ite_gpu.start.get(2));\
@@ -57,7 +57,7 @@ struct skip_init<true,T>
 										 if (key.get(0) > ite_gpu.stop.get(0) || key.get(1) > ite_gpu.stop.get(1) || key.get(2) > ite_gpu.stop.get(2))\
     									 {return;}
 
-#define GRID_ID_2(ite_gpu) grid_key_dx<2> key;\
+#define GRID_ID_2(ite_gpu) grid_key_dx<2,int> key;\
 							  key.set_d(0,threadIdx.x + blockIdx.x * blockDim.x + ite_gpu.start.get(0));\
     						  key.set_d(1,threadIdx.y + blockIdx.y * blockDim.y + ite_gpu.start.get(1));\
 										 \

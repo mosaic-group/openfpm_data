@@ -56,7 +56,7 @@ public:
 	 * \param key copy constructor
 	 *
 	 */
-	__device__ __host__ inline grid_key_dx(const grid_key_dx<dim> & key)
+	__device__ __host__ inline grid_key_dx(const grid_key_dx<dim,index_type> & key)
 	:grid_key_dx(key.k)
 	{
 	}
@@ -78,6 +78,39 @@ public:
 	 *
 	 */
 	__device__ __host__ inline grid_key_dx(const long int (&k)[dim])
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{this->k[i] = k[i];}
+	}
+
+	/*! \brief Constructor from buffer reference
+	 *
+	 * \param k reference buffer
+	 *
+	 */
+	__device__ __host__ inline grid_key_dx(const short (&k)[dim])
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{this->k[i] = k[i];}
+	}
+
+	/*! \brief Constructor from buffer reference
+	 *
+	 * \param k reference buffer
+	 *
+	 */
+	__device__ __host__ inline grid_key_dx(const unsigned short (&k)[dim])
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{this->k[i] = k[i];}
+	}
+
+	/*! \brief Constructor from buffer reference
+	 *
+	 * \param k reference buffer
+	 *
+	 */
+	__device__ __host__ inline grid_key_dx(const int (&k)[dim])
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{this->k[i] = k[i];}
@@ -110,9 +143,9 @@ public:
 		invert_assign(t...);
 	}
 
-	__device__ __host__ inline  grid_key_dx<dim> move(int i, int m)
+	__device__ __host__ inline  grid_key_dx<dim,index_type> move(int i, int m)
 	{
-		grid_key_dx<dim> tmp = *this;
+		grid_key_dx<dim,index_type> tmp = *this;
 
 		tmp.k[i] += m;
 

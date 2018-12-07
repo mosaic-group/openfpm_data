@@ -133,8 +133,8 @@ struct grid_gpu_ker
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T_>,layout,grid_sm<dim,T_>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
-	__device__ __host__ inline r_type get(const grid_key_dx<dim> & v1)
+	template <unsigned int p, typename ids_type,typename r_type=decltype(mem_get<p,layout_base<T_>,layout,grid_sm<dim,T_>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	__device__ __host__ inline r_type get(const grid_key_dx<dim,ids_type> & v1)
 	{
 		return mem_get<p,layout_base<T_>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
 	}
@@ -146,8 +146,8 @@ struct grid_gpu_ker
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T_>,layout,grid_sm<dim,T_>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
-	__device__ __host__ inline const r_type get(const grid_key_dx<dim> & v1) const
+	template <unsigned int p, typename ids_type, typename r_type=decltype(mem_get<p,layout_base<T_>,layout,grid_sm<dim,T_>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
+	__device__ __host__ inline const r_type get(const grid_key_dx<dim,ids_type> & v1) const
 	{
 		return mem_get<p,layout_base<T_>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
 	}
