@@ -4,6 +4,7 @@
 #include "Space/Shape/Box.hpp"
 #include "Vector/map_vector.hpp"
 #include "NN/CellList/cuda/CellList_gpu.hpp"
+#include "util/cuda/moderngpu/kernel_scan.hxx"
 #define DISABLE_MPI_WRITTERS
 #include "VTKWriter/VTKWriter.hpp"
 
@@ -47,42 +48,38 @@ __global__ void test_launch_grid(grid_type grid, Box<3,float> domain, ite_gpu<3>
 	printf("Grid point %d %d %d     scalar: %f  vector: %f %f %f \n",(int)key.get(0),(int)key.get(1),(int)key.get(2),scalar,v[0],v[1],v[2]);
 }
 
-__global__ void test_launch_cuda_native(float * scalar, float * vector, int sxy, int sx , int sy , int sz , int stride)
+__global__ void test_launch_cuda_native_vector(float * scalar, float * vector, int size, int capacity)
 {
-	int id[3];
+	int id = threadIdx.x + blockIdx.x * blockDim.x;
 
-	id[0] = threadIdx.x + blockIdx.x * blockDim.x;
-	id[1] = threadIdx.y + blockIdx.y * blockDim.y;
-	id[2] = threadIdx.z + blockIdx.z * blockDim.z;
+	if (id >= size) {return;}
 
-	if (id[0] >= sx) {return;}
-	if (id[1] >= sy) {return;}
-	if (id[2] >= sz) {return;}
-
-	float s = scalar[id[2]*sxy+id[1]*sx+id[0]];
+	float s = scalar[id];
 
 	float v[3];
 
-	v[0] = vector[id[2]*sxy+id[1]*sx+id[0] + 0*stride];
-	v[1] = vector[id[2]*sxy+id[1]*sx+id[0] + 1*stride];
-	v[2] = vector[id[2]*sxy+id[1]*sx+id[0] + 2*stride];
+	v[0] = vector[id + 0*capacity];
+	v[1] = vector[id + 1*capacity];
+	v[2] = vector[id + 2*capacity];
 
-	printf("Grid point from CUDA %d %d %d     scalar: %f  vector: %f %f %f \n",id[0],id[1],id[2],s,v[0],v[1],v[2]);
+	printf("Vector point from CUDA %d     scalar: %f  vector: %f %f %f \n",id,s,v[0],v[1],v[2]);
 }
 
 constexpr int NN_num = 4;
 
-template<typename celllist_type>
-__global__ void test_launch_cell_list(celllist_type cell, ite_gpu<3> ite_gpu)
+template<typename celllist_type, typename vector_pos_type>
+__global__ void test_launch_cell_list(celllist_type cell, vector_pos_type pos)
 {
-	GRID_ID_3(ite_gpu)
+	int id = threadIdx.x + blockIdx.x * blockDim.x;
 
 	int nn_part = 0;
 
 	int idx = 0;
 	int NN[NN_num];
 
-	auto NN_it = cell.template getNNIteratorBox<2>(key);
+	Point<3,float> xp = pos.template get<0>(id);
+
+	auto NN_it = cell.getNNIterator(cell.getCell(xp));
 
 	while (NN_it.isNext())
 	{
@@ -99,12 +96,12 @@ __global__ void test_launch_cell_list(celllist_type cell, ite_gpu<3> ite_gpu)
 		++NN_it;
 	}
 
-	printf("CELLLIST %d %d %d  nn_part: %d NN: %d %d %d %d \n",(int)key.get(0),(int)key.get(1),(int)key.get(2),nn_part,NN[0],NN[1],NN[2],NN[3]);
+	printf("CELLLIST %d  nn_part: %d NN: %d %d %d %d \n",id,nn_part,NN[0],NN[1],NN[2],NN[3]);
 }
 
-BOOST_AUTO_TEST_SUITE( grid_gpu_func_interp )
+BOOST_AUTO_TEST_SUITE( vector_gpu_func_verlet )
 
-BOOST_AUTO_TEST_CASE (gpu_p2m)
+BOOST_AUTO_TEST_CASE (gpu_verlet)
 {
 	openfpm::vector_gpu<Point<3,float>> pos;
 	openfpm::vector_gpu<aggregate<float,float[3]>> prop;
@@ -134,36 +131,9 @@ BOOST_AUTO_TEST_CASE (gpu_p2m)
 
 	test_launch<<<ite.wthr,ite.thr>>>(pos.toKernel(),prop.toKernel(),domain);
 
-	grid_gpu<3,aggregate<float,float[3]>> grid;
-
-	grid.resize({10,10,10});
-
-	auto it = grid.getIterator();
-
-	while (it.isNext())
-	{
-		auto key = it.get();
-
-		grid.template get<0>(key) = key.get(0) + key.get(1) + key.get(2);
-		grid.template get<1>(key)[0] = key.get(0);
-		grid.template get<1>(key)[1] = key.get(1);
-		grid.template get<1>(key)[2] = key.get(2);
-
-		++it;
-	}
-
-	grid_key_dx<3> start({0,0,0});
-	grid_key_dx<3> stop({9,9,9});
-
-	auto ite_g = grid.getGPUIterator(start,stop);
-
-	grid.template hostToDevice<0,1>();
-
-	test_launch_grid<<<ite_g.wthr,ite_g.thr>>>(grid.toKernel(),domain,ite_g);
-
 	//////////// Cuda interoperability
 
-	test_launch_cuda_native<<<ite_g.wthr,ite_g.thr>>>((float *)grid.template getDeviceBuffer<0>(),(float *)grid.template getDeviceBuffer<1>(),100,10,10,10,grid.size());
+	test_launch_cuda_native_vector<<<ite.wthr,ite.thr>>>((float *)prop.template getDeviceBuffer<0>(),(float *)prop.template getDeviceBuffer<1>(),prop.size(),prop.capacity());
 
 	//////////// Cell-list
 
@@ -177,18 +147,35 @@ BOOST_AUTO_TEST_CASE (gpu_p2m)
 
 	mgpu::ofp_context_t context(false);
 
-	const size_t (& sz)[3] = grid.getGrid().getSize();
+	const size_t (& sz)[3] = {10,10,10};
 
 	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cl(domain,sz,2);
 
-	cl.template construct(pos,pos_sort,prop,prop_sort,context,g_m);
+	cl.construct(pos,pos_sort,prop,prop_sort,context,g_m);
 
-	grid_key_dx<3> start_c({2,2,2});
-	grid_key_dx<3> stop_c({11,11,11});
+	test_launch_cell_list<<<ite.wthr,ite.thr>>>(cl.toKernel(),pos.toKernel());
 
-	auto ite_gpu = getGPUIterator_impl(cl.getGrid(),start_c,stop_c);
+	// scan example
 
-	test_launch_cell_list<<<ite_gpu.wthr,ite_gpu.thr>>>(cl.toKernel(),ite_gpu);
+	openfpm::vector_gpu<aggregate<int,int>> numbers;
+
+	numbers.resize(100);
+
+	for (size_t i = 0 ; i < 100 ; i++)
+	{
+		numbers.template get<0>(i) = (float)rand() /RAND_MAX * 10;
+	}
+
+	numbers.hostToDevice<0>();
+
+	mgpu::scan((int *)numbers.template getDeviceBuffer<0>(), numbers.size(), (int *)numbers.template getDeviceBuffer<1>() , context);
+
+	numbers.deviceToHost<1>();
+
+	for (size_t i = 0 ; i < 100 ; i++)
+	{
+		std::cout << "Element: " << numbers.template get<0>(i) << "  scan: " << numbers.template get<1>(i) << std::endl;
+	}
 
 	//////////////// VTK
 
