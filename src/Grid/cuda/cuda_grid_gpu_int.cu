@@ -7,6 +7,50 @@
 #define DISABLE_MPI_WRITTERS
 #include "VTKWriter/VTKWriter.hpp"
 
+// Linear
+
+template<typename st>
+class linear_kernel
+{
+public:
+
+	static const int np = 2;
+
+	static inline st value(st x, size_t i)
+	{
+		if (i == 0)
+			return x+1;
+		else if (i == 1)
+			return 1-x;
+
+		return 0.0;
+	}
+};
+
+// The M4 kernel function
+
+template<typename st>
+class mp4_kernel
+{
+public:
+
+	static const int np = 4;
+
+	static inline st value(st x, size_t i)
+	{
+		//
+		if (i == 0)
+			return st(2.0) + (st(-4.0)+(st(2.5)-st(0.5)*-x)*-x)*-x;
+		else if (i == 1)
+			return st(1.0) + (st(-2.5)+st(1.5)*-x)*x*x;
+		else  if (i == 2)
+			return st(1.0) + (st(-2.5)+st(1.5)*x)*x*x;
+		else if (i == 3)
+			return st(2.0) + (st(-4.0)+(st(2.5)-st(0.5)*x)*x)*x;
+		return 0.0;
+	}
+};
+
 template<typename vector_pos_type, typename vector_prop_type>
 __global__ void test_launch(vector_pos_type set_points, vector_prop_type prop, Box<3,float> domain)
 {
@@ -209,6 +253,22 @@ BOOST_AUTO_TEST_CASE (gpu_p2m)
 
 	// Write the VTK file
 	vtk_writer.write("particles.vtk",prp_names,"particles",ft);
+
+	/////////////// VTK writer for grid
+
+	// Create a writer and write
+	VTKWriter<boost::mpl::pair<grid_gpu<3,aggregate<float,float[3]>>,float>,VECTOR_GRIDS> vtk_g;
+
+	Point<3,float> offset({0.0,0.0});
+	Point<3,float> spacing({0.1,0.1,0.1});
+	Box<3,int> box({0,0,0},{5,5,5});
+
+	grid.template deviceToHost<0>();
+	vtk_g.add(grid,offset,spacing,box);
+
+	prp_names.resize(1);
+
+	vtk_g.write("output_grid.vtk", prp_names, "grids", ft);
 }
 
 BOOST_AUTO_TEST_CASE (gpu_m2p)
