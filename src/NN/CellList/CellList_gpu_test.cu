@@ -765,6 +765,10 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 
 	BOOST_REQUIRE_EQUAL(vnsrt.size(),9);
 
+	// Move to CPU
+
+	vnsrt.template deviceToHost<0>();
+
 	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(8),0);
 	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(0),1);
 	BOOST_REQUIRE_EQUAL(vnsrt.template get<0>(1),2);
