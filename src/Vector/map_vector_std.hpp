@@ -1173,7 +1173,7 @@ public:
 	 * \param new size of the vector
 	 *
 	 */
-	size_t resize_base(size_t sz)
+	void resize_base(size_t sz)
 	{
 		base_type::resize(sz);
 		v_size = sz;
