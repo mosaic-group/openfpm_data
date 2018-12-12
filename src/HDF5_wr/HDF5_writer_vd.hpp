@@ -158,6 +158,76 @@ public:
 		H5Fclose(file);
 	}
 
+	/*! \brief Return the equivalent HDF5 type for T
+	 *
+	 * \return The HDF5 type equivalent to T
+	 *
+	 */
+	template<typename T>
+	hid_t getType()
+	{
+		if (std::is_same<T,float>::value)
+		{return H5T_IEEE_F32LE;}
+		else if (std::is_same<T,double>::value)
+		{return H5T_IEEE_F64LE;}
+		else if (std::is_same<T,char>::value || std::is_same<T,unsigned char>::value)
+		{return H5T_STD_I8LE;}
+		else if (std::is_same<T,short>::value || std::is_same<T,unsigned short>::value)
+		{return H5T_STD_I16LE;}
+		else if (std::is_same<T,int>::value || std::is_same<T,unsigned int>::value)
+		{return H5T_STD_I32LE;}
+		else if (std::is_same<T,long int>::value || std::is_same<T,unsigned long int>::value)
+		{return H5T_STD_I64LE;}
+	}
+
+	/*! \brief It add an attribute to an already opened file
+	 *
+	 * \param dataset_id dataset_id
+	 * \param name_ name of the attribute
+	 * \param att_ attribute value
+	 */
+	template<typename value_type>
+	void addAttributeHDF5(hid_t dataset_id, std::string name_, value_type att_)
+	{
+		//create the data space for the scalar attibute
+		hid_t dataspace_id = H5Screate(H5S_SCALAR);
+
+		//create the dataset attribute (H5T_IEEE_F64BE: 64-bit float little endian)
+		hid_t attribute_id = H5Acreate2(dataset_id, name_.c_str(), H5T_IEEE_F32LE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
+		//write the attibute data
+		herr_t status = H5Awrite(attribute_id,H5T_NATIVE_DOUBLE, &att_);
+		//close the attribute
+		status = H5Aclose(attribute_id);
+		//close the dataspace
+		status = H5Sclose(dataspace_id);
+	}
+
+	/*! \brief It add an attribute to an already opened file
+	 *
+	 * \param dataset_id dataset_id
+	 * \param name_ name of the attribute
+	 * \param att_ attribute value
+	 */
+	template<typename value_type>
+	void addAttributeHDF5(std::string filename, std::string name_, value_type att_)
+	{
+        Vcluster<> & v_cl = create_vcluster();
+        MPI_Comm comm = v_cl.getMPIComm();
+        MPI_Info info  = MPI_INFO_NULL;
+        // Set up file access property list with parallel I/O access
+        hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+
+		hid_t file_id = H5Fopen(filename.c_str(),H5F_ACC_RDWR, plist_id);
+		hid_t dataset_id = H5Dopen2(file_id,"/vector_dist", H5P_DEFAULT);
+
+		addAttributeHDF5(dataset_id,name_.c_str(),att_);
+
+        //close the dataset
+        herr_t status = H5Dclose(dataset_id);
+        //close the file
+        status = H5Fclose(file_id);
+	}
+
 };
 
 

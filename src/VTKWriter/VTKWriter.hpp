@@ -41,9 +41,9 @@ template <typename T> std::string getType()
 	else if (typeid(T) == typeid(unsigned int))
 		return "unsigned_int";
 	else if (typeid(T) == typeid(long int))
-		return "long";
+		return "int";
 	else if (typeid(T) == typeid(unsigned long int))
-		return "unsigned_long";
+		return "unsigned_int";
 	else if (typeid(T) == typeid(bool))
 		return "bit";
 
@@ -114,7 +114,14 @@ class VTKWriter
 #include "VTKWriter_vector_box.hpp"
 #include "VTKWriter_grids.hpp"
 #include "VTKWriter_grids_st.hpp"
+
+// This is only active if MPI compiler work
+
+#ifndef DISABLE_MPI_WRITTERS
 #include "VTKWriter_dist_graph.hpp"
+#endif
+
+
 #include "VTKWriter_point_set.hpp"
 
 #endif /* VTKWRITER_HPP_ */

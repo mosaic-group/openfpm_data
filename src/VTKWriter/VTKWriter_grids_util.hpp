@@ -309,13 +309,11 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
 					{
 						// Print the properties
 						for (size_t i1 = 0 ; i1 < N1 ; i1++)
-						{
-							v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()[i1]) + " ";
-						}
+						{v_out += std::to_string(vg.get(k).g.get_o(it.get()).template get<I::value>()[i1]) + " ";}
+
 						if (N1 == 2)
-						{
-							v_out += "0.0";
-						}
+						{v_out += "0.0";}
+
 						v_out += "\n";
 					}
 					else
@@ -342,7 +340,7 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
 				}
 			}
 			if (ft == file_type::BINARY)
-				v_out += "\n";
+			{v_out += "\n";}
 		}
 	}
 };
@@ -466,7 +464,7 @@ template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & 
 inline void output_vertex(size_t k,std::string & v_out, file_type ft)
 {
 	if (ft == file_type::ASCII)
-		v_out += "1 " + std::to_string(k) + "\n";
+	{v_out += "1 " + std::to_string(k) + "\n";}
 	else
 	{
 		int tmp;

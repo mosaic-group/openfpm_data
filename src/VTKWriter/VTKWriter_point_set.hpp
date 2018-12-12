@@ -239,9 +239,9 @@ class VTKWriter<pair,VECTOR_POINTS>
 		// write the number of vertex
 
 		if (ft == file_type::ASCII)
-			v_out += "POINTS " + std::to_string(get_total()) + " float" + "\n";
+		{v_out += "POINTS " + std::to_string(get_total()) + " float" + "\n";}
 		else
-			v_out += "POINTS " + std::to_string(get_total()) + " " + getType<typename pair::first::value_type::coord_type>() + "\n";
+		{v_out += "POINTS " + std::to_string(get_total()) + " " + getType<typename pair::first::value_type::coord_type>() + "\n";}
 
 		// return the vertex properties string
 		return v_out;
@@ -317,7 +317,7 @@ class VTKWriter<pair,VECTOR_POINTS>
 
 		//! In case of binary we have to add a new line at the end of the list
 		if (ft == file_type::BINARY)
-			v_out += "\n";
+		{v_out += "\n";}
 
 		// return the vertex list
 		return v_out;
@@ -433,9 +433,9 @@ public:
 		prop_out_v< ele_vpp<typename pair::second>, typename pair::first::value_type::coord_type> pp(point_data, vpp, prop_names,ft);
 
 		if (prp == -1)
-			boost::mpl::for_each< boost::mpl::range_c<int,0, pair::second::value_type::max_prop> >(pp);
+		{boost::mpl::for_each< boost::mpl::range_c<int,0, pair::second::value_type::max_prop> >(pp);}
 		else
-			boost::mpl::for_each< boost::mpl::range_c<int,prp, prp> >(pp);
+		{boost::mpl::for_each< boost::mpl::range_c<int,prp, prp> >(pp);}
 
 		// Add the last property
 		pp.lastProp();

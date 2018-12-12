@@ -664,8 +664,8 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 		Box<1,size_t> d1({1},{14});
 
 		// Create box grids
-		Point<1,float> offset2({5.0,7.0});
-		Point<1,float> spacing2({0.2,0.1});
+		Point<1,float> offset2({5.0});
+		Point<1,float> spacing2({0.2});
 		Box<1,size_t> d2({2},{13});
 
 		// Create box grids

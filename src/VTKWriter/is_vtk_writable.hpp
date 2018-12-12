@@ -200,7 +200,7 @@ struct is_vtk_writable<unsigned int>
 template<>
 struct is_vtk_writable<long int>
 {
-	typedef long base;
+	typedef int base;
 
 	//! long int is vtk writable
 	enum
@@ -213,7 +213,7 @@ struct is_vtk_writable<long int>
 template<>
 struct is_vtk_writable<unsigned long int>
 {
-	typedef unsigned long base;
+	typedef unsigned int base;
 
 	//! unsigned long int is vtk writable
 	enum
