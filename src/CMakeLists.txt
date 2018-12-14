@@ -213,6 +213,7 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
 	      DESTINATION openfpm_data/include/util/multi_array_openfpm )
 
 install(FILES util/cuda/scan_cuda.cuh
+	      util/cuda/ofp_context.hxx
 	      DESTINATION openfpm_data/include/util/cuda )
 
 install(FILES util/cuda/moderngpu/context.hxx

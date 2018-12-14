@@ -85,12 +85,48 @@ struct cid_<2,cnt_type,ids_type,transform>
 		return e.get(0) + div_c[0] * e.get(1);
 	}
 
-	template<typename T> static inline __device__ cnt_type get_cid(openfpm::array<ids_type,2,cnt_type> & div_c,
-			                                                       openfpm::array<T,2,cnt_type> & spacing,
+	template<typename T> static inline __device__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c,
+			                                                       const openfpm::array<T,2,cnt_type> & spacing,
+			                                                       const openfpm::array<ids_type,2,cnt_type> & off,
 			                                                       const transform & t,
 			                                                       const Point<2,T> & p)
 	{
-		return t.transform(p.get(0),0) / spacing[0] + div_c[0] * t.transform(p.get(1),1) / spacing[1];
+
+		return openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0] +
+				  (openfpm::math::uint_floor(t.transform(p,1)/spacing[1]) + off[1])*div_c[0];
+	}
+
+	template<typename T> static inline __device__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c,
+			                                                       const openfpm::array<T,2,cnt_type> & spacing,
+			                                                       const openfpm::array<ids_type,2,cnt_type> & off,
+			                                                       const transform & t,
+			                                                       const T * p,
+			                                                       ids_type * e)
+	{
+		e[0] = openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0];
+		e[1] = openfpm::math::uint_floor(t.transform(p,1)/spacing[1]) + off[1];
+
+		return e[0] + e[1]*div_c[0];
+	}
+
+	template<typename T> static inline __device__ grid_key_dx<2,ids_type> get_cid_key(const openfpm::array<T,2,cnt_type> & spacing,
+			                                                       const openfpm::array<ids_type,2,cnt_type> & off,
+			                                                       const transform & t,
+			                                                       const Point<2,T> & p)
+	{
+		grid_key_dx<2,ids_type> e;
+
+		e.set_d(0,openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0]);
+		e.set_d(1,openfpm::math::uint_floor(t.transform(p,1)/spacing[1]) + off[1]);
+
+		return e;
+	}
+
+	template <typename U = cnt_type, typename sfinae=typename std::enable_if<std::is_same<ids_type,U>::value >::type >
+	static inline __device__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c,
+			                                  const grid_key_dx<2,cnt_type> & e)
+	{
+		return e.get(0) + e.get(1)*div_c[0];
 	}
 };
 
