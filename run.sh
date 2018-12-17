@@ -1,9 +1,7 @@
 #! /bin/bash
 
-source $HOME/.bashrc
-source $HOME/openfpm_vars_$3
-
-echo "$PATH"
+hostname=$(hostname)
+branch=$3
 
 # Make a directory in /tmp/openfpm_data
 
@@ -13,6 +11,18 @@ if [ "$2" == "gin" ]
 then
  module load gcc/4.9.2
  module load boost/1.54.0
+fi
+
+if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
+        export LD_LiBRARY_PATH="$LD_LIBRARY_PATH:$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5/lib"
+fi
+
+if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5/lib"
+fi
+
+if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5/lib"
 fi
 
 ./build/src/io
