@@ -22,6 +22,8 @@ git clone git@git.mpi-cbg.de:openfpm/openfpm_data.git openfpm_data
 git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git openfpm_pdata
 git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 
+cd "$1/openfpm_io"
+
 if [ x"$hostname" == x"cifarm-centos-node"  ]; then
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
         ./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
@@ -45,9 +47,6 @@ if [ x"$hostname" == x"cifarm-mac-node"  ]; then
 fi
 
 # Go in the right branch
-
-
-cd "$1/openfpm_io"
 
 echo "Compiling on $2"
 
