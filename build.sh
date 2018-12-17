@@ -61,7 +61,7 @@ then
  module load boost/1.54.0
  sh ./configure CXX=mpic++ --with-boost=/sw/apps/boost/1.54.0/ --with-hdf5=$HOME/$3/HDF5/bin/h5pcc
 else
- sh ./configure CXX=mpic++ --with-hdf5=$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5 --with-boost=$HOME/openfpm_dependencies/openfpm_io/$branch/BOOST --with-pdata=../openfpm_pdata/
+ sh ./configure CXX=mpic++ --with-hdf5=$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5 --with-boost=$HOME/openfpm_dependencies/openfpm_io/$branch/BOOST --with-pdata=../../openfpm_pdata/
 fi
 make VERBOSE=1 -j 1 
 
