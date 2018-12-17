@@ -1,0 +1,100 @@
+#!groovy
+
+parallel (
+
+"cifarm-ubuntu-node" : {node ('cifarm-ubuntu-node')
+                  {
+                    deleteDir()
+
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(50)
+                      }
+                    }
+
+                    stage ('build ubuntu')
+                    {
+                      sh "./build.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
+                    }
+
+                    stage ('run ubuntu')
+                    {
+                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
+                      sh "cd openfpm_io && ./success.sh 2 ubuntu openfpm_io"
+                    }
+                  }
+                 },
+
+
+"cifarm-mac-node" : {node ('cifarm-mac-node')
+                  {
+                    deleteDir()
+                    env.PATH = "/usr/local/bin:${env.PATH}"
+
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(50)
+                      }
+                    }
+
+                    stage ('build mac')
+                    {
+                      sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
+                    }
+
+                    stage ('run mac')
+                    {
+                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
+                      sh "cd openfpm_io && ./success.sh 2 mac openfpm_io"
+                    }
+                  }
+                 },
+
+"cifarm-centos-node" : {node ('cifarm-centos-node')
+                  {
+                    deleteDir()
+
+                    int ntry = 5
+                    while (ntry != 0)
+                    {
+                      try {
+                        checkout scm
+                        ntry = 0
+                      }
+                      catch (IOException e)
+                      {
+                        ntry--
+                        sleep(50)
+                      }
+                    }
+
+                    stage ('build_gin')
+                    {
+                      sh "echo $PATH && ./build.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
+                    }
+
+                    stage ('run_gin')
+                    {
+                      sh "cd openfpm_io && ./run.sh $WORKSPACE $NODE_NAME $BRANCH_NAME"
+                      sh "cd openfpm_io && ./success.sh 2 centos openfpm_io"
+                    }
+                  }
+                 }
+)
+
