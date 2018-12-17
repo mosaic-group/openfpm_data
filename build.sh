@@ -19,6 +19,8 @@ mv /tmp/openfpm_io openfpm_io
 
 git clone git@git.mpi-cbg.de:openfpm/openfpm_devices.git openfpm_devices
 git clone git@git.mpi-cbg.de:openfpm/openfpm_data.git openfpm_data
+cd openfpm_data
+git checkout GPU_test
 git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git openfpm_pdata
 git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 cd openfpm_vcluster
