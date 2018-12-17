@@ -65,6 +65,11 @@ then
 else
  sh ./configure CXX=mpic++ --with-hdf5=$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5 --with-boost=$HOME/openfpm_dependencies/openfpm_io/$branch/BOOST --with-pdata=../../openfpm_pdata/
 fi
+
+echo "-------------------------------"
+ls ../openfpm_data/src/util
+echo "-------------------------------"
+
 make VERBOSE=1 -j 1 
 
 if [ $? -ne 0 ]; then
