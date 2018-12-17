@@ -25,6 +25,7 @@ git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 cd "$1/openfpm_io"
 
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
+	rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/HDF5
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
         ./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
@@ -32,6 +33,7 @@ if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
 fi
 
 if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
+	rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/HDF5
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
 	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
@@ -40,6 +42,7 @@ fi
 
 if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
         export PATH="/usr/local/bin:$PATH"
+	rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/HDF5
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
 	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
