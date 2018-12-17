@@ -14,8 +14,7 @@ then
 fi
 
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
-        export LD_LiBRARY_PATH="$LD_LIBRARY_PATH:$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5/lib"
-	ls $HOME/openfpm_dependencies/openfpm_io/$branch/HDF5/lib
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5/lib"
 fi
 
 if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
