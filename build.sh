@@ -17,28 +17,26 @@ mkdir /tmp/openfpm_io
 mv * .[^.]* /tmp/openfpm_io
 mv /tmp/openfpm_io openfpm_io
 
-mkdir openfpm_io/src/config
-
 git clone git@git.mpi-cbg.de:openfpm/openfpm_devices.git openfpm_devices
 git clone git@git.mpi-cbg.de:openfpm/openfpm_data.git openfpm_data
 git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git openfpm_pdata
 git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 
-if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
+if [ x"$hostname" == x"cifarm-centos-node"  ]; then
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
         ./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_HDF5.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
 fi
 
-if [ x"$hostname" == x"cifarm-ubuntu-node.mpi-cbg.de"  ]; then
+if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_HDF5.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
 fi
 
-if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
+if [ x"$hostname" == x"cifarm-mac-node"  ]; then
         export PATH="/usr/local/bin:$PATH"
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
