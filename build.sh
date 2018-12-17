@@ -69,7 +69,7 @@ else
 fi
 
 echo "-------------------------------"
-ls ../openfpm_data/src/util
+ls ../openfpm_vcluster/src/VCluster/VCluster.cpp
 echo "-------------------------------"
 
 make VERBOSE=1 -j 1 
