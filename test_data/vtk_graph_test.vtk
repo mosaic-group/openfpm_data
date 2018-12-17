@@ -98,7 +98,7 @@ LOOKUP_TABLE default
 0.000000
 0.000000
 0.000000
-SCALARS prp2 unsigned_long
+SCALARS prp2 unsigned_int
 LOOKUP_TABLE default
 0
 0
@@ -128,7 +128,7 @@ LOOKUP_TABLE default
 0
 0
 0
-SCALARS prp5 long
+SCALARS prp5 int
 LOOKUP_TABLE default
 0
 0
@@ -323,7 +323,7 @@ LOOKUP_TABLE default
 0.000000
 0.000000
 0.000000
-SCALARS prp2 unsigned_long
+SCALARS prp2 unsigned_int
 LOOKUP_TABLE default
 0
 0
@@ -461,7 +461,7 @@ LOOKUP_TABLE default
 0
 0
 0
-SCALARS prp5 long
+SCALARS prp5 int
 LOOKUP_TABLE default
 0
 0
