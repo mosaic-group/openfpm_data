@@ -61,11 +61,11 @@ then
  module load boost/1.54.0
  sh ./configure CXX=mpic++ --with-boost=/sw/apps/boost/1.54.0/ --with-hdf5=$HOME/$3/HDF5/bin/h5pcc
 else
- echo "-------------------------------------------"
- ls /home/jenkins/openfpm_dependencies/openfpm_io/master/
- echo "-------------------------------------------"
  sh ./configure CXX=mpic++ --with-hdf5=$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5 --with-boost=$HOME/openfpm_dependencies/openfpm_io/$branch/BOOST 
 fi
+echo "----------------------------------"
+ls ../.
+echo "----------------------------------"
 make VERBOSE=1 -j 4
 
 if [ $? -ne 0 ]; then
