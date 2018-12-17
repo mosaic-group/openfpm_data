@@ -19,7 +19,7 @@ mv /tmp/openfpm_io openfpm_io
 
 git clone git@git.mpi-cbg.de:openfpm/openfpm_devices.git openfpm_devices
 git clone git@git.mpi-cbg.de:openfpm/openfpm_data.git openfpm_data
-git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git
+git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git .
 git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 
 cd "$1/openfpm_io"
