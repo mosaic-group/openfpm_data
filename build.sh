@@ -18,6 +18,9 @@ mv * .[^.]* /tmp/openfpm_io
 mv /tmp/openfpm_io openfpm_io
 
 git clone git@git.mpi-cbg.de:openfpm/openfpm_devices.git openfpm_devices
+cd openfpm_devices
+git checkout GPU_test
+cd ..
 git clone git@git.mpi-cbg.de:openfpm/openfpm_data.git openfpm_data
 cd openfpm_data
 git checkout GPU_test
