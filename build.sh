@@ -24,11 +24,6 @@ git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 
 cd "$1/openfpm_io"
 
-echo "DEBUG"
-
-ls ../openfpm_data/src/Graph
-
-echo "DEBUG"
 
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
