@@ -19,7 +19,7 @@ mv /tmp/openfpm_io openfpm_io
 
 git clone git@git.mpi-cbg.de:openfpm/openfpm_devices.git openfpm_devices
 git clone git@git.mpi-cbg.de:openfpm/openfpm_data.git openfpm_data
-git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git .
+git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git openfpm_pdata
 git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 
 cd "$1/openfpm_io"
@@ -61,11 +61,8 @@ then
  module load boost/1.54.0
  sh ./configure CXX=mpic++ --with-boost=/sw/apps/boost/1.54.0/ --with-hdf5=$HOME/$3/HDF5/bin/h5pcc
 else
- sh ./configure CXX=mpic++ --with-hdf5=$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5 --with-boost=$HOME/openfpm_dependencies/openfpm_io/$branch/BOOST 
+ sh ./configure CXX=mpic++ --with-hdf5=$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5 --with-boost=$HOME/openfpm_dependencies/openfpm_io/$branch/BOOST --with-pdata=../openfpm_pdata/src
 fi
-echo "----------------------------------"
-ls ../.
-echo "----------------------------------"
 make VERBOSE=1 -j 4
 
 if [ $? -ne 0 ]; then

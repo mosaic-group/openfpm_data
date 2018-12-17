@@ -10,6 +10,7 @@ set(SE_CLASS1 CACHE BOOL "Activate compilation with SE_CLASS1")
 set(SE_CLASS2 CACHE BOOL "Activate compilation with SE_CLASS2")
 set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
 set(ENV{HDF5_ROOT} ${HDF5_ROOT})
+set(OPENFPM_PDATA_DIR CACHE PATH "OpenFPM_pdata dirs")
 
 set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CUDA_STANDARD 11)

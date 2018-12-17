@@ -25,6 +25,7 @@ target_include_directories (io PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories (io PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (io PUBLIC ${TINYOBJLOADER_INCLUDE_DIRS} )
 target_include_directories (io PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories (io PUBLIC ${OPENFPM_PDATA_DIR}/src)
 
 if (PETSC_FOUND)
 	target_include_directories(io PUBLIC ${PETSC_INCLUDES})
