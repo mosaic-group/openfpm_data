@@ -349,14 +349,14 @@ struct copy_grid_fast<false,3,grid,ginfo>
 		grid_key_dx<3> one = zero;
 		one.set_d(1,1);
 
-		unsigned char * ptr_final_src = (unsigned char *)&(gd_src.template get<0>(one));
-		unsigned char * ptr_start_src = (unsigned char *)&(gd_src.template get<0>(zero));
+		unsigned char * ptr_final_src = (unsigned char *)(gd_src.template get_address<0>(one));
+		unsigned char * ptr_start_src = (unsigned char *)(gd_src.template get_address<0>(zero));
 
-		unsigned char * ptr_final_dst = (unsigned char *)&(gd_dst.template get<0>(one));
-		unsigned char * ptr_start_dst = (unsigned char *)&(gd_dst.template get<0>(zero));
+		unsigned char * ptr_final_dst = (unsigned char *)(gd_dst.template get_address<0>(one));
+		unsigned char * ptr_start_dst = (unsigned char *)(gd_dst.template get_address<0>(zero));
 
-		unsigned char * ptr_src = (unsigned char *)&(gd_src.template get<0>(bx_src.getKP1()));
-		unsigned char * ptr_dst = (unsigned char *)&(gd_dst.template get<0>(bx_dst.getKP1()));
+		unsigned char * ptr_src = (unsigned char *)(gd_src.template get_address<0>(bx_src.getKP1()));
+		unsigned char * ptr_dst = (unsigned char *)(gd_dst.template get_address<0>(bx_dst.getKP1()));
 
 		size_t n_cpy = bx_src.getHigh(0) - bx_src.getLow(0) + 1;
 
@@ -368,11 +368,11 @@ struct copy_grid_fast<false,3,grid,ginfo>
 		grid_key_dx<3> one2 = zero;
 		one2.set_d(2,1);
 
-		ptr_final_src = (unsigned char *)&(gd_src.template get<0>(one2));
-		ptr_start_src = (unsigned char *)&(gd_src.template get<0>(zero));
+		ptr_final_src = (unsigned char *)(gd_src.template get_address<0>(one2));
+		ptr_start_src = (unsigned char *)(gd_src.template get_address<0>(zero));
 
-		ptr_final_dst = (unsigned char *)&(gd_dst.template get<0>(one2));
-		ptr_start_dst = (unsigned char *)&(gd_dst.template get<0>(zero));
+		ptr_final_dst = (unsigned char *)(gd_dst.template get_address<0>(one2));
+		ptr_start_dst = (unsigned char *)(gd_dst.template get_address<0>(zero));
 
 		size_t stride_src_y = ptr_final_src - ptr_start_src;
 		size_t stride_dst_y = ptr_final_dst - ptr_start_dst;
@@ -462,11 +462,11 @@ struct copy_grid_fast<false,2,grid,ginfo>
 		grid_key_dx<2> one = zero;
 		one.set_d(1,1);
 
-		unsigned char * ptr_final_src = (unsigned char *)&(gd_src.template get<0>(one));
-		unsigned char * ptr_start_src = (unsigned char *)&(gd_src.template get<0>(zero));
+		unsigned char * ptr_final_src = (unsigned char *)(gd_src.template get_address<0>(one));
+		unsigned char * ptr_start_src = (unsigned char *)(gd_src.template get_address<0>(zero));
 
-		unsigned char * ptr_final_dst = (unsigned char *)&(gd_dst.template get<0>(one));
-		unsigned char * ptr_start_dst = (unsigned char *)&(gd_dst.template get<0>(zero));
+		unsigned char * ptr_final_dst = (unsigned char *)(gd_dst.template get_address<0>(one));
+		unsigned char * ptr_start_dst = (unsigned char *)(gd_dst.template get_address<0>(zero));
 
 		unsigned char * ptr_src = (unsigned char *)&(gd_src.template get<0>(bx_src.getKP1()));
 		unsigned char * ptr_dst = (unsigned char *)&(gd_dst.template get<0>(bx_dst.getKP1()));
@@ -812,8 +812,8 @@ struct pack_with_iterator_shortx<3,n_cpy,obj_byte,git,grid>
 		grid_key_dx<3> one = zero;
 		one.set_d(2,1);
 
-		unsigned char * ptr_final = (unsigned char *)&(gr.template get<0>(one));
-		unsigned char * ptr_start = (unsigned char *)&(gr.template get<0>(zero));
+		unsigned char * ptr_final = (unsigned char *)(gr.template get_address<0>(one));
+		unsigned char * ptr_start = (unsigned char *)(gr.template get_address<0>(zero));
 
 		size_t stride_y = ptr_final - ptr_start;
 
@@ -881,8 +881,8 @@ struct pack_with_iterator<false,dim,grid,encap_src,encap_dst,boost_vct,it,dtype,
 		grid_key_dx<dim> one = zero;
 		one.set_d(1,1);
 
-		unsigned char * ptr_final = (unsigned char *)&(gr.template get<0>(one));
-		unsigned char * ptr_start = (unsigned char *)&(gr.template get<0>(zero));
+		unsigned char * ptr_final = (unsigned char *)(gr.template get_address<0>(one));
+		unsigned char * ptr_start = (unsigned char *)(gr.template get_address<0>(zero));
 
 		size_t stride = ptr_final - ptr_start;
 

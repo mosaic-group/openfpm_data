@@ -59,6 +59,25 @@ namespace openfpm
 		}
 	};
 
+	template<bool is_ok_cuda,typename T, typename Memory,
+			 typename layout, template<typename> class layout_base,
+			 typename grow_p>
+	struct merge_prp_device_impl
+	{
+		template <typename S,
+				  typename M,
+				  typename gp,
+				  unsigned int impl,
+				  template <typename> class layout_base2,
+				  unsigned int ...args>
+		static void run(openfpm::vector<T,Memory,layout,layout_base,grow_p,impl> & this_ ,
+				        const openfpm::vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v,
+				        unsigned int offset)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " Error the function merge_prp_device only work with cuda enabled vector" << std::endl;
+		}
+	};
+
 	template<typename T, typename Memory,
 			 typename layout, template<typename> class layout_base,
 			 typename grow_p>
@@ -88,6 +107,38 @@ namespace openfpm
 
 	#else
 				std::cout << __FILE__ << ":" << __LINE__ << " Error the function add_prp_device only work when map_vector is compiled with nvcc" << std::endl;
+	#endif
+		}
+	};
+
+	template<typename T, typename Memory,
+			 typename layout, template<typename> class layout_base,
+			 typename grow_p>
+	struct merge_prp_device_impl<true,T,Memory,layout,layout_base,grow_p>
+	{
+		template <typename S,
+				  typename M,
+				  typename gp,
+				  unsigned int impl,
+				  template <typename> class layout_base2,
+				  unsigned int ...args>
+		static void run(vector<T,Memory,layout,layout_base,grow_p,impl> & this_ ,
+					    const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v,
+					    unsigned int offset)
+		{
+	#ifdef SE_CLASS2
+				check_valid(&this_,8);
+	#endif
+				// merge the data on device
+
+	#if defined(CUDA_GPU) && defined(__NVCC__)
+
+				auto ite = v.getGPUIterator();
+
+				merge_add_prp_device_impl<decltype(v.toKernel()),decltype(this_.toKernel()),args...><<<ite.wthr,ite.thr>>>(v.toKernel(),this_.toKernel(),(unsigned int)offset);
+
+	#else
+				std::cout << __FILE__ << ":" << __LINE__ << " Error the function merge_prp_device only work when map_vector is compiled with nvcc" << std::endl;
 	#endif
 		}
 	};
@@ -508,6 +559,59 @@ namespace openfpm
 				// write the object in the last element
 				object_s_di_op<op,decltype(v.get(i)),decltype(get(size()-1)),OBJ_ENCAP,args...>(v.get(i),get(opart.get(i)));
 			}
+		}
+
+		/*! \brief It merge the elements of a source vector to this vector (on device)
+		 *
+		 * Given 2 vector v1 and v2 of size 7,3. and as merging operation the function add.
+		 * Merging the second vector v2 to
+		 * the first one v1 starting from the element 2. Mean
+		 *
+		 * \verbatim
+		 *
+		 * 6   8  3   2  1   0  3    v1 elements
+		 *        |   |  |
+		 *       op  op  op
+		 *        |   |  |
+		 *        5   1  9           v2 elements
+		 *
+		 *-------------------------------------
+		 * 6   8  8   3  10  0   3   updated v1 elements
+		 *
+		 * This operation is done for each selected property in args
+		 *
+		 * \endverbatim
+		 *
+		 * The number of properties in the source vector must be smaller than the destination
+		 * all the properties of S must be mapped so if S has 3 properties
+		 * 3 numbers for args are required
+		 *
+		 * \tparam op merging operation
+		 * \tparam S Base object of the source vector
+		 * \tparam M memory type of the source vector
+		 * \tparam gp Grow policy of the source vector
+		 * \tparam args one or more number that define which property to set-up
+		 *
+		 * \param v source vector
+		 * \param start index from where to start the merging
+		 *
+		 */
+		template <template<typename,typename> class op, typename S, typename M, typename gp, unsigned int ...args>
+		void merge_prp_device(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v,
+				 	   unsigned int start)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+
+			if (v.size() != opart.size())
+				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be the same as o_part.size()" << opart.size() << std::endl;
+
+#endif
+
+			merge_prp_device_impl<std::is_same<Memory,CudaMemory>::value,T,Memory,layout,layout_base,grow_p>
+			::template run<S,M,gp,OPENFPM_NATIVE,layout_base,args...>(*this,v,start);
 		}
 
 

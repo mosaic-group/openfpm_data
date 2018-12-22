@@ -752,6 +752,32 @@ public:
 		return mem_getpointer<decltype(data_),layout_base_>::template getPointer<p>(data_);
 	}
 
+	/*! \brief Get the address of the selected element
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return the reference of the element
+	 *
+	 */
+	template <unsigned int p, typename r_type=decltype(&mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	__device__ __host__ inline r_type get_address(const grid_key_dx<dim> & v1)
+	{
+		return &mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
+	}
+
+	/*! \brief Get the address of the selected element
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return the reference of the element
+	 *
+	 */
+	template <unsigned int p, typename r_type=decltype(&mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
+	__device__ __host__ inline r_type get_address(const grid_key_dx<dim> & v1) const
+	{
+		return &mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
+	}
+
 	/*! \brief Get the reference of the selected element
 	 *
 	 * \param v1 grid_key that identify the element in the grid
