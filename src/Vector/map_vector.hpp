@@ -603,12 +603,6 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#ifdef SE_CLASS1
-
-			if (v.size() != opart.size())
-				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be the same as o_part.size()" << opart.size() << std::endl;
-
-#endif
 
 			merge_prp_device_impl<std::is_same<Memory,CudaMemory>::value,T,Memory,layout,layout_base,grow_p>
 			::template run<S,M,gp,OPENFPM_NATIVE,layout_base,args...>(*this,v,start);

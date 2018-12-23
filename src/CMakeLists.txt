@@ -95,6 +95,8 @@ install(FILES NN/CellList/CellListNNIteratorRadius.hpp
 	      NN/CellList/ParticleItCRS_Cells.hpp 
 	      NN/CellList/ParticleIt_Cells.hpp 
 	      NN/CellList/CellDecomposer.hpp
+	      NN/CellList/CellNNIteratorRuntime.hpp
+	      NN/CellList/CellNNIteratorRuntimeM.hpp
 	      DESTINATION openfpm_data/include/NN/CellList )
 
       install(FILES NN/CellList/cuda/CellList_cpu_ker.cuh
@@ -144,6 +146,7 @@ install(FILES util/check_no_pointers.hpp
 	      util/tokernel_transformation.hpp
 	      util/SimpleRNG.hpp
 	      util/math_util_complex.hpp
+	      util/mul_array_extents.hpp
 	      DESTINATION openfpm_data/include/util )
 
 install(FILES util/copy_compare/compare_fusion_vector.hpp 

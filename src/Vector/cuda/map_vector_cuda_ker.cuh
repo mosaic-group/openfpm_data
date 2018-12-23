@@ -226,12 +226,11 @@ namespace openfpm
 		 * \param obj object (encapsulated)
 		 *
 		 */
-		__device__ void set(int id, const typename grid_cpu<1,T_,CudaMemory,layout_type>::container & obj)
+		__device__ void set(int id, const container & obj)
 		{
 			//! copy the element
 			base.set(id,obj);
 		}
-
 
 		/*! \brief Get the pointer for the property p
 		 *
