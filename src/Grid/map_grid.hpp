@@ -135,8 +135,6 @@ public:
 
 	/*! \brief create a grid of size sz on each direction
 	 *
-	 * \tparam S memory type for allocation
-	 *
 	 * \param sz size if the grid on each directions
 	 *
 	 */
@@ -145,7 +143,11 @@ public:
 	{
 	}
 
-	//! Constructor allocate memory and give them a representation
+	/*! \brief Constructor allocate memory
+	 *
+	 * \param sz size of the grid in each dimension
+	 *
+	 */
 	inline grid_cpu(const size_t (& sz)[dim]) THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_lin>(sz)
 	{
