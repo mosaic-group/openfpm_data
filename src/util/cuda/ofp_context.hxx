@@ -133,6 +133,14 @@ namespace mgpu
 
 				return dev;
 			}
+
+			virtual int getNDevice()
+			{
+				int num_dev;
+				cudaGetDeviceCount(&num_dev);
+
+				return num_dev;
+			}
 	};
 
 }
