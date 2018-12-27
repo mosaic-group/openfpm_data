@@ -11,11 +11,7 @@
 #include "memory/memory.hpp"
 #include "Memleak_check.hpp"
 
-#ifdef __NVCC__
-#else
-#define __host__
-#define __device__
-#endif
+#include "util/cuda_util.hpp"
 
 /*!
  *

@@ -9,39 +9,27 @@
 #define OPENFPM_DATA_SRC_UTIL_CUDA_UTIL_HPP_
 
 #include "config.h"
+#ifdef CUDA_GPU
+#include <cuda_runtime.h>
+#endif
+
 
 #ifdef CUDA_GPU
 
+#include "util/cuda/ofp_context.hxx"
+
 	#ifndef __NVCC__
 
-		#define __host__
-		#define __device__
-
-		struct uint3
-		{
-			unsigned int x, y, z;
-		};
-
-		struct dim3
-		{
-			unsigned int x, y, z;
-		#if defined(__cplusplus)
-			__host__ __device__ dim3(unsigned int vx = 1, unsigned int vy = 1, unsigned int vz = 1) : x(vx), y(vy), z(vz) {}
-			__host__ __device__ dim3(uint3 v) : x(v.x), y(v.y), z(v.z) {}
-			__host__ __device__ operator uint3(void) { uint3 t; t.x = x; t.y = y; t.z = z; return t; }
-		#endif /* __cplusplus */
-		};
-
-		namespace mgpu
-		{
-			// Stub class for modern gpu
-
-			struct ofp_context_t
-			{
-				ofp_context_t(bool print_prop = true, int dev_num = 0)
-				{}
-			};
-		}
+//		namespace mgpu
+//		{
+//			// Stub class for modern gpu
+//
+//			struct ofp_context_t
+//			{
+//				ofp_context_t(bool print_prop = true, int dev_num = 0)
+//				{}
+//			};
+//		}
 
 	#else
 
