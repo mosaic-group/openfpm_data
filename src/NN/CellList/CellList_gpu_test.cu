@@ -704,7 +704,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 	pl_prp.template hostToDevice<0,1,2>();
 
 	// create an mgpu context
-	mgpu::ofp_context_t context(false);
+	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
 	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context);
 
 	// Check
@@ -1156,7 +1156,7 @@ template<unsigned int dim, typename T, typename CellS, int impl> void Test_cell_
 
 	size_t g_m = pl.size() / 2;
 
-	mgpu::ofp_context_t context(false);
+	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
 	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
 	auto & s_t_ns = cl2.getSortToNonSort();
 
@@ -1503,7 +1503,7 @@ BOOST_AUTO_TEST_CASE( CellList_swap_test )
 
 	size_t g_m = pl.size() / 2;
 
-	mgpu::ofp_context_t context(false);
+	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
 	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
 	cl4.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
 

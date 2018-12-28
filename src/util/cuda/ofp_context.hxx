@@ -15,6 +15,12 @@
 
 namespace mgpu
 {
+	enum gpu_context_opt
+	{
+		no_print_props,//!< no_print_props
+		print_props,   //!< print_props
+		dummy          //!< dummy
+	};
 
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -34,7 +40,7 @@ namespace mgpu
 			// Making this a template argument means we won't generate an instance
 			// of dummy_k for each translation unit.
 			template<int dummy_arg = 0>
-			void init(int dev_num)
+			void init(int dev_num, gpu_context_opt opt)
 			{
 				cudaFuncAttributes attr;
 				cudaError_t result = cudaFuncGetAttributes(&attr, dummy_k<0>);
@@ -43,7 +49,10 @@ namespace mgpu
 
 				int num_dev;
 				cudaGetDeviceCount(&num_dev);
-				cudaSetDevice(dev_num % num_dev);
+				if (opt != gpu_context_opt::dummy)
+				{
+					cudaSetDevice(dev_num % num_dev);
+				}
 
 				int ord;
 				cudaGetDevice(&ord);
@@ -56,11 +65,17 @@ namespace mgpu
 
 		public:
 
-			ofp_context_t(bool print_prop = true, int dev_num = 0, cudaStream_t stream_ = 0)
+
+			/*! \brief gpu context constructor
+			 *
+			 * \param opt options for this gpu context
+			 *
+			 */
+			ofp_context_t(gpu_context_opt opt = gpu_context_opt::no_print_props , int dev_num = 0, cudaStream_t stream_ = 0)
 			:context_t(), _stream(stream_)
 			{
-				init(dev_num);
-				if(print_prop)
+				init(dev_num,opt);
+				if(opt == gpu_context_opt::print_props)
 				{
 					printf("%s\n", device_prop_string(_props).c_str());
 				}
@@ -151,6 +166,12 @@ namespace mgpu
 
 namespace mgpu
 {
+	enum gpu_context_opt
+	{
+		no_print_props,//!< no_print_props
+		print_props,   //!< print_props
+		dummy          //!< dummy
+	};
 
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -161,6 +182,7 @@ namespace mgpu
 	{
 		protected:
 			cudaDeviceProp _props;
+			int _ptx_version;
 			cudaStream_t _stream;
 
 			cudaEvent_t _timer[2];
@@ -169,13 +191,18 @@ namespace mgpu
 			// Making this a template argument means we won't generate an instance
 			// of dummy_k for each translation unit.
 			template<int dummy_arg = 0>
-			void init(int dev_num)
+			void init(int dev_num, gpu_context_opt opt)
 			{
 				cudaFuncAttributes attr;
 
+				_ptx_version = 0;
+
 				int num_dev;
 				cudaGetDeviceCount(&num_dev);
-				cudaSetDevice(dev_num % num_dev);
+				if (opt != gpu_context_opt::dummy)
+				{
+					cudaSetDevice(dev_num % num_dev);
+				}
 
 				int ord;
 				cudaGetDevice(&ord);
@@ -188,11 +215,16 @@ namespace mgpu
 
 		public:
 
-			ofp_context_t(bool print_prop = true, int dev_num = 0, cudaStream_t stream_ = 0)
+			/*! \brief gpu context constructor
+			 *
+			 * \param opt options for this gpu context
+			 *
+			 */
+			ofp_context_t(gpu_context_opt opt = gpu_context_opt::no_print_props , int dev_num = 0, cudaStream_t stream_ = 0)
 			:context_t(), _stream(stream_)
 			{
-				init(dev_num);
-				if(print_prop)
+				init(dev_num,opt);
+				if(opt == gpu_context_opt::print_props)
 				{
 					printf("%s\n", device_prop_string(_props).c_str());
 				}

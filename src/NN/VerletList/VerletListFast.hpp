@@ -322,7 +322,7 @@ private:
 	 */
 	void initCl(CellListImpl & cli, vector_pos_type & pos, size_t g_m, size_t opt)
 	{
-		mgpu::ofp_context_t context(false);
+		mgpu::ofp_context_t context(mgpu::gpu_context_opt::dummy);
 		if (opt & VL_SYMMETRIC || opt & VL_CRS_SYMMETRIC)
 		{populate_cell_list(pos,cli,context,g_m,CL_SYMMETRIC);}
 		else
