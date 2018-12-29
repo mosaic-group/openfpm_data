@@ -12,9 +12,9 @@
 #define CL_NON_SYMMETRIC 2
 
 #if defined(CUDA_GPU) && defined(__NVCC__)
-#include "util/cuda/ofp_context.hxx"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #endif
+#include "util/cuda/ofp_context.hxx"
 
 /*! \brief Check this is a gpu or cpu type cell-list
  *

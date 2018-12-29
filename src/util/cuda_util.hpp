@@ -47,17 +47,6 @@
 #define __device__
 #endif
 
-namespace mgpu
-{
-	// Stub class for modern gpu
-
-	struct ofp_context_t
-	{
-		ofp_context_t(bool print_prop = true, int dev_num = 0)
-		{}
-	};
-}
-
 #endif
 
 
