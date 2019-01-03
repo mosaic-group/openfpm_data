@@ -15,11 +15,14 @@
 #include "NN/CellList/CellDecomposer.hpp"
 #include "Vector/map_vector.hpp"
 #include "Cuda_cell_list_util_func.hpp"
-#include "util/cuda/scan_cuda.cuh"
 #include "NN/CellList/cuda/CellList_gpu_ker.cuh"
 #include "util/cuda_util.hpp"
 #include "NN/CellList/CellList_util.hpp"
 #include "NN/CellList/CellList.hpp"
+
+#ifdef __NVCC__
+#include "util/cuda/moderngpu/kernel_scan.hxx"
+#endif
 
 constexpr int count = 0;
 constexpr int start = 1;
@@ -67,7 +70,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	openfpm::vector<aggregate<int>,Memory,typename memory_traits_inte<aggregate<int>>::type,memory_traits_inte> nnc_rad;
 
 	//! scan object
-	scan<cnt_type,ids_type> sc;
+	//scan<cnt_type,ids_type> sc;
 
 	//! Additional information in general (used to understand if the cell-list)
 	//! has been constructed from an old decomposition
@@ -247,7 +250,8 @@ public:
 																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
 
 		// now we scan
-		sc.scan_(cl_n,starts);
+		starts.resize(cl_n.size());
+		mgpu::scan((cnt_type *)cl_n.template getDeviceBuffer<0>(), cl_n.size(), (cnt_type *)starts.template getDeviceBuffer<0>() , mgpuContext);
 
 		// now we construct the cells
 
