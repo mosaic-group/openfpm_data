@@ -103,7 +103,7 @@ namespace openfpm
 
 				auto ite = v.getGPUIterator();
 
-				merge_add_prp_device_impl<decltype(v.toKernel()),decltype(this_.toKernel()),args...><<<ite.wthr,ite.thr>>>(v.toKernel(),this_.toKernel(),(unsigned int)old_sz);
+				CUDA_LAUNCH((merge_add_prp_device_impl<decltype(v.toKernel()),decltype(this_.toKernel()),args...>),ite.wthr,ite.thr,v.toKernel(),this_.toKernel(),(unsigned int)old_sz);
 
 	#else
 				std::cout << __FILE__ << ":" << __LINE__ << " Error the function add_prp_device only work when map_vector is compiled with nvcc" << std::endl;
@@ -135,7 +135,7 @@ namespace openfpm
 
 				auto ite = v.getGPUIterator();
 
-				merge_add_prp_device_impl<decltype(v.toKernel()),decltype(this_.toKernel()),args...><<<ite.wthr,ite.thr>>>(v.toKernel(),this_.toKernel(),(unsigned int)offset);
+				CUDA_LAUNCH((merge_add_prp_device_impl<decltype(v.toKernel()),decltype(this_.toKernel()),args...>),ite.wthr,ite.thr,v.toKernel(),this_.toKernel(),(unsigned int)offset);
 
 	#else
 				std::cout << __FILE__ << ":" << __LINE__ << " Error the function merge_prp_device only work when map_vector is compiled with nvcc" << std::endl;

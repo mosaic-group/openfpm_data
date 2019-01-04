@@ -16,6 +16,26 @@
 
 #ifdef CUDA_GPU
 
+#if defined(SE_CLASS1) || defined(CUDA_CHECK_LAUNCH)
+
+#define CUDA_LAUNCH(cuda_call,grid_size,block_size, ...) \
+		cuda_call<<<(grid_size),(block_size)>>>(__VA_ARGS__); \
+		cudaDeviceSynchronize(); \
+		{\
+			cudaError_t e = cudaGetLastError();\
+			if (e != cudaSuccess)\
+			{\
+				std::string error = cudaGetErrorString(e);\
+				std::cout << "Cuda Error in: " << __FILE__ << ":" << __LINE__ << " " << error << std::endl;\
+			}\
+		}
+#else
+
+#define CUDA_LAUNCH(cuda_call,grid_size,block_size, ...) \
+		cuda_call<<<(grid_size),(block_size)>>>(__VA_ARGS__);
+
+#endif
+
 #include "util/cuda/ofp_context.hxx"
 
 	#ifndef __NVCC__
