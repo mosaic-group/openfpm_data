@@ -238,7 +238,7 @@ public:
 
 		part_ids.resize(pl.size());
 
-		subindex<dim,T,cnt_type,ids_type><<<ite_gpu.wthr,ite_gpu.thr>>>(div_c,
+		CUDA_LAUNCH((subindex<dim,T,cnt_type,ids_type>),ite_gpu.wthr,ite_gpu.thr,div_c,
 																		spacing_c,
 																		off,
 																		this->getTransform(),
@@ -258,7 +258,7 @@ public:
 		cells.resize(pl.size());
 		auto itgg = part_ids.getGPUIterator();
 
-		fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>><<<itgg.wthr,itgg.thr>>>(0,
+		CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg.wthr,itgg.thr,0,
 																					   div_c,
 																					   off,
 																					   part_ids.size(),
@@ -276,10 +276,10 @@ public:
 		auto ite = pl.getGPUIterator();
 
 		// Here we test fill cell
-		reorder_parts<decltype(pl_prp.toKernel()),
+		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
 				      decltype(pl.toKernel()),
 				      decltype(sorted_to_not_sorted.toKernel()),
-				      cnt_type,shift_ph<0,cnt_type>><<<ite.wthr,ite.thr>>>(pl.size(),
+				      cnt_type,shift_ph<0,cnt_type>>),ite.wthr,ite.thr,pl.size(),
 				                                                           pl_prp.toKernel(),
 				                                                           pl_prp_out.toKernel(),
 				                                                           pl.toKernel(),
@@ -291,7 +291,7 @@ public:
 
 		ite = sorted_domain_particles_ids.getGPUIterator();
 
-		mark_domain_particles<<<ite.wthr,ite.thr>>>(sorted_to_not_sorted.toKernel(),sorted_domain_particles_ids.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
+		CUDA_LAUNCH((mark_domain_particles),ite.wthr,ite.thr,sorted_to_not_sorted.toKernel(),sorted_domain_particles_ids.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
 
 
 		// now we sort the particles
