@@ -100,6 +100,7 @@ public:
 	 *
 	 */
 	CellList_gpu(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
+	:CellDecomposer_sm<dim,T,transform>(clg)
 	{
 		cl_n = clg.cl_n;
 		cells = clg.cells;
@@ -123,6 +124,7 @@ public:
 	 *
 	 */
 	CellList_gpu(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> && clg)
+	:CellDecomposer_sm<dim,T,transform>(clg)
 	{
 		cl_n.swap(clg.cl_n);
 		cells.swap(clg.cells);
@@ -456,6 +458,7 @@ public:
 	 */
 	void swap(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
 	{
+		((CellDecomposer_sm<dim,T,transform> *)this)->swap(clg);
 		cl_n.swap(clg.cl_n);
 		cells.swap(clg.cells);
 		starts.swap(clg.starts);
