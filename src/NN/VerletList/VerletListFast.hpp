@@ -324,9 +324,9 @@ private:
 	{
 		mgpu::ofp_context_t context(mgpu::gpu_context_opt::dummy);
 		if (opt & VL_SYMMETRIC || opt & VL_CRS_SYMMETRIC)
-		{populate_cell_list(pos,cli,context,g_m,CL_SYMMETRIC);}
+		{populate_cell_list(pos,cli,context,g_m,CL_SYMMETRIC,cl_construct_opt::Full);}
 		else
-		{populate_cell_list(pos,cli,context,g_m,CL_NON_SYMMETRIC);}
+		{populate_cell_list(pos,cli,context,g_m,CL_NON_SYMMETRIC,cl_construct_opt::Full);}
 	}
 
 	/*! \brief Create the Verlet list from a given cell-list
