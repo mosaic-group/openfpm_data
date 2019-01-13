@@ -281,7 +281,7 @@ public:
 		sorted_domain_particles_ids.resize(pl.size());
 		sorted_domain_particles_dg.resize(pl.size());
 
-		auto ite = pl.getGPUIterator();
+		auto ite = pl.getGPUIterator(64);
 
 		// Here we reorder the particles to improve coalescing access
 		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),

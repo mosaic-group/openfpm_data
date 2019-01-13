@@ -213,7 +213,12 @@ struct grid_gpu_ker
 
 	__device__ inline void set(const grid_key_dx<dim> & key1,const grid_gpu_ker<dim,T_,layout_base> & g, const grid_key_dx<dim> & key2)
 	{
-		this->get_o(key1) = g.get_o(key2);
+		T_ tmp;
+
+		copy_encap_vector_fusion<decltype(g.get_o(key2)),typename T_::type> cp(g.get_o(key2),tmp.data);
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
+
+		this->get_o(key1) = tmp;
 	}
 
 	template<unsigned int ... prp> __device__ inline void set(const grid_key_dx<dim> & key1,const grid_gpu_ker<dim,T_,layout_base> & g, const grid_key_dx<dim> & key2)

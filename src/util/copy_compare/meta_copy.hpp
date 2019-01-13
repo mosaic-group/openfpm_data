@@ -67,7 +67,7 @@ struct meta_copy_d
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_d_(const Tsrc & src, Tdst & dst)
+	__device__ __host__ static inline void meta_copy_d_(const Tsrc & src, Tdst & dst)
 	{
 		copy_general<Tsrc>(src,dst);
 	}
@@ -78,7 +78,7 @@ struct meta_copy_d
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_d_(const Tsrc & src, Tdst && dst)
+	__device__ __host__ static inline void meta_copy_d_(const Tsrc & src, Tdst && dst)
 	{
 		copy_general<Tsrc>(src,dst);
 	}
@@ -145,7 +145,7 @@ struct meta_copy_d<Tsrc[N1],Tdst>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_d_(const Tsrc src[N1], Tdst && dst)
+	__device__ __host__ static inline void meta_copy_d_(const Tsrc src[N1], Tdst && dst)
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -159,7 +159,7 @@ struct meta_copy_d<Tsrc[N1],Tdst>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_d_(const Tsrc src[N1], Tdst & dst)
+	__device__ __host__ static inline void meta_copy_d_(const Tsrc src[N1], Tdst & dst)
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -178,7 +178,7 @@ struct meta_copy_d<Tsrc,Tdst[N1]>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_d_(const Tsrc & src, Tdst dst[N1])
+	__device__ __host__ static inline void meta_copy_d_(const Tsrc & src, Tdst dst[N1])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -197,7 +197,7 @@ struct meta_copy_d<Tsrc[N1],Tdst[N1]>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_d_(const Tsrc src[N1], Tdst dst[N1])
+	__device__ __host__ static inline void meta_copy_d_(const Tsrc src[N1], Tdst dst[N1])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -270,7 +270,7 @@ struct meta_copy<T[N1][N2]>
 template<typename Tsrc, typename Tdst,size_t N1,size_t N2>
 struct meta_copy_d<Tsrc[N1][N2],Tdst>
 {
-	static inline void meta_copy_d_(const Tsrc src[N1][N2], Tdst && dst)
+	__device__ __host__ static inline void meta_copy_d_(const Tsrc src[N1][N2], Tdst && dst)
 	{
 		/*! \brief copy and object from src to dst
 		 *
@@ -287,7 +287,7 @@ struct meta_copy_d<Tsrc[N1][N2],Tdst>
 		}
 	}
 
-	static inline void meta_copy_d_(const Tsrc src[N1][N2], Tdst & dst)
+	__device__ __host__ static inline void meta_copy_d_(const Tsrc src[N1][N2], Tdst & dst)
 	{
 		/*! \brief copy and object from src to dst
 		 *
@@ -315,7 +315,7 @@ struct meta_copy_d<Tsrc,Tdst[N1][N2]>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_d_(const Tsrc & src, Tdst dst[N1][N2])
+	__device__ __host__ static inline void meta_copy_d_(const Tsrc & src, Tdst dst[N1][N2])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -339,7 +339,7 @@ struct meta_copy_d<Tsrc[N1][N2],Tdst[N1][N2]>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_d_(const Tsrc src[N1][N2], Tdst dst[N1][N2])
+	__device__ __host__ static inline void meta_copy_d_(const Tsrc src[N1][N2], Tdst dst[N1][N2])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{

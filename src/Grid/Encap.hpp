@@ -756,7 +756,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline encapc<dim,T,Mem> & operator=(const T & obj)
+	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const T & obj)
 	{
 		copy_fusion_vector_encap<typename T::type,decltype(*this)> cp(obj.data,*this);
 

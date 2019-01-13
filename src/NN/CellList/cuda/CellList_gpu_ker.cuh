@@ -25,11 +25,12 @@ class NN_gpu_it
 	const openfpm::array<ids_type,dim,cnt_type> & off;
 
 	cnt_type p_id;
+	cnt_type p_id_end;
 	cnt_type c_id;
 
 	__device__ void SelectValid()
 	{
-		while (p_id >= starts.template get<0>(c_id+1) && isNext())
+		while (p_id >= p_id_end && isNext())
 		{
 			cnt_type id = cell_act.get(0);
 			cell_act.set_d(0,id+1);
@@ -56,6 +57,7 @@ class NN_gpu_it
 
 			c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_act);
 			p_id = starts.template get<0>(c_id);
+			p_id_end = starts.template get<0>(c_id+1);
 		}
 	}
 
@@ -80,6 +82,7 @@ public:
 
 		c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_start);
 		p_id = starts.template get<0>(c_id);
+		p_id_end = starts.template get<0>(c_id+1);
 
 		SelectValid();
 	}

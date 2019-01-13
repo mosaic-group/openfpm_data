@@ -725,6 +725,55 @@ BOOST_AUTO_TEST_CASE(grid_resize_less)
 	BOOST_REQUIRE_EQUAL(g1.size(),25ul);
 }
 
+BOOST_AUTO_TEST_CASE(copy_encap_vector_fusion_test)
+{
+	size_t sz2[] = {5,5};
+	grid_cpu<2,aggregate<float,float[3],float[3][3]>> g(sz2);
+	g.setMemory();
+
+	aggregate<float,float[3],float[3][3]>::type tmp;
+
+	grid_key_dx<2> key({0,0});
+	grid_key_dx<2> key1({1,1});
+
+	g.template get<0>(key) = 1.0;
+
+	g.template get<1>(key)[0] = 2.0;
+	g.template get<1>(key)[1] = 3.0;
+	g.template get<1>(key)[2] = 4.0;
+
+	g.template get<2>(key)[0][0] = 5.0;
+	g.template get<2>(key)[0][1] = 6.0;
+	g.template get<2>(key)[0][2] = 7.0;
+	g.template get<2>(key)[1][0] = 8.0;
+	g.template get<2>(key)[1][1] = 9.0;
+	g.template get<2>(key)[1][2] = 10.0;
+	g.template get<2>(key)[2][0] = 11.0;
+	g.template get<2>(key)[2][1] = 12.0;
+	g.template get<2>(key)[2][2] = 13.0;
+
+	copy_encap_vector_fusion<decltype(g.get_o(key)),typename aggregate<float,float[3],float[3][3]>::type> cp(g.get_o(key),tmp);
+	boost::mpl::for_each_ref< boost::mpl::range_c<int,0,aggregate<float,float[3],float[3][3]>::max_prop> >(cp);
+
+	g.get_o(key1) = tmp;
+
+	BOOST_REQUIRE_EQUAL(g.template get<0>(key),g.template get<0>(key1));
+
+	BOOST_REQUIRE_EQUAL(g.template get<1>(key)[0],g.template get<1>(key1)[0]);
+	BOOST_REQUIRE_EQUAL(g.template get<1>(key)[1],g.template get<1>(key1)[1]);
+	BOOST_REQUIRE_EQUAL(g.template get<1>(key)[2],g.template get<1>(key1)[2]);
+
+	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[0][0],g.template get<2>(key1)[0][0]);
+	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[0][1],g.template get<2>(key1)[0][1]);
+	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[0][2],g.template get<2>(key1)[0][2]);
+	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[1][0],g.template get<2>(key1)[1][0]);
+	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[1][1],g.template get<2>(key1)[1][1]);
+	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[1][2],g.template get<2>(key1)[1][2]);
+	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[2][0],g.template get<2>(key1)[2][0]);
+	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[2][1],g.template get<2>(key1)[2][1]);
+	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[2][2],g.template get<2>(key1)[2][2]);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif
