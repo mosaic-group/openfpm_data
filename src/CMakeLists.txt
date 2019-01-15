@@ -147,6 +147,7 @@ install(FILES util/check_no_pointers.hpp
 	      util/SimpleRNG.hpp
 	      util/math_util_complex.hpp
 	      util/mul_array_extents.hpp
+	      util/cuda/cuda_launch.hpp
 	      DESTINATION openfpm_data/include/util )
 
 install(FILES util/copy_compare/compare_fusion_vector.hpp 
