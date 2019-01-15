@@ -142,7 +142,6 @@ install(FILES util/check_no_pointers.hpp
 	      util/util_debug.hpp 
 	      util/variadic_to_vmpl.hpp 
 	      util/Pack_stat.hpp
-	      util/cuda/cuda_launch.hpp
 	      util/tokernel_transformation.hpp
 	      util/SimpleRNG.hpp
 	      util/math_util_complex.hpp
@@ -218,6 +217,7 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
 
 install(FILES util/cuda/scan_cuda.cuh
 	      util/cuda/ofp_context.hxx
+	      util/cuda/cuda_launch.hpp
 	      DESTINATION openfpm_data/include/util/cuda )
 
 install(FILES util/cuda/moderngpu/context.hxx
