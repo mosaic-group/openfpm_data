@@ -12,6 +12,7 @@
 #include "Point_test.hpp"
 #include "Grid/grid_util_test.hpp"
 #include "cuda_grid_unit_tests_func.cuh"
+#include "util/cuda/cuda_launch.hpp"
 
 BOOST_AUTO_TEST_SUITE( grid_gpu_func_test )
 
@@ -591,6 +592,93 @@ BOOST_AUTO_TEST_CASE (gpu_copy_device)
 	gpu_copy_device_test<3>();
 	gpu_copy_device_test<2>();
 	gpu_copy_device_test<1>();
+}
+
+template<typename grid_type>
+__global__ void test_se1_crash_gt2(grid_type gt1, grid_type gt2)
+{
+	int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (p == 279)
+	{
+		grid_key_dx<2> k({10000,12345});
+
+		gt1.template get<1>(k)[2] = 6.0;
+	}
+}
+
+template<typename grid_type>
+__global__ void test_se1_crash_gt3(grid_type gt1, grid_type gt2)
+{
+	grid_key_dx<2> k({10000,12345});
+
+	gt1.template get<2>(k)[2][2] = 6.0;
+}
+
+BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
+{
+#ifdef SE_CLASS1
+
+	size_t sz[2] = {5,5};
+
+	grid_gpu<2, aggregate<float,float[3],float[3][3]> > c3(sz);
+	c3.setMemory();
+
+	grid_gpu<2, aggregate<float,float[3],float[3][3]> > c2(sz);
+	c2.setMemory();
+
+	int dev_mem[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+	test_se1_crash_gt2<<<{32,1,1},{16,1,1}>>>(c3.toKernel(),c2.toKernel());
+	cudaDeviceSynchronize();
+
+	cudaMemcpyFromSymbol(dev_mem,global_cuda_error_array,sizeof(dev_mem));
+
+	BOOST_REQUIRE_EQUAL(dev_mem[0],1);
+	BOOST_REQUIRE_EQUAL(*(size_t *)(&dev_mem[1]),(size_t)(c3.toKernel().template getPointer<1>()));
+	BOOST_REQUIRE_EQUAL(dev_mem[3],1);
+	BOOST_REQUIRE_EQUAL(dev_mem[4],2);
+	BOOST_REQUIRE_EQUAL(dev_mem[5],10000);
+	BOOST_REQUIRE_EQUAL(dev_mem[6],12345);
+
+	BOOST_REQUIRE_EQUAL(dev_mem[7],17);
+	BOOST_REQUIRE_EQUAL(dev_mem[8],0);
+	BOOST_REQUIRE_EQUAL(dev_mem[9],0);
+
+	BOOST_REQUIRE_EQUAL(dev_mem[10],16);
+	BOOST_REQUIRE_EQUAL(dev_mem[11],1);
+	BOOST_REQUIRE_EQUAL(dev_mem[12],1);
+
+	BOOST_REQUIRE_EQUAL(dev_mem[13],7);
+	BOOST_REQUIRE_EQUAL(dev_mem[14],0);
+	BOOST_REQUIRE_EQUAL(dev_mem[15],0);
+
+	int dev_mem2[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+	test_se1_crash_gt3<<<{32,1,1},{16,1,1}>>>(c2.toKernel(),c3.toKernel());
+	cudaDeviceSynchronize();
+
+
+	cudaMemcpyFromSymbol(dev_mem2,global_cuda_error_array,sizeof(dev_mem2));
+
+	BOOST_REQUIRE_EQUAL(dev_mem2[0],1);
+	BOOST_REQUIRE_EQUAL(*(size_t *)(&dev_mem2[1]),(size_t)(c2.toKernel().template getPointer<2>()));
+	BOOST_REQUIRE_EQUAL(dev_mem2[3],2);
+	BOOST_REQUIRE_EQUAL(dev_mem2[4],2);
+
+	std::cout << "######### Testing error message #########" << std::endl;
+	dim3 wthr;
+	wthr.x = 32;
+	wthr.y = 1;
+	wthr.z = 1;
+	dim3 thr;
+	thr.x = 16;
+	thr.y = 1;
+	thr.z = 1;
+	CUDA_LAUNCH(test_se1_crash_gt2,wthr,thr,c3.toKernel(),c2.toKernel());
+	std::cout << "######### End Testing error message #########" << std::endl;
+
+#endif
 }
 
 BOOST_AUTO_TEST_SUITE_END()

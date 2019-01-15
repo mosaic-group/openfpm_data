@@ -72,11 +72,11 @@ struct grid_toKernelImpl
 	{
 		grid_gpu_ker<dim,T,memory_traits_lin> g(gc.getGrid());
 
-		g.data_.mem = gc.get_internal_data_().mem;
+		g.get_data_().mem = gc.get_internal_data_().mem;
 		// Increment the reference of mem
-		g.data_.mem->incRef();
-		g.data_.mem_r.bind_ref(gc.get_internal_data_().mem_r);
-		g.data_.switchToDevicePtr();
+		g.get_data_().mem->incRef();
+		g.get_data_().mem_r.bind_ref(gc.get_internal_data_().mem_r);
+		g.get_data_().switchToDevicePtr();
 
 		return g;
 	}
@@ -89,7 +89,7 @@ struct grid_toKernelImpl<true,dim,T>
 	{
 		grid_gpu_ker<dim,T,memory_traits_inte> g(gc.getGrid());
 		copy_switch_memory_c_no_cpy<typename std::remove_reference<decltype(gc.get_internal_data_())>::type,
-				                    typename std::remove_reference<decltype(g.data_)>::type> cp_mc(gc.get_internal_data_(),g.data_);
+				                    typename std::remove_reference<decltype(g.get_data_())>::type> cp_mc(gc.get_internal_data_(),g.get_data_());
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp_mc);
 

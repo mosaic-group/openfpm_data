@@ -284,12 +284,22 @@ struct mem_getpointer
 	{
 		return data_.mem_r.get_pointer();
 	}
+
+	template<unsigned int d> __device__ __host__ static void * getPointer(const data_type & data_)
+	{
+		return data_.mem_r.get_pointer();
+	}
 };
 
 template<typename data_type, typename layout>
 struct mem_getpointer<data_type,layout,1>
 {
 	template<unsigned int p> __device__ __host__ static void * getPointer(data_type & data_)
+	{
+		return boost::fusion::at_c<p>(data_).mem_r.get_pointer();
+	}
+
+	template<unsigned int p> __device__ __host__ static const void * getPointer(const data_type & data_)
 	{
 		return boost::fusion::at_c<p>(data_).mem_r.get_pointer();
 	}

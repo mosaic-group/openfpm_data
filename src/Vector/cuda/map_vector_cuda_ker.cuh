@@ -237,7 +237,7 @@ namespace openfpm
 		 * \tparam property p
 		 *
 		 */
-		template<unsigned int p> __device__ void * getPointer()
+		template<unsigned int p> __device__ __host__ void * getPointer()
 		{
 			//! copy the element
 			return base.template getPointer<p>();

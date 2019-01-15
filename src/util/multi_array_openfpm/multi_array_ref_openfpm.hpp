@@ -361,12 +361,22 @@ public:
 	  this->base_ = static_cast<T *>(base);
   }
 
-  /* \brief Set the internal pointer
+  /* \brief Get the internal pointer
    *
-   * \param base internal pointer
+   * \return the internal pointer
    *
    */
   void * get_pointer()
+  {
+	  return this->base_;
+  }
+
+  /* \brief Get the internal pointer
+   *
+   * \return the internal pointer
+   *
+   */
+  const void * get_pointer() const
   {
 	  return this->base_;
   }
