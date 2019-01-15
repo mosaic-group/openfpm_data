@@ -142,7 +142,7 @@ install(FILES util/check_no_pointers.hpp
 	      util/util_debug.hpp 
 	      util/variadic_to_vmpl.hpp 
 	      util/Pack_stat.hpp
-	      util/cuda_util.hpp
+	      util/cuda/cuda_launch.hpp
 	      util/tokernel_transformation.hpp
 	      util/SimpleRNG.hpp
 	      util/math_util_complex.hpp
