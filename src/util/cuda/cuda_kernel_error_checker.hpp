@@ -116,8 +116,8 @@ template<typename ... Args>int error_arg(void * ptr, int prp, Args ... args)
 #include <boost/algorithm/string.hpp>
 
 #ifdef SE_CLASS1
-#define CHECK_SE_CLASS1_PRE int dev_mem[] = {0,0,0,0,0,0,0,0,0,0,0};
-//#define CHECK_SE_CLASS1_POST(...) cudaMemcpyFromSymbol(dev_mem,global_cuda_error_array,sizeof(dev_mem));
+#define CUDA_LAUNCH_ERROR_OBJECT std::runtime_error("Runtime vector error");
+#define CHECK_SE_CLASS1_PRE int dev_mem[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 #define CHECK_SE_CLASS1_POST(kernel_call,...) cudaMemcpyFromSymbol(dev_mem,global_cuda_error_array,sizeof(dev_mem)); \
 		                     if (dev_mem[0] != 0)\
 		                     {\
@@ -127,7 +127,12 @@ template<typename ... Args>int error_arg(void * ptr, int prp, Args ... args)
 		                    	 std::string args_s( #__VA_ARGS__ );\
 		                    	 std::vector<std::string> results;\
 		                    	 boost::split(results, args_s, [](char c){return c == ',';});\
-		                    	 std::cout << __FILE__ << ":" << __LINE__ << " Overflow detected in Kernel: " << kernel_call << " from the structure " << results[ea] << " property: " << prp_err << " index:(" ;\
+		                    	 std::string data_s;\
+		                    	 if (ea >= results.size())\
+		                    	 {data_s = "Internal";}\
+								 else\
+								 {data_s = results[ea];}\
+		                    	 std::cout << __FILE__ << ":" << __LINE__ << " Overflow detected in Kernel: " << kernel_call << " from the structure: " << data_s << " property: " << prp_err << " index:(" ;\
 		                    	 int i = 0; \
 		                    	 for ( ; i < dev_mem[4]-1 ; i++)\
 		                    	 {\
@@ -136,6 +141,7 @@ template<typename ... Args>int error_arg(void * ptr, int prp, Args ... args)
 								 std::cout << dev_mem[5+i];\
 								 std::cout << ")";\
 								 std::cout << " thread: " << "(" << dev_mem[6+i] << "," << dev_mem[7+i] << "," << dev_mem[8+i] << ")*(" << dev_mem[9+i] << "," << dev_mem[10+i] << "," << dev_mem[11+i] << ")+(" << dev_mem[12+i] << "," << dev_mem[13+i] << "," << dev_mem[14+i] << ")" << std::endl;\
+								 ACTION_ON_ERROR(CUDA_LAUNCH_ERROR_OBJECT);\
 		                     }
 #else
 #define CHECK_SE_CLASS1_PRE

@@ -233,7 +233,7 @@ public:
 	 * \return the shift vector
 	 *
 	 */
-	inline const Point<dim,T> & getOrig() const
+	__device__ __host__ inline const Point<dim,T> & getOrig() const
 	{
 		return sh;
 	}
@@ -587,6 +587,34 @@ class CellDecomposer_sm
 		return id;
 	}
 
+	/*! \brief Convert the coordinates into id with negative machine precision expansion
+	 *
+	 * \param x point
+	 * \param s dimension
+	 *
+	 */
+	inline size_t ConvertToID_me(const Point<dim,T> & x ,size_t s, size_t sc = 0) const
+	{
+		T cc = t.transform(x,s) / box_unit.getHigh(s) - 0.015625;
+		size_t id = openfpm::math::size_t_floor(cc) + off[s];
+		id = (id >= gr_cell.size(s))?(gr_cell.size(s)-1-cell_shift.get(s)):id-cell_shift.get(s);
+		return id;
+	}
+
+	/*! \brief Convert the coordinates into id with positive machine precision expansion
+	 *
+	 * \param x point
+	 * \param s dimension
+	 *
+	 */
+	inline size_t ConvertToID_pe(const Point<dim,T> & x ,size_t s, size_t sc = 0) const
+	{
+		T cc = t.transform(x,s) / box_unit.getHigh(s) + 0.015625;
+		size_t id = openfpm::math::size_t_floor(cc) + off[s];
+		id = (id >= gr_cell.size(s))?(gr_cell.size(s)-1-cell_shift.get(s)):id-cell_shift.get(s);
+		return id;
+	}
+
 	/*! \brief Convert the coordinates into id without apply shift
 	 *
 	 * \param x coordinate
@@ -930,6 +958,82 @@ public:
 		}
 
 		return cell_id;
+	}
+
+	/*! \brief Get the cell-ids with negative machine precision expansion
+	 *
+	 * Convert the point coordinates into the cell ids (Careful it include padding)
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-ids ad a grid_key_dx<dim>
+	 *
+	 */
+	inline grid_key_dx<dim> getCellGrid_me(const Point<dim,T> & pos) const
+	{
+#ifdef SE_CLASS1
+		if (tot_n_cell == 0)
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer" << std::endl;
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+#endif
+
+		grid_key_dx<dim> key;
+		key.set_d(0,ConvertToID_me(pos,0));
+
+		for (size_t s = 1 ; s < dim ; s++)
+		{
+#ifdef SE_CLASS1
+			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
+			{
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space" << std::endl;
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
+#endif
+			/* coverity[dead_error_line] */
+			key.set_d(s,ConvertToID_me(pos,s));
+		}
+
+		return key;
+	}
+
+	/*! \brief Get the cell-ids with positive machine precision expansion
+	 *
+	 * Convert the point coordinates into the cell ids (Careful it include padding)
+	 *
+	 * \param pos Point position
+	 *
+	 * \return the cell-ids ad a grid_key_dx<dim>
+	 *
+	 */
+	inline grid_key_dx<dim> getCellGrid_pe(const Point<dim,T> & pos) const
+	{
+#ifdef SE_CLASS1
+		if (tot_n_cell == 0)
+		{
+			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using an uninitialized CellDecomposer" << std::endl;
+			ACTION_ON_ERROR(CELL_DECOMPOSER);
+		}
+#endif
+
+		grid_key_dx<dim> key;
+		key.set_d(0,ConvertToID_pe(pos,0));
+
+		for (size_t s = 1 ; s < dim ; s++)
+		{
+#ifdef SE_CLASS1
+			if ((size_t)(t.transform(pos,s) / box_unit.getHigh(s)) + off[s] < 0)
+			{
+				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point is not inside the cell space" << std::endl;
+				ACTION_ON_ERROR(CELL_DECOMPOSER);
+			}
+#endif
+			/* coverity[dead_error_line] */
+			key.set_d(s,ConvertToID_pe(pos,s));
+		}
+
+		return key;
 	}
 
 	/*! \brief Get the cell-ids

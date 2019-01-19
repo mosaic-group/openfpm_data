@@ -21,13 +21,13 @@
 		cuda_call<<<(grid_size),(block_size)>>>(__VA_ARGS__); \
 		cudaDeviceSynchronize(); \
 		{\
-			CHECK_SE_CLASS1_POST(#cuda_call,__VA_ARGS__)\
 			cudaError_t e = cudaGetLastError();\
 			if (e != cudaSuccess)\
 			{\
 				std::string error = cudaGetErrorString(e);\
 				std::cout << "Cuda Error in: " << __FILE__ << ":" << __LINE__ << " " << error << std::endl;\
 			}\
+			CHECK_SE_CLASS1_POST(#cuda_call,__VA_ARGS__)\
 		}\
         }
 #else

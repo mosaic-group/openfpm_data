@@ -8,6 +8,8 @@
 #include "Vector/map_vector.hpp"
 #include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
+#include "util/cuda/moderngpu/kernel_reduce.hxx"
+
 
 BOOST_AUTO_TEST_SUITE( modern_gpu_tests )
 
@@ -86,6 +88,47 @@ BOOST_AUTO_TEST_CASE( modern_gpu_sort )
     BOOST_REQUIRE_EQUAL(match,true);
 
 	std::cout << "End test modern gpu test tansform_lbs" << "\n";
+
+	// Test the cell list
+}
+
+BOOST_AUTO_TEST_CASE( modern_gpu_reduce )
+{
+	std::cout << "Test modern gpu reduce" << "\n";
+
+	mgpu::standard_context_t context(false);
+
+	int count = 200030;
+
+	openfpm::vector_gpu<aggregate<int>> vgpu;
+
+	vgpu.resize(count);
+
+	for (size_t i = 0 ; i < count ; i++)
+	{
+		vgpu.template get<0>(i) = ((float)rand() / RAND_MAX) * 17;
+	}
+
+	vgpu.hostToDevice<0>();
+
+	CudaMemory mem;
+	mem.allocate(sizeof(int));
+	mgpu::reduce((int *)vgpu.template getDeviceBuffer<0>(), count, (int *)mem.getDevicePointer(), mgpu::plus_t<int>(), context);
+
+    mem.deviceToHost();
+    int red_p = *(int *)mem.getPointer();
+
+    // print
+
+    int red = 0;
+    for (int i = 0 ; i < count ; i++)
+    {
+    	red += vgpu.template get<0>(i);
+    }
+
+    BOOST_REQUIRE_EQUAL(red,red_p);
+
+	std::cout << "End test modern gpu test reduce" << "\n";
 
 	// Test the cell list
 }
