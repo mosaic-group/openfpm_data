@@ -34,7 +34,7 @@ mkdir openfpm_data/src/config
 
 git clone https://git.mpi-cbg.de/openfpm/openfpm_devices.git openfpm_devices
 cd openfpm_devices
-git checkout GPU_test
+git checkout master
 cd ..
 
 cd "$workspace/openfpm_data"

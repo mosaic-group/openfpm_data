@@ -58,7 +58,7 @@ struct cid_<1,cnt_type,ids_type, transform>
 		return e[0];
 	}
 
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c, const grid_key_dx<1,cnt_type> & e)
+	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c, const grid_key_dx<1,ids_type> & e)
 	{
 		return e.get(0);
 	}
@@ -80,7 +80,7 @@ struct cid_<2,cnt_type,ids_type,transform>
 		return e[0] + div_c[0] * e[1];
 	}
 
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c, const grid_key_dx<2,cnt_type> & e)
+	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c, const grid_key_dx<2,ids_type> & e)
 	{
 		return e.get(0) + div_c[0] * e.get(1);
 	}
@@ -216,6 +216,37 @@ __device__ __host__ cnt_type encode_phase_id(cnt_type ph_id,cnt_type pid)
 
 template<unsigned int dim, typename pos_type, typename cnt_type, typename ids_type, typename transform>
 __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
+						 openfpm::array<pos_type,dim,cnt_type> spacing,
+						 openfpm::array<ids_type,dim,cnt_type> off,
+						 transform t,
+						 int n_cap,
+						 int n_part,
+						 int n_cap2,
+						 pos_type * p_pos,
+						 cnt_type *counts,
+						 ids_type * p_ids)
+{
+    cnt_type i, cid;
+    ids_type e[dim+1];
+
+    i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= n_part) return;
+
+    pos_type p[dim];
+
+    for (size_t k = 0 ; k < dim ; k++)
+    {p[k] = p_pos[i+k*n_cap];}
+
+    cid = cid_<dim,cnt_type,ids_type,transform>::get_cid(div,spacing,off,t,p,e);
+
+    e[dim] = atomicAdd(counts + cid, 1);
+
+    for (size_t k = 0 ; k <= dim ; k++)
+    {p_ids[i+k*(n_cap2)] = e[k];}
+}
+
+template<unsigned int dim, typename pos_type, typename cnt_type, typename ids_type, typename transform>
+__global__ void subindex_without_count(openfpm::array<ids_type,dim,cnt_type> div,
 						 openfpm::array<pos_type,dim,cnt_type> spacing,
 						 openfpm::array<ids_type,dim,cnt_type> off,
 						 transform t,
