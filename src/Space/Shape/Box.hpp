@@ -8,6 +8,9 @@
 #include "Grid/Encap.hpp"
 #include <sstream>
 
+#define PERIODIC 1
+#define NON_PERIODIC 0
+
 /*! \brief It define if we want the upper base or the down base (Lower or upper)
  * extreme of the interval
  *
@@ -985,6 +988,37 @@ public:
 
 
 
+				return false;
+			}
+
+		}
+
+		// In bound
+
+		return true;
+	}
+
+	/*! \brief Check if the point is inside the region excluding the positive part
+	 *
+	 * In periodic boundary conditions the positive border is not included, but match the beginning
+	 *
+	 * \param p point to check
+	 * \return true if the point is inside the space
+	 *
+	 */
+	template<typename bc_type>
+	__device__ __host__ inline bool isInsideNP_with_border(const Point<dim,T> & p, const Box<dim,T> & border, const bc_type (& bc)[dim]) const
+	{
+		// check if bound
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			// if outside the region return false
+			if (   p.get(i) < this->getLow(i)
+				|| (bc[i] == NON_PERIODIC && ((this->getHigh(i) != border.getHigh(i) && p.get(i) >= this->getHigh(i)) || (this->getHigh(i) == border.getHigh(i) && p.get(i) > this->getHigh(i)) ) )
+			    || (bc[i] == PERIODIC && p.get(i) >= this->getHigh(i)))
+			{
+				// Out of bound
 				return false;
 			}
 
