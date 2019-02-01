@@ -37,6 +37,7 @@ target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIE
 # will also build with -std=c++11
 target_compile_features(mem_map PUBLIC cxx_std_11)
 target_link_libraries(mem_map ${MPI_C_LIBRARIES})
+target_link_libraries(mem_map m)
 
 install(FILES Grid/comb.hpp 
 	      Grid/copy_grid_fast.hpp 
