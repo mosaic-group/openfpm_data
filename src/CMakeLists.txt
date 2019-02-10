@@ -38,6 +38,9 @@ target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIE
 target_compile_features(mem_map PUBLIC cxx_std_11)
 target_link_libraries(mem_map ${MPI_C_LIBRARIES})
 target_link_libraries(mem_map m)
+if (UNIX)
+    target_link_libraries(mem_map rt)
+endif (UNIX)
 
 install(FILES Grid/comb.hpp 
 	      Grid/copy_grid_fast.hpp 
