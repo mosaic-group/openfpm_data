@@ -12,12 +12,18 @@ add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp main.cpp util
 
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
+    if (TEST_COVERAGE)
+        target_compile_options(mem PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
+    endif()
 endif()
 
 ###########################
 
 if (CUDA_FOUND)
 	target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
+        if (TEST_COVERAGE)
+                target_compile_options(mem PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage">)
+        endif()
 endif()
 
 target_include_directories (mem_map PUBLIC ${CUDA_INCLUDE_DIRS})
