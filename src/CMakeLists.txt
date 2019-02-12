@@ -13,7 +13,7 @@ add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp main.cpp util
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
     if (TEST_COVERAGE)
-        target_compile_options(mem PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
+        target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
     endif()
 endif()
 
@@ -22,7 +22,7 @@ endif()
 if (CUDA_FOUND)
 	target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
         if (TEST_COVERAGE)
-                target_compile_options(mem PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage">)
+                target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage">)
         endif()
 endif()
 
@@ -37,6 +37,9 @@ target_include_directories (mem_map PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(mem_map ${Boost_LIBRARIES})
 target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 
+if (TEST_COVERAGE)
+    target_link_libraries(mem_map -lgcov)
+endif()
 
 # Request that particles be built with -std=c++11
 # As this is a public compile feature anything that links to particles
