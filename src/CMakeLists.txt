@@ -6,6 +6,9 @@ add_executable(io main.cpp HDF5_wr/HDF5_writer_cuda.cu ObjReader/ObjReader_unit_
 
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(io PRIVATE "-Wno-deprecated-declarations")
+    if (TEST_COVERAGE)
+        target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
+    endif()
 endif()
 
 ###########################
@@ -13,6 +16,9 @@ endif()
 if (CUDA_FOUND)
 	target_compile_options(io PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
 	target_include_directories (io PUBLIC ${MPI_C_INCLUDE_DIRS})
+        if (TEST_COVERAGE)
+                target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage">)
+        endif()
 endif()
 
 target_include_directories (io PUBLIC ${CUDA_INCLUDE_DIRS})
@@ -43,6 +49,10 @@ endif()
 # will also build with -std=c++11
 target_compile_features(io PUBLIC cxx_std_11)
 target_link_libraries(io ${MPI_C_LIBRARIES})
+
+if (TEST_COVERAGE)
+    target_link_libraries(io -lgcov)
+endif()
 
 install(FILES RawReader/RawReader.hpp 
 	      RawReader/RawReader_unit_tests.hpp 
