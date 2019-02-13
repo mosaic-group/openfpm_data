@@ -235,6 +235,7 @@ install(FILES util/cuda/scan_cuda.cuh
 	      DESTINATION openfpm_data/include/util/cuda )
 
 install(FILES util/cuda/moderngpu/context.hxx
+	      util/cuda/moderngpu/context_reduced.hxx
 	      util/cuda/moderngpu/cpp11.hxx
 	      util/cuda/moderngpu/cta_load_balance.hxx
 	      util/cuda/moderngpu/cta_merge.hxx
