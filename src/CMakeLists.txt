@@ -49,7 +49,7 @@ target_link_libraries(mem_map ${MPI_C_LIBRARIES})
 target_link_libraries(mem_map m)
 if (NOT APPLE)
     target_link_libraries(mem_map rt)
-endif (UNIX)
+endif ()
 
 install(FILES Grid/comb.hpp 
 	      Grid/copy_grid_fast.hpp 
@@ -74,7 +74,8 @@ install(FILES Grid/cuda/cuda_grid_gpu_funcs.cuh
 install(FILES data_type/aggregate.hpp
 	DESTINATION openfpm_data/include/data_type )
 
-install(FILES Graph/map_graph.hpp
+install(FILES Graph/CartesianGraphFactory.hpp
+	      Graph/map_graph.hpp
 	DESTINATION openfpm_data/include/Graph)
 
 install(FILES Point_test.hpp
