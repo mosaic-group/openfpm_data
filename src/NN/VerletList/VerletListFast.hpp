@@ -345,7 +345,7 @@ private:
 	{
 		if (opt == VL_CRS_SYMMETRIC)
 		{
-			create_<CellNNIteratorSym<dim,CellListImpl,RUNTIME,vector_pos_type,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<CellNNIteratorSym<dim,CellListImpl,vector_pos_type,RUNTIME,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
 		}
 		else if (opt == VL_SYMMETRIC)
 		{

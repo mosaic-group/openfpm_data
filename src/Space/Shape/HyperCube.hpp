@@ -402,7 +402,10 @@ public:
 				val = pos_n_zero[i] - pos_n_zero[i+1] - 1;
 			}
 			else
+			{
+				/* coverty[uninit_use] */
 				val = pos_n_zero[i];
+			}
 
 			for (long int j = 0 ; j < (long int)val; j++)
 			{

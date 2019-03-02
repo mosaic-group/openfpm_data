@@ -463,7 +463,7 @@ public:
 		mem_id lid = gk.get(0);
 		for (mem_id i = 1 ; i < N ; i++)
 		{
-			/* coverity[dead_error_begin */
+			/* coverity[dead_error_line] */
 			lid += gk.get(i) * sz_s[i-1];
 		}
 

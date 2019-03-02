@@ -426,7 +426,7 @@ public:
 	//! Type of internal memory structure
 	typedef Mem_type Mem_type_type;
 
-	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,RUNTIME,vector_pos_type,NO_CHECK> SymNNIterator;
+	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,RUNTIME,NO_CHECK> SymNNIterator;
 
 	//! Object type that the structure store
 	typedef typename Mem_type::local_index_type value_type;
@@ -1004,7 +1004,7 @@ public:
 	 *
 	 */
 	template<unsigned int impl>
-	inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(unsigned int)SYM,vector_pos_type,impl>
+	inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)SYM,impl>
 	getNNIteratorSym(size_t cell, size_t p, const vector_pos_type & v)
 	{
 #ifdef SE_CLASS1
@@ -1012,7 +1012,7 @@ public:
 		{std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;}
 #endif
 
-		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,SYM,vector_pos_type,impl> cln(cell,p,NNc_sym,*this,v);
+		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,SYM,impl> cln(cell,p,NNc_sym,*this,v);
 		return cln;
 	}
 
@@ -1039,15 +1039,15 @@ public:
 	 *
 	 */
 	template<unsigned int impl>
-	inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform>,(unsigned int)SYM,impl>
-	getNNIteratorSymMP(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v_p1, const openfpm::vector<Point<dim,T>> & v_p2)
+	inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)SYM,impl>
+	getNNIteratorSymMP(size_t cell, size_t p, const vector_pos_type & v_p1, const vector_pos_type & v_p2)
 	{
 #ifdef SE_CLASS1
 		if (from_cd == false)
 			std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
 #endif
 
-		CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform>,SYM,impl> cln(cell,p,NNc_sym,*this,v_p1,v_p2);
+		CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,SYM,impl> cln(cell,p,NNc_sym,*this,v_p1,v_p2);
 		return cln;
 	}
 
