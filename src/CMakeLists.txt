@@ -2,7 +2,15 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
-add_executable(io main.cpp HDF5_wr/HDF5_writer_cuda.cu ObjReader/ObjReader_unit_test.cpp  ../../openfpm_vcluster/src/VCluster/VCluster.cpp ../../openfpm_devices/src/memory/CudaMemory.cu ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/Memleak_check.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp)
+add_executable(io main.cpp 
+				  MetaParser/MetaParser_unit_test.cpp 
+				  HDF5_wr/HDF5_writer_cuda.cu 
+				  ObjReader/ObjReader_unit_test.cpp  
+				  ../../openfpm_vcluster/src/VCluster/VCluster.cpp 
+				  ../../openfpm_devices/src/memory/CudaMemory.cu 
+				  ../../openfpm_devices/src/memory/HeapMemory.cpp 
+				  ../../openfpm_devices/src/Memleak_check.cpp 
+				  ../../openfpm_devices/src/memory/PtrMemory.cpp)
 
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(io PRIVATE "-Wno-deprecated-declarations")

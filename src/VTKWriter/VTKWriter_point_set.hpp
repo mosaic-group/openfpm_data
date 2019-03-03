@@ -14,6 +14,7 @@
 #include "is_vtk_writable.hpp"
 #include <string>
 #include "byteswap_portable.hpp"
+#include "MetaParser/MetaParser.hpp"
 
 /*! \brief Store a reference to the vector position
  *
@@ -337,6 +338,37 @@ class VTKWriter<pair,VECTOR_POINTS>
 		return v_out;
 	}
 
+	/*! \brief return the meta data string
+	 *
+	 * \param meta_data string with the meta-data to add
+	 *
+	 */
+	std::string add_meta_data(std::string & meta_data)
+	{
+		std::string meta_string;
+
+		// check for time metadata
+		MetaParser_options opts;
+		opts.add_options()
+	    	    ("time", MetaParser_def::value<double>());
+
+		MetaParser mp(opts);
+		mp.parse(meta_data);
+
+		double time = 0.0;
+		bool exist = mp.getOption("time",time);
+
+		if (exist == true)
+		{
+			meta_string += "FIELD FieldData 1\n";
+			meta_string += "TIME 1 1 double\n";
+			meta_string += std::to_string(time);
+			meta_string += "\n";
+		}
+
+		return meta_string;
+	}
+
 public:
 
 	/*!
@@ -381,6 +413,7 @@ public:
 	template<int prp = -1> bool write(std::string file,
 									  const openfpm::vector<std::string> & prop_names,
 									  std::string f_name = "points" ,
+									  std::string meta_data = "",
 									  file_type ft = file_type::ASCII)
 	{
 		// Header for the vtk
@@ -412,6 +445,8 @@ public:
 
 		// Data type for graph is DATASET POLYDATA
 		vtk_header += "DATASET POLYDATA\n";
+
+		vtk_header += add_meta_data(meta_data);
 
 		// point properties header
 		point_prop_header = get_point_properties_list(ft);
