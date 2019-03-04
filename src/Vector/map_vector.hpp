@@ -39,6 +39,7 @@
 #include "util/cuda_util.hpp"
 #include "util/cuda/cuda_launch.hpp"
 #include "cuda/map_vector_cuda_ker.cuh"
+#include "map_vector_printers.hpp"
 
 namespace openfpm
 {
@@ -143,6 +144,7 @@ namespace openfpm
 	#endif
 		}
 	};
+
 
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
@@ -1778,6 +1780,38 @@ namespace openfpm
 			vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> v(v_size,this->base.toKernel());
 
 			return v;
+		}
+
+		/*! Convert this vector into a string
+		 *
+		 * \param prefix prefix to use for printing
+		 *
+		 * \return a string showing thid vector
+		 *
+		 */
+		template<unsigned int ... prps>
+		const std::string toString(std::string prefix = std::string())
+		{
+			std::stringstream ss;
+			auto it = getIterator();
+
+			while (it.isNext())
+			{
+				auto p = it.get();
+
+				ss << prefix;
+
+				ss << prefix <<  " element[" << p << "]" << " ";
+
+				vector_printer<self_type,prps ...> vp(*this,p,ss);
+				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prps)>>(vp);
+
+				ss << std::endl;
+
+				++it;
+			}
+
+			return ss.str();
 		}
 
 		void * internal_get_size_pointer()	{return &v_size;}

@@ -3,12 +3,29 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 if (CUDA_FOUND)
-	set(CUDA_SOURCES Vector/vector_gpu_unit_tests.cu Grid/cuda/cuda_grid_gpu_tests.cu  Vector/cuda/map_vector_cuda_funcs_tests.cu  ../../openfpm_devices/src/memory/CudaMemory.cu NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu  Grid/cuda/cuda_grid_unit_tests_func.cu  util/cuda/modern_gpu_tests.cu)
+	set(CUDA_SOURCES Vector/vector_gpu_unit_tests.cu 
+		Grid/cuda/cuda_grid_gpu_tests.cu  
+		Vector/cuda/map_vector_cuda_funcs_tests.cu  
+		../../openfpm_devices/src/memory/CudaMemory.cu 
+		NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu  
+		Grid/cuda/cuda_grid_unit_tests_func.cu  
+		util/cuda/modern_gpu_tests.cu
+		Vector/cuda/map_vector_sparse_cuda_ker_unit_tests.cu
+		Vector/cuda/map_vector_sparse_cuda_kernels_unit_tests.cu )
 else()
  	set(CUDA_SOURCES )
 endif()
 
-add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp main.cpp util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp memory_ly/memory_conf_unit_tests.cpp  Space/tests/SpaceBox_unit_tests.cpp  Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp  ${CUDA_SOURCES} ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp)
+add_executable(mem_map  ../../openfpm_devices/src/Memleak_check.cpp
+						${CUDA_SOURCES}
+						main.cpp
+						Vector/map_vector_sparse_unit_tests.cpp
+						util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp 
+						memory_ly/memory_conf_unit_tests.cpp  
+						Space/tests/SpaceBox_unit_tests.cpp  
+						Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp  
+						../../openfpm_devices/src/memory/HeapMemory.cpp 
+						../../openfpm_devices/src/memory/PtrMemory.cpp)
 
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")

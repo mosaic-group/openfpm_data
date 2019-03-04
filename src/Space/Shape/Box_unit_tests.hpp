@@ -366,6 +366,126 @@ BOOST_AUTO_TEST_CASE( box_min_distance_test )
 	BOOST_REQUIRE_CLOSE(b1.min_distance(b10),sqrt(0.01 + 0.01),0.01);
 }
 
+BOOST_AUTO_TEST_CASE( box_is_inside_with_border )
+{
+	// 2D
+
+	size_t bc_nn[] = {NON_PERIODIC,NON_PERIODIC};
+	size_t bc_pn[] = {PERIODIC,NON_PERIODIC};
+	size_t bc_np[] = {NON_PERIODIC,PERIODIC};
+	size_t bc_pp[] = {PERIODIC,PERIODIC};
+
+	Box<2,float> border({0.0,0.0},{1.0,1.0});
+
+	// non-tounching box
+	Box<2,float> b2({0.1,0.1},{0.2,0.2});
+	Box<2,float> b3({0.1,0.1},{1.0,1.0});
+
+	Point<2,float> p1({0.15,0.15});
+	Point<2,float> p2({0.25,0.25});
+	Point<2,float> p3({0.15,0.2});
+
+	Point<2,float> p4({0.1,0.25});
+	Point<2,float> p5({0.15,1.0});
+	Point<2,float> p6({0.1,1.0});
+
+	////// NON PERIODIC TEST
+
+	bool result = b2.isInsideNP_with_border(p1,border,bc_nn);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b2.isInsideNP_with_border(p2,border,bc_nn);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	result = b2.isInsideNP_with_border(p3,border,bc_nn);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	result = b3.isInsideNP_with_border(p1,border,bc_nn);
+
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b3.isInsideNP_with_border(p4,border,bc_nn);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b3.isInsideNP_with_border(p5,border,bc_nn);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b3.isInsideNP_with_border(p6,border,bc_nn);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	//////////////
+
+	result = b2.isInsideNP_with_border(p1,border,bc_pn);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b2.isInsideNP_with_border(p2,border,bc_pn);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	result = b2.isInsideNP_with_border(p3,border,bc_pn);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	result = b3.isInsideNP_with_border(p1,border,bc_pn);
+
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b3.isInsideNP_with_border(p4,border,bc_pn);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b3.isInsideNP_with_border(p5,border,bc_pn);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b3.isInsideNP_with_border(p6,border,bc_pn);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	////////////
+
+	result = b2.isInsideNP_with_border(p1,border,bc_np);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b2.isInsideNP_with_border(p2,border,bc_np);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	result = b2.isInsideNP_with_border(p3,border,bc_np);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	result = b3.isInsideNP_with_border(p1,border,bc_np);
+
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b3.isInsideNP_with_border(p4,border,bc_np);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b3.isInsideNP_with_border(p5,border,bc_np);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	result = b3.isInsideNP_with_border(p6,border,bc_np);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	////////////
+
+	result = b2.isInsideNP_with_border(p1,border,bc_pp);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b2.isInsideNP_with_border(p2,border,bc_pp);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	result = b2.isInsideNP_with_border(p3,border,bc_pp);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	result = b3.isInsideNP_with_border(p1,border,bc_pp);
+
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b3.isInsideNP_with_border(p4,border,bc_pp);
+	BOOST_REQUIRE_EQUAL(result,true);
+
+	result = b3.isInsideNP_with_border(p5,border,bc_pp);
+	BOOST_REQUIRE_EQUAL(result,false);
+
+	result = b3.isInsideNP_with_border(p6,border,bc_pp);
+	BOOST_REQUIRE_EQUAL(result,false);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 

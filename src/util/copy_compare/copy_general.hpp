@@ -15,6 +15,7 @@
 #include <boost/mpl/range_c.hpp>
 #include <iostream>
 #include "util/cuda_util.hpp"
+#include "data_type/aggregate.hpp"
 
 /*! \brief This structure define the operation add to use with copy general
  *
@@ -84,7 +85,7 @@ struct merge_
  * \tparam T type to copy
  *
  */
-template<typename T, unsigned int agg=2 * is_openfpm_native<T>::value + std::is_copy_assignable<T>::value>
+template<typename T, unsigned int agg=2 * is_aggregate<T>::value + std::is_copy_assignable<T>::value>
 struct copy_general
 {
 	/*! \brief Specialization when there is unknown copy method
@@ -156,7 +157,7 @@ struct copy_general<T,3>
  * \tparam T type to copy
  *
  */
-template<template<typename,typename> class op, typename T, unsigned int agg=2 * is_openfpm_native<T>::value + std::is_copy_assignable<T>::value>
+template<template<typename,typename> class op, typename T, unsigned int agg=2 * is_aggregate<T>::value + std::is_copy_assignable<T>::value>
 struct copy_general_op
 {
 	/*! \brief Specialization when there is unknown copy method
@@ -189,7 +190,7 @@ struct copy_general_op<op,T,1>
 
 //! Specialization for aggregate type objects
 template<template<typename,typename> class op, typename T>
-struct copy_general_op<op,T,2>
+struct copy_general_op<op,T,3>
 {
 	/*! \brief copy objects that are aggregates
 	 *
@@ -206,19 +207,19 @@ struct copy_general_op<op,T,2>
 };
 
 //! specialization for aggregate type object that define an operator=
-template<template<typename,typename> class op,typename T>
-struct copy_general_op<op,T,3>
-{
-	/*! \brief copy objects that are aggregates but define an operator=
-	 *
-	 * \param src source object to copy
-	 * \param dst destination object
-	 *
-	 */
-	inline copy_general_op(const T & src, T & dst)
-	{
-		op<T,T>::operation(dst,src);
-	}
-};
+//template<template<typename,typename> class op,typename T>
+//struct copy_general_op<op,T,3>
+//{
+//	/*! \brief copy objects that are aggregates but define an operator=
+//	 *
+//	 * \param src source object to copy
+//	 * \param dst destination object
+//	 *
+//	 */
+//	inline copy_general_op(const T & src, T & dst)
+//	{
+//		op<T,T>::operation(dst,src);
+//	}
+//};
 
 #endif /* OPENFPM_DATA_SRC_UTIL_COPY_GENERAL_HPP_ */

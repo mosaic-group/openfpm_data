@@ -19,7 +19,7 @@
  * \tparam T type to copy
  *
  */
-template<typename T, unsigned int agg=2 * is_openfpm_native<T>::value>
+template<typename T, unsigned int agg=2 * is_aggregate<T>::value>
 struct compare_general
 {
 	/*! \brief Spacialization when there is unknown compare method

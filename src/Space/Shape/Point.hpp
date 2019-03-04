@@ -351,12 +351,12 @@ template<unsigned int dim ,typename T> class Point
 	 * \return true if two points match
 	 *
 	 */
-	__device__ __host__ inline bool operator==(const Point<dim,T> & p)
+	__device__ __host__ inline bool operator==(const Point<dim,T> & p) const
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (p.get(i) != get(i))
-				return false;
+			{return false;}
 		}
 
 		return true;

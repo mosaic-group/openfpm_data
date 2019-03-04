@@ -13,9 +13,6 @@
 #include "util/mathutil.hpp"
 #include "iterators/stencil_type.hpp"
 
-#define PERIODIC 1
-#define NON_PERIODIC 0
-
 // Box need the definition of grid_key_dx_r
 #define HARDWARE 1
 

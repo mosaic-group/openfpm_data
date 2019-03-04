@@ -217,6 +217,23 @@ public:
 		nnc_rad.template hostToDevice<0>();
 	}
 
+	template<typename vector, typename vector_prp>
+	void construct_sparse()
+	{
+		///////////////////////////// In case of sparse ///////////////////////////
+
+		// 1 sub index does add elements to linear_sparse
+		// flush will construct the cells structure + offsets + internal index
+		//
+		//
+		// we construct for each cell the NN cells the number of neigborhood cells
+		//
+		//
+		// toKernelSparse()
+
+		///////////////////////////////////////////////////////////////////////////
+	}
+
 	/*! \brief construct from a list of particles
 	 *
 	 * \warning pl is assumed to be already be in device memory
@@ -256,6 +273,7 @@ public:
 																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																		static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
+
 
 		// now we scan
 		starts.resize(cl_n.size());

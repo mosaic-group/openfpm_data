@@ -9,6 +9,7 @@
 #include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #include "util/cuda/moderngpu/kernel_reduce.hxx"
+#include "util/cuda/moderngpu/kernel_segreduce.hxx"
 
 
 BOOST_AUTO_TEST_SUITE( modern_gpu_tests )
@@ -127,6 +128,83 @@ BOOST_AUTO_TEST_CASE( modern_gpu_reduce )
     }
 
     BOOST_REQUIRE_EQUAL(red,red_p);
+
+	std::cout << "End test modern gpu test reduce" << "\n";
+
+	// Test the cell list
+}
+
+
+BOOST_AUTO_TEST_CASE( modern_gpu_seg_reduce )
+{
+	std::cout << "Test modern gpu segmented reduce" << "\n";
+
+	mgpu::standard_context_t context(false);
+
+	int count = 130;
+
+	openfpm::vector_gpu<aggregate<int>> vgpu;
+	openfpm::vector_gpu<aggregate<int>> segment_offset;
+	openfpm::vector_gpu<aggregate<int>> output;
+	int init = 0;
+
+	vgpu.resize(count);
+
+	for (size_t i = 0 ; i < count ; i++)
+	{
+		vgpu.template get<0>(i) = ((float)rand() / RAND_MAX) * 17;
+	}
+
+	segment_offset.add();
+	segment_offset.template get<0>(0) = 0;
+	size_t base = 0;
+	while (1)
+	{
+		int c = ((float)rand() / RAND_MAX) * 17;
+
+		if (c + base >= count)
+		{break;}
+
+		segment_offset.add();
+		segment_offset.template get<0>(segment_offset.size() - 1) = c + segment_offset.template get<0>(segment_offset.size() - 2);
+
+		base += c;
+	}
+
+	vgpu.hostToDevice<0>();
+	segment_offset.hostToDevice<0>();
+	output.resize(segment_offset.size());
+
+	mgpu::segreduce((int *)vgpu.template getDeviceBuffer<0>(), vgpu.size(),
+					(int *)segment_offset.template getDeviceBuffer<0>(), segment_offset.size(),
+					(int *)output.template getDeviceBuffer<0>(),
+					mgpu::plus_t<int>(), init, context);
+
+
+	output.template deviceToHost<0>();
+
+	bool match = true;
+	size_t i = 0;
+	for ( ; i < segment_offset.size()-1 ; i++)
+	{
+		size_t red = 0;
+		for (size_t j = 0 ; j < segment_offset.template get<0>(i+1) - segment_offset.template get<0>(i)  ; j++)
+		{
+			red += vgpu.template get<0>(segment_offset.template get<0>(i) + j);
+		}
+		match &= red == output.template get<0>(i);
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+
+	size_t red2 = 0;
+	for (size_t j = 0 ; j < vgpu.size() - segment_offset.template get<0>(i)  ; j++)
+	{
+		red2 += vgpu.template get<0>(segment_offset.template get<0>(i) + j);
+	}
+	match &= red2 == output.template get<0>(i);
+
+	BOOST_REQUIRE_EQUAL(match,true);
 
 	std::cout << "End test modern gpu test reduce" << "\n";
 
