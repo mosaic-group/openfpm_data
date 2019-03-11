@@ -238,12 +238,12 @@ void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,typename layout_base
  *
  *
  */
-template<unsigned int dim, typename T>
+template<typename vector_pos_type>
 struct pos_v
 {
-	openfpm::vector<Point<dim,T>> & pos;
+	vector_pos_type & pos;
 
-	pos_v(openfpm::vector<Point<dim,T>> & pos)
+	pos_v(vector_pos_type & pos)
 	:pos(pos)
 	{}
 };

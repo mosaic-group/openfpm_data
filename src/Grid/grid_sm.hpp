@@ -581,7 +581,7 @@ public:
 	 *
 	 */
 
-	inline grid_sm<N,T> & operator=(const grid_sm<N,T> & g)
+	__device__ __host__ inline grid_sm<N,T> & operator=(const grid_sm<N,T> & g)
 	{
 		size_tot = g.size_tot;
 

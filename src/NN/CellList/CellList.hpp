@@ -434,6 +434,9 @@ public:
 	//! Type of the coordinate space (double float)
 	typedef T stype;
 
+	//!
+	typedef vector_pos_type internal_vector_pos_type;
+
 	/*! \brief Return the underlying grid information of the cell list
 	 *
 	 * \return the grid infos
@@ -969,14 +972,14 @@ public:
 	 * \return An iterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>,impl> getNNIteratorRadius(size_t cell, T r_cut)
+	template<unsigned int impl=NO_CHECK> inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,impl> getNNIteratorRadius(size_t cell, T r_cut)
 	{
 		openfpm::vector<long int> & NNc = rcache[r_cut];
 
 		if (NNc.size() == 0)
 		{NNcalc_rad(r_cut,NNc,this->getCellBox(),this->getGrid());}
 
-		CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>,impl> cln(cell,NNc,*this);
+		CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,impl> cln(cell,NNc,*this);
 
 		return cln;
 	}

@@ -54,14 +54,14 @@ namespace openfpm
 		typedef int yes_i_am_vector;
 
 		//! Type of the encapsulation memory parameter
-		typedef typename memory_traits_inte<T>::type layout_type;
+		typedef typename memory_traits_inte<T_>::type layout_type;
 
 		//! Object container for T, it is the return type of get_o it return a object type trough
 		// you can access all the properties of T
-		typedef typename grid_cpu<1,T,CudaMemory,typename memory_traits_inte<T>::type>::container container;
+		typedef typename grid_cpu<1,T_,CudaMemory,typename memory_traits_inte<T_>::type>::container container;
 
 		//! Type of the value the vector is storing
-		typedef T value_type;
+		typedef T_ value_type;
 
 		/*! \brief Return the size of the vector
 		 *

@@ -99,22 +99,8 @@ public:
 	 *
 	 */
 	CellList_gpu(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
-	:CellDecomposer_sm<dim,T,transform>(clg)
 	{
-		cl_n = clg.cl_n;
-		cells = clg.cells;
-		starts = clg.starts;
-		part_ids = clg.part_ids;
-		sorted_to_not_sorted = clg.sorted_to_not_sorted;
-		sorted_domain_particles_dg = clg.sorted_domain_particles_dg;
-		sorted_domain_particles_ids = clg.sorted_domain_particles_ids;
-		non_sorted_to_sorted = clg.non_sorted_to_sorted;
-
-		spacing_c = clg.spacing_c;
-		div_c = clg.div_c;
-		off = clg.off;
-		g_m = clg.g_m;
-		n_dec = clg.n_dec;
+		this->operator=(clg);
 	}
 
 	/*! \brief Copy constructor from temporal
@@ -123,23 +109,16 @@ public:
 	 *
 	 */
 	CellList_gpu(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> && clg)
-	:CellDecomposer_sm<dim,T,transform>(clg)
 	{
-		cl_n.swap(clg.cl_n);
-		cells.swap(clg.cells);
-		starts.swap(clg.starts);
-		part_ids.swap(clg.part_ids);
-		sorted_to_not_sorted.swap(clg.sorted_to_not_sorted);
-		sorted_domain_particles_dg.swap(clg.sorted_domain_particles_dg);
-		sorted_domain_particles_ids.swap(clg.sorted_domain_particles_ids);
-		non_sorted_to_sorted.swap(clg.non_sorted_to_sorted);
-
-		spacing_c = clg.spacing_c;
-		div_c = clg.div_c;
-		off = clg.off;
-		g_m = clg.g_m;
-		n_dec = clg.n_dec;
+		this->operator=(clg);
 	}
+
+	/*! \brief default constructor
+	 *
+	 *
+	 */
+	CellList_gpu()
+	{}
 
 	CellList_gpu(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1)
 	{
@@ -488,6 +467,50 @@ public:
 		size_t n_dec_tmp = n_dec;
 		n_dec = clg.n_dec;
 		clg.n_dec = n_dec_tmp;
+	}
+
+	CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> &
+	operator=(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
+	{
+		*static_cast<CellDecomposer_sm<dim,T,transform> *>(this) = *static_cast<const CellDecomposer_sm<dim,T,transform> *>(&clg);
+		cl_n = clg.cl_n;
+		cells = clg.cells;
+		starts = clg.starts;
+		part_ids = clg.part_ids;
+		sorted_to_not_sorted = clg.sorted_to_not_sorted;
+		sorted_domain_particles_dg = clg.sorted_domain_particles_dg;
+		sorted_domain_particles_ids = clg.sorted_domain_particles_ids;
+		non_sorted_to_sorted = clg.non_sorted_to_sorted;
+
+		spacing_c = clg.spacing_c;
+		div_c = clg.div_c;
+		off = clg.off;
+		g_m = clg.g_m;
+		n_dec = clg.n_dec;
+
+		return *this;
+	}
+
+	CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> &
+	operator=(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> && clg)
+	{
+		static_cast<CellDecomposer_sm<dim,T,transform> *>(this)->swap(*static_cast<CellDecomposer_sm<dim,T,transform> *>(&clg));
+		cl_n.swap(clg.cl_n);
+		cells.swap(clg.cells);
+		starts.swap(clg.starts);
+		part_ids.swap(clg.part_ids);
+		sorted_to_not_sorted.swap(clg.sorted_to_not_sorted);
+		sorted_domain_particles_dg.swap(clg.sorted_domain_particles_dg);
+		sorted_domain_particles_ids.swap(clg.sorted_domain_particles_ids);
+		non_sorted_to_sorted.swap(clg.non_sorted_to_sorted);
+
+		spacing_c = clg.spacing_c;
+		div_c = clg.div_c;
+		off = clg.off;
+		g_m = clg.g_m;
+		n_dec = clg.n_dec;
+
+		return *this;
 	}
 };
 

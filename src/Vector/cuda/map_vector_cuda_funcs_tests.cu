@@ -100,6 +100,88 @@ BOOST_AUTO_TEST_CASE( vector_cuda_to_kernel_recursive2 )
 	BOOST_REQUIRE_EQUAL(test,true);
 }
 
+template<typename vv_rc,typename vector_output_type>
+__global__ void kernel_recursive_check(vv_rc vvrc, vector_output_type vot)
+{
+	int k = 0;
+	for (int i = 0 ; i < vvrc.size() ; i++)
+	{
+		for (int j = 0 ; j < vvrc.template get<1>(i).size() ; j++)
+		{
+			vot.template get<0>(k) = vvrc.template get<1>(i).template get<0>(j);
+			k++;
+		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE( vector_cuda_to_kernel_recursive2_test_toKernel )
+{
+	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<aggregate<long int>>>> test2_type;
+	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<aggregate<Box<2,float>>>>> test3_type;
+
+	test2_type tt2;
+	test3_type tt3;
+
+	tt2.add_no_device();
+	tt2.add_no_device();
+	tt2.add_no_device();
+
+/*	tt3.add();
+	tt3.add();
+	tt3.add();*/
+
+	tt2.template get<0>(0) = 80;
+	tt2.template get<1>(0).add();
+	tt2.template get<1>(0).template get<0>(0) = 500;
+	tt2.template get<0>(0) = 180;
+	tt2.template get<1>(0).add();
+	tt2.template get<1>(0).template get<0>(1) = 600;
+	tt2.template get<0>(0) = 280;;
+	tt2.template get<1>(0).add();
+	tt2.template get<1>(0).template get<0>(2) = 700;
+	tt2.template get<1>(0).template hostToDevice<0>();
+
+	tt2.template get<0>(1) = 10080;
+	tt2.template get<1>(1).add();
+	tt2.template get<1>(1).template get<0>(0) = 1500;
+	tt2.template get<0>(1) = 20080;
+	tt2.template get<1>(1).add();
+	tt2.template get<1>(1).template get<0>(1) = 1600;
+	tt2.template get<0>(1) = 30080;
+	tt2.template get<1>(1).add();
+	tt2.template get<1>(1).template get<0>(2) = 1700;
+	tt2.template get<1>(1).template hostToDevice<0>();
+
+	tt2.template get<0>(2) = 40080;
+	tt2.template get<1>(2).add();
+	tt2.template get<1>(2).template get<0>(0) = 2500;
+	tt2.template get<0>(2) = 50080;
+	tt2.template get<1>(2).add();
+	tt2.template get<1>(2).template get<0>(1) = 2600;
+	tt2.template get<0>(2) = 60080;
+	tt2.template get<1>(2).add();
+	tt2.template get<1>(2).template get<0>(2) = 2700;
+	tt2.template get<1>(2).template hostToDevice<0>();
+
+	tt2.template hostToDevice<1>();
+	openfpm::vector_gpu<aggregate<long int>> vg;
+	vg.resize(9);
+
+	kernel_recursive_check<<<1,1>>>(tt2.toKernel(),vg.toKernel());
+
+	vg.template deviceToHost<0>();
+
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(0),500);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(1),600);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(2),700);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(3),1500);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(4),1600);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(5),1700);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(6),2500);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(7),2600);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(8),2700);
+}
+
 BOOST_AUTO_TEST_CASE( vector_cuda_to_cpu_operator_equal )
 {
 	openfpm::vector_gpu<aggregate<int,int,double>> v1;

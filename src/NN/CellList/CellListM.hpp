@@ -300,8 +300,8 @@ public:
 	getNNIteratorSym(size_t cell,
 					 size_t pp,
 			         size_t p,
-					 const openfpm::vector<Point<dim,typename CellBase::stype>> & pos,
-					 const openfpm::vector<pos_v<dim,typename CellBase::stype>> & v)
+					 const typename CellBase::internal_vector_pos_type & pos,
+					 const openfpm::vector<pos_v<typename CellBase::internal_vector_pos_type>> & v)
 	{
 		CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> cln(cell,pp,p,CellListM<dim,T,sh_byte,CellBase>::NNc_sym,*this,pos,v);
 

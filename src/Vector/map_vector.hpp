@@ -178,6 +178,10 @@ namespace openfpm
 	#include "map_vector_std.hpp"
 	#include "map_vector_std_ptr.hpp"
 
+#ifdef CUDA_GPU
+	#include "cuda/map_vector_std_cuda.hpp"
+#endif
+
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
 	 * The layout is memory_traits_lin
@@ -418,6 +422,31 @@ namespace openfpm
 				size_t sz[1];
 				non_zero_one(sz,2*base.size());
 				base.resize(sz);
+			}
+
+			//! increase the vector size
+			v_size++;
+		}
+
+		/*! \brief It insert a new emtpy object on the vector, eventually it reallocate the grid
+		 *
+		 * \warning It is not thread safe should not be used in multi-thread environment
+		 *          reallocation, work only on cpu
+		 *
+		 */
+		void add_no_device()
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			//! Check if we have enough space
+
+			if (v_size >= base.size())
+			{
+				//! Resize the memory, double up the actual memory allocated for the vector
+				size_t sz[1];
+				non_zero_one(sz,2*base.size());
+				base.resize_no_device(sz);
 			}
 
 			//! increase the vector size
@@ -1794,7 +1823,7 @@ namespace openfpm
 	template <typename T> using vector_std = vector<T, HeapMemory, typename memory_traits_lin<T>::type, memory_traits_lin, openfpm::grow_policy_double, STD_VECTOR>;
 	template<typename T> using vector_gpu = openfpm::vector<T,CudaMemory,typename memory_traits_inte<T>::type,memory_traits_inte>;
 	template<typename T> using vector_gpu_single = openfpm::vector<T,CudaMemory,typename memory_traits_inte<T>::type,memory_traits_inte,openfpm::grow_policy_identity>;
-
+	template<typename T> using vector_custd = vector<T, CudaMemory, typename memory_traits_inte<aggregate<T>>::type, memory_traits_inte, openfpm::grow_policy_double, STD_VECTOR>;
 }
 
 #endif
