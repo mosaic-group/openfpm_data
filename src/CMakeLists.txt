@@ -217,6 +217,8 @@ install(FILES Vector/map_vector.hpp
 	      DESTINATION openfpm_data/include/Vector )
 
 install(FILES Vector/cuda/map_vector_cuda_ker.cuh
+	      Vector/cuda/map_vector_std_cuda_ker.cuh
+	      Vector/cuda/map_vector_std_cuda.hpp
 	      DESTINATION openfpm_data/include/Vector/cuda/ )
 
 install(FILES util/multi_array_openfpm/array_openfpm.hpp
