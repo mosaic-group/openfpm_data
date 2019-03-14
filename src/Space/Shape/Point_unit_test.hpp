@@ -521,6 +521,163 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage_with_array )
 	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],5.0f/9.0f) ;}
 }
 
+BOOST_AUTO_TEST_CASE( Point_expression_usage_with_conversion )
+{
+	float scal = 0.0;
+
+	Point<3,float> p1({0.1,0.1,0.1});
+	Point<3,float> p2({0.2,0.3,0.4});
+	Point<3,float> p3({0.6,0.7,0.9});
+
+	p3 = p1 + 2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),p1.get(i) + 2);}
+	p3 = 2 + p2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),2 + p2.get(i));}
+
+	p3 = p1 - 2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),p1.get(i) - 2);}
+	p3 = 2 - p2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),2 - p2.get(i));}
+
+	p3 = p1 * 2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),p1.get(i) * 2);}
+	p3 = 2 * p2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),2 * p2.get(i));}
+
+	p3 = p1 / 2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),p1.get(i) / 2.0);}
+	p3 = 2 / p2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),(float)2 / p2.get(i));}
+
+	// Point function test
+
+	double tmp = 5 + (p1 * p2);
+	double check = 5 + p1.get(0)*p2.get(0) + p1.get(1)*p2.get(1) + p1.get(2)*p2.get(2);
+	BOOST_REQUIRE_EQUAL(tmp,check);
+	p3 = 5 + (p1 * p2);
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),check) ;}
+	tmp = 5 - (p1 * p2);
+	check = 5 - p1.get(0)*p2.get(0) - p1.get(1)*p2.get(1) - p1.get(2)*p2.get(2);
+	BOOST_REQUIRE_EQUAL(tmp,check);
+	p3 = 5 - (p1 * p2);
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),check) ;}
+	tmp = 5 * (p1 * p2);
+	check = 5*(p1.get(0)*p2.get(0) + p1.get(1)*p2.get(1) + p1.get(2)*p2.get(2));
+	BOOST_REQUIRE_EQUAL(tmp,check);
+	p3 = 5 * (p1 * p2);
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),check) ;}
+	tmp = 5 / (p1 * p2);
+	check = 5/(p1.get(0)*p2.get(0) + p1.get(1)*p2.get(1) + p1.get(2)*p2.get(2));
+	BOOST_REQUIRE_EQUAL(tmp,check);
+	p3 = 5 / (p1 * p2);
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),check) ;}
+
+	p3 = 2*(p1*p2)*p1;
+	for (size_t i = 0 ; i < 3 ; i++)
+	{
+		check = 2*(p1.get(0)*p2.get(0) + p1.get(1)*p2.get(1) + p1.get(2)*p2.get(2))*p1.get(i);
+		BOOST_REQUIRE_EQUAL(p3[i],check) ;
+	}
+	p3 = (p1*p2)*2*p1;
+	for (size_t i = 0 ; i < 3 ; i++)
+	{
+		check = 2*(p1.get(0)*p2.get(0) + p1.get(1)*p2.get(1) + p1.get(2)*p2.get(2))*p1.get(i);
+		BOOST_REQUIRE_EQUAL(p3[i],check) ;
+	}
+	p3 = (p1*p2)*p1*2;
+	for (size_t i = 0 ; i < 3 ; i++)
+	{
+		check = 2*(p1.get(0)*p2.get(0) + p1.get(1)*p2.get(1) + p1.get(2)*p2.get(2))*p1.get(i);
+		BOOST_REQUIRE_EQUAL(p3[i],check) ;
+	}
+
+}
+
+BOOST_AUTO_TEST_CASE( Point_expression_usage_with_conversion_array )
+{
+	float scal = 0.0;
+
+	float p1_p[] = {0.1,0.1,0.1};
+	float p2_p[] = {0.2,0.3,0.4};
+	float p3_p[] = {0.6,0.7,0.9};
+
+	Point<3,float> pp1({0.1,0.1,0.1});
+	Point<3,float> pp2({0.2,0.3,0.4});
+	Point<3,float> pp3({0.6,0.7,0.9});
+
+	auto p1 = getExprR(p1_p);
+	auto p2 = getExprR(p2_p);
+
+	auto p3L = getExprL(p3_p);
+
+	p3L = p1 + 2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],p1_p[i] + 2);}
+	p3L = 2 + p2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],2 + p2_p[i]);}
+
+	p3L = p1 - 2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],p1_p[i] - 2);}
+	p3L = 2 - p2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],2 - p2_p[i]);}
+
+	p3L = p1 * 2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],p1_p[i] * 2);}
+	p3L = 2 * p2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],2 * p2_p[i]);}
+
+	p3L = p1 / 2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],p1_p[i] / 2);}
+	p3L = 2 / p2;
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],2 / p2_p[i]);}
+
+	// Point function test
+
+	p3L = asin(p1/5 + p2/6);
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_CLOSE(p3_p[i],std::asin(p1_p[i]/5 + p2_p[i]/6),0.1) ;}
+	p3L = acos(p1/5 + p2/6);
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],std::acos(p1_p[i]/5 + p2_p[i]/6)) ;}
+
+
+	double tmp = 5 + (p1 * p2);
+	double check = 5 + pp1.get(0)*pp2.get(0) + pp1.get(1)*pp2.get(1) + pp1.get(2)*pp2.get(2);
+	BOOST_REQUIRE_EQUAL(tmp,check);
+	p3L = 5 + (p1 * p2);
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],check) ;}
+	tmp = 5 - (p1 * p2);
+	check = 5 - pp1.get(0)*pp2.get(0) - pp1.get(1)*pp2.get(1) - pp1.get(2)*pp2.get(2);
+	BOOST_REQUIRE_EQUAL(tmp,check);
+	p3L = 5 - (p1 * p2);
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],check) ;}
+	tmp = 5 * (p1 * p2);
+	check = 5*(pp1.get(0)*pp2.get(0) + pp1.get(1)*pp2.get(1) + pp1.get(2)*pp2.get(2));
+	BOOST_REQUIRE_EQUAL(tmp,check);
+	p3L = 5 * (p1 * p2);
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],check) ;}
+	tmp = 5 / (p1 * p2);
+	check = 5/(pp1.get(0)*pp2.get(0) + pp1.get(1)*pp2.get(1) + pp1.get(2)*pp2.get(2));
+	BOOST_REQUIRE_EQUAL(tmp,check);
+	p3L = 2*(p1*p2)*p1;
+	for (size_t i = 0 ; i < 3 ; i++)
+	{
+		check = 2*(pp1.get(0)*pp2.get(0) + pp1.get(1)*pp2.get(1) + pp1.get(2)*pp2.get(2))*pp1.get(i);
+		BOOST_REQUIRE_EQUAL(p3_p[i],check) ;
+	}
+	p3L = (p1*p2)*2*p1;
+	for (size_t i = 0 ; i < 3 ; i++)
+	{
+		check = 2*(pp1.get(0)*pp2.get(0) + pp1.get(1)*pp2.get(1) + pp1.get(2)*pp2.get(2))*pp1.get(i);
+		BOOST_REQUIRE_EQUAL(p3_p[i],check) ;
+	}
+	p3L = (p1*p2)*p1*2;
+	for (size_t i = 0 ; i < 3 ; i++)
+	{
+		check = 2*(pp1.get(0)*pp2.get(0) + pp1.get(1)*pp2.get(1) + pp1.get(2)*pp2.get(2))*pp1.get(i);
+		BOOST_REQUIRE_EQUAL(p3_p[i],check) ;
+	}
+	p3L = 5 / (p1 * p2);
+	check = 5/(pp1.get(0)*pp2.get(0) + pp1.get(1)*pp2.get(1) + pp1.get(2)*pp2.get(2));
+	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3_p[i],check) ;}
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

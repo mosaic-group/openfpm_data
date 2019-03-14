@@ -22,18 +22,6 @@ enum cl_construct_opt
 #endif
 #include "util/cuda/ofp_context.hxx"
 
-/*! \brief Check this is a gpu or cpu type cell-list
- *
- */
-template<typename T, typename Sfinae = void>
-struct is_gpu_celllist: std::false_type {};
-
-
-template<typename T>
-struct is_gpu_celllist<T, typename Void<typename T::yes_is_gpu_celllist>::type> : std::true_type
-{};
-
-
 
 /*! \brief populate the Cell-list with particles non symmetric case on GPU
  *

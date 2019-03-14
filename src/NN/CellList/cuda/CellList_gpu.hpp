@@ -27,7 +27,12 @@
 constexpr int count = 0;
 constexpr int start = 1;
 
-template<unsigned int dim, typename T,  typename Memory, typename transform = no_transform_only<dim,T>, typename cnt_type = unsigned int, typename ids_type = int>
+template<unsigned int dim,
+		 typename T,
+		 typename Memory,
+		 typename transform = no_transform_only<dim,T>,
+		 typename cnt_type = unsigned int,
+		 typename ids_type = int>
 class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 {
 	typedef openfpm::vector<aggregate<cnt_type>,Memory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> vector_cnt_type;
@@ -92,6 +97,21 @@ public:
 
 	//! Indicate that this cell list is a gpu type cell-list
 	typedef int yes_is_gpu_celllist;
+
+	//! the type of the space
+	typedef T stype;
+
+	//! dimensions of space
+	static const unsigned int dims = dim;
+
+	//! count type
+	typedef cnt_type cnt_type_;
+
+	//! id type
+	typedef ids_type ids_type_;
+
+	//! transform type
+	typedef transform transform_;
 
 	/*! \brief Copy constructor
 	 *
@@ -514,6 +534,12 @@ public:
 	}
 };
 
+// This is a tranformation node for vector_distributed for the algorithm toKernel_tranform
+template<template <typename> class layout_base, typename T>
+struct toKernel_transform<layout_base,T,4>
+{
+	typedef CellList_gpu_ker<T::dims,typename T::stype,typename T::cnt_type_,typename T::ids_type_,typename T::transform_> type;
+};
 
 #endif
 

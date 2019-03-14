@@ -320,5 +320,151 @@ BOOST_AUTO_TEST_CASE( vector_cuda_host_to_device_vector_and_point_tensor )
 	}
 }
 
+BOOST_AUTO_TEST_CASE( vector_cuda_copy )
+{
+	openfpm::vector_gpu<aggregate<float,float[3],float[3][3]>> v1;
+	openfpm::vector_gpu<aggregate<float,float[3],float[3][3]>> v2;
+
+	v1.resize(100);
+
+	auto ite = v1.getIterator();
+
+	while (ite.isNext())
+	{
+		auto p = ite.get();
+
+		v1.template get<0>(p) = p + 100;
+
+		v1.template get<0>(p) = p + 2000;
+		v1.template get<0>(p) = p + 3000;
+		v1.template get<0>(p) = p + 4000;
+
+		v1.template get<1>(p)[0] = p + 5000;
+		v1.template get<1>(p)[1] = p + 6000;
+		v1.template get<1>(p)[2] = p + 7000;
+
+		v1.template get<2>(p)[0][0] = p + 8000;
+		v1.template get<2>(p)[0][1] = p + 9000;
+		v1.template get<2>(p)[0][2] = p + 10000;
+
+		v1.template get<2>(p)[1][0] = p + 11000;
+		v1.template get<2>(p)[1][1] = p + 12000;
+		v1.template get<2>(p)[2][2] = p + 13000;
+
+		v1.template get<2>(p)[2][0] = p + 14000;
+		v1.template get<2>(p)[2][1] = p + 15000;
+		v1.template get<2>(p)[2][2] = p + 16000;
+
+		++ite;
+	}
+
+	v1.hostToDevice<0,1,2>();
+
+	ite = v1.getIterator();
+
+	while (ite.isNext())
+	{
+		auto p = ite.get();
+
+		v1.template get<0>(p) = p + 6100;
+
+		v1.template get<0>(p) = p + 62000;
+		v1.template get<0>(p) = p + 63000;
+		v1.template get<0>(p) = p + 64000;
+
+		v1.template get<1>(p)[0] = p + 65000;
+		v1.template get<1>(p)[1] = p + 66000;
+		v1.template get<1>(p)[2] = p + 67000;
+
+		v1.template get<2>(p)[0][0] = p + 68000;
+		v1.template get<2>(p)[0][1] = p + 69000;
+		v1.template get<2>(p)[0][2] = p + 610000;
+
+		v1.template get<2>(p)[1][0] = p + 611000;
+		v1.template get<2>(p)[1][1] = p + 612000;
+		v1.template get<2>(p)[2][2] = p + 613000;
+
+		v1.template get<2>(p)[2][0] = p + 614000;
+		v1.template get<2>(p)[2][1] = p + 615000;
+		v1.template get<2>(p)[2][2] = p + 616000;
+
+		++ite;
+	}
+
+	v2 = v1;
+
+	// first check the CPU
+
+	bool match = true;
+
+	ite = v2.getIterator();
+
+	while (ite.isNext())
+	{
+		auto p = ite.get();
+
+		match = v2.template get<0>(p) == p + 6100;
+
+		match = v2.template get<0>(p) == p + 62000;
+		match = v2.template get<0>(p) == p + 63000;
+		match = v2.template get<0>(p) == p + 64000;
+
+		match = v2.template get<1>(p)[0] == p + 65000;
+		match = v2.template get<1>(p)[1] == p + 66000;
+		match = v2.template get<1>(p)[2] == p + 67000;
+
+		match = v2.template get<2>(p)[0][0] == p + 68000;
+		match = v2.template get<2>(p)[0][1] == p + 69000;
+		match = v2.template get<2>(p)[0][2] == p + 610000;
+
+		match = v2.template get<2>(p)[1][0] == p + 611000;
+		match = v2.template get<2>(p)[1][1] == p + 612000;
+		match = v2.template get<2>(p)[2][2] == p + 613000;
+
+		match = v2.template get<2>(p)[2][0] == p + 614000;
+		match = v2.template get<2>(p)[2][1] == p + 615000;
+		match = v2.template get<2>(p)[2][2] == p + 616000;
+
+		++ite;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+
+	v2.deviceToHost<0,1,2>();
+
+	ite = v2.getIterator();
+
+	while (ite.isNext())
+	{
+		auto p = ite.get();
+
+		match = v2.template get<0>(p) == p + 100;
+
+		match = v2.template get<0>(p) == p + 2000;
+		match = v2.template get<0>(p) == p + 3000;
+		match = v2.template get<0>(p) == p + 4000;
+
+		match = v2.template get<1>(p)[0] == p + 5000;
+		match = v2.template get<1>(p)[1] == p + 6000;
+		match = v2.template get<1>(p)[2] == p + 7000;
+
+		match = v2.template get<2>(p)[0][0] == p + 8000;
+		match = v2.template get<2>(p)[0][1] == p + 9000;
+		match = v2.template get<2>(p)[0][2] == p + 10000;
+
+		match = v2.template get<2>(p)[1][0] == p + 11000;
+		match = v2.template get<2>(p)[1][1] == p + 12000;
+		match = v2.template get<2>(p)[2][2] == p + 13000;
+
+		match = v2.template get<2>(p)[2][0] == p + 14000;
+		match = v2.template get<2>(p)[2][1] == p + 15000;
+		match = v2.template get<2>(p)[2][2] == p + 16000;
+
+		++ite;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 

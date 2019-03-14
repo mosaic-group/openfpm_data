@@ -70,7 +70,7 @@ namespace openfpm
 // Definition of the box
 template<unsigned int dim , typename T> class Box;
 
-template<template <typename> class layout_base, typename T, int = is_vector_native<T>::value + 2*is_vector_dist<T>::value >
+template<template <typename> class layout_base, typename T, int = is_vector_native<T>::value + 2*is_vector_dist<T>::value + 4*is_gpu_celllist<T>::value >
 struct toKernel_transform;
 
 template<template <typename> class layout_base, typename T, typename ... args>

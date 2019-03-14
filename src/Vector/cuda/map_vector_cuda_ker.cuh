@@ -22,6 +22,14 @@ __global__ void merge_add_prp_device_impl(vector_src_type v_src, vector_dst_type
 	object_s_di<decltype(v_src.get(i)),decltype(v_dst.get(old_sz+i)),OBJ_ENCAP,args...>(v_src.get(i),v_dst.get(old_sz+i));
 }
 
+template<typename vector_src_type, typename vector_dst_type>
+__global__ void copy_two_vectors(vector_src_type v_src, vector_dst_type v_dst)
+{
+	int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+	v_src.get(i) = v_dst.get(i);
+}
+
 #endif
 
 namespace openfpm

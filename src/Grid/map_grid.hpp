@@ -359,11 +359,15 @@ struct host_to_device_impl
 
 		typedef typename toKernel_transform<layout_base,typename mem_r_type::value_type>::type kernel_type;
 
+		typedef boost::mpl::int_<(is_vector<typename mem_r_type::value_type>::value ||
+								  is_vector_dist<typename mem_r_type::value_type>::value ||
+								  is_gpu_celllist<typename mem_r_type::value_type>::value) + 2*std::is_array<type_prp>::value + std::rank<type_prp>::value> crh_cond;
+
 		call_recursive_host_device_if_vector<typename mem_r_type::value_type,
 											 kernel_type,
 											 type_prp,
 											 layout_base,
-											 (is_vector<typename mem_r_type::value_type>::value || is_vector_dist<typename mem_r_type::value_type>::value ) + 2*std::is_array<type_prp>::value + std::rank<type_prp>::value>
+											 crh_cond::value>
 		::template transform<Memory,mem_r_type>(static_cast<Memory *>(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem),
 									 boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r,
 				                       start*sizeof(type_prp),
@@ -374,7 +378,7 @@ struct host_to_device_impl
 											 kernel_type,
 											 type_prp,
 											 layout_base,
-											 is_vector<typename mem_r_type::value_type>::value + 2*std::is_array<type_prp>::value + std::rank<type_prp>::value>
+											 0>
 		::call(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r,start,stop);
 	}
 };

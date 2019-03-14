@@ -292,6 +292,44 @@ public:
 		return srt;
 	}
 
+	/*! \brief Get the number of cells this cell-list contain
+	 *
+	 * \return number of cells
+	 */
+	inline __device__ unsigned int getNCells() const
+	{
+		return starts.size() - 1;
+	}
+
+	/*! \brief Return the number of elements in the cell
+	 *
+	 * \param cell_id id of the cell
+	 *
+	 * \return number of elements in the cell
+	 *
+	 */
+	inline __device__ cnt_type getNelements(const cnt_type cell_id) const
+	{
+		return starts.template get<0>(cell_id+1) - starts.template get<0>(cell_id);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	inline __device__ cnt_type get(size_t cell, size_t ele)
+	{
+		cnt_type p_id = starts.template get<0>(cell) + ele;
+		return srt.template get<0>(p_id);
+	}
+
+
 	inline __device__ unsigned int get_g_m()
 	{
 		return g_m;
