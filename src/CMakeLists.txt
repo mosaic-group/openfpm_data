@@ -89,6 +89,9 @@ install(FILES VTKWriter/VTKWriter.hpp
 	      VTKWriter/is_vtk_writable.hpp
 	DESTINATION openfpm_io/include/VTKWriter/ )
 
+install(FILES MetaParser/MetaParser.hpp
+	DESTINATION openfpm_io/include/MetaParser/ )
+
 install(FILES HDF5_wr/HDF5_wr.hpp
 	HDF5_wr/HDF5_writer.hpp 
 	HDF5_wr/HDF5_writer_vd.hpp 
