@@ -242,7 +242,7 @@ struct fill_prop_by_type
 
 	enum
 	{
-		value = ((sizeof...(pos) != 0 && dim <= 3) * (std::is_array<pos_prop_type>::value + 1))
+		value = ((sizeof...(pos) != 0) * (std::is_array<pos_prop_type>::value + 1))
 	};
 
 };

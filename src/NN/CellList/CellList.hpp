@@ -1041,16 +1041,16 @@ public:
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl>
-	inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)SYM,impl>
-	getNNIteratorSymMP(size_t cell, size_t p, const vector_pos_type & v_p1, const vector_pos_type & v_p2)
+	template<unsigned int impl, typename vector_pos_type2>
+	inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,(unsigned int)SYM,impl>
+	getNNIteratorSymMP(size_t cell, size_t p, const vector_pos_type2 & v_p1, const vector_pos_type2 & v_p2)
 	{
 #ifdef SE_CLASS1
 		if (from_cd == false)
 			std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
 #endif
 
-		CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,SYM,impl> cln(cell,p,NNc_sym,*this,v_p1,v_p2);
+		CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,SYM,impl> cln(cell,p,NNc_sym,*this,v_p1,v_p2);
 		return cln;
 	}
 
