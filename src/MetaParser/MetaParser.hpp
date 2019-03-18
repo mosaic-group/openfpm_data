@@ -29,7 +29,7 @@ class MetaParser
 
 public:
 
-	MetaParser(boost::program_options::options_description & desc)
+	explicit MetaParser(boost::program_options::options_description & desc)
 	:desc(desc)
 	{
 	}
