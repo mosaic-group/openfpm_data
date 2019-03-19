@@ -66,6 +66,35 @@ public:
 		return base.size();
 	}
 
+	/*! \brief Get an element of the vector
+	 *
+	 * Get an element of the vector
+	 *
+	 * \tparam p Property to get
+	 * \param id Element to get
+	 *
+	 * \return the element value requested
+	 *
+	 */
+	__device__ inline auto at(size_t id) const -> decltype(base.template get<0>(0))
+	{
+		return base.template get<0>(id);
+	}
+
+	/*! \brief Get an element of the vector
+	 *
+	 * Get an element of the vector
+	 *
+	 * \tparam p Property to get
+	 * \param id Element to get
+	 *
+	 * \return the element value requested
+	 *
+	 */
+	__device__ inline auto at(size_t id) -> decltype(base.template get<0>(0))
+	{
+		return base.template get<0>(id);
+	}
 
 	/*! \brief Get an element of the vector
 	 *

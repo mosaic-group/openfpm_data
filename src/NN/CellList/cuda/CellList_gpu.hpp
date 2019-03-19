@@ -245,6 +245,14 @@ public:
 
 		part_ids.resize(pl.size());
 
+		if (ite_gpu.wthr.x == 0)
+		{
+			// no particles
+			starts.resize(cl_n.size());
+			starts.template fill<0>(0);
+			return;
+		}
+
 		CUDA_LAUNCH((subindex<dim,T,cnt_type,ids_type>),ite_gpu,div_c,
 																		spacing_c,
 																		off,

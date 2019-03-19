@@ -894,7 +894,10 @@ public:
 
 		Mem_type::swap(static_cast<Mem_type &>(cl));
 
-		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cl);
+		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this).swap(static_cast<CellDecomposer_sm<dim,T,transform> &>(cl));
+
+		n_dec = cl.n_dec;
+		from_cd = cl.from_cd;
 	}
 
 	/*! \brief Get the Cell iterator

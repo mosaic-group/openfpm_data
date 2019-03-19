@@ -241,7 +241,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the distance
 	 *
 	 */
-	T distance(const Point<dim,T> & q)
+	__device__ __host__ T distance(const Point<dim,T> & q)
 	{
 		T tot = 0.0;
 

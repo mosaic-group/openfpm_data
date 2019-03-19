@@ -353,9 +353,11 @@ struct host_to_device_impl
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		typedef decltype(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r) mem_r_type;
+		typedef typename boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type ele_type;
 
-		typedef typename boost::mpl::at<typename T_type::type,boost::mpl::int_<T::value>>::type type_prp;
+		typedef decltype(boost::fusion::at_c<ele_type::value>(dst).mem_r) mem_r_type;
+
+		typedef typename boost::mpl::at<typename T_type::type,ele_type>::type type_prp;
 
 		typedef typename toKernel_transform<layout_base,typename mem_r_type::value_type>::type kernel_type;
 
