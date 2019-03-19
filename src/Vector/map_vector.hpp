@@ -39,6 +39,7 @@
 #include "util/cuda_util.hpp"
 #include "util/cuda/cuda_launch.hpp"
 #include "cuda/map_vector_cuda_ker.cuh"
+#include "util/cuda/cuda_launch.hpp"
 
 namespace openfpm
 {
@@ -1318,7 +1319,7 @@ namespace openfpm
 				if (mv.size() != 0)
 				{
 					auto it = mv.getGPUIterator();
-					copy_two_vectors<<<it.wthr,it.thr>>>(toKernel(),mv.toKernel());
+					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
 				}
 #endif
 			}

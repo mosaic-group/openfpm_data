@@ -23,9 +23,12 @@ __global__ void merge_add_prp_device_impl(vector_src_type v_src, vector_dst_type
 }
 
 template<typename vector_src_type, typename vector_dst_type>
-__global__ void copy_two_vectors(vector_src_type v_src, vector_dst_type v_dst)
+__global__ void copy_two_vectors(vector_src_type v_dst, vector_dst_type v_src)
 {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+	if (i >= v_src.size())
+	{return;}
 
 	v_src.get(i) = v_dst.get(i);
 }

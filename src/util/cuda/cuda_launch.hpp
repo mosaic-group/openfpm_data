@@ -17,6 +17,15 @@
 
 #define CUDA_LAUNCH(cuda_call,ite, ...) \
         {\
+		cudaDeviceSynchronize(); \
+		{\
+			cudaError_t e = cudaGetLastError();\
+			if (e != cudaSuccess)\
+			{\
+				std::string error = cudaGetErrorString(e);\
+				std::cout << "Cuda an error has occurred before, detected in: " << __FILE__ << ":" << __LINE__ << " " << error << std::endl;\
+			}\
+		}\
 	    CHECK_SE_CLASS1_PRE\
 		cuda_call<<<ite.wthr,ite.thr>>>(__VA_ARGS__); \
 		cudaDeviceSynchronize(); \
