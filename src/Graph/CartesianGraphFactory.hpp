@@ -456,11 +456,7 @@ public:
 
 			// vertex spatial properties functor
 
-<<<<<<< HEAD
-			fill_prop<dim, lin_id, T, decltype(gp.vertex(g.LinId(key))), typename to_boost_vmpl<pos...>::type, fill_prop_by_type<sizeof...(pos), p, Graph, pos...>::value> flp(obj, szd, key, g, dom);
-=======
 			fill_prop<dim, lin_id, T, decltype(gp.vertex(g.LinId(key))), typename to_boost_vmpl<pos...>::type, fill_prop_by_type<dim,sizeof...(pos), p, Graph, pos...>::value> flp(obj, szd, key, g, dom);
->>>>>>> 33a5ec1ebc3fc47dd5def0a60f7c352ba810d247
 
 			// fill properties
 
