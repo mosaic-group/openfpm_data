@@ -537,11 +537,7 @@ public:
 	 *
 	 */
 	template<int se, int id_prp, typename T, unsigned int dim_c, int ... pos>
-<<<<<<< HEAD
-	static Graph construct(const size_t (&sz)[dim], Box<dim, T> dom, const size_t (& bc)[dim])
-=======
 	static Graph construct(const size_t (&sz)[dim], Box<dim, T> & dom, const size_t (& bc)[dim])
->>>>>>> 33a5ec1ebc3fc47dd5def0a60f7c352ba810d247
 	{
 		return Graph_constructor_impl<dim, id_prp, Graph, se, T, dim_c, pos...>::construct(sz, dom, bc);
 	}
