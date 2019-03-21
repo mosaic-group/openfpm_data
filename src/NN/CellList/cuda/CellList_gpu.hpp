@@ -27,7 +27,12 @@
 constexpr int count = 0;
 constexpr int start = 1;
 
-template<unsigned int dim, typename T,  typename Memory, typename transform = no_transform_only<dim,T>, typename cnt_type = unsigned int, typename ids_type = int>
+template<unsigned int dim,
+		 typename T,
+		 typename Memory,
+		 typename transform = no_transform_only<dim,T>,
+		 typename cnt_type = unsigned int,
+		 typename ids_type = int>
 class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 {
 	typedef openfpm::vector<aggregate<cnt_type>,Memory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> vector_cnt_type;
@@ -93,28 +98,29 @@ public:
 	//! Indicate that this cell list is a gpu type cell-list
 	typedef int yes_is_gpu_celllist;
 
+	//! the type of the space
+	typedef T stype;
+
+	//! dimensions of space
+	static const unsigned int dims = dim;
+
+	//! count type
+	typedef cnt_type cnt_type_;
+
+	//! id type
+	typedef ids_type ids_type_;
+
+	//! transform type
+	typedef transform transform_;
+
 	/*! \brief Copy constructor
 	 *
 	 *
 	 *
 	 */
 	CellList_gpu(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
-	:CellDecomposer_sm<dim,T,transform>(clg)
 	{
-		cl_n = clg.cl_n;
-		cells = clg.cells;
-		starts = clg.starts;
-		part_ids = clg.part_ids;
-		sorted_to_not_sorted = clg.sorted_to_not_sorted;
-		sorted_domain_particles_dg = clg.sorted_domain_particles_dg;
-		sorted_domain_particles_ids = clg.sorted_domain_particles_ids;
-		non_sorted_to_sorted = clg.non_sorted_to_sorted;
-
-		spacing_c = clg.spacing_c;
-		div_c = clg.div_c;
-		off = clg.off;
-		g_m = clg.g_m;
-		n_dec = clg.n_dec;
+		this->operator=(clg);
 	}
 
 	/*! \brief Copy constructor from temporal
@@ -123,23 +129,16 @@ public:
 	 *
 	 */
 	CellList_gpu(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> && clg)
-	:CellDecomposer_sm<dim,T,transform>(clg)
 	{
-		cl_n.swap(clg.cl_n);
-		cells.swap(clg.cells);
-		starts.swap(clg.starts);
-		part_ids.swap(clg.part_ids);
-		sorted_to_not_sorted.swap(clg.sorted_to_not_sorted);
-		sorted_domain_particles_dg.swap(clg.sorted_domain_particles_dg);
-		sorted_domain_particles_ids.swap(clg.sorted_domain_particles_ids);
-		non_sorted_to_sorted.swap(clg.non_sorted_to_sorted);
-
-		spacing_c = clg.spacing_c;
-		div_c = clg.div_c;
-		off = clg.off;
-		g_m = clg.g_m;
-		n_dec = clg.n_dec;
+		this->operator=(clg);
 	}
+
+	/*! \brief default constructor
+	 *
+	 *
+	 */
+	CellList_gpu()
+	{}
 
 	CellList_gpu(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1)
 	{
@@ -246,7 +245,15 @@ public:
 
 		part_ids.resize(pl.size());
 
-		CUDA_LAUNCH((subindex<dim,T,cnt_type,ids_type>),ite_gpu.wthr,ite_gpu.thr,div_c,
+		if (ite_gpu.wthr.x == 0)
+		{
+			// no particles
+			starts.resize(cl_n.size());
+			starts.template fill<0>(0);
+			return;
+		}
+
+		CUDA_LAUNCH((subindex<dim,T,cnt_type,ids_type>),ite_gpu,div_c,
 																		spacing_c,
 																		off,
 																		this->getTransform(),
@@ -266,7 +273,7 @@ public:
 		cells.resize(pl.size());
 		auto itgg = part_ids.getGPUIterator();
 
-		CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg.wthr,itgg.thr,0,
+		CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg,0,
 																					   div_c,
 																					   off,
 																					   part_ids.size(),
@@ -287,7 +294,7 @@ public:
 		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
 				      decltype(pl.toKernel()),
 				      decltype(sorted_to_not_sorted.toKernel()),
-				      cnt_type,shift_ph<0,cnt_type>>),ite.wthr,ite.thr,pl.size(),
+				      cnt_type,shift_ph<0,cnt_type>>),ite,pl.size(),
 				                                                           pl_prp.toKernel(),
 				                                                           pl_prp_out.toKernel(),
 				                                                           pl.toKernel(),
@@ -301,7 +308,7 @@ public:
 		{
 			ite = sorted_domain_particles_ids.getGPUIterator();
 
-			CUDA_LAUNCH((mark_domain_particles),ite.wthr,ite.thr,sorted_to_not_sorted.toKernel(),sorted_domain_particles_ids.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
+			CUDA_LAUNCH((mark_domain_particles),ite,sorted_to_not_sorted.toKernel(),sorted_domain_particles_ids.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
 
 
 			// now we sort the particles
@@ -489,8 +496,58 @@ public:
 		n_dec = clg.n_dec;
 		clg.n_dec = n_dec_tmp;
 	}
+
+	CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> &
+	operator=(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
+	{
+		*static_cast<CellDecomposer_sm<dim,T,transform> *>(this) = *static_cast<const CellDecomposer_sm<dim,T,transform> *>(&clg);
+		cl_n = clg.cl_n;
+		cells = clg.cells;
+		starts = clg.starts;
+		part_ids = clg.part_ids;
+		sorted_to_not_sorted = clg.sorted_to_not_sorted;
+		sorted_domain_particles_dg = clg.sorted_domain_particles_dg;
+		sorted_domain_particles_ids = clg.sorted_domain_particles_ids;
+		non_sorted_to_sorted = clg.non_sorted_to_sorted;
+
+		spacing_c = clg.spacing_c;
+		div_c = clg.div_c;
+		off = clg.off;
+		g_m = clg.g_m;
+		n_dec = clg.n_dec;
+
+		return *this;
+	}
+
+	CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> &
+	operator=(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> && clg)
+	{
+		static_cast<CellDecomposer_sm<dim,T,transform> *>(this)->swap(*static_cast<CellDecomposer_sm<dim,T,transform> *>(&clg));
+		cl_n.swap(clg.cl_n);
+		cells.swap(clg.cells);
+		starts.swap(clg.starts);
+		part_ids.swap(clg.part_ids);
+		sorted_to_not_sorted.swap(clg.sorted_to_not_sorted);
+		sorted_domain_particles_dg.swap(clg.sorted_domain_particles_dg);
+		sorted_domain_particles_ids.swap(clg.sorted_domain_particles_ids);
+		non_sorted_to_sorted.swap(clg.non_sorted_to_sorted);
+
+		spacing_c = clg.spacing_c;
+		div_c = clg.div_c;
+		off = clg.off;
+		g_m = clg.g_m;
+		n_dec = clg.n_dec;
+
+		return *this;
+	}
 };
 
+// This is a tranformation node for vector_distributed for the algorithm toKernel_tranform
+template<template <typename> class layout_base, typename T>
+struct toKernel_transform<layout_base,T,4>
+{
+	typedef CellList_gpu_ker<T::dims,typename T::stype,typename T::cnt_type_,typename T::ids_type_,typename T::transform_> type;
+};
 
 #endif
 

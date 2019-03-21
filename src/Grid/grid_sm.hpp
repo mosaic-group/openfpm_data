@@ -463,7 +463,7 @@ public:
 		mem_id lid = gk.get(0);
 		for (mem_id i = 1 ; i < N ; i++)
 		{
-			/* coverity[dead_error_begin */
+			/* coverity[dead_error_line] */
 			lid += gk.get(i) * sz_s[i-1];
 		}
 
@@ -581,7 +581,7 @@ public:
 	 *
 	 */
 
-	inline grid_sm<N,T> & operator=(const grid_sm<N,T> & g)
+	__device__ __host__ inline grid_sm<N,T> & operator=(const grid_sm<N,T> & g)
 	{
 		size_tot = g.size_tot;
 

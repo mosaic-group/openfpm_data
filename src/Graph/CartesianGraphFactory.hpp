@@ -230,7 +230,7 @@ public:
  * \tparam Graph Graph
  * \tparam pos Array of properties
  */
-template<int i, typename p, typename Graph, int ... pos>
+template<unsigned int dim, int i, typename p, typename Graph, int ... pos>
 struct fill_prop_by_type
 {
 
@@ -254,8 +254,8 @@ struct fill_prop_by_type
  * \tparam Graph Graph
  * \tparam pos Array of properties
  */
-template<typename p, typename Graph, int ... pos>
-struct fill_prop_by_type<0, p, Graph, pos...>
+template<unsigned int dim, typename p, typename Graph, int ... pos>
+struct fill_prop_by_type<dim, 0, p, Graph, pos...>
 {
 	enum
 	{
@@ -286,7 +286,7 @@ public:
 	 * \return the constructed graph
 	 *
 	 */
-	static Graph construct(const size_t (& sz)[dim], Box<dim,T> dom, const size_t(& bc)[dim])
+	static Graph construct(const size_t (& sz)[dim], Box<dim,T> & dom, const size_t(& bc)[dim])
 	{
 		// Calculate the size of the hyper-cubes on each dimension
 		T szd[dim];
@@ -335,7 +335,7 @@ public:
 
 			// vertex spatial properties functor
 
-			fill_prop<dim, lin_id, T, decltype(gp.vertex(g.LinId(key))), typename to_boost_vmpl<pos...>::type, fill_prop_by_type<sizeof...(pos), p, Graph, pos...>::value> flp(obj, szd, key, g, dom);
+			fill_prop<dim, lin_id, T, decltype(gp.vertex(g.LinId(key))), typename to_boost_vmpl<pos...>::type, fill_prop_by_type<dim,sizeof...(pos), p, Graph, pos...>::value> flp(obj, szd, key, g, dom);
 
 			// fill properties
 
@@ -407,7 +407,7 @@ public:
 	 * \return the constructed graph
 	 *
 	 */
-	static Graph construct(const size_t ( & sz)[dim], Box<dim,T> dom, const size_t(& bc)[dim])
+	static Graph construct(const size_t ( & sz)[dim], Box<dim,T> & dom, const size_t(& bc)[dim])
 	{
 		// Calculate the size of the hyper-cubes on each dimension
 
@@ -456,7 +456,11 @@ public:
 
 			// vertex spatial properties functor
 
+<<<<<<< HEAD
 			fill_prop<dim, lin_id, T, decltype(gp.vertex(g.LinId(key))), typename to_boost_vmpl<pos...>::type, fill_prop_by_type<sizeof...(pos), p, Graph, pos...>::value> flp(obj, szd, key, g, dom);
+=======
+			fill_prop<dim, lin_id, T, decltype(gp.vertex(g.LinId(key))), typename to_boost_vmpl<pos...>::type, fill_prop_by_type<dim,sizeof...(pos), p, Graph, pos...>::value> flp(obj, szd, key, g, dom);
+>>>>>>> 33a5ec1ebc3fc47dd5def0a60f7c352ba810d247
 
 			// fill properties
 
@@ -537,7 +541,11 @@ public:
 	 *
 	 */
 	template<int se, int id_prp, typename T, unsigned int dim_c, int ... pos>
+<<<<<<< HEAD
 	static Graph construct(const size_t (&sz)[dim], Box<dim, T> dom, const size_t (& bc)[dim])
+=======
+	static Graph construct(const size_t (&sz)[dim], Box<dim, T> & dom, const size_t (& bc)[dim])
+>>>>>>> 33a5ec1ebc3fc47dd5def0a60f7c352ba810d247
 	{
 		return Graph_constructor_impl<dim, id_prp, Graph, se, T, dim_c, pos...>::construct(sz, dom, bc);
 	}

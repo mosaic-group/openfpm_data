@@ -241,7 +241,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the distance
 	 *
 	 */
-	T distance(const Point<dim,T> & q)
+	__device__ __host__ T distance(const Point<dim,T> & q)
 	{
 		T tot = 0.0;
 
@@ -395,6 +395,7 @@ template<unsigned int dim ,typename T> class Point
 
 		for (size_t i = 0 ; i < dim - 1 ; i++)
 		{
+			/* coverty[dead_error_line] */
 			str += std::to_string(static_cast<double>(get(i))) + " ";
 		}
 		str += std::to_string(static_cast<double>(get(dim-1)));

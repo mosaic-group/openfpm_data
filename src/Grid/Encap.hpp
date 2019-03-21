@@ -487,7 +487,7 @@ public:
 	 *
 	 */
 	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))>
-	inline r_type get()
+	__device__ __host__ inline r_type get()
 	{
 #ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
@@ -501,7 +501,7 @@ public:
 	 *
 	 */
 	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))>
-	inline const r_type get() const
+	__device__ __host__ inline const r_type get() const
 	{
 #ifdef SE_CLASS2
 		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
@@ -516,7 +516,8 @@ public:
 	 * \param ele value to set
 	 *
 	 */
-	template <unsigned int p> inline void set(decltype(boost::fusion::at_c<p>(data_c)) & ele)
+	template <unsigned int p> inline
+	__device__ __host__ void set(decltype(boost::fusion::at_c<p>(data_c)) & ele)
 	{
 #ifdef SE_CLASS2
 			check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
@@ -534,7 +535,8 @@ public:
 	 * \return itself
 	 *
 	 */
-	template<unsigned int dim2> inline encapc<dim,T,Mem> & set(const encapc<dim2,T,Mem> & ec)
+	template<unsigned int dim2>
+	__device__ __host__ inline encapc<dim,T,Mem> & set(const encapc<dim2,T,Mem> & ec)
 	{
 		copy_cpu_encap_encap<encapc<dim2,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
 

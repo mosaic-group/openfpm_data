@@ -92,10 +92,10 @@ class CellNNIteratorSymM<dim,Cell,sh_byte,RUNTIME,impl> : public CellNNIterator<
 	//! index of the particle p
 	size_t p;
 
-	const openfpm::vector<Point<dim,typename Cell::stype>> & pos;
+	const typename Cell::internal_vector_pos_type & pos;
 
 	//! Position of the particles in the phases
-	const openfpm::vector<pos_v<dim,typename Cell::stype>> & ps;
+	const openfpm::vector<pos_v<typename Cell::internal_vector_pos_type>> & ps;
 
 	/*! Select the next valid element
 	 *
@@ -145,8 +145,8 @@ public:
 					   const long int * NNc,
 					   size_t NNc_size,
 					   Cell & cl,
-					   const openfpm::vector<Point<dim,typename Cell::stype>> & pos,
-					   const openfpm::vector<pos_v<dim,typename Cell::stype>> & ps)
+					   const typename Cell::internal_vector_pos_type & pos,
+					   const openfpm::vector<pos_v<typename Cell::internal_vector_pos_type>> & ps)
 	:CellNNIterator<dim,Cell,RUNTIME,impl>(cell,NNc,NNc_size,cl),pp(pp),p(p),pos(pos),ps(ps)
 	{}
 

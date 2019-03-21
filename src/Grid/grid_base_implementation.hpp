@@ -902,7 +902,9 @@ public:
 		check_init();
 		check_bound(v1);
 #endif
-		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(const_cast<decltype(this->data_) &>(data_),g1,v1);
+		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>
+			   ::get(const_cast<typename std::add_lvalue_reference<decltype(this->data_)>::type>(data_),
+					 g1,v1);
 	}
 
 	/*! \brief Get the of the selected element as a boost::fusion::vector
@@ -948,7 +950,8 @@ public:
 		check_init();
 		check_bound(v1);
 #endif
-		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_lin(const_cast<decltype(this->data_) &>(data_),v1);
+		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>
+		       ::get_lin(const_cast<typename std::add_lvalue_reference<decltype(this->data_)>::type>(data_),v1);
 	}
 
 	/*! \brief Fill the memory with the selected byte

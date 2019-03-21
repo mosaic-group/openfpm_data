@@ -752,7 +752,8 @@ BOOST_AUTO_TEST_CASE(copy_encap_vector_fusion_test)
 	g.template get<2>(key)[2][1] = 12.0;
 	g.template get<2>(key)[2][2] = 13.0;
 
-	copy_encap_vector_fusion<decltype(g.get_o(key)),typename aggregate<float,float[3],float[3][3]>::type> cp(g.get_o(key),tmp);
+	auto ge = g.get_o(key);
+	copy_encap_vector_fusion<decltype(g.get_o(key)),typename aggregate<float,float[3],float[3][3]>::type> cp(ge,tmp);
 	boost::mpl::for_each_ref< boost::mpl::range_c<int,0,aggregate<float,float[3],float[3][3]>::max_prop> >(cp);
 
 	g.get_o(key1) = tmp;

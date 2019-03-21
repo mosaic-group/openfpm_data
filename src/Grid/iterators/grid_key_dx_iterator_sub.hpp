@@ -640,7 +640,7 @@ public:
 	 */
 	inline void private_adjust(size_t tot_add)
 	{
-		this->stl_code.template private_adjust(tot_add);
+		this->stl_code.private_adjust(tot_add);
 	}
 };
 

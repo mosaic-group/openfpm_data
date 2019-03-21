@@ -158,7 +158,7 @@ public:
  *
  */
 template<unsigned int dim, typename Cell,typename vector_pos_type, unsigned int impl>
-class CellNNIteratorSym<dim,Cell,RUNTIME,vector_pos_type,impl> : public CellNNIterator<dim,Cell,RUNTIME,impl>
+class CellNNIteratorSym<dim,Cell,vector_pos_type,RUNTIME,impl> : public CellNNIterator<dim,Cell,RUNTIME,impl>
 {
 	//! index of the particle p
 	size_t p;
@@ -228,7 +228,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIteratorSym<dim,Cell,RUNTIME,vector_pos_type,impl> & operator++()
+	inline CellNNIteratorSym<dim,Cell,vector_pos_type,RUNTIME,impl> & operator++()
 	{
 		this->start_id++;
 

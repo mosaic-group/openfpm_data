@@ -80,7 +80,7 @@ struct cid_<2,cnt_type,ids_type,transform>
 		return e[0] + div_c[0] * e[1];
 	}
 
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c, const grid_key_dx<2,cnt_type> & e)
+	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c, const grid_key_dx<2,ids_type> & e)
 	{
 		return e.get(0) + div_c[0] * e.get(1);
 	}

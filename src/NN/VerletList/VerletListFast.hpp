@@ -345,7 +345,7 @@ private:
 	{
 		if (opt == VL_CRS_SYMMETRIC)
 		{
-			create_<CellNNIteratorSym<dim,CellListImpl,RUNTIME,vector_pos_type,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<CellNNIteratorSym<dim,CellListImpl,vector_pos_type,RUNTIME,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
 		}
 		else if (opt == VL_SYMMETRIC)
 		{
@@ -391,7 +391,7 @@ private:
 			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			NN_type NN = NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::get(it,pos,xp,i,cli,r_cut);
+			auto NN = NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::get(it,pos,xp,i,cli,r_cut);
 			NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::add(i,dp);
 
 			while (NN.isNext())
@@ -648,8 +648,8 @@ public:
 	 */
 	void Initialize(CellListImpl & cli,
 					T r_cut,
-					const openfpm::vector<Point<dim,T>> & pos,
-					const openfpm::vector<Point<dim,T>> & pos2,
+					const vector_pos_type & pos,
+					const vector_pos_type & pos2,
 					size_t g_m, size_t opt = VL_NON_SYMMETRIC)
 	{
 		Point<dim,T> spacing = cli.getCellBox().getP2();

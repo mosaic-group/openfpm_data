@@ -259,7 +259,8 @@ public:
 	 * \return Return an iterator over the neighborhood particles
 	 *
 	 */
-	typename CellListType::SymNNIterator getNNIteratorCSRM(const openfpm::vector<Point<dim,typename CellListType::stype>> & pos ,const openfpm::vector<pos_v<dim,typename CellListType::stype>> & v) const
+	typename CellListType::SymNNIterator getNNIteratorCSRM(const vector_pos_type & pos ,
+														   const openfpm::vector<pos_v<vector_pos_type>> & v) const
 	{
 		if (dom_or_anom == 0)
 			return typename CellListType::SymNNIterator(dom_cell.get(cid),CellListType::getV(*start),CellListType::getP(*start),NNc_sym.getPointer(),openfpm::math::pow(3,dim)/2+1,cli,pos,v);
