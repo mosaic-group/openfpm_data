@@ -174,7 +174,7 @@ struct aggregate
 	 * \return the property i
 	 *
 	 */
-	template<unsigned int i> typename boost::mpl::at<type,boost::mpl::int_<i>>::type & get()
+	template<unsigned int i> __device__ __host__ typename boost::mpl::at<type,boost::mpl::int_<i>>::type & get()
 	{
 		return boost::fusion::at_c<i>(data);
 	}
@@ -193,7 +193,7 @@ struct aggregate
 	 * \return the property i
 	 *
 	 */
-	template<unsigned int i> const typename boost::mpl::at<type,boost::mpl::int_<i>>::type & get() const
+	template<unsigned int i> __device__ __host__ const typename boost::mpl::at<type,boost::mpl::int_<i>>::type & get() const
 	{
 		return boost::fusion::at_c<i>(data);
 	}
