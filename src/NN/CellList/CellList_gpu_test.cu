@@ -1168,6 +1168,7 @@ template<unsigned int dim, typename T, typename CellS, int impl> void Test_cell_
 
 	auto & gdsi = cl2.getDomainSortIds();
 	gdsi.template deviceToHost<0>();
+	s_t_ns.template deviceToHost<0>();
 
 	bool match = true;
 	for (size_t i = 0 ; i < g_m ; i++)
