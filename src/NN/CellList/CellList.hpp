@@ -426,13 +426,16 @@ public:
 	//! Type of internal memory structure
 	typedef Mem_type Mem_type_type;
 
-	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,RUNTIME,vector_pos_type,NO_CHECK> SymNNIterator;
+	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,RUNTIME,NO_CHECK> SymNNIterator;
 
 	//! Object type that the structure store
 	typedef typename Mem_type::local_index_type value_type;
 
 	//! Type of the coordinate space (double float)
 	typedef T stype;
+
+	//!
+	typedef vector_pos_type internal_vector_pos_type;
 
 	/*! \brief Return the underlying grid information of the cell list
 	 *
@@ -891,7 +894,10 @@ public:
 
 		Mem_type::swap(static_cast<Mem_type &>(cl));
 
-		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this) = static_cast<const CellDecomposer_sm<dim,T,transform> &>(cl);
+		static_cast<CellDecomposer_sm<dim,T,transform> &>(*this).swap(static_cast<CellDecomposer_sm<dim,T,transform> &>(cl));
+
+		n_dec = cl.n_dec;
+		from_cd = cl.from_cd;
 	}
 
 	/*! \brief Get the Cell iterator
@@ -969,14 +975,14 @@ public:
 	 * \return An iterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>,impl> getNNIteratorRadius(size_t cell, T r_cut)
+	template<unsigned int impl=NO_CHECK> inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,impl> getNNIteratorRadius(size_t cell, T r_cut)
 	{
 		openfpm::vector<long int> & NNc = rcache[r_cut];
 
 		if (NNc.size() == 0)
 		{NNcalc_rad(r_cut,NNc,this->getCellBox(),this->getGrid());}
 
-		CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>,impl> cln(cell,NNc,*this);
+		CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,impl> cln(cell,NNc,*this);
 
 		return cln;
 	}
@@ -1004,7 +1010,7 @@ public:
 	 *
 	 */
 	template<unsigned int impl>
-	inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(unsigned int)SYM,vector_pos_type,impl>
+	inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)SYM,impl>
 	getNNIteratorSym(size_t cell, size_t p, const vector_pos_type & v)
 	{
 #ifdef SE_CLASS1
@@ -1012,7 +1018,7 @@ public:
 		{std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;}
 #endif
 
-		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,SYM,vector_pos_type,impl> cln(cell,p,NNc_sym,*this,v);
+		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,SYM,impl> cln(cell,p,NNc_sym,*this,v);
 		return cln;
 	}
 
@@ -1038,16 +1044,16 @@ public:
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl>
-	inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform>,(unsigned int)SYM,impl>
-	getNNIteratorSymMP(size_t cell, size_t p, const openfpm::vector<Point<dim,T>> & v_p1, const openfpm::vector<Point<dim,T>> & v_p2)
+	template<unsigned int impl, typename vector_pos_type2>
+	inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,(unsigned int)SYM,impl>
+	getNNIteratorSymMP(size_t cell, size_t p, const vector_pos_type2 & v_p1, const vector_pos_type2 & v_p2)
 	{
 #ifdef SE_CLASS1
 		if (from_cd == false)
 			std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
 #endif
 
-		CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform>,SYM,impl> cln(cell,p,NNc_sym,*this,v_p1,v_p2);
+		CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,SYM,impl> cln(cell,p,NNc_sym,*this,v_p1,v_p2);
 		return cln;
 	}
 

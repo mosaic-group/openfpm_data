@@ -15,10 +15,19 @@
 
 #include "cuda_kernel_error_checker.hpp"
 
-#define CUDA_LAUNCH(cuda_call,grid_size,block_size, ...) \
+#define CUDA_LAUNCH(cuda_call,ite, ...) \
         {\
+		cudaDeviceSynchronize(); \
+		{\
+			cudaError_t e = cudaGetLastError();\
+			if (e != cudaSuccess)\
+			{\
+				std::string error = cudaGetErrorString(e);\
+				std::cout << "Cuda an error has occurred before, detected in: " << __FILE__ << ":" << __LINE__ << " " << error << std::endl;\
+			}\
+		}\
 	    CHECK_SE_CLASS1_PRE\
-		cuda_call<<<(grid_size),(block_size)>>>(__VA_ARGS__); \
+		cuda_call<<<ite.wthr,ite.thr>>>(__VA_ARGS__); \
 		cudaDeviceSynchronize(); \
 		{\
 			cudaError_t e = cudaGetLastError();\
@@ -30,10 +39,11 @@
 			CHECK_SE_CLASS1_POST(#cuda_call,__VA_ARGS__)\
 		}\
         }
+
 #else
 
-#define CUDA_LAUNCH(cuda_call,grid_size,block_size, ...) \
-		cuda_call<<<(grid_size),(block_size)>>>(__VA_ARGS__);
+#define CUDA_LAUNCH(cuda_call,ite, ...) \
+		cuda_call<<<ite.wthr,ite.thr>>>(__VA_ARGS__);
 
 
 #endif

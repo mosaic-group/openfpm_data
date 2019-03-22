@@ -685,6 +685,24 @@ struct meta_copy_op
 	}
 };
 
+//! Partial specialization for N=1 1D-Array
+template<template<typename,typename> class op, typename T, typename vmpl>
+struct meta_copy_op<op,openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>
+{
+	/*! \brief Meta-copy applying an operation
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_(const openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> src, openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> dst)
+	{
+		for (size_t i1 = 0 ; i1 < boost::mpl::at<vmpl,boost::mpl::int_<0>>::type::value ; i1++)
+		{
+			copy_general_op<op,T>(src[i1],dst[i1]);
+		}
+	}
+};
 
 //! Partial specialization for N=1 1D-Array
 template<template<typename,typename> class op, typename T,size_t N1>
@@ -701,6 +719,28 @@ struct meta_copy_op<op,T[N1]>
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
 			copy_general_op<op,T>(src[i1],dst[i1]);
+		}
+	}
+};
+
+//! Partial specialization for N=2 2D-Array
+template<template<typename,typename> class op, typename T, typename vmpl>
+struct meta_copy_op<op,openfpm::detail::multi_array::sub_array_openfpm<T,2,vmpl>>
+{
+	/*! \brief Meta-copy applying an operation
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_(const openfpm::detail::multi_array::sub_array_openfpm<T,2,vmpl> src, openfpm::detail::multi_array::sub_array_openfpm<T,2,vmpl> dst)
+	{
+		for (size_t i1 = 0 ; i1 < boost::mpl::at<vmpl,boost::mpl::int_<0>>::type::value ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < boost::mpl::at<vmpl,boost::mpl::int_<1>>::type::value ; i2++)
+			{
+				copy_general_op<op,T>(src[i1][i2],dst[i1][i2]);
+			}
 		}
 	}
 };
@@ -818,6 +858,25 @@ struct meta_copy_op_d<op,Tsrc,Tdst[N1]>
 	}
 };
 
+//! Partial specialization for N=2 2D-Array
+template<template<typename,typename> class op, typename Tsrc, typename Tdst, typename vmpl>
+struct meta_copy_op_d<op,openfpm::detail::multi_array::sub_array_openfpm<Tsrc,1,vmpl>,openfpm::detail::multi_array::sub_array_openfpm<Tdst,1,vmpl>>
+{
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_d_(const openfpm::detail::multi_array::sub_array_openfpm<Tsrc,1,vmpl> src, openfpm::detail::multi_array::sub_array_openfpm<Tdst,1,vmpl> dst)
+	{
+		for (size_t i1 = 0 ; i1 < boost::mpl::at<vmpl,boost::mpl::int_<0>>::type::value ; i1++)
+		{
+			copy_general_op<op,Tdst>(src[i1],dst[i1]);
+		}
+	}
+};
+
 //! Partial specialization for N=1 1D-Array
 template<template<typename,typename> class op, typename Tsrc, typename Tdst, size_t N1>
 struct meta_copy_op_d<op,Tsrc[N1],Tdst[N1]>
@@ -852,6 +911,28 @@ struct meta_copy_op_d<op,Tsrc[N1][N2],Tdst[N1][N2]>
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
 			for (size_t i2 = 0 ; i2 < N2 ; i2++)
+			{
+				copy_general_op<op,Tdst>(src[i1][i2],dst[i1][i2]);
+			}
+		}
+	}
+};
+
+//! Partial specialization for N=2 2D-Array
+template<template<typename,typename> class op, typename Tsrc, typename Tdst, typename vmpl>
+struct meta_copy_op_d<op,openfpm::detail::multi_array::sub_array_openfpm<Tsrc,2,vmpl>,openfpm::detail::multi_array::sub_array_openfpm<Tdst,2,vmpl>>
+{
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	static inline void meta_copy_op_d_(const openfpm::detail::multi_array::sub_array_openfpm<Tsrc,2,vmpl> src, openfpm::detail::multi_array::sub_array_openfpm<Tdst,2,vmpl> dst)
+	{
+		for (size_t i1 = 0 ; i1 < boost::mpl::at<vmpl,boost::mpl::int_<0>>::type::value ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < boost::mpl::at<vmpl,boost::mpl::int_<1>>::type::value ; i2++)
 			{
 				copy_general_op<op,Tdst>(src[i1][i2],dst[i1][i2]);
 			}

@@ -53,7 +53,11 @@ template<unsigned int dim, typename T> void create_particles_on_grid(grid_sm<dim
  * \param v vector of positions
  *
  */
-template<unsigned int dim, typename T> void create_particles_on_gridM(grid_sm<dim,void> & g_info, T r_cut, SpaceBox<dim,T> & box, openfpm::vector<pos_v<dim,T>> & v, CellListM<dim,T,2> & cl)
+template<unsigned int dim, typename T> void create_particles_on_gridM(grid_sm<dim,void> & g_info,
+																	  T r_cut,
+																	  SpaceBox<dim,T> & box,
+																	  openfpm::vector<pos_v<openfpm::vector<Point<dim,T>>>> & v,
+																	  CellListM<dim,T,2> & cl)
 {
 	// Create a grid iterator
 	grid_key_dx_iterator<dim> g_it(g_info);
@@ -304,10 +308,10 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_sM(SpaceB
 		openfpm::vector<Point<dim,T>> ps2;
 		openfpm::vector<Point<dim,T>> ps3;
 
-		openfpm::vector<pos_v<dim,T>> pos2;
-		pos2.add(pos_v<dim,T>(ps1));
-		pos2.add(pos_v<dim,T>(ps2));
-		pos2.add(pos_v<dim,T>(ps3));
+		openfpm::vector<pos_v<openfpm::vector<Point<dim,T>>>> pos2;
+		pos2.add(pos_v<openfpm::vector<Point<dim,T>>>(ps1));
+		pos2.add(pos_v<openfpm::vector<Point<dim,T>>>(ps2));
+		pos2.add(pos_v<openfpm::vector<Point<dim,T>>>(ps3));
 
 		CellListM<dim,T,2> cl;
 		create_particles_on_gridM(ginfo,r_cut,box,pos2,cl);
@@ -372,10 +376,10 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_sM(SpaceB
 	openfpm::vector<Point<dim,T>> ps2;
 	openfpm::vector<Point<dim,T>> ps3;
 
-	openfpm::vector<pos_v<dim,T>> pos2;
-	pos2.add(pos_v<dim,T>(ps1));
-	pos2.add(pos_v<dim,T>(ps2));
-	pos2.add(pos_v<dim,T>(ps3));
+	openfpm::vector<pos_v<openfpm::vector<Point<dim,T>>>> pos2;
+	pos2.add(pos_v<openfpm::vector<Point<dim,T>>>(ps1));
+	pos2.add(pos_v<openfpm::vector<Point<dim,T>>>(ps2));
+	pos2.add(pos_v<openfpm::vector<Point<dim,T>>>(ps3));
 
 	create_particles_on_gridM(ginfo,r_cut,box,pos2,cli);
 

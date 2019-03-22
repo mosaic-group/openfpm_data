@@ -163,7 +163,7 @@ public:
  * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,int NNc_size, typename vector_pos_type, unsigned int impl>
+template<unsigned int dim, typename Cell, typename vector_pos_type,int NNc_size, unsigned int impl>
 class CellNNIteratorSym : public CellNNIterator<dim,Cell,NNc_size,impl>
 {
 	//! index of the particle p
@@ -226,7 +226,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIteratorSym<dim,Cell,NNc_size,vector_pos_type,impl> & operator++()
+	inline CellNNIteratorSym<dim,Cell,vector_pos_type,NNc_size,impl> & operator++()
 	{
 		this->start_id++;
 
@@ -252,16 +252,17 @@ public:
  * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,int NNc_size, unsigned int impl> class CellNNIteratorSymMP : public CellNNIterator<dim,Cell,NNc_size,impl>
+template<unsigned int dim, typename Cell, typename vector_pos_type , int NNc_size, unsigned int impl>
+class CellNNIteratorSymMP : public CellNNIterator<dim,Cell,NNc_size,impl>
 {
 	//! index of the particle p
 	size_t p;
 
 	//! Phase vector for particle p
-	const openfpm::vector<Point<dim,typename Cell::stype>> & v_p1;
+	const vector_pos_type & v_p1;
 
 	//! Phase vector for particle q
-	const openfpm::vector<Point<dim,typename Cell::stype>> & v_p2;
+	const vector_pos_type & v_p2;
 
 	/*! Select the next valid element
 	 *
@@ -309,8 +310,8 @@ public:
 			                   size_t p,
 							   const NNc_array<dim,NNc_size> &NNc,
 							   Cell & cl,
-							   const openfpm::vector<Point<dim,typename Cell::stype>> & v_p1,
-							   const openfpm::vector<Point<dim,typename Cell::stype>> & v_p2)
+							   const vector_pos_type & v_p1,
+							   const vector_pos_type & v_p2)
 	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),p(p),v_p1(v_p1),v_p2(v_p2)
 	{
 		selectValid();
@@ -322,7 +323,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIteratorSymMP<dim,Cell,NNc_size,impl> & operator++()
+	inline CellNNIteratorSymMP<dim,Cell,vector_pos_type,NNc_size,impl> & operator++()
 	{
 		this->start_id++;
 

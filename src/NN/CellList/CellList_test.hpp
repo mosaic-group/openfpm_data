@@ -265,9 +265,9 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBo
 	openfpm::vector<Point<dim,T>> phase1;
 	openfpm::vector<Point<dim,T>> phase2;
 
-	openfpm::vector<pos_v<dim,T>> phases;
-	phases.add(pos_v<dim,T>(phase1));
-	phases.add(pos_v<dim,T>(phase2));
+	openfpm::vector<pos_v<openfpm::vector<Point<dim,T>>>> phases;
+	phases.add(pos_v<openfpm::vector<Point<dim,T>>>(phase1));
+	phases.add(pos_v<openfpm::vector<Point<dim,T>>>(phase2));
 
 	size_t id = 0;
 

@@ -54,6 +54,65 @@ template<unsigned int dim ,typename T> class Point;
 #define POINT_RINT 40
 #define POINT_SUB_UNI 41
 
+/////////////////// Best cast rules ////////////////////////
+
+template<typename source1, typename source2>
+struct best_conv
+{
+	typedef source1 type;
+};
+
+
+template<typename source2>
+struct best_conv<int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source2>
+struct best_conv<long int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source2>
+struct best_conv<unsigned int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source2>
+struct best_conv<unsigned long int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source1>
+struct best_conv<source1,int>
+{
+	typedef source1 type;
+};
+
+template<typename source1>
+struct best_conv<source1,long int>
+{
+	typedef source1 type;
+};
+
+template<typename source1>
+struct best_conv<source1,unsigned int>
+{
+	typedef source1 type;
+};
+
+template<typename source1>
+struct best_conv<source1,unsigned long int>
+{
+	typedef source1 type;
+};
+
+///////////////////////////////////////////////////////////////
+
 constexpr unsigned int max_expr(unsigned int dim1, unsigned int dim2)
 {
 	return (dim1 > dim2)?dim1:dim2;
@@ -287,7 +346,9 @@ public:
 	 * \return the value of the expression for the coordinate k
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
+	template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+			                                    typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+	__device__ __host__  inline r_type value(size_t k) const
 	{
 		return o1.value(k) + o2.value(k);
 	}
@@ -296,7 +357,8 @@ public:
 	 *
 	 *
 	 */
-	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > __device__ __host__  inline operator T() const
+	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  >
+	__device__ __host__  inline operator T() const
 	{
 		init();
 		return o1.value(0) + o2.value(0);
@@ -362,7 +424,9 @@ public:
 	 * \return the evaluate expression at coordinate k
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
+	template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+                                                typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+	__device__ __host__  inline r_type value(size_t k) const
 	{
 		return o1.value(k) - o2.value(k);
 	}
@@ -371,7 +435,8 @@ public:
 	 *
 	 *
 	 */
-	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > __device__ __host__  operator T() const
+	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  >
+	__device__ __host__  operator T() const
 	{
 		init();
 		return o1.value(0) - o2.value(0);
@@ -433,13 +498,15 @@ public:
 	 * \return the result
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
+	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type >
+	__device__ __host__  inline r_type value(size_t k) const
 	{
 		return -(o1.value(k));
 	}
 
 	//! casting to a type T
-	template <typename T, typename check = typename std::enable_if<!std::is_same<T,orig>::value >::type  > __device__ __host__  operator T() const
+	template <typename T, typename check = typename std::enable_if<!std::is_same<T,orig>::value >::type  >
+	__device__ __host__  operator T() const
 	{
 		init();
 		return -(o1.value(0));
@@ -514,13 +581,16 @@ public:
 	 * \return the expression value
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
+	template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+                                       typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+	__device__ __host__  inline r_type value(size_t k) const
 	{
 		return scal;
 	}
 
 	//! cast to other type
-	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value >::type > __device__ __host__  operator T() const
+	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value >::type >
+	__device__ __host__  operator T() const
 	{
 		init();
 		return scal;
@@ -586,7 +656,9 @@ public:
 	 * \param key where to evaluate the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
+	template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+                                       typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+	__device__ __host__  inline r_type value(size_t k) const
 	{
 		return o1.value(k) * o2.value(k);
 	}
@@ -595,7 +667,8 @@ public:
 	 *
 	 *
 	 */
-	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  > __device__ __host__  operator T() const
+	template<typename T, typename test=typename boost::disable_if_c< std::is_same<T,orig>::value || exp1::nvals != 1 || exp2::nvals != 1 >::type  >
+	__device__ __host__  operator T() const
 	{
 		init();
 		return o1.value(0) * o2.value(0);
@@ -662,7 +735,9 @@ public:
 	 * \return the value of the expression
 	 *
 	 */
-	template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type value(size_t k) const
+	template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+                                       typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+	__device__ __host__  inline r_type value(size_t k) const
 	{
 		return o1.value(k) / o2.value(k);
 	}
@@ -1027,7 +1102,15 @@ operator*(T d, const Point<dim,T> & vb)
 	return exp_sum;
 }
 
-template<typename orig, typename exp1 , typename exp2, unsigned int op1, unsigned int dim, typename T>
+////////////////////// point_expression_op first operand cases ////////////////////////
+
+template<typename orig,
+         typename exp1 ,
+         typename exp2,
+         unsigned int op1,
+         unsigned int dim,
+         typename T,
+         typename sfinae = typename std::enable_if< point_expression_op<orig,exp1,exp2,op1>::nvals == dim >::type >
 __device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,POINT_MUL_POINT>
 operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression<T[dim]> & vb)
 {
@@ -1036,7 +1119,30 @@ operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expres
 	return exp_sum;
 }
 
-template<typename orig, typename exp1 , typename exp2, unsigned int op1, unsigned int dim, typename T>
+template<typename orig,
+         typename exp1 ,
+         typename exp2,
+         unsigned int op1,
+         unsigned int dim,
+         typename T,
+         typename sfinae = typename std::enable_if< point_expression_op<orig,exp1,exp2,op1>::nvals == 1 >::type >
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,POINT_MUL>
+operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression<T[dim]> & vb)
+{
+	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,POINT_MUL> exp_sum(va,vb);
+
+	return exp_sum;
+}
+
+////////////////////// point_expression_op second operand cases ////////////////////////
+
+template<typename orig,
+         typename exp1,
+         typename exp2,
+         unsigned int op1,
+         unsigned int dim,
+         typename T,
+         typename sfinae = typename std::enable_if< point_expression_op<orig,exp1,exp2,op1>::nvals == dim >::type >
 __device__ __host__ inline point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL_POINT>
 operator*(const point_expression<T[dim]> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)
 {
@@ -1044,6 +1150,23 @@ operator*(const point_expression<T[dim]> & va, const point_expression_op<orig,ex
 
 	return exp_sum;
 }
+
+template<typename orig,
+         typename exp1,
+         typename exp2,
+         unsigned int op1,
+         unsigned int dim,
+         typename T,
+         typename sfinae = typename std::enable_if< point_expression_op<orig,exp1,exp2,op1>::nvals == 1 >::type >
+__device__ __host__ inline point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL>
+operator*(const point_expression<T[dim]> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)
+{
+	point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL> exp_sum(va,vb);
+
+	return exp_sum;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /* \brief Multiply two points expression
  *
@@ -1405,12 +1528,13 @@ public:
 	 * \return a point expression
 	 *
 	 */
-	template<typename orig, typename exp1, typename exp2, unsigned int op> __device__ __host__  point_expression<T[dim]> & operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
+	template<typename orig, typename exp1, typename exp2, unsigned int op>
+	__device__ __host__  point_expression<T[dim]> & operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
 	{
 		p_exp.init();
 
 		for (size_t i = 0; i < dim ; i++)
-			d[i] = p_exp.value(i);
+		{d[i] = p_exp.value(i);}
 
 		return *this;
 	}

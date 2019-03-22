@@ -100,6 +100,88 @@ BOOST_AUTO_TEST_CASE( vector_cuda_to_kernel_recursive2 )
 	BOOST_REQUIRE_EQUAL(test,true);
 }
 
+template<typename vv_rc,typename vector_output_type>
+__global__ void kernel_recursive_check(vv_rc vvrc, vector_output_type vot)
+{
+	int k = 0;
+	for (int i = 0 ; i < vvrc.size() ; i++)
+	{
+		for (int j = 0 ; j < vvrc.template get<1>(i).size() ; j++)
+		{
+			vot.template get<0>(k) = vvrc.template get<1>(i).template get<0>(j);
+			k++;
+		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE( vector_cuda_to_kernel_recursive2_test_toKernel )
+{
+	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<aggregate<long int>>>> test2_type;
+	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<aggregate<Box<2,float>>>>> test3_type;
+
+	test2_type tt2;
+	test3_type tt3;
+
+	tt2.add_no_device();
+	tt2.add_no_device();
+	tt2.add_no_device();
+
+/*	tt3.add();
+	tt3.add();
+	tt3.add();*/
+
+	tt2.template get<0>(0) = 80;
+	tt2.template get<1>(0).add();
+	tt2.template get<1>(0).template get<0>(0) = 500;
+	tt2.template get<0>(0) = 180;
+	tt2.template get<1>(0).add();
+	tt2.template get<1>(0).template get<0>(1) = 600;
+	tt2.template get<0>(0) = 280;;
+	tt2.template get<1>(0).add();
+	tt2.template get<1>(0).template get<0>(2) = 700;
+	tt2.template get<1>(0).template hostToDevice<0>();
+
+	tt2.template get<0>(1) = 10080;
+	tt2.template get<1>(1).add();
+	tt2.template get<1>(1).template get<0>(0) = 1500;
+	tt2.template get<0>(1) = 20080;
+	tt2.template get<1>(1).add();
+	tt2.template get<1>(1).template get<0>(1) = 1600;
+	tt2.template get<0>(1) = 30080;
+	tt2.template get<1>(1).add();
+	tt2.template get<1>(1).template get<0>(2) = 1700;
+	tt2.template get<1>(1).template hostToDevice<0>();
+
+	tt2.template get<0>(2) = 40080;
+	tt2.template get<1>(2).add();
+	tt2.template get<1>(2).template get<0>(0) = 2500;
+	tt2.template get<0>(2) = 50080;
+	tt2.template get<1>(2).add();
+	tt2.template get<1>(2).template get<0>(1) = 2600;
+	tt2.template get<0>(2) = 60080;
+	tt2.template get<1>(2).add();
+	tt2.template get<1>(2).template get<0>(2) = 2700;
+	tt2.template get<1>(2).template hostToDevice<0>();
+
+	tt2.template hostToDevice<1>();
+	openfpm::vector_gpu<aggregate<long int>> vg;
+	vg.resize(9);
+
+	kernel_recursive_check<<<1,1>>>(tt2.toKernel(),vg.toKernel());
+
+	vg.template deviceToHost<0>();
+
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(0),500);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(1),600);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(2),700);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(3),1500);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(4),1600);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(5),1700);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(6),2500);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(7),2600);
+	BOOST_REQUIRE_EQUAL(vg.template get<0>(8),2700);
+}
+
 BOOST_AUTO_TEST_CASE( vector_cuda_to_cpu_operator_equal )
 {
 	openfpm::vector_gpu<aggregate<int,int,double>> v1;
@@ -236,6 +318,152 @@ BOOST_AUTO_TEST_CASE( vector_cuda_host_to_device_vector_and_point_tensor )
 		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[2][1],i+22200);
 		BOOST_REQUIRE_EQUAL(v1.template get<1>(i)[2][2],i+23600);
 	}
+}
+
+BOOST_AUTO_TEST_CASE( vector_cuda_copy )
+{
+	openfpm::vector_gpu<aggregate<float,float[3],float[3][3]>> v1;
+	openfpm::vector_gpu<aggregate<float,float[3],float[3][3]>> v2;
+
+	v1.resize(100);
+
+	auto ite = v1.getIterator();
+
+	while (ite.isNext())
+	{
+		auto p = ite.get();
+
+		v1.template get<0>(p) = p + 100;
+
+		v1.template get<0>(p) = p + 2000;
+		v1.template get<0>(p) = p + 3000;
+		v1.template get<0>(p) = p + 4000;
+
+		v1.template get<1>(p)[0] = p + 5000;
+		v1.template get<1>(p)[1] = p + 6000;
+		v1.template get<1>(p)[2] = p + 7000;
+
+		v1.template get<2>(p)[0][0] = p + 8000;
+		v1.template get<2>(p)[0][1] = p + 9000;
+		v1.template get<2>(p)[0][2] = p + 10000;
+
+		v1.template get<2>(p)[1][0] = p + 11000;
+		v1.template get<2>(p)[1][1] = p + 12000;
+		v1.template get<2>(p)[2][2] = p + 13000;
+
+		v1.template get<2>(p)[2][0] = p + 14000;
+		v1.template get<2>(p)[2][1] = p + 15000;
+		v1.template get<2>(p)[2][2] = p + 16000;
+
+		++ite;
+	}
+
+	v1.hostToDevice<0,1,2>();
+
+	ite = v1.getIterator();
+
+	while (ite.isNext())
+	{
+		auto p = ite.get();
+
+		v1.template get<0>(p) = p + 6100;
+
+		v1.template get<0>(p) = p + 62000;
+		v1.template get<0>(p) = p + 63000;
+		v1.template get<0>(p) = p + 64000;
+
+		v1.template get<1>(p)[0] = p + 65000;
+		v1.template get<1>(p)[1] = p + 66000;
+		v1.template get<1>(p)[2] = p + 67000;
+
+		v1.template get<2>(p)[0][0] = p + 68000;
+		v1.template get<2>(p)[0][1] = p + 69000;
+		v1.template get<2>(p)[0][2] = p + 610000;
+
+		v1.template get<2>(p)[1][0] = p + 611000;
+		v1.template get<2>(p)[1][1] = p + 612000;
+		v1.template get<2>(p)[2][2] = p + 613000;
+
+		v1.template get<2>(p)[2][0] = p + 614000;
+		v1.template get<2>(p)[2][1] = p + 615000;
+		v1.template get<2>(p)[2][2] = p + 616000;
+
+		++ite;
+	}
+
+	v2 = v1;
+
+	// first check the CPU
+
+	bool match = true;
+
+	ite = v2.getIterator();
+
+	while (ite.isNext())
+	{
+		auto p = ite.get();
+
+		match = v2.template get<0>(p) == p + 6100;
+
+		match = v2.template get<0>(p) == p + 62000;
+		match = v2.template get<0>(p) == p + 63000;
+		match = v2.template get<0>(p) == p + 64000;
+
+		match = v2.template get<1>(p)[0] == p + 65000;
+		match = v2.template get<1>(p)[1] == p + 66000;
+		match = v2.template get<1>(p)[2] == p + 67000;
+
+		match = v2.template get<2>(p)[0][0] == p + 68000;
+		match = v2.template get<2>(p)[0][1] == p + 69000;
+		match = v2.template get<2>(p)[0][2] == p + 610000;
+
+		match = v2.template get<2>(p)[1][0] == p + 611000;
+		match = v2.template get<2>(p)[1][1] == p + 612000;
+		match = v2.template get<2>(p)[2][2] == p + 613000;
+
+		match = v2.template get<2>(p)[2][0] == p + 614000;
+		match = v2.template get<2>(p)[2][1] == p + 615000;
+		match = v2.template get<2>(p)[2][2] == p + 616000;
+
+		++ite;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+
+	v2.deviceToHost<0,1,2>();
+
+	ite = v2.getIterator();
+
+	while (ite.isNext())
+	{
+		auto p = ite.get();
+
+		match = v2.template get<0>(p) == p + 100;
+
+		match = v2.template get<0>(p) == p + 2000;
+		match = v2.template get<0>(p) == p + 3000;
+		match = v2.template get<0>(p) == p + 4000;
+
+		match = v2.template get<1>(p)[0] == p + 5000;
+		match = v2.template get<1>(p)[1] == p + 6000;
+		match = v2.template get<1>(p)[2] == p + 7000;
+
+		match = v2.template get<2>(p)[0][0] == p + 8000;
+		match = v2.template get<2>(p)[0][1] == p + 9000;
+		match = v2.template get<2>(p)[0][2] == p + 10000;
+
+		match = v2.template get<2>(p)[1][0] == p + 11000;
+		match = v2.template get<2>(p)[1][1] == p + 12000;
+		match = v2.template get<2>(p)[2][2] == p + 13000;
+
+		match = v2.template get<2>(p)[2][0] == p + 14000;
+		match = v2.template get<2>(p)[2][1] == p + 15000;
+		match = v2.template get<2>(p)[2][2] == p + 16000;
+
+		++ite;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

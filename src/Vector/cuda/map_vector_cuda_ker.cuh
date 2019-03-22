@@ -22,6 +22,17 @@ __global__ void merge_add_prp_device_impl(vector_src_type v_src, vector_dst_type
 	object_s_di<decltype(v_src.get(i)),decltype(v_dst.get(old_sz+i)),OBJ_ENCAP,args...>(v_src.get(i),v_dst.get(old_sz+i));
 }
 
+template<typename vector_src_type, typename vector_dst_type>
+__global__ void copy_two_vectors(vector_src_type v_dst, vector_dst_type v_src)
+{
+	int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+	if (i >= v_src.size())
+	{return;}
+
+	v_src.get(i) = v_dst.get(i);
+}
+
 #endif
 
 namespace openfpm
@@ -54,14 +65,14 @@ namespace openfpm
 		typedef int yes_i_am_vector;
 
 		//! Type of the encapsulation memory parameter
-		typedef typename memory_traits_inte<T>::type layout_type;
+		typedef typename layout_base<T_>::type layout_type;
 
 		//! Object container for T, it is the return type of get_o it return a object type trough
 		// you can access all the properties of T
-		typedef typename grid_cpu<1,T,CudaMemory,typename memory_traits_inte<T>::type>::container container;
+		typedef typename grid_cpu<1,T_,CudaMemory,typename layout_base<T_>::type>::container container;
 
 		//! Type of the value the vector is storing
-		typedef T value_type;
+		typedef T_ value_type;
 
 		/*! \brief Return the size of the vector
 		 *

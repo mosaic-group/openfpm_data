@@ -667,15 +667,16 @@ BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 	BOOST_REQUIRE_EQUAL(dev_mem2[4],2);
 
 	std::cout << "######### Testing error message #########" << std::endl;
-	dim3 wthr;
-	wthr.x = 32;
-	wthr.y = 1;
-	wthr.z = 1;
-	dim3 thr;
-	thr.x = 16;
-	thr.y = 1;
-	thr.z = 1;
-	CUDA_LAUNCH(test_se1_crash_gt2,wthr,thr,c3.toKernel(),c2.toKernel());
+
+	ite_gpu<3> gr;
+
+	gr.wthr.x = 32;
+	gr.wthr.y = 1;
+	gr.wthr.z = 1;
+	gr.thr.x = 16;
+	gr.thr.y = 1;
+	gr.thr.z = 1;
+	CUDA_LAUNCH(test_se1_crash_gt2,gr,c3.toKernel(),c2.toKernel());
 	std::cout << "######### End Testing error message #########" << std::endl;
 
 #endif

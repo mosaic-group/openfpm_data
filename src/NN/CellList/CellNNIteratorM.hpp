@@ -39,10 +39,10 @@ class CellNNIteratorSymM : public CellNNIterator<dim,Cell,NNc_size,impl>
 	size_t p;
 
 	//! Position of the particles p
-	const openfpm::vector<Point<dim,typename Cell::stype>> & pos;
+	const typename Cell::internal_vector_pos_type & pos;
 
 	//! Position of the particle p
-	const openfpm::vector<pos_v<dim,typename Cell::stype>> & ps;
+	const typename openfpm::vector<pos_v<typename Cell::internal_vector_pos_type>> & ps;
 
 	/*! Select the next valid element
 	 *
@@ -91,8 +91,8 @@ public:
 					   size_t p,
 					   const NNc_array<dim,NNc_size> & NNc,
 					   Cell & cl,
-					   const openfpm::vector<Point<dim,typename Cell::stype>> & pos,
-					   const openfpm::vector<pos_v<dim,typename Cell::stype>> & ps)
+					   const typename Cell::internal_vector_pos_type & pos,
+					   const typename openfpm::vector<pos_v<typename Cell::internal_vector_pos_type>> & ps)
 	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),pp(pp),p(p),pos(pos),ps(ps)
 	{
 		selectValid();

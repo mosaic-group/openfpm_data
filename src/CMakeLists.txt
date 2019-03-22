@@ -29,12 +29,18 @@ add_executable(mem_map  ../../openfpm_devices/src/Memleak_check.cpp
 
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
+    if (TEST_COVERAGE)
+        target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
+    endif()
 endif()
 
 ###########################
 
 if (CUDA_FOUND)
 	target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
+        if (TEST_COVERAGE)
+                target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage">)
+        endif()
 endif()
 
 target_include_directories (mem_map PUBLIC ${CUDA_INCLUDE_DIRS})
@@ -48,12 +54,19 @@ target_include_directories (mem_map PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(mem_map ${Boost_LIBRARIES})
 target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 
+if (TEST_COVERAGE)
+    target_link_libraries(mem_map -lgcov)
+endif()
 
 # Request that particles be built with -std=c++11
 # As this is a public compile feature anything that links to particles
 # will also build with -std=c++11
 target_compile_features(mem_map PUBLIC cxx_std_11)
 target_link_libraries(mem_map ${MPI_C_LIBRARIES})
+target_link_libraries(mem_map m)
+if (NOT APPLE)
+    target_link_libraries(mem_map rt)
+endif ()
 
 install(FILES Grid/comb.hpp 
 	      Grid/copy_grid_fast.hpp 
@@ -78,7 +91,8 @@ install(FILES Grid/cuda/cuda_grid_gpu_funcs.cuh
 install(FILES data_type/aggregate.hpp
 	DESTINATION openfpm_data/include/data_type )
 
-install(FILES Graph/map_graph.hpp
+install(FILES Graph/CartesianGraphFactory.hpp
+	      Graph/map_graph.hpp
 	DESTINATION openfpm_data/include/Graph)
 
 install(FILES Point_test.hpp
@@ -220,6 +234,8 @@ install(FILES Vector/map_vector.hpp
 	      DESTINATION openfpm_data/include/Vector )
 
 install(FILES Vector/cuda/map_vector_cuda_ker.cuh
+	      Vector/cuda/map_vector_std_cuda_ker.cuh
+	      Vector/cuda/map_vector_std_cuda.hpp
 	      DESTINATION openfpm_data/include/Vector/cuda/ )
 
 install(FILES util/multi_array_openfpm/array_openfpm.hpp
@@ -239,6 +255,7 @@ install(FILES util/cuda/scan_cuda.cuh
 	      DESTINATION openfpm_data/include/util/cuda )
 
 install(FILES util/cuda/moderngpu/context.hxx
+	      util/cuda/moderngpu/context_reduced.hxx
 	      util/cuda/moderngpu/cpp11.hxx
 	      util/cuda/moderngpu/cta_load_balance.hxx
 	      util/cuda/moderngpu/cta_merge.hxx

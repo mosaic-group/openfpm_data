@@ -70,7 +70,7 @@ namespace openfpm
 // Definition of the box
 template<unsigned int dim , typename T> class Box;
 
-template<template <typename> class layout_base, typename T, bool = is_vector_native<T>::value>
+template<template <typename> class layout_base, typename T, int = is_vector_native<T>::value + 2*is_vector_dist<T>::value + 4*is_gpu_celllist<T>::value >
 struct toKernel_transform;
 
 template<template <typename> class layout_base, typename T, typename ... args>
@@ -100,22 +100,24 @@ struct apply_transform
 	typedef typename apply_trasform_impl<layout_base,T,typename T::type>::type type;
 };
 
-template<template <typename> class layout_base, typename T, bool >
-struct toKernel_transform
+/////////////////////////////////////////////// TRANSFORMER NODE /////////////////////////////////////////////////
+
+template<template <typename> class layout_base, typename T >
+struct toKernel_transform<layout_base,T,0>
 {
 	typedef T type;
 };
 
 
 template<template <typename> class layout_base, typename T>
-struct toKernel_transform<layout_base,T,true>
+struct toKernel_transform<layout_base,T,1>
 {
 	typedef typename apply_transform<layout_base,typename T::value_type>::type aggr;
 
 	typedef openfpm::vector_gpu_ker<aggr,layout_base> type;
 };
 
-/////////////////////////////////////////////////// KNOWN TYPE SPECIALIZATION //////////////////////////////////
+/////////////////////////////////////////////////// KNOWN TYPE SPECIALIZATION TERMINATORS //////////////////////
 
 template<template <typename> class layout_base,typename T, typename ... args>
 struct aggregate_or_known_type<layout_base,T,2,args ...>
