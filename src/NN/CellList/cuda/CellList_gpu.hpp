@@ -19,6 +19,7 @@
 #include "util/cuda_util.hpp"
 #include "NN/CellList/CellList_util.hpp"
 #include "NN/CellList/CellList.hpp"
+#include "Vector/map_vector_sparse.hpp"
 
 #ifdef __NVCC__
 #include "util/cuda/moderngpu/kernel_scan.hxx"
@@ -27,7 +28,13 @@
 constexpr int count = 0;
 constexpr int start = 1;
 
-template<unsigned int dim, typename T,  typename Memory, typename transform = no_transform_only<dim,T>, typename cnt_type = unsigned int, typename ids_type = int>
+template<unsigned int dim,
+		 typename T,
+		 typename Memory,
+		 typename transform = no_transform_only<dim,T>,
+		 typename cnt_type = unsigned int,
+		 typename ids_type = int,
+		 bool is_sparse = false>
 class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 {
 	typedef openfpm::vector<aggregate<cnt_type>,Memory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> vector_cnt_type;
@@ -40,6 +47,9 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 	//! \brief Cell scan with + operation of cl_n
 	vector_cnt_type starts;
+
+	//! \brief sparse vector in case of sparse Cell-list
+	openfpm::vector_sparse_gpu<aggregate<cnt_type>> cl_sparse;
 
 	//! \brief particle ids information the first "dim" is the cell-id in grid coordinates, the last is the local-id inside the cell
 	openfpm::vector<aggregate<ids_type[dim+1]>,Memory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
@@ -86,6 +96,212 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		}
 
 		cl_n.resize(tot_n_cell);
+	}
+
+	/*! \brief This function construct a sparse cell-list
+	 *
+	 *
+	 */
+	template<typename vector, typename vector_prp>
+	void construct_sparse(vector & pl,
+  	   	   	 	 	 	  vector & pl_out,
+  	   	   	 	 	 	  vector_prp & pl_prp,
+  	   	   	 	 	 	  vector_prp & pl_prp_out,
+  	   	   	 	 	 	  mgpu::ofp_context_t & mgpuContext,
+  	   	   	 	 	 	  size_t g_m = 0,
+  	   	   	 	 	 	  cl_construct_opt opt = cl_construct_opt::Full)
+	{
+#ifdef __NVCC__
+
+		part_ids.resize(pl.size());
+		cl_n.resize(pl.size());
+
+		// Than we construct the ids
+
+		auto ite_gpu = pl.getGPUIterator();
+
+		part_ids.resize(pl.size());
+
+		if (ite_gpu.wthr.x == 0)
+		{
+			// no particles
+			starts.resize(cl_n.size());
+			starts.template fill<0>(0);
+			return;
+		}
+
+		CUDA_LAUNCH((subindex<true,dim,T,cnt_type,ids_type>),ite_gpu,div_c,
+																		spacing_c,
+																		off,
+																		this->getTransform(),
+																		pl.capacity(),
+																		pl.size(),
+																		part_ids.capacity(),
+																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
+																		static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
+																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
+
+		// now we construct the cells
+
+		cells.resize(pl.size());
+
+		// Here we fill the sparse vector
+		CUDA_LAUNCH((fill_cells_sparse),ite_gpu,cl_sparse.toKernel(),cl_n.toKernel());
+
+		auto itgg = part_ids.getGPUIterator();
+
+		CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg,0,
+																					   div_c,
+																					   off,
+																					   part_ids.size(),
+																					   part_ids.capacity(),
+																					   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
+																					   static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()),
+																					   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
+
+		sorted_to_not_sorted.resize(pl.size());
+		non_sorted_to_sorted.resize(pl.size());
+
+		sorted_domain_particles_ids.resize(pl.size());
+		sorted_domain_particles_dg.resize(pl.size());
+
+		auto ite = pl.getGPUIterator(64);
+
+		// Here we reorder the particles to improve coalescing access
+		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
+				      decltype(pl.toKernel()),
+				      decltype(sorted_to_not_sorted.toKernel()),
+				      cnt_type,shift_ph<0,cnt_type>>),ite,pl.size(),
+				                                                           pl_prp.toKernel(),
+				                                                           pl_prp_out.toKernel(),
+				                                                           pl.toKernel(),
+				                                                           pl_out.toKernel(),
+				                                                           sorted_to_not_sorted.toKernel(),
+				                                                           non_sorted_to_sorted.toKernel(),
+				                                                           static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
+
+
+		if (opt == cl_construct_opt::Full)
+		{
+			ite = sorted_domain_particles_ids.getGPUIterator();
+
+			CUDA_LAUNCH((mark_domain_particles),ite,sorted_to_not_sorted.toKernel(),sorted_domain_particles_ids.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
+
+
+			// now we sort the particles
+			mergesort((int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),(int *)sorted_domain_particles_ids.template getDeviceBuffer<0>(),
+							 sorted_domain_particles_dg.size(), mgpu::template less_t<int>(), mgpuContext);
+		}
+
+	#else
+
+			std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
+
+	#endif
+	}
+
+	/*! \brief This function construct a dense cell-list
+	 *
+	 *
+	 */
+	template<typename vector, typename vector_prp>
+	void construct_dense(vector & pl,
+			   	   	   	 vector & pl_out,
+			   	   	   	 vector_prp & pl_prp,
+			   	   	   	 vector_prp & pl_prp_out,
+			   	   	   	 mgpu::ofp_context_t & mgpuContext,
+			   	   	   	 size_t g_m = 0,
+			   	   	   	 cl_construct_opt opt = cl_construct_opt::Full)
+	{
+#ifdef __NVCC__
+
+		part_ids.resize(pl.size());
+
+		// Than we construct the ids
+
+		auto ite_gpu = pl.getGPUIterator();
+
+		cl_n.resize(this->gr_cell.size()+1);
+		CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
+
+		part_ids.resize(pl.size());
+
+		if (ite_gpu.wthr.x == 0)
+		{
+			// no particles
+			starts.resize(cl_n.size());
+			starts.template fill<0>(0);
+			return;
+		}
+
+		CUDA_LAUNCH((subindex<false,dim,T,cnt_type,ids_type>),ite_gpu,div_c,
+																		spacing_c,
+																		off,
+																		this->getTransform(),
+																		pl.capacity(),
+																		pl.size(),
+																		part_ids.capacity(),
+																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
+																		static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
+																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
+
+		// now we scan
+		starts.resize(cl_n.size());
+		mgpu::scan((cnt_type *)cl_n.template getDeviceBuffer<0>(), cl_n.size(), (cnt_type *)starts.template getDeviceBuffer<0>() , mgpuContext);
+
+		// now we construct the cells
+
+		cells.resize(pl.size());
+		auto itgg = part_ids.getGPUIterator();
+
+		CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg,0,
+																					   div_c,
+																					   off,
+																					   part_ids.size(),
+																					   part_ids.capacity(),
+																					   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
+																					   static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()),
+																					   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
+
+		sorted_to_not_sorted.resize(pl.size());
+		non_sorted_to_sorted.resize(pl.size());
+
+		sorted_domain_particles_ids.resize(pl.size());
+		sorted_domain_particles_dg.resize(pl.size());
+
+		auto ite = pl.getGPUIterator(64);
+
+		// Here we reorder the particles to improve coalescing access
+		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
+				      decltype(pl.toKernel()),
+				      decltype(sorted_to_not_sorted.toKernel()),
+				      cnt_type,shift_ph<0,cnt_type>>),ite,pl.size(),
+				                                                           pl_prp.toKernel(),
+				                                                           pl_prp_out.toKernel(),
+				                                                           pl.toKernel(),
+				                                                           pl_out.toKernel(),
+				                                                           sorted_to_not_sorted.toKernel(),
+				                                                           non_sorted_to_sorted.toKernel(),
+				                                                           static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
+
+
+		if (opt == cl_construct_opt::Full)
+		{
+			ite = sorted_domain_particles_ids.getGPUIterator();
+
+			CUDA_LAUNCH((mark_domain_particles),ite,sorted_to_not_sorted.toKernel(),sorted_domain_particles_ids.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
+
+
+			// now we sort the particles
+			mergesort((int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),(int *)sorted_domain_particles_ids.template getDeviceBuffer<0>(),
+							 sorted_domain_particles_dg.size(), mgpu::template less_t<int>(), mgpuContext);
+		}
+
+	#else
+
+			std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
+
+	#endif
 	}
 
 public:
@@ -250,89 +466,8 @@ public:
 				   size_t g_m = 0,
 				   cl_construct_opt opt = cl_construct_opt::Full)
 	{
-#ifdef __NVCC__
-
-		part_ids.resize(pl.size());
-
-		// Than we construct the ids
-
-		auto ite_gpu = pl.getGPUIterator();
-
-		cl_n.resize(this->gr_cell.size()+1);
-		CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
-
-		part_ids.resize(pl.size());
-
-		CUDA_LAUNCH((subindex<dim,T,cnt_type,ids_type>),ite_gpu.wthr,ite_gpu.thr,div_c,
-																		spacing_c,
-																		off,
-																		this->getTransform(),
-																		pl.capacity(),
-																		pl.size(),
-																		part_ids.capacity(),
-																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
-																		static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
-																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
-
-
-		// now we scan
-		starts.resize(cl_n.size());
-		mgpu::scan((cnt_type *)cl_n.template getDeviceBuffer<0>(), cl_n.size(), (cnt_type *)starts.template getDeviceBuffer<0>() , mgpuContext);
-
-		// now we construct the cells
-
-		cells.resize(pl.size());
-		auto itgg = part_ids.getGPUIterator();
-
-		CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg.wthr,itgg.thr,0,
-																					   div_c,
-																					   off,
-																					   part_ids.size(),
-																					   part_ids.capacity(),
-																					   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
-																					   static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()),
-																					   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
-
-		sorted_to_not_sorted.resize(pl.size());
-		non_sorted_to_sorted.resize(pl.size());
-
-		sorted_domain_particles_ids.resize(pl.size());
-		sorted_domain_particles_dg.resize(pl.size());
-
-		auto ite = pl.getGPUIterator(64);
-
-		// Here we reorder the particles to improve coalescing access
-		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
-				      decltype(pl.toKernel()),
-				      decltype(sorted_to_not_sorted.toKernel()),
-				      cnt_type,shift_ph<0,cnt_type>>),ite.wthr,ite.thr,pl.size(),
-				                                                           pl_prp.toKernel(),
-				                                                           pl_prp_out.toKernel(),
-				                                                           pl.toKernel(),
-				                                                           pl_out.toKernel(),
-				                                                           sorted_to_not_sorted.toKernel(),
-				                                                           non_sorted_to_sorted.toKernel(),
-				                                                           static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
-
-
-		if (opt == cl_construct_opt::Full)
-		{
-			ite = sorted_domain_particles_ids.getGPUIterator();
-
-			CUDA_LAUNCH((mark_domain_particles),ite.wthr,ite.thr,sorted_to_not_sorted.toKernel(),sorted_domain_particles_ids.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
-
-
-			// now we sort the particles
-			mergesort((int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),(int *)sorted_domain_particles_ids.template getDeviceBuffer<0>(),
-							 sorted_domain_particles_dg.size(), mgpu::template less_t<int>(), mgpuContext);
-		}
-
-	#else
-
-			std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
-
-	#endif
-
+		if (is_sparse == false) {construct_dense(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,opt);}
+		else {construct_sparse(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,opt);}
 	}
 
 	CellList_gpu_ker<dim,T,cnt_type,ids_type,transform> toKernel()

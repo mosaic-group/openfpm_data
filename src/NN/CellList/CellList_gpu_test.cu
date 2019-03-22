@@ -84,7 +84,7 @@ void test_sub_index()
 
 	no_transform_only<dim,T> t(mt,pt);
 
-	subindex<dim,T,cnt_type,ids_type,no_transform_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
+	subindex<false,dim,T,cnt_type,ids_type,no_transform_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
 																	spacing,
 																	off,
 																	t,
@@ -231,7 +231,7 @@ void test_sub_index2()
 
 	shift_only<dim,T> t(mt,pt);
 
-	subindex<dim,T,cnt_type,ids_type,shift_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
+	subindex<false,dim,T,cnt_type,ids_type,shift_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
 																	spacing,
 																	off,
 																	t,

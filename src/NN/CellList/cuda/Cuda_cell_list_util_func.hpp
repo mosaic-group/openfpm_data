@@ -214,7 +214,8 @@ __device__ __host__ cnt_type encode_phase_id(cnt_type ph_id,cnt_type pid)
 
 #ifdef __NVCC__
 
-template<unsigned int dim, typename pos_type, typename cnt_type, typename ids_type, typename transform>
+template<bool is_sparse,unsigned int dim, typename pos_type,
+         typename cnt_type, typename ids_type, typename transform>
 __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
 						 openfpm::array<pos_type,dim,cnt_type> spacing,
 						 openfpm::array<ids_type,dim,cnt_type> off,
@@ -239,10 +240,33 @@ __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
 
     cid = cid_<dim,cnt_type,ids_type,transform>::get_cid(div,spacing,off,t,p,e);
 
-    e[dim] = atomicAdd(counts + cid, 1);
+    if (is_sparse == false)
+    {
+    	e[dim] = atomicAdd(counts + cid, 1);
 
-    for (size_t k = 0 ; k <= dim ; k++)
-    {p_ids[i+k*(n_cap2)] = e[k];}
+        for (size_t k = 0 ; k <= dim ; k++)
+        {p_ids[i+k*(n_cap2)] = e[k];}
+    }
+    else
+    {
+        for (size_t k = 0 ; k <= dim ; k++)
+        {p_ids[i+k*(n_cap2)] = e[k];}
+
+        counts[i] = cid;
+    }
+}
+
+template<typename vector_sparse, typename vector_cell>
+__global__ void fill_cells_sparse(vector_sparse vs, vector_cell vc)
+{
+	vs.init();
+
+	int p = blockIdx.x*blockDim.x + threadIdx.x;
+
+	int c = vc.template get<0>(p);
+
+	vs.insert(c);
+	vs.flush_block();
 }
 
 template<unsigned int dim, typename pos_type, typename cnt_type, typename ids_type, typename transform>
