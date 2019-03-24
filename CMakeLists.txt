@@ -11,6 +11,9 @@ set(SE_CLASS2 CACHE BOOL "Activate compilation with SE_CLASS2")
 set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
 set(ENV{HDF5_ROOT} ${HDF5_ROOT})
 set(OPENFPM_PDATA_DIR CACHE PATH "OpenFPM_pdata dirs")
+set(PETSC_ROOT CACHE PATH "If compiling with linear algebra indicate the PETSC root directory")
+set(ENV{PETSC_DIR} ${PETSC_ROOT})
+
 
 set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CUDA_STANDARD 11)
@@ -42,6 +45,7 @@ find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams prog
 find_package(MPI REQUIRED)
 find_package(HDF5 REQUIRED)
 find_package(TinyObjLoader )
+find_package(PETSc)
 
 if(CUDA_FOUND)
 	set(OPENFPM_INIT_FILE "initialize/initialize_wrapper_cuda.cu")
@@ -71,6 +75,10 @@ if(MPI_FOUND)
 	set(DEFINE_HAVE_MPI "#define HAVE_MPI")
 else()
 	message( FATAL_ERROR "MPI is required in order to install OpenFPM" )
+endif()
+
+if(PETSC_FOUND)
+        set(DEFINE_HAVE_PETSC "#define HAVE_PETSC")
 endif()
 
 if (Boost_FOUND)
