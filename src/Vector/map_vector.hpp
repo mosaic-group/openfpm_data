@@ -1304,8 +1304,7 @@ namespace openfpm
 #endif
 			v_size = mv.v_size;
 			size_t rsz[1] = {v_size};
-			if (base.size() < v_size)
-				base.resize(rsz);
+			base.resize(rsz);
 
 			// copy the object on cpu
 			for (size_t i = 0 ; i < v_size ; i++ )
@@ -1375,6 +1374,18 @@ namespace openfpm
 				base.set(key,mv.getInternal_base(),key);
 			}
 
+			// and device
+			if (Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false)
+			{
+#ifdef __NVCC__
+				if (mv.size() != 0)
+				{
+					auto it = mv.getGPUIterator();
+					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
+				}
+#endif
+			}
+
 			return *this;
 		}
 
@@ -1427,6 +1438,18 @@ namespace openfpm
 			{
 				grid_key_dx<1> key(i);
 				base.set_general(key,mv.getInternal_base(),key);
+			}
+
+			// and device
+			if (Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false)
+			{
+#ifdef __NVCC__
+				if (mv.size() != 0)
+				{
+					auto it = mv.getGPUIterator();
+					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
+				}
+#endif
 			}
 
 			return *this;

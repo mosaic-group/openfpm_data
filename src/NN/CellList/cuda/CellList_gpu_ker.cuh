@@ -8,7 +8,7 @@
 #ifndef CELLLIST_GPU_KER_CUH_
 #define CELLLIST_GPU_KER_CUH_
 
-template<unsigned int dim, typename cnt_type, typename ids_type, unsigned int r_int = 1>
+template<unsigned int dim, typename cnt_type, typename ids_type, unsigned int r_int, bool is_sparse>
 class NN_gpu_it
 {
 	grid_key_dx<dim,ids_type> cell_act;
@@ -97,7 +97,7 @@ public:
 		return srt.template get<0>(p_id);
 	}
 
-	__device__ NN_gpu_it<dim,cnt_type,ids_type,r_int> & operator++()
+	__device__ NN_gpu_it<dim,cnt_type,ids_type,r_int,is_sparse> & operator++()
 	{
 		++p_id;
 
@@ -119,6 +119,86 @@ public:
 	__device__ bool isNext()
 	{
 		return cell_act.get(dim-1) <= cell_stop.get(dim-1);
+	}
+};
+
+template<unsigned int dim, typename cnt_type, typename ids_type, unsigned int r_int>
+class NN_gpu_it<dim,cnt_type,ids_type,r_int,true>
+{
+	cnt_type p_id;
+	cnt_type p_id_end;
+
+	cnt_type cells_list_start;
+	cnt_type cells_list_stop;
+
+	const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & srt;
+
+	const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & cells_nn;
+
+	const openfpm::vector_gpu_ker<aggregate<cnt_type,cnt_type>,memory_traits_inte> & cell_nn_list;
+
+	__device__ void SelectValid()
+	{
+		while (p_id >= p_id_end && isNext())
+		{
+			++cells_list_start;
+
+			if (cells_list_start < cells_list_stop)
+			{
+				// calculate start and stop
+				p_id = cell_nn_list.template get<0>(cells_list_start);
+				p_id_end = cell_nn_list.template get<1>(cells_list_start);
+			}
+		}
+	}
+
+
+public:
+
+	__device__ NN_gpu_it(cnt_type c_id_sparse,
+            			const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & cells_nn,
+            			const openfpm::vector_gpu_ker<aggregate<cnt_type,cnt_type>,memory_traits_inte> & cell_nn_list,
+            			const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & srt)
+	:srt(srt),cells_nn(cells_nn),cell_nn_list(cell_nn_list)
+	{
+		if (c_id_sparse == (cnt_type)-1)
+		{
+			cells_list_stop = cells_list_start;
+			return;
+		}
+
+		cells_list_start = cells_nn.template get<0>(c_id_sparse);
+		cells_list_stop = cells_nn.template get<0>(c_id_sparse + 1);
+
+		// calculate start and stop
+		p_id = cell_nn_list.template get<0>(cells_list_start);
+		p_id_end = cell_nn_list.template get<1>(cells_list_start);
+
+		SelectValid();
+	}
+
+	__device__ cnt_type get_sort()
+	{
+		return p_id;
+	}
+
+	__device__ cnt_type get()
+	{
+		return srt.template get<0>(p_id);
+	}
+
+	__device__ NN_gpu_it<dim,cnt_type,ids_type,r_int,true> & operator++()
+	{
+		++p_id;
+
+		SelectValid();
+
+		return *this;
+	}
+
+	__device__ bool isNext()
+	{
+		return cells_list_start < cells_list_stop;
 	}
 };
 
@@ -211,7 +291,40 @@ public:
 	}
 };
 
-template<unsigned int dim, typename T, typename cnt_type, typename ids_type, typename transform>
+template<unsigned int dim,typename cnt_type,typename ids_type,bool is_sparse>
+struct NN_gpu_selector
+{
+	static NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> get(grid_key_dx<dim,ids_type> & cid,
+															openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & starts,
+															openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & srt,
+															openfpm::array<ids_type,dim,cnt_type> div_c,
+															openfpm::array<ids_type,dim,cnt_type> off)
+	{
+		NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> ngi(cid,starts,srt,div_c,off);
+
+		return ngi;
+	}
+};
+
+template<unsigned int dim,typename cnt_type,typename ids_type>
+struct NN_gpu_selector<dim,cnt_type,ids_type,true>
+{
+	static NN_gpu_it<dim,cnt_type,ids_type,1,true> get(grid_key_dx<dim,ids_type> & cid,
+															cnt_type c_id_sparse,
+															openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & starts,
+															openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & srt,
+															openfpm::array<ids_type,dim,cnt_type> div_c,
+															openfpm::array<ids_type,dim,cnt_type> off,
+															const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & cells_nn,
+															const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & cell_nn_list)
+	{
+		NN_gpu_it<dim,cnt_type,ids_type,1,true> ngi(c_id_sparse,cells_nn,cell_nn_list,srt);
+
+		return ngi;
+	}
+};
+
+template<unsigned int dim, typename T, typename cnt_type, typename ids_type, typename transform, bool is_sparse>
 class CellList_gpu_ker
 {
 	//! starting point for each cell
@@ -261,9 +374,9 @@ public:
 		return cid_<dim,cnt_type,ids_type,transform>::get_cid_key(spacing_c,off,t,xp);
 	}
 
-	inline __device__ NN_gpu_it<dim,cnt_type,ids_type> getNNIterator(const grid_key_dx<dim,ids_type> & cid)
+	inline __device__ NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> getNNIterator(const grid_key_dx<dim,ids_type> & cid)
 	{
-		NN_gpu_it<dim,cnt_type,ids_type> ngi(cid,starts,srt,div_c,off);
+		NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> ngi(cid,starts,srt,div_c,off);
 
 		return ngi;
 	}
@@ -275,9 +388,9 @@ public:
 		return ngi;
 	}
 
-	template<unsigned int r_int = 2> inline __device__ NN_gpu_it<dim,cnt_type,ids_type,r_int> getNNIteratorBox(const grid_key_dx<dim,ids_type> & cid)
+	template<unsigned int r_int = 2> inline __device__ NN_gpu_it<dim,cnt_type,ids_type,r_int,is_sparse> getNNIteratorBox(const grid_key_dx<dim,ids_type> & cid)
 	{
-		NN_gpu_it<dim,cnt_type,ids_type,r_int> ngi(cid,starts,srt,div_c,off);
+		NN_gpu_it<dim,cnt_type,ids_type,r_int,is_sparse> ngi(cid,starts,srt,div_c,off);
 
 		return ngi;
 	}
@@ -336,5 +449,85 @@ public:
 	}
 };
 
+
+template<unsigned int dim, typename T, typename cnt_type, typename ids_type, typename transform>
+class CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,true>
+{
+	//! starting point for each cell
+	openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> cell_nn;
+
+	//! starting point for each cell
+	openfpm::vector_gpu_ker<aggregate<cnt_type,cnt_type>,memory_traits_inte> cell_nn_list;
+
+	//! Sorted to non sorted ids conversion
+	openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt;
+
+	//! Domain particles ids
+	openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt;
+
+	//! Set of cells sparse
+	openfpm::vector_sparse_gpu_ker<aggregate<cnt_type>,cnt_type,memory_traits_inte> cl_sparse;
+
+	//! Spacing
+	openfpm::array<T,dim,cnt_type> spacing_c;
+
+	//! \brief number of sub-divisions in each direction
+	openfpm::array<ids_type,dim,cnt_type> div_c;
+
+	//! \brief cell offset
+	openfpm::array<ids_type,dim,cnt_type> off;
+
+	//! Ghost particle marker
+	unsigned int g_m;
+
+	//! transformation
+	transform t;
+
+public:
+
+	__device__ inline CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> cell_nn,
+					 openfpm::vector_gpu_ker<aggregate<cnt_type,cnt_type>,memory_traits_inte> cell_nn_list,
+					 openfpm::vector_sparse_gpu_ker<aggregate<cnt_type>,cnt_type,memory_traits_inte> cl_sparse,
+					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt,
+					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt,
+					 openfpm::array<T,dim,cnt_type> & spacing_c,
+			         openfpm::array<ids_type,dim,cnt_type> & div_c,
+			         openfpm::array<ids_type,dim,cnt_type> & off,
+			         const transform & t,
+			         unsigned int g_m)
+	:cell_nn(cell_nn),cell_nn_list(cell_nn_list),srt(srt),dprt(dprt),cl_sparse(cl_sparse),spacing_c(spacing_c),div_c(div_c),off(off),t(t),g_m(g_m)
+	{
+	}
+
+	inline __device__ auto getCell(const Point<dim,T> & xp) const -> decltype(cl_sparse.get_sparse(0))
+	{
+		cnt_type cell = cid_<dim,cnt_type,ids_type,transform>::get_cid(div_c,spacing_c,off,t,xp);
+
+		return cl_sparse.get_sparse(cell);
+	}
+
+	inline __device__ NN_gpu_it<dim,cnt_type,ids_type,1,true> getNNIterator(decltype(cl_sparse.get_sparse(0)) cid)
+	{
+		NN_gpu_it<dim,cnt_type,ids_type,1,true> ngi(cid.id,cell_nn,cell_nn_list,srt);
+
+		return ngi;
+	}
+
+	inline __device__ openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & getDomainSortIds()
+	{
+		return dprt;
+	}
+
+	inline __device__ openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & getSortToNonSort()
+	{
+		return srt;
+	}
+
+
+	inline __device__ unsigned int get_g_m()
+	{
+		return g_m;
+	}
+};
 
 #endif /* CELLLIST_GPU_KER_CUH_ */

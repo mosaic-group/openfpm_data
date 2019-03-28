@@ -474,6 +474,145 @@ void test_fill_cell()
 	BOOST_REQUIRE(check == true);
 }
 
+template<typename sparse_vector_type>
+__global__ void construct_cells(sparse_vector_type sv, grid_sm<3,void> gs)
+{
+	sv.init();
+
+	grid_key_dx<3> key1({5,5,5});
+	grid_key_dx<3> key2({5,5,6});
+	grid_key_dx<3> key3({5,6,5});
+	grid_key_dx<3> key4({5,6,6});
+	grid_key_dx<3> key5({6,5,5});
+	grid_key_dx<3> key6({6,5,6});
+	grid_key_dx<3> key7({6,6,5});
+	grid_key_dx<3> key8({6,6,6});
+
+	grid_key_dx<3> key9({7,7,7});
+
+	grid_key_dx<3> key10({9,9,9});
+
+	sv.template insert<0>(gs.LinId(key1)) = gs.LinId(key1);
+	sv.template insert<0>(gs.LinId(key2)) = gs.LinId(key2);
+	sv.template insert<0>(gs.LinId(key3)) = gs.LinId(key3);
+	sv.template insert<0>(gs.LinId(key4)) = gs.LinId(key4);
+	sv.template insert<0>(gs.LinId(key5)) = gs.LinId(key5);
+	sv.template insert<0>(gs.LinId(key6)) = gs.LinId(key6);
+	sv.template insert<0>(gs.LinId(key7)) = gs.LinId(key7);
+	sv.template insert<0>(gs.LinId(key8)) = gs.LinId(key8);
+	sv.template insert<0>(gs.LinId(key9)) = gs.LinId(key9);
+	sv.template insert<0>(gs.LinId(key10)) = gs.LinId(key10);
+
+	sv.flush_block();
+}
+
+void test_cell_count_n()
+{
+	openfpm::vector_sparse_gpu<aggregate<int>> vs;
+	openfpm::vector_gpu<aggregate<unsigned int>> cells_nn;
+	openfpm::vector_gpu<aggregate<int>> cells_nn_test;
+
+	vs.template getBackground<0>() = -1;
+
+	vs.setGPUInsertBuffer(1,32);
+
+	size_t sz[] = {17,17,17};
+	grid_sm<3,void> gs(sz);
+
+	construct_cells<<<1,1>>>(vs.toKernel(),gs);
+
+	mgpu::ofp_context_t ctx;
+
+	vs.flush<sadd_<0>>(ctx,flust_type::FLUSH_ON_DEVICE);
+
+	cells_nn.resize(11);
+	cells_nn.fill<0>(0);
+
+	grid_key_dx<3> start({0,0,0});
+	grid_key_dx<3> stop({2,2,2});
+	grid_key_dx<3> middle({1,1,1});
+
+	int mid = gs.LinId(middle);
+
+	grid_key_dx_iterator_sub<3> it(gs,start,stop);
+
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		cells_nn_test.add();
+		cells_nn_test.get<0>(cells_nn_test.size()-1) = (int)gs.LinId(p) - mid;
+
+		++it;
+	}
+
+	cells_nn_test.template hostToDevice<0>();
+
+	auto itgg = vs.getGPUIterator();
+	CUDA_LAUNCH((count_nn_cells),itgg,vs.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel());
+
+	cells_nn.deviceToHost<0>();
+
+	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(0),8);
+	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(1),8);
+	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(2),8);
+	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(3),8);
+	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(4),8);
+	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(5),8);
+	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(6),8);
+	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(7),9);
+	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(8),2);
+	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(9),1);
+
+	// now we scan
+	mgpu::scan((unsigned int *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (unsigned int *)cells_nn.template getDeviceBuffer<0>() , ctx);
+
+	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> cell_nn_list;
+	cell_nn_list.resize(7*8 + 9 + 2 + 1);
+
+	CUDA_LAUNCH((fill_nn_cells),itgg,vs.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel(),cell_nn_list.toKernel(),200);
+
+	cell_nn_list.deviceToHost<0>();
+
+	// 8 NN
+	for (size_t i = 0 ; i < 7 ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*i+0),1535);
+		BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*i+1),1536);
+		BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*i+2),1552);
+		BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*i+3),1553);
+		BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*i+4),1824);
+		BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*i+5),1825);
+		BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*i+6),1841);
+		BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*i+7),1842);
+	}
+
+	// 9 NN
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+0),1535);
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+1),1536);
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+2),1552);
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+3),1553);
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+4),1824);
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+5),1825);
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+6),1841);
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+7),1842);
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+8),2149);
+
+	// 2 NN
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+9),1842);
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+9+1),2149);
+
+	// 1 NN
+	BOOST_REQUIRE_EQUAL(cell_nn_list.template get<0>(8*7+9+2),2763);
+}
+
+BOOST_AUTO_TEST_CASE( test_count_nn_cells )
+{
+	std::cout << "Test cell count nn" << std::endl;
+
+	test_cell_count_n();
+}
+
 BOOST_AUTO_TEST_CASE( test_subindex_funcs )
 {
 	std::cout << "Test cell list GPU base func" << "\n";
@@ -705,7 +844,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 
 	// create an mgpu context
 	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
-	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context);
+	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context);
 
 	// Check
 
@@ -795,6 +934,20 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use)
 	// Test the cell list
 }
 
+BOOST_AUTO_TEST_CASE( CellList_gpu_use_sparse )
+{
+	std::cout << "Test cell list GPU sparse" << "\n";
+
+	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	SpaceBox<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
+
+	Test_cell_gpu<3,double,CellList_gpu<3,double,CudaMemory,no_transform_only<3,double>,unsigned int,int,true>> (box);
+
+	std::cout << "End cell list GPU sparse" << "\n";
+
+	// Test the cell list
+}
+
 template<unsigned int dim, typename vector_ps, typename vector_pr>
 void fill_random_parts(Box<dim,float> & box, vector_ps & vd_pos, vector_pr & vd_prp, size_t n)
 {
@@ -827,6 +980,7 @@ __global__ void calc_force_number(vector_pos pos, vector_ns s_t_ns, CellList_typ
     while (it.isNext())
     {
     	auto q = it.get_sort();
+    	auto q_ns = it.get();
 
     	int s1 = s_t_ns.template get<0>(q);
 
@@ -970,14 +1124,8 @@ struct execute_cl_test
 	{
 		auto ite = pl.getGPUIterator();
 
-		calc_force_number<decltype(pl.toKernel()),
-				          decltype(s_t_ns.toKernel()),
-				          decltype(cl2.toKernel()),
-				          decltype(n_out.toKernel())>
-		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
-							   s_t_ns.toKernel(),
-							   cl2.toKernel(),
-							   n_out.toKernel());
+		CUDA_LAUNCH((calc_force_number),ite,pl.toKernel(),s_t_ns.toKernel(),
+							   	   	   	   	cl2.toKernel(),n_out.toKernel());
 	}
 
 	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
@@ -985,15 +1133,11 @@ struct execute_cl_test
 	{
 		auto ite = pl.getGPUIterator();
 
-		calc_force_list<decltype(pl.toKernel()),
-				          decltype(s_t_ns.toKernel()),
-				          decltype(cl2.toKernel()),
-				          decltype(nn_list.toKernel())>
-		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
-							   s_t_ns.toKernel(),
-							   cl2.toKernel(),
-							   n_out_scan.toKernel(),
-							   nn_list.toKernel());
+		CUDA_LAUNCH((calc_force_list),ite,pl.toKernel(),
+							   	   	   s_t_ns.toKernel(),
+							   	   	   cl2.toKernel(),
+							   	   	   n_out_scan.toKernel(),
+							   	   	   nn_list.toKernel());
 	}
 
 	template<typename NN_type>
@@ -1157,7 +1301,7 @@ template<unsigned int dim, typename T, typename CellS, int impl> void Test_cell_
 	size_t g_m = pl.size() / 2;
 
 	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
-	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
+	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
 	auto & s_t_ns = cl2.getSortToNonSort();
 
 	pl.template hostToDevice<0>();
@@ -1168,6 +1312,7 @@ template<unsigned int dim, typename T, typename CellS, int impl> void Test_cell_
 
 	auto & gdsi = cl2.getDomainSortIds();
 	gdsi.template deviceToHost<0>();
+	s_t_ns.template deviceToHost<0>();
 
 	bool match = true;
 	for (size_t i = 0 ; i < g_m ; i++)
@@ -1184,34 +1329,40 @@ template<unsigned int dim, typename T, typename CellS, int impl> void Test_cell_
 	n_out.deviceToHost<0>();
 
 	{
-	bool check = true;
-	auto it = pl.getIterator();
+		bool check = true;
+		auto it = pl.getIterator();
 
-	while(it.isNext())
-	{
-		auto p = it.get();
-
-		Point<dim,T> xp = pl.get(p);
-
-		// Get NN iterator
-
-		auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIterator(cl_cpu.getCell(xp))*/;
-
-		size_t n_ele = 0;
-		while (NN_it.isNext())
+		while(it.isNext())
 		{
-			auto q = NN_it.get();
+			auto p = it.get();
 
-			n_ele++;
+			Point<dim,T> xp = pl.get(p);
 
-			++NN_it;
+			// Get NN iterator
+
+			auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIterator(cl_cpu.getCell(xp))*/;
+
+			size_t n_ele = 0;
+			while (NN_it.isNext())
+			{
+				auto q = NN_it.get();
+
+				n_ele++;
+
+				++NN_it;
+			}
+
+			check &= n_ele == n_out.template get<0>(p);
+
+			if (check == false)
+			{
+				std::cout << p << "  " << n_ele << "   " << n_out.template get<0>(p) << "   " << check << std::endl;
+				break;
+			}
+
+			++it;
 		}
-
-		check &= n_ele == n_out.template get<0>(p);
-
-		++it;
-	}
-	BOOST_REQUIRE_EQUAL(check,true);
+		BOOST_REQUIRE_EQUAL(check,true);
 	}
 
 	// now we scan the buffer
@@ -1338,6 +1489,24 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force)
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box2,10000,{16,16,16});
 
 	std::cout << "End cell list GPU" << "\n";
+
+	// Test the cell list
+}
+
+BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_sparse)
+{
+	std::cout << "Test cell list GPU force sparse" << "\n";
+
+	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,unsigned int,int,true>,0>(box,1000,{16,16,16});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box,10000,{16,16,16});
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box2,1000,{16,16,16});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box2,10000,{16,16,16});
+
+	std::cout << "End cell list GPU force sparse" << "\n";
 
 	// Test the cell list
 }
@@ -1504,8 +1673,8 @@ BOOST_AUTO_TEST_CASE( CellList_swap_test )
 	size_t g_m = pl.size() / 2;
 
 	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
-	cl2.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
-	cl4.template construct<decltype(pl),decltype(pl_prp)>(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
+	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
+	cl4.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
 
 	cl3.swap(cl2);
 

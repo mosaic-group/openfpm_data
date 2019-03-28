@@ -9,6 +9,7 @@
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CUDA_CUDA_CELL_LIST_UTIL_FUNC_HPP_
 
 #include <boost/integer/integer_mask.hpp>
+#include <Vector/map_vector_sparse.hpp>
 
 template<unsigned int dim, typename cnt_type, typename ids_type, typename transform>
 struct cid_
@@ -263,9 +264,11 @@ __global__ void fill_cells_sparse(vector_sparse vs, vector_cell vc)
 
 	int p = blockIdx.x*blockDim.x + threadIdx.x;
 
+	if (p >= vc.size())	{return;}
+
 	int c = vc.template get<0>(p);
 
-	vs.insert(c);
+	vs.template insert<0>(c) = p;
 	vs.flush_block();
 }
 
@@ -392,6 +395,64 @@ __global__ void mark_domain_particles(vector_sort_index vsi, vector_out_type vou
 	vout_ids.template get<0>(i) = i;
 
 }
+
+template<typename cl_sparse_type, typename vector_type, typename vector_type2>
+__global__ void count_nn_cells(cl_sparse_type cl_sparse, vector_type output, vector_type2 nn_to_test)
+{
+	typedef typename cl_sparse_type::index_type index_type;
+
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
+	openfpm::sparse_index<index_type> id(tid);
+
+	index_type cell = cl_sparse.get_index(id);
+
+	for (int i = 0 ; i < nn_to_test.size() ; i++)
+	{
+		index_type cell_n = cell + nn_to_test.template get<0>(i);
+
+		index_type start = cl_sparse.template get<0>(cell_n);
+
+		if (start != (index_type)-1)
+		{
+			// Cell exist
+			output.template get<0>(tid) += 1;
+		}
+	}
+};
+
+template<typename cl_sparse_type, typename vector_type, typename vector_type2, typename vector_type3>
+__global__ void fill_nn_cells(cl_sparse_type cl_sparse, vector_type starts, vector_type2 nn_to_test, vector_type3 output, typename cl_sparse_type::index_type max_stop)
+{
+	typedef typename cl_sparse_type::index_type index_type;
+
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
+	openfpm::sparse_index<index_type> id(tid);
+
+	if (tid >= cl_sparse.size())	{return;}
+
+	index_type cell = cl_sparse.get_index(id);
+
+	int cnt = 0;
+	for (int i = 0 ; i < nn_to_test.size() ; i++)
+	{
+		index_type cell_n = cell + nn_to_test.template get<0>(i);
+
+		auto sid = cl_sparse.get_sparse(cell_n);
+
+		if (sid.id != (index_type)-1)
+		{
+			index_type start = cl_sparse.template get<0>(sid);
+			// Cell exist
+			output.template get<0>(starts.template get<0>(tid) + cnt) = start;
+
+			if (sid.id == cl_sparse.size() - 1)
+			{output.template get<1>(starts.template get<0>(tid) + cnt) = max_stop;}
+			else
+			{output.template get<1>(starts.template get<0>(tid) + cnt) = cl_sparse.template get<0>(decltype(sid)(sid.id+1));}
+			++cnt;
+		}
+	}
+};
 
 template<typename T>
 struct to_type4

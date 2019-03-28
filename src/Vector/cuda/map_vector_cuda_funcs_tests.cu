@@ -460,6 +460,11 @@ BOOST_AUTO_TEST_CASE( vector_cuda_copy )
 		match = v2.template get<2>(p)[2][1] == p + 15000;
 		match = v2.template get<2>(p)[2][2] == p + 16000;
 
+		if (match == false)
+		{
+			std::cout << v2.template get<0>(p) << std::endl;
+		}
+
 		++ite;
 	}
 
