@@ -629,6 +629,8 @@ namespace openfpm
 			vct_nadd_index.template fill<0>(0);
 		}
 
+#ifdef CUDA_GPU
+
 		/*! \brief Get iterator over the stored elements
 		 *
 		 * \return an iterator
@@ -638,6 +640,8 @@ namespace openfpm
 		{
 			return vct_index.getGPUIterator();
 		}
+
+#endif
 
 		/*! \brief Clear all from all the elements
 		 *
