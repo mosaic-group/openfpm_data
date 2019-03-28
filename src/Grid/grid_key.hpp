@@ -343,16 +343,11 @@ public:
      * \return true if this is lexicographically less than other key
      *
      */
-    template<unsigned int dim_t> bool operator<(const grid_key_dx<dim_t> & key_t) const
+    bool operator<(const grid_key_dx<dim> & key_t) const
     {
-        if (dim < dim_t)
-        {
-            return true;
-        }
+    	// Check the two key index by index
 
-        // Check the two key index by index
-
-        for (size_t i = dim-1 ; i >= 0; --i)
+        for (long int i = dim-1 ; i >= 0; --i)
         {
             if (k[i] < key_t.k[i])
             {
