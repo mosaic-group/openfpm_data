@@ -232,6 +232,21 @@ template<unsigned int dim ,typename T> class Point
 		return sqrt(n);
 	}
 
+    /*! \brief Compute the squared 2-norm of the vector
+     *
+     * \return the squared 2-norm of the vector
+     *
+     */
+    __device__ __host__ T norm2()
+    {
+        T n = 0.0;
+
+        for (size_t i = 0 ; i < dim ; i++)
+            n+=get(i) * get(i);
+
+        return n;
+    }
+
 	/*! \brief  It calculate the distance between 2 points
 	 *
 	 * The distance between itself (p) and the other point (q)
