@@ -30,7 +30,7 @@ __global__ void copy_two_vectors(vector_src_type v_dst, vector_dst_type v_src)
 	if (i >= v_src.size())
 	{return;}
 
-	v_src.get(i) = v_dst.get(i);
+	v_dst.get(i) = v_src.get(i);
 }
 
 #endif
