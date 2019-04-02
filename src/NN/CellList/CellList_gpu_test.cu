@@ -1243,7 +1243,7 @@ struct execute_cl_test<2>
 	}
 };
 
-template<unsigned int dim, typename T, typename CellS, int impl> void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& div)[dim])
+template<unsigned int dim, typename T, typename CellS, int impl> void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& div)[dim],int box_nn = 1)
 {
 	// Origin
 	Point<dim,T> org({0.0,0.0,0.0});
@@ -1252,6 +1252,8 @@ template<unsigned int dim, typename T, typename CellS, int impl> void Test_cell_
 	CellS cl2(box,div,2);
 
 	CellList<dim,T,Mem_fast<>,shift<dim,T>> cl_cpu(box,div,2);
+
+	cl2.setBoxNN(box_nn);
 
 	T radius = (box.getHigh(0) - box.getLow(0))/div[0] * 2.0;
 	execute_cl_test<impl>::set_radius(cl2,cl_cpu,radius);
@@ -1457,6 +1459,24 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box)
 	// Test the cell list
 }
 
+BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_sparse)
+{
+	std::cout << "Test cell list GPU" << "\n";
+
+	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,unsigned int,int,true>,2>(box,1000,{32,32,32},2);
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,unsigned int,int,true>,2>(box,10000,{32,32,32},2);
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,unsigned int,int,true>,2>(box2,1000,{32,32,32},2);
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,unsigned int,int,true>,2>(box2,10000,{32,32,32},2);
+
+	std::cout << "End cell list GPU" << "\n";
+
+	// Test the cell list
+}
+
 BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_radius)
 {
 	std::cout << "Test cell list GPU" << "\n";
@@ -1501,10 +1521,10 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_sparse)
 	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
 
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,unsigned int,int,true>,0>(box,1000,{16,16,16});
-	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box,10000,{16,16,16});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,unsigned int,int,true>,0>(box,10000,{16,16,16});
 
-	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box2,1000,{16,16,16});
-	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box2,10000,{16,16,16});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,unsigned int,int,true>,0>(box2,1000,{16,16,16});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,unsigned int,int,true>,0>(box2,10000,{16,16,16});
 
 	std::cout << "End cell list GPU force sparse" << "\n";
 

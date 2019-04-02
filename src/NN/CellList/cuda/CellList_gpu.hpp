@@ -174,7 +174,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		construct_cell_nn_test();
 	}
 
-	void construct_cell_nn_test()
+	void construct_cell_nn_test(unsigned int box_nn = 1)
 	{
 		auto & gs = this->getGrid();
 
@@ -185,11 +185,11 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			start.set_d(i,0);
-			stop.set_d(i,2);
-			middle.set_d(i,1);
+			stop.set_d(i,2*box_nn);
+			middle.set_d(i,box_nn);
 		}
 
-		cells_nn_test.resize(openfpm::math::pow(3,dim));
+		cells_nn_test.resize(openfpm::math::pow(2*box_nn+1,dim));
 
 		int mid = gs.LinId(middle);
 
@@ -445,7 +445,7 @@ public:
 
 	/*! \brief Copy constructor
 	 *
-	 *
+	 * \param clg Cell list to copy
 	 *
 	 */
 	CellList_gpu(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
@@ -473,6 +473,16 @@ public:
 	CellList_gpu(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1)
 	{
 		Initialize(box,div,pad);
+	}
+
+	/*! \brief Set the NN box size
+	 *
+	 * \param nn number of NN around
+	 *
+	 */
+	void setBoxNN(unsigned int nn)
+	{
+		construct_cell_nn_test(nn);
 	}
 
 	/*! Initialize the cell list
