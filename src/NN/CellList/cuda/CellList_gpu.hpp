@@ -174,7 +174,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		construct_cell_nn_test();
 	}
 
-	void construct_cell_nn_test()
+	void construct_cell_nn_test(unsigned int n_NN = 1)
 	{
 		auto & gs = this->getGrid();
 
@@ -185,8 +185,8 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			start.set_d(i,0);
-			stop.set_d(i,2);
-			middle.set_d(i,1);
+			stop.set_d(i,2*n_NN);
+			middle.set_d(i,n_NN);
 		}
 
 		cells_nn_test.resize(openfpm::math::pow(3,dim));
@@ -490,6 +490,11 @@ public:
 		// Initialize point transformation
 
 		Initialize(sbox,div,pad);
+	}
+
+	void setBoxNN(unsigned int n_NN)
+	{
+		return construct_cell_nn_test(n_NN);
 	}
 
 	/*! Initialize the cell list constructor

@@ -513,6 +513,15 @@ public:
 		return ngi;
 	}
 
+	template<unsigned int r_int = 2>
+	inline __device__ NN_gpu_it<dim,cnt_type,ids_type,r_int,true>
+	getNNIteratorBox(decltype(cl_sparse.get_sparse(0)) cid)
+	{
+		NN_gpu_it<dim,cnt_type,ids_type,r_int,true> ngi(cid.id,cell_nn,cell_nn_list,srt);
+
+		return ngi;
+	}
+
 	inline __device__ openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & getDomainSortIds()
 	{
 		return dprt;

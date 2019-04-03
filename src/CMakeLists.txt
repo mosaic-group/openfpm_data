@@ -231,12 +231,19 @@ install(FILES Vector/map_vector.hpp
 	      Vector/vector_std_pack_unpack.ipp 
 	      Vector/vector_pack_unpack.ipp 
 	      Vector/vector_map_iterator.hpp
+	      Vector/map_vector_printers.hpp
+	      Vector/map_vector_sparse.hpp
 	      DESTINATION openfpm_data/include/Vector )
 
 install(FILES Vector/cuda/map_vector_cuda_ker.cuh
 	      Vector/cuda/map_vector_std_cuda_ker.cuh
 	      Vector/cuda/map_vector_std_cuda.hpp
+	      Vector/cuda/map_vector_sparse_cuda_ker.cuh
+	      Vector/cuda/map_vector_sparse_cuda_kernels.cuh
 	      DESTINATION openfpm_data/include/Vector/cuda/ )
+
+install(DIRECTORY util/cuda/cub/
+                  DESTINATION openfpm_data/include/util/cuda/cub )
 
 install(FILES util/multi_array_openfpm/array_openfpm.hpp
 	      util/multi_array_openfpm/multi_array_iterator_openfpm.hpp 
@@ -252,6 +259,7 @@ install(FILES util/cuda/scan_cuda.cuh
 	      util/cuda/ofp_context.hxx
 	      util/cuda/cuda_launch.hpp
 	      util/cuda/cuda_kernel_error_checker.hpp
+	      util/cuda/kernels.cuh
 	      DESTINATION openfpm_data/include/util/cuda )
 
 install(FILES util/cuda/moderngpu/context.hxx
