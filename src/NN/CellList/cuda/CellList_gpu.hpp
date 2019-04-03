@@ -475,15 +475,6 @@ public:
 		Initialize(box,div,pad);
 	}
 
-	/*! \brief Set the NN box size
-	 *
-	 * \param nn number of NN around
-	 *
-	 */
-	void setBoxNN(unsigned int nn)
-	{
-		construct_cell_nn_test(nn);
-	}
 
 	/*! Initialize the cell list
 	 *
@@ -500,6 +491,11 @@ public:
 		// Initialize point transformation
 
 		Initialize(sbox,div,pad);
+	}
+
+	void setBoxNN(unsigned int n_NN)
+	{
+		return construct_cell_nn_test(n_NN);
 	}
 
 	/*! Initialize the cell list constructor
