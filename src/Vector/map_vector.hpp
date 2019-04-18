@@ -1823,6 +1823,16 @@ namespace openfpm
 			return v;
 		}
 
+		/*! \brief give a path for key generation for shared memory
+		 *
+		 * \
+		 *
+		 */
+		void init_shmem(const char * pathname, int proj_id)
+		{
+			base.init_shmem(pathname,proj_id);
+		}
+
 		void * internal_get_size_pointer()	{return &v_size;}
 
 		void print_size()

@@ -119,14 +119,47 @@ struct mem_get<p,layout,data_type,g1_type,key_type,1>
 	}
 };
 
+template<typename layout, typename data_type, bool is_empty, unsigned int sel = 2*is_layout_mlin<layout>::value + is_layout_inte<layout>::value>
+struct mem_shmem
+{
+	__host__ static inline void set_shmem_key(data_type & data_,key_t key)
+	{}
+
+	__host__ static inline key_t get_shmem_key(data_type & data_)
+	{
+		return -1;
+	}
+};
+
+
+template<typename layout, typename data_type>
+struct mem_shmem<layout,data_type,false,2>
+{
+	__host__ static inline void set_shmem_key(data_type & data_,key_t key)
+	{
+		data_.mem->set_shmem_key(key);
+	}
+
+	__host__ static inline key_t get_shmem_key(data_type & data_)
+	{
+		return data_.mem->get_shmem_key();
+	}
+};
 
 //! Case memory_traits_lin
 template<typename S, typename layout, typename data_type, typename g1_type, unsigned int sel = 2*is_layout_mlin<layout>::value + is_layout_inte<layout>::value >
 struct mem_setm
 {
-	static inline void setMemory(data_type & data_, const g1_type & g1, bool & is_mem_init)
+	static inline void init_shmem(data_type & data_,const char * name, int proj_id)
+	{
+		data_.set_memory_name(name,proj_id);
+	}
+
+	static inline void setMemory(data_type & data_, const g1_type & g1, bool & is_mem_init, key_t key)
 	{
 		S * mem = new S();
+
+		mem->set_shmem_key(key);
 
 		//! Create and set the memory allocator
 		data_.setMemory(*mem);
@@ -142,7 +175,12 @@ struct mem_setm
 template<typename S, typename layout, typename data_type, typename g1_type>
 struct mem_setm<S,layout,data_type,g1_type,1>
 {
-	static inline void setMemory(data_type & data_, const g1_type & g1, bool & is_mem_init)
+	static inline void init_shmem(data_type & data_,const char * name, int proj_id)
+	{
+		// TODO implement shared memory implementation
+	}
+
+	static inline void setMemory(data_type & data_, const g1_type & g1, bool & is_mem_init, key_t key)
 	{
 		//! Create an allocate object
 		allocate<S> all(g1.size());

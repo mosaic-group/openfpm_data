@@ -233,6 +233,9 @@ private:
 	//! The memory allocator is not internally created
 	bool isExternal;
 
+	// shared_memory key
+	key_t key = -1;
+
 #ifdef SE_CLASS1
 
 	/*! \brief Check that the key is inside the grid
@@ -683,7 +686,7 @@ public:
 		check_valid(this,8);
 #endif
 
-		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::setMemory(data_,g1,is_mem_init);
+		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::setMemory(data_,g1,is_mem_init,key);
 	}
 
 	/*! \brief Get the object that provide memory
@@ -704,12 +707,6 @@ public:
 #endif
 		//! Is external
 		isExternal = true;
-
-		//! Create and set the memory allocator
-//		data_.setMemory(m);
-
-		//! Allocate the memory and create the reppresentation
-//		if (g1.size() != 0) data_.allocate(g1.size());
 
 		bool skip_ini = skip_init<has_noPointers<T>::value,T>::skip_();
 
@@ -994,6 +991,8 @@ public:
 		//! Create a completely new grid with sz
 
 		grid_base_impl<dim,T,S,layout,layout_base> grid_new(sz);
+
+		grid_new.set_shmem_key(this->get_shmem_key());
 
 		resize_impl_memset(grid_new);
 
@@ -1328,6 +1327,16 @@ public:
 		return grid_key_dx_iterator_sub<dim>(g1,m);
 	}
 
+	inline key_t get_shmem_key()
+	{
+		return mem_shmem<layout_base<T>,decltype(this->data_),boost::mpl::size<typename T::type>::type::value == 0>::get_shmem_key(data_);
+	}
+
+	inline void set_shmem_key(key_t k)
+	{
+		this->key = k;
+	}
+
 	/*! \brief Return a grid iterator
 	 *
 	 * Return a grid iterator, to iterate through the grid
@@ -1439,6 +1448,16 @@ public:
 #else
 		return -1;
 #endif
+	}
+
+	/*! \brief give a path for key generation for shared memory
+	 *
+	 * \
+	 *
+	 */
+	void init_shmem(const char * pathname, int proj_id)
+	{
+		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::init_shmem(data_,pathname,proj_id);
 	}
 };
 
