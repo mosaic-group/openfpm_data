@@ -46,7 +46,7 @@ if (PETSC_FOUND)
 endif()
 
 target_link_libraries(io ${Boost_LIBRARIES})
-target_link_libraries(io -L${HDF5_ROOT}/lib hdf5 hdf5_hl)
+target_link_libraries(io ${HDF5_LIBRARIES})
 target_link_libraries(io -L${TINYOBJLOADER_LIBRARY_DIRS} -ltinyobjloader )
 if (PETSC_FOUND)
 	target_link_libraries(io ${PETSC_LIBRARIES})
