@@ -44,7 +44,7 @@ endif()
 find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options)
 find_package(MPI REQUIRED)
 find_package(HDF5 REQUIRED)
-find_package(TinyObjLoader )
+find_package(TinyObjLoader)
 find_package(PETSc)
 
 if(CUDA_FOUND)
