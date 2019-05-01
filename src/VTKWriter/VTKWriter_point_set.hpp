@@ -343,7 +343,7 @@ class VTKWriter<pair,VECTOR_POINTS>
 	 * \param meta_data string with the meta-data to add
 	 *
 	 */
-	std::string add_meta_data(std::string & meta_data)
+	std::string add_meta_data(std::string & meta_data, file_type & opt)
 	{
 		std::string meta_string;
 
@@ -362,7 +362,13 @@ class VTKWriter<pair,VECTOR_POINTS>
 		{
 			meta_string += "FIELD FieldData 1\n";
 			meta_string += "TIME 1 1 double\n";
-			meta_string += std::to_string(time);
+			if (opt == file_type::ASCII)
+			{meta_string += std::to_string(time);}
+			else
+			{
+				time = swap_endian_lt(time);
+				meta_string.append((const char *)&time,sizeof(double));
+			}
 			meta_string += "\n";
 		}
 
@@ -446,7 +452,7 @@ public:
 		// Data type for graph is DATASET POLYDATA
 		vtk_header += "DATASET POLYDATA\n";
 
-		vtk_header += add_meta_data(meta_data);
+		vtk_header += add_meta_data(meta_data,ft);
 
 		// point properties header
 		point_prop_header = get_point_properties_list(ft);
