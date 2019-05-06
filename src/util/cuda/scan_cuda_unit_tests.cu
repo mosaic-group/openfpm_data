@@ -199,7 +199,7 @@ void test_gexscan()
 	cl_n.template hostToDevice<0>();
 	base.template hostToDevice<0>();
 
-	gexscan<THREADS/32,ratio_extend<cnt_type,ids_type>> <<< cl_n.size() / ratio / THREADS, THREADS >>>(nblocks,
+	gexscan<THREADS/32,ratio_extend<cnt_type,ids_type>> <<< cl_n.size() / 4 / ratio / THREADS, THREADS >>>(nblocks,
 																									  static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(cl_n.template getDeviceBuffer<0>()),
 																									  static_cast<cnt_type *>(base.template getDeviceBuffer<0>()),
 												                                                      static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(cl_n_scan.template getDeviceBuffer<0>()));
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(test_bexscan_functions)
 
 BOOST_AUTO_TEST_CASE( test_gexscan_funcs )
 {
-	std::cout << "Test cell list GPU base func" << "\n";
+	std::cout << "Test gexscan GPU base func" << "\n";
 
 	test_gexscan<unsigned int, unsigned char>();
 
@@ -293,7 +293,7 @@ BOOST_AUTO_TEST_CASE( test_gexscan_funcs )
 
 	test_gexscan<int, unsigned int>();
 
-	std::cout << "End cell list GPU" << "\n";
+	std::cout << "End gexscan GPU" << "\n";
 
 	// Test the cell list
 }

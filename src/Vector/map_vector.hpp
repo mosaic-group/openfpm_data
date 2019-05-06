@@ -1137,6 +1137,19 @@ namespace openfpm
 			dup.v_size = v_size;
 			dup.base.swap(base.duplicate());
 
+			// copy the device part
+			// and device
+			if (Memory::isDeviceHostSame() == false)
+			{
+#ifdef __NVCC__
+				if (dup.size() != 0)
+				{
+					auto it = dup.getGPUIterator();
+					CUDA_LAUNCH(copy_two_vectors,it,dup.toKernel(),toKernel());
+				}
+#endif
+			}
+
 			return dup;
 		}
 

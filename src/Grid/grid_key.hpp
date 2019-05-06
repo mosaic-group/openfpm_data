@@ -116,6 +116,17 @@ public:
 		{this->k[i] = k[i];}
 	}
 
+	/*! \brief Constructor from buffer reference
+	 *
+	 * \param k reference buffer
+	 *
+	 */
+	__device__ __host__ inline grid_key_dx(const unsigned int (&k)[dim])
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{this->k[i] = k[i];}
+	}
+
 	/*! \brief Construct a grid key from a list of numbers
 	 *
 	 * \param cmb combination

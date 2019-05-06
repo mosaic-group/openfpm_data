@@ -191,6 +191,33 @@ __global__ void construct_insert_list(vector_index_type vit_block_data,
 	}
 }
 
+template<typename vector_index_type>
+__global__ void construct_remove_list(vector_index_type vit_block_data,
+								 vector_index_type vit_block_n,
+								 vector_index_type vit_block_scan,
+								 vector_index_type vit_list_0,
+								 vector_index_type vit_list_1,
+								 int nslot)
+{
+	int n_move = vit_block_n.template get<0>(blockIdx.x);
+	int n_block_move = vit_block_n.template get<0>(blockIdx.x) / blockDim.x;
+	int start = vit_block_scan.template get<0>(blockIdx.x);
+
+	int i = 0;
+	for ( ; i < n_block_move ; i++)
+	{
+		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
+		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
+	}
+
+	// move remaining
+	if (threadIdx.x < n_move - i*blockDim.x )
+	{
+		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
+		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
+	}
+}
+
 template<typename e_type, typename v_reduce>
 struct data_merger
 {
@@ -291,6 +318,49 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 	}
 }
 
+template<typename vector_index_type, typename vector_index_type2, unsigned int block_dim>
+__global__ void solve_conflicts_remove(vector_index_type vct_index,
+								vector_index_type merge_index,
+		 	 	 	 	 	 	vector_index_type vct_index_out,
+		 	 	 	 	 	 	vector_index_type vct_index_out_ps,
+		 	 	 	 	 	 	vector_index_type2 vct_tot_out)
+{
+	typedef typename std::remove_reference<decltype(vct_index.template get<0>(0))>::type index_type;
+
+    // Specialize BlockScan for a 1D block of 256 threads on type int
+    typedef cub::BlockScan<int, block_dim> BlockScan;
+    // Allocate shared memory for BlockScan
+    __shared__ typename BlockScan::TempStorage temp_storage;
+
+	int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (p >= vct_index.size())	return;
+
+	index_type id_check_n = (p == vct_index.size() - 1)?(index_type)-1:vct_index.template get<0>(p+1);
+	index_type id_check_p = (p == 0)?(index_type)-1:vct_index.template get<0>(p-1);
+	index_type id_check = vct_index.template get<0>(p);
+	int predicate = id_check != id_check_p;
+	predicate &= id_check != id_check_n;
+
+	int scan = predicate;
+
+	// in shared memory scan
+	BlockScan(temp_storage).ExclusiveSum(scan, scan);
+
+	if (predicate == 1)
+	{
+		vct_index_out.template get<0>(blockIdx.x*block_dim + scan) = vct_index.template get<0>(p);
+		vct_index_out_ps.template get<0>(blockIdx.x*block_dim + scan) = merge_index.template get<0>(p);
+	}
+
+	__syncthreads();
+
+	if (threadIdx.x == blockDim.x - 1 || p == vct_index.size() - 1)
+	{
+		vct_tot_out.template get<0>(blockIdx.x) = scan + predicate;
+	}
+}
+
 template<typename vector_type, typename vector_type2, typename red_op>
 __global__ void reduce_from_offset(vector_type segment_offset,
 		                           vector_type2 output,
@@ -336,6 +406,40 @@ __global__ void realign(vector_index_type vct_index, vector_data_type vct_data,
 	vct_index_out.template get<0>(ds+threadIdx.x) = vct_index.template get<0>(p);
 
 	auto src = vct_data.get(p);
+	auto dst = vct_data_out.get(ds+threadIdx.x);
+
+	dst = src;
+}
+
+template<typename vector_index_type, typename vct_data_type, typename vector_index_type2>
+__global__ void realign_remove(vector_index_type vct_index, vector_index_type vct_m_index, vct_data_type vct_data,
+		 	 	 	 	 	 	vector_index_type vct_index_out, vct_data_type vct_data_out,
+		 	 	 	 	 	 	vector_index_type2 vct_tot_out_scan)
+{
+	int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (p >= vct_index.size())	return;
+
+	int tot = vct_tot_out_scan.template get<0>(blockIdx.x);
+
+	if (threadIdx.x > tot)
+	{return;}
+
+	if (threadIdx.x == tot && vct_tot_out_scan.template get<2>(blockIdx.x) == 1)
+	{return;}
+
+	// this branch exist if the previous block (last thread) had a predicate == 0 in resolve_conflict in that case
+	// the thread 0 of the next block does not have to produce any data
+	if (threadIdx.x == 0 && blockIdx.x != 0 && vct_tot_out_scan.template get<2>(blockIdx.x - 1) == 0)
+	{return;}
+
+	int ds = vct_tot_out_scan.template get<1>(blockIdx.x);
+
+	vct_index_out.template get<0>(ds+threadIdx.x) = vct_index.template get<0>(p);
+
+	int oi = vct_m_index.template get<0>(p);
+
+	auto src = vct_data.get(oi);
 	auto dst = vct_data_out.get(ds+threadIdx.x);
 
 	dst = src;

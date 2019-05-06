@@ -184,7 +184,9 @@ namespace openfpm
 		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_m_index;
 
 		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_add_index;
+		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_rem_index;
 		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_nadd_index;
+		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_nrem_index;
 		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> vct_add_data;
 		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> vct_add_data_reord;
 
@@ -210,7 +212,8 @@ namespace openfpm
 
 		size_t max_ele;
 
-		int n_gpu_block_slot;
+		int n_gpu_add_block_slot;
+		int n_gpu_rem_block_slot;
 
 		/*! \brief get the element i
 		 *
@@ -241,11 +244,11 @@ namespace openfpm
 		}
 
 		template<typename ... v_reduce>
-		void flush_on_gpu(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_0,
-						  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_1,
-						  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
-						  mgpu::ofp_context_t & context,
-						  int i)
+		void flush_on_gpu_insert(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_0,
+				  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_1,
+				  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
+				  mgpu::ofp_context_t & context,
+				  int i)
 		{
 #ifdef __NVCC__
 
@@ -283,7 +286,7 @@ namespace openfpm
 										vct_add_index_cont_1.toKernel(),
 										vct_add_data.toKernel(),
 										vct_add_data_cont.toKernel(),
-										n_gpu_block_slot);
+										n_gpu_add_block_slot);
 
 			// now we sort
 			mergesort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
@@ -384,7 +387,142 @@ namespace openfpm
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " error: you are suppose to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif
+		}
 
+
+		void flush_on_gpu_remove(
+				  mgpu::ofp_context_t & context)
+		{
+#ifdef __NVCC__
+
+			// Add 0 to the last element to vct_nadd_index
+			vct_nrem_index.resize(vct_nrem_index.size()+1);
+			vct_nrem_index.template get<0>(vct_nrem_index.size()-1) = 0;
+			vct_nrem_index.template hostToDevice<0>(vct_nrem_index.size()-1,vct_nrem_index.size()-1);
+
+			// Merge the list of inserted points for each block
+			starts.resize(vct_nrem_index.size());
+
+			mgpu::scan((Ti *)vct_nrem_index.template getDeviceBuffer<0>(), vct_nrem_index.size(), (Ti *)starts.template getDeviceBuffer<0>() , context);
+
+			starts.template deviceToHost<0>(starts.size()-1,starts.size()-1);
+			size_t n_ele = starts.template get<0>(starts.size()-1);
+
+			// we reuse vct_nadd_index
+			vct_add_index_cont_0.resize(n_ele);
+			vct_add_index_cont_1.resize(n_ele);
+
+			dim3 wthr;
+			dim3 thr;
+			wthr.x = vct_nrem_index.size()-1;
+			wthr.y = 1;
+			wthr.z = 1;
+			thr.x = 128;
+			thr.y = 1;
+			thr.z = 1;
+
+			construct_remove_list<<<wthr,thr>>>(vct_rem_index.toKernel(),
+										vct_nrem_index.toKernel(),
+										starts.toKernel(),
+										vct_add_index_cont_0.toKernel(),
+										vct_add_index_cont_1.toKernel(),
+										n_gpu_rem_block_slot);
+
+			// now we sort
+			mergesort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
+					vct_add_index_cont_0.size(), mgpu::template less_t<Ti>(), context);
+
+			auto ite = vct_add_index_cont_0.getGPUIterator();
+
+			mem.allocate(sizeof(int));
+			mem.fill(0);
+			vct_add_index_unique.resize(vct_add_index_cont_0.size()+1);
+
+			ite = vct_add_index_cont_0.getGPUIterator();
+
+			// produce unique index list
+			// Find the buffer bases
+			CUDA_LAUNCH((find_buffer_offsets_zero<0,decltype(vct_add_index_cont_0.toKernel()),decltype(vct_add_index_unique.toKernel())>),
+					    ite,
+					    vct_add_index_cont_0.toKernel(),(int *)mem.getDevicePointer(),vct_add_index_unique.toKernel());
+
+			mem.deviceToHost();
+			int n_ele_unique = *(int *)mem.getPointer();
+
+			vct_add_index_unique.resize(n_ele_unique);
+
+			mgpu::mergesort((Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
+							vct_add_index_unique.size(),mgpu::template less_t<Ti>(),context);
+
+			// Then we merge the two list vct_index and vct_add_index_unique
+
+			// index to get merge index
+			vct_m_index.resize(vct_index.size() + vct_add_index_unique.size());
+
+			ite = vct_m_index.getGPUIterator();
+			set_indexes<0><<<ite.wthr,ite.thr>>>(vct_m_index.toKernel(),0);
+
+			ite = vct_add_index_unique.getGPUIterator();
+			set_indexes<1><<<ite.wthr,ite.thr>>>(vct_add_index_unique.toKernel(),vct_index.size());
+
+			// after merge we solve the last conflicts, running across the vector again and spitting 1 when there is something to merge
+			// we reorder the data array also
+
+			vct_index_tmp.resize(vct_index.size() + vct_add_index_unique.size());
+			vct_index_tmp2.resize(vct_index.size() + vct_add_index_unique.size());
+
+			wthr.x = vct_index_tmp.size() / 128 + (vct_index_tmp.size() % 128 != 0);
+			wthr.y = 1;
+			wthr.z = 1;
+			thr.x = 128;
+			thr.y = 1;
+			thr.z = 1;
+
+			vct_index_dtmp.resize(wthr.x);
+
+			// we merge with vct_index with vct_add_index_unique in vct_index_tmp, vct_intex_tmp2 contain the merging index
+			//
+			mgpu::merge((Ti *)vct_index.template getDeviceBuffer<0>(),(Ti *)vct_m_index.template getDeviceBuffer<0>(),vct_index.size(),
+						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),vct_add_index_unique.size(),
+						(Ti *)vct_index_tmp.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp2.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
+
+			solve_conflicts_remove<decltype(vct_index_tmp.toKernel()),decltype(vct_index_dtmp.toKernel()),128>
+			<<<wthr,thr>>>
+										(vct_index_tmp.toKernel(),
+										 vct_index_tmp2.toKernel(),
+										 vct_index_tmp3.toKernel(),
+										 vct_m_index.toKernel(),
+										  vct_index_dtmp.toKernel());
+
+			// we scan tmp3
+			mgpu::scan((Ti*)vct_index_dtmp.template getDeviceBuffer<0>(),vct_index_dtmp.size(),(Ti *)vct_index_dtmp.template getDeviceBuffer<1>(),context);
+
+			// get the size to resize vct_index and vct_data
+			vct_index_dtmp.template deviceToHost<0,1>(vct_index_dtmp.size()-1,vct_index_dtmp.size()-1);
+			int size = vct_index_dtmp.template get<1>(vct_index_dtmp.size()-1) + vct_index_dtmp.template get<0>(vct_index_dtmp.size()-1);
+
+			vct_data_tmp.resize(size);
+			vct_index.resize(size);
+
+			realign_remove<<<wthr,thr>>>(vct_index_tmp3.toKernel(),vct_m_index.toKernel(),vct_data.toKernel(),
+								  vct_index.toKernel(),vct_data_tmp.toKernel(),
+								  vct_index_dtmp.toKernel());
+
+			vct_data.swap(vct_data_tmp);
+
+#else
+			std::cout << __FILE__ << ":" << __LINE__ << " error: you are suppose to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif
+		}
+
+		template<typename ... v_reduce>
+		void flush_on_gpu(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_0,
+						  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_1,
+						  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
+						  mgpu::ofp_context_t & context,
+						  int i)
+		{
+			flush_on_gpu_insert<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context,i);
 		}
 
 		void flush_on_cpu()
@@ -501,6 +639,19 @@ namespace openfpm
 			max_ele = n;
 		}
 
+		/*! \brief
+		 *
+		 * \warning After using this function to move out the vector of the indexes, this object become useless and
+		 *          must be destroyed
+		 *
+		 * \param iv
+		 *
+		 */
+		void swapIndexVector(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & iv)
+		{
+			vct_index.swap(iv);
+		}
+
 		/*! \brief Set the background to bck (which value get must return when the value is not find)
 		 *
 		 * \param bck
@@ -577,6 +728,21 @@ namespace openfpm
 			{this->flush_on_cpu();}
 		}
 
+		/*! \brief merge the added element to the main data array
+		 *
+		 * \param opt options
+		 *
+		 */
+		void flush_remove(mgpu::ofp_context_t & context, flust_type opt = FLUSH_ON_HOST)
+		{
+			if (opt & flust_type::FLUSH_ON_DEVICE)
+			{this->flush_on_gpu_remove(context);}
+			else
+			{
+				std::cerr << __FILE__ << ":" << __LINE__ << " error, flush_remove on CPU has not implemented yet";
+			}
+		}
+
 		/*! \brief Return how many element you have in this map
 		 *
 		 * \return the number of elements
@@ -606,10 +772,13 @@ namespace openfpm
 		vector_sparse_gpu_ker<T,Ti,layout_base> toKernel()
 		{
 			vector_sparse_gpu_ker<T,Ti,layout_base> mvsck(vct_index.toKernel(),vct_data.toKernel(),
-														  vct_add_index.toKernel(),vct_add_data.toKernel(),
+														  vct_add_index.toKernel(),
+														  vct_rem_index.toKernel(),vct_add_data.toKernel(),
 														  vct_nadd_index.toKernel(),
+														  vct_nrem_index.toKernel(),
 														  bck,
-														  n_gpu_block_slot);
+														  n_gpu_add_block_slot,
+														  n_gpu_rem_block_slot);
 
 			return mvsck;
 		}
@@ -625,8 +794,22 @@ namespace openfpm
 			vct_add_index.resize(nblock*nslot);
 			vct_nadd_index.resize(nblock);
 			vct_add_data.resize(nblock*nslot);
-			n_gpu_block_slot = nslot;
+			n_gpu_add_block_slot = nslot;
 			vct_nadd_index.template fill<0>(0);
+		}
+
+		/*! \brief set the gpu remove buffer for every block
+		 *
+		 * \param nblock number of blocks
+		 * \param nslot number of slots free for each block
+		 *
+		 */
+		void setGPURemoveBuffer(int nblock, int nslot)
+		{
+			vct_rem_index.resize(nblock*nslot);
+			vct_nrem_index.resize(nblock);
+			n_gpu_rem_block_slot = nslot;
+			vct_nrem_index.template fill<0>(0);
 		}
 
 #ifdef CUDA_GPU
@@ -655,7 +838,24 @@ namespace openfpm
 			vct_add_data.clear();
 
 			max_ele = 0;
-			n_gpu_block_slot = 0;
+			n_gpu_add_block_slot = 0;
+			n_gpu_rem_block_slot = 0;
+		}
+
+		void swap(vector_sparse<T,Ti,Memory,layout,layout_base,grow_p,impl> & sp)
+		{
+			vct_data.swap(sp.vct_data);
+			vct_index.swap(sp.vct_index);
+			vct_add_index.swap(sp.vct_add_index);
+			vct_add_data.swap(sp.vct_add_data);
+
+			size_t max_ele_ = sp.max_ele;
+			sp.max_ele = max_ele;
+			this->max_ele = max_ele_;
+
+			decltype(bck) bck_tmp = sp.bck;
+			sp.bck = bck;
+			this->bck = bck_tmp;
 		}
 	};
 

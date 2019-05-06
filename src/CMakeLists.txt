@@ -11,7 +11,8 @@ if (CUDA_FOUND)
 		Grid/cuda/cuda_grid_unit_tests_func.cu  
 		util/cuda/modern_gpu_tests.cu
 		Vector/cuda/map_vector_sparse_cuda_ker_unit_tests.cu
-		Vector/cuda/map_vector_sparse_cuda_kernels_unit_tests.cu )
+		Vector/cuda/map_vector_sparse_cuda_kernels_unit_tests.cu 
+		NN/CellList/tests/CellDecomposer_gpu_ker_unit_test.cu )
 else()
  	set(CUDA_SOURCES )
 endif()

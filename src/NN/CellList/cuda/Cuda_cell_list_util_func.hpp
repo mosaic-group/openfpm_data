@@ -25,7 +25,7 @@ struct cid_
 		return id;
 	}
 
-	static inline __device__ __host__ cnt_type get_cid(openfpm::array<ids_type,dim,cnt_type> & div_c , const grid_key_dx<1,cnt_type> & e)
+	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,dim,cnt_type> & div_c , const grid_key_dx<1,cnt_type> & e)
 	{
 		cnt_type id = e.get(dim-1);
 
@@ -36,8 +36,8 @@ struct cid_
 		return id;
 	}
 
-	template<typename T> static inline __device__ __host__ cnt_type get_cid(openfpm::array<ids_type,dim,cnt_type> & div_c,
-			                                                       openfpm::array<T,dim,cnt_type> & spacing,
+	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,dim,cnt_type> & div_c,
+			                                                       const openfpm::array<T,dim,cnt_type> & spacing,
 			                                                       const transform & t,
 			                                                       const Point<dim,T> & p)
 	{
@@ -54,7 +54,7 @@ struct cid_
 template<typename cnt_type, typename ids_type, typename transform>
 struct cid_<1,cnt_type,ids_type, transform>
 {
-	static inline __device__ __host__ cnt_type get_cid(openfpm::array<ids_type,1,cnt_type> & div_c, ids_type * e)
+	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c, ids_type * e)
 	{
 		return e[0];
 	}
@@ -64,8 +64,8 @@ struct cid_<1,cnt_type,ids_type, transform>
 		return e.get(0);
 	}
 
-	template<typename T> static inline __device__ __host__ cnt_type get_cid(openfpm::array<ids_type,1,cnt_type> & div_c,
-			                                                       openfpm::array<T,1,cnt_type> & spacing,
+	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c,
+			                                                       const openfpm::array<T,1,cnt_type> & spacing,
 			                                                       const transform & t,
 			                                                       const Point<1,T> & p)
 	{
@@ -76,7 +76,7 @@ struct cid_<1,cnt_type,ids_type, transform>
 template<typename cnt_type, typename ids_type, typename transform>
 struct cid_<2,cnt_type,ids_type,transform>
 {
-	static inline __device__ __host__ cnt_type get_cid(openfpm::array<ids_type,2,cnt_type> & div_c, ids_type * e)
+	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c, ids_type * e)
 	{
 		return e[0] + div_c[0] * e[1];
 	}
@@ -110,7 +110,8 @@ struct cid_<2,cnt_type,ids_type,transform>
 		return e[0] + e[1]*div_c[0];
 	}
 
-	template<typename T> static inline __device__ __host__ grid_key_dx<2,ids_type> get_cid_key(const openfpm::array<T,2,cnt_type> & spacing,
+	template<typename T>
+	static inline __device__ __host__ grid_key_dx<2,ids_type> get_cid_key(const openfpm::array<T,2,cnt_type> & spacing,
 			                                                       const openfpm::array<ids_type,2,cnt_type> & off,
 			                                                       const transform & t,
 			                                                       const Point<2,T> & p)
@@ -148,6 +149,13 @@ struct cid_<3,cnt_type,ids_type,transform>
 		return e.get(0) + (e.get(1) + e.get(2)*div_c[1])*div_c[0];
 	}
 
+	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,3,cnt_type> & div_c,
+													   const openfpm::array<ids_type,3,cnt_type> & off,
+			                                  const grid_key_dx<3,ids_type> & e)
+	{
+		return (e.get(0) + off[0]) + ((e.get(1) + off[1]) + (e.get(2) + off[2])*div_c[1])*div_c[0];
+	}
+
 	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,3,cnt_type> & div_c,
 			                                                       const openfpm::array<T,3,cnt_type> & spacing,
 			                                                       const openfpm::array<ids_type,3,cnt_type> & off,
@@ -174,7 +182,8 @@ struct cid_<3,cnt_type,ids_type,transform>
 		return e[0] + (e[1] + e[2]*div_c[1])*div_c[0];
 	}
 
-	template<typename T> static inline __device__ __host__ grid_key_dx<3,ids_type> get_cid_key(const openfpm::array<T,3,cnt_type> & spacing,
+	template<typename T>
+	static inline __device__ __host__ grid_key_dx<3,ids_type> get_cid_key(const openfpm::array<T,3,cnt_type> & spacing,
 			                                                       const openfpm::array<ids_type,3,cnt_type> & off,
 			                                                       const transform & t,
 			                                                       const Point<3,T> & p)
@@ -224,14 +233,16 @@ __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
 						 int n_cap,
 						 int n_part,
 						 int n_cap2,
+						 cnt_type start,
 						 pos_type * p_pos,
 						 cnt_type *counts,
 						 ids_type * p_ids)
 {
-    cnt_type i, cid;
+    cnt_type i, cid, ins;
     ids_type e[dim+1];
 
-    i = threadIdx.x + blockIdx.x * blockDim.x;
+    i = threadIdx.x + blockIdx.x * blockDim.x + start;
+    ins = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= n_part) return;
 
     pos_type p[dim];
@@ -246,14 +257,14 @@ __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
     	e[dim] = atomicAdd(counts + cid, 1);
 
         for (size_t k = 0 ; k <= dim ; k++)
-        {p_ids[i+k*(n_cap2)] = e[k];}
+        {p_ids[ins+k*(n_cap2)] = e[k];}
     }
     else
     {
         for (size_t k = 0 ; k <= dim ; k++)
-        {p_ids[i+k*(n_cap2)] = e[k];}
+        {p_ids[ins+k*(n_cap2)] = e[k];}
 
-        counts[i] = cid;
+        counts[ins] = cid;
     }
 }
 
@@ -269,8 +280,9 @@ __global__ void fill_cells_sparse(vector_sparse vs, vector_cell vc)
 	int c = vc.template get<0>(p);
 
 	vs.template insert<0>(c) = p;
-	vs.flush_block();
+	vs.flush_block_insert();
 }
+
 
 template<unsigned int dim, typename pos_type, typename cnt_type, typename ids_type, typename transform>
 __global__ void subindex_without_count(openfpm::array<ids_type,dim,cnt_type> div,
@@ -309,6 +321,7 @@ __global__ void fill_cells(cnt_type phase_id ,
 		                   openfpm::array<ids_type,dim,cnt_type> off,
 		                   cnt_type n,
 		                   cnt_type n_cap,
+		                   cnt_type start_p,
 		                   const cnt_type *starts,
 		                   const ids_type * p_ids,
 		                   cnt_type *cells)
@@ -328,7 +341,7 @@ __global__ void fill_cells(cnt_type phase_id ,
     start = starts[cid];
     id = start + e[dim];
 
-    cells[id] = encode_phase_id<cnt_type,ph>(phase_id,i);
+    cells[id] = encode_phase_id<cnt_type,ph>(phase_id,i + start_p);
 }
 
 

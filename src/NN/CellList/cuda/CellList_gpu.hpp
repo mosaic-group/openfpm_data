@@ -110,7 +110,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	//! \brief for each cell the particles id in it
 	vector_cnt_type cells;
 
-	//! \brief Cell scan with + operation of cl_n
+	//! \brief Cell scan with + operation of cl_n (in case of sparse it contain the cell index of the particles)
 	vector_cnt_type starts;
 
 	//! \brief sparse vector in case of sparse Cell-list
@@ -124,6 +124,9 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 	//! \brief particle ids information the first "dim" is the cell-id in grid coordinates, the last is the local-id inside the cell
 	openfpm::vector<aggregate<ids_type[dim+1]>,Memory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
+
+	//! \breif Size of the Neighborhood cells
+	int cells_nn_test_size;
 
 	//! \brief Neighborhood of a cell to test
 	openfpm::vector_gpu<aggregate<int>> cells_nn_test;
@@ -171,7 +174,8 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		cl_n.resize(tot_n_cell);
 
-		construct_cell_nn_test();
+		cells_nn_test_size = 1;
+		construct_cell_nn_test(cells_nn_test_size);
 	}
 
 	void construct_cell_nn_test(unsigned int box_nn = 1)
@@ -207,6 +211,13 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		}
 
 		cells_nn_test.template hostToDevice<0>();
+
+#if defined(__NVCC__) && defined(USE_LOW_REGISTER_ITERATOR)
+
+		// copy to the constant memory
+		cudaMemcpyToSymbol(cells_striding,cells_nn_test.template getPointer<0>(),cells_nn_test.size()*sizeof(int));
+
+#endif
 	}
 
 	/*! \brief This function construct a sparse cell-list
@@ -219,19 +230,19 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
   	   	   	 	 	 	  vector_prp & pl_prp,
   	   	   	 	 	 	  vector_prp & pl_prp_out,
   	   	   	 	 	 	  mgpu::ofp_context_t & mgpuContext,
-  	   	   	 	 	 	  size_t g_m = 0,
+  	   	   	 	 	 	  size_t g_m,
+ 			   	   	   	  size_t start,
+ 			   	   	   	  size_t stop,
   	   	   	 	 	 	  cl_construct_opt opt = cl_construct_opt::Full)
 	{
 #ifdef __NVCC__
 
-		part_ids.resize(pl.size());
-		starts.resize(pl.size());
+		part_ids.resize(stop - start);
+		starts.resize(stop - start);
 
 		// Than we construct the ids
 
-		auto ite_gpu = pl.getGPUIterator();
-
-		part_ids.resize(pl.size());
+		auto ite_gpu = pl.getGPUIteratorTo(stop-start);
 
 		if (ite_gpu.wthr.x == 0)
 		{
@@ -245,15 +256,17 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																		pl.capacity(),
 																		pl.size(),
 																		part_ids.capacity(),
+																		start,
 																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																		static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
 																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
 
 		// now we construct the cells
 
-		cells.resize(pl.size());
+		cells.resize(stop-start);
 
 		// Here we fill the sparse vector
+		cl_sparse.clear();
 		cl_sparse.template getBackground<0>() = (cnt_type)-1;
 		cl_sparse.setGPUInsertBuffer(ite_gpu.wthr.x,ite_gpu.thr.x);
 		CUDA_LAUNCH((fill_cells_sparse),ite_gpu,cl_sparse.toKernel(),starts.toKernel());
@@ -276,13 +289,13 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		CUDA_LAUNCH((fill_nn_cells),itgg,cl_sparse.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel(),cells_nn_list.toKernel(),cells.size());
 
-		sorted_to_not_sorted.resize(pl.size());
+		sorted_to_not_sorted.resize(stop-start);
 		non_sorted_to_sorted.resize(pl.size());
 
-		sorted_domain_particles_ids.resize(pl.size());
-		sorted_domain_particles_dg.resize(pl.size());
+		sorted_domain_particles_ids.resize(stop-start);
+		sorted_domain_particles_dg.resize(stop-start);
 
-		auto ite = pl.getGPUIterator(64);
+		auto ite = pl.getGPUIteratorTo(stop-start,64);
 
 		// Here we reorder the particles to improve coalescing access
 		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
@@ -326,21 +339,21 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 			   	   	   	 vector_prp & pl_prp,
 			   	   	   	 vector_prp & pl_prp_out,
 			   	   	   	 mgpu::ofp_context_t & mgpuContext,
-			   	   	   	 size_t g_m = 0,
+			   	   	   	 size_t g_m,
+			   	   	   	 size_t start,
+			   	   	   	 size_t stop,
 			   	   	   	 cl_construct_opt opt = cl_construct_opt::Full)
 	{
 #ifdef __NVCC__
 
-		part_ids.resize(pl.size());
-
 		// Than we construct the ids
 
-		auto ite_gpu = pl.getGPUIterator();
+		auto ite_gpu = pl.getGPUIteratorTo(stop-start);
 
 		cl_n.resize(this->gr_cell.size()+1);
 		CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
-		part_ids.resize(pl.size());
+		part_ids.resize(stop - start);
 
 		if (ite_gpu.wthr.x == 0)
 		{
@@ -355,8 +368,9 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																		off,
 																		this->getTransform(),
 																		pl.capacity(),
-																		pl.size(),
+																		stop,
 																		part_ids.capacity(),
+																		start,
 																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																		static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
@@ -367,7 +381,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		// now we construct the cells
 
-		cells.resize(pl.size());
+		cells.resize(stop-start);
 		auto itgg = part_ids.getGPUIterator();
 
 		CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg,0,
@@ -375,23 +389,24 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																					   off,
 																					   part_ids.size(),
 																					   part_ids.capacity(),
+																					   start,
 																					   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
 																					   static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()),
 																					   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
 
-		sorted_to_not_sorted.resize(pl.size());
+		sorted_to_not_sorted.resize(stop-start);
 		non_sorted_to_sorted.resize(pl.size());
 
-		sorted_domain_particles_ids.resize(pl.size());
-		sorted_domain_particles_dg.resize(pl.size());
+		sorted_domain_particles_ids.resize(stop-start);
+		sorted_domain_particles_dg.resize(stop-start);
 
-		auto ite = pl.getGPUIterator(64);
+		auto ite = pl.getGPUIteratorTo(stop-start,64);
 
 		// Here we reorder the particles to improve coalescing access
 		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
 				      decltype(pl.toKernel()),
 				      decltype(sorted_to_not_sorted.toKernel()),
-				      cnt_type,shift_ph<0,cnt_type>>),ite,pl.size(),
+				      cnt_type,shift_ph<0,cnt_type>>),ite,sorted_to_not_sorted.size(),
 				                                                           pl_prp.toKernel(),
 				                                                           pl_prp_out.toKernel(),
 				                                                           pl.toKernel(),
@@ -495,7 +510,13 @@ public:
 
 	void setBoxNN(unsigned int n_NN)
 	{
-		return construct_cell_nn_test(n_NN);
+		cells_nn_test_size = n_NN;
+		construct_cell_nn_test(n_NN);
+	}
+
+	void re_setBoxNN()
+	{
+		construct_cell_nn_test(cells_nn_test_size);
 	}
 
 	/*! Initialize the cell list constructor
@@ -566,10 +587,16 @@ public:
 				   vector_prp & pl_prp_out,
 				   mgpu::ofp_context_t & mgpuContext,
 				   size_t g_m = 0,
+				   size_t start = 0,
+				   size_t stop = (size_t)-1,
 				   cl_construct_opt opt = cl_construct_opt::Full)
 	{
-		if (is_sparse == false) {construct_dense(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,opt);}
-		else {construct_sparse(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,opt);}
+		// if stop if the default set to the number of particles
+		if (stop == (size_t)-1)
+		{stop = pl.size();}
+
+		if (is_sparse == false) {construct_dense(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,start,stop,opt);}
+		else {construct_sparse(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,start,stop,opt);}
 	}
 
 	CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse> toKernel()
@@ -725,13 +752,17 @@ public:
 	 *
 	 *
 	 */
-	void swap(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
+	void swap(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type,is_sparse> & clg)
 	{
 		((CellDecomposer_sm<dim,T,transform> *)this)->swap(clg);
 		cl_n.swap(clg.cl_n);
 		cells.swap(clg.cells);
 		starts.swap(clg.starts);
 		part_ids.swap(clg.part_ids);
+		cl_sparse.swap(clg.cl_sparse);
+		cells_nn.swap(clg.cells_nn);
+		cells_nn_list.swap(clg.cells_nn_list);
+		cells_nn_test.swap(clg.cells_nn_test);
 		sorted_to_not_sorted.swap(clg.sorted_to_not_sorted);
 		sorted_domain_particles_dg.swap(clg.sorted_domain_particles_dg);
 		sorted_domain_particles_ids.swap(clg.sorted_domain_particles_ids);
@@ -748,16 +779,24 @@ public:
 		size_t n_dec_tmp = n_dec;
 		n_dec = clg.n_dec;
 		clg.n_dec = n_dec_tmp;
+
+		int cells_nn_test_size_tmp = cells_nn_test_size;
+		cells_nn_test_size = clg.cells_nn_test_size;
+		clg.cells_nn_test_size = cells_nn_test_size_tmp;
 	}
 
-	CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> &
-	operator=(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
+	CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type,is_sparse> &
+	operator=(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type,is_sparse> & clg)
 	{
 		*static_cast<CellDecomposer_sm<dim,T,transform> *>(this) = *static_cast<const CellDecomposer_sm<dim,T,transform> *>(&clg);
 		cl_n = clg.cl_n;
 		cells = clg.cells;
 		starts = clg.starts;
 		part_ids = clg.part_ids;
+		cl_sparse = clg.cl_sparse;
+		cells_nn = clg.cells_nn;
+		cells_nn_list = clg.cells_nn_list;
+		cells_nn_test = clg.cells_nn_test;
 		sorted_to_not_sorted = clg.sorted_to_not_sorted;
 		sorted_domain_particles_dg = clg.sorted_domain_particles_dg;
 		sorted_domain_particles_ids = clg.sorted_domain_particles_ids;
@@ -768,6 +807,8 @@ public:
 		off = clg.off;
 		g_m = clg.g_m;
 		n_dec = clg.n_dec;
+
+		cells_nn_test_size = clg.cells_nn_test_size;
 
 		return *this;
 	}
@@ -780,6 +821,10 @@ public:
 		cells.swap(clg.cells);
 		starts.swap(clg.starts);
 		part_ids.swap(clg.part_ids);
+		cl_sparse.swap(clg.cl_sparse);
+		cells_nn.swap(clg.cells_nn);
+		cells_nn_list.swap(clg.cells_nn_list);
+		cells_nn_test.swap(clg.cells_nn_test);
 		sorted_to_not_sorted.swap(clg.sorted_to_not_sorted);
 		sorted_domain_particles_dg.swap(clg.sorted_domain_particles_dg);
 		sorted_domain_particles_ids.swap(clg.sorted_domain_particles_ids);
@@ -790,6 +835,8 @@ public:
 		off = clg.off;
 		g_m = clg.g_m;
 		n_dec = clg.n_dec;
+
+		cells_nn_test_size = clg.cells_nn_test_size;
 
 		return *this;
 	}

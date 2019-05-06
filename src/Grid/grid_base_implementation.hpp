@@ -64,97 +64,114 @@ struct skip_init<true,T>
 										 if (key.get(0) > ite_gpu.stop.get(0) || key.get(1) > ite_gpu.stop.get(1))\
     									 {return;}
 
-template<unsigned int dim>
-struct ite_gpu
-{
-	dim3 thr;
-	dim3 wthr;
+#ifdef __NVCC__
 
-	grid_key_dx<dim> start;
-	grid_key_dx<dim> stop;
+template<unsigned int dim, typename ids_type = int>
+struct grid_p
+{
+	__device__ static inline grid_key_dx<dim,ids_type> get_grid_point(const grid_sm<dim,void> & g)
+	{
+		grid_key_dx<dim,ids_type> key;
+
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+
+		unsigned int bz = blockIdx.z * blockDim.z + threadIdx.z;
+		key.set_d(2,bz % g.size(2));
+
+		for (unsigned int i = 3 ; i < dim ; i++)
+		{
+			bz /= g.size(i);
+			key.set_d(i,bz % g.size(i));
+		}
+
+		return key;
+	}
+
+	__device__ static inline grid_key_dx<dim,ids_type> get_grid_point(const openfpm::array<ids_type,dim,unsigned int> & g)
+	{
+		grid_key_dx<dim,ids_type> key;
+
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+
+		unsigned int bz = blockIdx.z * blockDim.z + threadIdx.z;
+		key.set_d(2,bz % g[2]);
+
+		for (unsigned int i = 3 ; i < dim ; i++)
+		{
+			bz /= g[i];
+			key.set_d(i,bz % g[i]);
+		}
+
+		return key;
+	}
 };
 
-
-template<unsigned int dim, typename T>
-ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T> & g1, grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024)
+template<typename ids_type>
+struct grid_p<3,ids_type>
 {
-	size_t tot_work = 1;
-	for (size_t i = 0 ; i < dim ; i++)
-	{tot_work *= key2.get(i) - key1.get(i) + 1;}
-
-	size_t n = (tot_work <= n_thr)?openfpm::math::round_big_2(tot_work):n_thr;
-
-	// Work to do
-	ite_gpu<dim> ig;
-
-	if (tot_work == 0)
+	__device__ static inline grid_key_dx<3,ids_type> get_grid_point(const grid_sm<3,void> & g)
 	{
-		ig.thr.x = 0;
-		ig.thr.y = 0;
-		ig.thr.z = 0;
+		grid_key_dx<3,unsigned int> key;
 
-		ig.wthr.x = 0;
-		ig.wthr.y = 0;
-		ig.wthr.z = 0;
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+		key.set_d(2,blockIdx.z * blockDim.z + threadIdx.z);
 
-		return ig;
+		return key;
 	}
 
-	ig.thr.x = 1;
-	ig.thr.y = 1;
-	ig.thr.z = 1;
-
-	int dir = 0;
-
-	while (n != 1)
+	__device__ static inline grid_key_dx<3,ids_type> get_grid_point(const openfpm::array<ids_type,3,unsigned int> & g)
 	{
-		if (dir % 3 == 0)
-		{ig.thr.x = ig.thr.x << 1;}
-		else if (dir % 3 == 1)
-		{ig.thr.y = ig.thr.y << 1;}
-		else if (dir % 3 == 2)
-		{ig.thr.z = ig.thr.z << 1;}
+		grid_key_dx<3,ids_type> key;
 
-		n = n >> 1;
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+		key.set_d(2,blockIdx.z * blockDim.z + threadIdx.z);
 
-		dir++;
-		dir %= dim;
+		return key;
+	}
+};
+
+template<typename ids_type>
+struct grid_p<2,ids_type>
+{
+	__device__ static inline grid_key_dx<2,ids_type> get_grid_point(const grid_sm<2,void> & g)
+	{
+		grid_key_dx<2,ids_type> key;
+
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+
+		return key;
 	}
 
-	if (dim >= 1)
-	{ig.wthr.x = (key2.get(0) - key1.get(0) + 1) / ig.thr.x + (((key2.get(0) - key1.get(0) + 1)%ig.thr.x != 0)?1:0);}
-
-	if (dim >= 2)
-	{ig.wthr.y = (key2.get(1) - key1.get(1) + 1) / ig.thr.y + (((key2.get(1) - key1.get(1) + 1)%ig.thr.y != 0)?1:0);}
-	else
-	{ig.wthr.y = 1;}
-
-	if (dim >= 3)
+	__device__ static inline grid_key_dx<2,ids_type> get_grid_point(const openfpm::array<ids_type,2,unsigned int> & g)
 	{
-		// Roll the other dimensions on z
-		ig.wthr.z = 1;
-		for (size_t i = 2 ; i < dim ; i++)
-		{ig.wthr.z *= (key2.get(i) - key1.get(i) + 1) / ig.thr.z + (((key2.get(i) - key1.get(i) + 1)%ig.thr.z != 0)?1:0);}
+		grid_key_dx<2,ids_type> key;
+
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+
+		return key;
 	}
-	else
-	{ig.wthr.z = 1;}
+};
 
-	// crop if wthr == 1
+template<typename ids_type>
+struct grid_p<1,ids_type>
+{
+	__device__ static inline grid_key_dx<1,unsigned int> get_grid_point(const grid_sm<1,void> & g)
+	{
+		grid_key_dx<1,unsigned int> key;
 
-	if (dim >= 1 && ig.wthr.x == 1)
-	{ig.thr.x = (key2.get(0) - key1.get(0) + 1);}
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
 
-	if (dim >= 2 && ig.wthr.y == 1)
-	{ig.wthr.y = key2.get(1) - key1.get(1) + 1;}
+		return key;
+	}
+};
 
-	if (dim == 3 && ig.wthr.z == 1)
-	{ig.wthr.z = key2.get(2) - key1.get(2) + 1;}
-
-	ig.start = key1;
-	ig.stop = key2;
-
-	return ig;
-}
+#endif
 
 template<unsigned int dim>
 bool has_work_gpu(ite_gpu<dim> & ite)
@@ -405,7 +422,7 @@ private:
 
 				grid_sm<1,void> g_sm_copy(sz);
 
-				auto ite = getGPUIterator_impl<1,void>(g_sm_copy,start,stop);
+				auto ite = getGPUIterator_impl<1>(g_sm_copy,start,stop);
 
 				copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());
 			}

@@ -8,14 +8,131 @@
 #ifndef CELLLIST_GPU_KER_CUH_
 #define CELLLIST_GPU_KER_CUH_
 
-template<unsigned int dim, typename cnt_type, typename ids_type, unsigned int r_int, bool is_sparse>
-class NN_gpu_it
+#include "NN/CellList/cuda/CellDecomposer_gpu_ker.cuh"
+
+#ifdef USE_LOW_REGISTER_ITERATOR
+
+#ifdef __NVCC__
+__constant__ int cells_striding[126];
+#endif
+
+template<unsigned int dim, int r_int, unsigned int pr_int, typename ids_type, typename cnt_type>
+struct NN_gpu_int_base_lr_impl
+{
+	cnt_type ca_pnt;
+
+	cnt_type ca_lin;
+
+	cnt_type c_id;
+
+	__device__ inline void init_impl(const grid_key_dx<dim,ids_type> & cell_pos, const openfpm::array<ids_type,dim,cnt_type> & div_c)
+	{
+#ifdef __NVCC__
+		ca_pnt = 0;
+
+		ca_lin = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_pos);
+		c_id = ca_lin + cells_striding[ca_pnt];
+#endif
+	}
+
+	__device__ inline void SelectValid_impl(const openfpm::array<ids_type,dim,cnt_type> & div_c)
+	{
+#ifdef __NVCC__
+		++ca_pnt;
+
+		c_id = ca_lin + cells_striding[ca_pnt];
+#endif
+	}
+
+	__device__ inline bool isNext_impl()
+	{
+		return ca_pnt < pr_int;
+	}
+};
+
+#endif
+
+template<unsigned int dim, int r_int, unsigned int pr_int, typename ids_type, typename cnt_type>
+struct NN_gpu_int_base_hr_impl
 {
 	grid_key_dx<dim,ids_type> cell_act;
 
 	grid_key_dx<dim,ids_type> cell_start;
 	grid_key_dx<dim,ids_type> cell_stop;
 
+	cnt_type c_id;
+
+	__device__ inline void init_impl(const grid_key_dx<dim,ids_type> & cell_pos, const openfpm::array<ids_type,dim,cnt_type> & div_c)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			cell_start.set_d(i,cell_pos.get(i) - r_int);
+			cell_stop.set_d(i,cell_pos.get(i) + r_int);
+			cell_act.set_d(i,cell_pos.get(i) - r_int);
+		}
+
+		c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_start);
+	}
+
+	__device__ inline void SelectValid_impl(const openfpm::array<ids_type,dim,cnt_type> & div_c)
+	{
+		cnt_type id = cell_act.get(0);
+		cell_act.set_d(0,id+1);
+
+		//! check the overflow of all the index with exception of the last dimensionality
+
+		int i = 0;
+		for ( ; i < dim-1 ; i++)
+		{
+			size_t id = cell_act.get(i);
+			if ((int)id > cell_stop.get(i))
+			{
+				// ! overflow, increment the next index
+
+				cell_act.set_d(i,cell_start.get(i));
+				id = cell_act.get(i+1);
+				cell_act.set_d(i+1,id+1);
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_act);
+	}
+
+	__device__ inline bool isNext_impl()
+	{
+		return cell_act.get(dim-1) <= cell_stop.get(dim-1);
+	}
+};
+
+#ifdef USE_LOW_REGISTER_ITERATOR
+
+template<unsigned int dim, int r_int, unsigned int pr_int, typename ids_type, typename cnt_type>
+struct NN_gpu_int_base: public NN_gpu_int_base_hr_impl<dim,r_int,pr_int,ids_type,cnt_type>
+{};
+
+template<int r_int, unsigned int pr_int, typename ids_type, typename cnt_type>
+struct NN_gpu_int_base<2,r_int,pr_int,ids_type,cnt_type>: public NN_gpu_int_base_lr_impl<2,r_int,pr_int,ids_type,cnt_type>
+{};
+
+template<int r_int, unsigned int pr_int, typename ids_type, typename cnt_type>
+struct NN_gpu_int_base<3,r_int,pr_int,ids_type,cnt_type>: public NN_gpu_int_base_lr_impl<3,r_int,pr_int,ids_type,cnt_type>
+{};
+
+#else
+
+template<unsigned int dim, int r_int, unsigned int pr_int, typename ids_type, typename cnt_type>
+struct NN_gpu_int_base: public NN_gpu_int_base_hr_impl<dim,r_int,pr_int,ids_type,cnt_type>
+{};
+
+#endif
+
+template<unsigned int dim, typename cnt_type, typename ids_type, unsigned int r_int, bool is_sparse>
+class NN_gpu_it: public NN_gpu_int_base<dim,r_int,openfpm::math::pow(2*r_int+1,dim),ids_type,cnt_type>
+{
 	const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & starts;
 
 	const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & srt;
@@ -26,45 +143,22 @@ class NN_gpu_it
 
 	cnt_type p_id;
 	cnt_type p_id_end;
-	cnt_type c_id;
 
-	__device__ void SelectValid()
+	inline __device__ void SelectValid()
 	{
 		while (p_id >= p_id_end && isNext())
 		{
-			cnt_type id = cell_act.get(0);
-			cell_act.set_d(0,id+1);
+			this->SelectValid_impl(div_c);
 
-			//! check the overflow of all the index with exception of the last dimensionality
-
-			int i = 0;
-			for ( ; i < dim-1 ; i++)
-			{
-				size_t id = cell_act.get(i);
-				if ((int)id > cell_stop.get(i))
-				{
-					// ! overflow, increment the next index
-
-					cell_act.set_d(i,cell_start.get(i));
-					id = cell_act.get(i+1);
-					cell_act.set_d(i+1,id+1);
-				}
-				else
-				{
-					break;
-				}
-			}
-
-			c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_act);
-			p_id = starts.template get<0>(c_id);
-			p_id_end = starts.template get<0>(c_id+1);
+			p_id = starts.template get<0>(this->c_id);
+			p_id_end = starts.template get<0>(this->c_id+1);
 		}
 	}
 
 
 public:
 
-	__device__ NN_gpu_it(const grid_key_dx<dim,ids_type> & cell_pos,
+	inline __device__ NN_gpu_it(const grid_key_dx<dim,ids_type> & cell_pos,
 			             const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & starts,
 			             const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & srt,
 			             const openfpm::array<ids_type,dim,cnt_type> & div_c,
@@ -73,31 +167,25 @@ public:
 	{
 		// calculate start and stop
 
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			cell_start.set_d(i,cell_pos.get(i) - r_int);
-			cell_stop.set_d(i,cell_pos.get(i) + r_int);
-			cell_act.set_d(i,cell_pos.get(i) - r_int);
-		}
+		this->init_impl(cell_pos,div_c);
 
-		c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_start);
-		p_id = starts.template get<0>(c_id);
-		p_id_end = starts.template get<0>(c_id+1);
+		p_id = starts.template get<0>(this->c_id);
+		p_id_end = starts.template get<0>(this->c_id+1);
 
 		SelectValid();
 	}
 
-	__device__ cnt_type get_sort()
+	inline __device__ cnt_type get_sort()
 	{
 		return p_id;
 	}
 
-	__device__ cnt_type get()
+	inline __device__ cnt_type get()
 	{
 		return srt.template get<0>(p_id);
 	}
 
-	__device__ NN_gpu_it<dim,cnt_type,ids_type,r_int,is_sparse> & operator++()
+	inline __device__ NN_gpu_it<dim,cnt_type,ids_type,r_int,is_sparse> & operator++()
 	{
 		++p_id;
 
@@ -106,19 +194,19 @@ public:
 		return *this;
 	}
 
-	__device__ cnt_type get_start(unsigned int ce_id)
+	inline __device__ cnt_type get_start(unsigned int ce_id)
 	{
 		return starts.template get<0>(ce_id);
 	}
 
-	__device__ cnt_type get_cid()
+	inline __device__ cnt_type get_cid()
 	{
-		return c_id;
+		return this->c_id;
 	}
 
-	__device__ bool isNext()
+	inline __device__ bool isNext()
 	{
-		return cell_act.get(dim-1) <= cell_stop.get(dim-1);
+		return this->isNext_impl()/*cell_act.get(dim-1) <= cell_stop.get(dim-1)*/;
 	}
 };
 
@@ -325,7 +413,7 @@ struct NN_gpu_selector<dim,cnt_type,ids_type,true>
 };
 
 template<unsigned int dim, typename T, typename cnt_type, typename ids_type, typename transform, bool is_sparse>
-class CellList_gpu_ker
+class CellList_gpu_ker: public CellDecomposer_gpu_ker<dim,T,cnt_type,ids_type,transform>
 {
 	//! starting point for each cell
 	openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> starts;
@@ -339,20 +427,8 @@ class CellList_gpu_ker
 	//! radius cells
 	openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> rad_cells;
 
-	//! Spacing
-	openfpm::array<T,dim,cnt_type> spacing_c;
-
-	//! \brief number of sub-divisions in each direction
-	openfpm::array<ids_type,dim,cnt_type> div_c;
-
-	//! \brief cell offset
-	openfpm::array<ids_type,dim,cnt_type> off;
-
 	//! Ghost particle marker
 	unsigned int g_m;
-
-	//! transformation
-	transform t;
 
 public:
 
@@ -365,32 +441,29 @@ public:
 			         openfpm::array<ids_type,dim,cnt_type> & off,
 			         const transform & t,
 			         unsigned int g_m)
-	:starts(starts),srt(srt),dprt(dprt),rad_cells(rad_cells),spacing_c(spacing_c),div_c(div_c),off(off),t(t),g_m(g_m)
+	:CellDecomposer_gpu_ker<dim,T,cnt_type,ids_type,transform>(spacing_c,div_c,off,t),
+	 starts(starts),srt(srt),dprt(dprt),rad_cells(rad_cells),g_m(g_m)
 	{
 	}
 
-	inline __device__ grid_key_dx<dim,ids_type> getCell(const Point<dim,T> & xp) const
-	{
-		return cid_<dim,cnt_type,ids_type,transform>::get_cid_key(spacing_c,off,t,xp);
-	}
 
 	inline __device__ NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> getNNIterator(const grid_key_dx<dim,ids_type> & cid)
 	{
-		NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> ngi(cid,starts,srt,div_c,off);
+		NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> ngi(cid,starts,srt,this->get_div_c(),this->get_off());
 
 		return ngi;
 	}
 
 	inline __device__ NN_gpu_it_radius<dim,cnt_type,ids_type> getNNIteratorRadius(const grid_key_dx<dim,ids_type> & cid)
 	{
-		NN_gpu_it_radius<dim,cnt_type,ids_type> ngi(cid,rad_cells,starts,srt,div_c,off);
+		NN_gpu_it_radius<dim,cnt_type,ids_type> ngi(cid,rad_cells,starts,srt,this->get_div_c(),this->get_off());
 
 		return ngi;
 	}
 
 	template<unsigned int r_int = 2> inline __device__ NN_gpu_it<dim,cnt_type,ids_type,r_int,is_sparse> getNNIteratorBox(const grid_key_dx<dim,ids_type> & cid)
 	{
-		NN_gpu_it<dim,cnt_type,ids_type,r_int,is_sparse> ngi(cid,starts,srt,div_c,off);
+		NN_gpu_it<dim,cnt_type,ids_type,r_int,is_sparse> ngi(cid,starts,srt,this->get_div_c(),this->get_off());
 
 		return ngi;
 	}
@@ -451,7 +524,7 @@ public:
 
 
 template<unsigned int dim, typename T, typename cnt_type, typename ids_type, typename transform>
-class CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,true>
+class CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,true>: public CellDecomposer_gpu_ker<dim,T,cnt_type,ids_type,transform>
 {
 	//! starting point for each cell
 	openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> cell_nn;
@@ -468,20 +541,8 @@ class CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,true>
 	//! Set of cells sparse
 	openfpm::vector_sparse_gpu_ker<aggregate<cnt_type>,cnt_type,memory_traits_inte> cl_sparse;
 
-	//! Spacing
-	openfpm::array<T,dim,cnt_type> spacing_c;
-
-	//! \brief number of sub-divisions in each direction
-	openfpm::array<ids_type,dim,cnt_type> div_c;
-
-	//! \brief cell offset
-	openfpm::array<ids_type,dim,cnt_type> off;
-
 	//! Ghost particle marker
 	unsigned int g_m;
-
-	//! transformation
-	transform t;
 
 public:
 
@@ -495,16 +556,18 @@ public:
 			         openfpm::array<ids_type,dim,cnt_type> & off,
 			         const transform & t,
 			         unsigned int g_m)
-	:cell_nn(cell_nn),cell_nn_list(cell_nn_list),srt(srt),dprt(dprt),cl_sparse(cl_sparse),spacing_c(spacing_c),div_c(div_c),off(off),t(t),g_m(g_m)
+	:CellDecomposer_gpu_ker<dim,T,cnt_type,ids_type,transform>(spacing_c,div_c,off,t),cell_nn(cell_nn),cell_nn_list(cell_nn_list),srt(srt),dprt(dprt),
+	 cl_sparse(cl_sparse),g_m(g_m)
 	{
 	}
 
 	inline __device__ auto getCell(const Point<dim,T> & xp) const -> decltype(cl_sparse.get_sparse(0))
 	{
-		cnt_type cell = cid_<dim,cnt_type,ids_type,transform>::get_cid(div_c,spacing_c,off,t,xp);
+		cnt_type cell = cid_<dim,cnt_type,ids_type,transform>::get_cid(this->get_div_c(),this->get_spacing_c(),this->get_off(),this->get_t(),xp);
 
 		return cl_sparse.get_sparse(cell);
 	}
+
 
 	inline __device__ NN_gpu_it<dim,cnt_type,ids_type,1,true> getNNIterator(decltype(cl_sparse.get_sparse(0)) cid)
 	{
@@ -522,6 +585,7 @@ public:
 		return ngi;
 	}
 
+
 	inline __device__ openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & getDomainSortIds()
 	{
 		return dprt;
@@ -538,5 +602,6 @@ public:
 		return g_m;
 	}
 };
+
 
 #endif /* CELLLIST_GPU_KER_CUH_ */

@@ -462,6 +462,8 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 
 	while (it_cl.isNext())
 	{
+		auto i = it_cl.get();
+
 		count++;
 		++it_cl;
 	}

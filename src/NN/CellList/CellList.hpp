@@ -270,6 +270,7 @@ void NNcalc_rad(T r_cut, openfpm::vector<long int> & NNcell, const Box<dim,T> & 
 		cell_zero.setHigh(i,(n_cell_mid[i]+1)*spacing.get(i));
 	}
 
+	NNcell.clear();
 	while (gkdi.isNext())
 	{
 		auto key = gkdi.get();
@@ -1210,6 +1211,9 @@ public:
 	}
 
 /////////////////////////////////////
+
+	void re_setBoxNN()
+	{}
 
 /////////////////////////////////////
 

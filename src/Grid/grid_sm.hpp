@@ -64,8 +64,26 @@ public:
 	}
 };
 
+template<unsigned int dim>
+struct ite_gpu
+{
+	dim3 thr;
+	dim3 wthr;
+
+	grid_key_dx<dim,int> start;
+	grid_key_dx<dim,int> stop;
+
+	size_t nblocks()
+	{
+		return wthr.x * wthr.y * wthr.z;
+	}
+};
+
 //! Declaration grid_sm
 template<unsigned int N, typename T> class grid_sm;
+
+template<unsigned int dim, typename T2, typename T>
+ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, grid_key_dx<dim,T> & key1, grid_key_dx<dim,T> & key2, size_t n_thr = 1024);
 
 //! Declaration print_warning_on_adjustment
 template <unsigned int dim> class print_warning_on_adjustment;
@@ -688,6 +706,42 @@ public:
 		return grid_key_dx_iterator_sub<N>(*this,start,stop);
 	}
 
+#ifdef CUDA_GPU
+
+	/*! \brief Get an iterator for the GPU
+	 *
+	 * \param start starting point
+	 * \param stop end point
+	 *
+	 */
+	template<typename T2>
+	struct ite_gpu<N> getGPUIterator(grid_key_dx<N,T2> & key1, grid_key_dx<N,T2> & key2, size_t n_thr = 1024) const
+	{
+		return getGPUIterator_impl<N>(*this,key1,key2,n_thr);
+	}
+
+	/*! \brief Get an iterator for the GPU
+	 *
+	 * \param start starting point
+	 * \param stop end point
+	 *
+	 */
+	struct ite_gpu<N> getGPUIterator(size_t n_thr = 1024) const
+	{
+		grid_key_dx<N> k1;
+		grid_key_dx<N> k2;
+
+		for (size_t i = 0 ; i < N ; i++)
+		{
+			k1.set_d(i,0);
+			k2.set_d(i,size(i));
+		}
+
+		return getGPUIterator_impl<N>(*this,k1,k2,n_thr);
+	}
+
+#endif
+
 	/*! \brief swap the grid_sm informations
 	 *
 	 * \param g grid to swap
@@ -731,6 +785,89 @@ public:
 };
 
 
+template<unsigned int dim, typename T2, typename T>
+ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, grid_key_dx<dim,T> & key1, grid_key_dx<dim,T> & key2, size_t n_thr)
+{
+	size_t tot_work = 1;
+	for (size_t i = 0 ; i < dim ; i++)
+	{tot_work *= key2.get(i) - key1.get(i) + 1;}
+
+	size_t n = (tot_work <= n_thr)?openfpm::math::round_big_2(tot_work):n_thr;
+
+	// Work to do
+	ite_gpu<dim> ig;
+
+	if (tot_work == 0)
+	{
+		ig.thr.x = 0;
+		ig.thr.y = 0;
+		ig.thr.z = 0;
+
+		ig.wthr.x = 0;
+		ig.wthr.y = 0;
+		ig.wthr.z = 0;
+
+		return ig;
+	}
+
+	ig.thr.x = 1;
+	ig.thr.y = 1;
+	ig.thr.z = 1;
+
+	int dir = 0;
+
+	while (n != 1)
+	{
+		if (dir % 3 == 0)
+		{ig.thr.x = ig.thr.x << 1;}
+		else if (dir % 3 == 1)
+		{ig.thr.y = ig.thr.y << 1;}
+		else if (dir % 3 == 2)
+		{ig.thr.z = ig.thr.z << 1;}
+
+		n = n >> 1;
+
+		dir++;
+		dir %= dim;
+	}
+
+	if (dim >= 1)
+	{ig.wthr.x = (key2.get(0) - key1.get(0) + 1) / ig.thr.x + (((key2.get(0) - key1.get(0) + 1)%ig.thr.x != 0)?1:0);}
+
+	if (dim >= 2)
+	{ig.wthr.y = (key2.get(1) - key1.get(1) + 1) / ig.thr.y + (((key2.get(1) - key1.get(1) + 1)%ig.thr.y != 0)?1:0);}
+	else
+	{ig.wthr.y = 1;}
+
+	if (dim >= 3)
+	{
+		// Roll the other dimensions on z
+		ig.wthr.z = 1;
+		for (size_t i = 2 ; i < dim ; i++)
+		{ig.wthr.z *= (key2.get(i) - key1.get(i) + 1) / ig.thr.z + (((key2.get(i) - key1.get(i) + 1)%ig.thr.z != 0)?1:0);}
+	}
+	else
+	{ig.wthr.z = 1;}
+
+	// crop if wthr == 1
+
+	if (dim >= 1 && ig.wthr.x == 1)
+	{ig.thr.x = (key2.get(0) - key1.get(0) + 1);}
+
+	if (dim >= 2 && ig.wthr.y == 1)
+	{ig.wthr.y = key2.get(1) - key1.get(1) + 1;}
+
+	if (dim == 3 && ig.wthr.z == 1)
+	{ig.wthr.z = key2.get(2) - key1.get(2) + 1;}
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{
+		ig.start.set_d(i,key1.get(i));
+		ig.stop.set_d(i,key2.get(i));
+	}
+
+	return ig;
+}
 
 
 /*! \brief Emulate grid_key_dx with runtime dimensionality
