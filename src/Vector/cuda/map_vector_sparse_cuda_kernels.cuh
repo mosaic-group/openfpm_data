@@ -62,6 +62,47 @@ struct smax_
 	{}
 };
 
+template<typename type_t, unsigned int blockLength>
+struct maximum_block_t  : public std::binary_function<type_t, type_t, type_t> {
+  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  	type_t res;
+  	for (int i=0; i<blockLength; ++i)
+  	{
+  		res[i] = max(a[i], b[i]);
+  	}
+    return res;
+  }
+};
+
+template<unsigned int prp, unsigned int blockLength>
+struct smax_block_
+{
+	typedef boost::mpl::int_<prp> prop;
+
+	template<typename red_type> using op_red = maximum_block_t<red_type, blockLength>;
+
+	template<typename red_type>
+	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
+	{
+		red_type res;
+		for (int i=0; i<blockLength; ++i)
+		{
+			res[i] = (r1[i] < r2[i])?r2[i]:r1[i];
+		}
+		return res;
+	}
+
+	static bool is_special()
+	{
+		return false;
+	}
+
+	//! is not special reduction so it does not need it
+	template<typename seg_type, typename output_type>
+	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
+	{}
+};
+
 template<unsigned int prp>
 struct smin_
 {
