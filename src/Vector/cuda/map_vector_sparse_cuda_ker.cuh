@@ -120,12 +120,26 @@ namespace openfpm
 		/*! \brief This function must be called
 		 *
 		 */
-		__device__ inline void init_inc()
+		__device__ inline void init_ins_inc()
 		{
 #ifdef __NVCC__
 			if (threadIdx.x == 0)
 			{
 				vct_atomic_add = vct_nadd_index.template get<0>(blockIdx.x);
+			}
+
+			__syncthreads();
+#endif
+		}
+
+		/*! \brief This function must be called
+		 *
+		 */
+		__device__ inline void init_rem_inc()
+		{
+#ifdef __NVCC__
+			if (threadIdx.x == 0)
+			{
 				vct_atomic_rem = vct_nrem_index.template get<0>(blockIdx.x);
 			}
 
