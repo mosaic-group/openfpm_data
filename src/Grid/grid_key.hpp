@@ -143,7 +143,7 @@ public:
 		invert_assign(t...);
 	}
 
-	__device__ __host__ inline  grid_key_dx<dim,index_type> move(int i, int m)
+	__device__ __host__ inline  grid_key_dx<dim,index_type> move(int i, int m) const
 	{
 		grid_key_dx<dim,index_type> tmp = *this;
 
@@ -335,6 +335,33 @@ public:
 	{
 		return !this->operator==(key_t);
 	}
+
+    /*! \brief Check order of two keys
+     *
+     * \param key_t key to check
+     *
+     * \return true if this is lexicographically less than other key
+     *
+     */
+    bool operator<(const grid_key_dx<dim> & key_t) const
+    {
+    	// Check the two key index by index
+
+        for (long int i = dim-1 ; i >= 0; --i)
+        {
+            if (k[i] < key_t.k[i])
+            {
+                return true;
+            }
+            else if (k[i] > key_t.k[i])
+            {
+                return false;
+            }
+        }
+
+        // identical key
+        return false;
+    }
 
 
 	/*! \brief set the Key from a list of numbers
