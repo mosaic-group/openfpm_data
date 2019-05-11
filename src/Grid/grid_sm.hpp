@@ -67,6 +67,8 @@ public:
 template<unsigned int dim>
 struct ite_gpu
 {
+#ifdef CUDA_GPU
+
 	dim3 thr;
 	dim3 wthr;
 
@@ -77,6 +79,8 @@ struct ite_gpu
 	{
 		return wthr.x * wthr.y * wthr.z;
 	}
+
+#endif
 };
 
 //! Declaration grid_sm

@@ -224,6 +224,7 @@ namespace openfpm
 		template<bool prefetch>
 		Ti _branchfree_search(Ti x, Ti & id) const
 		{
+			if (vct_index.size() == 0)	{return -1;}
 			const Ti *base = &vct_index.template get<0>(0);
 			Ti n = vct_data.size();
 			while (n > 1)
@@ -492,7 +493,8 @@ namespace openfpm
 										 vct_index_tmp2.toKernel(),
 										 vct_index_tmp3.toKernel(),
 										 vct_m_index.toKernel(),
-										  vct_index_dtmp.toKernel());
+										  vct_index_dtmp.toKernel(),
+										  vct_index.size());
 
 			// we scan tmp3
 			mgpu::scan((Ti*)vct_index_dtmp.template getDeviceBuffer<0>(),vct_index_dtmp.size(),(Ti *)vct_index_dtmp.template getDeviceBuffer<1>(),context);
@@ -507,6 +509,7 @@ namespace openfpm
 			realign_remove<<<wthr,thr>>>(vct_index_tmp3.toKernel(),vct_m_index.toKernel(),vct_data.toKernel(),
 								  vct_index.toKernel(),vct_data_tmp.toKernel(),
 								  vct_index_dtmp.toKernel());
+
 
 			vct_data.swap(vct_data_tmp);
 

@@ -57,6 +57,7 @@ namespace openfpm
 		 */
 		inline __device__ Ti _branchfree_search(Ti x, Ti & id) const
 		{
+			if (vct_index.size() == 0)	{return (Ti)-1;}
 			const Ti *base = &vct_index.template get<0>(0);
 			Ti n = vct_data.size();
 			while (n > 1)
@@ -328,8 +329,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		template <unsigned int p>
-		__device__ auto remove_b(Ti ele,Ti slot_base) -> decltype(vct_data.template get<p>(0))
+		__device__ void remove_b(Ti ele,Ti slot_base)
 		{
 #ifdef __NVCC__
 
