@@ -101,6 +101,20 @@ __global__ void test_insert_sparse2(vd_type vd_insert)
 }
 
 template<typename vd_type>
+__global__ void test_remove_sparse2(vd_type vd_insert)
+{
+	vd_insert.init();
+
+	int p = blockIdx.x*blockDim.x + threadIdx.x;
+
+	p *= 2;
+
+	vd_insert.remove(9000 - p);
+
+	vd_insert.flush_block_remove();
+}
+
+template<typename vd_type>
 __global__ void test_insert_sparse2_inc(vd_type vd_insert)
 {
 	vd_insert.init_ins_inc();
@@ -118,6 +132,20 @@ __global__ void test_insert_sparse2_inc(vd_type vd_insert)
 }
 
 template<typename vd_type>
+__global__ void test_remove_sparse2_inc(vd_type vd_insert)
+{
+	vd_insert.init_rem_inc();
+
+	int p = blockIdx.x*blockDim.x + threadIdx.x;
+
+	p *= 2;
+
+	vd_insert.remove(9000 - p);
+
+	vd_insert.flush_block_remove();
+}
+
+template<typename vd_type>
 __global__ void test_insert_sparse3(vd_type vd_insert)
 {
 	vd_insert.init();
@@ -132,6 +160,20 @@ __global__ void test_insert_sparse3(vd_type vd_insert)
 	ie.template get<2>() = 1;
 
 	vd_insert.flush_block_insert();
+}
+
+template<typename vd_type>
+__global__ void test_remove_sparse3(vd_type vd_insert)
+{
+	vd_insert.init();
+
+	int p = blockIdx.x*blockDim.x + threadIdx.x;
+
+	p *= 2;
+
+	vd_insert.remove(p);
+
+	vd_insert.flush_block_remove();
 }
 
 template<typename vd_sparse_type, typename vector_out_type>
@@ -506,47 +548,81 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_special_function )
 //////////////////////////////// REMOVE test section
 
 void check_lines(openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> & vs,
-		         bool s1, bool f1, bool d1,
-		         bool s2, bool f2, bool d2,
-		         bool s3, bool f3, bool d3,
-		         bool s4, bool f4, bool d4)
+		         bool s1,
+		         bool s2,
+		         bool s3,
+		         bool s4)
 {
 	bool match = true;
 
 	for (size_t i = 0 ; i <= 3500 ; i++)
 	{
-		match &= vs.template get<0>(2*i) == 5;
-		match &= vs.template get<1>(2*i) == 1;
-		match &= vs.template get<2>(2*i) == 1;
+		if (s1 == true)
+		{
+			match &= vs.template get<0>(2*i) == 5;
+			match &= vs.template get<1>(2*i) == 1;
+			match &= vs.template get<2>(2*i) == 1;
+		}
+		else
+		{
+			match &= vs.template get<0>(2*i) == 17;
+			match &= vs.template get<1>(2*i) == 18;
+			match &= vs.template get<2>(2*i) == 19;
+		}
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);
 
 	for (size_t i = 3501 ; i <= 4000 ; i++)
 	{
-		std::cout <<  2*i << "   "  << vs.template get<0>(2*i) << "   " << 5 - 2*i + 3000 + 9000 << std::endl;
-
-		match &= vs.template get<0>(2*i) == 5 - 2*i + 3000 + 9000;
-		match &= vs.template get<1>(2*i) == 1;
-		match &= vs.template get<2>(2*i) == 23000 + 9000 - 2*i;
+		if (s2 == true)
+		{
+			match &= vs.template get<0>(2*i) == 5 - 2*i + 3000 + 9000;
+			match &= vs.template get<1>(2*i) == 1;
+			match &= vs.template get<2>(2*i) == 23000 + 9000 - 2*i;
+		}
+		else
+		{
+			match &= vs.template get<0>(2*i) == 17;
+			match &= vs.template get<1>(2*i) == 18;
+			match &= vs.template get<2>(2*i) == 19;
+		}
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);
 
 	for (size_t i = 4001 ; i <= 4500 ; i++)
 	{
-		match &= vs.template get<0>(2*i) == 5 - 2*i + 1100 - 2*i + 3000 + 18000;
-		match &= vs.template get<1>(2*i) == 1;
-		match &= vs.template get<2>(2*i) == 23000 + 9000 - 2*i;
+		if (s3 == true)
+		{
+			match &= vs.template get<0>(2*i) == 5 - 2*i + 1100 - 2*i + 3000 + 18000;
+			match &= vs.template get<1>(2*i) == 1;
+			match &= vs.template get<2>(2*i) == 23000 + 9000 - 2*i;
+		}
+		else
+		{
+			match &= vs.template get<0>(2*i) == 17;
+			match &= vs.template get<1>(2*i) == 18;
+			match &= vs.template get<2>(2*i) == 19;
+		}
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);
 
 	for (size_t i = 4501 ; i <= 5000 ; i++)
 	{
-		match &= vs.template get<0>(2*i) == (s4 == true)?(5 - 2*i + 1100 + 9000):17;
-		match &= vs.template get<1>(2*i) == (f4 == true)?(1):18;
-		match &= vs.template get<2>(2*i) == (d4 == true)?(21100 + 9000 - 2*i):19;
+		if (s4 == true)
+		{
+			match &= vs.template get<0>(2*i) == 5 - 2*i + 1100 + 9000;
+			match &= vs.template get<1>(2*i) == 1;
+			match &= vs.template get<2>(2*i) == 21100 + 9000 - 2*i;
+		}
+		else
+		{
+			match &= vs.template get<0>(2*i) == 17;
+			match &= vs.template get<1>(2*i) == 18;
+			match &= vs.template get<2>(2*i) == 19;
+		}
 	}
 }
 
@@ -590,12 +666,123 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 
 	BOOST_REQUIRE_EQUAL(vs.size(),sz - 1000);
 
-/*	check_lines(vs,
-			    true,true,true,
-			    true,true,true,
-			    true,true,true,
-			    false,false,false);*/
+	check_lines(vs,
+			    true,
+			    true,
+			    false,
+			    false);
+
+	// we launch a kernel to insert data
+	vs.setGPURemoveBuffer(10,1024);
+	test_remove_sparse2<<<10,100>>>(vs.toKernel());
+
+	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+
+	BOOST_REQUIRE_EQUAL(vs.size(),sz - 1500);
+
+	vs.template deviceToHost<0,1,2>();
+
+	check_lines(vs,
+			    true,
+			    false,
+			    false,
+			    false);
+
+	vs.setGPURemoveBuffer(4000,512);
+	test_remove_sparse3<<<4000,256>>>(vs.toKernel());
+
+	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+
+	BOOST_REQUIRE_EQUAL(vs.size(),0);
+
+	vs.template deviceToHost<0,1,2>();
+
+	BOOST_REQUIRE_EQUAL(vs.size(),0);
+
+	check_lines(vs,
+			    false,
+			    false,
+			    false,
+			    false);
 }
+
+BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
+{
+	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
+
+	vs.template getBackground<0>() = 17;
+
+	vs.template getBackground<1>() = 18;
+
+	vs.template getBackground<2>() = 19;
+
+	vs.setGPUInsertBuffer(10,1024);
+
+	// we launch a kernel to insert data
+	test_insert_sparse<<<10,100>>>(vs.toKernel());
+	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
+	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
+	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
+
+	mgpu::ofp_context_t ctx;
+
+	vs.flush<sadd_<0>,sadd_<1>,sadd_<2>>(ctx,flust_type::FLUSH_ON_DEVICE);
+
+	// we launch a kernel to insert data
+	vs.setGPURemoveBuffer(10,1024);
+	test_remove_sparse<<<10,100>>>(vs.toKernel());
+	test_remove_sparse2_inc<<<10,99>>>(vs.toKernel());
+	test_remove_sparse2_inc<<<10,99>>>(vs.toKernel());
+	test_remove_sparse2_inc<<<10,99>>>(vs.toKernel());
+
+	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+
+	BOOST_REQUIRE_EQUAL(vs.size(),10);
+
+	vs.template deviceToHost<0,1,2>();
+
+	bool match = true;
+
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7022),14934);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7020),14940);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7020),14940);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7018),14946);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7016),14952);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7014),14958);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7012),14964);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7010),14970);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7008),14976);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7006),14982);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7004),14988);
+	BOOST_REQUIRE_EQUAL(vs.template get<0>(7002),14994);
+
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7022),44934);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7020),44940);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7020),44940);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7018),44946);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7016),44952);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7014),44958);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7012),44964);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7010),44970);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7008),44976);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7006),44982);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7004),44988);
+	BOOST_REQUIRE_EQUAL(vs.template get<1>(7002),44994);
+
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7022),74934);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7020),74940);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7020),74940);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7018),74946);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7016),74952);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7014),74958);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7012),74964);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7010),74970);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7008),74976);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7006),74982);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7004),74988);
+	BOOST_REQUIRE_EQUAL(vs.template get<2>(7002),74994);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

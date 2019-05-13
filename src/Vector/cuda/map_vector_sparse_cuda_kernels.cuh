@@ -445,7 +445,8 @@ __global__ void solve_conflicts_remove(vector_index_type vct_index,
 								vector_index_type merge_index,
 		 	 	 	 	 	 	vector_index_type vct_index_out,
 		 	 	 	 	 	 	vector_index_type vct_index_out_ps,
-		 	 	 	 	 	 	vector_index_type2 vct_tot_out)
+		 	 	 	 	 	 	vector_index_type2 vct_tot_out,
+		 	 	 	 	 	 	int base)
 {
 	typedef typename std::remove_reference<decltype(vct_index.template get<0>(0))>::type index_type;
 
@@ -463,6 +464,8 @@ __global__ void solve_conflicts_remove(vector_index_type vct_index,
 	index_type id_check = vct_index.template get<0>(p);
 	int predicate = id_check != id_check_p;
 	predicate &= id_check != id_check_n;
+	int mi = merge_index.template get<0>(p);
+	predicate &= (mi < base);
 
 	int scan = predicate;
 
@@ -544,15 +547,7 @@ __global__ void realign_remove(vector_index_type vct_index, vector_index_type vc
 
 	int tot = vct_tot_out_scan.template get<0>(blockIdx.x);
 
-	if (threadIdx.x > tot)
-	{return;}
-
-	if (threadIdx.x == tot && vct_tot_out_scan.template get<2>(blockIdx.x) == 1)
-	{return;}
-
-	// this branch exist if the previous block (last thread) had a predicate == 0 in resolve_conflict in that case
-	// the thread 0 of the next block does not have to produce any data
-	if (threadIdx.x == 0 && blockIdx.x != 0 && vct_tot_out_scan.template get<2>(blockIdx.x - 1) == 0)
+	if (threadIdx.x >= tot)
 	{return;}
 
 	int ds = vct_tot_out_scan.template get<1>(blockIdx.x);
