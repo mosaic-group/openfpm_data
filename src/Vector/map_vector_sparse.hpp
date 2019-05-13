@@ -92,12 +92,28 @@ namespace openfpm
 
 			typedef typename reduction_type::op_red<red_type> red_op;
 
-			red_type init = 0;
+			red_type init;
+			init = 0;
 
 			if (reduction_type::is_special() == false)
 			{
+				// mgpu::segreduce((red_type *)vector_data.template getDeviceBuffer<reduction_type::prop::value>(), vector_data.size(),
+				// 			(int *)segment_offset.template getDeviceBuffer<1>(), segment_offset.size(),
+				// 			(red_type *)vector_data_red.template getDeviceBuffer<reduction_type::prop::value>(),
+				// 			red_op(), init, context);
+				typedef mgpu::launch_box_t<
+      						mgpu::arch_20_cta<8, 8, 8>,
+      						mgpu::arch_21_cta<8, 8, 8>,
+      						mgpu::arch_30_cta<8, 8, 8>,
+      						mgpu::arch_32_cta<8, 8, 8>,
+      						mgpu::arch_35_cta<8, 8, 8>,
+      						mgpu::arch_37_cta<8, 8, 8>,
+      						mgpu::arch_50_cta<8, 8, 8>,
+      						mgpu::arch_52_cta<8, 8, 8>,
+      						mgpu::arch_53_cta<8, 8, 8>
+    					> myLaunchBox;
 
-				mgpu::segreduce((red_type *)vector_data.template getDeviceBuffer<reduction_type::prop::value>(), vector_data.size(),
+				mgpu::segreduce<myLaunchBox>((red_type *)vector_data.template getDeviceBuffer<reduction_type::prop::value>(), vector_data.size(),
 							(int *)segment_offset.template getDeviceBuffer<1>(), segment_offset.size(),
 							(red_type *)vector_data_red.template getDeviceBuffer<reduction_type::prop::value>(),
 							red_op(), init, context);
