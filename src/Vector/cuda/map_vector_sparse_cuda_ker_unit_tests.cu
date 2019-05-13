@@ -12,6 +12,7 @@
 #include <boost/test/unit_test.hpp>
 #include "Vector/map_vector_sparse.hpp"
 #include "Vector/map_vector.hpp"
+#include <map>
 
 struct DataBlock
 {
@@ -256,31 +257,9 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_block )
 
 
 	mgpu::ofp_context_t ctx;
-	// std::cout << "PTX version" << ctx.ptx_version() << std::endl;
-
-	// typedef mgpu::launch_box_t<
-	// 			mgpu::arch_20_cta<128, 11, 8>,
-	// 			mgpu::arch_30_cta<2,  2, 2>,
-	// 			mgpu::arch_35_cta<2,  2, 2>,
-	// 			mgpu::arch_52_cta<128, 11, 8>
-	// 		> myLaunchBox;
-
-	// std::cout << myLaunchBox::sm_ptx::nt << ", " << myLaunchBox::sm_ptx::vt << ", " <<myLaunchBox::sm_ptx::vt0 << std::endl;
 
 	// Flushing the inserts with some reduction operator
 	vs.flush<sadd_<0>, smax_block_<1, DataBlock::length>>(ctx,flust_type::FLUSH_ON_DEVICE);
-
-	// std::cout << "SIZE: " << vs.size() << std::endl;
-
-	// vs.setGPUInsertBuffer(10,1024);
-	// test_insert_sparse2<<<10,100>>>(vs.toKernel());
-
-	// vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
-
-	// vs.setGPUInsertBuffer(4000,512);
-	// test_insert_sparse3<<<4000,256>>>(vs.toKernel());
-
-	// vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE,1);
 
 	openfpm::vector_gpu<aggregate<size_t,DataBlock>> output;
 
@@ -309,21 +288,6 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_block )
 	BOOST_REQUIRE_EQUAL(match,true);
 
 	vs.clear();
-
-	// test_sparse_get_test<<<10,150>>>(vs.toKernel(),output.toKernel());
-
-	// output.template deviceToHost<0,1,2>();
-	// vs.template deviceToHost<0,1,2>();
-
-	// match = true;
-	// for (size_t i = 0 ; i < output.size()  ; i++)
-	// {
-	// 	match &= output.template get<0>(i) == 17;
-	// 	match &= output.template get<1>(i) == 18;
-	// 	match &= output.template get<2>(i) == 19;
-	// }
-
-	// BOOST_REQUIRE_EQUAL(match,true);
 }
 
 BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
