@@ -9,6 +9,10 @@
 #include "Vector/map_vector.hpp"
 #include "scan_cuda.cuh"
 
+#define SCAN_WITH_CUB
+
+#include "scan_ofp.cuh"
+
 BOOST_AUTO_TEST_SUITE( scan_tests )
 
 template<typename cnt_type, typename ids_type>
@@ -330,7 +334,7 @@ void test_scan(size_t num)
 
 BOOST_AUTO_TEST_CASE( test_scan_algo )
 {
-	std::cout << "Test cell list GPU scan" << "\n";
+	std::cout << "Test GPU obsolete scan" << "\n";
 
 	test_scan<unsigned int, unsigned char>(8192);
 
@@ -356,7 +360,45 @@ BOOST_AUTO_TEST_CASE( test_scan_algo )
 
 	test_scan<unsigned int, unsigned int>(1025);
 
-	std::cout << "End cell list GPU" << "\n";
+	std::cout << "End GPU obsolete scan" << "\n";
+
+	// Test the cell list
+}
+
+BOOST_AUTO_TEST_CASE( test_scan_cub_wrapper )
+{
+	std::cout << "Test scan CUB" << "\n";
+
+	openfpm::vector_gpu<aggregate<unsigned int>> input;
+	openfpm::vector_gpu<aggregate<unsigned int>> output;
+
+	openfpm::vector_gpu<aggregate<unsigned char>> temporal;
+
+	input.resize(10000);
+	output.resize(10000);
+
+	// fill input
+
+	for (size_t i = 0 ; i < 10000; i++)
+	{
+		input.template get<0>(i) = 10.0*(float)rand() / RAND_MAX;
+	}
+
+	input.template hostToDevice<0>();
+
+	mgpu::ofp_context_t context;
+	openfpm::scan((unsigned int *)input.template getDeviceBuffer<0>(),input.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
+
+    output.template deviceToHost<0>();
+
+    size_t cnt = 0;
+    for (size_t i = 0 ; i < input.size() ; i++)
+    {
+    	BOOST_REQUIRE_EQUAL(cnt,output.template get<0>(i));
+    	cnt += input.template get<0>(i);
+    }
+
+	std::cout << "End scan CUB" << "\n";
 
 	// Test the cell list
 }

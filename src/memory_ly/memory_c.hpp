@@ -258,23 +258,6 @@ class multi_array
 	typedef T type;
 };
 
-/*! \brief This class is a trick to indicate the compiler a specific
- *  specialization pattern
- *
- * This class is a trick to indicate the compiler a specific specialization
- * pattern, in particular it say that T is a key and
- * need a special treatment. T is suppose to be a boost::mpl::vector of
- * any type, (Actually does not have an application but is a generalization
- * of multi-array). T has to be a type of known size at compile time
- *
- */
-
-template<typename T>
-class key
-{
-	typedef T type;
-};
-
 
 /*! \brief this class multiply all the elements in a boost::mpl::vector excluding the first element
  *

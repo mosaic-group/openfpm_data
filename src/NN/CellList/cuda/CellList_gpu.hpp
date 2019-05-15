@@ -19,6 +19,7 @@
 #include "util/cuda_util.hpp"
 #include "NN/CellList/CellList_util.hpp"
 #include "NN/CellList/CellList.hpp"
+#include "util/cuda/scan_ofp.cuh"
 
 #ifdef __NVCC__
 #include "util/cuda/moderngpu/kernel_scan.hxx"
@@ -266,7 +267,7 @@ public:
 
 		// now we scan
 		starts.resize(cl_n.size());
-		mgpu::scan((cnt_type *)cl_n.template getDeviceBuffer<0>(), cl_n.size(), (cnt_type *)starts.template getDeviceBuffer<0>() , mgpuContext);
+		openfpm::scan((cnt_type *)cl_n.template getDeviceBuffer<0>(), cl_n.size(), (cnt_type *)starts.template getDeviceBuffer<0>() , mgpuContext);
 
 		// now we construct the cells
 

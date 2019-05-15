@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 if (CUDA_FOUND)
-	set(CUDA_SOURCES Vector/vector_gpu_unit_tests.cu Grid/cuda/cuda_grid_gpu_tests.cu  Vector/cuda/map_vector_cuda_funcs_tests.cu  ../../openfpm_devices/src/memory/CudaMemory.cu NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu  Grid/cuda/cuda_grid_unit_tests_func.cu  util/cuda/modern_gpu_tests.cu)
+	set(CUDA_SOURCES Vector/vector_gpu_unit_tests.cu Grid/cuda/cuda_grid_gpu_tests.cu  Vector/cuda/map_vector_cuda_funcs_tests.cu  ../../openfpm_devices/src/memory/CudaMemory.cu NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu  Grid/cuda/cuda_grid_unit_tests_func.cu  util/cuda/modern_gpu_tests.cu util/cuda/cub_gpu_tests.cu)
 else()
  	set(CUDA_SOURCES )
 endif()
