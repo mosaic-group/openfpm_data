@@ -17,6 +17,7 @@ class SparseGridGpu_ker
 {
 private:
     openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> blockMap;
+    static const unsigned int pMask = AggregateBlockT::max_prop_real - 1;
 
 public:
     typedef AggregateBlockT AggregateType;
@@ -88,7 +89,8 @@ inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
 ::insert(unsigned int blockId, unsigned int offset) -> ScalarTypeOf<AggregateBlockT, p>&
 {
     auto &block = blockMap.template insert<p>(blockId);
-    block.setElementDevice(offset);
+    auto &mask = blockMap.template insert<pMask>(blockId);
+    block.setElement(mask[offset]);
     return block[offset];
 }
 
@@ -98,7 +100,8 @@ inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
 ::insertBlock(unsigned int blockId) -> BlockTypeOf<AggregateBlockT, p>*
 {
     auto &block = blockMap.template insert<p>(blockId);
-    block.existBitMask = 0;
+    auto &mask = blockMap.template insert<pMask>(blockId);
+    mask = 0;
     return &block;
 }
 

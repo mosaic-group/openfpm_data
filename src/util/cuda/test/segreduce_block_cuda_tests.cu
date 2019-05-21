@@ -9,53 +9,7 @@
 #include <boost/test/unit_test.hpp>
 #include "Vector/map_vector.hpp"
 #include "SparseGridGpu/SparseGridGpu.hpp"
-
-template<unsigned int DataBlockSize, typename ScalarT>
-struct DataBlockLoc
-{
-    typedef ScalarT scalarType;
-
-    static const unsigned int size = DataBlockSize;
-    ScalarT block[size];
-
-    __device__ __host__ DataBlockLoc() = default;
-
-    __device__ __host__ DataBlockLoc(const DataBlockLoc &other)
-    {
-        memcpy(block, other.block, size * sizeof(ScalarT));
-    }
-
-    __device__ __host__ DataBlockLoc operator=(const DataBlockLoc &other)
-    {
-        memcpy(block, other.block, size * sizeof(ScalarT));
-        return *this;
-    }
-
-    __device__ __host__ DataBlockLoc operator=(float v) // Hack to make things compile
-    {
-        return *this;
-    }
-
-    __device__ __host__ inline ScalarT &operator[](unsigned int i)
-    {
-        return block[i];
-    }
-
-    __device__ __host__ inline const ScalarT &operator[](unsigned int i) const
-    {
-        return block[i];
-    }
-
-    __device__ __host__ inline static bool exist(unsigned int i, size_t &bitMask)
-    {
-        return (bitMask >> i) & ((size_t) 1);
-    }
-
-    __device__ __host__ inline static void setElement(unsigned int i, size_t &bitMask)
-    {
-        bitMask = bitMask | ((size_t) 1) << i;
-    }
-};
+//todo: here include SparseGridGpu_kernels and remove local kernel definitions
 
 template<typename op, typename ScalarT>
 __device__ inline ScalarT applyOp(ScalarT a, ScalarT b, bool aExist, bool bExist)
@@ -81,8 +35,7 @@ segreduce_block(
         DataType *data,
         SegType *segments,
         MaskType *masks,
-        DataType *output,
-        MaskType *outputMasks
+        DataType *output
         )
 {
     unsigned int segmentId = blockIdx.x;
@@ -96,44 +49,41 @@ segreduce_block(
     __shared__ DataType A[chunksPerBlock];
     __shared__ MaskType AMask[chunksPerBlock];
     typename DataType::scalarType bReg;
-    MaskType aMask, bMask;
+    typename MaskType::scalarType aMask, bMask;
 
     // Phase 0: Load chunks as first operand of the reduction
     if (chunkId < segmentSize)
     {
         A[chunkId][offset] = data[start + chunkId][offset];
-        aMask = masks[start + chunkId];
+        aMask = masks[start + chunkId][offset];
     }
 
     int i = chunksPerBlock;
     for ( ; i < segmentSize - (int) (chunksPerBlock); i += chunksPerBlock)
     {
         bReg = data[start + i + chunkId][offset];
-        bMask = masks[start + i + chunkId];
+        bMask = masks[start + i + chunkId][offset];
 
         A[chunkId][offset] = applyOp<op>(A[chunkId][offset],
                                          bReg,
-                                         DataType::exist(offset, aMask),
-                                         DataType::exist(offset, bMask));
+                                         DataType::exist(aMask),
+                                         DataType::exist(bMask));
         aMask = aMask | bMask;
     }
 
     if (i + chunkId < segmentSize)
     {
         bReg = data[start + i + chunkId][offset];
-        bMask = masks[start + i + chunkId];
+        bMask = masks[start + i + chunkId][offset];
 
         A[chunkId][offset] = applyOp<op>(A[chunkId][offset],
                                          bReg,
-                                         DataType::exist(offset, aMask),
-                                         DataType::exist(offset, bMask));
+                                         DataType::exist(aMask),
+                                         DataType::exist(bMask));
         aMask = aMask | bMask;
     }
 
-    if (offset == 0) // && chunkId < segmentSize)  //todo: check if second condition is necessary
-    {
-        AMask[chunkId] = aMask;
-    }
+    AMask[chunkId][offset] = aMask;
 
     __syncthreads();
 
@@ -146,13 +96,13 @@ segreduce_block(
             unsigned int otherChunkId = chunkId + (j / 2);
             if (otherChunkId < segmentSize)
             {
-                aMask = AMask[chunkId];
-                bMask = AMask[otherChunkId];
+                aMask = AMask[chunkId][offset];
+                bMask = AMask[otherChunkId][offset];
                 A[chunkId][offset] = applyOp<op>(A[chunkId][offset],
                                                  A[otherChunkId][offset],
-                                                 DataType::exist(offset, aMask),
-                                                 DataType::exist(offset, bMask));
-                AMask[chunkId] = aMask | bMask;
+                                                 DataType::exist(aMask),
+                                                 DataType::exist(bMask));
+                AMask[chunkId][offset] = aMask | bMask;
             }
         }
         __syncthreads();
@@ -162,10 +112,6 @@ segreduce_block(
     if (chunkId == 0)
     {
         output[segmentId][offset] = A[chunkId][offset];
-        if (offset == 0)
-        {
-            outputMasks[segmentId] = AMask[chunkId];
-        }
     }
 }
 
@@ -174,7 +120,8 @@ BOOST_AUTO_TEST_SUITE(segreduce_block_cuda_tests)
     BOOST_AUTO_TEST_CASE (segreduce_block_test)
     {
         typedef float ScalarT;
-        typedef DataBlockLoc<64, ScalarT> BlockT;
+        typedef DataBlock<unsigned char, 64> MaskBlockT;
+        typedef DataBlock<ScalarT, 64> BlockT;
         openfpm::vector_gpu<aggregate<int>> segments;
         segments.resize(8);
         segments.template get<0>(0) = 0;
@@ -189,18 +136,20 @@ BOOST_AUTO_TEST_SUITE(segreduce_block_cuda_tests)
         segments.template hostToDevice<0>();
 
         const unsigned int BITMASK = 0, BLOCK = 1;
-        const size_t mask = 0xFFFFFFFF;
         BlockT block;
+        MaskBlockT mask;
         for (int i = 0; i < 32; ++i)
         {
             block[i] = i + 1;
+            mask[i] = 1;
         }
         for (int i = 32; i < 64; ++i)
         {
             block[i] = 666;
+            mask[i] = 0;
         }
 
-        openfpm::vector_gpu<aggregate<size_t, BlockT>> data;
+        openfpm::vector_gpu<aggregate<MaskBlockT, BlockT>> data;
         data.resize(18);
         for (int i = 0; i < 18; ++i)
         {
@@ -211,7 +160,7 @@ BOOST_AUTO_TEST_SUITE(segreduce_block_cuda_tests)
         data.template hostToDevice<BITMASK, BLOCK>();
 
         // Allocate output buffer
-        openfpm::vector_gpu<aggregate<size_t, BlockT>> outputData;
+        openfpm::vector_gpu<aggregate<MaskBlockT, BlockT>> outputData;
         outputData.resize(segments.size()-1);
 
         // template<unsigned int chunksPerBlock, typename op, typename SegType, typename DataType, typename MaskType>
@@ -220,22 +169,28 @@ BOOST_AUTO_TEST_SUITE(segreduce_block_cuda_tests)
         segreduce_block<2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
                         (BlockT *) data.template getDeviceBuffer<BLOCK>(),
                         (int *) segments.template getDeviceBuffer<0>(),
-                        (size_t *) data.template getDeviceBuffer<BITMASK>(),
-                        (BlockT *) outputData.template getDeviceBuffer<BLOCK>(),
-                        (size_t *) outputData.template getDeviceBuffer<BITMASK>()
+                        (MaskBlockT *) data.template getDeviceBuffer<BITMASK>(),
+                        (BlockT *) outputData.template getDeviceBuffer<BLOCK>()
                                 );
+
+        // Segreduce on mask
+        segreduce_block<2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
+                        (MaskBlockT *) data.template getDeviceBuffer<BITMASK>(),
+                        (int *) segments.template getDeviceBuffer<0>(),
+                        (MaskBlockT *) data.template getDeviceBuffer<BITMASK>(),
+                        (MaskBlockT *) outputData.template getDeviceBuffer<BITMASK>()
+        );
 
         outputData.template deviceToHost<BITMASK, BLOCK>();
 
         for (int j = 0; j < outputData.size(); ++j)
         {
             BlockT outBlock = outputData.template get<BLOCK>(j);
-            size_t outMask = outputData.template get<BITMASK>(j);
+            MaskBlockT outMask = outputData.template get<BITMASK>(j);
 
-            std::cout << std::bitset<64>(outMask) << std::endl;
             for (int i = 0; i < BlockT::size; ++i)
             {
-                std::cout << outBlock[i] << " ";
+                std::cout << outBlock[i] << " " << outMask[i] << " ";
             }
             std::cout << std::endl;
         }
