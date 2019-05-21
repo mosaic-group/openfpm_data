@@ -21,7 +21,7 @@
 #include "util/cuda/kernels.cuh"
 #endif
 
-enum flust_type
+enum flush_type
 {
 	FLUSH_ON_HOST = 0,
 	FLUSH_ON_DEVICE = 1
@@ -705,10 +705,10 @@ namespace openfpm
 		template<typename ... v_reduce>
 		void flush_v(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_0,
 				     mgpu::ofp_context_t & context,
-				     flust_type opt = FLUSH_ON_HOST,
+				     flush_type opt = FLUSH_ON_HOST,
 				     int i = 0)
 		{
-			if (opt & flust_type::FLUSH_ON_DEVICE)
+			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context,i);}
 			else
 			{this->flush_on_cpu();}
@@ -724,10 +724,10 @@ namespace openfpm
 		template<typename ... v_reduce>
 		void flush_vd(vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
 				     mgpu::ofp_context_t & context,
-				     flust_type opt = FLUSH_ON_HOST,
+				     flush_type opt = FLUSH_ON_HOST,
 				     int i = 0)
 		{
-			if (opt & flust_type::FLUSH_ON_DEVICE)
+			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context,i);}
 			else
 			{this->flush_on_cpu();}
@@ -739,9 +739,9 @@ namespace openfpm
 		 *
 		 */
 		template<typename ... v_reduce>
-		void flush(mgpu::ofp_context_t & context, flust_type opt = FLUSH_ON_HOST, int i = 0)
+		void flush(mgpu::ofp_context_t & context, flush_type opt = FLUSH_ON_HOST, int i = 0)
 		{
-			if (opt & flust_type::FLUSH_ON_DEVICE)
+			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context,i);}
 			else
 			{this->flush_on_cpu();}
@@ -752,9 +752,9 @@ namespace openfpm
 		 * \param opt options
 		 *
 		 */
-		void flush_remove(mgpu::ofp_context_t & context, flust_type opt = FLUSH_ON_HOST)
+		void flush_remove(mgpu::ofp_context_t & context, flush_type opt = FLUSH_ON_HOST)
 		{
-			if (opt & flust_type::FLUSH_ON_DEVICE)
+			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu_remove(context);}
 			else
 			{
@@ -816,6 +816,15 @@ namespace openfpm
 			n_gpu_add_block_slot = nslot;
 			vct_nadd_index.template fill<0>(0);
 		}
+
+        /*! \brief Get the GPU insert buffer
+         *
+         * \return the reference to the GPU insert buffer
+         */
+        auto getGPUInsertBuffer() -> decltype(vct_add_data)&
+        {
+            return vct_add_data;
+        }
 
 		/*! \brief set the gpu remove buffer for every block
 		 *

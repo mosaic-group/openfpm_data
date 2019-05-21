@@ -59,6 +59,7 @@ namespace openfpm
 		{
 			if (vct_index.size() == 0)	{return (Ti)-1;}
 			const Ti *base = &vct_index.template get<0>(0);
+			const Ti * end = &vct_index.template get<0>(vct_index.size()-1);
 			Ti n = vct_data.size();
 			while (n > 1)
 			{
@@ -69,6 +70,7 @@ namespace openfpm
 
 			int off = (*base < x);
 			id = base - &vct_index.template get<0>(0) + off;
+			off = off && base != end;
 			return *(base + off);
 		}
 
@@ -168,6 +170,14 @@ namespace openfpm
 
 			return sid;
 		}
+
+        /*! \brief Get the background value
+         */
+        template <unsigned int p>
+        __device__ inline auto getBackground() -> decltype(bck.template get<p>())
+        {
+            return bck.template get<p>();
+        }
 
 		/*! \brief Get an element of the vector
 		 *

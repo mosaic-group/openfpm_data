@@ -226,17 +226,17 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 	test_insert_sparse<<<10,100>>>(vs.toKernel());
 
 	mgpu::ofp_context_t ctx;
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(10,1024);
 	test_insert_sparse2<<<10,100>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(4000,512);
 	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE,1);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE,1);
 
 	openfpm::vector_gpu<aggregate<size_t,float,double>> output;
 
@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_block )
 	mgpu::ofp_context_t ctx;
 
 	// Flushing the inserts with some reduction operator
-	vs.flush<sadd_<0>, smax_block_<1, DataBlock::length>>(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>, smax_block_<1, DataBlock::length>>(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	openfpm::vector_gpu<aggregate<size_t,DataBlock>> output;
 
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 
 	mgpu::ofp_context_t ctx;
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.template deviceToHost<0,1,2>();
 
@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 
 
 	mgpu::ofp_context_t ctx;
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.template deviceToHost<0,1,2>();
 
@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 	vs.setGPUInsertBuffer(10,1024);
 	test_insert_sparse2<<<10,100>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.template deviceToHost<0,1,2>();
 
@@ -455,7 +455,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 	vs.setGPUInsertBuffer(4000,512);
 	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE,1);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE,1);
 	vs.template deviceToHost<0,1,2>();
 
 	for (size_t i = 0 ; i <= 3500 ; i++)
@@ -515,7 +515,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_special_function )
 
 	mgpu::ofp_context_t ctx;
 
-	vs.flush<sstart_<0>>(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sstart_<0>>(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.template deviceToHost<0>();
 
@@ -643,17 +643,17 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 	test_insert_sparse<<<10,100>>>(vs.toKernel());
 
 	mgpu::ofp_context_t ctx;
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(10,1024);
 	test_insert_sparse2<<<10,100>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(4000,512);
 	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE,1);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE,1);
 
 	// we launch a kernel to insert data
 	vs.setGPURemoveBuffer(10,1024);
@@ -661,7 +661,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 
 	size_t sz = vs.size();
 
-	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 	vs.template deviceToHost<0,1,2>();
 
 	BOOST_REQUIRE_EQUAL(vs.size(),sz - 1000);
@@ -676,7 +676,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 	vs.setGPURemoveBuffer(10,1024);
 	test_remove_sparse2<<<10,100>>>(vs.toKernel());
 
-	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	BOOST_REQUIRE_EQUAL(vs.size(),sz - 1500);
 
@@ -691,7 +691,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 	vs.setGPURemoveBuffer(4000,512);
 	test_remove_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	BOOST_REQUIRE_EQUAL(vs.size(),0);
 
@@ -726,7 +726,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 
 	mgpu::ofp_context_t ctx;
 
-	vs.flush<sadd_<0>,sadd_<1>,sadd_<2>>(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,sadd_<1>,sadd_<2>>(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	// we launch a kernel to insert data
 	vs.setGPURemoveBuffer(10,1024);
@@ -735,7 +735,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 	test_remove_sparse2_inc<<<10,99>>>(vs.toKernel());
 	test_remove_sparse2_inc<<<10,99>>>(vs.toKernel());
 
-	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	BOOST_REQUIRE_EQUAL(vs.size(),10);
 

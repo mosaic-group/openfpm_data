@@ -229,6 +229,8 @@ void segreduce(input_it input, int count, segments_it segments,
       type_t indices[nt * vt + 2];
     } shared;
 
+//    memset(&shared, 0, sizeof(decltype(shared)));
+
     merge_range_t merge_range = compute_merge_range(count, num_segments, 
       cta, nt * vt, mp_data[cta], mp_data[cta + 1]);
 
