@@ -27,6 +27,9 @@ enum flush_type
 	FLUSH_ON_DEVICE = 1
 };
 
+constexpr int VECTOR_SPARSE_STANDARD = 1;
+constexpr int VECTOR_SPARSE_BLOCK = 2;
+
 namespace openfpm
 {
 	template<typename Ti>
@@ -51,7 +54,7 @@ namespace openfpm
 	 * \tparam encap dst
 	 *
 	 */
-	template<typename vector_data_type, typename vector_index_type, typename vector_reduction>
+	template<typename vector_data_type, typename vector_index_type, typename vector_reduction, typename block_functor, unsigned int impl2>
 	struct sparse_vector_reduction
 	{
 		//! Vector in which to the reduction
@@ -97,30 +100,65 @@ namespace openfpm
 
 			if (reduction_type::is_special() == false)
 			{
-				// mgpu::segreduce((red_type *)vector_data.template getDeviceBuffer<reduction_type::prop::value>(), vector_data.size(),
-				// 			(int *)segment_offset.template getDeviceBuffer<1>(), segment_offset.size(),
-				// 			(red_type *)vector_data_red.template getDeviceBuffer<reduction_type::prop::value>(),
-				// 			red_op(), init, context);
-				typedef mgpu::launch_box_t<
-      						mgpu::arch_20_cta<8, 8, 8>,
-      						mgpu::arch_21_cta<8, 8, 8>,
-      						mgpu::arch_30_cta<8, 8, 8>,
-      						mgpu::arch_32_cta<8, 8, 8>,
-      						mgpu::arch_35_cta<8, 8, 8>,
-      						mgpu::arch_37_cta<8, 8, 8>,
-      						mgpu::arch_50_cta<8, 8, 8>,
-      						mgpu::arch_52_cta<8, 8, 8>,
-      						mgpu::arch_53_cta<8, 8, 8>
-    					> myLaunchBox;
 
-				mgpu::segreduce<myLaunchBox>((red_type *)vector_data.template getDeviceBuffer<reduction_type::prop::value>(), vector_data.size(),
-							(int *)segment_offset.template getDeviceBuffer<1>(), segment_offset.size(),
-							(red_type *)vector_data_red.template getDeviceBuffer<reduction_type::prop::value>(),
-							red_op(), init, context);
+				if (impl2 == VECTOR_SPARSE_STANDARD)
+				{
+					// mgpu::segreduce((red_type *)vector_data.template getDeviceBuffer<reduction_type::prop::value>(), vector_data.size(),
+					// 			(int *)segment_offset.template getDeviceBuffer<1>(), segment_offset.size(),
+					// 			(red_type *)vector_data_red.template getDeviceBuffer<reduction_type::prop::value>(),
+					// 			red_op(), init, context);
+					typedef mgpu::launch_box_t<
+								mgpu::arch_20_cta<8, 8, 8>,
+								mgpu::arch_21_cta<8, 8, 8>,
+								mgpu::arch_30_cta<8, 8, 8>,
+								mgpu::arch_32_cta<8, 8, 8>,
+								mgpu::arch_35_cta<8, 8, 8>,
+								mgpu::arch_37_cta<8, 8, 8>,
+								mgpu::arch_50_cta<8, 8, 8>,
+								mgpu::arch_52_cta<8, 8, 8>,
+								mgpu::arch_53_cta<8, 8, 8>
+							> myLaunchBox;
+
+					mgpu::segreduce<myLaunchBox>((red_type *)vector_data.template getDeviceBuffer<reduction_type::prop::value>(), vector_data.size(),
+								(int *)segment_offset.template getDeviceBuffer<1>(), segment_offset.size(),
+								(red_type *)vector_data_red.template getDeviceBuffer<reduction_type::prop::value>(),
+								red_op(), init, context);
+				}
+				else
+				{
+					block_functor::seg_reduce(segment_offset,vector_data,vector_data_red);
+				}
 			}
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " error: this file si supposed to be compiled with nvcc" << std::endl;
 #endif
+		}
+	};
+
+	struct stub_block_functor
+	{
+		template<typename vector_index_type, typename vector_data_type>
+		static bool compact(vector_index_type & starts, vector_data_type & src, vector_data_type & dst)
+		{
+			return true;
+		}
+
+		template<typename vector_index_type, typename vector_data_type>
+		static bool reorder(vector_index_type & src_id, vector_data_type & data, vector_data_type & data_reord)
+		{
+			return true;
+		}
+
+		template<typename vector_index_type, typename vector_data_type>
+		static bool seg_reduce(vector_index_type & segments, vector_data_type & src, vector_data_type &  dst)
+		{
+			return true;
+		}
+
+		template<typename vector_index_type, typename vector_data_type>
+		static bool solve_conflicts(vector_index_type & keys, vector_data_type & data)
+		{
+			return true;
 		}
 	};
 
@@ -192,7 +230,9 @@ namespace openfpm
 			 typename layout=typename memory_traits_lin<T>::type,
 			 template<typename> class layout_base=memory_traits_lin ,
 			 typename grow_p=grow_policy_double,
-			 unsigned int impl=vect_isel<T>::value>
+			 unsigned int impl=vect_isel<T>::value,
+			 unsigned int impl2 = VECTOR_SPARSE_STANDARD,
+			 typename block_functor = stub_block_functor>
 	class vector_sparse
 	{
 		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_index;
@@ -296,7 +336,9 @@ namespace openfpm
 			thr.y = 1;
 			thr.z = 1;
 
-			construct_insert_list<<<wthr,thr>>>(vct_add_index.toKernel(),
+			if (impl2 == VECTOR_SPARSE_STANDARD)
+			{
+				construct_insert_list<<<wthr,thr>>>(vct_add_index.toKernel(),
 										vct_nadd_index.toKernel(),
 										starts.toKernel(),
 										vct_add_index_cont_0.toKernel(),
@@ -304,6 +346,18 @@ namespace openfpm
 										vct_add_data.toKernel(),
 										vct_add_data_cont.toKernel(),
 										n_gpu_add_block_slot);
+			}
+			else
+			{
+				construct_insert_list_key_only<<<wthr,thr>>>(vct_add_index.toKernel(),
+										vct_nadd_index.toKernel(),
+										starts.toKernel(),
+										vct_add_index_cont_0.toKernel(),
+										vct_add_index_cont_1.toKernel(),
+										n_gpu_add_block_slot);
+
+				block_functor::compact(starts,vct_add_data,vct_add_data_cont);
+			}
 
 			// now we sort
 			mergesort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
@@ -313,7 +367,15 @@ namespace openfpm
 
 			vct_add_data_reord.resize(n_ele);
 			// Now we reorder the data vector accordingly to the indexes
-			reorder_vector_data<<<ite.wthr,ite.thr>>>(vct_add_index_cont_1.toKernel(),vct_add_data_cont.toKernel(),vct_add_data_reord.toKernel());
+
+			if (impl2 == VECTOR_SPARSE_STANDARD)
+			{
+				reorder_vector_data<<<ite.wthr,ite.thr>>>(vct_add_index_cont_1.toKernel(),vct_add_data_cont.toKernel(),vct_add_data_reord.toKernel());
+			}
+			else
+			{
+				block_functor::reorder(vct_add_index_cont_1,vct_add_data_cont,vct_add_data_reord);
+			}
 
 			mem.allocate(sizeof(int));
 			mem.fill(0);
@@ -339,7 +401,7 @@ namespace openfpm
 			typedef boost::mpl::vector<v_reduce...> vv_reduce;
 
 			// Now we can do a segmented reduction
-			sparse_vector_reduction<decltype(vct_add_data),decltype(vct_add_index_unique),vv_reduce> svr(vct_add_data_unique,vct_add_data_reord,vct_add_index_unique,context);
+			sparse_vector_reduction<decltype(vct_add_data),decltype(vct_add_index_unique),vv_reduce,block_functor,impl2> svr(vct_add_data_unique,vct_add_data_reord,vct_add_index_unique,context);
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
 
 			sparse_vector_special<decltype(vct_add_data),decltype(vct_add_index_unique),vv_reduce> svr2(vct_add_data_unique,vct_add_data_reord,vct_add_index_unique,context);
