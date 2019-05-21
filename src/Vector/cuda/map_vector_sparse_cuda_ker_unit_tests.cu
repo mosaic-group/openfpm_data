@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_block )
 		vs.template getBackground<1>()[i] = 666;
 	}
 
-	const unsigned int gridSize = 5000;
+	const unsigned int gridSize = 500;
 	const unsigned int blockSizeInsert = 128;
 	const unsigned int blockSizeRead = 256;
 
