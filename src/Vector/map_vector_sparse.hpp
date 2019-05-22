@@ -156,7 +156,7 @@ namespace openfpm
 		}
 
 		template<typename vector_index_type, typename vector_data_type>
-		static bool solve_conflicts(vector_index_type & keys, vector_data_type & data)
+		static bool solve_conflicts(vector_index_type & keys, vector_data_type & data1, vector_data_type & data2 , vector_data_type & data_tmp , vector_data_type & dataOut)
 		{
 			return true;
 		}
@@ -441,27 +441,35 @@ namespace openfpm
 						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),vct_add_index_unique.size(),
 						(Ti *)vct_index_tmp.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp2.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
 
-			solve_conflicts<decltype(vct_index_tmp.toKernel()),decltype(vct_data.toKernel()),decltype(vct_index_dtmp.toKernel()),128,v_reduce ...>
-			<<<wthr,thr>>>
-										(vct_index_tmp.toKernel(),vct_data.toKernel(),
-										  vct_index_tmp2.toKernel(),vct_add_data_unique.toKernel(),
-										  vct_index_tmp3.toKernel(),vct_data_tmp.toKernel(),
-										  vct_index_dtmp.toKernel(),
-										  vct_index.size());
+			if (impl2 == VECTOR_SPARSE_STANDARD)
+			{
+                solve_conflicts<decltype(vct_index_tmp.toKernel()),decltype(vct_data.toKernel()),decltype(vct_index_dtmp.toKernel()),128,v_reduce ...>
+                <<<wthr,thr>>>
+                                            (vct_index_tmp.toKernel(),vct_data.toKernel(),
+                                              vct_index_tmp2.toKernel(),vct_add_data_unique.toKernel(),
+                                              vct_index_tmp3.toKernel(),vct_data_tmp.toKernel(),
+                                              vct_index_dtmp.toKernel(),
+                                              vct_index.size());
 
-			// we scan tmp3
-			mgpu::scan((Ti*)vct_index_dtmp.template getDeviceBuffer<0>(),vct_index_dtmp.size(),(Ti *)vct_index_dtmp.template getDeviceBuffer<1>(),context);
+                // we scan tmp3
+                mgpu::scan((Ti*)vct_index_dtmp.template getDeviceBuffer<0>(),vct_index_dtmp.size(),(Ti *)vct_index_dtmp.template getDeviceBuffer<1>(),context);
 
-			// get the size to resize vct_index and vct_data
-			vct_index_dtmp.template deviceToHost<0,1>(vct_index_dtmp.size()-1,vct_index_dtmp.size()-1);
-			int size = vct_index_dtmp.template get<1>(vct_index_dtmp.size()-1) + vct_index_dtmp.template get<0>(vct_index_dtmp.size()-1);
+                // get the size to resize vct_index and vct_data
+                vct_index_dtmp.template deviceToHost<0,1>(vct_index_dtmp.size()-1,vct_index_dtmp.size()-1);
+                int size = vct_index_dtmp.template get<1>(vct_index_dtmp.size()-1) + vct_index_dtmp.template get<0>(vct_index_dtmp.size()-1);
 
-			vct_index.resize(size);
-			vct_data.resize(size);
+                vct_index.resize(size);
+                vct_data.resize(size);
 
-			realign<<<wthr,thr>>>(vct_index_tmp3.toKernel(),vct_data_tmp.toKernel(),
-								  vct_index.toKernel(), vct_data.toKernel(),
-								  vct_index_dtmp.toKernel());
+                realign<<<wthr,thr>>>(vct_index_tmp3.toKernel(),vct_data_tmp.toKernel(),
+                                      vct_index.toKernel(), vct_data.toKernel(),
+                                      vct_index_dtmp.toKernel());
+			}
+			else
+            {
+			    block_functor::solve_conflicts(vct_index_tmp,vct_data,vct_add_data_unique,vct_add_data,vct_data_tmp);
+                vct_data_tmp.swap(vct_data);
+            }
 
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " error: you are suppose to compile this file with nvcc, if you want to use it with gpu" << std::endl;
