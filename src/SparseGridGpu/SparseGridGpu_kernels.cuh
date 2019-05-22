@@ -8,9 +8,8 @@
 //#ifdef __NVCC__
 
 #include <cstdlib>
-#include <crt/host_defines.h>
-#include <device_launch_parameters.h>
 #include "SparseGridGpu.hpp"
+#include "util/cuda_util.hpp"
 
 namespace SparseGridGpuKernels
 {
@@ -153,7 +152,7 @@ namespace SparseGridGpuKernels
      * @param dst The pointer to the start of the destination memory region.
      */
     template <typename DataVectorT, typename IndexVectorT>
-    __global__ void compact(DataVectorT & src, size_t blockPoolSize, IndexVectorT & starts, DataVectorT & dst)
+    __global__ void compact(DataVectorT src, size_t blockPoolSize, IndexVectorT starts, DataVectorT dst)
     {
         typedef typename DataVectorT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
@@ -166,36 +165,50 @@ namespace SparseGridGpuKernels
         unsigned int chunkOffset = threadIdx.x / chunkSize; // The thread block can work on several chunks in parallel
 //        unsigned int elementOffset = threadIdx.x % chunkSize; // Each thread gets one element of a chunk to work on
 
-        unsigned int curChunk = 0;
-        for (curChunk; curChunk < numChunksToProcess - chunksPerBlock; curChunk += chunksPerBlock)
+        unsigned int chunkIt = 0;
+        for (; chunkIt < numChunksToProcess - chunksPerBlock; chunkIt += chunksPerBlock)
         {
-            unsigned int dstId = starts[poolId] + curChunk + chunkOffset;
-            unsigned int srcId = poolStartPos + curChunk + chunkOffset;
+            unsigned int dstId = starts[poolId] + chunkIt + chunkOffset;
+            unsigned int srcId = poolStartPos + chunkIt + chunkOffset;
             dst.get(dstId) = src.get(srcId);
         }
-        if (curChunk + chunkOffset < numChunksToProcess)
+        if (chunkIt + chunkOffset < numChunksToProcess)
         {
-            unsigned int dstId = starts[poolId] + curChunk + chunkOffset;
-            unsigned int srcId = poolStartPos + curChunk + chunkOffset;
+            unsigned int dstId = starts[poolId] + chunkIt + chunkOffset;
+            unsigned int srcId = poolStartPos + chunkIt + chunkOffset;
             dst.get(dstId) = src.get(srcId);
         }
     }
     
-    template <typename IndexT>
-    __global__ void reorder(IndexT* dstIndices)
+    template <typename DataVectorT, typename IndexVectorT>
+    __global__ void reorder(DataVectorT src, IndexVectorT srcIndices, DataVectorT dst)
     {
-        //todo
+        typedef typename DataVectorT::value_type AggregateT;
+        typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
+        unsigned int chunkSize = BlockT0::size;
+
+        unsigned int chunksPerBlock = blockDim.x / chunkSize;
+        unsigned int chunkOffset = threadIdx.x / chunkSize; // The thread block can work on several chunks in parallel
+
+        unsigned int chunkBasePos = blockIdx.x * chunksPerBlock;
+
+        unsigned int dstId = chunkBasePos + chunkOffset;
+        if (dstId < srcIndices.size())
+        {
+            unsigned int srcId = srcIndices.template get<0>(dstId);
+            dst.get(dstId) = src.get(srcId);
+        }
     }
     
     // Below the kernels to be used inside the "compute segments" part of the solveConflicts
-    template <typename IndexT>
-    __global__ void computePredicates(IndexT* keys, IndexT* predicates)
+    template <typename IndexVectorT>
+    __global__ void computePredicates(IndexVectorT keys, IndexVectorT predicates)
     {
         //todo
     }
     
-    template <typename IndexT>
-    __global__ void copyPositionToDestIfPredicate(IndexT* predicates, IndexT* exclusiveScanOfPredicates)
+    template <typename IndexVectorT>
+    __global__ void copyPositionToDestIfPredicate(IndexVectorT predicates, IndexVectorT exclusiveScanOfPredicates)
     {
         //todo
     }
