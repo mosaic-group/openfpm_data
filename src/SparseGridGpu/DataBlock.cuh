@@ -6,7 +6,7 @@
 #define OPENFPM_PDATA_DATABLOCK_CUH
 
 #include <cstdlib>
-#include <host_defines.h>
+#include "util/cuda_util.hpp"
 #include <cstring>
 
 //todo: Copy the new DataBlock definition here (the one where bitmask is external)

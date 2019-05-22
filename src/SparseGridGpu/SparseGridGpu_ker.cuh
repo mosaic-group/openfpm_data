@@ -1,7 +1,7 @@
 #ifndef SPARSE_GRID_GPU_KER_CUH_
 #define SPARSE_GRID_GPU_KER_CUH_
 
-#include <host_defines.h>
+#include "util/cuda_util.hpp"
 #include <cstdlib>
 #include "Vector/map_vector_sparse.hpp"
 #include "DataBlock.cuh"
