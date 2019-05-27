@@ -103,7 +103,6 @@ public:
 
 		return false;
 	}
-
 };
 
 /*! \brief Class that contain Padding information on each direction positive and Negative direction

@@ -1229,6 +1229,19 @@ public:
 		return true;
 	}
 
+	/*! \brief Get the worst extension
+	 *
+	 * \return the worst extension
+	 */
+	inline T getRcut() const
+	{
+		T r_cut = 0;
+		for (size_t i = 0 ; i < dim ; i++)
+		{r_cut = std::max(r_cut,getHigh(i));}
+
+		return r_cut;
+	}
+
 	/*! \brief Get the volume of the box
 	 *
 	 * \return the box volume

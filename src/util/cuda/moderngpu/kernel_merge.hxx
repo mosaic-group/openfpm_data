@@ -43,7 +43,7 @@ void merge(a_keys_it a_keys, a_vals_it a_vals, int a_count,
     // Load the range for this CTA and merge the values into register.
     int mp0 = mp_data[cta + 0];
     int mp1 = mp_data[cta + 1];
-    merge_range_t range = compute_merge_range(a_count, b_count, cta, nv, 
+    merge_range_t range = compute_merge_range(a_count, b_count, cta, nv,
       mp0, mp1);
 
     merge_pair_t<type_t, vt> merge = cta_merge_from_mem<bounds_lower, nt, vt>(
