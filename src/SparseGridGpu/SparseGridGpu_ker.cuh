@@ -12,15 +12,54 @@ using BlockTypeOf = typename std::remove_reference<typename boost::fusion::resul
 template<typename AggregateT, unsigned int p>
 using ScalarTypeOf = typename std::remove_reference<typename boost::fusion::result_of::at_c<typename AggregateT::type, p>::type>::type::scalarType;
 
+template <typename AggregateT>
+struct LastPOf
+{
+    static const unsigned int value = AggregateT::max_prop_real - 1;
+};
+
+template <typename AggregateT, unsigned int pMask>
+struct InsertBlockWrapper
+{
+    AggregateT aggregate;
+
+    InsertBlockWrapper() = default;
+
+    InsertBlockWrapper(AggregateT aggregate) : aggregate(aggregate) {}
+
+    InsertBlockWrapper(const InsertBlockWrapper<AggregateT, pMask> &other)
+    {
+        aggregate = other.aggregate;
+    }
+
+    InsertBlockWrapper<AggregateT, pMask> &operator=(const InsertBlockWrapper<AggregateT, pMask> &other)
+    {
+        aggregate = other.aggregate;
+        return *this;
+    }
+
+    template <unsigned int p>
+    inline auto get() -> decltype(aggregate.template get<p>())
+    {
+        return aggregate.template get<p>();
+    }
+
+    inline auto getMask() -> decltype(aggregate.template get<pMask>())
+    {
+        return aggregate.template get<pMask>();
+    }
+};
+
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
 class SparseGridGpu_ker
 {
 private:
     openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> blockMap;
-    static const unsigned int pMask = AggregateBlockT::max_prop_real - 1;
 
 public:
+    static const unsigned int pMask = AggregateBlockT::max_prop_real - 1;
     typedef AggregateBlockT AggregateType;
+    typedef InsertBlockWrapper<AggregateBlockT, pMask> InsertBlockWrapperType;
 
 public:
     SparseGridGpu_ker(openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> blockMap)
@@ -38,8 +77,8 @@ public:
     template<unsigned int p>
     inline __device__ auto insert(unsigned int blockId, unsigned int offset) -> ScalarTypeOf<AggregateBlockT, p>&;
 
-    template<unsigned int p>
-    inline __device__ auto insertBlock(unsigned int blockId) -> BlockTypeOf<AggregateBlockT, p>*;
+//    inline __device__ auto insertBlock(unsigned int blockId) -> BlockTypeOf<AggregateBlockT, p>*;
+    inline __device__ auto insertBlock(unsigned int blockId) -> decltype(blockMap.insert(0));
 
     inline __device__ void init()
     {
@@ -95,26 +134,16 @@ inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
 }
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
-template<unsigned int p>
+//inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
+//::insertBlock(unsigned int blockId) -> BlockTypeOf<AggregateBlockT, p>*
 inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
-::insertBlock(unsigned int blockId) -> BlockTypeOf<AggregateBlockT, p>*
+        ::insertBlock(unsigned int blockId) -> decltype(blockMap.insert(0))
 {
-    auto &block = blockMap.template insert<p>(blockId);
-    auto &mask = blockMap.template insert<pMask>(blockId);
-    mask = 0;
-    return &block;
+//    auto &block = blockMap.template insert<p>(blockId);
+//    auto &mask = blockMap.template insert<pMask>(blockId);
+//    mask = 0;
+//    return &block;
+    return blockMap.insert(blockId);
 }
-
-//template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
-//inline __device__ void init()
-//{
-//    blockMap.init();
-//}
-
-//template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
-//inline __device__ void flush_block_insert()
-//{
-//    blockMap.flush_block_insert();
-//}
 
 #endif /* SPARSE_GRID_GPU_KER_CUH_ */

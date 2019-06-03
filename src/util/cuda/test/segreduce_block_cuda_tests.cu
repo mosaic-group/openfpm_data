@@ -164,8 +164,8 @@ BOOST_AUTO_TEST_SUITE(segreduce_block_cuda_tests)
         outputData.resize(segments.size()-1);
 
         // template<unsigned int chunksPerBlock, typename op, typename SegType, typename DataType, typename MaskType>
-        // segreduce_block(DataType *data, SegType *segments, MaskType *masks, DataType *output, MaskType *outputMasks)
-//        segreduce_block<2, mgpu::maximum_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
+        // segreduce(DataType *data, SegType *segments, MaskType *masks, DataType *output, MaskType *outputMasks)
+//        segreduce<2, mgpu::maximum_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
         segreduce_block<2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
                         (BlockT *) data.template getDeviceBuffer<BLOCK>(),
                         (int *) segments.template getDeviceBuffer<0>(),
