@@ -720,8 +720,6 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 
 	vs.template deviceToHost<0,1,2>();
 
-	bool match = true;
-
 	BOOST_REQUIRE_EQUAL(vs.template get<0>(7022),14934);
 	BOOST_REQUIRE_EQUAL(vs.template get<0>(7020),14940);
 	BOOST_REQUIRE_EQUAL(vs.template get<0>(7020),14940);

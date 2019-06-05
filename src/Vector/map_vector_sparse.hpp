@@ -86,6 +86,7 @@ namespace openfpm
                 typename vector_data_type,
                 typename vector_index_type,
                 typename vector_index_dtmp_type,
+                typename dim3T,
                 typename Ti,
                 typename ... v_reduce>
         static void solveConflicts(
@@ -98,8 +99,8 @@ namespace openfpm
                 vector_data_type & vct_add_data,
                 vector_data_type & vct_add_data_unique,
                 vector_data_type & vct_data_tmp,
-                dim3 wthr,
-                dim3 thr,
+                dim3T wthr,
+                dim3T thr,
                 mgpu::ofp_context_t & context
                 )
         {
@@ -186,6 +187,7 @@ namespace openfpm
                 typename vector_data_type,
                 typename vector_index_type,
                 typename vector_index_dtmp_type,
+                typename dim3T,
                 typename Ti,
                 typename ... v_reduce>
         static void solveConflicts(
@@ -198,8 +200,8 @@ namespace openfpm
                 vector_data_type & vct_add_data,
                 vector_data_type & vct_add_data_unique,
                 vector_data_type & vct_data_tmp,
-                dim3 wthr,
-                dim3 thr,
+                dim3T wthr,
+                dim3T thr,
                 mgpu::ofp_context_t & context
         )
         {
@@ -649,6 +651,7 @@ namespace openfpm
                     decltype(vct_data),
                     decltype(vct_index),
                     decltype(vct_index_dtmp),
+                    dim3,
                     Ti,
                     v_reduce ...
                     >
@@ -667,7 +670,7 @@ namespace openfpm
                         context
                     );
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " error: you are suppose to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+			std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif
 		}
 
