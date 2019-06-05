@@ -127,8 +127,9 @@ template<unsigned int p>
 inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
 ::insert(unsigned int blockId, unsigned int offset) -> ScalarTypeOf<AggregateBlockT, p>&
 {
-    auto &block = blockMap.template insert<p>(blockId);
-    auto &mask = blockMap.template insert<pMask>(blockId);
+    auto aggregate = blockMap.insert(blockId);
+    auto &block = aggregate.template get<p>();
+    auto &mask = aggregate.template get<pMask>();
     block.setElement(mask[offset]);
     return block[offset];
 }

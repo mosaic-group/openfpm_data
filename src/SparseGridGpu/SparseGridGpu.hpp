@@ -60,7 +60,7 @@ public:
 
     void setGPUInsertBuffer(int nBlock, int nSlot);
 
-    template<unsigned int p, unsigned int chunksPerBlock=2>
+    template<unsigned int p>
     void initializeGPUInsertBuffer();
 
     template<typename ... v_reduce>
@@ -112,13 +112,14 @@ void SparseGridGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::setGP
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-template<unsigned int p, unsigned int chunksPerBlock>
+template<unsigned int p>
 void SparseGridGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::initializeGPUInsertBuffer()
 {
     // Initialize the blocks to background
     auto & insertBuffer = blockMap.getGPUInsertBuffer();
-    typedef BlockTypeOf<AggregateBlockT, 0> BlockType; // Here assuming that all block types in the aggregate have the same size!
-    SparseGridGpuKernels::initializeInsertBuffer<p, pMask> <<< insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size >>>(
+    typedef BlockTypeOf<AggregateBlockT, p> BlockType; // Here assuming that all block types in the aggregate have the same size!
+    constexpr unsigned int chunksPerBlock = threadBlockSize / BlockType::size; // Floor is good here...
+    SparseGridGpuKernels::initializeInsertBuffer<p, pMask, chunksPerBlock> <<< insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size >>>(
             insertBuffer.toKernel(),
             blockMap.template getBackground<p>()[0]
                     );

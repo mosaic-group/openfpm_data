@@ -39,7 +39,27 @@ namespace openfpm
     template<unsigned int impl, typename block_functor>
     struct scalar_block_implementation_switch // Case for scalar implementations
     {
-        template <typename vector_reduction, typename T, typename vector_data_type, typename vector_index_type>
+        template <unsigned int p, typename vector_index_type>
+        static void extendSegments(vector_index_type & segments, size_t dataSize)
+        {
+#ifdef __NVCC__
+            // Pass as there is nothing to append for mgpu
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
+#endif // __NVCC__
+        }
+
+        template <typename vector_index_type>
+        static void trimSegments(vector_index_type & segments)
+        {
+#ifdef __NVCC__
+            // Pass as there is nothing to append for mgpu
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
+#endif // __NVCC__
+        }
+
+        template <unsigned int pSegment, typename vector_reduction, typename T, typename vector_data_type, typename vector_index_type>
         static void segreduce(vector_data_type & vector_data,
                 vector_index_type & segment_offset,
                 vector_data_type & vector_data_red,
@@ -124,14 +144,39 @@ namespace openfpm
     template<typename block_functor>
     struct scalar_block_implementation_switch<2, block_functor> // Case for blocked implementations
     {
-        template <typename vector_reduction, typename T, typename vector_data_type, typename vector_index_type>
+        template <unsigned int p, typename vector_index_type>
+        static void extendSegments(vector_index_type & segments, size_t dataSize)
+        {
+#ifdef __NVCC__
+            // Append trailing element to segment (marks end of last segment)
+            segments.resize(segments.size()+1);
+            segments.template get<p>(segments.size() - 1) = dataSize;
+            segments.template hostToDevice<p>(segments.size() - 1, segments.size() - 1);
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
+#endif // __NVCC__
+        }
+
+        template <typename vector_index_type>
+        static void trimSegments(vector_index_type & segments)
+        {
+#ifdef __NVCC__
+            // Append trailing element to segment (marks end of last segment)
+            segments.resize(segments.size()-1);
+            ////////////
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
+#endif // __NVCC__
+        }
+
+        template <unsigned int pSegment, typename vector_reduction, typename T, typename vector_data_type, typename vector_index_type>
         static void segreduce(vector_data_type & vector_data,
                        vector_index_type & segment_offset,
                        vector_data_type & vector_data_red,
                        mgpu::ofp_context_t & context)
         {
 #ifdef __NVCC__
-            block_functor::template seg_reduce<vector_reduction, T>(segment_offset, vector_data, vector_data_red);
+            block_functor::template seg_reduce<pSegment, vector_reduction, T>(segment_offset, vector_data, vector_data_red);
 #else // __NVCC__
     std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
 #endif // __NVCC__
@@ -166,8 +211,10 @@ namespace openfpm
 			            (vct_index_tmp, vct_index_tmp2,
 			            vct_data, vct_add_data_unique,
 			            vct_index_tmp3, vct_add_data,
-			            vct_data_tmp, context);
+			            vct_index, vct_data_tmp,
+			            context);
                 vct_data_tmp.swap(vct_data);
+
 #else // __NVCC__
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
 #endif // __NVCC__
@@ -200,7 +247,7 @@ namespace openfpm
 	        typename vector_index_type,
 	        typename vector_reduction,
 	        typename block_functor,
-	        unsigned int impl2>
+	        unsigned int impl2, unsigned int pSegment=1>
 	struct sparse_vector_reduction
 	{
 		//! Vector in which to the reduction
@@ -238,7 +285,7 @@ namespace openfpm
             typedef typename boost::mpl::at<typename ValueTypeOf<vector_data_type>::type,typename reduction_type::prop>::type red_type;
             if (reduction_type::is_special() == false)
 			{
-			    scalar_block_implementation_switch<impl2, block_functor>::template segreduce<vector_reduction, T>(
+			    scalar_block_implementation_switch<impl2, block_functor>::template segreduce<pSegment, vector_reduction, T>(
 			            vector_data,
 			            segment_offset,
 			            vector_data_red,
@@ -264,7 +311,7 @@ namespace openfpm
 			return true;
 		}
 
-        template<typename vector_reduction, typename T, typename vector_index_type, typename vector_data_type>
+        template<unsigned int pSegment, typename vector_reduction, typename T, typename vector_index_type, typename vector_data_type>
 		static bool seg_reduce(vector_index_type & segments, vector_data_type & src, vector_data_type &  dst)
 		{
 			return true;
@@ -274,7 +321,8 @@ namespace openfpm
 		static bool solve_conflicts(vector_index_type &keys, vector_index_type &merge_indices,
                                     vector_data_type &data1, vector_data_type &data2,
                                     vector_index_type &indices_tmp, vector_data_type &data_tmp,
-                                    vector_data_type &dataOut, mgpu::ofp_context_t & context)
+                                    vector_index_type &keysOut, vector_data_type &dataOut,
+                                    mgpu::ofp_context_t & context)
 		{
 			return true;
 		}
@@ -479,9 +527,20 @@ namespace openfpm
 				block_functor::compact(starts, n_gpu_add_block_slot, vct_add_data, vct_add_data_cont);
 			}
 
+            // At this point we can check whether we have not inserted anything actually,
+            // in this case, return without further ado...
+			if (vct_add_data_cont.size() == 0)
+            {
+                return;
+            }
+
 			// now we sort
-			mergesort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
-					vct_add_index_cont_0.size(), mgpu::template less_t<Ti>(), context);
+			mergesort(
+			        (Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),
+                    (Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
+					vct_add_index_cont_0.size(),
+					mgpu::template less_t<Ti>(),
+                    context);
 
 			auto ite = vct_add_index_cont_0.getGPUIterator();
 
@@ -505,9 +564,18 @@ namespace openfpm
 
 			// produce unique index list
 			// Find the buffer bases
-			CUDA_LAUNCH((find_buffer_offsets_zero<0,decltype(vct_add_index_cont_0.toKernel()),decltype(vct_add_index_unique.toKernel())>),
-					    ite,
-					    vct_add_index_cont_0.toKernel(),(int *)mem.getDevicePointer(),vct_add_index_unique.toKernel());
+			CUDA_LAUNCH(
+			        (
+                        find_buffer_offsets_zero
+                                <0,
+                                decltype(vct_add_index_cont_0.toKernel()),
+                                decltype(vct_add_index_unique.toKernel())
+                                >
+                    ),
+                    ite,
+                    vct_add_index_cont_0.toKernel(),
+                    (int *)mem.getDevicePointer(),
+                    vct_add_index_unique.toKernel());
 
 			mem.deviceToHost();
 			int n_ele_unique = *(int *)mem.getPointer();
@@ -515,17 +583,32 @@ namespace openfpm
 			vct_add_index_unique.resize(n_ele_unique);
 			vct_add_data_unique.resize(n_ele_unique);
 
-			mgpu::mergesort((Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
-							vct_add_index_unique.size(),mgpu::template less_t<Ti>(),context);
+			mgpu::mergesort(
+			        (Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),
+                    (Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
+                    vct_add_index_unique.size(),
+                    mgpu::template less_t<Ti>(),
+                    context);
 
 			typedef boost::mpl::vector<v_reduce...> vv_reduce;
 
 			// Now we can do a segmented reduction
-			sparse_vector_reduction<decltype(vct_add_data),decltype(vct_add_index_unique),vv_reduce,block_functor,impl2> svr(vct_add_data_unique,vct_add_data_reord,vct_add_index_unique,context);
+			scalar_block_implementation_switch<impl2, block_functor>
+			        ::template extendSegments<1>(vct_add_index_unique, vct_add_data_reord.size());
+
+			sparse_vector_reduction<decltype(vct_add_data),decltype(vct_add_index_unique),vv_reduce,block_functor,impl2>
+			        svr(
+			                vct_add_data_unique,
+			                vct_add_data_reord,
+			                vct_add_index_unique,
+			                context);
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
 
 			sparse_vector_special<decltype(vct_add_data),decltype(vct_add_index_unique),vv_reduce> svr2(vct_add_data_unique,vct_add_data_reord,vct_add_index_unique,context);
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr2);
+
+			scalar_block_implementation_switch<impl2, block_functor>
+			        ::trimSegments(vct_add_index_unique);
 
 			// Then we merge the two list vct_index and vct_add_index_unique
 

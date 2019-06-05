@@ -15,18 +15,36 @@
 
 namespace SparseGridGpuKernels
 {
-    template<unsigned int p, unsigned int maskProp, typename InsertBufferT, typename ScalarT>
+    template<unsigned int p, unsigned int maskProp, unsigned int chunksPerBlock, typename InsertBufferT, typename ScalarT>
     __global__ void initializeInsertBuffer(InsertBufferT insertBuffer, ScalarT backgroundValue)
     {
         typedef typename InsertBufferT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, p> BlockT;
+        typedef BlockTypeOf<AggregateT, maskProp> MaskT;
 
         int pos = blockIdx.x * blockDim.x + threadIdx.x;
-        unsigned int dataBlockId = pos / BlockT::size;
-        unsigned int offset = pos % BlockT::size;
+        const unsigned int dataBlockId = pos / BlockT::size;
+        const unsigned int offset = pos % BlockT::size;
+        const unsigned int chunkOffset = dataBlockId % chunksPerBlock;
 
-        insertBuffer.template get<maskProp>(dataBlockId)[offset] = 0;
-        insertBuffer.template get<p>(dataBlockId)[offset] = backgroundValue;
+        __shared__ BlockT data[chunksPerBlock];
+        __shared__ MaskT mask[chunksPerBlock];
+
+        if (dataBlockId < insertBuffer.size())
+        {
+            data[chunkOffset][offset] = backgroundValue;
+            mask[chunkOffset][offset] = 0;
+
+            __syncthreads();
+
+            // Here the operator= spreads nicely across threads...
+            insertBuffer.template get<p>(dataBlockId) = data[chunkOffset];
+            insertBuffer.template get<maskProp>(dataBlockId) = mask[chunkOffset];
+        }
+        else
+        {
+            __syncthreads();
+        }
     }
 
     /**
@@ -326,6 +344,31 @@ namespace SparseGridGpuKernels
         }
     }
 
+
+    /**
+     * Copy the key to the destination position in the out array specified by dstIndices.
+     * NOTE: it is not possible to reorder in-place!
+     * 
+     * @tparam IndexVectorT 
+     * @param keys
+     * @param dstIndices 
+     * @param out 
+     */
+    template<typename IndexVectorT>
+    __global__ void copyKeyToDstIndexIfPredicate(IndexVectorT keys, IndexVectorT dstIndices, IndexVectorT out)
+    {
+        // dstIndices is exclusive scan of predicates
+        unsigned int pos = blockIdx.x * blockDim.x + threadIdx.x;
+        if (pos < keys.size()) // dstIndices.size() must be keysSize+1, so a trailing element is required
+        {
+            bool predicate = dstIndices.template get<0>(pos) != dstIndices.template get<0>(pos+1);
+            if (predicate)
+            {
+                auto dstPos = dstIndices.template get<0>(pos);
+                out.template get<0>(dstPos) = keys.template get<0>(pos);
+            }
+        }
+    }
 }
 
 namespace SparseGridGpuFunctors
@@ -356,16 +399,17 @@ namespace SparseGridGpuFunctors
             typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
 
             constexpr unsigned int chunksPerBlock = blockSize / BlockT0::size;
-            const unsigned int gridSize = std::ceil(static_cast<float>(data.size()) / chunksPerBlock);
+            const unsigned int gridSize = static_cast<unsigned int>(std::ceil(static_cast<float>(data.size()) / chunksPerBlock));
 
             SparseGridGpuKernels::reorder <<< gridSize, blockSize >>> (
                     data.toKernel(),
                     src_id.toKernel(),
                     data_reord.toKernel());
+
             return true; //todo: check if error in kernel
         }
 
-        template<typename vector_reduction, typename T, typename vector_index_type, typename vector_data_type>
+        template<unsigned int pSegment, typename vector_reduction, typename T, typename vector_index_type, typename vector_data_type>
         static bool seg_reduce(vector_index_type &segments, vector_data_type &src, vector_data_type &dst)
         {
             typedef typename vector_data_type::value_type AggregateT;
@@ -379,7 +423,6 @@ namespace SparseGridGpuFunctors
 
             constexpr unsigned int p = reduction_type::prop::value;
             constexpr unsigned int pMask = AggregateT::max_prop_real - 1;
-            constexpr unsigned int pSegment = 0;
 
             typedef BlockTypeOf<AggregateT, p> BlockT; // The type of the 0-th property
 
@@ -401,7 +444,7 @@ namespace SparseGridGpuFunctors
         static bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices,
                                     vector_data_type &dataOld, vector_data_type &dataNew,
                                     vector_index_type &tmpIndices, vector_data_type &tmpData,
-                                    vector_data_type &dataOut,
+                                    vector_index_type &keysOut, vector_data_type &dataOut,
                                     mgpu::ofp_context_t & context)
         {
             typedef ValueTypeOf<vector_data_type> AggregateT;
@@ -421,9 +464,11 @@ namespace SparseGridGpuFunctors
             //      a) compute predicates
             //      b) run exclusive scan on predicates
             //      c) copyIdToDst...
+            //      d) update the keys to the soon-to-be segreduced ones
             // 2) perform segreduce
 
             // First ensure we have the right sizes on the buffers
+
             tmpData.resize(mergeIndices.size()); //todo: check if we need some other action to actually have the right space on gpu
 
             // Phase 0 - merge data
@@ -435,8 +480,9 @@ namespace SparseGridGpuFunctors
             mergeIndices.resize(mergeIndices.size() + 1); // This is to get space for the extra trailing predicate
             tmpIndices.resize(mergeIndices.size());
 
-            SparseGridGpuKernels::computePredicates<<<
-                        static_cast<unsigned int>(std::ceil(static_cast<float>(mergeIndices.size())/blockSize)),
+            unsigned int gridSize2 = static_cast<unsigned int>(std::ceil(static_cast<float>(mergeIndices.size()) / blockSize));
+            SparseGridGpuKernels::computePredicates << <
+                        gridSize2,
                         blockSize>>>
                         (keys.toKernel(), mergeIndices.toKernel());
 
@@ -447,14 +493,21 @@ namespace SparseGridGpuFunctors
             // Now it's important to resize mergeIndices in the right way, otherwise dragons ahead!
             tmpIndices.template deviceToHost<0>(); //todo: check if there is any way to get the last element from device without actually copying the whole array
             mergeIndices.resize(tmpIndices.template get<0>(tmpIndices.size()-1) + 1);
-            SparseGridGpuKernels::copyIdToDstIndexIfPredicate<<<std::ceil(static_cast<float>(mergeIndices.size())/blockSize), blockSize>>>
-                        (keys.size(), tmpIndices.toKernel(), mergeIndices.toKernel());
+            SparseGridGpuKernels::copyIdToDstIndexIfPredicate<< < gridSize2, blockSize >> >
+                                                                            (keys.size(), tmpIndices.toKernel(), mergeIndices.toKernel());
             // mergeIndices now contains the segments
+
+            // Now update the keys
+            keysOut.resize(mergeIndices.size()-1); // The final number of keys is one less than the segments values
+            SparseGridGpuKernels::copyKeyToDstIndexIfPredicate<< < gridSize2, blockSize >> >
+                                                                             (keys.toKernel(), tmpIndices.toKernel(), keysOut.toKernel());
+            // the new keys are now in keysOut
 
             // Phase 2 - segreduce on all properties
             dataOut.resize(mergeIndices.size()-1); // Right size for output, i.e. the number of segments
             typedef boost::mpl::vector<v_reduce...> vv_reduce;
-            openfpm::sparse_vector_reduction<decltype(dataOut),decltype(mergeIndices),vv_reduce,BlockFunctor,2>
+            constexpr unsigned int pSegment = 0;
+            openfpm::sparse_vector_reduction<decltype(dataOut),decltype(mergeIndices),vv_reduce,BlockFunctor,2, pSegment>
                     svr(dataOut,tmpData,mergeIndices,context);
             boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
 

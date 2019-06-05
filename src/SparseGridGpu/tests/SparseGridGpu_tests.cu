@@ -53,7 +53,7 @@ __global__ void insertValuesBlocked(SparseGridType sparseGrid)
 
     if (offset == 0) // Just one thread per data block
     {
-        auto & encap = sparseGrid.insertBlock(dataBlockId);
+        auto encap = sparseGrid.insertBlock(dataBlockId);
         blocks[dataBlockNum] = &(encap.template get<p>());
         masks[dataBlockNum] = &(encap.template get<pMask>());
     }
@@ -63,6 +63,8 @@ __global__ void insertValuesBlocked(SparseGridType sparseGrid)
 //    (*(blocks[dataBlockNum]))[offset] = pos;
     blocks[dataBlockNum]->block[offset] = pos;
     BlockT::setElement(masks[dataBlockNum]->block[offset]);
+
+    __syncthreads();
 
     sparseGrid.flush_block_insert();
 }

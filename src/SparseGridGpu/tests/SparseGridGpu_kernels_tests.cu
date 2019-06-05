@@ -493,7 +493,7 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_functors_tests)
         dataSrc.hostToDevice<p, pMask>();
         // Now perform the compaction
         typedef boost::mpl::vector<sadd_<p>> vv_reduce;
-        SparseGridGpuFunctors::BlockFunctor<128>::seg_reduce<vv_reduce, boost::mpl::int_<0>>(segments, dataSrc, dataDst);
+        SparseGridGpuFunctors::BlockFunctor<128>::seg_reduce<pSegment, vv_reduce, boost::mpl::int_<0>>(segments, dataSrc, dataDst);
 
         // Now retrieve the dataDst vector
         dataDst.deviceToHost<0>();
@@ -516,7 +516,7 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_functors_tests)
         typedef DataBlock<ScalarT, 64> BlockT;
         typedef DataBlock<unsigned char, 64> MaskBlockT;
         const unsigned int p=0, pMask=1, pInd=0;
-        openfpm::vector_gpu<aggregate<unsigned int>> keys, mergeIndices, tmpIndices;
+        openfpm::vector_gpu<aggregate<unsigned int>> keys, mergeIndices, tmpIndices, keysOut;
         openfpm::vector_gpu<aggregate<BlockT, MaskBlockT>> dataOld, dataNew, tmpData, dataOut;
         mgpu::ofp_context_t ctx;
 
@@ -597,11 +597,12 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_functors_tests)
                         keys, mergeIndices,
                         dataOld, dataNew,
                         tmpIndices, tmpData,
-                        dataOut,
+                        keysOut, dataOut,
                         ctx
                         );
 
         // Now retrieve the dataDst vector
+        keysOut.deviceToHost<pInd>();
         dataOut.deviceToHost<p, pMask>();
 
         // Debug output
@@ -612,6 +613,7 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_functors_tests)
                 << ", dataOut[" << i << "][1] = " << dataOut.template get<p>(i)[1]
                 << std::endl;
         }
+
         // Validation
         BOOST_REQUIRE_EQUAL(dataOut.template get<p>(0)[0], 1);
         BOOST_REQUIRE_EQUAL(dataOut.template get<p>(1)[0], 1);
