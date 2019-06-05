@@ -134,15 +134,9 @@ inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
 }
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
-//inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
-//::insertBlock(unsigned int blockId) -> BlockTypeOf<AggregateBlockT, p>*
 inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
         ::insertBlock(unsigned int blockId) -> decltype(blockMap.insert(0))
 {
-//    auto &block = blockMap.template insert<p>(blockId);
-//    auto &mask = blockMap.template insert<pMask>(blockId);
-//    mask = 0;
-//    return &block;
     return blockMap.insert(blockId);
 }
 

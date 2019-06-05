@@ -191,32 +191,12 @@ namespace SparseGridGpuKernels
         {
             unsigned int srcId = poolStartPos + chunkIt + chunkOffset;
             unsigned int dstId = starts.template get<0>(poolId) + chunkIt + chunkOffset;
-//            //// DEBUG
-//            if (elementOffset == 0)
-//            {
-//                printf("FOR ### poolId: %d, numChunksToProcess: %d, poolStartPos: %d, "
-//                       "chunkOffset: %d, elementOffset: %d,"
-//                       "chunkIt: %d, srcId: %d, dstId: %d\n",
-//                       poolId, numChunksToProcess, poolStartPos, chunkOffset, elementOffset,
-//                       chunkIt, srcId, dstId);
-//            }
-//            ////
-            dst.get(dstId) = src.get(srcId); //todo How does this = spread across threads...?
+            dst.get(dstId) = src.get(srcId); //todo How does this = spread across threads...? --> it's the = operator in DataBlock
         }
         if (chunkIt + chunkOffset < numChunksToProcess)
         {
             unsigned int srcId = poolStartPos + chunkIt + chunkOffset;
             unsigned int dstId = starts.template get<0>(poolId) + chunkIt + chunkOffset;
-//            //// DEBUG
-//            if (elementOffset == 0)
-//            {
-//                printf("IF ### poolId: %d, numChunksToProcess: %d, poolStartPos: %d, "
-//                       "chunkOffset: %d, elementOffset: %d,"
-//                       "chunkIt: %d, srcId: %d, dstId: %d\n",
-//                       poolId, numChunksToProcess, poolStartPos, chunkOffset, elementOffset,
-//                       chunkIt, srcId, dstId);
-//            }
-//            ////
             dst.get(dstId) = src.get(srcId); //todo How does this = spread across threads...?
         }
     }
@@ -247,12 +227,7 @@ namespace SparseGridGpuKernels
         if (dstId < srcIndices.size())
         {
             unsigned int srcId = srcIndices.template get<0>(dstId);
-//            typedef typename decltype(dst.get(dstId))::culo foo; // Debug: just to get the printout of the type of dst.get(dstId)
             dst.get(dstId) = src.get(srcId); //todo How does this = spread across threads...?
-            //todo We have a problem here, the copy doesn't take place as expected (see copy op in encapc),
-            // so it doesn't spread across threads automatically (and how is it supposed to know chunk boundaries?).
-            // We need to check if we can copy across properties given a fixed offset, so we can do all the
-            // offsetting logic from here and have the operator doing the across-properties logic on its own.
         }
     }
 
@@ -288,7 +263,7 @@ namespace SparseGridGpuKernels
 
     // Below the kernels to be used inside the "compute segments" part of the solveConflicts
     /**
-     * Fill a vector of predicates specifying if current key is equal to previous one.
+     * Fill a vector of predicates specifying if current key is different from the previous one.
      *
      * @tparam IndexVectorT The type of the (OpenFPM) vector of indices.
      * @param keys The keys to compute the predicate on.
@@ -319,6 +294,14 @@ namespace SparseGridGpuKernels
         }
     }
 
+    /**
+     * Copy the thread id to the destination position in the out array specified by dstIndices at the corresponding position.
+     * 
+     * @tparam IndexVectorT 
+     * @param keysSize 
+     * @param dstIndices 
+     * @param out 
+     */
     template<typename IndexVectorT>
     __global__ void copyIdToDstIndexIfPredicate(size_t keysSize, IndexVectorT dstIndices, IndexVectorT out)
     {
