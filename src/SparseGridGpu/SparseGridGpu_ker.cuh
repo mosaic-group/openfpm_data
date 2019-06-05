@@ -29,24 +29,40 @@ struct InsertBlockWrapper
 
     InsertBlockWrapper(const InsertBlockWrapper<AggregateT, pMask> &other)
     {
+#ifdef __NVCC__
         aggregate = other.aggregate;
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     InsertBlockWrapper<AggregateT, pMask> &operator=(const InsertBlockWrapper<AggregateT, pMask> &other)
     {
+#ifdef __NVCC__
         aggregate = other.aggregate;
         return *this;
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     template <unsigned int p>
     inline auto get() -> decltype(aggregate.template get<p>())
     {
+#ifdef __NVCC__
         return aggregate.template get<p>();
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     inline auto getMask() -> decltype(aggregate.template get<pMask>())
     {
+#ifdef __NVCC__
         return aggregate.template get<pMask>();
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 };
 
@@ -82,12 +98,20 @@ public:
 
     inline __device__ void init()
     {
+#ifdef __NVCC__
         blockMap.init();
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     inline __device__ void flush_block_insert()
     {
+#ifdef __NVCC__
         blockMap.flush_block_insert();
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 };
 
@@ -96,10 +120,14 @@ template<unsigned int p>
 inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
 ::get(unsigned int linId) const -> ScalarTypeOf<AggregateBlockT, p>
 {
+#ifdef __NVCC__
     typedef BlockTypeOf<AggregateBlockT, p> BlockT;
     unsigned int blockId = linId / BlockT::size;
     unsigned int offset = linId % BlockT::size;
     return get<p>(blockId, offset);
+#else // __NVCC__
+    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
 }
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
@@ -107,8 +135,12 @@ template<unsigned int p>
 inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
 ::get(unsigned int blockId, unsigned int offset) const -> ScalarTypeOf<AggregateBlockT, p>
 {
+#ifdef __NVCC__
     auto &block = blockMap.template get<p>(blockId);
     return block[offset];
+#else // __NVCC__
+    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
 }
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
@@ -116,10 +148,14 @@ template<unsigned int p>
 inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
 ::insert(unsigned int linId) -> ScalarTypeOf<AggregateBlockT, p>&
 {
+#ifdef __NVCC__
     typedef BlockTypeOf<AggregateBlockT, p> BlockT;
     unsigned int blockId = linId / BlockT::size;
     unsigned int offset = linId % BlockT::size;
     return insert<p>(blockId, offset);
+#else // __NVCC__
+    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
 }
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
@@ -127,18 +163,26 @@ template<unsigned int p>
 inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
 ::insert(unsigned int blockId, unsigned int offset) -> ScalarTypeOf<AggregateBlockT, p>&
 {
+#ifdef __NVCC__
     auto aggregate = blockMap.insert(blockId);
     auto &block = aggregate.template get<p>();
     auto &mask = aggregate.template get<pMask>();
     block.setElement(mask[offset]);
     return block[offset];
+#else // __NVCC__
+    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
 }
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
 inline __device__ auto SparseGridGpu_ker<AggregateBlockT, indexT, layout_base>
         ::insertBlock(unsigned int blockId) -> decltype(blockMap.insert(0))
 {
+#ifdef __NVCC__
     return blockMap.insert(blockId);
+#else // __NVCC__
+    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
 }
 
 #endif /* SPARSE_GRID_GPU_KER_CUH_ */

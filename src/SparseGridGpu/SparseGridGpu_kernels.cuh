@@ -18,6 +18,7 @@ namespace SparseGridGpuKernels
     template<unsigned int p, unsigned int maskProp, unsigned int chunksPerBlock, typename InsertBufferT, typename ScalarT>
     __global__ void initializeInsertBuffer(InsertBufferT insertBuffer, ScalarT backgroundValue)
     {
+#ifdef __NVCC__
         typedef typename InsertBufferT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, p> BlockT;
         typedef BlockTypeOf<AggregateT, maskProp> MaskT;
@@ -45,6 +46,9 @@ namespace SparseGridGpuKernels
         {
             __syncthreads();
         }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     /**
@@ -60,6 +64,7 @@ namespace SparseGridGpuKernels
     template<typename op, typename ScalarT>
     __device__ inline void applyOp(ScalarT &a, ScalarT b, bool aExist, bool bExist)
     {
+#ifdef __NVCC__
         op op_;
         if (aExist && bExist)
         {
@@ -69,6 +74,9 @@ namespace SparseGridGpuKernels
         {
             a = b;
         }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     // GridSize = number of segments
@@ -88,6 +96,7 @@ namespace SparseGridGpuKernels
             DataVectorT output
     )
     {
+#ifdef __NVCC__
         typedef typename DataVectorT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, p> DataType;
         typedef BlockTypeOf<AggregateT, pMask> MaskType;
@@ -175,6 +184,9 @@ namespace SparseGridGpuKernels
             generalDimensionFunctor<DataType>::assignWithOffset(output.template get<p>(segmentId), A[chunkId].data,
                                                                 offset);
         }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     /**
@@ -191,6 +203,7 @@ namespace SparseGridGpuKernels
     template<typename DataVectorT, typename IndexVectorT>
     __global__ void compact(DataVectorT src, size_t blockPoolSize, IndexVectorT starts, DataVectorT dst)
     {
+#ifdef __NVCC__
         typedef typename DataVectorT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
         unsigned int chunkSize = BlockT0::size;
@@ -217,6 +230,9 @@ namespace SparseGridGpuKernels
             unsigned int dstId = starts.template get<0>(poolId) + chunkIt + chunkOffset;
             dst.get(dstId) = src.get(srcId); //todo How does this = spread across threads...?
         }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     /**
@@ -232,6 +248,7 @@ namespace SparseGridGpuKernels
     template<typename DataVectorT, typename IndexVectorT>
     __global__ void reorder(DataVectorT src, IndexVectorT srcIndices, DataVectorT dst)
     {
+#ifdef __NVCC__
         typedef typename DataVectorT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
         unsigned int chunkSize = BlockT0::size;
@@ -247,11 +264,15 @@ namespace SparseGridGpuKernels
             unsigned int srcId = srcIndices.template get<0>(dstId);
             dst.get(dstId) = src.get(srcId); //todo How does this = spread across threads...?
         }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     template<typename DataVectorT, typename IndexVectorT>
     __global__ void mergeData(DataVectorT data1, DataVectorT data2, IndexVectorT mergeIndices, DataVectorT dataOut)
     {
+#ifdef __NVCC__
         typedef typename DataVectorT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
         unsigned int chunkSize = BlockT0::size;
@@ -277,6 +298,9 @@ namespace SparseGridGpuKernels
                 dataOut.get(dstId) = data2.get(srcId); //todo How does this = spread across threads...?
             }
         }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     // Below the kernels to be used inside the "compute segments" part of the solveConflicts
@@ -290,7 +314,8 @@ namespace SparseGridGpuKernels
     template<typename IndexVectorT>
     __global__ void computePredicates(IndexVectorT keys, IndexVectorT predicates)
     {
-        // predicates[i] must be 1 if keys[i] != keys[i-1] or if i == 0
+#ifdef __NVCC__
+       // predicates[i] must be 1 if keys[i] != keys[i-1] or if i == 0
         // else it must be 0
         unsigned int pos = blockIdx.x * blockDim.x + threadIdx.x;
         if (pos < keys.size())
@@ -310,6 +335,9 @@ namespace SparseGridGpuKernels
             // (value here doesn't matter, as the scan is exclusive!)
             predicates.template get<0>(pos) = 1;
         }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
     /**
@@ -323,6 +351,7 @@ namespace SparseGridGpuKernels
     template<typename IndexVectorT>
     __global__ void copyIdToDstIndexIfPredicate(size_t keysSize, IndexVectorT dstIndices, IndexVectorT out)
     {
+#ifdef __NVCC__
         // dstIndices is exclusive scan of predicates
         unsigned int pos = blockIdx.x * blockDim.x + threadIdx.x;
         if (pos < keysSize) // dstIndices.size() must be keysSize+1, so a trailing element is required
@@ -342,6 +371,9 @@ namespace SparseGridGpuKernels
             out.template get<0>(lastDst +
                                 lastPredicate) = pos; // We need to increment position if the last element was also written
         }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
     }
 
 
@@ -357,7 +389,8 @@ namespace SparseGridGpuKernels
     template<typename IndexVectorT>
     __global__ void copyKeyToDstIndexIfPredicate(IndexVectorT keys, IndexVectorT dstIndices, IndexVectorT out)
     {
-        // dstIndices is exclusive scan of predicates
+#ifdef __NVCC__
+       // dstIndices is exclusive scan of predicates
         unsigned int pos = blockIdx.x * blockDim.x + threadIdx.x;
         if (pos < keys.size()) // dstIndices.size() must be keysSize+1, so a trailing element is required
         {
@@ -369,6 +402,9 @@ namespace SparseGridGpuKernels
             }
         }
     }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
 }
 
 namespace SparseGridGpuFunctors
@@ -382,6 +418,7 @@ namespace SparseGridGpuFunctors
         template<typename vector_index_type, typename vector_data_type>
         static bool compact(vector_index_type &starts, int poolSize, vector_data_type &src, vector_data_type &dst)
         {
+#ifdef __NVCC__
             unsigned int gridSize = src.size() / poolSize; //This is the number of pools!
             assert(starts.size() > gridSize); // We need to check that have the right size on the starts vector (as we access blockId+1)
             SparseGridGpuKernels::compact <<< gridSize, blockSize >>> (
@@ -390,11 +427,16 @@ namespace SparseGridGpuFunctors
                             starts.toKernel(),
                             dst.toKernel());
             return true; //todo: check if error in kernel
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+            return true;
+#endif // __NVCC__
         }
 
         template<typename vector_index_type, typename vector_data_type>
         static bool reorder(vector_index_type &src_id, vector_data_type &data, vector_data_type &data_reord)
         {
+#ifdef __NVCC__
             typedef typename vector_data_type::value_type AggregateT;
             typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
 
@@ -407,11 +449,16 @@ namespace SparseGridGpuFunctors
                     data_reord.toKernel());
 
             return true; //todo: check if error in kernel
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+            return true;
+#endif // __NVCC__
         }
 
         template<unsigned int pSegment, typename vector_reduction, typename T, typename vector_index_type, typename vector_data_type>
         static bool seg_reduce(vector_index_type &segments, vector_data_type &src, vector_data_type &dst)
         {
+#ifdef __NVCC__
             typedef typename vector_data_type::value_type AggregateT;
 
             typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
@@ -437,6 +484,10 @@ namespace SparseGridGpuFunctors
                     dst.toKernel()
             );
             return true; //todo: check if error in kernel
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+            return true;
+#endif // __NVCC__
         }
 
         template<typename vector_index_type, typename vector_data_type, typename ... v_reduce>
@@ -446,6 +497,7 @@ namespace SparseGridGpuFunctors
                                     vector_index_type &keysOut, vector_data_type &dataOut,
                                     mgpu::ofp_context_t & context)
         {
+#ifdef __NVCC__
             typedef ValueTypeOf<vector_data_type> AggregateT;
             typedef ValueTypeOf<vector_index_type> AggregateIndexT;
 
@@ -511,6 +563,10 @@ namespace SparseGridGpuFunctors
             boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
 
             return true; //todo: check if error in kernel
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+            return true;
+#endif // __NVCC__
         }
     };
 }
