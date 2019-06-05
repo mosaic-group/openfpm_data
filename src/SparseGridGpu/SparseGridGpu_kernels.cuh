@@ -430,7 +430,6 @@ namespace SparseGridGpuFunctors
             const unsigned int gridSize =
                     segments.size() - 1; // This "-1" is because segments has a trailing extra element
 
-
             SparseGridGpuKernels::segreduce<p, pSegment, pMask, chunksPerBlock, red_op> <<< gridSize, blockSize >>> (
                     src.toKernel(),
                     segments.toKernel(),
@@ -491,7 +490,7 @@ namespace SparseGridGpuFunctors
                         (IndexT*) tmpIndices.template getDeviceBuffer<0>(),
                         context); // mgpu scan is exclusive by default
             // Now it's important to resize mergeIndices in the right way, otherwise dragons ahead!
-            tmpIndices.template deviceToHost<0>(); //todo: check if there is any way to get the last element from device without actually copying the whole array
+            tmpIndices.template deviceToHost<0>(tmpIndices.size()-1, tmpIndices.size()-1); //getting only the last element from device
             mergeIndices.resize(tmpIndices.template get<0>(tmpIndices.size()-1) + 1);
             SparseGridGpuKernels::copyIdToDstIndexIfPredicate<< < gridSize2, blockSize >> >
                                                                             (keys.size(), tmpIndices.toKernel(), mergeIndices.toKernel());
