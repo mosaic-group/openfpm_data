@@ -69,13 +69,13 @@ struct DataBlock
     template<typename BitMaskT>
     __device__ __host__ inline static bool exist(BitMaskT &bitMask)
     {
-        return (bitMask >> EXISTBIT) & 1U;
+        return bitMask==1;
     }
 
     template<typename BitMaskT>
     __device__ __host__ inline static void setElement(BitMaskT &bitMask)
     {
-        bitMask = bitMask | ( 1U << EXISTBIT );
+        bitMask = 1;
     }
 };
 
