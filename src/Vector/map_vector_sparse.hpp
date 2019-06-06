@@ -771,6 +771,8 @@ namespace openfpm
 						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),vct_add_index_unique.size(),
 						(Ti *)vct_index_tmp.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp2.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
 
+			vct_index_tmp3.resize(128*wthr.x);
+
 			solve_conflicts_remove<decltype(vct_index_tmp.toKernel()),decltype(vct_index_dtmp.toKernel()),128>
 			<<<wthr,thr>>>
 										(vct_index_tmp.toKernel(),
@@ -793,7 +795,6 @@ namespace openfpm
 			realign_remove<<<wthr,thr>>>(vct_index_tmp3.toKernel(),vct_m_index.toKernel(),vct_data.toKernel(),
 								  vct_index.toKernel(),vct_data_tmp.toKernel(),
 								  vct_index_dtmp.toKernel());
-
 
 			vct_data.swap(vct_data_tmp);
 
@@ -1037,6 +1038,16 @@ namespace openfpm
 		size_t size()
 		{
 			return vct_index.size();
+		}
+
+		/*! \brief Return the sorted vector of the indexes
+		 *
+		 * \return return the sorted vector of the indexes
+		 */
+		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> &
+		private_get_vct_index()
+		{
+			return vct_index;
 		}
 
 		/*! \brief Transfer from device to host

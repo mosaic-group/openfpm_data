@@ -11,7 +11,6 @@
 #include "util/cuda/moderngpu/kernel_reduce.hxx"
 #include "util/cuda/moderngpu/kernel_segreduce.hxx"
 
-
 BOOST_AUTO_TEST_SUITE( modern_gpu_tests )
 
 BOOST_AUTO_TEST_CASE( modern_gpu_transform_lbs )
@@ -210,6 +209,7 @@ BOOST_AUTO_TEST_CASE( modern_gpu_seg_reduce )
 
 	// Test the cell list
 }
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

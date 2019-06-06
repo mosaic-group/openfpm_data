@@ -145,7 +145,7 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
-		void * ptr_old = &base[0];
+		void * ptr_old = &base.template get<0>(0);
 #endif
 
 		base.add_no_device();
@@ -153,10 +153,10 @@ public:
 
 #ifdef SE_CLASS2
 
-		if (ptr_old != &base[0])
+		if (ptr_old != &base.template get<0>(0))
 		{
 			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+			check_new(&base.template get<0>(0),base.size()*sizeof(T),VECTOR_STD_EVENT,1);
 		}
 
 #endif
@@ -169,17 +169,17 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
-		void * ptr_old = &base[0];
+		void * ptr_old = &base.template get<0>(0);
 #endif
 
 		base.add_no_device();
 
 #ifdef SE_CLASS2
 
-		if (ptr_old != &base[0])
+		if (ptr_old != &base.template get<0>(0))
 		{
 			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
+			check_new(&base.template get<0>(0),base.size()*sizeof(T),VECTOR_STD_EVENT,1);
 		}
 
 #endif
@@ -416,7 +416,7 @@ public:
 	{
 #ifdef SE_CLASS2
 		check_delete(this);
-		check_delete(&base[0]);
+		check_delete(&base.template get<0>(0));
 #endif
 	}
 
