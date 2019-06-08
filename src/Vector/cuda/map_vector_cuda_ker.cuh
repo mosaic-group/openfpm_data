@@ -107,7 +107,7 @@ namespace openfpm
 		 *
 		 */
 		template <unsigned int p>
-		__device__ inline auto get(size_t id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+		__device__ inline auto get(unsigned int id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
 			grid_key_dx<1> key(id);
 
@@ -123,7 +123,7 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
-		inline __device__ auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>(id)))
+		inline __device__ auto get(unsigned int id) -> decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 			grid_key_dx<1> key(id);
 
@@ -139,7 +139,7 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
-		inline __device__ auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
+		inline __device__ auto get(unsigned int id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 			grid_key_dx<1> key(id);
 
@@ -158,7 +158,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline __device__ auto get_o(size_t id) const -> decltype(base.get_o(id))
+		inline __device__ auto get_o(unsigned int id) const -> decltype(base.get_o(id))
 		{
 			grid_key_dx<1> key(id);
 
@@ -177,7 +177,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline __device__ auto get_o(size_t id) -> decltype(base.get_o(id))
+		inline __device__ auto get_o(unsigned int id) -> decltype(base.get_o(id))
 		{
 			grid_key_dx<1> key(id);
 
@@ -207,7 +207,7 @@ namespace openfpm
 		 *
 		 */
 		template <unsigned int p>
-		__device__ __host__ inline auto get(size_t id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+		__device__ __host__ inline auto get(unsigned int id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
 			grid_key_dx<1> key(id);
 
@@ -257,6 +257,17 @@ namespace openfpm
 			return base.template getPointer<p>();
 		}
 
+		/*! \brief Get the pointer for the property p
+		 *
+		 * \tparam property p
+		 *
+		 */
+		template<unsigned int p> __device__ __host__ const void * getPointer() const
+		{
+			//! copy the element
+			return base.template getPointer<p>();
+		}
+
 		/*! \brief It set an element of the vector from a object that is a subset of the vector properties
 		 *
 		 * The number of properties in the source vector must be smaller than the destination
@@ -272,7 +283,7 @@ namespace openfpm
 		 * \param v source vector
 		 *
 		 */
-		template <typename encap_S, unsigned int ...args> void set_o(size_t i, const encap_S & obj)
+		template <typename encap_S, unsigned int ...args> void set_o(unsigned int i, const encap_S & obj)
 		{
 			// write the object in the last element
 			object_s_di<encap_S,decltype(get(i)),OBJ_ENCAP,args...>(obj,get(i));
@@ -285,7 +296,7 @@ namespace openfpm
 		 * \param src source element
 		 *
 		 */
-		__device__ void set(size_t id, const vector_gpu_ker<T_,layout_base> & v, size_t src)
+		__device__ void set(unsigned int id, const vector_gpu_ker<T_,layout_base> & v, unsigned int src)
 		{
 			base.set(id,v.base,src);
 		}
@@ -297,9 +308,33 @@ namespace openfpm
 		 * \param src source element
 		 *
 		 */
-		template<unsigned int ... prp> __device__ void set(size_t id, const vector_gpu_ker<T_,layout_base> & v, size_t src)
+		template<unsigned int ... prp> __device__ void set(unsigned int id, const vector_gpu_ker<T_,layout_base> & v, unsigned int src)
 		{
 			base.template set<prp...>(id,v.base,src);
+		}
+
+		/*! \brief Get an iterator for the GPU
+		 *
+		 *
+		 */
+		__host__ ite_gpu<1> getGPUIterator(size_t n_thr = 1024) const
+		{
+			grid_key_dx<1> start(0);
+			grid_key_dx<1> stop(size()-1);
+
+			return base.getGPUIterator(start,stop,n_thr);
+		}
+
+		/*! \brief Get an iterator for the GPU
+		 *
+		 *
+		 */
+		ite_gpu<1> getGPUIteratorTo(size_t stop, size_t n_thr = 1024) const
+		{
+			grid_key_dx<1> start(0);
+			grid_key_dx<1> stop_(stop);
+
+			return base.getGPUIterator(start,stop_,n_thr);
 		}
 
 		/*! \brief operator= this operator absorb the pointers, consider that this object wrap device pointers
@@ -313,6 +348,16 @@ namespace openfpm
 			base = v.base;
 
 			return *this;
+		}
+
+		/*! \brief Return the base
+		 *
+		 * \return the base
+		 *
+		 */
+		__device__ grid_gpu_ker<1,T_,layout_base> & getBase()
+		{
+			return base;
 		}
 
 		void * internal_get_size_pointer()	{return &v_size;}

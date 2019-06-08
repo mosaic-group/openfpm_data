@@ -100,7 +100,7 @@ class grid_cpu
 template<unsigned int dim, typename T, typename S>
 class grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>
 {
-	typedef typename apply_transform<memory_traits_inte,T>::type T_;
+	typedef typename apply_transform<memory_traits_lin,T>::type T_;
 
 public:
 

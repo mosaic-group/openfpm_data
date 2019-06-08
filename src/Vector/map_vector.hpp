@@ -1836,9 +1836,6 @@ namespace openfpm
 		 */
 		vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> toKernel()
 		{
-//			if (base.size() == 0)
-//			{std::cout << __FILE__ << ":" << __LINE__ << " Warning you are off-loading with toGPU a vector that seem to be empty or not initialized" << std::endl; }
-
 			vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> v(v_size,this->base.toKernel());
 
 			return v;

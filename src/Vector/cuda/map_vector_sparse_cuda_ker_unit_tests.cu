@@ -14,7 +14,7 @@
 #include "Vector/map_vector.hpp"
 #include <map>
 
-struct DataBlock
+/*struct DataBlock
 {
 	static const unsigned int length = 64;
 	float block[length];
@@ -33,7 +33,7 @@ struct DataBlock
 	{
 		return *this;
 	}
-};
+};*/
 
 template<typename vd_type>
 __global__ void test_insert_sparse(vd_type vd_insert)
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 	BOOST_REQUIRE_EQUAL(match,true);
 }
 
-BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_block )
+/*BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_block )
 {
 	openfpm::vector_sparse_gpu<aggregate<size_t, DataBlock>> vs;
 
@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_block )
 	BOOST_REQUIRE_EQUAL(match,true);
 
 	vs.clear();
-}
+}*/
 
 BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 {

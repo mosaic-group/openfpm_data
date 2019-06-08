@@ -103,6 +103,22 @@ struct has_typedef_type<T, typename Void< typename T::type>::type> : std::true_t
 {};
 
 template<typename T, typename Sfinae = void>
+struct has_vector_kernel: std::false_type {};
+
+/*! \brief has_vector_kernel check if a type has defined a member data
+ *
+ * ### Example
+ *
+ * \snippet util_test.hpp Check has_data
+ *
+ * return true if T::vector_kernel is a valid type
+ *
+ */
+template<typename T>
+struct has_vector_kernel<T, typename Void< typename T::vector_kernel >::type> : std::true_type
+{};
+
+template<typename T, typename Sfinae = void>
 struct has_data: std::false_type {};
 
 /*! \brief has_data check if a type has defined a member data
@@ -208,6 +224,24 @@ template<typename ObjType>
 struct has_pack<ObjType, typename Void<decltype( ObjType::pack() )>::type> : std::true_type
 {};
 
+/*! \brief has_toKernel check if a type has defined a
+ * method called toKernel
+ *
+ * ### Example
+ *
+ * \snippet
+ *
+ * return true if T.toKernel() is a valid expression
+ * and produce a defined type
+ *
+ */
+
+template<typename ObjType, typename Sfinae = void>
+struct has_toKernel: std::false_type {};
+
+template<typename ObjType>
+struct has_toKernel<ObjType, typename Void<decltype( std::declval<ObjType>().toKernel() )>::type> : std::true_type
+{};
 
 /*! \brief has_packRequest check if a type has defined a
  * method called packRequest

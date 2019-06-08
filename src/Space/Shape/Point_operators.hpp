@@ -8,6 +8,8 @@
 #ifndef OPENFPM_DATA_SRC_SPACE_SHAPE_POINT_OPERATORS_HPP_
 #define OPENFPM_DATA_SRC_SPACE_SHAPE_POINT_OPERATORS_HPP_
 
+#include "util/multi_array_openfpm/array_openfpm.hpp"
+
 template<unsigned int dim ,typename T> class Point;
 
 #define POINT_SUM 1
@@ -778,6 +780,37 @@ template<unsigned int dim, typename T> __device__ __host__  point_expression<con
 	return point_expression<const T[dim]>(a);
 }
 
+template<unsigned int dim, typename T>
+struct ger
+{
+	template<typename vmpl> __device__ __host__
+	__device__ __host__ static point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>
+	getExprR(const openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> & a)
+	{
+		return point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>(a);
+	}
+
+	__device__ __host__ static point_expression<const T[dim]>
+	getExprR(T (& a)[dim])
+	{
+		return point_expression<const T[dim]>(a);
+	}
+
+	template<typename vmpl> __device__ __host__
+	__device__ __host__ static point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>
+	getExprL(const openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> & a)
+	{
+		return point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>(a);
+	}
+
+	__device__ __host__ static point_expression<const T[dim]>
+	getExprL(T (& a)[dim])
+	{
+		return point_expression<const T[dim]>(a);
+	}
+};
+
+
 /*! \brief MACRO that define operator for point template expression parsing
  *
  *
@@ -795,11 +828,30 @@ operator_name(const Point<dim,T> & va, const point_expression<const T[(unsigned 
 	return exp_sum;\
 }\
 \
+template<unsigned int dim, typename T, typename vmpl>\
+__device__ __host__  inline point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,OP_ID>\
+operator_name(const Point<dim,T> & va, const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & vb)\
+{\
+	point_expression_op<Point<dim,T>,Point<dim,T>,point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,OP_ID> exp_sum(va,vb);\
+\
+	return exp_sum;\
+}\
+\
 template<unsigned int dim, typename T>\
 __device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,Point<dim,T>,OP_ID>\
 operator_name(const point_expression<const T[(unsigned int)dim]> & va, const Point<dim,T> & vb)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,Point<dim,T>,OP_ID> exp_sum(va,vb);\
+\
+	return exp_sum;\
+}\
+\
+template<unsigned int dim, typename T, typename vmpl>\
+__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,Point<dim,T>,OP_ID>\
+operator_name(const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & va,\
+              const Point<dim,T> & vb)\
+{\
+	point_expression_op<Point<dim,T>,point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,Point<dim,T>,OP_ID> exp_sum(va,vb);\
 \
 	return exp_sum;\
 }\
@@ -813,11 +865,43 @@ operator_name(const point_expression<const T[dim]> & va, double d)\
 	return exp_sum;\
 }\
 \
+template<typename T, typename vmpl>\
+__device__ __host__  inline point_expression_op<Point<subar_dim<vmpl>::type::value,T>,\
+												point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+												point_expression<double>,\
+												OP_ID>\
+operator_name(const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & va, double d)\
+{\
+	point_expression_op<Point<subar_dim<vmpl>::type::value,T>,\
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+						point_expression<double>,\
+						OP_ID>\
+						exp_sum(va,point_expression<double>(d));\
+\
+	return exp_sum;\
+}\
+\
 template<unsigned int dim, typename T>\
 __device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<double>,point_expression<const T[dim]>,OP_ID>\
 operator_name(double d, const point_expression<const T[dim]> & va)\
 {\
 	point_expression_op<Point<dim,T>,point_expression<double>,point_expression<const T[dim]>,OP_ID> exp_sum(point_expression<double>(d),va);\
+\
+	return exp_sum;\
+}\
+\
+template<typename T, typename vmpl>\
+__device__ __host__  inline point_expression_op<Point<subar_dim<vmpl>::type::value,T>,\
+												point_expression<double>,\
+												point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+												OP_ID>\
+operator_name(double d, const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & va)\
+{\
+	point_expression_op<Point<subar_dim<vmpl>::type::value,T>,\
+						point_expression<double>,\
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+						OP_ID>\
+						exp_sum(point_expression<double>(d),va);\
 \
 	return exp_sum;\
 }\
@@ -831,20 +915,27 @@ operator_name(const point_expression<const T[dim]> & va, const point_expression<
 	return exp_sum;\
 }\
 \
-template<unsigned int dim, typename T>\
-__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<T[dim]>,OP_ID>\
-operator_name(const point_expression<const T[dim]> & va, const point_expression<T[dim]> & vb)\
+template<typename T, typename vmpl>\
+__device__ __host__  inline point_expression_op<Point<subar_dim<vmpl>::type::value,T>,\
+												point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+												point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+												OP_ID>\
+operator_name(const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & va,\
+			  const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & vb)\
 {\
-	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<T[dim]>,OP_ID> exp_sum(va,vb);\
+	point_expression_op<Point<subar_dim<vmpl>::type::value,T>,\
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+						OP_ID> exp_sum(va,vb);\
 \
 	return exp_sum;\
 }\
 \
 template<unsigned int dim, typename T>\
-__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<const T[dim]>,OP_ID>\
-operator_name(const point_expression<T[dim]> & va, const point_expression<const T[dim]> & vb)\
+__device__ __host__  inline point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<T[dim]>,OP_ID>\
+operator_name(const point_expression<const T[dim]> & va, const point_expression<T[dim]> & vb)\
 {\
-	point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<const T[dim]>,OP_ID> exp_sum(va,vb);\
+	point_expression_op<Point<dim,T>,point_expression<const T[dim]>,point_expression<T[dim]>,OP_ID> exp_sum(va,vb);\
 \
 	return exp_sum;\
 }\
@@ -858,11 +949,43 @@ operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, const point_ex
 	return exp_sum;\
 }\
 \
+template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T, typename vmpl>\
+__device__ __host__  inline point_expression_op<orig,\
+												point_expression_op<orig,exp1,exp2,op1>,\
+												point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+												OP_ID>\
+operator_name(const point_expression_op<orig,exp1,exp2,op1> & va,\
+			  const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & vb)\
+{\
+	point_expression_op<orig,\
+						point_expression_op<orig,exp1,exp2,op1>,\
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+						OP_ID> exp_sum(va,vb);\
+\
+	return exp_sum;\
+}\
+\
 template<typename orig, typename exp1 , typename exp2, unsigned int op1, unsigned int dim, typename T>\
 __device__ __host__ inline point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,OP_ID>\
 operator_name(const point_expression<T[dim]> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)\
 {\
 	point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,OP_ID> exp_sum(va,vb);\
+\
+	return exp_sum;\
+}\
+\
+template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T, typename vmpl>\
+__device__ __host__ inline point_expression_op<orig,\
+											   point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+											   point_expression_op<orig,exp1,exp2,op1>,\
+											   OP_ID>\
+operator_name(const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & va,\
+			  const point_expression_op<orig,exp1,exp2,op1> & vb)\
+{\
+	point_expression_op<orig,\
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,\
+						point_expression_op<orig,exp1,exp2,op1>,\
+						OP_ID> exp_sum(va,vb);\
 \
 	return exp_sum;\
 }\
@@ -1062,8 +1185,9 @@ operator-(const Point<dim,T> & va)
 }
 
 
-///////////////////// DEFINITION OF THE OPERATOR* ////////////////
-///////////////// Template expression parsing ////////////////////
+///////////////////// DEFINITION OF THE OPERATOR* (Note * is scalar product) ////////////////
+///////////////////// This is the reason why we do not use CREATE_POINT_OPERATOR ////////////
+///////////////// Template expression parsing ///////////////////////////////////////////////
 
 
 template<unsigned int dim, typename T>
@@ -1075,11 +1199,44 @@ operator*(const point_expression<T[dim]> & va, double d)
 	return exp_sum;
 }
 
+template<typename T, typename vmpl>
+__device__ __host__ inline point_expression_op<Point<subar_dim<vmpl>::type::value,T>,
+											   point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+											   point_expression<double>,
+											   POINT_MUL>
+operator*(const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & va,
+		  double d)
+{
+	point_expression_op<Point<subar_dim<vmpl>::type::value,T>,
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+						point_expression<double>,
+						POINT_MUL> exp_sum(va,point_expression<double>(d));
+
+	return exp_sum;
+}
+
 template<unsigned int dim, typename T>
 __device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<double>,point_expression<T[dim]>,POINT_MUL>
-operator*(double d, const point_expression<T[dim]> & va)
+operator*(double d,
+		  const point_expression<T[dim]> & va)
 {
 	point_expression_op<Point<dim,T>,point_expression<double>,point_expression<T[dim]>,POINT_MUL> exp_sum(point_expression<double>(d),va);
+
+	return exp_sum;
+}
+
+template<typename T, typename vmpl>
+__device__ __host__ inline point_expression_op<Point<subar_dim<vmpl>::type::value,T>,
+											   point_expression<double>,
+											   point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+											   POINT_MUL>
+operator*(double d,
+		  const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & va)
+{
+	point_expression_op<Point<subar_dim<vmpl>::type::value,T>,
+						point_expression<double>,
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+						POINT_MUL> exp_sum(point_expression<double>(d),va);
 
 	return exp_sum;
 }
@@ -1089,6 +1246,22 @@ __device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<T[d
 operator*(const point_expression<T[dim]> & va, const point_expression<T[dim]> & vb)
 {
 	point_expression_op<Point<dim,T>,point_expression<T[dim]>,point_expression<T[dim]>,POINT_MUL_POINT> exp_sum(va,vb);
+
+	return exp_sum;
+}
+
+template<typename T, typename vmpl>
+__device__ __host__ inline point_expression_op<Point<subar_dim<vmpl>::type::value,T>,
+											   point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+											   point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+											   POINT_MUL_POINT>
+operator*(const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & va,
+		  const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & vb)
+{
+	point_expression_op<Point<subar_dim<vmpl>::type::value,T>,
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+						POINT_MUL_POINT> exp_sum(va,vb);
 
 	return exp_sum;
 }
@@ -1111,10 +1284,37 @@ template<typename orig,
          unsigned int dim,
          typename T,
          typename sfinae = typename std::enable_if< point_expression_op<orig,exp1,exp2,op1>::nvals == dim >::type >
-__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,POINT_MUL_POINT>
+__device__ __host__ inline point_expression_op<orig,
+											   point_expression_op<orig,exp1,exp2,op1>,
+											   point_expression<T[dim]>,
+											   POINT_MUL_POINT>
 operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression<T[dim]> & vb)
 {
-	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,POINT_MUL_POINT> exp_sum(va,vb);
+	point_expression_op<orig,
+						point_expression_op<orig,exp1,exp2,op1>,
+						point_expression<T[dim]>,
+						POINT_MUL_POINT> exp_sum(va,vb);
+
+	return exp_sum;
+}
+
+template<typename orig,
+         typename exp1 ,
+         typename exp2,
+         unsigned int op1,
+         typename T,
+         typename vmpl,
+         typename sfinae = typename std::enable_if< point_expression_op<orig,exp1,exp2,op1>::nvals == subar_dim<vmpl>::type::value >::type >
+__device__ __host__ inline point_expression_op<orig,
+											   point_expression_op<orig,exp1,exp2,op1>,
+											   point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+											   POINT_MUL_POINT>
+operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & vb)
+{
+	point_expression_op<orig,
+						point_expression_op<orig,exp1,exp2,op1>,
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+						POINT_MUL_POINT> exp_sum(va,vb);
 
 	return exp_sum;
 }
@@ -1130,6 +1330,27 @@ __device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp
 operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression<T[dim]> & vb)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T[dim]>,POINT_MUL> exp_sum(va,vb);
+
+	return exp_sum;
+}
+
+template<typename orig,
+         typename exp1 ,
+         typename exp2,
+         unsigned int op1,
+         typename T,
+         typename vmpl,
+         typename sfinae = typename std::enable_if< point_expression_op<orig,exp1,exp2,op1>::nvals == 1 >::type >
+__device__ __host__ inline point_expression_op<orig,
+											   point_expression_op<orig,exp1,exp2,op1>,
+											   point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+											   POINT_MUL>
+operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & vb)
+{
+	point_expression_op<orig,
+						point_expression_op<orig,exp1,exp2,op1>,
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+						POINT_MUL> exp_sum(va,vb);
 
 	return exp_sum;
 }
@@ -1155,6 +1376,27 @@ template<typename orig,
          typename exp1,
          typename exp2,
          unsigned int op1,
+         typename T,
+         typename vmpl,
+         typename sfinae = typename std::enable_if< point_expression_op<orig,exp1,exp2,op1>::nvals == subar_dim<vmpl>::type::value >::type >
+__device__ __host__ inline point_expression_op<orig,
+											   point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+											   point_expression_op<orig,exp1,exp2,op1>,
+											   POINT_MUL_POINT>
+operator*(const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)
+{
+	point_expression_op<orig,
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+						point_expression_op<orig,exp1,exp2,op1>,
+						POINT_MUL_POINT> exp_sum(va,vb);
+
+	return exp_sum;
+}
+
+template<typename orig,
+         typename exp1,
+         typename exp2,
+         unsigned int op1,
          unsigned int dim,
          typename T,
          typename sfinae = typename std::enable_if< point_expression_op<orig,exp1,exp2,op1>::nvals == 1 >::type >
@@ -1162,6 +1404,27 @@ __device__ __host__ inline point_expression_op<orig,point_expression<T[dim]>,poi
 operator*(const point_expression<T[dim]> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)
 {
 	point_expression_op<orig,point_expression<T[dim]>,point_expression_op<orig,exp1,exp2,op1>,POINT_MUL> exp_sum(va,vb);
+
+	return exp_sum;
+}
+
+template<typename orig,
+         typename exp1,
+         typename exp2,
+         unsigned int op1,
+         typename T,
+         typename vmpl,
+         typename sfinae = typename std::enable_if< point_expression_op<orig,exp1,exp2,op1>::nvals == 1 >::type >
+__device__ __host__ inline point_expression_op<orig,
+											   point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+											   point_expression_op<orig,exp1,exp2,op1>,
+											   POINT_MUL>
+operator*(const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & va, const point_expression_op<orig,exp1,exp2,op1> & vb)
+{
+	point_expression_op<orig,
+						point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+						point_expression_op<orig,exp1,exp2,op1>,
+						POINT_MUL> exp_sum(va,vb);
 
 	return exp_sum;
 }
@@ -1594,6 +1857,63 @@ public:
 	 */
 	__device__ __host__ inline point_expression(const T (& d)[dim])
 	:d(d)
+	{
+	}
+
+	/*! \brief This function must be called before value
+	 *
+	 * it calculate the scalar product before return the values
+	 *
+	 */
+	__device__ __host__ inline void init() const
+	{
+	}
+
+	/*! \brief Evaluate the expression at coordinate k
+	 *
+	 * It just return the value set in the constructor
+	 *
+	 * \param k coordinate
+	 *
+	 * \return the value
+	 *
+	 */
+	__device__ __host__ inline T value(const size_t k) const
+	{
+		return d[k];
+	}
+};
+
+/*! \brief Specialization for a const array of dimension dim
+ *
+ * \tparam T type of the array
+ * \tparam dim dimensionality of the array
+ *
+ */
+template<typename T, typename vmpl>
+class point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>
+{
+	//! array view of dimension dim
+	const openfpm::detail::multi_array::const_sub_array_openfpm<T,1,vmpl,const T *> d;
+
+public:
+
+	//! indicate that init must be called before value
+	typedef int has_init;
+
+	//! indicate that this class encapsulate an expression
+	typedef int is_expression;
+
+	//! this operation produce a vector as result of size dims
+	static const unsigned int nvals = subar_dim<vmpl>::type::value;
+
+	/*! \brief construct from an array of dimension dim
+	 *
+	 * \param d array
+	 *
+	 */
+	__device__ __host__ inline point_expression(const openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> & d)
+	:d(d.origin(),d.strides())
 	{
 	}
 

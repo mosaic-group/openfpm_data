@@ -8,6 +8,7 @@
 #ifndef CELLLIST_HPP_
 #define CELLLIST_HPP_
 
+#include "CellList_def.hpp"
 #include "Vector/map_vector.hpp"
 #include "CellDecomposer.hpp"
 #include "Space/SpaceBox.hpp"
