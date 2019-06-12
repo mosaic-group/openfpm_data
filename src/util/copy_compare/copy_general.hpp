@@ -24,6 +24,48 @@
  *
  */
 template<typename Tdst, typename Tsrc>
+struct max_
+{
+	/*! \brief Defition of the add operation
+	 *
+	 * \param dst Destination object
+	 * \param src Source object
+	 *
+	 */
+	static inline void operation(Tdst & dst, const Tsrc & src)
+	{
+		dst = (src > dst)?src:dst;
+	}
+};
+
+/*! \brief This structure define the operation add to use with copy general
+ *
+ * \tparam Tdst destination object type
+ * \tparam Tsrc source object type
+ *
+ */
+template<typename Tdst, typename Tsrc>
+struct min_
+{
+	/*! \brief Defition of the add operation
+	 *
+	 * \param dst Destination object
+	 * \param src Source object
+	 *
+	 */
+	static inline void operation(Tdst & dst, const Tsrc & src)
+	{
+		dst = (src < dst)?src:dst;
+	}
+};
+
+/*! \brief This structure define the operation add to use with copy general
+ *
+ * \tparam Tdst destination object type
+ * \tparam Tsrc source object type
+ *
+ */
+template<typename Tdst, typename Tsrc>
 struct add_
 {
 	/*! \brief Defition of the add operation

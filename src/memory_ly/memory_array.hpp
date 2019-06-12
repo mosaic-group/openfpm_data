@@ -91,7 +91,11 @@ class memory_array
 		return sz;
 	}
 
-	//! Set the internal pointer to the indicated chunk of memory
+	/*! \brief Set the internal pointer to the indicated chunk of memory
+	 *
+	 * \param ptr_ pointer
+	 *
+	 */
 	void set_pointer(void * ptr_)
 	{
 		ptr = static_cast<T *>(ptr_);

@@ -126,7 +126,7 @@ public:
 	 */
 	template<typename Mem> bool Intersect(const encapc<1,Box<dim,T>,Mem> & e_b, Box<dim,T> & b_out) const
 	{
-		return Intersect(e_b,b_out);
+		return Intersect(Box<dim,T>(e_b),b_out);
 	}
 
 	/*!

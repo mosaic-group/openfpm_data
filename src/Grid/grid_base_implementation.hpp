@@ -474,7 +474,7 @@ public:
 	// Implementation of packer and unpacker for grid
 	#include "grid_pack_unpack.ipp"
 
-	//! it define that it is a grid
+	//! it define that this data-structure is a grid
 	typedef int yes_i_am_grid;
 
 	//! Definition of the layout
@@ -795,6 +795,26 @@ public:
 		return &mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
 	}
 
+	/*! \brief In this case insert is equivalent to get
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return the reference of the element
+	 *
+	 */
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	inline r_type insert(const grid_key_dx<dim> & v1)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(v1);
+#endif
+		return this->get<p>(v1);
+	}
+
 	/*! \brief Get the reference of the selected element
 	 *
 	 * \param v1 grid_key that identify the element in the grid
@@ -872,7 +892,7 @@ public:
 		check_init();
 		check_bound(lin_id);
 #endif
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin(data_,g1,lin_id);
+		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin_const(data_,g1,lin_id);
 	}
 
 
@@ -992,11 +1012,101 @@ public:
 		memset(getPointer(),fl,size() * sizeof(T));
 	}
 
-	/*! \brief Resize the space
+	/*! \brief Remove all the points in this region
 	 *
-	 * Resize the space to a new grid, the element are retained on the new grid,
-	 * if the new grid is bigger the new element are now initialized, if is smaller
-	 * the data are cropped
+	 * For this case this function does nothing
+	 *
+	 * \param box_src box to kill the points
+	 *
+	 */
+	void remove(Box<dim,size_t> & section_to_delete)
+	{}
+
+	/*! \brief copy an external grid into a specific place into this grid
+	 *
+	 * It copy the area indicated by the  box_src from grid_src into this grid
+	 * at the place box_dst. The volume of box_src and box_dst
+	 *
+	 * \param grid_src source grid
+	 * \param box_src source box
+	 * \param box_dst destination box
+	 *
+	 */
+	void copy_to(const grid_base_impl<dim,T,S,layout_,layout_base> & grid_src,
+			     const Box<dim,size_t> & box_src,
+				 const Box<dim,size_t> & box_dst)
+	{
+		// sub-grid where to unpack
+		grid_key_dx_iterator_sub<dim> src(grid_src.getGrid(),box_src.getKP1(),box_src.getKP2());
+		grid_key_dx_iterator_sub<dim> dst(getGrid(),box_dst.getKP1(),box_dst.getKP2());
+
+		while (src.isNext())
+		{
+			auto key_src = src.get();
+			auto key_dst = dst.get();
+
+			get_o(key_dst) = grid_src.get_o(key_src);
+
+			++src;
+			++dst;
+		}
+	}
+
+	/*! \brief It does nothing
+	 *
+	 *
+	 *
+	 */
+	void clear()
+	{}
+
+	/*! \brief copy an external grid into a specific place into this grid
+	 *
+	 * It copy the area indicated by the  box_src from grid_src into this grid
+	 * at the place box_dst. The volume of box_src and box_dst
+	 *
+	 * \param grid_src source grid
+	 * \param box_src source box
+	 * \param box_dst destination box
+	 *
+	 */
+	template<template<typename,typename> class op, unsigned int ... prp>
+	void copy_to_op(const grid_base_impl<dim,T,S,layout_,layout_base> & gs,
+			     const Box<dim,size_t> & bx_src,
+				 const Box<dim,size_t> & bx_dst)
+	{
+		grid_key_dx_iterator_sub<dim> sub_src(gs.getGrid(),bx_src.getKP1(),bx_src.getKP2());
+		grid_key_dx_iterator_sub<dim> sub_dst(this->getGrid(),bx_dst.getKP1(),bx_dst.getKP2());
+
+		while (sub_src.isNext())
+		{
+			// write the object in the last element
+			object_s_di_op<op,decltype(gs.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(gs.get_o(sub_src.get()),this->get_o(sub_dst.get()));
+
+			++sub_src;
+			++sub_dst;
+		}
+
+/*		grid_key_dx_iterator_sub<dim> sub_src(grid_src.getGrid(),box_src.getKP1(),box_src.getKP2());
+		grid_key_dx_iterator_sub<dim> sub_dst(this->getGrid(),box_dst.getKP1(),box_dst.getKP2());
+
+//		const auto & gs = loc_grid.get(i);
+//		auto & gd = loc_grid.get(sub_id_dst);
+
+		while (sub_src.isNext())
+		{
+			// write the object in the last element
+			object_s_di_op<op,decltype(grid_src.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(grid_src.get_o(sub_src.get()),this->get_o(sub_dst.get()));
+
+			++sub_src;
+			++sub_dst;
+		}*/
+	}
+
+	/*! \brief Resize the grid
+	 *
+	 * Resize the grid to the old information is retained on the new grid,
+	 * if the new grid is bigger. if is smaller the data are cropped
 	 *
 	 * \param sz reference to an array of dimension dim
 	 * \param opt options for resize. In case we know that the data are only on device memory we can use DATA_ONLY_DEVICE,
@@ -1320,13 +1430,13 @@ public:
 	 * \return a sub-grid iterator
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop) const
+/*	inline grid_key_dx_iterator_sub<dim> getSubIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
 		return g1.getSubIterator(start,stop);
-	}
+	}*/
 
 	/*! \brief Return a sub-grid iterator
 	 *

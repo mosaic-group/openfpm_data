@@ -374,6 +374,10 @@ public:
         return false;
     }
 
+	static bool noPointers()
+	{
+		return true;
+	}
 
 	/*! \brief set the Key from a list of numbers
 	 *

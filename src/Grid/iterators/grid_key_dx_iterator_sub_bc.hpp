@@ -101,7 +101,11 @@ public:
 	 * \param bc boundary conditions
 	 *
 	 */
-	template<typename T> grid_key_dx_iterator_sub_bc(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start , const grid_key_dx<dim> & stop, const size_t (& bc)[dim])
+	template<typename T>
+	grid_key_dx_iterator_sub_bc(const grid_sm<dim,T> & g,
+								const grid_key_dx<dim> & start,
+								const grid_key_dx<dim> & stop,
+								const size_t (& bc)[dim])
 	:act(0)
 	{
 		Initialize(g,start,stop,bc);
@@ -115,7 +119,10 @@ public:
 	 * \param bc boundary conditions
 	 *
 	 */
-	template<typename T> void Initialize(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start , const grid_key_dx<dim> & stop, const size_t (& bc)[dim])
+	template<typename T> void Initialize(const grid_sm<dim,T> & g,
+										 const grid_key_dx<dim> & start ,
+										 const grid_key_dx<dim> & stop,
+										 const size_t (& bc)[dim])
 	{
 		// copy the boundary conditions
 
@@ -186,14 +193,14 @@ public:
 
 			// if intersect add in the box list
 			if (intersect == true)
-				boxes.push_back(b_out);
+			{boxes.push_back(b_out);}
 
 			++it;
 		}
 
 		// initialize the first iterator
 		if (boxes.size() > 0)
-			grid_key_dx_iterator_sub<dim,stencil,warn>::reinitialize(grid_key_dx_iterator_sub<dim>(g,boxes[0].getKP1(),boxes[0].getKP2()));
+		{grid_key_dx_iterator_sub<dim,stencil,warn>::reinitialize(grid_key_dx_iterator_sub<dim>(g,boxes[0].getKP1(),boxes[0].getKP2()));}
 	}
 
 	/*! \brief Get the next element

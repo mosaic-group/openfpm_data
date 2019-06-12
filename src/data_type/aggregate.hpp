@@ -68,6 +68,29 @@ struct copy_fusion_vector
 #define SE3_ADD_PROP(i) size_t[i+1],size_t
 #define SE3_SUB_MAX_PROP -2
 
+/*! \brief An aggregate that accept a boost fusion vector as type
+ *
+ *
+ *
+ */
+template<typename T>
+struct aggregate_bfv
+{
+	//! type the object store
+	typedef T type;
+
+	//! real type the object store
+	typedef T type_real;
+
+	//! data to store
+	type data;
+
+	aggregate_bfv()	{};
+
+	static const unsigned int max_prop = boost::mpl::size<type>::type::value;
+	static const unsigned int max_prop_real = boost::mpl::size<type>::type::value + SE3_SUB_MAX_PROP;
+};
+
 /*! \brief aggregate of properties, from a list of object if create a struct that follow the OPENFPM native structure
  *
  * see the Wiki for more information about the OPENFPM native structure format
@@ -139,6 +162,25 @@ struct aggregate
 
 #else
 
+/*! \brief An aggregate that accept a boost fusion vector as type
+ *
+ *
+ *
+ */
+template<typename T>
+struct aggregate_bfv
+{
+	//! type the object store
+	typedef T type;
+
+	//! real type the object store
+	typedef T type_real;
+
+	//! data to store
+	type data;
+
+	static const unsigned int max_prop = boost::mpl::size<type>::type::value;
+};
 
 /*! \brief aggregate of properties, from a list of object if create a struct that follow the OPENFPM native structure
  *

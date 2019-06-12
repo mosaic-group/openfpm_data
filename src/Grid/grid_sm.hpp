@@ -705,7 +705,7 @@ public:
 	 * \param stop stop point
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<N> getSubIterator(grid_key_dx<N> & start, grid_key_dx<N> & stop) const
+	inline grid_key_dx_iterator_sub<N> getSubIterator(const grid_key_dx<N> & start, const grid_key_dx<N> & stop) const
 	{
 		return grid_key_dx_iterator_sub<N>(*this,start,stop);
 	}
