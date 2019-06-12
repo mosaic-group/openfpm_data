@@ -79,7 +79,7 @@ namespace openfpm
 		 * \return the size
 		 *
 		 */
-		__device__ unsigned int size() const
+		__device__ __host__ unsigned int size() const
 		{
 			return v_size;
 		}

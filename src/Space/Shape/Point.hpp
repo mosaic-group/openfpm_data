@@ -199,7 +199,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	inline T& operator[](size_t i)
+	__device__ __host__ inline T& operator[](size_t i)
 	{
 		return get(i);
 	}
@@ -212,7 +212,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	inline const T& operator[](size_t i) const
+	__device__ __host__ inline const T& operator[](size_t i) const
 	{
 		return get(i);
 	}
