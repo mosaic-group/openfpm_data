@@ -5,13 +5,13 @@
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
-#include "SparseGridGpu/SparseGridGpu.hpp"
-#include "SparseGridGpu/SparseGridGpu_ker.cuh"
-#include "SparseGridGpu/SparseGridGpu_kernels.cuh"
+#include "SparseGridGpu/BlockMapGpu.hpp"
+#include "SparseGridGpu/BlockMapGpu_ker.cuh"
+#include "SparseGridGpu/BlockMapGpu_kernels.cuh"
 #include "SparseGridGpu/DataBlock.cuh"
 #include "Vector/cuda/map_vector_sparse_cuda_kernels.cuh"
 
-BOOST_AUTO_TEST_SUITE(SparseGridGpu_kernels_tests)
+BOOST_AUTO_TEST_SUITE(BlockMapGpu_kernels_tests)
 
 BOOST_AUTO_TEST_CASE (testSegreduce)
         {
@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE (testSegreduce)
                 openfpm::vector_gpu<aggregate<MaskBlockT, BlockT>> outputData;
                 outputData.resize(segments.size()-1);
 
-                SparseGridGpuKernels::segreduce<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
+                BlockMapGpuKernels::segreduce<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
                 data.toKernel(),
                 segments.toKernel(),
                 data.toKernel(),
@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE (testSegreduce)
                 );
 
                 // Segreduce on mask
-                SparseGridGpuKernels::segreduce<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
+                BlockMapGpuKernels::segreduce<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
                 data.toKernel(),
                 segments.toKernel(),
                 data.toKernel(),
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE (testSegreduce_vector)
                 openfpm::vector_gpu<aggregate<MaskBlockT, BlockT[3]>> outputData;
                 outputData.resize(segments.size()-1);
 
-                SparseGridGpuKernels::segreduce<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
+                BlockMapGpuKernels::segreduce<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
                 data.toKernel(),
                 segments.toKernel(),
                 data.toKernel(),
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE (testSegreduce_vector)
                 );
 
                 // Segreduce on mask
-                SparseGridGpuKernels::segreduce<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
+                BlockMapGpuKernels::segreduce<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
                 data.toKernel(),
                 segments.toKernel(),
                 data.toKernel(),
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE (testSegreduce_vector)
 //        openfpm::vector_gpu<aggregate<MaskBlockT, BlockT>> outputData;
 //        outputData.resize(segments.size()-1);
 //
-//        SparseGridGpuKernels::segreduce<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
+//        BlockMapGpuKernels::segreduce<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
 //                data.toKernel(),
 //                        segments.toKernel(),
 //                        data.toKernel(),
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE (testSegreduce_vector)
 //        );
 //
 //        // Segreduce on mask
-//        SparseGridGpuKernels::segreduce<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
+//        BlockMapGpuKernels::segreduce<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
 //                data.toKernel(),
 //                        segments.toKernel(),
 //                        data.toKernel(),
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE (testSegreduce_vector)
 //        openfpm::vector_gpu<aggregate<MaskBlockT, BlockT[3]>> outputData;
 //        outputData.resize(segments.size()-1);
 //
-//        SparseGridGpuKernels::segreduce<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
+//        BlockMapGpuKernels::segreduce<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
 //                data.toKernel(),
 //                        segments.toKernel(),
 //                        data.toKernel(),
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE (testSegreduce_vector)
 //        );
 //
 //        // Segreduce on mask
-//        SparseGridGpuKernels::segreduce<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
+//        BlockMapGpuKernels::segreduce<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
 //                data.toKernel(),
 //                        segments.toKernel(),
 //                        data.toKernel(),
@@ -337,7 +337,7 @@ BOOST_AUTO_TEST_CASE (testSegreduce_vector)
 
 BOOST_AUTO_TEST_SUITE_END() // SparseGridGpu_kernels_tests
 
-BOOST_AUTO_TEST_SUITE(SparseGridGpu_functors_tests)
+BOOST_AUTO_TEST_SUITE(BlockMapGpu_functors_tests)
     BOOST_AUTO_TEST_CASE (testCompact)
     {
         typedef float ScalarT;
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_functors_tests)
         starts.hostToDevice<0>();
         dataSrc.hostToDevice<0>();
         // Now perform the compaction
-        SparseGridGpuFunctors::BlockFunctor<128>::compact(starts, poolSize, dataSrc, dataDst);
+        BlockMapGpuFunctors::BlockFunctor<128>::compact(starts, poolSize, dataSrc, dataDst);
 
         // Now retrieve the dataDst vector
         dataDst.deviceToHost<0>();
@@ -434,7 +434,7 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_functors_tests)
         srcIndices.hostToDevice<0>();
         dataSrc.hostToDevice<0>();
         // Now perform the compaction
-        SparseGridGpuFunctors::BlockFunctor<128>::reorder(srcIndices, dataSrc, dataDst);
+        BlockMapGpuFunctors::BlockFunctor<128>::reorder(srcIndices, dataSrc, dataDst);
 
         // Now retrieve the dataDst vector
         dataDst.deviceToHost<0>();
@@ -493,7 +493,7 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_functors_tests)
         dataSrc.hostToDevice<p, pMask>();
         // Now perform the compaction
         typedef boost::mpl::vector<sadd_<p>> vv_reduce;
-        SparseGridGpuFunctors::BlockFunctor<128>::seg_reduce<pSegment, vv_reduce, boost::mpl::int_<0>>(segments, dataSrc, dataDst);
+        BlockMapGpuFunctors::BlockFunctor<128>::seg_reduce<pSegment, vv_reduce, boost::mpl::int_<0>>(segments, dataSrc, dataDst);
 
         // Now retrieve the dataDst vector
         dataDst.deviceToHost<0>();
@@ -589,7 +589,7 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_functors_tests)
         dataNew.hostToDevice<p, pMask>();
 
         // Now perform the compaction
-        SparseGridGpuFunctors::BlockFunctor<128>::solve_conflicts<
+        BlockMapGpuFunctors::BlockFunctor<128>::solve_conflicts<
                 decltype(keys),
                 decltype(dataOld),
                 sadd_<p>

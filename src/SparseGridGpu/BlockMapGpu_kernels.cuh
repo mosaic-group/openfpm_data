@@ -2,18 +2,18 @@
 // Created by tommaso on 16/05/19.
 //
 
-#ifndef OPENFPM_PDATA_SPARSEGRIDGPU_KERNELS_CUH
-#define OPENFPM_PDATA_SPARSEGRIDGPU_KERNELS_CUH
+#ifndef OPENFPM_PDATA_BLOCKMAPGPU_KERNELS_CUH
+#define OPENFPM_PDATA_BLOCKMAPGPU_KERNELS_CUH
 
 //#ifdef __NVCC__
 
 #include <cstdlib>
-#include "SparseGridGpu.hpp"
+#include "BlockMapGpu.hpp"
 #include "util/cuda_util.hpp"
-#include "SparseGridGpu_dimensionalityWrappers.cuh"
+#include "BlockMapGpu_dimensionalityWrappers.cuh"
 #include "Vector/map_vector_sparse.hpp"
 
-namespace SparseGridGpuKernels
+namespace BlockMapGpuKernels
 {
     template<unsigned int p, unsigned int maskProp, unsigned int chunksPerBlock, typename InsertBufferT, typename ScalarT>
     __global__ void initializeInsertBuffer(InsertBufferT insertBuffer, ScalarT backgroundValue)
@@ -134,8 +134,8 @@ namespace SparseGridGpuKernels
 
             generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
                                                                     bReg,
-                                                                    BaseBlockType::exist(aMask),
-                                                                    BaseBlockType::exist(bMask));
+                                                                    BlockMapGpu_ker<>::exist(aMask),
+                                                                    BlockMapGpu_ker<>::exist(bMask));
             aMask = aMask | bMask;
         }
 
@@ -148,8 +148,8 @@ namespace SparseGridGpuKernels
 
             generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
                                                                     bReg,
-                                                                    BaseBlockType::exist(aMask),
-                                                                    BaseBlockType::exist(bMask));
+                                                                    BlockMapGpu_ker<>::exist(aMask),
+                                                                    BlockMapGpu_ker<>::exist(bMask));
             aMask = aMask | bMask;
         }
 
@@ -170,8 +170,8 @@ namespace SparseGridGpuKernels
                     bMask = AMask[otherChunkId][offset];
                     generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
                                                                             A[otherChunkId][offset],
-                                                                            BaseBlockType::exist(aMask),
-                                                                            BaseBlockType::exist(bMask));
+                                                                            BlockMapGpu_ker<>::exist(aMask),
+                                                                            BlockMapGpu_ker<>::exist(bMask));
                     AMask[chunkId][offset] = aMask | bMask;
                 }
             }
@@ -407,7 +407,7 @@ namespace SparseGridGpuKernels
 #endif // __NVCC__
 }
 
-namespace SparseGridGpuFunctors
+namespace BlockMapGpuFunctors
 {
     /**
      * This functor is used in the sparse vector flush method to achieve the right blocked behaviour
@@ -421,7 +421,7 @@ namespace SparseGridGpuFunctors
 #ifdef __NVCC__
             unsigned int gridSize = src.size() / poolSize; //This is the number of pools!
             assert(starts.size() > gridSize); // We need to check that have the right size on the starts vector (as we access blockId+1)
-            SparseGridGpuKernels::compact <<< gridSize, blockSize >>> (
+            BlockMapGpuKernels::compact <<< gridSize, blockSize >>> (
                     src.toKernel(),
                             poolSize,
                             starts.toKernel(),
@@ -443,7 +443,7 @@ namespace SparseGridGpuFunctors
             constexpr unsigned int chunksPerBlock = blockSize / BlockT0::size;
             const unsigned int gridSize = static_cast<unsigned int>(std::ceil(static_cast<float>(data.size()) / chunksPerBlock));
 
-            SparseGridGpuKernels::reorder <<< gridSize, blockSize >>> (
+            BlockMapGpuKernels::reorder <<< gridSize, blockSize >>> (
                     data.toKernel(),
                     src_id.toKernel(),
                     data_reord.toKernel());
@@ -477,7 +477,7 @@ namespace SparseGridGpuFunctors
             const unsigned int gridSize =
                     segments.size() - 1; // This "-1" is because segments has a trailing extra element
 
-            SparseGridGpuKernels::segreduce<p, pSegment, pMask, chunksPerBlock, red_op> <<< gridSize, blockSize >>> (
+            BlockMapGpuKernels::segreduce<p, pSegment, pMask, chunksPerBlock, red_op> <<< gridSize, blockSize >>> (
                     src.toKernel(),
                     segments.toKernel(),
                     src.toKernel(),
@@ -523,7 +523,7 @@ namespace SparseGridGpuFunctors
             tmpData.resize(mergeIndices.size()); //todo: check if we need some other action to actually have the right space on gpu
 
             // Phase 0 - merge data
-            SparseGridGpuKernels::mergeData<<< gridSize, blockSize >>>(dataOld.toKernel(),
+            BlockMapGpuKernels::mergeData<<< gridSize, blockSize >>>(dataOld.toKernel(),
                     dataNew.toKernel(), mergeIndices.toKernel(), tmpData.toKernel());
             // Now we can recycle the mergeIndices buffer for other things.
 
@@ -532,7 +532,7 @@ namespace SparseGridGpuFunctors
             tmpIndices.resize(mergeIndices.size());
 
             unsigned int gridSize2 = static_cast<unsigned int>(std::ceil(static_cast<float>(mergeIndices.size()) / blockSize));
-            SparseGridGpuKernels::computePredicates << <
+            BlockMapGpuKernels::computePredicates << <
                         gridSize2,
                         blockSize>>>
                         (keys.toKernel(), mergeIndices.toKernel());
@@ -544,13 +544,13 @@ namespace SparseGridGpuFunctors
             // Now it's important to resize mergeIndices in the right way, otherwise dragons ahead!
             tmpIndices.template deviceToHost<0>(tmpIndices.size()-1, tmpIndices.size()-1); //getting only the last element from device
             mergeIndices.resize(tmpIndices.template get<0>(tmpIndices.size()-1) + 1);
-            SparseGridGpuKernels::copyIdToDstIndexIfPredicate<< < gridSize2, blockSize >> >
+            BlockMapGpuKernels::copyIdToDstIndexIfPredicate<< < gridSize2, blockSize >> >
                                                                             (keys.size(), tmpIndices.toKernel(), mergeIndices.toKernel());
             // mergeIndices now contains the segments
 
             // Now update the keys
             keysOut.resize(mergeIndices.size()-1); // The final number of keys is one less than the segments values
-            SparseGridGpuKernels::copyKeyToDstIndexIfPredicate<< < gridSize2, blockSize >> >
+            BlockMapGpuKernels::copyKeyToDstIndexIfPredicate<< < gridSize2, blockSize >> >
                                                                              (keys.toKernel(), tmpIndices.toKernel(), keysOut.toKernel());
             // the new keys are now in keysOut
 
@@ -573,4 +573,4 @@ namespace SparseGridGpuFunctors
 
 //#endif //__NVCC__
 
-#endif //OPENFPM_PDATA_SPARSEGRIDGPU_KERNELS_CUH
+#endif //OPENFPM_PDATA_BLOCKMAPGPU_KERNELS_CUH

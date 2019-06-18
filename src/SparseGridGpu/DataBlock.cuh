@@ -71,18 +71,6 @@ struct DataBlock
     {
         return block[i];
     }
-
-    template<typename BitMaskT>
-    __device__ __host__ inline static bool exist(BitMaskT &bitMask)
-    {
-        return bitMask==1;
-    }
-
-    template<typename BitMaskT>
-    __device__ __host__ inline static void setElement(BitMaskT &bitMask)
-    {
-        bitMask = 1;
-    }
 };
 
 #endif //OPENFPM_PDATA_DATABLOCK_CUH

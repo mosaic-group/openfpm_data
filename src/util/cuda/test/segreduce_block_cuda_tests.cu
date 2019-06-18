@@ -8,7 +8,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include "Vector/map_vector.hpp"
-#include "SparseGridGpu/SparseGridGpu.hpp"
+#include "SparseGridGpu/BlockMapGpu.hpp"
 //todo: here include SparseGridGpu_kernels and remove local kernel definitions
 
 template<typename op, typename ScalarT>
@@ -66,8 +66,8 @@ segreduce_block(
 
         A[chunkId][offset] = applyOp<op>(A[chunkId][offset],
                                          bReg,
-                                         DataType::exist(aMask),
-                                         DataType::exist(bMask));
+                                         BlockMapGpu_ker<>::exist(aMask),
+                                         BlockMapGpu_ker<>::exist(bMask));
         aMask = aMask | bMask;
     }
 
@@ -78,8 +78,8 @@ segreduce_block(
 
         A[chunkId][offset] = applyOp<op>(A[chunkId][offset],
                                          bReg,
-                                         DataType::exist(aMask),
-                                         DataType::exist(bMask));
+                                         BlockMapGpu_ker<>::exist(aMask),
+                                         BlockMapGpu_ker<>::exist(bMask));
         aMask = aMask | bMask;
     }
 
@@ -100,8 +100,8 @@ segreduce_block(
                 bMask = AMask[otherChunkId][offset];
                 A[chunkId][offset] = applyOp<op>(A[chunkId][offset],
                                                  A[otherChunkId][offset],
-                                                 DataType::exist(aMask),
-                                                 DataType::exist(bMask));
+                                                 BlockMapGpu_ker<>::exist(aMask),
+                                                 BlockMapGpu_ker<>::exist(bMask));
                 AMask[chunkId][offset] = aMask | bMask;
             }
         }
