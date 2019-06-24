@@ -10,6 +10,14 @@
 
 #include "Grid/iterators/grid_key_dx_iterator.hpp"
 
+template<unsigned int dim>
+struct striding
+{
+	size_t striding_src[dim - 1];
+	size_t striding_dst[dim - 1];
+	size_t n_cpy;
+	size_t tot_y;
+};
 
 //////////////////////////////////// Functor to copy 1D grid in device memory ////////////
 
@@ -97,8 +105,8 @@ struct copy_grid_fast
 {
 	static void copy(ginfo & gs_src,
 				   ginfo & gs_dst,
-				   Box<N,size_t> & bx_src,
-				   Box<N,size_t> & bx_dst,
+				   const Box<N,size_t> & bx_src,
+				   const Box<N,size_t> & bx_dst,
 				   const grid & gd_src,
 				   grid & gd_dst,
 				   grid_key_dx<N> (& cnt)[1] )
@@ -126,8 +134,8 @@ struct copy_grid_fast<true,3,grid,ginfo>
 {
 	static void copy(ginfo & gs_src,
 				   ginfo & gs_dst,
-				   Box<3,size_t> & bx_src,
-				   Box<3,size_t> & bx_dst,
+				   const Box<3,size_t> & bx_src,
+				   const Box<3,size_t> & bx_dst,
 				   const grid & gd_src,
 				   grid & gd_dst,
 				   grid_key_dx<3> (& cnt)[1] )
@@ -175,8 +183,8 @@ struct copy_grid_fast<true,2,grid,ginfo>
 {
 	static void copy(ginfo & gs_src,
 				   ginfo & gs_dst,
-				   Box<2,size_t> & bx_src,
-				   Box<2,size_t> & bx_dst,
+				   const Box<2,size_t> & bx_src,
+				   const Box<2,size_t> & bx_dst,
 				   const grid & gd_src,
 				   grid & gd_dst,
 				   grid_key_dx<2> (& cnt)[1] )
@@ -218,8 +226,8 @@ struct copy_grid_fast<true,1,grid,ginfo>
 {
 	static void copy(ginfo & gs_src,
 				   ginfo & gs_dst,
-				   Box<1,size_t> & bx_src,
-				   Box<1,size_t> & bx_dst,
+				   const Box<1,size_t> & bx_src,
+				   const Box<1,size_t> & bx_dst,
 				   const grid & gd_src,
 				   grid & gd_dst,
 				   grid_key_dx<1> (& cnt)[1] )
@@ -243,90 +251,420 @@ struct copy_grid_fast<true,1,grid,ginfo>
 
 ////// In case the property is not complex
 
-template<typename grid>
-void copy_grid_fast_longx_3(Box<3,size_t> & bx_src,
+template<unsigned int object_size>
+void copy_grid_fast_longx_3(const Box<3,size_t> & bx_src,
 							unsigned char * ptr_dst,
 							unsigned char * ptr_src,
-							size_t stride_src_x,
-							size_t stride_dst_x,
-							size_t stride_src_y,
-							size_t stride_dst_y,
-							size_t tot_y,
-							size_t n_cpy)
+							striding<3> & sr)
 {
 	for (size_t i = bx_src.getLow(2) ; i <= bx_src.getHigh(2) ; i++)
 	{
 		for (size_t j = bx_src.getLow(1) ; j <= bx_src.getHigh(1) ; j++)
 		{
-			memcpy(ptr_dst,ptr_src,n_cpy*sizeof(typename grid::value_type));
+			memcpy(ptr_dst,ptr_src,sr.n_cpy*object_size);
 
-			ptr_dst += stride_dst_x;
-			ptr_src += stride_src_x;
+			ptr_dst += sr.striding_dst[0];
+			ptr_src += sr.striding_src[0];
 		}
-		ptr_dst += stride_dst_y - tot_y*stride_dst_x;
-		ptr_src += stride_src_y - tot_y*stride_src_x;
+		ptr_dst += sr.striding_dst[1] - sr.tot_y*sr.striding_dst[0];
+		ptr_src += sr.striding_src[1] - sr.tot_y*sr.striding_src[0];
 	}
 }
 
-template<typename grid, unsigned int n_cpy>
-void copy_grid_fast_shortx_3(Box<3,size_t> & bx_src,
+template<unsigned int object_size, unsigned int n_cpy>
+void copy_grid_fast_shortx_3(const Box<3,size_t> & bx_src,
 		unsigned char * ptr_dst,
 		unsigned char * ptr_src,
-		size_t stride_src_x,
-		size_t stride_dst_x,
-		size_t stride_src_y,
-		size_t stride_dst_y,
-		size_t tot_y)
+		striding<3> & sr)
 {
 	for (size_t i = bx_src.getLow(2) ; i <= bx_src.getHigh(2) ; i++)
 	{
 		for (size_t j = bx_src.getLow(1) ; j <= bx_src.getHigh(1) ; j++)
 		{
-			__builtin_memcpy(ptr_dst,ptr_src,n_cpy*sizeof(typename grid::value_type));
+			__builtin_memcpy(ptr_dst,ptr_src,n_cpy*object_size);
 
-			ptr_dst += stride_dst_x;
-			ptr_src += stride_src_x;
+			ptr_dst += sr.striding_dst[0];
+			ptr_src += sr.striding_src[0];
 		}
-		ptr_dst += stride_dst_y - tot_y*stride_dst_x;
-		ptr_src += stride_src_y - tot_y*stride_src_x;
+		ptr_dst += sr.striding_dst[1] - sr.tot_y*sr.striding_dst[0];
+		ptr_src += sr.striding_src[1] - sr.tot_y*sr.striding_src[0];
 	}
 }
 
 
 ////// In case the property is not complex
 
-template<typename grid>
-void copy_grid_fast_longx_2(Box<2,size_t> & bx_src,
+template<unsigned int object_size>
+void copy_grid_fast_longx_2(const Box<2,size_t> & bx_src,
 							unsigned char * ptr_dst,
 							unsigned char * ptr_src,
-							size_t stride_src_x,
-							size_t stride_dst_x,
-							size_t n_cpy)
+							striding<2> & sr)
 {
 	for (size_t j = bx_src.getLow(1) ; j <= bx_src.getHigh(1) ; j++)
 	{
-		memcpy(ptr_dst,ptr_src,n_cpy*sizeof(typename grid::value_type));
+		memcpy(ptr_dst,ptr_src,sr.n_cpy*object_size);
 
-		ptr_dst += stride_dst_x;
-		ptr_src += stride_src_x;
+		ptr_dst += sr.striding_dst[0];
+		ptr_src += sr.striding_src[0];
 	}
 }
 
-template<typename grid, unsigned int n_cpy>
-void copy_grid_fast_shortx_2(Box<2,size_t> & bx_src,
+template<unsigned int object_size, unsigned int n_cpy>
+void copy_grid_fast_shortx_2(const Box<2,size_t> & bx_src,
 		unsigned char * ptr_dst,
 		unsigned char * ptr_src,
-		size_t stride_src_x,
-		size_t stride_dst_x)
+		striding<2> & sr)
 {
 	for (size_t j = bx_src.getLow(1) ; j <= bx_src.getHigh(1) ; j++)
 	{
-		__builtin_memcpy(ptr_dst,ptr_src,n_cpy*sizeof(typename grid::value_type));
+		__builtin_memcpy(ptr_dst,ptr_src,n_cpy*object_size);
 
-		ptr_dst += stride_dst_x;
-		ptr_src += stride_src_x;
+		ptr_dst += sr.striding_dst[0];
+		ptr_src += sr.striding_src[0];
 	}
 }
+
+template<unsigned int dim>
+struct copy_ndim_fast_selector
+{
+	template<unsigned int object_size>
+	static void call(unsigned char * ptr_src,
+			 unsigned char * ptr_dst,
+			 striding<dim> & sr,
+  const Box<dim,size_t> & bx_src)
+	{
+		std::cout << __FILE__ << ":" << __LINE__ << " error, wrong specialization. this case is not handled" << std::endl;
+	}
+};
+
+template<>
+struct copy_ndim_fast_selector<3>
+{
+	template<unsigned int object_size>
+	static void call(unsigned char * ptr_src,
+					 unsigned char * ptr_dst,
+					 striding<3> & sr,
+		   const Box<3,size_t> & bx_src)
+	{
+		switch (sr.n_cpy)
+		{
+		case 1:
+				copy_grid_fast_shortx_3<object_size,1>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+		case 2:
+				copy_grid_fast_shortx_3<object_size,2>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+
+		case 3:
+				copy_grid_fast_shortx_3<object_size,3>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+
+		case 4:
+				copy_grid_fast_shortx_3<object_size,4>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+		case 5:
+				copy_grid_fast_shortx_3<object_size,5>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+		case 6:
+				copy_grid_fast_shortx_3<object_size,6>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+
+		case 7:
+				copy_grid_fast_shortx_3<object_size,7>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+
+		case 8:
+				copy_grid_fast_shortx_3<object_size,8>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+
+		default:
+				copy_grid_fast_longx_3<object_size>(bx_src,ptr_dst,ptr_src,sr);
+		}
+	}
+};
+
+template<>
+struct copy_ndim_fast_selector<2>
+{
+	template<unsigned int object_size>
+	static void call(unsigned char * ptr_src,
+			 unsigned char * ptr_dst,
+			 striding<2> & sr,
+  const Box<2,size_t> & bx_src)
+	{
+		switch (sr.n_cpy)
+		{
+		case 1:
+				copy_grid_fast_shortx_2<object_size,1>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+		case 2:
+				copy_grid_fast_shortx_2<object_size,2>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+
+		case 3:
+				copy_grid_fast_shortx_2<object_size,3>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+
+		case 4:
+				copy_grid_fast_shortx_2<object_size,4>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+		case 5:
+				copy_grid_fast_shortx_2<object_size,5>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+		case 6:
+				copy_grid_fast_shortx_2<object_size,6>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+
+		case 7:
+				copy_grid_fast_shortx_2<object_size,7>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+
+		case 8:
+				copy_grid_fast_shortx_2<object_size,8>(bx_src,ptr_dst,ptr_src,sr);
+				break;
+
+		default:
+				copy_grid_fast_longx_2<object_size>(bx_src,ptr_dst,ptr_src,sr);
+		}
+	}
+};
+
+
+template<unsigned int dim_prp, unsigned int prp,typename grid_type>
+struct get_pointer
+{
+	static unsigned char * get(const grid_type & gd, grid_key_dx<grid_type::dims> & key, unsigned int (& id)[dim_prp])
+	{
+		return (unsigned char *)(&gd.template get_unsafe<prp>(key));
+	}
+};
+
+template<unsigned int prp,typename grid_type>
+struct get_pointer<1,prp,grid_type>
+{
+	static unsigned char * get(const grid_type & gd, grid_key_dx<grid_type::dims> & key, unsigned int (& id)[1])
+	{
+		return (unsigned char *)(&gd.template get_unsafe<prp>(key)[id[0]]);
+	}
+};
+
+template<unsigned int prp,typename grid_type>
+struct get_pointer<2,prp,grid_type>
+{
+	static unsigned char * get(const grid_type & gd, grid_key_dx<grid_type::dims> & key, unsigned int (& id)[2])
+	{
+		return (unsigned char *)(&gd.template get_unsafe<prp>(key)[id[0]][id[1]]);
+	}
+};
+
+template<unsigned int dim,unsigned int dim_prp,unsigned int prp, typename grid_type>
+struct get_striding
+{
+	static striding<dim> get(const grid_type & gd_src,grid_type &gd_dst,
+							   const Box<dim,size_t> & bx_src, unsigned int (& id)[dim_prp])
+	{
+		striding<dim> sr;
+
+		grid_key_dx<dim> zero;
+		zero.zero();
+		grid_key_dx<dim> one = zero;
+		one.set_d(1,1);
+
+		unsigned char * ptr_final_src = get_pointer<dim_prp,prp,grid_type>::get(gd_src,one,id);
+		unsigned char * ptr_start_src = get_pointer<dim_prp,prp,grid_type>::get(gd_src,zero,id);
+
+		unsigned char * ptr_final_dst = get_pointer<dim_prp,prp,grid_type>::get(gd_dst,one,id);
+		unsigned char * ptr_start_dst = get_pointer<dim_prp,prp,grid_type>::get(gd_dst,zero,id);
+
+		sr.n_cpy = bx_src.getHigh(0) - bx_src.getLow(0) + 1;
+		sr.tot_y = bx_src.getHigh(1) - bx_src.getLow(1) + 1;
+
+		sr.striding_src[0] = ptr_final_src - ptr_start_src;
+		sr.striding_dst[0] = ptr_final_dst - ptr_start_dst;
+
+		if (dim == 3)
+		{
+			grid_key_dx<dim> one2 = zero;
+			one2.set_d(2,1);
+
+			unsigned char * ptr_final_src = get_pointer<dim_prp,prp,grid_type>::get(gd_src,one2,id);
+			unsigned char * ptr_start_src = get_pointer<dim_prp,prp,grid_type>::get(gd_src,zero,id);
+
+			unsigned char * ptr_final_dst = get_pointer<dim_prp,prp,grid_type>::get(gd_dst,one2,id);
+			unsigned char * ptr_start_dst = get_pointer<dim_prp,prp,grid_type>::get(gd_dst,zero,id);
+
+			sr.striding_src[1] = ptr_final_src - ptr_start_src;
+			sr.striding_dst[1] = ptr_final_dst - ptr_start_dst;
+		}
+
+		return sr;
+	};
+};
+
+template<unsigned int dim, typename T>
+struct mp_funct_impl
+{
+	template<unsigned int prp, typename grid>
+	static void process(const grid & gd_src,grid & gd_dst,
+						const Box<dim,size_t> & bx_src, const Box<grid::dims,size_t> & bx_dst)
+	{
+		unsigned int id[0];
+		striding<dim> sr = get_striding<dim,0,prp,grid>::get(gd_src,gd_dst,bx_src,id);
+
+		unsigned char * ptr_src = (unsigned char *)(&gd_src.template get<prp>(bx_src.getKP1()));
+		unsigned char * ptr_dst = (unsigned char *)(&gd_dst.template get<prp>(bx_dst.getKP1()));
+
+		copy_ndim_fast_selector<dim>::template call<sizeof(T)>(ptr_src,ptr_dst,sr,bx_src);
+	}
+};
+
+template<unsigned int dim, typename T, unsigned int N1>
+struct mp_funct_impl<dim,T[N1]>
+{
+	template<unsigned int prp, typename grid>
+	static void process(const grid & gd_src,grid & gd_dst,
+						const Box<dim,size_t> & bx_src, const Box<grid::dims,size_t> & bx_dst)
+	{
+		unsigned int id[1];
+
+		for (id[0] = 0 ; id[0] < N1 ; id[0]++)
+		{
+			striding<dim> sr = get_striding<dim,1,prp,grid>::get(gd_src,gd_dst,bx_src,id);
+
+			unsigned char * ptr_src = (unsigned char *)(&gd_src.template get<prp>(bx_src.getKP1())[id[0]]);
+			unsigned char * ptr_dst = (unsigned char *)(&gd_dst.template get<prp>(bx_dst.getKP1())[id[0]]);
+
+			copy_ndim_fast_selector<dim>::template call<sizeof(T)>(ptr_src,ptr_dst,sr,bx_src);
+		}
+	}
+};
+
+
+template<unsigned int dim, typename T, unsigned int N1, unsigned int N2>
+struct mp_funct_impl<dim,T[N1][N2]>
+{
+	template<unsigned int prp, typename grid>
+	static void process(const grid & gd_src,grid & gd_dst,
+						const Box<dim,size_t> & bx_src, const Box<grid::dims,size_t> & bx_dst)
+	{
+		unsigned int id[2];
+
+		for (id[1] = 0 ; id[1] < N1 ; id[1]++)
+		{
+			for (id[0] = 0 ; id[0] < N2 ; id[0]++)
+			{
+				striding<dim> sr = get_striding<dim,2,prp,grid>::get(gd_src,gd_dst,bx_src,id);
+
+				unsigned char * ptr_src = (unsigned char *)(&gd_src.template get<prp>(bx_src.getKP1())[id[1]][id[0]]);
+				unsigned char * ptr_dst = (unsigned char *)(&gd_dst.template get<prp>(bx_dst.getKP1())[id[1]][id[0]]);
+
+				copy_ndim_fast_selector<dim>::template call<sizeof(T)>(ptr_src,ptr_dst,sr,bx_src);
+			}
+		}
+	}
+};
+
+template<typename grid, typename ginfo>
+class mp_funct
+{
+	const grid & gd_src;
+	grid & gd_dst;
+	ginfo & gs_src;
+	ginfo & gs_dst;
+
+	const Box<grid::dims,size_t> & bx_src;
+	const Box<grid::dims,size_t> & bx_dst;
+
+	grid_key_dx<grid::dims> (& cnt)[1];
+
+public:
+
+	mp_funct(const grid & gd_src,grid & gd_dst,
+			 ginfo & gs_src,ginfo & gs_dst,
+			 const Box<grid::dims,size_t> & bx_src , const Box<grid::dims,size_t> & bx_dst,
+			 grid_key_dx<grid::dims> (& cnt)[1])
+	:gd_src(gd_src),gd_dst(gd_dst),gs_src(gs_src),gs_dst(gs_dst),bx_src(bx_src),bx_dst(bx_dst),cnt(cnt)
+	{}
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t)
+	{
+		typedef typename boost::mpl::at<typename grid::value_type::type,boost::mpl::int_<T::value>>::type prp_type;
+
+		mp_funct_impl<grid::dims,prp_type>::template process<T::value>(gd_src,gd_dst,bx_src,bx_dst);
+
+/*		grid_key_dx<3> zero;
+		zero.zero();
+		grid_key_dx<3> one = zero;
+		one.set_d(1,1);
+
+		unsigned char * ptr_final_src = (unsigned char *)(gd_src.template get_address<prp>(one));
+		unsigned char * ptr_start_src = (unsigned char *)(gd_src.template get_address<prp>(zero));
+
+		unsigned char * ptr_final_dst = (unsigned char *)(gd_dst.template get_address<prp>(one));
+		unsigned char * ptr_start_dst = (unsigned char *)(gd_dst.template get_address<prp>(zero));
+
+		unsigned char * ptr_src = (unsigned char *)(gd_src.template get_address<prp>(bx_src.getKP1()));
+		unsigned char * ptr_dst = (unsigned char *)(gd_dst.template get_address<prp>(bx_dst.getKP1()));
+
+		size_t n_cpy = bx_src.getHigh(0) - bx_src.getLow(0) + 1;
+		size_t tot_y = bx_src.getHigh(1) - bx_src.getLow(1) + 1;
+
+		size_t stride_src_x = ptr_final_src - ptr_start_src;
+		size_t stride_dst_x = ptr_final_dst - ptr_start_dst;
+
+		grid_key_dx<3> one2 = zero;
+		one2.set_d(2,1);
+
+		ptr_final_src = (unsigned char *)(gd_src.template get_address<0>(one2));
+		ptr_start_src = (unsigned char *)(gd_src.template get_address<0>(zero));
+
+		ptr_final_dst = (unsigned char *)(gd_dst.template get_address<0>(one2));
+		ptr_start_dst = (unsigned char *)(gd_dst.template get_address<0>(zero));
+
+		size_t stride_src_y = ptr_final_src - ptr_start_src;
+		size_t stride_dst_y = ptr_final_dst - ptr_start_dst;
+
+		copy_ndim_fast_selector<grid::dims>::template call<T::value>(gs_src,gs_dst,bx_src,bx_dst,
+							  gd_src,gd_dst,cnt);*/
+	}
+};
+
+template<bool is_inte,unsigned int dim,typename grid, typename ginfo>
+struct copy_grid_fast_layout_switch
+{
+	static void copy(const ginfo & gs_src,
+			   const ginfo & gs_dst,
+			   const Box<dim,size_t> & bx_src,
+			   const Box<dim,size_t> & bx_dst,
+			   const grid & gd_src,
+			   grid & gd_dst,
+			   grid_key_dx<dim> (& cnt)[1])
+	{
+		mp_funct_impl<dim,typename grid::value_type>::template process<0>(gd_src,gd_dst,bx_src,bx_dst);
+
+//		copy_ndim_fast_selector<grid::dims>::template call<0>(gs_src,gs_dst,bx_src,bx_dst,
+//							  	  	  	  	  	  	  	  	  gd_src,gd_dst,cnt);
+	}
+};
+
+template<unsigned int dim, typename grid, typename ginfo>
+struct copy_grid_fast_layout_switch<true,dim,grid,ginfo>
+{
+	static void copy(const ginfo & gs_src,
+			   const ginfo & gs_dst,
+			   const Box<dim,size_t> & bx_src,
+			   const Box<dim,size_t> & bx_dst,
+			   const grid & gd_src,
+			   grid & gd_dst,
+			   grid_key_dx<dim> (& cnt)[1])
+	{
+		mp_funct<grid,ginfo> mpf(gd_src,gd_dst,gs_src,gs_dst,bx_src,bx_dst,cnt);
+
+		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,grid::value_type::max_prop>>(mpf);
+	}
+};
 
 /*! \brief This is a way to quickly copy a grid into another grid
  *
@@ -337,14 +675,15 @@ struct copy_grid_fast<false,3,grid,ginfo>
 {
 	static void copy(ginfo & gs_src,
 				   ginfo & gs_dst,
-				   Box<3,size_t> & bx_src,
-				   Box<3,size_t> & bx_dst,
+				   const Box<3,size_t> & bx_src,
+				   const Box<3,size_t> & bx_dst,
 				   const grid & gd_src,
 				   grid & gd_dst,
 				   grid_key_dx<3> (& cnt)[1] )
 	{
+		copy_grid_fast_layout_switch<is_layout_inte<typename grid::layout_base_>::value,3,grid,ginfo>::copy(gs_src,gs_dst,bx_src,bx_dst,gd_src,gd_dst,cnt);
 
-		grid_key_dx<3> zero;
+/*		grid_key_dx<3> zero;
 		zero.zero();
 		grid_key_dx<3> one = zero;
 		one.set_d(1,1);
@@ -437,9 +776,13 @@ struct copy_grid_fast<false,3,grid,ginfo>
 									stride_src_x,stride_dst_x,
 									stride_src_y,stride_dst_y,
 									tot_y,n_cpy);
-		}
+		}*/
 	}
 };
+
+
+
+
 
 /*! \brief This is a way to quickly copy a grid into another grid
  *
@@ -450,14 +793,15 @@ struct copy_grid_fast<false,2,grid,ginfo>
 {
 	static void copy(ginfo & gs_src,
 				   ginfo & gs_dst,
-				   Box<2,size_t> & bx_src,
-				   Box<2,size_t> & bx_dst,
+				   const Box<2,size_t> & bx_src,
+				   const Box<2,size_t> & bx_dst,
 				   const grid & gd_src,
 				   grid & gd_dst,
 				   grid_key_dx<2> (& cnt)[1] )
 	{
+		copy_grid_fast_layout_switch<is_layout_inte<typename grid::layout_base_>::value,2,grid,ginfo>::copy(gs_src,gs_dst,bx_src,bx_dst,gd_src,gd_dst,cnt);
 
-		grid_key_dx<2> zero;
+/*		grid_key_dx<2> zero;
 		zero.zero();
 		grid_key_dx<2> one = zero;
 		one.set_d(1,1);
@@ -519,7 +863,7 @@ struct copy_grid_fast<false,2,grid,ginfo>
 				copy_grid_fast_longx_2<grid>(bx_src,ptr_dst,ptr_src,
 									stride_src_x,stride_dst_x,
 									n_cpy);
-		}
+		}*/
 	}
 };
 
@@ -812,8 +1156,8 @@ struct pack_with_iterator_shortx<3,n_cpy,obj_byte,git,grid>
 		grid_key_dx<3> one = zero;
 		one.set_d(2,1);
 
-		unsigned char * ptr_final = (unsigned char *)(gr.template get_address<0>(one));
-		unsigned char * ptr_start = (unsigned char *)(gr.template get_address<0>(zero));
+		unsigned char * ptr_final = (unsigned char *)(&gr.template get<0>(one));
+		unsigned char * ptr_start = (unsigned char *)(&gr.template get<0>(zero));
 
 		size_t stride_y = ptr_final - ptr_start;
 
@@ -881,8 +1225,8 @@ struct pack_with_iterator<false,dim,grid,encap_src,encap_dst,boost_vct,it,dtype,
 		grid_key_dx<dim> one = zero;
 		one.set_d(1,1);
 
-		unsigned char * ptr_final = (unsigned char *)(gr.template get_address<0>(one));
-		unsigned char * ptr_start = (unsigned char *)(gr.template get_address<0>(zero));
+		unsigned char * ptr_final = (unsigned char *)(&gr.template get<0>(one));
+		unsigned char * ptr_start = (unsigned char *)(&gr.template get<0>(zero));
 
 		size_t stride = ptr_final - ptr_start;
 

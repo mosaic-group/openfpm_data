@@ -1100,6 +1100,14 @@ public:
 		Mem_type::clear();
 	}
 
+	/*! \brief Litterary destroy the memory of the cell list, including the retained one
+	 *
+	 */
+	void destroy()
+	{
+		Mem_type::destroy();
+	}
+
 	/*! \brief Return the starting point of the cell p
 	 *
 	 * \param cell_id cell id

@@ -6,6 +6,8 @@
 #include <boost/test/unit_test.hpp>
 #include "util/math_util_complex.hpp"
 
+#define DISABLE_MPI_WRITTERS
+
 // initialization function:
 bool init_unit_test()
 {
@@ -42,8 +44,8 @@ int main(int argc, char* argv[])
 #include "NN/CellList/CellList_test.hpp"
 #include "Vector/vector_unit_tests.hpp"
 #include "Space/Shape/HyperCube_unit_test.hpp"
-#include "Graph/graph_unit_tests.hpp"
 #include "Grid/grid_unit_tests.hpp"
+#include "Graph/graph_unit_tests.hpp"
 #include "Grid/grid_sm_unit_tests.hpp"
 #include "util/test/mathutil_unit_test.hpp"
 #include "NN/CellList/CellDecomposer_unit_tests.hpp"

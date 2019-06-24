@@ -337,4 +337,26 @@ template<size_t index, size_t N> struct MetaFuncOrd {
    enum { value = index };
 };
 
+///////////// Check if the
+
+template<typename ObjType, typename Sfinae = void>
+struct isDynStruct: std::false_type
+{
+	constexpr static bool value()
+	{
+		return false;
+	}
+};
+
+template<typename ObjType>
+struct isDynStruct<ObjType, typename Void<decltype( ObjType::isCompressed() )>::type> : std::true_type
+{
+	constexpr static bool value()
+	{
+		return ObjType::isCompressed();
+	}
+};
+
+
+
 #endif
