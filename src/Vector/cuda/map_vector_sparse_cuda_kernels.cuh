@@ -14,6 +14,36 @@
 #include "util/cuda/cub/block/block_scan.cuh"
 #include "util/cuda/moderngpu/operators.hxx"
 
+template<typename type_t>
+struct bitwiseOr_t  : public std::binary_function<type_t, type_t, type_t> {
+  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+    return a|b;
+  }
+};
+
+template<unsigned int prp>
+struct sBitwiseOr_
+{
+	typedef boost::mpl::int_<prp> prop;
+
+	template<typename red_type> using op_red = bitwiseOr_t<red_type>;
+
+	template<typename red_type>
+	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
+	{
+		return r1|r2;
+	}
+
+	static bool is_special()
+	{
+		return false;
+	}
+
+	//! is not special reduction so it does not need it
+	template<typename seg_type, typename output_type>
+	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
+	{}
+};
 
 template<unsigned int prp>
 struct sadd_
@@ -281,6 +311,34 @@ struct snum_
 		output.template get<0>(i) = seg_next - seg_prev;
 	}
 };
+
+
+template<typename vector_index_type>
+__global__ void construct_insert_list_key_only(vector_index_type vit_block_data,
+								 vector_index_type vit_block_n,
+								 vector_index_type vit_block_scan,
+								 vector_index_type vit_list_0,
+								 vector_index_type vit_list_1,
+								 int nslot)
+{
+	int n_move = vit_block_n.template get<0>(blockIdx.x);
+	int n_block_move = vit_block_n.template get<0>(blockIdx.x) / blockDim.x;
+	int start = vit_block_scan.template get<0>(blockIdx.x);
+
+	int i = 0;
+	for ( ; i < n_block_move ; i++)
+	{
+		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
+		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
+	}
+
+	// move remaining
+	if (threadIdx.x < n_move - i*blockDim.x )
+	{
+		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
+		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
+	}
+}
 
 template<typename vector_index_type, typename vector_data_type>
 __global__ void construct_insert_list(vector_index_type vit_block_data,

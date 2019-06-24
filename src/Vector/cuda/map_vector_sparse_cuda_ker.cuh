@@ -8,6 +8,23 @@
 #ifndef MAP_VECTOR_SPARSE_CUDA_KER_CUH_
 #define MAP_VECTOR_SPARSE_CUDA_KER_CUH_
 
+//todo: Check where it's a good place to put the following method...
+template<typename dim3Ta, typename dim3Tb>
+inline __device__ __host__ int dim3CoordToInt(dim3Ta coord, dim3Tb dimensions)
+{
+    int res = coord.z;
+    res *= dimensions.y;
+    res += coord.y;
+    res *= dimensions.x;
+    res += coord.x;
+    return res;
+}
+// Specialization allowing transparency
+inline __device__ __host__ int dim3CoordToInt(int coord, int dimension)
+{
+    return coord;
+}
+
 namespace openfpm
 {
 	template<typename index_type>
@@ -59,6 +76,7 @@ namespace openfpm
 		{
 			if (vct_index.size() == 0)	{return (Ti)-1;}
 			const Ti *base = &vct_index.template get<0>(0);
+			const Ti * end = &vct_index.template get<0>(vct_index.size()-1);
 			Ti n = vct_data.size();
 			while (n > 1)
 			{
@@ -69,6 +87,7 @@ namespace openfpm
 
 			int off = (*base < x);
 			id = base - &vct_index.template get<0>(0) + off;
+			off = off && base != end;
 			return *(base + off);
 		}
 
@@ -126,7 +145,8 @@ namespace openfpm
 #ifdef __NVCC__
 			if (threadIdx.x == 0)
 			{
-				vct_atomic_add = vct_nadd_index.template get<0>(blockIdx.x);
+			    int blockId = dim3CoordToInt(blockIdx, gridDim);
+				vct_atomic_add = vct_nadd_index.template get<0>(blockId);
 			}
 
 			__syncthreads();
@@ -141,7 +161,8 @@ namespace openfpm
 #ifdef __NVCC__
 			if (threadIdx.x == 0)
 			{
-				vct_atomic_rem = vct_nrem_index.template get<0>(blockIdx.x);
+			    int blockId = dim3CoordToInt(blockIdx, gridDim);
+			    vct_atomic_rem = vct_nrem_index.template get<0>(blockId);
 			}
 
 			__syncthreads();
@@ -169,6 +190,14 @@ namespace openfpm
 			return sid;
 		}
 
+        /*! \brief Get the background value
+         */
+        template <unsigned int p>
+        __device__ inline auto getBackground() -> decltype(bck.template get<p>())
+        {
+            return bck.template get<p>();
+        }
+
 		/*! \brief Get an element of the vector
 		 *
 		 * Get an element of the vector
@@ -186,6 +215,13 @@ namespace openfpm
 			Ti v = this->_branchfree_search(id,di);
 			return (v == id)?vct_data.template get<p>(di):bck.template get<p>();
 		}
+
+        __device__ inline auto get(Ti id) const -> decltype(vct_data.get(0))
+        {
+            Ti di;
+            Ti v = this->_branchfree_search(id,di);
+            return (v == id)?vct_data.get(static_cast<size_t>(di)):bck.get();
+        }
 
 		/*! \brief Get an element of the vector
 		 *
@@ -273,7 +309,8 @@ namespace openfpm
 		{
 #ifdef __NVCC__
 
-			int slot_base = blockIdx.x;
+            int blockId = dim3CoordToInt(blockIdx, gridDim);
+		    int slot_base = blockId;
 
 			int pos = atomicAdd(&vct_atomic_add,1);
 			vct_add_index.template get<0>(slot_base*nslot_add+pos) = ele;
@@ -294,7 +331,8 @@ namespace openfpm
 		{
 #ifdef __NVCC__
 
-			int slot_base = blockIdx.x;
+            int blockId = dim3CoordToInt(blockIdx, gridDim);
+		    int slot_base = blockId;
 
 			int pos = atomicAdd(&vct_atomic_rem,1);
 			vct_rem_index.template get<0>(slot_base*nslot_rem+pos) = ele;
@@ -315,7 +353,8 @@ namespace openfpm
 		{
 #ifdef __NVCC__
 
-			int slot_base = blockIdx.x;
+            int blockId = dim3CoordToInt(blockIdx, gridDim);
+		    int slot_base = blockId;
 
 			int pos = atomicAdd(&vct_atomic_add,1);
 			vct_add_index.template get<0>(slot_base*nslot_add+pos) = ele;
@@ -385,7 +424,10 @@ namespace openfpm
 			__syncthreads();
 
 			if (threadIdx.x == 0)
-			{vct_nadd_index.template get<0>(blockIdx.x) = vct_atomic_add;}
+			{
+			    int blockId = dim3CoordToInt(blockIdx, gridDim);
+			    vct_nadd_index.template get<0>(blockId) = vct_atomic_add;
+			}
 
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
@@ -403,7 +445,10 @@ namespace openfpm
 			__syncthreads();
 
 			if (threadIdx.x == 0)
-			{vct_nrem_index.template get<0>(blockIdx.x) = vct_atomic_rem;}
+			{
+			    int blockId = dim3CoordToInt(blockIdx, gridDim);
+			    vct_nrem_index.template get<0>(blockId) = vct_atomic_rem;
+			}
 
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;

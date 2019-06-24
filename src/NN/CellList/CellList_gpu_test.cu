@@ -526,7 +526,7 @@ void test_cell_count_n()
 
 	mgpu::ofp_context_t ctx;
 
-	vs.flush<sadd_<0>>(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>>(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	cells_nn.resize(11);
 	cells_nn.fill<0>(0);

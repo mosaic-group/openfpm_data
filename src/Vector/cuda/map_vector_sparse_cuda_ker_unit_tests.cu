@@ -14,27 +14,6 @@
 #include "Vector/map_vector.hpp"
 #include <map>
 
-/*struct DataBlock
-{
-	static const unsigned int length = 64;
-	float block[length];
-
-	__device__ __host__ float &operator[](unsigned int i)
-	{
-		return block[i];
-	}
-
-	__device__ __host__ const float &operator[](unsigned int i) const
-	{
-		return block[i];
-	}
-
-	__device__ __host__ DataBlock operator=(float v)
-	{
-		return *this;
-	}
-};*/
-
 template<typename vd_type>
 __global__ void test_insert_sparse(vd_type vd_insert)
 {
@@ -51,24 +30,24 @@ __global__ void test_insert_sparse(vd_type vd_insert)
 	vd_insert.flush_block_insert();
 }
 
-template<unsigned int blockLength, typename vd_type>
-__global__ void test_insert_sparse_block(vd_type vd_insert)
-{
-	vd_insert.init();
-
-	int p = blockIdx.x*blockDim.x + threadIdx.x;
-
-	p *= 2;
-
-	auto ie = vd_insert.insert(10000 - p);
-	ie.template get<0>() = p + 100;
-	for (unsigned int i = 0 ; i < blockLength ; i++)
-	{
-		ie.template get<1>()[i] = p + 10100 + i;
-	}
-	
-	vd_insert.flush_block_insert();
-}
+//template<unsigned int blockLength, typename vd_type>
+//__global__ void test_insert_sparse_block(vd_type vd_insert)
+//{
+//	vd_insert.init();
+//
+//	int p = blockIdx.x*blockDim.x + threadIdx.x;
+//
+//	p *= 2;
+//
+//	auto ie = vd_insert.insert(10000 - p);
+//	ie.template get<0>() = p + 100;
+//	for (unsigned int i = 0 ; i < blockLength ; i++)
+//	{
+//		ie.template get<1>()[i] = p + 10100 + i;
+//	}
+//
+//	vd_insert.flush_block_insert();
+//}
 
 template<typename vd_type>
 __global__ void test_remove_sparse(vd_type vd_insert)
@@ -191,22 +170,22 @@ __global__ void test_sparse_get_test(vd_sparse_type vd_test, vector_out_type out
 	output.template get<2>(i) = vd_test.template get_ele<2>(v);
 }
 
-template<unsigned int blockLength, typename vd_sparse_type, typename vector_out_type>
-__global__ void test_sparse_get_test_block(vd_sparse_type vd_test, vector_out_type output)
-{
-	int p = blockIdx.x*blockDim.x + threadIdx.x;
-	int i = blockIdx.x*blockDim.x + threadIdx.x;
-
-	p *= 2;
-
-	int v;
-
-	output.template get<0>(i) = vd_test.template get<0>(10000 - p,v);
-	for (int j=0; j<blockLength; ++j)
-	{
-		output.template get<1>(i)[j] = vd_test.template get_ele<1>(v)[j];
-	}
-}
+//template<unsigned int blockLength, typename vd_sparse_type, typename vector_out_type>
+//__global__ void test_sparse_get_test_block(vd_sparse_type vd_test, vector_out_type output)
+//{
+//	int p = blockIdx.x*blockDim.x + threadIdx.x;
+//	int i = blockIdx.x*blockDim.x + threadIdx.x;
+//
+//	p *= 2;
+//
+//	int v;
+//
+//	output.template get<0>(i) = vd_test.template get<0>(10000 - p,v);
+//	for (int j=0; j<blockLength; ++j)
+//	{
+//		output.template get<1>(i)[j] = vd_test.template get_ele<1>(v)[j];
+//	}
+//}
 
 BOOST_AUTO_TEST_SUITE( vector_cuda_sparse )
 
@@ -226,17 +205,17 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 	test_insert_sparse<<<10,100>>>(vs.toKernel());
 
 	mgpu::ofp_context_t ctx;
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(10,1024);
 	test_insert_sparse2<<<10,100>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(4000,512);
 	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE,1);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE,1);
 
 	openfpm::vector_gpu<aggregate<size_t,float,double>> output;
 
@@ -275,62 +254,62 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 	BOOST_REQUIRE_EQUAL(match,true);
 }
 
-/*BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_block )
-{
-	openfpm::vector_sparse_gpu<aggregate<size_t, DataBlock>> vs;
-
-	// Set the background values
-	vs.template getBackground<0>() = 17;
-
-	for (int i=0; i<DataBlock::length; ++i)
-	{
-		vs.template getBackground<1>()[i] = 666;
-	}
-
-	const unsigned int gridSize = 5000;
-	const unsigned int blockSizeInsert = 128;
-	const unsigned int blockSizeRead = 256;
-
-	// Prealloc insertion buffer
-	vs.setGPUInsertBuffer(gridSize,1024);
-
-	// Insert some data on the vector_sparse_gpu
-	test_insert_sparse_block<DataBlock::length><<<gridSize,blockSizeInsert>>>(vs.toKernel());
-
-
-	mgpu::ofp_context_t ctx;
-
-	// Flushing the inserts with some reduction operator
-	vs.flush<sadd_<0>, smax_block_<1, DataBlock::length>>(ctx,flust_type::FLUSH_ON_DEVICE);
-
-	openfpm::vector_gpu<aggregate<size_t,DataBlock>> output;
-
-	output.resize(gridSize*blockSizeRead);
-
-	// Copy results to an output vector
-	test_sparse_get_test_block<DataBlock::length><<<gridSize,blockSizeRead>>>(vs.toKernel(),output.toKernel());
-
-	output.template deviceToHost<0,1>();
-	vs.template deviceToHost<0,1>();
-
-	bool match = true;
-	for (size_t i = 0 ; i < output.size()  ; i++)
-	{
-		match &= output.template get<0>(i) == vs.template get<0>(10000 - 2*i);
-		// std::cout << "SCALAR " << output.template get<0>(i) << std::endl;
-		// std::cout << i;
-		for (int j=0; j<DataBlock::length; ++j)
-		{
-			// std::cout << " " <<  output.template get<1>(i)[j] << "  " << vs.template get<1>(10000 - 2*i)[j] << ", ";
-			match &= output.template get<1>(i)[j] == vs.template get<1>(10000 - 2*i)[j];
-		}
-		// std::cout << std::endl;
-	}
-
-	BOOST_REQUIRE_EQUAL(match,true);
-
-	vs.clear();
-}*/
+//BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_block )
+//{
+//	openfpm::vector_sparse_gpu<aggregate<size_t, DataBlock>> vs;
+//
+//	// Set the background values
+//	vs.template getBackground<0>() = 17;
+//
+//	for (int i=0; i<DataBlock::length; ++i)
+//	{
+//		vs.template getBackground<1>()[i] = 666;
+//	}
+//
+//	const unsigned int gridSize = 500;
+//	const unsigned int blockSizeInsert = 128;
+//	const unsigned int blockSizeRead = 256;
+//
+//	// Prealloc insertion buffer
+//	vs.setGPUInsertBuffer(gridSize,1024);
+//
+//	// Insert some data on the vector_sparse_gpu
+//	test_insert_sparse_block<DataBlock::length><<<gridSize,blockSizeInsert>>>(vs.toKernel());
+//
+//
+//	mgpu::ofp_context_t ctx;
+//
+//	// Flushing the inserts with some reduction operator
+//	vs.flush<sadd_<0>, smax_block_<1, DataBlock::length>>(ctx,flush_type::FLUSH_ON_DEVICE);
+//
+//	openfpm::vector_gpu<aggregate<size_t,DataBlock>> output;
+//
+//	output.resize(gridSize*blockSizeRead);
+//
+//	// Copy results to an output vector
+//	test_sparse_get_test_block<DataBlock::length><<<gridSize,blockSizeRead>>>(vs.toKernel(),output.toKernel());
+//
+//	output.template deviceToHost<0,1>();
+//	vs.template deviceToHost<0,1>();
+//
+//	bool match = true;
+//	for (size_t i = 0 ; i < output.size()  ; i++)
+//	{
+//		match &= output.template get<0>(i) == vs.template get<0>(10000 - 2*i);
+//		// std::cout << "SCALAR " << output.template get<0>(i) << std::endl;
+//		// std::cout << i;
+//		for (int j=0; j<DataBlock::length; ++j)
+//		{
+//			// std::cout << " " <<  output.template get<1>(i)[j] << "  " << vs.template get<1>(10000 - 2*i)[j] << ", ";
+//			match &= output.template get<1>(i)[j] == vs.template get<1>(10000 - 2*i)[j];
+//		}
+//		// std::cout << std::endl;
+//	}
+//
+//	BOOST_REQUIRE_EQUAL(match,true);
+//
+//	vs.clear();
+//}
 
 BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 {
@@ -352,7 +331,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 
 	mgpu::ofp_context_t ctx;
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.template deviceToHost<0,1,2>();
 
@@ -400,7 +379,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 
 
 	mgpu::ofp_context_t ctx;
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.template deviceToHost<0,1,2>();
 
@@ -417,7 +396,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 	vs.setGPUInsertBuffer(10,1024);
 	test_insert_sparse2<<<10,100>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.template deviceToHost<0,1,2>();
 
@@ -455,7 +434,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 	vs.setGPUInsertBuffer(4000,512);
 	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE,1);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE,1);
 	vs.template deviceToHost<0,1,2>();
 
 	for (size_t i = 0 ; i <= 3500 ; i++)
@@ -515,7 +494,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_special_function )
 
 	mgpu::ofp_context_t ctx;
 
-	vs.flush<sstart_<0>>(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sstart_<0>>(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.template deviceToHost<0>();
 
@@ -643,17 +622,17 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 	test_insert_sparse<<<10,100>>>(vs.toKernel());
 
 	mgpu::ofp_context_t ctx;
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(10,1024);
 	test_insert_sparse2<<<10,100>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(4000,512);
 	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flust_type::FLUSH_ON_DEVICE,1);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE,1);
 
 	// we launch a kernel to insert data
 	vs.setGPURemoveBuffer(10,1024);
@@ -661,7 +640,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 
 	size_t sz = vs.size();
 
-	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 	vs.template deviceToHost<0,1,2>();
 
 	BOOST_REQUIRE_EQUAL(vs.size(),sz - 1000);
@@ -676,7 +655,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 	vs.setGPURemoveBuffer(10,1024);
 	test_remove_sparse2<<<10,100>>>(vs.toKernel());
 
-	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	BOOST_REQUIRE_EQUAL(vs.size(),sz - 1500);
 
@@ -691,7 +670,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 	vs.setGPURemoveBuffer(4000,512);
 	test_remove_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	BOOST_REQUIRE_EQUAL(vs.size(),0);
 
@@ -726,7 +705,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 
 	mgpu::ofp_context_t ctx;
 
-	vs.flush<sadd_<0>,sadd_<1>,sadd_<2>>(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>,sadd_<1>,sadd_<2>>(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	// we launch a kernel to insert data
 	vs.setGPURemoveBuffer(10,1024);
@@ -735,7 +714,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 	test_remove_sparse2_inc<<<10,99>>>(vs.toKernel());
 	test_remove_sparse2_inc<<<10,99>>>(vs.toKernel());
 
-	vs.flush_remove(ctx,flust_type::FLUSH_ON_DEVICE);
+	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	BOOST_REQUIRE_EQUAL(vs.size(),10);
 
