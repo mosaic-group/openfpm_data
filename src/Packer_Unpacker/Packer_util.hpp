@@ -406,7 +406,7 @@ struct call_pack_agg_functor
 
 		pack_pack_op<openfpm::is_multi_array<decltype(obj.template get<T::value>())>::value,obj_type,Mem>::template call_pack_pack<T::value>(mem,obj,sts);
 
-		Packer<obj_t,Mem>::pack(mem,obj.template get<T::value>(),sts);
+//		Packer<obj_t,Mem>::pack(mem,obj.template get<T::value>(),sts);
 	}
 };
 

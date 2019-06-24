@@ -141,7 +141,7 @@ public:
 	{
 		typedef typename std::remove_extent<T>::type prim_type;
 
-		meta_copy<T>::meta_copy_((prim_type *)ext.getPointer(),obj);
+		meta_copy<T>::meta_copy_((prim_type *)ext.getPointerOffset(ps.getOffset()),obj);
 
 		ps.addOffset(sizeof(T));
 	}

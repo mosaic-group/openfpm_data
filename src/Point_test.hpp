@@ -217,12 +217,12 @@ public:
 	//! getter method for a general property i
 	template<unsigned int i>
 	inline auto get() -> decltype(boost::fusion::at_c<i>(data))
-	{return boost::fusion::at_c<i>(data);};
+	{return boost::fusion::at_c<i>(data);}
 
 	//! getter method for a general property i
 	template<unsigned int i>
 	inline auto get() const -> decltype(boost::fusion::at_c<i>(data))
-	{return boost::fusion::at_c<i>(data);};
+	{return boost::fusion::at_c<i>(data);}
 
 	//! Default constructor
 	Point_test()

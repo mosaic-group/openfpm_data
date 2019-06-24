@@ -101,42 +101,32 @@ struct mem_get
 		return boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id));
 	}
 
+        /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get_c(const data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(boost::fusion::at_c<p>(data_.mem_r.operator[](g1.LinId(v1)))) &
 	{
 		return boost::fusion::at_c<p>(data_.mem_r.operator[](g1.LinId(v1)));
 	}
 
+        /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get_lin_c(const data_type & data_, const g1_type & g1, const size_t lin_id) -> decltype(boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id))) &
 	{
 		return boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id));
-	}
-
-	/*! \brief Return a reference to the selected element
-	 *
-	 * \param data object from where to take the element
-	 * \param g1 grid information
-	 * \param v1 element id
-	 *
-	 * \return a reference to the object selected
-	 *
-	 */
-	static inline auto get_const(const data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(openfpm::as_const(boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1))) )  ) &
-	{
-		return boost::fusion::at_c<p>(data_.mem_r->operator[](g1.LinId(v1)));
-	}
-
-	/*! \brief Return a reference to the selected element
-	 *
-	 * \param data object from where to take the element
-	 * \param g1 grid information
-	 * \param v1 element id
-	 *
-	 * \return a reference to the object selected
-	 *
-	 */
-	static inline auto get_lin_const(const data_type & data_, const g1_type & g1, const size_t lin_id) -> decltype(openfpm::as_const(boost::fusion::at_c<p>(data_.mem_r->operator[](lin_id)))) &
-	{
-		return boost::fusion::at_c<p>(data_.mem_r->operator[](lin_id));
 	}
 };
 
@@ -172,42 +162,32 @@ struct mem_get<p,layout,data_type,g1_type,key_type,1>
 		return boost::fusion::at_c<p>(data_).mem_r.operator[](lin_id);
 	}
 
+	 /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a const reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get_c(const data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(boost::fusion::at_c<p>(data_).mem_r.operator[](g1.LinId(v1)))
 	{
 		return boost::fusion::at_c<p>(data_).mem_r.operator[](g1.LinId(v1));
 	}
 
+        /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a const reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get_lin_c(const data_type & data_, const g1_type & g1, size_t lin_id) -> decltype(boost::fusion::at_c<p>(data_).mem_r.operator[](lin_id))
 	{
 		return boost::fusion::at_c<p>(data_).mem_r.operator[](lin_id);
-	}
-
-	/*! \brief Return a reference to the selected element
-	 *
-	 * \param data object from where to take the element
-	 * \param g1 grid information
-	 * \param v1 element id
-	 *
-	 * \return a const reference to the object selected
-	 *
-	 */
-	static inline auto get_const(const data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(openfpm::as_const(boost::fusion::at_c<p>(data_).mem_r)->operator[](g1.LinId(v1)))
-	{
-		return boost::fusion::at_c<p>(data_).mem_r->operator[](g1.LinId(v1));
-	}
-
-	/*! \brief Return a reference to the selected element
-	 *
-	 * \param data object from where to take the element
-	 * \param g1 grid information
-	 * \param v1 element id
-	 *
-	 * \return a const reference to the object selected
-	 *
-	 */
-	static inline auto get_lin_const(const data_type & data_, const g1_type & g1, size_t lin_id) -> decltype(openfpm::as_const(boost::fusion::at_c<p>(data_).mem_r)->operator[](lin_id))
-	{
-		return boost::fusion::at_c<p>(data_).mem_r->operator[](lin_id);
 	}
 };
 

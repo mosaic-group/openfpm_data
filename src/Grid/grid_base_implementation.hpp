@@ -11,6 +11,7 @@
 #include "grid_base_impl_layout.hpp"
 #include "util/cuda_util.hpp"
 #include "cuda/cuda_grid_gpu_funcs.cuh"
+#include "util/create_vmpl_sequence.hpp"
 
 #define DATA_ON_HOST 32
 #define DATA_ON_DEVICE 64
@@ -199,6 +200,40 @@ bool has_work_gpu(ite_gpu<dim> & ite)
 
 #include "copy_grid_fast.hpp"
 
+template<typename T>
+struct copy_grid_fast_caller
+{
+	template<typename grid_type>
+	static void call(grid_type & gd, const grid_type & gs, const Box<grid_type::dims,size_t> & box_src, const Box<grid_type::dims,size_t> & box_dst)
+	{
+		std::cout << "Error: " << __FILE__ << ":" << __LINE__ << " copy_grid_fast_caller failure" << std::endl;
+	}
+};
+
+template<int ... prp>
+struct copy_grid_fast_caller<index_tuple_sq<prp ...>>
+{
+	template<typename grid_type>
+	static void call(grid_type & gd, const grid_type & gs, const Box<grid_type::dims,size_t> & box_src, const Box<grid_type::dims,size_t> & box_dst)
+	{
+        grid_key_dx<grid_type::dims> cnt[1];
+        cnt[0].zero();
+
+        typedef typename std::remove_reference<decltype(gd)>::type grid_cp;
+        typedef typename std::remove_reference<decltype(gd.getGrid())>::type grid_info_cp;
+
+        typedef typename to_int_sequence<0,grid_type::value_type::max_prop>::type result;
+
+        copy_grid_fast<!is_contiguos<prp...>::type::value || has_pack_gen<typename grid_type::value_type>::value,
+                                   grid_type::dims,
+                                   grid_cp,
+                                   grid_info_cp>::copy(gs.getGrid(),
+                                   gd.getGrid(),
+                                   box_src,
+                                   box_dst,
+                                   gs,gd,cnt);
+	}
+};
 
 /*! \brief
  *
@@ -769,31 +804,6 @@ public:
 		return mem_getpointer<decltype(data_),layout_base_>::template getPointer<p>(data_);
 	}
 
-	/*! \brief Get the address of the selected element
-	 *
-	 * \param v1 grid_key that identify the element in the grid
-	 *
-	 * \return the reference of the element
-	 *
-	 */
-	template <unsigned int p, typename r_type=decltype(&mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
-	__device__ __host__ inline r_type get_address(const grid_key_dx<dim> & v1)
-	{
-		return &mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
-	}
-
-	/*! \brief Get the address of the selected element
-	 *
-	 * \param v1 grid_key that identify the element in the grid
-	 *
-	 * \return the reference of the element
-	 *
-	 */
-	template <unsigned int p, typename r_type=decltype(&mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
-	__device__ __host__ inline r_type get_address(const grid_key_dx<dim> & v1) const
-	{
-		return &mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
-	}
 
 	/*! \brief In this case insert is equivalent to get
 	 *
@@ -813,6 +823,45 @@ public:
 		check_bound(v1);
 #endif
 		return this->get<p>(v1);
+	}
+
+
+	/*! \brief Get the reference of the selected element
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return the reference of the element
+	 *
+	 */
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	__device__ __host__ inline r_type get_usafe(const grid_key_dx<dim> & v1)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+#endif
+		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
+	}
+
+	/*! \brief Get the const reference of the selected element
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return the const reference of the element
+	 *
+	 */
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
+	__device__ __host__ inline r_type get_unsafe(const grid_key_dx<dim> & v1) const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+#endif
+		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -1027,17 +1076,21 @@ public:
 	 * It copy the area indicated by the  box_src from grid_src into this grid
 	 * at the place box_dst. The volume of box_src and box_dst
 	 *
+	 * box_dst and box_src are adjusted if box_dst overflow the destination grid
+	 *
 	 * \param grid_src source grid
 	 * \param box_src source box
 	 * \param box_dst destination box
 	 *
 	 */
 	void copy_to(const grid_base_impl<dim,T,S,layout_,layout_base> & grid_src,
-			     const Box<dim,size_t> & box_src,
-				 const Box<dim,size_t> & box_dst)
+			     const Box<dim,long int> & box_src,
+				 const Box<dim,long int> & box_dst)
 	{
+
+
 		// sub-grid where to unpack
-		grid_key_dx_iterator_sub<dim> src(grid_src.getGrid(),box_src.getKP1(),box_src.getKP2());
+/*		grid_key_dx_iterator_sub<dim> src(grid_src.getGrid(),box_src.getKP1(),box_src.getKP2());
 		grid_key_dx_iterator_sub<dim> dst(getGrid(),box_dst.getKP1(),box_dst.getKP2());
 
 		while (src.isNext())
@@ -1049,7 +1102,90 @@ public:
 
 			++src;
 			++dst;
+		}*/
+
+		///////////////////////////////////////
+
+//        typedef typename std::remove_reference<decltype(grid_src)>::type grid_cp;
+//        typedef typename std::remove_reference<decltype(grid_src.getGrid())>::type grid_info_cp;
+
+		// fix box_dst
+
+	     Box<dim,size_t> box_src_;
+		 Box<dim,size_t> box_dst_;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (box_dst.getHigh(i) >= g1.size(i))
+			{
+				long int shift = box_dst.getHigh(i) - g1.size(i) + 1;
+				box_dst_.setHigh(i,box_dst.getHigh(i) - shift);
+				box_src_.setHigh(i,box_src.getHigh(i) - shift);
+			}
+			else
+			{
+				box_dst_.setHigh(i,box_dst.getHigh(i));
+				box_src_.setHigh(i,box_src.getHigh(i));
+			}
+
+			if (box_dst.getLow(i) < 0)
+			{
+				long int shift = -box_dst.getLow(i);
+				box_dst_.setLow(i,box_dst.getLow(i) - shift);
+				box_src_.setLow(i,box_src.getLow(i) - shift);
+			}
+			else
+			{
+				box_dst_.setLow(i,box_dst.getLow(i));
+				box_src_.setLow(i,box_src.getLow(i));
+			}
 		}
+
+        typedef typename to_int_sequence<0,T::max_prop>::type result;
+
+        copy_grid_fast_caller<result>::call(*this,grid_src,box_src_,box_dst_);
+
+/*        copy_grid_fast<!is_contiguos<prp...>::type::value || has_pack_gen<typename device_grid::value_type>::value,
+                                   dim,
+                                   grid_cp,
+                                   grid_info_cp>::copy(grid_src.getGrid(),
+                                   this->getGrid(),
+                                   box_src,
+                                   box_dst,
+                                   grid_src,*this,cnt);*/
+
+		/////////////////////////////////////////
+	}
+
+	/*! \brief copy an external grid into a specific place into this grid
+	 *
+	 * It copy the area indicated by the  box_src from grid_src into this grid
+	 * at the place box_dst. The volume of box_src and box_dst
+	 *
+	 * \param grid_src source grid
+	 * \param box_src source box
+	 * \param box_dst destination box
+	 *
+	 */
+	template<unsigned int ... prp>
+	void copy_to_prp(const grid_base_impl<dim,T,S,layout_,layout_base> & grid_src,
+			     const Box<dim,size_t> & box_src,
+				 const Box<dim,size_t> & box_dst)
+	{
+        typedef typename std::remove_reference<decltype(grid_src)>::type grid_cp;
+        typedef typename std::remove_reference<decltype(grid_src.getGrid())>::type grid_info_cp;
+
+        grid_key_dx<dim> cnt[1];
+        cnt[0].zero();
+
+        copy_grid_fast<!is_contiguos<prp...>::type::value || has_pack_gen<T>::value,
+                                   dim,
+                                   grid_cp,
+                                   grid_info_cp>::copy(grid_src.getGrid(),
+                                   this->getGrid(),
+                                   box_src,
+                                   box_dst,
+                                   grid_src,*this,cnt);
 	}
 
 	/*! \brief It does nothing
@@ -1430,13 +1566,13 @@ public:
 	 * \return a sub-grid iterator
 	 *
 	 */
-/*	inline grid_key_dx_iterator_sub<dim> getSubIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
+	inline grid_key_dx_iterator_sub<dim> getSubIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
 #endif
 		return g1.getSubIterator(start,stop);
-	}*/
+	}
 
 	/*! \brief Return a sub-grid iterator
 	 *

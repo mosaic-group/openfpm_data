@@ -583,10 +583,12 @@ class grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> : public grid_base_
 {
 	typedef typename apply_transform<memory_traits_inte,T>::type T_;
 
-	//! grid layout
-	typedef typename memory_traits_inte<T>::type layout;
+	T background;
 
 public:
+
+	//! grid layout
+	typedef typename memory_traits_inte<T>::type layout;
 
 	//! Object container for T, it is the return type of get_o it return a object type trough
 	// you can access all the properties of T

@@ -141,6 +141,15 @@ public:
 		return cl_n.size();
 	}
 
+	/*! \brief Destroy the internal memory including the retained one
+	 *
+	 */
+	inline void destroy()
+	{
+		cl_n.swap(openfpm::vector<aggregate<local_index>,Memory>());
+		cl_base.swap(base());
+	}
+
 	/*! \brief Initialize the data to zero
 	 *
 	 * \param slot number of slot for each cell
