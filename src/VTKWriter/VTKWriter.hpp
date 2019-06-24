@@ -103,6 +103,7 @@ enum file_type
 #define VTK_WRITER 0x10000
 #define FORMAT_ASCII 0x0
 #define FORMAT_BINARY 0x10000000
+#define PRINT_GHOST 1
 
 template <typename Object, unsigned int imp>
 class VTKWriter
@@ -120,7 +121,6 @@ class VTKWriter
 #ifndef DISABLE_MPI_WRITTERS
 #include "VTKWriter_dist_graph.hpp"
 #endif
-
 
 #include "VTKWriter_point_set.hpp"
 

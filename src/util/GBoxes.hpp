@@ -45,6 +45,10 @@ struct GBoxes
 	//! origin of GDbox in global grid coordinates
 	Point<dim,long int> origin;
 
+	//! In case the grid is not defined everywhere but is defined by a set of boxes
+	//! indicate from which box it come from
+	size_t k;
+
 	/*! \brief Indicate that this structure has no pointers inside
 	 *
 	 * \return true
