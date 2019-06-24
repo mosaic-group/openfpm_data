@@ -891,7 +891,24 @@ namespace openfpm
 			vct_add_data.clear();
 			vct_add_index.clear();
 		}
+	private:
+        /*! \brief Get the indices buffer
+        *
+        * \return the reference to the indices buffer
+        */
+        auto getIndexBuffer() -> decltype(vct_index)&
+        {
+            return vct_index;
+        }
 
+        /*! \brief Get the data buffer
+         *
+         * \return the reference to the data buffer
+         */
+        auto getDataBuffer() -> decltype(vct_data)&
+        {
+            return vct_data;
+        }
 	public:
 
 		vector_sparse()

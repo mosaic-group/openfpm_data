@@ -35,8 +35,6 @@ private:
 //    size_t sz[dim];
 
 public:
-    //todo: Add a constructor from dim3 and uint3 objects
-
     __host__ __device__ BlockGeometry(const size_t blockDimensions[dim])
     {
         memcpy(blockSz, blockDimensions, dim * sizeof(size_t));
@@ -64,6 +62,38 @@ public:
 //            sz[i] = blockGrid.size(i) * blockEdgeSize;
         }
     }
+
+#ifdef __NVCC__
+    //Constructors from dim3 and uint3 objects
+    __host__ __device__ BlockGeometry(const dim3 blockDimensions)
+    {
+        assert(dim <= 3);
+        blockSz[0] = blockDimensions.x;
+        if (dim > 1)
+        {
+            blockSz[1] = blockDimensions.y;
+            if (dim > 2)
+            {
+                blockSz[2] = blockDimensions.z;
+            }
+        }
+    }
+
+    __host__ __device__ BlockGeometry(const uint3 blockDimensions)
+    {
+        assert(dim <= 3);
+        blockSz[0] = blockDimensions.x;
+        if (dim > 1)
+        {
+            blockSz[1] = blockDimensions.y;
+            if (dim > 2)
+            {
+                blockSz[2] = blockDimensions.z;
+            }
+        }
+    }
+
+#endif // __NVCC__
 
     __host__ __device__ BlockGeometry(const BlockGeometry<dim, blockEdgeSize> &other)
     {
@@ -100,6 +130,11 @@ public:
     {
         mem_id blockLinId = linId / blockSize;
         mem_id localLinId = linId % blockSize;
+        return InvLinId(blockLinId, localLinId);
+    }
+
+    inline __host__ __device__ grid_key_dx<dim> InvLinId(mem_id blockLinId, mem_id localLinId) const
+    {
         grid_key_dx<dim> coord;
         for (int d = 0; d < dim; ++d)
         {
@@ -111,6 +146,31 @@ public:
             localLinId /= blockEdgeSize;
         }
         return coord;
+    }
+
+    // Now methods to handle blockGrid coordinates (e.g. to load neighbouring blocks)
+    template<typename indexT>
+    inline __host__ __device__ mem_id BlockLinId(const grid_key_dx<dim, indexT> blockCoord) const
+    {
+        mem_id blockLinId = blockCoord.get(dim - 1);
+        for (int d = dim - 2; d >= 0; --d)
+        {
+            blockLinId *= blockSz[d];
+            blockLinId += blockCoord.get(d);
+        }
+        return blockLinId;
+    }
+
+    inline __host__ __device__ grid_key_dx<dim> BlockInvLinId(mem_id blockLinId) const
+    {
+        grid_key_dx<dim> blockCoord;
+        for (int d = 0; d < dim; ++d)
+        {
+            auto c = blockLinId % blockSz[d];
+            blockCoord.set_d(d, c);
+            blockLinId /= blockSz[d];
+        }
+        return blockCoord;
     }
 };
 

@@ -76,6 +76,8 @@ __global__ void copyBlocksToOutput(SparseGridType sparseGrid, VectorOutType outp
     output.template get<p>(pos) = value;
 }
 
+//todo: Here write some sort of stencil kernel to test the client interface for stencil application
+
 BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
 
     BOOST_AUTO_TEST_CASE(testInsert)
@@ -88,14 +90,16 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
         constexpr unsigned int dataBlockSize = blockEdgeSize * blockEdgeSize;
         typedef aggregate<DataBlock<float, dataBlockSize>> AggregateSGT;
         typedef aggregate<float> AggregateOutT;
-        BlockGeometry<2, blockEdgeSize> blockGeometry(2);
+
+        dim3 gridSize(2, 2, 2);
+        dim3 blockSizeInsert(blockEdgeSize, blockEdgeSize, blockEdgeSize);
+
+        BlockGeometry<dim, blockEdgeSize> blockGeometry(gridSize);
         SparseGridGpu<dim, blockEdgeSize, AggregateSGT> sparseGrid(blockGeometry);
 
         sparseGrid.template setBackground<0>(666);
 //        const unsigned int gridSizeLin = 4;
 //        const unsigned int bufferPoolSize = 1024;
-        dim3 gridSize(2, 2);
-        dim3 blockSizeInsert(blockEdgeSize, blockEdgeSize);
 //        const unsigned int blockSizeInsert = 128;
 //        const unsigned int gridSizeRead = gridSize + 1;
 //        const unsigned int blockSizeRead = 128;
@@ -147,12 +151,14 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
         constexpr unsigned int dataBlockSize = blockEdgeSize * blockEdgeSize;
         typedef aggregate<DataBlock<float, dataBlockSize>> AggregateSGT;
         typedef aggregate<float> AggregateOutT;
-        BlockGeometry<dim, blockEdgeSize> blockGeometry(2);
-        SparseGridGpu<dim, blockEdgeSize, AggregateSGT, 64> sparseGrid(blockGeometry);
 
-        sparseGrid.template setBackground<0>(666);
         dim3 gridSize(2, 2, 2);
         dim3 blockSizeInsert(blockEdgeSize, blockEdgeSize, blockEdgeSize);
+
+        BlockGeometry<dim, blockEdgeSize> blockGeometry(gridSize);
+        SparseGridGpu<dim, blockEdgeSize, AggregateSGT> sparseGrid(blockGeometry);
+
+        sparseGrid.template setBackground<0>(666);
 
         sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
         sparseGrid.initializeGPUInsertBuffer<0>();

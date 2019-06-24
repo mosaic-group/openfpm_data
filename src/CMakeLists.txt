@@ -18,7 +18,7 @@ if (CUDA_FOUND)
             SparseGridGpu/BlockMapGpu_ker.cuh
             SparseGridGpu/tests/BlockMapGpu_tests.cu
             SparseGridGpu/DataBlock.cuh SparseGridGpu/BlockMapGpu_kernels.cuh
-            util/cuda/segreduce_block_cuda.cuh util/cuda/test/segreduce_block_cuda_tests.cu SparseGridGpu/BlockMapGpu_dimensionalityWrappers.cuh SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu SparseGridGpu/SparseGridGpu.hpp SparseGridGpu/tests/SparseGridGpu_tests.cu SparseGridGpu/SparseGridGpu_ker.cuh)
+            util/cuda/segreduce_block_cuda.cuh util/cuda/test/segreduce_block_cuda_tests.cu SparseGridGpu/BlockMapGpu_dimensionalityWrappers.cuh SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu SparseGridGpu/SparseGridGpu.hpp SparseGridGpu/tests/SparseGridGpu_tests.cu SparseGridGpu/SparseGridGpu_ker.cuh SparseGridGpu/SparseGridGpu_kernels.cuh)
 else ()
     set(CUDA_SOURCES)
 endif ()
