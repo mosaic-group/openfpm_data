@@ -267,7 +267,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		// Here we fill the sparse vector
 		cl_sparse.clear();
-		cl_sparse.template getBackground<0>() = (cnt_type)-1;
+		cl_sparse.template setBackground<0>((cnt_type)-1);
 		cl_sparse.setGPUInsertBuffer(ite_gpu.wthr.x,ite_gpu.thr.x);
 		CUDA_LAUNCH((fill_cells_sparse),ite_gpu,cl_sparse.toKernel(),starts.toKernel());
 		cl_sparse.template flush_vd<sstart_<0>>(cells,mgpuContext,FLUSH_ON_DEVICE);

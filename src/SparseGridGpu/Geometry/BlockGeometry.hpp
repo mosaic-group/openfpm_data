@@ -32,16 +32,19 @@ class BlockGeometry
 private:
     constexpr static size_t blockSize = IntPow<blockEdgeSize, dim>::value;
     size_t blockSz[dim];
-//    size_t sz[dim];
+    size_t sz[dim];
 
 public:
+
+    BlockGeometry()	{}
+
     __host__ __device__ BlockGeometry(const size_t blockDimensions[dim])
     {
         memcpy(blockSz, blockDimensions, dim * sizeof(size_t));
-//        for (int d=0; d<dim; ++d)
-//        {
-//            sz[d] = blockDimensions[d] * blockEdgeSize;
-//        }
+        for (int d=0; d<dim; ++d)
+        {
+            sz[d] = blockDimensions[d] * blockEdgeSize;
+        }
     }
 
     __host__ __device__ BlockGeometry(const size_t domainBlockEdgeSize)
@@ -49,7 +52,7 @@ public:
         for (int i = 0; i < dim; ++i)
         {
             blockSz[i] = domainBlockEdgeSize;
-//            sz[i] = domainBlockEdgeSize * blockEdgeSize;
+            sz[i] = domainBlockEdgeSize * blockEdgeSize;
         }
     }
 
@@ -59,7 +62,7 @@ public:
         for (int i = 0; i < dim; ++i)
         {
             blockSz[i] = blockGrid.size(i);
-//            sz[i] = blockGrid.size(i) * blockEdgeSize;
+            sz[i] = blockGrid.size(i) * blockEdgeSize;
         }
     }
 
@@ -67,22 +70,29 @@ public:
     //Constructors from dim3 and uint3 objects
     __host__ __device__ BlockGeometry(const dim3 blockDimensions)
     {
+    	unsigned int i = 0;
         assert(dim <= 3);
-        blockSz[0] = blockDimensions.x;
+        blockSz[i] = blockDimensions.x;
+        sz[i] = blockSz[i] * blockEdgeSize;
         if (dim > 1)
         {
-            blockSz[1] = blockDimensions.y;
+        	++i;
+            blockSz[i] = blockDimensions.y;
+            sz[i] = blockSz[i] * blockEdgeSize;
             if (dim > 2)
             {
-                blockSz[2] = blockDimensions.z;
+            	++i;
+                blockSz[i] = blockDimensions.z;
+                sz[i] = blockSz[i] * blockEdgeSize;
             }
         }
     }
 
-    __host__ __device__ BlockGeometry(const uint3 blockDimensions)
+/*    __host__ __device__ BlockGeometry(const uint3 blockDimensions)
     {
         assert(dim <= 3);
         blockSz[0] = blockDimensions.x;
+        sz[i] = blockSz[0] * blockEdgeSize;
         if (dim > 1)
         {
             blockSz[1] = blockDimensions.y;
@@ -91,14 +101,14 @@ public:
                 blockSz[2] = blockDimensions.z;
             }
         }
-    }
+    }*/
 
 #endif // __NVCC__
 
     __host__ __device__ BlockGeometry(const BlockGeometry<dim, blockEdgeSize> &other)
     {
         memcpy(blockSz, other.blockSz, dim * sizeof(size_t));
-//        memcpy(sz, other.sz, dim * sizeof(size_t));
+        memcpy(sz, other.sz, dim * sizeof(size_t));
     }
 
     __host__ __device__ BlockGeometry &operator=(const BlockGeometry<dim, blockEdgeSize> &other)
@@ -106,10 +116,15 @@ public:
         if (&other != this)
         {
             memcpy(blockSz, other.blockSz, dim * sizeof(size_t));
-//            memcpy(sz, other.sz, dim * sizeof(size_t));
+            memcpy(sz, other.sz, dim * sizeof(size_t));
         }
         return *this;
     }
+
+    __host__ __device__ const size_t (& getSize() const)[dim]
+	{
+    	return sz;
+	}
 
     template<typename indexT>
     inline __host__ __device__ mem_id LinId(const grid_key_dx<dim, indexT> coord) const
@@ -171,6 +186,16 @@ public:
             blockLinId /= blockSz[d];
         }
         return blockCoord;
+    }
+
+    inline size_t size() const
+    {
+    	size_t sz = 1;
+
+    	for (size_t i = 0 ; i < dim ; i++)
+    	{sz *= blockSz[i];}
+
+    	return sz;
     }
 };
 

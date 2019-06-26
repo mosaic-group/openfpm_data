@@ -515,7 +515,7 @@ void test_cell_count_n()
 	openfpm::vector_gpu<aggregate<unsigned int>> cells_nn;
 	openfpm::vector_gpu<aggregate<int>> cells_nn_test;
 
-	vs.template getBackground<0>() = -1;
+	vs.template setBackground<0>(-1);
 
 	vs.setGPUInsertBuffer(1,32);
 

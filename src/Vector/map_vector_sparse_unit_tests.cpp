@@ -11,23 +11,15 @@ BOOST_AUTO_TEST_CASE ( test_sparse_vector_use )
 	openfpm::vector_sparse<aggregate<size_t,size_t[3],size_t[3][3]>> vs;
 
 	aggregate<size_t,size_t[3],size_t[3][3]> bck;
-	vs.template getBackground<0>() = 0;
+	vs.template setBackground<0>(0);
 
-	vs.template getBackground<1>()[0] = 0;
-	vs.template getBackground<1>()[1] = 0;
-	vs.template getBackground<1>()[2] = 0;
+	size_t v[3] = {0,0,0};
 
-	vs.template getBackground<2>()[0][0] = 0;
-	vs.template getBackground<2>()[0][1] = 0;
-	vs.template getBackground<2>()[0][2] = 0;
+	vs.template setBackground<1>(v);
 
-	vs.template getBackground<2>()[1][0] = 0;
-	vs.template getBackground<2>()[1][1] = 0;
-	vs.template getBackground<2>()[1][2] = 0;
+	size_t t[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
 
-	vs.template getBackground<2>()[2][0] = 0;
-	vs.template getBackground<2>()[2][1] = 0;
-	vs.template getBackground<2>()[2][2] = 0;
+	vs.template setBackground<2>(t);
 
 	vs.template insert<0>(5) = 5;
 	vs.template insert<0>(8) = 8;

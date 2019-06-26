@@ -15,31 +15,27 @@
 
 namespace BlockMapGpuKernels
 {
-    template<unsigned int p, unsigned int maskProp, unsigned int chunksPerBlock, typename InsertBufferT, typename ScalarT>
-    __global__ void initializeInsertBuffer(InsertBufferT insertBuffer, ScalarT backgroundValue)
+    template<unsigned int maskProp, unsigned int chunksPerBlock, typename InsertBufferT>
+    __global__ void initializeInsertBuffer(InsertBufferT insertBuffer)
     {
 #ifdef __NVCC__
         typedef typename InsertBufferT::value_type AggregateT;
-        typedef BlockTypeOf<AggregateT, p> BlockT;
         typedef BlockTypeOf<AggregateT, maskProp> MaskT;
 
         int pos = blockIdx.x * blockDim.x + threadIdx.x;
-        const unsigned int dataBlockId = pos / BlockT::size;
-        const unsigned int offset = pos % BlockT::size;
+        const unsigned int dataBlockId = pos / MaskT::size;
+        const unsigned int offset = pos % MaskT::size;
         const unsigned int chunkOffset = dataBlockId % chunksPerBlock;
 
-        __shared__ BlockT data[chunksPerBlock];
         __shared__ MaskT mask[chunksPerBlock];
 
         if (dataBlockId < insertBuffer.size())
         {
-            data[chunkOffset][offset] = backgroundValue;
             mask[chunkOffset][offset] = 0;
 
             __syncthreads();
 
             // Here the operator= spreads nicely across threads...
-            insertBuffer.template get<p>(dataBlockId) = data[chunkOffset];
             insertBuffer.template get<maskProp>(dataBlockId) = mask[chunkOffset];
         }
         else

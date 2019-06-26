@@ -55,6 +55,11 @@ public:
         return grid.LinId(coord);
     }
 
+    inline __device__ unsigned int size(unsigned int i)
+    {
+    	return grid.getSize()[i];
+    }
+
     inline __device__ grid_key_dx<dim> getCoord(size_t linId) const
     {
         return grid.InvLinId(linId);

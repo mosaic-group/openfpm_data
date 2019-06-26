@@ -193,11 +193,11 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 {
 	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
 
-	vs.template getBackground<0>() = 17;
+	vs.template setBackground<0>(17);
 
-	vs.template getBackground<1>() = 18;
+	vs.template setBackground<1>(18);
 
-	vs.template getBackground<2>() = 19;
+	vs.template setBackground<2>(19);
 
 	vs.setGPUInsertBuffer(10,1024);
 
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 	vs.setGPUInsertBuffer(4000,512);
 	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE,1);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	openfpm::vector_gpu<aggregate<size_t,float,double>> output;
 
@@ -315,11 +315,11 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 {
 	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
 
-	vs.template getBackground<0>() = 17;
+	vs.template setBackground<0>(17);
 
-	vs.template getBackground<1>() = 18;
+	vs.template setBackground<1>(18);
 
-	vs.template getBackground<2>() = 19;
+	vs.template setBackground<2>(19);
 
 	vs.setGPUInsertBuffer(10,1024);
 
@@ -366,11 +366,11 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 {
 	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
 
-	vs.template getBackground<0>() = 0;
+	vs.template setBackground<0>(0);
 
-	vs.template getBackground<1>() = 0;
+	vs.template setBackground<1>(0);
 
-	vs.template getBackground<2>() = 0;
+	vs.template setBackground<2>(0);
 
 	vs.setGPUInsertBuffer(10,1024);
 
@@ -434,7 +434,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 	vs.setGPUInsertBuffer(4000,512);
 	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE,1);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 	vs.template deviceToHost<0,1,2>();
 
 	for (size_t i = 0 ; i <= 3500 ; i++)
@@ -478,11 +478,11 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_special_function )
 {
 	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
 
-	vs.template getBackground<0>() = 17;
+	vs.template setBackground<0>(17);
 
-	vs.template getBackground<1>() = 18;
+	vs.template setBackground<1>(18);
 
-	vs.template getBackground<2>() = 19;
+	vs.template setBackground<2>(19);
 
 	vs.setGPUInsertBuffer(10,1024);
 
@@ -610,11 +610,11 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 {
 	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
 
-	vs.template getBackground<0>() = 17;
+	vs.template setBackground<0>(17);
 
-	vs.template getBackground<1>() = 18;
+	vs.template setBackground<1>(18);
 
-	vs.template getBackground<2>() = 19;
+	vs.template setBackground<2>(19);
 
 	vs.setGPUInsertBuffer(10,1024);
 
@@ -632,7 +632,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 	vs.setGPUInsertBuffer(4000,512);
 	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
 
-	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE,1);
+	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	// we launch a kernel to insert data
 	vs.setGPURemoveBuffer(10,1024);
@@ -689,11 +689,11 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 {
 	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
 
-	vs.template getBackground<0>() = 17;
+	vs.template setBackground<0>(17);
 
-	vs.template getBackground<1>() = 18;
+	vs.template setBackground<1>(18);
 
-	vs.template getBackground<2>() = 19;
+	vs.template setBackground<2>(19);
 
 	vs.setGPUInsertBuffer(10,1024);
 

@@ -11,13 +11,65 @@
 #include <SparseGridGpu/Geometry/BlockGeometry.hpp>
 #include "SparseGridGpu_ker.cuh"
 #include "SparseGridGpu_kernels.cuh"
+#include "iterators/SparseGridGpu_iterator_sub.hpp"
 
-template<unsigned int dim, unsigned int blockEdgeSize, typename AggregateBlockT, unsigned int threadBlockSize = 128, typename indexT=int, template<typename> class layout_base=memory_traits_inte>
-class SparseGridGpu : public BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>
+template<unsigned int dim>
+struct default_edge
+{
+	typedef boost::mpl::int_<2> type;
+};
+
+
+template<>
+struct default_edge<1>
+{
+	typedef boost::mpl::int_<64> type;
+};
+
+template<>
+struct default_edge<2>
+{
+	typedef boost::mpl::int_<8> type;
+};
+
+template<>
+struct default_edge<3>
+{
+	typedef boost::mpl::int_<4> type;
+};
+
+template<unsigned int dim, unsigned int blockEdgeSize, typename ... aggr_list>
+struct aggregate_transform_datablock_impl
+{
+	typedef aggregate<DataBlock<aggr_list,IntPow<blockEdgeSize,dim>::value>...> type;
+};
+
+template<unsigned int dim, unsigned int blockEdgeSize, typename aggr>
+struct aggregate_convert
+{
+};
+
+template<unsigned int dim, unsigned int blockEdgeSize, typename ... types>
+struct aggregate_convert<dim,blockEdgeSize,aggregate<types ...>>
+{
+	typedef typename aggregate_transform_datablock_impl<dim,blockEdgeSize,types ...>::type type;
+};
+
+template<unsigned int dim,
+		 typename AggregateT,
+		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
+		 unsigned int threadBlockSize = 128,
+		 typename indexT=int,
+		 template<typename> class layout_base=memory_traits_inte>
+class SparseGridGpu : public BlockMapGpu<typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type, threadBlockSize, indexT, layout_base>
 {
 private:
+
+	typedef typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type AggregateBlockT;
+
     BlockGeometry<dim, blockEdgeSize> gridGeometry;
     grid_sm<dim, int> extendedBlockGeometry;
+    grid_sm<dim,void> gridSize;
     unsigned int stencilSupportRadius;
     unsigned int ghostLayerSize;
     unsigned int *ghostLayerToThreadsMapping;
@@ -26,18 +78,55 @@ protected:
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
 
 public:
+
+    static constexpr unsigned int dims = dim;
+
+   typedef grid_key_dx<dim, indexT> base_key;
+
+	/*! \brief return the size of the grid
+	 *
+	 * \return Return the size of the grid
+	 *
+	 */
+	inline size_t size() const
+	{
+		return gridGeometry.size();
+	}
+
+	/*! \brief This is a meta-function return which type of sub iterator a grid produce
+	 *
+	 * \return the type of the sub-grid iterator
+	 *
+	 */
+	template <typename stencil = no_stencil>
+	static SparseGridGpu_iterator_sub<dim> type_of_subiterator()
+	{
+		return SparseGridGpu_iterator_sub<dim>();
+	}
+
+	/*! \brief This is a meta-function return which type of iterator a grid produce
+	 *
+	 * \return the type of the sub-grid iterator
+	 *
+	 */
+	static SparseGridGpu_iterator type_of_iterator()
+	{
+		return SparseGridGpu_iterator();
+	}
+
     template<typename dim3T>
     inline static int dim3SizeToInt(dim3T d)
     {
         return d.x * d.y * d.z;
     }
 
-    inline static int dim3SizeToInt(unsigned int d)
+    inline static int dim3SizeToInt(size_t d)
     {
         return d;
     }
 
 private:
+
     void computeSizeOfGhostLayer()
     {
         unsigned int term1 = 1;
@@ -84,7 +173,6 @@ private:
         grid_skin_iterator_bc<dim> gsi(enlargedGrid, innerBox, outerBox, bc);
 
         unsigned int i = 0;
-        unsigned int limit = ghostLayerSize;
         while (gsi.isNext())
         {
             auto coord = gsi.get();
@@ -94,15 +182,25 @@ private:
             ++i;
             ++gsi;
         }
-        assert(i == limit);
+        assert(i == ghostLayerSize);
 //        std::cout << "i=" << i << ", limit=" << limit << std::endl; //debug
     }
 
-public:
-    SparseGridGpu(BlockGeometry<dim, blockEdgeSize> gridGeometry, unsigned int stencilSupportRadius = 1)
-            : gridGeometry(gridGeometry),
-              stencilSupportRadius(stencilSupportRadius)
+    void initialize(const size_t (& res)[dim])
     {
+    	// calculate the number of blocks on each direction
+    	size_t blocks[dim];
+
+    	for (size_t i = 0 ; i < dim ; i++)
+    	{
+    		blocks[i] = res[i] / blockEdgeSize;
+
+    		if (res[i] % blockEdgeSize != 0)
+    		{blocks[i]++;}
+    	}
+
+    	gridGeometry = BlockGeometry<dim,blockEdgeSize>(blocks);
+
         computeSizeOfGhostLayer();
         allocateGhostLayerMapping();
         computeGhostLayerMapping();
@@ -113,6 +211,35 @@ public:
             extBlockDims[d] = blockEdgeSize + stencilSupportRadius;
         }
         extendedBlockGeometry.setDimensions(extBlockDims);
+        gridSize.setDimensions(res);
+    }
+
+
+public:
+
+    SparseGridGpu()
+	:stencilSupportRadius(1)
+    {};
+
+    /*! \brief resize the SparseGrid
+     *
+     * \param res indicate the resolution in each dimension
+     *
+     */
+    void resize(size_t (& res)[dim])
+    {
+    	initialize(res);
+    }
+
+    /*! \brief
+     *
+     *
+     */
+    SparseGridGpu(BlockGeometry<dim, blockEdgeSize> & gridGeometry, unsigned int stencilSupportRadius = 1)
+            : gridGeometry(gridGeometry),
+              stencilSupportRadius(stencilSupportRadius)
+    {
+    	initialize(gridGeometry.getSize());
     };
 
     virtual ~SparseGridGpu();
@@ -160,15 +287,20 @@ public:
 
     }
 
+    inline ite_gpu<dim> getGridGPUIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop, size_t n_thr = threadBlockSize)
+    {
+    	return gridSize.getGPUIterator(start,stop,n_thr);
+    }
+
     // Data management methods
 
     template<unsigned int p, typename CoordT>
     auto
-    get(CoordT &coord) const -> ScalarTypeOf<AggregateBlockT, p>;
+    get(const CoordT &coord) const -> const ScalarTypeOf<AggregateBlockT, p> &;
 
     template<unsigned int p, typename CoordT>
     auto
-    insert(CoordT &coord) -> ScalarTypeOf<AggregateBlockT, p> &;
+    insert(const CoordT &coord) -> ScalarTypeOf<AggregateBlockT, p> &;
 
     template<typename dim3T>
     void setGPUInsertBuffer(dim3T nBlock, dim3T nSlot)
@@ -190,8 +322,10 @@ public:
     void applyStencils();
 };
 
-template<unsigned int dim, unsigned int blockEdgeSize, typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-void SparseGridGpu<dim, blockEdgeSize, AggregateBlockT, threadBlockSize, indexT, layout_base>::tagBoundaries()
+template<unsigned int dim, typename AggregateT,
+		 unsigned int blockEdgeSize, unsigned int threadBlockSize,
+		 typename indexT, template<typename> class layout_base>
+void SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layout_base>::tagBoundaries()
 {
     //todo: Here iterate on all existing elements and tag those which are at the edge
     // Notes:
@@ -205,39 +339,45 @@ void SparseGridGpu<dim, blockEdgeSize, AggregateBlockT, threadBlockSize, indexT,
     SparseGridGpuKernels::tagBoundaries<<<gridSize, threadBlockSize>>>(indexBuffer.toKernel(), dataBuffer.toKernel(), this->toKernel());
 }
 
-template<unsigned int dim, unsigned int blockEdgeSize, typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+template<unsigned int dim, typename AggregateT,
+		 unsigned int blockEdgeSize, unsigned int threadBlockSize,
+		 typename indexT, template<typename> class layout_base>
 template<typename stencil>
-void SparseGridGpu<dim, blockEdgeSize, AggregateBlockT, threadBlockSize, indexT, layout_base>::applyStencils()
+void SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layout_base>::applyStencils()
 {
     //todo: Apply the given stencil on all elements which are not boundary-tagged
 }
 
-template<unsigned int dim, unsigned int blockEdgeSize, typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+template<unsigned int dim,typename AggregateT,
+		 unsigned int blockEdgeSize, unsigned int threadBlockSize,
+		 typename indexT, template<typename> class layout_base>
 template<typename stencil, typename ... otherStencils>
-void SparseGridGpu<dim, blockEdgeSize, AggregateBlockT, threadBlockSize, indexT, layout_base>::applyStencils()
+void SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layout_base>::applyStencils()
 {
     applyStencils<stencil>();
     applyStencils<otherStencils ...>();
 }
 
-template<unsigned int dim, unsigned int blockEdgeSize, typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+template<unsigned int dim, typename AggregateT,
+		 unsigned int blockEdgeSize, unsigned int threadBlockSize,
+		 typename indexT, template<typename> class layout_base>
 template<unsigned int p, typename CoordT>
-auto SparseGridGpu<dim, blockEdgeSize, AggregateBlockT, threadBlockSize, indexT, layout_base>::
-get(CoordT & coord) const -> ScalarTypeOf<AggregateBlockT, p>
+auto SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layout_base>::
+get(const CoordT & coord) const -> const ScalarTypeOf<AggregateBlockT, p> &
 {
     return BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::template get<p>(gridGeometry.LinId(coord));
 }
 
-template<unsigned int dim, unsigned int blockEdgeSize, typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+template<unsigned int dim, typename AggregateT, unsigned int blockEdgeSize, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
 template<unsigned int p, typename CoordT>
-auto SparseGridGpu<dim, blockEdgeSize, AggregateBlockT, threadBlockSize, indexT, layout_base>::insert(
-        CoordT &coord) -> ScalarTypeOf<AggregateBlockT, p> &
+auto SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layout_base>::insert(
+        const CoordT &coord) -> ScalarTypeOf<AggregateBlockT, p> &
 {
     return BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::template insert<p>(gridGeometry.LinId(coord));
 }
 
-template<unsigned int dim, unsigned int blockEdgeSize, typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-SparseGridGpu<dim, blockEdgeSize, AggregateBlockT, threadBlockSize, indexT, layout_base>::~SparseGridGpu()
+template<unsigned int dim, typename AggregateT, unsigned int blockEdgeSize, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layout_base>::~SparseGridGpu()
 {
     delete[](ghostLayerToThreadsMapping);
 }
