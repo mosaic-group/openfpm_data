@@ -10,9 +10,9 @@
 
 #include "util/common.hpp"
 
+
 template<typename T, typename Sfinae = void>
 struct is_vector: std::false_type {};
-
 
 /*! \brief is_grid check if the type is a vector
  *
@@ -76,6 +76,19 @@ struct is_gpu_celllist: std::false_type {};
 
 template<typename T>
 struct is_gpu_celllist<T, typename Void<typename T::yes_is_gpu_celllist>::type> : std::true_type
+{};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*! \brief Check this is a gpu or cpu type cell-list
+ *
+ */
+template<typename T, typename Sfinae = void>
+struct is_gpu_ker_celllist: std::false_type {};
+
+
+template<typename T>
+struct is_gpu_ker_celllist<T, typename Void<typename T::yes_is_gpu_ker_celllist>::type> : std::true_type
 {};
 
 #endif /* SRC_VECTOR_UTIL_HPP_ */

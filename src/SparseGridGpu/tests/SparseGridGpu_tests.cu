@@ -41,6 +41,10 @@ __global__ void insertValues(SparseGridType sparseGrid)
     __syncthreads();
 
     sparseGrid.flush_block_insert();
+
+    // Compiler avoid warning
+    y++;
+    z++;
 }
 
 template<unsigned int p, typename SparseGridType, typename VectorOutType>
@@ -74,6 +78,11 @@ __global__ void copyBlocksToOutput(SparseGridType sparseGrid, VectorOutType outp
 //           static_cast<int>(value)); //debug
 
     output.template get<p>(pos) = value;
+
+    // Compiler avoid warning
+    x++;
+    y++;
+    z++;
 }
 
 //todo: Here write some sort of stencil kernel to test the client interface for stencil application
@@ -95,9 +104,9 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
         dim3 blockSizeInsert(blockEdgeSize, blockEdgeSize, blockEdgeSize);
 
         BlockGeometry<dim, blockEdgeSize> blockGeometry(gridSize);
-        SparseGridGpu<dim, blockEdgeSize, AggregateSGT> sparseGrid(blockGeometry);
+        SparseGridGpu<dim, AggregateOutT, blockEdgeSize> sparseGrid(blockGeometry);
 
-        sparseGrid.template setBackground<0>(666);
+        sparseGrid.template setBackgroundValue<0>(666);
 //        const unsigned int gridSizeLin = 4;
 //        const unsigned int bufferPoolSize = 1024;
 //        const unsigned int blockSizeInsert = 128;
@@ -106,7 +115,7 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
 
 //        sparseGrid.setGPUInsertBuffer(gridSizeLin, bufferPoolSize);
         sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-        sparseGrid.initializeGPUInsertBuffer<0>();
+        sparseGrid.initializeGPUInsertBuffer();
 
         insertValues<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel());
 
@@ -156,12 +165,12 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
         dim3 blockSizeInsert(blockEdgeSize, blockEdgeSize, blockEdgeSize);
 
         BlockGeometry<dim, blockEdgeSize> blockGeometry(gridSize);
-        SparseGridGpu<dim, blockEdgeSize, AggregateSGT> sparseGrid(blockGeometry);
+        SparseGridGpu<dim, AggregateOutT, blockEdgeSize> sparseGrid(blockGeometry);
 
-        sparseGrid.template setBackground<0>(666);
+        sparseGrid.template setBackgroundValue<0>(666);
 
         sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-        sparseGrid.initializeGPUInsertBuffer<0>();
+        sparseGrid.initializeGPUInsertBuffer();
 
         insertValues<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel());
 

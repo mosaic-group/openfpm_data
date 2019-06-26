@@ -12,12 +12,6 @@
 #include "map_graph.hpp"
 #include "Point_test.hpp"
 
-#ifdef TEST_COVERAGE_MODE
-#define GS_SIZE 8
-#else
-#define GS_SIZE 128
-#endif
-
 BOOST_AUTO_TEST_SUITE( graph_test )
 
 BOOST_AUTO_TEST_CASE( graph_use)

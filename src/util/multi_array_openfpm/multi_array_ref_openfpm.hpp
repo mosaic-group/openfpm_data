@@ -50,26 +50,6 @@ public:
 /*    typedef typename super_type::extent_range extent_range;*/
     typedef general_storage_order<NumDims> storage_order_type;
 
-    // template typedefs
-/*    template <std::size_t NDims>
-    struct const_array_view_openfpm
-	{
-    	typedef boost::detail::multi_array::const_multi_array_view_openfpm<T,NDims> type;
-    };
-
-    template <std::size_t NDims>
-    struct array_view
-	{
-      typedef boost::detail::multi_array::multi_array_view<T,NDims> type;
-    };
-
-	#ifndef BOOST_NO_MEMBER_TEMPLATE_FRIENDS
-    	// make const_multi_array_ref a friend of itself
-    	template <typename,std::size_t,typename>
-    	friend class const_multi_array_ref;
-  	#endif*/
-
-
     template <typename ExtentType>
     explicit const_multi_array_ref_openfpm(TPtr base, const ExtentType& extents, const general_storage_order<NumDims>& so)
     :base_(base),storage_(so)
@@ -108,39 +88,6 @@ public:
 
     size_type num_elements() const { return num_elements_; }
 
-/*    template <typename IndexList>
-    const element& operator()(IndexList indices) const {
-      boost::function_requires<
-        boost::CollectionConcept<IndexList> >();
-      return super_type::access_element(boost::type<const element&>(),
-                                        indices,origin(),
-                                        shape(),strides(),index_bases());
-    }*/
-
-    // Only allow const element access
-/*    __device__ __host__ const_reference operator[](index idx) const
-    {
-      return super_type::access(boost::type<const_reference>(),
-                                idx,origin(),
-                                shape(),strides(),index_bases());
-    }
-
-    // see generate_array_view in base.hpp
-    template <int NDims>
-    __device__ __host__ typename const_array_view_openfpm<NDims>::type
-    operator[](const detail::multi_array::
-               index_gen<NumDims,NDims>& indices)
-      const {
-      typedef typename const_array_view_openfpm<NDims>::type return_type;
-      return
-        super_type::generate_array_view(boost::type<return_type>(),
-                                        indices,
-                                        shape(),
-                                        strides(),
-                                        index_bases(),
-                                        origin());
-    }*/
-
     const_iterator begin() const
     {
       return const_iterator(0,origin(),size(),strides());
@@ -151,95 +98,10 @@ public:
       return const_iterator(size(),origin(),size(),strides());
     }
 
-/*    const_reverse_iterator rbegin() const {
-      return const_reverse_iterator(end());
-    }
-
-    const_reverse_iterator rend() const {
-      return const_reverse_iterator(begin());
-    }
-
-
-    template <typename OPtr>
-    bool operator==(const
-                    const_multi_array_ref_openfpm<T,NumDims,OPtr>& rhs)
-      const {
-      if(std::equal(extent_list_.begin(),
-                    extent_list_.end(),
-                    rhs.extent_list_.begin()))
-        return std::equal(begin(),end(),rhs.begin());
-      else return false;
-    }
-
-    template <typename OPtr>
-    bool operator<(const const_multi_array_ref_openfpm<T,NumDims,OPtr>& rhs) const
-    {
-      return std::lexicographical_compare(begin(),end(),rhs.begin(),rhs.end());
-    }
-
-    template <typename OPtr>
-    bool operator!=(const const_multi_array_ref_openfpm<T,NumDims,OPtr>& rhs) const
-    {
-      return !(*this == rhs);
-    }
-
-    template <typename OPtr>
-    bool operator>(const const_multi_array_ref_openfpm<T,NumDims,OPtr>& rhs) const
-    {
-      return rhs < *this;
-    }
-
-    template <typename OPtr>
-    bool operator<=(const const_multi_array_ref_openfpm<T,NumDims,OPtr>& rhs) const
-    {
-      return !(*this > rhs);
-    }
-
-    template <typename OPtr>
-    bool operator>=(const const_multi_array_ref_openfpm<T,NumDims,OPtr>& rhs) const
-    {
-      return !(*this < rhs);
-    }
-
-
-  #ifndef BOOST_NO_MEMBER_TEMPLATE_FRIENDS
-  protected:
-  #else
-  public:
-  #endif
-
-    typedef size_type size_list;*/
     typedef openfpm::array<index,NumDims> index_list;
 
     // This is used by multi_array, which is a subclass of this
     void set_base_ptr(TPtr new_base) { base_ = new_base; }
-
-
-    // This constructor supports multi_array's default constructor
-    // and constructors from multi_array_ref, subarray, and array_view
-/*    explicit
-    const_multi_array_ref_openfpm(TPtr base,
-                          const storage_order_type& so,
-                          const index * index_bases,
-                          const size_type* extents) :
-      base_(base), storage_(so), origin_offset_(0), directional_offset_(0)
-   {
-     // If index_bases or extents is null, then initialize the corresponding
-     // private data to zeroed lists.
-     if(index_bases) {
-       boost::detail::multi_array::
-         copy_n(index_bases,NumDims,index_base_list_.begin());
-     } else {
-       std::fill_n(index_base_list_.begin(),NumDims,0);
-     }
-     if(extents) {
-       init_multi_array_ref(extents);
-     } else {
-       boost::array<index,NumDims> extent_list;
-       extent_list.assign(0);
-       init_multi_array_ref(extent_list.begin());
-     }
-   }*/
 
 
     TPtr base_;
@@ -290,16 +152,6 @@ public:
   typedef int yes_is_multi_array;
 
 /*  typedef typename super_type::size_list size_list;*/
-
-/*  template <std::size_t NDims>
-  struct const_array_view_openfpm {
-    typedef boost::detail::multi_array::const_multi_array_view_openfpm<T,NDims> type;
-  };*/
-
-/*  template <std::size_t NDims>
-  struct array_view_openfpm {
-    typedef boost::detail::multi_array::multi_array_view_openfpm<T,NDims> type;
-  };*/
 
   template <class ExtentType>
   explicit multi_array_ref_openfpm(T* base, const ExtentType r_sz, const general_storage_order<NumDims>& so)
@@ -366,7 +218,7 @@ public:
    * \return the internal pointer
    *
    */
-  void * get_pointer()
+  __device__ __host__ void * get_pointer()
   {
 	  return this->base_;
   }
@@ -376,7 +228,7 @@ public:
    * \return the internal pointer
    *
    */
-  const void * get_pointer() const
+  __device__ __host__ const void * get_pointer() const
   {
 	  return this->base_;
   }

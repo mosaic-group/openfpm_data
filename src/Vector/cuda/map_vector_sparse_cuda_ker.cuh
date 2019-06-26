@@ -61,7 +61,7 @@ namespace openfpm
 
 		// the const is forced by the getter that only return const encap that should not allow the modification of bck
 		// this should possible avoid to define an object const_encap
-		mutable T bck;
+		mutable vector_gpu_ker<T,layout_base> vct_data_bck;
 
 		int nslot_add;
 		int nslot_rem;
@@ -102,13 +102,13 @@ namespace openfpm
 							  vector_gpu_ker<T,layout_base> vct_add_data,
 							  vector_gpu_ker<aggregate<Ti>,layout_base> vct_nadd_index,
 							  vector_gpu_ker<aggregate<Ti>,layout_base> vct_nrem_index,
-							  T & bck,
+							  vector_gpu_ker<T,layout_base> vct_data_bck,
 							  int nslot_add,
 							  int nslot_rem)
 		:vct_index(vct_index),vct_data(vct_data),
 		 vct_add_index(vct_add_index),vct_rem_index(vct_rem_index),vct_add_data(vct_add_data),
 		 vct_nadd_index(vct_nadd_index),vct_nrem_index(vct_nrem_index),
-		 bck(bck),nslot_add(nslot_add),nslot_rem(nslot_rem)
+		 vct_data_bck(vct_data_bck),nslot_add(nslot_add),nslot_rem(nslot_rem)
 		{}
 
 		/*! \brief Get the number of elements
@@ -193,9 +193,9 @@ namespace openfpm
         /*! \brief Get the background value
          */
         template <unsigned int p>
-        __device__ inline auto getBackground() -> decltype(bck.template get<p>())
+        __device__ inline auto getBackground() -> decltype(vct_data_bck.template get<p>(0))
         {
-            return bck.template get<p>();
+            return vct_data_bck.template get<p>(0);
         }
 
 		/*! \brief Get an element of the vector
@@ -213,14 +213,14 @@ namespace openfpm
 		{
 			Ti di;
 			Ti v = this->_branchfree_search(id,di);
-			return (v == id)?vct_data.template get<p>(di):bck.template get<p>();
+			return (v == id)?vct_data.template get<p>(di):vct_data_bck.template get<p>(0);
 		}
 
         __device__ inline auto get(Ti id) const -> decltype(vct_data.get(0))
         {
             Ti di;
             Ti v = this->_branchfree_search(id,di);
-            return (v == id)?vct_data.get(static_cast<size_t>(di)):bck.get();
+            return (v == id)?vct_data.get(static_cast<size_t>(di)):vct_data_bck.get();
         }
 
 		/*! \brief Get an element of the vector
@@ -281,7 +281,7 @@ namespace openfpm
 		{
 			Ti v = this->_branchfree_search(id,di);
 			di = (v != id)?-1:di;
-			return (v == id)?vct_data.template get<p>(di):bck.template get<p>();
+			return (v == id)?vct_data.template get<p>(di):vct_data_bck.template get<p>(0);
 		}
 
 		/*! \brief Get an element of the vector
@@ -297,7 +297,7 @@ namespace openfpm
 		template <unsigned int p>
 		__device__ inline auto get_ele(Ti di) const -> decltype(vct_data.template get<p>(di))
 		{
-			return (di != -1)?vct_data.template get<p>(di):bck.template get<p>();
+			return (di != -1)?vct_data.template get<p>(di):vct_data_bck.template get<p>(0);
 		}
 
 		/*! \brief It insert an element in the sparse vector

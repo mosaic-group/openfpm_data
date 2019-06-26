@@ -13,6 +13,8 @@
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/reverse.hpp>
 
+template<int ...> struct index_tuple_sq{};
+
 /*! \brief Exit condition
  *
  * Exit condition, when c equal to end return true
@@ -23,7 +25,7 @@
  */
 
 template<int c,int end>
-struct exit_impl : boost::mpl::equal_to<boost::mpl::int_<c>,boost::mpl::int_<end>>
+struct exit_impl_sq : boost::mpl::equal_to<boost::mpl::int_<c>,boost::mpl::int_<end>>
 {};
 
 /*! \brief Recursive specialization of to_variadic
@@ -34,29 +36,21 @@ struct exit_impl : boost::mpl::equal_to<boost::mpl::int_<c>,boost::mpl::int_<end
  * \param exit, when true it say to terminate the sequence
  *
  */
-template<class H, int c , int end, bool exit>
+template<int c , int end, bool exit,int ... vars>
 struct to_variadic_impl
 {
-   typedef typename exit_impl<c,end>::type exit_;
-   typedef typename boost::mpl::push_back<H,boost::mpl::int_<c>> v;
-   typedef typename to_variadic_impl<v,c+1,end,exit_::value>::type type;
+   typedef typename exit_impl_sq<c,end>::type exit_;
+   typedef typename to_variadic_impl<c+1,end,exit_::value,vars ..., c>::type type;
 };
 
 
 //! Terminator of to_variadic
-template<template<typename> class H,typename F,typename L>
-struct to_variadic_impl<H,F,L,true>
+template<int c, int end, int ... vars>
+struct to_variadic_impl<c,end,true, vars ...>
 {
-   typedef H type;
+   typedef index_tuple_sq<vars ...> type;
 };
 
-template<typename Seq>
-struct seq_traits_impl
-{
-   typedef typename boost::mpl::begin<Seq>::type first_;
-   typedef typename boost::mpl::end<Seq>::type last_;
-   typedef typename exit_impl<first_,last_>::type exit_;
-};
 
 /*!
 *
@@ -64,7 +58,7 @@ struct seq_traits_impl
 *
 * usage:
 *
-* to_sequence<3,4,5>::type
+* to_int_sequence<3,5>::type
 *
 * is mapped to
 *
@@ -79,13 +73,10 @@ template<unsigned int N, unsigned int M>
 struct to_int_sequence
 {
 	//! end condition
-	typedef typename exit_impl<N,M>::type exit_;
-
-	//! starting vector type
-	typedef boost::mpl::vector<boost::mpl::int_<N>> vi;
+	typedef typename exit_impl_sq<N,M>::type exit_;
 
 	//! generate the boost::fusion::vector apply H on each term
-	typedef typename to_variadic_impl<vi,N+1,M,exit_::value >::type type;
+	typedef typename to_variadic_impl<N+1,M,exit_::value,N>::type type;
 };
 
 

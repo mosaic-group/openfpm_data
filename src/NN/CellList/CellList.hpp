@@ -8,6 +8,7 @@
 #ifndef CELLLIST_HPP_
 #define CELLLIST_HPP_
 
+#include "CellList_def.hpp"
 #include "Vector/map_vector.hpp"
 #include "CellDecomposer.hpp"
 #include "Space/SpaceBox.hpp"
@@ -1097,6 +1098,14 @@ public:
 	void clear()
 	{
 		Mem_type::clear();
+	}
+
+	/*! \brief Litterary destroy the memory of the cell list, including the retained one
+	 *
+	 */
+	void destroy()
+	{
+		Mem_type::destroy();
 	}
 
 	/*! \brief Return the starting point of the cell p

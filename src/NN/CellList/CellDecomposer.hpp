@@ -1828,44 +1828,8 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 		return g_box;
 	}
 
-	inline Box<dim,long int> convertDomainSpaceIntoCellUnitsNear(const Box<dim,T> & b_d) const
-	{
-		Box<dim,long int> g_box;
-		Box<dim,T> b = b_d;
-		b -= getOrig();
 
-		// Convert b into grid units
-		b /= getCellBox().getP2();
-
-		// Considering that we are interested in a box decomposition of the space
-		// where each box does not intersect any other boxes in the decomposition we include the negative
-		// countour and exclude the positive one. So ceilP1 do the job for P1 while ceilP2 - 1
-		// do the job for P2
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-				b.setLow(i,b.getLow(i) + 0.125);
-				b.setHigh(i,b.getHigh(i) + 0.125);
-		}
-
-		b.floorP1();
-		b.floorP2();
-
-		g_box = b;
-
-		// Translate the box by the offset
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-				g_box.setLow(i,g_box.getLow(i) + off[i]);
-				g_box.setHigh(i,g_box.getHigh(i) + off[i]);
-		}
-
-
-		return g_box;
-	}
-
-	/*! \brief Convert a Box in grid units into the domain space (Negative contour included, positive contour excluded)
+	/*! \brief Convert a Box from grid units into domain space (Negative contour included, positive contour excluded)
 	 *
 	 *  Given the following
 	 *
@@ -1874,16 +1838,16 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
                       +-----+-----+-----+-----+-----+-----+ (1.0. 1.0) Domain box
                       |     |     |     |     |     |     |
                       |     |     |     |     |     |     |
-                      |   +-----------------+ |     |     |
+                      |     |     |     |     |     |     |
+                      +-----+-----+-----+-----+----{2}----+
+                      |     |     |     |     |     |     |
+                |     |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
                       +-----+-----+-----+-----+-----+-----+
-                      |   | |     |     |   | |     |     |
-Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
-(0.1 , 0.42)          |   | |     |     |   | |     |     |
-(0.64, 0.85)          +-----+-----+-----+-----+-----+-----+
-                      |   | |     |     |   | |     |     |
-                      |   | |     |     |   | |     |     |
-                      |   +-----------------+ |     |     |
-                      +-----+-----+-----+-----+-----+-----+
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |
+                      +-----+----{1}----+-----+-----+-----+
                       |     |     |     |     |     |     |
                       |     |     |     |     |     |     |
                       +-----+-----+-----+-----+-----+-----+
@@ -1898,12 +1862,13 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 
     \verbatim
 
-    It return a Box with P1 = (1,3), P2 = (3,4)
+    Giving a box P1 = (2,2), P2 = (5,4)
+    it return a box (0.333333,0.33333333)  (0.8333333,0.8)
 
 	 *
 	 * \param b Box in grid units
 	 *
-	 * \return Box in domain space, if P2 < P1 the method return an invalid box
+	 * \return the box in domain space
 	 *
 	 */
 	inline Box<dim,T> convertCellUnitsIntoDomainSpace(const Box<dim,long int> & b_d) const
@@ -1925,6 +1890,77 @@ Box "b"      <-----------------+  |     |   | |     |     |  Grid (7, 6)
 				be.setHigh(i,box.getLow(i));
 			else
 				be.setHigh(i,(b_d.getHigh(i) - off[i]) * box_unit.getP2()[i] + box.getLow(i));
+		}
+
+		return be;
+	}
+
+
+	/*! \brief Convert a Box from grid units into domain space (Negative contour included, positive contour excluded)
+	 *
+	 *  Given the following
+	 *
+	 * \verbatim
+
+                      +-----+-----+-----+-----+-----+-----+ (1.0. 1.0) Domain box
+                      |     |     |     |     |     |     |
+                      |     |  *-----------------------*  |
+                      |     |  |  |     |     |     |  |  |
+                      +-----+--|--+-----+-----+----{2}-|--+
+                      |     |  |  |     |     |     |  |  |
+                      |     |  |  |     |     |     |  |  |
+                      |     |  |  |     |     |     |  |  |
+                      +-----+--|--+-----+-----+-----+--|--+
+                      |     |  |  |     |     |     |  |  |
+                      |     |  |  |     |     |     |  |  |
+                      |     |  |  |     |     |     |  |  |
+                      +-----+--|-{1}----+-----+-----+--|--+
+                      |     |  |  |     |     |     |  |  |
+                      |     |  *-----------------------*  |
+                      |     |     |     |     |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      |     |     |     |     |     |     |
+                      +-----+-----+-----+-----+-----+-----+
+                    (0.0, 0.0)
+
+
+    + = grid points
+
+    \verbatim
+
+    Giving a box P1 = (2,2), P2 = (5,4)
+    it return a box (0.25,0.25)  (0.916666,0.9)
+
+	 *
+	 * \param b Box in grid units
+	 *
+	 * The box is never allowed to be bigger than the domain and is always cropped
+	 * by the domain size
+	 *
+	 * \return the box in domain space
+	 *
+	 */
+	inline Box<dim,T> convertCellUnitsIntoDomainSpaceMiddle(const Box<dim,long int> & b_d) const
+	{
+		Box<dim,T> be;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if ((long int)gr_cell.size(i) - (long int)off[i] == b_d.getLow(i))
+			{be.setLow(i,box.getHigh(i));}
+			else if ((long int)off[i] == b_d.getLow(i))
+			{be.setLow(i,box.getLow(i));}
+			else
+			{be.setLow(i,(b_d.getLow(i) - off[i]) * box_unit.getP2()[i] + box.getLow(i) - box_unit.getP2()[i] / 2.0);}
+
+			if ((long int)gr_cell.size(i) - (long int)off[i] == b_d.getHigh(i))
+			{be.setHigh(i,box.getHigh(i));}
+			else if ((long int)off[i] == b_d.getHigh(i))
+			{be.setHigh(i,box.getLow(i));}
+			else
+			{be.setHigh(i,(b_d.getHigh(i) - off[i]) * box_unit.getP2()[i] + box.getLow(i) + box_unit.getP2()[i] / 2.0);}
 		}
 
 		return be;

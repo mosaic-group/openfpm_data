@@ -346,6 +346,20 @@ namespace openfpm
 			resize(0);
 		}
 
+		/*! \brief Clear the vector
+		 *
+		 * Eliminate all the elements for from the vector
+		 *
+		 */
+		void shrink_to_fit()
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			size_t sz[1] = {size()};
+			base.resize(sz);
+		}
+
 		/*! \brief Resize the vector
 		 *
 		 * Resize the vector and allocate n elements
@@ -949,6 +963,7 @@ namespace openfpm
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
+
 
 			return base.template get<p>(key);
 		}
@@ -1836,9 +1851,6 @@ namespace openfpm
 		 */
 		vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> toKernel()
 		{
-//			if (base.size() == 0)
-//			{std::cout << __FILE__ << ":" << __LINE__ << " Warning you are off-loading with toGPU a vector that seem to be empty or not initialized" << std::endl; }
-
 			vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> v(v_size,this->base.toKernel());
 
 			return v;

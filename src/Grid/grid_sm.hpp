@@ -87,7 +87,7 @@ struct ite_gpu
 template<unsigned int N, typename T> class grid_sm;
 
 template<unsigned int dim, typename T2, typename T>
-ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, grid_key_dx<dim,T> & key1, grid_key_dx<dim,T> & key2, size_t n_thr = 1024);
+ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, size_t n_thr = 1024);
 
 //! Declaration print_warning_on_adjustment
 template <unsigned int dim> class print_warning_on_adjustment;
@@ -705,7 +705,7 @@ public:
 	 * \param stop stop point
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<N> getSubIterator(grid_key_dx<N> & start, grid_key_dx<N> & stop) const
+	inline grid_key_dx_iterator_sub<N> getSubIterator(const grid_key_dx<N> & start, const grid_key_dx<N> & stop) const
 	{
 		return grid_key_dx_iterator_sub<N>(*this,start,stop);
 	}
@@ -719,7 +719,7 @@ public:
 	 *
 	 */
 	template<typename T2>
-	struct ite_gpu<N> getGPUIterator(grid_key_dx<N,T2> & key1, grid_key_dx<N,T2> & key2, size_t n_thr = 1024) const
+	struct ite_gpu<N> getGPUIterator(const grid_key_dx<N,T2> & key1, const grid_key_dx<N,T2> & key2, size_t n_thr = 1024) const
 	{
 		return getGPUIterator_impl<N>(*this,key1,key2,n_thr);
 	}
@@ -790,7 +790,7 @@ public:
 
 
 template<unsigned int dim, typename T2, typename T>
-ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, grid_key_dx<dim,T> & key1, grid_key_dx<dim,T> & key2, size_t n_thr)
+ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, const size_t n_thr)
 {
 	size_t tot_work = 1;
 	for (size_t i = 0 ; i < dim ; i++)

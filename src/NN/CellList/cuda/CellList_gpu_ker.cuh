@@ -8,6 +8,7 @@
 #ifndef CELLLIST_GPU_KER_CUH_
 #define CELLLIST_GPU_KER_CUH_
 
+#include "NN/CellList/CellList_def.hpp"
 #include "NN/CellList/cuda/CellDecomposer_gpu_ker.cuh"
 
 #ifdef USE_LOW_REGISTER_ITERATOR
@@ -432,6 +433,8 @@ class CellList_gpu_ker: public CellDecomposer_gpu_ker<dim,T,cnt_type,ids_type,tr
 
 public:
 
+	typedef int yes_is_gpu_ker_celllist;
+
 	__device__ inline CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> starts,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt,
@@ -447,6 +450,7 @@ public:
 	}
 
 
+	template<unsigned int stub = NO_CHECK>
 	inline __device__ NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> getNNIterator(const grid_key_dx<dim,ids_type> & cid)
 	{
 		NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> ngi(cid,starts,srt,this->get_div_c(),this->get_off());
@@ -569,6 +573,7 @@ public:
 	}
 
 
+	template<unsigned int stub = NO_CHECK>
 	inline __device__ NN_gpu_it<dim,cnt_type,ids_type,1,true> getNNIterator(decltype(cl_sparse.get_sparse(0)) cid)
 	{
 		NN_gpu_it<dim,cnt_type,ids_type,1,true> ngi(cid.id,cell_nn,cell_nn_list,srt);

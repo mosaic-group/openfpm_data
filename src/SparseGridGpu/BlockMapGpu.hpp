@@ -31,6 +31,7 @@ private:
     typedef BlockTypeOf<AggregateBlockT, 0> BlockT0;
 
 protected:
+    const static unsigned char EXIST_BIT = 0;
     typedef typename AggregateAppend<DataBlock<unsigned char, BlockT0::size>, AggregateBlockT>::type AggregateInternalT;
     static const unsigned int pMask = AggregateInternalT::max_prop_real - 1;
     openfpm::vector_sparse_gpu<
@@ -45,10 +46,20 @@ public:
 public:
     BlockMapGpu() = default;
 
+	/*! \brief Get the background value
+	 *
+	 * \return background value
+	 *
+	 */
+	auto getBackgroundValue() -> decltype(blockMap.getBackground())
+	{
+		return blockMap.getBackground();
+	}
+
 //    auto get(unsigned int linId) const -> decltype(blockMap.get(0));
 
     template<unsigned int p>
-    auto get(unsigned int linId) const -> ScalarTypeOf<AggregateBlockT, p>;
+    auto get(unsigned int linId) const -> const ScalarTypeOf<AggregateBlockT, p> &;
 
 //    auto insert(unsigned int linId) -> decltype(blockMap.insert(0));
 
@@ -66,26 +77,64 @@ public:
 
     void setGPUInsertBuffer(int nBlock, int nSlot);
 
-    template<unsigned int p>
     void initializeGPUInsertBuffer();
 
     template<typename ... v_reduce>
-    void flush(mgpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST, int i = 0);
+    void flush(mgpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST);
 
     template<unsigned int p>
-    void setBackground(ScalarTypeOf<AggregateBlockT, p> backgroundValue);
+    void setBackgroundValue(ScalarTypeOf<AggregateBlockT, p> backgroundValue);
+
+    template<typename BitMaskT>
+	inline static bool getBit(const BitMaskT &bitMask, unsigned char pos)
+	{
+		return (bitMask>>pos)&1U;
+	}
+
+	template<typename BitMaskT>
+	inline static bool setBit(BitMaskT &bitMask, unsigned char pos)
+	{
+		return bitMask |= 1U<<pos;
+	}
+
+	template<typename BitMaskT>
+	inline static bool unsetBit(BitMaskT &bitMask, unsigned char pos)
+	{
+		return bitMask &= !(1U<<pos);
+	}
+
+    template<typename BitMaskT>
+    inline static bool exist(BitMaskT &bitMask)
+    {
+        return getBit(bitMask, EXIST_BIT);
+    }
+
+    template<typename BitMaskT>
+    inline static void setExist(BitMaskT &bitMask)
+    {
+        setBit(bitMask, EXIST_BIT);
+    }
 };
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
 template<unsigned int p>
 auto
-BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::get(unsigned int linId) const -> ScalarTypeOf<AggregateBlockT, p>
+BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::get(unsigned int linId) const -> const ScalarTypeOf<AggregateBlockT, p> &
 {
     typedef BlockTypeOf<AggregateBlockT, p> BlockT;
     unsigned int blockId = linId / BlockT::size;
     unsigned int offset = linId % BlockT::size;
-    auto &block = blockMap.template get<p>(blockId);
-    return block[offset];
+    auto aggregate = blockMap.get(blockId);
+    auto &block = aggregate.template get<p>();
+	auto &mask = aggregate.template get<pMask>();
+	if (exist(mask[offset]))
+	{
+		return block[offset];
+	}
+	else
+	{
+		return blockMap.template getBackground<p>()[offset];
+	}
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
@@ -99,7 +148,7 @@ BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::insert(unsig
     auto aggregate = blockMap.insert(blockId);
     auto &block = aggregate.template get<p>();
     auto &mask = aggregate.template get<pMask>();
-    block.setElement(mask[offset]);
+    setExist(mask[offset]);
     return block[offset];
 }
 
@@ -118,40 +167,45 @@ void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::setGPUI
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-template<unsigned int p>
 void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::initializeGPUInsertBuffer()
 {
     //todo: Test if it's enough to just initialize masks to 0, without any background value
     // Initialize the blocks to background
     auto & insertBuffer = blockMap.getGPUInsertBuffer();
     std::cout << "initializeGPUInsertBuffer :: insertBuffer.size() = " << insertBuffer.size() << std::endl; //debug
-    typedef BlockTypeOf<AggregateBlockT, p> BlockType; // Here assuming that all block types in the aggregate have the same size!
+    typedef BlockTypeOf<AggregateInternalT, pMask> BlockType; // Here assuming that all block types in the aggregate have the same size!
     constexpr unsigned int chunksPerBlock = threadBlockSize / BlockType::size; // Floor is good here...
-    BlockMapGpuKernels::initializeInsertBuffer<p, pMask, chunksPerBlock> <<< insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size >>>(
-            insertBuffer.toKernel(),
-            blockMap.template getBackground<p>()[0]
-                    );
+    BlockMapGpuKernels::initializeInsertBuffer<pMask, chunksPerBlock> <<< insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size >>>(
+            insertBuffer.toKernel());
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
 template<typename ... v_reduce>
-void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::flush(mgpu::ofp_context_t &context, flush_type opt, int i)
+void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::flush(mgpu::ofp_context_t &context, flush_type opt)
 {
-    blockMap.template flush<v_reduce ..., sBitwiseOr_<pMask>>(context, opt, i); // This is the one to use ideally
+    blockMap.template flush<v_reduce ..., sBitwiseOr_<pMask>>(context, opt); // This is the one to use ideally
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
 template<unsigned int p>
-void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::setBackground(
+void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::setBackgroundValue(
         ScalarTypeOf<AggregateBlockT, p> backgroundValue)
 {
     // NOTE: Here we assume user only passes Blocks and not scalars in the templated aggregate type
-    typedef BlockTypeOf<AggregateBlockT, p> BlockT;
-    blockMap.template getBackground<pMask>() = 0;
+    typedef BlockTypeOf<AggregateInternalT, p> BlockT;
+    typedef BlockTypeOf<AggregateInternalT, pMask> BlockM;
+
+    BlockT bP;
+    BlockM bM;
+
     for (unsigned int i = 0; i < BlockT::size; ++i)
     {
-        blockMap.template getBackground<p>()[i] = backgroundValue;
+        bP[i] = backgroundValue;
+        bM[i] = 0;
     }
+
+    blockMap.template setBackground<p>(bP);
+    blockMap.template setBackground<pMask>(bM);
 }
 
 #endif /* BLOCK_MAP_GPU_HPP_ */

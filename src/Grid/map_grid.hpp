@@ -100,7 +100,9 @@ class grid_cpu
 template<unsigned int dim, typename T, typename S>
 class grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>
 {
-	typedef typename apply_transform<memory_traits_inte,T>::type T_;
+	typedef typename apply_transform<memory_traits_lin,T>::type T_;
+
+	T background;
 
 public:
 
@@ -114,6 +116,11 @@ public:
 	//! Grid_cpu has no grow policy
 	typedef void grow_policy;
 
+	//! type that identify one point in the grid
+	typedef grid_key_dx<dim> base_key;
+
+	//! sub-grid iterator type
+	typedef grid_key_dx_iterator_sub<dim> sub_grid_iterator_type;
 
 	//! Default constructor
 	inline grid_cpu() THROW
@@ -158,9 +165,11 @@ public:
 	 * \param g grid to copy
 	 *
 	 */
-	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_base_impl<dim,T,S,layout,memory_traits_lin> & g)
+	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & g)
 	{
 		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g.duplicate());
+
+		meta_copy<T>::meta_copy_(g.background,background);
 
 		return *this;
 	}
@@ -170,9 +179,11 @@ public:
 	 * \param g grid to copy
 	 *
 	 */
-	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_base_impl<dim,T,S,layout,memory_traits_lin> && g)
+	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> && g)
 	{
 		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g);
+
+		meta_copy<T>::meta_copy_(g.background,background);
 
 		return *this;
 	}
@@ -270,6 +281,61 @@ public:
 	}
 
 #endif
+
+	/*! \brief This is a meta-function return which type of sub iterator a grid produce
+	 *
+	 * \return the type of the sub-grid iterator
+	 *
+	 */
+	template <typename stencil = no_stencil>
+	static grid_key_dx_iterator_sub<dim, stencil> type_of_subiterator()
+	{
+		return grid_key_dx_iterator_sub<dim, stencil>();
+	}
+
+	/*! \brief Return if in this representation data are stored is a compressed way
+	 *
+	 * \return false this is a normal grid no compression
+	 *
+	 */
+	static constexpr bool isCompressed()
+	{
+		return false;
+	}
+
+	/*! \brief This is a meta-function return which type of iterator a grid produce
+	 *
+	 * \return the type of the sub-grid iterator
+	 *
+	 */
+	static grid_key_dx_iterator<dim> type_of_iterator()
+	{
+		return grid_key_dx_iterator<dim>();
+	}
+
+	/*! \brief In this case it just copy the key_in in key_out
+	 *
+	 * \param key_out output key
+	 * \param key_in input key
+	 *
+	 */
+	void convert_key(grid_key_dx<dim> & key_out, const grid_key_dx<dim> & key_in) const
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{key_out.set_d(i,key_in.get(i));}
+	}
+
+	/*! \brief Get the background value
+	 *
+	 * For dense grid this function is useless
+	 *
+	 * \return background value
+	 *
+	 */
+	T & getBackgroundValue()
+	{
+		return background;
+	}
 };
 
 
@@ -517,10 +583,12 @@ class grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> : public grid_base_
 {
 	typedef typename apply_transform<memory_traits_inte,T>::type T_;
 
-	//! grid layout
-	typedef typename memory_traits_inte<T>::type layout;
+	T background;
 
 public:
+
+	//! grid layout
+	typedef typename memory_traits_inte<T>::type layout;
 
 	//! Object container for T, it is the return type of get_o it return a object type trough
 	// you can access all the properties of T
@@ -652,6 +720,60 @@ public:
 	}
 
 #endif
+	/*! \brief This is a meta-function return which type of sub iterator a grid produce
+	 *
+	 * \return the type of the sub-grid iterator
+	 *
+	 */
+	template <typename stencil = no_stencil>
+	static grid_key_dx_iterator_sub<dim, stencil> type_of_subiterator()
+	{
+		return grid_key_dx_iterator_sub<dim, stencil>();
+	}
+
+	/*! \brief Return if in this representation data are stored is a compressed way
+	 *
+	 * \return false this is a normal grid no compression
+	 *
+	 */
+	static constexpr bool isCompressed()
+	{
+		return false;
+	}
+
+	/*! \brief This is a meta-function return which type of iterator a grid produce
+	 *
+	 * \return the type of the sub-grid iterator
+	 *
+	 */
+	static grid_key_dx_iterator<dim> type_of_iterator()
+	{
+		return grid_key_dx_iterator<dim>();
+	}
+
+	/*! \brief In this case it just copy the key_in in key_out
+	 *
+	 * \param key_out output key
+	 * \param key_in input key
+	 *
+	 */
+	void convert_key(grid_key_dx<dim> & key_out, const grid_key_dx<dim> & key_in) const
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{key_out.set_d(i,key_in.get(i));}
+	}
+
+	/*! \brief Get the background value
+	 *
+	 * For dense grid this function is useless
+	 *
+	 * \return background value
+	 *
+	 */
+	T & getBackgroundValue()
+	{
+		return background;
+	}
 };
 
 //! short formula for a grid on gpu

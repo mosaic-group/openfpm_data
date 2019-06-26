@@ -419,12 +419,23 @@ public:
 		return *this;
 	}
 
+	/*! \brief Get an iterator for the GPU
+	 *
+	 * \param start starting point
+	 * \param stop end point
+	 *
+	 */
+	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024) const
+	{
+		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
+	}
+
 	/*! \brief Get the internal data_ structure
 	 *
 	 * \return the data_ structure
 	 *
 	 */
-	inline layout & get_data_()
+	__device__ __host__ inline layout & get_data_()
 	{
 		return data_;
 	}
@@ -434,7 +445,7 @@ public:
 	 * \return the data_ structure
 	 *
 	 */
-	inline const layout & get_data_() const
+	__device__ __host__ inline const layout & get_data_() const
 	{
 		return data_;
 	}

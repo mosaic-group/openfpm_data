@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
         typedef aggregate<DataBlock<float, 64>> AggregateSGT;
         typedef aggregate<float> AggregateOutT;
         BlockMapGpu<AggregateSGT> sparseGrid;
-        sparseGrid.template setBackground<0>(666);
+        sparseGrid.template setBackgroundValue<0>(666);
 
         const unsigned int gridSize = 10;
         const unsigned int blockSize = 128;
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
         typedef aggregate<DataBlock<float, 64>> AggregateT;
         typedef aggregate<float> AggregateOutT;
         BlockMapGpu<AggregateT, 128> blockMap;
-        blockMap.template setBackground<0>(666);
+        blockMap.template setBackgroundValue<0>(666);
 
         const unsigned int gridSize = 3;
         const unsigned int bufferPoolSize = 128; // Should be multiple of BlockT::size
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
         blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
         // Initialize the insert buffer
-        blockMap.initializeGPUInsertBuffer<0>();
+        blockMap.initializeGPUInsertBuffer();
 
         // Insert values
         insertValues<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
         typedef aggregate<DataBlock<float, 64>> AggregateT;
         typedef aggregate<float> AggregateOutT;
         BlockMapGpu<AggregateT, 128> sparseGrid;
-        sparseGrid.template setBackground<0>(666);
+        sparseGrid.template setBackgroundValue<0>(666);
 
         const unsigned int gridSize = 3;
         const unsigned int bufferPoolSize = 4; // Should be multiple of BlockT::size
@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
         sparseGrid.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
         // Initialize the insert buffer
-        sparseGrid.initializeGPUInsertBuffer<0>();
+        sparseGrid.initializeGPUInsertBuffer();
 
         // Insert values
         insertValuesBlocked<0, 2> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel());

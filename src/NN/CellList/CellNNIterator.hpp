@@ -15,8 +15,6 @@
 #define SYM  openfpm::math::pow(3,dim)/2 + 1
 #define CRS openfpm::math::pow(2,dim)
 
-#define NO_CHECK 1
-#define SAFE 2
 
 /*! \brief Iterator for the neighborhood of the cell structures
  *

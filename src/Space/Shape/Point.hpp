@@ -199,7 +199,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	inline T& operator[](size_t i)
+	__device__ __host__ inline T& operator[](size_t i)
 	{
 		return get(i);
 	}
@@ -212,7 +212,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	inline const T& operator[](size_t i) const
+	__device__ __host__ inline const T& operator[](size_t i) const
 	{
 		return get(i);
 	}
@@ -275,7 +275,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 *
 	 */
-	inline void zero()
+	__device__ __host__ inline void zero()
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -475,7 +475,7 @@ template<unsigned int dim ,typename T> class Point
 		p_exp.init();
 
 		for (size_t i = 0; i < dim ; i++)
-			get(i) = p_exp.value(i);
+		{get(i) = p_exp.value(i);}
 
 		return *this;
 	}
