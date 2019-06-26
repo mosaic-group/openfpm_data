@@ -7,6 +7,7 @@
 
 #include <SparseGridGpu/Geometry/BlockGeometry.hpp>
 
+//todo Remove template param GridSmT and just use BlockGeometry
 template<unsigned int dim,
         unsigned int blockEdgeSize,
         typename AggregateBlockT,
@@ -112,7 +113,7 @@ public:
     {
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(offset, stencilSupportRadius, coord);
-        return grid_key_dx<dim>(coord);
+        return coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
     }
 
     inline __device__ unsigned int
@@ -245,9 +246,6 @@ public:
     template<unsigned int ... props, typename CoordT>
     inline __device__ void storeBlock(CoordT coord, void *sharedRegionPtr[sizeof...(props)]);
 
-    // Methods for accessing the GPU buffers (for "iterating" on all the elements)
-
-
 private:
     template<unsigned int edgeSize>
     inline void linToCoordWithOffset(unsigned int linId, unsigned int offset, unsigned int coord[dim])
@@ -268,6 +266,18 @@ private:
         {
             linId *= edgeSize + 2 * paddingSize;
             linId += coord[d];
+        }
+        return linId;
+    }
+
+    template<unsigned int edgeSize>
+    inline unsigned int coordToLin(grid_key_dx<dim> coord, unsigned int paddingSize = 0)
+    {
+        unsigned int linId = coord.get(dim - 1);
+        for (unsigned int d = dim - 2; d >= 0; --d)
+        {
+            linId *= edgeSize + 2 * paddingSize;
+            linId += coord.get(d);
         }
         return linId;
     }

@@ -50,7 +50,19 @@ namespace SparseGridGpuKernels
             //todo: Here code for tagging the boundary
             if (offset < blockSize)
             {
-                //todo
+                const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
+                const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
+                MaskT cur = enlargedBlock[linId];
+                if (sparseGrid.exist(cur))
+                {
+                    bool isPadding = false;
+                    for (int d=0; d<dim; ++d)
+                    {
+                        auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
+//                        MaskT neighbourPlus =
+                        //todo: finish this
+                    }
+                }
             }
             // Write block back to global memory
             sparseGrid.storeBlock(dataBlockCoord, enlargedBlock);

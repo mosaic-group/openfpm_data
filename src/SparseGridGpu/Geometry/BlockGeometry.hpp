@@ -114,6 +114,7 @@ public:
     template<typename indexT>
     inline __host__ __device__ mem_id LinId(const grid_key_dx<dim, indexT> coord) const
     {
+        //todo: Check (in debug mode only) that the coordinates passed here are valid and not overflowing dimensions (???)
         mem_id blockLinId = coord.get(dim - 1) / blockEdgeSize;
         mem_id localLinId = coord.get(dim - 1) % blockEdgeSize;
         for (int d = dim - 2; d >= 0; --d)
