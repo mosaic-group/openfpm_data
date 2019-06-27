@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
         typedef aggregate<DataBlock<float, 64>> AggregateT;
         typedef aggregate<float> AggregateOutT;
         BlockMapGpu<AggregateT, 128> blockMap;
-        blockMap.template setBackground<0>(666);
+        blockMap.template setBackgroundValue<0>(666);
 
         const unsigned int gridSize = 3;
         const unsigned int bufferPoolSize = 128; // Should be multiple of BlockT::size
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
         blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
         // Initialize the insert buffer
-        blockMap.initializeGPUInsertBuffer<0>();
+        blockMap.initializeGPUInsertBuffer();
 
         // Insert values
         insertValuesHalfBlock<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());

@@ -127,6 +127,7 @@ BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::get(unsigned
     auto aggregate = blockMap.get(blockId);
     auto &block = aggregate.template get<p>();
 	auto &mask = aggregate.template get<pMask>();
+	// Now check if the element actually exists
 	if (exist(mask[offset]))
 	{
 		return block[offset];

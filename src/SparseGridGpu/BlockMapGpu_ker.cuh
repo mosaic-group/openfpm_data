@@ -173,8 +173,14 @@ inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 ::get(unsigned int blockId, unsigned int offset) const -> ScalarTypeOf<AggregateBlockT, p>
 {
 #ifdef __NVCC__
-    auto &block = blockMap.template get<p>(blockId);
-    return block[offset];
+    auto aggregate = blockMap.get(blockId);
+    auto &block = aggregate.template get<p>();
+    auto &mask = aggregate.template get<pMask>();
+    // Now check if the element actually exists
+    return exist(mask[offset])
+                ? block[offset]
+                : blockMap.template getBackground<p>()[offset];
+//                : const_cast<BlockTypeOf<AggregateBlockT, p>>(blockMap.template getBackground<p>())[offset];
 #else // __NVCC__
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif // __NVCC__
