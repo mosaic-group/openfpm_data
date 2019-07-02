@@ -18,7 +18,7 @@ if (CUDA_FOUND)
             SparseGridGpu/BlockMapGpu_ker.cuh
             SparseGridGpu/tests/BlockMapGpu_tests.cu
             SparseGridGpu/DataBlock.cuh SparseGridGpu/BlockMapGpu_kernels.cuh
-            util/cuda/segreduce_block_cuda.cuh util/cuda/test/segreduce_block_cuda_tests.cu SparseGridGpu/BlockMapGpu_dimensionalityWrappers.cuh SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu SparseGridGpu/SparseGridGpu.hpp SparseGridGpu/tests/SparseGridGpu_tests.cu SparseGridGpu/SparseGridGpu_ker.cuh SparseGridGpu/SparseGridGpu_kernels.cuh)
+            util/cuda/segreduce_block_cuda.cuh util/cuda/test/segreduce_block_cuda_tests.cu SparseGridGpu/BlockMapGpu_dimensionalityWrappers.cuh SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu SparseGridGpu/SparseGridGpu.hpp SparseGridGpu/tests/SparseGridGpu_tests.cu SparseGridGpu/SparseGridGpu_ker.cuh SparseGridGpu/SparseGridGpu_kernels.cuh SparseGridGpu/BlockCache/BlockCache.cuh)
 else ()
     set(CUDA_SOURCES)
 endif ()
@@ -35,7 +35,7 @@ add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp
         ../../openfpm_devices/src/memory/HeapMemory.cpp
         ../../openfpm_devices/src/memory/PtrMemory.cpp 
 	SparseGridGpu/Geometry/BlockGeometry.hpp 
-	SparseGridGpu/Geometry/tests/BlockGeometry_tests.cpp)
+	SparseGridGpu/Geometry/tests/BlockGeometry_tests.cpp SparseGridGpu/TemplateUtils/mathUtils.hpp)
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")

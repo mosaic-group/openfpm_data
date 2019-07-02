@@ -8,18 +8,7 @@
 #include <boost/mpl/size_t.hpp>
 #include <cstring>
 #include <Grid/grid_sm.hpp>
-
-template<unsigned int base, unsigned int exponent>
-struct IntPow
-{
-    constexpr static size_t value = base * IntPow<base, exponent - 1>::value;
-};
-
-template<unsigned int base>
-struct IntPow<base, 0>
-{
-    constexpr static size_t value = 1;
-};
+#include "SparseGridGpu/TemplateUtils/mathUtils.hpp"
 
 /**
  * This class provides an interface to linearization of coordinates and viceversa when blocks are involved.

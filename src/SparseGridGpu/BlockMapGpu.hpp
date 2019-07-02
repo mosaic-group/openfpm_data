@@ -75,6 +75,13 @@ public:
     template<unsigned int ... prp>
     void deviceToHost();
 
+    void deviceToHost();
+
+    template<unsigned int ... prp>
+    void hostToDevice();
+
+    void hostToDevice();
+
     void setGPUInsertBuffer(int nBlock, int nSlot);
 
     void initializeGPUInsertBuffer();
@@ -113,6 +120,12 @@ public:
     inline static void setExist(BitMaskT &bitMask)
     {
         setBit(bitMask, EXIST_BIT);
+    }
+
+    template<typename BitMaskT>
+    inline static void unsetExist(BitMaskT &bitMask)
+    {
+        unsetBit(bitMask, EXIST_BIT);
     }
 };
 
@@ -161,6 +174,28 @@ void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::deviceT
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::deviceToHost()
+{
+    blockMap.template deviceToHost<pMask>();
+    /////////////// DEBUG ////////////////////
+    auto indexBuffer = BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+    //////////////////////////////////////////
+}
+
+template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+template<unsigned int ... prp>
+void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::hostToDevice()
+{
+    blockMap.template hostToDevice<prp..., pMask>();
+}
+
+template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::hostToDevice()
+{
+    blockMap.template hostToDevice<pMask>();
+}
+
+template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
 void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::setGPUInsertBuffer(int nBlock, int nSlot)
 {
     // Prealloc the insert buffer on the underlying sparse vector
@@ -173,7 +208,6 @@ void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::initial
     //todo: Test if it's enough to just initialize masks to 0, without any background value
     // Initialize the blocks to background
     auto & insertBuffer = blockMap.getGPUInsertBuffer();
-    std::cout << "initializeGPUInsertBuffer :: insertBuffer.size() = " << insertBuffer.size() << std::endl; //debug
     typedef BlockTypeOf<AggregateInternalT, pMask> BlockType; // Here assuming that all block types in the aggregate have the same size!
     constexpr unsigned int chunksPerBlock = threadBlockSize / BlockType::size; // Floor is good here...
     BlockMapGpuKernels::initializeInsertBuffer<pMask, chunksPerBlock> <<< insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size >>>(

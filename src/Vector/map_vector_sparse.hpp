@@ -901,7 +901,7 @@ namespace openfpm
 			vct_add_index.clear();
 		}
 
-	private:
+	public:
         /*! \brief Get the indices buffer
         *
         * \return the reference to the indices buffer
@@ -1138,6 +1138,18 @@ namespace openfpm
 			vct_index.template deviceToHost<0>();
 			vct_data.template deviceToHost<prp...>();
 		}
+
+        /*! \brief Transfer from host to device
+         *
+         * \tparam set of parameters to transfer to device
+         *
+         */
+        template<unsigned int ... prp>
+        void hostToDevice()
+        {
+            vct_index.template hostToDevice<0>();
+            vct_data.template hostToDevice<prp...>();
+        }
 
 		/*! \brief toKernel function transform this structure into one that can be used on GPU
 		 *
