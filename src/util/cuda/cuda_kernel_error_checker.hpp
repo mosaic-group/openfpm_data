@@ -11,7 +11,7 @@
 #include "Grid/util.hpp"
 #include "Vector/util.hpp"
 
-template<typename T, int type_of_t=2*is_grid<T>::value+1*is_vector<T>::value>
+template<typename T, int type_of_t=has_check_device_pointer<T>::value>
 struct check_type
 {
 	static int check(void * ptr, int prp, T & arg)
@@ -26,51 +26,51 @@ struct check_type
  * pointer ptr match one of the pointer properties
  *
  */
-template<typename data_type>
-struct check_device_ptr
-{
-	//! pointer to check
-	void * ptr;
-
-	//! Data to check
-	data_type & data;
-
-	int prp;
-
-	mutable bool result;
-
-	/*! \brief constructor
-	 *
-	 * \param ptr pointer to check
-	 * \param data data structure
-	 *
-	 */
-	inline check_device_ptr(void * ptr, int prp, data_type & data)
-	:ptr(ptr),data(data),prp(prp)
-	{
-	};
-
-	//! It call the copy function for each property
-	template<typename T>
-	inline void operator()(T& t)
-	{
-		if (T::value == prp)
-		{
-			result = data.template getPointer<T::value>() == ptr;
-		}
-	}
-};
+//template<typename data_type>
+//struct check_device_ptr
+//{
+//	//! pointer to check
+//	void * ptr;
+//
+//	//! Data to check
+//	data_type & data;
+//
+//	int prp;
+//
+//	mutable bool result;
+//
+//	/*! \brief constructor
+//	 *
+//	 * \param ptr pointer to check
+//	 * \param data data structure
+//	 *
+//	 */
+//	inline check_device_ptr(void * ptr, int prp, data_type & data)
+//	:ptr(ptr),data(data),prp(prp)
+//	{
+//	};
+//
+//	//! It call the copy function for each property
+//	template<typename T>
+//	inline void operator()(T& t)
+//	{
+//		if (T::value == prp)
+//		{
+//			result = data.template getPointer<T::value>() == ptr;
+//		}
+//	}
+//};
 
 template<typename T>
 struct check_type<T,1>
 {
 	static int check(void * ptr, int prp, T & arg)
 	{
-		check_device_ptr<T> cp(ptr,prp,arg);
-
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::value_type::max_prop> >(cp);
-
-		return cp.result;
+//		check_device_ptr<T> cp(ptr,prp,arg);
+//
+//		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::value_type::max_prop> >(cp);
+//
+//		return cp.result;
 	}
 };
 
@@ -79,11 +79,11 @@ struct check_type<T,2>
 {
 	static int check(void * ptr, int prp, T & arg)
 	{
-		check_device_ptr<T> cp(ptr,prp,arg);
-
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::value_type::max_prop> >(cp);
-
-		return cp.result;
+//		check_device_ptr<T> cp(ptr,prp,arg);
+//
+//		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::value_type::max_prop> >(cp);
+//
+//		return cp.result;
 	}
 };
 

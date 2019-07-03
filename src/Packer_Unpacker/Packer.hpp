@@ -541,7 +541,7 @@ public:
 		{call_encapPackChunking<T,Mem,prp ...>::call_pack(eobj,sub_id,mem,sts);}
 		else
 		{
-			selector_chunking_prp_has_zero_size<sizeof...(prp),T, T_nc, prp ...>::select(mem,eobj,sub_id);
+			selector_chunking_prp_has_zero_size<sizeof...(prp) != 0,T, T_nc, prp ...>::select(mem,eobj,sub_id);
 		}
 
 		// update statistic
