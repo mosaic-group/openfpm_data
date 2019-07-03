@@ -14,6 +14,229 @@
 #include "util/cuda/cub/block/block_scan.cuh"
 #include "util/cuda/moderngpu/operators.hxx"
 
+#endif
+
+template<unsigned int prp>
+struct sadd_
+{
+	typedef boost::mpl::int_<prp> prop;
+
+#ifdef __NVCC__
+	template<typename red_type> using op_red = mgpu::plus_t<red_type>;
+#endif
+
+	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
+	{
+		return r1 + r2;
+	}
+
+	static bool is_special()
+	{
+		return false;
+	}
+
+	//! is not special reduction so it does not need it
+	template<typename seg_type, typename output_type>
+	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
+	{}
+};
+
+#ifdef __NVCC__
+
+template<typename type_t, unsigned int blockLength>
+struct plus_block_t  : public std::binary_function<type_t, type_t, type_t> {
+  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  	type_t res;
+  	for (int i=0; i<blockLength; ++i)
+  	{
+  		res[i] = a[i] + b[i];
+  	}
+    return res;
+  }
+};
+
+#endif
+
+template<unsigned int prp, unsigned int blockLength>
+struct sadd_block_
+{
+	typedef boost::mpl::int_<prp> prop;
+
+#ifdef __NVCC__
+	template<typename red_type> using op_red = plus_block_t<red_type, blockLength>;
+#endif
+
+	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
+	{
+		red_type res;
+		for (int i=0; i<blockLength; ++i)
+		{
+			res[i] = r1[i] + r2[i];
+		}
+		return res;
+	}
+
+	static bool is_special()
+	{
+		return false;
+	}
+
+	//! is not special reduction so it does not need it
+	template<typename seg_type, typename output_type>
+	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
+	{}
+};
+
+template<unsigned int prp>
+struct smax_
+{
+	typedef boost::mpl::int_<prp> prop;
+
+#ifdef __NVCC__
+	template<typename red_type> using op_red = mgpu::maximum_t<red_type>;
+#endif
+
+	template<typename red_type>
+	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
+	{
+		return (r1 < r2)?r2:r1;
+	}
+
+	static bool is_special()
+	{
+		return false;
+	}
+
+	//! is not special reduction so it does not need it
+	template<typename seg_type, typename output_type>
+	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
+	{}
+};
+
+#ifdef __NVCC__
+
+template<typename type_t, unsigned int blockLength>
+struct maximum_block_t  : public std::binary_function<type_t, type_t, type_t> {
+  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  	type_t res;
+  	for (int i=0; i<blockLength; ++i)
+  	{
+  		res[i] = max(a[i], b[i]);
+  	}
+    return res;
+  }
+};
+
+#endif
+
+template<unsigned int prp, unsigned int blockLength>
+struct smax_block_
+{
+	typedef boost::mpl::int_<prp> prop;
+
+#ifdef __NVCC__
+	template<typename red_type> using op_red = maximum_block_t<red_type, blockLength>;
+#endif
+
+	template<typename red_type>
+	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
+	{
+		red_type res;
+		for (int i=0; i<blockLength; ++i)
+		{
+			res[i] = (r1[i] < r2[i])?r2[i]:r1[i];
+		}
+		return res;
+	}
+
+	static bool is_special()
+	{
+		return false;
+	}
+
+	//! is not special reduction so it does not need it
+	template<typename seg_type, typename output_type>
+	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
+	{}
+};
+
+
+
+template<unsigned int prp>
+struct smin_
+{
+	typedef boost::mpl::int_<prp> prop;
+
+#ifdef __NVCC__
+	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+#endif
+
+	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
+	{
+		return (r1 < r2)?r1:r2;
+	}
+
+	static bool is_special()
+	{
+		return false;
+	}
+
+	//! is not special reduction so it does not need it
+	template<typename seg_type, typename output_type>
+	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
+	{}
+};
+
+#ifdef __NVCC__
+
+template<typename type_t, unsigned int blockLength>
+struct minimum_block_t  : public std::binary_function<type_t, type_t, type_t> {
+  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  	type_t res;
+  	for (int i=0; i<blockLength; ++i)
+  	{
+  		res[i] = min(a[i], b[i]);
+  	}
+    return res;
+  }
+};
+
+#endif
+
+template<unsigned int prp, unsigned int blockLength>
+struct smin_block_
+{
+	typedef boost::mpl::int_<prp> prop;
+
+#ifdef __NVCC__
+	template<typename red_type> using op_red = minimum_block_t<red_type, blockLength>;
+#endif
+
+	template<typename red_type>
+	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
+	{
+		red_type res;
+		for (int i=0; i<blockLength; ++i)
+		{
+			res[i] = (r1[i] < r2[i])?r1[i]:r2[i];
+		}
+		return res;
+	}
+
+	static bool is_special()
+	{
+		return false;
+	}
+
+	//! is not special reduction so it does not need it
+	template<typename seg_type, typename output_type>
+	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
+	{}
+};
+
+
+#ifdef __NVCC__
+
 template<typename type_t>
 struct bitwiseOr_t  : public std::binary_function<type_t, type_t, type_t> {
   MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
@@ -45,197 +268,6 @@ struct sBitwiseOr_
 	{}
 };
 
-template<unsigned int prp>
-struct sadd_
-{
-	typedef boost::mpl::int_<prp> prop;
-
-	template<typename red_type> using op_red = mgpu::plus_t<red_type>;
-
-	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
-	{
-		return r1 + r2;
-	}
-
-	static bool is_special()
-	{
-		return false;
-	}
-
-	//! is not special reduction so it does not need it
-	template<typename seg_type, typename output_type>
-	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
-	{}
-};
-
-template<typename type_t, unsigned int blockLength>
-struct plus_block_t  : public std::binary_function<type_t, type_t, type_t> {
-  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
-  	type_t res;
-  	for (int i=0; i<blockLength; ++i)
-  	{
-  		res[i] = a[i] + b[i];
-  	}
-    return res;
-  }
-};
-
-template<unsigned int prp, unsigned int blockLength>
-struct sadd_block_
-{
-	typedef boost::mpl::int_<prp> prop;
-
-	template<typename red_type> using op_red = plus_block_t<red_type, blockLength>;
-
-	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
-	{
-		red_type res;
-		for (int i=0; i<blockLength; ++i)
-		{
-			res[i] = r1[i] + r2[i];
-		}
-		return res;
-	}
-
-	static bool is_special()
-	{
-		return false;
-	}
-
-	//! is not special reduction so it does not need it
-	template<typename seg_type, typename output_type>
-	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
-	{}
-};
-
-template<unsigned int prp>
-struct smax_
-{
-	typedef boost::mpl::int_<prp> prop;
-
-	template<typename red_type> using op_red = mgpu::maximum_t<red_type>;
-
-	template<typename red_type>
-	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
-	{
-		return (r1 < r2)?r2:r1;
-	}
-
-	static bool is_special()
-	{
-		return false;
-	}
-
-	//! is not special reduction so it does not need it
-	template<typename seg_type, typename output_type>
-	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
-	{}
-};
-
-template<typename type_t, unsigned int blockLength>
-struct maximum_block_t  : public std::binary_function<type_t, type_t, type_t> {
-  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
-  	type_t res;
-  	for (int i=0; i<blockLength; ++i)
-  	{
-  		res[i] = max(a[i], b[i]);
-  	}
-    return res;
-  }
-};
-
-template<unsigned int prp, unsigned int blockLength>
-struct smax_block_
-{
-	typedef boost::mpl::int_<prp> prop;
-
-	template<typename red_type> using op_red = maximum_block_t<red_type, blockLength>;
-
-	template<typename red_type>
-	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
-	{
-		red_type res;
-		for (int i=0; i<blockLength; ++i)
-		{
-			res[i] = (r1[i] < r2[i])?r2[i]:r1[i];
-		}
-		return res;
-	}
-
-	static bool is_special()
-	{
-		return false;
-	}
-
-	//! is not special reduction so it does not need it
-	template<typename seg_type, typename output_type>
-	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
-	{}
-};
-
-template<unsigned int prp>
-struct smin_
-{
-	typedef boost::mpl::int_<prp> prop;
-
-	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
-
-	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
-	{
-		return (r1 < r2)?r1:r2;
-	}
-
-	static bool is_special()
-	{
-		return false;
-	}
-
-	//! is not special reduction so it does not need it
-	template<typename seg_type, typename output_type>
-	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
-	{}
-};
-
-template<typename type_t, unsigned int blockLength>
-struct minimum_block_t  : public std::binary_function<type_t, type_t, type_t> {
-  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
-  	type_t res;
-  	for (int i=0; i<blockLength; ++i)
-  	{
-  		res[i] = min(a[i], b[i]);
-  	}
-    return res;
-  }
-};
-
-template<unsigned int prp, unsigned int blockLength>
-struct smin_block_
-{
-	typedef boost::mpl::int_<prp> prop;
-
-	template<typename red_type> using op_red = minimum_block_t<red_type, blockLength>;
-
-	template<typename red_type>
-	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
-	{
-		red_type res;
-		for (int i=0; i<blockLength; ++i)
-		{
-			res[i] = (r1[i] < r2[i])?r1[i]:r2[i];
-		}
-		return res;
-	}
-
-	static bool is_special()
-	{
-		return false;
-	}
-
-	//! is not special reduction so it does not need it
-	template<typename seg_type, typename output_type>
-	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
-	{}
-};
 
 template<unsigned int prp>
 struct sstart_

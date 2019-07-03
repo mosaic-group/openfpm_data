@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE ( test_sparse_vector_use )
 	vs.template insert<0>(28) = 28;
 
 	mgpu::ofp_context_t ctx;
-	vs.flush(ctx);
+	vs.template flush<sadd_<0>>(ctx);
 
 	BOOST_REQUIRE_EQUAL(vs.get<0>(5),5);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(54),54);
@@ -51,14 +51,14 @@ BOOST_AUTO_TEST_CASE ( test_sparse_vector_use )
 	vs.template insert<0>(88) = 88;
 	vs.template insert<0>(823) = 823;
 
-	vs.flush(ctx);
+	vs.template flush<sadd_<0>>(ctx);
 
 	BOOST_REQUIRE_EQUAL(vs.get<0>(5),5);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(54),54);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(85),85);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(1000),0);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(4),4);
-	BOOST_REQUIRE_EQUAL(vs.get<0>(28),28);
+	BOOST_REQUIRE_EQUAL(vs.get<0>(28),56);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(45),45);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(823),823);
 
@@ -68,11 +68,11 @@ BOOST_AUTO_TEST_CASE ( test_sparse_vector_use )
 	vs.template insert<0>(94) = 940;
 	vs.template insert<0>(88) = 880;
 
-	vs.flush(ctx);
+	vs.template flush<sadd_<0>>(ctx);
 
-	BOOST_REQUIRE_EQUAL(vs.get<0>(45),450);
-	BOOST_REQUIRE_EQUAL(vs.get<0>(94),940);
-	BOOST_REQUIRE_EQUAL(vs.get<0>(88),880);
+	BOOST_REQUIRE_EQUAL(vs.get<0>(45),495);
+	BOOST_REQUIRE_EQUAL(vs.get<0>(94),1034);
+	BOOST_REQUIRE_EQUAL(vs.get<0>(88),968);
 
 	// try to insert the same thing multiple time
 
@@ -82,10 +82,10 @@ BOOST_AUTO_TEST_CASE ( test_sparse_vector_use )
 	vs.template insert<0>(45) = 1880;
 	vs.template insert<0>(1) = 2050;
 
-	vs.flush(ctx);
+	vs.template flush<sadd_<0>>(ctx);
 
 	BOOST_REQUIRE_EQUAL(vs.get<0>(101),1850);
-	BOOST_REQUIRE_EQUAL(vs.get<0>(45),1880);
+	BOOST_REQUIRE_EQUAL(vs.get<0>(45),5765);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(1),2050);
 }
 

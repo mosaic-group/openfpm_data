@@ -13,6 +13,7 @@
 #include "Vector/cuda/map_vector_sparse_cuda_kernels.cuh"
 #include "util/cuda/ofp_context.hxx"
 #include <iostream>
+#include <limits>
 
 #ifdef __NVCC__
 #include "util/cuda/moderngpu/kernel_scan.hxx"
@@ -35,6 +36,29 @@ namespace openfpm
 {
     constexpr int VECTOR_SPARSE_STANDARD = 1;
     constexpr int VECTOR_SPARSE_BLOCK = 2;
+
+    template<typename reduction_type, unsigned int impl>
+    struct cpu_block_process
+    {
+    	template<typename encap_src, typename encap_dst>
+    	static inline void process(encap_src & src, encap_dst & dst)
+    	{
+    		dst = reduction_type::red(dst,src);
+    	}
+    };
+
+    template<typename reduction_type>
+    struct cpu_block_process<reduction_type,VECTOR_SPARSE_BLOCK>
+    {
+    	template<typename encap_src, typename encap_dst>
+    	static inline void process(encap_src & src, encap_dst & dst)
+    	{
+    		for (size_t i = 0 ; i < encap_src::size ; i++)
+    		{
+    			dst[i] = reduction_type::red(dst[i],src[i]);
+    		}
+    	}
+    };
 
     template<unsigned int impl, typename block_functor>
     struct scalar_block_implementation_switch // Case for scalar implementations
@@ -86,7 +110,6 @@ namespace openfpm
                 typename vector_data_type,
                 typename vector_index_type,
                 typename vector_index_dtmp_type,
-                typename dim3T,
                 typename Ti,
                 typename ... v_reduce>
         static void solveConflicts(
@@ -99,21 +122,20 @@ namespace openfpm
                 vector_data_type & vct_add_data,
                 vector_data_type & vct_add_data_unique,
                 vector_data_type & vct_data_tmp,
-                dim3T wthr,
-                dim3T thr,
+                ite_gpu<1> & itew,
                 mgpu::ofp_context_t & context
                 )
         {
 #ifdef __NVCC__
-            solve_conflicts<
+            CUDA_LAUNCH((solve_conflicts<
                         decltype(vct_index_tmp.toKernel()),
                         decltype(vct_data.toKernel()),
                         decltype(vct_index_dtmp.toKernel()),
                         128,
                         v_reduce ...
-                        >
-                <<<wthr,thr>>>
-                                            (vct_index_tmp.toKernel(),vct_data.toKernel(),
+                        >),
+            			itew,
+                                              vct_index_tmp.toKernel(),vct_data.toKernel(),
                                               vct_index_tmp2.toKernel(),vct_add_data_unique.toKernel(),
                                               vct_index_tmp3.toKernel(),vct_data_tmp.toKernel(),
                                               vct_index_dtmp.toKernel(),
@@ -133,7 +155,7 @@ namespace openfpm
                 vct_index.resize(size);
                 vct_data.resize(size);
 
-                realign<<<wthr,thr>>>(vct_index_tmp3.toKernel(),vct_data_tmp.toKernel(),
+                CUDA_LAUNCH(realign,itew,vct_index_tmp3.toKernel(),vct_data_tmp.toKernel(),
                                       vct_index.toKernel(), vct_data.toKernel(),
                                       vct_index_dtmp.toKernel());
 #else // __NVCC__
@@ -187,7 +209,6 @@ namespace openfpm
                 typename vector_data_type,
                 typename vector_index_type,
                 typename vector_index_dtmp_type,
-                typename dim3T,
                 typename Ti,
                 typename ... v_reduce>
         static void solveConflicts(
@@ -200,8 +221,7 @@ namespace openfpm
                 vector_data_type & vct_add_data,
                 vector_data_type & vct_add_data_unique,
                 vector_data_type & vct_data_tmp,
-                dim3T wthr,
-                dim3T thr,
+                ite_gpu<1> & itew,
                 mgpu::ofp_context_t & context
         )
         {
@@ -232,6 +252,169 @@ namespace openfpm
 		bool operator<(const reorder & t) const
 		{
 			return id < t.id;
+		}
+	};
+
+	/*! \brief this class is a functor for "for_each" algorithm
+	 *
+	 * This class is a functor for "for_each" algorithm. For each
+	 * element of the boost::vector the operator() is called.
+	 * Is mainly used to copy one encap into another encap object
+	 *
+	 * \tparam encap source
+	 * \tparam encap dst
+	 *
+	 */
+	template<typename vector_data_type,
+			typename vector_index_type,
+	        typename vector_index_type_reo,
+	        typename vector_reduction,
+	        unsigned int impl>
+	struct sparse_vector_reduction_cpu
+	{
+		//! Vector in which to the reduction
+		vector_data_type & vector_data_red;
+
+		//! Vector in which to the reduction
+		vector_data_type & vector_data;
+
+		//! reorder vector index
+		vector_index_type_reo & reorder_add_index_cpu;
+
+		//! Index type vector
+		vector_index_type & vector_index;
+
+		/*! \brief constructor
+		 *
+		 * \param src source encapsulated object
+		 * \param dst source encapsulated object
+		 *
+		 */
+		inline sparse_vector_reduction_cpu(vector_data_type & vector_data_red,
+									   vector_data_type & vector_data,
+									   vector_index_type & vector_index,
+									   vector_index_type_reo & reorder_add_index_cpu)
+		:vector_data_red(vector_data_red),vector_data(vector_data),vector_index(vector_index),reorder_add_index_cpu(reorder_add_index_cpu)
+		{};
+
+		//! It call the copy function for each property
+		template<typename T>
+		inline void operator()(T& t) const
+		{
+            typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
+            typedef typename boost::mpl::at<typename ValueTypeOf<vector_data_type>::type,typename reduction_type::prop>::type red_type;
+
+            if (reduction_type::is_special() == false)
+			{
+    			for (size_t i = 0 ; i < reorder_add_index_cpu.size() ; )
+    			{
+    				size_t start = reorder_add_index_cpu.get(i).id;
+    				red_type red = vector_data.template get<reduction_type::prop::value>(i);
+
+    				size_t j = 1;
+    				for ( ; i+j < reorder_add_index_cpu.size() && reorder_add_index_cpu.get(i+j).id == start ; j++)
+    				{
+    					cpu_block_process<reduction_type,impl>::process(vector_data.template get<reduction_type::prop::value>(i+j),red);
+    					//reduction_type::red(red,vector_data.template get<reduction_type::prop::value>(i+j));
+    				}
+    				vector_data_red.add();
+    				vector_data_red.template get<reduction_type::prop::value>(vector_data_red.size()-1) = red;
+
+    				if (T::value == 0)
+    				{
+    					vector_index.add();
+    					vector_index.template get<0>(vector_index.size() - 1) = reorder_add_index_cpu.get(i).id;
+    				}
+
+    				i += j;
+    			}
+			}
+		}
+	};
+
+	/*! \brief this class is a functor for "for_each" algorithm
+	 *
+	 * This class is a functor for "for_each" algorithm. For each
+	 * element of the boost::vector the operator() is called.
+	 * Is mainly used to copy one encap into another encap object
+	 *
+	 * \tparam encap source
+	 * \tparam encap dst
+	 *
+	 */
+	template<typename encap_src,
+			typename encap_dst,
+	        typename vector_reduction>
+	struct sparse_vector_reduction_solve_conflict_assign_cpu
+	{
+		//! source
+		encap_src & src;
+
+		//! destination
+		encap_dst & dst;
+
+
+		/*! \brief constructor
+		 *
+		 * \param src source encapsulated object
+		 * \param dst source encapsulated object
+		 *
+		 */
+		inline sparse_vector_reduction_solve_conflict_assign_cpu(encap_src & src, encap_dst & dst)
+		:src(src),dst(dst)
+		{};
+
+		//! It call the copy function for each property
+		template<typename T>
+		inline void operator()(T& t) const
+		{
+            typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
+
+            dst.template get<reduction_type::prop::value>() = src.template get<reduction_type::prop::value>();
+		}
+	};
+
+	/*! \brief this class is a functor for "for_each" algorithm
+	 *
+	 * This class is a functor for "for_each" algorithm. For each
+	 * element of the boost::vector the operator() is called.
+	 * Is mainly used to copy one encap into another encap object
+	 *
+	 * \tparam encap source
+	 * \tparam encap dst
+	 *
+	 */
+	template<typename encap_src,
+			typename encap_dst,
+	        typename vector_reduction,
+	        unsigned int impl>
+	struct sparse_vector_reduction_solve_conflict_reduce_cpu
+	{
+		//! source
+		encap_src & src;
+
+		//! destination
+		encap_dst & dst;
+
+
+		/*! \brief constructor
+		 *
+		 * \param src source encapsulated object
+		 * \param dst source encapsulated object
+		 *
+		 */
+		inline sparse_vector_reduction_solve_conflict_reduce_cpu(encap_src & src, encap_dst & dst)
+		:src(src),dst(dst)
+		{};
+
+		//! It call the copy function for each property
+		template<typename T>
+		inline void operator()(T& t) const
+		{
+            typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
+
+            cpu_block_process<reduction_type,impl>::process(src.template get<reduction_type::prop::value>(),dst.template get<reduction_type::prop::value>());
+//            reduction_type::red(dst.template get<reduction_type::prop::value>(),src.template get<reduction_type::prop::value>());
 		}
 	};
 
@@ -383,7 +566,8 @@ namespace openfpm
 			{
 				auto ite = segment_offset.getGPUIterator();
 
-				reduce_from_offset<decltype(segment_offset.toKernel()),decltype(vector_data_red.toKernel()),reduction_type><<<ite.wthr,ite.thr>>>(segment_offset.toKernel(),vector_data_red.toKernel(),vector_data.size());
+				CUDA_LAUNCH((reduce_from_offset<decltype(segment_offset.toKernel()),decltype(vector_data_red.toKernel()),reduction_type>),
+															ite,segment_offset.toKernel(),vector_data_red.toKernel(),vector_data.size());
 			}
 
 #else
@@ -503,18 +687,17 @@ namespace openfpm
 			vct_add_index_cont_1.resize(n_ele);
 			vct_add_data_cont.resize(n_ele);
 
-			dim3 wthr;
-			dim3 thr;
-			wthr.x = vct_nadd_index.size()-1;
-			wthr.y = 1;
-			wthr.z = 1;
-			thr.x = 128;
-			thr.y = 1;
-			thr.z = 1;
+			ite_gpu<1> itew;
+			itew.wthr.x = vct_nadd_index.size()-1;
+			itew.wthr.y = 1;
+			itew.wthr.z = 1;
+			itew.thr.x = 128;
+			itew.thr.y = 1;
+			itew.thr.z = 1;
 
 			if (impl2 == VECTOR_SPARSE_STANDARD)
 			{
-				construct_insert_list<<<wthr,thr>>>(vct_add_index.toKernel(),
+				CUDA_LAUNCH(construct_insert_list,itew,vct_add_index.toKernel(),
 										vct_nadd_index.toKernel(),
 										starts.toKernel(),
 										vct_add_index_cont_0.toKernel(),
@@ -525,7 +708,7 @@ namespace openfpm
 			}
 			else
 			{
-				construct_insert_list_key_only<<<wthr,thr>>>(vct_add_index.toKernel(),
+				CUDA_LAUNCH(construct_insert_list_key_only,itew,vct_add_index.toKernel(),
 										vct_nadd_index.toKernel(),
 										starts.toKernel(),
 										vct_add_index_cont_0.toKernel(),
@@ -560,7 +743,7 @@ namespace openfpm
 
 			if (impl2 == VECTOR_SPARSE_STANDARD)
 			{
-				reorder_vector_data<<<ite.wthr,ite.thr>>>(vct_add_index_cont_1.toKernel(),vct_add_data_cont.toKernel(),vct_add_data_reord.toKernel());
+				CUDA_LAUNCH(reorder_vector_data,ite,vct_add_index_cont_1.toKernel(),vct_add_data_cont.toKernel(),vct_add_data_reord.toKernel());
 			}
 			else
 			{
@@ -627,10 +810,10 @@ namespace openfpm
 			vct_m_index.resize(vct_index.size() + vct_add_index_unique.size());
 
 			ite = vct_m_index.getGPUIterator();
-			set_indexes<0><<<ite.wthr,ite.thr>>>(vct_m_index.toKernel(),0);
+			CUDA_LAUNCH((set_indexes<0>),ite,vct_m_index.toKernel(),0);
 
 			ite = vct_add_index_unique.getGPUIterator();
-			set_indexes<1><<<ite.wthr,ite.thr>>>(vct_add_index_unique.toKernel(),vct_index.size());
+			CUDA_LAUNCH((set_indexes<1>),ite,vct_add_index_unique.toKernel(),vct_index.size());
 
 			// after merge we solve the last conflicts, running across the vector again and spitting 1 when there is something to merge
 			// we reorder the data array also
@@ -640,14 +823,14 @@ namespace openfpm
 			vct_index_tmp3.resize(vct_index.size() + vct_add_index_unique.size());
 			vct_data_tmp.resize(vct_index.size() + vct_add_index_unique.size());
 
-			wthr.x = vct_index_tmp.size() / 128 + (vct_index_tmp.size() % 128 != 0);
-			wthr.y = 1;
-			wthr.z = 1;
-			thr.x = 128;
-			thr.y = 1;
-			thr.z = 1;
+			itew.wthr.x = vct_index_tmp.size() / 128 + (vct_index_tmp.size() % 128 != 0);
+			itew.wthr.y = 1;
+			itew.wthr.z = 1;
+			itew.thr.x = 128;
+			itew.thr.y = 1;
+			itew.thr.z = 1;
 
-			vct_index_dtmp.resize(wthr.x);
+			vct_index_dtmp.resize(itew.wthr.x);
 
 			// we merge with vct_index with vct_add_index_unique in vct_index_tmp, vct_intex_tmp2 contain the merging index
 			//
@@ -660,7 +843,6 @@ namespace openfpm
                     decltype(vct_data),
                     decltype(vct_index),
                     decltype(vct_index_dtmp),
-                    dim3,
                     Ti,
                     v_reduce ...
                     >
@@ -674,8 +856,7 @@ namespace openfpm
                         vct_add_data,
                         vct_add_data_unique,
                         vct_data_tmp,
-                        wthr,
-                        thr,
+                        itew,
                         context
                     );
 
@@ -707,16 +888,15 @@ namespace openfpm
 			vct_add_index_cont_0.resize(n_ele);
 			vct_add_index_cont_1.resize(n_ele);
 
-			dim3 wthr;
-			dim3 thr;
-			wthr.x = vct_nrem_index.size()-1;
-			wthr.y = 1;
-			wthr.z = 1;
-			thr.x = 128;
-			thr.y = 1;
-			thr.z = 1;
+			ite_gpu<1> itew;
+			itew.wthr.x = vct_nrem_index.size()-1;
+			itew.wthr.y = 1;
+			itew.wthr.z = 1;
+			itew.thr.x = 128;
+			itew.thr.y = 1;
+			itew.thr.z = 1;
 
-			construct_remove_list<<<wthr,thr>>>(vct_rem_index.toKernel(),
+			CUDA_LAUNCH(construct_remove_list,itew,vct_rem_index.toKernel(),
 										vct_nrem_index.toKernel(),
 										starts.toKernel(),
 										vct_add_index_cont_0.toKernel(),
@@ -755,10 +935,10 @@ namespace openfpm
 			vct_m_index.resize(vct_index.size() + vct_add_index_unique.size());
 
 			ite = vct_m_index.getGPUIterator();
-			set_indexes<0><<<ite.wthr,ite.thr>>>(vct_m_index.toKernel(),0);
+			CUDA_LAUNCH((set_indexes<0>),ite,vct_m_index.toKernel(),0);
 
 			ite = vct_add_index_unique.getGPUIterator();
-			set_indexes<1><<<ite.wthr,ite.thr>>>(vct_add_index_unique.toKernel(),vct_index.size());
+			CUDA_LAUNCH((set_indexes<1>),ite,vct_add_index_unique.toKernel(),vct_index.size());
 
 			// after merge we solve the last conflicts, running across the vector again and spitting 1 when there is something to merge
 			// we reorder the data array also
@@ -766,14 +946,14 @@ namespace openfpm
 			vct_index_tmp.resize(vct_index.size() + vct_add_index_unique.size());
 			vct_index_tmp2.resize(vct_index.size() + vct_add_index_unique.size());
 
-			wthr.x = vct_index_tmp.size() / 128 + (vct_index_tmp.size() % 128 != 0);
-			wthr.y = 1;
-			wthr.z = 1;
-			thr.x = 128;
-			thr.y = 1;
-			thr.z = 1;
+			itew.wthr.x = vct_index_tmp.size() / 128 + (vct_index_tmp.size() % 128 != 0);
+			itew.wthr.y = 1;
+			itew.wthr.z = 1;
+			itew.thr.x = 128;
+			itew.thr.y = 1;
+			itew.thr.z = 1;
 
-			vct_index_dtmp.resize(wthr.x);
+			vct_index_dtmp.resize(itew.wthr.x);
 
 			// we merge with vct_index with vct_add_index_unique in vct_index_tmp, vct_intex_tmp2 contain the merging index
 			//
@@ -781,11 +961,11 @@ namespace openfpm
 						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),vct_add_index_unique.size(),
 						(Ti *)vct_index_tmp.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp2.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
 
-			vct_index_tmp3.resize(128*wthr.x);
+			vct_index_tmp3.resize(128*itew.wthr.x);
 
-			solve_conflicts_remove<decltype(vct_index_tmp.toKernel()),decltype(vct_index_dtmp.toKernel()),128>
-			<<<wthr,thr>>>
-										(vct_index_tmp.toKernel(),
+			CUDA_LAUNCH((solve_conflicts_remove<decltype(vct_index_tmp.toKernel()),decltype(vct_index_dtmp.toKernel()),128>),
+										itew,
+										vct_index_tmp.toKernel(),
 										 vct_index_tmp2.toKernel(),
 										 vct_index_tmp3.toKernel(),
 										 vct_m_index.toKernel(),
@@ -802,7 +982,7 @@ namespace openfpm
 			vct_data_tmp.resize(size);
 			vct_index.resize(size);
 
-			realign_remove<<<wthr,thr>>>(vct_index_tmp3.toKernel(),vct_m_index.toKernel(),vct_data.toKernel(),
+			CUDA_LAUNCH(realign_remove,itew,vct_index_tmp3.toKernel(),vct_m_index.toKernel(),vct_data.toKernel(),
 								  vct_index.toKernel(),vct_data_tmp.toKernel(),
 								  vct_index_dtmp.toKernel());
 
@@ -822,10 +1002,15 @@ namespace openfpm
 			flush_on_gpu_insert<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context);
 		}
 
+		template<typename ... v_reduce>
 		void flush_on_cpu()
 		{
+			if (vct_add_index.size() == 0)
+			{return;}
+
 			// First copy the added index to reorder
 			reorder_add_index_cpu.resize(vct_add_index.size());
+			vct_add_data_cont.resize(vct_add_index.size());
 
 			for (size_t i = 0 ; i < reorder_add_index_cpu.size() ; i++)
 			{
@@ -835,38 +1020,81 @@ namespace openfpm
 
 			reorder_add_index_cpu.sort();
 
+			// Copy the data
+			for (size_t i = 0 ; i < reorder_add_index_cpu.size() ; i++)
+			{
+				vct_add_data_cont.get(i) = vct_add_data.get(reorder_add_index_cpu.get(i).id2);
+			}
+
+			typedef boost::mpl::vector<v_reduce...> vv_reduce;
+
+			sparse_vector_reduction_cpu<decltype(vct_add_data),
+										decltype(vct_add_index_unique),
+										decltype(reorder_add_index_cpu),
+										vv_reduce,
+										impl2>
+			        svr(vct_add_data_unique,
+			        	vct_add_data_cont,
+			        	vct_add_index_unique,
+			        	reorder_add_index_cpu);
+
+			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
+
 			// merge the the data
 
 			vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p,impl> vct_data_tmp;
 			vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_index_tmp;
 
-			vct_data_tmp.resize(vct_data.size() + vct_add_data.size());
-			vct_index_tmp.resize(vct_index.size() + vct_add_index.size());
+			vct_data_tmp.resize(vct_data.size() + vct_add_data_unique.size());
+			vct_index_tmp.resize(vct_index.size() + vct_add_index_unique.size());
 
 			Ti di = 0;
 			Ti ai = 0;
 			size_t i = 0;
 
-			for ( ; i < vct_data_tmp.size() && ai < vct_add_index.size() && di < vct_index.size() ; i++)
+			for ( ; i < vct_data_tmp.size() ; i++)
 			{
-				Ti id_a = reorder_add_index_cpu.get(ai).id;
-				Ti id_d = vct_index.template get<0>(di);
+				Ti id_a = (ai < vct_add_index_unique.size())?vct_add_index_unique.template get<0>(ai):std::numeric_limits<Ti>::max();
+				Ti id_d = (di < vct_index.size())?vct_index.template get<0>(di):std::numeric_limits<Ti>::max();
 
 				if (  id_a <= id_d )
 				{
-					Ti pos = reorder_add_index_cpu.get(ai).id2;
-
-					vct_index_tmp.template get<0>(i) = reorder_add_index_cpu.get(ai).id;
-					vct_data_tmp.get(i) = vct_add_data.get(pos);
+					vct_index_tmp.template get<0>(i) = id_a;
 
 					if (id_a == id_d)
-					{di++;}
+					{
+						auto dst = vct_data_tmp.get(i);
+						auto src = vct_add_data_unique.get(ai);
 
-					// duplicate, set again
-					if (ai+1 < reorder_add_index_cpu.size() && reorder_add_index_cpu.get(ai+1).id == id_a)
-					{i--;}
+						sparse_vector_reduction_solve_conflict_assign_cpu<decltype(vct_data_tmp.get(i)),
+																		  decltype(vct_add_data.get(ai)),
+																		  vv_reduce>
+						sva(src,dst);
 
-					ai++;
+						boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(sva);
+						ai++;
+
+						dst = vct_data_tmp.get(i);
+						src = vct_data.get(di);
+
+						sparse_vector_reduction_solve_conflict_reduce_cpu<decltype(vct_data_tmp.get(i)),
+								  	  	  	  	  	  	  	  	  	  	  decltype(vct_data.get(di)),
+								  	  	  	  	  	  	  	  	  	  	  vv_reduce,
+								  	  	  	  	  	  	  	  	  	  	  impl2>
+						svr(src,dst);
+						boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
+
+						di++;
+
+						vct_data_tmp.resize(vct_data_tmp.size()-1);
+						vct_index_tmp.resize(vct_index_tmp.size()-1);
+					}
+					else
+					{
+						vct_index_tmp.template get<0>(i) = vct_add_index_unique.template get<0>(ai);
+						vct_data_tmp.get(i) = vct_add_data_unique.get(ai);
+						ai++;
+					}
 				}
 				else
 				{
@@ -876,29 +1104,13 @@ namespace openfpm
 				}
 			}
 
-			for ( ; ai < vct_add_index.size() ; ai++, i++)
-			{
-				Ti pos = reorder_add_index_cpu.get(ai).id2;
-
-				vct_index_tmp.template get<0>(i) = reorder_add_index_cpu.get(ai).id;
-				vct_data_tmp.get(i) = vct_add_data.get(pos);
-			}
-
-			for ( ; di < vct_index.size() ; di++ , i++)
-			{
-				vct_index_tmp.template get<0>(i) = vct_index.template get<0>(di);
-				vct_data_tmp.get(i) = vct_data.get(di);
-			}
-
-			// if there are duplicate vct_index_tmp can store less entry
-			vct_index_tmp.resize(i);
-			vct_data_tmp.resize(i);
-
 			vct_index.swap(vct_index_tmp);
 			vct_data.swap(vct_data_tmp);
 
 			vct_add_data.clear();
 			vct_add_index.clear();
+			vct_add_index_unique.clear();
+			vct_add_data_unique.clear();
 		}
 
 	private:
@@ -1058,7 +1270,7 @@ namespace openfpm
 			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context,i);}
 			else
-			{this->flush_on_cpu();}
+			{this->flush_on_cpu<v_reduce ... >();}
 		}
 
 		/*! \brief merge the added element to the main data array but save the insert buffer in v
@@ -1076,7 +1288,7 @@ namespace openfpm
 			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context);}
 			else
-			{this->flush_on_cpu();}
+			{this->flush_on_cpu<v_reduce ... >();}
 		}
 
 		/*! \brief merge the added element to the main data array
@@ -1090,7 +1302,7 @@ namespace openfpm
 			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context);}
 			else
-			{this->flush_on_cpu();}
+			{this->flush_on_cpu<v_reduce ... >();}
 		}
 
 		/*! \brief merge the added element to the main data array

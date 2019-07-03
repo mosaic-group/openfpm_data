@@ -12,6 +12,7 @@
 #include "util/cuda_util.hpp"
 #include "cuda/cuda_grid_gpu_funcs.cuh"
 #include "util/create_vmpl_sequence.hpp"
+#include "util/cuda/cuda_launch.hpp"
 
 #define DATA_ON_HOST 32
 #define DATA_ON_DEVICE 64
@@ -428,7 +429,7 @@ private:
 			for (size_t i = 0 ; i < dim ; i++)
 			{
 				start.set_d(i,0);
-				stop.set_d(i,g1.size(i)-1);
+				stop.set_d(i,sz[i]-1);
 			}
 
 //			if (dim == 1)
@@ -443,7 +444,9 @@ private:
 				bool has_work = has_work_gpu(ite);
 
 				if (has_work == true)
-				{copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());}
+				{
+					CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+				}
 			}
 			else
 			{
@@ -459,7 +462,7 @@ private:
 
 				auto ite = getGPUIterator_impl<1>(g_sm_copy,start,stop);
 
-				copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());
+				CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
 			}
 #else
 

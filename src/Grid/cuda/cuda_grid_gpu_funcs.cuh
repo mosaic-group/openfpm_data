@@ -19,7 +19,7 @@ struct copy_ndim_grid_impl
 	{
 		unsigned int i = threadIdx.x + blockIdx.x * blockDim.x;
 
-		if (i >= src.getGrid().size())
+		if (i >= src.getGrid().size() || i >= dst.getGrid().size())
 		{return;}
 
 		auto key_src = src.getGrid().InvLinId(i);
@@ -40,6 +40,9 @@ struct copy_ndim_grid_impl<2,grid_type>
 		if (key_src.get(0) >= src.getGrid().size(0))	{return;}
 		if (key_src.get(1) >= src.getGrid().size(1))	{return;}
 
+		if (key_src.get(0) >= dst.getGrid().size(0))	{return;}
+		if (key_src.get(1) >= dst.getGrid().size(1))	{return;}
+
 		dst.get_o(key_src) = src.get_o(key_src);
 	}
 };
@@ -57,6 +60,10 @@ struct copy_ndim_grid_impl<3,grid_type>
 		if (key_src.get(0) >= src.getGrid().size(0))	{return;}
 		if (key_src.get(1) >= src.getGrid().size(1))	{return;}
 		if (key_src.get(2) >= src.getGrid().size(2))	{return;}
+
+		if (key_src.get(0) >= dst.getGrid().size(0))	{return;}
+		if (key_src.get(1) >= dst.getGrid().size(1))	{return;}
+		if (key_src.get(2) >= dst.getGrid().size(2))	{return;}
 
 		dst.get_o(key_src) = src.get_o(key_src);
 	}

@@ -1423,7 +1423,7 @@ public:
 	 *
 	 */
 	template<int ... prp> void pack(ExtPreAlloc<S> & mem,
-									Pack_stat & sts)
+									Pack_stat & sts) const
 	{
 		grid_sm<dim,void> gs_cnk(sz_cnk);
 

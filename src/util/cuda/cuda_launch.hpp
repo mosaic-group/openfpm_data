@@ -40,11 +40,37 @@
 		}\
         }
 
+#define CUDA_CHECK() \
+        {\
+		cudaDeviceSynchronize(); \
+		{\
+			cudaError_t e = cudaGetLastError();\
+			if (e != cudaSuccess)\
+			{\
+				std::string error = cudaGetErrorString(e);\
+				std::cout << "Cuda an error has occurred before, detected in: " << __FILE__ << ":" << __LINE__ << " " << error << std::endl;\
+			}\
+		}\
+	    CHECK_SE_CLASS1_PRE\
+		cudaDeviceSynchronize(); \
+		{\
+			cudaError_t e = cudaGetLastError();\
+			if (e != cudaSuccess)\
+			{\
+				std::string error = cudaGetErrorString(e);\
+				std::cout << "Cuda Error in: " << __FILE__ << ":" << __LINE__ << " " << error << std::endl;\
+			}\
+			CHECK_SE_CLASS1_POST("no call","no args")\
+		}\
+        }
+
 #else
 
 #define CUDA_LAUNCH(cuda_call,ite, ...) \
 		cuda_call<<<ite.wthr,ite.thr>>>(__VA_ARGS__);
 
+
+#define CUDA_CHECK()
 
 #endif
 

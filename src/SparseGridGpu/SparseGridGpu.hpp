@@ -83,6 +83,8 @@ public:
 
    typedef grid_key_dx<dim, indexT> base_key;
 
+   template<typename Tfunc> using layout_mfunc = memory_traits_inte<Tfunc>;
+
 	/*! \brief return the size of the grid
 	 *
 	 * \return Return the size of the grid
