@@ -57,6 +57,14 @@ struct aggregate_convert<dim,blockEdgeSize,aggregate<types ...>>
 	typedef typename aggregate_transform_datablock_impl<dim,blockEdgeSize,types ...>::type type;
 };
 
+/////////////
+
+enum StencilMode
+{
+    STENCIL_MODE_INSERT = 0,
+    STENCIL_MODE_INPLACE = 1
+};
+
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
@@ -70,7 +78,7 @@ private:
 	typedef typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type AggregateBlockT;
     BlockGeometry<dim, blockEdgeSize> gridGeometry;
     grid_sm<dim, int> extendedBlockGeometry;
-    grid_sm<dim,void> gridSize;
+    grid_sm<dim, int> gridSize;
     unsigned int stencilSupportRadius;
     unsigned int ghostLayerSize;
     unsigned int *ghostLayerToThreadsMapping;
@@ -121,6 +129,11 @@ public:
     }
 
     inline static int dim3SizeToInt(size_t d)
+    {
+        return d;
+    }
+
+    inline static int dim3SizeToInt(unsigned int d)
     {
         return d;
     }
@@ -211,6 +224,74 @@ private:
         gridSize.setDimensions(res);
     }
 
+    template <typename stencil, typename... Args>
+    void applyStencilInPlace(Args... args)
+    {
+        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
+        auto & indexBuffer = BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer = BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+
+        const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
+        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
+
+        if (numScalars == 0) return;
+
+        // NOTE: Here we want to work only on one data chunk per block!
+        constexpr unsigned int chunksPerBlock = 1;
+        const unsigned int localThreadBlockSize = dataChunkSize * chunksPerBlock;
+        const unsigned int threadGridSize = numScalars % localThreadBlockSize == 0
+                                            ? numScalars / localThreadBlockSize
+                                            : 1 + numScalars / localThreadBlockSize;
+
+        SparseGridGpuKernels::applyStencil
+                <dim,
+                BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::pMask,
+                stencil>
+                <<<threadGridSize, localThreadBlockSize>>>(
+                        indexBuffer.toKernel(),
+                        dataBuffer.toKernel(),
+                        this->toKernel(),
+                        true,
+                        args...);
+    }
+
+    //todo: the applyInsert should also allocate the gpu insert buffer, initialize it, etc
+    template <typename stencil, typename... Args>
+    void applyStencilInsert(Args... args)
+    {
+        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
+        auto & indexBuffer = BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer = BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+
+        const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
+        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
+
+        if (numScalars == 0) return;
+
+        // NOTE: Here we want to work only on one data chunk per block!
+        constexpr unsigned int chunksPerBlock = 1;
+        const unsigned int localThreadBlockSize = dataChunkSize * chunksPerBlock;
+        const unsigned int threadGridSize = numScalars % localThreadBlockSize == 0
+                                      ? numScalars / localThreadBlockSize
+                                      : 1 + numScalars / localThreadBlockSize;
+
+        setGPUInsertBuffer(threadGridSize, chunksPerBlock); // Here 1 is because we process 1 chunk per block!
+        this->initializeGPUInsertBuffer();
+
+        SparseGridGpuKernels::applyStencil
+                <dim,
+                BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::pMask,
+                stencil>
+                <<<threadGridSize, localThreadBlockSize>>>(
+                        indexBuffer.toKernel(),
+                        dataBuffer.toKernel(),
+                        this->toKernel(),
+                        true,
+                        args...);
+
+        mgpu::ofp_context_t ctx;
+        stencil::flush(*this, ctx);
+    }
 
 public:
 
@@ -310,11 +391,29 @@ public:
     // Stencil-related methods
     void tagBoundaries();
 
-    template<typename stencil>
-    void applyStencils();
+    template<typename stencil, typename... Args>
+    void applyStencils(StencilMode mode = STENCIL_MODE_INSERT, Args... args);
 
-    template<typename stencil, typename ... otherStencils>
-    void applyStencils();
+    template<typename stencil1, typename stencil2, typename ... otherStencils, typename... Args>
+    void applyStencils(StencilMode mode = STENCIL_MODE_INSERT, Args... args);
+
+    template<typename BitMaskT>
+    inline static bool isPadding(BitMaskT &bitMask)
+    {
+        return getBit(bitMask, PADDING_BIT);
+    }
+
+    template<typename BitMaskT>
+    inline static void setPadding(BitMaskT &bitMask)
+    {
+        setBit(bitMask, PADDING_BIT);
+    }
+
+    template<typename BitMaskT>
+    inline static void unsetPadding(BitMaskT &bitMask)
+    {
+        unsetBit(bitMask, PADDING_BIT);
+    }
 };
 
 template<unsigned int dim, typename AggregateT,
@@ -372,20 +471,36 @@ void SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layo
 template<unsigned int dim, typename AggregateT,
 		 unsigned int blockEdgeSize, unsigned int threadBlockSize,
 		 typename indexT, template<typename> class layout_base>
-template<typename stencil>
-void SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layout_base>::applyStencils()
+template<typename stencil, typename... Args>
+void SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layout_base>
+        ::applyStencils(StencilMode mode, Args... args)
 {
-    //todo: Apply the given stencil on all elements which are not boundary-tagged
+    // Apply the given stencil on all elements which are not boundary-tagged
+    // The idea is to have this function launch a __global__ function (made by us) on all existing blocks
+    // then this kernel checks if elements exist && !padding and on those it calls the user-provided
+    // __device__ functor. The mode of the stencil application is used basically to choose how we load the block
+    // that we pass to the user functor as storeBlock: in case of Insert, we get the block through an insert (and
+    // we also call the necessary aux functions); in case of an In-place we just get the block from the data buffer.
+    switch (mode)
+    {
+        case STENCIL_MODE_INPLACE:
+            applyStencilInPlace<stencil>(args...);
+            break;
+        case STENCIL_MODE_INSERT:
+            applyStencilInsert<stencil>(args...);
+            break;
+    }
 }
 
 template<unsigned int dim,typename AggregateT,
 		 unsigned int blockEdgeSize, unsigned int threadBlockSize,
 		 typename indexT, template<typename> class layout_base>
-template<typename stencil, typename ... otherStencils>
-void SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layout_base>::applyStencils()
+template<typename stencil1, typename stencil2, typename ... otherStencils, typename... Args>
+void SparseGridGpu<dim, AggregateT, blockEdgeSize, threadBlockSize, indexT, layout_base>
+        ::applyStencils(StencilMode mode, Args... args)
 {
-    applyStencils<stencil>();
-    applyStencils<otherStencils ...>();
+    applyStencils<stencil1>(mode, args...);
+    applyStencils<stencil2, otherStencils ...>(mode, args...);
 }
 
 template<unsigned int dim, typename AggregateT,

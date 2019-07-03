@@ -31,6 +31,7 @@ protected:
 public:
     static constexpr unsigned int d = dim;
     unsigned int stencilSupportRadius;
+    typedef AggregateBlockT AggregateBlockType;
 
 public:
     SparseGridGpu_ker(const openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> &blockMap,
@@ -91,9 +92,14 @@ public:
         return res;
     }
 
-    constexpr __device__ unsigned int getBlockEdgeSize() const
+    constexpr static __device__ unsigned int getBlockEdgeSize()
     {
         return blockEdgeSize;
+    }
+
+    constexpr __device__ unsigned int getBlockSize() const
+    {
+        return blockSize;
     }
 
     inline __device__ unsigned int getEnlargedBlockSize() const
@@ -152,9 +158,15 @@ public:
     inline __device__ auto
     getBlock(const grid_key_dx<dim, CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBlock(0));
 
+    inline __device__ auto
+    getBlock(const unsigned int blockLinId) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBlock(0));
+
     template<typename CoordT>
     inline __device__ auto
     insertBlock(const grid_key_dx<dim, CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(0));
+
+    inline __device__ auto
+    insertBlock(const unsigned int blockLinId) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(0));
 
     // Load & Store aux functions for user kernels. To be used for loading to or writing from shared memory.
 
@@ -545,11 +557,35 @@ template<unsigned int dim,
         typename indexT,
         template<typename> class layout_base,
         typename GridSmT>
+inline __device__ auto SparseGridGpu_ker<dim, blockEdgeSize, AggregateBlockT, indexT, layout_base, GridSmT>
+::getBlock(const unsigned int blockLinId) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBlock(0))
+{
+    return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBlock(blockLinId);
+}
+
+template<unsigned int dim,
+        unsigned int blockEdgeSize,
+        typename AggregateBlockT,
+        typename indexT,
+        template<typename> class layout_base,
+        typename GridSmT>
 template<typename CoordT>
 inline __device__ auto SparseGridGpu_ker<dim, blockEdgeSize, AggregateBlockT, indexT, layout_base, GridSmT>
 ::insertBlock(const grid_key_dx<dim, CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(0))
 {
     return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(getBlockId(coord));
+}
+
+template<unsigned int dim,
+        unsigned int blockEdgeSize,
+        typename AggregateBlockT,
+        typename indexT,
+        template<typename> class layout_base,
+        typename GridSmT>
+inline __device__ auto SparseGridGpu_ker<dim, blockEdgeSize, AggregateBlockT, indexT, layout_base, GridSmT>
+::insertBlock(const unsigned int blockLinId) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(0))
+{
+    return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(blockLinId);
 }
 
 //template<unsigned int dim,
