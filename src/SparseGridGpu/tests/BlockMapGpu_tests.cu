@@ -148,9 +148,6 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
         // Prealloc insert buffer
         blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
-        // Initialize the insert buffer
-        blockMap.initializeGPUInsertBuffer();
-
         // Insert values
         insertValues<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
 
@@ -200,9 +197,6 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
 
         // Prealloc insert buffer
         blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
-
-        // Initialize the insert buffer
-        blockMap.initializeGPUInsertBuffer();
 
         // Insert values
         insertValuesHalfBlock<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
@@ -267,9 +261,6 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
 
         // Prealloc insert buffer
         sparseGrid.setGPUInsertBuffer(gridSize, bufferPoolSize);
-
-        // Initialize the insert buffer
-        sparseGrid.initializeGPUInsertBuffer();
 
         // Insert values
         insertValuesBlocked<0, 2> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel());

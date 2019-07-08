@@ -200,6 +200,7 @@ void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::setGPUI
 {
     // Prealloc the insert buffer on the underlying sparse vector
     blockMap.setGPUInsertBuffer(nBlock, nSlot);
+    initializeGPUInsertBuffer();
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>

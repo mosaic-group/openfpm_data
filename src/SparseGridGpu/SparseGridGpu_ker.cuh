@@ -139,6 +139,31 @@ public:
         return coordToLin<blockEdgeSize>(res, stencilSupportRadius);
     }
 
+    inline __device__ bool
+    getIfBoundaryElementInEnlargedBlock(const grid_key_dx<dim> coordInEnlargedBlock, char (&boundaryDirection)[dim])
+    {
+        bool isBoundary = false;
+        for (int d=0; d<dim; ++d)
+        {
+            const auto v = coordInEnlargedBlock.get(d);
+            if (v==stencilSupportRadius)
+            {
+                boundaryDirection[d] = -1;
+                isBoundary = true;
+            }
+            else if (v==stencilSupportRadius+blockEdgeSize-1)
+            {
+                boundaryDirection[d] = 1;
+                isBoundary = true;
+            }
+            else
+            {
+                boundaryDirection[d] = 0;
+            }
+        }
+        return isBoundary;
+    }
+
     // Data management methods
 
     template<unsigned int p, typename CoordT>
@@ -352,8 +377,8 @@ private:
         return linId;
     }
 
-    template<unsigned int edgeSize>
-    inline __device__ unsigned int coordToLin(const grid_key_dx<dim> &coord, const unsigned int paddingSize = 0) const
+    template<unsigned int edgeSize, typename CoordT>
+    inline __device__ unsigned int coordToLin(const grid_key_dx<dim, CoordT> &coord, const unsigned int paddingSize = 0) const
     {
         unsigned int linId = coord.get(dim - 1);
         for (int d = dim - 2; d >= 0; --d)
@@ -364,7 +389,8 @@ private:
         return linId;
     }
 
-    inline __device__ unsigned int coordToLin(const grid_key_dx<dim> & coord, grid_key_dx<dim> & blockDimensions) const
+    template <typename CoordT>
+    inline __device__ unsigned int coordToLin(const grid_key_dx<dim, CoordT> & coord, grid_key_dx<dim> & blockDimensions) const
     {
         unsigned int linId = coord.get(dim - 1);
         for (int d = dim - 2; d >= 0; --d)

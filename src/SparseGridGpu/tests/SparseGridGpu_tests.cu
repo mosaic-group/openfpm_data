@@ -273,29 +273,140 @@ struct HeatStencil
 
         __shared__ ScalarT enlargedBlock[enlargedBlockSize];
         sparseGrid.loadBlock<p>(dataBlockLoad, enlargedBlock);
-        for (unsigned int iter=0; iter<1000; ++iter)
-        {
-            sparseGrid.loadGhost<p>(dataBlockCoord, enlargedBlock);
-            __syncthreads();
+        sparseGrid.loadGhost<p>(dataBlockCoord, enlargedBlock);
+        __syncthreads();
 
-            const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
-            const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
+        const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
+        const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
+        ScalarT cur = enlargedBlock[linId];
+        ScalarT laplacian = -2.0 * dim * cur; // The central part of the stencil
+        for (int d = 0; d < dim; ++d)
+        {
+            auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
+            auto nMinusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, -1);
+            ScalarT neighbourPlus = enlargedBlock[nPlusId];
+            ScalarT neighbourMinus = enlargedBlock[nMinusId];
+            laplacian += neighbourMinus + neighbourPlus;
+        }
+        enlargedBlock[linId] = cur + dt * laplacian;
+
+        __syncthreads();
+        sparseGrid.storeBlock<p>(dataBlockStore, enlargedBlock);
+    }
+
+    template <typename SparseGridT, typename CtxT>
+    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+    {
+        sparseGrid.template flush <smin_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
+    }
+};
+
+template<unsigned int dim, unsigned int p>
+struct HeatStencil2
+{
+    // This is an example of a laplacian smoothing stencil to apply using the apply stencil facility of SparseGridGpu
+
+    static constexpr unsigned int flops = 3 + 2*dim;
+
+    static constexpr unsigned int supportRadius = 1;
+
+    template<typename SparseGridT, typename DataBlockWrapperT>
+    static inline __device__ void stencil(
+            SparseGridT & sparseGrid,
+            grid_key_dx<dim> & dataBlockCoord,
+            unsigned int offset,
+            grid_key_dx<dim> & pointCoord,
+            DataBlockWrapperT & dataBlockLoad,
+            DataBlockWrapperT & dataBlockStore,
+            float dt, unsigned int maxIter=1000)
+    {
+        typedef typename SparseGridT::AggregateBlockType AggregateT;
+        typedef ScalarTypeOf<AggregateT, p> ScalarT;
+        typedef BlockTypeOf<AggregateT, p> BlockT;
+        constexpr unsigned int blockSize = BlockT::size;
+
+        constexpr unsigned int enlargedBlockSize = IntPow<
+                SparseGridT::getBlockEdgeSize() + 2 * supportRadius, dim>::value;
+
+        const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
+        const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
+        char boundaryDirection[dim];
+        bool isBoundary = sparseGrid.getIfBoundaryElementInEnlargedBlock(coord, boundaryDirection);
+
+        unsigned int nPlusId[dim], nMinusId[dim];
+        for (int d=0; d<dim; ++d)
+        {
+            nPlusId[d] = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
+            nMinusId[d] = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, -1);
+        }
+
+        __shared__ ScalarT enlargedBlock[enlargedBlockSize];
+
+        ScalarT * nPlus[dim];
+        ScalarT * nMinus[dim];
+        for (int d=0; d<dim; ++d)
+        {
+            const auto boundaryDir = boundaryDirection[d];
+            const auto nCoord = sparseGrid.getNeighbour(pointCoord, d, boundaryDir);
+            const auto nOffset = sparseGrid.getLinId(nCoord) % blockSize;
+            nPlus[d] = &(enlargedBlock[nPlusId[d]]);
+            nMinus[d] = &(enlargedBlock[nMinusId[d]]);
+            if (boundaryDir==1)
+            {
+//                nPlus[d] = &(sparseGrid.getBlock(nCoord).template get<p>()[nOffset]);
+//                nPlus[d] = &(sparseGrid.template get<p>(nCoord));
+//                nPlus[d] = sparseGrid.getBlock(nCoord).template getPtr<p>()->block + nOffset;
+                nPlus[d] = sparseGrid.getBlock(nCoord).template get<p>().block + nOffset;
+            }
+            else if (boundaryDir==-1)
+            {
+//                nMinus[d] = &(sparseGrid.getBlock(nCoord).template get<p>()[nOffset]);
+//                nMinus[d] = &(sparseGrid.template get<p>(nCoord));
+//                nMinus[d] = sparseGrid.getBlock(nCoord).template getPtr<p>()->block + nOffset;
+                nMinus[d] = sparseGrid.getBlock(nCoord).template get<p>().block + nOffset;
+            }
+        }
+
+        sparseGrid.loadBlock<p>(dataBlockLoad, enlargedBlock);
+        __syncthreads();
+        for (unsigned int iter=0; iter<maxIter; ++iter)
+        {
+//            sparseGrid.loadGhost<p>(dataBlockCoord, enlargedBlock);
+//            __syncthreads();
+
+//todo: capisci come mai questa load non va mentre con la load ghost si!
+
             ScalarT cur = enlargedBlock[linId];
             ScalarT laplacian = -2.0 * dim * cur; // The central part of the stencil
             for (int d = 0; d < dim; ++d)
             {
-                auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
-                auto nMinusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, -1);
-                ScalarT neighbourPlus = enlargedBlock[nPlusId];
-                ScalarT neighbourMinus = enlargedBlock[nMinusId];
-                laplacian += neighbourMinus + neighbourPlus;
+//                const auto boundary = boundaryDirection[d];
+//                ScalarT neighbourPlus = enlargedBlock[nPlusId[d]];
+//                ScalarT neighbourMinus = enlargedBlock[nMinusId[d]];
+//                if (boundary == 1)
+//                {
+//                    neighbourPlus = *(nPlus[d]);
+//                }
+//                else if (boundary == -1)
+//                {
+//                    neighbourMinus = *(nMinus[d]);
+//                }
+//                laplacian += neighbourMinus + neighbourPlus;
+                laplacian += *(nMinus[d]) + *(nPlus[d]);
             }
             enlargedBlock[linId] = cur + dt * laplacian;
 
             __syncthreads();
-            sparseGrid.storeBlock<p>(dataBlockStore, enlargedBlock);
+//            sparseGrid.storeBlock<p>(dataBlockLoad, enlargedBlock);
+            if (isBoundary)
+            {
+                dataBlockLoad.template get<p>()[offset] = enlargedBlock[linId];
+            }
             __syncthreads();
         }
+        __syncthreads();
+        sparseGrid.storeBlock<p>(dataBlockStore, enlargedBlock);
+        __syncthreads();
     }
 
     template <typename SparseGridT, typename CtxT>
@@ -335,7 +446,6 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
 
 //        sparseGrid.setGPUInsertBuffer(gridSizeLin, bufferPoolSize);
         sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-        sparseGrid.initializeGPUInsertBuffer();
 
         insertValues<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel());
 
@@ -390,7 +500,6 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
         sparseGrid.template setBackgroundValue<0>(666);
 
         sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-        sparseGrid.initializeGPUInsertBuffer();
 
         insertValues<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel());
 
@@ -443,7 +552,6 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
 
         sparseGrid.template setBackgroundValue<0>(666);
         sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-        sparseGrid.initializeGPUInsertBuffer();
 
         // Insert only one point in the SparseGrid
 //        grid_key_dx<dim, int> pt({6,6});
@@ -504,32 +612,28 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
 
         BlockGeometry<dim, blockEdgeSize> blockGeometry(gridSize);
         SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
-
+        mgpu::ofp_context_t ctx;
         sparseGrid.template setBackgroundValue<0>(0);
 
         // Insert values on the grid
         sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-        sparseGrid.initializeGPUInsertBuffer();
-
         insertConstantValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), 0);
-
-        mgpu::ofp_context_t ctx;
         sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-        //
-        sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-        sparseGrid.initializeGPUInsertBuffer();
 
+        sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
         dim3 pt2(4, 4, 0);
         insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), pt2, 100);
-
-//        mgpu::ofp_context_t ctx;
         sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 //        // Now tag the boundaries
 //        sparseGrid.tagBoundaries();
 
         // Now apply the laplacian operator
-        sparseGrid.applyStencils<HeatStencil<dim, 0>>(STENCIL_MODE_INPLACE, 0.1);
+        const unsigned int maxIter = 1000;
+        for (unsigned int iter=0; iter<maxIter; ++iter)
+        {
+            sparseGrid.applyStencils<HeatStencil<dim, 0>>(STENCIL_MODE_INPLACE, 0.1);
+        }
 
         // Get output
         openfpm::vector_gpu<AggregateT> output;

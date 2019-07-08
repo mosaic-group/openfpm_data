@@ -707,6 +707,13 @@ public:
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
 
+	// DEBUG //
+    template <unsigned int p> __device__ __host__  auto getPtr() -> decltype(boost::fusion::at_c<p>(data).mem_r + k)
+    {
+        return boost::fusion::at_c<p>(data).mem_r + k;
+    }
+	///////////
+
 	/*! \brief Access the data
 	 *
 	 * \tparam p property selected
