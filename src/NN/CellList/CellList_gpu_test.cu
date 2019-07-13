@@ -1240,11 +1240,11 @@ struct execute_cl_test<1>
 	{
 		auto ite = pl.getGPUIterator();
 
-		calc_force_number_rad<decltype(pl.toKernel()),
+		CUDA_LAUNCH((calc_force_number_rad<decltype(pl.toKernel()),
 				          decltype(s_t_ns.toKernel()),
 				          decltype(cl2.toKernel()),
-				          decltype(n_out.toKernel())>
-		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+				          decltype(n_out.toKernel())>),
+							   ite,pl.toKernel(),
 							   s_t_ns.toKernel(),
 							   cl2.toKernel(),
 							   n_out.toKernel());
@@ -1255,11 +1255,11 @@ struct execute_cl_test<1>
 	{
 		auto ite = pl.getGPUIterator();
 
-		calc_force_list_rad<decltype(pl.toKernel()),
+		CUDA_LAUNCH((calc_force_list_rad<decltype(pl.toKernel()),
 				          decltype(s_t_ns.toKernel()),
 				          decltype(cl2.toKernel()),
-				          decltype(nn_list.toKernel())>
-		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+				          decltype(nn_list.toKernel())>),
+							   ite,pl.toKernel(),
 							   s_t_ns.toKernel(),
 							   cl2.toKernel(),
 							   n_out_scan.toKernel(),
@@ -1288,11 +1288,11 @@ struct execute_cl_test<2>
 	{
 		auto ite = s_t_ns.getGPUIterator();
 
-		calc_force_number_box_noato<decltype(pl.toKernel()),
+		CUDA_LAUNCH((calc_force_number_box_noato<decltype(pl.toKernel()),
 				          decltype(s_t_ns.toKernel()),
 				          decltype(cl2.toKernel()),
-				          decltype(n_out.toKernel())>
-		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+				          decltype(n_out.toKernel())>),
+							   ite,pl.toKernel(),
 							   s_t_ns.toKernel(),
 							   cl2.toKernel(),
 							   n_out.toKernel(),
@@ -1304,11 +1304,12 @@ struct execute_cl_test<2>
 	{
 		auto ite = s_t_ns.getGPUIterator();
 
-		calc_force_number_box<decltype(pl.toKernel()),
+		CUDA_LAUNCH((calc_force_number_box<decltype(pl.toKernel()),
 				          decltype(s_t_ns.toKernel()),
 				          decltype(cl2.toKernel()),
-				          decltype(n_out.toKernel())>
-		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+				          decltype(n_out.toKernel())>),
+							   ite,
+							   pl.toKernel(),
 							   s_t_ns.toKernel(),
 							   cl2.toKernel(),
 							   n_out.toKernel(),
@@ -1320,11 +1321,11 @@ struct execute_cl_test<2>
 	{
 		auto ite = s_t_ns.getGPUIterator();
 
-		calc_force_list_box<decltype(pl.toKernel()),
+		CUDA_LAUNCH((calc_force_list_box<decltype(pl.toKernel()),
 				          decltype(s_t_ns.toKernel()),
 				          decltype(cl2.toKernel()),
-				          decltype(nn_list.toKernel())>
-		<<<ite.wthr,ite.thr>>>(pl.toKernel(),
+				          decltype(nn_list.toKernel())>),
+							   ite,pl.toKernel(),
 							   s_t_ns.toKernel(),
 							   cl2.toKernel(),
 							   n_out_scan.toKernel(),
@@ -1486,8 +1487,9 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out_scan;
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> nn_list;
 
-	scan<unsigned int,unsigned char> sc;
-	sc.scan_(n_out,n_out_scan);
+	n_out_scan.resize(pl.size()+1);
+
+	mgpu::scan((unsigned int *)n_out.template getDeviceBuffer<0>(),n_out.size(),(unsigned int *)n_out_scan.template getDeviceBuffer<0>(),context);
 	n_out_scan.template deviceToHost<0>();
 
 	if (n_out_scan.template get<0>(pl.size()) == 0)
@@ -1551,7 +1553,6 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 	}
 
 	BOOST_REQUIRE_EQUAL(check,true);
-
 	}
 }
 

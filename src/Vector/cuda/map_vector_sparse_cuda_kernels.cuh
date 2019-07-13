@@ -669,6 +669,8 @@ __global__ void set_indexes(vector_type vd, int off)
 {
 	int p = blockIdx.x * blockDim.x + threadIdx.x;
 
+	if (p >= vd.size())	{return;}
+
 	vd.template get<prp>(p) = p + off;
 }
 

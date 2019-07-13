@@ -91,4 +91,47 @@ template<typename T>
 struct is_gpu_ker_celllist<T, typename Void<typename T::yes_is_gpu_ker_celllist>::type> : std::true_type
 {};
 
+// structure to check the device pointer
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. It check if the
+ * pointer ptr match one of the pointer properties
+ *
+ */
+template<typename data_type>
+struct check_device_ptr
+{
+	//! pointer to check
+	void * ptr;
+
+	//! Data to check
+	data_type & data;
+
+	mutable int prp;
+
+	mutable bool result;
+
+	/*! \brief constructor
+	 *
+	 * \param ptr pointer to check
+	 * \param data data structure
+	 *
+	 */
+	inline check_device_ptr(void * ptr, data_type & data)
+	:ptr(ptr),data(data),result(false)
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t)
+	{
+		if (data.template getPointer<T::value>() == ptr)
+		{
+			prp = T::value;
+			result = true;
+		}
+	}
+};
+
 #endif /* SRC_VECTOR_UTIL_HPP_ */

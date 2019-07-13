@@ -1296,6 +1296,7 @@ namespace openfpm
 			base.set(id,v.base,src);
 		}
 
+
 		/*! \brief Assignment operator
 		 *
 		 * move semantic movement operator=

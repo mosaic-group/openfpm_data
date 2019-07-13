@@ -870,7 +870,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_packing)
 
 	while (sub_it2.isNext())
 	{
-		auto p = sub_it.get();
+		auto p = sub_it2.get();
 
 		match &= grid3.template insert<0>(p) == grid.template get<0>(p);
 		match &= grid3.template insert<1>(p) == grid.template get<1>(p);

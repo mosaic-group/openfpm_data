@@ -11,106 +11,82 @@
 #include "Grid/util.hpp"
 #include "Vector/util.hpp"
 
+struct pointer_check
+{
+	//! Indicate if the pointer match
+	bool match;
+
+	//! match string
+	std::string match_str;
+};
+
 template<typename T, int type_of_t=has_check_device_pointer<T>::value>
 struct check_type
 {
-	static int check(void * ptr, int prp, T & arg)
+	static pointer_check check(void * ptr, int prp, T & arg)
 	{
-		return false;
+		pointer_check pc;
+
+		pc.match = false;
+
+		return pc;
 	}
 };
 
-/*! \brief this class is a functor for "for_each" algorithm
- *
- * This class is a functor for "for_each" algorithm. It check if the
- * pointer ptr match one of the pointer properties
- *
- */
-//template<typename data_type>
-//struct check_device_ptr
-//{
-//	//! pointer to check
-//	void * ptr;
-//
-//	//! Data to check
-//	data_type & data;
-//
-//	int prp;
-//
-//	mutable bool result;
-//
-//	/*! \brief constructor
-//	 *
-//	 * \param ptr pointer to check
-//	 * \param data data structure
-//	 *
-//	 */
-//	inline check_device_ptr(void * ptr, int prp, data_type & data)
-//	:ptr(ptr),data(data),prp(prp)
-//	{
-//	};
-//
-//	//! It call the copy function for each property
-//	template<typename T>
-//	inline void operator()(T& t)
-//	{
-//		if (T::value == prp)
-//		{
-//			result = data.template getPointer<T::value>() == ptr;
-//		}
-//	}
-//};
+
 
 template<typename T>
 struct check_type<T,1>
 {
-	static int check(void * ptr, int prp, T & arg)
+	static pointer_check check(void * ptr, int prp, T & arg)
 	{
-//		check_device_ptr<T> cp(ptr,prp,arg);
-//
-//		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::value_type::max_prop> >(cp);
-//
-//		return cp.result;
+		return arg.check_device_pointer(ptr);
 	}
 };
 
-template<typename T>
-struct check_type<T,2>
+struct pos_pc
 {
-	static int check(void * ptr, int prp, T & arg)
-	{
-//		check_device_ptr<T> cp(ptr,prp,arg);
-//
-//		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::value_type::max_prop> >(cp);
-//
-//		return cp.result;
-	}
+	int pos;
+	pointer_check pc;
 };
 
 template<typename ArgL>
-int error_args_impl(void * ptr, int prp, ArgL argl)
+pos_pc error_args_impl(void * ptr, int prp, ArgL argl)
 {
-	if (check_type<ArgL>::check(ptr,prp,argl) == true)
+	pos_pc pp;
+	pointer_check pc = check_type<ArgL>::check(ptr,prp,argl);
+	if (pc.match == true)
 	{
-		return 0;
+		pp.pos = 0;
+		pp.pc = pc;
+		return pp;
 	}
-	return -1;
+
+	pp.pos = -1;
+
+	return pp;
 }
 
 template<typename ArgL, typename ... Args>
-int error_args_impl(void * ptr, int prp, ArgL argl, Args ... args)
+pos_pc error_args_impl(void * ptr, int prp, ArgL argl, Args ... args)
 {
-	if (check_type<ArgL>::check(ptr,prp,argl) == true)
+	pos_pc pp;
+	pointer_check pc = check_type<ArgL>::check(ptr,prp,argl);
+	if (pc.match == true)
 	{
-		return sizeof...(args);
+		pp.pos = sizeof...(args);
+		pp.pc = pc;
+		return pp;
 	}
 	return error_args_impl(ptr, prp, args ...);
 }
 
-template<typename ... Args>int error_arg(void * ptr, int prp, Args ... args)
+template<typename ... Args>pos_pc error_arg(void * ptr, int prp, Args ... args)
 {
-	int pos = error_args_impl(ptr, prp, args ... );
-	return sizeof...(args) - pos - 1;
+	pos_pc pp;
+	pp = error_args_impl(ptr, prp, args ... );
+	pp.pos = sizeof...(args) - pp.pos - 1;
+	return pp;
 }
 
 #include <boost/algorithm/string.hpp>
@@ -123,15 +99,15 @@ template<typename ... Args>int error_arg(void * ptr, int prp, Args ... args)
 		                     {\
 		                    	 void * ptr = (void *)*(size_t *)&dev_mem[1]; \
 		                    	 int prp_err = dev_mem[3];\
-		                    	 int ea = error_arg(ptr,prp_err,__VA_ARGS__);\
+		                    	 pos_pc ea = error_arg(ptr,prp_err,__VA_ARGS__);\
 		                    	 std::string args_s( #__VA_ARGS__ );\
 		                    	 std::vector<std::string> results;\
 		                    	 boost::split(results, args_s, [](char c){return c == ',';});\
 		                    	 std::string data_s;\
-		                    	 if (ea >= results.size())\
+		                    	 if (ea.pos >= results.size())\
 		                    	 {data_s = "Internal";}\
 								 else\
-								 {data_s = results[ea];}\
+								 {data_s = results[ea.pos];}\
 		                    	 std::cout << __FILE__ << ":" << __LINE__ << " Overflow detected in Kernel: " << kernel_call << " from the structure: " << data_s << " property: " << prp_err << " index:(" ;\
 		                    	 int i = 0; \
 		                    	 for ( ; i < dev_mem[4]-1 ; i++)\
@@ -141,6 +117,7 @@ template<typename ... Args>int error_arg(void * ptr, int prp, Args ... args)
 								 std::cout << dev_mem[5+i];\
 								 std::cout << ")";\
 								 std::cout << " thread: " << "(" << dev_mem[6+i] << "," << dev_mem[7+i] << "," << dev_mem[8+i] << ")*(" << dev_mem[9+i] << "," << dev_mem[10+i] << "," << dev_mem[11+i] << ")+(" << dev_mem[12+i] << "," << dev_mem[13+i] << "," << dev_mem[14+i] << ")" << std::endl;\
+		                    	 std::cout << "Internal error report: " << ea.pc.match_str << std::endl;\
 								 ACTION_ON_ERROR(CUDA_LAUNCH_ERROR_OBJECT);\
 		                     }
 #else

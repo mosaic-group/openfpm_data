@@ -691,7 +691,7 @@ public:
 	static const int max_prop = T::max_prop;
 
 	//! constructor require a key and a memory data
-	encapc(typename memory_traits_inte<T>::type & data, size_t k)
+	__device__ __host__ encapc(typename memory_traits_inte<T>::type & data, size_t k)
 	:data(data),k(k)
 	{}
 

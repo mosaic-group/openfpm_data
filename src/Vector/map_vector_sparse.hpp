@@ -1226,7 +1226,7 @@ namespace openfpm
 	    				typename std::remove_reference<decltype(vct_data_bck.template get<p>(0))>::type>
 	    				::meta_copy_d_(bck,vct_data_bck.template get<p>(0));
 
-	    	vct_data_bck.template hostToDevice<0>();
+	    	vct_data_bck.template hostToDevice<p>();
 	    }
 
 		/*! \brief It insert an element in the sparse vector

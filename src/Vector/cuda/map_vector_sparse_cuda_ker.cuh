@@ -95,6 +95,9 @@ namespace openfpm
 
 		typedef Ti index_type;
 
+		//! Indicate this structure has a function to check the device pointer
+		typedef int yes_has_check_device_pointer;
+
 		vector_sparse_gpu_ker(vector_gpu_ker<aggregate<Ti>,layout_base> vct_index,
 							  vector_gpu_ker<T,layout_base> vct_data,
 							  vector_gpu_ker<aggregate<Ti>,layout_base> vct_add_index,
@@ -220,7 +223,12 @@ namespace openfpm
         {
             Ti di;
             Ti v = this->_branchfree_search(id,di);
-            return (v == id)?vct_data.get(static_cast<size_t>(di)):vct_data_bck.get();
+            auto ec = vct_data.get_unsafe(static_cast<size_t>(di));
+            if (v != id)
+            {
+            	ec = vct_data_bck.get(0);
+            }
+            return ec;
         }
 
 		/*! \brief Get an element of the vector
@@ -491,6 +499,88 @@ namespace openfpm
 			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
 #endif
 		}
+
+
+#ifdef SE_CLASS1
+
+		/*! \brief Check if the device pointer is owned by this structure
+		 *
+		 * \return a structure pointer check with information about the match
+		 *
+		 */
+		pointer_check check_device_pointer(void * ptr)
+		{
+			pointer_check pc;
+
+			pc = vct_index.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("Index vector overflow: ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			pc = vct_data.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("Data vector overflow: ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			pc = vct_add_index.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("Add index vector overflow: ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			pc = vct_rem_index.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("Remove index vector overflow: ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			pc = vct_nadd_index.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("Add index counter vector overflow: ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			pc = vct_nrem_index.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("Remove index counter vector overflow: ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			pc = vct_add_data.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("Add data vector overflow: ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			pc = vct_data_bck.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("Background data vector overflow: ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			return pc;
+		}
+
+#endif
+
 	};
 }
 

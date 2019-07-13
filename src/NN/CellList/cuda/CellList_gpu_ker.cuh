@@ -151,6 +151,8 @@ class NN_gpu_it: public NN_gpu_int_base<dim,r_int,openfpm::math::pow(2*r_int+1,d
 		{
 			this->SelectValid_impl(div_c);
 
+			if (isNext() == false) {break;}
+
 			p_id = starts.template get<0>(this->c_id);
 			p_id_end = starts.template get<0>(this->c_id+1);
 		}
@@ -207,7 +209,7 @@ public:
 
 	inline __device__ bool isNext()
 	{
-		return this->isNext_impl()/*cell_act.get(dim-1) <= cell_stop.get(dim-1)*/;
+		return this->isNext_impl();
 	}
 };
 
@@ -435,6 +437,9 @@ public:
 
 	typedef int yes_is_gpu_ker_celllist;
 
+	//! Indicate this structure has a function to check the device pointer
+	typedef int yes_has_check_device_pointer;
+
 	__device__ inline CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> starts,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt,
@@ -524,6 +529,54 @@ public:
 	{
 		return g_m;
 	}
+
+#ifdef SE_CLASS1
+
+	/*! \brief Check if the device pointer is owned by this structure
+	 *
+	 * \return a structure pointer check with information about the match
+	 *
+	 */
+	pointer_check check_device_pointer(void * ptr)
+	{
+		pointer_check pc;
+
+		pc = starts.check_device_pointer(ptr);
+
+		if (pc.match == true)
+		{
+			pc.match_str = std::string("Cell index overflow (starts): ") + "\n" + pc.match_str;
+			return pc;
+		}
+
+		pc = srt.check_device_pointer(ptr);
+
+		if (pc.match == true)
+		{
+			pc.match_str = std::string("Particle index overflow (str): ") + "\n" + pc.match_str;
+			return pc;
+		}
+
+		pc = dprt.check_device_pointer(ptr);
+
+		if (pc.match == true)
+		{
+			pc.match_str = std::string("Particle index overflow (dprt): ") + "\n" + pc.match_str;
+			return pc;
+		}
+
+		pc = rad_cells.check_device_pointer(ptr);
+
+		if (pc.match == true)
+		{
+			pc.match_str = std::string("Particle index overflow (dprt): ") + "\n" + pc.match_str;
+			return pc;
+		}
+
+		return pc;
+	}
+
+#endif
 };
 
 
@@ -549,6 +602,9 @@ class CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,true>: public CellDecom
 	unsigned int g_m;
 
 public:
+
+	//! Indicate this structure has a function to check the device pointer
+	typedef int yes_has_check_device_pointer;
 
 	__device__ inline CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> cell_nn,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type,cnt_type>,memory_traits_inte> cell_nn_list,
@@ -606,6 +662,54 @@ public:
 	{
 		return g_m;
 	}
+
+#ifdef SE_CLASS1
+
+	/*! \brief Check if the device pointer is owned by this structure
+	 *
+	 * \return a structure pointer check with information about the match
+	 *
+	 */
+	pointer_check check_device_pointer(void * ptr)
+	{
+		pointer_check pc;
+
+		pc = cell_nn.check_device_pointer(ptr);
+
+		if (pc.match == true)
+		{
+			pc.match_str = std::string("Cell index overflow (starts): ") + "\n" + pc.match_str;
+			return pc;
+		}
+
+		pc = cell_nn_list.check_device_pointer(ptr);
+
+		if (pc.match == true)
+		{
+			pc.match_str = std::string("Cell particle buffer overflow (cell_nn_list): ") + "\n" + pc.match_str;
+			return pc;
+		}
+
+		pc = srt.check_device_pointer(ptr);
+
+		if (pc.match == true)
+		{
+			pc.match_str = std::string("Particle index overflow (str): ") + "\n" + pc.match_str;
+			return pc;
+		}
+
+		pc = dprt.check_device_pointer(ptr);
+
+		if (pc.match == true)
+		{
+			pc.match_str = std::string("Particle index overflow (dprt): ") + "\n" + pc.match_str;
+			return pc;
+		}
+
+		return pc;
+	}
+
+#endif
 };
 
 

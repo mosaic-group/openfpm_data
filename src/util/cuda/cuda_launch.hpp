@@ -23,7 +23,7 @@
 			if (e != cudaSuccess)\
 			{\
 				std::string error = cudaGetErrorString(e);\
-				std::cout << "Cuda an error has occurred before, detected in: " << __FILE__ << ":" << __LINE__ << " " << error << std::endl;\
+				std::cout << "Cuda an error has occurred before this CUDA_LAUNCH, detected in: " << __FILE__ << ":" << __LINE__ << " " << error << std::endl;\
 			}\
 		}\
 	    CHECK_SE_CLASS1_PRE\

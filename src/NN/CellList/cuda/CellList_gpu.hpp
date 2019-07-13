@@ -155,9 +155,6 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	//! Radius neighborhood
 	openfpm::vector<aggregate<int>,Memory,typename memory_traits_inte<aggregate<int>>::type,memory_traits_inte> nnc_rad;
 
-	//! scan object
-	//scan<cnt_type,ids_type> sc;
-
 	//! Additional information in general (used to understand if the cell-list)
 	//! has been constructed from an old decomposition
 	size_t n_dec;
@@ -301,7 +298,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
 				      decltype(pl.toKernel()),
 				      decltype(sorted_to_not_sorted.toKernel()),
-				      cnt_type,shift_ph<0,cnt_type>>),ite,pl.size(),
+				      cnt_type,shift_ph<0,cnt_type>>),ite,sorted_to_not_sorted.size(),
 				                                                           pl_prp.toKernel(),
 				                                                           pl_prp_out.toKernel(),
 				                                                           pl.toKernel(),

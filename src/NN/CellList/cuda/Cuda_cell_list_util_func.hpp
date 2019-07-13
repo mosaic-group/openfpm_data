@@ -417,6 +417,8 @@ __global__ void count_nn_cells(cl_sparse_type cl_sparse, vector_type output, vec
 	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	openfpm::sparse_index<index_type> id(tid);
 
+	if (tid >= cl_sparse.size()) {return;}
+
 	index_type cell = cl_sparse.get_index(id);
 
 	for (int i = 0 ; i < nn_to_test.size() ; i++)
