@@ -264,6 +264,9 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
         util/multi_array_openfpm/types.hpp
         DESTINATION openfpm_data/include/util/multi_array_openfpm)
 
+install(DIRECTORY util/cuda/cub/
+                  DESTINATION openfpm_data/include/util/cuda/cub )
+
 install(FILES util/cuda/scan_cuda.cuh
         util/cuda/ofp_context.hxx
         util/cuda/cuda_launch.hpp

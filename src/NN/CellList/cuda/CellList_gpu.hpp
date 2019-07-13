@@ -20,6 +20,7 @@
 #include "util/cuda_util.hpp"
 #include "NN/CellList/CellList_util.hpp"
 #include "NN/CellList/CellList.hpp"
+#include "util/cuda/scan_ofp.cuh"
 
 #ifdef __NVCC__
 #include "util/cuda/moderngpu/kernel_scan.hxx"

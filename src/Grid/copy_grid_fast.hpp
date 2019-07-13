@@ -1225,7 +1225,7 @@ struct pack_with_iterator<false,dim,grid,encap_src,encap_dst,boost_vct,it,dtype,
 		grid_key_dx<dim> one = zero;
 		one.set_d(1,1);
 
-		unsigned char * ptr_final = (unsigned char *)(&gr.template get<0>(one));
+		unsigned char * ptr_final = (unsigned char *)(&gr.template get_unsafe<0>(one));
 		unsigned char * ptr_start = (unsigned char *)(&gr.template get<0>(zero));
 
 		size_t stride = ptr_final - ptr_start;
