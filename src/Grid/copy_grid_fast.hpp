@@ -593,41 +593,6 @@ public:
 		typedef typename boost::mpl::at<typename grid::value_type::type,boost::mpl::int_<T::value>>::type prp_type;
 
 		mp_funct_impl<grid::dims,prp_type>::template process<T::value>(gd_src,gd_dst,bx_src,bx_dst);
-
-/*		grid_key_dx<3> zero;
-		zero.zero();
-		grid_key_dx<3> one = zero;
-		one.set_d(1,1);
-
-		unsigned char * ptr_final_src = (unsigned char *)(gd_src.template get_address<prp>(one));
-		unsigned char * ptr_start_src = (unsigned char *)(gd_src.template get_address<prp>(zero));
-
-		unsigned char * ptr_final_dst = (unsigned char *)(gd_dst.template get_address<prp>(one));
-		unsigned char * ptr_start_dst = (unsigned char *)(gd_dst.template get_address<prp>(zero));
-
-		unsigned char * ptr_src = (unsigned char *)(gd_src.template get_address<prp>(bx_src.getKP1()));
-		unsigned char * ptr_dst = (unsigned char *)(gd_dst.template get_address<prp>(bx_dst.getKP1()));
-
-		size_t n_cpy = bx_src.getHigh(0) - bx_src.getLow(0) + 1;
-		size_t tot_y = bx_src.getHigh(1) - bx_src.getLow(1) + 1;
-
-		size_t stride_src_x = ptr_final_src - ptr_start_src;
-		size_t stride_dst_x = ptr_final_dst - ptr_start_dst;
-
-		grid_key_dx<3> one2 = zero;
-		one2.set_d(2,1);
-
-		ptr_final_src = (unsigned char *)(gd_src.template get_address<0>(one2));
-		ptr_start_src = (unsigned char *)(gd_src.template get_address<0>(zero));
-
-		ptr_final_dst = (unsigned char *)(gd_dst.template get_address<0>(one2));
-		ptr_start_dst = (unsigned char *)(gd_dst.template get_address<0>(zero));
-
-		size_t stride_src_y = ptr_final_src - ptr_start_src;
-		size_t stride_dst_y = ptr_final_dst - ptr_start_dst;
-
-		copy_ndim_fast_selector<grid::dims>::template call<T::value>(gs_src,gs_dst,bx_src,bx_dst,
-							  gd_src,gd_dst,cnt);*/
 	}
 };
 
@@ -682,101 +647,6 @@ struct copy_grid_fast<false,3,grid,ginfo>
 				   grid_key_dx<3> (& cnt)[1] )
 	{
 		copy_grid_fast_layout_switch<is_layout_inte<typename grid::layout_base_>::value,3,grid,ginfo>::copy(gs_src,gs_dst,bx_src,bx_dst,gd_src,gd_dst,cnt);
-
-/*		grid_key_dx<3> zero;
-		zero.zero();
-		grid_key_dx<3> one = zero;
-		one.set_d(1,1);
-
-		unsigned char * ptr_final_src = (unsigned char *)(gd_src.template get_address<0>(one));
-		unsigned char * ptr_start_src = (unsigned char *)(gd_src.template get_address<0>(zero));
-
-		unsigned char * ptr_final_dst = (unsigned char *)(gd_dst.template get_address<0>(one));
-		unsigned char * ptr_start_dst = (unsigned char *)(gd_dst.template get_address<0>(zero));
-
-		unsigned char * ptr_src = (unsigned char *)(gd_src.template get_address<0>(bx_src.getKP1()));
-		unsigned char * ptr_dst = (unsigned char *)(gd_dst.template get_address<0>(bx_dst.getKP1()));
-
-		size_t n_cpy = bx_src.getHigh(0) - bx_src.getLow(0) + 1;
-
-		size_t tot_y = bx_src.getHigh(1) - bx_src.getLow(1) + 1;
-
-		size_t stride_src_x = ptr_final_src - ptr_start_src;
-		size_t stride_dst_x = ptr_final_dst - ptr_start_dst;
-
-		grid_key_dx<3> one2 = zero;
-		one2.set_d(2,1);
-
-		ptr_final_src = (unsigned char *)(gd_src.template get_address<0>(one2));
-		ptr_start_src = (unsigned char *)(gd_src.template get_address<0>(zero));
-
-		ptr_final_dst = (unsigned char *)(gd_dst.template get_address<0>(one2));
-		ptr_start_dst = (unsigned char *)(gd_dst.template get_address<0>(zero));
-
-		size_t stride_src_y = ptr_final_src - ptr_start_src;
-		size_t stride_dst_y = ptr_final_dst - ptr_start_dst;
-
-		switch (n_cpy)
-		{
-		case 1:
-				copy_grid_fast_shortx_3<grid,1>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x,
-									stride_src_y,stride_dst_y,
-									tot_y);
-				break;
-		case 2:
-				copy_grid_fast_shortx_3<grid,2>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x,
-									stride_src_y,stride_dst_y,
-									tot_y);
-				break;
-
-		case 3:
-				copy_grid_fast_shortx_3<grid,3>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x,
-									stride_src_y,stride_dst_y,
-									tot_y);
-				break;
-
-		case 4:
-				copy_grid_fast_shortx_3<grid,4>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x,
-									stride_src_y,stride_dst_y,
-									tot_y);
-				break;
-		case 5:
-				copy_grid_fast_shortx_3<grid,5>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x,
-									stride_src_y,stride_dst_y,
-									tot_y);
-				break;
-		case 6:
-				copy_grid_fast_shortx_3<grid,6>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x,
-									stride_src_y,stride_dst_y,
-									tot_y);
-				break;
-
-		case 7:
-				copy_grid_fast_shortx_3<grid,7>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x,
-									stride_src_y,stride_dst_y,
-									tot_y);
-				break;
-
-		case 8:
-				copy_grid_fast_shortx_3<grid,8>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x,
-									stride_src_y,stride_dst_y,
-									tot_y);
-				break;
-
-		default:
-				copy_grid_fast_longx_3<grid>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x,
-									stride_src_y,stride_dst_y,
-									tot_y,n_cpy);
-		}*/
 	}
 };
 
@@ -800,70 +670,6 @@ struct copy_grid_fast<false,2,grid,ginfo>
 				   grid_key_dx<2> (& cnt)[1] )
 	{
 		copy_grid_fast_layout_switch<is_layout_inte<typename grid::layout_base_>::value,2,grid,ginfo>::copy(gs_src,gs_dst,bx_src,bx_dst,gd_src,gd_dst,cnt);
-
-/*		grid_key_dx<2> zero;
-		zero.zero();
-		grid_key_dx<2> one = zero;
-		one.set_d(1,1);
-
-		unsigned char * ptr_final_src = (unsigned char *)(gd_src.template get_address<0>(one));
-		unsigned char * ptr_start_src = (unsigned char *)(gd_src.template get_address<0>(zero));
-
-		unsigned char * ptr_final_dst = (unsigned char *)(gd_dst.template get_address<0>(one));
-		unsigned char * ptr_start_dst = (unsigned char *)(gd_dst.template get_address<0>(zero));
-
-		unsigned char * ptr_src = (unsigned char *)&(gd_src.template get<0>(bx_src.getKP1()));
-		unsigned char * ptr_dst = (unsigned char *)&(gd_dst.template get<0>(bx_dst.getKP1()));
-
-		size_t n_cpy = bx_src.getHigh(0) - bx_src.getLow(0) + 1;
-
-		size_t stride_src_x = ptr_final_src - ptr_start_src;
-		size_t stride_dst_x = ptr_final_dst - ptr_start_dst;
-
-		switch (n_cpy)
-		{
-		case 1:
-				copy_grid_fast_shortx_2<grid,1>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x);
-				break;
-		case 2:
-				copy_grid_fast_shortx_2<grid,2>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x);
-				break;
-
-		case 3:
-				copy_grid_fast_shortx_2<grid,3>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x);
-				break;
-
-		case 4:
-				copy_grid_fast_shortx_2<grid,4>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x);
-				break;
-		case 5:
-				copy_grid_fast_shortx_2<grid,5>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x);
-				break;
-		case 6:
-				copy_grid_fast_shortx_2<grid,6>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x);
-				break;
-
-		case 7:
-				copy_grid_fast_shortx_2<grid,7>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x);
-				break;
-
-		case 8:
-				copy_grid_fast_shortx_2<grid,8>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x);
-				break;
-
-		default:
-				copy_grid_fast_longx_2<grid>(bx_src,ptr_dst,ptr_src,
-									stride_src_x,stride_dst_x,
-									n_cpy);
-		}*/
 	}
 };
 
@@ -1156,7 +962,7 @@ struct pack_with_iterator_shortx<3,n_cpy,obj_byte,git,grid>
 		grid_key_dx<3> one = zero;
 		one.set_d(2,1);
 
-		unsigned char * ptr_final = (unsigned char *)(&gr.template get<0>(one));
+		unsigned char * ptr_final = (unsigned char *)(&gr.template get_unsafe<0>(one));
 		unsigned char * ptr_start = (unsigned char *)(&gr.template get<0>(zero));
 
 		size_t stride_y = ptr_final - ptr_start;
