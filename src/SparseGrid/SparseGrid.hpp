@@ -19,8 +19,11 @@
 #include "SparseGridUtil.hpp"
 #include "SparseGrid_iterator.hpp"
 // We do not want parallel writer
+
+#ifdef OPENFPM_DATA_ENABLE_IO_MODULE
 #define NO_PARALLEL
 #include "VTKWriter/VTKWriter.hpp"
+#endif
 
 
 template<typename Tsrc,typename Tdst>
@@ -1928,6 +1931,8 @@ public:
 		clear_cache();
 	}
 
+#ifdef OPENFPM_DATA_ENABLE_IO_MODULE
+
 	/*! \brief write the sparse grid into VTK
 	 *
 	 * \param out VTK output
@@ -1974,6 +1979,8 @@ public:
 		// Write the VTK file
 		return vtk_writer.write(output,prp_names,"sparse_grid",ft);
 	}
+
+#endif
 
 	//Functions to check if the packing object is complex
 	static bool pack()
