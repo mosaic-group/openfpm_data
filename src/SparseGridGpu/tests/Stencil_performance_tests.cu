@@ -19,6 +19,76 @@ static void HandleError( cudaError_t err,
 }
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
 
+template<unsigned int p, typename SparseGridType>
+__global__ void insertValues2D(SparseGridType sparseGrid, const int offsetX=0, const int offsetY=0)
+{
+    sparseGrid.init();
+
+    const auto bDimX = blockDim.x;
+    const auto bDimY = blockDim.y;
+    const auto bIdX = blockIdx.x;
+    const auto bIdY = blockIdx.y;
+    const auto tIdX = threadIdx.x;
+    const auto tIdY = threadIdx.y;
+    int x = bIdX * bDimX + tIdX + offsetX;
+    int y = bIdY * bDimY + tIdY + offsetY;
+    grid_key_dx<SparseGridType::d, int> coord({x, y});
+
+    sparseGrid.template insert<p>(coord) = x*x*y*y; // some function...
+
+    __syncthreads();
+
+    sparseGrid.flush_block_insert();
+
+    // Compiler avoid warning
+    x++;
+    y++;
+}
+
+template<unsigned int p, unsigned int chunksPerBlock, unsigned int blockEdgeSize, typename SparseGridType>
+__global__ void insertValues2DBlocked(SparseGridType sparseGrid, const int sOffsetX=0, const int sOffsetY=0)
+{
+    constexpr unsigned int pMask = SparseGridType::pMask;
+    typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
+    typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
+
+    sparseGrid.init();
+
+    __shared__ BlockT *blocks[chunksPerBlock];
+    __shared__ MaskBlockT *masks[chunksPerBlock];
+
+    int posX = blockIdx.x * blockDim.x + threadIdx.x + sOffsetX;
+    int posY = blockIdx.y * blockDim.y + threadIdx.y + sOffsetY;
+    const unsigned int dataBlockIdX = posX / blockEdgeSize;
+    const unsigned int dataBlockIdY = posY / blockEdgeSize;
+    const unsigned int offsetX = posX % blockEdgeSize;
+    const unsigned int offsetY = posY % blockEdgeSize;
+
+    const unsigned int blockDimX = blockDim.x / blockEdgeSize;
+    const unsigned int blockOffsetX = threadIdx.x / blockEdgeSize;
+    const unsigned int blockOffsetY = threadIdx.y / blockEdgeSize;
+
+    const unsigned int dataBlockNum = blockOffsetY*blockDimX + blockOffsetX;
+    const unsigned int offset = offsetY * blockEdgeSize + offsetX;
+
+    if (offset == 0) // Just one thread per data block
+    {
+        grid_key_dx<SparseGridType::d, int> blockCoord({dataBlockIdX, dataBlockIdY});
+        auto encap = sparseGrid.insertBlock(sparseGrid.getBlockLinId(blockCoord));
+        blocks[dataBlockNum] = &(encap.template get<p>());
+        masks[dataBlockNum] = &(encap.template get<pMask>());
+    }
+
+    __syncthreads();
+
+    blocks[dataBlockNum]->block[offset] = posX*posX * posY*posY;
+    BlockMapGpu_ker<>::setExist(masks[dataBlockNum]->block[offset]);
+
+    __syncthreads();
+
+    sparseGrid.flush_block_insert();
+}
+
 template<unsigned int p, unsigned int chunksPerBlock=1, typename SparseGridType, typename ScalarT>
 __global__ void insertConstantValue(SparseGridType sparseGrid, ScalarT value)
 {
@@ -124,22 +194,55 @@ __global__ void copyBlocksToOutput(SparseGridType sparseGrid, VectorOutType outp
 }
 
 template<unsigned int dim, unsigned int p>
-struct HeatStencilOrig
+struct EmptyStencil
 {
     // This is an example of a laplacian smoothing stencil to apply using the apply stencil facility of SparseGridGpu
 
-    static constexpr unsigned int flops = 3 + 2*dim;
+    static constexpr unsigned int flops = 0;
+
+    static constexpr unsigned int supportRadius = 0;
+
+    template<typename SparseGridT, typename DataBlockWrapperT>
+    static inline __device__ void stencil(
+            SparseGridT & sparseGrid,
+            const unsigned int dataBlockId,
+            const int * neighboursPositions,
+            unsigned int offset,
+            grid_key_dx<dim, int> & pointCoord,
+            DataBlockWrapperT & dataBlockLoad,
+            DataBlockWrapperT & dataBlockStore,
+            bool applyStencilHere,
+            float dt)
+    {
+        // Nothing to do here
+    }
+
+    template <typename SparseGridT, typename CtxT>
+    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+    {
+        sparseGrid.template flush <smin_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
+    }
+};
+
+template<unsigned int dim, unsigned int p>
+struct SkeletonStencil
+{
+    // This is an example of a laplacian smoothing stencil to apply using the apply stencil facility of SparseGridGpu
+
+    static constexpr unsigned int flops = 0;
 
     static constexpr unsigned int supportRadius = 1;
 
     template<typename SparseGridT, typename DataBlockWrapperT>
     static inline __device__ void stencil(
             SparseGridT & sparseGrid,
-            grid_key_dx<dim> & dataBlockCoord,
+            const unsigned int dataBlockId,
+            const int * neighboursPositions,
             unsigned int offset,
-            grid_key_dx<dim> & pointCoord,
+            grid_key_dx<dim, int> & pointCoord,
             DataBlockWrapperT & dataBlockLoad,
             DataBlockWrapperT & dataBlockStore,
+            bool applyStencilHere,
             float dt)
     {
         typedef typename SparseGridT::AggregateBlockType AggregateT;
@@ -150,23 +253,7 @@ struct HeatStencilOrig
 
         __shared__ ScalarT enlargedBlock[enlargedBlockSize];
         sparseGrid.loadBlock<p>(dataBlockLoad, enlargedBlock);
-        sparseGrid.loadGhost<p>(dataBlockCoord, enlargedBlock);
-        __syncthreads();
-
-        const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
-        const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
-        ScalarT cur = enlargedBlock[linId];
-        ScalarT laplacian = -2.0 * dim * cur; // The central part of the stencil
-        for (int d = 0; d < dim; ++d)
-        {
-            auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
-            auto nMinusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, -1);
-            ScalarT neighbourPlus = enlargedBlock[nPlusId];
-            ScalarT neighbourMinus = enlargedBlock[nMinusId];
-            laplacian += neighbourMinus + neighbourPlus;
-        }
-        enlargedBlock[linId] = cur + dt * laplacian;
-
+        sparseGrid.loadGhost<p>(dataBlockId, neighboursPositions, enlargedBlock);
         __syncthreads();
         sparseGrid.storeBlock<p>(dataBlockStore, enlargedBlock);
     }
@@ -174,7 +261,7 @@ struct HeatStencilOrig
     template <typename SparseGridT, typename CtxT>
     static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
     {
-        sparseGrid.template flush <smin_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
+        sparseGrid.template flush <sRight_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
     }
 };
 
@@ -190,109 +277,73 @@ struct HeatStencil
     template<typename SparseGridT, typename DataBlockWrapperT>
     static inline __device__ void stencil(
             SparseGridT & sparseGrid,
-            grid_key_dx<dim> & dataBlockCoord,
+            const unsigned int dataBlockId,
+            const int * neighboursPositions,
             unsigned int offset,
-            grid_key_dx<dim> & pointCoord,
+            grid_key_dx<dim, int> & pointCoord,
             DataBlockWrapperT & dataBlockLoad,
             DataBlockWrapperT & dataBlockStore,
-            float dt, unsigned int maxIter=1000)
+            bool applyStencilHere,
+            float dt)
     {
         typedef typename SparseGridT::AggregateBlockType AggregateT;
         typedef ScalarTypeOf<AggregateT, p> ScalarT;
-        typedef BlockTypeOf<AggregateT, p> BlockT;
-        constexpr unsigned int blockSize = BlockT::size;
 
         constexpr unsigned int enlargedBlockSize = IntPow<
                 SparseGridT::getBlockEdgeSize() + 2 * supportRadius, dim>::value;
 
-        const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
-        const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
-        char boundaryDirection[dim];
-        bool isBoundary = sparseGrid.getIfBoundaryElementInEnlargedBlock(coord, boundaryDirection);
-
-        unsigned int nPlusId[dim], nMinusId[dim];
-        for (int d=0; d<dim; ++d)
-        {
-            nPlusId[d] = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
-            nMinusId[d] = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, -1);
-        }
-
         __shared__ ScalarT enlargedBlock[enlargedBlockSize];
-
-        ScalarT * nPlus[dim];
-        ScalarT * nMinus[dim];
-        for (int d=0; d<dim; ++d)
-        {
-            const auto boundaryDir = boundaryDirection[d];
-            const auto nCoord = sparseGrid.getNeighbour(pointCoord, d, boundaryDir);
-            const auto nOffset = sparseGrid.getLinId(nCoord) % blockSize;
-            nPlus[d] = &(enlargedBlock[nPlusId[d]]);
-            nMinus[d] = &(enlargedBlock[nMinusId[d]]);
-            if (boundaryDir==1)
-            {
-//                nPlus[d] = &(sparseGrid.getBlock(nCoord).template get<p>()[nOffset]);
-//                nPlus[d] = &(sparseGrid.template get<p>(nCoord));
-                nPlus[d] = sparseGrid.getBlock(nCoord).template get<p>().block + nOffset;
-            }
-            else if (boundaryDir==-1)
-            {
-//                nMinus[d] = &(sparseGrid.getBlock(nCoord).template get<p>()[nOffset]);
-//                nMinus[d] = &(sparseGrid.template get<p>(nCoord));
-                nMinus[d] = sparseGrid.getBlock(nCoord).template get<p>().block + nOffset;
-            }
-        }
-
         sparseGrid.loadBlock<p>(dataBlockLoad, enlargedBlock);
+        sparseGrid.loadGhost<p>(dataBlockId, neighboursPositions, enlargedBlock);
+//        sparseGrid.loadGhost<p>(dataBlockId, nullptr, enlargedBlock);
         __syncthreads();
-//            sparseGrid.loadGhost<p>(dataBlockCoord, enlargedBlock);
-//            __syncthreads();
 
-        ScalarT cur = enlargedBlock[linId];
-        ScalarT laplacian = -2.0 * dim * cur; // The central part of the stencil
-        for (int d = 0; d < dim; ++d)
+        if (applyStencilHere)
         {
-//                const auto boundary = boundaryDirection[d];
-//                ScalarT neighbourPlus = enlargedBlock[nPlusId[d]];
-//                ScalarT neighbourMinus = enlargedBlock[nMinusId[d]];
-//                if (boundary == 1)
-//                {
-//                    neighbourPlus = *(nPlus[d]);
-//                }
-//                else if (boundary == -1)
-//                {
-//                    neighbourMinus = *(nMinus[d]);
-//                }
-            laplacian += *(nMinus[d]) + *(nPlus[d]);
-//                laplacian += neighbourMinus + neighbourPlus;
-
+            const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
+            const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
+            ScalarT cur = enlargedBlock[linId];
+            ScalarT laplacian = -2.0 * dim * cur; // The central part of the stencil
+            for (int d = 0; d < dim; ++d)
+            {
+                auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
+                auto nMinusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, -1);
+                ScalarT neighbourPlus = enlargedBlock[nPlusId];
+                ScalarT neighbourMinus = enlargedBlock[nMinusId];
+                laplacian += neighbourMinus + neighbourPlus;
+            }
+            enlargedBlock[linId] = cur + dt * laplacian;
         }
-        enlargedBlock[linId] = cur + dt * laplacian;
 
         __syncthreads();
         sparseGrid.storeBlock<p>(dataBlockStore, enlargedBlock);
-        __syncthreads();
     }
 
     template <typename SparseGridT, typename CtxT>
     static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
     {
-        sparseGrid.template flush <smin_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
+        sparseGrid.template flush <sRight_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
     }
 };
 
 BOOST_AUTO_TEST_SUITE(SparseGridGpu_Stencil_Performance_tests)
-    BOOST_AUTO_TEST_CASE(testStencilHeatPerf)
+    BOOST_AUTO_TEST_CASE(testStencilHeat)
     {
+        auto testName = "In-place stencil";
         constexpr unsigned int dim = 2;
         constexpr unsigned int blockEdgeSize = 8;
-        unsigned int gridEdgeSize = 256;
+        unsigned int gridEdgeSize = 512;
+//        constexpr unsigned int blockEdgeSize = 16;
+//        unsigned int gridEdgeSize = 256;
+//        unsigned int gridEdgeSize = 8;
         constexpr unsigned int chunkSize = IntPow<blockEdgeSize,dim>::value;
         typedef aggregate<float> AggregateT;
-//        typedef HeatStencil<dim, 0> StencilT;
-        typedef HeatStencilOrig<dim, 0> StencilT;
+//        typedef EmptyStencil<dim, 0> StencilT;
+//        typedef SkeletonStencil<dim, 0> StencilT;
+        typedef HeatStencil<dim, 0> StencilT;
 
-        unsigned int iterations = 5;
-        unsigned int repetitions = 1;
+        unsigned int iterations = 100;
+        unsigned int repetitions = 5;
 
         float timeInitAvg;
         float timeStencilAvg;
@@ -329,6 +380,8 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_Stencil_Performance_tests)
             insertOneValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), sourcePt, 100);
             sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
+            sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
+
             HANDLE_ERROR(cudaEventRecord(afterInit, 0));
             HANDLE_ERROR(cudaEventSynchronize(afterInit));
 
@@ -353,14 +406,337 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_Stencil_Performance_tests)
         timeStencilAvg /= repetitions;
         timeTotalAvg /= repetitions;
 
-        unsigned int numElements = gridEdgeSize*blockEdgeSize*gridEdgeSize*blockEdgeSize;
+        // All times above are in ms
+
+        unsigned long long numElements = gridEdgeSize*blockEdgeSize*gridEdgeSize*blockEdgeSize;
         float gElemS = numElements * iterations / (1e9 * timeStencilAvg/1000);
         float gFlopsS = gElemS * StencilT::flops;
+        float stencilSingleTimingMillis = timeStencilAvg/iterations;
+        printf("Test: %s\n", testName);
         printf("Grid: %ux%u\n", gridEdgeSize*blockEdgeSize, gridEdgeSize*blockEdgeSize);
         printf("Iterations: %u\n", iterations);
         printf("Timing (avg on %u repetitions):\n\tInit: %f ms\n\tStencil: %f ms\n\tTotal: %f ms\n",
                 repetitions, timeInitAvg, timeStencilAvg, timeTotalAvg);
+        printf("Stencil details:\n\tSingle application timing: %f ms\n", stencilSingleTimingMillis);
         printf("Throughput:\n\t%f GElem/s\n\t%f GFlops/s\n", gElemS, gFlopsS);
 
     }
+
+    BOOST_AUTO_TEST_CASE(testStencilHeatInsert)
+    {
+        auto testName = "Insert stencil";
+        constexpr unsigned int dim = 2;
+        constexpr unsigned int blockEdgeSize = 8;
+        unsigned int gridEdgeSize = 512;
+//        constexpr unsigned int blockEdgeSize = 16;
+//        unsigned int gridEdgeSize = 256;
+//        unsigned int gridEdgeSize = 8;
+        constexpr unsigned int chunkSize = IntPow<blockEdgeSize,dim>::value;
+        typedef aggregate<float> AggregateT;
+//        typedef EmptyStencil<dim, 0> StencilT;
+//        typedef SkeletonStencil<dim, 0> StencilT; //todo: Rimetti HeatStencil!
+        typedef HeatStencil<dim, 0> StencilT;
+
+        unsigned int iterations = 10;
+        unsigned int repetitions = 5;
+//        unsigned int iterations = 5;
+//        unsigned int repetitions = 1;
+
+        float timeInitAvg;
+        float timeStencilAvg;
+        float timeTotalAvg;
+
+        for (int rep=0; rep<repetitions; ++rep)
+        {
+
+            cudaEvent_t start, afterInit, stop;
+            float timeInit;
+            float timeStencil;
+            float timeTotal;
+
+            HANDLE_ERROR(cudaEventCreate(&start));
+            HANDLE_ERROR(cudaEventCreate(&afterInit));
+            HANDLE_ERROR(cudaEventCreate(&stop));
+
+            HANDLE_ERROR(cudaEventRecord(start, 0));
+
+            dim3 gridSize(gridEdgeSize, gridEdgeSize);
+            dim3 blockSize(blockEdgeSize, blockEdgeSize);
+            BlockGeometry<dim, blockEdgeSize> blockGeometry(gridSize);
+            SparseGridGpu<dim, AggregateT, blockEdgeSize, chunkSize> sparseGrid(blockGeometry);
+            mgpu::ofp_context_t ctx;
+            sparseGrid.template setBackgroundValue<0>(0);
+
+            // Initialize the grid
+            sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
+            insertConstantValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), 0);
+            sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+            sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
+            dim3 sourcePt(gridSize.x * blockEdgeSize / 2, gridSize.y * blockEdgeSize / 2, 0);
+            insertOneValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), sourcePt, 100);
+            sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+            sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
+
+            HANDLE_ERROR(cudaEventRecord(afterInit, 0));
+            HANDLE_ERROR(cudaEventSynchronize(afterInit));
+
+            for (unsigned int iter=0; iter<iterations; ++iter)
+            {
+                sparseGrid.applyStencils<StencilT>(STENCIL_MODE_INSERT, 0.1);
+                cudaDeviceSynchronize();
+            }
+
+            HANDLE_ERROR(cudaEventRecord(stop, 0));
+            HANDLE_ERROR(cudaEventSynchronize(stop));
+            HANDLE_ERROR(cudaEventElapsedTime(&timeInit, start, afterInit));
+            HANDLE_ERROR(cudaEventElapsedTime(&timeStencil, afterInit, stop));
+            HANDLE_ERROR(cudaEventElapsedTime(&timeTotal, start, stop));
+
+            timeInitAvg += timeInit;
+            timeStencilAvg += timeStencil;
+            timeTotalAvg += timeTotal;
+        }
+
+        timeInitAvg /= repetitions;
+        timeStencilAvg /= repetitions;
+        timeTotalAvg /= repetitions;
+
+        // All times above are in ms
+
+        unsigned long long numElements = gridEdgeSize*blockEdgeSize*gridEdgeSize*blockEdgeSize;
+        float gElemS = numElements * iterations / (1e9 * timeStencilAvg/1000);
+        float gFlopsS = gElemS * StencilT::flops;
+        float stencilSingleTimingMillis = timeStencilAvg/iterations;
+        printf("Test: %s\n", testName);
+        printf("Grid: %ux%u\n", gridEdgeSize*blockEdgeSize, gridEdgeSize*blockEdgeSize);
+        printf("Iterations: %u\n", iterations);
+        printf("Timing (avg on %u repetitions):\n\tInit: %f ms\n\tStencil: %f ms\n\tTotal: %f ms\n",
+               repetitions, timeInitAvg, timeStencilAvg, timeTotalAvg);
+        printf("Stencil details:\n\tSingle application timing: %f ms\n", stencilSingleTimingMillis);
+        printf("Throughput:\n\t%f GElem/s\n\t%f GFlops/s\n", gElemS, gFlopsS);
+
+    }
+
+    BOOST_AUTO_TEST_CASE(testInsert)
+    {
+        auto testName = "Insert (one chunk per element)";
+        constexpr unsigned int dim = 2;
+        constexpr unsigned int blockEdgeSize = 8;
+//        unsigned int gridEdgeSize = 512;
+        unsigned int gridEdgeSize = 128;
+//        constexpr unsigned int blockEdgeSize = 16;
+//        unsigned int gridEdgeSize = 256;
+//        unsigned int gridEdgeSize = 8;
+        constexpr unsigned int chunkSize = IntPow<blockEdgeSize,dim>::value;
+        typedef aggregate<float> AggregateT;
+
+        unsigned int iterations = 10;
+        unsigned int repetitions = 5;
+        bool prePopulateGrid = true;
+
+        float timeInitAvg;
+        float timeStencilAvg;
+        float timeTotalAvg;
+
+        for (int rep=0; rep<repetitions; ++rep)
+        {
+
+            cudaEvent_t start, afterInit, stop;
+            float timeInit;
+            float timeStencil;
+            float timeTotal;
+
+            HANDLE_ERROR(cudaEventCreate(&start));
+            HANDLE_ERROR(cudaEventCreate(&afterInit));
+            HANDLE_ERROR(cudaEventCreate(&stop));
+
+            HANDLE_ERROR(cudaEventRecord(start, 0));
+
+            dim3 gridSize(gridEdgeSize, gridEdgeSize);
+            dim3 blockSize(blockEdgeSize, blockEdgeSize);
+            BlockGeometry<dim, blockEdgeSize> blockGeometry(gridSize);
+            SparseGridGpu<dim, AggregateT, blockEdgeSize, chunkSize> sparseGrid(blockGeometry);
+            mgpu::ofp_context_t ctx;
+            sparseGrid.template setBackgroundValue<0>(0);
+
+            // Initialize the grid
+//            sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
+//            insertConstantValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), 0);
+//            sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+//
+//            sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
+//            dim3 sourcePt(gridSize.x * blockEdgeSize / 2, gridSize.y * blockEdgeSize / 2, 0);
+//            insertOneValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), sourcePt, 100);
+//            sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+//
+//            sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
+
+            if (prePopulateGrid)
+            {
+                // Pre-populate grid
+                sparseGrid.setGPUInsertBuffer(gridSize, blockSize);
+                insertValues2D<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), 0, 0);
+                sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+                cudaDeviceSynchronize();
+                ///
+            }
+
+            HANDLE_ERROR(cudaEventRecord(afterInit, 0));
+            HANDLE_ERROR(cudaEventSynchronize(afterInit));
+
+            for (unsigned int iter=0; iter<iterations; ++iter)
+            {
+//                auto offset = iter * 99999 % 32003;
+                auto offset = 0;
+                sparseGrid.setGPUInsertBuffer(gridSize, blockSize);
+                insertValues2D<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), offset, offset);
+                sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+                cudaDeviceSynchronize();
+            }
+
+            HANDLE_ERROR(cudaEventRecord(stop, 0));
+            HANDLE_ERROR(cudaEventSynchronize(stop));
+            HANDLE_ERROR(cudaEventElapsedTime(&timeInit, start, afterInit));
+            HANDLE_ERROR(cudaEventElapsedTime(&timeStencil, afterInit, stop));
+            HANDLE_ERROR(cudaEventElapsedTime(&timeTotal, start, stop));
+
+            timeInitAvg += timeInit;
+            timeStencilAvg += timeStencil;
+            timeTotalAvg += timeTotal;
+        }
+
+        timeInitAvg /= repetitions;
+        timeStencilAvg /= repetitions;
+        timeTotalAvg /= repetitions;
+
+        // All times above are in ms
+
+        unsigned long long numElements = gridEdgeSize*blockEdgeSize*gridEdgeSize*blockEdgeSize;
+        float mElemS = numElements * iterations / (1e6 * timeStencilAvg/1000);
+//        float gFlopsS = gElemS * StencilT::flops;
+        float stencilSingleTimingMillis = timeStencilAvg/iterations;
+        printf("Test: %s\n", testName);
+        printf("Grid: %ux%u\n", gridEdgeSize*blockEdgeSize, gridEdgeSize*blockEdgeSize);
+        printf("Iterations: %u\n", iterations);
+        printf("Timing (avg on %u repetitions):\n\tInit: %f ms\n\tStencil: %f ms\n\tTotal: %f ms\n",
+               repetitions, timeInitAvg, timeStencilAvg, timeTotalAvg);
+        printf("Stencil details:\n\tSingle application timing: %f ms\n", stencilSingleTimingMillis);
+//        printf("Throughput:\n\t%f GElem/s\n\t%f GFlops/s\n", gElemS, gFlopsS);
+        printf("Throughput:\n\t%f MElem/s\n", mElemS);
+
+    }
+
+    BOOST_AUTO_TEST_CASE(testInsertBlocked)
+    {
+        auto testName = "Insert (one chunk per block)";
+        constexpr unsigned int dim = 2;
+        constexpr unsigned int blockEdgeSize = 8;
+//        unsigned int gridEdgeSize = 512;
+        unsigned int gridEdgeSize = 128;
+//        constexpr unsigned int blockEdgeSize = 16;
+//        unsigned int gridEdgeSize = 256;
+//        unsigned int gridEdgeSize = 8;
+        constexpr unsigned int chunkSize = IntPow<blockEdgeSize,dim>::value;
+        typedef aggregate<float> AggregateT;
+
+        unsigned int iterations = 10;
+        unsigned int repetitions = 5;
+        bool prePopulateGrid = true;
+
+        float timeInitAvg;
+        float timeStencilAvg;
+        float timeTotalAvg;
+
+        for (int rep=0; rep<repetitions; ++rep)
+        {
+
+            cudaEvent_t start, afterInit, stop;
+            float timeInit;
+            float timeStencil;
+            float timeTotal;
+
+            HANDLE_ERROR(cudaEventCreate(&start));
+            HANDLE_ERROR(cudaEventCreate(&afterInit));
+            HANDLE_ERROR(cudaEventCreate(&stop));
+
+            HANDLE_ERROR(cudaEventRecord(start, 0));
+
+            dim3 gridSize(gridEdgeSize, gridEdgeSize);
+            dim3 blockSize(blockEdgeSize, blockEdgeSize);
+            dim3 blockSizeBlockedInsert(1, 1);
+            BlockGeometry<dim, blockEdgeSize> blockGeometry(gridSize);
+            SparseGridGpu<dim, AggregateT, blockEdgeSize, chunkSize> sparseGrid(blockGeometry);
+            mgpu::ofp_context_t ctx;
+            sparseGrid.template setBackgroundValue<0>(0);
+
+            // Initialize the grid
+//            sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
+//            insertConstantValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), 0);
+//            sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+//
+//            sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
+//            dim3 sourcePt(gridSize.x * blockEdgeSize / 2, gridSize.y * blockEdgeSize / 2, 0);
+//            insertOneValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), sourcePt, 100);
+//            sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+//
+//            sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
+
+            if (prePopulateGrid)
+            {
+                // Pre-populate grid
+                sparseGrid.setGPUInsertBuffer(gridSize, blockSize);
+                insertValues2D<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), 0, 0);
+                sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+                cudaDeviceSynchronize();
+                ///
+            }
+
+            HANDLE_ERROR(cudaEventRecord(afterInit, 0));
+            HANDLE_ERROR(cudaEventSynchronize(afterInit));
+
+            for (unsigned int iter=0; iter<iterations; ++iter)
+            {
+//                auto offset = iter * 99999 % 32003;
+                auto offset = 0;
+                sparseGrid.setGPUInsertBuffer(gridSize, blockSizeBlockedInsert);
+                insertValues2DBlocked<0, 1, blockEdgeSize> << < gridSize, blockSize >> >
+                        (sparseGrid.toKernel(), offset, offset);
+                sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+                cudaDeviceSynchronize();
+            }
+
+            HANDLE_ERROR(cudaEventRecord(stop, 0));
+            HANDLE_ERROR(cudaEventSynchronize(stop));
+            HANDLE_ERROR(cudaEventElapsedTime(&timeInit, start, afterInit));
+            HANDLE_ERROR(cudaEventElapsedTime(&timeStencil, afterInit, stop));
+            HANDLE_ERROR(cudaEventElapsedTime(&timeTotal, start, stop));
+
+            timeInitAvg += timeInit;
+            timeStencilAvg += timeStencil;
+            timeTotalAvg += timeTotal;
+        }
+
+        timeInitAvg /= repetitions;
+        timeStencilAvg /= repetitions;
+        timeTotalAvg /= repetitions;
+
+        // All times above are in ms
+
+        unsigned long long numElements = gridEdgeSize*blockEdgeSize*gridEdgeSize*blockEdgeSize;
+        float mElemS = numElements * iterations / (1e6 * timeStencilAvg/1000);
+//        float gFlopsS = gElemS * StencilT::flops;
+        float stencilSingleTimingMillis = timeStencilAvg/iterations;
+        printf("Test: %s\n", testName);
+        printf("Grid: %ux%u\n", gridEdgeSize*blockEdgeSize, gridEdgeSize*blockEdgeSize);
+        printf("Iterations: %u\n", iterations);
+        printf("Timing (avg on %u repetitions):\n\tInit: %f ms\n\tStencil: %f ms\n\tTotal: %f ms\n",
+               repetitions, timeInitAvg, timeStencilAvg, timeTotalAvg);
+        printf("Stencil details:\n\tSingle application timing: %f ms\n", stencilSingleTimingMillis);
+//        printf("Throughput:\n\t%f GElem/s\n\t%f GFlops/s\n", gElemS, gFlopsS);
+        printf("Throughput:\n\t%f MElem/s\n", mElemS);
+
+    }
+
 BOOST_AUTO_TEST_SUITE_END()

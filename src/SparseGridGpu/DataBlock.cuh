@@ -35,7 +35,7 @@ struct DataBlock
 #endif // __CUDA_ARCH__
     }
 
-    __device__ __host__ DataBlock operator=(const DataBlock &other)
+    __device__ __host__ inline DataBlock & operator=(const DataBlock &other)
     {
 #ifdef  __CUDA_ARCH__
 #ifdef __NVCC__
@@ -47,7 +47,7 @@ struct DataBlock
         return *this;
     }
 
-    __device__ __host__ DataBlock operator=(ScalarT v)
+    __device__ __host__ inline DataBlock & operator=(ScalarT v)
     {
 #ifdef  __CUDA_ARCH__
 #ifdef __NVCC__

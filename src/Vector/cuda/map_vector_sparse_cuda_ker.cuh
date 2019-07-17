@@ -193,7 +193,7 @@ namespace openfpm
         /*! \brief Get the background value
          */
         template <unsigned int p>
-        __device__ inline auto getBackground() const -> decltype(vct_data_bck.template get<p>(0))
+        __device__ inline auto getBackground() const -> decltype(vct_data_bck.template get<p>(0)) &
         {
             return vct_data_bck.template get<p>(0);
         }
@@ -216,11 +216,12 @@ namespace openfpm
 			return (v == id)?vct_data.template get<p>(di):vct_data_bck.template get<p>(0);
 		}
 
-        __device__ inline auto get(Ti id) const -> decltype(vct_data.get(0))
+        __device__ inline auto get(Ti id) const -> decltype(vct_data.get(0)) ///////// DEBUG
         {
             Ti di;
             Ti v = this->_branchfree_search(id,di);
             return (v == id)?vct_data.get(static_cast<size_t>(di)):vct_data_bck.get(0);
+//            return (v == id)?vct_data_bck.get(0):vct_data_bck.get(0);
         }
 
 		/*! \brief Get an element of the vector

@@ -27,6 +27,7 @@ protected:
     // Good reason on why not to use constant memory for ghostLayer mapping is here https://stackoverflow.com/a/18021374
     unsigned int ghostLayerSize;
     unsigned int *ghostLayerToThreadsMapping;
+    unsigned int *neighboursToThreadsMapping;
 
 public:
     static constexpr unsigned int d = dim;
@@ -39,6 +40,7 @@ public:
                       GridSmT extendedBlockGeometry,
                       unsigned int stencilSupportRadius,
                       unsigned int *mapping,
+                      unsigned int *neighbours,
                       unsigned int ghostLayerSize)
             : BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>(blockMap),
               grid(grid),
@@ -47,7 +49,9 @@ public:
               ghostLayerSize(ghostLayerSize)
     {
         cudaMalloc(&ghostLayerToThreadsMapping, ghostLayerSize * sizeof(unsigned int));
+        cudaMalloc(&neighboursToThreadsMapping, ghostLayerSize * sizeof(unsigned int));
         cudaMemcpy(ghostLayerToThreadsMapping, mapping, ghostLayerSize * sizeof(unsigned int), cudaMemcpyHostToDevice);
+        cudaMemcpy(neighboursToThreadsMapping, neighbours, ghostLayerSize * sizeof(unsigned int), cudaMemcpyHostToDevice);
     }
 
     // Geometry
@@ -62,7 +66,7 @@ public:
     	return grid.getSize()[i];
     }
 
-    inline __device__ grid_key_dx<dim> getCoord(size_t linId) const
+    inline __device__ grid_key_dx<dim, int> getCoord(size_t linId) const
     {
         return grid.InvLinId(linId);
 
@@ -74,19 +78,19 @@ public:
         return grid.BlockLinId(blockCoord);
     }
 
-    inline __device__ grid_key_dx<dim> getBlockCoord(size_t blockLinId) const
+    inline __device__ grid_key_dx<dim, int> getBlockCoord(size_t blockLinId) const
     {
         return grid.BlockInvLinId(blockLinId);
     }
 
-    inline __device__ grid_key_dx<dim> getBlockBaseCoord(size_t blockLinId) const
+    inline __device__ grid_key_dx<dim, int> getBlockBaseCoord(size_t blockLinId) const
     {
         return grid.InvLinId(blockLinId * blockSize);
     }
 
-    inline __device__ grid_key_dx<dim> getNeighbour(grid_key_dx<dim> base, unsigned int dimension, char offset) const
+    inline __device__ grid_key_dx<dim, int> getNeighbour(grid_key_dx<dim, int> base, unsigned int dimension, char offset) const
     {
-        grid_key_dx<dim> res = base;
+        grid_key_dx<dim, int> res = base;
         auto i = base.get(dimension) + offset;
         res.set_d(dimension, i);
         return res;
@@ -116,12 +120,12 @@ public:
         return linId;
     }
 
-    inline __device__ grid_key_dx<dim>
+    inline __device__ grid_key_dx<dim, int>
     getCoordInEnlargedBlock(const unsigned int offset) const
     {
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(offset, stencilSupportRadius, coord);
-        return grid_key_dx<dim>(coord);
+        return grid_key_dx<dim, int>(coord);
     }
 
     inline __device__ unsigned int
@@ -133,14 +137,14 @@ public:
     }
 
     inline __device__ unsigned int
-    getNeighbourLinIdInEnlargedBlock(grid_key_dx<dim> base, unsigned int dimension, char offset) const
+    getNeighbourLinIdInEnlargedBlock(grid_key_dx<dim, int> base, unsigned int dimension, char offset) const
     {
-        grid_key_dx<dim> res = getNeighbour(base, dimension, offset);
+        grid_key_dx<dim, int> res = getNeighbour(base, dimension, offset);
         return coordToLin<blockEdgeSize>(res, stencilSupportRadius);
     }
 
     inline __device__ bool
-    getIfBoundaryElementInEnlargedBlock(const grid_key_dx<dim> coordInEnlargedBlock, char (&boundaryDirection)[dim])
+    getIfBoundaryElementInEnlargedBlock(const grid_key_dx<dim, int> coordInEnlargedBlock, char (&boundaryDirection)[dim])
     {
         bool isBoundary = false;
         for (int d=0; d<dim; ++d)
@@ -178,6 +182,9 @@ public:
 
     template<typename CoordT>
     inline __device__ unsigned int getBlockId(const grid_key_dx<dim, CoordT> & coord);
+
+    template<typename CoordT>
+    inline __device__ unsigned int getOffset(const grid_key_dx<dim, CoordT> & coord);
 
     template<typename CoordT>
     inline __device__ auto
@@ -243,7 +250,12 @@ public:
      */
     template<unsigned int p, typename CoordT>
     inline __device__ void
-    loadGhost(const grid_key_dx<dim, CoordT> & coord, ScalarTypeOf<AggregateBlockT, p> *sharedRegion);
+    loadGhost(const grid_key_dx<dim, CoordT> & coord, const int * neighboursPos, ScalarTypeOf<AggregateBlockT, p> *sharedRegion);
+
+    template<unsigned int p>
+    inline __device__ void
+    loadGhost(const unsigned int blockLinId, const int * neighboursPos, ScalarTypeOf<AggregateBlockT, p> *sharedRegion);
+
 
     /**
      * Load the ghost layer of a data block into the boundary part of a shared memory region.
@@ -257,7 +269,10 @@ public:
      * @param sharedRegionPtr The pointer to the shared memory region.
      */
     template<unsigned int ... props, typename CoordT>
-    inline __device__ void loadGhost(const grid_key_dx<dim, CoordT> & coord, void *sharedRegionPtr[sizeof...(props)]);
+    inline __device__ void loadGhost(const grid_key_dx<dim, CoordT> & coord, const int * neighboursPos, void *sharedRegionPtr[sizeof...(props)]);
+
+    template<unsigned int ... props>
+    inline __device__ void loadGhost(const unsigned int blockLinId, const int * neighboursPos, void *sharedRegionPtr[sizeof...(props)]);
 
     /**
      * Read a data block from the inner part of a shared memory region and store it in global memory.
@@ -352,6 +367,40 @@ public:
         unsetBit(bitMask, PADDING_BIT);
     }
 
+    inline __device__ void getNeighboursPos(const unsigned int blockId, const unsigned int offset, int * neighboursPos)
+    {
+        //todo: also do the full neighbourhood version, this is just cross
+        auto blockCoord = getBlockCoord(blockId);
+        if (offset < 2*dim)
+        {
+            unsigned int d = offset/2;
+            int dPos = blockCoord.get(d) + (offset%2)*2 - 1;
+            blockCoord.set_d(d, dPos);
+            neighboursPos[offset] = this->blockMap.get_sparse(getBlockLinId(blockCoord)).id;
+//            /////// DEBUG ///////
+//            printf(">>> getNeighboursPos: block=%u, offset=%u, neighbour=%d\n", blockId, offset, neighboursPos[offset]);
+//            /////////////////////
+        }
+    }
+
+    inline __device__ int getNeighboursPos(const unsigned int blockId, const unsigned int offset)
+    {
+        //todo: also do the full neighbourhood version, this is just cross
+        auto blockCoord = getBlockCoord(blockId);
+        int neighbourPos = -1;
+        if (offset < 2*dim)
+        {
+            unsigned int d = offset/2;
+            int dPos = blockCoord.get(d) + (offset%2)*2 - 1;
+            blockCoord.set_d(d, dPos);
+            neighbourPos = this->blockMap.get_sparse(getBlockLinId(blockCoord)).id;
+//            /////// DEBUG ///////
+//            printf(">>> getNeighboursPos: block=%u, offset=%u, neighbour=%d\n", blockId, offset, neighbourPos);
+//            /////////////////////
+        }
+        return neighbourPos;
+    }
+
 private:
     template<unsigned int edgeSize>
     inline __device__ void linToCoordWithOffset(const unsigned int linId, const unsigned int offset, unsigned int (&coord)[dim]) const
@@ -390,7 +439,7 @@ private:
     }
 
     template <typename CoordT>
-    inline __device__ unsigned int coordToLin(const grid_key_dx<dim, CoordT> & coord, grid_key_dx<dim> & blockDimensions) const
+    inline __device__ unsigned int coordToLin(const grid_key_dx<dim, CoordT> & coord, grid_key_dx<dim, int> & blockDimensions) const
     {
         unsigned int linId = coord.get(dim - 1);
         for (int d = dim - 2; d >= 0; --d)
@@ -444,44 +493,120 @@ private:
     {
         typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
-        const unsigned int rounds = ghostLayerSize % blockDim.x == 0 // ceiling
-                                    ? ghostLayerSize / blockDim.x
-                                    : 1 + ghostLayerSize / blockDim.x;
-        for (int round = 0; round < rounds; ++round)
+        const unsigned int edge = blockEdgeSize + 2*stencilSupportRadius;
+
+        grid_key_dx<dim, int> localCoord;
+        grid_key_dx<dim, int> elementCoord;
+
+        for (int pos = threadIdx.x; pos < ghostLayerSize; pos += blockDim.x)
         {
-            const unsigned int pos = round * blockDim.x + threadIdx.x;
-            if (pos < ghostLayerSize)
-            {
                 // Convert pos into a linear id accounting for the inner domain offsets
                 const unsigned int linId = ghostLayerToThreadsMapping[pos];
                 // Now get linear offset wrt the first element of the block
-                grid_key_dx<dim> localCoord = blockWithGhostGrid.InvLinId(linId);
-                grid_key_dx<dim> elementCoord = getBlockBaseCoord(blockId);
+                elementCoord = getBlockBaseCoord(blockId);
+                unsigned int ctr = linId;
                 for (int i = 0; i < dim; ++i)
                 {
-                    localCoord.set_d(i, localCoord.get(i) - stencilSupportRadius);
-                    elementCoord.set_d(i, elementCoord.get(i) - localCoord.get(i));
+                    int v = (ctr % edge) - stencilSupportRadius;
+                    ctr /= edge;
+                    elementCoord.set_d(i, elementCoord.get(i) + v);
                 }
 
                 // Actually load the data into the shared region
                 ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
                 *(basePtr + linId) = get<p>(elementCoord);
+        }
+    }
+
+    // NOTE: this must be called with linear thread grid, nice-to-have would be a generic converter (easy to do)
+    // from dim3 to linear which would work under all possible launch params
+    // todo: move this into a functor for compile time choice of cross or full neighbourhood
+    template<unsigned int p, typename SharedPtrT>
+    inline __device__ void
+    __loadGhost(const unsigned int blockId, const int * neighboursPos, SharedPtrT sharedRegionPtr)
+    {
+        if (neighboursPos == nullptr)
+        {
+            return __loadGhost<p>(blockId, sharedRegionPtr);
+        }
+
+        typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
+
+        const unsigned int edge = blockEdgeSize + 2*stencilSupportRadius;
+
+//        grid_key_dx<dim, int> elementCoord;
+        int elementCoord[dim];
+
+        for (int pos = threadIdx.x; pos < ghostLayerSize; pos += blockDim.x)
+        {
+            int neighbourNum = neighboursToThreadsMapping[pos];
+            if (neighbourNum >= 0)
+            {
+                // Convert pos into a linear id accounting for the inner domain offsets
+                const unsigned int linId = ghostLayerToThreadsMapping[pos];
+                // Now get linear offset wrt the first element of the block
+//                elementCoord = getBlockBaseCoord(blockId);
+//                unsigned int ctr = linId;
+//                for (int i = 0; i < dim; ++i)
+//                {
+//                    int v = (ctr % edge) - stencilSupportRadius;
+//                    ctr /= edge;
+//                    elementCoord.set_d(i, elementCoord.get(i) + v);
+//                }
+//                auto offset = getOffset(elementCoord);
+
+//                // todo: the below works only on cross-stencils, we need to make it general!
+//                const unsigned int d = neighbourNum / 2;
+//                const int sign = 1 - 2 * (neighbourNum % 2);
+//                int displacement = sign * (blockEdgeSize - 1);
+//                unsigned int correction = 0;
+//                for (int i=dim-1; i>=0; --i)
+//                {
+//                    correction = correction * edge + stencilSupportRadius;
+//                    if (i < d)
+//                    {
+//                        displacement *= edge;
+//                    }
+//                }
+//
+//                //todo: this is bugged and needs to be solved!
+//
+//                const unsigned int offset = linId + displacement - correction;
+
+                unsigned int ctr = linId;
+                for (int i = 0; i < dim; ++i)
+                {
+                    int v = ((ctr % edge) - stencilSupportRadius) % blockEdgeSize;
+                    ctr /= edge;
+                    elementCoord[i] = v;
+                }
+                unsigned int offset = elementCoord[dim-1];
+                for (int i=dim-2; i>=0; --i)
+                {
+                    offset *= blockEdgeSize;
+                    offset += elementCoord[i];
+                }
+
+                // Actually load the data into the shared region
+                auto nPos = neighboursPos[neighbourNum];
+                ScalarT *basePtr = (ScalarT *) sharedRegionPtr;
+                *(basePtr + linId) = this->blockMap.template get_ele<p>(nPos)[offset];
             }
         }
     }
 
     template<unsigned int p, unsigned int ... props>
     inline __device__ void
-    __loadGhost(const unsigned int blockId, void *sharedRegionPtr[sizeof...(props)+1])
+    __loadGhost(const unsigned int blockId, const int * neighboursPos, void *sharedRegionPtr[sizeof...(props)+1])
     {
-        __loadGhost<p>(blockId, sharedRegionPtr);
+        __loadGhost<p>(blockId, neighboursPos, sharedRegionPtr);
         if (sizeof...(props) > 1)
         {
-            __loadGhost<props ...>(blockId, sharedRegionPtr + 1);
+            __loadGhost<props ...>(blockId, neighboursPos, sharedRegionPtr + 1);
         }
         else if (sizeof...(props) == 1)
         {
-            __loadGhost<props ...>(blockId, *(sharedRegionPtr + 1));
+            __loadGhost<props ...>(blockId, neighboursPos, *(sharedRegionPtr + 1));
         }
     }
 
@@ -561,7 +686,22 @@ inline __device__ unsigned int
 SparseGridGpu_ker<dim, blockEdgeSize, AggregateBlockT, indexT, layout_base, GridSmT>
 ::getBlockId(const grid_key_dx<dim, CoordT> & coord)
 {
+    // todo: check this because it's bugged! maybe?
     return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBlockId(grid.LinId(coord));
+}
+
+template<unsigned int dim,
+        unsigned int blockEdgeSize,
+        typename AggregateBlockT,
+        typename indexT,
+        template<typename> class layout_base,
+        typename GridSmT>
+template<typename CoordT>
+inline __device__ unsigned int
+SparseGridGpu_ker<dim, blockEdgeSize, AggregateBlockT, indexT, layout_base, GridSmT>
+::getOffset(const grid_key_dx<dim, CoordT> & coord)
+{
+    return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getOffset(grid.LinId(coord));
 }
 
 template<unsigned int dim,
@@ -651,11 +791,25 @@ template<unsigned int dim,
         typename GridSmT>
 template<unsigned int p, typename CoordT>
 inline __device__ void SparseGridGpu_ker<dim, blockEdgeSize, AggregateBlockT, indexT, layout_base, GridSmT>
-::loadGhost(const grid_key_dx<dim, CoordT> & coord, ScalarTypeOf <AggregateBlockT, p> *sharedRegion)
+::loadGhost(const grid_key_dx<dim, CoordT> & coord, const int * neighboursPos, ScalarTypeOf <AggregateBlockT, p> *sharedRegion)
 {
     //todo: Make this work well with multiples chunks per block or check not to get several chunks or dragons ahoy!
     auto blockLinId = getBlockId(coord);
-    __loadGhost<p>(blockLinId, sharedRegion);
+    __loadGhost<p>(blockLinId, neighboursPos, sharedRegion);
+}
+
+template<unsigned int dim,
+        unsigned int blockEdgeSize,
+        typename AggregateBlockT,
+        typename indexT,
+        template<typename> class layout_base,
+        typename GridSmT>
+template<unsigned int p>
+inline __device__ void SparseGridGpu_ker<dim, blockEdgeSize, AggregateBlockT, indexT, layout_base, GridSmT>
+::loadGhost(const unsigned int blockLinId, const int * neighboursPos, ScalarTypeOf <AggregateBlockT, p> *sharedRegion)
+{
+    //todo: Make this work well with multiples chunks per block or check not to get several chunks or dragons ahoy!
+    __loadGhost<p>(blockLinId, neighboursPos, sharedRegion);
 }
 
 //template<unsigned int dim,
@@ -737,10 +891,23 @@ template<unsigned int dim,
         typename GridSmT>
 template<unsigned int ... props, typename CoordT>
 inline __device__ void SparseGridGpu_ker<dim, blockEdgeSize, AggregateBlockT, indexT, layout_base, GridSmT>
-::loadGhost(const grid_key_dx<dim, CoordT> & coord, void *sharedRegionPtr[sizeof...(props)])
+::loadGhost(const grid_key_dx<dim, CoordT> & coord, const int * neighboursPos, void *sharedRegionPtr[sizeof...(props)])
 {
     auto blockLinId = getBlockId(coord);
-    __loadGhost<props ...>(blockLinId, sharedRegionPtr);
+    __loadGhost<props ...>(blockLinId, neighboursPos, sharedRegionPtr);
+}
+
+template<unsigned int dim,
+        unsigned int blockEdgeSize,
+        typename AggregateBlockT,
+        typename indexT,
+        template<typename> class layout_base,
+        typename GridSmT>
+template<unsigned int ... props>
+inline __device__ void SparseGridGpu_ker<dim, blockEdgeSize, AggregateBlockT, indexT, layout_base, GridSmT>
+::loadGhost(const unsigned int blockLinId, const int * neighboursPos, void *sharedRegionPtr[sizeof...(props)])
+{
+    __loadGhost<props ...>(blockLinId, neighboursPos, sharedRegionPtr);
 }
 
 //template<unsigned int dim,

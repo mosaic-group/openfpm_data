@@ -69,10 +69,8 @@ struct InsertBlockWrapper
 template<typename AggregateBlockT=aggregate<DataBlock<float, 64>>, typename indexT=int, template<typename> class layout_base=memory_traits_inte>
 class BlockMapGpu_ker
 {
-private:
-    openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> blockMap;
-
 protected:
+    openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> blockMap;
     const static unsigned char EXIST_BIT = 0;
 
 public:
@@ -88,15 +86,15 @@ public:
     }
 
     template<typename BitMaskT>
-    inline static __device__ __host__ bool setBit(BitMaskT &bitMask, unsigned char pos)
+    inline static __device__ __host__ void setBit(BitMaskT &bitMask, unsigned char pos)
     {
-        return bitMask |= 1U<<pos;
+        bitMask = bitMask | (1U<<pos);
     }
 
     template<typename BitMaskT>
-    inline static __device__ __host__ bool unsetBit(BitMaskT &bitMask, unsigned char pos)
+    inline static __device__ __host__ void unsetBit(BitMaskT &bitMask, unsigned char pos)
     {
-        return bitMask &= !(1U<<pos);
+        bitMask = bitMask & ~(1U<<pos);
     }
 
 public:
@@ -129,6 +127,15 @@ public:
     {
 #ifdef __NVCC__
         return linId / BlockTypeOf<AggregateBlockT, 0>::size;
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
+    }
+
+    inline static __device__ unsigned int getOffset(unsigned int linId)
+    {
+#ifdef __NVCC__
+        return linId % BlockTypeOf<AggregateBlockT, 0>::size;
 #else // __NVCC__
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif // __NVCC__
@@ -197,14 +204,36 @@ inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 ::get(unsigned int blockId, unsigned int offset) const -> ScalarTypeOf<AggregateBlockT, p>
 {
 #ifdef __NVCC__
-    auto aggregate = blockMap.get(blockId);
-    auto &block = aggregate.template get<p>();
-    auto &mask = aggregate.template get<pMask>();
+//    const auto & aggregate = blockMap.get(blockId);
+//    const auto & block = aggregate.template get<p>();
+//    const auto & mask = aggregate.template get<pMask>();
+//    // Now check if the element actually exists
+//    return exist(mask[offset])
+//                ? block[offset]
+//                : blockMap.template getBackground<p>()[offset];
+////    return blockMap.template get<p>(blockId)[offset];
+
+    const auto sid = blockMap.get_sparse(blockId);
+    const auto & block = blockMap.template get_ele<p>(sid.id)[offset];
+    const auto mask = blockMap.template get_ele<pMask>(sid.id)[offset];
     // Now check if the element actually exists
-    return exist(mask[offset])
-                ? block[offset]
+    return exist(mask)
+                ? block
                 : blockMap.template getBackground<p>()[offset];
-//                : const_cast<BlockTypeOf<AggregateBlockT, p>>(blockMap.template getBackground<p>())[offset];
+
+//    const auto & block = blockMap.template get<p>(blockId)[offset];
+//    const auto & mask = blockMap.template get<pMask>(blockId)[offset];
+//    // Now check if the element actually exists
+//    return exist(mask)
+//                ? block
+//                : blockMap.template getBackground<p>()[offset];
+
+//    const auto & block = blockMap.get(blockId).template get<p>()[offset];
+//    const auto & mask = blockMap.get(blockId).template get<pMask>()[offset];
+//    // Now check if the element actually exists
+//    return exist(mask)
+//                ? block
+//                : blockMap.template getBackground<p>()[offset];
 #else // __NVCC__
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif // __NVCC__
@@ -244,11 +273,7 @@ inline __device__ ScalarTypeOf<AggregateBlockT, p> & BlockMapGpu_ker<AggregateBl
 {
     // Only call this if you are TOTALLY SURE the element exists! Otherwise KABOOOOOM! :D
 #ifdef __NVCC__
-    auto aggregate = blockMap.get(blockId);
-    auto &block = aggregate.template get<p>();
-    auto &mask = aggregate.template get<pMask>();
-    // Now check if the element actually exists
-    return block[offset];
+    return blockMap.template get<p>(blockId)[offset];
 #else // __NVCC__
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif // __NVCC__

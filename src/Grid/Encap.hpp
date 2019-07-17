@@ -691,7 +691,7 @@ public:
 	static const int max_prop = T::max_prop;
 
 	//! constructor require a key and a memory data
-	encapc(typename memory_traits_inte<T>::type & data, size_t k)
+    encapc(typename memory_traits_inte<T>::type & data, size_t k)
 	:data(data),k(k)
 	{}
 
@@ -707,13 +707,6 @@ public:
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
 
-	// DEBUG //
-    template <unsigned int p> __device__ __host__  auto getPtr() -> decltype(boost::fusion::at_c<p>(data).mem_r + k)
-    {
-        return boost::fusion::at_c<p>(data).mem_r + k;
-    }
-	///////////
-
 	/*! \brief Access the data
 	 *
 	 * \tparam p property selected
@@ -725,6 +718,13 @@ public:
 	{
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
+
+//    __device__ __host__ encapc(const encapc<dim,T,Mem> & ec) = delete;
+    __device__ __host__ encapc(const encapc<dim,T,Mem> & ec) : data(ec.data), k(ec.k)
+    {
+//        printf("ciao\n");
+    }
+//    __device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec) = delete; //DEBUG
 
 	/*! \brief Assignment
 	 *

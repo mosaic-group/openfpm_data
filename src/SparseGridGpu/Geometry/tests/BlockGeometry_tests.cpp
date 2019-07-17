@@ -10,28 +10,28 @@
 template <unsigned int dim, typename BGT>
 void testStandardLinearizations(BGT geometry)
 {
-    grid_key_dx<dim> origin({0,0});
+    grid_key_dx<dim, int> origin({0,0});
     BOOST_REQUIRE_EQUAL(geometry.LinId(origin), 0);
 
-    grid_key_dx<dim> block0a({7,0});
+    grid_key_dx<dim, int> block0a({7,0});
     BOOST_REQUIRE_EQUAL(geometry.LinId(block0a), 7);
-    grid_key_dx<dim> block0b({0,1});
+    grid_key_dx<dim, int> block0b({0,1});
     BOOST_REQUIRE_EQUAL(geometry.LinId(block0b), 8);
-    grid_key_dx<dim> block0c({7,7});
+    grid_key_dx<dim, int> block0c({7,7});
     BOOST_REQUIRE_EQUAL(geometry.LinId(block0c), 63);
 
-    grid_key_dx<dim> block1a({8+7,0});
+    grid_key_dx<dim, int> block1a({8+7,0});
     BOOST_REQUIRE_EQUAL(geometry.LinId(block1a), 64+7);
-    grid_key_dx<dim> block1b({8+0,1});
+    grid_key_dx<dim, int> block1b({8+0,1});
     BOOST_REQUIRE_EQUAL(geometry.LinId(block1b), 64+8);
-    grid_key_dx<dim> block1c({8+7,7});
+    grid_key_dx<dim, int> block1c({8+7,7});
     BOOST_REQUIRE_EQUAL(geometry.LinId(block1c), 64+63);
 
-    grid_key_dx<dim> block3a({7,8+0});
+    grid_key_dx<dim, int> block3a({7,8+0});
     BOOST_REQUIRE_EQUAL(geometry.LinId(block3a), (64*3)+7);
-    grid_key_dx<dim> block3b({0,8+1});
+    grid_key_dx<dim, int> block3b({0,8+1});
     BOOST_REQUIRE_EQUAL(geometry.LinId(block3b), (64*3)+8);
-    grid_key_dx<dim> block3c({7,8+7});
+    grid_key_dx<dim, int> block3c({7,8+7});
     BOOST_REQUIRE_EQUAL(geometry.LinId(block3c), (64*3)+63);
 }
 
