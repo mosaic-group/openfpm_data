@@ -290,25 +290,25 @@ namespace SparseGridGpuKernels
         EncapT* tmpPtr = (EncapT*)((void*)(insertEncaps));
         auto & dataBlockStore = *tmpPtr;
 
-//        // Read local mask to register
-//        const auto curMask = dataBlockLoad.template get<pMask>()[offset];
-//
-//        grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
-//
-//
-//        bool applyStencilHere = true;
-//
-//        if ( (!sparseGrid.exist(curMask)) || sparseGrid.isPadding(curMask) || offset > blockSize )
-//        {
-//            applyStencilHere = false;
-//        }
-//
-//        __syncthreads();
-//
-//        stencil::stencil(
-//                sparseGrid, dataBlockId, neighboursPos, offset, pointCoord, dataBlockLoad, dataBlockStore,
-//                applyStencilHere, args...);
-//        sparseGrid.setExist(dataBlockStore.template get<pMask>()[offset]);
+        // Read local mask to register
+        const auto curMask = dataBlockLoad.template get<pMask>()[offset];
+
+        grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
+
+
+        bool applyStencilHere = true;
+
+        if ( (!sparseGrid.exist(curMask)) || sparseGrid.isPadding(curMask) || offset > blockSize )
+        {
+            applyStencilHere = false;
+        }
+
+        __syncthreads();
+
+        stencil::stencil(
+                sparseGrid, dataBlockId, neighboursPos, offset, pointCoord, dataBlockLoad, dataBlockStore,
+                applyStencilHere, args...);
+        sparseGrid.setExist(dataBlockStore.template get<pMask>()[offset]);
 
         __syncthreads();
         sparseGrid.flush_block_insert();
