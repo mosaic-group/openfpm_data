@@ -336,6 +336,30 @@ public:
 	{
 		return background;
 	}
+
+	/*! \brief assign operator
+	 *
+	 * \return itself
+	 *
+	 */
+	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> & base)
+	{
+		grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::operator=(base);
+
+		return *this;
+	}
+
+	/*! \brief assign operator
+	 *
+	 * \return itself
+	 *
+	 */
+	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> && base)
+	{
+		grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>::operator=((grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> &&)base);
+
+		return *this;
+	}
 };
 
 
@@ -610,6 +634,16 @@ public:
 	{
 	}
 
+	/*! \brief create a grid from another grid
+	 *
+	 * \param g the grid to copy
+	 *
+	 */
+	inline grid_cpu(grid_cpu && g) THROW
+	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(g)
+	{
+	}
+
 	/*! \brief create a grid of size sz on each direction
 	 *
 	 * \param sz grid size in each direction
@@ -773,6 +807,30 @@ public:
 	T & getBackgroundValue()
 	{
 		return background;
+	}
+
+	/*! \brief assign operator
+	 *
+	 * \return itself
+	 *
+	 */
+	grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> & operator=(const grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte> & base)
+	{
+		grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::operator=(base);
+
+		return *this;
+	}
+
+	/*! \brief assign operator
+	 *
+	 * \return itself
+	 *
+	 */
+	grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> & operator=(grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte> && base)
+	{
+		grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::operator=(base);
+
+		return *this;
 	}
 };
 

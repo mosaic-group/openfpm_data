@@ -9,13 +9,29 @@
 #define OPENFPM_DATA_SRC_GRID_GRID_PERFORMANCE_TESTS_HPP_
 
 #include "grid_util_test.hpp"
+#include "util/stat/common_statistics.hpp"
 
-openfpm::vector<std::string> testsg;
-openfpm::vector<float> per_timesg;
+// Property tree
+struct report_grid_copy_func_tests
+{
+	boost::property_tree::ptree graphs;
+};
+
+report_grid_copy_func_tests report_grid_funcs;
+
+
+//openfpm::vector<std::string> testsg;
+//openfpm::vector<float> per_timesg;
+
+BOOST_AUTO_TEST_SUITE( grid_performance )
 
 BOOST_AUTO_TEST_CASE(grid_performance_set_obj)
 {
 	size_t sz[] = {128,128,128};
+
+	report_grid_funcs.graphs.put("performance.grid.set(0).grid.x",sz[0]);
+	report_grid_funcs.graphs.put("performance.grid.set(0).grid.y",sz[1]);
+	report_grid_funcs.graphs.put("performance.grid.set(0).grid.z",sz[2]);
 
 	grid_cpu<3, Point_test<float> > c3(sz);
 	c3.setMemory();
@@ -26,41 +42,43 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_obj)
 	f.fill();
 
 	std::vector<double> times(N_STAT + 1);
-	times[0] = 1000;
 
-	for (size_t j = 0 ; j < 8 ; j++)
+	for (size_t i = 0 ; i < N_STAT+1 ; i++)
 	{
-		for (size_t i = 1 ; i < N_STAT+1 ; i++)
+		timer t;
+		t.start();
+
+		auto it = c3.getIterator();
+
+		while (it.isNext())
 		{
-			timer t;
-			t.start();
+			c3.set(it.get(),f);
 
-			auto it = c3.getIterator();
-
-			while (it.isNext())
-			{
-				c3.set(it.get(),f);
-
-				++it;
-			}
-
-			t.stop();
-
-			times[i] = t.getwct();
+			++it;
 		}
-		std::sort(times.begin(),times.end());
-		sleep(5);
+
+		t.stop();
+
+		times[i] = t.getwct();
 	}
 
-	testsg.add("Grid so");
-	per_timesg.add(times[0]);
+	double mean;
+	double dev;
+	standard_deviation(times,mean,dev);
 
+	report_grid_funcs.graphs.put("performance.grid.set(0).x.data.name","Grid_so");
+	report_grid_funcs.graphs.put("performance.grid.set(0).y.data.mean",mean);
+	report_grid_funcs.graphs.put("performance.grid.set(0).y.data.dev",dev);
 }
 
 BOOST_AUTO_TEST_CASE(grid_performance_set_other_grid)
 {
 	size_t sz[] = {128,128,128};
 
+	report_grid_funcs.graphs.put("performance.grid.set(1).grid.x",sz[0]);
+	report_grid_funcs.graphs.put("performance.grid.set(1).grid.y",sz[1]);
+	report_grid_funcs.graphs.put("performance.grid.set(1).grid.z",sz[2]);
+
 	grid_cpu<3, Point_test<float> > c3(sz);
 	c3.setMemory();
 
@@ -69,41 +87,44 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_other_grid)
 	c1.setMemory();
 
 	std::vector<double> times(N_STAT + 1);
-	times[0] = 1000;
 
-	for (size_t j = 0 ; j < 8 ; j++)
+	for (size_t i = 0 ; i < N_STAT+1 ; i++)
 	{
-		for (size_t i = 1 ; i < N_STAT+1 ; i++)
+		timer t;
+		t.start();
+
+		auto it = c3.getIterator();
+
+		while (it.isNext())
 		{
-			timer t;
-			t.start();
+			c3.set(it.get(),c1,it.get());
 
-			auto it = c3.getIterator();
-
-			while (it.isNext())
-			{
-				c3.set(it.get(),c1,it.get());
-
-				++it;
-			}
-
-			t.stop();
-
-			times[i] = t.getwct();
+			++it;
 		}
-		std::sort(times.begin(),times.end());
-		sleep(5);
+
+		t.stop();
+
+		times[i] = t.getwct();
 	}
+	std::sort(times.begin(),times.end());
 
-	testsg.add("Grid sog");
-	per_timesg.add(times[0]);
+	double mean;
+	double dev;
+	standard_deviation(times,mean,dev);
 
+	report_grid_funcs.graphs.put("performance.grid.set(1).x.data.name","Grid_sog");
+	report_grid_funcs.graphs.put("performance.grid.set(1).y.data.mean",mean);
+	report_grid_funcs.graphs.put("performance.grid.set(1).y.data.dev",dev);
 }
 
 BOOST_AUTO_TEST_CASE(grid_performance_set_other_grid_encap)
 {
 	size_t sz[] = {128,128,128};
 
+	report_grid_funcs.graphs.put("performance.grid.set(2).grid.x",sz[0]);
+	report_grid_funcs.graphs.put("performance.grid.set(2).grid.y",sz[1]);
+	report_grid_funcs.graphs.put("performance.grid.set(2).grid.z",sz[2]);
+
 	grid_cpu<3, Point_test<float> > c3(sz);
 	c3.setMemory();
 
@@ -112,39 +133,42 @@ BOOST_AUTO_TEST_CASE(grid_performance_set_other_grid_encap)
 	c1.setMemory();
 
 	std::vector<double> times(N_STAT + 1);
-	times[0] = 1000;
 
-	for (size_t j = 0 ; j < 8 ; j++)
+	for (size_t i = 0 ; i < N_STAT+1 ; i++)
 	{
-		for (size_t i = 1 ; i < N_STAT+1 ; i++)
+		timer t;
+		t.start();
+
+		auto it = c3.getIterator();
+
+		while (it.isNext())
 		{
-			timer t;
-			t.start();
+			c3.set(it.get(),c1.get_o(it.get()));
 
-			auto it = c3.getIterator();
-
-			while (it.isNext())
-			{
-				c3.set(it.get(),c1.get_o(it.get()));
-
-				++it;
-			}
-
-			t.stop();
-
-			times[i] = t.getwct();
+			++it;
 		}
-		std::sort(times.begin(),times.end());
-		sleep(5);
+
+		t.stop();
+
+		times[i] = t.getwct();
 	}
 
-	testsg.add("Grid soge");
-	per_timesg.add(times[0]);
+	double mean;
+	double dev;
+	standard_deviation(times,mean,dev);
+
+	report_grid_funcs.graphs.put("performance.grid.set(2).x.data.name","Grid_soge");
+	report_grid_funcs.graphs.put("performance.grid.set(2).y.data.mean",mean);
+	report_grid_funcs.graphs.put("performance.grid.set(2).y.data.dev",dev);
 }
 
 BOOST_AUTO_TEST_CASE(grid_performance_duplicate)
 {
 	size_t sz[] = {128,128,128};
+
+	report_grid_funcs.graphs.put("performance.grid.set(3).grid.x",sz[0]);
+	report_grid_funcs.graphs.put("performance.grid.set(3).grid.y",sz[1]);
+	report_grid_funcs.graphs.put("performance.grid.set(3).grid.z",sz[2]);
 
 	grid_cpu<3, Point_test<float> > c3(sz);
 	c3.setMemory();
@@ -153,92 +177,58 @@ BOOST_AUTO_TEST_CASE(grid_performance_duplicate)
 	grid_cpu<3, Point_test<float> > c1;
 
 	std::vector<double> times(N_STAT_SMALL + 1);
-	times[0] = 1000;
 
-	for (size_t j = 0 ; j < 8 ; j++)
+	for (size_t i = 0 ; i < N_STAT_SMALL+1 ; i++)
 	{
-		for (size_t i = 1 ; i < N_STAT_SMALL+1 ; i++)
-		{
-			timer t;
-			t.start();
+		timer t;
+		t.start();
 
-			c1 = c3.duplicate();
+		c1 = c3.duplicate();
 
-			t.stop();
+		t.stop();
 
-			times[i] = t.getwct();
-		}
-		std::sort(times.begin(),times.end());
-		sleep(5);
+		times[i] = t.getwct();
 	}
 
-	testsg.add("Grid dup");
-	per_timesg.add(times[0]);
+	double mean;
+	double dev;
+	standard_deviation(times,mean,dev);
+
+	report_grid_funcs.graphs.put("performance.grid.set(3).x.data.name","Grid_dup");
+	report_grid_funcs.graphs.put("performance.grid.set(3).y.data.mean",mean);
+	report_grid_funcs.graphs.put("performance.grid.set(3).y.data.dev",dev);
 }
 
 /////// THIS IS NOT A TEST IT WRITE THE PERFORMANCE RESULT ///////
 
 BOOST_AUTO_TEST_CASE(grid_performance_write_report)
 {
-	openfpm::vector<std::string> yn;
-	openfpm::vector<openfpm::vector<float>> y;
+	// Create a graphs
 
-	// Get the directory of the performance test files
-	std::string per_dir(test_dir);
+	report_grid_funcs.graphs.put("graphs.graph(0).type","line");
+	report_grid_funcs.graphs.add("graphs.graph(0).title","Grid set functions (so/sog/soge) and duplicate (dup) performance");
+	report_grid_funcs.graphs.add("graphs.graph(0).x.title","Tests");
+	report_grid_funcs.graphs.add("graphs.graph(0).y.title","Time seconds");
+	report_grid_funcs.graphs.add("graphs.graph(0).y.data(0).source","performance.grid.set(#).y.data.mean");
+	report_grid_funcs.graphs.add("graphs.graph(0).x.data(0).source","performance.grid.set(#).x.data.name");
+	report_grid_funcs.graphs.add("graphs.graph(0).y.data(0).title","Actual");
+	report_grid_funcs.graphs.add("graphs.graph(0).interpolation","lines");
 
-	// Reference time
-	openfpm::vector<openfpm::vector<float>> y_ref;
-	y_ref.load(per_dir + std::string("/openfpm_data/ref_timesg"));
+	boost::property_tree::xml_writer_settings<std::string> settings(' ', 4);
+	boost::property_tree::write_xml("grid_performance_funcs.xml", report_grid_funcs.graphs,std::locale(),settings);
 
-	load_and_combine(per_dir + std::string("/openfpm_data/previous_measureg"),y,per_timesg);
+	GoogleChart cg;
 
-	// Adding the dataset names
-	if (y.size() != 0)
-	{
-		for (size_t j = 0; j < y.get(0).size(); j++)
-			yn.add("config " + std::to_string(j));
-	}
+	std::string file_xml_ref(test_dir);
+	file_xml_ref += std::string("/openfpm_pdata/grid_performance_funcs_ref.xml");
 
-	// Google charts options
-	GCoptions options;
+	StandardXMLPerformanceGraph("grid_performance_funcs.xml",file_xml_ref,cg);
 
-	options.title = std::string("Grid Performances");
-	options.yAxis = std::string("Time (seconds)");
-	options.xAxis = std::string("Benchmark");
-	options.stype = std::string("bars");
+	addUpdtateTime(cg);
 
-	std::stringstream g_test_desc;
-	g_test_desc << "<h2>Grid performance test</h2>\n";
-	g_test_desc << "<strong>128x128x128 Grid containing a Point_test<float></strong><br>";
-	g_test_desc << "<strong>Grid so:</strong> Initialize each element of the grid<br>";
-	g_test_desc << "<strong>Grid sog:</strong> Manual copy of two grids<br>";
-	g_test_desc << "<strong>Grid soge:</strong> Manual copy of two grids in a different way<br>";
-	g_test_desc << "<strong>Grid dup:</strong> Duplication of the grid (Duplication include grid creation time)<br>";
-
-
-	cg.addHTML(g_test_desc.str());
-	cg.AddHistGraph(testsg,y,yn,options);
-
-	// compare the reference times with the actual times
-
-	// calculate speed-up
-	openfpm::vector<openfpm::vector<float>> y_ref_sup;
-
-	speedup_calculate(y_ref_sup,y,y_ref,yn);
-
-	std::stringstream g_test_spdesc;
-	g_test_spdesc << "<h2>Grid speedup</h2>\n";
-	g_test_spdesc << "The previous tests are compared with the best performances ever registered, ";
-	g_test_spdesc << "the banded area indicate the upper and lower bounds of the best registrered performances.<br>";
-	g_test_spdesc << "The lines are the latest 5 tests<br>";
-	g_test_spdesc << "<strong>Line inside the area</strong>: The tested configuration has no improvement or degradation in performance<br>";
-	g_test_spdesc << "<strong>Line break the upper bound</strong>: The tested configuration has improvement in performance<br>";
-	g_test_spdesc << "<strong>Line break the lower bound</strong>: The tested configuration has degradation in performance<br>";
-	g_test_spdesc << "<strong>Y axis:</strong> Performance change in percentage from the average of the best registered performances<br>";
-
-
-	cg.addHTML(g_test_spdesc.str());
-	cg.AddLinesGraph(testsg,y_ref_sup,yn,options);
+	cg.write("grid_performance_funcs.html");
 }
+
+BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* OPENFPM_DATA_SRC_GRID_GRID_PERFORMANCE_TESTS_HPP_ */

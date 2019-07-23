@@ -25,7 +25,6 @@
 #include "VTKWriter/VTKWriter.hpp"
 #endif
 
-
 template<typename Tsrc,typename Tdst>
 class copy_prop_to_vector
 {

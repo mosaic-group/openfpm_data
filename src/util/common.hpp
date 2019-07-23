@@ -371,5 +371,4 @@ struct isDynStruct<ObjType, typename Void<decltype( ObjType::isCompressed() )>::
 };
 
 
-
 #endif

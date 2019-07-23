@@ -46,6 +46,10 @@ endif ()
 
 ###########################
 
+if (TEST_PERFORMANCE)
+    target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
+endif ()
+
 if (CUDA_FOUND)
     target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
     if (TEST_COVERAGE)

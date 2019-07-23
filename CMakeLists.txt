@@ -10,6 +10,7 @@ set(SE_CLASS1 CACHE BOOL "Activate compilation with SE_CLASS1")
 set(SE_CLASS2 CACHE BOOL "Activate compilation with SE_CLASS2")
 set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
 set(ENABLE_GPU CACHE BOOL "Disable the GPU code independently that a cuda compiler is found")
+set(TEST_PERFORMANCE CACHE BOOL "Enable test performance")
 
 set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CUDA_STANDARD 11)
@@ -29,7 +30,7 @@ if (ENABLE_GPU)
         endif()
 endif()
 
-find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options)
+find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem)
 find_package(LibHilbert REQUIRED)
 
 

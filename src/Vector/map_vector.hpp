@@ -377,10 +377,17 @@ namespace openfpm
 
 			if (slot > base.size())
 			{
-				size_t gr = grow_p::grow(base.size(),slot);
+				size_t gr = slot;
+				// If you increase by one we smartly resize the internal capacity more than 1
+				// This is to make faster patterns like resize(size()+1)
+				if (slot - base.size() == 1)
+				{
+					gr = grow_p::grow(base.size(),slot);
+				}
 
 				//! Resize the memory
 				size_t sz[1] = {gr};
+
 				base.resize(sz,opt);
 			}
 
