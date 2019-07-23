@@ -10,6 +10,7 @@
 
 #include <fstream>
 #include "Vector/map_vector.hpp"
+#include <cmath>
 
 #define GGRAPH_COLUMS 1
 #define GGRAPH_POINTS 2
@@ -153,6 +154,33 @@ const std::string saving_javascript = "function save(i)\n\
 										var e = document.getElementById('chart_')\n\
 										e.getElementsByTagName('svg')[0].parentNode.innerHTML";
 
+template<typename T>
+struct check_nan
+{
+	static bool check(const T & n)
+	{
+		return false;
+	}
+};
+
+template<>
+struct check_nan<float>
+{
+	static bool check(const float & n)
+	{
+		return std::isnan(n);
+	}
+};
+
+template<>
+struct check_nan<double>
+{
+	static bool check(const double & n)
+	{
+		return std::isnan(n);
+	}
+};
+
 /////////////////////////////////////////////////////////////////////
 
 /*! \brief Small class to produce graph with Google chart in HTML
@@ -186,11 +214,212 @@ const std::string saving_javascript = "function save(i)\n\
  */
 class GoogleChart
 {
+	template<typename arg_0, typename ... args>
+	struct get_value_type
+	{
+		typedef typename arg_0::value_type type;
+	};
+
 	//! set of graphs
 	openfpm::vector<GGraph> set_of_graphs;
 
 	//! set inject HTML;
 	openfpm::vector<std::string> injectHTML;
+
+	//! Data has holes
+	bool holes = false;
+
+	/*! \brief Recursively sort variadic template of vectors
+	 *
+	 * \param x vector with x
+	 * \param y vector with y
+	 * \param xy all the other vectors
+	 *
+	 */
+	template<typename X, typename ... Xs>
+	void recursive_sort(X & x,X & y,Xs& ... xy)
+	{
+		struct srt_xy
+		{
+			typename X::value_type x;
+			unsigned int id;
+
+			bool operator<(const srt_xy & tmp) const
+			{
+				return x < tmp.x;
+			}
+		};
+
+		openfpm::vector<srt_xy> reord;
+		X y_tmp;
+
+		reord.resize(x.size());
+		y_tmp.resize(x.size());
+
+		for (size_t i = 0 ; i < x.size() ; i++)
+		{
+			reord.get(i).x = x.get(i);
+			reord.get(i).id = i;
+		}
+
+		reord.sort();
+
+		// reorder x and y
+
+		for (size_t i = 0 ; i < x.size() ; i++)
+		{
+			x.get(i) = reord.get(i).x;
+			y_tmp.get(i) = y.get(reord.get(i).id);
+		}
+
+		y_tmp.swap(y);
+
+		// sort x
+
+		recursive_sort(xy ...);
+	}
+
+	//! terminator for recursive sort
+	void recursive_sort()
+	{}
+
+	/*! \brief Recursively sort variadic template of vectors
+	 *
+	 * \param counters indexes
+	 * \param x vector with x
+	 * \param y vector with y
+	 * \param xy all the other vectors
+	 *
+	 */
+	template<typename X, typename ... Xs>
+	bool isNext(size_t * counters,X & x,X & y,Xs& ... xy)
+	{
+		if (counters[0] < x.size())
+		{
+			return true;
+		}
+		return isNext(&counters[1],xy ...);
+	}
+
+	/*! \brief Recursively sort variadic template of vectors
+	 *
+	 * \param counters indexes
+	 *
+	 */
+	bool isNext(size_t * counters)
+	{
+		return false;
+	}
+
+
+	/*! \brief Recursively sort variadic template of vectors
+	 *
+	 * \param counters indexes
+	 * \param x vector with x
+	 * \param y vector with y
+	 * \param xy all the other vectors
+	 *
+	 */
+	template<typename T, typename X, typename ... Xs>
+	T get_low(size_t * counters,X & x,X & y,Xs& ... xy)
+	{
+		if (sizeof...(Xs) != 0)
+		{
+			T low1;
+			if (counters[0] >= x.size())
+			{low1 = std::numeric_limits<typename X::value_type>::infinity();}
+			else
+			{low1 = x.get(counters[0]);}
+
+			T low2 = get_low<T>(&counters[1],xy ...);
+			return (low1 < low2)?low1:low2;
+		}
+
+		if (counters[0] >= x.size())
+		{return std::numeric_limits<typename X::value_type>::infinity();}
+		return x.get(counters[0]);
+	}
+
+	/*! \brief Recursively sort variadic template of vectors
+	 *
+	 * \param counters indexes
+	 *
+	 */
+	template<typename T>
+	T get_low(size_t * counters)
+	{
+		return 0.0;
+	}
+
+	/*! \brief Recursively sort variadic template of vectors
+	 *
+	 * \param x vector with x
+	 * \param y vector with y
+	 * \param xy all the other vectors
+	 *
+	 */
+	template<typename X, typename ... Xs>
+	void get_point(typename X::value_type low,
+			   typename X::value_type * point,
+			   size_t * counters,
+			   X & x,
+			   X & y,
+			   Xs& ... xy)
+	{
+		if (low == x.get(counters[0]))
+		{
+			point[0] = y.get(counters[0]);
+			counters[0]++;
+		}
+		else
+		{
+			point[0] = std::numeric_limits<typename X::value_type>::quiet_NaN();
+		}
+
+		get_point(low,&point[1],&counters[1],xy...);
+	}
+
+	/*! \brief Recursively sort variadic template of vectors
+	 *
+	 * \param x vector with x
+	 * \param y vector with y
+	 * \param xy all the other vectors
+	 *
+	 */
+	template<typename T>
+	void get_point(T low,
+			   T * point,
+			   size_t * counters)
+	{
+		return;
+	}
+
+	/*! \brief Recursively sort variadic template of vectors
+	 *
+	 * \param x vector with x
+	 * \param y vector with y
+	 * \param xy all the other vectors
+	 *
+	 */
+	template<typename ... Xs>
+	bool get_v(typename get_value_type<Xs...>::type & x,
+			   typename get_value_type<Xs...>::type * point,
+			   size_t * counters,
+			   Xs& ... xy)
+	{
+		// if exist the next element
+		if (isNext(counters,xy...) == false)
+		{return false;}
+
+		// get lowest x
+		typename get_value_type<Xs...>::type low = get_low<typename get_value_type<Xs...>::type>(counters,xy...);
+
+		x = low;
+
+		get_point(low,point,counters,xy...);
+
+		return true;
+	}
 
 	/*! \brief Given X and Y vector return the string representing the data section of the Google Chart
 	 *
@@ -215,7 +444,7 @@ class GoogleChart
 		// we require that the number of x elements are the same as y elements
 
 		if (x.size() != y.size())
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " vector x and the vector y must have the same number of elements " << x.size() << "!=" << y.size() << "\n";
+		{std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " vector x and the vector y must have the same number of elements " << x.size() << "!=" << y.size() << "\n";}
 
 		// Google chart visualization
         data << "var data" << i << " = new google.visualization.DataTable();\n";
@@ -250,7 +479,17 @@ class GoogleChart
         				data << "["  << x.get(i);
         		}
         		else
-        			data << "," << y.get(i).get(j-1);
+        		{
+        			if (check_nan<typename Y::value_type>::check(y.get(i).get(j-1)) == false)
+        			{
+        				data << "," << y.get(i).get(j-1);
+        			}
+        			else
+        			{
+        				holes = true;
+        				data << "," << "null";
+        			}
+        		}
         	}
         	data << "],\n";
         }
@@ -351,6 +590,8 @@ class GoogleChart
 		of << "var options";
 		of << i;
 		of << "= {\n";
+		if (holes == true)
+		{of << "interpolateNulls : true,\n";}
 		of << opt;
 		of << "};\n";
 	}
@@ -513,16 +754,71 @@ public:
 		set_of_graphs.last().opt = opt;
 	}
 
+
 	/*! \brief Add lines graph
 	 *
-	 * \param y A vector of vectors of values. each vector is a graph of points
-	 *
-	 * \param x Give a name or number to each x value, so can be a string or a number
+	 * \param xy list of vectors like openfpm::vector<float> or openfpm::vector<double>. Suppose you have a dataset of points x1,y1
+	 *           and a dataset x2,y2 and you want to display all these points in one graph. Than you call this function with
+	 *           AddLines(x1,y1,x2,y2,opt)
 	 *
 	 * \param opt Graph options
 	 *
 	 */
-	template<typename X, typename Y> void AddLines(openfpm::vector<X> & x, openfpm::vector<Y> & y , const GCoptions & opt)
+	template<typename ... X> void AddLines(const openfpm::vector<std::string> & yn,
+										   const GCoptions & opt,
+										   X ... xy)
+	{
+		// first we sort the vectors
+		recursive_sort(xy ... );
+
+		constexpr int size = sizeof...(xy);
+
+		size_t counters[sizeof...(X)];
+		memset(&counters,0,sizeof(counters));
+
+		typename get_value_type<X...>::type point[sizeof...(X)];
+		typename get_value_type<X...>::type xe;
+
+		openfpm::vector<typename get_value_type<X...>::type> x;
+
+		openfpm::vector<openfpm::vector<typename get_value_type<X...>::type>> y;
+
+
+		while (get_v(xe,point,counters,xy...))
+		{
+			y.add();
+			x.add(xe);
+
+			for (size_t i = 0 ; i < sizeof...(X)/2 ; i++)
+			{
+				y.last().add(point[i]);
+			}
+		}
+
+		AddLinesGraph(x,y,yn,opt);
+	}
+
+	/*! \brief Add lines graph
+	 *
+	 * If the x vector contain 0.0,0.1,0.2,0.3,0.4 and you want to draw two lines you specifying two y values for each of the x points
+	 * you create an openfpm::vector<openfpm::vector<float>> y such that
+	 *
+	 *  \verbatim
+                               ------  j  -------        |
+	   y.get(i).get(j) = 3.2   3.4    5.4    1.3    2.3  i
+	                     1.4   5.3    3.2    2.1    1.1  |
+
+	   \endverbatim
+	 *
+	 * \param y A vector of vectors of values. each vector contain the graph points, compared to AddLinesGraph the points are stored
+	 *
+	 *
+	 * \param x axis values
+	 *
+	 * \param opt Graph options
+	 *
+	 */
+	template<typename X, typename Y> void AddLinesGraphT(openfpm::vector<X> & x, openfpm::vector<Y> & y , const GCoptions & opt)
 	{
 		openfpm::vector<std::string> yn;
 
@@ -567,6 +863,18 @@ public:
 	}
 
 	/*! \brief Add a simple lines graph
+	 *
+	 * If the x vector contain 0.0,0.1,0.2,0.3,0.4 and you want to draw two lines you specifying two y values for each of the x points
+	 * you create an openfpm::vector<openfpm::vector<float>> y such that
+	 *
+	 *  \verbatim
+                         --  j  --
+	   y.get(i).get(j) = 3.2   3.4
+	                     1.4   5.3 |
+	                     5.4   3.2 i
+	                     1.3   2.2 |
+                         2.3   1.1
+	   \endverbatim
 	 *
 	 * \param y A vector of vectors of values. The size of y indicate how many x values
 	 *          we have, while the internal vector can store multiple value of the same point,

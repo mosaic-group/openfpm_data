@@ -387,6 +387,126 @@ BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
+BOOST_AUTO_TEST_CASE( google_chart_number )
+{
+	Vcluster<> & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
+	//! [Producing a set of histograms graphs]
+
+	openfpm::vector<float> x;
+	openfpm::vector<openfpm::vector<size_t>> y;
+	openfpm::vector<std::string> yn;
+
+	x.add(0.1);
+	x.add(0.2);
+	x.add(0.3);
+	x.add(0.4);
+	x.add(0.5);
+	x.add(0.6);
+
+	// Each colum can have multiple data set (in this case 4 dataset)
+	// Each dataset can have a name
+	yn.add("dataset1");
+	yn.add("dataset2");
+	yn.add("dataset3");
+	yn.add("dataset4");
+
+	// Each colums can have multiple data-set
+	y.add({2,3,5,6});
+	y.add({5,6,1,6});
+	y.add({2,1,6,9});
+	y.add({1,6,3,2});
+	y.add({3,3,0,6});
+	y.add({2,1,4,6});
+
+	// Google charts options
+	GCoptions options;
+
+	options.title = std::string("Example");
+	options.yAxis = std::string("Y Axis");
+	options.xAxis = std::string("X Axis");
+	options.stype = std::string("line");
+
+	GoogleChart cg;
+	//
+	cg.AddLinesGraph(x,y,yn,options);
+	cg.write("gc_num_plot.html");
+
+	//! [Producing a set of histograms graphs]
+
+	bool test = compare("gc_num_plot.html","gc_num_plot_test.html");
+	BOOST_REQUIRE_EQUAL(true,test);
+}
+
+BOOST_AUTO_TEST_CASE( google_chart_number_lines_different_x )
+{
+	Vcluster<> & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
+	//! [Producing a set of histograms graphs]
+
+	openfpm::vector<float> x1;
+	openfpm::vector<float> y1;
+	openfpm::vector<float> x2;
+	openfpm::vector<float> y2;
+	openfpm::vector<float> x3;
+	openfpm::vector<float> y3;
+	openfpm::vector<std::string> yn;
+
+	x1.add(0.1); y1.add(4.5);
+	x1.add(0.2); y1.add(3.0);
+	x1.add(0.3); y1.add(5.5);
+	x1.add(0.4); y1.add(3.3);
+	x1.add(0.5); y1.add(1.0);
+	x1.add(0.6); y1.add(7.0);
+
+	x2.add(0.15); y2.add(1.5);
+	x2.add(0.2); y2.add(4.5);
+	x2.add(0.35); y2.add(2.5);
+	x2.add(0.45); y2.add(6.5);
+
+	x3.add(0.1); y3.add(3.5);
+	x3.add(0.2); y3.add(6.5);
+	x3.add(0.63); y3.add(1.5);
+	x3.add(0.37); y3.add(1.5);
+	x3.add(0.7); y3.add(3.5);
+	x3.add(0.82); y3.add(2.5);
+	x3.add(0.4); y3.add(2.5);
+	x3.add(1.0); y3.add(1.5);
+	x3.add(0.5); y3.add(7.5);
+	x3.add(0.91); y3.add(5.5);
+
+	// Each colum can have multiple data set (in this case 4 dataset)
+	// Each dataset can have a name
+	yn.add("dataset1");
+	yn.add("dataset2");
+	yn.add("dataset3");
+
+
+	// Google charts options
+	GCoptions options;
+
+	options.title = std::string("Example");
+	options.yAxis = std::string("Y Axis");
+	options.xAxis = std::string("X Axis");
+	options.stype = std::string("line");
+
+	GoogleChart cg;
+
+	cg.AddLines(yn,options,x1,y1,x2,y2,x3,y3);
+	cg.write("gc_num_ydif_plot.html");
+
+	//! [Producing a set of histograms graphs]
+
+	bool test = compare("gc_num_ydif_plot.html","gc_num_ydif_plot_test.html");
+	BOOST_REQUIRE_EQUAL(true,test);
+}
+
 BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 {
 	Vcluster<> & v_cl = create_vcluster();
