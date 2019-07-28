@@ -59,7 +59,7 @@ protected:
 	/*! \brief Select non-empty cell
 	 *
 	 */
-	inline void selectValid()
+	__attribute__((always_inline)) inline void selectValid()
 	{
 		while (start_id == stop_id)
 		{
@@ -89,7 +89,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIterator(size_t cell, const NNc_array<dim,NNc_size> &NNc, Cell & cl)
+	__attribute__((always_inline)) inline CellNNIterator(size_t cell, const NNc_array<dim,NNc_size> &NNc, Cell & cl)
 	:NNc_id(0),cell(cell),cell_id(NNc[NNc_id] + cell),cl(cl),NNc(NNc)
 	{
 		start_id = &cl.getStartId(cell_id);
@@ -102,7 +102,7 @@ public:
 	 * \return true if there is the next element
 	 *
 	 */
-	inline bool isNext()
+	__attribute__((always_inline)) inline bool isNext()
 	{
 		if (NNc_id >= NNc_size)
 			return false;
@@ -114,7 +114,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIterator & operator++()
+	__attribute__((always_inline)) inline CellNNIterator & operator++()
 	{
 		start_id++;
 
@@ -128,7 +128,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline const typename Cell::Mem_type_type::local_index_type & get()
+	__attribute__((always_inline)) inline const typename Cell::Mem_type_type::local_index_type & get()
 	{
 		return cl.get_lin(start_id);
 	}
@@ -138,7 +138,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline const typename Cell::Mem_type_type::local_index_type & get() const
+	__attribute__((always_inline)) inline const typename Cell::Mem_type_type::local_index_type & get() const
 	{
 		return cl.get_lin(start_id);
 	}
@@ -173,7 +173,7 @@ class CellNNIteratorSym : public CellNNIterator<dim,Cell,NNc_size,impl>
 	/*! Select the next valid element
 	 *
 	 */
-	inline void selectValid()
+	__attribute__((always_inline)) inline void selectValid()
 	{
 		if (this->NNc[this->NNc_id] == 0)
 		{
@@ -212,7 +212,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIteratorSym(size_t cell, size_t p, const NNc_array<dim,NNc_size> &NNc, Cell & cl, const vector_pos_type & v)
+	__attribute__((always_inline)) inline CellNNIteratorSym(size_t cell, size_t p, const NNc_array<dim,NNc_size> &NNc, Cell & cl, const vector_pos_type & v)
 	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),p(p),v(v)
 	{
 		selectValid();
@@ -224,7 +224,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIteratorSym<dim,Cell,vector_pos_type,NNc_size,impl> & operator++()
+	__attribute__((always_inline)) inline CellNNIteratorSym<dim,Cell,vector_pos_type,NNc_size,impl> & operator++()
 	{
 		this->start_id++;
 
@@ -265,7 +265,7 @@ class CellNNIteratorSymMP : public CellNNIterator<dim,Cell,NNc_size,impl>
 	/*! Select the next valid element
 	 *
 	 */
-	inline void selectValid()
+	__attribute__((always_inline)) inline void selectValid()
 	{
 		if (this->NNc[this->NNc_id] == 0)
 		{
@@ -304,7 +304,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIteratorSymMP(size_t cell,
+	__attribute__((always_inline)) inline CellNNIteratorSymMP(size_t cell,
 			                   size_t p,
 							   const NNc_array<dim,NNc_size> &NNc,
 							   Cell & cl,
@@ -321,7 +321,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIteratorSymMP<dim,Cell,vector_pos_type,NNc_size,impl> & operator++()
+	__attribute__((always_inline)) inline CellNNIteratorSymMP<dim,Cell,vector_pos_type,NNc_size,impl> & operator++()
 	{
 		this->start_id++;
 
@@ -357,7 +357,7 @@ public:
 	 * \param cl Cell on which iterate
 	 *
 	 */
-	inline CellIterator(const size_t cell, Cell & cl)
+	__attribute__((always_inline)) inline CellIterator(const size_t cell, Cell & cl)
 	:cl(cl),ele_id(0),cell(cell)
 	{
 	}
@@ -367,7 +367,7 @@ public:
 	 * \return true if there are still neighborhood particles
 	 *
 	 */
-	inline bool isNext()
+	__attribute__((always_inline)) inline bool isNext()
 	{
 		return cl.getNelements(cell) > ele_id;
 	}
@@ -377,7 +377,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellIterator & operator++()
+	__attribute__((always_inline)) inline CellIterator & operator++()
 	{
 		ele_id++;
 
@@ -389,7 +389,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline typename Cell::value_type & get()
+	__attribute__((always_inline)) inline typename Cell::value_type & get()
 	{
 		return cl.get(cell,ele_id);
 	}
@@ -399,7 +399,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline const typename Cell::value_type & get() const
+	__attribute__((always_inline)) inline const typename Cell::value_type & get() const
 	{
 		return cl.get(cell,ele_id);
 	}

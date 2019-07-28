@@ -8,7 +8,7 @@
 #ifndef OPENFPM_DATA_SRC_GRID_GRID_PERFORMANCE_TESTS_HPP_
 #define OPENFPM_DATA_SRC_GRID_GRID_PERFORMANCE_TESTS_HPP_
 
-#include "grid_util_test.hpp"
+#include "Grid/grid_util_test.hpp"
 #include "util/stat/common_statistics.hpp"
 
 // Property tree
@@ -220,11 +220,11 @@ BOOST_AUTO_TEST_CASE(grid_performance_write_report)
 	GoogleChart cg;
 
 	std::string file_xml_ref(test_dir);
-	file_xml_ref += std::string("/openfpm_pdata/grid_performance_funcs_ref.xml");
+	file_xml_ref += std::string("/openfpm_data/grid_performance_funcs_ref.xml");
 
 	StandardXMLPerformanceGraph("grid_performance_funcs.xml",file_xml_ref,cg);
 
-	addUpdtateTime(cg);
+	addUpdtateTime(cg,1);
 
 	cg.write("grid_performance_funcs.html");
 }

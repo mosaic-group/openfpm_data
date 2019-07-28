@@ -61,7 +61,7 @@ protected:
 	/*! \brief Select non-empty cell
 	 *
 	 */
-	inline void selectValid()
+	__attribute__((always_inline)) inline void selectValid()
 	{
 		while (start_id == stop_id)
 		{
@@ -92,7 +92,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIterator(size_t cell, const long int * NNc, size_t NNc_size, Cell & cl)
+	__attribute__((always_inline)) inline CellNNIterator(size_t cell, const long int * NNc, size_t NNc_size, Cell & cl)
 	:NNc_id(0),NNc_size(NNc_size),cell(cell),cell_id(NNc[NNc_id] + cell),cl(cl),NNc(NNc)
 	{
 		start_id = &cl.getStartId(cell_id);
@@ -105,7 +105,7 @@ public:
 	 * \return true if there is the next element
 	 *
 	 */
-	inline bool isNext()
+	__attribute__((always_inline)) inline bool isNext()
 	{
 		if (NNc_id >= NNc_size)
 			return false;
@@ -117,7 +117,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIterator & operator++()
+	__attribute__((always_inline)) inline CellNNIterator & operator++()
 	{
 		start_id++;
 
@@ -131,7 +131,7 @@ public:
 	 * \return  the next element object
 	 *
 	 */
-	inline const typename Cell::Mem_type_type::loc_index & get()
+	__attribute__((always_inline)) inline const typename Cell::Mem_type_type::loc_index & get()
 	{
 		return cl.get_lin(start_id);
 	}
@@ -166,7 +166,7 @@ class CellNNIteratorSym<dim,Cell,vector_pos_type,RUNTIME,impl> : public CellNNIt
 	/*! Select the next valid element
 	 *
 	 */
-	inline void selectValid()
+	__attribute__((always_inline)) inline void selectValid()
 	{
 		if (this->NNc[this->NNc_id] == 0)
 		{
@@ -205,7 +205,7 @@ public:
 	 * \param cl Cell structure
 	 *
 	 */
-	inline CellNNIteratorSym(size_t cell,
+	__attribute__((always_inline)) inline CellNNIteratorSym(size_t cell,
 			                 size_t p,
 							 const long int * NNc,
 							 size_t NNc_size,
@@ -225,7 +225,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIteratorSym<dim,Cell,vector_pos_type,RUNTIME,impl> & operator++()
+	__attribute__((always_inline)) inline CellNNIteratorSym<dim,Cell,vector_pos_type,RUNTIME,impl> & operator++()
 	{
 		this->start_id++;
 
