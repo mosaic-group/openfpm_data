@@ -179,9 +179,6 @@ namespace SparseGridGpuKernels
 
         // NOTE: here we do 1 chunk per block! (we want to be sure to fit local memory constraints
         // since we will be loading also neighbouring elements!) (beware curse of dimensionality...)
-//        int pos = blockIdx.x * blockDim.x + threadIdx.x;
-//        const unsigned int dataBlockPos = pos / blockSize;
-//        const unsigned int offset = pos % blockSize;
         const unsigned int dataBlockPos = blockIdx.x;
         const unsigned int offset = threadIdx.x;
 
@@ -218,11 +215,6 @@ namespace SparseGridGpuKernels
         stencil::stencil(
                 sparseGrid, dataBlockId, neighboursPos, offset, pointCoord, dataBlockLoad, dataBlockLoad,
                 applyStencilHere, args...);
-
-        // todo:
-        //#else // __NVCC__
-        //        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-        //#endif // __NVCC__
     }
 
     template <unsigned int dim,

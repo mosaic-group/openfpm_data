@@ -341,21 +341,6 @@ public:
         __loadGhost<props ...>(blockLinId, neighboursPos, sharedRegionPtr);
     }
 
-    /**
-     * Read a data block from the inner part of a shared memory region and store it in global memory.
-     * The given shared memory region should be shaped as a dim-dimensional array and sized so that it
-     * can contain the block plus the ghost layer around it.
-     *
-     * @tparam p The property to store into global memory.
-     * @tparam CoordT The coordinate type.
-     * @tparam Shared The type of the shared memory region.
-     * @param coord The coordinate of the block.
-     * @param sharedRegionPtr The pointer to the shared memory region.
-     */
-//    template<unsigned int p, typename CoordT>
-//    inline __device__ void
-//    storeBlock(const grid_key_dx<dim, CoordT> coord, ScalarTypeOf<AggregateBlockT, p> *sharedRegion);
-
     template<unsigned int p, typename AggrWrapperT>
     inline __device__ void
     storeBlock(AggrWrapperT &block, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
