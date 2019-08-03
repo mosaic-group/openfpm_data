@@ -16,6 +16,68 @@
 
 #endif
 
+template<typename type_t>
+struct rightOperand_t  : public std::binary_function<type_t, type_t, type_t> {
+  __device__ __host__ type_t operator()(type_t a, type_t b) const {
+    return b;
+  }
+};
+
+template<unsigned int prp>
+struct sRight_
+{
+	typedef boost::mpl::int_<prp> prop;
+
+	template<typename red_type> using op_red = rightOperand_t<red_type>;
+
+	template<typename red_type>
+	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
+	{
+		return r2;
+	}
+
+	static bool is_special()
+	{
+		return false;
+	}
+
+	//! is not special reduction so it does not need it
+	template<typename seg_type, typename output_type>
+	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
+	{}
+};
+
+template<typename type_t>
+struct leftOperand_t  : public std::binary_function<type_t, type_t, type_t> {
+	__device__ __host__ type_t operator()(type_t a, type_t b) const {
+    return a;
+  }
+};
+
+template<unsigned int prp>
+struct sLeft_
+{
+	typedef boost::mpl::int_<prp> prop;
+
+	template<typename red_type> using op_red = leftOperand_t<red_type>;
+
+	template<typename red_type>
+	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
+	{
+		return r1;
+	}
+
+	static bool is_special()
+	{
+		return false;
+	}
+
+	//! is not special reduction so it does not need it
+	template<typename seg_type, typename output_type>
+	__device__ __host__ static void set(seg_type seg_next, seg_type seg_prev, output_type & output, int i)
+	{}
+};
+
 template<unsigned int prp>
 struct sadd_
 {
@@ -45,7 +107,7 @@ struct sadd_
 
 template<typename type_t, unsigned int blockLength>
 struct plus_block_t  : public std::binary_function<type_t, type_t, type_t> {
-  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+	__device__ __host__ type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
@@ -429,6 +491,7 @@ __global__ void construct_remove_list(vector_index_type vit_block_data,
 		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
 	}
 }
+
 
 template<typename e_type, typename v_reduce>
 struct data_merger

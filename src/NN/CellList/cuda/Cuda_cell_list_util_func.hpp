@@ -454,7 +454,7 @@ __global__ void fill_nn_cells(cl_sparse_type cl_sparse, vector_type starts, vect
 
 		auto sid = cl_sparse.get_sparse(cell_n);
 
-		if (sid.id != (index_type)-1)
+		if (sid.id != (index_type)cl_sparse.size())
 		{
 			index_type start = cl_sparse.template get<0>(sid);
 			// Cell exist

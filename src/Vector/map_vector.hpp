@@ -380,7 +380,7 @@ namespace openfpm
 				size_t gr = slot;
 				// If you increase by one we smartly resize the internal capacity more than 1
 				// This is to make faster patterns like resize(size()+1)
-				if (slot - base.size() == 1)
+				if (slot - base.size() == 1 && opt && (opt & EXACT_RESIZE) == 0)
 				{
 					gr = grow_p::grow(base.size(),slot);
 				}

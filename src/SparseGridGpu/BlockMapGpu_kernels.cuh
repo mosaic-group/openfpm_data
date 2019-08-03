@@ -516,7 +516,7 @@ namespace BlockMapGpuFunctors
 
             // First ensure we have the right sizes on the buffers
 
-            tmpData.resize(mergeIndices.size()); //todo: check if we need some other action to actually have the right space on gpu
+            tmpData.resize(mergeIndices.size(),EXACT_RESIZE); //todo: check if we need some other action to actually have the right space on gpu
 
             // Phase 0 - merge data
             BlockMapGpuKernels::mergeData<<< gridSize, blockSize >>>(dataOld.toKernel(),

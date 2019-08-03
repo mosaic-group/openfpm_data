@@ -75,6 +75,13 @@ public:
     template<unsigned int ... prp>
     void deviceToHost();
 
+    void deviceToHost();
+
+    template<unsigned int ... prp>
+    void hostToDevice();
+
+    void hostToDevice();
+
     void setGPUInsertBuffer(int nBlock, int nSlot);
 
     void initializeGPUInsertBuffer();
@@ -114,6 +121,12 @@ public:
     {
         setBit(bitMask, EXIST_BIT);
     }
+
+    template<typename BitMaskT>
+    inline static void unsetExist(BitMaskT &bitMask)
+    {
+        unsetBit(bitMask, EXIST_BIT);
+    }
 };
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
@@ -127,6 +140,7 @@ BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::get(unsigned
     auto aggregate = blockMap.get(blockId);
     auto &block = aggregate.template get<p>();
 	auto &mask = aggregate.template get<pMask>();
+	// Now check if the element actually exists
 	if (exist(mask[offset]))
 	{
 		return block[offset];
@@ -160,10 +174,33 @@ void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::deviceT
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::deviceToHost()
+{
+    blockMap.template deviceToHost<pMask>();
+    /////////////// DEBUG ////////////////////
+    auto indexBuffer = blockMap.getIndexBuffer();
+    //////////////////////////////////////////
+}
+
+template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+template<unsigned int ... prp>
+void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::hostToDevice()
+{
+    blockMap.template hostToDevice<prp..., pMask>();
+}
+
+template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::hostToDevice()
+{
+    blockMap.template hostToDevice<pMask>();
+}
+
+template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
 void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::setGPUInsertBuffer(int nBlock, int nSlot)
 {
     // Prealloc the insert buffer on the underlying sparse vector
     blockMap.setGPUInsertBuffer(nBlock, nSlot);
+    initializeGPUInsertBuffer();
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
@@ -172,7 +209,6 @@ void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::initial
     //todo: Test if it's enough to just initialize masks to 0, without any background value
     // Initialize the blocks to background
     auto & insertBuffer = blockMap.getGPUInsertBuffer();
-    std::cout << "initializeGPUInsertBuffer :: insertBuffer.size() = " << insertBuffer.size() << std::endl; //debug
     typedef BlockTypeOf<AggregateInternalT, pMask> BlockType; // Here assuming that all block types in the aggregate have the same size!
     constexpr unsigned int chunksPerBlock = threadBlockSize / BlockType::size; // Floor is good here...
     BlockMapGpuKernels::initializeInsertBuffer<pMask, chunksPerBlock> <<< insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size >>>(
@@ -183,7 +219,7 @@ template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT
 template<typename ... v_reduce>
 void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::flush(mgpu::ofp_context_t &context, flush_type opt)
 {
-    blockMap.template flush<v_reduce ..., sBitwiseOr_<pMask>>(context, opt); // This is the one to use ideally
+    blockMap.template flush<v_reduce ..., sBitwiseOr_<pMask>>(context, opt);
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>

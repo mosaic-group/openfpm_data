@@ -17,8 +17,9 @@ if (CUDA_FOUND)
             SparseGridGpu/BlockMapGpu.hpp
             SparseGridGpu/BlockMapGpu_ker.cuh
             SparseGridGpu/tests/BlockMapGpu_tests.cu
+	    util/test/zmorton_unit_tests.cpp
             SparseGridGpu/DataBlock.cuh SparseGridGpu/BlockMapGpu_kernels.cuh
-            util/cuda/segreduce_block_cuda.cuh util/cuda/test/segreduce_block_cuda_tests.cu SparseGridGpu/BlockMapGpu_dimensionalityWrappers.cuh SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu SparseGridGpu/SparseGridGpu.hpp SparseGridGpu/tests/SparseGridGpu_tests.cu SparseGridGpu/SparseGridGpu_ker.cuh SparseGridGpu/SparseGridGpu_kernels.cuh)
+            util/cuda/segreduce_block_cuda.cuh util/cuda/test/segreduce_block_cuda_tests.cu SparseGridGpu/BlockMapGpu_dimensionalityWrappers.cuh SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu SparseGridGpu/SparseGridGpu.hpp SparseGridGpu/tests/SparseGridGpu_tests.cu SparseGridGpu/SparseGridGpu_ker.cuh SparseGridGpu/SparseGridGpu_kernels.cuh SparseGridGpu/BlockCache/BlockCache.cuh SparseGridGpu/tests/Stencil_performance_tests.cu )
 else ()
     set(CUDA_SOURCES)
 endif ()
@@ -34,8 +35,7 @@ add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp
         Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
         ../../openfpm_devices/src/memory/HeapMemory.cpp
         ../../openfpm_devices/src/memory/PtrMemory.cpp 
-	SparseGridGpu/Geometry/BlockGeometry.hpp 
-	SparseGridGpu/Geometry/tests/BlockGeometry_tests.cpp)
+	SparseGridGpu/Geometry/tests/grid_smb_tests.cpp)
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
@@ -51,7 +51,10 @@ if (TEST_PERFORMANCE)
 endif ()
 
 if (CUDA_FOUND)
-    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
+#    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
+    # The below is for better performance on CUDA
+    # "-rdc=true" is for Dynamic Parallelism (cooperative groups)
+    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -arch=sm_61 -g -lineinfo >)
     if (TEST_COVERAGE)
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
     endif ()

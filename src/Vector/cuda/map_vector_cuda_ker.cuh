@@ -179,7 +179,7 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
-		inline __device__ auto get(unsigned int id) -> decltype(base.get_o(grid_key_dx<1>(id)))
+		__device__ inline auto get(unsigned int id) -> decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)

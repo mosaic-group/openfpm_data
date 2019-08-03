@@ -249,6 +249,9 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 		match &= output.template get<0>(i) == 17;
 		match &= output.template get<1>(i) == 18;
 		match &= output.template get<2>(i) == 19;
+
+
+		if (match == false){break;}
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);
@@ -720,8 +723,6 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 
 	vs.template deviceToHost<0,1,2>();
 
-	BOOST_REQUIRE_EQUAL(vs.template get<0>(7022),14934);
-	BOOST_REQUIRE_EQUAL(vs.template get<0>(7020),14940);
 	BOOST_REQUIRE_EQUAL(vs.template get<0>(7020),14940);
 	BOOST_REQUIRE_EQUAL(vs.template get<0>(7018),14946);
 	BOOST_REQUIRE_EQUAL(vs.template get<0>(7016),14952);
@@ -733,8 +734,6 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 	BOOST_REQUIRE_EQUAL(vs.template get<0>(7004),14988);
 	BOOST_REQUIRE_EQUAL(vs.template get<0>(7002),14994);
 
-	BOOST_REQUIRE_EQUAL(vs.template get<1>(7022),44934);
-	BOOST_REQUIRE_EQUAL(vs.template get<1>(7020),44940);
 	BOOST_REQUIRE_EQUAL(vs.template get<1>(7020),44940);
 	BOOST_REQUIRE_EQUAL(vs.template get<1>(7018),44946);
 	BOOST_REQUIRE_EQUAL(vs.template get<1>(7016),44952);
@@ -746,8 +745,6 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 	BOOST_REQUIRE_EQUAL(vs.template get<1>(7004),44988);
 	BOOST_REQUIRE_EQUAL(vs.template get<1>(7002),44994);
 
-	BOOST_REQUIRE_EQUAL(vs.template get<2>(7022),74934);
-	BOOST_REQUIRE_EQUAL(vs.template get<2>(7020),74940);
 	BOOST_REQUIRE_EQUAL(vs.template get<2>(7020),74940);
 	BOOST_REQUIRE_EQUAL(vs.template get<2>(7018),74946);
 	BOOST_REQUIRE_EQUAL(vs.template get<2>(7016),74952);

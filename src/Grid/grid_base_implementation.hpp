@@ -14,8 +14,9 @@
 #include "util/create_vmpl_sequence.hpp"
 #include "util/cuda/cuda_launch.hpp"
 
-#define DATA_ON_HOST 32
-#define DATA_ON_DEVICE 64
+constexpr int DATA_ON_HOST = 32;
+constexpr int DATA_ON_DEVICE = 64;
+constexpr int EXACT_RESIZE = 128;
 
 template<bool np,typename T>
 struct skip_init

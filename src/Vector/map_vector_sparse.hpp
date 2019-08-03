@@ -34,6 +34,28 @@ using ValueTypeOf = typename std::remove_reference<OfpmVectorT>::type::value_typ
 
 namespace openfpm
 {
+	// All props
+	template<typename sg_type>
+	struct htoD
+	{
+		//! encapsulated source object
+		sg_type & sg;
+
+		unsigned int lele;
+
+		htoD(sg_type & sg, unsigned int lele)
+		:sg(sg),lele(lele)
+		{};
+
+
+		//! It call the copy function for each property
+		template<typename T>
+		__device__ __host__ inline void operator()(T& t) const
+		{
+			sg.template hostToDevice<T::value>(lele,lele);
+		}
+	};
+
     constexpr int VECTOR_SPARSE_STANDARD = 1;
     constexpr int VECTOR_SPARSE_BLOCK = 2;
 
@@ -610,13 +632,12 @@ namespace openfpm
 		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_index_tmp2;
 		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_index_tmp3;
 		vector<aggregate<Ti,Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti,Ti>>::type,layout_base,grow_p> vct_index_dtmp;
-		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p,impl> vct_data_tmp;
+
+		T bck;
 
 		CudaMemory mem;
 
 		openfpm::vector<reorder<Ti>> reorder_add_index_cpu;
-
-		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p,impl> vct_data_bck;
 
 		size_t max_ele;
 
@@ -630,11 +651,12 @@ namespace openfpm
 		 * \param i element i
 		 */
 		template<bool prefetch>
-		Ti _branchfree_search(Ti x, Ti & id) const
+		inline void _branchfree_search(Ti x, Ti & id) const
 		{
-			if (vct_index.size() == 0)	{return -1;}
+			if (vct_index.size() == 0)	{id = 0; return;}
 			const Ti *base = &vct_index.template get<0>(0);
-			Ti n = vct_data.size();
+			const Ti *end = (const Ti *)vct_index.template getPointer<0>() + vct_index.size();
+			Ti n = vct_data.size()-1;
 			while (n > 1)
 			{
 				Ti half = n / 2;
@@ -649,7 +671,8 @@ namespace openfpm
 
 			int off = (*base < x);
 			id = base - &vct_index.template get<0>(0) + off;
-			return *(base + off);
+			Ti v = (base + off != end)?*(base + off):-1;
+			id = (x == v)?id:vct_data.size()-1;
 		}
 
 		template<typename ... v_reduce>
@@ -821,7 +844,11 @@ namespace openfpm
 			vct_index_tmp.resize(vct_index.size() + vct_add_index_unique.size());
 			vct_index_tmp2.resize(vct_index.size() + vct_add_index_unique.size());
 			vct_index_tmp3.resize(vct_index.size() + vct_add_index_unique.size());
-			vct_data_tmp.resize(vct_index.size() + vct_add_index_unique.size());
+
+			// Do not delete this reserve
+			// Unfortunately all resize with DataBlocks are broken
+			vct_add_data_cont.reserve(vct_index.size() + vct_add_index_unique.size()+1);
+			vct_add_data_cont.resize(vct_index.size() + vct_add_index_unique.size());
 
 			itew.wthr.x = vct_index_tmp.size() / 128 + (vct_index_tmp.size() % 128 != 0);
 			itew.wthr.y = 1;
@@ -855,7 +882,7 @@ namespace openfpm
                         vct_data,
                         vct_add_data,
                         vct_add_data_unique,
-                        vct_data_tmp,
+                        vct_add_data_cont,
                         itew,
                         context
                     );
@@ -979,18 +1006,28 @@ namespace openfpm
 			vct_index_dtmp.template deviceToHost<0,1>(vct_index_dtmp.size()-1,vct_index_dtmp.size()-1);
 			int size = vct_index_dtmp.template get<1>(vct_index_dtmp.size()-1) + vct_index_dtmp.template get<0>(vct_index_dtmp.size()-1);
 
-			vct_data_tmp.resize(size);
+			vct_add_data_cont.resize(size);
 			vct_index.resize(size);
 
 			CUDA_LAUNCH(realign_remove,itew,vct_index_tmp3.toKernel(),vct_m_index.toKernel(),vct_data.toKernel(),
-								  vct_index.toKernel(),vct_data_tmp.toKernel(),
+								  vct_index.toKernel(),vct_add_data_cont.toKernel(),
 								  vct_index_dtmp.toKernel());
 
-			vct_data.swap(vct_data_tmp);
+			vct_data.swap(vct_add_data_cont);
 
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " error: you are suppose to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif
+		}
+
+		void resetBck()
+		{
+			// re-add background
+			vct_data.resize(vct_data.size()+1);
+			vct_data.get(vct_data.size()-1) = bck;
+
+			htoD<decltype(vct_data)> trf(vct_data,vct_data.size()-1);
+			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(trf);
 		}
 
 		template<typename ... v_reduce>
@@ -1113,7 +1150,7 @@ namespace openfpm
 			vct_add_data_unique.clear();
 		}
 
-	private:
+	public:
         /*! \brief Get the indices buffer
         *
         * \return the reference to the indices buffer
@@ -1136,6 +1173,7 @@ namespace openfpm
 		vector_sparse()
 		:max_ele(0)
 		{
+			vct_data.resize(1);
 		}
 
 		/*! \brief Get an element of the vector
@@ -1152,8 +1190,8 @@ namespace openfpm
 		inline auto get(Ti id) const -> decltype(vct_data.template get<p>(id))
 		{
 			Ti di;
-			Ti v = this->_branchfree_search<false>(id,di);
-			return (v == id)?vct_data.template get<p>(di):vct_data_bck.template get<p>(0);
+			this->_branchfree_search<false>(id,di);
+			return vct_data.template get<p>(di);
 		}
 
 		/*! \brief Get an element of the vector
@@ -1169,8 +1207,8 @@ namespace openfpm
 		inline auto get(Ti id) const -> decltype(vct_data.get(id))
 		{
 			Ti di;
-			Ti v = this->_branchfree_search<false>(id,di);
-			return (v == id)?vct_data.get(di):vct_data_bck.get(0);
+			this->_branchfree_search<false>(id,di);
+			return vct_data.get(di);
 		}
 
 		/*! \brief resize to n elements
@@ -1202,9 +1240,9 @@ namespace openfpm
 		 *
 		 */
 		template <unsigned int p>
-		auto getBackground() const -> decltype(vct_data_bck.template get<p>(0))
+		auto getBackground() const -> decltype(vct_data.template get<p>(vct_data.size()-1))
 		{
-			return vct_data_bck.template get<p>(0);
+			return vct_data.template get<p>(vct_data.size()-1);
 		}
 
 		/*! \brief Set the background to bck (which value get must return when the value is not find)
@@ -1212,21 +1250,22 @@ namespace openfpm
 		 * \param bck
 		 *
 		 */
-		auto getBackground() const -> decltype(vct_data_bck.get(0))
+		auto getBackground() const -> decltype(vct_data.get(vct_data.size()-1))
 		{
-			return vct_data_bck.get(0);
+			return vct_data.get(vct_data.size()-1);
 		}
 
 	    template<unsigned int p>
-	    void setBackground(const typename boost::mpl::at<typename T::type, boost::mpl::int_<p>>::type & bck)
+	    void setBackground(const typename boost::mpl::at<typename T::type, boost::mpl::int_<p>>::type & bck_)
 	    {
-	    	vct_data_bck.resize(1);
-
 	    	meta_copy_d<typename boost::mpl::at<typename T::type, boost::mpl::int_<p>>::type,
-	    				typename std::remove_reference<decltype(vct_data_bck.template get<p>(0))>::type>
-	    				::meta_copy_d_(bck,vct_data_bck.template get<p>(0));
+	    				typename std::remove_reference<decltype(vct_data.template get<p>(vct_data.size()-1))>::type>
+	    				::meta_copy_d_(bck_,vct_data.template get<p>(vct_data.size()-1));
 
-	    	vct_data_bck.template hostToDevice<p>();
+	    	vct_data.template hostToDevice<p>(vct_data.size()-1,vct_data.size()-1);
+
+	    	meta_copy<typename boost::mpl::at<typename T::type, boost::mpl::int_<p>>::type>
+	    				::meta_copy_(bck_,bck.template get<p>());
 	    }
 
 		/*! \brief It insert an element in the sparse vector
@@ -1267,10 +1306,15 @@ namespace openfpm
 				     flush_type opt = FLUSH_ON_HOST,
 				     int i = 0)
 		{
+			// Eliminate background
+			vct_data.resize(vct_index.size());
+
 			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context,i);}
 			else
 			{this->flush_on_cpu<v_reduce ... >();}
+
+			resetBck();
 		}
 
 		/*! \brief merge the added element to the main data array but save the insert buffer in v
@@ -1285,10 +1329,15 @@ namespace openfpm
 				     mgpu::ofp_context_t & context,
 				     flush_type opt = FLUSH_ON_HOST)
 		{
+			// Eliminate background
+			vct_data.resize(vct_index.size());
+
 			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context);}
 			else
 			{this->flush_on_cpu<v_reduce ... >();}
+
+			resetBck();
 		}
 
 		/*! \brief merge the added element to the main data array
@@ -1299,10 +1348,15 @@ namespace openfpm
 		template<typename ... v_reduce>
 		void flush(mgpu::ofp_context_t & context, flush_type opt = FLUSH_ON_HOST)
 		{
+			// Eliminate background
+			vct_data.resize(vct_index.size());
+
 			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context);}
 			else
 			{this->flush_on_cpu<v_reduce ... >();}
+
+			resetBck();
 		}
 
 		/*! \brief merge the added element to the main data array
@@ -1312,12 +1366,16 @@ namespace openfpm
 		 */
 		void flush_remove(mgpu::ofp_context_t & context, flush_type opt = FLUSH_ON_HOST)
 		{
+			vct_data.resize(vct_data.size()-1);
+
 			if (opt & flush_type::FLUSH_ON_DEVICE)
 			{this->flush_on_gpu_remove(context);}
 			else
 			{
 				std::cerr << __FILE__ << ":" << __LINE__ << " error, flush_remove on CPU has not implemented yet";
 			}
+
+			resetBck();
 		}
 
 		/*! \brief Return how many element you have in this map
@@ -1351,6 +1409,18 @@ namespace openfpm
 			vct_data.template deviceToHost<prp...>();
 		}
 
+        /*! \brief Transfer from host to device
+         *
+         * \tparam set of parameters to transfer to device
+         *
+         */
+        template<unsigned int ... prp>
+        void hostToDevice()
+        {
+            vct_index.template hostToDevice<0>();
+            vct_data.template hostToDevice<prp...>();
+        }
+
 		/*! \brief toKernel function transform this structure into one that can be used on GPU
 		 *
 		 * \return structure that can be used on GPU
@@ -1363,7 +1433,6 @@ namespace openfpm
 														  vct_rem_index.toKernel(),vct_add_data.toKernel(),
 														  vct_nadd_index.toKernel(),
 														  vct_nrem_index.toKernel(),
-														  vct_data_bck.toKernel(),
 														  n_gpu_add_block_slot,
 														  n_gpu_rem_block_slot);
 
@@ -1433,6 +1502,13 @@ namespace openfpm
 			vct_add_index.clear();
 			vct_add_data.clear();
 
+			// re-add background
+			vct_data.resize(vct_data.size()+1);
+			vct_data.get(vct_data.size()-1) = bck;
+
+			htoD<decltype(vct_data)> trf(vct_data,vct_data.size()-1);
+			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(trf);
+
 			max_ele = 0;
 			n_gpu_add_block_slot = 0;
 			n_gpu_rem_block_slot = 0;
@@ -1448,8 +1524,6 @@ namespace openfpm
 			size_t max_ele_ = sp.max_ele;
 			sp.max_ele = max_ele;
 			this->max_ele = max_ele_;
-
-			sp.vct_data_bck.swap(this->vct_data_bck);
 		}
 	};
 

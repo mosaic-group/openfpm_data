@@ -61,7 +61,7 @@ namespace openfpm
 
 		// the const is forced by the getter that only return const encap that should not allow the modification of bck
 		// this should possible avoid to define an object const_encap
-		mutable vector_gpu_ker<T,layout_base> vct_data_bck;
+		//mutable vector_gpu_ker<T,layout_base> vct_data_bck;
 
 		int nslot_add;
 		int nslot_rem;
@@ -72,12 +72,12 @@ namespace openfpm
 		 *
 		 * \param i element i
 		 */
-		inline __device__ Ti _branchfree_search(Ti x, Ti & id) const
+		inline __device__ void _branchfree_search(Ti x, Ti & id) const
 		{
-			if (vct_index.size() == 0)	{return (Ti)-1;}
+			if (vct_index.size() == 0)	{id = 0; return;}
 			const Ti *base = &vct_index.template get<0>(0);
-			const Ti * end = &vct_index.template get<0>(vct_index.size()-1);
-			Ti n = vct_data.size();
+			const Ti *end = (const Ti *)vct_index.template getPointer<0>() + vct_index.size();
+			Ti n = vct_data.size()-1;
 			while (n > 1)
 			{
 				Ti half = n / 2;
@@ -87,8 +87,8 @@ namespace openfpm
 
 			int off = (*base < x);
 			id = base - &vct_index.template get<0>(0) + off;
-			off = off && base != end;
-			return *(base + off);
+			Ti v = (base + off != end)?*(base + off):-1;
+			id = (x == v)?id:vct_data.size()-1;
 		}
 
 	public:
@@ -105,13 +105,12 @@ namespace openfpm
 							  vector_gpu_ker<T,layout_base> vct_add_data,
 							  vector_gpu_ker<aggregate<Ti>,layout_base> vct_nadd_index,
 							  vector_gpu_ker<aggregate<Ti>,layout_base> vct_nrem_index,
-							  vector_gpu_ker<T,layout_base> vct_data_bck,
 							  int nslot_add,
 							  int nslot_rem)
 		:vct_index(vct_index),vct_data(vct_data),
 		 vct_add_index(vct_add_index),vct_rem_index(vct_rem_index),vct_add_data(vct_add_data),
 		 vct_nadd_index(vct_nadd_index),vct_nrem_index(vct_nrem_index),
-		 vct_data_bck(vct_data_bck),nslot_add(nslot_add),nslot_rem(nslot_rem)
+		 nslot_add(nslot_add),nslot_rem(nslot_rem)
 		{}
 
 		/*! \brief Get the number of elements
@@ -186,9 +185,8 @@ namespace openfpm
 		__device__ inline openfpm::sparse_index<Ti> get_sparse(Ti id) const
 		{
 			Ti di;
-			Ti v = this->_branchfree_search(id,di);
-
-			openfpm::sparse_index<Ti> sid((v == id)?di:(Ti)-1);
+			this->_branchfree_search(id,di);
+			openfpm::sparse_index<Ti> sid(di);
 
 			return sid;
 		}
@@ -196,9 +194,9 @@ namespace openfpm
         /*! \brief Get the background value
          */
         template <unsigned int p>
-        __device__ inline auto getBackground() -> decltype(vct_data_bck.template get<p>(0))
+        __device__ inline auto getBackground() const -> decltype(vct_data.template get<p>(0)) &
         {
-            return vct_data_bck.template get<p>(0);
+            return vct_data.template get<p>(vct_data.size()-1);
         }
 
 		/*! \brief Get an element of the vector
@@ -215,20 +213,15 @@ namespace openfpm
 		__device__ inline auto get(Ti id) const -> decltype(vct_data.template get<p>(id))
 		{
 			Ti di;
-			Ti v = this->_branchfree_search(id,di);
-			return (v == id)?vct_data.template get<p>(di):vct_data_bck.template get<p>(0);
+			this->_branchfree_search(id,di);
+			return vct_data.template get<p>(di);
 		}
 
         __device__ inline auto get(Ti id) const -> decltype(vct_data.get(0))
         {
             Ti di;
             Ti v = this->_branchfree_search(id,di);
-            auto ec = vct_data.get_unsafe(static_cast<size_t>(di));
-            if (v != id)
-            {
-            	ec = vct_data_bck.get(0);
-            }
-            return ec;
+            return vct_data.get(static_cast<size_t>(di));
         }
 
 		/*! \brief Get an element of the vector
@@ -287,9 +280,8 @@ namespace openfpm
 		template <unsigned int p>
 		__device__ inline auto get(Ti id, Ti & di) const -> decltype(vct_data.template get<p>(id))
 		{
-			Ti v = this->_branchfree_search(id,di);
-			di = (v != id)?-1:di;
-			return (v == id)?vct_data.template get<p>(di):vct_data_bck.template get<p>(0);
+			this->_branchfree_search(id,di);
+			return vct_data.template get<p>(di);
 		}
 
 		/*! \brief Get an element of the vector
@@ -305,7 +297,7 @@ namespace openfpm
 		template <unsigned int p>
 		__device__ inline auto get_ele(Ti di) const -> decltype(vct_data.template get<p>(di))
 		{
-			return (di != -1)?vct_data.template get<p>(di):vct_data_bck.template get<p>(0);
+			return vct_data.template get<p>(di);
 		}
 
 		/*! \brief It insert an element in the sparse vector
@@ -565,14 +557,6 @@ namespace openfpm
 			if (pc.match == true)
 			{
 				pc.match_str = std::string("Add data vector overflow: ") + "\n" + pc.match_str;
-				return pc;
-			}
-
-			pc = vct_data_bck.check_device_pointer(ptr);
-
-			if (pc.match == true)
-			{
-				pc.match_str = std::string("Background data vector overflow: ") + "\n" + pc.match_str;
 				return pc;
 			}
 

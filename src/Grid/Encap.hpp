@@ -702,7 +702,8 @@ public:
 	 * \return The reference of the data
 	 *
 	 */
-	template <unsigned int p> __device__ __host__  auto get() -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
+	template <unsigned int p>
+	__device__ __host__ auto get() -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
 	{
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
@@ -718,6 +719,13 @@ public:
 	{
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
+
+//    __device__ __host__ encapc(const encapc<dim,T,Mem> & ec) = delete;
+    __device__ __host__ encapc(const encapc<dim,T,Mem> & ec) : data(ec.data), k(ec.k)
+    {
+//        printf("ciao\n");
+    }
+//    __device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec) = delete; //DEBUG
 
 	/*! \brief Assignment
 	 *
