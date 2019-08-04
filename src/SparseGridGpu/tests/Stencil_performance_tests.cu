@@ -49,8 +49,6 @@ __global__ void insertValues2DBlocked(SparseGridType sparseGrid, const int sOffs
 
     int posX = blockIdx.x * blockDim.x + threadIdx.x + sOffsetX;
     int posY = blockIdx.y * blockDim.y + threadIdx.y + sOffsetY;
-    const unsigned int dataBlockIdX = posX / blockEdgeSize;
-    const unsigned int dataBlockIdY = posY / blockEdgeSize;
     const unsigned int offsetX = posX % blockEdgeSize;
     const unsigned int offsetY = posY % blockEdgeSize;
 
@@ -63,7 +61,7 @@ __global__ void insertValues2DBlocked(SparseGridType sparseGrid, const int sOffs
 
     if (offset == 0) // Just one thread per data block
     {
-        grid_key_dx<SparseGridType::d, int> blockCoord({dataBlockIdX, dataBlockIdY});
+        grid_key_dx<SparseGridType::d, int> blockCoord({posX / blockEdgeSize, posY / blockEdgeSize});
         auto encap = sparseGrid.insertBlock(sparseGrid.getBlockLinId(blockCoord));
         blocks[dataBlockNum] = &(encap.template get<p>());
         masks[dataBlockNum] = &(encap.template get<pMask>());
@@ -214,66 +212,39 @@ struct EmptyStencil
     }
 };
 
-template<unsigned int dim, unsigned int p>
-struct SkeletonStencil
-{
-    // This is an example of a laplacian smoothing stencil to apply using the apply stencil facility of SparseGridGpu
-
-    static constexpr unsigned int flops = 0;
-
-    static constexpr unsigned int supportRadius = 1;
-
-    template<typename SparseGridT, typename DataBlockWrapperT>
-    static inline __device__ void stencil(
-            SparseGridT & sparseGrid,
-            const unsigned int dataBlockId,
-            const int * neighboursPositions,
-            unsigned int offset,
-            grid_key_dx<dim, int> & pointCoord,
-            DataBlockWrapperT & dataBlockLoad,
-            DataBlockWrapperT & dataBlockStore,
-            bool applyStencilHere,
-            float dt)
-    {
-        typedef typename SparseGridT::AggregateBlockType AggregateT;
-        typedef ScalarTypeOf<AggregateT, p> ScalarT;
-
-        constexpr unsigned int enlargedBlockSize = IntPow<
-                SparseGridT::getBlockEdgeSize() + 2 * supportRadius, dim>::value;
-
-        __shared__ ScalarT enlargedBlock[enlargedBlockSize];
-        sparseGrid.loadBlock<p>(dataBlockLoad, enlargedBlock);
-        sparseGrid.loadGhost<p>(dataBlockId, neighboursPositions, enlargedBlock);
-        __syncthreads();
-        sparseGrid.storeBlock<p>(dataBlockStore, enlargedBlock);
-    }
-
-    template <typename SparseGridT, typename CtxT>
-    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
-    {
-        sparseGrid.template flush <sRight_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
-    }
-};
 
 template<unsigned int dim, unsigned int p_src, unsigned int p_dst>
 struct HeatStencil
 {
+	typedef NNStar stencil_type;
+
     // This is an example of a laplacian smoothing stencil to apply using the apply stencil facility of SparseGridGpu
 
     static constexpr unsigned int flops = 3 + 2*dim;
 
     static constexpr unsigned int supportRadius = 1;
 
+    /*! \brief Stencil function
+     *
+     * \param sparseGrid This is the sparse grid data-structure
+     * \param dataBlockId The id of the block
+     * \param offset index in local coordinate of the point where we are working
+	 * \param dataBlockLoad dataBlock from where we read
+	 * \param dataBlockStore dataBlock from where we write
+	 * \param isActive the point is active if exist and is not padding
+	 * \param dt delta t
+     *
+     *
+     */
     template<typename SparseGridT, typename DataBlockWrapperT>
     static inline __device__ void stencil(
             SparseGridT & sparseGrid,
             const unsigned int dataBlockId,
-            const int * neighboursPositions,
             unsigned int offset,
-            grid_key_dx<dim, int> & pointCoord,
+            const grid_key_dx<dim, int> & pointCoord,
             const DataBlockWrapperT & dataBlockLoad,
             DataBlockWrapperT & dataBlockStore,
-            bool applyStencilHere,
+            bool isActive,
             float dt)
     {
         typedef typename SparseGridT::AggregateBlockType AggregateT;
@@ -283,14 +254,12 @@ struct HeatStencil
                 SparseGridT::getBlockEdgeSize() + 2 * supportRadius, dim>::value;
 
         __shared__ ScalarT enlargedBlock[enlargedBlockSize];
-//        sparseGrid.loadGhost<p_src>(dataBlockId, neighboursPositions, enlargedBlock);
-//        sparseGrid.loadBlock<p_src>(dataBlockLoad, enlargedBlock);
 
-        sparseGrid.loadGhostBlock<p_src>(dataBlockLoad,dataBlockId, neighboursPositions, enlargedBlock);
+        sparseGrid.loadGhostBlock<p_src>(dataBlockLoad,dataBlockId, enlargedBlock);
 
         __syncthreads();
 
-        if (applyStencilHere)
+        if (isActive)
         {
             const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
             const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
@@ -324,11 +293,6 @@ void testStencilHeat_perf()
 {
     auto testName = "In-place stencil";
     unsigned int gridEdgeSize = 1024;
-//        constexpr unsigned int blockEdgeSize = 16;
-//        unsigned int gridEdgeSize = 256;
-//        unsigned int gridEdgeSize = 8;
-//        typedef EmptyStencil<dim, 0> StencilT;
-//        typedef SkeletonStencil<dim, 0> StencilT;
     typedef HeatStencil<SparseGridZ::dims,0,1> StencilT;
 
     unsigned int iterations = 100;
@@ -579,7 +543,6 @@ BOOST_AUTO_TEST_CASE(testStencilHeatZ)
 
             for (unsigned int iter=0; iter<iterations; ++iter)
             {
-//                auto offset = iter * 99999 % 32003;
                 auto offset = 0;
                 sparseGrid.setGPUInsertBuffer(gridSize, blockSize);
                 insertValues2D<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), offset, offset);

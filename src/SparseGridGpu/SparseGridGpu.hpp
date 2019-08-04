@@ -66,6 +66,16 @@ enum StencilMode
     STENCIL_MODE_INPLACE = 1
 };
 
+struct NNFull
+{
+	static const int nNN = 27;
+};
+
+struct NNStar
+{
+	static const int nNN = 8;
+};
+
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
@@ -74,7 +84,7 @@ template<unsigned int dim,
 		 template<typename> class layout_base=memory_traits_inte,
 		 typename linearizer = grid_smb<dim, blockEdgeSize>>
 class SparseGridGpu : public BlockMapGpu<
-        typename AggregateAppend<DataBlock<int, 2*dim>, typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type>::type,
+        typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type,
         threadBlockSize, indexT, layout_base>
 {
 private:
@@ -86,21 +96,18 @@ private:
     unsigned int stencilSupportRadius;
     unsigned int ghostLayerSize;
 
-    //! For stencil in a block wise computation we have to load blocks + ghosts area. The ghost area live in neighborhood blocks
+    //! For stencil in a block-wise computation we have to load blocks + ghosts area. The ghost area live in neighborhood blocks
     //! For example the left ghost margin live in the right part of the left located neighborhood block, the right margin live in the
     //! left part of the of the right located neighborhood block, the top ...
-    //! The first index indicate the index of the point in the block + ghost area, the second index indicate the correspondent index
-    //! in the neighborhood block
+    //! The first index indicate the index of the point in the block + ghost area, the second index indicate the correspondent neighborhood
+    //! index (in a star like 0 mean negative x 1 positive x, 1 mean negative y and so on)
     openfpm::vector_gpu<aggregate<short int,short int>> ghostLayerToThreadsMapping;
 
-
-    static constexpr unsigned int numNeighbours = 2*dim; //todo: make this dependent on stencil type (also on template param)
-    //todo: Add a flush for pNeighbours which keeps the left operand (old data)
+    openfpm::vector_gpu<aggregate<unsigned int>> nn_blocks;
 
 protected:
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
-    typedef typename AggregateAppend<DataBlock<int, 2*dim>, AggregateBlockT>::type AggregateInternalT;
-    static const unsigned int pNeighbours = AggregateInternalT::max_prop_real - 1;
+    typedef AggregateBlockT AggregateInternalT;
 
 public:
     static constexpr unsigned int dims = dim;
@@ -163,7 +170,7 @@ public:
     void flush(mgpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST)
     {
         BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
-                ::template flush<v_reduce ..., sLeft_<pNeighbours>>(context, opt);
+                ::template flush<v_reduce ...>(context, opt);
     }
 
 private:
@@ -291,12 +298,11 @@ private:
         SparseGridGpuKernels::applyStencilInPlace
                 <dim,
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                pNeighbours,
                 stencil>
                 <<<threadGridSize, localThreadBlockSize>>>(
                         indexBuffer.toKernel(),
                         dataBuffer.toKernel(),
-                        this->toKernel(),
+                        this->template toKernelNN<stencil::stencil_type::nNN>(),
                         args...);
     }
 
@@ -326,12 +332,11 @@ private:
         SparseGridGpuKernels::applyStencilInsert
                 <dim,
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                pNeighbours,
                 stencil>
                 <<<threadGridSize, localThreadBlockSize>>>(
                         indexBuffer.toKernel(),
                         dataBuffer.toKernel(),
-                        this->toKernel(),
+                        this->template toKernelNN<stencil::stencil_type::nNN>(),
                         args...);
 
 //        cudaDeviceSynchronize();
@@ -371,6 +376,7 @@ public:
                     dim,
                     blockEdgeSize,
                     typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
+                    0,
                     indexT,
                     layout_base,
                     decltype(extendedBlockGeometry),
@@ -382,6 +388,7 @@ public:
                         dim,
                         blockEdgeSize,
                         typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
+                        0,
                         indexT,
                         layout_base,
                         decltype(extendedBlockGeometry),
@@ -392,6 +399,41 @@ public:
                 extendedBlockGeometry,
                 stencilSupportRadius,
                 ghostLayerToThreadsMapping.toKernel(),
+                nn_blocks.toKernel(),
+                ghostLayerSize);
+        return toKer;
+    }
+
+    template<unsigned int nNN>
+    SparseGridGpu_ker
+            <
+                    dim,
+                    blockEdgeSize,
+                    typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
+                    nNN,
+                    indexT,
+                    layout_base,
+                    decltype(extendedBlockGeometry),
+                    linearizer
+            > toKernelNN()
+    {
+        SparseGridGpu_ker
+                <
+                        dim,
+                        blockEdgeSize,
+                        typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
+                        nNN,
+                        indexT,
+                        layout_base,
+                        decltype(extendedBlockGeometry),
+                        linearizer
+                > toKer(
+                BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.toKernel(),
+                gridGeometry,
+                extendedBlockGeometry,
+                stencilSupportRadius,
+                ghostLayerToThreadsMapping.toKernel(),
+                nn_blocks.toKernel(),
                 ghostLayerSize);
         return toKer;
     }
@@ -437,7 +479,7 @@ public:
         );
     }
 
-    // Stencil-related methods
+    template<typename stencil_type = NNStar>
     void tagBoundaries()
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
@@ -460,27 +502,24 @@ public:
             CUDA_LAUNCH_DIM3((SparseGridGpuKernels::tagBoundaries<
                     dim,
                     1,
-                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                    pNeighbours>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->toKernel());
+                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN>(), nn_blocks.toKernel());
         }
         else if (stencilSupportRadius == 2)
         {
         	CUDA_LAUNCH_DIM3((SparseGridGpuKernels::tagBoundaries<
                     dim,
                     2,
-                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                    pNeighbours>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->toKernel());
+                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN>(), nn_blocks.toKernel());
         }
         else if (stencilSupportRadius == 0)
         {
         	CUDA_LAUNCH_DIM3((SparseGridGpuKernels::tagBoundaries<
                     dim,
                     0,
-                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                    pNeighbours>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->toKernel());
+                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN>(), nn_blocks.toKernel());
         }
         else
         {
@@ -490,29 +529,28 @@ public:
         }
     }
 
+    template<typename NNtype = NNStar>
     void findNeighbours()
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
 
         const unsigned int numBlocks = indexBuffer.size();
-        const unsigned int numScalars = numBlocks * numNeighbours;
+        const unsigned int numScalars = numBlocks * NNtype::nNN;
+        nn_blocks.resize(numScalars);
 
         if (numScalars == 0) return;
 
         // NOTE: Here we want to work only on one data chunk per block!
 
-        unsigned int localThreadBlockSize = threadBlockSize % numNeighbours == 0
+        unsigned int localThreadBlockSize = threadBlockSize % NNtype::nNN == 0
                                             ? threadBlockSize
-                                            : (threadBlockSize / numNeighbours) * numNeighbours; //todo: check that this is properly rounding
+                                            : (threadBlockSize / NNtype::nNN) * NNtype::nNN; //todo: check that this is properly rounding
         unsigned int threadGridSize = numScalars % localThreadBlockSize == 0
                                       ? numScalars / localThreadBlockSize
                                       : 1 + numScalars / localThreadBlockSize;
-        CUDA_LAUNCH_DIM3((SparseGridGpuKernels::findNeighbours<
-                dim,
-                pNeighbours>),
-                threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->toKernel());
+        CUDA_LAUNCH_DIM3((SparseGridGpuKernels::findNeighbours<dim,NNtype::nNN>),
+                threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), this->toKernel(),nn_blocks.toKernel());
     }
 
 

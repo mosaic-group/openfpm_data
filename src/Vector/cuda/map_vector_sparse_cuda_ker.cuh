@@ -87,7 +87,7 @@ namespace openfpm
 
 			int off = (*base < x);
 			id = base - &vct_index.template get<0>(0) + off;
-			Ti v = (base + off != end)?*(base + off):-1;
+			Ti v = (base + off != end)?*(base + off):(Ti)-1;
 			id = (x == v)?id:vct_data.size()-1;
 		}
 

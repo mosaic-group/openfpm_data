@@ -15,6 +15,7 @@ constexpr int nt = 1;
 template<unsigned int dim,
         unsigned int blockEdgeSize,
         typename AggregateBlockT,
+        unsigned int nNN,
         typename indexT,
         template<typename> class layout_base,
         typename GridSmT,
@@ -28,9 +29,9 @@ private:
 protected:
     const static unsigned char PADDING_BIT = 1;
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
-    // Good reason on why not to use constant memory for ghostLayer mapping is here https://stackoverflow.com/a/18021374
     unsigned int ghostLayerSize;
     openfpm::vector_gpu_ker<aggregate<short int,short int>,memory_traits_inte> ghostLayerToThreadsMapping;
+    openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> nn_blocks;
 
 public:
     static constexpr unsigned int d = dim;
@@ -43,13 +44,15 @@ public:
                       GridSmT extendedBlockGeometry,
                       unsigned int stencilSupportRadius,
                       openfpm::vector_gpu_ker<aggregate<short int,short int>,memory_traits_inte> ghostLayerToThreadsMapping,
+                      openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> nn_blocks,
                       unsigned int ghostLayerSize)
             : BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>(blockMap),
               grid(grid),
               blockWithGhostGrid(extendedBlockGeometry),
               stencilSupportRadius(stencilSupportRadius),
               ghostLayerSize(ghostLayerSize),
-              ghostLayerToThreadsMapping(ghostLayerToThreadsMapping)
+              ghostLayerToThreadsMapping(ghostLayerToThreadsMapping),
+              nn_blocks(nn_blocks)
     {}
 
     // Geometry
@@ -271,22 +274,22 @@ public:
      * @param coord The coordinate of the block.
      * @param sharedRegionPtr The pointer to the shared memory region.
      */
-    template<unsigned int p, typename CoordT>
+/*    template<unsigned int p, typename CoordT>
     inline __device__ void
-    loadGhost(const grid_key_dx<dim, CoordT> & coord, const int * neighboursPos, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
+    loadGhost(const grid_key_dx<dim, CoordT> & coord, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
     {
         //todo: Make this work well with multiples chunks per block or check not to get several chunks or dragons ahoy!
         auto blockLinId = getBlockId(coord);
-        __loadGhost<p>(blockLinId, neighboursPos, sharedRegion);
+        __loadGhost<p>(blockLinId, sharedRegion);
     }
 
     template<unsigned int p>
     inline __device__ void
-    loadGhost(const unsigned int blockLinId, const int * neighboursPos, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
+    loadGhost(const unsigned int blockLinId, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
     {
         //todo: Make this work well with multiples chunks per block or check not to get several chunks or dragons ahoy!
-        __loadGhost<p>(blockLinId, neighboursPos, sharedRegion);
-    }
+        __loadGhost<p>(blockLinId, sharedRegion);
+    }*/
 
     /**
      * Load the ghost layer of a data block into the boundary part of a shared memory region.
@@ -301,19 +304,17 @@ public:
      */
     template<unsigned int p , typename AggrWrapperT , typename CoordT>
     inline __device__ void
-    loadGhostBlock(const AggrWrapperT & dataBlockLoad,const grid_key_dx<dim, CoordT> & coord, const int * neighboursPos, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
+    loadGhostBlock(const AggrWrapperT & dataBlockLoad,const grid_key_dx<dim, CoordT> & coord, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
     {
-        //todo: Make this work well with multiples chunks per block or check not to get several chunks or dragons ahoy!
         auto blockLinId = getBlockId(coord);
-        __loadGhostBlock<p>(dataBlockLoad,blockLinId, neighboursPos, sharedRegion);
+        __loadGhostBlock<p>(dataBlockLoad,blockLinId, sharedRegion);
     }
 
     template<unsigned int p, typename AggrWrapperT>
     inline __device__ void
-    loadGhostBlock(const AggrWrapperT & dataBlockLoad, const unsigned int blockLinId, const int * neighboursPos, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
+    loadGhostBlock(const AggrWrapperT & dataBlockLoad, const unsigned int blockLinId, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
     {
-        //todo: Make this work well with multiples chunks per block or check not to get several chunks or dragons ahoy!
-        __loadGhostBlock<p>(dataBlockLoad,blockLinId, neighboursPos, sharedRegion);
+        __loadGhostBlock<p>(dataBlockLoad,blockLinId, sharedRegion);
     }
 
     /**
@@ -553,7 +554,7 @@ private:
     // from dim3 to linear which would work under all possible launch params
     template<unsigned int p, typename SharedPtrT>
     inline __device__ void
-    __loadGhost(const unsigned int blockId, SharedPtrT * sharedRegionPtr)
+    __loadGhostNoNN(const unsigned int blockId, SharedPtrT * sharedRegionPtr)
     {
         typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
@@ -582,63 +583,6 @@ private:
         }
     }
 
-    // NOTE: this must be called with linear thread grid, nice-to-have would be a generic converter (easy to do)
-    // from dim3 to linear which would work under all possible launch params
-    // todo: move this into a functor for compile time choice of cross or full neighbourhood
-
-    /*! \brief Load the ghost area in the shared region
-     *
-     * \param blockId Index of the center block
-     * \param neighboursPos neighborhood blocks around blockId (if neighbourPos is null loadGhost)
-     * \param sharedRegionPtr shared region
-     *
-     */
-    template<unsigned int p, typename SharedPtrT>
-    inline __device__ void
-    __loadGhost(const unsigned int blockId, const int * neighboursPos, SharedPtrT * sharedRegionPtr)
-    {
-        if (neighboursPos == nullptr)
-        {
-            return __loadGhost<p>(blockId, sharedRegionPtr);
-        }
-
-        typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
-
-        const unsigned int edge = blockEdgeSize + 2*stencilSupportRadius;
-
-//        grid_key_dx<dim, int> elementCoord;
-        int elementCoord[dim];
-
-        int pos = threadIdx.x % ghostLayerSize;
-
-//        for (int pos = threadIdx.x; pos < ghostLayerSize; pos += blockDim.x)
-//        {
-            short int neighbourNum = ghostLayerToThreadsMapping.template get<nt>(pos);
-
-            // Convert pos into a linear id accounting for the inner domain offsets
-            const unsigned int linId = ghostLayerToThreadsMapping.template get<gt>(pos);
-            // Now get linear offset wrt the first element of the block
-
-			int ctr = linId;
-			unsigned int acc = 1;
-			unsigned int offset = 0;
-			for (int i = 0; i < dim; ++i)
-			{
-				int v = (ctr % edge) - stencilSupportRadius;
-				v = (v < 0)?(v + blockEdgeSize):v;
-				v = (v >= blockEdgeSize)?v-blockEdgeSize:v;
-				offset += v*acc;
-				ctr /= edge;
-				acc *= blockEdgeSize;
-			}
-
-			// Actually load the data into the shared region
-			auto nPos = neighboursPos[neighbourNum];
-
-			sharedRegionPtr[linId] =  this->blockMap.template get_ele<p>(nPos)[offset];
-//        }
-    }
-
     /*! \brief Load the ghost area in the shared region
      *
      * \param blockId Index of the center block
@@ -648,57 +592,58 @@ private:
      */
     template<unsigned int p, typename AggrWrapperT ,typename SharedPtrT>
     inline __device__ void
-    __loadGhostBlock(const AggrWrapperT &block, const unsigned int blockId, const int * neighboursPos, SharedPtrT * sharedRegionPtr)
+    __loadGhostBlock(const AggrWrapperT &block, const unsigned int blockId, SharedPtrT * sharedRegionPtr)
     {
-/*        if (neighboursPos == nullptr)
-        {
-            return __loadGhost<p>(blockId, sharedRegionPtr);
-        }*/
-
         typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
-
-        const unsigned int edge = blockEdgeSize + 2*stencilSupportRadius;
-
-//        grid_key_dx<dim, int> elementCoord;
-        int elementCoord[dim];
 
         const int pos = threadIdx.x % ghostLayerSize;
 
-//        for (int pos = threadIdx.x; pos < ghostLayerSize; pos += blockDim.x)
-//        {
-            short int neighbourNum = ghostLayerToThreadsMapping.template get<nt>(pos);
+        __shared__ int neighboursPos[nNN];
 
-            // Convert pos into a linear id accounting for the inner domain offsets
-            const unsigned int linId = ghostLayerToThreadsMapping.template get<gt>(pos);
-            // Now get linear offset wrt the first element of the block
+        const unsigned int edge = blockEdgeSize + 2*stencilSupportRadius;
+		short int neighbourNum = ghostLayerToThreadsMapping.template get<nt>(pos);
 
-			int ctr = linId;
-			unsigned int acc = 1;
-			unsigned int offset = 0;
-			for (int i = 0; i < dim; ++i)
-			{
-				int v = (ctr % edge) - stencilSupportRadius;
-				v = (v < 0)?(v + blockEdgeSize):v;
-				v = (v >= blockEdgeSize)?v-blockEdgeSize:v;
-				offset += v*acc;
-				ctr /= edge;
-				acc *= blockEdgeSize;
-			}
+		// Convert pos into a linear id accounting for the inner domain offsets
+		const unsigned int linId = ghostLayerToThreadsMapping.template get<gt>(pos);
+		// Now get linear offset wrt the first element of the block
 
-	        // Convert pos into a linear id accounting for the ghost offsets
-	        unsigned int coord[dim];
-	        linToCoordWithOffset<blockEdgeSize>(pos, stencilSupportRadius, coord);
-	        const int linId2 = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+		int ctr = linId;
+		unsigned int acc = 1;
+		unsigned int offset = 0;
+		for (int i = 0; i < dim; ++i)
+		{
+			int v = (ctr % edge) - stencilSupportRadius;
+			v = (v < 0)?(v + blockEdgeSize):v;
+			v = (v >= blockEdgeSize)?v-blockEdgeSize:v;
+			offset += v*acc;
+			ctr /= edge;
+			acc *= blockEdgeSize;
+		}
 
-	        // Actually load the data into the shared region
-	        //ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
-	        sharedRegionPtr[linId2] = block.template get<p>()[pos];
+		// Convert pos into a linear id accounting for the ghost offsets
+		unsigned int coord[dim];
+		linToCoordWithOffset<blockEdgeSize>(threadIdx.x, stencilSupportRadius, coord);
+		const int linId2 = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+        unsigned int nnb = nn_blocks.template get<0>(blockId*nNN + (threadIdx.x % nNN));
 
-			// Actually load the data into the shared region
-			auto nPos = neighboursPos[neighbourNum];
+        if (threadIdx.x < nNN)
+        {
+        	neighboursPos[threadIdx.x] = nnb;
+        }
 
-			sharedRegionPtr[linId] =  this->blockMap.template get_ele<p>(nPos)[offset];
-//        }
+		__syncthreads();
+
+		// Actually load the data into the shared region
+		auto nPos = neighboursPos[neighbourNum];
+
+		auto gdata =  this->blockMap.template get_ele<p>(nPos)[offset];
+
+		// Actually load the data into the shared region
+		//ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
+		auto bdata = block.template get<p>()[threadIdx.x];
+
+		sharedRegionPtr[linId] = gdata;
+		sharedRegionPtr[linId2] = bdata;
     }
 
     template<unsigned int p, unsigned int ... props>

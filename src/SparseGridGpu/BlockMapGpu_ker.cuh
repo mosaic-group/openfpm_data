@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include "Vector/map_vector_sparse.hpp"
 #include "DataBlock.cuh"
+#include "TemplateUtils/encap_shmem.hpp"
 
 template<typename AggregateT, unsigned int p>
 using BlockTypeOf = typename std::remove_reference<typename boost::fusion::result_of::at_c<typename AggregateT::type, p>::type>::type;
@@ -121,7 +122,35 @@ public:
     template<unsigned int p>
     inline __device__ auto insert(unsigned int blockId, unsigned int offset) -> ScalarTypeOf<AggregateBlockT, p>&;
 
-    inline __device__ auto insertBlock(unsigned int blockId) -> decltype(blockMap.insert(0));
+    inline __device__ auto insertBlock(unsigned int blockId) -> decltype(blockMap.insert(0))
+	{
+		#ifdef __NVCC__
+		    return blockMap.insert(blockId);
+		#else // __NVCC__
+		    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+		#endif // __NVCC__
+	}
+
+    inline __device__ auto insertBlockNew(unsigned int blockId, unsigned int stride = 8192) -> decltype(blockMap.insert(0))
+	{
+    	__shared__ int mem[encap_shmem<sizeof(blockMap.insert(0))>::nthr];
+
+		#ifdef __NVCC__
+    	if (threadIdx.x % stride == 0)
+    	{
+    		auto ec = blockMap.insert(blockId);
+
+    		// copy to shared to broadcast on all thread
+    		new (mem) decltype(ec)(ec.private_get_data(),ec.private_get_k());
+    	}
+
+    	__syncthreads();
+
+		return *(decltype(blockMap.insert(0)) *)mem;
+		#else // __NVCC__
+		    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+		#endif // __NVCC__
+	}
 
     inline static __device__ unsigned int getBlockId(unsigned int linId)
     {
@@ -310,15 +339,5 @@ inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 #endif // __NVCC__
 }
 
-template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
-inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
-        ::insertBlock(unsigned int blockId) -> decltype(blockMap.insert(0))
-{
-#ifdef __NVCC__
-    return blockMap.insert(blockId);
-#else // __NVCC__
-    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
-}
 
 #endif /* BLOCK_MAP_GPU_KER_CUH_ */

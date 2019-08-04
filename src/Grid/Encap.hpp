@@ -774,6 +774,23 @@ public:
 
 		return *this;
 	}
+
+	__device__ __host__ inline void private_set_data_k(Mem & data_c, size_t k)
+	{
+		this->data = data;
+		this->k = k;
+	}
+
+	__device__ __host__ inline Mem & private_get_data()
+	{
+		return data;
+	}
+
+	__device__ __host__ inline size_t private_get_k()
+	{
+		return k;
+	}
+
 };
 
 #include "util/common.hpp"

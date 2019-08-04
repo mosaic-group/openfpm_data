@@ -300,13 +300,14 @@ struct HeatStencil
 {
     // This is an example of a laplacian smoothing stencil to apply using the apply stencil facility of SparseGridGpu
 
+	typedef NNStar stencil_type;
+
     static constexpr unsigned int supportRadius = 1;
 
     template<typename SparseGridT, typename DataBlockWrapperT>
     static inline __device__ void stencil(
             SparseGridT & sparseGrid,
             const unsigned int dataBlockId,
-            const int * neighboursPositions,
             unsigned int offset,
             grid_key_dx<dim, int> & pointCoord,
             DataBlockWrapperT & dataBlockLoad,
@@ -321,8 +322,11 @@ struct HeatStencil
                 SparseGridT::getBlockEdgeSize() + 2 * supportRadius, dim>::value;
 
         __shared__ ScalarT enlargedBlock[enlargedBlockSize];
-        sparseGrid.loadBlock<p>(dataBlockLoad, enlargedBlock);
-        sparseGrid.loadGhost<p>(dataBlockId, neighboursPositions, enlargedBlock);
+//        sparseGrid.loadBlock<p>(dataBlockLoad, enlargedBlock);
+//        sparseGrid.loadGhost<p>(dataBlockId, enlargedBlock);
+
+        sparseGrid.loadGhostBlock<p>(dataBlockLoad,dataBlockId,enlargedBlock);
+
 //        sparseGrid.loadGhost<p>(dataBlockId, nullptr, enlargedBlock);
         __syncthreads();
 
@@ -491,13 +495,6 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
         SparseGridGpu<dim, AggregateOutT, blockEdgeSize> sparseGrid(blockGeometry);
 
         sparseGrid.template setBackgroundValue<0>(666);
-//        const unsigned int gridSizeLin = 4;
-//        const unsigned int bufferPoolSize = 1024;
-//        const unsigned int blockSizeInsert = 128;
-//        const unsigned int gridSizeRead = gridSize + 1;
-//        const unsigned int blockSizeRead = 128;
-
-//        sparseGrid.setGPUInsertBuffer(gridSizeLin, bufferPoolSize);
         sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 
         insertValues<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel());
@@ -818,11 +815,6 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_tests)
         sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
         insertBoundaryValuesHeat<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel());
         sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-
-//        sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-//        dim3 pt2(4, 4, 0);
-//        insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), pt2, 100);
-//        sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
         sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 
