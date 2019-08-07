@@ -76,6 +76,13 @@ struct NNStar
 	static const int nNN = 8;
 };
 
+template<unsigned int nNN_, unsigned int nLoop_>
+struct ct_par
+{
+	static const unsigned int nNN = nNN_;
+	static const unsigned int nLoop = nLoop_;
+};
+
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
@@ -376,7 +383,7 @@ public:
                     dim,
                     blockEdgeSize,
                     typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
-                    0,
+                    ct_par<0,1>,
                     indexT,
                     layout_base,
                     decltype(extendedBlockGeometry),
@@ -388,7 +395,7 @@ public:
                         dim,
                         blockEdgeSize,
                         typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
-                        0,
+                        ct_par<0,1>,
                         indexT,
                         layout_base,
                         decltype(extendedBlockGeometry),
@@ -410,7 +417,7 @@ public:
                     dim,
                     blockEdgeSize,
                     typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
-                    nNN,
+                    ct_par<nNN,1>,
                     indexT,
                     layout_base,
                     decltype(extendedBlockGeometry),
@@ -422,7 +429,7 @@ public:
                         dim,
                         blockEdgeSize,
                         typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
-                        nNN,
+                        ct_par<nNN,1>,
                         indexT,
                         layout_base,
                         decltype(extendedBlockGeometry),

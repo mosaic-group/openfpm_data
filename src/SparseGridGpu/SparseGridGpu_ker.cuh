@@ -7,15 +7,13 @@
 
 #include <SparseGridGpu/Geometry/grid_smb.hpp>
 #include "BlockMapGpu.hpp"
-
-constexpr int gt = 0;
-constexpr int nt = 1;
+#include "SparseGridGpu_ker_util.hpp"
 
 //todo Remove template param GridSmT and just use BlockGeometry
 template<unsigned int dim,
         unsigned int blockEdgeSize,
         typename AggregateBlockT,
-        unsigned int nNN,
+        typename ct_params,
         typename indexT,
         template<typename> class layout_base,
         typename GridSmT,
@@ -263,33 +261,6 @@ public:
         __loadBlock<props ...>(block, sharedRegionPtr);
     }
 
-    /**
-     * Load the ghost layer of a data block into the boundary part of a shared memory region.
-     * The given shared memory region should be shaped as a dim-dimensional array and sized so that it
-     * can contain the block plus the ghost layer around it.
-     *
-     * @tparam p The property to retrieve from global memory.
-     * @tparam CoordT The coordinate type.
-     * @tparam Shared The type of the shared memory region.
-     * @param coord The coordinate of the block.
-     * @param sharedRegionPtr The pointer to the shared memory region.
-     */
-/*    template<unsigned int p, typename CoordT>
-    inline __device__ void
-    loadGhost(const grid_key_dx<dim, CoordT> & coord, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
-    {
-        //todo: Make this work well with multiples chunks per block or check not to get several chunks or dragons ahoy!
-        auto blockLinId = getBlockId(coord);
-        __loadGhost<p>(blockLinId, sharedRegion);
-    }
-
-    template<unsigned int p>
-    inline __device__ void
-    loadGhost(const unsigned int blockLinId, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
-    {
-        //todo: Make this work well with multiples chunks per block or check not to get several chunks or dragons ahoy!
-        __loadGhost<p>(blockLinId, sharedRegion);
-    }*/
 
     /**
      * Load the ghost layer of a data block into the boundary part of a shared memory region.
@@ -370,9 +341,6 @@ public:
      * @param coord The coordinate of the block.
      * @param sharedRegionPtr The array of pointers to the shared memory regions, one for each property.
      */
-//    template<unsigned int ... props, typename CoordT>
-//    inline __device__ void storeBlock(const grid_key_dx<dim, CoordT> coord, void *sharedRegionPtr[sizeof...(props)]);
-
     template<unsigned int ... props, typename AggrWrapperT>
     inline __device__ void storeBlock(AggrWrapperT &block, void *sharedRegionPtr[sizeof...(props)])
     {
@@ -468,54 +436,7 @@ public:
     }
 
 private:
-    template<unsigned int edgeSize>
-    inline __device__ void linToCoordWithOffset(const unsigned int linId, const unsigned int offset, unsigned int (&coord)[dim]) const
-    {
-        unsigned int linIdTmp = linId;
-        for (unsigned int d = 0; d < dim; ++d)
-        {
-            coord[d] = linIdTmp % edgeSize;
-            coord[d] += offset;
-            linIdTmp /= edgeSize;
-        }
-    }
 
-    template<unsigned int edgeSize>
-    inline __device__ unsigned int coordToLin(const unsigned int (&coord)[dim], const unsigned int paddingSize = 0) const
-    {
-        unsigned int linId = coord[dim - 1];
-        for (int d = dim - 2; d >= 0; --d)
-        {
-            linId *= edgeSize + 2 * paddingSize;
-            linId += coord[d];
-        }
-        return linId;
-    }
-
-
-    template<unsigned int edgeSize, typename CoordT>
-    inline __device__ unsigned int coordToLin(const grid_key_dx<dim, CoordT> &coord, const unsigned int paddingSize = 0) const
-    {
-        unsigned int linId = coord.get(dim - 1);
-        for (int d = dim - 2; d >= 0; --d)
-        {
-            linId *= edgeSize + 2 * paddingSize;
-            linId += coord.get(d);
-        }
-        return linId;
-    }
-
-    template <typename CoordT>
-    inline __device__ unsigned int coordToLin(const grid_key_dx<dim, CoordT> & coord, grid_key_dx<dim, int> & blockDimensions) const
-    {
-        unsigned int linId = coord.get(dim - 1);
-        for (int d = dim - 2; d >= 0; --d)
-        {
-            linId *= blockDimensions.get(d);
-            linId += coord.get(d);
-        }
-        return linId;
-    }
 
     template<unsigned int p, typename AggrWrapperT, typename SharedPtrT>
     inline __device__ void
@@ -594,11 +515,20 @@ private:
     inline __device__ void
     __loadGhostBlock(const AggrWrapperT &block, const unsigned int blockId, SharedPtrT * sharedRegionPtr)
     {
-        typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
+    	loadGhostBlock_impl<ct_params::nLoop,dim,AggrWrapperT,p,ct_params,blockEdgeSize>::load(block,
+    															   sharedRegionPtr,
+    															   ghostLayerToThreadsMapping,
+    															   nn_blocks,
+    															   this->blockMap,
+    															   stencilSupportRadius,
+    															   ghostLayerSize,
+    															   blockId);
+
+/*        typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
         const int pos = threadIdx.x % ghostLayerSize;
 
-        __shared__ int neighboursPos[nNN];
+        __shared__ int neighboursPos[ct_params::nNN];
 
         const unsigned int edge = blockEdgeSize + 2*stencilSupportRadius;
 		short int neighbourNum = ghostLayerToThreadsMapping.template get<nt>(pos);
@@ -624,9 +554,9 @@ private:
 		unsigned int coord[dim];
 		linToCoordWithOffset<blockEdgeSize>(threadIdx.x, stencilSupportRadius, coord);
 		const int linId2 = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
-        unsigned int nnb = nn_blocks.template get<0>(blockId*nNN + (threadIdx.x % nNN));
+        unsigned int nnb = nn_blocks.template get<0>(blockId*ct_params::nNN + (threadIdx.x % ct_params::nNN));
 
-        if (threadIdx.x < nNN)
+        if (threadIdx.x < ct_params::nNN)
         {
         	neighboursPos[threadIdx.x] = nnb;
         }
@@ -643,7 +573,7 @@ private:
 		auto bdata = block.template get<p>()[threadIdx.x];
 
 		sharedRegionPtr[linId] = gdata;
-		sharedRegionPtr[linId2] = bdata;
+		sharedRegionPtr[linId2] = bdata;*/
     }
 
     template<unsigned int p, unsigned int ... props>

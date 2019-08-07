@@ -664,6 +664,32 @@ public:
 		return ret;
 	}
 
+	/*! \brief Get the point p1 as grid_key_dx
+	 *
+	 * \return the key
+	 *
+	 */
+	grid_key_dx<dim,int> getKP1int() const
+	{
+		// grid key to return
+		grid_key_dx<dim,int> ret(boost::fusion::at_c<p1>(data));
+
+		return ret;
+	}
+
+	/*! \brief Get the point p12 as grid_key_dx
+	 *
+	 * \return the key
+	 *
+	 */
+	grid_key_dx<dim,int> getKP2int() const
+	{
+		// grid key to return
+		grid_key_dx<dim,int> ret(boost::fusion::at_c<p2>(data));
+
+		return ret;
+	}
+
 	/*! \brief Get the point p1
 	 *
 	 * \return the point p1

@@ -54,7 +54,7 @@ if (CUDA_FOUND)
 #    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
     # The below is for better performance on CUDA
     # "-rdc=true" is for Dynamic Parallelism (cooperative groups)
-    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -arch=sm_61 -g -lineinfo >)
+    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_50,code=sm_50 -g -lineinfo >)
     if (TEST_COVERAGE)
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
     endif ()

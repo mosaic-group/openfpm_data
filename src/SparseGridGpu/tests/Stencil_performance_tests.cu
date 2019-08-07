@@ -516,18 +516,6 @@ BOOST_AUTO_TEST_CASE(testStencilHeatZ)
             mgpu::ofp_context_t ctx;
             sparseGrid.template setBackgroundValue<0>(0);
 
-            // Initialize the grid
-//            sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
-//            insertConstantValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), 0);
-//            sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-//
-//            sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
-//            dim3 sourcePt(gridSize.x * blockEdgeSize / 2, gridSize.y * blockEdgeSize / 2, 0);
-//            insertOneValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), sourcePt, 100);
-//            sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-//
-//            sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
-
             if (prePopulateGrid)
             {
                 // Pre-populate grid
@@ -597,26 +585,12 @@ BOOST_AUTO_TEST_CASE(testStencilHeatZ)
 
         unsigned int iterations = 10;
         unsigned int repetitions = 5;
-        bool prePopulateGrid = true;
+//        bool prePopulateGrid = true;
 
-        float timeInitAvg;
-        float timeStencilAvg;
-        float timeTotalAvg;
+        float timeInsertAvg = 0.0;
 
         for (int rep=0; rep<repetitions; ++rep)
         {
-
-            cudaEvent_t start, afterInit, stop;
-            float timeInit;
-            float timeStencil;
-            float timeTotal;
-
-            CUDA_SAFE_CALL(cudaEventCreate(&start));
-            CUDA_SAFE_CALL(cudaEventCreate(&afterInit));
-            CUDA_SAFE_CALL(cudaEventCreate(&stop));
-
-            CUDA_SAFE_CALL(cudaEventRecord(start, 0));
-
             dim3 gridSize(gridEdgeSize, gridEdgeSize);
             dim3 blockSize(blockEdgeSize, blockEdgeSize);
             dim3 blockSizeBlockedInsert(1, 1);
@@ -625,69 +599,48 @@ BOOST_AUTO_TEST_CASE(testStencilHeatZ)
             mgpu::ofp_context_t ctx;
             sparseGrid.template setBackgroundValue<0>(0);
 
-            // Initialize the grid
-//            sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
-//            insertConstantValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), 0);
-//            sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-//
-//            sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
-//            dim3 sourcePt(gridSize.x * blockEdgeSize / 2, gridSize.y * blockEdgeSize / 2, 0);
-//            insertOneValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), sourcePt, 100);
-//            sparseGrid.flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-//
-//            sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
-
-            if (prePopulateGrid)
+            for (unsigned int iter=0; iter<5; ++iter)
             {
-                // Pre-populate grid
-                sparseGrid.setGPUInsertBuffer(gridSize, blockSize);
-                insertValues2D<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), 0, 0);
-                sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-                cudaDeviceSynchronize();
-                ///
-            }
-
-            CUDA_SAFE_CALL(cudaEventRecord(afterInit, 0));
-            CUDA_SAFE_CALL(cudaEventSynchronize(afterInit));
-
-            for (unsigned int iter=0; iter<iterations; ++iter)
-            {
-//                auto offset = iter * 99999 % 32003;
                 auto offset = 0;
                 sparseGrid.setGPUInsertBuffer(gridSize, blockSizeBlockedInsert);
                 insertValues2DBlocked<0, 1, blockEdgeSize> << < gridSize, blockSize >> >
                         (sparseGrid.toKernel(), offset, offset);
                 sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-                cudaDeviceSynchronize();
             }
 
-            CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-            CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-            CUDA_SAFE_CALL(cudaEventElapsedTime(&timeInit, start, afterInit));
-            CUDA_SAFE_CALL(cudaEventElapsedTime(&timeStencil, afterInit, stop));
-            CUDA_SAFE_CALL(cudaEventElapsedTime(&timeTotal, start, stop));
 
-            timeInitAvg += timeInit;
-            timeStencilAvg += timeStencil;
-            timeTotalAvg += timeTotal;
+            cudaDeviceSynchronize();
+
+            timer ts;
+            ts.start();
+
+            for (unsigned int iter=0; iter<iterations; ++iter)
+            {
+                auto offset = 0;
+                sparseGrid.setGPUInsertBuffer(gridSize, blockSizeBlockedInsert);
+                insertValues2DBlocked<0, 1, blockEdgeSize> << < gridSize, blockSize >> >
+                        (sparseGrid.toKernel(), offset, offset);
+                sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+            }
+
+            cudaDeviceSynchronize();
+
+            ts.stop();
+            timeInsertAvg += ts.getwct();
         }
 
-        timeInitAvg /= repetitions;
-        timeStencilAvg /= repetitions;
-        timeTotalAvg /= repetitions;
+        timeInsertAvg /= repetitions;
 
         // All times above are in ms
 
         unsigned long long numElements = gridEdgeSize*blockEdgeSize*gridEdgeSize*blockEdgeSize;
-        float mElemS = numElements * iterations / (1e6 * timeStencilAvg/1000);
-//        float gFlopsS = gElemS * StencilT::flops;
-        float stencilSingleTimingMillis = timeStencilAvg/iterations;
+        float mElemS = numElements * iterations / (1e6 * timeInsertAvg);
+        float stencilInsertTimingMillis = timeInsertAvg/iterations;
         printf("Test: %s\n", testName);
         printf("Grid: %ux%u\n", gridEdgeSize*blockEdgeSize, gridEdgeSize*blockEdgeSize);
         printf("Iterations: %u\n", iterations);
-        printf("Timing (avg on %u repetitions):\n\tInit: %f ms\n\tStencil: %f ms\n\tTotal: %f ms\n",
-               repetitions, timeInitAvg, timeStencilAvg, timeTotalAvg);
-        printf("Stencil details:\n\tSingle application timing: %f ms\n", stencilSingleTimingMillis);
+        std::cout << "Timing (avg on " << repetitions << " repetitions):" << std::endl;
+        std::cout << "\tInsert: " << stencilInsertTimingMillis << " ms" << std::endl;
 //        printf("Throughput:\n\t%f GElem/s\n\t%f GFlops/s\n", gElemS, gFlopsS);
         printf("Throughput:\n\t%f MElem/s\n", mElemS);
 
