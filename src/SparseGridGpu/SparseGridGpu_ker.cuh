@@ -29,12 +29,16 @@ protected:
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
     unsigned int ghostLayerSize;
     openfpm::vector_gpu_ker<aggregate<short int,short int>,memory_traits_inte> ghostLayerToThreadsMapping;
-    openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> nn_blocks;
+    openfpm::vector_gpu_ker<aggregate<indexT>,memory_traits_inte> nn_blocks;
 
 public:
     static constexpr unsigned int d = dim;
+    static constexpr unsigned int blockEdgeSize_ = blockEdgeSize;
     unsigned int stencilSupportRadius;
     typedef AggregateBlockT AggregateBlockType;
+
+	//! Indicate this structure has a function to check the device pointer
+	typedef int yes_has_check_device_pointer;
 
 public:
     SparseGridGpu_ker(const openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> &blockMap,
@@ -42,7 +46,7 @@ public:
                       GridSmT extendedBlockGeometry,
                       unsigned int stencilSupportRadius,
                       openfpm::vector_gpu_ker<aggregate<short int,short int>,memory_traits_inte> ghostLayerToThreadsMapping,
-                      openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> nn_blocks,
+                      openfpm::vector_gpu_ker<aggregate<indexT>,memory_traits_inte> nn_blocks,
                       unsigned int ghostLayerSize)
             : BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>(blockMap),
               grid(grid),
@@ -52,6 +56,12 @@ public:
               ghostLayerToThreadsMapping(ghostLayerToThreadsMapping),
               nn_blocks(nn_blocks)
     {}
+
+    template<typename CoordT>
+    __device__ inline grid_key_dx<dim,CoordT> getGlobalCoord(const grid_key_dx<dim, CoordT> & blockCoord, unsigned int offset)
+    {
+    	return grid.getGlobalCoord(blockCoord,offset);
+    }
 
     // Geometry
     template<typename CoordT>
@@ -404,7 +414,7 @@ public:
         unsetBit(bitMask, PADDING_BIT);
     }
 
-    inline __device__ void getNeighboursPos(const unsigned int blockId, const unsigned int offset, int * neighboursPos)
+    inline __device__ void getNeighboursPos(const indexT blockId, const unsigned int offset, int * neighboursPos)
     {
         //todo: also do the full neighbourhood version, this is just cross
         auto blockCoord = getBlockCoord(blockId);
@@ -417,7 +427,7 @@ public:
         }
     }
 
-    inline __device__ int getNeighboursPos(const unsigned int blockId, const unsigned int offset)
+    inline __device__ int getNeighboursPos(const indexT blockId, const unsigned int offset)
     {
         //todo: also do the full neighbourhood version, this is just cross
         auto blockCoord = getBlockCoord(blockId);
@@ -428,12 +438,43 @@ public:
             int dPos = blockCoord.get(d) + (offset%2)*2 - 1;
             blockCoord.set_d(d, dPos);
             neighbourPos = this->blockMap.get_sparse(getBlockLinId(blockCoord)).id;
-//            /////// DEBUG ///////
-//            printf(">>> getNeighboursPos: block=%u, offset=%u, neighbour=%d\n", blockId, offset, neighbourPos);
-//            /////////////////////
         }
         return neighbourPos;
     }
+
+#ifdef SE_CLASS1
+
+		/*! \brief Check if the device pointer is owned by this structure
+		 *
+		 * \return a structure pointer check with information about the match
+		 *
+		 */
+		pointer_check check_device_pointer(void * ptr)
+		{
+			pointer_check pc;
+
+			pc = ghostLayerToThreadsMapping.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("ghostLayerToThreadsMapping overflow : ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			pc = nn_blocks.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("nn_blocks overflow: ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			pc = ((BlockMapGpu_ker<AggregateBlockT, indexT, layout_base> *)this)->check_device_pointer(ptr);
+
+			return pc;
+		}
+
+#endif
 
 private:
 
@@ -523,57 +564,6 @@ private:
     															   stencilSupportRadius,
     															   ghostLayerSize,
     															   blockId);
-
-/*        typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
-
-        const int pos = threadIdx.x % ghostLayerSize;
-
-        __shared__ int neighboursPos[ct_params::nNN];
-
-        const unsigned int edge = blockEdgeSize + 2*stencilSupportRadius;
-		short int neighbourNum = ghostLayerToThreadsMapping.template get<nt>(pos);
-
-		// Convert pos into a linear id accounting for the inner domain offsets
-		const unsigned int linId = ghostLayerToThreadsMapping.template get<gt>(pos);
-		// Now get linear offset wrt the first element of the block
-
-		int ctr = linId;
-		unsigned int acc = 1;
-		unsigned int offset = 0;
-		for (int i = 0; i < dim; ++i)
-		{
-			int v = (ctr % edge) - stencilSupportRadius;
-			v = (v < 0)?(v + blockEdgeSize):v;
-			v = (v >= blockEdgeSize)?v-blockEdgeSize:v;
-			offset += v*acc;
-			ctr /= edge;
-			acc *= blockEdgeSize;
-		}
-
-		// Convert pos into a linear id accounting for the ghost offsets
-		unsigned int coord[dim];
-		linToCoordWithOffset<blockEdgeSize>(threadIdx.x, stencilSupportRadius, coord);
-		const int linId2 = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
-        unsigned int nnb = nn_blocks.template get<0>(blockId*ct_params::nNN + (threadIdx.x % ct_params::nNN));
-
-        if (threadIdx.x < ct_params::nNN)
-        {
-        	neighboursPos[threadIdx.x] = nnb;
-        }
-
-		__syncthreads();
-
-		// Actually load the data into the shared region
-		auto nPos = neighboursPos[neighbourNum];
-
-		auto gdata =  this->blockMap.template get_ele<p>(nPos)[offset];
-
-		// Actually load the data into the shared region
-		//ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
-		auto bdata = block.template get<p>()[threadIdx.x];
-
-		sharedRegionPtr[linId] = gdata;
-		sharedRegionPtr[linId2] = bdata;*/
     }
 
     template<unsigned int p, unsigned int ... props>

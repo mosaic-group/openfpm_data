@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
+if (TEST_PERFORMANCE)
+    set(CUDA_SOURCES SparseGridGpu/performance/Stencil_performance_tests.cu)
+endif ()
+
 if (CUDA_FOUND)
-    set(CUDA_SOURCES
+	set(CUDA_SOURCES ${CUDA_SOURCES}
             Vector/vector_gpu_unit_tests.cu
             Grid/cuda/cuda_grid_gpu_tests.cu
             Vector/cuda/map_vector_cuda_funcs_tests.cu
@@ -14,12 +18,12 @@ if (CUDA_FOUND)
             Vector/cuda/map_vector_sparse_cuda_ker_unit_tests.cu
             Vector/cuda/map_vector_sparse_cuda_kernels_unit_tests.cu
             NN/CellList/tests/CellDecomposer_gpu_ker_unit_test.cu
-            SparseGridGpu/BlockMapGpu.hpp
-            SparseGridGpu/BlockMapGpu_ker.cuh
             SparseGridGpu/tests/BlockMapGpu_tests.cu
 	    util/test/zmorton_unit_tests.cpp
-            SparseGridGpu/DataBlock.cuh SparseGridGpu/BlockMapGpu_kernels.cuh
-            util/cuda/segreduce_block_cuda.cuh util/cuda/test/segreduce_block_cuda_tests.cu SparseGridGpu/BlockMapGpu_dimensionalityWrappers.cuh SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu SparseGridGpu/SparseGridGpu.hpp SparseGridGpu/tests/SparseGridGpu_tests.cu SparseGridGpu/SparseGridGpu_ker.cuh SparseGridGpu/SparseGridGpu_kernels.cuh SparseGridGpu/BlockCache/BlockCache.cuh SparseGridGpu/tests/Stencil_performance_tests.cu )
+	    util/cuda/test/segreduce_block_cuda_tests.cu 
+	    SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu 
+	    SparseGridGpu/tests/SparseGridGpu_tests.cu 
+	    )
 else ()
     set(CUDA_SOURCES)
 endif ()
@@ -37,6 +41,13 @@ add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp
         ../../openfpm_devices/src/memory/PtrMemory.cpp 
 	SparseGridGpu/Geometry/tests/grid_smb_tests.cpp)
 
+add_executable(isolation
+	../../openfpm_devices/src/memory/CudaMemory.cu
+	../../openfpm_devices/src/memory/HeapMemory.cpp
+        SparseGridGpu/tests/SparseGridGpu_tests.cu
+	isolation.cpp
+        )
+
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
     if (TEST_COVERAGE)
@@ -48,6 +59,7 @@ endif ()
 
 if (TEST_PERFORMANCE)
     target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
+    target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
 endif ()
 
 if (CUDA_FOUND)
@@ -55,6 +67,13 @@ if (CUDA_FOUND)
     # The below is for better performance on CUDA
     # "-rdc=true" is for Dynamic Parallelism (cooperative groups)
     target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_50,code=sm_50 -g -lineinfo >)
+    if (TEST_COVERAGE)
+        target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
+    endif ()
+#    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
+    # The below is for better performance on CUDA
+    # "-rdc=true" is for Dynamic Parallelism (cooperative groups)
+    target_compile_options(isolation PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_50,code=sm_50 -g -lineinfo >)
     if (TEST_COVERAGE)
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
     endif ()
@@ -67,8 +86,19 @@ target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories(mem_map PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories(mem_map PUBLIC ${Boost_INCLUDE_DIRS})
 
+target_include_directories(isolation PUBLIC ${CUDA_INCLUDE_DIRS})
+target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
+target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
+target_include_directories(isolation PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
+target_include_directories(isolation PUBLIC ${Boost_INCLUDE_DIRS})
+
+
 target_link_libraries(mem_map ${Boost_LIBRARIES})
 target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
+
+target_link_libraries(isolation ${Boost_LIBRARIES})
+target_link_libraries(isolation -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 
 if (TEST_COVERAGE)
     target_link_libraries(mem_map -lgcov)

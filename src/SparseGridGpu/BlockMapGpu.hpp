@@ -24,7 +24,7 @@ using BlockTypeOf = typename std::remove_reference<typename boost::fusion::resul
 template<typename AggregateT, unsigned int p>
 using ScalarTypeOf = typename std::remove_reference<typename boost::fusion::result_of::at_c<typename AggregateT::type, p>::type>::type::scalarType;
 
-template<typename AggregateBlockT, unsigned int threadBlockSize=128, typename indexT=int, template<typename> class layout_base=memory_traits_inte>
+template<typename AggregateBlockT, unsigned int threadBlockSize=128, typename indexT=long int, template<typename> class layout_base=memory_traits_inte>
 class BlockMapGpu
 {
 private:
@@ -34,9 +34,8 @@ protected:
     const static unsigned char EXIST_BIT = 0;
     typedef typename AggregateAppend<DataBlock<unsigned char, BlockT0::size>, AggregateBlockT>::type AggregateInternalT;
     static const unsigned int pMask = AggregateInternalT::max_prop_real - 1;
-    openfpm::vector_sparse_gpu<
+    openfpm::vector_sparse_gpu_block<
             AggregateInternalT,
-            openfpm::VECTOR_SPARSE_BLOCK,
             BlockMapGpuFunctors::BlockFunctor<threadBlockSize>
             > blockMap;
 
@@ -127,6 +126,19 @@ public:
     {
         unsetBit(bitMask, EXIST_BIT);
     }
+
+    /*! \brief Return internal structure block map
+     *
+     * \return the blockMap
+     *
+     */
+    openfpm::vector_sparse_gpu_block<
+                AggregateInternalT,
+                BlockMapGpuFunctors::BlockFunctor<threadBlockSize>
+                > & private_get_blockMap()
+	{
+    	return blockMap;
+	}
 };
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>

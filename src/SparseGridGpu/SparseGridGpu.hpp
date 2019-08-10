@@ -13,6 +13,9 @@
 #include "SparseGridGpu_kernels.cuh"
 #include "Iterators/SparseGridGpu_iterator_sub.hpp"
 #include "Geometry/grid_zmb.hpp"
+#ifdef OPENFPM_DATA_ENABLE_IO_MODULE
+#include "VTKWriter/VTKWriter.hpp"
+#endif
 
 // todo: Move all the following utils into some proper file inside TemplateUtils
 
@@ -58,6 +61,17 @@ struct aggregate_convert<dim,blockEdgeSize,aggregate<types ...>>
 	typedef typename aggregate_transform_datablock_impl<dim,blockEdgeSize,types ...>::type type;
 };
 
+template<typename aggr>
+struct aggregate_add
+{
+};
+
+template<typename ... types>
+struct aggregate_add<aggregate<types ...>>
+{
+	typedef aggregate<types ..., unsigned char> type;
+};
+
 /////////////
 
 enum StencilMode
@@ -83,11 +97,42 @@ struct ct_par
 	static const unsigned int nLoop = nLoop_;
 };
 
+
+template<typename Tsrc,typename Tdst>
+class copy_prop_to_vector_block
+{
+	//! source
+	Tsrc src;
+
+	//! destination
+	Tdst dst;
+
+	size_t pos;
+
+	unsigned int bPos;
+
+public:
+
+	copy_prop_to_vector_block(Tsrc src, Tdst dst,size_t pos, size_t bPos)
+	:src(src),dst(dst),pos(pos),bPos(bPos)
+	{}
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		typedef typename std::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>()[bPos],dst.template get<T::value>());
+	}
+
+};
+
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
 		 unsigned int threadBlockSize = 128,
-		 typename indexT=int,
+		 typename indexT=long int,
 		 template<typename> class layout_base=memory_traits_inte,
 		 typename linearizer = grid_smb<dim, blockEdgeSize>>
 class SparseGridGpu : public BlockMapGpu<
@@ -110,7 +155,7 @@ private:
     //! index (in a star like 0 mean negative x 1 positive x, 1 mean negative y and so on)
     openfpm::vector_gpu<aggregate<short int,short int>> ghostLayerToThreadsMapping;
 
-    openfpm::vector_gpu<aggregate<unsigned int>> nn_blocks;
+    openfpm::vector_gpu<aggregate<indexT>> nn_blocks;
 
 protected:
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
@@ -302,11 +347,11 @@ private:
                                             ? numScalars / localThreadBlockSize
                                             : 1 + numScalars / localThreadBlockSize;
 
-        SparseGridGpuKernels::applyStencilInPlace
+        CUDA_LAUNCH_DIM3((SparseGridGpuKernels::applyStencilInPlace
                 <dim,
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                stencil>
-                <<<threadGridSize, localThreadBlockSize>>>(
+                stencil>),
+                threadGridSize, localThreadBlockSize,
                         indexBuffer.toKernel(),
                         dataBuffer.toKernel(),
                         this->template toKernelNN<stencil::stencil_type::nNN>(),
@@ -336,11 +381,11 @@ private:
         setGPUInsertBuffer(threadGridSize, chunksPerBlock);
 //        setGPUInsertBuffer(threadGridSize, localThreadBlockSize);
 
-        SparseGridGpuKernels::applyStencilInsert
+        CUDA_LAUNCH_DIM3((SparseGridGpuKernels::applyStencilInsert
                 <dim,
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                stencil>
-                <<<threadGridSize, localThreadBlockSize>>>(
+                stencil>),
+                threadGridSize, localThreadBlockSize,
                         indexBuffer.toKernel(),
                         dataBuffer.toKernel(),
                         this->template toKernelNN<stencil::stencil_type::nNN>(),
@@ -550,9 +595,8 @@ public:
 
         // NOTE: Here we want to work only on one data chunk per block!
 
-        unsigned int localThreadBlockSize = threadBlockSize % NNtype::nNN == 0
-                                            ? threadBlockSize
-                                            : (threadBlockSize / NNtype::nNN) * NNtype::nNN; //todo: check that this is properly rounding
+        unsigned int localThreadBlockSize = NNtype::nNN;
+
         unsigned int threadGridSize = numScalars % localThreadBlockSize == 0
                                       ? numScalars / localThreadBlockSize
                                       : 1 + numScalars / localThreadBlockSize;
@@ -606,13 +650,105 @@ public:
     {
         unsetBit(bitMask, PADDING_BIT);
     }
+
+    template<unsigned int p>
+    void print_vct_add_data()
+    {
+    	typedef BlockMapGpu<
+    	        typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type,
+    	        threadBlockSize, indexT, layout_base> BMG;
+
+    	auto & bM = BMG::blockMap.private_get_vct_add_data();
+    	auto & vI = BMG::blockMap.private_get_vct_add_index();
+    	bM.template deviceToHost<p>();
+    	vI.template deviceToHost<0>();
+
+    	std::cout << "vct_add_data: " << std::endl;
+
+    	for (size_t i = 0 ; i < bM.size() ; i++)
+    	{
+    		std::cout << i << "  index: " << vI.template get<0>(i) << "  BlockData: " << std::endl;
+    		for (size_t j = 0 ; j < blockSize ; j++)
+    		{
+    			std::cout << (int)bM.template get<p>(i)[j] << "  ";
+    		}
+
+    		std::cout << std::endl;
+    	}
+    }
+
+#ifdef OPENFPM_DATA_ENABLE_IO_MODULE
+
+	/*! \brief write the sparse grid into VTK
+	 *
+	 * \param out VTK output
+	 *
+	 */
+	template<typename Tw = float> bool write(const std::string & output)
+	{
+		file_type ft = file_type::BINARY;
+
+		auto & bm = this->private_get_blockMap();
+
+		auto & index = bm.getIndexBuffer();
+		auto & data = bm.getDataBuffer();
+
+		openfpm::vector<Point<dim,Tw>> tmp_pos;
+		openfpm::vector<typename aggregate_add<AggregateT>::type> tmp_prp;
+
+		// copy position and properties
+
+		auto it = index.getIterator();
+
+		while(it.isNext())
+		{
+			auto key = it.get();
+
+			Point<dim,Tw> p;
+
+			for (size_t i = 0 ; i < gridGeometry.getBlockSize() ; i++)
+			{
+				if (data.template get<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>(key)[i] != 0)
+				{
+					// Get the block index
+					grid_key_dx<dim,int> keyg = gridGeometry.InvLinId(index.template get<0>(key),i);
+
+					for (size_t k = 0 ; k < dim ; k++)
+					{p.get(k) = keyg.get(k);}
+
+					tmp_pos.add(p);
+
+					tmp_prp.add();
+					copy_prop_to_vector_block<decltype(data.get_o(key)),decltype(tmp_prp.last())>
+					cp(data.get_o(key),tmp_prp.last(),key,i);
+
+					boost::mpl::for_each_ref< boost::mpl::range_c<int,0,AggregateT::max_prop> >(cp);
+
+					tmp_prp.last().template get<AggregateT::max_prop>() = data.template get<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>(key)[i];
+				}
+			}
+
+			++it;
+		}
+
+		// VTKWriter for a set of points
+		VTKWriter<boost::mpl::pair<openfpm::vector<Point<dim,Tw>>, openfpm::vector<typename aggregate_add<AggregateT>::type>>, VECTOR_POINTS> vtk_writer;
+		vtk_writer.add(tmp_pos,tmp_prp,tmp_pos.size());
+
+		openfpm::vector<std::string> prp_names;
+
+		// Write the VTK file
+		return vtk_writer.write(output,prp_names,"sparse_grid","",ft);
+	}
+
+#endif
 };
 
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
 		 unsigned int threadBlockSize = 128,
-		 typename indexT=int,
+		 typename indexT=long int,
 		 template<typename> class layout_base=memory_traits_inte,
 		 typename linearizer = grid_zmb<dim, blockEdgeSize>>
 using SparseGridGpu_z = SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer>;

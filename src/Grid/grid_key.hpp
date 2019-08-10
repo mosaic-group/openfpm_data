@@ -24,7 +24,8 @@ public:
 	 * \param exp grid_key_dx expression
 	 *
 	 */
-	template<typename exp1> inline grid_key_dx(const grid_key_dx_expression<dim,exp1> & exp)
+	template<typename exp1>
+	__device__ __host__ inline grid_key_dx(const grid_key_dx_expression<dim,exp1> & exp)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = exp.value(i);
@@ -243,9 +244,10 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx_sum<dim,grid_key_dx<dim>,grid_key_dx<dim>> operator+(const grid_key_dx<dim> & p) const
+	__device__ __host__ inline grid_key_dx_sum<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>>
+	operator+(const grid_key_dx<dim,index_type> & p) const
 	{
-		grid_key_dx_sum<dim,grid_key_dx<dim>,grid_key_dx<dim>> exp_sum(*this,p);
+		grid_key_dx_sum<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>> exp_sum(*this,p);
 
 		return exp_sum;
 	}
@@ -257,7 +259,8 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx_sum<dim,grid_key_dx<dim>,Point<dim,long int>> operator+(const Point<dim,long int> & p) const
+	inline grid_key_dx_sum<dim,grid_key_dx<dim>,Point<dim,long int>>
+	operator+(const Point<dim,long int> & p) const
 	{
 		grid_key_dx_sum<dim,grid_key_dx<dim>,Point<dim,long int>> exp_sum(*this,p);
 

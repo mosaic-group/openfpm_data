@@ -48,7 +48,7 @@ namespace SparseGridGpuKernels
             return;
         }
 
-        const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+        const auto dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
         auto dataBlock = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
 
         sparseGrid.loadGhostBlock<pMask>(dataBlock,dataBlockId,enlargedBlock);
@@ -88,10 +88,6 @@ namespace SparseGridGpuKernels
         // Write block back to global memory
         __syncthreads();
         sparseGrid.storeBlock<pMask>(dataBlock, enlargedBlock);
-        // todo:
-        //#else // __NVCC__
-        //        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-        //#endif // __NVCC__
     }
 
     /*! \brief find the neighborhood of each chunk
@@ -122,8 +118,9 @@ namespace SparseGridGpuKernels
         if (dataBlockPos >= indexBuffer.size())
         {return;}
 
-        const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
-        int neighbourPos = sparseGrid.getNeighboursPos(dataBlockId, offset);
+        const auto dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+
+        auto neighbourPos = sparseGrid.getNeighboursPos(dataBlockId, offset);
         nn_blocks.template get<0>(dataBlockPos*nNN + offset) = neighbourPos;
     }
 
@@ -224,7 +221,7 @@ namespace SparseGridGpuKernels
         __syncthreads();
 
         auto dataBlockLoad = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
-        const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+        const auto dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
 
         auto dataBlockStore = sparseGrid.insertBlockNew(dataBlockId);
 

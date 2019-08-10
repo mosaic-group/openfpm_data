@@ -596,7 +596,7 @@ class CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,true>: public CellDecom
 	openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt;
 
 	//! Set of cells sparse
-	openfpm::vector_sparse_gpu_ker<aggregate<cnt_type>,cnt_type,memory_traits_inte> cl_sparse;
+	openfpm::vector_sparse_gpu_ker<aggregate<cnt_type>,int,memory_traits_inte> cl_sparse;
 
 	//! Ghost particle marker
 	unsigned int g_m;
@@ -608,7 +608,7 @@ public:
 
 	__device__ inline CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> cell_nn,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type,cnt_type>,memory_traits_inte> cell_nn_list,
-					 openfpm::vector_sparse_gpu_ker<aggregate<cnt_type>,cnt_type,memory_traits_inte> cl_sparse,
+					 openfpm::vector_sparse_gpu_ker<aggregate<cnt_type>,int,memory_traits_inte> cl_sparse,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt,
 					 openfpm::array<T,dim,cnt_type> & spacing_c,

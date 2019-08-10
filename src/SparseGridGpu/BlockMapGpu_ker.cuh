@@ -131,12 +131,12 @@ public:
 		#endif // __NVCC__
 	}
 
-    inline __device__ auto insertBlockNew(unsigned int blockId, unsigned int stride = 8192) -> decltype(blockMap.insert(0))
+    inline __device__ auto insertBlockNew(indexT blockId, unsigned int stride = 8192) -> decltype(blockMap.insert(0))
 	{
     	__shared__ int mem[encap_shmem<sizeof(blockMap.insert(0))>::nthr];
 
 		#ifdef __NVCC__
-    	if (threadIdx.x % stride == 0)
+    	if (threadIdx.x % stride == 0 && threadIdx.y == 0 && threadIdx.z == 0)
     	{
     		auto ec = blockMap.insert(blockId);
 
@@ -210,6 +210,31 @@ public:
     {
         return get<pMask>(linId);
     }
+
+#ifdef SE_CLASS1
+
+		/*! \brief Check if the device pointer is owned by this structure
+		 *
+		 * \return a structure pointer check with information about the match
+		 *
+		 */
+		pointer_check check_device_pointer(void * ptr)
+		{
+			pointer_check pc;
+
+			pc = blockMap.check_device_pointer(ptr);
+
+			if (pc.match == true)
+			{
+				pc.match_str = std::string("blockMap overflow : ") + "\n" + pc.match_str;
+				return pc;
+			}
+
+			return pc;
+		}
+
+#endif
+
 };
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>

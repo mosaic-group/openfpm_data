@@ -358,6 +358,7 @@ namespace openfpm
 
 			int pos = atomicAdd(&vct_atomic_add,1);
 			vct_add_index.template get<0>(slot_base*nslot_add+pos) = ele;
+
 			return vct_add_data.get(slot_base*nslot_add+pos);
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
@@ -459,7 +460,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		__device__ void flush_block_insert(unsigned int b, bool flusher)
+		__device__ void flush_block_insert(Ti b, bool flusher)
 		{
 #ifdef __NVCC__
 

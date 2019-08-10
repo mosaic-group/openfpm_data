@@ -19,10 +19,6 @@ struct report_grid_copy_func_tests
 
 report_grid_copy_func_tests report_grid_funcs;
 
-
-//openfpm::vector<std::string> testsg;
-//openfpm::vector<float> per_timesg;
-
 BOOST_AUTO_TEST_SUITE( grid_performance )
 
 BOOST_AUTO_TEST_CASE(grid_performance_set_obj)

@@ -115,7 +115,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	vector_cnt_type starts;
 
 	//! \brief sparse vector in case of sparse Cell-list
-	openfpm::vector_sparse_u_gpu<aggregate<cnt_type>> cl_sparse;
+	openfpm::vector_sparse_gpu<aggregate<cnt_type>> cl_sparse;
 
 	//! \brief number of neighborhood each cell cell has + offset
 	openfpm::vector_gpu<aggregate<cnt_type>> cells_nn;

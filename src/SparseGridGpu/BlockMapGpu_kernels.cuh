@@ -185,6 +185,130 @@ namespace BlockMapGpuKernels
 #endif // __NVCC__
     }
 
+    // GridSize = number of segments
+    // BlockSize = chunksPerBlock * chunkSize
+    //
+/*    template<unsigned int p,
+            unsigned int pSegment,
+            unsigned int pMask,
+            unsigned int chunksPerBlock,
+            typename op,
+            typename IndexVectorT, typename DataVectorT, typename MaskVectorT>
+    __global__ void
+    segreduce_total(
+            DataVectorT data,
+            DataVectorT data_old,
+            IndexVectorT segments_data,
+            IndexVectorT segments_dataMap,
+            IndexVectorT outputMap,
+            MaskVectorT masks,
+            DataVectorT output
+    )
+    {
+#ifdef __NVCC__
+        typedef typename DataVectorT::value_type AggregateT;
+        typedef BlockTypeOf<AggregateT, p> DataType;
+        typedef BlockTypeOf<AggregateT, pMask> MaskType;
+        typedef typename std::remove_all_extents<DataType>::type BaseBlockType;
+        constexpr unsigned int chunkSize = BaseBlockType::size;
+
+        unsigned int segmentId = blockIdx.x;
+        int segmentSize = segments.template get<pSegment>(segmentId + 1)
+                          - segments.template get<pSegment>(segmentId);
+
+        unsigned int start = segments.template get<pSegment>(segmentId);
+
+        unsigned int chunkId = threadIdx.x / chunkSize;
+        unsigned int offset = threadIdx.x % chunkSize;
+
+        __shared__ ArrayWrapper<DataType> A[chunksPerBlock];
+        __shared__ MaskType AMask[chunksPerBlock];
+        typename ComposeArrayType<DataType>::type bReg;
+        typename MaskType::scalarType aMask, bMask;
+
+        // Phase 0: Load chunks as first operand of the reduction
+        if (chunkId < segmentSize)
+        {
+        	unsigned int m_chunkId = segments_dataMap.template get<0>(start + chunkId);
+            A[chunkId][offset] = RhsBlockWrapper<DataType>(data.template get<p>(m_chunkId), offset).value;
+            aMask = masks.template get<pMask>(m_chunkId)[offset];
+        }
+
+        int i = chunksPerBlock;
+        for (; i < segmentSize - (int) (chunksPerBlock); i += chunksPerBlock)
+        {
+        	unsigned int m_chunkId = segments_dataMap.template get<0>(start + i + chunkId);
+            generalDimensionFunctor<decltype(bReg)>::assignWithOffsetRHS(bReg,
+                                                                         data.template get<p>(m_chunkId),
+                                                                         offset);
+            bMask = masks.template get<pMask>(m_chunkId)[offset];
+
+            generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
+                                                                    bReg,
+                                                                    BlockMapGpu_ker<>::exist(aMask),
+                                                                    BlockMapGpu_ker<>::exist(bMask));
+            aMask = aMask | bMask;
+        }
+
+        if (i + chunkId < segmentSize)
+        {
+        	unsigned int m_chunkId = segments_dataMap.template get<0>(start + i + chunkId);
+            generalDimensionFunctor<decltype(bReg)>::assignWithOffsetRHS(bReg,
+                                                                         data.template get<p>(m_chunkId),
+                                                                         offset);
+            bMask = masks.template get<pMask>(m_chunkId)[offset];
+
+            generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
+                                                                    bReg,
+                                                                    BlockMapGpu_ker<>::exist(aMask),
+                                                                    BlockMapGpu_ker<>::exist(bMask));
+            aMask = aMask | bMask;
+        }
+
+        AMask[chunkId][offset] = aMask;
+
+        __syncthreads();
+
+        // Horizontal reduction finished
+        // Now vertical reduction
+        for (int j = 2; j <= chunksPerBlock && j <= segmentSize; j *= 2)
+        {
+            if (chunkId % j == 0 && chunkId < segmentSize)
+            {
+                unsigned int otherChunkId = chunkId + (j / 2);
+                if (otherChunkId < segmentSize)
+                {
+                    aMask = AMask[chunkId][offset];
+                    bMask = AMask[otherChunkId][offset];
+                    generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
+                                                                            A[otherChunkId][offset],
+                                                                            BlockMapGpu_ker<>::exist(aMask),
+                                                                            BlockMapGpu_ker<>::exist(bMask));
+                    AMask[chunkId][offset] = aMask | bMask;
+                }
+            }
+            __syncthreads();
+        }
+
+        //////////////////////////////////////// Reduce now with old data if present link
+
+        ///////////////////////////////////////////////////////////////////////////////////
+
+        // Write output
+        if (chunkId == 0)
+        {
+        	unsigned int out_id = outputMap.template get<0>(segmentId);
+            generalDimensionFunctor<DataType>::assignWithOffset(output.template get<p>(out_id), A[chunkId].data,
+                                                                offset);
+        }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
+    }*/
+
+
+
+
     /**
      * Compact various memory pools (with empty segments) into a single contiguous memory region.
      * NOTE: Each thread block is in charge of one pool
@@ -557,6 +681,24 @@ namespace BlockMapGpuFunctors
             openfpm::sparse_vector_reduction<decltype(dataOut),decltype(mergeIndices),vv_reduce,BlockFunctor,2, pSegment>
                     svr(dataOut,tmpData,mergeIndices,context);
             boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
+
+            ///////////////////// DEBUG /////////////////
+
+/*            dataOut.template deviceToHost<0>();
+
+            std::cout << "DATA CHUNKS OUT: " << dataOut.size() << std::endl;
+
+            for (size_t i = 0 ; i < dataOut.size() ; i++)
+            {
+            	for (size_t j = 0 ; j < 64 ; j++)
+            	{
+            		std::cout << dataOut.template get<0>(i)[j] << "   ";
+            	}
+            	std::cout << std::endl;
+            }*/
+
+            //////////////////////////////////////////////
+
 
             return true; //todo: check if error in kernel
 #else // __NVCC__

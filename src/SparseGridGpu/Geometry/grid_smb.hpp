@@ -158,9 +158,8 @@ public:
     {
         mem_id blockLinId = blockCoord.get(dim - 1);
         if (blockLinId >= blockSz[dim-1])
-        {
-            return -1;
-        }
+        {return -1;}
+
         for (int d = dim - 2; d >= 0; --d)
         {
             blockLinId *= blockSz[d];
@@ -172,6 +171,20 @@ public:
             blockLinId += cur;
         }
         return blockLinId;
+    }
+
+    // Now methods to handle blockGrid coordinates (e.g. to load neighbouring blocks)
+    template<typename indexT>
+    inline __host__ __device__ grid_key_dx<dim,indexT> getGlobalCoord(const grid_key_dx<dim, indexT> blockCoord, unsigned int offset) const
+    {
+    	grid_key_dx<dim,indexT> k;
+
+    	for (unsigned int i = 0 ; i < dim ; i++)
+    	{
+    		k.set_d(i,blockCoord.get(i)*blockEdgeSize + offset%blockEdgeSize);
+    		offset /= blockEdgeSize;
+    	}
+    	return k;
     }
 
     inline __host__ __device__ grid_key_dx<dim, int> BlockInvLinId(mem_id blockLinId) const
@@ -194,6 +207,11 @@ public:
     	{sz *= blockSz[i];}
 
     	return sz;
+    }
+
+    inline size_t getBlockSize() const
+    {
+    	return blockSize;
     }
 };
 

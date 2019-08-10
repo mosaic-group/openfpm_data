@@ -115,8 +115,11 @@ namespace openfpm
             typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
             typedef typename boost::mpl::at<typename vector_data_type::value_type::type,typename reduction_type::prop>::type red_type;
             typedef typename reduction_type::op_red<red_type> red_op;
+            typedef typename boost::mpl::at<typename vector_index_type::value_type::type,boost::mpl::int_<0>>::type seg_type;
             red_type init;
             init = 0;
+
+            assert((std::is_same<seg_type,int>::value == true));
 
             mgpu::segreduce(
                     (red_type *)vector_data.template getDeviceBuffer<reduction_type::prop::value>(), vector_data.size(),
@@ -599,7 +602,7 @@ namespace openfpm
 	};
 
 	template<typename T,
-			 typename Ti = int,
+			 typename Ti = long int,
 			 typename Memory=HeapMemory,
 			 typename layout=typename memory_traits_lin<T>::type,
 			 template<typename> class layout_base=memory_traits_lin ,
@@ -624,6 +627,7 @@ namespace openfpm
 		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_add_index_cont_1;
 		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> vct_add_data_cont;
 		vector<aggregate<Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti>>::type,layout_base,grow_p> vct_add_index_unique;
+		vector<aggregate<int,int>,Memory,typename layout_base<aggregate<int,int>>::type,layout_base,grow_p> segments_int;
 
 		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p,impl> vct_add_data_unique;
 
@@ -1525,6 +1529,16 @@ namespace openfpm
 			sp.max_ele = max_ele;
 			this->max_ele = max_ele_;
 		}
+
+		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & private_get_vct_add_data()
+		{
+			return vct_add_data;
+		}
+
+		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & private_get_vct_add_index()
+		{
+			return vct_add_index;
+		}
 	};
 
 	template<typename T, unsigned int blockSwitch = VECTOR_SPARSE_STANDARD, typename block_functor = stub_block_functor>
@@ -1539,18 +1553,19 @@ namespace openfpm
             blockSwitch,
             block_functor
             >;
-    template<typename T, unsigned int blockSwitch = VECTOR_SPARSE_STANDARD, typename block_functor = stub_block_functor>
-    using vector_sparse_u_gpu = openfpm::vector_sparse<
-            T,
-            unsigned int,
-            CudaMemory,
-            typename memory_traits_inte<T>::type,
-            memory_traits_inte,
+
+	template<typename T, typename block_functor = stub_block_functor>
+	using vector_sparse_gpu_block = openfpm::vector_sparse<
+	        T,
+	        long int,
+	        CudaMemory,
+	        typename memory_traits_inte<T>::type,
+	        memory_traits_inte,
             grow_policy_double,
             vect_isel<T>::value,
-            blockSwitch,
+            VECTOR_SPARSE_BLOCK,
             block_functor
-    >;
+            >;
 }
 
 
