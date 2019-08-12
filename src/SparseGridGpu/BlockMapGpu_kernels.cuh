@@ -188,20 +188,20 @@ namespace BlockMapGpuKernels
     // GridSize = number of segments
     // BlockSize = chunksPerBlock * chunkSize
     //
-/*    template<unsigned int p,
+    template<unsigned int p,
             unsigned int pSegment,
             unsigned int pMask,
             unsigned int chunksPerBlock,
             typename op,
-            typename IndexVectorT, typename DataVectorT, typename MaskVectorT>
+            typename IndexVectorT, typename DataVectorT>
     __global__ void
     segreduce_total(
-            DataVectorT data,
+            DataVectorT data_new,
             DataVectorT data_old,
             IndexVectorT segments_data,
             IndexVectorT segments_dataMap,
+            IndexVectorT segments_dataOld,
             IndexVectorT outputMap,
-            MaskVectorT masks,
             DataVectorT output
     )
     {
@@ -213,10 +213,10 @@ namespace BlockMapGpuKernels
         constexpr unsigned int chunkSize = BaseBlockType::size;
 
         unsigned int segmentId = blockIdx.x;
-        int segmentSize = segments.template get<pSegment>(segmentId + 1)
-                          - segments.template get<pSegment>(segmentId);
+        int segmentSize = segments_data.template get<pSegment>(segmentId + 1)
+                          - segments_data.template get<pSegment>(segmentId);
 
-        unsigned int start = segments.template get<pSegment>(segmentId);
+        unsigned int start = segments_data.template get<pSegment>(segmentId);
 
         unsigned int chunkId = threadIdx.x / chunkSize;
         unsigned int offset = threadIdx.x % chunkSize;
@@ -230,40 +230,55 @@ namespace BlockMapGpuKernels
         if (chunkId < segmentSize)
         {
         	unsigned int m_chunkId = segments_dataMap.template get<0>(start + chunkId);
-            A[chunkId][offset] = RhsBlockWrapper<DataType>(data.template get<p>(m_chunkId), offset).value;
-            aMask = masks.template get<pMask>(m_chunkId)[offset];
+            A[chunkId][offset] = RhsBlockWrapper<DataType>(data_new.template get<p>(m_chunkId), offset).value;
+            aMask = data_new.template get<pMask>(m_chunkId)[offset];
         }
+
+        //////////////////////////// Horizontal reduction (work on data) //////////////////////////////////////////////////
+        //////////////////////////// We reduce
 
         int i = chunksPerBlock;
         for (; i < segmentSize - (int) (chunksPerBlock); i += chunksPerBlock)
         {
         	unsigned int m_chunkId = segments_dataMap.template get<0>(start + i + chunkId);
-            generalDimensionFunctor<decltype(bReg)>::assignWithOffsetRHS(bReg,
-                                                                         data.template get<p>(m_chunkId),
-                                                                         offset);
-            bMask = masks.template get<pMask>(m_chunkId)[offset];
 
+        	// it breg = data_new.template get<p>(m_chunkId)
+            generalDimensionFunctor<decltype(bReg)>::assignWithOffsetRHS(bReg,
+                                                                         data_new.template get<p>(m_chunkId),
+                                                                         offset);
+            bMask = data_new.template get<pMask>(m_chunkId)[offset];
+
+            // it reduce A[chunkId][offset] with breg
             generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
                                                                     bReg,
                                                                     BlockMapGpu_ker<>::exist(aMask),
                                                                     BlockMapGpu_ker<>::exist(bMask));
+            // reduce aMask with bMask
             aMask = aMask | bMask;
         }
+
 
         if (i + chunkId < segmentSize)
         {
         	unsigned int m_chunkId = segments_dataMap.template get<0>(start + i + chunkId);
-            generalDimensionFunctor<decltype(bReg)>::assignWithOffsetRHS(bReg,
-                                                                         data.template get<p>(m_chunkId),
-                                                                         offset);
-            bMask = masks.template get<pMask>(m_chunkId)[offset];
 
+        	// it breg = data_new.template get<p>(m_chunkId)
+            generalDimensionFunctor<decltype(bReg)>::assignWithOffsetRHS(bReg,
+                                                                         data_new.template get<p>(m_chunkId),
+                                                                         offset);
+            bMask = data_new.template get<pMask>(m_chunkId)[offset];
+
+            // it reduce A[chunkId][offset] with breg
             generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
                                                                     bReg,
                                                                     BlockMapGpu_ker<>::exist(aMask),
                                                                     BlockMapGpu_ker<>::exist(bMask));
+
+            // reduce aMask with bMask
             aMask = aMask | bMask;
         }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         AMask[chunkId][offset] = aMask;
 
@@ -292,6 +307,19 @@ namespace BlockMapGpuKernels
 
         //////////////////////////////////////// Reduce now with old data if present link
 
+        int seg_old = segments_dataOld.template get<0>(segmentId);
+
+        if (seg_old != -1)
+        {
+        	aMask = AMask[0][offset];
+        	bMask = data_old.template get<pMask>(seg_old)[offset];
+        	generalDimensionFunctor<DataType>::template applyOp<op>(A[0][offset],
+        														data_old.template get<p>(seg_old)[offset],
+                                                                BlockMapGpu_ker<>::exist(aMask),
+                                                                BlockMapGpu_ker<>::exist(bMask));
+        	AMask[0][offset] = aMask | bMask;
+        }
+
         ///////////////////////////////////////////////////////////////////////////////////
 
         // Write output
@@ -304,7 +332,7 @@ namespace BlockMapGpuKernels
 #else // __NVCC__
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif // __NVCC__
-    }*/
+    }
 
 
 

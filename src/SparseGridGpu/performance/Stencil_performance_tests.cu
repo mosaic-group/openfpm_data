@@ -223,6 +223,7 @@ struct HeatStencil
     static inline __device__ void stencil(
             SparseGridT & sparseGrid,
             const unsigned int dataBlockId,
+            const openfpm::sparse_index<unsigned int> dataBlockIdPos,
             unsigned int offset,
             const grid_key_dx<dim, int> & pointCoord,
             const DataBlockWrapperT & dataBlockLoad,
@@ -238,7 +239,7 @@ struct HeatStencil
 
         __shared__ ScalarT enlargedBlock[enlargedBlockSize];
 
-        sparseGrid.loadGhostBlock<p_src>(dataBlockLoad,dataBlockId, enlargedBlock);
+        sparseGrid.loadGhostBlock<p_src>(dataBlockLoad,dataBlockIdPos, enlargedBlock);
 
         __syncthreads();
 

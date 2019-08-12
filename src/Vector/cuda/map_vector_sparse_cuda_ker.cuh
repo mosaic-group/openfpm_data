@@ -31,10 +31,6 @@ namespace openfpm
 	struct sparse_index
 	{
 		index_type id;
-
-		__device__ sparse_index(index_type id)
-		:id(id)
-		{}
 	};
 
 	static __shared__ int vct_atomic_add;
@@ -186,7 +182,8 @@ namespace openfpm
 		{
 			Ti di;
 			this->_branchfree_search(id,di);
-			openfpm::sparse_index<Ti> sid(di);
+			openfpm::sparse_index<Ti> sid;
+			sid.id = di;
 
 			return sid;
 		}

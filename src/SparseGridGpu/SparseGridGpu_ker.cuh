@@ -293,7 +293,7 @@ public:
 
     template<unsigned int p, typename AggrWrapperT>
     inline __device__ void
-    loadGhostBlock(const AggrWrapperT & dataBlockLoad, const unsigned int blockLinId, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
+    loadGhostBlock(const AggrWrapperT & dataBlockLoad, const openfpm::sparse_index<unsigned int> blockLinId, ScalarTypeOf<AggregateBlockT, p> *sharedRegion)
     {
         __loadGhostBlock<p>(dataBlockLoad,blockLinId, sharedRegion);
     }
@@ -554,7 +554,7 @@ private:
      */
     template<unsigned int p, typename AggrWrapperT ,typename SharedPtrT>
     inline __device__ void
-    __loadGhostBlock(const AggrWrapperT &block, const unsigned int blockId, SharedPtrT * sharedRegionPtr)
+    __loadGhostBlock(const AggrWrapperT &block, const openfpm::sparse_index<unsigned int> blockId, SharedPtrT * sharedRegionPtr)
     {
     	loadGhostBlock_impl<ct_params::nLoop,dim,AggrWrapperT,p,ct_params,blockEdgeSize>::load(block,
     															   sharedRegionPtr,
@@ -563,7 +563,7 @@ private:
     															   this->blockMap,
     															   stencilSupportRadius,
     															   ghostLayerSize,
-    															   blockId);
+    															   blockId.id);
     }
 
     template<unsigned int p, unsigned int ... props>

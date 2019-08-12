@@ -315,6 +315,7 @@ struct HeatStencil
     static inline __device__ void stencil(
             SparseGridT & sparseGrid,
             const unsigned int dataBlockId,
+            openfpm::sparse_index<unsigned int> dataBlockIdPos,
             unsigned int offset,
             grid_key_dx<dim, int> & pointCoord,
             DataBlockWrapperT & dataBlockLoad,
@@ -332,7 +333,7 @@ struct HeatStencil
 //        sparseGrid.loadBlock<p>(dataBlockLoad, enlargedBlock);
 //        sparseGrid.loadGhost<p>(dataBlockId, enlargedBlock);
 
-        sparseGrid.loadGhostBlock<p_src>(dataBlockLoad,dataBlockId,enlargedBlock);
+        sparseGrid.loadGhostBlock<p_src>(dataBlockLoad,dataBlockIdPos,enlargedBlock);
 
 //        sparseGrid.loadGhost<p>(dataBlockId, nullptr, enlargedBlock);
         __syncthreads();
@@ -822,9 +823,6 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 //        // Now tag the boundaries
 	sparseGrid.tagBoundaries();
 
-	sparseGrid.deviceToHost<0>();
-	sparseGrid.write("test_heat_stencil.vtk");
-
 	// Now apply the laplacian operator
 	const unsigned int maxIter = 1000;
 //        const unsigned int maxIter = 10;
@@ -833,6 +831,9 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 		sparseGrid.applyStencils<HeatStencil<dim, 0,1>>(STENCIL_MODE_INPLACE, 0.1);
 		sparseGrid.applyStencils<HeatStencil<dim, 1,0>>(STENCIL_MODE_INPLACE, 0.1);
 	}
+
+	sparseGrid.deviceToHost<0>();
+	sparseGrid.write("test_heat_stencil.vtk");
 
 	// Get output
 	openfpm::vector_gpu<AggregateT> output;
@@ -1022,7 +1023,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput)
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
-//	sparseGrid.tagBoundaries();
+	sparseGrid.tagBoundaries();
 
 	sparseGrid.template deviceToHost<0>();
 

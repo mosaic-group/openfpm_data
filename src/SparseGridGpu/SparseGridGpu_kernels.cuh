@@ -51,7 +51,15 @@ namespace SparseGridGpuKernels
         const auto dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
         auto dataBlock = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
 
-        sparseGrid.loadGhostBlock<pMask>(dataBlock,dataBlockId,enlargedBlock);
+        if (dataBlockId < 0)
+        {
+        	printf("Negative Datablock \n");
+        	return;
+        }
+
+        openfpm::sparse_index<unsigned int> sdataBlockPos;
+        sdataBlockPos.id = dataBlockPos;
+        sparseGrid.loadGhostBlock<pMask>(dataBlock,sdataBlockPos,enlargedBlock);
 
         __syncthreads();
 
@@ -173,8 +181,11 @@ namespace SparseGridGpuKernels
             applyStencilHere = false;
         }
 
+        openfpm::sparse_index<unsigned int> sdataBlockPos;
+        sdataBlockPos.id = dataBlockPos;
+
         stencil::stencil(
-                sparseGrid, dataBlockId, offset, pointCoord, dataBlockLoad, dataBlockLoad,
+                sparseGrid, dataBlockId, sdataBlockPos , offset, pointCoord, dataBlockLoad, dataBlockLoad,
                 applyStencilHere, args...);
     }
 
@@ -238,8 +249,11 @@ namespace SparseGridGpuKernels
             applyStencilHere = false;
         }
 
+        openfpm::sparse_index<unsigned int> sdataBlockId;
+        sdataBlockId.id = dataBlockPos;
+
         stencil::stencil(
-                sparseGrid, dataBlockId, offset, pointCoord, dataBlockLoad, dataBlockStore,
+                sparseGrid, dataBlockId, sdataBlockId, offset, pointCoord, dataBlockLoad, dataBlockStore,
                 applyStencilHere, args...);
         sparseGrid.setExist(dataBlockStore.template get<pMask>()[offset]);
 

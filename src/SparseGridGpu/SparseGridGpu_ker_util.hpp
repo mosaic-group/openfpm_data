@@ -73,7 +73,7 @@ struct loadGhostBlock_impl
 							const blockMapType & blockMap,
 							unsigned int stencilSupportRadius,
 							unsigned int ghostLayerSize,
-							unsigned int blockId)
+							const unsigned int blockId)
 	{
 		printf("Error to implement loadGhostBlock_impl with nLoop=%d \n",nLoop);
 	}
@@ -90,7 +90,7 @@ struct loadGhostBlock_impl<1,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
 							const blockMapType & blockMap,
 							unsigned int stencilSupportRadius,
 							unsigned int ghostLayerSize,
-							unsigned int blockId)
+							const unsigned int blockIdPos)
 	{
 			typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
@@ -122,7 +122,8 @@ struct loadGhostBlock_impl<1,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
 			unsigned int coord[dim];
 			linToCoordWithOffset<blockEdgeSize>(threadIdx.x, stencilSupportRadius, coord);
 			const int linId2 = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
-			unsigned int nnb = nn_blocks.template get<0>(blockId*ct_params::nNN + (threadIdx.x % ct_params::nNN));
+
+			unsigned int nnb = nn_blocks.template get<0>(blockIdPos*ct_params::nNN + (threadIdx.x % ct_params::nNN));
 
 			if (threadIdx.x < ct_params::nNN)
 			{

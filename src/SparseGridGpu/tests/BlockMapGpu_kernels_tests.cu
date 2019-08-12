@@ -89,6 +89,157 @@ BOOST_AUTO_TEST_CASE (testSegreduce)
                 }
         }
 
+BOOST_AUTO_TEST_CASE (testSegreduce_total)
+        {
+                typedef float ScalarT;
+                typedef DataBlock<unsigned char, 64> MaskBlockT;
+                typedef DataBlock<ScalarT, 64> BlockT;
+                openfpm::vector_gpu<aggregate<int>> segments;
+                openfpm::vector_gpu<aggregate<int>> segment_dataMap;
+                openfpm::vector_gpu<aggregate<int>> outputMap;
+                openfpm::vector_gpu<aggregate<int>> segments_oldData;
+
+                // segment reduction for the new added data
+                segments.resize(8);
+                segments.template get<0>(0) = 0;
+                segments.template get<0>(1) = 4;
+                segments.template get<0>(2) = 5;
+                segments.template get<0>(3) = 7;
+                segments.template get<0>(4) = 8;
+                segments.template get<0>(5) = 11;
+                segments.template get<0>(6) = 17;
+                segments.template get<0>(7) = 18; // Id of first non-existent data
+
+                // segment old data indicate if new data has also old data
+                // to be reduced with
+                segments_oldData.resize(8);
+                segments_oldData.template get<0>(0) = -1;
+                segments_oldData.template get<0>(1) = 2;
+                segments_oldData.template get<0>(2) = -1;
+                segments_oldData.template get<0>(3) = 5;
+                segments_oldData.template get<0>(4) = 7;
+                segments_oldData.template get<0>(5) = -1;
+                segments_oldData.template get<0>(6) = -1;
+                segments_oldData.template get<0>(7) = -1; // Id of first non-existent data
+
+                // for each added index we have a chunk in the vct_add_data vector
+                // undortunately is not
+
+                segment_dataMap.resize(20);
+                segment_dataMap.template get<0>(0) = 10;
+                segment_dataMap.template get<0>(1) = 1;
+                segment_dataMap.template get<0>(2) = 50;
+                segment_dataMap.template get<0>(3) = 11;
+                segment_dataMap.template get<0>(4) = 13;
+                segment_dataMap.template get<0>(5) = 87;
+                segment_dataMap.template get<0>(6) = 54;
+                segment_dataMap.template get<0>(7) = 33;
+                segment_dataMap.template get<0>(8) = 22;
+                segment_dataMap.template get<0>(9) = 17;
+                segment_dataMap.template get<0>(10) = 40;
+                segment_dataMap.template get<0>(11) = 32;
+                segment_dataMap.template get<0>(12) = 80;
+                segment_dataMap.template get<0>(13) = 52;
+                segment_dataMap.template get<0>(14) = 21;
+                segment_dataMap.template get<0>(15) = 76;
+                segment_dataMap.template get<0>(16) = 65;
+                segment_dataMap.template get<0>(17) = 54;
+                segment_dataMap.template get<0>(18) = 3;
+
+                outputMap.resize(15);
+                outputMap.template get<0>(0) = 9;
+                outputMap.template get<0>(1) = 11;
+                outputMap.template get<0>(2) = 13;
+                outputMap.template get<0>(3) = 34;
+                outputMap.template get<0>(4) = 23;
+                outputMap.template get<0>(5) = 90;
+                outputMap.template get<0>(6) = 21;
+                outputMap.template get<0>(7) = 11;
+                outputMap.template get<0>(8) = 15;
+
+                segments.template hostToDevice<0>();
+                segment_dataMap.hostToDevice<0>();
+                segments_oldData.hostToDevice<0>();
+                outputMap.hostToDevice<0>();
+
+                const unsigned int BITMASK = 0, BLOCK = 1;
+                BlockT block;
+                MaskBlockT mask;
+                BlockT block_old;
+                MaskBlockT mask_old;
+                for (int i = 0; i < 32; ++i)
+                {
+                    block[i] = i + 1;
+                    mask[i] = 1;
+                    block_old[i] = 100 + i + 1;
+                    mask_old[i] = 1;
+                }
+                for (int i = 32; i < 64; ++i)
+                {
+                    block[i] = 666;
+                    mask[i] = 0;
+                    block_old[i] = 666;
+                    mask_old[i] = 0;
+                }
+                block_old[33] = 665;
+                mask_old[33] = 1;
+
+                openfpm::vector_gpu<aggregate<MaskBlockT, BlockT>> data_old;
+                openfpm::vector_gpu<aggregate<MaskBlockT, BlockT>> data_new;
+                data_new.resize(100);
+                data_old.resize(100);
+                for (int i = 0; i < 100; ++i)
+                {
+                    data_new.template get<BITMASK>(i) = mask;
+                    data_new.template get<BLOCK>(i) = block;
+                    if (i < data_old.size())
+                    {
+                    	data_old.template get<BITMASK>(i) = mask_old;
+                    	data_old.template get<BLOCK>(i) = block_old;
+                    }
+                }
+
+                data_new.template hostToDevice<BITMASK, BLOCK>();
+                data_old.template hostToDevice<BITMASK, BLOCK>();
+
+                // Allocate output buffer
+                openfpm::vector_gpu<aggregate<MaskBlockT, BlockT>> outputData;
+                outputData.resize(100);
+
+                CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>>),segments.size()-1, 2*BlockT::size,
+                data_new.toKernel(),
+                data_old.toKernel(),
+                segments.toKernel(),
+                segment_dataMap.toKernel(),
+                segments_oldData.toKernel(),
+                outputMap.toKernel(),
+                outputData.toKernel());
+
+                // Segreduce on mask
+                CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>>),segments.size()-1, 2*BlockT::size,
+				data_new.toKernel(),
+				data_old.toKernel(),
+				segments.toKernel(),
+				segment_dataMap.toKernel(),
+				segments_oldData.toKernel(),
+				outputMap.toKernel(),
+				outputData.toKernel());
+
+/*                outputData.template deviceToHost<BITMASK, BLOCK>();
+
+                for (int j = 0; j < outputData.size(); ++j)
+                {
+                    BlockT outBlock = outputData.template get<BLOCK>(j);
+                    MaskBlockT outMask = outputData.template get<BITMASK>(j);
+
+                    for (int i = 0; i < BlockT::size; ++i)
+                    {
+                        std::cout << outBlock[i] << ":" << (int)outMask[i] << " ";
+                    }
+                    std::cout << std::endl;
+                }*/
+        }
+
 BOOST_AUTO_TEST_CASE (testSegreduce_vector)
         {
                 typedef float ScalarT;

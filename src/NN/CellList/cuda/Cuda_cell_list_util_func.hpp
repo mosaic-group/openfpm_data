@@ -415,7 +415,8 @@ __global__ void count_nn_cells(cl_sparse_type cl_sparse, vector_type output, vec
 	typedef typename cl_sparse_type::index_type index_type;
 
 	int tid = threadIdx.x + blockIdx.x * blockDim.x;
-	openfpm::sparse_index<index_type> id(tid);
+	openfpm::sparse_index<index_type> id;
+	id.id = tid;
 
 	if (tid >= cl_sparse.size()) {return;}
 
@@ -441,7 +442,8 @@ __global__ void fill_nn_cells(cl_sparse_type cl_sparse, vector_type starts, vect
 	typedef typename cl_sparse_type::index_type index_type;
 
 	int tid = threadIdx.x + blockIdx.x * blockDim.x;
-	openfpm::sparse_index<index_type> id(tid);
+	openfpm::sparse_index<index_type> id;
+	id.id = tid;
 
 	if (tid >= cl_sparse.size())	{return;}
 
@@ -463,7 +465,11 @@ __global__ void fill_nn_cells(cl_sparse_type cl_sparse, vector_type starts, vect
 			if (sid.id == cl_sparse.size() - 1)
 			{output.template get<1>(starts.template get<0>(tid) + cnt) = max_stop;}
 			else
-			{output.template get<1>(starts.template get<0>(tid) + cnt) = cl_sparse.template get<0>(decltype(sid)(sid.id+1));}
+			{
+				decltype(sid) sid_t;
+				sid_t.id = sid.id+1;
+				output.template get<1>(starts.template get<0>(tid) + cnt) = cl_sparse.template get<0>(sid_t);
+			}
 			++cnt;
 		}
 	}
