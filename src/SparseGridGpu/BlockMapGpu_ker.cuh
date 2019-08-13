@@ -131,9 +131,11 @@ public:
 		#endif // __NVCC__
 	}
 
+    template<unsigned int nChunksPerBlocks = 1>
     inline __device__ auto insertBlockNew(indexT blockId, unsigned int stride = 8192) -> decltype(blockMap.insert(0))
 	{
-    	__shared__ int mem[encap_shmem<sizeof(blockMap.insert(0))>::nthr];
+    	int offset = threadIdx.x % stride;
+    	__shared__ int mem[nChunksPerBlocks][encap_shmem<sizeof(blockMap.insert(0))>::nthr];
 
 		#ifdef __NVCC__
     	if (threadIdx.x % stride == 0 && threadIdx.y == 0 && threadIdx.z == 0)
@@ -141,12 +143,12 @@ public:
     		auto ec = blockMap.insert(blockId);
 
     		// copy to shared to broadcast on all thread
-    		new (mem) decltype(ec)(ec.private_get_data(),ec.private_get_k());
+    		new (mem[offset]) decltype(ec)(ec.private_get_data(),ec.private_get_k());
     	}
 
     	__syncthreads();
 
-		return *(decltype(blockMap.insert(0)) *)mem;
+		return *(decltype(blockMap.insert(0)) *)mem[offset];
 		#else // __NVCC__
 		    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 		#endif // __NVCC__

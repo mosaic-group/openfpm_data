@@ -223,15 +223,15 @@ public:
 
     template<typename CoordT>
     inline __device__ auto
-    insertBlock(const grid_key_dx<dim, CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(0))
+    insertBlock(const grid_key_dx<dim, CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlockNew(0))
     {
-        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(getBlockId(coord));
+        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlockNew(getBlockId(coord));
     }
 
     inline __device__ auto
-    insertBlock(const unsigned int blockLinId) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(0))
+    insertBlock(const unsigned int blockLinId) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlockNew(0))
     {
-        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(blockLinId);
+        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlockNew(blockLinId);
     }
 
     // Load & Store aux functions for user kernels. To be used for loading to or writing from shared memory.
