@@ -1828,9 +1828,9 @@ namespace openfpm
 		 * \
 		 *
 		 */
-		void init_shmem(const char * pathname, int proj_id)
+		void init_shmem(handle_shmem shid)
 		{
-			base.init_shmem(pathname,proj_id);
+			base.init_shmem(shid);
 		}
 
 		void * internal_get_size_pointer()	{return &v_size;}

@@ -204,11 +204,11 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 		mem_obj.mem_r.swap(mem_r);
 	}
 
-	void set_memory_name(const char * pathname, int proj_id)
-	{
-		mem->set_memory_name(pathname,proj_id);
-	}
 
+	void init_shmem(handle_shmem shid)
+	{
+		mem->set_shmem_handle(shid);
+	}
 };
 
 

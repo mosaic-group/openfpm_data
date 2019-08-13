@@ -8,7 +8,7 @@ else()
  	set(CUDA_SOURCES )
 endif()
 
-add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp main.cpp util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp memory_ly/memory_conf_unit_tests.cpp  Space/tests/SpaceBox_unit_tests.cpp  Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp  ${CUDA_SOURCES} ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp)
+add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp main.cpp util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp memory_ly/memory_conf_unit_tests.cpp  Space/tests/SpaceBox_unit_tests.cpp  Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp  ${CUDA_SOURCES} ../../openfpm_devices/src/memory/ShmAllocator_manager.cpp ../../openfpm_devices/src/memory/SemManager.cpp ../../openfpm_devices/src/memory/ShmAllocator.cpp  ../../openfpm_devices/src/memory/HeapMemory.cpp ../../openfpm_devices/src/memory/PtrMemory.cpp)
 
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")

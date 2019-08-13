@@ -233,8 +233,8 @@ private:
 	//! The memory allocator is not internally created
 	bool isExternal;
 
-	// shared_memory key
-	key_t key = -1;
+	// shared_memory handle
+	handle_shmem sh_handle;
 
 #ifdef SE_CLASS1
 
@@ -433,7 +433,7 @@ private:
 
 		while(it.isNext())
 		{
-			// get the grid key
+			// get the grid sh_handle
 			grid_key_dx<dim> key = it.get();
 
 			// create a copy element
@@ -477,6 +477,7 @@ public:
 	grid_base_impl() THROW
 	:g1(0),isExternal(false)
 	{
+		sh_handle.id = -1;
 		// Add this pointer
 #ifdef SE_CLASS2
 		check_new(this,8,GRID_EVENT,1);
@@ -492,6 +493,7 @@ public:
 	grid_base_impl(const grid_base_impl & g) THROW
 	:isExternal(false)
 	{
+		sh_handle.id = -1;
 		this->operator=(g);
 	}
 
@@ -503,6 +505,7 @@ public:
 	grid_base_impl(const size_t & sz) THROW
 	:g1(sz),isExternal(false)
 	{
+		sh_handle.id = -1;
 		// Add this pointer
 #ifdef SE_CLASS2
 		check_new(this,8,GRID_EVENT,1);
@@ -519,6 +522,7 @@ public:
 	grid_base_impl(const size_t (& sz)[dim]) THROW
 	:g1(sz),isExternal(false)
 	{
+		sh_handle.id = -1;
 		// Add this pointer
 #ifdef SE_CLASS2
 		check_new(this,8,GRID_EVENT,1);
@@ -686,7 +690,7 @@ public:
 		check_valid(this,8);
 #endif
 
-		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::setMemory(data_,g1,is_mem_init,key);
+		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::setMemory(data_,g1,is_mem_init,sh_handle);
 	}
 
 	/*! \brief Get the object that provide memory
@@ -992,7 +996,7 @@ public:
 
 		grid_base_impl<dim,T,S,layout,layout_base> grid_new(sz);
 
-		grid_new.set_shmem_key(this->get_shmem_key());
+		grid_new.set_shmem_handle(this->get_shmem_handle());
 
 		resize_impl_memset(grid_new);
 
@@ -1327,14 +1331,14 @@ public:
 		return grid_key_dx_iterator_sub<dim>(g1,m);
 	}
 
-	inline key_t get_shmem_key()
+	inline handle_shmem get_shmem_handle()
 	{
-		return mem_shmem<layout_base<T>,decltype(this->data_),boost::mpl::size<typename T::type>::type::value == 0>::get_shmem_key(data_);
+		return mem_shmem<layout_base<T>,decltype(this->data_),boost::mpl::size<typename T::type>::type::value == 0>::get_shmem_handle(data_);
 	}
 
-	inline void set_shmem_key(key_t k)
+	inline void set_shmem_handle(handle_shmem sh)
 	{
-		this->key = k;
+		this->sh_handle = sh;
 	}
 
 	/*! \brief Return a grid iterator
@@ -1455,9 +1459,9 @@ public:
 	 * \
 	 *
 	 */
-	void init_shmem(const char * pathname, int proj_id)
+	void init_shmem(handle_shmem shid)
 	{
-		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::init_shmem(data_,pathname,proj_id);
+		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::init_shmem(data_,shid);
 	}
 };
 
