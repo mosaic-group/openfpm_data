@@ -370,6 +370,8 @@ private:
                                             ? numScalars / localThreadBlockSize
                                             : 1 + numScalars / localThreadBlockSize;
 
+        constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value - IntPow<blockEdgeSize, dim>::value), (blockSize * chunksPerBlock)>::value; // todo: This works only for stencilSupportSize==1
+
         CUDA_LAUNCH_DIM3((SparseGridGpuKernels::applyStencilInPlace
                 <dim,
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
@@ -377,7 +379,7 @@ private:
                 threadGridSize, localThreadBlockSize,
                         indexBuffer.toKernel(),
                         dataBuffer.toKernel(),
-                        this->template toKernelNN<stencil::stencil_type::nNN>(),
+                        this->template toKernelNN<stencil::stencil_type::nNN, nLoop>(),
                         args...);
     }
 
@@ -401,6 +403,8 @@ private:
                                       ? numScalars / localThreadBlockSize
                                       : 1 + numScalars / localThreadBlockSize;
 
+        constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value - IntPow<blockEdgeSize, dim>::value), (blockSize * chunksPerBlock)>::value; // todo: This works only for stencilSupportSize==1
+
         setGPUInsertBuffer(threadGridSize, chunksPerBlock);
 //        setGPUInsertBuffer(threadGridSize, localThreadBlockSize);
 
@@ -411,7 +415,7 @@ private:
                 threadGridSize, localThreadBlockSize,
                         indexBuffer.toKernel(),
                         dataBuffer.toKernel(),
-                        this->template toKernelNN<stencil::stencil_type::nNN>(),
+                        this->template toKernelNN<stencil::stencil_type::nNN, nLoop>(),
                         args...);
 
 //        cudaDeviceSynchronize();
@@ -479,13 +483,13 @@ public:
         return toKer;
     }
 
-    template<unsigned int nNN>
+    template<unsigned int nNN, unsigned int nLoop>
     SparseGridGpu_ker
             <
                     dim,
                     blockEdgeSize,
                     typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
-                    ct_par<nNN,1>,
+                    ct_par<nNN,nLoop>,
                     indexT,
                     layout_base,
                     decltype(extendedBlockGeometry),
@@ -497,7 +501,7 @@ public:
                         dim,
                         blockEdgeSize,
                         typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
-                        ct_par<nNN,1>,
+                        ct_par<nNN,nLoop>,
                         indexT,
                         layout_base,
                         decltype(extendedBlockGeometry),
@@ -584,13 +588,17 @@ public:
         unsigned int threadGridSize = numScalars % dataChunkSize == 0
                                     ? numScalars / dataChunkSize
                                     : 1 + numScalars / dataChunkSize;
+
+        constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value - IntPow<blockEdgeSize, dim>::value), (blockSize * 1)>::value; // todo: This works only for stencilSupportSize==1
+//        constexpr unsigned int nLoop = IntPow<blockEdgeSize + 2, dim>::value; // todo: This works only for stencilSupportSize==1
+
         if (stencilSupportRadius == 1)
         {
             CUDA_LAUNCH_DIM3((SparseGridGpuKernels::tagBoundaries<
                     dim,
                     1,
                     BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN>(), nn_blocks.toKernel());
+                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel());
         }
         else if (stencilSupportRadius == 2)
         {
@@ -598,7 +606,7 @@ public:
                     dim,
                     2,
                     BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN>(), nn_blocks.toKernel());
+                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel());
         }
         else if (stencilSupportRadius == 0)
         {
@@ -606,7 +614,7 @@ public:
                     dim,
                     0,
                     BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN>(), nn_blocks.toKernel());
+                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel());
         }
         else
         {
