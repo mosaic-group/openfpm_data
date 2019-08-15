@@ -1001,6 +1001,63 @@ __global__ void insertSphere(SparseGridType sparseGrid, grid_key_dx<2,int> start
     sparseGrid.flush_block_insert();
 }
 
+template<unsigned int p, typename SparseGridType>
+__global__ void insertSphere3D(SparseGridType sparseGrid, grid_key_dx<3,int> start, float r1, float r2)
+{
+    constexpr unsigned int pMask = SparseGridType::pMask;
+    typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
+    typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
+
+    grid_key_dx<3,int> blk({
+        blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize(),
+        blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize(),
+        blockIdx.z + start.get(2) / sparseGrid.getBlockEdgeSize()});
+
+    unsigned int offset = threadIdx.x;
+
+    __shared__ bool is_block_empty;
+
+    if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0)
+    {is_block_empty = true;}
+
+    sparseGrid.init();
+
+    auto blockId = sparseGrid.getBlockLinId(blk);
+
+    grid_key_dx<3,int> keyg;
+    keyg = sparseGrid.getGlobalCoord(blk,offset);
+
+    const mem_id x = keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);
+    const mem_id y = keyg.get(1) - (start.get(1) + gridDim.y / 2 * SparseGridType::blockEdgeSize_);
+    const mem_id z = keyg.get(2) - (start.get(2) + gridDim.z / 2 * SparseGridType::blockEdgeSize_);
+    float radius = sqrt((float) (x*x + y*y + z*z));
+
+    bool is_active = radius < r1 && radius > r2;
+
+    if (is_active == true)
+    {
+        is_block_empty = false;
+    }
+
+    __syncthreads();
+
+    if (is_block_empty == false)
+    {
+        auto ec = sparseGrid.insertBlockNew(blockId);
+
+        if ( is_active == true)
+        {
+//            ec.template get<p>()[offset] = 1;
+            ec.template get<p>()[offset] = x;
+            BlockMapGpu_ker<>::setExist(ec.template get<pMask>()[offset]);
+        }
+    }
+
+    __syncthreads();
+
+    sparseGrid.flush_block_insert();
+}
+
 BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput)
 {
 	constexpr unsigned int dim = 2;
@@ -1029,6 +1086,38 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput)
 
 	sparseGrid.write("SparseGridGPU_output.vtk");
 }
+
+    BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3D)
+    {
+        constexpr unsigned int dim = 3;
+        constexpr unsigned int blockEdgeSize = 4;
+        typedef aggregate<float> AggregateT;
+
+        size_t sz[3] = {512,512,512};
+//        dim3 gridSize(128,128,128);
+        dim3 gridSize(32,32,32);
+
+        grid_smb<dim, blockEdgeSize> blockGeometry(sz);
+        SparseGridGpu<dim, AggregateT, blockEdgeSize, 64, long int> sparseGrid(blockGeometry);
+        mgpu::ofp_context_t ctx;
+        sparseGrid.template setBackgroundValue<0>(0);
+
+        grid_key_dx<3,int> start({256,256,256});
+
+        // Insert values on the grid
+        sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
+        CUDA_LAUNCH_DIM3((insertSphere3D<0>),
+                gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
+                sparseGrid.toKernel(), start, 64, 56);
+        sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+        sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
+        sparseGrid.tagBoundaries();
+
+        sparseGrid.template deviceToHost<0>();
+
+        sparseGrid.write("SparseGridGPU_output3D.vtk");
+    }
 
 #endif
 
