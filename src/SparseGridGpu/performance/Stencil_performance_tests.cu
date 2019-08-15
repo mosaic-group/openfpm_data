@@ -193,9 +193,6 @@ __global__ void copyBlocksToOutput(SparseGridType sparseGrid, VectorOutType outp
     z++;
 }
 
-
-
-
 template<unsigned int dim, unsigned int p_src, unsigned int p_dst>
 struct HeatStencil
 {
@@ -224,7 +221,7 @@ struct HeatStencil
             SparseGridT & sparseGrid,
             const unsigned int dataBlockId,
             const openfpm::sparse_index<unsigned int> dataBlockIdPos,
-            unsigned int offset,
+            const unsigned int offset,
             const grid_key_dx<dim, int> & pointCoord,
             const DataBlockWrapperT & dataBlockLoad,
             DataBlockWrapperT & dataBlockStore,
@@ -239,7 +236,7 @@ struct HeatStencil
 
         __shared__ ScalarT enlargedBlock[enlargedBlockSize];
 
-        sparseGrid.loadGhostBlock<p_src>(dataBlockLoad,dataBlockIdPos, enlargedBlock);
+        sparseGrid.loadGhostBlock<p_src>(dataBlockLoad, dataBlockIdPos, enlargedBlock);
 
         __syncthreads();
 
@@ -260,9 +257,72 @@ struct HeatStencil
             }
             enlargedBlock[linId] = cur + dt * laplacian;
         }
+    }
 
-        __syncthreads();
-        sparseGrid.storeBlock<p_dst>(dataBlockStore, enlargedBlock);
+    /*! \brief Stencil Host function
+    *
+    * \param sparseGrid This is the sparse grid data-structure
+    * \param dataBlockId The id of the block
+    * \param offset index in local coordinate of the point where we are working
+    * \param dataBlockLoad dataBlock from where we read
+    * \param dataBlockStore dataBlock from where we write
+    * \param isActive the point is active if exist and is not padding
+    * \param dt delta t
+    *
+    *
+    */
+    template<typename SparseGridT, typename DataBlockWrapperT>
+    static inline __host__ void stencilHost(
+            SparseGridT & sparseGrid,
+            const unsigned int dataBlockId,
+            const openfpm::sparse_index<unsigned int> dataBlockIdPos,
+            const unsigned int offset,
+            const grid_key_dx<dim, int> & pointCoord,
+            const DataBlockWrapperT & dataBlockLoad,
+            DataBlockWrapperT & dataBlockStore,
+            bool isActive,
+            float dt)
+    {
+        constexpr unsigned int blockEdgeSize = SparseGridT::getBlockEdgeSize();
+
+        if (isActive)
+        {
+            auto cur = dataBlockLoad.template get<p_src>()[offset];
+            auto laplacian = -2.0 * dim * cur; // The central part of the stencil
+
+            auto neighbourCoord = pointCoord;
+            auto counter = offset;
+            unsigned int dimStride = 1;
+            for (int d = 0; d < dim; ++d)
+            {
+                const auto localOffset = counter % blockEdgeSize;
+
+                if (localOffset == 0) // This means we are at the lower boundary for this dimension
+                {
+                    neighbourCoord.set_d(d, neighbourCoord.get(d) - 1);
+                    laplacian += sparseGrid.template get<p_src>(neighbourCoord);
+                    neighbourCoord.set_d(d, neighbourCoord.get(d) + 1);
+                }
+                else
+                {
+                    laplacian += dataBlockLoad.template get<p_src>()[offset - dimStride];
+                }
+                if (localOffset == blockEdgeSize - 1) // This means we are at the lower boundary for this dimension
+                {
+                neighbourCoord.set_d(d, neighbourCoord.get(d) + 1);
+                laplacian += sparseGrid.template get<p_src>(neighbourCoord);
+                neighbourCoord.set_d(d, neighbourCoord.get(d) - 1);
+                }
+                else
+                {
+                    laplacian += dataBlockLoad.template get<p_src>()[offset + dimStride];
+                }
+                //
+                counter /= blockEdgeSize;
+                dimStride *= blockEdgeSize;
+            }
+            dataBlockStore.template get<p_dst>()[offset] = cur + dt * laplacian;
+        }
     }
 
     template <typename SparseGridT, typename CtxT>
@@ -356,6 +416,98 @@ void testStencilHeat_perf(unsigned int i)
     report_sparsegrid_funcs.graphs.put(base +".time.dev",deviation_tm);
 }
 
+template<typename SparseGridZ>
+void testStencilHeatHost_perf(unsigned int i)
+{
+    // todo: Make sure to reimplement the host stencil application function to pre-load to a block of memory both content and ghost
+    // this way we can avoid binary searches...
+    auto testName = "In-place stencil HOST";
+    unsigned int gridEdgeSize = 1024;
+    typedef HeatStencil<SparseGridZ::dims,0,1> StencilT;
+
+    std::string base("performance.SparseGridGpu(" + std::to_string(i) + ").stencil");
+
+    report_sparsegrid_funcs.graphs.put(base + ".dim",2);
+    report_sparsegrid_funcs.graphs.put(base + ".blockSize",8);
+    report_sparsegrid_funcs.graphs.put(base + ".gridSize.x",gridEdgeSize*SparseGridZ::blockEdgeSize_);
+    report_sparsegrid_funcs.graphs.put(base + ".gridSize.y",gridEdgeSize*SparseGridZ::blockEdgeSize_);
+
+//    unsigned int iterations = 100;
+    unsigned int iterations = 10;
+//    unsigned int iterations = 2;
+//    unsigned int iterations = 1; // Debug
+
+    openfpm::vector<double> measures_gf;
+    openfpm::vector<double> measures_tm;
+
+    dim3 gridSize(gridEdgeSize, gridEdgeSize);
+    dim3 blockSize(SparseGridZ::blockEdgeSize_,SparseGridZ::blockEdgeSize_);
+    typename SparseGridZ::grid_info blockGeometry(gridSize);
+    SparseGridZ sparseGrid(blockGeometry);
+    mgpu::ofp_context_t ctx;
+    sparseGrid.template setBackgroundValue<0>(0);
+
+    unsigned long long numElements = gridEdgeSize*SparseGridZ::blockEdgeSize_*gridEdgeSize*SparseGridZ::blockEdgeSize_;
+
+    // Initialize the grid
+    sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
+    CUDA_LAUNCH_DIM3((insertConstantValue<0>),gridSize, blockSize,sparseGrid.toKernel(), 0);
+    sparseGrid.template flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+    sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
+    dim3 sourcePt(gridSize.x * SparseGridZ::blockEdgeSize_ / 2, gridSize.y * SparseGridZ::blockEdgeSize_ / 2, 0);
+    insertOneValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), sourcePt, 100);
+    sparseGrid.template flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+    sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
+    cudaDeviceSynchronize();
+
+    sparseGrid.template deviceToHost<0>();
+
+    for (unsigned int iter=0; iter<iterations; ++iter)
+    {
+        cudaDeviceSynchronize();
+
+        timer ts;
+        ts.start();
+
+        sparseGrid.template applyStencilsHost<StencilT>(STENCIL_MODE_INPLACE, 0.1);
+
+        cudaDeviceSynchronize();
+        ts.stop();
+
+        measures_tm.add(ts.getwct());
+
+        float gElemS = numElements / (1e9 * ts.getwct());
+        float gFlopsS = gElemS * StencilT::flops;
+
+        measures_gf.add(gFlopsS);
+    }
+
+    double mean_tm = 0;
+    double deviation_tm = 0;
+    standard_deviation(measures_tm,mean_tm,deviation_tm);
+
+    double mean_gf = 0;
+    double deviation_gf = 0;
+    standard_deviation(measures_gf,mean_gf,deviation_gf);
+
+    // All times above are in ms
+
+    float gElemS = numElements / (1e9 * mean_tm);
+    float gFlopsS = gElemS * StencilT::flops;
+    std::cout << "Test: " << testName << std::endl;
+    std::cout << "Grid: " << gridEdgeSize*SparseGridZ::blockEdgeSize_ << "x" << gridEdgeSize*SparseGridZ::blockEdgeSize_ << std::endl;
+    std::cout << "Iterations: " << iterations << std::endl;
+    std::cout << "\tStencil: " << mean_gf << " dev:" << deviation_gf << " s" << std::endl;
+    std::cout << "Throughput: " << std::endl << "\t " << gElemS << " GElem/s " << std::endl << "\t " << gFlopsS << " GFlops/s" << std::endl;
+
+    report_sparsegrid_funcs.graphs.put(base + ".Gflops.mean",mean_gf);
+    report_sparsegrid_funcs.graphs.put(base +".Gflops.dev",deviation_gf);
+    report_sparsegrid_funcs.graphs.put(base + ".time.mean",mean_tm);
+    report_sparsegrid_funcs.graphs.put(base +".time.dev",deviation_tm);
+}
+
 BOOST_AUTO_TEST_SUITE(performance)
 
 BOOST_AUTO_TEST_SUITE(SparseGridGpu_test)
@@ -384,6 +536,19 @@ BOOST_AUTO_TEST_CASE(testStencilHeatZ)
     report_sparsegrid_funcs.graphs.put("performance.SparseGridGpu(1).stencil.test.name","StencilZ");
 
 	testStencilHeat_perf<SparseGridGpu_z<dim, AggregateT, blockEdgeSize, chunkSize>>(1);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeat_Host)
+{
+    constexpr unsigned int dim = 2;
+    constexpr unsigned int blockEdgeSize = 8;
+
+    typedef aggregate<float,float> AggregateT;
+    constexpr unsigned int chunkSize = IntPow<blockEdgeSize,dim>::value;
+
+    report_sparsegrid_funcs.graphs.put("performance.SparseGridGpu(0).stencil.test.name","StencilN");
+
+    testStencilHeatHost_perf<SparseGridGpu<dim, AggregateT, blockEdgeSize, chunkSize>>(0);
 }
 
 void testInsertStencil(unsigned int gridEdgeSize, unsigned int i)

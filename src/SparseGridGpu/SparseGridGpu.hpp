@@ -328,6 +328,29 @@ private:
         gridSize.setDimensions(res);
     }
 
+    // This is for testing stencil application in Host, remember to deviceToHost the sparse grid before doing this!
+    template <typename stencil, typename... Args>
+    void applyStencilInPlaceHost(Args... args)
+    {
+        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
+        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+
+        const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
+        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
+
+        if (numScalars == 0) return;
+
+        SparseGridGpuKernels::applyStencilInPlaceHost
+                <dim,
+                        BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+                        stencil>(
+                         indexBuffer,
+                         dataBuffer,
+                         *this,
+                         args...);
+    }
+
     template <typename stencil, typename... Args>
     void applyStencilInPlace(Args... args)
     {
@@ -490,6 +513,18 @@ public:
         return toKer;
     }
 
+    //
+
+    constexpr static unsigned int getBlockEdgeSize()
+    {
+        return blockEdgeSize;
+    }
+
+    constexpr unsigned int getBlockSize() const
+    {
+        return blockSize;
+    }
+
     // Geometry
     template<typename CoordT>
     inline size_t getLinId(CoordT &coord)
@@ -604,6 +639,26 @@ public:
                 threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), this->toKernel(),nn_blocks.toKernel());
     }
 
+    template<typename stencil, typename... Args>
+    void applyStencilsHost(StencilMode mode = STENCIL_MODE_INPLACE, Args... args)
+    {
+        // Apply the given stencil on all elements which are not boundary-tagged
+        // The idea is to have this function launch a __global__ function (made by us) on all existing blocks
+        // then this kernel checks if elements exist && !padding and on those it calls the user-provided
+        // __device__ functor. The mode of the stencil application is used basically to choose how we load the block
+        // that we pass to the user functor as storeBlock: in case of Insert, we get the block through an insert (and
+        // we also call the necessary aux functions); in case of an In-place we just get the block from the data buffer.
+        switch (mode)
+        {
+            case STENCIL_MODE_INPLACE:
+                applyStencilInPlaceHost<stencil>(args...);
+                break;
+            case STENCIL_MODE_INSERT:
+//                applyStencilInsertHost<stencil>(args...);
+                std::cout << "No insert mode stencil application available on Host!" << std::endl;
+                break;
+        }
+    }
 
     //todo: Move implems into a functor for compile time choice of stencil mode
     template<typename stencil, typename... Args>
@@ -636,19 +691,22 @@ public:
     template<typename BitMaskT>
     inline static bool isPadding(BitMaskT &bitMask)
     {
-        return getBit(bitMask, PADDING_BIT);
+        return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
+        ::getBit(bitMask, PADDING_BIT);
     }
 
     template<typename BitMaskT>
     inline static void setPadding(BitMaskT &bitMask)
     {
-        setBit(bitMask, PADDING_BIT);
+        BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
+        ::setBit(bitMask, PADDING_BIT);
     }
 
     template<typename BitMaskT>
     inline static void unsetPadding(BitMaskT &bitMask)
     {
-        unsetBit(bitMask, PADDING_BIT);
+        BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
+        ::unsetBit(bitMask, PADDING_BIT);
     }
 
     template<unsigned int p>
