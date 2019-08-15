@@ -48,12 +48,12 @@ namespace SparseGridGpuKernels
             return;
         }
 
-        const auto dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+        const long long dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
         auto dataBlock = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
 
         if (dataBlockId < 0)
         {
-        	printf("Negative Datablock \n");
+        	printf("Negative Datablock: dataBlockId=%ld, dataBlockPos=%u \n", dataBlockId, dataBlockPos);
         	return;
         }
 
