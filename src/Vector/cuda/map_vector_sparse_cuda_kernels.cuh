@@ -413,6 +413,7 @@ __global__ void construct_insert_list_key_only(vector_index_type vit_block_data,
 								 vector_index_type vit_block_scan,
 								 vector_index_type vit_list_0,
 								 vector_index_type vit_list_1,
+								 vector_index_type segment_index_map,
 								 int nslot)
 {
 	int n_move = vit_block_n.template get<0>(blockIdx.x);
@@ -424,6 +425,7 @@ __global__ void construct_insert_list_key_only(vector_index_type vit_block_data,
 	{
 		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
 		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
+		segment_index_map.template get<0>(start + i*blockDim.x + threadIdx.x) = nslot*blockIdx.x + i*blockDim.x + threadIdx.x;
 	}
 
 	// move remaining
@@ -431,6 +433,7 @@ __global__ void construct_insert_list_key_only(vector_index_type vit_block_data,
 	{
 		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
 		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
+		segment_index_map.template get<0>(start + i*blockDim.x + threadIdx.x) = nslot*blockIdx.x + i*blockDim.x + threadIdx.x;
 	}
 }
 
@@ -593,6 +596,76 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 	}
 }
 
+// for each segments
+template<typename vector_index_type, typename vector_index_type2>
+__global__ void compute_predicate(vector_index_type vct_index_merge,
+								unsigned int m,
+								vector_index_type2 pred_ids)
+{
+	int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (p >= vct_index_merge.size())	return;
+
+	unsigned int pp1 = (p+1 == vct_index_merge.size())?p:p+1;
+	unsigned int pm1 = (p == 0)?p:p-1;
+
+	auto id0 = vct_index_merge.template get<0>(pm1);
+	auto id1 = vct_index_merge.template get<0>(p);
+	auto id2 = vct_index_merge.template get<0>(pp1);
+
+	pred_ids.template get<0>(p) = (id1 < m && id2 < m) | (id0 < m && id2 < m) | (id0 < m && id1 >= m && id2 >= m);
+	pred_ids.template get<1>(p) = id1 >= m;
+	pred_ids.template get<2>(p) = !(id1 < m && id2 >= m);
+	pred_ids.template get<3>(p) = id1 < m && id2 < m;
+}
+
+// for each segments
+template<typename vector_index_type, typename vector_index_type2>
+__global__ void maps_create(vector_index_type2 scan_ids,
+								vector_index_type2 pred_ids,
+		 	 	 	 	 	 	vector_index_type vct_seg_old,
+		 	 	 	 	 	 	vector_index_type vct_out_map,
+		 	 	 	 	 	 	vector_index_type vct_copy_old)
+{
+	int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (p >= scan_ids.size())	return;
+
+	auto id1 = scan_ids.template get<0>(p);
+	bool pred_id1 = pred_ids.template get<0>(p);
+	auto id2 = scan_ids.template get<1>(p);
+	bool pred_id2 = pred_ids.template get<1>(p);
+	auto id3 = scan_ids.template get<2>(p);
+	auto id4 = scan_ids.template get<3>(p);
+	bool pred_id4 = pred_ids.template get<3>(p);
+
+	if (pred_id2 == true)
+	{
+		vct_seg_old.template get<0>(id2) = (pred_id1 == true)?id1:-1;
+	}
+	vct_out_map.template get<0>(id2) = id3;
+
+	if (pred_id4 == true)
+	{vct_copy_old.template get<0>(id4) = id3;}
+}
+
+
+
+// for each segments
+template<typename vector_index_type, typename vector_data_type>
+__global__ void copy_old(vector_data_type vct_data_new,
+								vector_index_type index_to_copy,
+		 	 	 	 	 	 	vector_data_type vct_data_old)
+{
+	int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (p >= index_to_copy.size())	return;
+
+	auto id = index_to_copy.template get<0>(p);
+
+	vct_data_new.get(id) = vct_data_old.get(p);
+}
+
 template<typename vector_index_type, typename vector_index_type2, unsigned int block_dim>
 __global__ void solve_conflicts_remove(vector_index_type vct_index,
 								vector_index_type merge_index,
@@ -726,6 +799,19 @@ __global__ void reorder_vector_data(vector_index_type vi, vector_data_type v_dat
 
 	v_data_ord.get_o(p) = v_data.get_o(vi.template get<0>(p));
 }
+
+template<typename vector_index_type>
+__global__ void reorder_create_index_map(vector_index_type vi, vector_index_type seg_in, vector_index_type seg_out)
+{
+	int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (p >= vi.size())	return;
+
+	// reorder based on v_ord the data vector
+
+	seg_out.template get<0>(p) = seg_in.template get<0>(vi.template get<0>(p));
+}
+
 
 template<unsigned int prp, typename vector_type>
 __global__ void set_indexes(vector_type vd, int off)

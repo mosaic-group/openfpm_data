@@ -193,12 +193,12 @@ namespace BlockMapGpuKernels
             unsigned int pMask,
             unsigned int chunksPerBlock,
             typename op,
-            typename IndexVectorT, typename DataVectorT>
+            typename IndexVectorT, typename IndexVectorT2, typename DataVectorT>
     __global__ void
     segreduce_total(
             DataVectorT data_new,
             DataVectorT data_old,
-            IndexVectorT segments_data,
+            IndexVectorT2 segments_data,
             IndexVectorT segments_dataMap,
             IndexVectorT segments_dataOld,
             IndexVectorT outputMap,
@@ -710,29 +710,178 @@ namespace BlockMapGpuFunctors
                     svr(dataOut,tmpData,mergeIndices,context);
             boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
 
-            ///////////////////// DEBUG /////////////////
-
-/*            dataOut.template deviceToHost<0>();
-
-            std::cout << "DATA CHUNKS OUT: " << dataOut.size() << std::endl;
-
-            for (size_t i = 0 ; i < dataOut.size() ; i++)
-            {
-            	for (size_t j = 0 ; j < 64 ; j++)
-            	{
-            		std::cout << dataOut.template get<0>(i)[j] << "   ";
-            	}
-            	std::cout << std::endl;
-            }*/
-
-            //////////////////////////////////////////////
-
 
             return true; //todo: check if error in kernel
 #else // __NVCC__
             std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
             return true;
 #endif // __NVCC__
+        }
+    };
+}
+
+
+
+namespace BlockMapGpuFunctorsNew
+{
+    /**
+     * This functor is used in the sparse vector flush method to achieve the right blocked behaviour
+     */
+    template<unsigned int blockSize>
+    struct BlockFunctor
+    {
+        template<typename vector_index_type, typename vector_data_type>
+        static bool compact(vector_index_type &starts, int poolSize, vector_data_type &src, vector_data_type &dst)
+        {
+            return true;
+        }
+
+        template<typename vector_index_type, typename vector_data_type>
+        static bool reorder(vector_index_type &src_id, vector_data_type &data, vector_data_type &data_reord)
+        {
+            return true;
+        }
+
+        template<unsigned int pSegment, typename vector_reduction, typename T, typename vector_index_type, typename vector_data_type>
+        static bool seg_reduce(vector_index_type &segments, vector_data_type &data_old, vector_data_type &data_output,
+        					   vector_index_type &vct_old_copy,
+        					   vector_data_type &data_new, vector_index_type data_new_map,
+        					   vector_index_type & data_out_map,
+        					   vector_index_type & data_seg_old_map)
+        {
+#ifdef __NVCC__
+            typedef typename vector_data_type::value_type AggregateT;
+
+            typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
+            typedef typename boost::mpl::at<
+                    typename vector_data_type::value_type::type,
+                    typename reduction_type::prop
+                    >::type::scalarType red_type;
+            typedef typename reduction_type::op_red<red_type> red_op;
+
+            constexpr unsigned int p = reduction_type::prop::value;
+            constexpr unsigned int pMask = AggregateT::max_prop_real - 1;
+
+            typedef BlockTypeOf<AggregateT, p> BlockT; // The type of the 0-th property
+
+            constexpr unsigned int chunksPerBlock = blockSize / BlockT::size;
+            const unsigned int gridSize =
+                    segments.size() - 1; // This "-1" is because segments has a trailing extra element
+
+			// Copy old elements
+
+			CUDA_LAUNCH_DIM3(copy_old,gridSize,data_output.toKernel(),vct_old_copy.toKernel(),data_old.toKernel());
+
+
+    		CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<p, pSegment, pMask, 2, chunksPerBlock, red_op>),gridSize, blockSize,
+    						data_new.toKernel(),
+    						data_old.toKernel(),
+    						segments.toKernel(),
+    						data_new_map.toKernel(),
+    						data_seg_old_map.toKernel(),
+    						data_out_map.toKernel(),
+    						data_output.toKernel());
+
+            return true; //todo: check if error in kernel
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+            return true;
+#endif // __NVCC__
+        }
+
+        template<unsigned int pSegment, typename vector_reduction, typename T,
+                 typename vector_index_type,
+                 typename vector_index_type2,
+                 typename vector_data_type>
+        static bool seg_reduce_total(vector_index_type2 &segments, vector_data_type &data_old, vector_data_type &data_output,
+        					   vector_index_type &vct_old_copy,
+        					   vector_data_type &data_new, vector_index_type data_new_map,
+        					   vector_index_type & data_out_map,
+        					   vector_index_type & data_seg_old_map)
+        {
+#ifdef __NVCC__
+            typedef typename vector_data_type::value_type AggregateT;
+
+            typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
+            typedef typename boost::mpl::at<
+                    typename vector_data_type::value_type::type,
+                    typename reduction_type::prop
+                    >::type::scalarType red_type;
+            typedef typename reduction_type::op_red<red_type> red_op;
+
+            constexpr unsigned int p = reduction_type::prop::value;
+            constexpr unsigned int pMask = AggregateT::max_prop_real - 1;
+
+            typedef BlockTypeOf<AggregateT, p> BlockT; // The type of the 0-th property
+
+            constexpr unsigned int chunksPerBlock = blockSize / BlockT::size;
+            const unsigned int gridSize =
+                    segments.size() - 1; // This "-1" is because segments has a trailing extra element
+
+			// Copy old elements
+
+			CUDA_LAUNCH_DIM3(copy_old,gridSize,blockSize,data_output.toKernel(),vct_old_copy.toKernel(),data_old.toKernel());
+
+
+    		CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<p, pSegment, pMask, chunksPerBlock, red_op>),gridSize, blockSize,
+    						data_new.toKernel(),
+    						data_old.toKernel(),
+    						segments.toKernel(),
+    						data_new_map.toKernel(),
+    						data_seg_old_map.toKernel(),
+    						data_out_map.toKernel(),
+    						data_output.toKernel());
+
+            return true; //todo: check if error in kernel
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+            return true;
+#endif // __NVCC__
+        }
+
+        template<unsigned int pSegment, typename vector_reduction, typename T, typename vector_index_type, typename vector_data_type>
+        static bool seg_reduce(vector_index_type &segments, vector_data_type &src, vector_data_type &dst)
+        {
+#ifdef __NVCC__
+            typedef typename vector_data_type::value_type AggregateT;
+
+            typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
+            typedef typename boost::mpl::at<
+                    typename vector_data_type::value_type::type,
+                    typename reduction_type::prop
+                    >::type::scalarType red_type;
+            typedef typename reduction_type::op_red<red_type> red_op;
+
+            constexpr unsigned int p = reduction_type::prop::value;
+            constexpr unsigned int pMask = AggregateT::max_prop_real - 1;
+
+            typedef BlockTypeOf<AggregateT, p> BlockT; // The type of the 0-th property
+
+            constexpr unsigned int chunksPerBlock = blockSize / BlockT::size;
+            const unsigned int gridSize =
+                    segments.size() - 1; // This "-1" is because segments has a trailing extra element
+
+            BlockMapGpuKernels::segreduce<p, pSegment, pMask, chunksPerBlock, red_op> <<< gridSize, blockSize >>> (
+                    src.toKernel(),
+                    segments.toKernel(),
+                    src.toKernel(),
+                    dst.toKernel()
+            );
+            return true; //todo: check if error in kernel
+#else // __NVCC__
+            std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+            return true;
+#endif // __NVCC__
+        }
+
+        template<typename vector_index_type, typename vector_data_type, typename ... v_reduce>
+        static bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices,
+                                    vector_data_type &dataOld, vector_data_type &dataNew,
+                                    vector_index_type &tmpIndices, vector_data_type &tmpData,
+                                    vector_index_type &keysOut, vector_data_type &dataOut,
+                                    mgpu::ofp_context_t & context)
+        {
+            return true;
         }
     };
 }

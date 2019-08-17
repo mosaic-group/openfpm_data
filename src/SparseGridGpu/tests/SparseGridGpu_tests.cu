@@ -27,7 +27,7 @@ __global__ void insertConstantValue2(SparseGridType sparseGrid, ScalarT value)
     unsigned int dataBlockId = pos / BlockT::size;
     unsigned int offset = pos % BlockT::size;
 
-    auto encap = sparseGrid.insertBlockNew(dataBlockId);
+    auto encap = sparseGrid.insertBlock(dataBlockId);
     encap.template get<p1>()[offset] = value;
     encap.template get<p2>()[offset] = value;
     BlockMapGpu_ker<>::setExist(encap.template get<pMask>()[offset]);
@@ -987,7 +987,7 @@ __global__ void insertSphere(SparseGridType sparseGrid, grid_key_dx<2,int> start
 
     if (is_block_empty == false)
     {
-    	auto ec = sparseGrid.insertBlockNew(blockId);
+    	auto ec = sparseGrid.insertBlock(blockId);
 
         if ( is_active == true)
         {

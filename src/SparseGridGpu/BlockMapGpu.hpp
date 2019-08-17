@@ -132,10 +132,7 @@ public:
      * \return the blockMap
      *
      */
-    openfpm::vector_sparse_gpu_block<
-                AggregateInternalT,
-                BlockMapGpuFunctors::BlockFunctor<threadBlockSize>
-                > & private_get_blockMap()
+    decltype(blockMap) & private_get_blockMap()
 	{
     	return blockMap;
 	}

@@ -7,6 +7,185 @@
 
 BOOST_AUTO_TEST_SUITE( vector_sparse_cuda_kernels )
 
+BOOST_AUTO_TEST_CASE(test_maps_create)
+{
+	openfpm::vector_gpu<aggregate<int>> merge_indexes;
+
+	openfpm::vector_gpu<aggregate<int,int,int,int>> p_ids;
+	openfpm::vector_gpu<aggregate<int,int,int,int>> s_ids;
+
+	openfpm::vector_gpu<aggregate<int>> copy_old;
+	openfpm::vector_gpu<aggregate<int>> outputMap;
+	openfpm::vector_gpu<aggregate<int>> segments_oldData;
+
+	// old data has 9 points
+	// new data has 7 segments
+
+	merge_indexes.resize(16);
+	merge_indexes.template get<0>(0) = 9;      // new
+	merge_indexes.template get<0>(1) = 10;     // new
+	merge_indexes.template get<0>(2) = 0;      // old id:0
+	merge_indexes.template get<0>(3) = 1;      // old id:1
+	merge_indexes.template get<0>(4) = 2;      // old id:2
+	merge_indexes.template get<0>(5) = 3;      // old id:3
+	merge_indexes.template get<0>(6) = 4;      // old id:4
+	merge_indexes.template get<0>(7) = 5;      // old id:5
+	merge_indexes.template get<0>(8) = 11;     // new
+	merge_indexes.template get<0>(9) = 6;      // old id:6
+	merge_indexes.template get<0>(10) = 12;     // new
+	merge_indexes.template get<0>(11) = 7;     // old id:7
+	merge_indexes.template get<0>(12) = 8;     // old id: 8
+	merge_indexes.template get<0>(13) = 13;    // new
+	merge_indexes.template get<0>(14) = 14;    // new
+	merge_indexes.template get<0>(15) = 15;    // new
+
+	merge_indexes.template hostToDevice<0>();
+
+	s_ids.resize(16+1);
+	p_ids.resize(16+1);
+
+	// fill the last of compute predicates
+	p_ids.template get<0>(p_ids.size()-1) = 0;
+	p_ids.template get<1>(p_ids.size()-1) = 0;
+	p_ids.template get<2>(p_ids.size()-1) = 0;
+	p_ids.template get<3>(p_ids.size()-1) = 0;
+
+	p_ids.template hostToDevice<0,1,2,3>(p_ids.size()-1,p_ids.size()-1);
+
+	auto ite = merge_indexes.getGPUIterator();
+
+	CUDA_LAUNCH(compute_predicate,ite,merge_indexes.toKernel(),9,p_ids.toKernel());
+
+	mgpu::standard_context_t context(false);
+	mgpu::scan((int *)p_ids.template getDeviceBuffer<0>(),
+				s_ids.size(),
+	            (int *)s_ids.template getDeviceBuffer<0>(),
+                context);
+
+	mgpu::scan((int *)p_ids.template getDeviceBuffer<1>(),
+				s_ids.size(),
+	            (int *)s_ids.template getDeviceBuffer<1>(),
+                context);
+
+	mgpu::scan((int *)p_ids.template getDeviceBuffer<2>(),
+				s_ids.size(),
+	            (int *)s_ids.template getDeviceBuffer<2>(),
+                context);
+
+	mgpu::scan((int *)p_ids.template getDeviceBuffer<3>(),
+				s_ids.size(),
+	            (int *)s_ids.template getDeviceBuffer<3>(),
+                context);
+
+	s_ids.template deviceToHost<0,1,2,3>();
+	p_ids.template deviceToHost<0,1,2,3>();
+
+	size_t copy_old_size = s_ids.template get<3>(s_ids.size()-1) + p_ids.template get<3>(p_ids.size()-1);
+	size_t seg_old_size = s_ids.template get<1>(s_ids.size()-1) + p_ids.template get<1>(p_ids.size()-1);
+	size_t out_map_size = s_ids.template get<1>(s_ids.size()-1) + p_ids.template get<1>(p_ids.size()-1);
+
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(0),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(0),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(0),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(0),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(1),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(1),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(1),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(1),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(2),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(2),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(2),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(2),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(3),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(3),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(3),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(3),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(4),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(4),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(4),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(4),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(5),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(5),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(5),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(5),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(6),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(6),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(6),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(6),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(7),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(7),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(7),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(7),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(8),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(8),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(8),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(8),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(9),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(9),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(9),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(9),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(10),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(10),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(10),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(10),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(11),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(11),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(11),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(11),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(12),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(12),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(12),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(12),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(13),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(13),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(13),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(13),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(14),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(14),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(14),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(14),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<0>(15),0);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<1>(15),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<2>(15),1);
+	BOOST_REQUIRE_EQUAL(p_ids.template get<3>(15),0);
+
+	segments_oldData.resize(seg_old_size);
+	outputMap.resize(out_map_size);
+	copy_old.resize(copy_old_size);
+
+	CUDA_LAUNCH(maps_create,ite,s_ids.toKernel(),p_ids.toKernel(),segments_oldData.toKernel(),outputMap.toKernel(),copy_old.toKernel());
+
+	segments_oldData.template deviceToHost<0>();
+	outputMap.template deviceToHost<0>();
+	copy_old.template deviceToHost<0>();
+
+	BOOST_REQUIRE_EQUAL(seg_old_size,7);
+	BOOST_REQUIRE_EQUAL(out_map_size,7);
+	BOOST_REQUIRE_EQUAL(copy_old_size,6);
+
+	BOOST_REQUIRE_EQUAL(segments_oldData.template get<0>(0),-1);
+	BOOST_REQUIRE_EQUAL(outputMap.template get<0>(0),0);
+	BOOST_REQUIRE_EQUAL(segments_oldData.template get<0>(1),-1);
+	BOOST_REQUIRE_EQUAL(outputMap.template get<0>(1),1);
+	BOOST_REQUIRE_EQUAL(segments_oldData.template get<0>(2),5);
+	BOOST_REQUIRE_EQUAL(outputMap.template get<0>(2),7);
+	BOOST_REQUIRE_EQUAL(segments_oldData.template get<0>(3),6);
+	BOOST_REQUIRE_EQUAL(outputMap.template get<0>(3),8);
+	BOOST_REQUIRE_EQUAL(segments_oldData.template get<0>(4),8);
+	BOOST_REQUIRE_EQUAL(outputMap.template get<0>(4),10);
+	BOOST_REQUIRE_EQUAL(segments_oldData.template get<0>(5),-1);
+	BOOST_REQUIRE_EQUAL(outputMap.template get<0>(5),11);
+	BOOST_REQUIRE_EQUAL(segments_oldData.template get<0>(6),-1);
+	BOOST_REQUIRE_EQUAL(outputMap.template get<0>(6),12);
+
+	BOOST_REQUIRE_EQUAL(copy_old.template get<0>(0),2);
+	BOOST_REQUIRE_EQUAL(copy_old.template get<0>(1),3);
+	BOOST_REQUIRE_EQUAL(copy_old.template get<0>(2),4);
+	BOOST_REQUIRE_EQUAL(copy_old.template get<0>(3),5);
+	BOOST_REQUIRE_EQUAL(copy_old.template get<0>(4),6);
+	BOOST_REQUIRE_EQUAL(copy_old.template get<0>(5),9);
+}
+
 BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 {
 	openfpm::vector_gpu<aggregate<int>> block_insert;

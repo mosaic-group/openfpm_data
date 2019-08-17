@@ -234,7 +234,7 @@ namespace SparseGridGpuKernels
         auto dataBlockLoad = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
         const auto dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
 
-        auto dataBlockStore = sparseGrid.insertBlockNew(dataBlockId);
+        auto dataBlockStore = sparseGrid.insertBlock(dataBlockId);
 
         // Read local mask to register
         const auto curMask = dataBlockLoad.template get<pMask>()[offset];

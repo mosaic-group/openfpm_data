@@ -62,33 +62,18 @@ __global__ void insertValues2DBlocked(SparseGridType sparseGrid, const int sOffs
 
     sparseGrid.init();
 
-    __shared__ BlockT *blocks[chunksPerBlock];
-    __shared__ MaskBlockT *masks[chunksPerBlock];
-
     int posX = blockIdx.x * blockDim.x + threadIdx.x + sOffsetX;
     int posY = blockIdx.y * blockDim.y + threadIdx.y + sOffsetY;
     const unsigned int offsetX = posX % blockEdgeSize;
     const unsigned int offsetY = posY % blockEdgeSize;
 
-    const unsigned int blockDimX = blockDim.x / blockEdgeSize;
-    const unsigned int blockOffsetX = threadIdx.x / blockEdgeSize;
-    const unsigned int blockOffsetY = threadIdx.y / blockEdgeSize;
-
-    const unsigned int dataBlockNum = blockOffsetY*blockDimX + blockOffsetX;
     const unsigned int offset = offsetY * blockEdgeSize + offsetX;
 
-//    if (offset == 0) // Just one thread per data block
-//    {
-        grid_key_dx<SparseGridType::d, int> blockCoord({posX / blockEdgeSize, posY / blockEdgeSize});
-        auto encap = sparseGrid.insertBlockNew(sparseGrid.getBlockLinId(blockCoord));
-        blocks[dataBlockNum] = &(encap.template get<p>());
-        masks[dataBlockNum] = &(encap.template get<pMask>());
-//    }
+	grid_key_dx<SparseGridType::d, int> blockCoord({posX / blockEdgeSize, posY / blockEdgeSize});
+	auto encap = sparseGrid.insertBlock(sparseGrid.getBlockLinId(blockCoord));
 
-    __syncthreads();
-
-    blocks[dataBlockNum]->block[offset] = posX*posX * posY*posY;
-    BlockMapGpu_ker<>::setExist(masks[dataBlockNum]->block[offset]);
+    encap.template get<p>()[offset] = posX*posX * posY*posY;
+    BlockMapGpu_ker<>::setExist(encap.template get<pMask>()[offset]);
 
     __syncthreads();
 
@@ -106,9 +91,6 @@ __global__ void insertConstantValue(SparseGridType sparseGrid, ScalarT value)
 
     sparseGrid.init();
 
-    __shared__ BlockT *blocks[chunksPerBlock];
-    __shared__ MaskBlockT *masks[chunksPerBlock];
-
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int z = blockIdx.z * blockDim.z + threadIdx.z;
@@ -117,18 +99,11 @@ __global__ void insertConstantValue(SparseGridType sparseGrid, ScalarT value)
     auto pos = sparseGrid.getLinId(coord);
     unsigned int dataBlockId = pos / BlockT::size;
     unsigned int offset = pos % BlockT::size;
-    unsigned int dataBlockNum = dataBlockId % chunksPerBlock;
 
-//    if (offset == 0) // Just one thread per data block
-//    {
-        auto encap = sparseGrid.insertBlockNew(dataBlockId);
-        blocks[dataBlockNum] = &(encap.template get<p>());
-        masks[dataBlockNum] = &(encap.template get<pMask>());
-//    }
+    auto encap = sparseGrid.template insertBlock<chunksPerBlock>(dataBlockId,BlockT::size);
 
-    __syncthreads();
-    blocks[dataBlockNum]->block[offset] = value;
-    BlockMapGpu_ker<>::setExist(masks[dataBlockNum]->block[offset]);
+    encap.template get<p>()[offset] = value;
+    BlockMapGpu_ker<>::setExist(encap.template get<pMask>()[offset]);
 
     __syncthreads();
 
