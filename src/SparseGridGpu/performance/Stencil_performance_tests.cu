@@ -514,9 +514,11 @@ void testStencilHeatSparse_perf(unsigned int i)
 {
     auto testName = "In-place sparse stencil";
     unsigned int gridEdgeSize = 128;
-    typedef HeatStencil<SparseGridZ::dims,0,1> StencilT;
     constexpr unsigned int dim = SparseGridZ::dims;
     const unsigned int blockEdgeSize = SparseGridZ::blockEdgeSize_;
+
+    typedef HeatStencil<dim, 0, 1> Stencil01T;
+    typedef HeatStencil<dim, 1, 0> Stencil10T;
 
     std::string base("performance.SparseGridGpu(" + std::to_string(i) + ").stencil");
 
@@ -578,14 +580,9 @@ void testStencilHeatSparse_perf(unsigned int i)
     auto boundaryElements = sparseGrid.countBoundaryElements();
     unsigned long long numElements = existingElements - boundaryElements;
 
-//    std::cout << "DEBUG: numElements=" << numElements
-//        << ", existingElements=" << existingElements
-//        << ", boundaryElements=" << boundaryElements
-//        << std::endl;
-
     // Now apply some boundary conditions
     sparseGrid.template applyBoundaryStencils<BoundaryStencilSetXRescaled<dim,0,0>>(
-            192, 384,
+            500000, 501600,
             0.0, 10.0);
     cudaDeviceSynchronize();
 
@@ -596,15 +593,17 @@ void testStencilHeatSparse_perf(unsigned int i)
         timer ts;
         ts.start();
 
-        sparseGrid.template applyStencils<StencilT>(STENCIL_MODE_INPLACE, 0.1);
-
+        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
+        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
+        cudaDeviceSynchronize();
+
         ts.stop();
 
         measures_tm.add(ts.getwct());
 
         float gElemS = numElements / (1e9 * ts.getwct());
-        float gFlopsS = gElemS * StencilT::flops;
+        float gFlopsS = gElemS * Stencil01T::flops;
 
         measures_gf.add(gFlopsS);
     }
@@ -620,7 +619,7 @@ void testStencilHeatSparse_perf(unsigned int i)
     // All times above are in ms
 
     float gElemS = numElements / (1e9 * mean_tm);
-    float gFlopsS = gElemS * StencilT::flops;
+    float gFlopsS = gElemS * Stencil01T::flops;
     std::cout << "Test: " << testName << std::endl;
     std::cout << "Grid: " << gridEdgeSize*blockEdgeSize << "x" << gridEdgeSize*blockEdgeSize << std::endl;
     std::cout << "Iterations: " << iterations << std::endl;
@@ -632,7 +631,8 @@ void testStencilHeatSparse_perf(unsigned int i)
     report_sparsegrid_funcs.graphs.put(base + ".time.mean",mean_tm);
     report_sparsegrid_funcs.graphs.put(base +".time.dev",deviation_tm);
 
-    sparseGrid.template deviceToHost<0>();
+    // DEBUG
+    sparseGrid.template deviceToHost<0,1>();
     sparseGrid.write("SparseGridGPU_testStencilHeatSparse_perf_DEBUG.vtk");
 }
 
@@ -640,10 +640,12 @@ template<typename SparseGridZ>
 void testStencilHeat3DSparse_perf(unsigned int i)
 {
     auto testName = "In-place 3D sparse stencil";
-    unsigned int gridEdgeSize = 128;
+    unsigned int gridEdgeSize = 32;
     constexpr unsigned int dim = SparseGridZ::dims;
     const unsigned int blockEdgeSize = SparseGridZ::blockEdgeSize_;
-    typedef HeatStencil<dim,0,1> StencilT;
+
+    typedef HeatStencil<dim, 0, 1> Stencil01T;
+    typedef HeatStencil<dim, 1, 0> Stencil10T;
 
     std::string base("performance.SparseGridGpu(" + std::to_string(i) + ").stencil");
 
@@ -660,14 +662,11 @@ void testStencilHeat3DSparse_perf(unsigned int i)
 
     dim3 gridSize(gridEdgeSize, gridEdgeSize, gridEdgeSize);
     dim3 blockSize(blockEdgeSize, blockEdgeSize, blockEdgeSize);
-    typename SparseGridZ::grid_info blockGeometry(gridSize);
+    size_t sz[3] = {512,512,512};
+    typename SparseGridZ::grid_info blockGeometry(sz);
     SparseGridZ sparseGrid(blockGeometry);
     mgpu::ofp_context_t ctx;
     sparseGrid.template setBackgroundValue<0>(0);
-
-    unsigned long long numElements = gridEdgeSize * blockEdgeSize
-                                     * gridEdgeSize * blockEdgeSize
-                                     * gridEdgeSize * blockEdgeSize;
 
     ///// Insert sparse content, a set of 3 hollow spheres /////
     // Sphere 1
@@ -707,6 +706,11 @@ void testStencilHeat3DSparse_perf(unsigned int i)
     sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
     sparseGrid.tagBoundaries();
 
+    sparseGrid.template deviceToHost<0>(); // NECESSARY as count takes place on Host!
+    auto existingElements = sparseGrid.countExistingElements();
+    auto boundaryElements = sparseGrid.countBoundaryElements();
+    unsigned long long numElements = existingElements - boundaryElements;
+
     // Now apply some boundary conditions
     sparseGrid.template applyBoundaryStencils<BoundaryStencilSetXRescaled<dim,0,0>>(
             192, 384,
@@ -720,15 +724,17 @@ void testStencilHeat3DSparse_perf(unsigned int i)
         timer ts;
         ts.start();
 
-        sparseGrid.template applyStencils<StencilT>(STENCIL_MODE_INPLACE, 0.1);
-
+        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
+        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
+        cudaDeviceSynchronize();
+
         ts.stop();
 
         measures_tm.add(ts.getwct());
 
         float gElemS = numElements / (1e9 * ts.getwct());
-        float gFlopsS = gElemS * StencilT::flops;
+        float gFlopsS = gElemS * Stencil01T::flops;
 
         measures_gf.add(gFlopsS);
     }
@@ -744,7 +750,7 @@ void testStencilHeat3DSparse_perf(unsigned int i)
     // All times above are in ms
 
     float gElemS = numElements / (1e9 * mean_tm);
-    float gFlopsS = gElemS * StencilT::flops;
+    float gFlopsS = gElemS * Stencil01T::flops;
     std::cout << "Test: " << testName << std::endl;
     std::cout << "Grid: " << gridEdgeSize * blockEdgeSize
               << "x" << gridEdgeSize * blockEdgeSize
@@ -758,6 +764,10 @@ void testStencilHeat3DSparse_perf(unsigned int i)
     report_sparsegrid_funcs.graphs.put(base +".Gflops.dev",deviation_gf);
     report_sparsegrid_funcs.graphs.put(base + ".time.mean",mean_tm);
     report_sparsegrid_funcs.graphs.put(base +".time.dev",deviation_tm);
+
+    // DEBUG
+    sparseGrid.template deviceToHost<0,1>();
+    sparseGrid.write("SparseGridGPU_testStencilHeat3DSparse_perf_DEBUG.vtk");
 }
 
 template<typename SparseGridZ>
