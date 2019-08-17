@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 if (TEST_PERFORMANCE)
-    set(CUDA_SOURCES SparseGridGpu/performance/Stencil_performance_tests.cu)
+    set(CUDA_SOURCES SparseGridGpu/performance/Stencil_performance_tests.cu SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh)
 endif ()
 
 if (CUDA_FOUND)
@@ -22,8 +22,8 @@ if (CUDA_FOUND)
 	    util/test/zmorton_unit_tests.cpp
 	    util/cuda/test/segreduce_block_cuda_tests.cu 
 	    SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu 
-	    SparseGridGpu/tests/SparseGridGpu_tests.cu 
-	    )
+	    SparseGridGpu/tests/SparseGridGpu_tests.cu
+            SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh)
 else ()
     set(CUDA_SOURCES)
 endif ()
