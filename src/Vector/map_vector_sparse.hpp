@@ -655,18 +655,6 @@ namespace openfpm
 
 	struct stub_block_functor
 	{
-		template<typename vector_index_type, typename vector_data_type>
-		static bool compact(vector_index_type & starts, int poolSize, vector_data_type & src, vector_data_type & dst)
-		{
-			return true;
-		}
-
-		template<typename vector_index_type, typename vector_data_type>
-		static bool reorder(vector_index_type & src_id, vector_data_type & data, vector_data_type & data_reord)
-		{
-			return true;
-		}
-
         template<unsigned int pSegment, typename vector_reduction, typename T, typename vector_index_type, typename vector_data_type>
 		static bool seg_reduce(vector_index_type & segments, vector_data_type & src, vector_data_type &  dst)
 		{
@@ -792,6 +780,8 @@ namespace openfpm
 		vector<aggregate<Ti,Ti,Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti,Ti,Ti>>::type,layout_base,grow_p> vct_p_ids;
 		vector<aggregate<Ti,Ti,Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti,Ti,Ti>>::type,layout_base,grow_p> vct_s_ids;
 
+		block_functor blf;
+
 		T bck;
 
 		CudaMemory mem;
@@ -905,8 +895,6 @@ namespace openfpm
 										vct_add_cont_index.toKernel(),
 										vct_add_cont_index_map.toKernel(),
 										n_gpu_add_block_slot);
-
-				//block_functor::compact(vct_index_tmp4, n_gpu_add_block_slot, vct_add_data, vct_add_data_cont);
 			}
 
 			return n_ele;
