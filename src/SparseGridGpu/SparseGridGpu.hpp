@@ -77,7 +77,8 @@ struct aggregate_add<aggregate<types ...>>
 enum StencilMode
 {
     STENCIL_MODE_INSERT = 0,
-    STENCIL_MODE_INPLACE = 1
+    STENCIL_MODE_INPLACE = 1,
+    STENCIL_MODE_INSERT_NOFLUSH = 2
 };
 
 struct NNFull
@@ -329,7 +330,7 @@ private:
     }
 
     template <typename stencil, typename... Args>
-    void applyStencilInPlace(Args... args)
+    void applyStencilInPlace(StencilMode & mode,Args... args)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -360,7 +361,7 @@ private:
 
     //todo: the applyInsert should also allocate the gpu insert buffer, initialize it, etc
     template <typename stencil, typename... Args>
-    void applyStencilInsert(Args... args)
+    void applyStencilInsert(StencilMode & mode, Args... args)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -391,9 +392,12 @@ private:
                         this->template toKernelNN<stencil::stencil_type::nNN>(),
                         args...);
 
-//        cudaDeviceSynchronize();
-        mgpu::ofp_context_t ctx;
-        stencil::flush(*this, ctx);
+
+        if (mode != STENCIL_MODE_INSERT_NOFLUSH)
+        {
+        	mgpu::ofp_context_t ctx;
+        	stencil::flush(*this, ctx);
+        }
     }
 
 public:
@@ -618,10 +622,13 @@ public:
         switch (mode)
         {
             case STENCIL_MODE_INPLACE:
-                applyStencilInPlace<stencil>(args...);
+                applyStencilInPlace<stencil>(mode,args...);
                 break;
             case STENCIL_MODE_INSERT:
-                applyStencilInsert<stencil>(args...);
+                applyStencilInsert<stencil>(mode,args...);
+                break;
+            case STENCIL_MODE_INSERT_NOFLUSH:
+                applyStencilInsert<stencil>(mode,args...);
                 break;
         }
     }

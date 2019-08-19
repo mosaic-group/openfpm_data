@@ -105,9 +105,11 @@ namespace openfpm
 #endif // __NVCC__
         }
 
-        template <unsigned int pSegment, typename vector_reduction, typename T, typename vector_data_type, typename vector_index_type>
+        template <unsigned int pSegment, typename vector_reduction, typename T, typename vector_data_type, typename vector_index_type , typename vector_index_type2>
         static void segreduce(vector_data_type & vector_data,
-                vector_index_type & segment_offset,
+        		vector_data_type & vector_data_unsorted,
+        		vector_index_type & vector_data_map,
+                vector_index_type2 & segment_offset,
                 vector_data_type & vector_data_red,
                 mgpu::ofp_context_t & context)
         {
@@ -236,14 +238,16 @@ namespace openfpm
 #endif // __NVCC__
         }
 
-        template <unsigned int pSegment, typename vector_reduction, typename T, typename vector_data_type, typename vector_index_type>
+        template <unsigned int pSegment, typename vector_reduction, typename T, typename vector_data_type, typename vector_index_type ,typename vector_index_type2>
         static void segreduce(vector_data_type & vector_data,
-                       vector_index_type & segment_offset,
-                       vector_data_type & vector_data_red,
-                       mgpu::ofp_context_t & context)
+        					  vector_data_type & vector_data_unsorted,
+        					  vector_index_type & vector_data_map,
+        					  vector_index_type2 & segment_offset,
+        					  vector_data_type & vector_data_red,
+        					  mgpu::ofp_context_t & context)
         {
 #ifdef __NVCC__
-            block_functor::template seg_reduce<pSegment, vector_reduction, T>(segment_offset, vector_data, vector_data_red);
+            block_functor::template seg_reduce<pSegment, vector_reduction, T>(segment_offset, vector_data, vector_data_unsorted, vector_data_map, vector_data_red);
 #else // __NVCC__
     std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
 #endif // __NVCC__
@@ -495,7 +499,8 @@ namespace openfpm
 	 *
 	 */
 	template<typename vector_data_type,
-	        typename vector_index_type,
+			typename vector_index_type,
+	        typename vector_index_type2,
 	        typename vector_reduction,
 	        typename block_functor,
 	        unsigned int impl2, unsigned int pSegment=1>
@@ -504,11 +509,17 @@ namespace openfpm
 		//! Vector in which to the reduction
 		vector_data_type & vector_data_red;
 
-		//! Vector in which to the reduction
+		//! new datas
 		vector_data_type & vector_data;
 
+		//! new data in an unsorted way
+		vector_data_type & vector_data_unsorted;
+
 		//! segment of offsets
-		vector_index_type & segment_offset;
+		vector_index_type2 & segment_offset;
+
+		//! map of the data
+		vector_index_type & vector_data_map;
 
 		//! gpu context
 		mgpu::ofp_context_t & context;
@@ -521,9 +532,11 @@ namespace openfpm
 		 */
 		inline sparse_vector_reduction(vector_data_type & vector_data_red,
 									   vector_data_type & vector_data,
-									   vector_index_type & segment_offset,
+									   vector_data_type & vector_data_unsorted,
+									   vector_index_type & vector_data_map,
+									   vector_index_type2 & segment_offset,
 									   mgpu::ofp_context_t & context)
-		:vector_data_red(vector_data_red),vector_data(vector_data),segment_offset(segment_offset),context(context)
+		:vector_data_red(vector_data_red),vector_data(vector_data),vector_data_unsorted(vector_data_unsorted),segment_offset(segment_offset),vector_data_map(vector_data_map),context(context)
 		{};
 
 		//! It call the copy function for each property
@@ -538,6 +551,8 @@ namespace openfpm
 			{
 			    scalar_block_implementation_switch<impl2, block_functor>::template segreduce<pSegment, vector_reduction, T>(
 			            vector_data,
+			            vector_data_unsorted,
+			            vector_data_map,
 			            segment_offset,
 			            vector_data_red,
 			            context);
@@ -832,6 +847,7 @@ namespace openfpm
 		size_t make_continuos(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_nadd_index,
 							  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index,
 							  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_cont_index,
+							  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_cont_index_map,
 							  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data,
 							  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_cont,
 							  mgpu::ofp_context_t & context)
@@ -856,8 +872,7 @@ namespace openfpm
 
 			// we reuse vct_nadd_index
 			vct_add_cont_index.resize(n_ele);
-			vct_add_index_cont_1.resize(n_ele);
-			vct_add_data_cont.resize(n_ele);
+			vct_add_cont_index_map.resize(n_ele);
 
 			ite_gpu<1> itew;
 			itew.wthr.x = vct_nadd_index.size()-1;
@@ -869,13 +884,15 @@ namespace openfpm
 
 			if (impl2 == VECTOR_SPARSE_STANDARD)
 			{
-				CUDA_LAUNCH(construct_insert_list,itew,vct_add_index.toKernel(),
+				vct_add_data_cont.resize(n_ele);
+
+				CUDA_LAUNCH(construct_insert_list_key_only,itew,vct_add_index.toKernel(),
 										vct_nadd_index.toKernel(),
 										vct_index_tmp4.toKernel(),
 										vct_add_cont_index.toKernel(),
-										vct_add_index_cont_1.toKernel(),
-										vct_add_data.toKernel(),
-										vct_add_data_cont.toKernel(),
+										vct_add_cont_index_map.toKernel(),
+//										vct_add_data.toKernel(),
+//										vct_add_data_cont.toKernel(),
 										n_gpu_add_block_slot);
 			}
 			else
@@ -886,11 +903,10 @@ namespace openfpm
 										vct_nadd_index.toKernel(),
 										vct_index_tmp4.toKernel(),
 										vct_add_cont_index.toKernel(),
-										vct_add_index_cont_1.toKernel(),
-										vct_segment_index_map.toKernel(),
+										vct_add_cont_index_map.toKernel(),
 										n_gpu_add_block_slot);
 
-				block_functor::compact(vct_index_tmp4, n_gpu_add_block_slot, vct_add_data, vct_add_data_cont);
+				//block_functor::compact(vct_index_tmp4, n_gpu_add_block_slot, vct_add_data, vct_add_data_cont);
 			}
 
 			return n_ele;
@@ -904,11 +920,13 @@ namespace openfpm
 		 * \param vct_add_cont_index array of indexes (unsorted), as output will be sorted
 		 * \param vct_add_cont_index_map reference to the original indexes
 		 * \param vct_add_data_reord sorted data output
+		 * \param vct_add_data_cont added data in a continuos unsorted array
 		 *
 		 */
 		void reorder_indexes(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_cont_index,
 							 vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_cont_index_map,
 							 vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
+							 vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_cont,
 							 mgpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
@@ -941,10 +959,7 @@ namespace openfpm
 			{
 				CUDA_LAUNCH(reorder_vector_data,ite,vct_add_cont_index_map.toKernel(),vct_add_data_cont.toKernel(),vct_add_data_reord.toKernel());
 			}
-			else
-			{
-				block_functor::reorder(vct_add_cont_index_map,vct_add_data_cont,vct_add_data_reord);
-			}
+
 #endif
 		}
 
@@ -957,7 +972,6 @@ namespace openfpm
 		template<typename ... v_reduce>
 		void merge_indexes(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_sort,
 						   vector<aggregate<Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti>>::type,layout_base,grow_p> & vct_add_index_unique,
-				  	  	   vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
 				  	  	   vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_merge_index,
 				  	  	   vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_merge_index_map,
 				  	  	   mgpu::ofp_context_t & context)
@@ -1051,8 +1065,12 @@ namespace openfpm
 #endif
 		}
 
+
+
 		template<typename ... v_reduce>
 		void merge_datas(vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
+						 vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data,
+						 vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_data_reord_map,
 				  	  	   mgpu::ofp_context_t & context)
 		{
 			ite_gpu<1> itew;
@@ -1071,15 +1089,21 @@ namespace openfpm
 			scalar_block_implementation_switch<impl2, block_functor>
 			        ::template extendSegments<1>(vct_add_index_unique, vct_add_data_reord.size());
 
-			sparse_vector_reduction<decltype(vct_add_data),decltype(vct_add_index_unique),vv_reduce,block_functor,impl2>
+			sparse_vector_reduction<typename std::remove_reference<decltype(vct_add_data)>::type,
+								    decltype(vct_add_data_reord_map),
+								    decltype(vct_add_index_unique),vv_reduce,block_functor,impl2>
 			        svr(
 			                vct_add_data_unique,
 			                vct_add_data_reord,
+			                vct_add_data,
+			                vct_add_data_reord_map,
 			                vct_add_index_unique,
 			                context);
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
 
-			sparse_vector_special<decltype(vct_add_data),decltype(vct_add_index_unique),vv_reduce> svr2(vct_add_data_unique,vct_add_data_reord,vct_add_index_unique,context);
+			sparse_vector_special<typename std::remove_reference<decltype(vct_add_data)>::type,
+								  decltype(vct_add_index_unique),
+								  vv_reduce> svr2(vct_add_data_unique,vct_add_data_reord,vct_add_index_unique,context);
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr2);
 
 			scalar_block_implementation_switch<impl2, block_functor>
@@ -1124,7 +1148,8 @@ namespace openfpm
 				return;
 			}
 
-			size_t n_ele = make_continuos(vct_nadd_index,vct_add_index,vct_add_index_cont_0,vct_add_data,vct_add_data_cont,context);
+			size_t n_ele = make_continuos(vct_nadd_index,vct_add_index,vct_add_index_cont_0,
+										  vct_add_index_cont_1,vct_add_data,vct_add_data_cont,context);
 
 			ite_gpu<1> itew;
 			itew.wthr.x = vct_nadd_index.size()-1;
@@ -1312,22 +1337,30 @@ namespace openfpm
 				return;
 			}
 
-			size_t n_ele = make_continuos(vct_nadd_index,vct_add_index,vct_add_index_cont_0,vct_add_data,vct_add_data_cont,context);
+			size_t n_ele = make_continuos(vct_nadd_index,vct_add_index,vct_add_index_cont_0,vct_add_index_cont_1,
+										  vct_add_data,vct_add_data_cont,context);
 
             // At this point we can check whether we have not inserted anything actually,
             // in this case, return without further ado...
-			if (vct_add_data_cont.size() == 0)
+			if (vct_add_index_cont_0.size() == 0)
             {
                 return;
             }
 
-			reorder_indexes(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context);
+			reorder_indexes(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,vct_add_data,context);
 
 			merge_indexes<v_reduce ... >(vct_add_index_cont_0,vct_add_index_unique,
-										 vct_add_data_reord,vct_index_tmp,vct_index_tmp2,
+										 vct_index_tmp,vct_index_tmp2,
 										 context);
 
-			merge_datas<v_reduce ... >(vct_add_data_reord,context);
+			if (impl2 == VECTOR_SPARSE_STANDARD)
+			{
+				merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_data,vct_add_index_cont_1,context);
+			}
+			else
+			{
+				merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_data,vct_add_index_cont_1,context);
+			}
 
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;

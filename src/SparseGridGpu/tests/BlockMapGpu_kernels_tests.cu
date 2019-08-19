@@ -227,11 +227,16 @@ BOOST_AUTO_TEST_CASE(testSegreduce_total)
 
         outputData.template deviceToHost<BITMASK, BLOCK>();
 
+        std::cout << "------------------------------------------------------------" << std::endl;
 
-		for (int j = 0; j < outputData.size(); ++j)
+		for (int j = 0; j < outputMap.size(); ++j)
 		{
-			BlockT outBlock = outputData.template get<BLOCK>(j);
-			MaskBlockT outMask = outputData.template get<BITMASK>(j);
+			size_t j_ = outputMap.template get<0>(j);
+
+			std::cout << "Index: " << j_ << std::endl;
+
+			BlockT outBlock = outputData.template get<BLOCK>(j_);
+			MaskBlockT outMask = outputData.template get<BITMASK>(j_);
 
 			for (int i = 0; i < BlockT::size; ++i)
 			{
@@ -239,6 +244,8 @@ BOOST_AUTO_TEST_CASE(testSegreduce_total)
 			}
 			std::cout << std::endl;
 		}
+
+		std::cout << "------------------------------------------------------------" << std::endl;
 
         // Check
 
@@ -356,340 +363,71 @@ BOOST_AUTO_TEST_CASE (testSegreduce_vector)
 		}
 }
 
-//    BOOST_AUTO_TEST_CASE (testSolveConflicts)
-//    {
-//        typedef float ScalarT;
-//        typedef DataBlock<unsigned char, 64> MaskBlockT;
-//        typedef DataBlock<ScalarT, 64> BlockT;
-//        openfpm::vector_gpu<aggregate<int>> segments;
-//        segments.resize(8);
-//        segments.template get<0>(0) = 0;
-//        segments.template get<0>(1) = 4;
-//        segments.template get<0>(2) = 5;
-//        segments.template get<0>(3) = 7;
-//        segments.template get<0>(4) = 8;
-//        segments.template get<0>(5) = 11;
-//        segments.template get<0>(6) = 17;
-//        segments.template get<0>(7) = 18; // Id of first non-existent data
-//
-//        segments.template hostToDevice<0>();
-//
-//        const unsigned int BITMASK = 0, BLOCK = 1;
-//        BlockT block;
-//        MaskBlockT mask;
-//        for (int i = 0; i < 32; ++i)
-//        {
-//            block[i] = i + 1;
-//            mask[i] = 1;
-//        }
-//        for (int i = 32; i < 64; ++i)
-//        {
-//            block[i] = 666;
-//            mask[i] = 0;
-//        }
-//
-//        openfpm::vector_gpu<aggregate<MaskBlockT, BlockT>> data;
-//        data.resize(18);
-//        for (int i = 0; i < 18; ++i)
-//        {
-//            data.template get<BITMASK>(i) = mask;
-//            data.template get<BLOCK>(i) = block;
-//        }
-//
-//        data.template hostToDevice<BITMASK, BLOCK>();
-//
-//        // Allocate output buffer
-//        openfpm::vector_gpu<aggregate<MaskBlockT, BlockT>> outputData;
-//        outputData.resize(segments.size()-1);
-//
-//        BlockMapGpuKernels::segreduce<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
-//                data.toKernel(),
-//                        segments.toKernel(),
-//                        data.toKernel(),
-//                        outputData.toKernel()
-//        );
-//
-//        // Segreduce on mask
-//        BlockMapGpuKernels::segreduce<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
-//                data.toKernel(),
-//                        segments.toKernel(),
-//                        data.toKernel(),
-//                        outputData.toKernel()
-//        );
-//
-//        outputData.template deviceToHost<BITMASK, BLOCK>();
-//
-//        for (int j = 0; j < outputData.size(); ++j)
-//        {
-//            BlockT outBlock = outputData.template get<BLOCK>(j);
-//            MaskBlockT outMask = outputData.template get<BITMASK>(j);
-//
-//            for (int i = 0; i < BlockT::size; ++i)
-//            {
-//                std::cout << outBlock[i] << ":" << (int)outMask[i] << " ";
-//            }
-//            std::cout << std::endl;
-//        }
-//    }
-//
-//    BOOST_AUTO_TEST_CASE (testSolveConflicts_vector)
-//    {
-//        typedef float ScalarT;
-//        typedef DataBlock<unsigned char, 64> MaskBlockT;
-//        typedef DataBlock<ScalarT, 64> BlockT;
-//        openfpm::vector_gpu<aggregate<int>> segments;
-//        segments.resize(8);
-//        segments.template get<0>(0) = 0;
-//        segments.template get<0>(1) = 4;
-//        segments.template get<0>(2) = 5;
-//        segments.template get<0>(3) = 7;
-//        segments.template get<0>(4) = 8;
-//        segments.template get<0>(5) = 11;
-//        segments.template get<0>(6) = 17;
-//        segments.template get<0>(7) = 18; // Id of first non-existent data
-//
-//        segments.template hostToDevice<0>();
-//
-//        const unsigned int BITMASK = 0, BLOCK = 1;
-//        BlockT block[3];
-//        MaskBlockT mask;
-//        for (int i = 0; i < 32; ++i)
-//        {
-//            block[0][i] = i + 1;
-//            block[1][i] = i + 1;
-//            block[2][i] = i + 1;
-//            mask[i] = 1;
-//        }
-//        for (int i = 32; i < 64; ++i)
-//        {
-//            block[0][i] = 666;
-//            block[1][i] = 666;
-//            block[2][i] = 666;
-//            mask[i] = 0;
-//        }
-//
-//        openfpm::vector_gpu<aggregate<MaskBlockT, BlockT[3]>> data;
-//        data.resize(18);
-//        for (int i = 0; i < 18; ++i)
-//        {
-//            data.template get<BITMASK>(i) = mask;
-//            for (int k=0; k<3; k++)
-//            {
-//                data.template get<BLOCK>(i)[k] = block[k];
-//            }
-//        }
-//
-//        data.template hostToDevice<BITMASK, BLOCK>();
-//
-//        // Allocate output buffer
-//        openfpm::vector_gpu<aggregate<MaskBlockT, BlockT[3]>> outputData;
-//        outputData.resize(segments.size()-1);
-//
-//        BlockMapGpuKernels::segreduce<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
-//                data.toKernel(),
-//                        segments.toKernel(),
-//                        data.toKernel(),
-//                        outputData.toKernel()
-//        );
-//
-//        // Segreduce on mask
-//        BlockMapGpuKernels::segreduce<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
-//                data.toKernel(),
-//                        segments.toKernel(),
-//                        data.toKernel(),
-//                        outputData.toKernel()
-//        );
-//
-//        outputData.template deviceToHost<BITMASK, BLOCK>();
-//
-//        for (int j = 0; j < outputData.size(); ++j)
-//        {
-//            BlockT outBlock[3];
-//            for (int k = 0 ; k < 3 ;k++)
-//            {outBlock[k] = outputData.template get<BLOCK>(j)[k];}
-//            MaskBlockT outMask = outputData.template get<BITMASK>(j);
-//
-//            for (int i = 0; i < BlockT::size; ++i)
-//            {
-//                std::cout << "(" << outBlock[0][i] << "," << outBlock[1][i] << "," << outBlock[2][i] << ")" << ":" << (int)outMask[i] << " ";
-//            }
-//            std::cout << std::endl;
-//        }
-//    }
-
 BOOST_AUTO_TEST_SUITE_END() // SparseGridGpu_kernels_tests
 
 BOOST_AUTO_TEST_SUITE(BlockMapGpu_functors_tests)
-BOOST_AUTO_TEST_CASE (testCompact)
-{
-typedef float ScalarT;
-typedef DataBlock<ScalarT, 64> BlockT;
-const unsigned int numPools = 5;
-const unsigned int poolSize = 10;
-openfpm::vector_gpu<aggregate<unsigned int>> starts;
-openfpm::vector_gpu<aggregate<BlockT>> dataSrc;
-openfpm::vector_gpu<aggregate<BlockT>> dataDst;
 
-const unsigned int numEl = numPools * poolSize;
-starts.resize(numPools+1);
-dataSrc.resize(numEl);
-
-// Now fill the starts...
-unsigned int curStart = 0;
-for (int i=0; i <= numPools; ++i)
-{
-	curStart += i; // Each pool contains i+1 elements
-	starts.template get<0>(i) = curStart;
-//            curStart += 2; // Each pool contains 2 elements
-//            curStart += 5; // Each pool contains RHS elements
-}
-dataDst.resize(starts.template get<0>(numPools));
-
-//        // Debug
-//        std::cout << "dataDst.size() = " << dataDst.size() << std::endl;
-
-// Fill the data
-for (int i=0; i<dataSrc.size(); ++i)
-{
-	for (int j=0; j<BlockT::size; ++j)
-	{
-		dataSrc.template get<0>(i)[j] = i;
-	};
-}
-// Copy to device
-starts.hostToDevice<0>();
-dataSrc.hostToDevice<0>();
-// Now perform the compaction
-BlockMapGpuFunctors::BlockFunctor<128>::compact(starts, poolSize, dataSrc, dataDst);
-
-// Now retrieve the dataDst vector
-dataDst.deviceToHost<0>();
-
-// Debug output
-for (int i=0; i<dataDst.size(); ++i)
-{
-	std::cout << "dataDst[" << i << "][0] = " << dataDst.template get<0>(i)[0] << std::endl;
-}
-// Validation
-int counter = 0;
-for (int pool=0; pool<numPools; ++pool)
-{
-	int numElInPool = pool+1;
-	for (int i=0; i<numElInPool; ++i)
-	{
-		int target = pool*10 + i;
-		BOOST_REQUIRE_EQUAL(dataDst.template get<0>(counter)[0], target);
-		++counter;
-	}
-}
-}
-
-BOOST_AUTO_TEST_CASE (testReorder)
-{
-typedef float ScalarT;
-typedef DataBlock<ScalarT, 64> BlockT;
-const unsigned int numEl = 10;
-const unsigned int permutationOffset = 2;
-openfpm::vector_gpu<aggregate<unsigned int>> srcIndices;
-openfpm::vector_gpu<aggregate<BlockT>> dataSrc;
-openfpm::vector_gpu<aggregate<BlockT>> dataDst;
-
-srcIndices.resize(numEl);
-dataSrc.resize(numEl);
-dataDst.resize(numEl);
-
-// Now fill the permutation
-for (int i=0; i < numEl; ++i)
-{
-	srcIndices.template get<0>(i) = (i+permutationOffset)%numEl; // We periodically shift the array by permutationOffset
-}
-
-// Fill the data
-for (int i=0; i<dataSrc.size(); ++i)
-{
-	for (int j=0; j<BlockT::size; ++j)
-	{
-		dataSrc.template get<0>(i)[j] = i;
-	};
-}
-// Copy to device
-srcIndices.hostToDevice<0>();
-dataSrc.hostToDevice<0>();
-// Now perform the compaction
-BlockMapGpuFunctors::BlockFunctor<128>::reorder(srcIndices, dataSrc, dataDst);
-
-// Now retrieve the dataDst vector
-dataDst.deviceToHost<0>();
-
-// Debug output
-for (int i=0; i<dataDst.size(); ++i)
-{
-	std::cout << "dataDst[" << i << "][0] = " << dataDst.template get<0>(i)[0] << std::endl;
-}
-// Validation
-for (int i=0; i<numEl; ++i)
-{
-	int target = (i+permutationOffset)%numEl;
-	BOOST_REQUIRE_EQUAL(dataDst.template get<0>(i)[0], target);
-}
-}
 
 BOOST_AUTO_TEST_CASE (testSeg_reduce)
 {
-typedef float ScalarT;
-typedef DataBlock<ScalarT, 64> BlockT;
-typedef DataBlock<unsigned char, 64> MaskBlockT;
-const unsigned int numSegments = 10;
-const unsigned int p=0, pMask=1, pSegment=0;
-openfpm::vector_gpu<aggregate<unsigned int>> segments;
-openfpm::vector_gpu<aggregate<BlockT, MaskBlockT>> dataSrc;
-openfpm::vector_gpu<aggregate<BlockT, MaskBlockT>> dataDst; // Mask is included here for signature issues, but never filled
+	typedef float ScalarT;
+	typedef DataBlock<ScalarT, 64> BlockT;
+	typedef DataBlock<unsigned char, 64> MaskBlockT;
+	const unsigned int numSegments = 10;
+	const unsigned int p=0, pMask=1, pSegment=0;
+	openfpm::vector_gpu<aggregate<unsigned int>> segments;
+	openfpm::vector_gpu<aggregate<BlockT, MaskBlockT>> dataSrc;
+	openfpm::vector_gpu<aggregate<BlockT, MaskBlockT>> dataDst; // Mask is included here for signature issues, but never filled
+	openfpm::vector_gpu<aggregate<int>> segment_map;
 
-segments.resize(numSegments+1);
-dataDst.resize(numSegments);
+	segments.resize(numSegments+1);
+	dataDst.resize(numSegments);
+	segment_map.resize(numSegments);
 
-// Now fill the segments...
-unsigned int curStart = 0;
-for (int i=0; i <= numSegments; ++i)
-{
-	curStart += i; // Each segment contains i+1 elements
-	segments.template get<pSegment>(i) = curStart;
-//            curStart += 5; // Each segment contains RHS elements
-}
-dataSrc.resize(segments.template get<pSegment>(numSegments));
-
-//        // Debug
-//        std::cout << "dataSrc.size() = " << dataSrc.size() << std::endl;
-
-// Fill the data
-for (int i=0; i<dataSrc.size(); ++i)
-{
-	for (int j=0; j<BlockT::size; ++j)
+	// Now fill the segments...
+	unsigned int curStart = 0;
+	for (int i=0; i <= numSegments; ++i)
 	{
-		dataSrc.template get<p>(i)[j] = 1;
-		dataSrc.template get<pMask>(i)[j] = 1;
-	};
-}
-// Copy to device
-segments.hostToDevice<pSegment>();
-dataSrc.hostToDevice<p, pMask>();
-// Now perform the compaction
-typedef boost::mpl::vector<sadd_<p>> vv_reduce;
-BlockMapGpuFunctors::BlockFunctor<128>::seg_reduce<pSegment, vv_reduce, boost::mpl::int_<0>>(segments, dataSrc, dataDst);
+		curStart += i; // Each segment contains i+1 elements
+		segments.template get<pSegment>(i) = curStart;
+	//            curStart += 5; // Each segment contains RHS elements
+	}
 
-// Now retrieve the dataDst vector
-dataDst.deviceToHost<0>();
+	dataSrc.resize(segments.template get<pSegment>(numSegments));
+	segment_map.resize(segments.template get<pSegment>(numSegments));
 
-// Debug output
-for (int i=0; i<dataDst.size(); ++i)
-{
-	std::cout << "dataDst[" << i << "][0] = " << dataDst.template get<0>(i)[0] << std::endl;
-}
-// Validation
-for (int i=0; i<dataDst.size(); ++i)
-{
-	BOOST_REQUIRE_EQUAL(dataDst.template get<0>(i)[0], i+1);
-}
+	// Fill the data
+	for (int i=0; i<dataSrc.size(); ++i)
+	{
+		for (int j=0; j<BlockT::size; ++j)
+		{
+			dataSrc.template get<p>(i)[j] = 1;
+			dataSrc.template get<pMask>(i)[j] = 1;
+		};
+		segment_map.template get<0>(i) = i;
+	}
+	// Copy to device
+	segments.hostToDevice<pSegment>();
+	dataSrc.hostToDevice<p, pMask>();
+	segment_map.hostToDevice<0>();
+
+	// Now perform the compaction
+	typedef boost::mpl::vector<sadd_<p>> vv_reduce;
+	BlockMapGpuFunctors::BlockFunctor<128>::seg_reduce<pSegment, vv_reduce, boost::mpl::int_<0>>(segments, dataSrc, dataSrc, segment_map, dataDst);
+
+	// Now retrieve the dataDst vector
+	dataDst.deviceToHost<0>();
+
+	// Debug output
+	for (int i=0; i<dataDst.size(); ++i)
+	{
+		std::cout << "dataDst[" << i << "][0] = " << dataDst.template get<0>(i)[0] << std::endl;
+	}
+	// Validation
+	for (int i=0; i<dataDst.size(); ++i)
+	{
+		BOOST_REQUIRE_EQUAL(dataDst.template get<0>(i)[0], i+1);
+	}
 }
 
 BOOST_AUTO_TEST_CASE (testSolve_conflicts)

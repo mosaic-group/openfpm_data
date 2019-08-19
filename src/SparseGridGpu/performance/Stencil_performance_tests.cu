@@ -410,19 +410,18 @@ void testInsertStencil(unsigned int gridEdgeSize, unsigned int i)
 
 	for (unsigned int iter=0; iter<iterations; ++iter)
 	{
-		cudaDeviceSynchronize();
-
 		timer ts;
 		ts.start();
 
+		cudaDeviceSynchronize();
+
 		sparseGrid.applyStencils<StencilT>(STENCIL_MODE_INSERT, 0.1);
-		sparseGrid.template flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
 
 		cudaDeviceSynchronize();
 
 		ts.stop();
 
-		float gElemS = numElements / (1e6 * ts.getwct()) * StencilT::flops;
+		float gElemS = numElements / (1e9 * ts.getwct()) * HeatStencil<dim,0,1>::flops;
 
 		measures.add(gElemS);
 	}
@@ -439,7 +438,7 @@ void testInsertStencil(unsigned int gridEdgeSize, unsigned int i)
 	std::cout << "Test: " << testName << "\n";
 	std::cout << "Grid: " << gridEdgeSize*blockEdgeSize << "x" << gridEdgeSize*blockEdgeSize << "\n";
 	std::cout << "Iterations: " << iterations << "\n";
-	std::cout << "Throughput:\n\t" << mean << " MElem/s dev: " << deviation << " GElem/s\n";
+	std::cout << "Throughput:\n\t" << mean << " GElem/s dev: " << deviation << " GElem/s\n";
 }
 
 BOOST_AUTO_TEST_CASE(testStencilHeatInsert)
@@ -591,6 +590,7 @@ void test_insert_block(unsigned int gridEdgeSize, unsigned int i)
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSizeBlockedInsert);
 		insertValues2DBlocked<0, 1, blockEdgeSize> << < gridSize, blockSize >> >
 				(sparseGrid.toKernel(), offset, offset);
+
 		sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 		cudaDeviceSynchronize();
