@@ -595,7 +595,8 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 
 // for each segments
 template<typename vector_index_type, typename vector_index_type2>
-__global__ void compute_predicate(vector_index_type vct_index_merge,
+__global__ void compute_predicate(vector_index_type vct_keys_merge,
+								vector_index_type vct_index_merge,
 								unsigned int m,
 								vector_index_type2 pred_ids)
 {
@@ -610,10 +611,25 @@ __global__ void compute_predicate(vector_index_type vct_index_merge,
 	auto id1 = vct_index_merge.template get<0>(p);
 	auto id2 = vct_index_merge.template get<0>(pp1);
 
-	pred_ids.template get<0>(p) = (id1 < m && id2 < m) | (id0 < m && id2 < m) | (id0 < m && id1 >= m && id2 >= m);
+	auto k0 = vct_keys_merge.template get<0>(pm1);
+	auto k1 = vct_keys_merge.template get<0>(p);
+	auto k2 = vct_keys_merge.template get<0>(pp1);
+
+	// predicate 0 count old chunks, but when is merged to new data the 1 must be shifted to the new element
+	//
+	pred_ids.template get<0>(p) = ((k0 == k1) && (p != 0)) || (id1 < m && (k1 != k2));
+
+	//predicate 1 is used to count the new index segments
 	pred_ids.template get<1>(p) = id1 >= m;
-	pred_ids.template get<2>(p) = !(id1 < m && id2 >= m);
-	pred_ids.template get<3>(p) = id1 < m && id2 < m;
+
+	// predicate 2 is used is used to count everything does not merge
+	pred_ids.template get<2>(p) = (k1 != k2);
+
+	// predicate 3 is used to count old keys that does not reduce with new data
+	pred_ids.template get<3>(p) = id1 < m && (k1 != k2);
+
+	//predicate 1 is used to count the new index segments
+	pred_ids.template get<4>(p) = id1 < m;
 }
 
 // for each segments
@@ -622,7 +638,8 @@ __global__ void maps_create(vector_index_type2 scan_ids,
 								vector_index_type2 pred_ids,
 		 	 	 	 	 	 	vector_index_type vct_seg_old,
 		 	 	 	 	 	 	vector_index_type vct_out_map,
-		 	 	 	 	 	 	vector_index_type vct_copy_old)
+		 	 	 	 	 	 	vector_index_type vct_copy_old_dst,
+		 	 	 	 	 	 	vector_index_type vct_copy_old_src)
 {
 	int p = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -635,15 +652,19 @@ __global__ void maps_create(vector_index_type2 scan_ids,
 	auto id3 = scan_ids.template get<2>(p);
 	auto id4 = scan_ids.template get<3>(p);
 	bool pred_id4 = pred_ids.template get<3>(p);
+	auto id5 = scan_ids.template get<4>(p);
 
 	if (pred_id2 == true)
-	{
-		vct_seg_old.template get<0>(id2) = (pred_id1 == true)?id1:-1;
-	}
-	vct_out_map.template get<0>(id2) = id3;
+	{vct_seg_old.template get<0>(id2) = (pred_id1 == true)?id1:-1;}
+
+	if (pred_id2 == true)
+	{vct_out_map.template get<0>(id2) = id3;}
 
 	if (pred_id4 == true)
-	{vct_copy_old.template get<0>(id4) = id3;}
+	{
+		vct_copy_old_dst.template get<0>(id4) = id3;
+		vct_copy_old_src.template get<0>(id4) = id5;
+	}
 }
 
 

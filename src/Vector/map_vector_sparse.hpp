@@ -82,6 +82,11 @@ namespace openfpm
     	}
     };
 
+
+    /*! \brief Functor switch to select the vector sparse for standars scalar and blocked implementation
+     *
+     *
+     */
     template<unsigned int impl, typename block_functor>
     struct scalar_block_implementation_switch // Case for scalar implementations
     {
@@ -111,6 +116,7 @@ namespace openfpm
         		vector_index_type & vector_data_map,
                 vector_index_type2 & segment_offset,
                 vector_data_type & vector_data_red,
+                block_functor & blf,
                 mgpu::ofp_context_t & context)
         {
 #ifdef __NVCC__
@@ -169,6 +175,7 @@ namespace openfpm
                 vector_data_type & vct_add_data_unique,
                 vector_data_type & vct_data_tmp,
                 ite_gpu<1> & itew,
+                block_functor & blf,
                 mgpu::ofp_context_t & context
                 )
         {
@@ -210,6 +217,7 @@ namespace openfpm
         }
     };
 
+
     template<typename block_functor>
     struct scalar_block_implementation_switch<2, block_functor> // Case for blocked implementations
     {
@@ -244,10 +252,11 @@ namespace openfpm
         					  vector_index_type & vector_data_map,
         					  vector_index_type2 & segment_offset,
         					  vector_data_type & vector_data_red,
+        					  block_functor & blf,
         					  mgpu::ofp_context_t & context)
         {
 #ifdef __NVCC__
-            block_functor::template seg_reduce<pSegment, vector_reduction, T>(segment_offset, vector_data, vector_data_unsorted, vector_data_map, vector_data_red);
+            blf.template seg_reduce<pSegment, vector_reduction, T>(segment_offset, vector_data, vector_data_unsorted, vector_data_map, vector_data_red);
 #else // __NVCC__
     std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
 #endif // __NVCC__
@@ -292,11 +301,12 @@ namespace openfpm
                 vector_data_type & vct_add_data_unique,
                 vector_data_type & vct_data_tmp,
                 ite_gpu<1> & itew,
+                block_functor & blf,
                 mgpu::ofp_context_t & context
         )
         {
 #ifdef __NVCC__
-            block_functor::template solve_conflicts<
+            blf.template solve_conflicts<
 			            decltype(vct_index_tmp),
 			            decltype(vct_data),
 			            v_reduce ...>
@@ -521,6 +531,9 @@ namespace openfpm
 		//! map of the data
 		vector_index_type & vector_data_map;
 
+		//! block functor
+		block_functor & blf;
+
 		//! gpu context
 		mgpu::ofp_context_t & context;
 
@@ -535,8 +548,15 @@ namespace openfpm
 									   vector_data_type & vector_data_unsorted,
 									   vector_index_type & vector_data_map,
 									   vector_index_type2 & segment_offset,
+									   block_functor & blf,
 									   mgpu::ofp_context_t & context)
-		:vector_data_red(vector_data_red),vector_data(vector_data),vector_data_unsorted(vector_data_unsorted),segment_offset(segment_offset),vector_data_map(vector_data_map),context(context)
+		:vector_data_red(vector_data_red),
+		 vector_data(vector_data),
+		 vector_data_unsorted(vector_data_unsorted),
+		 segment_offset(segment_offset),
+		 vector_data_map(vector_data_map),
+		 blf(blf),
+		 context(context)
 		{};
 
 		//! It call the copy function for each property
@@ -555,6 +575,7 @@ namespace openfpm
 			            vector_data_map,
 			            segment_offset,
 			            vector_data_red,
+			            blf,
 			            context);
 			}
 #else
@@ -1086,6 +1107,7 @@ namespace openfpm
 			                vct_add_data,
 			                vct_add_data_reord_map,
 			                vct_add_index_unique,
+			                blf,
 			                context);
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
 
@@ -1118,6 +1140,7 @@ namespace openfpm
                         vct_add_data_unique,
                         vct_add_data_cont,
                         itew,
+                        blf,
                         context
                     );
 		}

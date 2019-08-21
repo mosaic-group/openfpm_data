@@ -500,6 +500,43 @@ namespace BlockMapGpuKernels
 #endif // __NVCC__
     }
 
+
+    /**
+     * Reorder blocks of data according to the permutation given by the input srcIndices vector.
+     * NOTE: Each thread block is in charge of a fixed amount (automatically determined) of data blocks.
+     *
+     * @tparam DataVectorT The type of the (OpenFPM) vector of values.
+     * @tparam IndexVectorT The type of the (OpenFPM) vector of indices.
+     * @param src The input vector of data, which needs to be reordered.
+     * @param srcIndices Vector which specifies the reordering permutation, i.e. dst[i] = src[srcIndices[i]].
+     * @param dst The output vector of reordered data.
+     */
+    template<typename DataVectorT, typename IndexVectorT>
+    __global__ void copy_old_ker(IndexVectorT srcIndices, DataVectorT src, IndexVectorT dstIndices, DataVectorT dst)
+    {
+#ifdef __NVCC__
+        typedef typename DataVectorT::value_type AggregateT;
+        typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
+        unsigned int chunkSize = BlockT0::size;
+
+        unsigned int chunksPerBlock = blockDim.x / chunkSize;
+        unsigned int chunkOffset = threadIdx.x / chunkSize; // The thread block can work on several chunks in parallel
+
+        unsigned int chunkBasePos = blockIdx.x * chunksPerBlock;
+
+        unsigned int p = chunkBasePos + chunkOffset;
+        if (p < srcIndices.size())
+        {
+            auto dstId = dstIndices.template get<0>(p);
+            auto srcId = srcIndices.template get<0>(p);
+
+            dst.get(dstId) = src.get(srcId); //todo How does this = spread across threads...?
+        }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
+    }
+
     template<typename DataVectorT, typename IndexVectorT>
     __global__ void mergeData(DataVectorT data1, DataVectorT data2, IndexVectorT mergeIndices, DataVectorT dataOut)
     {
@@ -663,6 +700,9 @@ struct sparse_vector_reduction_solve_conflict
 	//! new datas
 	vector_data_type & vector_data;
 
+	//! new datas
+	vector_data_type & vector_data_old;
+
 	//! new data in an unsorted way
 	vector_data_type & vector_data_unsorted;
 
@@ -671,6 +711,12 @@ struct sparse_vector_reduction_solve_conflict
 
 	//! map of the data
 	vector_index_type & vector_data_map;
+
+	//! output map
+	vector_index_type & out_map;
+
+	//! old data segments
+	vector_index_type & segments_oldData;
 
 	//! gpu context
 	mgpu::ofp_context_t & context;
@@ -684,10 +730,21 @@ struct sparse_vector_reduction_solve_conflict
 	inline sparse_vector_reduction_solve_conflict(vector_data_type & vector_data_red,
 								   vector_data_type & vector_data,
 								   vector_data_type & vector_data_unsorted,
+								   vector_data_type & vector_data_old,
 								   vector_index_type & vector_data_map,
 								   vector_index_type2 & segment_offset,
+								   vector_index_type & out_map,
+								   vector_index_type & segments_oldData,
 								   mgpu::ofp_context_t & context)
-	:vector_data_red(vector_data_red),vector_data(vector_data),vector_data_unsorted(vector_data_unsorted),segment_offset(segment_offset),vector_data_map(vector_data_map),context(context)
+	:vector_data_red(vector_data_red),
+	 vector_data(vector_data),
+	 vector_data_unsorted(vector_data_unsorted),
+	 vector_data_old(vector_data_old),
+	 segment_offset(segment_offset),
+	 vector_data_map(vector_data_map),
+	 out_map(out_map),
+	 segments_oldData(segments_oldData),
+	 context(context)
 	{};
 
 	//! It call the copy function for each property
@@ -716,13 +773,22 @@ struct sparse_vector_reduction_solve_conflict
 
             constexpr unsigned int chunksPerBlock = blockSize / BlockT::size;
             const unsigned int gridSize =
-                    segment_offset.size() - 1; // This "-1" is because segments has a trailing extra element
+                    segment_offset.size()  - 1; // This "-1" is because segments has a trailing extra element
 
-            CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce<p, pSegment, pMask, chunksPerBlock, red_op>),gridSize, blockSize,
+//            CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce<p, pSegment, pMask, chunksPerBlock, red_op>),gridSize, blockSize,
+//                    vector_data.toKernel(),
+//                    segment_offset.toKernel()/*,
+//                    src_map.toKernel()*/,
+//                    vector_data.toKernel(),
+//                    vector_data_red.toKernel());
+
+            CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<p, pSegment, pMask, chunksPerBlock, red_op>),gridSize, blockSize,
                     vector_data.toKernel(),
-                    segment_offset.toKernel()/*,
-                    src_map.toKernel()*/,
-                    vector_data.toKernel(),
+            		  vector_data_old.toKernel(),
+                    segment_offset.toKernel(),
+                    vector_data_map.toKernel(),
+                    segments_oldData.toKernel(),
+                    out_map.toKernel(),
                     vector_data_red.toKernel());
 		}
 #else
@@ -739,8 +805,18 @@ namespace BlockMapGpuFunctors
     template<unsigned int blockSize>
     struct BlockFunctor
     {
+    	openfpm::vector_gpu<aggregate<int,int,int,int,int>> p_ids;
+    	openfpm::vector_gpu<aggregate<int,int,int,int,int>> s_ids;
+
+    	openfpm::vector_gpu<aggregate<int>> copy_old_dst;
+    	openfpm::vector_gpu<aggregate<int>> copy_old_src;
+    	openfpm::vector_gpu<aggregate<int>> outputMap;
+    	openfpm::vector_gpu<aggregate<int>> segments_oldData;
+
+    	openfpm::vector_gpu<aggregate<int>> trivial_map;
+
         template<unsigned int pSegment, typename vector_reduction, typename T, typename vector_index_type, typename vector_index_type2, typename vector_data_type>
-        static bool seg_reduce(vector_index_type2 &segments, vector_data_type &src, vector_data_type &src_unsorted, vector_index_type & src_map, vector_data_type &dst)
+        bool seg_reduce(vector_index_type2 &segments, vector_data_type &src, vector_data_type &src_unsorted, vector_index_type & src_map, vector_data_type &dst)
         {
 #ifdef __NVCC__
             typedef typename vector_data_type::value_type AggregateT;
@@ -776,7 +852,7 @@ namespace BlockMapGpuFunctors
         }
 
         template<typename vector_index_type, typename vector_data_type, typename ... v_reduce>
-        static bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices,
+        bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices,
                                     vector_data_type &dataOld, vector_data_type &dataNew,
                                     vector_index_type &tmpIndices, vector_data_type &tmpData,
                                     vector_index_type &keysOut, vector_data_type &dataOut,
@@ -797,9 +873,13 @@ namespace BlockMapGpuFunctors
 
             // Calculate maps
 
-/*        	CUDA_LAUNCH(compute_predicate,ite,mergeIndices.toKernel(),dataOld.size(),p_ids.toKernel());
+            auto ite = mergeIndices.getGPUIterator();
 
-        	mgpu::standard_context_t context(false);
+            p_ids.resize(mergeIndices.size());
+            s_ids.resize(mergeIndices.size());
+
+        	CUDA_LAUNCH(compute_predicate,ite,keys.toKernel(),mergeIndices.toKernel(),dataOld.size(),p_ids.toKernel());
+
         	mgpu::scan((int *)p_ids.template getDeviceBuffer<0>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<0>(),
@@ -820,8 +900,13 @@ namespace BlockMapGpuFunctors
         	            (int *)s_ids.template getDeviceBuffer<3>(),
                         context);
 
-        	s_ids.template deviceToHost<0,1,2,3>();
-        	p_ids.template deviceToHost<0,1,2,3>();
+        	mgpu::scan((int *)p_ids.template getDeviceBuffer<4>(),
+        				s_ids.size(),
+        	            (int *)s_ids.template getDeviceBuffer<4>(),
+                        context);
+
+        	s_ids.template deviceToHost<0,1,2,3>(s_ids.size()-1,s_ids.size()-1);
+        	p_ids.template deviceToHost<0,1,2,3>(p_ids.size()-1,p_ids.size()-1);
 
         	size_t copy_old_size = s_ids.template get<3>(s_ids.size()-1) + p_ids.template get<3>(p_ids.size()-1);
         	size_t seg_old_size = s_ids.template get<1>(s_ids.size()-1) + p_ids.template get<1>(p_ids.size()-1);
@@ -829,11 +914,10 @@ namespace BlockMapGpuFunctors
 
         	segments_oldData.resize(seg_old_size);
         	outputMap.resize(out_map_size);
-        	copy_old.resize(copy_old_size);
+        	copy_old_dst.resize(copy_old_size);
+        	copy_old_src.resize(copy_old_size);
 
-        	CUDA_LAUNCH(maps_create,ite,s_ids.toKernel(),p_ids.toKernel(),segments_oldData.toKernel(),outputMap.toKernel(),copy_old.toKernel());*/
-
-
+        	CUDA_LAUNCH(maps_create,ite,s_ids.toKernel(),p_ids.toKernel(),segments_oldData.toKernel(),outputMap.toKernel(),copy_old_dst.toKernel(),copy_old_src.toKernel());
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -848,13 +932,6 @@ namespace BlockMapGpuFunctors
             // 2) perform segreduce
 
             // First ensure we have the right sizes on the buffers
-
-            tmpData.resize(mergeIndices.size(),EXACT_RESIZE); //todo: check if we need some other action to actually have the right space on gpu
-
-            // Phase 0 - merge data
-            BlockMapGpuKernels::mergeData<<< gridSize, blockSize >>>(dataOld.toKernel(),
-                    dataNew.toKernel(), mergeIndices.toKernel(), tmpData.toKernel());
-            // Now we can recycle the mergeIndices buffer for other things.
 
             // Phase 1 - compute segments
             mergeIndices.resize(mergeIndices.size() + 1); // This is to get space for the extra trailing predicate
@@ -887,10 +964,26 @@ namespace BlockMapGpuFunctors
             dataOut.resize(mergeIndices.size()-1); // Right size for output, i.e. the number of segments
             typedef boost::mpl::vector<v_reduce...> vv_reduce;
             constexpr unsigned int pSegment = 0;
-            sparse_vector_reduction_solve_conflict<blockSize,decltype(dataOut),decltype(mergeIndices),decltype(mergeIndices),vv_reduce,BlockFunctor,2, pSegment>
-                    svr(dataOut,tmpData,tmpData,mergeIndices,mergeIndices,context);
+
+            //// Create a trivial map
+
+            trivial_map.resize(dataNew.size()+1);
+
+            for (size_t i = 0 ; i < trivial_map.size(); i++)
+            {
+            	trivial_map.template get<0>(i) = i;
+            }
+
+            trivial_map.hostToDevice<0>();
+
+			sparse_vector_reduction_solve_conflict<blockSize,decltype(dataOut),decltype(outputMap),decltype(trivial_map),vv_reduce,BlockFunctor,2, pSegment>
+					svr(dataOut,dataNew,dataNew,dataOld,trivial_map,trivial_map,outputMap,segments_oldData,context);
+
             boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
 
+            //copy the old chunks
+            if (copy_old_dst.size() != 0)
+            {CUDA_LAUNCH_DIM3(BlockMapGpuKernels::copy_old_ker,copy_old_dst.size(),blockSize,copy_old_src.toKernel(),dataOld.toKernel(),copy_old_dst.toKernel(),dataOut.toKernel());}
 
             return true; //todo: check if error in kernel
 #else // __NVCC__
