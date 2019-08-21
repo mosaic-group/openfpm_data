@@ -15,281 +15,16 @@
 #include "Plot/GoogleChart.hpp"
 #include "util/performance/performance_util.hpp"
 #include "SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh"
+#include <set>
+#include "performancePlots.hpp"
 
 extern char * test_dir;
 
 // Property tree
-struct report_sparse_grid_tests
-{
-	boost::property_tree::ptree graphs;
-};
 
 report_sparse_grid_tests report_sparsegrid_funcs;
 std::string suiteURI = "performance.SparseGridGpu";
-
-void write_test_report()
-{
-    const char *perfResultsXmlFile = "SparseGridGpu_performance.xml";
-
-    unsigned int plotCounter = 0;
-
-    // Dense 2D
-    {
-        std::string dim = "2";
-        std::string linMode = "N";
-        std::string base = "performance.SparseGridGpu.device.stencil.dense."+linMode+"."+dim+"D";
-
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil "+linMode+" "+dim+"D"+" grid scaling performance");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title", "GridEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".gridScaling(#).GFlops.mean");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".gridScaling(#).gridSize.x");
-//    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x", true);
-        int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".gridScaling(0).blockSize"));
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "blockEdge=" + std::to_string(bes));
-        ++plotCounter;
-
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil "+linMode+" "+dim+"D"+" block scaling performance");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title",
-                                           "BlockEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".blockScaling(#).GFlops.mean");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".blockScaling(#).blockSize");
-//    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x",true);
-        int ges = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".blockScaling(0).gridSize.x"));
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "gridEdge=" + std::to_string(ges));
-        ++plotCounter;
-    }
-
-    // Dense 2D Z-morton
-    {
-        std::string dim = "2";
-        std::string linMode = "Z";
-        std::string base = "performance.SparseGridGpu.device.stencil.dense."+linMode+"."+dim+"D";
-
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil "+linMode+" "+dim+"D"+" grid scaling performance");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title", "GridEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".gridScaling(#).GFlops.mean");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".gridScaling(#).gridSize.x");
-//    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x", true);
-        int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".gridScaling(0).blockSize"));
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "blockEdge=" + std::to_string(bes));
-        ++plotCounter;
-
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil "+linMode+" "+dim+"D"+" block scaling performance");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title",
-                                           "BlockEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".blockScaling(#).GFlops.mean");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".blockScaling(#).blockSize");
-//    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x",true);
-        int ges = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".blockScaling(0).gridSize.x"));
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "gridEdge=" + std::to_string(ges));
-        ++plotCounter;
-    }
-
-    // Dense 3D
-    {
-        std::string dim = "3";
-        std::string linMode = "N";
-        std::string base = "performance.SparseGridGpu.device.stencil.dense."+linMode+"."+dim+"D";
-
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil "+linMode+" "+dim+"D"+" grid scaling performance");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title", "GridEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".gridScaling(#).GFlops.mean");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".gridScaling(#).gridSize.x");
-//    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x", true);
-        int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".gridScaling(0).blockSize"));
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "blockEdge=" + std::to_string(bes));
-        ++plotCounter;
-
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil "+linMode+" "+dim+"D"+" block scaling performance");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title",
-                                           "BlockEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".blockScaling(#).GFlops.mean");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".blockScaling(#).blockSize");
-//    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x",true);
-        int ges = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".blockScaling(0).gridSize.x"));
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "gridEdge=" + std::to_string(ges));
-        ++plotCounter;
-    }
-
-    // Sparse 2D
-    {
-        std::string dim = "2";
-        std::string pattern = "sparse";
-        std::string linMode = "N";
-        std::string base = "performance.SparseGridGpu.device.stencil."+pattern+"."+linMode+"."+dim+"D";
-
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil "+pattern+" "+linMode+" "+dim+"D"
-                                           +" grid scaling performance");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title", "GridEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".gridScaling(#).GFlops.mean");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".gridScaling(#).gridSize.x");
-//    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x", true);
-        int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".gridScaling(0).blockSize"));
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "blockEdge=" + std::to_string(bes));
-        ++plotCounter;
-
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil "+pattern+" "+linMode+" "+dim+"D"
-                                           +" block scaling performance");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title",
-                                           "BlockEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".blockScaling(#).GFlops.mean");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".blockScaling(#).blockSize");
-//    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x",true);
-        int ges = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".blockScaling(0).gridSize.x"));
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "gridEdge=" + std::to_string(ges));
-        ++plotCounter;
-    }
-
-    // Sparse 3D
-    {
-        std::string dim = "3";
-        std::string pattern = "sparse";
-        std::string linMode = "N";
-        std::string base = "performance.SparseGridGpu.device.stencil."+pattern+"."+linMode+"."+dim+"D";
-
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil "+pattern+" "+linMode+" "+dim+"D"
-                                           +" grid scaling performance");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title", "GridEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".gridScaling(#).GFlops.mean");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".gridScaling(#).gridSize.x");
-//    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x", true);
-        int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".gridScaling(0).blockSize"));
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "blockEdge=" + std::to_string(bes));
-        ++plotCounter;
-
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
-        report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil "+pattern+" "+linMode+" "+dim+"D"
-                                           +" block scaling performance");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title",
-                                           "BlockEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".blockScaling(#).GFlops.mean");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".blockScaling(#).blockSize");
-//    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x",true);
-        int ges = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".blockScaling(0).gridSize.x"));
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "gridEdge=" + std::to_string(ges));
-        ++plotCounter;
-    }
-
-//	report_sparsegrid_funcs.graphs.put("graphs.graph(1).type","line");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(1).title","SparseGridGPU insert blocked performance");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(1).x.title","size");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(1).y.title","Milion inserts");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(1).y.data(0).source","performance.SparseGridGpu(#).insert.Minsert.mean");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(1).x.data(0).source","performance.SparseGridGpu(#).insert.gridSize.x");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(1).y.data(0).title","line");
-//
-//	report_sparsegrid_funcs.graphs.put("graphs.graph(2).type","line");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(2).title","SparseGridGPU insert single performance");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(2).x.title","size");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(2).y.title","Milion inserts");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(2).y.data(0).source","performance.SparseGridGpu(#).insertSingle.Minsert.mean");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(2).x.data(0).source","performance.SparseGridGpu(#).insertSingle.gridSize.x");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(2).y.data(0).title","line");
-//
-//	report_sparsegrid_funcs.graphs.put("graphs.graph(3).type","line");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(3).title","SparseGridGPU insert single performance");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(3).x.title","size");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(3).y.title","Milion inserts");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(3).y.data(0).source","performance.SparseGridGpu(#).insertStencil.GElems.mean");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(3).x.data(0).source","performance.SparseGridGpu(#).insertStencil.gridSize.x");
-//	report_sparsegrid_funcs.graphs.add("graphs.graph(3).y.data(0).title","line");
-
-    std::string file_xml_results(test_dir);
-    file_xml_results += std::string("/") + std::string(perfResultsXmlFile);
-
-    boost::property_tree::xml_writer_settings<std::string> settings(' ', 4);
-    boost::property_tree::write_xml(file_xml_results, report_sparsegrid_funcs.graphs, std::locale(), settings);
-
-    std::string file_xml_ref(test_dir);
-//	file_xml_ref += std::string("/openfpm_pdata/SparseGridGpu_performance_ref.xml"); // This the normal setup
-    file_xml_ref += std::string("/") + std::string(perfResultsXmlFile); // This is our setup to get the stdDev on plots
-
-    GoogleChart cg;
-
-    StandardXMLPerformanceGraph(file_xml_results, file_xml_ref, cg, 1);
-
-    addUpdtateTime(cg,1);
-    cg.write("SparseGridGpu_performance.html");
-}
+std::set<std::string> testSet;
 
 struct Fixture
 {
@@ -301,7 +36,7 @@ struct Fixture
     ~Fixture()
     {
         BOOST_TEST_MESSAGE( "Teardown fixture" );
-        write_test_report();
+        write_test_report(report_sparsegrid_funcs, testSet);
     }
 };
 
@@ -980,7 +715,7 @@ void launch_testStencilHeat3D_perf(std::string testURI, unsigned int i)
 ////    sparseGrid.write("SparseGridGPU_testStencilHeatSparse_perf_DEBUG.vtk");
 //}
 template<unsigned int blockEdgeSize, unsigned int gridEdgeSize, typename SparseGridZ>
-void testStencilHeatSparse_perf(unsigned int i, std::string base)
+void testStencilHeatSparse_perf(unsigned int i, std::string base, float fillMultiplier=1, float voidMultiplier=1)
 {
     auto testName = "In-place sparse stencil";
 //    unsigned int gridEdgeSize = 128;
@@ -1012,14 +747,15 @@ void testStencilHeatSparse_perf(unsigned int i, std::string base)
     sparseGrid.template setBackgroundValue<0>(0);
 
     ///// Insert sparse content, a set of concentric spheres /////
-    const unsigned int numSpheres = gridEdgeSize / 4;
+    float allMultiplier = fillMultiplier + voidMultiplier;
+    const unsigned int numSpheres = gridEdgeSize / (2*allMultiplier);
 //    const unsigned int numSpheres = 1;
     unsigned int centerPoint = spatialEdgeSize / 2;
 
     for (int i = 1; i <= numSpheres; ++i)
     {
-        unsigned int rBig = 2*i * blockEdgeSize;
-        unsigned int rSmall = (2*i-1) * blockEdgeSize;
+        unsigned int rBig = allMultiplier*i * blockEdgeSize;
+        unsigned int rSmall = (allMultiplier*i - fillMultiplier) * blockEdgeSize;
         // Sphere i-th
         grid_key_dx<dim, int> start1({centerPoint, centerPoint});
         sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
@@ -1102,17 +838,35 @@ void testStencilHeatSparse_perf(unsigned int i, std::string base)
 //    sparseGrid.write("SparseGridGPU_testStencilHeatSparse_perf_DEBUG.vtk");
 }
 template<unsigned int blockEdgeSize, unsigned int gridEdgeSize>
-void launch_testStencilHeatSparse_perf(std::string testURI, unsigned int i)
+void launch_testStencilHeatSparse_perf(std::string testURI, unsigned int i,
+        float fillMultiplier=1, float voidMultiplier=1, std::string occupancyStr="05")
 {
     constexpr unsigned int dim = 2;
     typedef aggregate<float,float> AggregateT;
     constexpr unsigned int chunkSize = IntPow<blockEdgeSize,dim>::value;
 
     std::string base(testURI + "(" + std::to_string(i) + ")");
-    report_sparsegrid_funcs.graphs.put(base + ".test.name","StencilNSparse");
+    report_sparsegrid_funcs.graphs.put(base + ".test.name","StencilNSparse"+occupancyStr);
 
     testStencilHeatSparse_perf<blockEdgeSize, gridEdgeSize,
-            SparseGridGpu<dim, AggregateT, blockEdgeSize, chunkSize, long int>>(i, base);
+            SparseGridGpu<dim, AggregateT, blockEdgeSize, chunkSize, long int>>(i, base,
+                    fillMultiplier, voidMultiplier);
+    cudaDeviceSynchronize();
+}
+template<unsigned int blockEdgeSize, unsigned int gridEdgeSize>
+void launch_testStencilHeatSparseZ_perf(std::string testURI, unsigned int i,
+                                       float fillMultiplier=1, float voidMultiplier=1, std::string occupancyStr="05")
+{
+    constexpr unsigned int dim = 2;
+    typedef aggregate<float,float> AggregateT;
+    constexpr unsigned int chunkSize = IntPow<blockEdgeSize,dim>::value;
+
+    std::string base(testURI + "(" + std::to_string(i) + ")");
+    report_sparsegrid_funcs.graphs.put(base + ".test.name","StencilNSparse"+occupancyStr);
+
+    testStencilHeatSparse_perf<blockEdgeSize, gridEdgeSize,
+            SparseGridGpu_z<dim, AggregateT, blockEdgeSize, chunkSize, long int>>(i, base,
+                                                                                fillMultiplier, voidMultiplier);
     cudaDeviceSynchronize();
 }
 
@@ -1264,7 +1018,7 @@ void launch_testStencilHeatSparse_perf(std::string testURI, unsigned int i)
 ////    sparseGrid.write("SparseGridGPU_testStencilHeat3DSparse_perf_DEBUG.vtk");
 //}
 template<unsigned int blockEdgeSize, unsigned int gridEdgeSize, typename SparseGridZ>
-void testStencilHeat3DSparse_perf(unsigned int i, std::string base)
+void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMultiplier=1, float voidMultiplier=1)
 {
     auto testName = "In-place 3D sparse stencil";
 //    unsigned int gridEdgeSize = 32;
@@ -1297,13 +1051,14 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base)
     sparseGrid.template setBackgroundValue<0>(0);
 
     ///// Insert sparse content, a set of concentric spheres /////
-    const unsigned int numSpheres = gridEdgeSize / 4;
+    float allMultiplier = fillMultiplier + voidMultiplier;
+    const unsigned int numSpheres = gridEdgeSize / (2*allMultiplier);
     unsigned int centerPoint = spatialEdgeSize / 2;
 
     for (int i = 1; i <= numSpheres; ++i)
     {
-        unsigned int rBig = 2*i * blockEdgeSize;
-        unsigned int rSmall = (2*i-1) * blockEdgeSize;
+        unsigned int rBig = allMultiplier*i * blockEdgeSize;
+        unsigned int rSmall = (allMultiplier*i - fillMultiplier) * blockEdgeSize;
         // Sphere i-th
         grid_key_dx<dim, int> start1({centerPoint, centerPoint, centerPoint});
         sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
@@ -1389,7 +1144,8 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base)
 //    sparseGrid.write("SparseGridGPU_testStencilHeat3DSparse_perf_DEBUG.vtk");
 }
 template<unsigned int blockEdgeSize, unsigned int gridEdgeSize>
-void launch_testStencilHeat3DSparse_perf(std::string testURI, unsigned int i)
+void launch_testStencilHeat3DSparse_perf(std::string testURI, unsigned int i,
+        float fillMultiplier=1, float voidMultiplier=1)
 {
     constexpr unsigned int dim = 3;
     typedef aggregate<float,float> AggregateT;
@@ -1399,7 +1155,8 @@ void launch_testStencilHeat3DSparse_perf(std::string testURI, unsigned int i)
     report_sparsegrid_funcs.graphs.put(base + ".test.name","StencilN3DSparse");
 
     testStencilHeat3DSparse_perf<blockEdgeSize, gridEdgeSize,
-            SparseGridGpu<dim, AggregateT, blockEdgeSize, chunkSize, long int>>(i, base);
+            SparseGridGpu<dim, AggregateT, blockEdgeSize, chunkSize, long int>>(i, base,
+                    fillMultiplier, voidMultiplier);
     cudaDeviceSynchronize();
 }
 
@@ -1530,6 +1287,8 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_test)
 //    launch_testStencilHeatHost_perf<8, 512>(testURI, counter++);
 //    launch_testStencilHeatHost_perf<8, 1024>(testURI, counter++);
 ////    launch_testStencilHeatHost_perf<8, 2048>(testURI, counter++);
+
+//    testSet.insert(testURI);
 //}
 //
 //BOOST_AUTO_TEST_CASE(testStencilHeatHost_blockScaling)
@@ -1540,18 +1299,23 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_test)
 //    launch_testStencilHeatHost_perf<8, 1024>(testURI, counter++);
 //    launch_testStencilHeatHost_perf<16, 512>(testURI, counter++);
 //    launch_testStencilHeatHost_perf<32, 256>(testURI, counter++);
+
+//    testSet.insert(testURI);
 //}
 
 BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling)
+//BOOST_AUTO_TEST_CASE(testStencilHeatSparse10_gridScaling)
 {
     std::string testURI = suiteURI + ".device.stencil.dense.N.2D.gridScaling";
     unsigned int counter = 0;
-    constexpr unsigned int blockEdgeSize = 16;
+    constexpr unsigned int blockEdgeSize = 8;
     launch_testStencilHeat_perf<blockEdgeSize, 128>(testURI, counter++);
     launch_testStencilHeat_perf<blockEdgeSize, 256>(testURI, counter++);
     launch_testStencilHeat_perf<blockEdgeSize, 512>(testURI, counter++);
     launch_testStencilHeat_perf<blockEdgeSize, 1024>(testURI, counter++);
 //    launch_testStencilHeat_perf<blockEdgeSize, 2048>(testURI, counter++);
+
+    testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testStencilHeat_blockScaling)
@@ -1563,18 +1327,22 @@ BOOST_AUTO_TEST_CASE(testStencilHeat_blockScaling)
     launch_testStencilHeat_perf<8, 1024>(testURI, counter++);
     launch_testStencilHeat_perf<16, 512>(testURI, counter++);
     launch_testStencilHeat_perf<32, 256>(testURI, counter++);
+
+    testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testStencilHeatZ_gridScaling)
 {
     std::string testURI = suiteURI + ".device.stencil.dense.Z.2D.gridScaling";
     unsigned int counter = 0;
-    constexpr unsigned int blockEdgeSize = 16;
+    constexpr unsigned int blockEdgeSize = 8;
     launch_testStencilHeatZ_perf<blockEdgeSize, 128>(testURI, counter++);
     launch_testStencilHeatZ_perf<blockEdgeSize, 256>(testURI, counter++);
     launch_testStencilHeatZ_perf<blockEdgeSize, 512>(testURI, counter++);
     launch_testStencilHeatZ_perf<blockEdgeSize, 1024>(testURI, counter++);
 //    launch_testStencilHeatZ_perf<blockEdgeSize, 2048>(testURI, counter++);
+
+    testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testStencilHeatZ_blockScaling)
@@ -1586,6 +1354,8 @@ BOOST_AUTO_TEST_CASE(testStencilHeatZ_blockScaling)
     launch_testStencilHeatZ_perf<8, 1024>(testURI, counter++);
     launch_testStencilHeatZ_perf<16, 512>(testURI, counter++);
     launch_testStencilHeatZ_perf<32, 256>(testURI, counter++);
+
+    testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testStencilHeat3D_gridScaling)
@@ -1598,6 +1368,8 @@ BOOST_AUTO_TEST_CASE(testStencilHeat3D_gridScaling)
     launch_testStencilHeat3D_perf<blockEdgeSize, 32>(testURI, counter++);
     launch_testStencilHeat3D_perf<blockEdgeSize, 64>(testURI, counter++);
 //    launch_testStencilHeat3D_perf<blockEdgeSize, 128>(testURI, counter++);
+
+    testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testStencilHeat3D_blockScaling)
@@ -1608,6 +1380,8 @@ BOOST_AUTO_TEST_CASE(testStencilHeat3D_blockScaling)
     launch_testStencilHeat3D_perf<4, 64>(testURI, counter++);
     launch_testStencilHeat3D_perf<8, 32>(testURI, counter++);
 //    launch_testStencilHeat3D_perf<16, 16>(testURI, counter++); // Too big, it doesn't work
+
+    testSet.insert(testURI);
 }
 
 //BOOST_AUTO_TEST_CASE(testStencilHeatZ3D)
@@ -1623,48 +1397,189 @@ BOOST_AUTO_TEST_CASE(testStencilHeat3D_blockScaling)
 //    testStencilHeat3D_perf<SparseGridGpu_z<dim, AggregateT, blockEdgeSize, chunkSize>>(1);
 //}
 
-BOOST_AUTO_TEST_CASE(testStencilHeatSparse_gridScaling)
+BOOST_AUTO_TEST_CASE(testStencilHeatSparse05_gridScaling)
 {
-    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.gridScaling";
+    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.05.gridScaling";
     unsigned int counter = 0;
-    constexpr unsigned int blockEdgeSize = 16;
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 128>(testURI, counter++);
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 256>(testURI, counter++);
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 512>(testURI, counter++);
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 1024>(testURI, counter++);
-//    launch_testStencilHeatSparse_perf<blockEdgeSize, 2048>(testURI, counter++);
-}
+    constexpr unsigned int blockEdgeSize = 8;
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 128>(testURI, counter++, 1, 1, "05");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 256>(testURI, counter++, 1, 1, "05");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 512>(testURI, counter++, 1, 1, "05");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 1, "05");
+////    launch_testStencilHeatSparse_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 1, "05);
 
-BOOST_AUTO_TEST_CASE(testStencilHeatSparse_blockScaling)
+    testSet.insert(testURI);
+}
+BOOST_AUTO_TEST_CASE(testStencilHeatSparse05_blockScaling)
 {
-    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.blockScaling";
+    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.05.blockScaling";
     unsigned int counter = 0;
     // Note - blockEdgeSize == 2 doesn't work
-    launch_testStencilHeatSparse_perf<4, 1024>(testURI, counter++);
-    launch_testStencilHeatSparse_perf<8, 512>(testURI, counter++);
-    launch_testStencilHeatSparse_perf<16, 256>(testURI, counter++);
-    launch_testStencilHeatSparse_perf<32, 128>(testURI, counter++);
+    launch_testStencilHeatSparse_perf<2, 2048>(testURI, counter++, 1, 1, "05");
+    launch_testStencilHeatSparse_perf<4, 1024>(testURI, counter++, 1, 1, "05");
+    launch_testStencilHeatSparse_perf<8, 512>(testURI, counter++, 1, 1, "05");
+    launch_testStencilHeatSparse_perf<16, 256>(testURI, counter++, 1, 1, "05");
+    launch_testStencilHeatSparse_perf<32, 128>(testURI, counter++, 1, 1, "05");
+
+    testSet.insert(testURI);
 }
+
+BOOST_AUTO_TEST_CASE(testStencilHeatSparse08_gridScaling)
+{
+    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.08.gridScaling";
+    unsigned int counter = 0;
+    constexpr unsigned int blockEdgeSize = 8;
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 128>(testURI, counter++, 1, 0.25, "08");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 256>(testURI, counter++, 1, 0.25, "08");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 512>(testURI, counter++, 1, 0.25, "08");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 0.25, "08");
+////    launch_testStencilHeatSparse_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 0.25, "08");
+
+    testSet.insert(testURI);
+}
+BOOST_AUTO_TEST_CASE(testStencilHeatSparse08_blockScaling)
+{
+    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.08.blockScaling";
+    unsigned int counter = 0;
+    launch_testStencilHeatSparse_perf<2, 2048>(testURI, counter++, 1, 0.25, "08");
+    launch_testStencilHeatSparse_perf<4, 1024>(testURI, counter++, 1, 0.25, "08");
+    launch_testStencilHeatSparse_perf<8, 512>(testURI, counter++, 1, 0.25, "08");
+    launch_testStencilHeatSparse_perf<16, 256>(testURI, counter++, 1, 0.25, "08");
+    launch_testStencilHeatSparse_perf<32, 128>(testURI, counter++, 1, 0.25, "08");
+
+    testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeatSparse09_gridScaling)
+{
+    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.09.gridScaling";
+    unsigned int counter = 0;
+    constexpr unsigned int blockEdgeSize = 8;
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 128>(testURI, counter++, 1, 0.1, "09");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 256>(testURI, counter++, 1, 0.1, "09");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 512>(testURI, counter++, 1, 0.1, "09");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 0.1, "09");
+////    launch_testStencilHeatSparse_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 0.1, "09");
+
+    testSet.insert(testURI);
+}
+BOOST_AUTO_TEST_CASE(testStencilHeatSparse09_blockScaling)
+{
+    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.09.blockScaling";
+    unsigned int counter = 0;
+    // Note - blockEdgeSize == 2 doesn't work
+    launch_testStencilHeatSparse_perf<2, 2048>(testURI, counter++, 1, 0.1, "09");
+    launch_testStencilHeatSparse_perf<4, 1024>(testURI, counter++, 1, 0.1, "09");
+    launch_testStencilHeatSparse_perf<8, 512>(testURI, counter++, 1, 0.1, "09");
+    launch_testStencilHeatSparse_perf<16, 256>(testURI, counter++, 1, 0.1, "09");
+    launch_testStencilHeatSparse_perf<32, 128>(testURI, counter++, 1, 0.1, "09");
+
+    testSet.insert(testURI);
+}
+
+        BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ05_gridScaling)
+        {
+            std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.05.gridScaling";
+            unsigned int counter = 0;
+            constexpr unsigned int blockEdgeSize = 8;
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 128>(testURI, counter++, 1, 1, "05");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 256>(testURI, counter++, 1, 1, "05");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 512>(testURI, counter++, 1, 1, "05");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 1, "05");
+////    launch_testStencilHeatSparseZ_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 1, "05);
+
+            testSet.insert(testURI);
+        }
+        BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ05_blockScaling)
+        {
+            std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.05.blockScaling";
+            unsigned int counter = 0;
+            // Note - blockEdgeSize == 2 doesn't work
+            launch_testStencilHeatSparseZ_perf<2, 2048>(testURI, counter++, 1, 1, "05");
+            launch_testStencilHeatSparseZ_perf<4, 1024>(testURI, counter++, 1, 1, "05");
+            launch_testStencilHeatSparseZ_perf<8, 512>(testURI, counter++, 1, 1, "05");
+            launch_testStencilHeatSparseZ_perf<16, 256>(testURI, counter++, 1, 1, "05");
+            launch_testStencilHeatSparseZ_perf<32, 128>(testURI, counter++, 1, 1, "05");
+
+            testSet.insert(testURI);
+        }
+
+        BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ08_gridScaling)
+        {
+            std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.08.gridScaling";
+            unsigned int counter = 0;
+            constexpr unsigned int blockEdgeSize = 8;
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 128>(testURI, counter++, 1, 0.25, "08");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 256>(testURI, counter++, 1, 0.25, "08");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 512>(testURI, counter++, 1, 0.25, "08");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 0.25, "08");
+////    launch_testStencilHeatSparseZ_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 0.25, "08");
+
+            testSet.insert(testURI);
+        }
+        BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ08_blockScaling)
+        {
+            std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.08.blockScaling";
+            unsigned int counter = 0;
+            launch_testStencilHeatSparseZ_perf<2, 2048>(testURI, counter++, 1, 0.25, "08");
+            launch_testStencilHeatSparseZ_perf<4, 1024>(testURI, counter++, 1, 0.25, "08");
+            launch_testStencilHeatSparseZ_perf<8, 512>(testURI, counter++, 1, 0.25, "08");
+            launch_testStencilHeatSparseZ_perf<16, 256>(testURI, counter++, 1, 0.25, "08");
+            launch_testStencilHeatSparseZ_perf<32, 128>(testURI, counter++, 1, 0.25, "08");
+
+            testSet.insert(testURI);
+        }
+
+        BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ09_gridScaling)
+        {
+            std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.09.gridScaling";
+            unsigned int counter = 0;
+            constexpr unsigned int blockEdgeSize = 8;
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 128>(testURI, counter++, 1, 0.1, "09");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 256>(testURI, counter++, 1, 0.1, "09");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 512>(testURI, counter++, 1, 0.1, "09");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 0.1, "09");
+////    launch_testStencilHeatSparseZ_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 0.1, "09");
+
+            testSet.insert(testURI);
+        }
+        BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ09_blockScaling)
+        {
+            std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.09.blockScaling";
+            unsigned int counter = 0;
+            // Note - blockEdgeSize == 2 doesn't work
+            launch_testStencilHeatSparseZ_perf<2, 2048>(testURI, counter++, 1, 0.1, "09");
+            launch_testStencilHeatSparseZ_perf<4, 1024>(testURI, counter++, 1, 0.1, "09");
+            launch_testStencilHeatSparseZ_perf<8, 512>(testURI, counter++, 1, 0.1, "09");
+            launch_testStencilHeatSparseZ_perf<16, 256>(testURI, counter++, 1, 0.1, "09");
+            launch_testStencilHeatSparseZ_perf<32, 128>(testURI, counter++, 1, 0.1, "09");
+
+            testSet.insert(testURI);
+        }
 
 BOOST_AUTO_TEST_CASE(testStencilHeat3DSparse_gridScaling)
 {
     std::string testURI = suiteURI + ".device.stencil.sparse.N.3D.gridScaling";
     unsigned int counter = 0;
     constexpr unsigned int blockEdgeSize = 8;
-    launch_testStencilHeat3DSparse_perf<blockEdgeSize, 8>(testURI, counter++);
-    launch_testStencilHeat3DSparse_perf<blockEdgeSize, 16>(testURI, counter++);
-    launch_testStencilHeat3DSparse_perf<blockEdgeSize, 32>(testURI, counter++);
-    launch_testStencilHeat3DSparse_perf<blockEdgeSize, 64>(testURI, counter++);
+    launch_testStencilHeat3DSparse_perf<blockEdgeSize, 8>(testURI, counter++, 1, 1);
+    launch_testStencilHeat3DSparse_perf<blockEdgeSize, 16>(testURI, counter++, 1, 1);
+    launch_testStencilHeat3DSparse_perf<blockEdgeSize, 32>(testURI, counter++, 1, 1);
+    launch_testStencilHeat3DSparse_perf<blockEdgeSize, 64>(testURI, counter++, 1, 1);
+
+    testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testStencilHeat3DSparse_blockScaling)
 {
     std::string testURI = suiteURI + ".device.stencil.sparse.N.3D.blockScaling";
     unsigned int counter = 0;
-    launch_testStencilHeat3DSparse_perf<2, 128>(testURI, counter++);
-    launch_testStencilHeat3DSparse_perf<4, 64>(testURI, counter++);
-    launch_testStencilHeat3DSparse_perf<8, 32>(testURI, counter++);
-//    launch_testStencilHeat3DSparse_perf<16, 16>(testURI, counter++); // Too big, it doesn't work
+    launch_testStencilHeat3DSparse_perf<2, 128>(testURI, counter++, 1, 1);
+    launch_testStencilHeat3DSparse_perf<4, 64>(testURI, counter++, 1, 1);
+    launch_testStencilHeat3DSparse_perf<8, 32>(testURI, counter++, 1, 1);
+//    launch_testStencilHeat3DSparse_perf<16, 16>(testURI, counter++, 1, 1); // Too big, it doesn't work
+
+    testSet.insert(testURI);
 }
 
 template<unsigned int blockEdgeSize, unsigned int gridEdgeSize>
@@ -1770,6 +1685,8 @@ BOOST_AUTO_TEST_CASE(testStencilHeatInsert_gridScaling)
 	testInsertStencil<8, 256>(testURI, counter++);
 	testInsertStencil<8, 512>(testURI, counter++);
 	testInsertStencil<8, 1024>(testURI, counter++);
+
+    testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testStencilHeatInsert_blockScaling)
@@ -1780,6 +1697,8 @@ BOOST_AUTO_TEST_CASE(testStencilHeatInsert_blockScaling)
     testInsertStencil<8, 512>(testURI, counter++);
     testInsertStencil<16, 256>(testURI, counter++);
     testInsertStencil<32, 128>(testURI, counter++);
+
+    testSet.insert(testURI);
 }
 
 template<unsigned int blockEdgeSize, unsigned int gridEdgeSize>
@@ -1882,6 +1801,8 @@ BOOST_AUTO_TEST_CASE(testInsert_gridScaling)
     testInsertSingle<8, 256>(testURI, counter++);
 //    testInsertSingle<8, 512>(testURI, counter++);
 //    testInsertSingle<8, 1024>(testURI, counter++);
+
+    testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testInsert_blockScaling)
@@ -1893,6 +1814,8 @@ BOOST_AUTO_TEST_CASE(testInsert_blockScaling)
     testInsertSingle<8, 256>(testURI, counter++);
 //    testInsertSingle<16, 128>(testURI, counter++);
 //    testInsertSingle<32, 64>(testURI, counter++);
+
+    testSet.insert(testURI);
 }
 
 template<unsigned int blockEdgeSize, unsigned int gridEdgeSize>
@@ -1995,6 +1918,8 @@ BOOST_AUTO_TEST_CASE(testInsertBlocked_gridScaling)
     test_insert_block<8,512>(testURI, counter++);
     test_insert_block<8,1024>(testURI, counter++);
 //    test_insert_block<8,2048>(testURI, counter++); // Out of memory
+
+    testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testInsertBlocked_blockScaling)
@@ -2006,11 +1931,13 @@ BOOST_AUTO_TEST_CASE(testInsertBlocked_blockScaling)
     test_insert_block<8,512>(testURI, counter++);
     test_insert_block<16,256>(testURI, counter++);
     test_insert_block<32,128>(testURI, counter++);
+
+    testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(write_teport)
 {
-    write_test_report();
+    write_test_report(report_sparsegrid_funcs, testSet);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

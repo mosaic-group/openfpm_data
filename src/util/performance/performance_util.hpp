@@ -125,7 +125,7 @@ static void StandardXMLPerformanceGraph(std::string file_xml,
 
     // First we check for graphs
 
-    try
+//    try
     {
     	boost::property_tree::ptree childs = tree_measure.get_child("graphs");
 
@@ -367,10 +367,10 @@ static void StandardXMLPerformanceGraph(std::string file_xml,
     		}
     	}
     }
-    catch (std::exception e)
-    {
-    	std::cout << __FILE__ << ":" << __LINE__ << " Error: invalid xml for performance test " << e.what() << std::endl;
-    }
+//    catch (std::exception e)
+//    {
+//    	std::cout << __FILE__ << ":" << __LINE__ << " Error: invalid xml for performance test " << e.what() << std::endl;
+//    }
 
 }
 

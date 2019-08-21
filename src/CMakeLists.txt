@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 if (TEST_PERFORMANCE)
-    set(CUDA_SOURCES SparseGridGpu/performance/Stencil_performance_tests.cu SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh)
+    set(CUDA_SOURCES SparseGridGpu/performance/Stencil_performance_tests.cu SparseGridGpu/performance/performancePlots.hpp SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh)
 endif ()
 
 if (CUDA_FOUND)
