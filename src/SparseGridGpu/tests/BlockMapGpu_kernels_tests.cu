@@ -665,7 +665,7 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 
 	BlockMapGpuFunctors::BlockFunctor<128> obj;
 
-	// Now perform the compaction
+	 // Now perform the compaction
 
 	obj.solve_conflicts<
 			decltype(keys),
