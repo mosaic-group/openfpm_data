@@ -312,7 +312,6 @@ namespace openfpm
 			            v_reduce ...>
 			            (vct_index_tmp, vct_index_tmp2,
 			            vct_data, vct_add_data_unique,
-			            vct_index_tmp3, vct_add_data,
 			            vct_index, vct_data_tmp,
 			            context);
                 vct_data_tmp.swap(vct_data);
@@ -896,27 +895,18 @@ namespace openfpm
 			if (impl2 == VECTOR_SPARSE_STANDARD)
 			{
 				vct_add_data_cont.resize(n_ele);
-
-				CUDA_LAUNCH(construct_insert_list_key_only,itew,vct_add_index.toKernel(),
-										vct_nadd_index.toKernel(),
-										vct_index_tmp4.toKernel(),
-										vct_add_cont_index.toKernel(),
-										vct_add_cont_index_map.toKernel(),
-//										vct_add_data.toKernel(),
-//										vct_add_data_cont.toKernel(),
-										n_gpu_add_block_slot);
 			}
 			else
 			{
 				vct_segment_index_map.resize(n_ele);
-
-				CUDA_LAUNCH(construct_insert_list_key_only,itew,vct_add_index.toKernel(),
-										vct_nadd_index.toKernel(),
-										vct_index_tmp4.toKernel(),
-										vct_add_cont_index.toKernel(),
-										vct_add_cont_index_map.toKernel(),
-										n_gpu_add_block_slot);
 			}
+
+			CUDA_LAUNCH(construct_insert_list_key_only,itew,vct_add_index.toKernel(),
+									vct_nadd_index.toKernel(),
+									vct_index_tmp4.toKernel(),
+									vct_add_cont_index.toKernel(),
+									vct_add_cont_index_map.toKernel(),
+									n_gpu_add_block_slot);
 
 			return n_ele;
 #endif

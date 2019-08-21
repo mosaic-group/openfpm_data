@@ -15,6 +15,95 @@
 
 namespace BlockMapGpuKernels
 {
+	// for each segments
+	template<typename vector_index_type, typename vector_index_type2>
+	__global__ void compute_predicate(vector_index_type vct_keys_merge,
+									vector_index_type vct_index_merge,
+									unsigned int m,
+									vector_index_type2 pred_ids)
+	{
+		int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (p >= vct_index_merge.size())	return;
+
+		unsigned int pp1 = (p+1 == vct_index_merge.size())?p:p+1;
+		unsigned int pm1 = (p == 0)?p:p-1;
+
+		auto id1 = vct_index_merge.template get<0>(p);
+
+		auto k0 = vct_keys_merge.template get<0>(pm1);
+		auto k1 = vct_keys_merge.template get<0>(p);
+		auto k2 = vct_keys_merge.template get<0>(pp1);
+
+		// predicate 0 count old chunks, but when is merged to new data the 1 must be shifted to the new element
+		//
+		pred_ids.template get<0>(p) = ((k0 == k1) && (p != 0)) || (id1 < m && (k1 != k2));
+
+		//predicate 1 is used to count the new index segments
+		pred_ids.template get<1>(p) = id1 >= m;
+
+		// predicate 2 is used is used to count everything does not merge
+		pred_ids.template get<2>(p) = (k1 != k2) | (p == vct_index_merge.size()-1);
+
+		// predicate 3 is used to count old keys that does not reduce with new data
+		pred_ids.template get<3>(p) = id1 < m && (k1 != k2);
+
+		//predicate 1 is used to count the new index segments
+		pred_ids.template get<4>(p) = id1 < m;
+	}
+
+	// for each segments
+	template<typename vector_index_type, typename vector_index_type2>
+	__global__ void maps_create(vector_index_type2 scan_ids,
+									vector_index_type2 pred_ids,
+									vector_index_type vct_seg_old,
+									vector_index_type vct_out_map,
+									vector_index_type vct_copy_old_dst,
+									vector_index_type vct_copy_old_src)
+	{
+		int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (p >= scan_ids.size())	return;
+
+		auto id1 = scan_ids.template get<0>(p);
+		bool pred_id1 = pred_ids.template get<0>(p);
+		auto id2 = scan_ids.template get<1>(p);
+		bool pred_id2 = pred_ids.template get<1>(p);
+		auto id3 = scan_ids.template get<2>(p);
+		auto id4 = scan_ids.template get<3>(p);
+		bool pred_id4 = pred_ids.template get<3>(p);
+		auto id5 = scan_ids.template get<4>(p);
+
+		if (pred_id2 == true)
+		{vct_seg_old.template get<0>(id2) = (pred_id1 == true)?id1:-1;}
+
+		if (pred_id2 == true)
+		{vct_out_map.template get<0>(id2) = id3;}
+
+		if (pred_id4 == true)
+		{
+			vct_copy_old_dst.template get<0>(id4) = id3;
+			vct_copy_old_src.template get<0>(id4) = id5;
+		}
+	}
+
+
+
+	// for each segments
+	template<typename vector_index_type, typename vector_data_type>
+	__global__ void copy_old(vector_data_type vct_data_new,
+									vector_index_type index_to_copy,
+									vector_data_type vct_data_old)
+	{
+		int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (p >= index_to_copy.size())	return;
+
+		auto id = index_to_copy.template get<0>(p);
+
+		vct_data_new.get(id) = vct_data_old.get(p);
+	}
+
     template<unsigned int maskProp, unsigned int chunksPerBlock, typename InsertBufferT>
     __global__ void initializeInsertBuffer(InsertBufferT insertBuffer)
     {
@@ -477,41 +566,6 @@ namespace BlockMapGpuKernels
      * @param dst The output vector of reordered data.
      */
     template<typename DataVectorT, typename IndexVectorT>
-    __global__ void reorder(DataVectorT src, IndexVectorT srcIndices, DataVectorT dst)
-    {
-#ifdef __NVCC__
-        typedef typename DataVectorT::value_type AggregateT;
-        typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
-        unsigned int chunkSize = BlockT0::size;
-
-        unsigned int chunksPerBlock = blockDim.x / chunkSize;
-        unsigned int chunkOffset = threadIdx.x / chunkSize; // The thread block can work on several chunks in parallel
-
-        unsigned int chunkBasePos = blockIdx.x * chunksPerBlock;
-
-        unsigned int dstId = chunkBasePos + chunkOffset;
-        if (dstId < srcIndices.size())
-        {
-            unsigned int srcId = srcIndices.template get<0>(dstId);
-            dst.get(dstId) = src.get(srcId); //todo How does this = spread across threads...?
-        }
-#else // __NVCC__
-        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
-    }
-
-
-    /**
-     * Reorder blocks of data according to the permutation given by the input srcIndices vector.
-     * NOTE: Each thread block is in charge of a fixed amount (automatically determined) of data blocks.
-     *
-     * @tparam DataVectorT The type of the (OpenFPM) vector of values.
-     * @tparam IndexVectorT The type of the (OpenFPM) vector of indices.
-     * @param src The input vector of data, which needs to be reordered.
-     * @param srcIndices Vector which specifies the reordering permutation, i.e. dst[i] = src[srcIndices[i]].
-     * @param dst The output vector of reordered data.
-     */
-    template<typename DataVectorT, typename IndexVectorT>
     __global__ void copy_old_ker(IndexVectorT srcIndices, DataVectorT src, IndexVectorT dstIndices, DataVectorT dst)
     {
 #ifdef __NVCC__
@@ -537,139 +591,27 @@ namespace BlockMapGpuKernels
 #endif // __NVCC__
     }
 
-    template<typename DataVectorT, typename IndexVectorT>
-    __global__ void mergeData(DataVectorT data1, DataVectorT data2, IndexVectorT mergeIndices, DataVectorT dataOut)
-    {
-#ifdef __NVCC__
-        typedef typename DataVectorT::value_type AggregateT;
-        typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
-        unsigned int chunkSize = BlockT0::size;
 
-        unsigned int chunksPerBlock = blockDim.x / chunkSize;
-        unsigned int chunkOffset = threadIdx.x / chunkSize; // The thread block can work on several chunks in parallel
-
-        unsigned int chunkBasePos = blockIdx.x * chunksPerBlock;
-
-        unsigned int dstId = chunkBasePos + chunkOffset;
-        if (dstId < mergeIndices.size())
-        {
-            auto size1 = data1.size();
-            auto size2 = data2.size();
-            unsigned int mrgId = mergeIndices.template get<0>(dstId);
-            unsigned int srcId = mrgId - size1; // This is actually only used on data2 branch!
-            if (mrgId < size1) // We need to read from data1
-            {
-                dataOut.get(dstId) = data1.get(mrgId); //todo How does this = spread across threads...?
-            }
-            else if (srcId < size2) // We need to read from data2
-            {
-                dataOut.get(dstId) = data2.get(srcId); //todo How does this = spread across threads...?
-            }
-        }
-#else // __NVCC__
-        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
-    }
-
-    // Below the kernels to be used inside the "compute segments" part of the solveConflicts
-    /**
-     * Fill a vector of predicates specifying if current key is different from the previous one.
-     *
-     * @tparam IndexVectorT The type of the (OpenFPM) vector of indices.
-     * @param keys The keys to compute the predicate on.
-     * @param predicates The output vector of {0,1} predicates.
-     */
-    template<typename IndexVectorT>
-    __global__ void computePredicates(IndexVectorT keys, IndexVectorT predicates)
-    {
-#ifdef __NVCC__
-       // predicates[i] must be 1 if keys[i] != keys[i-1] or if i == 0
-        // else it must be 0
-        unsigned int pos = blockIdx.x * blockDim.x + threadIdx.x;
-        if (pos < keys.size())
-        {
-            if (pos > 0)
-            {
-                predicates.template get<0>(pos) = (keys.template get<0>(pos - 1) != keys.template get<0>(pos)) ? 1 : 0;
-            }
-            else
-            {
-                predicates.template get<0>(pos) = 1;
-            }
-        }
-        else if (pos == keys.size())
-        {
-            // This is just to get one extra trailing element in the exScan
-            // (value here doesn't matter, as the scan is exclusive!)
-            predicates.template get<0>(pos) = 1;
-        }
-#else // __NVCC__
-        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
-    }
-
-    /**
-     * Copy the thread id to the destination position in the out array specified by dstIndices at the corresponding position.
-     * 
-     * @tparam IndexVectorT 
-     * @param keysSize 
-     * @param dstIndices 
-     * @param out 
-     */
-    template<typename IndexVectorT>
-    __global__ void copyIdToDstIndexIfPredicate(size_t keysSize, IndexVectorT dstIndices, IndexVectorT out)
-    {
-#ifdef __NVCC__
-        // dstIndices is exclusive scan of predicates
-        unsigned int pos = blockIdx.x * blockDim.x + threadIdx.x;
-        if (pos < keysSize) // dstIndices.size() must be keysSize+1, so a trailing element is required
-        {
-            bool predicate = dstIndices.template get<0>(pos) != dstIndices.template get<0>(pos+1);
-            if (predicate)
-            {
-                auto dstPos = dstIndices.template get<0>(pos);
-                out.template get<0>(dstPos) = pos;
-            }
-        }
-        else if (pos == keysSize)
-        {
-            // Append a trailing index as end of last segment
-            auto lastDst = dstIndices.template get<0>(pos - 1);
-            auto lastPredicate = dstIndices.template get<0>(pos - 1) != dstIndices.template get<0>(pos);
-            out.template get<0>(lastDst +
-                                lastPredicate) = pos; // We need to increment position if the last element was also written
-        }
-#else // __NVCC__
-        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
-    }
-
-
-    /**
-     * Copy the key to the destination position in the out array specified by dstIndices.
-     * NOTE: it is not possible to reorder in-place!
-     * 
-     * @tparam IndexVectorT 
-     * @param keys
-     * @param dstIndices 
-     * @param out 
-     */
-    template<typename IndexVectorT>
-    __global__ void copyKeyToDstIndexIfPredicate(IndexVectorT keys, IndexVectorT dstIndices, IndexVectorT out)
+    template<typename IndexVectorT, typename IndexVectorT2>
+    __global__ void copyKeyToDstIndexIfPredicate(IndexVectorT keys, IndexVectorT2 dstIndices, IndexVectorT out)
     {
 #ifdef __NVCC__
        // dstIndices is exclusive scan of predicates
         unsigned int pos = blockIdx.x * blockDim.x + threadIdx.x;
-        if (pos < keys.size()) // dstIndices.size() must be keysSize+1, so a trailing element is required
-        {
-            bool predicate = dstIndices.template get<0>(pos) != dstIndices.template get<0>(pos+1);
-            if (predicate)
-            {
-                auto dstPos = dstIndices.template get<0>(pos);
-                out.template get<0>(dstPos) = keys.template get<0>(pos);
-            }
-        }
+
+        if (pos >= dstIndices.size())	{return;}
+
+        unsigned int pm1 = (pos == 0)?0:pos-1;
+
+        bool predicate = dstIndices.template get<2>(pos) != dstIndices.template get<2>(pm1) || pos == 0;
+
+		if (predicate)
+		{
+			auto dstPos = dstIndices.template get<2>(pos);
+			out.template get<0>(dstPos) = keys.template get<0>(pos);
+		}
     }
+
 #else // __NVCC__
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif // __NVCC__
@@ -775,13 +717,6 @@ struct sparse_vector_reduction_solve_conflict
             const unsigned int gridSize =
                     segment_offset.size()  - 1; // This "-1" is because segments has a trailing extra element
 
-//            CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce<p, pSegment, pMask, chunksPerBlock, red_op>),gridSize, blockSize,
-//                    vector_data.toKernel(),
-//                    segment_offset.toKernel()/*,
-//                    src_map.toKernel()*/,
-//                    vector_data.toKernel(),
-//                    vector_data_red.toKernel());
-
             CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<p, pSegment, pMask, chunksPerBlock, red_op>),gridSize, blockSize,
                     vector_data.toKernel(),
             		  vector_data_old.toKernel(),
@@ -854,7 +789,6 @@ namespace BlockMapGpuFunctors
         template<typename vector_index_type, typename vector_data_type, typename ... v_reduce>
         bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices,
                                     vector_data_type &dataOld, vector_data_type &dataNew,
-                                    vector_index_type &tmpIndices, vector_data_type &tmpData,
                                     vector_index_type &keysOut, vector_data_type &dataOut,
                                     mgpu::ofp_context_t & context)
         {
@@ -878,7 +812,7 @@ namespace BlockMapGpuFunctors
             p_ids.resize(mergeIndices.size());
             s_ids.resize(mergeIndices.size());
 
-        	CUDA_LAUNCH(compute_predicate,ite,keys.toKernel(),mergeIndices.toKernel(),dataOld.size(),p_ids.toKernel());
+        	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,keys.toKernel(),mergeIndices.toKernel(),dataOld.size(),p_ids.toKernel());
 
         	mgpu::scan((int *)p_ids.template getDeviceBuffer<0>(),
         				s_ids.size(),
@@ -911,57 +845,27 @@ namespace BlockMapGpuFunctors
         	size_t copy_old_size = s_ids.template get<3>(s_ids.size()-1) + p_ids.template get<3>(p_ids.size()-1);
         	size_t seg_old_size = s_ids.template get<1>(s_ids.size()-1) + p_ids.template get<1>(p_ids.size()-1);
         	size_t out_map_size = s_ids.template get<1>(s_ids.size()-1) + p_ids.template get<1>(p_ids.size()-1);
+        	size_t data_out_size = s_ids.template get<2>(s_ids.size()-1) + p_ids.template get<2>(p_ids.size()-1);
 
         	segments_oldData.resize(seg_old_size);
         	outputMap.resize(out_map_size);
         	copy_old_dst.resize(copy_old_size);
         	copy_old_src.resize(copy_old_size);
 
-        	CUDA_LAUNCH(maps_create,ite,s_ids.toKernel(),p_ids.toKernel(),segments_oldData.toKernel(),outputMap.toKernel(),copy_old_dst.toKernel(),copy_old_src.toKernel());
+        	CUDA_LAUNCH(BlockMapGpuKernels::maps_create,ite,s_ids.toKernel(),p_ids.toKernel(),segments_oldData.toKernel(),outputMap.toKernel(),copy_old_dst.toKernel(),copy_old_src.toKernel());
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            //todo Work plan
-            // Phases of solve_conflicts:
-            // 0) merge data
-            // 1) compute segments
-            //      a) compute predicates
-            //      b) run exclusive scan on predicates
-            //      c) copyIdToDst...
-            //      d) update the keys to the soon-to-be segreduced ones
-            // 2) perform segreduce
+            // Create the output for the keys
+            keysOut.resize(data_out_size); // The final number of keys is one less than the segments values
 
-            // First ensure we have the right sizes on the buffers
+            ite = keysOut.getGPUIterator();
+            CUDA_LAUNCH(BlockMapGpuKernels::copyKeyToDstIndexIfPredicate,ite,keys.toKernel(), s_ids.toKernel(), keysOut.toKernel());
 
-            // Phase 1 - compute segments
-            mergeIndices.resize(mergeIndices.size() + 1); // This is to get space for the extra trailing predicate
-            tmpIndices.resize(mergeIndices.size());
-
-            unsigned int gridSize2 = static_cast<unsigned int>(std::ceil(static_cast<float>(mergeIndices.size()) / blockSize));
-            BlockMapGpuKernels::computePredicates << <
-                        gridSize2,
-                        blockSize>>>
-                        (keys.toKernel(), mergeIndices.toKernel());
-
-            mgpu::scan( (IndexT*) mergeIndices.template getDeviceBuffer<0>(),
-                        mergeIndices.size(), // Here note that mergeIndices is the predicate vector
-                        (IndexT*) tmpIndices.template getDeviceBuffer<0>(),
-                        context); // mgpu scan is exclusive by default
-            // Now it's important to resize mergeIndices in the right way, otherwise dragons ahead!
-            tmpIndices.template deviceToHost<0>(tmpIndices.size()-1, tmpIndices.size()-1); //getting only the last element from device
-            mergeIndices.resize(tmpIndices.template get<0>(tmpIndices.size()-1) + 1);
-            BlockMapGpuKernels::copyIdToDstIndexIfPredicate<< < gridSize2, blockSize >> >
-                                                                            (keys.size(), tmpIndices.toKernel(), mergeIndices.toKernel());
-            // mergeIndices now contains the segments
-
-            // Now update the keys
-            keysOut.resize(mergeIndices.size()-1); // The final number of keys is one less than the segments values
-            BlockMapGpuKernels::copyKeyToDstIndexIfPredicate<< < gridSize2, blockSize >> >
-                                                                             (keys.toKernel(), tmpIndices.toKernel(), keysOut.toKernel());
             // the new keys are now in keysOut
 
             // Phase 2 - segreduce on all properties
-            dataOut.resize(mergeIndices.size()-1); // Right size for output, i.e. the number of segments
+            dataOut.resize(data_out_size); // Right size for output, i.e. the number of segments
             typedef boost::mpl::vector<v_reduce...> vv_reduce;
             constexpr unsigned int pSegment = 0;
 
@@ -983,7 +887,9 @@ namespace BlockMapGpuFunctors
 
             //copy the old chunks
             if (copy_old_dst.size() != 0)
-            {CUDA_LAUNCH_DIM3(BlockMapGpuKernels::copy_old_ker,copy_old_dst.size(),blockSize,copy_old_src.toKernel(),dataOld.toKernel(),copy_old_dst.toKernel(),dataOut.toKernel());}
+            {
+            	CUDA_LAUNCH_DIM3(BlockMapGpuKernels::copy_old_ker,copy_old_dst.size(),blockSize,copy_old_src.toKernel(),dataOld.toKernel(),copy_old_dst.toKernel(),dataOut.toKernel());
+            }
 
             return true; //todo: check if error in kernel
 #else // __NVCC__

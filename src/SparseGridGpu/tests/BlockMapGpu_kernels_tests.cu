@@ -500,7 +500,7 @@ BOOST_AUTO_TEST_CASE(test_maps_create)
 
 	auto ite = merge_indexes.getGPUIterator();
 
-	CUDA_LAUNCH(compute_predicate,ite,merge_keys.toKernel(),merge_indexes.toKernel(),9,p_ids.toKernel());
+	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,merge_keys.toKernel(),merge_indexes.toKernel(),9,p_ids.toKernel());
 
 	mgpu::standard_context_t context(false);
 	mgpu::scan((int *)p_ids.template getDeviceBuffer<0>(),
@@ -540,7 +540,7 @@ BOOST_AUTO_TEST_CASE(test_maps_create)
 	copy_old_src.resize(copy_old_size);
 	copy_old_dst.resize(copy_old_size);
 
-	CUDA_LAUNCH(maps_create,ite,s_ids.toKernel(),p_ids.toKernel(),segments_oldData.toKernel(),outputMap.toKernel(),copy_old_dst.toKernel(),copy_old_src.toKernel());
+	CUDA_LAUNCH(BlockMapGpuKernels::maps_create,ite,s_ids.toKernel(),p_ids.toKernel(),segments_oldData.toKernel(),outputMap.toKernel(),copy_old_dst.toKernel(),copy_old_src.toKernel());
 
 	segments_oldData.template deviceToHost<0>();
 	outputMap.template deviceToHost<0>();
@@ -674,7 +674,6 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 			>(
 					keys, mergeIndices,
 					dataOld, dataNew,
-					tmpIndices, tmpData,
 					keysOut, dataOut,
 					ctx
 					);
