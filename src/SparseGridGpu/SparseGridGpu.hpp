@@ -13,6 +13,7 @@
 #include "SparseGridGpu_kernels.cuh"
 #include "Iterators/SparseGridGpu_iterator_sub.hpp"
 #include "Geometry/grid_zmb.hpp"
+#include "util/stat/common_statistics.hpp"
 #ifdef OPENFPM_DATA_ENABLE_IO_MODULE
 #include "VTKWriter/VTKWriter.hpp"
 #endif
@@ -741,6 +742,41 @@ public:
         }
 
         return numBoundaryElements;
+    }
+
+    // Also count mean+stdDev of occupancy of existing blocks
+    void measureBlockOccupancy(double &mean, double &deviation)
+    {
+        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
+        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+
+        constexpr unsigned int pMask = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask;
+        typedef typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT BAggregateT;
+        typedef BlockTypeOf<BAggregateT, pMask> MaskBlockT;
+        constexpr unsigned int blockSize = MaskBlockT::size;
+        const auto bufferSize = indexBuffer.size();
+
+        openfpm::vector<double> measures;
+
+        for (size_t blockId=0; blockId<bufferSize; ++blockId)
+        {
+            auto dataBlock = dataBuffer.get(blockId); // Avoid binary searches as much as possible
+            size_t numElementsInBlock = 0;
+            for (size_t elementId=0; elementId<blockSize; ++elementId)
+            {
+                const auto curMask = dataBlock.template get<pMask>()[elementId];
+
+                if (this->exist(curMask))
+                {
+                    ++numElementsInBlock;
+                }
+            }
+            double blockOccupancy = static_cast<double>(numElementsInBlock)/blockSize;
+            measures.add(blockOccupancy);
+        }
+
+        standard_deviation(measures, mean, deviation);
     }
 
     template<typename stencil, typename... Args>

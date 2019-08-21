@@ -102,7 +102,8 @@ static bool isFloat(const std::string &someString)
 
 static void StandardXMLPerformanceGraph(std::string file_xml,
 		                      std::string file_xml_ref,
-							  GoogleChart & cg)
+							  GoogleChart & cg,
+							  const double deviationMultiplier = 3.0)
 {
     // Create empty property tree object
 	boost::property_tree::ptree tree_measure;
@@ -139,12 +140,14 @@ static void StandardXMLPerformanceGraph(std::string file_xml,
     		{
     			if (c.second.template get<std::string>("y.data(" + std::to_string(number) + ").title","") == "")
     			{break;}
-    			yn.add(c.second.template get<std::string>("y.data(" + std::to_string(number) + ").title","line" + std::to_string(number)));
+    			yn.add(c.second.template get<std::string>("y.data(" + std::to_string(number) + ").title",
+    			        "line" + std::to_string(number)));
     			yn.add("interval");
     			yn.add("interval");
     			number++;
     		}
 
+    		bool is_log_x = c.second.template get<bool>("options.log_x",false);
     		bool is_log_y = c.second.template get<bool>("options.log_y",false);
 
     		// We process the graph
@@ -239,8 +242,8 @@ static void StandardXMLPerformanceGraph(std::string file_xml,
     				y.last().add(y_val);
 
     				x_ref.last().add(x_val_ref);
-    				y_ref_dw.last().add(y_val_ref - 3.0 * y_val_dev_ref);
-    				y_ref_up.last().add(y_val_ref + 3.0 * y_val_dev_ref);
+                    y_ref_dw.last().add(y_val_ref - deviationMultiplier * y_val_dev_ref);
+    				y_ref_up.last().add(y_val_ref + deviationMultiplier * y_val_dev_ref);
 
 					warning_set(warning_level,y_val,y_val_ref,y_val_dev_ref);
 
@@ -255,15 +258,25 @@ static void StandardXMLPerformanceGraph(std::string file_xml,
     			std::string chart_area;
     			addchartarea(chart_area,warning_level);
     			opt.curveType = c.second.template get<std::string>("interpolation","function");
+//    			opt.curveType = c.second.template get<std::string>("interpolation","none");
 
-    			if (is_log_y == true)
+    			if (is_log_x == true)
     			{
-    				opt.more = GC_Y_LOG + "," + GC_ZOOM + chart_area;
+    				opt.more = GC_X_LOG + "," + GC_ZOOM + chart_area;
     			}
     			else
         		{
         			opt.more = GC_ZOOM + chart_area;
         		}
+
+                if (is_log_y == true)
+                {
+                    opt.more = GC_Y_LOG + "," + GC_ZOOM + chart_area;
+                }
+                else
+                {
+                    opt.more = GC_ZOOM + chart_area;
+                }
 
     			opt.title = title;
     			opt.xAxis = x_title;

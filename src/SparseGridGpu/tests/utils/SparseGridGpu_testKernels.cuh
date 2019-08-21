@@ -81,7 +81,10 @@ __global__ void insertSphere(SparseGridType sparseGrid, grid_key_dx<2,int> start
     typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
     typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
 
-    grid_key_dx<2,int> blk({blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize() ,blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize()});
+    grid_key_dx<2,int> blk({
+        blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize(),
+        blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize()
+    });
 
     unsigned int offset = threadIdx.x;
 
@@ -97,8 +100,11 @@ __global__ void insertSphere(SparseGridType sparseGrid, grid_key_dx<2,int> start
     grid_key_dx<2,int> keyg;
     keyg = sparseGrid.getGlobalCoord(blk,offset);
 
-    float radius = sqrt( (float)(keyg.get(0) - (start.get(0) + gridDim.x/2*SparseGridType::blockEdgeSize_))*(keyg.get(0) - (start.get(0) + gridDim.x/2*SparseGridType::blockEdgeSize_)) +
-                         (keyg.get(1) - (start.get(1) + gridDim.y/2*SparseGridType::blockEdgeSize_))*(keyg.get(1) - (start.get(1) + gridDim.y/2*SparseGridType::blockEdgeSize_)) );
+    float radius = sqrt( (float)
+            (keyg.get(0) - (start.get(0) + gridDim.x/2*SparseGridType::blockEdgeSize_))
+            * (keyg.get(0) - (start.get(0) + gridDim.x/2*SparseGridType::blockEdgeSize_))
+            + (keyg.get(1) - (start.get(1) + gridDim.y/2*SparseGridType::blockEdgeSize_))
+            * (keyg.get(1) - (start.get(1) + gridDim.y/2*SparseGridType::blockEdgeSize_)) );
 
     bool is_active = radius < r1 && radius > r2;
 
