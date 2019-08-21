@@ -15,13 +15,9 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	openfpm::vector_gpu<aggregate<int>> output_list_0;
 	openfpm::vector_gpu<aggregate<int>> output_list_1;
 
-	openfpm::vector_gpu<aggregate<int,float,double>> block_data;
-	openfpm::vector_gpu<aggregate<int,float,double>> cont_data;
-
 	int nblock = 100;
 	int nslot = 512;
 	block_insert.resize(nblock*nslot);
-	block_data.resize(nblock*nslot);
 	block_n.resize(nblock+1);
 	block_n_scan.resize(nblock+1);
 
@@ -32,24 +28,18 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 		for (int j = 0 ; j < block_n.template get<0>(i) ; j++)
 		{
 			block_insert.template get<0>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
-
-			block_data.template get<0>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
-			block_data.template get<1>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
-			block_data.template get<2>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
 		}
 	}
 
 	block_n.template get<0>(block_n.size()-1) = 0;
 	block_insert.template hostToDevice<0>();
 	block_n.template hostToDevice<0>();
-	block_data.template hostToDevice<0,1,2>();
 
 	mgpu::standard_context_t context(false);
 	mgpu::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
 
 	block_n_scan.template deviceToHost<0>(block_n_scan.size()-1,block_n_scan.size()-1);
 	size_t n_ele = block_n_scan.template get<0>(block_n.size()-1);
-	cont_data.resize(n_ele);
 
 	output_list_0.resize(n_ele);
 	output_list_1.resize(n_ele);
@@ -64,14 +54,12 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	thr.y = 1;
 	thr.z = 1;
 
-	construct_insert_list<<<wthr,thr>>>(block_insert.toKernel(),block_n.toKernel(),
+	construct_insert_list_key_only<<<wthr,thr>>>(block_insert.toKernel(),block_n.toKernel(),
 										block_n_scan.toKernel(),output_list_0.toKernel(),output_list_1.toKernel(),
-										block_data.toKernel(),cont_data.toKernel(),
 										nslot);
 
 	output_list_0.template deviceToHost<0>();
 	block_n_scan.template deviceToHost<0>();
-	cont_data.template deviceToHost<0,1,2>();
 
 	// we check
 
@@ -83,10 +71,68 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 		for (int j = 0 ; j < block_n.template get<0>(i) ; j++)
 		{
 			check &= output_list_0.template get<0>(block_n_scan.template get<0>(i) + j) == block_insert.template get<0>(i*nslot + j);
+		}
+	}
 
-			check &= cont_data.template get<0>(block_n_scan.template get<0>(i) + j) == block_data.template get<0>(i*nslot + j);
-			check &= cont_data.template get<1>(block_n_scan.template get<0>(i) + j) == block_data.template get<1>(i*nslot + j);
-			check &= cont_data.template get<2>(block_n_scan.template get<0>(i) + j) == block_data.template get<2>(i*nslot + j);
+	BOOST_REQUIRE_EQUAL(check,true);
+}
+
+BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use_small_pool )
+{
+	openfpm::vector_gpu<aggregate<int>> block_insert;
+	openfpm::vector_gpu<aggregate<int>> block_n;
+	openfpm::vector_gpu<aggregate<int>> block_n_scan;
+	openfpm::vector_gpu<aggregate<int>> output_list_0;
+	openfpm::vector_gpu<aggregate<int>> output_list_1;
+
+	int nblock = 100;
+	int nslot = 17;
+	block_insert.resize(nblock*nslot);
+	block_n.resize(nblock+1);
+	block_n_scan.resize(nblock+1);
+
+	// fill block insert of some data
+	for (int i = 0 ; i < nblock ; i++)
+	{
+		block_n.template get<0>(i) = ((float)rand() / RAND_MAX) * 16;
+		for (int j = 0 ; j < block_n.template get<0>(i) ; j++)
+		{
+			block_insert.template get<0>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
+		}
+	}
+
+	block_n.template get<0>(block_n.size()-1) = 0;
+	block_insert.template hostToDevice<0>();
+	block_n.template hostToDevice<0>();
+
+	mgpu::standard_context_t context(false);
+	mgpu::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
+
+	block_n_scan.template deviceToHost<0>(block_n_scan.size()-1,block_n_scan.size()-1);
+	size_t n_ele = block_n_scan.template get<0>(block_n.size()-1);
+
+	output_list_0.resize(n_ele);
+	output_list_1.resize(n_ele);
+
+	auto ite = block_insert.getGPUIterator();
+
+	CUDA_LAUNCH(construct_insert_list_key_only_small_pool,ite,block_insert.toKernel(),block_n.toKernel(),
+										block_n_scan.toKernel(),output_list_0.toKernel(),output_list_1.toKernel(),
+										nslot);
+
+	output_list_0.template deviceToHost<0>();
+	block_n_scan.template deviceToHost<0>();
+
+	// we check
+
+	bool check = true;
+
+	// fill block insert of some data
+	for (int i = 0 ; i < nblock ; i++)
+	{
+		for (int j = 0 ; j < block_n.template get<0>(i) ; j++)
+		{
+			check &= output_list_0.template get<0>(block_n_scan.template get<0>(i) + j) == block_insert.template get<0>(i*nslot + j);
 		}
 	}
 

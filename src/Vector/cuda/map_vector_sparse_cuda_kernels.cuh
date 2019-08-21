@@ -434,36 +434,31 @@ __global__ void construct_insert_list_key_only(vector_index_type vit_block_data,
 	}
 }
 
-template<typename vector_index_type, typename vector_data_type>
-__global__ void construct_insert_list(vector_index_type vit_block_data,
+template<typename vector_index_type>
+__global__ void construct_insert_list_key_only_small_pool(vector_index_type vit_block_data,
 								 vector_index_type vit_block_n,
 								 vector_index_type vit_block_scan,
 								 vector_index_type vit_list_0,
 								 vector_index_type vit_list_1,
-								 vector_data_type vdata_block,
-								 vector_data_type vdata,
 								 int nslot)
 {
-	int n_move = vit_block_n.template get<0>(blockIdx.x);
-	int n_block_move = vit_block_n.template get<0>(blockIdx.x) / blockDim.x;
-	int start = vit_block_scan.template get<0>(blockIdx.x);
+	int p = blockIdx.x * blockDim.x + threadIdx.x;
 
-	int i = 0;
-	for ( ; i < n_block_move ; i++)
-	{
-		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
-		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
-		vdata.get(start + i*blockDim.x + threadIdx.x) = vdata_block.get(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
-	}
+	if (p >= vit_block_data.size())	{return;}
+
+	int pool_id = p / nslot;
+	int thr_id = p % nslot;
+	int start = vit_block_scan.template get<0>(pool_id);
+	int n = vit_block_scan.template get<0>(pool_id+1) - start;
 
 	// move remaining
-	if (threadIdx.x < n_move - i*blockDim.x )
+	if (thr_id < n )
 	{
-		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
-		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
-		vdata.get(start + i*blockDim.x + threadIdx.x) = vdata_block.get(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);;
+		vit_list_0.template get<0>(start + thr_id) = vit_block_data.template get<0>(nslot*pool_id + thr_id);
+		vit_list_1.template get<0>(start + thr_id) = nslot*pool_id + thr_id;
 	}
 }
+
 
 template<typename vector_index_type>
 __global__ void construct_remove_list(vector_index_type vit_block_data,
