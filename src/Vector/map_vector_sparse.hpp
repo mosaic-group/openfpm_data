@@ -139,25 +139,22 @@ namespace openfpm
 #endif // __NVCC__
         }
 
-        template <unsigned int pSegment, typename vector_reduction, typename T
-        		, typename vector_data_type, typename vector_index_type, typename vector_index_type2>
-        static void segreduce_total(vector_index_type2 & segment_offset,
-        		vector_data_type & vector_data_old,
-        		vector_data_type & vector_out_red,
-        		vector_index_type & vct_old_copy,
-                vector_data_type & vector_data_new,
-                vector_index_type & vector_index_map,
-                vector_index_type & vector_out_map,
-                vector_index_type & vector_seg_old,
-                mgpu::ofp_context_t & context)
-        {
-#ifdef __NVCC__
-        	std::cout << "segreduce_total TODO" << std::endl;
-#else // __NVCC__
-    std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
-        }
 
+        /*! \briefMerge all datas
+         *
+         * \param vct_index_old sorted vector of the old indexes
+         * \param vct_data_old vector of old data
+         * \param vct_index_out output indexes merged new and old indexes
+         * \param vct_index_merge_id indicate from where it come from the merged index (if the number is bigger than vct_index_old.size()
+         *                                                          the merged index come from the new data)
+         * \param vct_index_merge indexes old and new merged with conflicts
+         * \param vct_add_data_unique data to add (has been already reduced)
+         * \param vct_data_old old data
+         * \param vct_add_data data to add in its original form in the insert buffer
+         * \param vct_data_out reduced data vector new + old
+         * \param vct_index_dtmp temporal buffer vector used for intermediate calculation
+         *
+         */
         template <
                 typename vector_data_type,
                 typename vector_index_type,
@@ -166,17 +163,17 @@ namespace openfpm
                 typename Ti,
                 typename ... v_reduce>
         static void solveConflicts(
-                vector_index_type & vct_index,
-                vector_index_type & vct_index_tmp,
-                vector_index_type & vct_index_tmp2,
-                vector_index_type & vct_index_tmp3,
+                vector_index_type & vct_index_old,
+                vector_index_type & vct_index_merge,
+                vector_index_type & vct_index_merge_id,
+                vector_index_type & vct_index_out,
                 vector_index_dtmp_type & vct_index_dtmp,
                 vector_index_type & data_map,
                 vector_index_type2 & segments_new,
-                vector_data_type & vct_data,
+                vector_data_type & vct_data_old,
                 vector_data_type & vct_add_data,
                 vector_data_type & vct_add_data_unique,
-                vector_data_type & vct_data_tmp,
+                vector_data_type & vct_data_out,
                 ite_gpu<1> & itew,
                 block_functor & blf,
                 mgpu::ofp_context_t & context
@@ -184,18 +181,18 @@ namespace openfpm
         {
 #ifdef __NVCC__
             CUDA_LAUNCH((solve_conflicts<
-                        decltype(vct_index_tmp.toKernel()),
-                        decltype(vct_data.toKernel()),
+                        decltype(vct_index_merge.toKernel()),
+                        decltype(vct_data_old.toKernel()),
                         decltype(vct_index_dtmp.toKernel()),
                         128,
                         v_reduce ...
                         >),
             			itew,
-                                              vct_index_tmp.toKernel(),vct_data.toKernel(),
-                                              vct_index_tmp2.toKernel(),vct_add_data_unique.toKernel(),
-                                              vct_index_tmp3.toKernel(),vct_data_tmp.toKernel(),
+                                              vct_index_merge.toKernel(),vct_data_old.toKernel(),
+                                              vct_index_merge_id.toKernel(),vct_add_data_unique.toKernel(),
+                                              vct_index_out.toKernel(),vct_data_out.toKernel(),
                                               vct_index_dtmp.toKernel(),
-                                              vct_index.size());
+                                              vct_index_old.size());
 
                 // we scan tmp3
                 mgpu::scan(
@@ -208,11 +205,11 @@ namespace openfpm
                 vct_index_dtmp.template deviceToHost<0,1>(vct_index_dtmp.size()-1,vct_index_dtmp.size()-1);
                 int size = vct_index_dtmp.template get<1>(vct_index_dtmp.size()-1) + vct_index_dtmp.template get<0>(vct_index_dtmp.size()-1);
 
-                vct_index.resize(size);
-                vct_data.resize(size);
+                vct_index_old.resize(size);
+                vct_data_old.resize(size);
 
-                CUDA_LAUNCH(realign,itew,vct_index_tmp3.toKernel(),vct_data_tmp.toKernel(),
-                                      vct_index.toKernel(), vct_data.toKernel(),
+                CUDA_LAUNCH(realign,itew,vct_index_out.toKernel(),vct_data_out.toKernel(),
+                                      vct_index_old.toKernel(), vct_data_old.toKernel(),
                                       vct_index_dtmp.toKernel());
 #else // __NVCC__
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
@@ -261,28 +258,6 @@ namespace openfpm
 
         }
 
-        template <unsigned int pSegment,
-        		  typename vector_reduction,
-        		  typename T,
-        		  typename vector_data_type,
-        		  typename vector_index_type,
-        		  typename vector_index_type2>
-        static void segreduce_total(vector_index_type2 &segments, vector_data_type &data_old, vector_data_type &data_output,
-				   vector_index_type &vct_old_copy,
-				   vector_data_type &data_new, vector_index_type data_new_map,
-				   vector_index_type & data_out_map,
-				   vector_index_type & data_seg_old_map,
-				   mgpu::ofp_context_t & context)
-        {
-#ifdef __NVCC__
-            block_functor::template seg_reduce_total<pSegment, vector_reduction, T>(segments,data_old,data_output,
-            																		vct_old_copy,data_new,data_new_map,
-            																		data_out_map,data_seg_old_map);
-#else // __NVCC__
-    std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
-        }
-
         template <
                 typename vector_data_type,
                 typename vector_index_type,
@@ -291,17 +266,17 @@ namespace openfpm
                 typename Ti,
                 typename ... v_reduce>
         static void solveConflicts(
-                vector_index_type & vct_index,
-                vector_index_type & vct_index_tmp,
-                vector_index_type & vct_index_tmp2,
-                vector_index_type & vct_index_tmp3,
+                vector_index_type & vct_index_old,
+                vector_index_type & vct_index_merge,
+                vector_index_type & vct_index_merge_id,
+                vector_index_type & vct_index_out,
                 vector_index_dtmp_type & vct_index_dtmp,
                 vector_index_type & data_map,
                 vector_index_type2 & segments_new,
                 vector_data_type & vct_data,
                 vector_data_type & vct_add_data,
                 vector_data_type & vct_add_data_unique,
-                vector_data_type & vct_data_tmp,
+                vector_data_type & vct_data_out,
                 ite_gpu<1> & itew,
                 block_functor & blf,
                 mgpu::ofp_context_t & context
@@ -309,15 +284,15 @@ namespace openfpm
         {
 #ifdef __NVCC__
             blf.template solve_conflicts<1,
-			            decltype(vct_index_tmp),
+			            decltype(vct_index_merge),
 			            decltype(segments_new),
 			            decltype(vct_data),
 			            v_reduce ...>
-			            (vct_index_tmp, vct_index_tmp2, segments_new, data_map,
+			            (vct_index_merge, vct_index_merge_id, segments_new, data_map,
 			            vct_data, vct_add_data,
-			            vct_index, vct_data_tmp,
+			            vct_index_old, vct_data_out,
 			            context);
-                vct_data_tmp.swap(vct_data);
+                vct_data_out.swap(vct_data);
 
 #else // __NVCC__
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
@@ -796,12 +771,6 @@ namespace openfpm
 
 		// segments map (This is used only in case of Blocked data)
 		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_segment_index_map;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_segment_index_map2;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_segment_old_data;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_out_map;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_old_copy;
-		vector<aggregate<Ti,Ti,Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti,Ti,Ti>>::type,layout_base,grow_p> vct_p_ids;
-		vector<aggregate<Ti,Ti,Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti,Ti,Ti>>::type,layout_base,grow_p> vct_s_ids;
 
 		block_functor blf;
 

@@ -319,6 +319,162 @@ namespace BlockMapGpuKernels
 #endif // __NVCC__
     }
 
+    // GridSize = number of segments
+    // BlockSize = chunksPerBlock * chunkSize
+    //
+    template<unsigned int p,
+            unsigned int pSegment,
+            unsigned int pMask,
+            unsigned int chunksPerBlock,
+            typename op,
+            typename IndexVector_segdataT, typename IndexVector_datamapT,
+            typename IndexVector_segoldT, typename IndexVector_outmapT, typename DataVectorT>
+    __global__ void
+    segreduce_total_with_mask(
+            DataVectorT data_new,
+            DataVectorT data_old,
+            IndexVector_segdataT segments_data,
+            IndexVector_datamapT segments_dataMap,
+            IndexVector_segoldT segments_dataOld,
+            IndexVector_outmapT outputMap,
+            DataVectorT output
+    )
+    {
+#ifdef __NVCC__
+        typedef typename DataVectorT::value_type AggregateT;
+        typedef BlockTypeOf<AggregateT, p> DataType;
+        typedef BlockTypeOf<AggregateT, pMask> MaskType;
+        typedef typename std::remove_all_extents<DataType>::type BaseBlockType;
+        constexpr unsigned int chunkSize = BaseBlockType::size;
+
+        unsigned int segmentId = blockIdx.x;
+        int segmentSize = segments_data.template get<pSegment>(segmentId + 1)
+                          - segments_data.template get<pSegment>(segmentId);
+
+        unsigned int start = segments_data.template get<pSegment>(segmentId);
+
+        unsigned int chunkId = threadIdx.x / chunkSize;
+        unsigned int offset = threadIdx.x % chunkSize;
+
+        __shared__ ArrayWrapper<DataType> A[chunksPerBlock];
+        __shared__ MaskType AMask[chunksPerBlock];
+        typename ComposeArrayType<DataType>::type bReg;
+        typename MaskType::scalarType aMask, bMask;
+
+        // Phase 0: Load chunks as first operand of the reduction
+        if (chunkId < segmentSize)
+        {
+        	unsigned int m_chunkId = segments_dataMap.template get<0>(start + chunkId);
+
+            A[chunkId][offset] = RhsBlockWrapper<DataType>(data_new.template get<p>(m_chunkId), offset).value;
+            aMask = data_new.template get<pMask>(m_chunkId)[offset];
+        }
+
+        //////////////////////////// Horizontal reduction (work on data) //////////////////////////////////////////////////
+        //////////////////////////// We reduce
+
+        int i = chunksPerBlock;
+        for (; i < segmentSize - (int) (chunksPerBlock); i += chunksPerBlock)
+        {
+        	unsigned int m_chunkId = segments_dataMap.template get<0>(start + i + chunkId);
+
+        	// it breg = data_new.template get<p>(m_chunkId)
+            generalDimensionFunctor<decltype(bReg)>::assignWithOffsetRHS(bReg,
+                                                                         data_new.template get<p>(m_chunkId),
+                                                                         offset);
+            bMask = data_new.template get<pMask>(m_chunkId)[offset];
+
+            // it reduce A[chunkId][offset] with breg
+            generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
+                                                                    bReg,
+                                                                    BlockMapGpu_ker<>::exist(aMask),
+                                                                    BlockMapGpu_ker<>::exist(bMask));
+            // reduce aMask with bMask
+            aMask = aMask | bMask;
+        }
+
+
+        if (i + chunkId < segmentSize)
+        {
+        	unsigned int m_chunkId = segments_dataMap.template get<0>(start + i + chunkId);
+
+        	// it breg = data_new.template get<p>(m_chunkId)
+            generalDimensionFunctor<decltype(bReg)>::assignWithOffsetRHS(bReg,
+                                                                         data_new.template get<p>(m_chunkId),
+                                                                         offset);
+            bMask = data_new.template get<pMask>(m_chunkId)[offset];
+
+            // it reduce A[chunkId][offset] with breg
+            generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
+                                                                    bReg,
+                                                                    BlockMapGpu_ker<>::exist(aMask),
+                                                                    BlockMapGpu_ker<>::exist(bMask));
+
+            // reduce aMask with bMask
+            aMask = aMask | bMask;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        AMask[chunkId][offset] = aMask;
+
+        __syncthreads();
+
+        // Horizontal reduction finished
+        // Now vertical reduction
+        for (int j = 2; j <= chunksPerBlock && j <= segmentSize; j *= 2)
+        {
+            if (chunkId % j == 0 && chunkId < segmentSize)
+            {
+                unsigned int otherChunkId = chunkId + (j / 2);
+                if (otherChunkId < segmentSize)
+                {
+                    aMask = AMask[chunkId][offset];
+                    bMask = AMask[otherChunkId][offset];
+                    generalDimensionFunctor<DataType>::template applyOp<op>(A[chunkId][offset],
+                                                                            A[otherChunkId][offset],
+                                                                            BlockMapGpu_ker<>::exist(aMask),
+                                                                            BlockMapGpu_ker<>::exist(bMask));
+                    AMask[chunkId][offset] = aMask | bMask;
+                }
+            }
+            __syncthreads();
+        }
+
+        //////////////////////////////////////// Reduce now with old data if present link
+
+        int seg_old = segments_dataOld.template get<0>(segmentId);
+
+        if (seg_old != -1 && chunkId == 0)
+        {
+        	aMask = AMask[0][offset];
+        	bMask = data_old.template get<pMask>(seg_old)[offset];
+        	generalDimensionFunctor<DataType>::template applyOp<op>(A[0][offset],
+        														data_old.template get<p>(seg_old)[offset],
+                                                                BlockMapGpu_ker<>::exist(aMask),
+                                                                BlockMapGpu_ker<>::exist(bMask));
+        	AMask[0][offset] = aMask | bMask;
+        }
+
+        __syncthreads();
+
+        ///////////////////////////////////////////////////////////////////////////////////
+
+        // Write output
+        if (chunkId == 0)
+        {
+        	unsigned int out_id = outputMap.template get<0>(segmentId);
+            generalDimensionFunctor<DataType>::assignWithOffset(output.template get<p>(out_id), A[chunkId].data,
+                                                                offset);
+
+            generalDimensionFunctor<DataType>::assignWithOffset(output.template get<pMask>(out_id), AMask[chunkId],
+                                                                offset);
+        }
+#else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif // __NVCC__
+    }
+
     /**
      * Reorder blocks of data according to the permutation given by the input srcIndices vector.
      * NOTE: Each thread block is in charge of a fixed amount (automatically determined) of data blocks.
@@ -483,7 +639,9 @@ struct sparse_vector_reduction_solve_conflict
             const unsigned int gridSize =
                     segment_offset.size()  - 1; // This "-1" is because segments has a trailing extra element
 
-            CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<p, pSegment, pMask, chunksPerBlock, red_op>),gridSize, blockSize,
+            if (T::value == 0)
+            {
+            	CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total_with_mask<p, pSegment, pMask, chunksPerBlock, red_op>),gridSize, blockSize,
                     vector_data.toKernel(),
             		  vector_data_old.toKernel(),
                     segment_offset.toKernel(),
@@ -491,6 +649,18 @@ struct sparse_vector_reduction_solve_conflict
                     segments_oldData.toKernel(),
                     out_map.toKernel(),
                     vector_data_red.toKernel());
+            }
+            else
+            {
+            	CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<p, pSegment, pMask, chunksPerBlock, red_op>),gridSize, blockSize,
+                    vector_data.toKernel(),
+            		  vector_data_old.toKernel(),
+                    segment_offset.toKernel(),
+                    vector_data_map.toKernel(),
+                    segments_oldData.toKernel(),
+                    out_map.toKernel(),
+                    vector_data_red.toKernel());
+            }
 		}
 #else
 		std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;

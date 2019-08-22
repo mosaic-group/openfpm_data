@@ -228,7 +228,7 @@ template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT
 template<typename ... v_reduce>
 void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::flush(mgpu::ofp_context_t &context, flush_type opt)
 {
-    blockMap.template flush<v_reduce ..., sBitwiseOr_<pMask>>(context, opt);
+    blockMap.template flush<v_reduce .../*, sBitwiseOr_<pMask>*/>(context, opt);
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
