@@ -258,11 +258,7 @@ namespace openfpm
         					  block_functor & blf,
         					  mgpu::ofp_context_t & context)
         {
-#ifdef __NVCC__
-            blf.template seg_reduce<pSegment, vector_reduction, T>(segment_offset, vector_data, vector_data_unsorted, vector_data_map, vector_data_red);
-#else // __NVCC__
-    std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
+
         }
 
         template <unsigned int pSegment,
@@ -1184,9 +1180,7 @@ namespace openfpm
             // At this point we can check whether we have not inserted anything actually,
             // in this case, return without further ado...
 			if (vct_add_index_cont_0.size() == 0)
-            {
-                return;
-            }
+            {return;}
 
 			reorder_indexes(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,vct_add_data,context);
 
@@ -1194,14 +1188,8 @@ namespace openfpm
 										 vct_index_tmp,vct_index_tmp2,
 										 context);
 
-			if (impl2 == VECTOR_SPARSE_STANDARD)
-			{
-				merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_index_unique,vct_add_data,vct_add_index_cont_1,context);
-			}
-			else
-			{
-				merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_index_unique,vct_add_data,vct_add_index_cont_1,context);
-			}
+
+			merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_index_unique,vct_add_data,vct_add_index_cont_1,context);
 
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
