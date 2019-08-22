@@ -786,8 +786,8 @@ namespace BlockMapGpuFunctors
 #endif // __NVCC__
         }
 
-        template<typename vector_index_type, typename vector_data_type, typename ... v_reduce>
-        bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices,
+        template<typename vector_index_type, typename vector_index_type2, typename vector_data_type, typename ... v_reduce>
+        bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices, vector_index_type2 &segments_new,
                                     vector_data_type &dataOld, vector_data_type &dataNew,
                                     vector_index_type &keysOut, vector_data_type &dataOut,
                                     mgpu::ofp_context_t & context)

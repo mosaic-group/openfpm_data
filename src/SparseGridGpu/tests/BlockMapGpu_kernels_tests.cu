@@ -591,7 +591,7 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 	typedef DataBlock<ScalarT, 64> BlockT;
 	typedef DataBlock<unsigned char, 64> MaskBlockT;
 	const unsigned int p=0, pMask=1, pInd=0;
-	openfpm::vector_gpu<aggregate<unsigned int>> keys, mergeIndices, tmpIndices, keysOut;
+	openfpm::vector_gpu<aggregate<unsigned int>> keys, mergeIndices, tmpIndices, keysOut, segments_new;
 	openfpm::vector_gpu<aggregate<BlockT, MaskBlockT>> dataOld, dataNew, tmpData, dataOut;
 	mgpu::ofp_context_t ctx;
 
@@ -615,21 +615,34 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 
 	// Merge Indices
 	mergeIndices.resize(15);
-	mergeIndices.template get<pInd>(0) = 5;
+	mergeIndices.template get<pInd>(0) = 5;  // 0
 	mergeIndices.template get<pInd>(1) = 0;
-	mergeIndices.template get<pInd>(2) = 6;
+	mergeIndices.template get<pInd>(2) = 6;  // 1
 	mergeIndices.template get<pInd>(3) = 1;
-	mergeIndices.template get<pInd>(4) = 7;
-	mergeIndices.template get<pInd>(5) = 8;
-	mergeIndices.template get<pInd>(6) = 9;
-	mergeIndices.template get<pInd>(7) = 10;
+	mergeIndices.template get<pInd>(4) = 7;  // 2
+	mergeIndices.template get<pInd>(5) = 8;  // 3
+	mergeIndices.template get<pInd>(6) = 9;  // 4
+	mergeIndices.template get<pInd>(7) = 10; // 5
 	mergeIndices.template get<pInd>(8) = 2;
-	mergeIndices.template get<pInd>(9) = 11;
+	mergeIndices.template get<pInd>(9) = 11; // 6
 	mergeIndices.template get<pInd>(10) = 3;
-	mergeIndices.template get<pInd>(11) = 12;
+	mergeIndices.template get<pInd>(11) = 12; // 7
 	mergeIndices.template get<pInd>(12) = 4;
-	mergeIndices.template get<pInd>(13) = 13;
-	mergeIndices.template get<pInd>(14) = 14;
+	mergeIndices.template get<pInd>(13) = 13; // 8
+	mergeIndices.template get<pInd>(14) = 14; // 9
+
+	// segments new
+	segments_new.resize(9);
+	segments_new.template get<0>(0) = 0;   // 5
+	segments_new.template get<0>(1) = 1;   // 6
+	segments_new.template get<0>(2) = 2;   // 7
+	segments_new.template get<0>(3) = 3;   // 8
+	segments_new.template get<0>(4) = 4;   // 9
+	segments_new.template get<0>(5) = 5;   // 10
+	segments_new.template get<0>(6) = 6;   // 11
+	segments_new.template get<0>(7) = 7;   // 12
+	segments_new.template get<0>(8) = 8;   // 13
+	segments_new.template get<0>(9) = 10;   // 13
 
 	// Fill the data
 	{ // We want i to live in a confined namespace
@@ -669,10 +682,11 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 
 	obj.solve_conflicts<
 			decltype(keys),
+			decltype(segments_new),
 			decltype(dataOld),
 			sadd_<p>
 			>(
-					keys, mergeIndices,
+					keys, mergeIndices, segments_new,
 					dataOld, dataNew,
 					keysOut, dataOut,
 					ctx

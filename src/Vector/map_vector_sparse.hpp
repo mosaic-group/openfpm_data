@@ -161,6 +161,7 @@ namespace openfpm
         template <
                 typename vector_data_type,
                 typename vector_index_type,
+                typename vector_index_type2,
                 typename vector_index_dtmp_type,
                 typename Ti,
                 typename ... v_reduce>
@@ -170,6 +171,7 @@ namespace openfpm
                 vector_index_type & vct_index_tmp2,
                 vector_index_type & vct_index_tmp3,
                 vector_index_dtmp_type & vct_index_dtmp,
+                vector_index_type2 & segments_new,
                 vector_data_type & vct_data,
                 vector_data_type & vct_add_data,
                 vector_data_type & vct_add_data_unique,
@@ -287,6 +289,7 @@ namespace openfpm
         template <
                 typename vector_data_type,
                 typename vector_index_type,
+                typename vector_index_type2,
                 typename vector_index_dtmp_type,
                 typename Ti,
                 typename ... v_reduce>
@@ -296,6 +299,7 @@ namespace openfpm
                 vector_index_type & vct_index_tmp2,
                 vector_index_type & vct_index_tmp3,
                 vector_index_dtmp_type & vct_index_dtmp,
+                vector_index_type2 & segments_new,
                 vector_data_type & vct_data,
                 vector_data_type & vct_add_data,
                 vector_data_type & vct_add_data_unique,
@@ -308,9 +312,10 @@ namespace openfpm
 #ifdef __NVCC__
             blf.template solve_conflicts<
 			            decltype(vct_index_tmp),
+			            decltype(segments_new),
 			            decltype(vct_data),
 			            v_reduce ...>
-			            (vct_index_tmp, vct_index_tmp2,
+			            (vct_index_tmp, vct_index_tmp2, segments_new,
 			            vct_data, vct_add_data_unique,
 			            vct_index, vct_data_tmp,
 			            context);
@@ -1082,6 +1087,7 @@ namespace openfpm
 
 		template<typename ... v_reduce>
 		void merge_datas(vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
+						 vector<aggregate<Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti>>::type,layout_base,grow_p> & segments_new,
 						 vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data,
 						 vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_data_reord_map,
 				  	  	   mgpu::ofp_context_t & context)
@@ -1129,6 +1135,7 @@ namespace openfpm
             scalar_block_implementation_switch<impl2, block_functor>::template solveConflicts<
                     decltype(vct_data),
                     decltype(vct_index),
+                    decltype(segments_new),
                     decltype(vct_index_dtmp),
                     Ti,
                     v_reduce ...
@@ -1139,6 +1146,7 @@ namespace openfpm
                         vct_index_tmp2,
                         vct_index_tmp3,
                         vct_index_dtmp,
+                        segments_new,
                         vct_data,
                         vct_add_data,
                         vct_add_data_unique,
@@ -1147,195 +1155,6 @@ namespace openfpm
                         blf,
                         context
                     );
-		}
-
-		template<typename ... v_reduce>
-		void flush_on_gpu_insertNew(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_0,
-				  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_sort_map,
-				  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
-				  mgpu::ofp_context_t & context)
-		{
-#ifdef __NVCC__
-
-			// To avoid the case where you never called setGPUInsertBuffer
-			if (n_gpu_add_block_slot == 0)
-			{
-				return;
-			}
-
-			size_t n_ele = make_continuos(vct_nadd_index,vct_add_index,vct_add_index_cont_0,
-										  vct_add_index_cont_1,vct_add_data,vct_add_data_cont,context);
-
-			ite_gpu<1> itew;
-			itew.wthr.x = vct_nadd_index.size()-1;
-			itew.wthr.y = 1;
-			itew.wthr.z = 1;
-			itew.thr.x = 128;
-			itew.thr.y = 1;
-			itew.thr.z = 1;
-
-			// !!!!!!!!!!!!!!!!!!! Reset to zero pull size !!!!!!!!!!!!!!!!!!!!!!
-			n_gpu_add_block_slot = 0;
-
-            // At this point we can check whether we have not inserted anything actually,
-            // in this case, return without further ado...
-			if (vct_add_index_cont_0.size() == 0)
-            {
-                return;
-            }
-
-			// now we sort
-			mergesort(
-			        (Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),
-                    (Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
-					vct_add_index_cont_0.size(),
-					mgpu::template less_t<Ti>(),
-                    context);
-
-			auto ite = vct_add_index_cont_0.getGPUIterator();
-
-			vct_add_data_reord.resize(n_ele);
-			// Now we reorder the data vector accordingly to the indexes
-
-			CUDA_LAUNCH(reorder_create_index_map,ite,vct_add_index_cont_1.toKernel(),vct_segment_index_map.toKernel(),vct_segment_index_map2.toKernel())
-
-			mem.allocate(sizeof(int));
-			mem.fill(0);
-			vct_add_index_unique.resize(vct_add_index_cont_0.size()+1);
-
-			ite = vct_add_index_cont_0.getGPUIterator();
-
-			// produce unique index list
-			// Find the buffer bases
-			CUDA_LAUNCH(
-			        (
-                        find_buffer_offsets_zero
-                                <0,
-                                decltype(vct_add_index_cont_0.toKernel()),
-                                decltype(vct_add_index_unique.toKernel())
-                                >
-                    ),
-                    ite,
-                    vct_add_index_cont_0.toKernel(),
-                    (int *)mem.getDevicePointer(),
-                    vct_add_index_unique.toKernel());
-
-			mem.deviceToHost();
-			int n_ele_unique = *(int *)mem.getPointer();
-
-			vct_add_index_unique.resize(n_ele_unique);
-			vct_add_data_unique.resize(n_ele_unique);
-
-			mgpu::mergesort(
-			        (Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),
-                    (Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
-                    vct_add_index_unique.size(),
-                    mgpu::template less_t<Ti>(),
-                    context);
-
-			typedef boost::mpl::vector<v_reduce...> vv_reduce;
-
-			// Now we can do a segmented reduction
-			scalar_block_implementation_switch<impl2, block_functor>
-			        ::template extendSegments<1>(vct_add_index_unique, vct_add_index_cont_0.size());
-
-
-			// Then we merge the two list vct_index and vct_add_index_unique
-
-			// index to get merge index
-			vct_m_index.resize(vct_index.size() + vct_add_index_unique.size());
-
-			ite = vct_m_index.getGPUIterator();
-			CUDA_LAUNCH((set_indexes<0>),ite,vct_m_index.toKernel(),0);
-
-			ite = vct_add_index_unique.getGPUIterator();
-			CUDA_LAUNCH((set_indexes<1>),ite,vct_add_index_unique.toKernel(),vct_index.size());
-
-			// after merge we solve the last conflicts, running across the vector again and spitting 1 when there is something to merge
-			// we reorder the data array also
-
-			vct_index_tmp.resize(vct_index.size() + vct_add_index_unique.size());
-			vct_index_tmp2.resize(vct_index.size() + vct_add_index_unique.size());
-			vct_index_tmp3.resize(vct_index.size() + vct_add_index_unique.size());
-
-			// Do not delete this reserve
-			// Unfortunately all resize with DataBlocks are broken
-			vct_add_data_cont.reserve(vct_index.size() + vct_add_index_unique.size()+1);
-			vct_add_data_cont.resize(vct_index.size() + vct_add_index_unique.size());
-
-			itew.wthr.x = vct_index_tmp.size() / 128 + (vct_index_tmp.size() % 128 != 0);
-			itew.wthr.y = 1;
-			itew.wthr.z = 1;
-			itew.thr.x = 128;
-			itew.thr.y = 1;
-			itew.thr.z = 1;
-
-			vct_index_dtmp.resize(itew.wthr.x);
-
-			// we merge with vct_index with vct_add_index_unique in vct_index_tmp, vct_intex_tmp2 contain the merging index
-			//
-			mgpu::merge((Ti *)vct_index.template getDeviceBuffer<0>(),(Ti *)vct_m_index.template getDeviceBuffer<0>(),vct_index.size(),
-						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),vct_add_index_unique.size(),
-						(Ti *)vct_index_tmp.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp2.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
-
-			// create outputMap and
-
-			CUDA_LAUNCH(compute_predicate,ite,vct_index_tmp2.toKernel(),vct_index.size(),vct_p_ids.toKernel());
-
-			mgpu::scan((int *)vct_p_ids.template getDeviceBuffer<0>(),
-						vct_s_ids.size(),
-						(int *)vct_s_ids.template getDeviceBuffer<0>(),
-						context);
-
-			mgpu::scan((int *)vct_p_ids.template getDeviceBuffer<1>(),
-						vct_s_ids.size(),
-						(int *)vct_s_ids.template getDeviceBuffer<1>(),
-						context);
-
-			mgpu::scan((int *)vct_p_ids.template getDeviceBuffer<2>(),
-						vct_s_ids.size(),
-						(int *)vct_s_ids.template getDeviceBuffer<2>(),
-						context);
-
-			mgpu::scan((int *)vct_p_ids.template getDeviceBuffer<3>(),
-						vct_s_ids.size(),
-						(int *)vct_s_ids.template getDeviceBuffer<3>(),
-						context);
-
-			vct_s_ids.template deviceToHost<1,3>(vct_s_ids.size()-1,vct_s_ids.size()-1);
-			vct_p_ids.template deviceToHost<1,3>(vct_p_ids.size()-1,vct_p_ids.size()-1);
-
-			size_t copy_old_size = vct_s_ids.template get<3>(vct_s_ids.size()-1) + vct_p_ids.template get<3>(vct_p_ids.size()-1);
-			size_t seg_old_size = vct_s_ids.template get<1>(vct_s_ids.size()-1) + vct_p_ids.template get<1>(vct_p_ids.size()-1);
-			size_t out_map_size = vct_s_ids.template get<1>(vct_s_ids.size()-1) + vct_p_ids.template get<1>(vct_p_ids.size()-1);
-
-			vct_segment_old_data.resize(seg_old_size);
-			vct_out_map.resize(out_map_size);
-			vct_old_copy.resize(copy_old_size);
-
-			CUDA_LAUNCH(maps_create,ite,vct_s_ids.toKernel(),vct_p_ids.toKernel(),
-										vct_segment_old_data.toKernel(),vct_out_map.toKernel(),vct_old_copy.toKernel());
-
-			sparse_vector_reduction_total<decltype(vct_add_data),decltype(vct_segment_index_map2),
-										  decltype(vct_add_index_unique),vv_reduce,block_functor,impl2>
-					svr(vct_data,
-						vct_add_data,
-						vct_segment_index_map2,
-						vct_old_copy,
-						vct_add_data_cont,
-						vct_add_index_unique,
-						vct_out_map,
-						vct_segment_old_data,
-						context);
-			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
-
-			ite = vct_old_copy.getGPUIterator();
-
-			CUDA_LAUNCH(copy_old,ite,vct_add_data_cont.toKernel(),vct_old_copy.toKernel(),vct_data.toKernel());
-
-#else
-			std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif
 		}
 
 		template<typename ... v_reduce>
@@ -1370,11 +1189,11 @@ namespace openfpm
 
 			if (impl2 == VECTOR_SPARSE_STANDARD)
 			{
-				merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_data,vct_add_index_cont_1,context);
+				merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_index_unique,vct_add_data,vct_add_index_cont_1,context);
 			}
 			else
 			{
-				merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_data,vct_add_index_cont_1,context);
+				merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_index_unique,vct_add_data,vct_add_index_cont_1,context);
 			}
 
 #else
