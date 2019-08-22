@@ -591,12 +591,13 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 	typedef DataBlock<ScalarT, 64> BlockT;
 	typedef DataBlock<unsigned char, 64> MaskBlockT;
 	const unsigned int p=0, pMask=1, pInd=0;
-	openfpm::vector_gpu<aggregate<unsigned int>> keys, mergeIndices, tmpIndices, keysOut, segments_new;
+	openfpm::vector_gpu<aggregate<unsigned int>> keys, mergeIndices, tmpIndices, keysOut, trivial_map;
+	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> segments_new;
 	openfpm::vector_gpu<aggregate<BlockT, MaskBlockT>> dataOld, dataNew, tmpData, dataOut;
 	mgpu::ofp_context_t ctx;
 
 	// Keys
-	keys.resize(15);
+	keys.resize(14);
 	keys.template get<pInd>(0) = 0;
 	keys.template get<pInd>(1) = 1;
 	keys.template get<pInd>(2) = 2;
@@ -609,12 +610,11 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 	keys.template get<pInd>(9) = 9;
 	keys.template get<pInd>(10) = 10;
 	keys.template get<pInd>(11) = 11;
-	keys.template get<pInd>(12) = 12;
+	keys.template get<pInd>(12) = 13;
 	keys.template get<pInd>(13) = 13;
-	keys.template get<pInd>(14) = 14;
 
 	// Merge Indices
-	mergeIndices.resize(15);
+	mergeIndices.resize(14);
 	mergeIndices.template get<pInd>(0) = 5;  // 0
 	mergeIndices.template get<pInd>(1) = 0;
 	mergeIndices.template get<pInd>(2) = 6;  // 1
@@ -627,12 +627,11 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 	mergeIndices.template get<pInd>(9) = 11; // 6
 	mergeIndices.template get<pInd>(10) = 3;
 	mergeIndices.template get<pInd>(11) = 12; // 7
-	mergeIndices.template get<pInd>(12) = 4;
-	mergeIndices.template get<pInd>(13) = 13; // 8
-	mergeIndices.template get<pInd>(14) = 14; // 9
+	mergeIndices.template get<pInd>(12) = 13; // 8
+	mergeIndices.template get<pInd>(13) = 14; // 9
 
 	// segments new
-	segments_new.resize(9);
+	segments_new.resize(10);
 	segments_new.template get<0>(0) = 0;   // 5
 	segments_new.template get<0>(1) = 1;   // 6
 	segments_new.template get<0>(2) = 2;   // 7
@@ -641,8 +640,8 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 	segments_new.template get<0>(5) = 5;   // 10
 	segments_new.template get<0>(6) = 6;   // 11
 	segments_new.template get<0>(7) = 7;   // 12
-	segments_new.template get<0>(8) = 8;   // 13
-	segments_new.template get<0>(9) = 10;   // 13
+	segments_new.template get<0>(8) = 8;   // 13,14
+	segments_new.template get<0>(9) = 10;
 
 	// Fill the data
 	{ // We want i to live in a confined namespace
@@ -670,23 +669,35 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 		}
 	}
 
+    //// Create a trivial map
+
+    trivial_map.resize(dataNew.size()+1);
+
+    for (size_t i = 0 ; i < trivial_map.size(); i++)
+    {
+    	trivial_map.template get<0>(i) = i;
+    }
+
+    trivial_map.hostToDevice<0>();
+
 	// Copy to device
 	keys.hostToDevice<pInd>();
 	mergeIndices.hostToDevice<pInd>();
 	dataOld.hostToDevice<p, pMask>();
 	dataNew.hostToDevice<p, pMask>();
+	segments_new.hostToDevice<0>();
 
 	BlockMapGpuFunctors::BlockFunctor<128> obj;
 
 	// Now perform the compaction
 
-	obj.solve_conflicts<
+	obj.solve_conflicts<0,
 			decltype(keys),
 			decltype(segments_new),
 			decltype(dataOld),
 			sadd_<p>
 			>(
-					keys, mergeIndices, segments_new,
+					keys, mergeIndices, segments_new, trivial_map,
 					dataOld, dataNew,
 					keysOut, dataOut,
 					ctx
@@ -717,9 +728,7 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(8)[0], 1);
 	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(9)[0], 1);
 	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(10)[0], 1);
-	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(11)[0], 1);
-	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(12)[0], 1);
-	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(13)[0], 1);
+	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(11)[0], 2);
 
 	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(0)[1], 5);
 	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(1)[1], 0);
@@ -732,9 +741,7 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(8)[1], 11);
 	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(9)[1], 3);
 	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(10)[1], 12);
-	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(11)[1], 4);
-	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(12)[1], 13);
-	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(13)[1], 14);
+	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(11)[1], 27);
 }
 
 BOOST_AUTO_TEST_SUITE_END() //SparseGridGpu_functors_tests

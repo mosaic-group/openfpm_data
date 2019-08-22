@@ -29,6 +29,7 @@ namespace BlockMapGpuKernels
 		unsigned int pp1 = (p+1 == vct_index_merge.size())?p:p+1;
 		unsigned int pm1 = (p == 0)?p:p-1;
 
+		auto id0 = vct_index_merge.template get<0>(pm1);
 		auto id1 = vct_index_merge.template get<0>(p);
 
 		auto k0 = vct_keys_merge.template get<0>(pm1);
@@ -37,7 +38,7 @@ namespace BlockMapGpuKernels
 
 		// predicate 0 count old chunks, but when is merged to new data the 1 must be shifted to the new element
 		//
-		pred_ids.template get<0>(p) = ((k0 == k1) && (p != 0)) || (id1 < m && (k1 != k2));
+		pred_ids.template get<0>(p) = ((k0 == k1) && (p != 0) && id0 < m) || (id1 < m && (k1 != k2));
 
 		//predicate 1 is used to count the new index segments
 		pred_ids.template get<1>(p) = id1 >= m;
@@ -53,11 +54,11 @@ namespace BlockMapGpuKernels
 	}
 
 	// for each segments
-	template<typename vector_index_type, typename vector_index_type2>
+	template<typename vector_index_type, typename vector_index_type2, typename vector_index_map_type>
 	__global__ void maps_create(vector_index_type2 scan_ids,
 									vector_index_type2 pred_ids,
 									vector_index_type vct_seg_old,
-									vector_index_type vct_out_map,
+									vector_index_map_type vct_out_map,
 									vector_index_type vct_copy_old_dst,
 									vector_index_type vct_copy_old_src)
 	{
@@ -412,15 +413,16 @@ namespace BlockMapGpuKernels
             unsigned int pMask,
             unsigned int chunksPerBlock,
             typename op,
-            typename IndexVectorT, typename IndexVectorT2, typename DataVectorT>
+            typename IndexVector_segdataT, typename IndexVector_datamapT,
+            typename IndexVector_segoldT, typename IndexVector_outmapT, typename DataVectorT>
     __global__ void
     segreduce_total(
             DataVectorT data_new,
             DataVectorT data_old,
-            IndexVectorT2 segments_data,
-            IndexVectorT segments_dataMap,
-            IndexVectorT segments_dataOld,
-            IndexVectorT outputMap,
+            IndexVector_segdataT segments_data,
+            IndexVector_datamapT segments_dataMap,
+            IndexVector_segoldT segments_dataOld,
+            IndexVector_outmapT outputMap,
             DataVectorT output
     )
     {
@@ -449,6 +451,7 @@ namespace BlockMapGpuKernels
         if (chunkId < segmentSize)
         {
         	unsigned int m_chunkId = segments_dataMap.template get<0>(start + chunkId);
+
             A[chunkId][offset] = RhsBlockWrapper<DataType>(data_new.template get<p>(m_chunkId), offset).value;
             aMask = data_new.template get<pMask>(m_chunkId)[offset];
         }
@@ -629,8 +632,10 @@ namespace BlockMapGpuKernels
  */
 template<unsigned int blockSize,
 		typename vector_data_type,
-		typename vector_index_type,
-        typename vector_index_type2,
+		typename vector_datamap_type,
+        typename vector_segoffset_type,
+        typename vector_outmap_type,
+        typename vector_segolddata_type,
         typename vector_reduction,
         typename block_functor,
         unsigned int impl2, unsigned int pSegment=1>
@@ -649,16 +654,16 @@ struct sparse_vector_reduction_solve_conflict
 	vector_data_type & vector_data_unsorted;
 
 	//! segment of offsets
-	vector_index_type2 & segment_offset;
+	vector_segoffset_type & segment_offset;
 
 	//! map of the data
-	vector_index_type & vector_data_map;
+	vector_datamap_type & vector_data_map;
 
 	//! output map
-	vector_index_type & out_map;
+	vector_outmap_type & out_map;
 
 	//! old data segments
-	vector_index_type & segments_oldData;
+	vector_segolddata_type & segments_oldData;
 
 	//! gpu context
 	mgpu::ofp_context_t & context;
@@ -673,10 +678,10 @@ struct sparse_vector_reduction_solve_conflict
 								   vector_data_type & vector_data,
 								   vector_data_type & vector_data_unsorted,
 								   vector_data_type & vector_data_old,
-								   vector_index_type & vector_data_map,
-								   vector_index_type2 & segment_offset,
-								   vector_index_type & out_map,
-								   vector_index_type & segments_oldData,
+								   vector_datamap_type & vector_data_map,
+								   vector_segoffset_type & segment_offset,
+								   vector_outmap_type & out_map,
+								   vector_segolddata_type & segments_oldData,
 								   mgpu::ofp_context_t & context)
 	:vector_data_red(vector_data_red),
 	 vector_data(vector_data),
@@ -745,10 +750,8 @@ namespace BlockMapGpuFunctors
 
     	openfpm::vector_gpu<aggregate<int>> copy_old_dst;
     	openfpm::vector_gpu<aggregate<int>> copy_old_src;
-    	openfpm::vector_gpu<aggregate<int>> outputMap;
+    	openfpm::vector_gpu<aggregate<unsigned int>> outputMap;
     	openfpm::vector_gpu<aggregate<int>> segments_oldData;
-
-    	openfpm::vector_gpu<aggregate<int>> trivial_map;
 
         template<unsigned int pSegment, typename vector_reduction, typename T, typename vector_index_type, typename vector_index_type2, typename vector_data_type>
         bool seg_reduce(vector_index_type2 &segments, vector_data_type &src, vector_data_type &src_unsorted, vector_index_type & src_map, vector_data_type &dst)
@@ -786,8 +789,8 @@ namespace BlockMapGpuFunctors
 #endif // __NVCC__
         }
 
-        template<typename vector_index_type, typename vector_index_type2, typename vector_data_type, typename ... v_reduce>
-        bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices, vector_index_type2 &segments_new,
+        template<unsigned int pSegment, typename vector_index_type, typename vector_index_type2, typename vector_data_type, typename ... v_reduce>
+        bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices, vector_index_type2 &segments_new, vector_index_type &data_map,
                                     vector_data_type &dataOld, vector_data_type &dataNew,
                                     vector_index_type &keysOut, vector_data_type &dataOut,
                                     mgpu::ofp_context_t & context)
@@ -854,8 +857,6 @@ namespace BlockMapGpuFunctors
 
         	CUDA_LAUNCH(BlockMapGpuKernels::maps_create,ite,s_ids.toKernel(),p_ids.toKernel(),segments_oldData.toKernel(),outputMap.toKernel(),copy_old_dst.toKernel(),copy_old_src.toKernel());
 
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
             // Create the output for the keys
             keysOut.resize(data_out_size); // The final number of keys is one less than the segments values
 
@@ -867,21 +868,14 @@ namespace BlockMapGpuFunctors
             // Phase 2 - segreduce on all properties
             dataOut.resize(data_out_size); // Right size for output, i.e. the number of segments
             typedef boost::mpl::vector<v_reduce...> vv_reduce;
-            constexpr unsigned int pSegment = 0;
 
-            //// Create a trivial map
-
-            trivial_map.resize(dataNew.size()+1);
-
-            for (size_t i = 0 ; i < trivial_map.size(); i++)
-            {
-            	trivial_map.template get<0>(i) = i;
-            }
-
-            trivial_map.hostToDevice<0>();
-
-			sparse_vector_reduction_solve_conflict<blockSize,decltype(dataOut),decltype(outputMap),decltype(trivial_map),vv_reduce,BlockFunctor,2, pSegment>
-					svr(dataOut,dataNew,dataNew,dataOld,trivial_map,trivial_map,outputMap,segments_oldData,context);
+			sparse_vector_reduction_solve_conflict<blockSize,decltype(dataOut),
+															 decltype(data_map),
+															 decltype(segments_new),
+															 decltype(outputMap),
+															 decltype(segments_oldData),
+															 vv_reduce,BlockFunctor,2, pSegment>
+					svr(dataOut,dataNew,dataNew,dataOld,data_map,segments_new,outputMap,segments_oldData,context);
 
             boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
 

@@ -171,6 +171,7 @@ namespace openfpm
                 vector_index_type & vct_index_tmp2,
                 vector_index_type & vct_index_tmp3,
                 vector_index_dtmp_type & vct_index_dtmp,
+                vector_index_type & data_map,
                 vector_index_type2 & segments_new,
                 vector_data_type & vct_data,
                 vector_data_type & vct_add_data,
@@ -299,6 +300,7 @@ namespace openfpm
                 vector_index_type & vct_index_tmp2,
                 vector_index_type & vct_index_tmp3,
                 vector_index_dtmp_type & vct_index_dtmp,
+                vector_index_type & data_map,
                 vector_index_type2 & segments_new,
                 vector_data_type & vct_data,
                 vector_data_type & vct_add_data,
@@ -310,13 +312,13 @@ namespace openfpm
         )
         {
 #ifdef __NVCC__
-            blf.template solve_conflicts<
+            blf.template solve_conflicts<1,
 			            decltype(vct_index_tmp),
 			            decltype(segments_new),
 			            decltype(vct_data),
 			            v_reduce ...>
-			            (vct_index_tmp, vct_index_tmp2, segments_new,
-			            vct_data, vct_add_data_unique,
+			            (vct_index_tmp, vct_index_tmp2, segments_new, data_map,
+			            vct_data, vct_add_data,
 			            vct_index, vct_data_tmp,
 			            context);
                 vct_data_tmp.swap(vct_data);
@@ -1108,7 +1110,9 @@ namespace openfpm
 			scalar_block_implementation_switch<impl2, block_functor>
 			        ::template extendSegments<1>(vct_add_index_unique, vct_add_data_reord.size());
 
-			sparse_vector_reduction<typename std::remove_reference<decltype(vct_add_data)>::type,
+			if (impl2 == VECTOR_SPARSE_STANDARD)
+			{
+				sparse_vector_reduction<typename std::remove_reference<decltype(vct_add_data)>::type,
 								    decltype(vct_add_data_reord_map),
 								    decltype(vct_add_index_unique),vv_reduce,block_functor,impl2>
 			        svr(
@@ -1119,15 +1123,14 @@ namespace openfpm
 			                vct_add_index_unique,
 			                blf,
 			                context);
-			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
+
+				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
+			}
 
 			sparse_vector_special<typename std::remove_reference<decltype(vct_add_data)>::type,
 								  decltype(vct_add_index_unique),
 								  vv_reduce> svr2(vct_add_data_unique,vct_add_data_reord,vct_add_index_unique,context);
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr2);
-
-			scalar_block_implementation_switch<impl2, block_functor>
-			        ::trimSegments(vct_add_index_unique);
 
 			//////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1146,6 +1149,7 @@ namespace openfpm
                         vct_index_tmp2,
                         vct_index_tmp3,
                         vct_index_dtmp,
+                        vct_add_data_reord_map,
                         segments_new,
                         vct_data,
                         vct_add_data,
@@ -1155,6 +1159,9 @@ namespace openfpm
                         blf,
                         context
                     );
+
+			scalar_block_implementation_switch<impl2, block_functor>
+			        ::trimSegments(vct_add_index_unique);
 		}
 
 		template<typename ... v_reduce>
