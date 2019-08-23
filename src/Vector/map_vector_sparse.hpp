@@ -976,34 +976,6 @@ namespace openfpm
 
 			ite = vct_add_index_sort.getGPUIterator();
 
-			// produce unique index list
-			// Find the buffer bases
-/*			CUDA_LAUNCH(
-			        (
-                        find_buffer_offsets_zero
-                                <0,
-                                decltype(vct_add_index_sort.toKernel()),
-                                decltype(vct_add_index_unique.toKernel())
-                                >
-                    ),
-                    ite,
-                    vct_add_index_sort.toKernel(),
-                    (int *)mem.getDevicePointer(),
-                    vct_add_index_unique.toKernel());
-
-			mem.deviceToHost();
-			int n_ele_unique = *(int *)mem.getPointer();
-
-			vct_add_index_unique.resize(n_ele_unique);
-			vct_add_data_unique.resize(n_ele_unique);
-
-			mgpu::mergesort(
-			        (Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),
-                    (Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
-                    vct_add_index_unique.size(),
-                    mgpu::template less_t<Ti>(),
-                    context);*/
-
 			vct_index_tmp4.resize(vct_add_index_sort.size()+1);
 
 			CUDA_LAUNCH(
@@ -1017,8 +989,6 @@ namespace openfpm
 					ite,
 					vct_add_index_sort.toKernel(),
 					vct_index_tmp4.toKernel());
-
-		//	openfpm::scan((Ti *)vct_nrem_index.template getDeviceBuffer<0>(), vct_nrem_index.size(), (Ti *)vct_index_tmp4.template getDeviceBuffer<0>() , context);
 
 			openfpm::scan((Ti *)vct_index_tmp4.template getDeviceBuffer<0>(),vct_index_tmp4.size(),(Ti *)vct_index_tmp4.template getDeviceBuffer<0>(),context);
 
@@ -1034,17 +1004,6 @@ namespace openfpm
 					vct_add_index_sort.toKernel(),
 					vct_index_tmp4.toKernel(),
 					vct_add_index_unique.toKernel());
-
-			///////////////////// DEBUG //////////////////////
-
-/*			vct_add_index_unique.template deviceToHost<0,1>();
-
-			for (size_t i = 0 ; i < vct_add_index_unique.size() ; i++)
-			{
-				std::cout << vct_add_index_unique.template get<0>(i) << "  " << vct_add_index_unique.template get<1>(i) << std::endl;
-			}*/
-
-			//////////////////////////////////////////////////
 
 			typedef boost::mpl::vector<v_reduce...> vv_reduce;
 
