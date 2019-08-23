@@ -20,4 +20,10 @@ struct IntPow<base, 0>
     constexpr static size_t value = 1;
 };
 
+template <unsigned int numerator, unsigned int denominator>
+struct UIntDivCeil
+{
+    constexpr static unsigned int value = numerator / denominator + (numerator%denominator!=0);
+};
+
 #endif //OPENFPM_PDATA_MATHUTILS_HPP

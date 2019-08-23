@@ -48,12 +48,12 @@ namespace SparseGridGpuKernels
             return;
         }
 
-        const auto dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+        const long long dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
         auto dataBlock = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
 
         if (dataBlockId < 0)
         {
-        	printf("Negative Datablock \n");
+        	printf("Negative Datablock: dataBlockId=%ld, dataBlockPos=%u \n", dataBlockId, dataBlockPos);
         	return;
         }
 
@@ -139,6 +139,62 @@ namespace SparseGridGpuKernels
             typename DataBufT,
             typename SparseGridT,
             typename... Args>
+    __host__ void applyStencilInPlaceHost(
+            IndexBufT &indexBuffer,
+            DataBufT &dataBuffer,
+            SparseGridT & sparseGrid,
+            Args... args)
+    {
+        constexpr unsigned int pIndex = 0;
+
+        typedef typename IndexBufT::value_type IndexAggregateT;
+        typedef BlockTypeOf<IndexAggregateT , pIndex> IndexT;
+
+        typedef typename DataBufT::value_type AggregateT;
+        typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
+        typedef ScalarTypeOf<AggregateT, pMask> MaskT;
+        constexpr unsigned int blockSize = MaskBlockT::size;
+        const auto bufferSize = indexBuffer.size();
+
+        for (size_t blockId=0; blockId<bufferSize; ++blockId)
+        {
+            const unsigned int dataBlockPos = blockId;
+            auto dataBlockLoad = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
+            const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+
+            for (size_t elementId=0; elementId<blockSize; ++elementId)
+            {
+                const unsigned int offset = elementId;
+
+                // Read local mask to register
+                const auto curMask = dataBlockLoad.template get<pMask>()[offset];
+                grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
+
+                bool applyStencilHere = true;
+
+                if ((!sparseGrid.exist(curMask)) || sparseGrid.isPadding(curMask) || offset > blockSize)
+                {
+                    //            return; // We want to apply only on existing AND non-padding elements
+                    applyStencilHere = false;
+                }
+
+                openfpm::sparse_index<unsigned int> sdataBlockPos;
+                sdataBlockPos.id = dataBlockPos;
+
+                stencil::stencilHost(
+                        sparseGrid, dataBlockId, sdataBlockPos, offset, pointCoord, dataBlockLoad, dataBlockLoad,
+                        applyStencilHere, args...);
+            }
+        }
+    }
+
+    template <unsigned int dim,
+            unsigned int pMask,
+            typename stencil,
+            typename IndexBufT,
+            typename DataBufT,
+            typename SparseGridT,
+            typename... Args>
     __global__ void applyStencilInPlace(
             IndexBufT indexBuffer,
             DataBufT dataBuffer,
@@ -169,16 +225,15 @@ namespace SparseGridGpuKernels
 
         // todo: Add management of RED-BLACK stencil application! :)
         const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
-        // Read local mask to register
-        const auto curMask = dataBlockLoad.template get<pMask>()[offset];
         grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
 
-        bool applyStencilHere = true;
+        bool applyStencilHere = false;
 
-        if ( (!sparseGrid.exist(curMask)) || sparseGrid.isPadding(curMask) || offset > blockSize )
+        if (offset < blockSize)
         {
-            //            return; // We want to apply only on existing AND non-padding elements
-            applyStencilHere = false;
+            // Read local mask to register
+            const auto curMask = dataBlockLoad.template get<pMask>()[offset];
+            applyStencilHere = sparseGrid.exist(curMask) && (!sparseGrid.isPadding(curMask));
         }
 
         openfpm::sparse_index<unsigned int> sdataBlockPos;
@@ -221,7 +276,7 @@ namespace SparseGridGpuKernels
 //        const unsigned int dataBlockPos = pos / blockSize;
 //        const unsigned int offset = pos % blockSize;
         const unsigned int dataBlockPos = blockIdx.x;
-        const unsigned int offset = threadIdx.x;
+        const unsigned int offset = threadIdx.x % blockSize;
 
         if (dataBlockPos >= indexBuffer.size())
         {
@@ -236,17 +291,17 @@ namespace SparseGridGpuKernels
 
         auto dataBlockStore = sparseGrid.insertBlock(dataBlockId);
 
-        // Read local mask to register
-        const auto curMask = dataBlockLoad.template get<pMask>()[offset];
-
         grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
 
+        bool applyStencilHere = false;
 
-        bool applyStencilHere = true;
-
-        if ( (!sparseGrid.exist(curMask)) || sparseGrid.isPadding(curMask) || offset > blockSize )
+        // Read local mask to register
+        const auto curMask = dataBlockLoad.template get<pMask>()[offset];
+        applyStencilHere = sparseGrid.exist(curMask) && (!sparseGrid.isPadding(curMask));
+        if (applyStencilHere)
         {
-            applyStencilHere = false;
+            // Mark the current element in the new block as existing
+            sparseGrid.setExist(dataBlockStore.template get<pMask>()[offset]);
         }
 
         openfpm::sparse_index<unsigned int> sdataBlockId;
@@ -255,10 +310,64 @@ namespace SparseGridGpuKernels
         stencil::stencil(
                 sparseGrid, dataBlockId, sdataBlockId, offset, pointCoord, dataBlockLoad, dataBlockStore,
                 applyStencilHere, args...);
-        sparseGrid.setExist(dataBlockStore.template get<pMask>()[offset]);
 
         __syncthreads();
         sparseGrid.flush_block_insert();
+    }
+
+    // Apply in-place operator on boundary
+    template <unsigned int dim,
+            unsigned int pMask,
+            typename stencil,
+            typename IndexBufT,
+            typename DataBufT,
+            typename SparseGridT,
+            typename... Args>
+    __global__ void applyBoundaryStencilInPlace(
+            IndexBufT indexBuffer,
+            DataBufT dataBuffer,
+            SparseGridT sparseGrid,
+            Args... args)
+    {
+        constexpr unsigned int pIndex = 0;
+
+        typedef typename IndexBufT::value_type IndexAggregateT;
+        typedef BlockTypeOf<IndexAggregateT , pIndex> IndexT;
+
+        typedef typename DataBufT::value_type AggregateT;
+        typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
+        typedef ScalarTypeOf<AggregateT, pMask> MaskT;
+        constexpr unsigned int blockSize = MaskBlockT::size;
+
+        // NOTE: here we do 1 chunk per block! (we want to be sure to fit local memory constraints
+        // since we will be loading also neighbouring elements!) (beware curse of dimensionality...)
+        const unsigned int dataBlockPos = blockIdx.x;
+        const unsigned int offset = threadIdx.x;
+
+        if (dataBlockPos >= indexBuffer.size())
+        {
+            return;
+        }
+
+        auto dataBlockLoad = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
+        const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+        grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
+
+        bool applyStencilHere = false;
+
+        if (offset < blockSize)
+        {
+            // Read local mask to register
+            const auto curMask = dataBlockLoad.template get<pMask>()[offset];
+            applyStencilHere = sparseGrid.isPadding(curMask) && sparseGrid.exist(curMask);
+        }
+
+        openfpm::sparse_index<unsigned int> sdataBlockPos;
+        sdataBlockPos.id = dataBlockPos;
+
+        stencil::stencil(
+                sparseGrid, dataBlockId, sdataBlockPos , offset, pointCoord, dataBlockLoad, dataBlockLoad,
+                applyStencilHere, args...);
     }
 }
 
