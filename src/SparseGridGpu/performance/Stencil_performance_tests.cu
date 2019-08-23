@@ -26,6 +26,18 @@ report_sparse_grid_tests report_sparsegrid_funcs;
 std::string suiteURI = "performance.SparseGridGpu";
 std::set<std::string> testSet;
 
+//// 2D params
+//const unsigned int minSpatialEdgeSize2D = 512;
+//const unsigned int maxSpatialEdgeSize2D = 8192;
+//const unsigned int minBlockEdgeSize2D = 2;
+//const unsigned int maxBlockEdgeSize2D = 32;
+//// 3D params
+//const unsigned int minSpatialEdgeSize3D = 64;
+//const unsigned int maxSpatialEdgeSize3D = 512;
+//const unsigned int minBlockEdgeSize3D = 2;
+//const unsigned int maxBlockEdgeSize3D = 8;
+////
+
 struct Fixture
 {
     Fixture()
@@ -271,6 +283,8 @@ struct HeatStencil
             }
             enlargedBlock[linId] = cur + dt * laplacian;
         }
+        __syncthreads();
+        sparseGrid.storeBlock<p_dst>(dataBlockStore, enlargedBlock);
     }
 
     /*! \brief Stencil Host function
@@ -1792,16 +1806,34 @@ void testInsertSingle(std::string testURI, unsigned int i)
 	std::cout << "Throughput:\n\t" << mean << "M/s" << "\n";
 }
 
-BOOST_AUTO_TEST_CASE(testInsert_gridScaling)
+BOOST_AUTO_TEST_CASE(testInsert_gridScaling_2)
 {
-    std::string testURI = suiteURI + ".device.insert.dense.single.2D.gridScaling";
+    std::string testURI = suiteURI + ".device.insert.dense.single.2D.2.gridScaling";
     unsigned int counter = 0;
+    testInsertSingle<2, 128>(testURI, counter++);
+    testInsertSingle<2, 256>(testURI, counter++);
+    testInsertSingle<2, 512>(testURI, counter++);
+    testInsertSingle<2, 1024>(testURI, counter++);
+    testSet.insert(testURI);
+}
+BOOST_AUTO_TEST_CASE(testInsert_gridScaling_4)
+{
+    std::string testURI = suiteURI + ".device.insert.dense.single.2D.4.gridScaling";
+    unsigned int counter = 0;
+    testInsertSingle<4, 64>(testURI, counter++);
+    testInsertSingle<4, 128>(testURI, counter++);
+    testInsertSingle<4, 256>(testURI, counter++);
+    testInsertSingle<4, 512>(testURI, counter++);
+    testSet.insert(testURI);
+}
+BOOST_AUTO_TEST_CASE(testInsert_gridScaling_8)
+{
+    std::string testURI = suiteURI + ".device.insert.dense.single.2D.8.gridScaling";
+    unsigned int counter = 0;
+    testInsertSingle<8, 32>(testURI, counter++);
     testInsertSingle<8, 64>(testURI, counter++);
     testInsertSingle<8, 128>(testURI, counter++);
     testInsertSingle<8, 256>(testURI, counter++);
-//    testInsertSingle<8, 512>(testURI, counter++);
-//    testInsertSingle<8, 1024>(testURI, counter++);
-
     testSet.insert(testURI);
 }
 
@@ -1908,19 +1940,77 @@ void test_insert_block(std::string testURI, unsigned int i)
 	std::cout << "Throughput:\n\t" << mean << " MElem/s\n";
 }
 
-BOOST_AUTO_TEST_CASE(testInsertBlocked_gridScaling)
+BOOST_AUTO_TEST_CASE(testInsertBlocked_gridScaling_2)
 {
-    std::string testURI = suiteURI + ".device.insert.dense.block.2D.gridScaling";
+    std::string testURI = suiteURI + ".device.insert.dense.block.2D.2.gridScaling";
     unsigned int counter = 0;
+    test_insert_block<2,128>(testURI, counter++);
+    test_insert_block<2,256>(testURI, counter++);
+    test_insert_block<2,512>(testURI, counter++);
+    test_insert_block<2,1024>(testURI, counter++);
+    test_insert_block<2,2048>(testURI, counter++);
+//    test_insert_block<2,4096>(testURI, counter++);
+
+    testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testInsertBlocked_gridScaling_4)
+{
+    std::string testURI = suiteURI + ".device.insert.dense.block.2D.4.gridScaling";
+    unsigned int counter = 0;
+    test_insert_block<4,64>(testURI, counter++);
+    test_insert_block<4,128>(testURI, counter++);
+    test_insert_block<4,256>(testURI, counter++);
+    test_insert_block<4,512>(testURI, counter++);
+    test_insert_block<4,1024>(testURI, counter++);
+    test_insert_block<4,2048>(testURI, counter++);
+
+    testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testInsertBlocked_gridScaling_8)
+{
+    std::string testURI = suiteURI + ".device.insert.dense.block.2D.8.gridScaling";
+    unsigned int counter = 0;
+    test_insert_block<8,32>(testURI, counter++);
     test_insert_block<8,64>(testURI, counter++);
     test_insert_block<8,128>(testURI, counter++);
     test_insert_block<8,256>(testURI, counter++);
     test_insert_block<8,512>(testURI, counter++);
     test_insert_block<8,1024>(testURI, counter++);
-//    test_insert_block<8,2048>(testURI, counter++); // Out of memory
 
     testSet.insert(testURI);
 }
+
+BOOST_AUTO_TEST_CASE(testInsertBlocked_gridScaling_16)
+{
+    std::string testURI = suiteURI + ".device.insert.dense.block.2D.16.gridScaling";
+    unsigned int counter = 0;
+    test_insert_block<16,16>(testURI, counter++);
+    test_insert_block<16,32>(testURI, counter++);
+    test_insert_block<16,64>(testURI, counter++);
+    test_insert_block<16,128>(testURI, counter++);
+    test_insert_block<16,256>(testURI, counter++);
+    test_insert_block<16,512>(testURI, counter++);
+
+    testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testInsertBlocked_gridScaling_32)
+{
+    std::string testURI = suiteURI + ".device.insert.dense.block.2D.32.gridScaling";
+    unsigned int counter = 0;
+    test_insert_block<32,8>(testURI, counter++);
+    test_insert_block<32,16>(testURI, counter++);
+    test_insert_block<32,32>(testURI, counter++);
+    test_insert_block<32,64>(testURI, counter++);
+    test_insert_block<32,128>(testURI, counter++);
+    test_insert_block<32,256>(testURI, counter++);
+
+    testSet.insert(testURI);
+}
+
+
 
 BOOST_AUTO_TEST_CASE(testInsertBlocked_blockScaling)
 {

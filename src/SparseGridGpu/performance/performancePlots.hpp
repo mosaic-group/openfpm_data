@@ -65,6 +65,8 @@ void write_test_report(report_sparse_grid_tests &report_sparsegrid_funcs, std::s
     plotDenseSparse2DComparison(report_sparsegrid_funcs, testSet, plotCounter);
 
     plotDense2DStencilInsert(report_sparsegrid_funcs, testSet, plotCounter);
+    plotInsertSingle2D(report_sparsegrid_funcs, testSet, plotCounter);
+    plotInsertBlock2D(report_sparsegrid_funcs, testSet, plotCounter);
 
 
     //	report_sparsegrid_funcs.graphs.put("graphs.graph(1).type","line");
@@ -130,7 +132,7 @@ plotDenseSparse2DComparison(report_sparse_grid_tests &report_sparsegrid_funcs, s
         int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
                 baseSparse + ".05.gridScaling(0).blockSize"));
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil " + pattern + " " + linMode + " " + dim + "D"
+                                           "SparseGridGPU stencil dense-" + pattern + " " + linMode + " " + dim + "D"
                                            + " grid scaling performance, blockEdge=" + std::to_string(bes));
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title", "GridEdgeSize");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
@@ -172,7 +174,7 @@ plotDenseSparse2DComparison(report_sparse_grid_tests &report_sparsegrid_funcs, s
         int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
                 baseSparse + ".05.blockScaling(0).gridSize.x"));
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").title",
-                                           "SparseGridGPU stencil " + pattern + " " + linMode + " " + dim + "D"
+                                           "SparseGridGPU stencil dense-" + pattern + " " + linMode + " " + dim + "D"
                                            + " grid scaling performance, gridEdge=" + std::to_string(bes));
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title", "BlockEdgeSize");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "GFlops");
@@ -540,7 +542,10 @@ void plotInsertSingle2D(report_sparse_grid_tests &report_sparsegrid_funcs, std::
     std::string insertMode = "single";
     std::string base = "performance.SparseGridGpu.device.insert.dense." + insertMode + "." + dim + "D";
 
-    if( isTestInSet(testSet, base + ".gridScaling") )
+    if( isTestInSet(testSet, base + ".2.gridScaling")
+        && isTestInSet(testSet, base + ".4.gridScaling")
+        && isTestInSet(testSet, base + ".8.gridScaling")
+        )
     {
         report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
         report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
@@ -548,16 +553,28 @@ void plotInsertSingle2D(report_sparse_grid_tests &report_sparsegrid_funcs, std::
                                            "SparseGridGPU insert " + insertMode + " " + dim + "D" +
                                            " grid scaling performance");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title", "GridEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "MInsert/s");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "M Inserts/s");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".gridScaling(#).Minsert.mean");
+                                           base + ".2.gridScaling(#).Minsert.mean");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(1).source",
+                                           base + ".4.gridScaling(#).Minsert.mean");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(2).source",
+                                           base + ".8.gridScaling(#).Minsert.mean");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".gridScaling(#).gridSize.x");
+                                           base + ".2.gridScaling(#).gridSize.x");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(1).source",
+                                           base + ".4.gridScaling(#).gridSize.x");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(2).source",
+                                           base + ".8.gridScaling(#).gridSize.x");
 //    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x", true);
-        int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".gridScaling(0).blockSize"));
+//        int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
+//                base + ".gridScaling(0).blockSize"));
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "blockEdge=" + std::to_string(bes));
+                                           "blockEdge=2");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(1).title",
+                                           "blockEdge=4");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(2).title",
+                                           "blockEdge=8");
         ++plotCounter;
     }
     if( isTestInSet(testSet, base + ".blockScaling") )
@@ -568,7 +585,7 @@ void plotInsertSingle2D(report_sparse_grid_tests &report_sparsegrid_funcs, std::
                                            "SparseGridGPU insert "+insertMode+" "+dim+"D"+" block scaling performance");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title",
                                            "BlockEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "MInsert/s");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "M Inserts/s");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
                                            base + ".blockScaling(#).Minsert.mean");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
@@ -589,7 +606,12 @@ void plotInsertBlock2D(report_sparse_grid_tests &report_sparsegrid_funcs, std::s
     std::string insertMode = "block";
     std::string base = "performance.SparseGridGpu.device.insert.dense." + insertMode + "." + dim + "D";
 
-    if( isTestInSet(testSet, base + ".gridScaling") )
+    if( isTestInSet(testSet, base + ".2.gridScaling")
+        && isTestInSet(testSet, base + ".4.gridScaling")
+        && isTestInSet(testSet, base + ".8.gridScaling")
+        && isTestInSet(testSet, base + ".16.gridScaling")
+        && isTestInSet(testSet, base + ".32.gridScaling")
+            )
     {
         report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").type", "line");
         report_sparsegrid_funcs.graphs.put("graphs.graph(" + std::to_string(plotCounter) + ").interpolation", "none");
@@ -597,16 +619,40 @@ void plotInsertBlock2D(report_sparse_grid_tests &report_sparsegrid_funcs, std::s
                                            "SparseGridGPU insert " + insertMode + " " + dim + "D" +
                                            " grid scaling performance");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title", "GridEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "MInsert/s");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "M Inserts/s");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
-                                           base + ".gridScaling(#).Minsert.mean");
+                                           base + ".2.gridScaling(#).Minsert.mean");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(1).source",
+                                           base + ".4.gridScaling(#).Minsert.mean");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(2).source",
+                                           base + ".8.gridScaling(#).Minsert.mean");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(3).source",
+                                           base + ".16.gridScaling(#).Minsert.mean");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(4).source",
+                                           base + ".32.gridScaling(#).Minsert.mean");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
-                                           base + ".gridScaling(#).gridSize.x");
+                                           base + ".2.gridScaling(#).gridSize.x");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(1).source",
+                                           base + ".4.gridScaling(#).gridSize.x");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(2).source",
+                                           base + ".8.gridScaling(#).gridSize.x");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(3).source",
+                                           base + ".16.gridScaling(#).gridSize.x");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(4).source",
+                                           base + ".32.gridScaling(#).gridSize.x");
 //    report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x", true);
-        int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
-                base + ".gridScaling(0).blockSize"));
+//        int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
+//                base + ".gridScaling(0).blockSize"));
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
-                                           "blockEdge=" + std::to_string(bes));
+                                           "blockEdge=2");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(1).title",
+                                           "blockEdge=4");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(2).title",
+                                           "blockEdge=8");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(3).title",
+                                           "blockEdge=16");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(4).title",
+                                           "blockEdge=32");
         ++plotCounter;
     }
     if( isTestInSet(testSet, base + ".blockScaling") )
@@ -617,7 +663,7 @@ void plotInsertBlock2D(report_sparse_grid_tests &report_sparsegrid_funcs, std::s
                                            "SparseGridGPU insert "+insertMode+" "+dim+"D"+" block scaling performance");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.title",
                                            "BlockEdgeSize");
-        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "MInsert/s");
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.title", "M Inserts/s");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).source",
                                            base + ".blockScaling(#).Minsert.mean");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
