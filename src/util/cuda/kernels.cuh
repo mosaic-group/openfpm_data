@@ -37,7 +37,7 @@ __global__  void construct_index_unique(vector_type2 vd_input, vector_type vd, v
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x;
 
-    if (p >= (int)vd.size()) return;
+    if (p >= (int)vd.size() - 1) return;
 
     unsigned int id = vd.template get<0>(p);
     unsigned int id_p1 = vd.template get<0>(p+1);
