@@ -23,6 +23,9 @@
 #include "util/cuda/kernels.cuh"
 #endif
 
+#include "util/cuda/scan_ofp.cuh"
+#include "util/cuda/sort_ofp.cuh"
+
 enum flush_type
 {
 	FLUSH_ON_HOST = 0,
@@ -195,7 +198,7 @@ namespace openfpm
                                               vct_index_old.size());
 
                 // we scan tmp3
-                mgpu::scan(
+                openfpm::scan(
                         (Ti*)vct_index_dtmp.template getDeviceBuffer<0>(),
                         vct_index_dtmp.size(),
                         (Ti *)vct_index_dtmp.template getDeviceBuffer<1>(),
@@ -844,7 +847,7 @@ namespace openfpm
 			// Merge the list of inserted points for each block
 			vct_index_tmp4.resize(vct_nadd_index.size());
 
-			mgpu::scan((Ti *)vct_nadd_index.template getDeviceBuffer<0>(),
+			openfpm::scan((Ti *)vct_nadd_index.template getDeviceBuffer<0>(),
 			            vct_nadd_index.size(),
 			            (Ti *)vct_index_tmp4.template getDeviceBuffer<0>() ,
                         context);
@@ -928,7 +931,7 @@ namespace openfpm
 			n_gpu_add_block_slot = 0;
 
 			// now we sort
-			mergesort(
+			openfpm::sort(
 			        (Ti *)vct_add_cont_index.template getDeviceBuffer<0>(),
                     (Ti *)vct_add_cont_index_map.template getDeviceBuffer<0>(),
 					vct_add_cont_index.size(),
@@ -975,7 +978,7 @@ namespace openfpm
 
 			// produce unique index list
 			// Find the buffer bases
-			CUDA_LAUNCH(
+/*			CUDA_LAUNCH(
 			        (
                         find_buffer_offsets_zero
                                 <0,
@@ -999,7 +1002,49 @@ namespace openfpm
                     (Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
                     vct_add_index_unique.size(),
                     mgpu::template less_t<Ti>(),
-                    context);
+                    context);*/
+
+			vct_index_tmp4.resize(vct_add_index_sort.size()+1);
+
+			CUDA_LAUNCH(
+					(
+						find_buffer_offsets_for_scan
+								<0,
+								decltype(vct_add_index_sort.toKernel()),
+								decltype(vct_index_tmp4.toKernel())
+								>
+					),
+					ite,
+					vct_add_index_sort.toKernel(),
+					vct_index_tmp4.toKernel());
+
+		//	openfpm::scan((Ti *)vct_nrem_index.template getDeviceBuffer<0>(), vct_nrem_index.size(), (Ti *)vct_index_tmp4.template getDeviceBuffer<0>() , context);
+
+			openfpm::scan((Ti *)vct_index_tmp4.template getDeviceBuffer<0>(),vct_index_tmp4.size(),(Ti *)vct_index_tmp4.template getDeviceBuffer<0>(),context);
+
+			vct_index_tmp4.template deviceToHost<0>(vct_index_tmp4.size()-1,vct_index_tmp4.size()-1);
+			int n_ele_unique = vct_index_tmp4.template get<0>(vct_index_tmp4.size()-1);
+
+			vct_add_index_unique.resize(n_ele_unique);
+			vct_add_data_unique.resize(n_ele_unique);
+
+			CUDA_LAUNCH(
+					(construct_index_unique<0>),
+					ite,
+					vct_add_index_sort.toKernel(),
+					vct_index_tmp4.toKernel(),
+					vct_add_index_unique.toKernel());
+
+			///////////////////// DEBUG //////////////////////
+
+/*			vct_add_index_unique.template deviceToHost<0,1>();
+
+			for (size_t i = 0 ; i < vct_add_index_unique.size() ; i++)
+			{
+				std::cout << vct_add_index_unique.template get<0>(i) << "  " << vct_add_index_unique.template get<1>(i) << std::endl;
+			}*/
+
+			//////////////////////////////////////////////////
 
 			typedef boost::mpl::vector<v_reduce...> vv_reduce;
 
@@ -1179,7 +1224,7 @@ namespace openfpm
 			// Merge the list of inserted points for each block
 			vct_index_tmp4.resize(vct_nrem_index.size());
 
-			mgpu::scan((Ti *)vct_nrem_index.template getDeviceBuffer<0>(), vct_nrem_index.size(), (Ti *)vct_index_tmp4.template getDeviceBuffer<0>() , context);
+			openfpm::scan((Ti *)vct_nrem_index.template getDeviceBuffer<0>(), vct_nrem_index.size(), (Ti *)vct_index_tmp4.template getDeviceBuffer<0>() , context);
 
 			vct_index_tmp4.template deviceToHost<0>(vct_index_tmp4.size()-1,vct_index_tmp4.size()-1);
 			size_t n_ele = vct_index_tmp4.template get<0>(vct_index_tmp4.size()-1);
@@ -1273,7 +1318,7 @@ namespace openfpm
 										  vct_index.size());
 
 			// we scan tmp3
-			mgpu::scan((Ti*)vct_index_dtmp.template getDeviceBuffer<0>(),vct_index_dtmp.size(),(Ti *)vct_index_dtmp.template getDeviceBuffer<1>(),context);
+			openfpm::scan((Ti*)vct_index_dtmp.template getDeviceBuffer<0>(),vct_index_dtmp.size(),(Ti *)vct_index_dtmp.template getDeviceBuffer<1>(),context);
 
 			// get the size to resize vct_index and vct_data
 			vct_index_dtmp.template deviceToHost<0,1>(vct_index_dtmp.size()-1,vct_index_dtmp.size()-1);

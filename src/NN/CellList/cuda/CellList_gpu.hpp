@@ -22,10 +22,6 @@
 #include "NN/CellList/CellList.hpp"
 #include "util/cuda/scan_ofp.cuh"
 
-#ifdef __NVCC__
-#include "util/cuda/moderngpu/kernel_scan.hxx"
-#endif
-
 constexpr int count = 0;
 constexpr int start = 1;
 
@@ -278,7 +274,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		CUDA_LAUNCH((count_nn_cells),itgg,cl_sparse.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel());
 
 		// now we scan
-		mgpu::scan((cnt_type *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (cnt_type *)cells_nn.template getDeviceBuffer<0>() , mgpuContext);
+		openfpm::scan((cnt_type *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (cnt_type *)cells_nn.template getDeviceBuffer<0>() , mgpuContext);
 
 		cells_nn.template deviceToHost<0>(cells_nn.size() - 1, cells_nn.size() - 1);
 		size_t n_nn_cells = cells_nn.template get<0>(cells_nn.size() - 1);
@@ -375,7 +371,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		// now we scan
 		starts.resize(cl_n.size());
-		mgpu::scan((cnt_type *)cl_n.template getDeviceBuffer<0>(), cl_n.size(), (cnt_type *)starts.template getDeviceBuffer<0>() , mgpuContext);
+		openfpm::scan((cnt_type *)cl_n.template getDeviceBuffer<0>(), cl_n.size(), (cnt_type *)starts.template getDeviceBuffer<0>() , mgpuContext);
 
 		// now we construct the cells
 

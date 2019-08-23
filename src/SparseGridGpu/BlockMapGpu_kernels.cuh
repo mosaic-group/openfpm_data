@@ -12,6 +12,7 @@
 #include "util/cuda_util.hpp"
 #include "BlockMapGpu_dimensionalityWrappers.cuh"
 #include "Vector/map_vector_sparse.hpp"
+#include "util/cuda/scan_ofp.cuh"
 
 namespace BlockMapGpuKernels
 {
@@ -713,27 +714,27 @@ namespace BlockMapGpuFunctors
 
         	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,keys.toKernel(),mergeIndices.toKernel(),dataOld.size(),p_ids.toKernel());
 
-        	mgpu::scan((int *)p_ids.template getDeviceBuffer<0>(),
+        	openfpm::scan((int *)p_ids.template getDeviceBuffer<0>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<0>(),
                         context);
 
-        	mgpu::scan((int *)p_ids.template getDeviceBuffer<1>(),
+        	openfpm::scan((int *)p_ids.template getDeviceBuffer<1>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<1>(),
                         context);
 
-        	mgpu::scan((int *)p_ids.template getDeviceBuffer<2>(),
+        	openfpm::scan((int *)p_ids.template getDeviceBuffer<2>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<2>(),
                         context);
 
-        	mgpu::scan((int *)p_ids.template getDeviceBuffer<3>(),
+        	openfpm::scan((int *)p_ids.template getDeviceBuffer<3>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<3>(),
                         context);
 
-        	mgpu::scan((int *)p_ids.template getDeviceBuffer<4>(),
+        	openfpm::scan((int *)p_ids.template getDeviceBuffer<4>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<4>(),
                         context);
