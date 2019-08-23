@@ -423,47 +423,42 @@ __global__ void construct_insert_list_key_only(vector_index_type vit_block_data,
 	for ( ; i < n_block_move ; i++)
 	{
 		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
-		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
+		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = nslot*blockIdx.x + i*blockDim.x + threadIdx.x;
 	}
 
 	// move remaining
 	if (threadIdx.x < n_move - i*blockDim.x )
 	{
 		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
-		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
+		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = nslot*blockIdx.x + i*blockDim.x + threadIdx.x;
 	}
 }
 
-template<typename vector_index_type, typename vector_data_type>
-__global__ void construct_insert_list(vector_index_type vit_block_data,
+template<typename vector_index_type>
+__global__ void construct_insert_list_key_only_small_pool(vector_index_type vit_block_data,
 								 vector_index_type vit_block_n,
 								 vector_index_type vit_block_scan,
 								 vector_index_type vit_list_0,
 								 vector_index_type vit_list_1,
-								 vector_data_type vdata_block,
-								 vector_data_type vdata,
 								 int nslot)
 {
-	int n_move = vit_block_n.template get<0>(blockIdx.x);
-	int n_block_move = vit_block_n.template get<0>(blockIdx.x) / blockDim.x;
-	int start = vit_block_scan.template get<0>(blockIdx.x);
+	int p = blockIdx.x * blockDim.x + threadIdx.x;
 
-	int i = 0;
-	for ( ; i < n_block_move ; i++)
-	{
-		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
-		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
-		vdata.get(start + i*blockDim.x + threadIdx.x) = vdata_block.get(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
-	}
+	if (p >= vit_block_data.size())	{return;}
+
+	int pool_id = p / nslot;
+	int thr_id = p % nslot;
+	int start = vit_block_scan.template get<0>(pool_id);
+	int n = vit_block_scan.template get<0>(pool_id+1) - start;
 
 	// move remaining
-	if (threadIdx.x < n_move - i*blockDim.x )
+	if (thr_id < n )
 	{
-		vit_list_0.template get<0>(start + i*blockDim.x + threadIdx.x) = vit_block_data.template get<0>(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);
-		vit_list_1.template get<0>(start + i*blockDim.x + threadIdx.x) = start + i*blockDim.x + threadIdx.x;
-		vdata.get(start + i*blockDim.x + threadIdx.x) = vdata_block.get(nslot*blockIdx.x + i*blockDim.x + threadIdx.x);;
+		vit_list_0.template get<0>(start + thr_id) = vit_block_data.template get<0>(nslot*pool_id + thr_id);
+		vit_list_1.template get<0>(start + thr_id) = nslot*pool_id + thr_id;
 	}
 }
+
 
 template<typename vector_index_type>
 __global__ void construct_remove_list(vector_index_type vit_block_data,
@@ -592,6 +587,7 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 		vct_tot_out.template get<2>(blockIdx.x) = predicate;
 	}
 }
+
 
 template<typename vector_index_type, typename vector_index_type2, unsigned int block_dim>
 __global__ void solve_conflicts_remove(vector_index_type vct_index,
@@ -726,6 +722,19 @@ __global__ void reorder_vector_data(vector_index_type vi, vector_data_type v_dat
 
 	v_data_ord.get_o(p) = v_data.get_o(vi.template get<0>(p));
 }
+
+template<typename vector_index_type>
+__global__ void reorder_create_index_map(vector_index_type vi, vector_index_type seg_in, vector_index_type seg_out)
+{
+	int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (p >= vi.size())	return;
+
+	// reorder based on v_ord the data vector
+
+	seg_out.template get<0>(p) = seg_in.template get<0>(vi.template get<0>(p));
+}
+
 
 template<unsigned int prp, typename vector_type>
 __global__ void set_indexes(vector_type vd, int off)

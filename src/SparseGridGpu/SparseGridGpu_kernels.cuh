@@ -276,7 +276,7 @@ namespace SparseGridGpuKernels
 //        const unsigned int dataBlockPos = pos / blockSize;
 //        const unsigned int offset = pos % blockSize;
         const unsigned int dataBlockPos = blockIdx.x;
-        const unsigned int offset = threadIdx.x;
+        const unsigned int offset = threadIdx.x % blockSize;
 
         if (dataBlockPos >= indexBuffer.size())
         {
@@ -288,22 +288,20 @@ namespace SparseGridGpuKernels
 
         auto dataBlockLoad = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
         const auto dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
-        grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
 
-        auto dataBlockStore = sparseGrid.insertBlockNew(dataBlockId);
+        auto dataBlockStore = sparseGrid.insertBlock(dataBlockId);
+
+        grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
 
         bool applyStencilHere = false;
 
-        if (offset < blockSize)
+        // Read local mask to register
+        const auto curMask = dataBlockLoad.template get<pMask>()[offset];
+        applyStencilHere = sparseGrid.exist(curMask) && (!sparseGrid.isPadding(curMask));
+        if (applyStencilHere)
         {
-            // Read local mask to register
-            const auto curMask = dataBlockLoad.template get<pMask>()[offset];
-            applyStencilHere = sparseGrid.exist(curMask) && (!sparseGrid.isPadding(curMask));
-            if (applyStencilHere)
-            {
-                // Mark the current element in the new block as existing
-                sparseGrid.setExist(dataBlockStore.template get<pMask>()[offset]);
-            }
+            // Mark the current element in the new block as existing
+            sparseGrid.setExist(dataBlockStore.template get<pMask>()[offset]);
         }
 
         openfpm::sparse_index<unsigned int> sdataBlockId;

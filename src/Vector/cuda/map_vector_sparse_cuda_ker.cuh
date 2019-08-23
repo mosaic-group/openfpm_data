@@ -472,6 +472,11 @@ namespace openfpm
 #endif
 		}
 
+		__device__ auto private_get_data() -> decltype(vct_add_data.getBase().get_data_())
+		{
+			return vct_add_data.getBase().get_data_();
+		}
+
 		/*! \brief It insert an element in the sparse vector
 		 *
 		 *

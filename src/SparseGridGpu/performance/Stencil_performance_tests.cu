@@ -2,6 +2,7 @@
 // Created by tommaso on 4/07/19.
 //
 
+#define SCAN_WITH_CUB
 #define BOOST_TEST_DYN_LINK
 #define OPENFPM_DATA_ENABLE_IO_MODULE
 #define DISABLE_MPI_WRITTERS
@@ -88,33 +89,18 @@ __global__ void insertValues2DBlocked(SparseGridType sparseGrid, const int sOffs
 
     sparseGrid.init();
 
-    __shared__ BlockT *blocks[chunksPerBlock];
-    __shared__ MaskBlockT *masks[chunksPerBlock];
-
     int posX = blockIdx.x * blockDim.x + threadIdx.x + sOffsetX;
     int posY = blockIdx.y * blockDim.y + threadIdx.y + sOffsetY;
     const unsigned int offsetX = posX % blockEdgeSize;
     const unsigned int offsetY = posY % blockEdgeSize;
 
-    const unsigned int blockDimX = blockDim.x / blockEdgeSize;
-    const unsigned int blockOffsetX = threadIdx.x / blockEdgeSize;
-    const unsigned int blockOffsetY = threadIdx.y / blockEdgeSize;
-
-    const unsigned int dataBlockNum = blockOffsetY*blockDimX + blockOffsetX;
     const unsigned int offset = offsetY * blockEdgeSize + offsetX;
 
-//    if (offset == 0) // Just one thread per data block
-//    {
-        grid_key_dx<SparseGridType::d, int> blockCoord({posX / blockEdgeSize, posY / blockEdgeSize});
-        auto encap = sparseGrid.insertBlockNew(sparseGrid.getBlockLinId(blockCoord));
-        blocks[dataBlockNum] = &(encap.template get<p>());
-        masks[dataBlockNum] = &(encap.template get<pMask>());
-//    }
+	grid_key_dx<SparseGridType::d, int> blockCoord({posX / blockEdgeSize, posY / blockEdgeSize});
+	auto encap = sparseGrid.insertBlock(sparseGrid.getBlockLinId(blockCoord));
 
-    __syncthreads();
-
-    blocks[dataBlockNum]->block[offset] = posX*posX * posY*posY;
-    BlockMapGpu_ker<>::setExist(masks[dataBlockNum]->block[offset]);
+    encap.template get<p>()[offset] = posX*posX * posY*posY;
+    BlockMapGpu_ker<>::setExist(encap.template get<pMask>()[offset]);
 
     __syncthreads();
 
@@ -132,9 +118,6 @@ __global__ void insertConstantValue(SparseGridType sparseGrid, ScalarT value)
 
     sparseGrid.init();
 
-    __shared__ BlockT *blocks[chunksPerBlock];
-    __shared__ MaskBlockT *masks[chunksPerBlock];
-
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int z = blockIdx.z * blockDim.z + threadIdx.z;
@@ -143,18 +126,11 @@ __global__ void insertConstantValue(SparseGridType sparseGrid, ScalarT value)
     auto pos = sparseGrid.getLinId(coord);
     unsigned int dataBlockId = pos / BlockT::size;
     unsigned int offset = pos % BlockT::size;
-    unsigned int dataBlockNum = dataBlockId % chunksPerBlock;
 
-//    if (offset == 0) // Just one thread per data block
-//    {
-        auto encap = sparseGrid.insertBlockNew(dataBlockId);
-        blocks[dataBlockNum] = &(encap.template get<p>());
-        masks[dataBlockNum] = &(encap.template get<pMask>());
-//    }
+    auto encap = sparseGrid.template insertBlock<chunksPerBlock>(dataBlockId,BlockT::size);
 
-    __syncthreads();
-    blocks[dataBlockNum]->block[offset] = value;
-    BlockMapGpu_ker<>::setExist(masks[dataBlockNum]->block[offset]);
+    encap.template get<p>()[offset] = value;
+    BlockMapGpu_ker<>::setExist(encap.template get<pMask>()[offset]);
 
     __syncthreads();
 
@@ -1648,13 +1624,12 @@ void testInsertStencil(std::string testURI, unsigned int i)
 
     for (unsigned int iter=0; iter<iterations; ++iter)
 	{
-		cudaDeviceSynchronize();
-
 		timer ts;
 		ts.start();
 
+		cudaDeviceSynchronize();
+
 		sparseGrid.template applyStencils<StencilT>(STENCIL_MODE_INSERT, 0.1);
-		sparseGrid.template flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
 
 		cudaDeviceSynchronize();
 

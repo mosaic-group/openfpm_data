@@ -12,7 +12,7 @@ if (CUDA_FOUND)
             Grid/cuda/cuda_grid_gpu_tests.cu
             Vector/cuda/map_vector_cuda_funcs_tests.cu
             ../../openfpm_devices/src/memory/CudaMemory.cu
-            NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu
+            NN/CellList/CellList_gpu_test.cu util/cuda/scan_sort_cuda_unit_tests.cu
             Grid/cuda/cuda_grid_unit_tests_func.cu
             util/cuda/modern_gpu_tests.cu
             Vector/cuda/map_vector_sparse_cuda_ker_unit_tests.cu

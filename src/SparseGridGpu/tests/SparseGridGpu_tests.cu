@@ -28,7 +28,7 @@ __global__ void insertConstantValue2(SparseGridType sparseGrid, ScalarT value)
     unsigned int dataBlockId = pos / BlockT::size;
     unsigned int offset = pos % BlockT::size;
 
-    auto encap = sparseGrid.insertBlockNew(dataBlockId);
+    auto encap = sparseGrid.insertBlock(dataBlockId);
     encap.template get<p1>()[offset] = value;
     encap.template get<p2>()[offset] = value;
     BlockMapGpu_ker<>::setExist(encap.template get<pMask>()[offset]);
@@ -960,6 +960,57 @@ BOOST_AUTO_TEST_CASE(testStencilHeatInsert)
 }
 
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
+
+// template<unsigned int p, typename SparseGridType>
+// __global__ void insertSphere(SparseGridType sparseGrid, grid_key_dx<2,int> start, float r1, float r2)
+// {
+//     constexpr unsigned int pMask = SparseGridType::pMask;
+//     typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
+//     typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
+
+//     grid_key_dx<2,int> blk({blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize() ,blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize()});
+
+//     unsigned int offset = threadIdx.x;
+
+//     __shared__ bool is_block_empty;
+
+//     if (threadIdx.x == 0 && threadIdx.y == 0)
+//     {is_block_empty = true;}
+
+//     sparseGrid.init();
+
+//     auto blockId = sparseGrid.getBlockLinId(blk);
+
+//     grid_key_dx<2,int> keyg;
+//     keyg = sparseGrid.getGlobalCoord(blk,offset);
+
+//     float radius = sqrt( (float)(keyg.get(0) - (start.get(0) + gridDim.x/2*SparseGridType::blockEdgeSize_))*(keyg.get(0) - (start.get(0) + gridDim.x/2*SparseGridType::blockEdgeSize_)) +
+//     		  	  	  	        (keyg.get(1) - (start.get(1) + gridDim.y/2*SparseGridType::blockEdgeSize_))*(keyg.get(1) - (start.get(1) + gridDim.y/2*SparseGridType::blockEdgeSize_)) );
+
+//     bool is_active = radius < r1 && radius > r2;
+
+//     if (is_active == true)
+//     {
+//     	is_block_empty = false;
+//     }
+
+//     __syncthreads();
+
+//     if (is_block_empty == false)
+//     {
+//     	auto ec = sparseGrid.insertBlock(blockId);
+
+//         if ( is_active == true)
+//         {
+//         	ec.template get<p>()[offset] = 1;
+//         	BlockMapGpu_ker<>::setExist(ec.template get<pMask>()[offset]);
+//         }
+//     }
+
+//     __syncthreads();
+
+//     sparseGrid.flush_block_insert();
+// }
 
 BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput)
 {

@@ -791,6 +791,10 @@ public:
 		return k;
 	}
 
+	__device__ __host__ inline size_t private_set_k(unsigned int k)
+	{
+		return this->k = k;
+	}
 };
 
 #include "util/common.hpp"

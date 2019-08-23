@@ -78,7 +78,8 @@ struct aggregate_add<aggregate<types ...>>
 enum StencilMode
 {
     STENCIL_MODE_INSERT = 0,
-    STENCIL_MODE_INPLACE = 1
+    STENCIL_MODE_INPLACE = 1,
+    STENCIL_MODE_INSERT_NOFLUSH = 2
 };
 
 struct NNFull
@@ -353,7 +354,7 @@ private:
     }
 
     template <typename stencil, typename... Args>
-    void applyStencilInPlace(Args... args)
+    void applyStencilInPlace(StencilMode & mode,Args... args)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -386,7 +387,7 @@ private:
 
     //todo: the applyInsert should also allocate the gpu insert buffer, initialize it, etc
     template <typename stencil, typename... Args>
-    void applyStencilInsert(Args... args)
+    void applyStencilInsert(StencilMode & mode, Args... args)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -419,9 +420,12 @@ private:
                         this->template toKernelNN<stencil::stencil_type::nNN, nLoop>(),
                         args...);
 
-//        cudaDeviceSynchronize();
-        mgpu::ofp_context_t ctx;
-        stencil::flush(*this, ctx);
+
+        if (mode != STENCIL_MODE_INSERT_NOFLUSH)
+        {
+        	mgpu::ofp_context_t ctx;
+        	stencil::flush(*this, ctx);
+        }
     }
 
     template <typename stencil, typename... Args>
@@ -745,7 +749,7 @@ public:
     }
 
     // Also count mean+stdDev of occupancy of existing blocks
-    void measureBlockOccupancy(double &mean, double &deviation)
+    void measureBlockOccupancyMemory(double &mean, double &deviation)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -768,6 +772,41 @@ public:
                 const auto curMask = dataBlock.template get<pMask>()[elementId];
 
                 if (this->exist(curMask))
+                {
+                    ++numElementsInBlock;
+                }
+            }
+            double blockOccupancy = static_cast<double>(numElementsInBlock)/blockSize;
+            measures.add(blockOccupancy);
+        }
+
+        standard_deviation(measures, mean, deviation);
+    }
+
+    // Also count mean+stdDev of occupancy of existing blocks
+    void measureBlockOccupancy(double &mean, double &deviation)
+    {
+        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
+        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+
+        constexpr unsigned int pMask = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask;
+        typedef typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT BAggregateT;
+        typedef BlockTypeOf<BAggregateT, pMask> MaskBlockT;
+        constexpr unsigned int blockSize = MaskBlockT::size;
+        const auto bufferSize = indexBuffer.size();
+
+        openfpm::vector<double> measures;
+
+        for (size_t blockId=0; blockId<bufferSize; ++blockId)
+        {
+            auto dataBlock = dataBuffer.get(blockId); // Avoid binary searches as much as possible
+            size_t numElementsInBlock = 0;
+            for (size_t elementId=0; elementId<blockSize; ++elementId)
+            {
+                const auto curMask = dataBlock.template get<pMask>()[elementId];
+
+                if (this->exist(curMask) && !this->isPadding(curMask))
                 {
                     ++numElementsInBlock;
                 }
@@ -819,10 +858,13 @@ public:
         switch (mode)
         {
             case STENCIL_MODE_INPLACE:
-                applyStencilInPlace<stencil>(args...);
+                applyStencilInPlace<stencil>(mode,args...);
                 break;
             case STENCIL_MODE_INSERT:
-                applyStencilInsert<stencil>(args...);
+                applyStencilInsert<stencil>(mode,args...);
+                break;
+            case STENCIL_MODE_INSERT_NOFLUSH:
+                applyStencilInsert<stencil>(mode,args...);
                 break;
         }
     }

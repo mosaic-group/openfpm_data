@@ -117,7 +117,7 @@ __global__ void insertSphere(SparseGridType sparseGrid, grid_key_dx<2,int> start
 
     if (is_block_empty == false)
     {
-        auto ec = sparseGrid.insertBlockNew(blockId);
+        auto ec = sparseGrid.insertBlock(blockId);
 
         if ( is_active == true)
         {
@@ -176,7 +176,7 @@ __global__ void insertSphere3D(SparseGridType sparseGrid, grid_key_dx<3,int> sta
 
     if (is_block_empty == false)
     {
-        auto ec = sparseGrid.insertBlockNew(blockId);
+        auto ec = sparseGrid.insertBlock(blockId);
 
         if ( is_active == true)
         {

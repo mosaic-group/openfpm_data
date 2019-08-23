@@ -42,26 +42,16 @@ __global__ void insertValuesBlocked(SparseGridType sparseGrid)
 
     sparseGrid.init();
 
-    __shared__ BlockT *blocks[chunksPerBlock];
-    __shared__ MaskBlockT *masks[chunksPerBlock];
 
     int pos = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int dataBlockId = pos / BlockT::size;
     unsigned int offset = pos % BlockT::size;
 
-    unsigned int dataBlockNum = dataBlockId % chunksPerBlock;
+    auto encap = sparseGrid.insertBlock<chunksPerBlock>(dataBlockId,BlockT::size);
 
-    if (offset == 0) // Just one thread per data block
-    {
-        auto encap = sparseGrid.insertBlock(dataBlockId);
-        blocks[dataBlockNum] = &(encap.template get<p>());
-        masks[dataBlockNum] = &(encap.template get<pMask>());
-    }
 
-    __syncthreads();
-
-    blocks[dataBlockNum]->block[offset] = pos;
-    BlockMapGpu_ker<>::setExist(masks[dataBlockNum]->block[offset]);
+    encap.template get<p>()[offset] = pos;
+    BlockMapGpu_ker<>::setExist(encap.template get<pMask>()[offset]);
 
     __syncthreads();
 
@@ -88,168 +78,168 @@ __global__ void insertValuesHalfBlock(SparseGridType sparseGrid)
 
 BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
 
-    BOOST_AUTO_TEST_CASE(testBitwiseOps)
-    {
-        BOOST_REQUIRE(BlockMapGpu_ker<>::getBit(1,0));
-        BOOST_REQUIRE(!BlockMapGpu_ker<>::getBit(2,0));
-        BOOST_REQUIRE(BlockMapGpu_ker<>::getBit(2,1));
-        BOOST_REQUIRE(BlockMapGpu_ker<>::getBit(3,0));
-        BOOST_REQUIRE(BlockMapGpu_ker<>::getBit(3,1));
-        unsigned int m = 0;
-        BOOST_REQUIRE(!BlockMapGpu_ker<>::getBit(m,0));
-        BlockMapGpu_ker<>::setBit(m, 0);
-        BOOST_REQUIRE(BlockMapGpu_ker<>::getBit(m,0));
-        BlockMapGpu_ker<>::unsetBit(m, 0);
-        BOOST_REQUIRE(!BlockMapGpu_ker<>::getBit(m,0));
-    }
+BOOST_AUTO_TEST_CASE(testBitwiseOps)
+{
+	BOOST_REQUIRE(BlockMapGpu_ker<>::getBit(1,0));
+	BOOST_REQUIRE(!BlockMapGpu_ker<>::getBit(2,0));
+	BOOST_REQUIRE(BlockMapGpu_ker<>::getBit(2,1));
+	BOOST_REQUIRE(BlockMapGpu_ker<>::getBit(3,0));
+	BOOST_REQUIRE(BlockMapGpu_ker<>::getBit(3,1));
+	unsigned int m = 0;
+	BOOST_REQUIRE(!BlockMapGpu_ker<>::getBit(m,0));
+	BlockMapGpu_ker<>::setBit(m, 0);
+	BOOST_REQUIRE(BlockMapGpu_ker<>::getBit(m,0));
+	BlockMapGpu_ker<>::unsetBit(m, 0);
+	BOOST_REQUIRE(!BlockMapGpu_ker<>::getBit(m,0));
+}
 
-    BOOST_AUTO_TEST_CASE(testBackground)
-    {
-        typedef aggregate<DataBlock<float, 64>> AggregateSGT;
-        typedef aggregate<float> AggregateOutT;
-        BlockMapGpu<AggregateSGT> sparseGrid;
-        sparseGrid.template setBackgroundValue<0>(666);
+BOOST_AUTO_TEST_CASE(testBackground)
+{
+	typedef aggregate<DataBlock<float, 64>> AggregateSGT;
+	typedef aggregate<float> AggregateOutT;
+	BlockMapGpu<AggregateSGT> sparseGrid;
+	sparseGrid.template setBackgroundValue<0>(666);
 
-        const unsigned int gridSize = 10;
-        const unsigned int blockSize = 128;
+	const unsigned int gridSize = 10;
+	const unsigned int blockSize = 128;
 
-        // Get output
-        openfpm::vector_gpu<AggregateOutT> output;
-        output.resize(gridSize * blockSize);
-        copyBlocksToOutput<0> <<< gridSize, blockSize >>> (sparseGrid.toKernel(), output.toKernel());
+	// Get output
+	openfpm::vector_gpu<AggregateOutT> output;
+	output.resize(gridSize * blockSize);
+	copyBlocksToOutput<0> <<< gridSize, blockSize >>> (sparseGrid.toKernel(), output.toKernel());
 
-        output.template deviceToHost<0>();
-        sparseGrid.template deviceToHost<0>();
+	output.template deviceToHost<0>();
+	sparseGrid.template deviceToHost<0>();
 
-        // Compare
-        bool match = true;
-        for (size_t i = 0; i < output.size(); i++)
-        {
+	// Compare
+	bool match = true;
+	for (size_t i = 0; i < output.size(); i++)
+	{
 //            std::cout << "output(" << i << ") = " << output.template get<0>(i) << std::endl;
-            match &= output.template get<0>(i) == sparseGrid.template get<0>(i);
-        }
+		match &= output.template get<0>(i) == sparseGrid.template get<0>(i);
+	}
 
-        BOOST_REQUIRE_EQUAL(match, true);
-    }
+	BOOST_REQUIRE_EQUAL(match, true);
+}
 
-    BOOST_AUTO_TEST_CASE(testInsert)
-    {
-        typedef aggregate<DataBlock<float, 64>> AggregateT;
-        typedef aggregate<float> AggregateOutT;
-        BlockMapGpu<AggregateT, 128> blockMap;
-        blockMap.template setBackgroundValue<0>(666);
+BOOST_AUTO_TEST_CASE(testInsert)
+{
+	typedef aggregate<DataBlock<float, 64>> AggregateT;
+	typedef aggregate<float> AggregateOutT;
+	BlockMapGpu<AggregateT, 128> blockMap;
+	blockMap.template setBackgroundValue<0>(666);
 
-        const unsigned int gridSize = 3;
-        const unsigned int bufferPoolSize = 128; // Should be multiple of BlockT::size
-        const unsigned int blockSizeInsert = 128;
-        const unsigned int gridSizeRead = gridSize + 1;
-        const unsigned int blockSizeRead = 128;
+	const unsigned int gridSize = 3;
+	const unsigned int bufferPoolSize = 128; // Should be multiple of BlockT::size
+	const unsigned int blockSizeInsert = 128;
+	const unsigned int gridSizeRead = gridSize + 1;
+	const unsigned int blockSizeRead = 128;
 
-        // Prealloc insert buffer
-        blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
+	// Prealloc insert buffer
+	blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
-        // Insert values
-        insertValues<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
+	// Insert values
+	insertValues<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
 
-        // Flush inserts
-        mgpu::ofp_context_t ctx;
-        blockMap.flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
+	// Flush inserts
+	mgpu::ofp_context_t ctx;
+	blockMap.flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
 
-        // Get output
-        openfpm::vector_gpu<AggregateOutT> output;
-        output.resize(gridSizeRead * blockSizeRead);
+	// Get output
+	openfpm::vector_gpu<AggregateOutT> output;
+	output.resize(gridSizeRead * blockSizeRead);
 
-        copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (blockMap.toKernel(), output.toKernel());
+	copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (blockMap.toKernel(), output.toKernel());
 
-        output.template deviceToHost<0>();
-        blockMap.template deviceToHost<0>();
+	output.template deviceToHost<0>();
+	blockMap.template deviceToHost<0>();
 
-        // Compare
-        bool match = true;
-        for (size_t i = 0; i < output.size(); i++)
-        {
-            auto expectedValue = (i < gridSize * blockSizeInsert) ? i : 666;
-            std::cout << "blockMap(" << i << ") = " << blockMap.template get<0>(i)
-                    << " == "
-                    << expectedValue
-                    << " == "
-                    << output.template get<0>(i) << " = output(" << i << ")"
-                            << std::endl;
-            match &= output.template get<0>(i) == blockMap.template get<0>(i);
-            match &= output.template get<0>(i) == expectedValue;
-        }
+	// Compare
+	bool match = true;
+	for (size_t i = 0; i < output.size(); i++)
+	{
+		auto expectedValue = (i < gridSize * blockSizeInsert) ? i : 666;
+		std::cout << "blockMap(" << i << ") = " << blockMap.template get<0>(i)
+				<< " == "
+				<< expectedValue
+				<< " == "
+				<< output.template get<0>(i) << " = output(" << i << ")"
+						<< std::endl;
+		match &= output.template get<0>(i) == blockMap.template get<0>(i);
+		match &= output.template get<0>(i) == expectedValue;
+	}
 
-        BOOST_REQUIRE_EQUAL(match, true);
-    }
+	BOOST_REQUIRE_EQUAL(match, true);
+}
 
-    BOOST_AUTO_TEST_CASE(testInsert_halfBlock) //todo
-    {
-        typedef aggregate<DataBlock<float, 64>> AggregateT;
-        typedef aggregate<float> AggregateOutT;
-        BlockMapGpu<AggregateT, 128> blockMap;
-        blockMap.template setBackgroundValue<0>(666);
+BOOST_AUTO_TEST_CASE(testInsert_halfBlock) //todo
+{
+	typedef aggregate<DataBlock<float, 64>> AggregateT;
+	typedef aggregate<float> AggregateOutT;
+	BlockMapGpu<AggregateT, 128> blockMap;
+	blockMap.template setBackgroundValue<0>(666);
 
-        const unsigned int gridSize = 3;
-        const unsigned int bufferPoolSize = 128; // Should be multiple of BlockT::size
-        const unsigned int blockSizeInsert = 128;
-        const unsigned int gridSizeRead = gridSize + 1;
-        const unsigned int blockSizeRead = 128;
+	const unsigned int gridSize = 3;
+	const unsigned int bufferPoolSize = 128; // Should be multiple of BlockT::size
+	const unsigned int blockSizeInsert = 128;
+	const unsigned int gridSizeRead = gridSize + 1;
+	const unsigned int blockSizeRead = 128;
 
-        // Prealloc insert buffer
-        blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
+	// Prealloc insert buffer
+	blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
-        // Insert values
-        insertValuesHalfBlock<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
+	// Insert values
+	insertValuesHalfBlock<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
 
-        // Flush inserts
-        mgpu::ofp_context_t ctx;
-        blockMap.flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
+	// Flush inserts
+	mgpu::ofp_context_t ctx;
+	blockMap.flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
 
-        // Get output
-        openfpm::vector_gpu<AggregateOutT> output;
-        output.resize(gridSizeRead * blockSizeRead);
+	// Get output
+	openfpm::vector_gpu<AggregateOutT> output;
+	output.resize(gridSizeRead * blockSizeRead);
 
-        copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (blockMap.toKernel(), output.toKernel());
+	copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (blockMap.toKernel(), output.toKernel());
 
-        output.template deviceToHost<0>();
-        blockMap.template deviceToHost<0>();
+	output.template deviceToHost<0>();
+	blockMap.template deviceToHost<0>();
 
-        // Compare
-        bool match = true;
-        for (size_t i = 0; i < output.size(); i++)
-        {
-            auto expectedValue = (i < gridSize * blockSizeInsert) ? i : 666;
-            constexpr unsigned int dataChunkSize = BlockTypeOf<AggregateT, 0>::size;
-            int offset = i % dataChunkSize;
-            if (! (offset < dataChunkSize / 2))
-            {
-                expectedValue = 666; // Just the first half of each block was inserted
-            }
-            std::cout << "blockMap(" << i << ") = " << blockMap.template get<0>(i)
-                      << " == "
-                      << expectedValue
-                      << " == "
-                      << output.template get<0>(i) << " = output(" << i << ")"
-                      << std::endl;
-            match &= output.template get<0>(i) == blockMap.template get<0>(i);
-            match &= output.template get<0>(i) == expectedValue;
-        }
+	// Compare
+	bool match = true;
+	for (size_t i = 0; i < output.size(); i++)
+	{
+		auto expectedValue = (i < gridSize * blockSizeInsert) ? i : 666;
+		constexpr unsigned int dataChunkSize = BlockTypeOf<AggregateT, 0>::size;
+		int offset = i % dataChunkSize;
+		if (! (offset < dataChunkSize / 2))
+		{
+			expectedValue = 666; // Just the first half of each block was inserted
+		}
+		std::cout << "blockMap(" << i << ") = " << blockMap.template get<0>(i)
+				  << " == "
+				  << expectedValue
+				  << " == "
+				  << output.template get<0>(i) << " = output(" << i << ")"
+				  << std::endl;
+		match &= output.template get<0>(i) == blockMap.template get<0>(i);
+		match &= output.template get<0>(i) == expectedValue;
+	}
 
-        BOOST_REQUIRE_EQUAL(match, true);
-    }
+	BOOST_REQUIRE_EQUAL(match, true);
+}
 
-    BOOST_AUTO_TEST_CASE(testInsert_blocked)
-    {
-        typedef aggregate<DataBlock<float, 64>> AggregateT;
-        typedef aggregate<float> AggregateOutT;
-        BlockMapGpu<AggregateT, 128> sparseGrid;
-        sparseGrid.template setBackgroundValue<0>(666);
+BOOST_AUTO_TEST_CASE(testInsert_blocked)
+{
+	typedef aggregate<DataBlock<float, 64>> AggregateT;
+	typedef aggregate<float> AggregateOutT;
+	BlockMapGpu<AggregateT, 128> sparseGrid;
+	sparseGrid.template setBackgroundValue<0>(666);
 
-        const unsigned int gridSize = 3;
-        const unsigned int bufferPoolSize = 4; // Should be multiple of BlockT::size
-        const unsigned int blockSizeInsert = 128;
-        const unsigned int gridSizeRead = gridSize + 1;
-        const unsigned int blockSizeRead = 128;
+	const unsigned int gridSize = 3;
+	const unsigned int bufferPoolSize = 4; // Should be multiple of BlockT::size
+	const unsigned int blockSizeInsert = 128;
+	const unsigned int gridSizeRead = gridSize + 1;
+	const unsigned int blockSizeRead = 128;
 
 ////////// DEBUG
 //        const unsigned int gridSize = 2;
@@ -259,42 +249,42 @@ BOOST_AUTO_TEST_SUITE(BlockMapGpu_tests)
 //        const unsigned int blockSizeRead = 64;
 //////////
 
-        // Prealloc insert buffer
-        sparseGrid.setGPUInsertBuffer(gridSize, bufferPoolSize);
+	// Prealloc insert buffer
+	sparseGrid.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
-        // Insert values
-        insertValuesBlocked<0, 2> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel());
+	// Insert values
+	insertValuesBlocked<0, 2> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel());
 
-        // Flush inserts
-        mgpu::ofp_context_t ctx;
-        sparseGrid.flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
+	// Flush inserts
+	mgpu::ofp_context_t ctx;
+	sparseGrid.flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
 
-        // Get output
-        openfpm::vector_gpu<AggregateOutT> output;
-        output.resize(gridSizeRead * blockSizeRead);
+	// Get output
+	openfpm::vector_gpu<AggregateOutT> output;
+	output.resize(gridSizeRead * blockSizeRead);
 
-        copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (sparseGrid.toKernel(), output.toKernel());
+	copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (sparseGrid.toKernel(), output.toKernel());
 
-        output.template deviceToHost<0>();
-        sparseGrid.template deviceToHost<0>();
+	output.template deviceToHost<0>();
+	sparseGrid.template deviceToHost<0>();
 
-        // Compare
-        bool match = true;
-        for (size_t i = 0; i < output.size(); i++)
-        {
-            auto expectedValue = (i < gridSize * blockSizeInsert) ? i : 666;
-            std::cout << "sparseGrid(" << i << ") = " << sparseGrid.template get<0>(i)
-                      << " == "
-                      << expectedValue
-                      << " == "
-                      << output.template get<0>(i) << " = output(" << i << ")"
-                      << std::endl;
-            match &= output.template get<0>(i) == sparseGrid.template get<0>(i);
-            match &= output.template get<0>(i) == expectedValue;
-        }
+	// Compare
+	bool match = true;
+	for (size_t i = 0; i < output.size(); i++)
+	{
+		auto expectedValue = (i < gridSize * blockSizeInsert) ? i : 666;
+		std::cout << "sparseGrid(" << i << ") = " << sparseGrid.template get<0>(i)
+				  << " == "
+				  << expectedValue
+				  << " == "
+				  << output.template get<0>(i) << " = output(" << i << ")"
+				  << std::endl;
+		match &= output.template get<0>(i) == sparseGrid.template get<0>(i);
+		match &= output.template get<0>(i) == expectedValue;
+	}
 
-        BOOST_REQUIRE_EQUAL(match, true);
-    }
+	BOOST_REQUIRE_EQUAL(match, true);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
