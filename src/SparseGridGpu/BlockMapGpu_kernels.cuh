@@ -757,8 +757,8 @@ namespace BlockMapGpuFunctors
             // Create the output for the keys
             keysOut.resize(data_out_size); // The final number of keys is one less than the segments values
 
-            ite = keysOut.getGPUIterator();
-            CUDA_LAUNCH(BlockMapGpuKernels::copyKeyToDstIndexIfPredicate,ite,keys.toKernel(), s_ids.toKernel(), keysOut.toKernel());
+            ite = keys.getGPUIterator();
+            CUDA_LAUNCH(BlockMapGpuKernels::copyKeyToDstIndexIfPredicate, ite, keys.toKernel(), s_ids.toKernel(), keysOut.toKernel());
 
             // the new keys are now in keysOut
 
