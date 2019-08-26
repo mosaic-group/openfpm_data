@@ -340,7 +340,8 @@ template<unsigned int blockEdgeSize, unsigned int gridEdgeSize, typename SparseG
 void testStencilHeat_perf(unsigned int i, std::string base)
 {
     auto testName = "In-place stencil";
-    typedef HeatStencil<SparseGridZ::dims,0,1> StencilT;
+    typedef HeatStencil<SparseGridZ::dims,0,1> Stencil01T;
+    typedef HeatStencil<SparseGridZ::dims,1,0> Stencil10T;
 
     report_sparsegrid_funcs.graphs.put(base + ".dim",2);
     report_sparsegrid_funcs.graphs.put(base + ".blockSize",blockEdgeSize);
@@ -373,24 +374,27 @@ void testStencilHeat_perf(unsigned int i, std::string base)
 
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 
+    iterations /= 2;
 	for (unsigned int iter=0; iter<iterations; ++iter)
 	{
 		cudaDeviceSynchronize();
 
-		timer ts;
-		ts.start();
+        timer ts;
+        ts.start();
 
-		sparseGrid.template applyStencils<StencilT>(STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
+        cudaDeviceSynchronize();
+        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
+        cudaDeviceSynchronize();
 
-		cudaDeviceSynchronize();
-		ts.stop();
+        ts.stop();
 
-		measures_tm.add(ts.getwct());
+        measures_tm.add(ts.getwct());
 
-	    float gElemS = numElements / (1e9 * ts.getwct());
-	    float gFlopsS = gElemS * StencilT::flops;
+        float gElemS = 2 * numElements / (1e9 * ts.getwct());
+        float gFlopsS = gElemS * Stencil01T::flops;
 
-		measures_gf.add(gFlopsS);
+        measures_gf.add(gFlopsS);
 	}
 
 	double mean_tm = 0;
@@ -403,8 +407,8 @@ void testStencilHeat_perf(unsigned int i, std::string base)
 
     // All times above are in ms
 
-    float gElemS = numElements / (1e9 * mean_tm);
-    float gFlopsS = gElemS * StencilT::flops;
+    float gElemS = 2 * numElements / (1e9 * mean_tm);
+    float gFlopsS = gElemS * Stencil01T::flops;
     std::cout << "Test: " << testName << std::endl;
     std::cout << "Block: " << SparseGridZ::blockEdgeSize_ << "x" << SparseGridZ::blockEdgeSize_ << std::endl;
     std::cout << "Grid: " << gridEdgeSize*SparseGridZ::blockEdgeSize_ << "x" << gridEdgeSize*SparseGridZ::blockEdgeSize_ << std::endl;
@@ -457,7 +461,8 @@ void testStencilHeat3D_perf(unsigned int i, std::string base)
     auto testName = "In-place 3D stencil";
 //    unsigned int gridEdgeSize = 128;
 //    unsigned int gridEdgeSize = 64;
-    typedef HeatStencil<SparseGridZ::dims,0,1> StencilT;
+    typedef HeatStencil<SparseGridZ::dims,0,1> Stencil01T;
+    typedef HeatStencil<SparseGridZ::dims,1,0> Stencil10T;
 
     report_sparsegrid_funcs.graphs.put(base + ".dim",3);
     report_sparsegrid_funcs.graphs.put(base + ".blockSize",blockEdgeSize);
@@ -496,6 +501,7 @@ void testStencilHeat3D_perf(unsigned int i, std::string base)
 
     sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 
+    iterations /= 2;
     for (unsigned int iter=0; iter<iterations; ++iter)
     {
         cudaDeviceSynchronize();
@@ -503,15 +509,17 @@ void testStencilHeat3D_perf(unsigned int i, std::string base)
         timer ts;
         ts.start();
 
-        sparseGrid.template applyStencils<StencilT>(STENCIL_MODE_INPLACE, 0.1);
-
+        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
+        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
+        cudaDeviceSynchronize();
+
         ts.stop();
 
         measures_tm.add(ts.getwct());
 
-        float gElemS = numElements / (1e9 * ts.getwct());
-        float gFlopsS = gElemS * StencilT::flops;
+        float gElemS = 2 * numElements / (1e9 * ts.getwct());
+        float gFlopsS = gElemS * Stencil01T::flops;
 
         measures_gf.add(gFlopsS);
     }
@@ -526,8 +534,8 @@ void testStencilHeat3D_perf(unsigned int i, std::string base)
 
     // All times above are in ms
 
-    float gElemS = numElements / (1e9 * mean_tm);
-    float gFlopsS = gElemS * StencilT::flops;
+    float gElemS = 2 * numElements / (1e9 * mean_tm);
+    float gFlopsS = gElemS * Stencil01T::flops;
     std::cout << "Test: " << testName << std::endl;
     std::cout << "Block: " << SparseGridZ::blockEdgeSize_
               << "x" << SparseGridZ::blockEdgeSize_
@@ -566,144 +574,6 @@ void launch_testStencilHeat3D_perf(std::string testURI, unsigned int i)
     cudaDeviceSynchronize();
 }
 
-//template<unsigned int blockEdgeSize, unsigned int gridEdgeSize, typename SparseGridZ>
-//void testStencilHeatSparse_perf(unsigned int i, std::string base)
-//{
-//    auto testName = "In-place sparse stencil";
-////    unsigned int gridEdgeSize = 128;
-//    constexpr unsigned int dim = SparseGridZ::dims;
-////    const unsigned int blockEdgeSize = SparseGridZ::blockEdgeSize_;
-//
-//    typedef HeatStencil<dim, 0, 1> Stencil01T;
-//    typedef HeatStencil<dim, 1, 0> Stencil10T;
-//
-////    std::string base("performance.SparseGridGpu(" + std::to_string(i) + ").stencil");
-//
-//    report_sparsegrid_funcs.graphs.put(base + ".dim",2);
-//    report_sparsegrid_funcs.graphs.put(base + ".blockSize",blockEdgeSize);
-//    report_sparsegrid_funcs.graphs.put(base + ".gridSize.x",gridEdgeSize*blockEdgeSize);
-//    report_sparsegrid_funcs.graphs.put(base + ".gridSize.y",gridEdgeSize*blockEdgeSize);
-//
-//    unsigned int iterations = 100;
-//
-//    openfpm::vector<double> measures_gf;
-//    openfpm::vector<double> measures_tm;
-//
-//    dim3 gridSize(gridEdgeSize, gridEdgeSize);
-//    dim3 blockSize(blockEdgeSize,blockEdgeSize);
-//    size_t sz[2] = {1000000,1000000};
-//    typename SparseGridZ::grid_info blockGeometry(sz);
-//    SparseGridZ sparseGrid(blockGeometry);
-//    mgpu::ofp_context_t ctx;
-//    sparseGrid.template setBackgroundValue<0>(0);
-//
-//    ///// Insert sparse content, a set of 3 hollow spheres /////
-//    constexpr unsigned int rBig = gridEdgeSize * blockEdgeSize / 2;
-//    constexpr unsigned int rSmall = rBig/2;
-//    constexpr unsigned int rBig2 = rBig;
-//    constexpr unsigned int rSmall2 = rBig2 - (rBig2/16);
-//    constexpr unsigned int rBig3 = rBig/8;
-//    constexpr unsigned int rSmall3 = rBig3 - (rBig3/10);
-//    // Sphere 1
-//    grid_key_dx<2,int> start1({500000,500000});
-//    sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-//    CUDA_LAUNCH_DIM3((insertSphere<0>),
-//                     gridSize, dim3(blockEdgeSize*blockEdgeSize,1,1),
-//                     sparseGrid.toKernel(), start1, rBig, rSmall, 1);
-//    cudaDeviceSynchronize();
-//    sparseGrid.template flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-//    cudaDeviceSynchronize();
-//
-//    // Sphere 2
-//    grid_key_dx<2,int> start2({500000+rBig,500000+rBig});
-//    sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-//    CUDA_LAUNCH_DIM3((insertSphere<0>),
-//                     gridSize, dim3(blockEdgeSize*blockEdgeSize,1,1),
-//                     sparseGrid.toKernel(), start2, rBig2, rSmall2, 1);
-//    cudaDeviceSynchronize();
-//    sparseGrid.template flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-//    cudaDeviceSynchronize();
-//
-//    // Sphere 3
-//    grid_key_dx<2,int> start3({500000+rBig,500000});
-//    sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-//    CUDA_LAUNCH_DIM3((insertSphere<0>),
-//                     gridSize, dim3(blockEdgeSize*blockEdgeSize,1,1),
-//                     sparseGrid.toKernel(), start3, rBig3, rSmall3, 1);
-//    cudaDeviceSynchronize();
-//    sparseGrid.template flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-//    cudaDeviceSynchronize();
-//    ///// /////
-//
-//    sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
-//    sparseGrid.tagBoundaries();
-//
-//    sparseGrid.template deviceToHost<0>(); // NECESSARY as count takes place on Host!
-//    auto existingElements = sparseGrid.countExistingElements();
-//    auto boundaryElements = sparseGrid.countBoundaryElements();
-//    unsigned long long numElements = existingElements - boundaryElements;
-//
-//    // Now apply some boundary conditions
-//    sparseGrid.template applyBoundaryStencils<BoundaryStencilSetXRescaled<dim,0,0>>(
-//            500000, 500000+(2*rBig),
-//            0.0, 10.0);
-//    cudaDeviceSynchronize();
-//
-//    for (unsigned int iter=0; iter<iterations; ++iter)
-//    {
-//        cudaDeviceSynchronize();
-//
-//        timer ts;
-//        ts.start();
-//
-//        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
-//        cudaDeviceSynchronize();
-//        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
-//        cudaDeviceSynchronize();
-//
-//        ts.stop();
-//
-//        measures_tm.add(ts.getwct());
-//
-//        float gElemS = numElements / (1e9 * ts.getwct());
-//        float gFlopsS = gElemS * Stencil01T::flops;
-//
-//        measures_gf.add(gFlopsS);
-//    }
-//
-//    double mean_tm = 0;
-//    double deviation_tm = 0;
-//    standard_deviation(measures_tm,mean_tm,deviation_tm);
-//
-//    double mean_gf = 0;
-//    double deviation_gf = 0;
-//    standard_deviation(measures_gf,mean_gf,deviation_gf);
-//
-//    // All times above are in ms
-//
-//    float gElemS = numElements / (1e9 * mean_tm);
-//    float gFlopsS = gElemS * Stencil01T::flops;
-//    std::cout << "Test: " << testName << std::endl;
-//    std::cout << "Block: " << blockEdgeSize << "x" << blockEdgeSize << std::endl;
-//    std::cout << "Grid: " << gridEdgeSize*blockEdgeSize << "x" << gridEdgeSize*blockEdgeSize << std::endl;
-//    double dataOccupancyMean, dataOccupancyDev;
-//    sparseGrid.deviceToHost();
-//    sparseGrid.measureBlockOccupancy(dataOccupancyMean, dataOccupancyDev);std::cout << "Data Occupancy: " << dataOccupancyMean << " dev:" << dataOccupancyDev << std::endl;
-//    report_sparsegrid_funcs.graphs.put(base + ".dataOccupancy.mean",dataOccupancyMean);
-//    report_sparsegrid_funcs.graphs.put(base +".dataOccupancy.dev",dataOccupancyDev);
-//    std::cout << "Iterations: " << iterations << std::endl;
-//    std::cout << "\tStencil: " << mean_gf << " dev:" << deviation_gf << " s" << std::endl;
-//    std::cout << "Throughput: " << std::endl << "\t " << gElemS << " GElem/s " << std::endl << "\t " << gFlopsS << " GFlops/s" << std::endl;
-//
-//    report_sparsegrid_funcs.graphs.put(base + ".GFlops.mean",mean_gf);
-//    report_sparsegrid_funcs.graphs.put(base +".GFlops.dev",deviation_gf);
-//    report_sparsegrid_funcs.graphs.put(base + ".time.mean",mean_tm);
-//    report_sparsegrid_funcs.graphs.put(base +".time.dev",deviation_tm);
-//
-////    // DEBUG
-////    sparseGrid.template deviceToHost<0,1>();
-////    sparseGrid.write("SparseGridGPU_testStencilHeatSparse_perf_DEBUG.vtk");
-//}
 template<unsigned int blockEdgeSize, unsigned int gridEdgeSize, typename SparseGridZ>
 void testStencilHeatSparse_perf(unsigned int i, std::string base, float fillMultiplier=1, float voidMultiplier=1)
 {
@@ -772,6 +642,7 @@ void testStencilHeatSparse_perf(unsigned int i, std::string base, float fillMult
             0.0, 10.0);
     cudaDeviceSynchronize();
 
+    iterations /= 2;
     for (unsigned int iter=0; iter<iterations; ++iter)
     {
         cudaDeviceSynchronize();
@@ -788,7 +659,7 @@ void testStencilHeatSparse_perf(unsigned int i, std::string base, float fillMult
 
         measures_tm.add(ts.getwct());
 
-        float gElemS = numElements / (1e9 * ts.getwct());
+        float gElemS = 2 * numElements / (1e9 * ts.getwct());
         float gFlopsS = gElemS * Stencil01T::flops;
 
         measures_gf.add(gFlopsS);
@@ -804,7 +675,7 @@ void testStencilHeatSparse_perf(unsigned int i, std::string base, float fillMult
 
     // All times above are in ms
 
-    float gElemS = numElements / (1e9 * mean_tm);
+    float gElemS =  2 * numElements / (1e9 * mean_tm);
     float gFlopsS = gElemS * Stencil01T::flops;
     std::cout << "Test: " << testName << std::endl;
     std::cout << "Block: " << blockEdgeSize << "x" << blockEdgeSize << std::endl;
@@ -860,153 +731,6 @@ void launch_testStencilHeatSparseZ_perf(std::string testURI, unsigned int i,
     cudaDeviceSynchronize();
 }
 
-//template<unsigned int blockEdgeSize, unsigned int gridEdgeSize, typename SparseGridZ>
-//void testStencilHeat3DSparse_perf(unsigned int i, std::string base)
-//{
-//    auto testName = "In-place 3D sparse stencil";
-////    unsigned int gridEdgeSize = 32;
-//    constexpr unsigned int dim = SparseGridZ::dims;
-////    const unsigned int blockEdgeSize = SparseGridZ::blockEdgeSize_;
-//
-//    typedef HeatStencil<dim, 0, 1> Stencil01T;
-//    typedef HeatStencil<dim, 1, 0> Stencil10T;
-//
-////    std::string base("performance.SparseGridGpu(" + std::to_string(i) + ").stencil");
-//
-//    report_sparsegrid_funcs.graphs.put(base + ".dim",dim);
-//    report_sparsegrid_funcs.graphs.put(base + ".blockSize",blockEdgeSize);
-//    report_sparsegrid_funcs.graphs.put(base + ".gridSize.x", gridEdgeSize * blockEdgeSize);
-//    report_sparsegrid_funcs.graphs.put(base + ".gridSize.y", gridEdgeSize * blockEdgeSize);
-//    report_sparsegrid_funcs.graphs.put(base + ".gridSize.z", gridEdgeSize * blockEdgeSize);
-//
-//    unsigned int iterations = 100;
-//
-//    openfpm::vector<double> measures_gf;
-//    openfpm::vector<double> measures_tm;
-//
-//    dim3 gridSize(gridEdgeSize, gridEdgeSize, gridEdgeSize);
-//    dim3 blockSize(blockEdgeSize, blockEdgeSize, blockEdgeSize);
-//    unsigned int spatialEdgeSize = 10000;
-//    size_t sz[3] = {spatialEdgeSize, spatialEdgeSize, spatialEdgeSize};
-//    typename SparseGridZ::grid_info blockGeometry(sz);
-//    SparseGridZ sparseGrid(blockGeometry);
-//    mgpu::ofp_context_t ctx;
-//    sparseGrid.template setBackgroundValue<0>(0);
-//
-//    ///// Insert sparse content, a set of 3 hollow spheres /////
-//    constexpr unsigned int rBig = gridEdgeSize * blockEdgeSize / 2;
-//    constexpr unsigned int rSmall = rBig/2;
-//    constexpr unsigned int rBig2 = rBig;
-//    constexpr unsigned int rSmall2 = rBig2 - (rBig2/3);
-//    constexpr unsigned int rBig3 = rBig/4;
-//    constexpr unsigned int rSmall3 = rBig3 - (rBig3/4);
-//    // Sphere 1
-//    unsigned int centerPoint = spatialEdgeSize/2;
-//    grid_key_dx<dim,int> start1({centerPoint, centerPoint, centerPoint});
-//    sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-//    CUDA_LAUNCH_DIM3((insertSphere3D<0>),
-//                     gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
-//                     sparseGrid.toKernel(), start1, rBig, rSmall, 1);
-//    cudaDeviceSynchronize();
-//    sparseGrid.template flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-//    cudaDeviceSynchronize();
-//
-//    sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
-//    sparseGrid.tagBoundaries();
-//
-//    // Sphere 2
-//    grid_key_dx<dim,int> start2({centerPoint - rBig, centerPoint - rBig, centerPoint - rBig});
-//    sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-//    CUDA_LAUNCH_DIM3((insertSphere3D<0>),
-//                     gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
-//                     sparseGrid.toKernel(), start2, rBig2, rSmall2, 1);
-//    cudaDeviceSynchronize();
-//    sparseGrid.template flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-//    cudaDeviceSynchronize();
-//
-//    // Sphere 3
-//    grid_key_dx<dim,int> start3({centerPoint + rBig, centerPoint - rBig, centerPoint - rBig});
-//    sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-//    CUDA_LAUNCH_DIM3((insertSphere3D<0>),
-//                     gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
-//                     sparseGrid.toKernel(), start3, rBig3, rSmall3, 1);
-//    cudaDeviceSynchronize();
-//    sparseGrid.template flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-//    cudaDeviceSynchronize();
-//    ///// /////
-//
-//    sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
-//    sparseGrid.tagBoundaries();
-//
-//    sparseGrid.template deviceToHost<0>(); // NECESSARY as count takes place on Host!
-//    auto existingElements = sparseGrid.countExistingElements();
-//    auto boundaryElements = sparseGrid.countBoundaryElements();
-//    unsigned long long numElements = existingElements - boundaryElements;
-//
-//    // Now apply some boundary conditions
-//    sparseGrid.template applyBoundaryStencils<BoundaryStencilSetXRescaled<dim,0,0>>(
-//            centerPoint - rBig, centerPoint + (2 * rBig),
-//            0.0, 10.0);
-//    cudaDeviceSynchronize();
-//
-//    for (unsigned int iter=0; iter<iterations; ++iter)
-//    {
-//        cudaDeviceSynchronize();
-//
-//        timer ts;
-//        ts.start();
-//
-//        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
-//        cudaDeviceSynchronize();
-//        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
-//        cudaDeviceSynchronize();
-//
-//        ts.stop();
-//
-//        measures_tm.add(ts.getwct());
-//
-//        float gElemS = numElements / (1e9 * ts.getwct());
-//        float gFlopsS = gElemS * Stencil01T::flops;
-//
-//        measures_gf.add(gFlopsS);
-//    }
-//
-//    double mean_tm = 0;
-//    double deviation_tm = 0;
-//    standard_deviation(measures_tm,mean_tm,deviation_tm);
-//
-//    double mean_gf = 0;
-//    double deviation_gf = 0;
-//    standard_deviation(measures_gf,mean_gf,deviation_gf);
-//
-//    // All times above are in ms
-//
-//    float gElemS = numElements / (1e9 * mean_tm);
-//    float gFlopsS = gElemS * Stencil01T::flops;
-//    std::cout << "Test: " << testName << std::endl;
-//    std::cout << "Block: " << blockEdgeSize << "x" << blockEdgeSize << "x" << blockEdgeSize << std::endl;
-//    std::cout << "Grid: " << gridEdgeSize * blockEdgeSize
-//              << "x" << gridEdgeSize * blockEdgeSize
-//              << "x" << gridEdgeSize * blockEdgeSize
-//              << std::endl;
-//    double dataOccupancyMean, dataOccupancyDev;
-//    sparseGrid.deviceToHost();
-//    sparseGrid.measureBlockOccupancy(dataOccupancyMean, dataOccupancyDev);std::cout << "Data Occupancy: " << dataOccupancyMean << " dev:" << dataOccupancyDev << std::endl;
-//    report_sparsegrid_funcs.graphs.put(base + ".dataOccupancy.mean",dataOccupancyMean);
-//    report_sparsegrid_funcs.graphs.put(base +".dataOccupancy.dev",dataOccupancyDev);
-//    std::cout << "Iterations: " << iterations << std::endl;
-//    std::cout << "\tStencil: " << mean_gf << " dev:" << deviation_gf << " s" << std::endl;
-//    std::cout << "Throughput: " << std::endl << "\t " << gElemS << " GElem/s " << std::endl << "\t " << gFlopsS << " GFlops/s" << std::endl;
-//
-//    report_sparsegrid_funcs.graphs.put(base + ".GFlops.mean",mean_gf);
-//    report_sparsegrid_funcs.graphs.put(base +".GFlops.dev",deviation_gf);
-//    report_sparsegrid_funcs.graphs.put(base + ".time.mean",mean_tm);
-//    report_sparsegrid_funcs.graphs.put(base +".time.dev",deviation_tm);
-//
-////    // DEBUG
-////    sparseGrid.template deviceToHost<0,1>();
-////    sparseGrid.write("SparseGridGPU_testStencilHeat3DSparse_perf_DEBUG.vtk");
-//}
 template<unsigned int blockEdgeSize, unsigned int gridEdgeSize, typename SparseGridZ>
 void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMultiplier=1, float voidMultiplier=1)
 {
@@ -1075,6 +799,7 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMu
             0.0, 10.0);
     cudaDeviceSynchronize();
 
+    iterations /= 2;
     for (unsigned int iter=0; iter<iterations; ++iter)
     {
         cudaDeviceSynchronize();
@@ -1091,7 +816,7 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMu
 
         measures_tm.add(ts.getwct());
 
-        float gElemS = numElements / (1e9 * ts.getwct());
+        float gElemS = 2 * numElements / (1e9 * ts.getwct());
         float gFlopsS = gElemS * Stencil01T::flops;
 
         measures_gf.add(gFlopsS);
@@ -1107,7 +832,7 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMu
 
     // All times above are in ms
 
-    float gElemS = numElements / (1e9 * mean_tm);
+    float gElemS = 2 * numElements / (1e9 * mean_tm);
     float gFlopsS = gElemS * Stencil01T::flops;
     std::cout << "Test: " << testName << std::endl;
     std::cout << "Block: " << blockEdgeSize << "x" << blockEdgeSize << "x" << blockEdgeSize << std::endl;
@@ -1156,7 +881,9 @@ void testStencilHeatHost_perf(unsigned int i, std::string base)
     // todo: Make sure to reimplement the host stencil application function to pre-load to a block of memory both content and ghost
     // this way we can avoid binary searches...
     auto testName = "In-place stencil HOST";
-    typedef HeatStencil<SparseGridZ::dims,0,1> StencilT;
+    typedef HeatStencil<SparseGridZ::dims,0,1> Stencil01T;
+    typedef HeatStencil<SparseGridZ::dims,1,0> Stencil10T;
+
 
     constexpr unsigned int dim = 2;
 
@@ -1197,8 +924,9 @@ void testStencilHeatHost_perf(unsigned int i, std::string base)
     sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
     cudaDeviceSynchronize();
 
-    sparseGrid.template deviceToHost<0>();
+    sparseGrid.template deviceToHost<0,1>();
 
+    iterations /= 2;
     for (unsigned int iter=0; iter<iterations; ++iter)
     {
         cudaDeviceSynchronize();
@@ -1206,15 +934,17 @@ void testStencilHeatHost_perf(unsigned int i, std::string base)
         timer ts;
         ts.start();
 
-        sparseGrid.template applyStencilsHost<StencilT>(STENCIL_MODE_INPLACE, 0.1);
-
+        sparseGrid.template applyStencilsHost<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
+        sparseGrid.template applyStencilsHost<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
+        cudaDeviceSynchronize();
+
         ts.stop();
 
         measures_tm.add(ts.getwct());
 
-        float gElemS = numElements / (1e9 * ts.getwct());
-        float gFlopsS = gElemS * StencilT::flops;
+        float gElemS = 2 * numElements / (1e9 * ts.getwct());
+        float gFlopsS = gElemS * Stencil01T::flops;
 
         measures_gf.add(gFlopsS);
     }
@@ -1229,8 +959,8 @@ void testStencilHeatHost_perf(unsigned int i, std::string base)
 
     // All times above are in ms
 
-    float gElemS = numElements / (1e9 * mean_tm);
-    float gFlopsS = gElemS * StencilT::flops;
+    float gElemS = 2 * numElements / (1e9 * mean_tm);
+    float gFlopsS = gElemS * Stencil01T::flops;
 
     std::cout << "Test: " << testName << std::endl;
     std::cout << "Host: " << SparseGridZ::blockEdgeSize_ << "x" << SparseGridZ::blockEdgeSize_ << std::endl;
@@ -1268,33 +998,32 @@ BOOST_AUTO_TEST_SUITE(performance, *boost::unit_test::fixture<Fixture>())
 
 BOOST_AUTO_TEST_SUITE(SparseGridGpu_test)
 
-//BOOST_AUTO_TEST_CASE(testStencilHeatHost_gridScaling)
-//{
-//    std::string testURI = suiteURI + ".host.stencil.dense.N.2D.gridScaling";
-//    unsigned int counter = 0;
-//    launch_testStencilHeatHost_perf<8, 128>(testURI, counter++);
-//    launch_testStencilHeatHost_perf<8, 256>(testURI, counter++);
-//    launch_testStencilHeatHost_perf<8, 512>(testURI, counter++);
-//    launch_testStencilHeatHost_perf<8, 1024>(testURI, counter++);
-////    launch_testStencilHeatHost_perf<8, 2048>(testURI, counter++);
+BOOST_AUTO_TEST_CASE(testStencilHeatHost_gridScaling)
+{
+   std::string testURI = suiteURI + ".host.stencil.dense.N.2D.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeatHost_perf<8, 128>(testURI, counter++);
+   launch_testStencilHeatHost_perf<8, 256>(testURI, counter++);
+   launch_testStencilHeatHost_perf<8, 512>(testURI, counter++);
+   launch_testStencilHeatHost_perf<8, 1024>(testURI, counter++);
 
-//    testSet.insert(testURI);
-//}
-//
-//BOOST_AUTO_TEST_CASE(testStencilHeatHost_blockScaling)
-//{
-//    std::string testURI = suiteURI + ".host.stencil.dense.N.2D.blockScaling";
-//    unsigned int counter = 0;
-//    launch_testStencilHeatHost_perf<4, 2048>(testURI, counter++);
-//    launch_testStencilHeatHost_perf<8, 1024>(testURI, counter++);
-//    launch_testStencilHeatHost_perf<16, 512>(testURI, counter++);
-//    launch_testStencilHeatHost_perf<32, 256>(testURI, counter++);
+   testSet.insert(testURI);
+}
 
-//    testSet.insert(testURI);
-//}
+BOOST_AUTO_TEST_CASE(testStencilHeatHost_blockScaling)
+{
+   std::string testURI = suiteURI + ".host.stencil.dense.N.2D.blockScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeatHost_perf<4, 2048>(testURI, counter++);
+   launch_testStencilHeatHost_perf<8, 1024>(testURI, counter++);
+   launch_testStencilHeatHost_perf<16, 512>(testURI, counter++);
+   launch_testStencilHeatHost_perf<32, 256>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
 
 BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling)
-//BOOST_AUTO_TEST_CASE(testStencilHeatSparse10_gridScaling)
+// BOOST_AUTO_TEST_CASE(testStencilHeatSparse10_gridScaling)
 {
     std::string testURI = suiteURI + ".device.stencil.dense.N.2D.gridScaling";
     unsigned int counter = 0;
@@ -1306,6 +1035,66 @@ BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling)
 //    launch_testStencilHeat_perf<blockEdgeSize, 2048>(testURI, counter++);
 
     testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling_2)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.N.2D.2.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeat_perf<2, 512>(testURI, counter++);
+   launch_testStencilHeat_perf<2, 1024>(testURI, counter++);
+   launch_testStencilHeat_perf<2, 2048>(testURI, counter++);
+   // launch_testStencilHeat_perf<2, 4096>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling_4)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.N.2D.4.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeat_perf<4, 256>(testURI, counter++);
+   launch_testStencilHeat_perf<4, 512>(testURI, counter++);
+   launch_testStencilHeat_perf<4, 1024>(testURI, counter++);
+   launch_testStencilHeat_perf<4, 2048>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling_8)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.N.2D.8.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeat_perf<8, 128>(testURI, counter++);
+   launch_testStencilHeat_perf<8, 256>(testURI, counter++);
+   launch_testStencilHeat_perf<8, 512>(testURI, counter++);
+   launch_testStencilHeat_perf<8, 1024>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling_16)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.N.2D.16.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeat_perf<16, 64>(testURI, counter++);
+   launch_testStencilHeat_perf<16, 128>(testURI, counter++);
+   launch_testStencilHeat_perf<16, 256>(testURI, counter++);
+   launch_testStencilHeat_perf<16, 512>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling_32)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.N.2D.32.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeat_perf<32, 32>(testURI, counter++);
+   launch_testStencilHeat_perf<32, 64>(testURI, counter++);
+   launch_testStencilHeat_perf<32, 128>(testURI, counter++);
+   // launch_testStencilHeat_perf<32, 512>(testURI, counter++);
+
+   testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testStencilHeat_blockScaling)
@@ -1335,6 +1124,66 @@ BOOST_AUTO_TEST_CASE(testStencilHeatZ_gridScaling)
     testSet.insert(testURI);
 }
 
+BOOST_AUTO_TEST_CASE(testStencilHeatZ_gridScaling_2)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.Z.2D.2.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeatZ_perf<2, 512>(testURI, counter++);
+   launch_testStencilHeatZ_perf<2, 1024>(testURI, counter++);
+   launch_testStencilHeatZ_perf<2, 2048>(testURI, counter++);
+   // launch_testStencilHeatZ_perf<2, 4096>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeatZ_gridScaling_4)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.Z.2D.4.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeatZ_perf<4, 256>(testURI, counter++);
+   launch_testStencilHeatZ_perf<4, 512>(testURI, counter++);
+   launch_testStencilHeatZ_perf<4, 1024>(testURI, counter++);
+   launch_testStencilHeatZ_perf<4, 2048>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeatZ_gridScaling_8)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.Z.2D.8.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeatZ_perf<8, 128>(testURI, counter++);
+   launch_testStencilHeatZ_perf<8, 256>(testURI, counter++);
+   launch_testStencilHeatZ_perf<8, 512>(testURI, counter++);
+   launch_testStencilHeatZ_perf<8, 1024>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeatZ_gridScaling_16)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.Z.2D.16.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeatZ_perf<16, 64>(testURI, counter++);
+   launch_testStencilHeatZ_perf<16, 128>(testURI, counter++);
+   launch_testStencilHeatZ_perf<16, 256>(testURI, counter++);
+   launch_testStencilHeatZ_perf<16, 512>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeatZ_gridScaling_32)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.Z.2D.32.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeatZ_perf<32, 32>(testURI, counter++);
+   launch_testStencilHeatZ_perf<32, 64>(testURI, counter++);
+   launch_testStencilHeatZ_perf<32, 128>(testURI, counter++);
+   // launch_testStencilHeatZ_perf<32, 512>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
 BOOST_AUTO_TEST_CASE(testStencilHeatZ_blockScaling)
 {
     std::string testURI = suiteURI + ".device.stencil.dense.Z.2D.blockScaling";
@@ -1360,6 +1209,42 @@ BOOST_AUTO_TEST_CASE(testStencilHeat3D_gridScaling)
 //    launch_testStencilHeat3D_perf<blockEdgeSize, 128>(testURI, counter++);
 
     testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeat3D_gridScaling_2)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.N.3D.2.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeat3D_perf<2, 32>(testURI, counter++);
+   launch_testStencilHeat3D_perf<2, 64>(testURI, counter++);
+   launch_testStencilHeat3D_perf<2, 128>(testURI, counter++);
+   // launch_testStencilHeat3D_perf<2, 256>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeat3D_gridScaling_4)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.N.3D.4.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeat3D_perf<4, 16>(testURI, counter++);
+   launch_testStencilHeat3D_perf<4, 32>(testURI, counter++);
+   launch_testStencilHeat3D_perf<4, 64>(testURI, counter++);
+   launch_testStencilHeat3D_perf<4, 128>(testURI, counter++);
+
+   testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeat3D_gridScaling_8)
+{
+   std::string testURI = suiteURI + ".device.stencil.dense.N.3D.8.gridScaling";
+   unsigned int counter = 0;
+   launch_testStencilHeat3D_perf<8, 8>(testURI, counter++);
+   launch_testStencilHeat3D_perf<8, 16>(testURI, counter++);
+   launch_testStencilHeat3D_perf<8, 32>(testURI, counter++);
+   launch_testStencilHeat3D_perf<8, 64>(testURI, counter++);
+
+   testSet.insert(testURI);
 }
 
 BOOST_AUTO_TEST_CASE(testStencilHeat3D_blockScaling)
@@ -1392,160 +1277,160 @@ BOOST_AUTO_TEST_CASE(testStencilHeatSparse05_gridScaling)
     std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.05.gridScaling";
     unsigned int counter = 0;
     constexpr unsigned int blockEdgeSize = 8;
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 128>(testURI, counter++, 1, 1, "05");
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 256>(testURI, counter++, 1, 1, "05");
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 512>(testURI, counter++, 1, 1, "05");
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 1, "05");
-////    launch_testStencilHeatSparse_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 1, "05);
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 128>(testURI, counter++, 1.45, 1, "05");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 256>(testURI, counter++, 1.45, 1, "05");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 512>(testURI, counter++, 1.45, 1, "05");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 1024>(testURI, counter++, 1.45, 1, "05");
+////    launch_testStencilHeatSparse_perf<blockEdgeSize, 2048>(testURI, counter++, 1.45, 1, "05);
 
     testSet.insert(testURI);
 }
-BOOST_AUTO_TEST_CASE(testStencilHeatSparse05_blockScaling)
-{
-    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.05.blockScaling";
-    unsigned int counter = 0;
-    // Note - blockEdgeSize == 2 doesn't work
-    launch_testStencilHeatSparse_perf<2, 2048>(testURI, counter++, 1, 1, "05");
-    launch_testStencilHeatSparse_perf<4, 1024>(testURI, counter++, 1, 1, "05");
-    launch_testStencilHeatSparse_perf<8, 512>(testURI, counter++, 1, 1, "05");
-    launch_testStencilHeatSparse_perf<16, 256>(testURI, counter++, 1, 1, "05");
-    launch_testStencilHeatSparse_perf<32, 128>(testURI, counter++, 1, 1, "05");
+// BOOST_AUTO_TEST_CASE(testStencilHeatSparse05_blockScaling)
+// {
+//     std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.05.blockScaling";
+//     unsigned int counter = 0;
+//     // Note - blockEdgeSize == 2 doesn't work
+//     // launch_testStencilHeatSparse_perf<2, 2048>(testURI, counter++, 1.45, 1, "05");
+//     launch_testStencilHeatSparse_perf<4, 1024>(testURI, counter++, 1.45, 1, "05");
+//     // launch_testStencilHeatSparse_perf<8, 512>(testURI, counter++, 1.45, 1, "05");
+//     // launch_testStencilHeatSparse_perf<16, 256>(testURI, counter++, 1.45, 1, "05");
+//     // launch_testStencilHeatSparse_perf<32, 128>(testURI, counter++, 1.45, 1, "05");
 
-    testSet.insert(testURI);
-}
+//     testSet.insert(testURI);
+// }
 
 BOOST_AUTO_TEST_CASE(testStencilHeatSparse08_gridScaling)
 {
     std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.08.gridScaling";
     unsigned int counter = 0;
     constexpr unsigned int blockEdgeSize = 8;
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 128>(testURI, counter++, 1, 0.25, "08");
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 256>(testURI, counter++, 1, 0.25, "08");
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 512>(testURI, counter++, 1, 0.25, "08");
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 0.25, "08");
-////    launch_testStencilHeatSparse_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 0.25, "08");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 128>(testURI, counter++, 2, 0.20, "08");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 256>(testURI, counter++, 2, 0.20, "08");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 512>(testURI, counter++, 2, 0.20, "08");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 1024>(testURI, counter++, 2, 0.20, "08");
+////    launch_testStencilHeatSparse_perf<blockEdgeSize, 2048>(testURI, counter++, 2, 0.20, "08");
 
     testSet.insert(testURI);
 }
-BOOST_AUTO_TEST_CASE(testStencilHeatSparse08_blockScaling)
-{
-    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.08.blockScaling";
-    unsigned int counter = 0;
-    launch_testStencilHeatSparse_perf<2, 2048>(testURI, counter++, 1, 0.25, "08");
-    launch_testStencilHeatSparse_perf<4, 1024>(testURI, counter++, 1, 0.25, "08");
-    launch_testStencilHeatSparse_perf<8, 512>(testURI, counter++, 1, 0.25, "08");
-    launch_testStencilHeatSparse_perf<16, 256>(testURI, counter++, 1, 0.25, "08");
-    launch_testStencilHeatSparse_perf<32, 128>(testURI, counter++, 1, 0.25, "08");
+// BOOST_AUTO_TEST_CASE(testStencilHeatSparse08_blockScaling)
+// {
+//     std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.08.blockScaling";
+//     unsigned int counter = 0;
+//     launch_testStencilHeatSparse_perf<2, 2048>(testURI, counter++, 2, 0.20, "08");
+//     launch_testStencilHeatSparse_perf<4, 1024>(testURI, counter++, 2, 0.20, "08");
+//     launch_testStencilHeatSparse_perf<8, 512>(testURI, counter++, 2, 0.20, "08");
+//     launch_testStencilHeatSparse_perf<16, 256>(testURI, counter++, 2, 0.20, "08");
+//     launch_testStencilHeatSparse_perf<32, 128>(testURI, counter++, 2, 0.20, "08");
 
-    testSet.insert(testURI);
-}
+//     testSet.insert(testURI);
+// }
 
 BOOST_AUTO_TEST_CASE(testStencilHeatSparse09_gridScaling)
 {
     std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.09.gridScaling";
     unsigned int counter = 0;
     constexpr unsigned int blockEdgeSize = 8;
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 128>(testURI, counter++, 1, 0.1, "09");
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 256>(testURI, counter++, 1, 0.1, "09");
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 512>(testURI, counter++, 1, 0.1, "09");
-    launch_testStencilHeatSparse_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 0.1, "09");
-////    launch_testStencilHeatSparse_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 0.1, "09");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 128>(testURI, counter++, 2.3, 0.07, "09");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 256>(testURI, counter++, 2.3, 0.07, "09");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 512>(testURI, counter++, 2.3, 0.07, "09");
+    launch_testStencilHeatSparse_perf<blockEdgeSize, 1024>(testURI, counter++, 2.3, 0.07, "09");
+////    launch_testStencilHeatSparse_perf<blockEdgeSize, 2048>(testURI, counter++, 2.3, 0.07, "09");
 
     testSet.insert(testURI);
 }
-BOOST_AUTO_TEST_CASE(testStencilHeatSparse09_blockScaling)
-{
-    std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.09.blockScaling";
-    unsigned int counter = 0;
-    // Note - blockEdgeSize == 2 doesn't work
-    launch_testStencilHeatSparse_perf<2, 2048>(testURI, counter++, 1, 0.1, "09");
-    launch_testStencilHeatSparse_perf<4, 1024>(testURI, counter++, 1, 0.1, "09");
-    launch_testStencilHeatSparse_perf<8, 512>(testURI, counter++, 1, 0.1, "09");
-    launch_testStencilHeatSparse_perf<16, 256>(testURI, counter++, 1, 0.1, "09");
-    launch_testStencilHeatSparse_perf<32, 128>(testURI, counter++, 1, 0.1, "09");
+// BOOST_AUTO_TEST_CASE(testStencilHeatSparse09_blockScaling)
+// {
+//     std::string testURI = suiteURI + ".device.stencil.sparse.N.2D.09.blockScaling";
+//     unsigned int counter = 0;
+//     // Note - blockEdgeSize == 2 doesn't work
+//     launch_testStencilHeatSparse_perf<2, 2048>(testURI, counter++, 1, 0.1, "09");
+//     launch_testStencilHeatSparse_perf<4, 1024>(testURI, counter++, 1, 0.1, "09");
+//     launch_testStencilHeatSparse_perf<8, 512>(testURI, counter++, 1, 0.1, "09");
+//     launch_testStencilHeatSparse_perf<16, 256>(testURI, counter++, 1, 0.1, "09");
+//     launch_testStencilHeatSparse_perf<32, 128>(testURI, counter++, 1, 0.1, "09");
 
-    testSet.insert(testURI);
-}
+//     testSet.insert(testURI);
+// }
 
         BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ05_gridScaling)
         {
             std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.05.gridScaling";
             unsigned int counter = 0;
             constexpr unsigned int blockEdgeSize = 8;
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 128>(testURI, counter++, 1, 1, "05");
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 256>(testURI, counter++, 1, 1, "05");
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 512>(testURI, counter++, 1, 1, "05");
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 1, "05");
-////    launch_testStencilHeatSparseZ_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 1, "05);
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 128>(testURI, counter++, 1.45, 1, "05");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 256>(testURI, counter++, 1.45, 1, "05");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 512>(testURI, counter++, 1.45, 1, "05");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 1024>(testURI, counter++, 1.45, 1, "05");
+////    launch_testStencilHeatSparseZ_perf<blockEdgeSize, 2048>(testURI, counter++, 1.45, 1, "05);
 
             testSet.insert(testURI);
         }
-        BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ05_blockScaling)
-        {
-            std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.05.blockScaling";
-            unsigned int counter = 0;
-            // Note - blockEdgeSize == 2 doesn't work
-            launch_testStencilHeatSparseZ_perf<2, 2048>(testURI, counter++, 1, 1, "05");
-            launch_testStencilHeatSparseZ_perf<4, 1024>(testURI, counter++, 1, 1, "05");
-            launch_testStencilHeatSparseZ_perf<8, 512>(testURI, counter++, 1, 1, "05");
-            launch_testStencilHeatSparseZ_perf<16, 256>(testURI, counter++, 1, 1, "05");
-            launch_testStencilHeatSparseZ_perf<32, 128>(testURI, counter++, 1, 1, "05");
+        // BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ05_blockScaling)
+        // {
+        //     std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.05.blockScaling";
+        //     unsigned int counter = 0;
+        //     // Note - blockEdgeSize == 2 doesn't work
+        //     launch_testStencilHeatSparseZ_perf<2, 2048>(testURI, counter++, 1, 1, "05");
+        //     launch_testStencilHeatSparseZ_perf<4, 1024>(testURI, counter++, 1, 1, "05");
+        //     launch_testStencilHeatSparseZ_perf<8, 512>(testURI, counter++, 1, 1, "05");
+        //     launch_testStencilHeatSparseZ_perf<16, 256>(testURI, counter++, 1, 1, "05");
+        //     launch_testStencilHeatSparseZ_perf<32, 128>(testURI, counter++, 1, 1, "05");
 
-            testSet.insert(testURI);
-        }
+        //     testSet.insert(testURI);
+        // }
 
         BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ08_gridScaling)
         {
             std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.08.gridScaling";
             unsigned int counter = 0;
             constexpr unsigned int blockEdgeSize = 8;
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 128>(testURI, counter++, 1, 0.25, "08");
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 256>(testURI, counter++, 1, 0.25, "08");
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 512>(testURI, counter++, 1, 0.25, "08");
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 0.25, "08");
-////    launch_testStencilHeatSparseZ_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 0.25, "08");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 128>(testURI, counter++, 2, 0.20, "08");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 256>(testURI, counter++, 2, 0.20, "08");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 512>(testURI, counter++, 2, 0.20, "08");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 1024>(testURI, counter++, 2, 0.20, "08");
+////    launch_testStencilHeatSparseZ_perf<blockEdgeSize, 2048>(testURI, counter++, 2, 0.20, "08");
 
             testSet.insert(testURI);
         }
-        BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ08_blockScaling)
-        {
-            std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.08.blockScaling";
-            unsigned int counter = 0;
-            launch_testStencilHeatSparseZ_perf<2, 2048>(testURI, counter++, 1, 0.25, "08");
-            launch_testStencilHeatSparseZ_perf<4, 1024>(testURI, counter++, 1, 0.25, "08");
-            launch_testStencilHeatSparseZ_perf<8, 512>(testURI, counter++, 1, 0.25, "08");
-            launch_testStencilHeatSparseZ_perf<16, 256>(testURI, counter++, 1, 0.25, "08");
-            launch_testStencilHeatSparseZ_perf<32, 128>(testURI, counter++, 1, 0.25, "08");
+        // BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ08_blockScaling)
+        // {
+        //     std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.08.blockScaling";
+        //     unsigned int counter = 0;
+        //     launch_testStencilHeatSparseZ_perf<2, 2048>(testURI, counter++, 1, 0.25, "08");
+        //     launch_testStencilHeatSparseZ_perf<4, 1024>(testURI, counter++, 1, 0.25, "08");
+        //     launch_testStencilHeatSparseZ_perf<8, 512>(testURI, counter++, 1, 0.25, "08");
+        //     launch_testStencilHeatSparseZ_perf<16, 256>(testURI, counter++, 1, 0.25, "08");
+        //     launch_testStencilHeatSparseZ_perf<32, 128>(testURI, counter++, 1, 0.25, "08");
 
-            testSet.insert(testURI);
-        }
+        //     testSet.insert(testURI);
+        // }
 
         BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ09_gridScaling)
         {
             std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.09.gridScaling";
             unsigned int counter = 0;
             constexpr unsigned int blockEdgeSize = 8;
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 128>(testURI, counter++, 1, 0.1, "09");
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 256>(testURI, counter++, 1, 0.1, "09");
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 512>(testURI, counter++, 1, 0.1, "09");
-            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 1024>(testURI, counter++, 1, 0.1, "09");
-////    launch_testStencilHeatSparseZ_perf<blockEdgeSize, 2048>(testURI, counter++, 1, 0.1, "09");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 128>(testURI, counter++, 2.3, 0.07, "09");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 256>(testURI, counter++, 2.3, 0.07, "09");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 512>(testURI, counter++, 2.3, 0.07, "09");
+            launch_testStencilHeatSparseZ_perf<blockEdgeSize, 1024>(testURI, counter++, 2.3, 0.07, "09");
+////    launch_testStencilHeatSparseZ_perf<blockEdgeSize, 2048>(testURI, counter++, 2.3, 0.07, "09");
 
             testSet.insert(testURI);
         }
-        BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ09_blockScaling)
-        {
-            std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.09.blockScaling";
-            unsigned int counter = 0;
-            // Note - blockEdgeSize == 2 doesn't work
-            launch_testStencilHeatSparseZ_perf<2, 2048>(testURI, counter++, 1, 0.1, "09");
-            launch_testStencilHeatSparseZ_perf<4, 1024>(testURI, counter++, 1, 0.1, "09");
-            launch_testStencilHeatSparseZ_perf<8, 512>(testURI, counter++, 1, 0.1, "09");
-            launch_testStencilHeatSparseZ_perf<16, 256>(testURI, counter++, 1, 0.1, "09");
-            launch_testStencilHeatSparseZ_perf<32, 128>(testURI, counter++, 1, 0.1, "09");
+        // BOOST_AUTO_TEST_CASE(testStencilHeatSparseZ09_blockScaling)
+        // {
+        //     std::string testURI = suiteURI + ".device.stencil.sparse.Z.2D.09.blockScaling";
+        //     unsigned int counter = 0;
+        //     // Note - blockEdgeSize == 2 doesn't work
+        //     launch_testStencilHeatSparseZ_perf<2, 2048>(testURI, counter++, 1, 0.1, "09");
+        //     launch_testStencilHeatSparseZ_perf<4, 1024>(testURI, counter++, 1, 0.1, "09");
+        //     launch_testStencilHeatSparseZ_perf<8, 512>(testURI, counter++, 1, 0.1, "09");
+        //     launch_testStencilHeatSparseZ_perf<16, 256>(testURI, counter++, 1, 0.1, "09");
+        //     launch_testStencilHeatSparseZ_perf<32, 128>(testURI, counter++, 1, 0.1, "09");
 
-            testSet.insert(testURI);
-        }
+        //     testSet.insert(testURI);
+        // }
 
 BOOST_AUTO_TEST_CASE(testStencilHeat3DSparse_gridScaling)
 {
@@ -1579,8 +1464,8 @@ void testInsertStencil(std::string testURI, unsigned int i)
 	constexpr unsigned int dim = 2;
 //	constexpr unsigned int blockEdgeSize = 8;
 	constexpr unsigned int chunkSize = IntPow<blockEdgeSize,dim>::value;
-	typedef aggregate<float,float> AggregateT;
-	typedef HeatStencil<dim,0,1> StencilT;
+	typedef aggregate<float> AggregateT;
+	typedef HeatStencil<dim,0,0> StencilT;
 
 	unsigned int iterations = 10;
 
@@ -1670,10 +1555,36 @@ BOOST_AUTO_TEST_CASE(testStencilHeatInsert_gridScaling)
     std::string testURI = suiteURI + ".device.stencilInsert.dense.N.2D.gridScaling";
     unsigned int counter = 0;
     testInsertStencil<8, 64>(testURI, counter++);
+    testInsertStencil<8, 128>(testURI, counter++);
+    testInsertStencil<8, 256>(testURI, counter++);
+    testInsertStencil<8, 512>(testURI, counter++);
+    testInsertStencil<8, 1024>(testURI, counter++);
+
+    testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeatInsert_gridScaling_8)
+{
+    std::string testURI = suiteURI + ".device.stencilInsert.dense.N.2D.8.gridScaling";
+    unsigned int counter = 0;
+    testInsertStencil<8, 64>(testURI, counter++);
 	testInsertStencil<8, 128>(testURI, counter++);
 	testInsertStencil<8, 256>(testURI, counter++);
 	testInsertStencil<8, 512>(testURI, counter++);
 	testInsertStencil<8, 1024>(testURI, counter++);
+
+    testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testStencilHeatInsert_gridScaling_16)
+{
+    std::string testURI = suiteURI + ".device.stencilInsert.dense.N.2D.16.gridScaling";
+    unsigned int counter = 0;
+    testInsertStencil<16, 32>(testURI, counter++);
+    testInsertStencil<16, 64>(testURI, counter++);
+    testInsertStencil<16, 128>(testURI, counter++);
+    testInsertStencil<16, 256>(testURI, counter++);
+    testInsertStencil<16, 512>(testURI, counter++);
 
     testSet.insert(testURI);
 }
