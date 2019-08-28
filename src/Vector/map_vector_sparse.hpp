@@ -795,9 +795,9 @@ namespace openfpm
 		 * \param i element i
 		 */
 		template<bool prefetch>
-		inline void _branchfree_search(Ti x, Ti & id) const
+		inline Ti _branchfree_search_nobck(Ti x, Ti & id) const
 		{
-			if (vct_index.size() == 0)	{id = 0; return;}
+			if (vct_index.size() == 0)	{id = 0; return -1;}
 			const Ti *base = &vct_index.template get<0>(0);
 			const Ti *end = (const Ti *)vct_index.template getPointer<0>() + vct_index.size();
 			Ti n = vct_data.size()-1;
@@ -815,7 +815,19 @@ namespace openfpm
 
 			int off = (*base < x);
 			id = base - &vct_index.template get<0>(0) + off;
-			Ti v = (base + off != end)?*(base + off):-1;
+			return (base + off != end)?*(base + off):-1;
+		}
+
+		/*! \brief get the element i
+		 *
+		 * search the element x
+		 *
+		 * \param i element i
+		 */
+		template<bool prefetch>
+		inline void _branchfree_search(Ti x, Ti & id) const
+		{
+			Ti v = _branchfree_search_nobck<prefetch>(x,id);
 			id = (x == v)?id:vct_data.size()-1;
 		}
 
@@ -940,11 +952,11 @@ namespace openfpm
 
 			auto ite = vct_add_cont_index.getGPUIterator();
 
-			vct_add_data_reord.resize(n_ele);
 			// Now we reorder the data vector accordingly to the indexes
 
 			if (impl2 == VECTOR_SPARSE_STANDARD)
 			{
+				vct_add_data_reord.resize(n_ele);
 				CUDA_LAUNCH(reorder_vector_data,ite,vct_add_cont_index_map.toKernel(),vct_add_data_cont.toKernel(),vct_add_data_reord.toKernel());
 			}
 
@@ -996,7 +1008,11 @@ namespace openfpm
 			int n_ele_unique = vct_index_tmp4.template get<0>(vct_index_tmp4.size()-1);
 
 			vct_add_index_unique.resize(n_ele_unique);
-			vct_add_data_unique.resize(n_ele_unique);
+
+			if (impl2 == VECTOR_SPARSE_STANDARD)
+			{
+				vct_add_data_unique.resize(n_ele_unique);
+			}
 
 			CUDA_LAUNCH(
 					(construct_index_unique<0>),
@@ -1027,8 +1043,11 @@ namespace openfpm
 
 			// Do not delete this reserve
 			// Unfortunately all resize with DataBlocks are broken
-			vct_add_data_cont.reserve(vct_index.size() + vct_add_index_unique.size()+1);
-			vct_add_data_cont.resize(vct_index.size() + vct_add_index_unique.size());
+			if (impl2 == VECTOR_SPARSE_STANDARD)
+			{
+				vct_add_data_cont.reserve(vct_index.size() + vct_add_index_unique.size()+1);
+				vct_add_data_cont.resize(vct_index.size() + vct_add_index_unique.size());
+			}
 
 			ite = vct_add_index_unique.getGPUIterator();
 			vct_index_tmp4.resize(vct_add_index_unique.size());
@@ -1077,7 +1096,7 @@ namespace openfpm
 
 			// Now we can do a segmented reduction
 			scalar_block_implementation_switch<impl2, block_functor>
-			        ::template extendSegments<1>(vct_add_index_unique, vct_add_data_reord.size());
+			        ::template extendSegments<1>(vct_add_index_unique, vct_add_data_reord_map.size());
 
 			if (impl2 == VECTOR_SPARSE_STANDARD)
 			{
@@ -1547,6 +1566,9 @@ namespace openfpm
 
 		/*! \brief It insert an element in the sparse vector
 		 *
+		 * \tparam p property id
+		 *
+		 * \param ele element id
 		 *
 		 */
 		template <unsigned int p>
@@ -1560,6 +1582,62 @@ namespace openfpm
 
 		/*! \brief It insert an element in the sparse vector
 		 *
+		 * \tparam p property id
+		 *
+		 * \param ele element id
+		 *
+		 */
+		template <unsigned int p>
+		auto insertFlush(Ti ele) -> decltype(vct_data.template get<p>(0))
+		{
+			size_t di;
+
+			// first we have to search if the block exist
+			Ti v = _branchfree_search_nobck(ele,di);
+
+			if (v == ele)
+			{
+				// block exist
+				return vct_data.template get<p>(ele);
+			}
+
+			// It does not exist, we create it di contain the index where we have to create the new block
+			vct_index.insert(di);
+			vct_data.isert(di);
+
+			return vct_data.template get<p>(di);
+		}
+
+		/*! \brief It insert an element in the sparse vector
+		 *
+		 * \param ele element id
+		 *
+		 */
+		auto insertFlush(Ti ele) -> decltype(vct_data.get(0))
+		{
+			Ti di;
+
+			// first we have to search if the block exist
+			Ti v = _branchfree_search_nobck<true>(ele,di);
+
+			if (v == ele)
+			{
+				// block exist
+				return vct_data.get(ele);
+			}
+
+			// It does not exist, we create it di contain the index where we have to create the new block
+			vct_index.insert(di);
+			vct_data.insert(di);
+
+			vct_index.template get<0>(di) = ele;
+
+			return vct_data.get(di);
+		}
+
+		/*! \brief It insert an element in the sparse vector
+		 *
+		 * \param ele element id
 		 *
 		 */
 		auto insert(Ti ele) -> decltype(vct_data.get(0))

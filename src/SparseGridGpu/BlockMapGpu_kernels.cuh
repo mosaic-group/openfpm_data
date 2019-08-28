@@ -757,12 +757,15 @@ namespace BlockMapGpuFunctors
             // Create the output for the keys
             keysOut.resize(data_out_size); // The final number of keys is one less than the segments values
 
-            ite = keysOut.getGPUIterator();
+            ite = keys.getGPUIterator();
             CUDA_LAUNCH(BlockMapGpuKernels::copyKeyToDstIndexIfPredicate,ite,keys.toKernel(), s_ids.toKernel(), keysOut.toKernel());
+
+
 
             // the new keys are now in keysOut
 
             // Phase 2 - segreduce on all properties
+            dataOut.reserve(data_out_size+1);
             dataOut.resize(data_out_size); // Right size for output, i.e. the number of segments
             typedef boost::mpl::vector<v_reduce...> vv_reduce;
 

@@ -60,10 +60,59 @@ public:
     template<unsigned int p>
     auto get(unsigned int linId) const -> const ScalarTypeOf<AggregateBlockT, p> &;
 
-//    auto insert(unsigned int linId) -> decltype(blockMap.insert(0));
-
+    /*! \brief insert data, host version
+     *
+     * \tparam property id
+     *
+     * \param linId linearized id block + local linearization
+     *
+     * \return a reference to the data
+     *
+     */
     template<unsigned int p>
-    auto insert(unsigned int linId) -> ScalarTypeOf<AggregateBlockT, p> &;
+    auto insert(unsigned int linId) -> ScalarTypeOf<AggregateBlockT, p> &
+    {
+        typedef BlockTypeOf<AggregateBlockT, p> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        unsigned int offset = linId % BlockT::size;
+        auto aggregate = blockMap.insert(blockId);
+        auto &block = aggregate.template get<p>();
+        auto &mask = aggregate.template get<pMask>();
+        setExist(mask[offset]);
+        return block[offset];
+    }
+
+    /*! \brief insert a block + flush, host version
+     *
+     * \tparam property id
+     *
+     * \param linId linearized id block
+     *
+     * \return a reference to the block data
+     *
+     */
+    template<unsigned int p>
+    auto insertBlockFlush(size_t blockId) -> decltype(blockMap.insertFlush(blockId).template get<p>())
+    {
+        typedef BlockTypeOf<AggregateBlockT, p> BlockT;
+
+        auto aggregate = blockMap.insertFlush(blockId);
+        auto &block = aggregate.template get<p>();
+
+        return block;
+    }
+
+    /*! \brief insert a block + flush, host version
+     *
+     * \param linId linearized id block
+     *
+     * \return a reference to the block data
+     *
+     */
+    auto insertBlockFlush(size_t blockId) -> decltype(blockMap.insertFlush(blockId))
+    {
+        return blockMap.insertFlush(blockId);
+    }
 
     BlockMapGpu_ker<AggregateInternalT, indexT, layout_base> toKernel()
     {
@@ -72,7 +121,10 @@ public:
     }
 
     template<unsigned int ... prp>
-    void deviceToHost();
+    void deviceToHost()
+    {
+        blockMap.template deviceToHost<prp..., pMask>();
+    }
 
     void deviceToHost();
 
@@ -158,28 +210,6 @@ BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::get(unsigned
 	{
 		return blockMap.template getBackground<p>()[offset];
 	}
-}
-
-template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-template<unsigned int p>
-auto
-BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::insert(unsigned int linId) -> ScalarTypeOf<AggregateBlockT, p> &
-{
-    typedef BlockTypeOf<AggregateBlockT, p> BlockT;
-    unsigned int blockId = linId / BlockT::size;
-    unsigned int offset = linId % BlockT::size;
-    auto aggregate = blockMap.insert(blockId);
-    auto &block = aggregate.template get<p>();
-    auto &mask = aggregate.template get<pMask>();
-    setExist(mask[offset]);
-    return block[offset];
-}
-
-template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-template<unsigned int ... prp>
-void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::deviceToHost()
-{
-    blockMap.template deviceToHost<prp..., pMask>();
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>

@@ -36,6 +36,7 @@ public:
     static constexpr unsigned int blockEdgeSize_ = blockEdgeSize;
     unsigned int stencilSupportRadius;
     typedef AggregateBlockT AggregateBlockType;
+    typedef indexT indexT_;
 
 	//! Indicate this structure has a function to check the device pointer
 	typedef int yes_has_check_device_pointer;
@@ -129,7 +130,7 @@ public:
         return linId;
     }
 
-    inline __device__ grid_key_dx<dim, int>
+    inline __device__ grid_key_dx<dim,int>
     getCoordInEnlargedBlock(const unsigned int offset) const
     {
         unsigned int coord[dim];
@@ -145,8 +146,17 @@ public:
         return coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
     }
 
+    template<typename Coordtype>
     inline __device__ unsigned int
-    getNeighbourLinIdInEnlargedBlock(grid_key_dx<dim, int> base, unsigned int dimension, char offset) const
+    getNeighbourLinIdInEnlargedBlock(const grid_key_dx<dim, Coordtype> & base, grid_key_dx<dim, Coordtype> & offsets) const
+    {
+        grid_key_dx<dim, int> res = base + offsets;
+        return coordToLin<blockEdgeSize>(res, stencilSupportRadius);
+    }
+
+    template<typename Coordtype>
+    inline __device__ unsigned int
+    getNeighbourLinIdInEnlargedBlock(const grid_key_dx<dim,Coordtype> & base, unsigned int dimension, char offset) const
     {
         grid_key_dx<dim, int> res = getNeighbour(base, dimension, offset);
         return coordToLin<blockEdgeSize>(res, stencilSupportRadius);
@@ -415,32 +425,13 @@ public:
         unsetBit(bitMask, PADDING_BIT);
     }
 
-    inline __device__ void getNeighboursPos(const indexT blockId, const unsigned int offset, int * neighboursPos)
+    template<typename NNtype>
+    inline __device__ indexT getNeighboursPos(const indexT blockId, const unsigned int offset)
     {
         //todo: also do the full neighbourhood version, this is just cross
         auto blockCoord = getBlockCoord(blockId);
-        if (offset < 2*dim)
-        {
-            unsigned int d = offset/2;
-            int dPos = blockCoord.get(d) + (offset%2)*2 - 1;
-            blockCoord.set_d(d, dPos);
-            neighboursPos[offset] = this->blockMap.get_sparse(getBlockLinId(blockCoord)).id;
-        }
-    }
 
-    inline __device__ int getNeighboursPos(const indexT blockId, const unsigned int offset)
-    {
-        //todo: also do the full neighbourhood version, this is just cross
-        auto blockCoord = getBlockCoord(blockId);
-        int neighbourPos = -1;
-        if (offset < 2*dim)
-        {
-            unsigned int d = offset/2;
-            int dPos = blockCoord.get(d) + (offset%2)*2 - 1;
-            blockCoord.set_d(d, dPos);
-            neighbourPos = this->blockMap.get_sparse(getBlockLinId(blockCoord)).id;
-        }
-        return neighbourPos;
+        return NNtype::template getNNpos<indexT>(blockCoord,this->blockMap,*this,offset);
     }
 
 #ifdef SE_CLASS1

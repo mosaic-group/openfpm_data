@@ -67,7 +67,7 @@ inline __device__ __host__  void invlin_zid(size_t lin, grid_key_dx<2,T> & key)
 	key.set_d(1,y);
 }
 
-static const size_t B3[] = {0x9249249249249249, 0x30C30C30C30C30C3, 0xF00F00F00F00F00F, 0x0FFF000FFF000FFF,0xFFFF0000FFFFFFFF};
+
 static const size_t S3[] = {2, 4, 8, 16, 32};
 
 template<typename T>
@@ -77,23 +77,23 @@ inline __device__ __host__  size_t lin_zid(const grid_key_dx<3,T> & key)
 	size_t z = key.get(2);
 	size_t y = key.get(1);
 
-	x = (x | (x << S3[4])) & B3[4];
-	x = (x | (x << S3[3])) & B3[3];
-	x = (x | (x << S3[2])) & B3[2];
-	x = (x | (x << S3[1])) & B3[1];
-	x = (x | (x << S3[0])) & B3[0];
+	x = (x | (x << 32)) & 0xFFFF0000FFFFFFFF;
+	x = (x | (x << 16)) & 0x0FFF000FFF000FFF;
+	x = (x | (x << 8)) & 0xF00F00F00F00F00F;
+	x = (x | (x << 4)) & 0x30C30C30C30C30C3;
+	x = (x | (x << 2)) & 0x9249249249249249;
 
-	y = (y | (y << S3[4])) & B3[4];
-	y = (y | (y << S3[3])) & B3[3];
-	y = (y | (y << S3[2])) & B3[2];
-	y = (y | (y << S3[1])) & B3[1];
-	y = (y | (y << S3[0])) & B3[0];
+	y = (y | (y << 32)) & 0xFFFF0000FFFFFFFF;
+	y = (y | (y << 16)) & 0x0FFF000FFF000FFF;
+	y = (y | (y << 8)) & 0xF00F00F00F00F00F;
+	y = (y | (y << 4)) & 0x30C30C30C30C30C3;
+	y = (y | (y << 2)) & 0x9249249249249249;
 
-	z = (z | (z << S3[4])) & B3[4];
-	z = (y | (y << S3[3])) & B3[3];
-	z = (y | (y << S3[2])) & B3[2];
-	z = (y | (y << S3[1])) & B3[1];
-	z = (y | (y << S3[0])) & B3[0];
+	z = (z | (z << 32)) & 0xFFFF0000FFFFFFFF;
+	z = (y | (y << 16)) & 0x0FFF000FFF000FFF;
+	z = (y | (y << 5)) & 0xF00F00F00F00F00F;
+	z = (y | (y << 4)) & 0x30C30C30C30C30C3;
+	z = (y | (y << 2)) & 0x9249249249249249;
 
 	return x | (y << 1) | (z << 2);
 }

@@ -17,6 +17,7 @@ namespace SparseGridGpuKernels
     template <unsigned int dim,
             unsigned int stencilSupportRadius,
             unsigned int pMask,
+            typename NN_type,
             typename IndexBufT,
             typename DataBufT,
             typename SparseGridT,
@@ -51,12 +52,6 @@ namespace SparseGridGpuKernels
         const long long dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
         auto dataBlock = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
 
-        if (dataBlockId < 0)
-        {
-        	printf("Negative Datablock: dataBlockId=%ld, dataBlockPos=%u \n", dataBlockId, dataBlockPos);
-        	return;
-        }
-
         openfpm::sparse_index<unsigned int> sdataBlockPos;
         sdataBlockPos.id = dataBlockPos;
         sparseGrid.loadGhostBlock<pMask>(dataBlock,sdataBlockPos,enlargedBlock);
@@ -72,17 +67,7 @@ namespace SparseGridGpuKernels
             MaskT cur = enlargedBlock[linId];
             if (sparseGrid.exist(cur))
             {
-                bool isPadding = false;
-                for (int d=0; d<dim; ++d)
-                {
-                    auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
-                    auto nMinusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, -1);
-                    MaskT neighbourPlus = enlargedBlock[nPlusId];
-                    MaskT neighbourMinus = enlargedBlock[nMinusId];
-                    isPadding = isPadding || (!sparseGrid.exist(neighbourPlus));
-                    isPadding = isPadding || (!sparseGrid.exist(neighbourMinus));
-                    if (isPadding) break;
-                }
+                bool isPadding = NN_type::isPadding(sparseGrid,coord,enlargedBlock);
                 if (isPadding)
                 {
                     sparseGrid.setPadding(enlargedBlock[linId]);
@@ -106,7 +91,7 @@ namespace SparseGridGpuKernels
      *
      */
     template <unsigned int dim,
-            unsigned int nNN,
+            typename nNN_type,
             typename IndexBufT,
             typename SparseGridT,
             typename nn_blocksT>
@@ -120,16 +105,17 @@ namespace SparseGridGpuKernels
 
         const unsigned int pos = blockIdx.x * blockDim.x + threadIdx.x;
 
-        const unsigned int dataBlockPos = pos / nNN;
-        const unsigned int offset = pos % nNN;
+        const unsigned int dataBlockPos = pos / nNN_type::nNN;
+        const unsigned int offset = pos % nNN_type::nNN;
 
         if (dataBlockPos >= indexBuffer.size())
         {return;}
 
         const auto dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
 
-        auto neighbourPos = sparseGrid.getNeighboursPos(dataBlockId, offset);
-        nn_blocks.template get<0>(dataBlockPos*nNN + offset) = neighbourPos;
+        auto neighbourPos = sparseGrid.template getNeighboursPos<nNN_type>(dataBlockId, offset);
+
+        nn_blocks.template get<0>(dataBlockPos*nNN_type::nNN + offset) = neighbourPos;
     }
 
     template <unsigned int dim,

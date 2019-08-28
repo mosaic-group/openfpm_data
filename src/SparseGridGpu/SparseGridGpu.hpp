@@ -14,7 +14,7 @@
 #include "Iterators/SparseGridGpu_iterator_sub.hpp"
 #include "Geometry/grid_zmb.hpp"
 #include "util/stat/common_statistics.hpp"
-#ifdef OPENFPM_DATA_ENABLE_IO_MODULE
+#if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
 #include "VTKWriter/VTKWriter.hpp"
 #endif
 
@@ -82,14 +82,218 @@ enum StencilMode
     STENCIL_MODE_INSERT_NOFLUSH = 2
 };
 
-struct NNFull
+/*! \brief Check if is padding
+ *
+ *
+ */
+template<unsigned int dim>
+struct NNfull_is_padding_impl
 {
-	static const int nNN = 27;
+	__device__ inline static bool is_padding()
+	{
+		printf("NNfull_is_padding_impl with dim: %d not implemented yet \n",dim);
+
+		return false;
+	}
 };
 
+/*! \brief Check if is padding
+ *
+ *
+ */
+template<>
+struct NNfull_is_padding_impl<3>
+{
+	template<typename sparseGrid_type, typename coord_type, typename Mask_type,unsigned int eb_size>
+	__device__ inline static bool is_padding(sparseGrid_type & sparseGrid, coord_type & coord, Mask_type (& enlargedBlock)[eb_size])
+	{
+		bool isPadding_ = false;
+		for (int i = 0 ; i < 3 ; i++)
+		{
+			for (int j = 0 ; j < 3 ; j++)
+			{
+				for (int k = 0 ; k < 3 ; k++)
+				{
+					grid_key_dx<3,int> key;
+
+					key.set_d(0,i-1);
+					key.set_d(1,j-1);
+					key.set_d(2,k-1);
+
+					auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, key);
+					typename std::remove_all_extents<Mask_type>::type neighbourPlus = enlargedBlock[nPlusId];
+					isPadding_ = isPadding_ || (!sparseGrid.exist(neighbourPlus));
+					if (isPadding_) break;
+				}
+			}
+		}
+		return isPadding_;
+	}
+};
+
+
+/*! \brief Check if is padding
+ *
+ *
+ */
+template<>
+struct NNfull_is_padding_impl<2>
+{
+	template<typename sparseGrid_type, typename coord_type, typename Mask_type,unsigned int eb_size>
+	__device__ inline static bool is_padding(sparseGrid_type & sparseGrid, coord_type & coord, Mask_type (& enlargedBlock)[eb_size])
+	{
+		bool isPadding_ = false;
+		for (int i = 0 ; i < 3 ; i++)
+		{
+			for (int j = 0 ; j < 3 ; j++)
+			{
+				grid_key_dx<2,int> key;
+
+				key.set_d(0,i-1);
+				key.set_d(1,j-1);
+
+				auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, key);
+				typename std::remove_all_extents<Mask_type>::type neighbourPlus = enlargedBlock[nPlusId];
+				isPadding_ = isPadding_ || (!sparseGrid.exist(neighbourPlus));
+				if (isPadding_) break;
+			}
+		}
+		return isPadding_;
+	}
+};
+
+template<unsigned int dim>
+struct NNFull
+{
+	static const int nNN = IntPow<3, dim>::value;
+
+	template<typename indexT, typename blockCoord_type, typename blockMap_type, typename SparseGrid_type>
+	__device__ static inline indexT getNNpos(blockCoord_type & blockCoord,
+								  blockMap_type & blockMap,
+								  SparseGrid_type & sparseGrid,
+								  const unsigned int offset)
+	{
+        // point to the background element
+        int neighbourPos = blockMap.size();
+        if (offset < nNN && offset != nNN / 2)
+        {
+        	int cnt = offset;
+        	for (int i = 0 ; i < dim ; i++)
+        	{
+        		int dPos = cnt % 3;
+        		cnt /= 3;
+        		blockCoord.set_d(i, blockCoord.get(i) + dPos - 1);
+        	}
+
+            neighbourPos = blockMap.get_sparse(sparseGrid.getBlockLinId(blockCoord)).id;
+        }
+        return neighbourPos;
+	}
+
+	template<typename indexT, unsigned int blockEdgeSize, typename coordType>
+	__host__ static inline indexT getNNskin(coordType & coord, int stencilSupportRadius)
+	{
+		// linearize the coord
+
+		indexT neighbourNum = 0;
+
+		indexT accu = 1;
+		for(int i = 0 ; i < dim ; i++)
+		{
+			int c = static_cast<int>(coord.get(i)) - static_cast<int>(stencilSupportRadius);
+			if (c < 0)
+			{
+				neighbourNum += 0;
+			}
+            else if (c >= blockEdgeSize)
+            {
+                neighbourNum += 2*accu;
+            }
+            else
+            {
+            	neighbourNum += accu;
+            }
+			accu *= 3;
+		}
+
+        return neighbourNum;
+	}
+
+
+	template<typename sparseGrid_type, typename coord_type, typename Mask_type,unsigned int eb_size>
+	__device__ static inline bool isPadding(sparseGrid_type & sparseGrid, coord_type & coord, Mask_type (& enlargedBlock)[eb_size])
+	{
+		return NNfull_is_padding_impl<3>::template is_padding(sparseGrid,coord,enlargedBlock);
+	}
+};
+
+template<unsigned int dim>
 struct NNStar
 {
-	static const int nNN = 8;
+	static const int nNN = IntPow<2, dim>::value;
+
+	template<typename indexT, typename blockCoord_type, typename blockMap_type, typename SparseGrid_type>
+	__device__ static inline indexT getNNpos(blockCoord_type & blockCoord,
+								  blockMap_type & blockMap,
+								  SparseGrid_type & sparseGrid,
+								  const unsigned int offset)
+	{
+        //todo: also do the full neighbourhood version, this is just cross
+        int neighbourPos = -1;
+        if (offset < 2*dim)
+        {
+            unsigned int d = offset/2;
+            int dPos = blockCoord.get(d) + (offset%2)*2 - 1;
+            blockCoord.set_d(d, dPos);
+            neighbourPos = blockMap.get_sparse(sparseGrid.getBlockLinId(blockCoord)).id;
+        }
+        return neighbourPos;
+	}
+
+	template<typename indexT, unsigned int blockEdgeSize, typename coordType>
+	__host__ static inline indexT getNNskin(coordType & coord, int stencilSupportRadius)
+	{
+        int neighbourNum = -1;
+        int ctr = 0;
+        for (int j = 0; j < dim; ++j)
+        {
+            int c = static_cast<int>(coord.get(j)) - static_cast<int>(stencilSupportRadius);
+            if (c < 0)
+            {
+                neighbourNum = 2*j;
+                ++ctr;
+            }
+            else if (c >= blockEdgeSize)
+            {
+                neighbourNum = 2*j + 1;
+                ++ctr;
+            }
+        }
+        if (ctr > 1) // If we are on a "corner"
+        {
+            neighbourNum = 0;
+        }
+
+        return neighbourNum;
+	}
+
+	template<typename sparseGrid_type, typename coord_type, typename Mask_type,unsigned int eb_size>
+	__device__ static inline bool isPadding(sparseGrid_type & sparseGrid, coord_type & coord, Mask_type (& enlargedBlock)[eb_size])
+	{
+		bool isPadding_ = false;
+		for (int d=0; d<dim; ++d)
+		{
+			auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
+			auto nMinusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, -1);
+			typename std::remove_all_extents<Mask_type>::type neighbourPlus = enlargedBlock[nPlusId];
+			typename std::remove_all_extents<Mask_type>::type neighbourMinus = enlargedBlock[nMinusId];
+			isPadding_ = isPadding_ || (!sparseGrid.exist(neighbourPlus));
+			isPadding_ = isPadding_ || (!sparseGrid.exist(neighbourMinus));
+			if (isPadding_) break;
+		}
+
+		return isPadding_;
+	}
 };
 
 template<unsigned int nNN_, unsigned int nLoop_>
@@ -142,6 +346,7 @@ class SparseGridGpu : public BlockMapGpu<
         threadBlockSize, indexT, layout_base>
 {
 private:
+
     const static unsigned char PADDING_BIT = 1;
 	typedef typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type AggregateBlockT;
     linearizer gridGeometry;
@@ -249,6 +454,7 @@ private:
     	ghostLayerToThreadsMapping.resize(ghostLayerSize);
     }
 
+    template<typename stencil_type>
     void computeGhostLayerMapping()
     {
         size_t dimensions[dim],
@@ -282,28 +488,7 @@ private:
             // Mapping
             ghostLayerToThreadsMapping.template get<gt>(i) = linId;
             // Now compute the neighbour position to use
-//            grid_key_dx<dim, int> localCoord = extendedBlockGeometry.InvLinId(linId);
-            int neighbourNum = -1;
-            int ctr = 0;
-            for (int j = 0; j < dim; ++j)
-            {
-                int c = static_cast<int>(coord.get(j)) - static_cast<int>(stencilSupportRadius);
-                if (c < 0)
-                {
-                    neighbourNum = 2*j;
-                    ++ctr;
-                }
-                else if (c >= blockEdgeSize)
-                {
-                    neighbourNum = 2*j + 1;
-                    ++ctr;
-                }
-            }
-            if (ctr > 1) // If we are on a "corner"
-            {
-                neighbourNum = 0;
-            }
-            ghostLayerToThreadsMapping.template get<nt>(i) = neighbourNum;
+            ghostLayerToThreadsMapping.template get<nt>(i) = stencil_type::template getNNskin<indexT,blockEdgeSize>(coord,stencilSupportRadius);
             //
             ++i;
             ++gsi;
@@ -319,7 +504,7 @@ private:
 
         computeSizeOfGhostLayer();
         allocateGhostLayerMapping();
-        computeGhostLayerMapping();
+        computeGhostLayerMapping<NNStar<dim>>();
 
         size_t extBlockDims[dim];
         for (int d=0; d<dim; ++d)
@@ -476,7 +661,17 @@ public:
     	initialize(res);
     }
 
-    /*! \brief
+    /*! \brief Constructor from glock geometry
+     *
+     *
+     */
+    SparseGridGpu(size_t (& res)[dim], unsigned int stencilSupportRadius = 1)
+    :stencilSupportRadius(stencilSupportRadius)
+    {
+    	initialize(res);
+    };
+
+    /*! \brief Constructor from glock geometry
      *
      *
      */
@@ -554,7 +749,27 @@ public:
         return toKer;
     }
 
-    //
+    /*! \brief Return the grid information object
+     *
+     * \return grid information object
+     *
+     */
+    linearizer & getGrid()
+    {
+    	return gridGeometry;
+    }
+
+    /*! \brief Set the neighborhood type
+     *
+     * \tparam stencil_type Type of stencil
+     *
+     */
+    template<typename stencil_type>
+    void setNNType()
+    {
+    	computeGhostLayerMapping<stencil_type>();
+    }
+
 
     constexpr static unsigned int getBlockEdgeSize()
     {
@@ -607,7 +822,7 @@ public:
         );
     }
 
-    template<typename stencil_type = NNStar>
+    template<typename stencil_type = NNStar<dim>>
     void tagBoundaries()
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
@@ -634,7 +849,8 @@ public:
             CUDA_LAUNCH_DIM3((SparseGridGpuKernels::tagBoundaries<
                     dim,
                     1,
-                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+                    stencil_type>),
                     threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel());
         }
         else if (stencilSupportRadius == 2)
@@ -642,7 +858,8 @@ public:
         	CUDA_LAUNCH_DIM3((SparseGridGpuKernels::tagBoundaries<
                     dim,
                     2,
-                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+                    stencil_type>),
                     threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel());
         }
         else if (stencilSupportRadius == 0)
@@ -650,7 +867,8 @@ public:
         	CUDA_LAUNCH_DIM3((SparseGridGpuKernels::tagBoundaries<
                     dim,
                     0,
-                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+                    stencil_type>),
                     threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel());
         }
         else
@@ -662,7 +880,7 @@ public:
         cudaDeviceSynchronize();
     }
 
-    template<typename NNtype = NNStar>
+    template<typename NNtype = NNStar<dim>>
     void findNeighbours()
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
@@ -681,9 +899,9 @@ public:
         unsigned int threadGridSize = numScalars % localThreadBlockSize == 0
                                       ? numScalars / localThreadBlockSize
                                       : 1 + numScalars / localThreadBlockSize;
-        CUDA_LAUNCH_DIM3((SparseGridGpuKernels::findNeighbours<dim,NNtype::nNN>),
+
+        CUDA_LAUNCH_DIM3((SparseGridGpuKernels::findNeighbours<dim,NNtype>),
                 threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), this->toKernel(),nn_blocks.toKernel());
-        cudaDeviceSynchronize();
     }
 
     size_t countExistingElements()
@@ -925,6 +1143,32 @@ public:
         ::unsetBit(bitMask, PADDING_BIT);
     }
 
+    /*! \brief Insert the point on host side and flush directly
+     *
+     * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
+     *
+     * \param grid point where to insert
+     *
+     * \return a reference to the data to fill
+     *
+     *
+     */
+    template<unsigned int p, typename CoordT>
+    auto insertFlush(const grid_key_dx<dim,CoordT> &coord) -> ScalarTypeOf<AggregateBlockT, p> &
+    {
+    	// Linearized block_id
+    	auto lin = gridGeometry.LinId(coord);
+    	indexT block_id = lin / blockSize;
+    	indexT local_id = lin % blockSize;
+
+    	typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
+
+    	auto block_data = this->insertBlockFlush(block_id);
+    	block_data.template get<BMG::pMask>()[local_id] = 1;
+
+    	return block_data.template get<p>()[local_id];
+    }
+
     template<unsigned int p>
     void print_vct_add_data()
     {
@@ -951,7 +1195,38 @@ public:
     	}
     }
 
-#ifdef OPENFPM_DATA_ENABLE_IO_MODULE
+    /*! \brief Return the index array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_index_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer()) &
+    {
+    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+    }
+
+    /*! \brief Return the index array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_data_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer())
+    {
+    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+    }
+
+    /*! \brief Return the index array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_neighborhood_array() -> decltype(nn_blocks) &
+    {
+    	return nn_blocks;
+    }
+
+
+#if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
 
 	/*! \brief write the sparse grid into VTK
 	 *

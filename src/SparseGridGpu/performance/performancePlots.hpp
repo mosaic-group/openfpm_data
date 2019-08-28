@@ -5,7 +5,7 @@
 #ifndef OPENFPM_PDATA_PERFORMANCEPLOTS_HPP
 #define OPENFPM_PDATA_PERFORMANCEPLOTS_HPP
 
-#include <c++/5/set>
+#include <set>
 #include <util/common.hpp>
 
 extern char * test_dir;

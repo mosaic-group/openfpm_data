@@ -162,16 +162,17 @@ struct loadGhostBlock_impl<2,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
         typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
         const int pos = threadIdx.x % ghostLayerSize;
+        const int pos_d1 = (threadIdx.x + blockDim.x) % ghostLayerSize;
 
         __shared__ int neighboursPos[ct_params::nNN];
 
         const unsigned int edge = blockEdgeSize + 2*stencilSupportRadius;
         short int neighbourNum = ghostLayerToThreadsMapping.template get<nt>(pos);
-        short int neighbourNum2 = ghostLayerToThreadsMapping.template get<nt>(pos + blockDim.x);
+        short int neighbourNum2 = ghostLayerToThreadsMapping.template get<nt>(pos_d1);
 
         // Convert pos into a linear id accounting for the inner domain offsets
         const unsigned int linId = ghostLayerToThreadsMapping.template get<gt>(pos);
-        const unsigned int linId2 = ghostLayerToThreadsMapping.template get<gt>(pos + blockDim.x);
+        const unsigned int linId2 = ghostLayerToThreadsMapping.template get<gt>(pos_d1);
         // Now get linear offset wrt the first element of the block
 
         int ctr = linId;
@@ -241,18 +242,19 @@ struct loadGhostBlock_impl<3,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
         typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
         const int pos = threadIdx.x % ghostLayerSize;
+        const int pos_d1 = (threadIdx.x + 2*blockDim.x) % ghostLayerSize;
 
         __shared__ int neighboursPos[ct_params::nNN];
 
         const unsigned int edge = blockEdgeSize + 2*stencilSupportRadius;
         short int neighbourNum = ghostLayerToThreadsMapping.template get<nt>(pos);
         short int neighbourNum2 = ghostLayerToThreadsMapping.template get<nt>(pos + blockDim.x);
-        short int neighbourNum3 = ghostLayerToThreadsMapping.template get<nt>(pos + 2*blockDim.x);
+        short int neighbourNum3 = ghostLayerToThreadsMapping.template get<nt>(pos_d1);
 
         // Convert pos into a linear id accounting for the inner domain offsets
         const unsigned int linId = ghostLayerToThreadsMapping.template get<gt>(pos);
         const unsigned int linId2 = ghostLayerToThreadsMapping.template get<gt>(pos + blockDim.x);
-        const unsigned int linId3 = ghostLayerToThreadsMapping.template get<gt>(pos + 2*blockDim.x);
+        const unsigned int linId3 = ghostLayerToThreadsMapping.template get<gt>(pos_d1);
         // Now get linear offset wrt the first element of the block
 
         int ctr = linId;
@@ -332,6 +334,7 @@ struct loadGhostBlock_impl<7,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
         typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
         const int pos = threadIdx.x % ghostLayerSize;
+        const int pos_d1 = (threadIdx.x + 6*blockDim.x) % ghostLayerSize;
 
         __shared__ int neighboursPos[ct_params::nNN];
 
@@ -342,7 +345,7 @@ struct loadGhostBlock_impl<7,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
         short int neighbourNum4 = ghostLayerToThreadsMapping.template get<nt>(pos + 3*blockDim.x);
         short int neighbourNum5 = ghostLayerToThreadsMapping.template get<nt>(pos + 4*blockDim.x);
         short int neighbourNum6 = ghostLayerToThreadsMapping.template get<nt>(pos + 5*blockDim.x);
-        short int neighbourNum7 = ghostLayerToThreadsMapping.template get<nt>(pos + 6*blockDim.x);
+        short int neighbourNum7 = ghostLayerToThreadsMapping.template get<nt>(pos_d1);
 
         // Convert pos into a linear id accounting for the inner domain offsets
         const unsigned int linId = ghostLayerToThreadsMapping.template get<gt>(pos);
@@ -351,7 +354,7 @@ struct loadGhostBlock_impl<7,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
         const unsigned int linId4 = ghostLayerToThreadsMapping.template get<gt>(pos + 3*blockDim.x);
         const unsigned int linId5 = ghostLayerToThreadsMapping.template get<gt>(pos + 4*blockDim.x);
         const unsigned int linId6 = ghostLayerToThreadsMapping.template get<gt>(pos + 5*blockDim.x);
-        const unsigned int linId7 = ghostLayerToThreadsMapping.template get<gt>(pos + 6*blockDim.x);
+        const unsigned int linId7 = ghostLayerToThreadsMapping.template get<gt>(pos_d1);
         // Now get linear offset wrt the first element of the block
 
         int ctr = linId;
