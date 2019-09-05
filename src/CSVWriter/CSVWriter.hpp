@@ -183,7 +183,7 @@ class CSVWriter
 		csv_col<typename v_prp::value_type,has_attributes<typename v_prp::value_type>::value> col(str);
 
 		// Iterate through all the vertex and create the vertex list
-		boost::mpl::for_each< boost::mpl::range_c<int,0,v_prp::value_type::max_prop> >(col);
+		boost::mpl::for_each_ref_host< boost::mpl::range_c<int,0,v_prp::value_type::max_prop> >(col);
 
 		str << "\n";
 
@@ -225,7 +225,7 @@ class CSVWriter
 			csv_prp<decltype(obj)> c_prp(str,obj);
 
 			// write the properties to the stream string
-			boost::mpl::for_each< boost::mpl::range_c<int,0,v_prp::value_type::max_prop> >(c_prp);
+			boost::mpl::for_each_ref_host< boost::mpl::range_c<int,0,v_prp::value_type::max_prop> >(c_prp);
 
 			str << "\n";
 		}
