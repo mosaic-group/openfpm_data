@@ -14,7 +14,7 @@
 #include <fstream>
 #include "util/common.hpp"
 #include <boost/mpl/range_c.hpp>
-#include <boost/mpl/for_each.hpp>
+#include "util/for_each_ref_host.hpp"
 #include "csv_multiarray.hpp"
 #include "util/util.hpp"
 #include "is_csv_writable.hpp"
