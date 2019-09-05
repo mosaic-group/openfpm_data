@@ -148,7 +148,8 @@ install(FILES util/check_no_pointers.hpp
 	      util/common.hpp util/convert.hpp 
 	      util/create_vmpl_sequence.hpp 
 	      util/ct_array.hpp 
-	      util/for_each_ref.hpp 
+	      util/for_each_ref.hpp
+	      util/for_each_ref_host.hpp 
 	      util/mathutil.hpp util/object_creator.hpp 
 	      util/object_s_di.hpp 
 	      util/object_si_d.hpp 
