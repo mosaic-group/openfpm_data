@@ -445,9 +445,10 @@ public:
 	 * \return a point unsigned long int
 	 *
 	 */
-	Point<dim,size_t> toPoint() const
+	template<typename typeT = size_t>
+	inline Point<dim,typeT> toPoint() const
 	{
-		Point<dim,size_t> p;
+		Point<dim,typeT> p;
 
 		for (size_t i = 0; i < dim ; i++)
 		{
@@ -478,7 +479,7 @@ public:
 	 * \return the index value
 	 *
 	 */
-	__device__ __host__  mem_id get(size_t i) const
+	__device__ __host__  index_type get(index_type i) const
 	{
 		return k[i];
 	}
@@ -491,7 +492,7 @@ public:
 	 * \param id value to set
 	 *
 	 */
-	__device__ __host__   void set_d(size_t i, mem_id id)
+	__device__ __host__   void set_d(index_type i, index_type id)
 	{
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 

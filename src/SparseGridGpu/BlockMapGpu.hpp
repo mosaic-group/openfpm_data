@@ -30,6 +30,16 @@ class BlockMapGpu
 private:
     typedef BlockTypeOf<AggregateBlockT, 0> BlockT0;
 
+#ifdef SE_CLASS1
+
+    //! Indicate if the setGPUInsertBuffer has been called
+    bool is_setGPUInsertBuffer = false;
+
+    //! Indicate if the initializeGPUInsertBuffer has been called
+    bool is_initializeGPUInsertBuffer = false;
+
+#endif
+
 protected:
     const static unsigned char EXIST_BIT = 0;
     typedef typename AggregateAppend<DataBlock<unsigned char, BlockT0::size>, AggregateBlockT>::type AggregateInternalT;
@@ -42,7 +52,6 @@ protected:
 public:
     typedef AggregateBlockT AggregateType;
 
-public:
     BlockMapGpu() = default;
 
 	/*! \brief Get the background value
@@ -133,12 +142,49 @@ public:
 
     void hostToDevice();
 
-    void setGPUInsertBuffer(int nBlock, int nSlot);
+    /*! \Brief Before inser any element you have to call this function to initialize the insert buffer
+     *
+     * \param nBlock number of blocks the insert buffer has
+     * \param nSlot maximum number of insertion each thread block does
+     *
+     */
+    void setGPUInsertBuffer(int nBlock, int nSlot)
+    {
+        // Prealloc the insert buffer on the underlying sparse vector
+        blockMap.setGPUInsertBuffer(nBlock, nSlot);
+        initializeGPUInsertBuffer();
 
-    void initializeGPUInsertBuffer();
+#ifdef SE_CLASS1
+        is_setGPUInsertBuffer = true;
+#endif
+    }
+
+    void initializeGPUInsertBuffer()
+    {
+        //todo: Test if it's enough to just initialize masks to 0, without any background value
+        // Initialize the blocks to background
+        auto & insertBuffer = blockMap.getGPUInsertBuffer();
+        typedef BlockTypeOf<AggregateInternalT, pMask> BlockType; // Here assuming that all block types in the aggregate have the same size!
+        constexpr unsigned int chunksPerBlock = threadBlockSize / BlockType::size; // Floor is good here...
+        BlockMapGpuKernels::initializeInsertBuffer<pMask, chunksPerBlock> <<< insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size >>>(
+                insertBuffer.toKernel());
+
+    #ifdef SE_CLASS1
+            is_initializeGPUInsertBuffer = true;
+    #endif
+    }
 
     template<typename ... v_reduce>
-    void flush(mgpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST);
+    void flush(mgpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST)
+    {
+#ifdef SE_CLASS1
+
+    	if (is_setGPUInsertBuffer == false || is_initializeGPUInsertBuffer == false)
+    	{std::cout << __FILE__ << ":" << __LINE__ << " error setGPUInsertBuffer you must call before doing any insertion " << std::endl;}
+#endif
+
+        blockMap.template flush<v_reduce ... >(context, opt);
+    }
 
     template<unsigned int p>
     void setBackgroundValue(ScalarTypeOf<AggregateBlockT, p> backgroundValue);
@@ -232,33 +278,6 @@ template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT
 void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::hostToDevice()
 {
     blockMap.template hostToDevice<pMask>();
-}
-
-template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::setGPUInsertBuffer(int nBlock, int nSlot)
-{
-    // Prealloc the insert buffer on the underlying sparse vector
-    blockMap.setGPUInsertBuffer(nBlock, nSlot);
-    initializeGPUInsertBuffer();
-}
-
-template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::initializeGPUInsertBuffer()
-{
-    //todo: Test if it's enough to just initialize masks to 0, without any background value
-    // Initialize the blocks to background
-    auto & insertBuffer = blockMap.getGPUInsertBuffer();
-    typedef BlockTypeOf<AggregateInternalT, pMask> BlockType; // Here assuming that all block types in the aggregate have the same size!
-    constexpr unsigned int chunksPerBlock = threadBlockSize / BlockType::size; // Floor is good here...
-    BlockMapGpuKernels::initializeInsertBuffer<pMask, chunksPerBlock> <<< insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size >>>(
-            insertBuffer.toKernel());
-}
-
-template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-template<typename ... v_reduce>
-void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::flush(mgpu::ofp_context_t &context, flush_type opt)
-{
-    blockMap.template flush<v_reduce .../*, sBitwiseOr_<pMask>*/>(context, opt);
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>

@@ -484,7 +484,7 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (initialized == false)
-		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
+		{std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using unitialized iterator" << "\n";}
 #endif
 
 		for (size_t i = 0 ; i < nsteps ; i++)
@@ -506,7 +506,7 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (initialized == false)
-		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
+		{std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using unitialized iterator" << "\n";}
 #endif
 
 		if (this->gk.get(dim-1) <= gk_stop.get(dim-1))
@@ -642,6 +642,17 @@ public:
 	inline void private_adjust(size_t tot_add)
 	{
 		this->stl_code.private_adjust(tot_add);
+	}
+
+	/* \brief Set the iterator in a way that isNext return false
+	 *
+	 */
+	void invalidate()
+	{
+		this->gk.set_d(dim-1,1);
+		this->gk_stop.set_d(dim-1,0);
+
+		initialized = true;
 	}
 };
 

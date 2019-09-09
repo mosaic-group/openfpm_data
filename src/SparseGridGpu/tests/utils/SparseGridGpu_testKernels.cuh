@@ -157,13 +157,13 @@ __global__ void insertSphere3D(SparseGridType sparseGrid, grid_key_dx<3,int> sta
     grid_key_dx<3,int> keyg;
     keyg = sparseGrid.getGlobalCoord(blk,offset);
 
-    const long long x = keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);
-    const long long y = keyg.get(1) - (start.get(1) + gridDim.y / 2 * SparseGridType::blockEdgeSize_);
-    const long long z = keyg.get(2) - (start.get(2) + gridDim.z / 2 * SparseGridType::blockEdgeSize_);
+    const long int x = (long int)keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);
+    const long int y = (long int)keyg.get(1) - (start.get(1) + gridDim.y / 2 * SparseGridType::blockEdgeSize_);
+    const long int z = (long int)keyg.get(2) - (start.get(2) + gridDim.z / 2 * SparseGridType::blockEdgeSize_);
 
     float radius = sqrt((float) (x*x + y*y + z*z));
 
-    bool is_active = radius < r1 && radius > r2;
+    bool is_active = radius < r1 && radius >= r2;
 
     if (is_active == true)
     {
@@ -179,7 +179,6 @@ __global__ void insertSphere3D(SparseGridType sparseGrid, grid_key_dx<3,int> sta
         if ( is_active == true)
         {
             ec.template get<p>()[offset] = value;
-//            ec.template get<p>()[offset] = x;
             BlockMapGpu_ker<>::setExist(ec.template get<pMask>()[offset]);
         }
     }
@@ -215,9 +214,9 @@ __global__ void insertSphere3D_radius(SparseGridType sparseGrid, grid_key_dx<3,i
     grid_key_dx<3,int> keyg;
     keyg = sparseGrid.getGlobalCoord(blk,offset);
 
-    const long long x = keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);
-    const long long y = keyg.get(1) - (start.get(1) + gridDim.y / 2 * SparseGridType::blockEdgeSize_);
-    const long long z = keyg.get(2) - (start.get(2) + gridDim.z / 2 * SparseGridType::blockEdgeSize_);
+    const long int x = (long int)keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);
+    const long int y = (long int)keyg.get(1) - (start.get(1) + gridDim.y / 2 * SparseGridType::blockEdgeSize_);
+    const long int z = (long int)keyg.get(2) - (start.get(2) + gridDim.z / 2 * SparseGridType::blockEdgeSize_);
 
     float radius = sqrt((float) (x*x + y*y + z*z));
 

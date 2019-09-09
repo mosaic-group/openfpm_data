@@ -859,10 +859,10 @@ ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, const grid_key_dx<d
 	{ig.thr.x = (key2.get(0) - key1.get(0) + 1);}
 
 	if (dim >= 2 && ig.wthr.y == 1)
-	{ig.wthr.y = key2.get(1) - key1.get(1) + 1;}
+	{ig.thr.y = key2.get(1) - key1.get(1) + 1;}
 
 	if (dim == 3 && ig.wthr.z == 1)
-	{ig.wthr.z = key2.get(2) - key1.get(2) + 1;}
+	{ig.thr.z = key2.get(2) - key1.get(2) + 1;}
 
 	for (size_t i = 0 ; i < dim ; i++)
 	{

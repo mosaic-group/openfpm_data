@@ -14,6 +14,7 @@
 #include "Iterators/SparseGridGpu_iterator_sub.hpp"
 #include "Geometry/grid_zmb.hpp"
 #include "util/stat/common_statistics.hpp"
+#include "Iterators/SparseGridGpu_iterator.hpp"
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
 #include "VTKWriter/VTKWriter.hpp"
 #endif
@@ -364,11 +365,14 @@ private:
 
     openfpm::vector_gpu<aggregate<indexT>> nn_blocks;
 
+    typedef SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer> self;
+
 protected:
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
     typedef AggregateBlockT AggregateInternalT;
 
 public:
+
     static constexpr unsigned int dims = dim;
     static constexpr unsigned int blockEdgeSize_ = blockEdgeSize;
 
@@ -376,7 +380,7 @@ public:
 
     template<typename Tfunc> using layout_mfunc = memory_traits_inte<Tfunc>;
 
-    typedef grid_key_dx<dim, indexT> base_key;
+    typedef sparse_grid_gpu_index<self> base_key;
 
     /*! \brief return the size of the grid
      *
@@ -385,7 +389,7 @@ public:
      */
     inline size_t size() const
     {
-        return gridGeometry.size();
+        return this->countExistingElements();
     }
 
     /*! \brief This is a meta-function return which type of sub iterator a grid produce
@@ -394,9 +398,9 @@ public:
      *
      */
     template <typename stencil = no_stencil>
-    static SparseGridGpu_iterator_sub<dim> type_of_subiterator()
+    static SparseGridGpu_iterator_sub<dim,self> type_of_subiterator()
     {
-        return SparseGridGpu_iterator_sub<dim>();
+        return SparseGridGpu_iterator_sub<dim,self>();
     }
 
     /*! \brief This is a meta-function return which type of iterator a grid produce
@@ -404,9 +408,9 @@ public:
      * \return the type of the sub-grid iterator
      *
      */
-    static SparseGridGpu_iterator type_of_iterator()
+    static SparseGridGpu_iterator<dim,self> type_of_iterator()
     {
-        return SparseGridGpu_iterator();
+        return SparseGridGpu_iterator<dim,self>(std::declval<self>());
     }
 
     template<typename dim3T>
@@ -647,6 +651,8 @@ private:
 
 public:
 
+    typedef AggregateT value_type;
+
     SparseGridGpu()
 	:stencilSupportRadius(1)
     {};
@@ -788,7 +794,7 @@ public:
         return gridGeometry.LinId(coord);
     }
 
-    inline grid_key_dx<dim, int> getCoord(size_t linId)
+    inline grid_key_dx<dim, int> getCoord(size_t linId) const
     {
         return gridGeometry.InvLinId(linId);
     }
@@ -798,12 +804,50 @@ public:
     	return gridSize.getGPUIterator(start,stop,n_thr);
     }
 
-    // Data management methods
 
+    /*! \brief Get an element using the point coordinates
+     *
+     * \tparam p property index
+     *
+     * \param coord point coordinates
+     *
+     * \return the element
+     *
+     */
     template<unsigned int p, typename CoordT>
-    auto get(const CoordT &coord) const -> const ScalarTypeOf<AggregateBlockT, p> &
+    auto get(const grid_key_dx<dim,CoordT> & coord) const -> const ScalarTypeOf<AggregateBlockT, p> &
     {
         return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::template get<p>(gridGeometry.LinId(coord));
+    }
+
+    /*! \brief Get an element using sparse_grid_gpu_index (using this index it guarantee that the point exist)
+     *
+     * \tparam p property index
+     *
+     * \param element
+     *
+     * \return the element
+     *
+     */
+    template<unsigned int p>
+    auto get(const sparse_grid_gpu_index<self> & coord) const -> const ScalarTypeOf<AggregateBlockT, p> &
+    {
+        return private_get_data_array().template get<p>(coord.get_cnk_pos_id())[coord.get_data_id()];
+    }
+
+    /*! \brief Get an element using sparse_grid_gpu_index (using this index it guarantee that the point exist)
+     *
+     * \tparam p property index
+     *
+     * \param element
+     *
+     * \return the element
+     *
+     */
+    template<unsigned int p>
+    auto get(const sparse_grid_gpu_index<self> & coord) -> ScalarTypeOf<AggregateBlockT, p> &
+    {
+        return private_get_data_array().template get<p>(coord.get_cnk_pos_id())[coord.get_data_id()];
     }
 
     template<unsigned int p, typename CoordT>
@@ -812,6 +856,12 @@ public:
         return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::template insert<p>(gridGeometry.LinId(coord));
     }
 
+    /*! \Brief Before inser any element you have to call this function to initialize the insert buffer
+     *
+     * \param nBlock number of blocks the insert buffer has
+     * \param nSlot maximum number of insertion each thread block does
+     *
+     */
     template<typename dim3T>
     void setGPUInsertBuffer(dim3T nBlock, dim3T nSlot)
     {
@@ -904,7 +954,7 @@ public:
                 threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), this->toKernel(),nn_blocks.toKernel());
     }
 
-    size_t countExistingElements()
+    size_t countExistingElements() const
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -1143,6 +1193,8 @@ public:
         ::unsetBit(bitMask, PADDING_BIT);
     }
 
+
+
     /*! \brief Insert the point on host side and flush directly
      *
      * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
@@ -1195,6 +1247,46 @@ public:
     	}
     }
 
+    /*! \brief Return a SparseGrid iterator
+     *
+     * \return a SparseGrid iterator
+     *
+     */
+    decltype(self::type_of_iterator()) getIterator() const
+    {
+    	return decltype(self::type_of_iterator())(*this);
+    }
+
+    /*! \brief Return a SparseGrid iterator only on a sub-set of elements
+     *
+     * \return a SparseGrid iterator on a subset of elements
+     *
+     */
+    decltype(self::type_of_subiterator()) getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
+    {
+    	return decltype(self::type_of_subiterator())(*this,start,stop);
+    }
+
+    /*! \brief Return the index array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_index_array() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer()) &
+    {
+    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+    }
+
+    /*! \brief Return the index array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_data_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer()) &
+    {
+    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+    }
+
     /*! \brief Return the index array of the blocks
      *
      * \return the index arrays of the blocks
@@ -1210,7 +1302,7 @@ public:
      * \return the index arrays of the blocks
      *
      */
-    auto private_get_data_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer())
+    auto private_get_data_array() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer()) &
     {
     	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
     }

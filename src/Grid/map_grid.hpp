@@ -337,6 +337,18 @@ public:
 		return background;
 	}
 
+	/*! \brief Set the background value
+	 *
+	 * \tparam p property to set
+	 *
+	 */
+	template<unsigned int p>
+	void setBackgroundValue(const typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type & val)
+	{
+		background.template get<p>() = val;
+	}
+
+
 	/*! \brief assign operator
 	 *
 	 * \return itself

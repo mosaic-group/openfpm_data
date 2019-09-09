@@ -82,6 +82,34 @@ public:
 
     }
 
+    /*! \brief Given a point to insert, return the block-id and offset of that point
+     *
+     * \param p Point the thread is processing
+     * \param blk Block id the point is falling into
+     * \param offset linearized index within the block
+     *
+     * \return true if the point is inactive
+     *
+     */
+    template<typename ite_type>
+    inline __device__ bool getInsertBlockOffset(const ite_type & itd, const grid_key_dx<dim, int> & p, grid_key_dx<dim, int> & blk, int & offset)
+    {
+    	int accu = 1;
+    	offset = 0;
+
+    	bool active = true;
+
+    	for (int i = 0 ; i < dim ; i++)
+    	{
+    		blk.set_d(i,p.get(i) / getBlockEdgeSize());
+    		offset += (p.get(i) % getBlockEdgeSize()) * accu;
+    		accu *= getBlockEdgeSize();
+    		active = active && (p.get(i) >= (itd.start.get(i) + itd.start_base.get(i))) && (p.get(i) <= itd.stop.get(i));
+    	}
+
+    	return active;
+    }
+
     template<typename CoordT>
     inline __device__ size_t getBlockLinId(CoordT blockCoord) const
     {

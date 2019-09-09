@@ -1447,6 +1447,13 @@ namespace openfpm
 		}
 
 	public:
+
+		vector_sparse()
+		:max_ele(0)
+		{
+			vct_data.resize(1);
+		}
+
         /*! \brief Get the indices buffer
         *
         * \return the reference to the indices buffer
@@ -1464,13 +1471,24 @@ namespace openfpm
         {
             return vct_data;
         }
-	public:
 
-		vector_sparse()
-		:max_ele(0)
-		{
-			vct_data.resize(1);
-		}
+        /*! \brief Get the indices buffer
+        *
+        * \return the reference to the indices buffer
+        */
+        auto getIndexBuffer() const -> const decltype(vct_index)&
+        {
+            return vct_index;
+        }
+
+        /*! \brief Get the data buffer
+         *
+         * \return the reference to the data buffer
+         */
+        auto getDataBuffer() const -> const decltype(vct_data)&
+        {
+            return vct_data;
+        }
 
 		/*! \brief Get an element of the vector
 		 *
@@ -1598,7 +1616,7 @@ namespace openfpm
 			if (v == ele)
 			{
 				// block exist
-				return vct_data.template get<p>(ele);
+				return vct_data.template get<p>(di);
 			}
 
 			// It does not exist, we create it di contain the index where we have to create the new block
@@ -1623,7 +1641,7 @@ namespace openfpm
 			if (v == ele)
 			{
 				// block exist
-				return vct_data.get(ele);
+				return vct_data.get(di);
 			}
 
 			// It does not exist, we create it di contain the index where we have to create the new block

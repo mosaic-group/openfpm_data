@@ -1091,28 +1091,6 @@ public:
 			     const Box<dim,long int> & box_src,
 				 const Box<dim,long int> & box_dst)
 	{
-
-
-		// sub-grid where to unpack
-/*		grid_key_dx_iterator_sub<dim> src(grid_src.getGrid(),box_src.getKP1(),box_src.getKP2());
-		grid_key_dx_iterator_sub<dim> dst(getGrid(),box_dst.getKP1(),box_dst.getKP2());
-
-		while (src.isNext())
-		{
-			auto key_src = src.get();
-			auto key_dst = dst.get();
-
-			get_o(key_dst) = grid_src.get_o(key_src);
-
-			++src;
-			++dst;
-		}*/
-
-		///////////////////////////////////////
-
-//        typedef typename std::remove_reference<decltype(grid_src)>::type grid_cp;
-//        typedef typename std::remove_reference<decltype(grid_src.getGrid())>::type grid_info_cp;
-
 		// fix box_dst
 
 	     Box<dim,size_t> box_src_;
@@ -1226,21 +1204,6 @@ public:
 			++sub_src;
 			++sub_dst;
 		}
-
-/*		grid_key_dx_iterator_sub<dim> sub_src(grid_src.getGrid(),box_src.getKP1(),box_src.getKP2());
-		grid_key_dx_iterator_sub<dim> sub_dst(this->getGrid(),box_dst.getKP1(),box_dst.getKP2());
-
-//		const auto & gs = loc_grid.get(i);
-//		auto & gd = loc_grid.get(sub_id_dst);
-
-		while (sub_src.isNext())
-		{
-			// write the object in the last element
-			object_s_di_op<op,decltype(grid_src.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(grid_src.get_o(sub_src.get()),this->get_o(sub_dst.get()));
-
-			++sub_src;
-			++sub_dst;
-		}*/
 	}
 
 	/*! \brief Resize the grid

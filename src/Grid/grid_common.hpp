@@ -18,6 +18,33 @@
  * Is mainly used to call hostToDevice for each properties
  *
  */
+template<typename aggrT_src, typename local_grids_type>
+struct setBackground_impl
+{
+	aggrT_src & bck;
+
+	local_grids_type loc_grid;
+
+	inline setBackground_impl(aggrT_src & bck, local_grids_type & loc_grid)
+	:bck(bck),loc_grid(loc_grid)
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t)
+	{
+		for (size_t i = 0 ; i < loc_grid.size() ; i++)
+		{loc_grid.get(i).template setBackgroundValue<T::value>(bck.template get<T::value>());}
+	}
+};
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to call hostToDevice for each properties
+ *
+ */
 template<typename Tv>
 struct host_to_dev_all_prp
 {

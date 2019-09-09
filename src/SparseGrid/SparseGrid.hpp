@@ -586,7 +586,7 @@ public:
 	template<unsigned int p>
 	void setBackgroundValue(const typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type & val)
 	{
-		return background.template get<p>() = val;
+		background.template get<p>() = val;
 	}
 
 	/*! \brief Get the background value

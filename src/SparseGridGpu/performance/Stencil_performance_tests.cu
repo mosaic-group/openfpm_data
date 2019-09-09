@@ -27,18 +27,6 @@ report_sparse_grid_tests report_sparsegrid_funcs;
 std::string suiteURI = "performance.SparseGridGpu";
 std::set<std::string> testSet;
 
-//// 2D params
-//const unsigned int minSpatialEdgeSize2D = 512;
-//const unsigned int maxSpatialEdgeSize2D = 8192;
-//const unsigned int minBlockEdgeSize2D = 2;
-//const unsigned int maxBlockEdgeSize2D = 32;
-//// 3D params
-//const unsigned int minSpatialEdgeSize3D = 64;
-//const unsigned int maxSpatialEdgeSize3D = 512;
-//const unsigned int minBlockEdgeSize3D = 2;
-//const unsigned int maxBlockEdgeSize3D = 8;
-////
-
 struct Fixture
 {
     Fixture()
@@ -1146,6 +1134,7 @@ BOOST_AUTO_TEST_SUITE(SparseGridGpu_test)
 BOOST_AUTO_TEST_CASE(testConv3x3x3_gridScaling)
 {
     std::string testURI = suiteURI + ".device.conv3x3x3.sparse.N.3D.gridScaling";
+    unsigned int counter = 0;
     launch_testConv3x3x3_perf(testURI, counter++);
 
     testSet.insert(testURI);
