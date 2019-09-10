@@ -10,6 +10,8 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 
 static void addUpdtateTime(GoogleChart & cg, int np)
 {

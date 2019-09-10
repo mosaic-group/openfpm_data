@@ -3,7 +3,17 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 if (TEST_PERFORMANCE)
-    set(CUDA_SOURCES SparseGridGpu/performance/Stencil_performance_tests.cu SparseGridGpu/performance/performancePlots.hpp SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh)
+	set(CUDA_SOURCES SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_sparse.cu
+			 SparseGridGpu/performance/SparseGridGpu_performance_insert_stencil.cu
+			 SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil.cu 
+			 SparseGridGpu/performance/SparseGridGpu_performance_stencil_heat_host.cu  
+			 SparseGridGpu/performance/SparseGridGpu_performance_get_nn.cu  
+			 SparseGridGpu/performance/SparseGridGpu_performance_get_single.cu 
+			 SparseGridGpu/performance/SparseGridGpu_performance_insert_single.cu
+			 SparseGridGpu/performance/SparseGridGpu_performance_tests.cu
+			 SparseGridGpu/performance/SparseGridGpu_performance_insert_block.cu
+			 SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_3d.cu
+			 SparseGridGpu/performance/performancePlots.cpp)
 endif ()
 
 if (CUDA_FOUND)
