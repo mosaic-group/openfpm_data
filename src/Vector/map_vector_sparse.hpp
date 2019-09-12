@@ -125,7 +125,7 @@ namespace openfpm
 #ifdef __NVCC__
             typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
             typedef typename boost::mpl::at<typename vector_data_type::value_type::type,typename reduction_type::prop>::type red_type;
-            typedef typename reduction_type::op_red<red_type> red_op;
+            typedef typename reduction_type::template op_red<red_type> red_op;
             typedef typename boost::mpl::at<typename vector_index_type::value_type::type,boost::mpl::int_<0>>::type seg_type;
             red_type init;
             init = 0;

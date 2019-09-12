@@ -652,7 +652,9 @@ public:
 		this->gk.set_d(dim-1,1);
 		this->gk_stop.set_d(dim-1,0);
 
-		initialized = true;
+#ifdef SE_CLASS1
+		this->initialized = true;
+#endif
 	}
 };
 

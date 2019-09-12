@@ -79,6 +79,26 @@ public:
 	{
 		return data_id;
 	}
+
+	/*! \brief return toPoint() + p
+	 *
+	 * \param p the point p
+	 *
+	 * \return toPoint() + p
+	 *
+	 */
+	inline grid_key_dx<SparseGridGpu_type::dims> operator+(const Point<SparseGridGpu_type::dims,size_t> & p)
+	{
+		grid_key_dx<SparseGridGpu_type::dims> ret;
+		Point<SparseGridGpu_type::dims,size_t> key = toPoint();
+
+		for (int i = 0 ; i < SparseGridGpu_type::dims ; i++)
+		{
+			ret.set_d(i,key.get(i) + p.get(i));
+		}
+
+		return ret;
+	}
 };
 
 template<unsigned int dim, typename SparseGridType>

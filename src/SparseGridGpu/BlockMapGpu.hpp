@@ -165,7 +165,7 @@ public:
         // Initialize the blocks to background
         auto & insertBuffer = blockMap.getGPUInsertBuffer();
         typedef BlockTypeOf<AggregateInternalT, pMask> BlockType; // Here assuming that all block types in the aggregate have the same size!
-        constexpr unsigned int chunksPerBlock = threadBlockSize / BlockType::size; // Floor is good here...
+        constexpr unsigned int chunksPerBlock = 1; // Floor is good here...
         BlockMapGpuKernels::initializeInsertBuffer<pMask, chunksPerBlock> <<< insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size >>>(
                 insertBuffer.toKernel());
 
@@ -186,8 +186,30 @@ public:
         blockMap.template flush<v_reduce ... >(context, opt);
     }
 
+    /*! \brief set the background for property p
+     *
+     * \tparam p property p
+     *
+     */
     template<unsigned int p>
-    void setBackgroundValue(ScalarTypeOf<AggregateBlockT, p> backgroundValue);
+    void setBackgroundValue(ScalarTypeOf<AggregateBlockT, p> backgroundValue)
+    {
+        // NOTE: Here we assume user only passes Blocks and not scalars in the templated aggregate type
+        typedef BlockTypeOf<AggregateInternalT, p> BlockT;
+        typedef BlockTypeOf<AggregateInternalT, pMask> BlockM;
+
+        BlockT bP;
+        BlockM bM;
+
+        for (unsigned int i = 0; i < BlockT::size; ++i)
+        {
+            bP[i] = backgroundValue;
+            bM[i] = 0;
+        }
+
+        blockMap.template setBackground<p>(bP);
+        blockMap.template setBackground<pMask>(bM);
+    }
 
     template<typename BitMaskT>
 	inline static bool getBit(const BitMaskT &bitMask, unsigned char pos)
@@ -280,26 +302,10 @@ void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::hostToD
     blockMap.template hostToDevice<pMask>();
 }
 
-template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-template<unsigned int p>
-void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::setBackgroundValue(
-        ScalarTypeOf<AggregateBlockT, p> backgroundValue)
-{
-    // NOTE: Here we assume user only passes Blocks and not scalars in the templated aggregate type
-    typedef BlockTypeOf<AggregateInternalT, p> BlockT;
-    typedef BlockTypeOf<AggregateInternalT, pMask> BlockM;
+//template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
+//template<unsigned int p>
+//void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::setBackgroundValue(
+//        ScalarTypeOf<AggregateBlockT, p> backgroundValue)
 
-    BlockT bP;
-    BlockM bM;
-
-    for (unsigned int i = 0; i < BlockT::size; ++i)
-    {
-        bP[i] = backgroundValue;
-        bM[i] = 0;
-    }
-
-    blockMap.template setBackground<p>(bP);
-    blockMap.template setBackground<pMask>(bM);
-}
 
 #endif /* BLOCK_MAP_GPU_HPP_ */

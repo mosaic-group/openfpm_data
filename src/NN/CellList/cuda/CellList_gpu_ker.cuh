@@ -440,7 +440,7 @@ public:
 	//! Indicate this structure has a function to check the device pointer
 	typedef int yes_has_check_device_pointer;
 
-	__device__ inline CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> starts,
+	__host__ __device__ inline CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> starts,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt,
 					 openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> rad_cells,
@@ -606,7 +606,7 @@ public:
 	//! Indicate this structure has a function to check the device pointer
 	typedef int yes_has_check_device_pointer;
 
-	__device__ inline CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> cell_nn,
+	__host__ __device__ inline CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> cell_nn,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type,cnt_type>,memory_traits_inte> cell_nn_list,
 					 openfpm::vector_sparse_gpu_ker<aggregate<cnt_type>,int,memory_traits_inte> cl_sparse,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt,

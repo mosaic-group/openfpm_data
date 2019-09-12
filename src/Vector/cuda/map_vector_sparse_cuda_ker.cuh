@@ -10,7 +10,7 @@
 
 //todo: Check where it's a good place to put the following method...
 template<typename dim3Ta, typename dim3Tb>
-inline __device__ __host__ int dim3CoordToInt(dim3Ta coord, dim3Tb dimensions)
+inline __device__ __host__ int dim3CoordToInt(const dim3Ta & coord, const dim3Tb & dimensions)
 {
     int res = coord.z;
     res *= dimensions.y;

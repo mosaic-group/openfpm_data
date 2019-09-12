@@ -23,7 +23,7 @@ struct setBackground_impl
 {
 	aggrT_src & bck;
 
-	local_grids_type loc_grid;
+	local_grids_type & loc_grid;
 
 	inline setBackground_impl(aggrT_src & bck, local_grids_type & loc_grid)
 	:bck(bck),loc_grid(loc_grid)

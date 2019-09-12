@@ -217,7 +217,7 @@ public:
 		data = it_sub.data;
 		sub_set = it_sub.sub_set;
 		res = it_sub.res;
-		in_chunk_it.reinitialize(it_sub.in_chunk_it);
+		in_chunk_it = it_sub.in_chunk_it;
 		chunk_sz = it_sub.chunk_sz;
 
 		return *this;
