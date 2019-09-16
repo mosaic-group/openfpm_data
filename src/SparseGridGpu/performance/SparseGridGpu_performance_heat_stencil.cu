@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling_4)
    launch_testStencilHeat_perf<4, 256>(testURI, counter++);
    launch_testStencilHeat_perf<4, 512>(testURI, counter++);
    launch_testStencilHeat_perf<4, 1024>(testURI, counter++);
-   launch_testStencilHeat_perf<4, 2048>(testURI, counter++);
+//   launch_testStencilHeat_perf<4, 2048>(testURI, counter++);
 
    testSet.insert(testURI);
 }
@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling_8)
    launch_testStencilHeat_perf<8, 128>(testURI, counter++);
    launch_testStencilHeat_perf<8, 256>(testURI, counter++);
    launch_testStencilHeat_perf<8, 512>(testURI, counter++);
-   launch_testStencilHeat_perf<8, 1024>(testURI, counter++);
+//   launch_testStencilHeat_perf<8, 1024>(testURI, counter++);
 
    testSet.insert(testURI);
 }
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling_16)
    launch_testStencilHeat_perf<16, 64>(testURI, counter++);
    launch_testStencilHeat_perf<16, 128>(testURI, counter++);
    launch_testStencilHeat_perf<16, 256>(testURI, counter++);
-   launch_testStencilHeat_perf<16, 512>(testURI, counter++);
+//   launch_testStencilHeat_perf<16, 512>(testURI, counter++);
 
    testSet.insert(testURI);
 }
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeat_gridScaling_32)
    launch_testStencilHeat_perf<32, 32>(testURI, counter++);
    launch_testStencilHeat_perf<32, 64>(testURI, counter++);
    launch_testStencilHeat_perf<32, 128>(testURI, counter++);
-   launch_testStencilHeat_perf<32, 256>(testURI, counter++); // test
+//   launch_testStencilHeat_perf<32, 256>(testURI, counter++); // test
 
    testSet.insert(testURI);
 }
