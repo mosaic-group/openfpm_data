@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeatHost_gridScaling)
    launch_testStencilHeatHost_perf<8, 128>(testURI, counter++);
    launch_testStencilHeatHost_perf<8, 256>(testURI, counter++);
    launch_testStencilHeatHost_perf<8, 512>(testURI, counter++);
-   launch_testStencilHeatHost_perf<8, 1024>(testURI, counter++);
+//   launch_testStencilHeatHost_perf<8, 1024>(testURI, counter++);
 
    testSet.insert(testURI);
 }
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeatHost_blockScaling)
    launch_testStencilHeatHost_perf<4, 2048>(testURI, counter++);
    launch_testStencilHeatHost_perf<8, 1024>(testURI, counter++);
    launch_testStencilHeatHost_perf<16, 512>(testURI, counter++);
-   launch_testStencilHeatHost_perf<32, 256>(testURI, counter++);
+//   launch_testStencilHeatHost_perf<32, 256>(testURI, counter++);
 
    testSet.insert(testURI);
 }
