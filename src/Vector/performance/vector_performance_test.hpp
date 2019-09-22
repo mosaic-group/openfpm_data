@@ -116,8 +116,6 @@ BOOST_AUTO_TEST_CASE(vector_performance)
 		times_g[i] = tg.getwct();
 	}
 
-	std::cout << "Tot: " << tot_accu / 1000000.0 << std::endl;
-
 	double mean;
 	double dev;
 	standard_deviation(times,mean,dev);

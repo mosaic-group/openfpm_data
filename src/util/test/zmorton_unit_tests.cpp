@@ -513,6 +513,29 @@ BOOST_AUTO_TEST_CASE( zmorton_invlinearization_test )
 		invlin_zid(lin,ikey21);
 
 		BOOST_REQUIRE(key21 == ikey21);
+
+		bool match = true;
+
+		for (unsigned int i = 0 ; i < 100 ; i++)
+		{
+			for (unsigned int j = 0 ; j < 100 ; j++)
+			{
+				for (unsigned int k = 0 ; k < 100 ; k++)
+				{
+					grid_key_dx<3> key23({i,j,k});
+					grid_key_dx<3> ikey23;
+
+					lin = lin_zid(key23);
+					invlin_zid(lin,ikey23);
+
+					match &= key23 == ikey23;
+				}
+			}
+		}
+
+		diocane:
+
+		BOOST_REQUIRE(match == true);
 	}
 }
 

@@ -22,7 +22,7 @@
  * tuned for blocked data.
  */
 template<unsigned int dim, unsigned int blockEdgeSize>
-class grid_zmb : public grid_smb<dim,blockEdgeSize>
+class grid_zmb : private grid_smb<dim,blockEdgeSize>
 {
 
 public:
@@ -101,7 +101,7 @@ public:
 
     // Now methods to handle blockGrid coordinates (e.g. to load neighbouring blocks)
     template<typename indexT>
-    inline __host__ __device__ mem_id BlockLinId(const grid_key_dx<dim, indexT> blockCoord) const
+    inline __host__ __device__ mem_id BlockLinId(const grid_key_dx<dim, indexT> & blockCoord) const
     {
         return lin_zid(blockCoord);
     }
@@ -114,6 +114,23 @@ public:
         return k;
     }
 
+    __host__ __device__ const size_t (& getSize() const)[dim]
+	{
+    	return grid_smb<dim,blockEdgeSize>::getSize();
+	}
+
+
+    // Now methods to handle blockGrid coordinates (e.g. to load neighbouring blocks)
+    template<typename indexT>
+    inline __host__ __device__ grid_key_dx<dim,indexT> getGlobalCoord(const grid_key_dx<dim, indexT> & blockCoord, unsigned int offset) const
+    {
+    	return grid_smb<dim,blockEdgeSize>::getGlobalCoord(blockCoord,offset);
+    }
+
+    inline size_t getBlockSize() const
+    {
+    	return grid_smb<dim,blockEdgeSize>::getBlockSize();
+    }
 };
 
 

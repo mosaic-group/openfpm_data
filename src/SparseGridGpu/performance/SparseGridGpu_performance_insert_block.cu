@@ -7,7 +7,6 @@
 
 #define SCAN_WITH_CUB
 #define BOOST_TEST_DYN_LINK
-#define OPENFPM_DATA_ENABLE_IO_MODULE
 #define DISABLE_MPI_WRITTERS
 
 #include <boost/test/unit_test.hpp>

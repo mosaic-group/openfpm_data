@@ -5,6 +5,8 @@
 #ifndef OPENFPM_PDATA_SPARSEGRIDGPU_HPP
 #define OPENFPM_PDATA_SPARSEGRIDGPU_HPP
 
+constexpr int BLOCK_SIZE_STENCIL = 128;
+
 #include <cstdlib>
 #include <SparseGridGpu/BlockMapGpu.hpp>
 #include <Grid/iterators/grid_skin_iterator.hpp>
@@ -15,11 +17,18 @@
 #include "Geometry/grid_zmb.hpp"
 #include "util/stat/common_statistics.hpp"
 #include "Iterators/SparseGridGpu_iterator.hpp"
+
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
 #include "VTKWriter/VTKWriter.hpp"
 #endif
 
 // todo: Move all the following utils into some proper file inside TemplateUtils
+
+enum tag_boundaries
+{
+	NO_CALCULATE_EXISTING_POINTS,
+	CALCULATE_EXISTING_POINTS
+};
 
 template<unsigned int dim>
 struct default_edge
@@ -80,7 +89,8 @@ enum StencilMode
 {
     STENCIL_MODE_INSERT = 0,
     STENCIL_MODE_INPLACE = 1,
-    STENCIL_MODE_INSERT_NOFLUSH = 2
+    STENCIL_MODE_INSERT_NOFLUSH = 2,
+    STENCIL_MODE_INPLACE_NO_SHARED = 3
 };
 
 /*! \brief Check if is padding
@@ -226,6 +236,42 @@ struct NNFull
 	{
 		return NNfull_is_padding_impl<3>::template is_padding(sparseGrid,coord,enlargedBlock);
 	}
+
+	/*! \brief given a coordinate writtel in local coordinate for a given it return the neighborhood chunk position and the offset
+	 *        in the neighborhood chunk
+	 *
+	 * \param coord local coordinated
+	 * \param NN_index index of the neighborhood chunk
+	 * \param offset_nn offset in local coordinates
+	 *
+	 * \return true if it is inside false otherwise
+	 *
+	 */
+	template<unsigned int blockEdgeSize, typename indexT2>
+	__device__ static inline bool getNNindex_offset(grid_key_dx<dim,indexT2> & coord, unsigned int & NN_index, unsigned int & offset_nn)
+	{
+		bool out = false;
+		NN_index = 0;
+		offset_nn = 0;
+
+		int cnt = 1;
+		int cnt_off = 1;
+		for (unsigned int i = 0 ; i < dim ; i++)
+		{
+			int p = 1 - ((int)(coord.get(i) < 0)) + ((int)(coord.get(i) >= (int)blockEdgeSize));
+
+			NN_index += p*cnt;
+
+			offset_nn += (coord.get(i) + (1 - p)*(int)blockEdgeSize)*cnt_off;
+
+			cnt *= 3;
+			cnt_off *= blockEdgeSize;
+
+			out |= (p != 1);
+		}
+
+		return out;
+	}
 };
 
 template<unsigned int dim>
@@ -295,6 +341,15 @@ struct NNStar
 
 		return isPadding_;
 	}
+
+	/*! \brief given a coordinate give the neighborhood chunk position and the offset in the neighborhood chunk
+	 *
+	 *
+	 */
+	__device__ static inline bool getNNindex_offset()
+	{
+		return false;
+	}
 };
 
 template<unsigned int nNN_, unsigned int nLoop_>
@@ -355,6 +410,10 @@ private:
     grid_sm<dim, int> gridSize;
     unsigned int stencilSupportRadius;
     unsigned int ghostLayerSize;
+
+    //! set of existing points
+    //! the formats is id/blockSize = data block poosition id % blockSize = offset
+    openfpm::vector_gpu<aggregate<indexT>> e_points;
 
     //! For stencil in a block-wise computation we have to load blocks + ghosts area. The ghost area live in neighborhood blocks
     //! For example the left ghost margin live in the right part of the left located neighborhood block, the right margin live in the
@@ -574,6 +633,33 @@ private:
                         args...);
     }
 
+    template <typename stencil, typename... Args>
+    void applyStencilInPlaceNoShared(StencilMode & mode,Args... args)
+    {
+        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
+        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+
+        const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
+        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
+
+        if (numScalars == 0) return;
+
+        // NOTE: Here we want to work only on one data chunk per block!
+        constexpr unsigned int chunksPerBlock = 1;
+        auto ite = e_points.getGPUIterator(BLOCK_SIZE_STENCIL);
+
+        CUDA_LAUNCH((SparseGridGpuKernels::applyStencilInPlaceNoShared
+                <dim,
+                BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+                stencil>),
+                ite,
+                        indexBuffer.toKernel(),
+                        dataBuffer.toKernel(),
+                        this->template toKernelNN<stencil::stencil_type::nNN, 0>(),
+                        args...);
+    }
+
     //todo: the applyInsert should also allocate the gpu insert buffer, initialize it, etc
     template <typename stencil, typename... Args>
     void applyStencilInsert(StencilMode & mode, Args... args)
@@ -671,7 +757,7 @@ public:
      *
      *
      */
-    SparseGridGpu(size_t (& res)[dim], unsigned int stencilSupportRadius = 1)
+    SparseGridGpu(const size_t (& res)[dim], unsigned int stencilSupportRadius = 1)
     :stencilSupportRadius(stencilSupportRadius)
     {
     	initialize(res);
@@ -717,6 +803,7 @@ public:
                 stencilSupportRadius,
                 ghostLayerToThreadsMapping.toKernel(),
                 nn_blocks.toKernel(),
+                e_points.toKernel(),
                 ghostLayerSize);
         return toKer;
     }
@@ -751,6 +838,7 @@ public:
                 stencilSupportRadius,
                 ghostLayerToThreadsMapping.toKernel(),
                 nn_blocks.toKernel(),
+                e_points.toKernel(),
                 ghostLayerSize);
         return toKer;
     }
@@ -873,7 +961,7 @@ public:
     }
 
     template<typename stencil_type = NNStar<dim>>
-    void tagBoundaries()
+    void tagBoundaries(mgpu::ofp_context_t &context, tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -927,6 +1015,46 @@ public:
             std::cout << __FILE__ << ":" << __LINE__ << " error: stencilSupportRadius supported only up to 2, passed: " << stencilSupportRadius << std::endl;
 
         }
+
+        if (opt == tag_boundaries::CALCULATE_EXISTING_POINTS)
+        {
+        	// first we calculate the existing points
+        	openfpm::vector_gpu<aggregate<indexT>> block_points;
+
+        	block_points.resize(indexBuffer.size() + 1);
+        	block_points.template get<0>(block_points.size()-1) = 0;
+        	block_points.template hostToDevice<0>(block_points.size()-1,block_points.size()-1);
+
+        	ite_gpu<1> ite;
+
+        	ite.wthr.x = indexBuffer.size();
+        	ite.wthr.y = 1;
+        	ite.wthr.z = 1;
+        	ite.thr.x = getBlockSize();
+        	ite.thr.y = 1;
+        	ite.thr.z = 1;
+
+        	CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+        				 ite,
+        				 dataBuffer.toKernel(),
+        				 block_points.toKernel());
+
+        	// than we scan
+        	openfpm::scan((indexT *)block_points.template getDeviceBuffer<0>(),block_points.size(),(indexT *)block_points.template getDeviceBuffer<0>(),context);
+
+        	// Get the total number of points
+        	block_points.template deviceToHost<0>(block_points.size()-1,block_points.size()-1);
+        	size_t tot = block_points.template get<0>(block_points.size()-1);
+        	e_points.resize(tot);
+
+        	// we fill e_points
+        	CUDA_LAUNCH((SparseGridGpuKernels::fill_e_points<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,
+        				 dataBuffer.toKernel(),
+        				 block_points.toKernel(),
+        				 e_points.toKernel())
+
+        }
+
         cudaDeviceSynchronize();
     }
 
@@ -1134,6 +1262,9 @@ public:
             case STENCIL_MODE_INSERT_NOFLUSH:
                 applyStencilInsert<stencil>(mode,args...);
                 break;
+            case STENCIL_MODE_INPLACE_NO_SHARED:
+                applyStencilInPlaceNoShared<stencil>(mode,args...);
+                break;
         }
     }
     template<typename stencil1, typename stencil2, typename ... otherStencils, typename... Args>
@@ -1193,7 +1324,18 @@ public:
         ::unsetBit(bitMask, PADDING_BIT);
     }
 
-
+    /*! \brief Linearization of  block coordinates
+     *
+     * \param blockCoord block coordinates
+     *
+     * \return the linearized index
+     *
+     */
+    template<typename CoordT>
+    inline size_t getBlockLinId(const CoordT & blockCoord) const
+    {
+        return gridGeometry.BlockLinId(blockCoord);
+    }
 
     /*! \brief Insert the point on host side and flush directly
      *

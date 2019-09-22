@@ -4,7 +4,6 @@
 
 #define SCAN_WITH_CUB
 #define BOOST_TEST_DYN_LINK
-#define OPENFPM_DATA_ENABLE_IO_MODULE
 #define DISABLE_MPI_WRITTERS
 
 #include <boost/test/unit_test.hpp>
@@ -26,22 +25,8 @@ report_sparse_grid_tests report_sparsegrid_funcs;
 std::string suiteURI = "performance.SparseGridGpu";
 std::set<std::string> testSet;
 
-/*struct Fixture
-{
-    Fixture()
-    {
-        BOOST_TEST_MESSAGE( "Setup fixture" );
-    }
 
-    ~Fixture()
-    {
-        BOOST_TEST_MESSAGE( "Teardown fixture" );
-        write_test_report(report_sparsegrid_funcs, testSet);
-    }
-};*/
-
-
-BOOST_AUTO_TEST_SUITE(performance /*, *boost::unit_test::fixture<Fixture>()*/)
+BOOST_AUTO_TEST_SUITE(performance)
 
 BOOST_AUTO_TEST_SUITE(SparseGridGpu_test)
 
@@ -264,16 +249,52 @@ void testStencilSkeleton_perf(unsigned int i, std::string base)
     report_sparsegrid_funcs.graphs.put(base +".time.dev",deviation_tm);
 }
 
-void launch_testConv3x3x3_perf(std::string testURI, unsigned int i)
+void launch_testConv3x3x3_perf_z_morton(std::string testURI, unsigned int i)
 {
-    constexpr unsigned int dim = 2;
+    constexpr unsigned int dim = 3;
     typedef aggregate<float,float> AggregateT;
-    constexpr unsigned int chunkSize = IntPow<4,dim>::value;
+    constexpr unsigned int chunkSize = IntPow<8,dim>::value;
 
     std::string base(testURI + "(" + std::to_string(i) + ")");
     report_sparsegrid_funcs.graphs.put(base + ".test.name","Conv3x3x3");
 
-    testConv3x3x3_perf();
+    testConv3x3x3_perf<SparseGridGpu_z<dim, AggregateT, 8, chunkSize,long int>>("Convolution 3x3x3 Z-morton");
+}
+
+void launch_testConv3x3x3_perf(std::string testURI, unsigned int i)
+{
+    constexpr unsigned int dim = 3;
+    typedef aggregate<float,float> AggregateT;
+    constexpr unsigned int chunkSize = IntPow<8,dim>::value;
+
+    std::string base(testURI + "(" + std::to_string(i) + ")");
+    report_sparsegrid_funcs.graphs.put(base + ".test.name","Conv3x3x3");
+
+    testConv3x3x3_perf<SparseGridGpu<dim, AggregateT, 8, chunkSize,long int>>("Convolution 3x3x3 ");
+}
+
+void launch_testConv3x3x3_perf_no_shared_z_morton(std::string testURI, unsigned int i)
+{
+    constexpr unsigned int dim = 3;
+    typedef aggregate<float,float> AggregateT;
+    constexpr unsigned int chunkSize = IntPow<8,dim>::value;
+
+    std::string base(testURI + "(" + std::to_string(i) + ")");
+    report_sparsegrid_funcs.graphs.put(base + ".test.name","Conv3x3x3");
+
+    testConv3x3x3_no_shared_perf<SparseGridGpu_z<dim, AggregateT, 8, 512, long int>>("Convolution 3x3x3_noshared z-morton");
+}
+
+void launch_testConv3x3x3_perf_no_shared(std::string testURI, unsigned int i)
+{
+    constexpr unsigned int dim = 3;
+    typedef aggregate<float,float> AggregateT;
+    constexpr unsigned int chunkSize = IntPow<8,dim>::value;
+
+    std::string base(testURI + "(" + std::to_string(i) + ")");
+    report_sparsegrid_funcs.graphs.put(base + ".test.name","Conv3x3x3");
+
+    testConv3x3x3_no_shared_perf<SparseGridGpu<dim, AggregateT, 8, 512, long int>>("Convolution 3x3x3_noshared");
 }
 
 template<unsigned int blockEdgeSize, unsigned int gridEdgeSize>
@@ -309,12 +330,36 @@ void launch_testStencilSkeletonZ_perf(std::string testURI, unsigned int i)
     cudaDeviceSynchronize();
 }
 
+BOOST_AUTO_TEST_CASE(testConv3x3x3_noshared)
+{
+    std::string testURI = suiteURI + ".device.conv3x3x3_no_shared.sparse.N.3D.gridScaling";
+    unsigned int counter = 0;
+    launch_testConv3x3x3_perf_no_shared(testURI, counter++);
+    testSet.insert(testURI);
+}
 
-BOOST_AUTO_TEST_CASE(testConv3x3x3_gridScaling)
+BOOST_AUTO_TEST_CASE(testConv3x3x3_noshared_z_morton)
+{
+    std::string testURI = suiteURI + ".device.conv3x3x3_no_shared.sparse.N.3D.gridScaling";
+    unsigned int counter = 0;
+    launch_testConv3x3x3_perf_no_shared_z_morton(testURI, counter++);
+    testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testConv3x3x3)
 {
     std::string testURI = suiteURI + ".device.conv3x3x3.sparse.N.3D.gridScaling";
     unsigned int counter = 0;
     launch_testConv3x3x3_perf(testURI, counter++);
+    testSet.insert(testURI);
+}
+
+BOOST_AUTO_TEST_CASE(testConv3x3x3_zmorton)
+{
+
+    std::string testURI = suiteURI + ".device.conv3x3x3_zmorton.sparse.N.3D.gridScaling";
+    unsigned int counter = 0;
+    launch_testConv3x3x3_perf_z_morton(testURI, counter++);
     testSet.insert(testURI);
 }
 

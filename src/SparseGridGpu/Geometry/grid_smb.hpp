@@ -40,14 +40,6 @@ public:
         }
     }
 
-/*    __host__ __device__ grid_smb(const size_t blockDimensions[dim])
-    {
-        memcpy(blockSz, blockDimensions, dim * sizeof(size_t));
-        for (int d=0; d<dim; ++d)
-        {
-            sz[d] = blockDimensions[d] * blockEdgeSize;
-        }
-    }*/
 
     __host__ __device__ grid_smb(const size_t domainBlockEdgeSize)
     {
@@ -137,6 +129,25 @@ public:
         return InvLinId(blockLinId, localLinId);
     }
 
+    /*! brief Given a local offset it provide the the position in coordinates
+     *
+     * \param linId point
+     *
+     * \return the point in coordinates
+     *
+     */
+    inline __host__ __device__ grid_key_dx<dim, int> LocalInvLinId(unsigned int localLinId) const
+    {
+        grid_key_dx<dim, int> coord;
+        for (int d = 0; d < dim; ++d)
+        {
+            auto c = localLinId % blockEdgeSize;
+            coord.set_d(d, c);
+            localLinId /= blockEdgeSize;
+        }
+        return coord;
+    }
+
     inline __host__ __device__ grid_key_dx<dim, int> InvLinId(mem_id blockLinId, mem_id localLinId) const
     {
         grid_key_dx<dim, int> coord;
@@ -154,7 +165,7 @@ public:
 
     // Now methods to handle blockGrid coordinates (e.g. to load neighbouring blocks)
     template<typename indexT>
-    inline __host__ __device__ mem_id BlockLinId(const grid_key_dx<dim, indexT> blockCoord) const
+    inline __host__ __device__ mem_id BlockLinId(const grid_key_dx<dim, indexT> & blockCoord) const
     {
         mem_id blockLinId = blockCoord.get(dim - 1);
         if (blockLinId >= blockSz[dim-1])
@@ -175,7 +186,7 @@ public:
 
     // Now methods to handle blockGrid coordinates (e.g. to load neighbouring blocks)
     template<typename indexT>
-    inline __host__ __device__ grid_key_dx<dim,indexT> getGlobalCoord(const grid_key_dx<dim, indexT> blockCoord, unsigned int offset) const
+    inline __host__ __device__ grid_key_dx<dim,indexT> getGlobalCoord(const grid_key_dx<dim, indexT> & blockCoord, unsigned int offset) const
     {
     	grid_key_dx<dim,indexT> k;
 

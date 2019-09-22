@@ -90,10 +90,10 @@ inline __device__ __host__  size_t lin_zid(const grid_key_dx<3,T> & key)
 	y = (y | (y << 2)) & 0x9249249249249249;
 
 	z = (z | (z << 32)) & 0xFFFF0000FFFFFFFF;
-	z = (y | (y << 16)) & 0x0FFF000FFF000FFF;
-	z = (y | (y << 5)) & 0xF00F00F00F00F00F;
-	z = (y | (y << 4)) & 0x30C30C30C30C30C3;
-	z = (y | (y << 2)) & 0x9249249249249249;
+	z = (z | (z << 16)) & 0x0FFF000FFF000FFF;
+	z = (z | (z << 8)) & 0xF00F00F00F00F00F;
+	z = (z | (z << 4)) & 0x30C30C30C30C30C3;
+	z = (z | (z << 2)) & 0x9249249249249249;
 
 	return x | (y << 1) | (z << 2);
 }

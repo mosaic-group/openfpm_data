@@ -295,7 +295,7 @@ private:
 	 */
 	inline void check_init() const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		if (is_mem_init == false)
 		{
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
@@ -311,7 +311,7 @@ private:
 	 */
 	inline void check_bound(const grid_key_dx<dim> & v1) const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		for (long int i = 0 ; i < dim ; i++)
 		{
 			if (v1.get(i) >= (long int)getGrid().size(i))
@@ -335,7 +335,7 @@ private:
 	 */
 	inline void check_bound(size_t v1) const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		if (v1 >= getGrid().size())
 		{
 			std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << v1<< " >= " << getGrid().size() << "\n";
@@ -354,7 +354,7 @@ private:
 	 */
 	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const grid_key_dx<dim> & key2) const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (key2.get(i) >= (long int)g.getGrid().size(i))
@@ -382,7 +382,7 @@ private:
 	template<typename Mem, typename layout2, template <typename>
 	class layout_base2> inline void check_bound(const grid_base_impl<dim,T,Mem,layout2,layout_base2> & g,const grid_key_dx<dim> & key2) const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (key2.get(i) >= (long int)g.getGrid().size(i))
@@ -409,7 +409,7 @@ private:
 	 */
 	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const size_t & key2) const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		if (key2 >= g.getGrid().size())
 		{
 			std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << key2 << " >= " << getGrid().size() << "\n";

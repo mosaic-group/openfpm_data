@@ -308,6 +308,7 @@ namespace openfpm
 		}
 
 		vector_gpu_ker()
+		:v_size(0)
 		{}
 
 		vector_gpu_ker(int v_size, const grid_gpu_ker<1,T_,layout_base> & cpy)

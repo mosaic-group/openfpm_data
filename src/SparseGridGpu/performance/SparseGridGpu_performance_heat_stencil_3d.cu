@@ -6,7 +6,6 @@
  */
 #define SCAN_WITH_CUB
 #define BOOST_TEST_DYN_LINK
-#define OPENFPM_DATA_ENABLE_IO_MODULE
 #define DISABLE_MPI_WRITTERS
 
 #include <boost/test/unit_test.hpp>
@@ -194,7 +193,7 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMu
     ///// /////
 
     sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
-    sparseGrid.tagBoundaries();
+    sparseGrid.tagBoundaries(ctx);
 
     sparseGrid.template deviceToHost<0>(); // NECESSARY as count takes place on Host!
     auto existingElements = sparseGrid.countExistingElements();

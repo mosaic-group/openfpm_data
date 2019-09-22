@@ -9,6 +9,13 @@
 #include "BlockMapGpu.hpp"
 #include "SparseGridGpu_ker_util.hpp"
 
+template<typename indexT>
+struct block_offset
+{
+	indexT pos;
+	indexT off;
+};
+
 //todo Remove template param GridSmT and just use BlockGeometry
 template<unsigned int dim,
         unsigned int blockEdgeSize,
@@ -30,6 +37,7 @@ protected:
     unsigned int ghostLayerSize;
     openfpm::vector_gpu_ker<aggregate<short int,short int>,memory_traits_inte> ghostLayerToThreadsMapping;
     openfpm::vector_gpu_ker<aggregate<indexT>,memory_traits_inte> nn_blocks;
+    openfpm::vector_gpu_ker<aggregate<indexT>,memory_traits_inte> buffPnt;
 
 public:
     static constexpr unsigned int d = dim;
@@ -42,12 +50,19 @@ public:
 	typedef int yes_has_check_device_pointer;
 
 public:
+
+	/*! \brief constructor
+	 *
+	 * this constructor is in general called in the function toKernel() of SparseGridGpu
+	 *
+	 */
     SparseGridGpu_ker(const openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> &blockMap,
                       linearizer & grid,
                       GridSmT extendedBlockGeometry,
                       unsigned int stencilSupportRadius,
                       openfpm::vector_gpu_ker<aggregate<short int,short int>,memory_traits_inte> ghostLayerToThreadsMapping,
                       openfpm::vector_gpu_ker<aggregate<indexT>,memory_traits_inte> nn_blocks,
+                      openfpm::vector_gpu_ker<aggregate<indexT>,memory_traits_inte> buffPnt,
                       unsigned int ghostLayerSize)
             : BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>(blockMap),
               grid(grid),
@@ -55,27 +70,56 @@ public:
               stencilSupportRadius(stencilSupportRadius),
               ghostLayerSize(ghostLayerSize),
               ghostLayerToThreadsMapping(ghostLayerToThreadsMapping),
-              nn_blocks(nn_blocks)
+              nn_blocks(nn_blocks),
+              buffPnt(buffPnt)
     {}
 
+    /*! \brief Get the coordinate of the block and the offset id inside the block it give the global coordinate
+     *
+     * \param blockCoord block coordinate
+     * \param offset in the block
+     *
+     * \return the global coordinate position
+     *
+     */
     template<typename CoordT>
-    __device__ inline grid_key_dx<dim,CoordT> getGlobalCoord(const grid_key_dx<dim, CoordT> & blockCoord, unsigned int offset)
+    __device__ __host__ inline grid_key_dx<dim,CoordT> getGlobalCoord(const grid_key_dx<dim, CoordT> & blockCoord, unsigned int offset)
     {
     	return grid.getGlobalCoord(blockCoord,offset);
     }
 
-    // Geometry
+    /*! \brief Linearization of  global coordinates
+     *
+     * \param coord point coordinates
+     *
+     * \return the linearized position
+     *
+     */
     template<typename CoordT>
     inline __device__ size_t getLinId(const grid_key_dx<dim, CoordT> & coord) const
     {
         return grid.LinId(coord);
     }
 
+    /*! \brief Size of the sparse grid  in each direction
+     *
+     * \param i direction
+     *
+     * \return the linearized position
+     *
+     */
     inline __device__ unsigned int size(unsigned int i)
     {
     	return grid.getSize()[i];
     }
 
+    /*! \brief The inversion of getLinId
+     *
+     * \param linearized index
+     *
+     * \return the point coordinate
+     *
+     */
     inline __device__ grid_key_dx<dim, int> getCoord(size_t linId) const
     {
         return grid.InvLinId(linId);
@@ -110,17 +154,39 @@ public:
     	return active;
     }
 
+    /*! \brief Linearization of  block coordinates
+     *
+     * \param blockCoord block coordinates
+     *
+     * \return the linearized index
+     *
+     */
     template<typename CoordT>
     inline __device__ size_t getBlockLinId(CoordT blockCoord) const
     {
         return grid.BlockLinId(blockCoord);
     }
 
+    /*! \brief The inversion of getBlockLinId
+     *
+     * \param blockLinId linearized block index
+     *
+     * \return the block coordinates
+     *
+     */
     inline __device__ grid_key_dx<dim, int> getBlockCoord(size_t blockLinId) const
     {
         return grid.BlockInvLinId(blockLinId);
     }
 
+    /*! \brief Given a linearized block index it return the coordinated of the lower-left point in 2D or
+     *         in general the origin of the block in global coordinates
+     *
+     * \param blockLinId linearized block index
+     *
+     * \return the block coordinates
+     *
+     */
     inline __device__ grid_key_dx<dim, int> getBlockBaseCoord(size_t blockLinId) const
     {
         return grid.InvLinId(blockLinId * blockSize);
@@ -134,19 +200,77 @@ public:
         return res;
     }
 
+    /*! \brief Return the size of the block edge size
+     *
+     * \return the block edge size
+     *
+     */
     constexpr static __device__ unsigned int getBlockEdgeSize()
     {
         return blockEdgeSize;
     }
 
+
+    /*! \brief Return the size of the block
+     *
+     * \return the block size
+     *
+     */
     constexpr __device__ unsigned int getBlockSize() const
     {
         return blockSize;
     }
 
+    /*! \brief Return the size of the block + ghost needed to apply the stencil
+     *
+     * \return the block size + ghost
+     *
+     */
     inline __device__ unsigned int getEnlargedBlockSize() const
     {
         return std::pow(blockEdgeSize + 2*stencilSupportRadius, dim);
+    }
+
+    /*! \brief Get the neighborhood point in one direction
+     *
+     * \warning This function assume you do not move more than one block edge size in one direction
+     *
+     * \param pos data block position
+     * \param offset inside the data block
+     * \param position where to move
+     *
+     */
+    template<typename NN_type, typename indexT2>
+    inline __device__  block_offset<indexT2> getNNPoint(openfpm::sparse_index<unsigned int> pos,
+    										unsigned int offset,
+    										const grid_key_dx<dim,indexT2> & mov)
+    {
+    	block_offset<indexT2> bof;
+
+    	grid_key_dx<dim,indexT2> coord;
+
+    	for (int i = 0 ; i < dim ; i++)
+    	{
+    		coord.set_d(i,mov.get(i) + offset % blockEdgeSize);
+    		offset /= blockEdgeSize;
+    	}
+
+    	unsigned int NN_index = 0;
+    	unsigned int offset_nn = 0;
+
+    	bool out = NN_type::template getNNindex_offset<blockEdgeSize>(coord,NN_index,offset_nn);
+
+    	// Calculate internal coordinates
+
+    	indexT nnb = pos.id;
+
+    	if (out == true)
+    	{nnb = nn_blocks.template get<0>(NN_index + NN_type::nNN*pos.id);}
+
+    	bof.pos = nnb;
+    	bof.off = offset_nn;
+
+    	return bof;
     }
 
     inline __device__ unsigned int posToEnlargedBlockPos(unsigned int pos) const
@@ -225,10 +349,37 @@ public:
     	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template get<p>(grid.LinId(coord));
     }
 
+    /*! \brief Access the grid point
+     *
+     * \param coord point
+     *
+     * \return a reference to the data point
+     *
+     */
     template<unsigned int p, typename CoordT>
     inline __device__ auto
-    insert(const grid_key_dx<dim, CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template insert<p>(
-            0))
+    get(const block_offset<CoordT> & coord) const -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::blockMap.template get_ele<p>(coord.pos)[coord.off])
+    {
+    	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::blockMap.template get_ele<p>(coord.pos)[coord.off];
+    }
+
+    /*! \brief Access the grid point
+     *
+     * \param coord point
+     *
+     * \return a reference to the data point
+     *
+     */
+    template<unsigned int p, typename CoordT>
+    inline __device__ auto
+    get(const block_offset<CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::blockMap.template get_ele<p>(coord.pos)[coord.off])
+    {
+    	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::blockMap.template get_ele<p>(coord.pos)[coord.off];
+    }
+
+    template<unsigned int p, typename CoordT>
+    inline __device__ auto
+    insert(const grid_key_dx<dim, CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template insert<p>(0))
     {
     	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template insert<p>(grid.LinId(coord));
     }
@@ -271,6 +422,16 @@ public:
     insertBlock(const indexT blockLinId, const unsigned int stride = 8192) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(0))
     {
         return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock<chunksPerBlocks>(blockLinId,stride);
+    }
+
+    /*! \brief Return the buffer of points
+     *
+     * \return the buffer of points
+     *
+     */
+    inline __device__ auto getPointBuffer() -> decltype(buffPnt) &
+    {
+    	return buffPnt;
     }
 
     // Load & Store aux functions for user kernels. To be used for loading to or writing from shared memory.
