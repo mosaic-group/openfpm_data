@@ -8,6 +8,45 @@
 #ifndef SPARSEGRIDGPU_KER_UTIL_HPP_
 #define SPARSEGRIDGPU_KER_UTIL_HPP_
 
+#include "util/variadic_to_vmpl.hpp"
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to calculate the size to pack a point
+ *
+ * \tparam prp set for properties
+ *
+ */
+template<typename AggregateT, int ... prp>
+struct sparsegridgpu_pack_request
+{
+	typedef typename to_boost_vmpl<prp...>::type vprp;
+
+	//! point size
+	size_t point_size;
+
+	/*! \brief constructor
+	 *
+	 */
+	inline sparsegridgpu_pack_request()
+	:point_size(0)
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t)
+	{
+		typedef typename boost::mpl::at<vprp,T>::type prp_cp;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::mpl::at<typename AggregateT::type,prp_cp>::type pack_type;
+
+		point_size += sizeof(pack_type);
+	}
+};
+
 template<unsigned int edgeSize, unsigned int dim>
 inline __device__ unsigned int coordToLin(const unsigned int (&coord)[dim], const unsigned int paddingSize = 0)
 {

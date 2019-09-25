@@ -574,6 +574,10 @@ void testConv3x3x3_perf(std::string testName)
               << std::endl;
     std::cout << "Grid: " << sz[0] << "x" << sz[1] << "x" << sz[2] << std::endl;
 
+    double dataOccupancyMean, dataOccupancyDev;
+    sparseGrid.measureBlockOccupancy(dataOccupancyMean, dataOccupancyDev);
+    std::cout << "Data Occupancy: " << dataOccupancyMean << " dev:" << dataOccupancyDev << std::endl;
+
     std::cout << "Iterations: " << iterations << std::endl;
     std::cout << "\tConvolution3x3x3: " << mean_tm << " dev:" << deviation_tm << " s" << std::endl;
     std::cout << "Throughput: " << std::endl << "\t " << mean_gf << " GFlops/s   dev: " <<  deviation_gf << "   GFlops/s " << std::endl;
@@ -664,6 +668,10 @@ static void testConv3x3x3_no_shared_perf(std::string testName)
               << "x" << SparseGridZ::blockEdgeSize_
               << std::endl;
     std::cout << "Grid: " << sz[0] << "x" << sz[1] << "x" << sz[2] << std::endl;
+
+    double dataOccupancyMean, dataOccupancyDev;
+    sparseGrid.measureBlockOccupancy(dataOccupancyMean, dataOccupancyDev);
+    std::cout << "Data Occupancy: " << dataOccupancyMean << " dev:" << dataOccupancyDev << std::endl;
 
     std::cout << "Iterations: " << iterations << std::endl;
     std::cout << "\tConvolution3x3x3: " << mean_tm << " dev:" << deviation_tm << " s" << std::endl;

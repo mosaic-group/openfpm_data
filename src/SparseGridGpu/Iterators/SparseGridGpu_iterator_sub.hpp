@@ -43,6 +43,12 @@ class SparseGridGpu_iterator_sub
 	// subset in grid coordinates
 	Box<dim,int> sub_set;
 
+	//! start point
+	mutable grid_key_dx<dim> start;
+
+	//! stop point
+	mutable grid_key_dx<dim> stop;
+
 	// subset in local chunk coordinates
 	Box<dim,int> res;
 
@@ -156,6 +162,30 @@ public:
 		initialize_chunk_it();
 
 		SelectValid();
+	}
+
+	/*! \brief Return the starting point
+	 *
+	 * \return the start point
+	 *
+	 */
+	grid_key_dx<dim> & getStart() const
+	{
+		start = sub_set.getKP1();
+
+		return start;
+	}
+
+	/*! \brief Return the stop point
+	 *
+	 * \return the stop point
+	 *
+	 */
+	grid_key_dx<dim> & getStop() const
+	{
+		stop = sub_set.getKP2();
+
+		return stop;
 	}
 
 	/*! \brief Reinitialize the iterator

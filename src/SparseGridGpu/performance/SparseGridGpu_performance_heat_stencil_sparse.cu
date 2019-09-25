@@ -127,7 +127,8 @@ void testStencilHeatSparse_perf(unsigned int i, std::string base, float fillMult
     std::cout << "Grid: " << gridEdgeSize*blockEdgeSize << "x" << gridEdgeSize*blockEdgeSize << std::endl;
     double dataOccupancyMean, dataOccupancyDev;
     sparseGrid.deviceToHost();
-    sparseGrid.measureBlockOccupancy(dataOccupancyMean, dataOccupancyDev);std::cout << "Data Occupancy: " << dataOccupancyMean << " dev:" << dataOccupancyDev << std::endl;
+    sparseGrid.measureBlockOccupancy(dataOccupancyMean, dataOccupancyDev);
+    std::cout << "Data Occupancy: " << dataOccupancyMean << " dev:" << dataOccupancyDev << std::endl;
     report_sparsegrid_funcs.graphs.put(base + ".dataOccupancy.mean",dataOccupancyMean);
     report_sparsegrid_funcs.graphs.put(base +".dataOccupancy.dev",dataOccupancyDev);
     std::cout << "Iterations: " << iterations << std::endl;

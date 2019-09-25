@@ -424,13 +424,22 @@ private:
 
     openfpm::vector_gpu<aggregate<indexT>> nn_blocks;
 
+    //! temporal
+    mutable openfpm::vector_gpu<aggregate<indexT>> tmp;
+
     typedef SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer> self;
+
+    //! the set of all sub-set to pack
+    mutable openfpm::vector_gpu<Box<dim,int>> pack_subs;
 
 protected:
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
     typedef AggregateBlockT AggregateInternalT;
 
 public:
+
+	//! it define that this data-structure is a grid
+	typedef int yes_i_am_grid;
 
     static constexpr unsigned int dims = dim;
     static constexpr unsigned int blockEdgeSize_ = blockEdgeSize;
@@ -1388,6 +1397,102 @@ public:
     		std::cout << std::endl;
     	}
     }
+
+    /*! \brief memory requested to pack this object
+     *
+     * \param req request
+     *
+     */
+	template<int ... prp> inline
+	void packRequest(size_t & req, mgpu::ofp_context_t &context) const
+    {
+    	ite_gpu<1> ite;
+
+    	auto & indexBuffer = private_get_index_array();
+    	auto & dataBuffer = private_get_data_array();
+
+    	ite.wthr.x = indexBuffer.size();
+    	ite.wthr.y = 1;
+    	ite.wthr.z = 1;
+    	ite.thr.x = getBlockSize();
+    	ite.thr.y = 1;
+    	ite.thr.z = 1;
+
+    	tmp.resize(indexBuffer.size() + 1);
+
+		// Launch a kernel that count the number of element on each chunks
+    	CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+    				 ite,
+    				 dataBuffer.toKernel(),
+    				 tmp.toKernel());
+
+    	openfpm::scan((indexT *)tmp. template getDeviceBuffer<0>(),
+    						tmp.size(), (indexT *)tmp. template getDeviceBuffer<0>(), context);
+
+    	tmp.template deviceToHost<0>(tmp.size()-1,tmp.size()-1);
+
+    	sparsegridgpu_pack_request<AggregateT,prp ...> spq;
+
+    	boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                (prp)>>(spq);
+
+		size_t n_pnt = tmp.template get<0>(tmp.size()-1);
+
+
+		                        // 4 byte each chunks        data                      // we use short to pack the offset
+		                        // for each counter
+		req = sizeof(indexT) +               // byte required to pack the number
+			  sizeof(indexT)*indexBuffer.size() +    // byte required to pack the chunk indexes
+			  sizeof(indexT)*tmp.size() +            // byte required to pack the scan of the chunks points
+			  n_pnt*(spq.point_size + 2);    // byte required to pack data + offset position
+    }
+
+	/*! \brief Calculate the size to pack part of this structure
+	 *
+	 * \warning this function does not return the byte immediately but it buffer the request until you call
+	 *          packCalculate
+	 *
+	 * \warning to reset call packReset()
+	 *
+	 * \tparam prp set of properties to pack
+	 *
+
+	 * \param sub sub-grid to pack
+	 * \param req output byte
+	 *
+	 */
+	template<int ... prp> inline
+	void packRequest(SparseGridGpu_iterator_sub<dim,self> & sub_it,
+					 size_t & req) const
+	{
+		pack_subs.add();
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			pack_subs.template get<0>(pack_subs.size()-1)[i] = sub_it.getStart().get(i);
+			pack_subs.template get<1>(pack_subs.size()-1)[i] = sub_it.getStop().get(i);
+		}
+	}
+
+	/*! \brief Reset the pack calculation
+	 *
+	 *
+	 */
+	void packReset()
+	{
+		pack_subs.clear();
+	}
+
+	/*! \brief Calculate the size of the information to pack
+	 *
+	 * \param req output size
+	 * \param context gpu contect
+	 *
+	 */
+	template<int ... prp> inline
+	void packCalculate(size_t & req, mgpu::ofp_context_t &context)
+	{
+		//
+	}
 
     /*! \brief Return a SparseGrid iterator
      *

@@ -9,6 +9,14 @@
 #include <SparseGridGpu/TemplateUtils/mathUtils.hpp>
 #include "util/cuda_util.hpp"
 
+#ifndef SPARSEGRIDGPU_LAUNCH_BOUND_APPLY_STENCIL_IN_PLACE
+#define SPARSEGRIDGPU_LAUNCH_BOUND_APPLY_STENCIL_IN_PLACE
+#endif
+
+#ifndef SPARSEGRIDGPU_LAUNCH_BOUND_APPLY_STENCIL_IN_PLACE_NO_SHARED
+#define SPARSEGRIDGPU_LAUNCH_BOUND_APPLY_STENCIL_IN_PLACE_NO_SHARED
+#endif
+
 // Kernels for SparseGridGpu
 
 namespace SparseGridGpuKernels
@@ -181,8 +189,9 @@ namespace SparseGridGpuKernels
             typename DataBufT,
             typename SparseGridT,
             typename... Args>
-    __global__
-    void applyStencilInPlaceNoShared(
+    __global__ void
+    SPARSEGRIDGPU_LAUNCH_BOUND_APPLY_STENCIL_IN_PLACE_NO_SHARED
+    applyStencilInPlaceNoShared(
             IndexBufT indexBuffer,
             DataBufT dataBuffer,
             SparseGridT sparseGrid,
@@ -241,8 +250,9 @@ namespace SparseGridGpuKernels
             typename DataBufT,
             typename SparseGridT,
             typename... Args>
-    __global__
-    void applyStencilInPlace(
+    __global__ void
+    SPARSEGRIDGPU_LAUNCH_BOUND_APPLY_STENCIL_IN_PLACE
+    applyStencilInPlace(
             IndexBufT indexBuffer,
             DataBufT dataBuffer,
             SparseGridT sparseGrid,

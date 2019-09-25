@@ -1101,6 +1101,98 @@ BOOST_AUTO_TEST_CASE(test_sparse_grid_iterator_sub_host)
 }
 
 
+
+
+BOOST_AUTO_TEST_CASE(test_sparse_grid_iterator_host)
+{
+	constexpr unsigned int dim = 3;
+	constexpr unsigned int blockEdgeSize = 4;
+	typedef aggregate<float, float> AggregateT;
+
+	size_t sz[3] = {512,512,512};
+	dim3 gridSize(32,32,32);
+
+	grid_smb<dim, blockEdgeSize> blockGeometry(sz);
+	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64, long int> sparseGrid(blockGeometry);
+	mgpu::ofp_context_t ctx;
+	sparseGrid.template setBackgroundValue<0>(0);
+
+	///// Insert sparse content, a set of 3 hollow spheres /////
+	// Sphere 1
+	grid_key_dx<3,int> start1({256,256,256});
+	sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
+	CUDA_LAUNCH_DIM3((insertSphere3D<0>),
+					 gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
+					 sparseGrid.toKernel(), start1, 64, 32, 1);
+
+	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+	sparseGrid.template deviceToHost<0>();
+
+	bool match = true;
+
+	int count = 0;
+
+	auto it = sparseGrid.getIterator();
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		match &= sparseGrid.template get<0>(key) == 1.0;
+		//unsigned char bl = sparseGrid.template get<2>(key);
+
+		count++;
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(sparseGrid.countExistingElements(),count);
+	BOOST_REQUIRE_EQUAL(match,true);
+}
+
+BOOST_AUTO_TEST_CASE(test_pack_request)
+{
+	size_t sz[] = {1000,1000,1000};
+
+	constexpr int blockEdgeSize = 4;
+	constexpr int dim = 3;
+
+	typedef SparseGridGpu<dim, aggregate<float>, blockEdgeSize, 64, long int> SparseGridZ;
+
+	SparseGridZ sparseGrid(sz);
+	mgpu::ofp_context_t ctx;
+	sparseGrid.template setBackgroundValue<0>(0);
+
+	// now create a 3D sphere
+
+    grid_key_dx<3,int> start({256,256,256});
+
+    dim3 gridSize(32,32,32);
+
+    // Insert values on the grid
+    sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
+    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
+            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
+            sparseGrid.toKernel(), start,64, 56, 1);
+
+    sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+    sparseGrid.template deviceToHost<0>();
+
+    size_t cnt = sparseGrid.countExistingElements();
+
+    size_t req = 0;
+    sparseGrid.packRequest<0>(req,ctx);
+
+    size_t tot = 8 +                // how many chunks
+    		     sparseGrid.private_get_index_array().size()*16 + 8 +// store the scan + chunk indexes
+    		     cnt*(sizeof(float) + 2); // how much data
+
+    BOOST_REQUIRE_EQUAL(req,tot);
+}
+
+#if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
+
 BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 {
 	constexpr unsigned int dim = 3;
@@ -1174,60 +1266,6 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 	sparseGrid.deviceToHost<0,1>();
 	sparseGrid.write("SparseGridGPU_output3DHeatStencil.vtk");
 }
-
-BOOST_AUTO_TEST_CASE(test_sparse_grid_iterator_host)
-{
-	constexpr unsigned int dim = 3;
-	constexpr unsigned int blockEdgeSize = 4;
-	typedef aggregate<float, float> AggregateT;
-
-	size_t sz[3] = {512,512,512};
-//        dim3 gridSize(128,128,128);
-	dim3 gridSize(32,32,32);
-
-	grid_smb<dim, blockEdgeSize> blockGeometry(sz);
-	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64, long int> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
-	sparseGrid.template setBackgroundValue<0>(0);
-
-	///// Insert sparse content, a set of 3 hollow spheres /////
-	// Sphere 1
-	grid_key_dx<3,int> start1({256,256,256});
-	sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-	CUDA_LAUNCH_DIM3((insertSphere3D<0>),
-					 gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
-					 sparseGrid.toKernel(), start1, 64, 32, 1);
-
-	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-
-	sparseGrid.template deviceToHost<0>();
-
-	bool match = true;
-
-	int count = 0;
-
-	auto it = sparseGrid.getIterator();
-
-	while (it.isNext())
-	{
-		auto key = it.get();
-
-		match &= sparseGrid.template get<0>(key) == 1.0;
-		//unsigned char bl = sparseGrid.template get<2>(key);
-
-		count++;
-
-		++it;
-	}
-
-	BOOST_REQUIRE_EQUAL(sparseGrid.countExistingElements(),count);
-	BOOST_REQUIRE_EQUAL(match,true);
-}
-
-
-
-#if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
-
 
 BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput)
 {

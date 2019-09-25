@@ -6,6 +6,9 @@
 #define BOOST_TEST_DYN_LINK
 #define DISABLE_MPI_WRITTERS
 
+//#define SPARSEGRIDGPU_LAUNCH_BOUND_APPLY_STENCIL_IN_PLACE __launch_bounds__(512)
+#define SPARSEGRIDGPU_LAUNCH_BOUND_APPLY_STENCIL_IN_PLACE_NO_SHARED __launch_bounds__(BLOCK_SIZE_STENCIL,12)
+
 #include <boost/test/unit_test.hpp>
 #include "SparseGridGpu/SparseGridGpu.hpp"
 #include "cuda_macro.h"

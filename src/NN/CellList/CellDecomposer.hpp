@@ -781,6 +781,10 @@ protected:
 
 #endif
 
+		// set div_wp to zero
+		for (size_t i = 0 ; i < dim ; i++)
+		{div_wp[i] = 0;}
+
 		// created a padded div
 		size_t div_p[dim];
 
@@ -1487,10 +1491,6 @@ public:
 	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, const size_t pad)
 	:t(Matrix<dim,T>::identity(),box.getP1()),box(box),gr_cell()
 	{
-		// set div_wp to zero
-		for (size_t i = 0 ; i < dim ; i++)
-		{div_wp[i] = 0;}
-
 		Initialize(pad);
 	}
 
