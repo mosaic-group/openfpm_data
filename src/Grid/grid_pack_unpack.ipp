@@ -11,6 +11,23 @@ static bool pack()
 	return false;
 }
 
+/*! \brief Reset the pack calculation
+ * 
+ * \note in this case does nothing
+ *
+ */
+void packReset()
+{}
+
+/*! \brief Pack calculate
+ * 
+ * \note in this case does nothing
+ *
+ */
+ template<typename context_type>
+void packCalculate(size_t & req, const context_type & ctx)
+{}
+
 static bool packRequest()
 {
 	return false;

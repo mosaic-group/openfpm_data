@@ -1398,6 +1398,8 @@ public:
     	}
     }
 
+    /////////////////////////////////// DISTRIBUTED INTERFACE ///////////////////////
+
     /*! \brief memory requested to pack this object
      *
      * \param req request
@@ -1493,6 +1495,68 @@ public:
 	{
 		//
 	}
+
+	/*! \brief Pack the object into the memory given an iterator
+	 *
+	 * \warning the pack does not happen here but it happen in packFinalize, the request is just queued
+	 *
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 * \param sub_it sub grid iterator ( or the elements in the grid to pack )
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void pack(ExtPreAlloc<CudaMemory> & mem,
+									SparseGridGpu_iterator_sub<dim,self> & sub_it,
+									Pack_stat & sts)
+	{
+
+	}
+
+	/*! \brief Remove all the points in this region
+	 *
+	 * \param box_src box to kill the points
+	 *
+	 */
+	void remove(Box<dim,size_t> & section_to_delete)
+	{
+
+	}
+
+	/*! \brief This is a multiresolution sparse grid so is a compressed format
+	 *
+	 * \return true
+	 *
+	 */
+	static constexpr bool isCompressed()
+	{
+		return true;
+	}
+
+	void copy_to(const self & grid_src,
+		         const Box<dim,size_t> & box_src,
+			     const Box<dim,size_t> & box_dst)
+	{
+	}
+
+	/*! \brief unpack the sub-grid object
+	 *
+	 * \tparam prp properties to unpack
+	 *
+	 * \param mem preallocated memory from where to unpack the object
+	 * \param sub sub-grid iterator
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<unsigned int ... prp, typename S2>
+	void unpack(ExtPreAlloc<S2> & mem,
+				SparseGridGpu_iterator_sub<dim,self> & sub_it,
+				Unpack_stat & ps)
+	{
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /*! \brief Return a SparseGrid iterator
      *

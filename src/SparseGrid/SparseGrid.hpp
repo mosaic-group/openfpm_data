@@ -1118,11 +1118,31 @@ public:
 		return n * sizeof(prp_object);
 	}
 
+	/*! \brief Reset the pack calculation
+	 *
+	 * \note in this case it does nothing
+	 *
+	 */
+	void packReset()
+	{}
+
+	/*! \brief Calculate the size of the information to pack
+	 *
+	 * \in this case it does nothing
+	 *
+	 * \param req output size
+	 * \param context gpu contect
+	 *
+	 */
+	template<int ... prp, typename context_type> inline
+	void packCalculate(size_t & req, const context_type & context)
+	{}
+
 	/*! \brief Insert an allocation request
 	 *
 	 * \tparam prp set of properties to pack
 	 *
-
+	 *
 	 * \param sub sub-grid iterator
 	 * \param vector of requests
 	 *
