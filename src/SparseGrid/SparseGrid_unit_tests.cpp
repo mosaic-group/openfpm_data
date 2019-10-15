@@ -799,8 +799,9 @@ template<typename sgrid> void Test_unpack_and_check(sgrid & grid, sgrid & grid2,
 
 	// now we unpack on another grid
 
+	int ctx = 0;
 	Unpack_stat usts;
-	grid2.template unpack<0>(mem,sub_it,usts);
+	grid2.template unpack<0>(mem,sub_it,usts,ctx);
 
 	bool match = true;
 	auto it = grid.getIterator();

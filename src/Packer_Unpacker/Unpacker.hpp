@@ -257,9 +257,11 @@ public:
 		obj.template unpack<prp...>(mem, ps);
 	}
 
-	template<typename grid_sub_it_type, unsigned int ... prp> static void unpack(ExtPreAlloc<Mem> & mem, grid_sub_it_type & sub_it, T & obj, Unpack_stat & ps)
+	template<typename grid_sub_it_type,
+			 typename context_type,
+			 unsigned int ... prp> static void unpack(ExtPreAlloc<Mem> & mem, grid_sub_it_type & sub_it, T & obj, Unpack_stat & ps, context_type & context)
 	{
-		obj.template unpack<prp...>(mem, sub_it, ps);
+		obj.template unpack<prp...>(mem, sub_it, ps, context);
 	}
 };
 

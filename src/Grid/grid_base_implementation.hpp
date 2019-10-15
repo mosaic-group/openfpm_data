@@ -1670,6 +1670,25 @@ public:
 		return -1;
 #endif
 	}
+
+	/*! \brief In this case it does nothing
+	 *
+	 * \note this function exist to respect the interface to work as distributed
+	 *
+	 */
+	void removeCopyReset()
+	{}
+
+	/*! \brief In this case it does nothing
+	 *
+	 * \note this function exist to respect the interface to work as distributed
+	 *
+	 * \param ctx context
+	 *
+	 */
+	template<typename context_type>
+	void removeCopyFinalize(const context_type & ctx)
+	{}
 };
 
 

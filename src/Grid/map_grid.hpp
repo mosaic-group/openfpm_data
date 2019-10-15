@@ -567,9 +567,11 @@ struct device_to_host_start_stop_impl
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		typedef typename boost::mpl::at<typename T_type::type,T>::type p_type;
+		typedef typename boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type prp_id;
 
-		boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem->deviceToHost(start*sizeof(p_type),(stop+1)*sizeof(p_type));
+		typedef typename boost::mpl::at<typename T_type::type,prp_id>::type p_type;
+
+		boost::fusion::at_c<prp_id::value>(dst).mem->deviceToHost(start*sizeof(p_type),(stop+1)*sizeof(p_type));
 	}
 };
 

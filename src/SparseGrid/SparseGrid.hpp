@@ -1435,6 +1435,36 @@ public:
 		*number_of_chunks = n_packed_chunk;
 	}
 
+	/*! \brief In this case it does nothing
+	 *
+	 * \note this function exist to respect the interface to work as distributed
+	 *
+	 */
+	void removeCopyReset()
+	{}
+
+	/*! \brief In this case it does nothing
+	 *
+	 * \note this function exist to respect the interface to work as distributed
+	 *
+	 * \param ctx context
+	 *
+	 */
+	template<typename context_type>
+	void removeCopyFinalize(const context_type & ctx)
+	{}
+
+	/*! \brief Pack finalize Finalize the pack of this object. In this case it does nothing
+	 *
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void packFinalize(ExtPreAlloc<S> & mem, Pack_stat & sts)
+	{}
+
 	/*! \brief Pack the object into the memory given an iterator
 	 *
 	 * \tparam prp properties to pack
@@ -1630,10 +1660,11 @@ public:
 	 * \param obj object where to unpack
 	 *
 	 */
-	template<unsigned int ... prp, typename S2>
+	template<unsigned int ... prp, typename S2,typename context_type>
 	void unpack(ExtPreAlloc<S2> & mem,
 				grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> & sub_it,
-				Unpack_stat & ps)
+				Unpack_stat & ps,
+				context_type & context)
 	{
 		short unsigned int mask_it[chunking::size::value];
 
@@ -1725,7 +1756,8 @@ public:
 
 		auto sub_it = this->getIterator(start,stop);
 
-		unpack<prp...>(mem,sub_it,ps);
+		int ctx;
+		unpack<prp...>(mem,sub_it,ps,ctx);
 	}
 
 	/*! \brief unpack the sub-grid object applying an operation

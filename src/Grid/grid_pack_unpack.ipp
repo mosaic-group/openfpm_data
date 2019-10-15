@@ -24,7 +24,7 @@ void packReset()
  * \note in this case does nothing
  *
  */
- template<typename context_type>
+ template<unsigned int ... prp, typename context_type>
 void packCalculate(size_t & req, const context_type & ctx)
 {}
 
@@ -355,6 +355,17 @@ struct unpack_simple_cond<true, prp ...>
 		}
 	}
 	
+	/*! \brief Pack finalize Finalize the pack of this object. In this case it does nothing
+	 *
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void packFinalize(ExtPreAlloc<S> & mem, Pack_stat & sts)
+	{}
+	
 	/*! \brief Pack the object into the memory given an iterator
 	 *
 	 * \tparam prp properties to pack
@@ -430,7 +441,7 @@ struct unpack_simple_cond<true, prp ...>
 	 * \param obj object where to unpack
 	 *
 	 */
-	template<unsigned int ... prp,typename S2> void unpack(ExtPreAlloc<S2> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Unpack_stat & ps)
+	template<unsigned int ... prp,typename S2, typename context_type> void unpack(ExtPreAlloc<S2> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Unpack_stat & ps,context_type & context)
 	{
 		// object that store the information in mem
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout,layout_base>::value_type::type,prp...>::type> prp_object;

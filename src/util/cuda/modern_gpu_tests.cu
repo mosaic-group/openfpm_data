@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE( modern_gpu_transform_lbs )
 
 	segments.template hostToDevice<0>();
 
-	load_balance_search(count, (int *)segments.template getDeviceBuffer<0>(), num_segments, (int *)lbs.template getDeviceBuffer<0>(),context);
+	mgpu::load_balance_search(count, (int *)segments.template getDeviceBuffer<0>(), num_segments, (int *)lbs.template getDeviceBuffer<0>(),context);
 
 	lbs.deviceToHost<0>();
 

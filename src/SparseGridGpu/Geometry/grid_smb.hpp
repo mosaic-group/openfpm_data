@@ -220,7 +220,7 @@ public:
     	return sz;
     }
 
-    inline size_t getBlockSize() const
+    __host__ __device__ inline size_t getBlockSize() const
     {
     	return blockSize;
     }

@@ -1191,6 +1191,166 @@ BOOST_AUTO_TEST_CASE(test_pack_request)
     BOOST_REQUIRE_EQUAL(req,tot);
 }
 
+BOOST_AUTO_TEST_CASE(test_pack_request_with_iterator)
+{
+	size_t sz[] = {1000,1000,1000};
+
+	constexpr int blockEdgeSize = 4;
+	constexpr int dim = 3;
+
+	typedef SparseGridGpu<dim, aggregate<float>, blockEdgeSize, 64, long int> SparseGridZ;
+
+	SparseGridZ sparseGrid(sz);
+	mgpu::ofp_context_t ctx;
+	sparseGrid.template setBackgroundValue<0>(0);
+
+	// now create a 3D sphere
+
+    grid_key_dx<3,int> start({256,256,256});
+
+    dim3 gridSize(32,32,32);
+
+    // Insert values on the grid
+    sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
+    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
+            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
+            sparseGrid.toKernel(), start,64, 56, 1);
+
+    sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+    size_t req = 0;
+    sparseGrid.packReset();
+
+    {
+    grid_key_dx<3> start1({0,0,0});
+    grid_key_dx<3> stop1({321,999,999});
+
+    grid_key_dx<3> start2({322,0,0});
+    grid_key_dx<3> stop2({999,999,999});
+
+    auto it1 = sparseGrid.getIterator(start1,stop1);
+    sparseGrid.template packRequest<0>(it1,req);
+
+    auto it2 = sparseGrid.getIterator(start2,stop2);
+    sparseGrid.template packRequest<0>(it2,req);
+
+    sparseGrid.template packCalculate<0>(req,ctx);
+    }
+
+    sparseGrid.template deviceToHost<0>();
+
+
+    size_t cnt = sparseGrid.countExistingElements();
+
+    size_t tot = 8 +                // how many chunks
+    		     sparseGrid.private_get_index_array().size()*16 + 8 +// store the scan + chunk indexes
+    		     cnt*(sizeof(float) + 2); // how much data
+
+    BOOST_REQUIRE_EQUAL(req,tot);
+
+    ////////////////////////////////// test something else
+
+    req = 0;
+    sparseGrid.packReset();
+
+    {
+    grid_key_dx<3> start1({0,0,0});
+    grid_key_dx<3> stop1({999,999,999});
+
+    auto it1 = sparseGrid.getIterator(start1,stop1);
+    sparseGrid.template packRequest<0>(it1,req);
+
+    auto it2 = sparseGrid.getIterator(start1,stop1);
+    sparseGrid.template packRequest<0>(it2,req);
+
+    sparseGrid.template packCalculate<0>(req,ctx);
+    }
+
+
+    tot = 8 +                // how many chunks
+    		     sparseGrid.private_get_index_array().size()*16 + 8 + // store the scan + chunk indexes
+    		     2*cnt*(sizeof(float) + 2); // how much data
+
+    BOOST_REQUIRE_EQUAL(req,tot);
+}
+
+BOOST_AUTO_TEST_CASE(sparsegridgpu_remove_test)
+{
+	size_t sz[] = {1000,1000,1000};
+
+	constexpr int blockEdgeSize = 4;
+	constexpr int dim = 3;
+
+	typedef SparseGridGpu<dim, aggregate<float>, blockEdgeSize, 64, long int> SparseGridZ;
+
+	SparseGridZ sparseGrid(sz);
+	mgpu::ofp_context_t ctx;
+	sparseGrid.template setBackgroundValue<0>(0);
+
+	// now create a 3D sphere
+
+    grid_key_dx<3,int> start({256,256,256});
+
+    dim3 gridSize(32,32,32);
+
+    // Insert values on the grid
+    sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
+    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
+            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
+            sparseGrid.toKernel(), start,64, 56, 1);
+
+    sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+    // remove the center
+
+    Box<3,unsigned int> remove_section1({310,0,0},{330,999,999});
+    Box<3,unsigned int> remove_section2({0,310,0},{999,330,999});
+    Box<3,unsigned int> remove_section3({0,0,310},{999,999,330});
+
+    sparseGrid.remove(remove_section1);
+    sparseGrid.remove(remove_section2);
+    sparseGrid.remove(remove_section3);
+
+    sparseGrid.removeCopyFinalize(ctx);
+
+    sparseGrid.deviceToHost<0>();
+
+    // Check we have the sphere points with the exception of the box
+
+    auto it = sparseGrid.getIterator();
+
+    bool match = true;
+
+    while (it.isNext())
+    {
+    	auto p = it.get();
+
+    	Point<3,size_t> pt = p.toPoint();
+
+    	// Calculate redius
+    	float radius = sqrt((pt.get(0) - 320)*(pt.get(0) - 320) +
+    						(pt.get(1) - 320)*(pt.get(1) - 320) +
+    						(pt.get(2) - 320)*(pt.get(2) - 320));
+
+
+    	if (radius < 55.99 || radius > 64.01)
+    	{match &= false;}
+
+    	if (remove_section1.isInside(pt) == true)
+    	{match &= false;}
+
+    	if (remove_section2.isInside(pt) == true)
+    	{match &= false;}
+
+    	if (remove_section3.isInside(pt) == true)
+    	{match &= false;}
+
+    	++it;
+    }
+
+    BOOST_REQUIRE_EQUAL(match,true);
+}
+
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
 
 BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)

@@ -214,7 +214,8 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx<dim> & operator+=(const grid_key_dx<dim> & p)
+	__device__ __host__
+	inline grid_key_dx<dim,index_type> & operator+=(const grid_key_dx<dim,index_type> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			k[i] += p.k[i];
@@ -229,7 +230,8 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx<dim> & operator-=(const grid_key_dx<dim> & p)
+	__device__ __host__
+	inline grid_key_dx<dim,index_type> & operator-=(const grid_key_dx<dim,index_type> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			k[i] -= p.k[i];
@@ -244,7 +246,8 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	__device__ __host__ inline grid_key_dx_sum<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>>
+	__device__ __host__
+	inline grid_key_dx_sum<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>>
 	operator+(const grid_key_dx<dim,index_type> & p) const
 	{
 		grid_key_dx_sum<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>> exp_sum(*this,p);
@@ -259,6 +262,7 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
+	__device__ __host__
 	inline grid_key_dx_sum<dim,grid_key_dx<dim>,Point<dim,long int>>
 	operator+(const Point<dim,long int> & p) const
 	{
@@ -274,6 +278,7 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
+	__device__ __host__
 	inline grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> operator+(const comb<dim> & cmb) const
 	{
 		grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> exp_sum(*this,cmb);
@@ -288,9 +293,11 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx<dim>> operator-(const grid_key_dx<dim> & cmb) const
+	__device__ __host__
+	inline grid_key_dx_sub<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>>
+	operator-(const grid_key_dx<dim,index_type> & cmb) const
 	{
-		grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx<dim>> exp_sum(*this,cmb);
+		grid_key_dx_sub<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>> exp_sum(*this,cmb);
 
 		return exp_sum;
 	}
@@ -302,9 +309,10 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	template <typename T> inline grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx_expression<dim,T>> operator-(const grid_key_dx_expression<dim,T> & cmb) const
+	template <typename T>
+	__device__ __host__ inline grid_key_dx_sub<dim,grid_key_dx<dim,index_type>,grid_key_dx_expression<dim,T>> operator-(const grid_key_dx_expression<dim,T> & cmb) const
 	{
-		grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx_expression<dim,T>> exp_sum(*this,cmb);
+		grid_key_dx_sub<dim,grid_key_dx<dim,index_type>,grid_key_dx_expression<dim,T>> exp_sum(*this,cmb);
 
 		return exp_sum;
 	}
@@ -316,7 +324,7 @@ public:
 	 * \return true if the two key are equal
 	 *
 	 */
-	template<unsigned int dim_t> bool operator==(const grid_key_dx<dim_t> & key_t) const
+	template<unsigned int dim_t> bool operator==(const grid_key_dx<dim_t,index_type> & key_t) const
 	{
 		if (dim != dim_t)
 		{
@@ -345,7 +353,7 @@ public:
 	 * \return true if the two key are equal
 	 *
 	 */
-	template<unsigned int dim_t> bool operator!=(const grid_key_dx<dim_t> & key_t)
+	template<unsigned int dim_t> bool operator!=(const grid_key_dx<dim_t,index_type> & key_t)
 	{
 		return !this->operator==(key_t);
 	}
@@ -357,7 +365,7 @@ public:
      * \return true if this is lexicographically less than other key
      *
      */
-    bool operator<(const grid_key_dx<dim> & key_t) const
+    bool operator<(const grid_key_dx<dim,index_type> & key_t) const
     {
     	// Check the two key index by index
 
@@ -446,7 +454,7 @@ public:
 	 *
 	 */
 	template<typename typeT = size_t>
-	inline Point<dim,typeT> toPoint() const
+	__host__ __device__ inline Point<dim,typeT> toPoint() const
 	{
 		Point<dim,typeT> p;
 

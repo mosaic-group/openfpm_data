@@ -368,7 +368,314 @@ namespace SparseGridGpuKernels
 
         __syncthreads();
 
-        output.template get<0>(dataBlockPos) = ato_cnt;
+//        output.template get<0>(dataBlockPos) = ato_cnt;
+    }
+
+    template<unsigned int dim,
+    		 unsigned int pMask,
+    		 unsigned int blockEdgeSize,
+    		 typename dataBufferType,
+    		 typename outType,
+    		 typename boxesVector_type,
+    		 typename grid_smb_type,
+    		 typename indexBuffer_type>
+    __global__ void calc_remove_points_chunks_boxes(indexBuffer_type indexBuffer,
+    											 boxesVector_type boxes,
+    											 grid_smb_type grd,
+    											 dataBufferType dataBuf,
+    											 outType output)
+    {
+    	typedef typename dataBufferType::value_type AggregateT;
+    	typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
+
+        const unsigned int dataBlockPos = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (dataBlockPos >= indexBuffer.size())
+        {return;}
+
+        auto id = indexBuffer.template get<0>(dataBlockPos);
+        grid_key_dx<dim,int> pnt = grd.InvLinId(id*grd.getBlockSize());
+
+        Box<dim,unsigned int> b;
+
+        for (int i = 0 ; i < dim ; i++)
+        {
+        	b.setLow(i,pnt.get(i));
+        	b.setHigh(i,pnt.get(i) + blockEdgeSize - 1);
+        }
+
+        // this block intersect a remove box section so mark the chunk
+
+        output.template get<1>(dataBlockPos) = 0;
+		for (int k = 0 ; k < boxes.size() ; k++ )
+		{
+			Box<dim,unsigned int> btest = boxes.get(k);
+
+			Box<dim,unsigned int> bout;
+
+			if (btest.Intersect(b,bout) == true)
+			{
+				output.template get<1>(dataBlockPos) = 1;
+			}
+		}
+    }
+
+    template<typename outType,
+    		 typename activeCnkType>
+    __global__ void collect_rem_chunks(activeCnkType act,
+    								   outType output)
+    {
+        const unsigned int dataBlockPos = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (dataBlockPos >= act.size()-1)
+        {return;}
+
+        auto id = act.template get<1>(dataBlockPos);
+        auto id_p1 = act.template get<1>(dataBlockPos+1);
+
+        if (id != id_p1)
+        {
+        	output.template get<0>(id) = dataBlockPos;
+        }
+    }
+
+    template<unsigned int dim, unsigned int pMask,
+    							typename dataBufferType,
+    						    typename indexBufferType,
+    						    typename grid_smb_type,
+    						    typename activeCntType,
+    						    typename boxesType>
+    __global__ void remove_points(indexBufferType indexBuffer,
+    							  grid_smb_type grd,
+    							  dataBufferType dataBuffer,
+    							  activeCntType active_blocks,
+    							  boxesType boxes)
+    {
+    	typedef typename dataBufferType::value_type AggregateT;
+    	typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
+    	constexpr unsigned int blockSize = MaskBlockT::size;
+
+        const unsigned int dataBlockPos = active_blocks.template get<0>(blockIdx.x);
+        const unsigned int offset = threadIdx.x % blockSize;
+
+        if (dataBlockPos >= dataBuffer.size()-1)
+        {return;}
+
+        int predicate = dataBuffer.template get<pMask>(dataBlockPos)[offset] & 0x1;
+        // calculate point coord;
+        auto id = indexBuffer.template get<0>(dataBlockPos);
+        grid_key_dx<dim,int> pnt = grd.InvLinId(id*grd.getBlockSize() + offset);
+        Point<dim,unsigned int> p;
+
+        for (int i = 0 ; i < dim ; i++)
+        {p.get(i) = pnt.get(i);}
+
+        // if this block intersect any box
+
+        if (predicate == true)
+        {
+			for (int k = 0 ; k < boxes.size() ; k++ )
+			{
+				Box<dim,unsigned int> box = boxes.get(k);
+
+				if (box.isInside(p) == true)
+				{
+					dataBuffer.template get<pMask>(dataBlockPos)[offset] = 0;
+				}
+			}
+        }
+    }
+
+    template<unsigned int dim,
+    		 unsigned int pMask,
+    		 unsigned int numCnt,
+             typename indexT,
+    		 typename dataBufferType,
+    		 typename outType,
+    		 typename boxesVector_type,
+    		 typename grid_smb_type,
+    		 typename indexBuffer_type>
+    __global__ void calc_exist_points_with_boxes(indexBuffer_type indexBuffer,
+    											 boxesVector_type boxes,
+    											 grid_smb_type grd,
+    											 dataBufferType dataBuf,
+    											 outType output,
+    											 unsigned int stride_size)
+    {
+    	typedef typename dataBufferType::value_type AggregateT;
+    	typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
+    	constexpr unsigned int blockSize = MaskBlockT::size;
+
+        const unsigned int dataBlockPos = blockIdx.x;
+        const unsigned int offset = threadIdx.x % blockSize;
+
+        __shared__ int ato_cnt[numCnt];
+
+        if (threadIdx.x < numCnt)
+        {ato_cnt[threadIdx.x] = 0;}
+
+        __syncthreads();
+
+#ifdef SE_CLASS1
+
+        if (numCnt >= blockDim.x)
+        {printf("Error calc_exist_points_with_boxes assertion failed numCnt >= blockDim.x  %d %d \n",numCnt,blockDim.x);}
+
+#endif
+
+        if (dataBlockPos >= output.size())
+        {return;}
+
+        int predicate = dataBuf.template get<pMask>(dataBlockPos)[offset] & 0x1;
+        // calculate point coord;
+        indexT id = indexBuffer.template get<0>(dataBlockPos);
+        grid_key_dx<dim,int> pnt = grd.InvLinId(id*grd.getBlockSize() + offset);
+        Point<dim,int> p;
+
+        for (int i = 0 ; i < dim ; i++)
+        {p.get(i) = pnt.get(i);}
+
+        // if this block intersect any box
+
+        if (predicate == true)
+        {
+			for (int k = 0 ; k < boxes.size() ; k++ )
+			{
+				Box<dim,int> box = boxes.get(k);
+
+				if (box.isInside(p) == true)
+				{
+					atomicAdd(&ato_cnt[k],1);
+				}
+			}
+        }
+
+        __syncthreads();
+
+		for (int k = 0 ; k < boxes.size() ; k++ )
+		{
+			output.template get<0>(dataBlockPos+k*stride_size) = ato_cnt[k];
+			output.template get<1>(dataBlockPos+k*stride_size) = (ato_cnt[k] != 0);
+		}
+    }
+
+    template<unsigned int dim,
+    		 unsigned int pMask,
+    		 unsigned int numCnt,
+             typename indexT,
+    		 typename dataBufferType,
+    		 typename packBufferType,
+    		 typename scanType,
+    		 typename scanItType,
+    		 typename outputType,
+    		 typename boxesVector_type,
+    		 typename grid_smb_type,
+    		 typename indexBuffer_type>
+    __global__ void get_exist_points_with_boxes(indexBuffer_type indexBuffer,
+    											 boxesVector_type boxes,
+    											 grid_smb_type grd,
+    											 dataBufferType dataBuf,
+    											 packBufferType pack_output,
+    											 scanType scan,
+    											 scanItType scan_it,
+    											 outputType output)
+    {
+    	typedef typename dataBufferType::value_type AggregateT;
+    	typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
+    	constexpr unsigned int blockSize = MaskBlockT::size;
+
+        const unsigned int dataBlockPos = blockIdx.x;
+        const unsigned int offset = threadIdx.x % blockSize;
+
+        __shared__ int ato_cnt[numCnt];
+
+        if (threadIdx.x < numCnt)
+        {ato_cnt[threadIdx.x] = 0;}
+
+        __syncthreads();
+
+#ifdef SE_CLASS1
+
+        if (numCnt >= blockDim.x)
+        {printf("Error get_exist_points_with_boxes assertion failed numCnt >= blockDim.x  %d %d \n",numCnt,blockDim.x);}
+
+#endif
+
+        if (dataBlockPos >= output.size())
+        {return;}
+
+        int predicate = dataBuf.template get<pMask>(dataBlockPos)[offset] & 0x1;
+        // calculate point coord;
+        indexT id = indexBuffer.template get<0>(dataBlockPos);
+        grid_key_dx<dim,int> pnt = grd.InvLinId(id*grd.getBlockSize() + offset);
+        Point<dim,int> p;
+
+        for (int i = 0 ; i < dim ; i++)
+        {p.get(i) = pnt.get(i);}
+
+        // if this block intersect any box
+
+        if (predicate == true)
+        {
+			for (int k = 0 ; k < boxes.size() ; k++ )
+			{
+				Box<dim,int> box = boxes.get(k);
+
+				if (box.isInside(p) == true)
+				{
+					int p = atomicAdd(&ato_cnt[k] , 1);
+					unsigned int sit = scan.template get<0>(dataBlockPos + k*(indexBuffer.size() + 1));
+					int scan_id = scan.template get<0>(dataBlockPos + k*(indexBuffer.size() + 1)) + scan_it.template get<0>(k);
+					output.template get<0>(scan_id + p) = (offset + dataBlockPos * blockSize) * numCnt + k;
+					pack_output.template get<0>(scan_id + p) = p + sit;
+				}
+			}
+        }
+    }
+
+
+    template<unsigned int dim,
+    		 unsigned int blockSize,
+    		 typename indexT,
+    		 typename linearizer,
+    		 typename segType,
+    		 typename outputType>
+    __global__ void convert_chunk_alignment(indexT * ids, short int * offsets, unsigned int * scan,
+    										segType segments,
+    		                                linearizer gridGeoPack,
+    		                                grid_key_dx<dim,int> origPack,
+    		                                linearizer gridGeo,
+    		                                grid_key_dx<dim,int> origUnpack,
+    		                                outputType output)
+    {
+    	// points
+        const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (p >= output.size())
+        {return;}
+
+        auto id = ids[p];
+
+        // get the chunk index
+        int cid = segments.template get<0>(p);
+
+        unsigned int np = scan[cid+1] - scan[cid];
+
+        printf("HERE %d %d \n",np,p);
+
+/*        for (int j = 0 ; j < np ; j++)
+        {
+        	short int offset = offsets[j];
+        	grid_key_dx<dim,int> pos = gridGeoPack.InvLinId(id,offset) - origPack + origUnpack;
+
+        	unsigned int id_u;
+
+        	auto plin = gridGeo.LinId(pos);
+        	id_u = plin / blockSize;
+
+        	output.template get<0>(p) = id_u;
+        	output.template get<1>(p) = p;
+        }*/
     }
 
     template <unsigned int dim,
@@ -440,6 +747,65 @@ namespace SparseGridGpuKernels
 
         __syncthreads();
         sparseGrid.flush_block_insert();
+    }
+
+    template<typename scanPointerType, typename scanType>
+    __global__ void last_scan_point(scanPointerType scan_ptr, scanType scan,unsigned int stride)
+    {
+    	const unsigned int k = blockIdx.x * blockDim.x + threadIdx.x;
+
+		unsigned int ppos = scan.template get<0>((k+1)*stride);
+		unsigned int pos = scan.template get<1>((k+1)*stride);
+
+		((unsigned int *)scan_ptr.ptr[k])[pos] = ppos;
+    }
+
+    template<unsigned int n_it,
+    		 typename indexT,
+    		 typename pntBuff_type,
+    		 typename pointOffset_type,
+    		 typename indexBuffer_type,
+    		 typename dataBuffer_type,
+    		 typename scan_type,
+    		 unsigned int blockSize,
+    		 unsigned int ... prp>
+    __global__ void pack_data(pntBuff_type pntBuff,
+    						  dataBuffer_type dataBuff,
+    						  indexBuffer_type indexBuff,
+    						  scan_type scan,
+    						  pointOffset_type point_offsets,
+    						  arr_ptr<n_it> index_ptr,
+    						  arr_ptr<n_it> scan_ptr,
+    						  arr_ptr<n_it> data_ptr,
+    						  arr_ptr<n_it> offset_ptr,
+    						  unsigned int r_nit/*,
+    						  bool print*/)
+    {
+        const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (p >= pntBuff.size())
+        {return;}
+
+        const unsigned int pb = pntBuff.template get<0>(p);
+        const unsigned int p_offset = point_offsets.template get<0>(p);
+
+        const unsigned int k = pb % n_it;
+        const unsigned int id = pb / n_it;
+
+        const unsigned int dataBlockPos = id / blockSize;
+        const unsigned int offset = id % blockSize;
+
+		unsigned int ppos = scan.template get<0>(dataBlockPos + k*(indexBuff.size() + 1));
+		unsigned int pos = scan.template get<1>(dataBlockPos + k*(indexBuff.size() + 1));
+
+		sparsegridgpu_pack_impl<typename dataBuffer_type::value_type, dataBuffer_type ,prp ...>
+														spi(dataBlockPos,offset,dataBuff,ppos,data_ptr.ptr[k]);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
+
+		((unsigned int *)scan_ptr.ptr[k])[pos] = ppos;
+		((indexT *)index_ptr.ptr[k])[pos] = indexBuff.template get<0>(dataBlockPos);
+		((short int *)offset_ptr.ptr[k])[pos] = offset;
     }
 
     // Apply in-place operator on boundary

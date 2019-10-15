@@ -10,6 +10,65 @@
 
 #include "util/variadic_to_vmpl.hpp"
 
+template<unsigned int n_it>
+struct arr_ptr
+{
+	void * ptr[n_it];
+};
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to calculate the size to pack a point
+ *
+ * \tparam prp set for properties
+ *
+ */
+template<typename AggregateT, typename dataBuffer_type, int ... prp>
+struct sparsegridgpu_pack_impl
+{
+	typedef typename to_boost_vmpl<prp...>::type vprp;
+
+	//! position of the block
+	unsigned int dataBlockPos;
+
+	//! offset
+	unsigned int offset;
+
+	//! data buffer
+	dataBuffer_type & dataBuff;
+
+	//! point
+	unsigned int ppos;
+
+	//! data pointer
+	void * data_ptr;
+
+	/*! \brief constructor
+	 *
+	 */
+	__device__ __host__ inline sparsegridgpu_pack_impl(unsigned int dataBlockPos,
+								   unsigned int offset,
+								   dataBuffer_type & dataBuff,
+								   unsigned int ppos,
+								   void * data_ptr)
+	:dataBlockPos(dataBlockPos),offset(offset),dataBuff(dataBuff),ppos(ppos),data_ptr(data_ptr)
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	__device__ __host__ inline void operator()(T& t)
+	{
+		typedef typename boost::mpl::at<vprp,T>::type prp_cp;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::mpl::at<typename AggregateT::type,prp_cp>::type pack_type;
+
+		((pack_type *)data_ptr)[ppos] = 999/*dataBuff.template get<prp_cp::value>(dataBlockPos)[offset]*/;
+	}
+};
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each

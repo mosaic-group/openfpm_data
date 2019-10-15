@@ -7,6 +7,8 @@
 #include "util/for_each_ref.hpp"
 #include "util/variadic_to_vmpl.hpp"
 
+constexpr int RUN_ON_DEVICE = 1024;
+
 #define GCC_VERSION (__GNUC__ * 10000 \
                                + __GNUC_MINOR__ * 100 \
                                + __GNUC_PATCHLEVEL__)

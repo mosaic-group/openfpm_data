@@ -58,12 +58,15 @@ class SparseGridGpu_iterator_sub
 	// chunk size
 	grid_sm<dim,void> chunk_sz;
 
-	/*! \brief initializr the chunk interator
+	/*! \brief initialize the chunk interator
 	 *
 	 *
 	 */
 	void initialize_chunk_it()
 	{
+		if (chunk >= ids->size())
+		{return;}
+
 		// compute if the chunk intersect the start - stop box
 		chunk_coord = sparseGrid->getCoord(ids->template get<0>(chunk)*sparseGrid->getBlockSize());
 
