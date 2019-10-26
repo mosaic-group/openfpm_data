@@ -286,9 +286,6 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		sorted_to_not_sorted.resize(stop-start);
 		non_sorted_to_sorted.resize(pl.size());
 
-		sorted_domain_particles_ids.resize(stop-start);
-		sorted_domain_particles_dg.resize(stop-start);
-
 		auto ite = pl.getGPUIteratorTo(stop-start,64);
 
 		// Here we reorder the particles to improve coalescing access
@@ -306,14 +303,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		if (opt == cl_construct_opt::Full)
 		{
-			ite = sorted_domain_particles_ids.getGPUIterator();
-
-			CUDA_LAUNCH((mark_domain_particles),ite,sorted_to_not_sorted.toKernel(),sorted_domain_particles_ids.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
-
-
-			// now we sort the particles
-			mergesort((int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),(int *)sorted_domain_particles_ids.template getDeviceBuffer<0>(),
-							 sorted_domain_particles_dg.size(), mgpu::template less_t<int>(), mgpuContext);
+			construct_domain_ids(mgpuContext,start,stop,g_m);
 		}
 
 	#else
@@ -321,6 +311,36 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 			std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
 
 	#endif
+	}
+
+	/*! \brief Construct the ids of the particles domain in the sorted array
+	 *
+	 * \param mgpuContext mgpu context
+	 *
+	 */
+	void construct_domain_ids(mgpu::ofp_context_t & mgpuContext, size_t start, size_t stop, size_t g_m)
+	{
+#ifdef __NVCC__
+		sorted_domain_particles_dg.resize(stop-start+1);
+
+		auto ite = sorted_domain_particles_dg.getGPUIterator();
+
+		CUDA_LAUNCH((mark_domain_particles),ite,sorted_to_not_sorted.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
+
+		// now we sort the particles
+//			mergesort((int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),(int *)sorted_domain_particles_ids.template getDeviceBuffer<0>(),
+//							 sorted_domain_particles_dg.size(), mgpu::template less_t<int>(), mgpuContext);
+
+		// lets scan
+		openfpm::scan((unsigned int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),sorted_domain_particles_dg.size(),(unsigned int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),mgpuContext);
+
+		sorted_domain_particles_dg.template deviceToHost<0>(sorted_domain_particles_dg.size()-1,sorted_domain_particles_dg.size()-1);
+		auto sz = sorted_domain_particles_dg.template get<0>(sorted_domain_particles_dg.size()-1);
+
+		sorted_domain_particles_ids.resize(sz);
+
+		CUDA_LAUNCH((collect_domain_ghost_ids),ite,sorted_domain_particles_dg.toKernel(),sorted_domain_particles_ids.toKernel());
+#endif
 	}
 
 	/*! \brief This function construct a dense cell-list
@@ -391,9 +411,6 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		sorted_to_not_sorted.resize(stop-start);
 		non_sorted_to_sorted.resize(pl.size());
 
-		sorted_domain_particles_ids.resize(stop-start);
-		sorted_domain_particles_dg.resize(stop-start);
-
 		auto ite = pl.getGPUIteratorTo(stop-start,64);
 
 		// Here we reorder the particles to improve coalescing access
@@ -412,14 +429,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		if (opt == cl_construct_opt::Full)
 		{
-			ite = sorted_domain_particles_ids.getGPUIterator();
-
-			CUDA_LAUNCH((mark_domain_particles),ite,sorted_to_not_sorted.toKernel(),sorted_domain_particles_ids.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
-
-
-			// now we sort the particles
-			mergesort((int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),(int *)sorted_domain_particles_ids.template getDeviceBuffer<0>(),
-							 sorted_domain_particles_dg.size(), mgpu::template less_t<int>(), mgpuContext);
+			construct_domain_ids(mgpuContext,start,stop,g_m);
 		}
 
 	#else

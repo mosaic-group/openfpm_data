@@ -398,15 +398,27 @@ __global__ void reorder_parts(int n,
 }
 
 template<typename vector_sort_index, typename vector_out_type>
-__global__ void mark_domain_particles(vector_sort_index vsi, vector_out_type vout_ids, vector_out_type vout_dg, int g_m)
+__global__ void mark_domain_particles(vector_sort_index vsi, vector_out_type vout_dg, int g_m)
 {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 
 	if (i >= vsi.size()) return;
 
-	vout_dg.template get<0>(i) = (vsi.template get<0>(i) < g_m)?0:1;
-	vout_ids.template get<0>(i) = i;
+	vout_dg.template get<0>(i) = (vsi.template get<0>(i) < g_m)?1:0;
+}
 
+template<typename scan_type, typename vector_out_type>
+__global__ void collect_domain_ghost_ids(scan_type scan, vector_out_type vout_ids)
+{
+	int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+	if (i >= scan.size()-1) return;
+
+	auto pp = scan.template get<0>(i+1);
+	auto p = scan.template get<0>(i);
+
+	if (pp != p)
+	{vout_ids.template get<0>(scan.template get<0>(i)) = i;}
 }
 
 template<typename cl_sparse_type, typename vector_type, typename vector_type2>

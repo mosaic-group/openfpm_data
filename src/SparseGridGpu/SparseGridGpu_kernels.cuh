@@ -368,7 +368,7 @@ namespace SparseGridGpuKernels
 
         __syncthreads();
 
-//        output.template get<0>(dataBlockPos) = ato_cnt;
+        output.template get<0>(dataBlockPos) = ato_cnt;
     }
 
     template<unsigned int dim,

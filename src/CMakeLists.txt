@@ -186,12 +186,14 @@ install(FILES NN/CellList/CellListNNIteratorRadius.hpp
         NN/CellList/CellDecomposer.hpp
         NN/CellList/CellNNIteratorRuntime.hpp
         NN/CellList/CellNNIteratorRuntimeM.hpp
+	NN/CellList/CellList_def.hpp
         DESTINATION openfpm_data/include/NN/CellList)
 
 install(FILES NN/CellList/cuda/CellList_cpu_ker.cuh
         NN/CellList/cuda/CellList_gpu_ker.cuh
         NN/CellList/cuda/CellList_gpu.hpp
         NN/CellList/cuda/Cuda_cell_list_util_func.hpp
+	NN/CellList/cuda/CellDecomposer_gpu_ker.cuh
         DESTINATION openfpm_data/include/NN/CellList/cuda)
 
 
@@ -234,7 +236,6 @@ install(FILES util/check_no_pointers.hpp
         util/SimpleRNG.hpp
         util/math_util_complex.hpp
         util/mul_array_extents.hpp
-        util/cuda/cuda_launch.hpp
         DESTINATION openfpm_data/include/util)
 
 install(FILES util/copy_compare/compare_fusion_vector.hpp
@@ -320,6 +321,9 @@ install(FILES util/cuda/scan_cuda.cuh
         util/cuda/cuda_launch.hpp
         util/cuda/cuda_kernel_error_checker.hpp
         util/cuda/kernels.cuh
+        util/cuda/cuda_launch.hpp
+        util/cuda/scan_ofp.cuh
+	util/cuda/sort_ofp.cuh
         DESTINATION openfpm_data/include/util/cuda)
 
 install(FILES util/cuda/moderngpu/context.hxx
