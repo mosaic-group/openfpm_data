@@ -357,16 +357,6 @@ __device__ inline void phase_and_id(cnt_type c, cnt_type *ph_id, cnt_type *pid)
 }
 
 
-/*template <unsigned int n_prp , typename cnt_type, typename T>
-__device__ inline void reorderMP(const boost_array_openfpm<T*,n_prp> input,
-		              boost_array_openfpm<T*,dim> output,
-		              cnt_type i)
-{
-    int src_id, ph_id;
-    phase_and_id(i, &ph_id, &src_id);
-    output[ph_id][i] = src.d[ph_id][src_id];
-}*/
-
 template <typename vector_prp , typename cnt_type>
 __device__ inline void reorder(const vector_prp & input,
 		                       vector_prp & output,
@@ -374,6 +364,15 @@ __device__ inline void reorder(const vector_prp & input,
 		                       cnt_type dst_id)
 {
 	output.set(dst_id,input,src_id);
+}
+
+template <typename vector_prp , typename cnt_type, unsigned int ... prp>
+__device__ inline void reorder_wprp(const vector_prp & input,
+		                       vector_prp & output,
+		                       cnt_type src_id,
+		                       cnt_type dst_id)
+{
+	output.template set<prp ...>(dst_id,input,src_id);
 }
 
 template <typename vector_prp, typename vector_pos, typename vector_ns, typename cnt_type, typename sh>
@@ -391,6 +390,27 @@ __global__ void reorder_parts(int n,
 
     cnt_type code = cells[i];
     reorder(input, output, code,i);
+    reorder(input_pos,output_pos,code,i);
+
+    sorted_non_sorted.template get<0>(i) = code;
+    non_sorted_to_sorted.template get<0>(code) = i;
+}
+
+template <typename vector_prp, typename vector_pos, typename vector_ns, typename cnt_type, typename sh, unsigned int ... prp>
+__global__ void reorder_parts_wprp(int n,
+		                      const vector_prp input,
+		                      vector_prp output,
+		                      const vector_pos input_pos,
+		                      vector_pos output_pos,
+		                      vector_ns sorted_non_sorted,
+		                      vector_ns non_sorted_to_sorted,
+		                      const cnt_type * cells)
+{
+    cnt_type i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= n) return;
+
+    cnt_type code = cells[i];
+    reorder_wprp<vector_prp,cnt_type,prp...>(input, output, code,i);
     reorder(input_pos,output_pos,code,i);
 
     sorted_non_sorted.template get<0>(i) = code;

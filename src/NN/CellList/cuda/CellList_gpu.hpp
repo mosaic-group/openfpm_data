@@ -218,7 +218,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	 *
 	 *
 	 */
-	template<typename vector, typename vector_prp>
+	template<typename vector, typename vector_prp, unsigned int ... prp>
 	void construct_sparse(vector & pl,
   	   	   	 	 	 	  vector & pl_out,
   	   	   	 	 	 	  vector_prp & pl_prp,
@@ -327,10 +327,6 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		CUDA_LAUNCH((mark_domain_particles),ite,sorted_to_not_sorted.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
 
-		// now we sort the particles
-//			mergesort((int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),(int *)sorted_domain_particles_ids.template getDeviceBuffer<0>(),
-//							 sorted_domain_particles_dg.size(), mgpu::template less_t<int>(), mgpuContext);
-
 		// lets scan
 		openfpm::scan((unsigned int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),sorted_domain_particles_dg.size(),(unsigned int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),mgpuContext);
 
@@ -347,7 +343,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	 *
 	 *
 	 */
-	template<typename vector, typename vector_prp>
+	template<typename vector, typename vector_prp, unsigned int ... prp>
 	void construct_dense(vector & pl,
 			   	   	   	 vector & pl_out,
 			   	   	   	 vector_prp & pl_prp,
@@ -413,19 +409,36 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		auto ite = pl.getGPUIteratorTo(stop-start,64);
 
-		// Here we reorder the particles to improve coalescing access
-		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
-				      decltype(pl.toKernel()),
-				      decltype(sorted_to_not_sorted.toKernel()),
-				      cnt_type,shift_ph<0,cnt_type>>),ite,sorted_to_not_sorted.size(),
-				                                                           pl_prp.toKernel(),
-				                                                           pl_prp_out.toKernel(),
-				                                                           pl.toKernel(),
-				                                                           pl_out.toKernel(),
-				                                                           sorted_to_not_sorted.toKernel(),
-				                                                           non_sorted_to_sorted.toKernel(),
-				                                                           static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
-
+		if (sizeof...(prp) == 0)
+		{
+			// Here we reorder the particles to improve coalescing access
+			CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
+						  decltype(pl.toKernel()),
+						  decltype(sorted_to_not_sorted.toKernel()),
+						  cnt_type,shift_ph<0,cnt_type>>),ite,sorted_to_not_sorted.size(),
+																			   pl_prp.toKernel(),
+																			   pl_prp_out.toKernel(),
+																			   pl.toKernel(),
+																			   pl_out.toKernel(),
+																			   sorted_to_not_sorted.toKernel(),
+																			   non_sorted_to_sorted.toKernel(),
+																			   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
+		}
+		else
+		{
+			// Here we reorder the particles to improve coalescing access
+			CUDA_LAUNCH((reorder_parts_wprp<decltype(pl_prp.toKernel()),
+						  decltype(pl.toKernel()),
+						  decltype(sorted_to_not_sorted.toKernel()),
+						  cnt_type,shift_ph<0,cnt_type>,prp...>),ite,sorted_to_not_sorted.size(),
+																			   pl_prp.toKernel(),
+																			   pl_prp_out.toKernel(),
+																			   pl.toKernel(),
+																			   pl_out.toKernel(),
+																			   sorted_to_not_sorted.toKernel(),
+																			   non_sorted_to_sorted.toKernel(),
+																			   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
+		}
 
 		if (opt == cl_construct_opt::Full)
 		{
@@ -584,7 +597,7 @@ public:
 	 * \param pl Particles list
 	 *
 	 */
-	template<typename vector, typename vector_prp>
+	template<typename vector, typename vector_prp, unsigned int ... prp>
 	void construct(vector & pl,
 				   vector & pl_out,
 				   vector_prp & pl_prp,
@@ -599,8 +612,8 @@ public:
 		if (stop == (size_t)-1)
 		{stop = pl.size();}
 
-		if (is_sparse == false) {construct_dense(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,start,stop,opt);}
-		else {construct_sparse(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,start,stop,opt);}
+		if (is_sparse == false) {construct_dense<vector,vector_prp,prp...>(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,start,stop,opt);}
+		else {construct_sparse<vector,vector_prp,prp...>(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,start,stop,opt);}
 	}
 
 	CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse> toKernel()

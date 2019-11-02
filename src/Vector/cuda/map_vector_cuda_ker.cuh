@@ -405,7 +405,8 @@ namespace openfpm
 		 * \param src source element
 		 *
 		 */
-		template<unsigned int ... prp> __device__ void set(unsigned int id, const vector_gpu_ker<T_,layout_base> & v, unsigned int src)
+		template<unsigned int ... prp>
+		__device__ void set(unsigned int id, const vector_gpu_ker<T_,layout_base> & v, unsigned int src)
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)
