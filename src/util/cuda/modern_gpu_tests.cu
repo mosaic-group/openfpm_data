@@ -1,5 +1,3 @@
-#define BOOST_GPU_ENABLED __host__ __device__
-
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>

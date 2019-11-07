@@ -80,7 +80,7 @@ struct populate_cell_list_no_sym_impl<true>
 		v_prp_out.resize(pos.size());
 		v_pos_out.resize(pos.size());
 
-		cli.template construct<decltype(pos),decltype(v_prp),prp ...>(pos,v_pos_out,v_prp,v_prp_out,context,g_m,optc);
+		cli.template construct<decltype(pos),decltype(v_prp),prp ...>(pos,v_pos_out,v_prp,v_prp_out,context,g_m,0,pos.size(),optc);
 	}
 };
 

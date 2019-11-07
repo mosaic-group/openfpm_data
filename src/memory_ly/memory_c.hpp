@@ -204,6 +204,30 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 		mem_obj.mem_r.swap(mem_r);
 	}
 
+	/*! \brief swap the memory
+	 *
+	 * swap the memory between objects
+	 *
+	 */
+	template<typename Mem_type>
+	__host__ void swap_nomode(memory_c & mem_obj)
+	{
+		// It would be better a dynamic_cast, unfortunately nvcc
+		// does not accept it. It seems that for some reason nvcc want to
+		// produce device code out of this method. While it is true
+		// that this method is called inside a generic __device__ __host__
+		// function, tagging this method only __host__ does not stop
+		// nvcc from the intention to produce device code.
+		// The workaround is to use static_cast. Another workaround (to test)
+		// could be create a duplicate for_each function tagged only __host__ ,
+		// but I have to intention to duplicate code
+
+		Mem_type * mem_tmp = static_cast<Mem_type*>(mem);
+		mem_tmp->swap(*static_cast<Mem_type*>(mem_obj.mem));
+
+		mem_obj.mem_r.swap(mem_r);
+	}
+
 };
 
 
@@ -536,6 +560,31 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 		mem_obj.mem = static_cast<D*>(mem_tmp);
 
 		mem_r.swap(mem_obj.mem_r);
+	}
+
+
+	/*! \brief swap the memory
+	 *
+	 * swap the memory between objects
+	 *
+	 */
+	template<typename Mem_type>
+	__host__ void swap_nomode(memory_c & mem_obj)
+	{
+		// It would be better a dynamic_cast, unfortunately nvcc
+		// does not accept it. It seems that for some reason nvcc want to
+		// produce device code out of this method. While it is true
+		// that this function is called inside a generic __device__ __host__
+		// function, tagging this method only __host__ does not stop
+		// nvcc from the intention to produce device code.
+		// The workaround is to use static_cast. Another workaround (to test)
+		// could be create a duplicate for_each function tagged only __host__ ,
+		// but I have to intention to duplicate code
+
+		Mem_type * mem_tmp = static_cast<Mem_type*>(mem);
+		mem_tmp->swap(*static_cast<Mem_type*>(mem_obj.mem));
+
+		mem_obj.mem_r.swap(mem_r);
 	}
 };
 

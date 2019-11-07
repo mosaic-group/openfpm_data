@@ -136,7 +136,7 @@ public:
 	 * \return the number of elements
 	 *
 	 */
-	inline size_t size()
+	inline size_t size() const
 	{
 		return cl_n.size();
 	}

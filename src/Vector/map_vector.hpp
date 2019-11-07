@@ -1525,6 +1525,28 @@ namespace openfpm
 
 		/*! \brief Swap the memory with another vector
 		 *
+		 * \note this is different from the normal swap please look a grid_base_implementation.hpp method swap_nomode
+		 *       for info
+		 *
+		 * \param v vector
+		 *
+		 */
+		void swap_nomode(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & v)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			size_t sz_sp = v_size;
+
+			// swap the v_size
+			v_size = v.v_size;
+
+			base.swap_nomode(v.base);
+			v.v_size = sz_sp;
+		}
+
+		/*! \brief Swap the memory with another vector
+		 *
 		 * \param v vector
 		 *
 		 */
@@ -1738,6 +1760,19 @@ namespace openfpm
 			check_valid(this,8);
 #endif
 			base.template setMemory<p>(mem);
+		}
+
+		/*! \brief Set the memory of the base structure using an object
+		 *
+		 * \param mem Memory object to use for allocation
+		 *
+		 */
+		void setMemoryArray(Memory * mem)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			base.setMemoryArray(mem);
 		}
 
 		/*! \brief Return the pointer that store the data

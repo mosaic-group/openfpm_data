@@ -742,7 +742,7 @@ public:
 		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::setMemory(data_,g1,is_mem_init);
 	}
 
-	/*! \brief Get the object that provide memory
+	/*! \brief Set the object that provide memory from outside
 	 *
 	 * An external allocator is useful with allocator like PreAllocHeapMem
 	 * to have contiguous in memory vectors. Or to force the system to retain
@@ -770,6 +770,32 @@ public:
 		bool skip_ini = skip_init<has_noPointers<T>::value,T>::skip_();
 
 		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemory<p>(data_,m,g1.size(),skip_ini);
+
+		is_mem_init = true;
+	}
+
+	/*! \brief Set the object that provide memory from outside
+	 *
+	 * An external allocator is useful with allocator like PreAllocHeapMem
+	 * to have contiguous in memory vectors. Or to force the system to retain
+	 * memory
+	 *
+	 * \tparam S memory type
+	 *
+	 * \param m external memory allocator
+	 *
+	 */
+	void setMemoryArray(S * m)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		//! Is external
+		isExternal = true;
+
+		bool skip_ini = skip_init<has_noPointers<T>::value,T>::skip_();
+
+		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemoryArray(*this,m,g1.size(),skip_ini);
 
 		is_mem_init = true;
 	}
@@ -1302,13 +1328,61 @@ public:
 		data_.move(&this->template get<0>());
 	}
 
+	/*! \brief It swap the objects A become B and B become A using A.swap(B);
+	 *
+	 * This is a different from the standard swap and require long explanation.
+	 *
+	 * This object by default when it construct after we call setMemory() it create an internal memory object
+	 * and use it allocate memory internally.
+	 *
+	 * If instead we use setMemory(external_mem) this object does not create an internal memory object but use
+	 * the passed object to allocate memory. Because the external memory can already have a pool of memory preallocated
+	 * we can re-use the memory.
+	 *
+	 * Despite this setMemory can be used to do memory retaining/re-use  and/or garbage collection.
+	 * It can be seen from a different prospective of making the data structures act like a representation of external
+	 *  memory. De facto we are giving meaning to the external memory so we are shaping or re-shaping pre-existing
+	 *   external memory.
+	 *
+	 * In the following I will call these two mode Mode1 and Mode2
+	 *
+	 * Using the structure in this way has consequences, because now in Mode2 the memory (and so its life-span) is disentangled
+	 *  by its structure.
+	 *
+	 *
+	 * The main difference comes when we swap object in which one of both are in Mode2
+	 *
+	 * Let's suppose object A is in Mode1 and object B is is Mode2. The normal swap, fully swap the objects
+	 *
+	 * A.swap(B) A become B (in mode 2) and B become A (in mode 1)
+	 *
+	 * A.swap_nomode(B) In this case the mode is not swapped  A become B (in mode 1) and B become A (in mode 2).
+	 *                  So the mode is not swapped and remain the original
+	 *
+	 * \param grid object B
+	 *
+	 */
 
-	/*! \brief It move the allocated object from one grid to another
+	void swap_nomode(grid_base_impl<dim,T,S,layout,layout_base> & grid)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+
+		mem_swap<T,layout_base<T>,decltype(data_),decltype(grid)>::template swap_nomode<S>(data_,grid.data_);
+
+		// exchange the grid info
+		g1.swap(grid.g1);
+
+		// exchange the init status
+		bool exg = is_mem_init;
+		is_mem_init = grid.is_mem_init;
+		grid.is_mem_init = exg;
+	}
+
+	/*! \brief It swap the objects A become B and B become A using A.swap(B);
 	 *
-	 * It move the allocated object from one grid to another, after this
-	 * call the argument grid is no longer valid
-	 *
-	 * \param grid to move/copy
+	 * \param grid to swap with
 	 *
 	 */
 
