@@ -559,6 +559,16 @@ namespace SparseGridGpuKernels
 		}
     }
 
+    /*! \brief
+     *
+     * \param indexBuffer is the buffer of indexes
+     * \param boxes is the set of boxes
+     * \param grd contain information about the grid
+     * \param dataBuff contain the information buffer
+     * \param pack_output contain the index in the output buffer for the point to serialize
+     * \param scan for each data-block it contain the number of points that fall inside the set of boxes
+     *
+     */
     template<unsigned int dim,
     		 unsigned int pMask,
     		 unsigned int numCnt,
@@ -601,9 +611,6 @@ namespace SparseGridGpuKernels
 
 #endif
 
-        if (dataBlockPos >= output.size())
-        {return;}
-
         int predicate = dataBuf.template get<pMask>(dataBlockPos)[offset] & 0x1;
         // calculate point coord;
         indexT id = indexBuffer.template get<0>(dataBlockPos);
@@ -623,16 +630,95 @@ namespace SparseGridGpuKernels
 
 				if (box.isInside(p) == true)
 				{
+					// We have an atomic counter for every packing box
 					int p = atomicAdd(&ato_cnt[k] , 1);
+
+					// we have a scan for every box
+					const unsigned int dataBlockPosPack = scan.template get<1>(dataBlockPos + k*(indexBuffer.size() + 1));
 					unsigned int sit = scan.template get<0>(dataBlockPos + k*(indexBuffer.size() + 1));
 					int scan_id = scan.template get<0>(dataBlockPos + k*(indexBuffer.size() + 1)) + scan_it.template get<0>(k);
 					output.template get<0>(scan_id + p) = (offset + dataBlockPos * blockSize) * numCnt + k;
 					pack_output.template get<0>(scan_id + p) = p + sit;
+
+//					printf("EXPOINTS: DATABLOBKPOS %d   DATABLOCKPOSPACK %d    ID: %d  K: %d   %p \n",dataBlockPos,dataBlockPosPack,(int)indexBuffer.template get<0>(dataBlockPos),(int)k,&indexBuffer.template get<0>(0));
 				}
 			}
         }
     }
 
+    template<unsigned int pMask, typename add_data_type>
+    __global__ void resetMask(add_data_type add_data, unsigned int start)
+    {
+    	// points
+        const unsigned int bid = blockIdx.x + start;
+        const unsigned int tid = threadIdx.x;
+
+        if (bid >= add_data.size())
+        {return;}
+
+    	add_data.template get<pMask>(bid)[tid] = 0;
+    }
+
+    template<unsigned int blockSize,
+    		 unsigned int pMask,
+    		 typename AggregateT,
+    		 typename indexT,
+    		 typename point_buffer,
+    		 typename chunk_arr_type,
+    		 typename convertion_type,
+    		 typename add_index_type,
+    		 typename data_ptrs_type,
+    		 typename add_data_type,
+    		 unsigned int ... prp>
+    __global__ void fill_add_buffer(indexT * ptr_id,
+    								point_buffer pts,
+    								chunk_arr_type chunk_arr,
+    								convertion_type conv,
+    								add_index_type add_index,
+    								data_ptrs_type data_ptrs,
+    								add_data_type add_data,
+    								unsigned int start)
+    {
+    	// points
+        const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (p >= pts.size())
+        {return;}
+
+        auto dataBlockPos = conv.template get<0>(p);
+        auto ord = chunk_arr.template get<1>(p);
+        auto plin = chunk_arr.template get<0>(p);
+
+        auto dataBlockId = plin / blockSize;
+        short int offset = plin % blockSize;
+
+        add_index.template get<0>(dataBlockPos + start) = dataBlockId;
+
+		sparsegridgpu_unpack_impl<AggregateT, add_data_type ,prp ...>
+														spi(dataBlockPos + start,offset,add_data,p,data_ptrs);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
+
+		add_data.template get<pMask>(dataBlockPos + start)[offset] = 1;
+    }
+
+    template<unsigned int blockSize, typename vector_type, typename output_type>
+    __global__ void mark_unpack_chunks(vector_type vd, output_type output)
+    {
+    	// points
+        const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (p >= vd.size())
+        {return;}
+
+        auto cp = vd.template get<0>(p) / blockSize;
+        decltype(cp) cp_p1;
+
+        if (p == vd.size()-1)	{cp_p1 = -1;}
+        else {cp_p1 = vd.template get<0>(p+1) / blockSize;}
+
+        output.template get<0>(p) = cp_p1 != cp;
+    }
 
     template<unsigned int dim,
     		 unsigned int blockSize,
@@ -641,6 +727,7 @@ namespace SparseGridGpuKernels
     		 typename segType,
     		 typename outputType>
     __global__ void convert_chunk_alignment(indexT * ids, short int * offsets, unsigned int * scan,
+    										unsigned int n_seg,
     										segType segments,
     		                                linearizer gridGeoPack,
     		                                grid_key_dx<dim,int> origPack,
@@ -654,28 +741,26 @@ namespace SparseGridGpuKernels
         if (p >= output.size())
         {return;}
 
-        auto id = ids[p];
-
         // get the chunk index
         int cid = segments.template get<0>(p);
 
-        unsigned int np = scan[cid+1] - scan[cid];
+        auto id = ids[cid];
 
-        printf("HERE %d %d \n",np,p);
+        unsigned int poff = (cid == n_seg-1)?output.size():scan[cid+1];
 
-/*        for (int j = 0 ; j < np ; j++)
-        {
-        	short int offset = offsets[j];
-        	grid_key_dx<dim,int> pos = gridGeoPack.InvLinId(id,offset) - origPack + origUnpack;
+        unsigned int np = poff - scan[cid];
 
-        	unsigned int id_u;
+		short int offset = offsets[p];
+		grid_key_dx<dim,int> pos = gridGeoPack.InvLinId(id,offset) - origPack + origUnpack;
 
-        	auto plin = gridGeo.LinId(pos);
-        	id_u = plin / blockSize;
+		unsigned int id_u;
 
-        	output.template get<0>(p) = id_u;
-        	output.template get<1>(p) = p;
-        }*/
+//		printf("GEOLIN: CID: %d      %d %d    %d %d    (%d %d)  %p \n",cid,pos.get(0),pos.get(1),origPack.get(0),origPack.get(1),(int)id,(int)offset,ids);
+
+		auto plin = gridGeo.LinId(pos);
+
+		output.template get<0>(p) = plin;
+		output.template get<1>(p) = p;
     }
 
     template <unsigned int dim,
@@ -750,17 +835,21 @@ namespace SparseGridGpuKernels
     }
 
     template<typename scanPointerType, typename scanType>
-    __global__ void last_scan_point(scanPointerType scan_ptr, scanType scan,unsigned int stride)
+    __global__ void last_scan_point(scanPointerType scan_ptr, scanType scan,unsigned int stride, unsigned int n_pack)
     {
     	const unsigned int k = blockIdx.x * blockDim.x + threadIdx.x;
 
-		unsigned int ppos = scan.template get<0>((k+1)*stride);
-		unsigned int pos = scan.template get<1>((k+1)*stride);
+    	if (k >= n_pack)	{return;}
+
+		unsigned int ppos = scan.template get<0>((k+1)*stride-1);
+		unsigned int pos = scan.template get<1>((k+1)*stride-1);
 
 		((unsigned int *)scan_ptr.ptr[k])[pos] = ppos;
     }
 
-    template<unsigned int n_it,
+    template<typename AggregateT,
+    		 unsigned int n_it,
+    		 unsigned int n_prp,
     		 typename indexT,
     		 typename pntBuff_type,
     		 typename pointOffset_type,
@@ -776,7 +865,7 @@ namespace SparseGridGpuKernels
     						  pointOffset_type point_offsets,
     						  arr_ptr<n_it> index_ptr,
     						  arr_ptr<n_it> scan_ptr,
-    						  arr_ptr<n_it> data_ptr,
+    						  arr_arr_ptr<n_it,n_prp> data_ptr,
     						  arr_ptr<n_it> offset_ptr,
     						  unsigned int r_nit/*,
     						  bool print*/)
@@ -796,16 +885,26 @@ namespace SparseGridGpuKernels
         const unsigned int offset = id % blockSize;
 
 		unsigned int ppos = scan.template get<0>(dataBlockPos + k*(indexBuff.size() + 1));
-		unsigned int pos = scan.template get<1>(dataBlockPos + k*(indexBuff.size() + 1));
+		const unsigned int dataBlockPosPack = scan.template get<1>(dataBlockPos + k*(indexBuff.size() + 1));
 
-		sparsegridgpu_pack_impl<typename dataBuffer_type::value_type, dataBuffer_type ,prp ...>
-														spi(dataBlockPos,offset,dataBuff,ppos,data_ptr.ptr[k]);
+		sparsegridgpu_pack_impl<AggregateT, dataBuffer_type ,prp ...>
+														spi(dataBlockPos,offset,dataBuff,p_offset,data_ptr.ptr[k]);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
 
-		((unsigned int *)scan_ptr.ptr[k])[pos] = ppos;
-		((indexT *)index_ptr.ptr[k])[pos] = indexBuff.template get<0>(dataBlockPos);
-		((short int *)offset_ptr.ptr[k])[pos] = offset;
+		((unsigned int *)scan_ptr.ptr[k])[dataBlockPosPack] = ppos;
+
+		((indexT *)index_ptr.ptr[k])[dataBlockPosPack] = indexBuff.template get<0>(dataBlockPos);
+		((short int *)offset_ptr.ptr[k])[p_offset] = offset;
+
+//		printf("POINTERS SCAN %p    OFFSET %p      INDEX %p    DATA  %p    %f   %f    %d  %d \n",&((unsigned int *)scan_ptr.ptr[k])[dataBlockPosPack],
+//																			&((short int *)offset_ptr.ptr[k])[p_offset],
+//																			&((indexT *)index_ptr.ptr[k])[dataBlockPosPack],
+//																			&((float *)data_ptr.ptr[k][0])[p_offset],
+//																			dataBuff.template get<0>(dataBlockPos)[offset],
+//																			((float *)data_ptr.ptr[k][0])[p_offset],
+//																			dataBlockPos,
+//																			offset);
     }
 
     // Apply in-place operator on boundary

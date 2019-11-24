@@ -1750,7 +1750,7 @@ public:
 	 * \note this function exist to respect the interface to work as distributed
 	 *
 	 */
-	void removeCopyReset()
+	void removeAddUnpackReset()
 	{}
 
 	/*! \brief In this case it does nothing
@@ -1760,8 +1760,8 @@ public:
 	 * \param ctx context
 	 *
 	 */
-	template<typename context_type>
-	void removeCopyFinalize(const context_type & ctx)
+	template<unsigned int ... prp, typename context_type>
+	void removeAddUnpackFinalize(const context_type & ctx)
 	{}
 };
 

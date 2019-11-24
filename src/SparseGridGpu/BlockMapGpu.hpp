@@ -159,6 +159,16 @@ public:
 #endif
     }
 
+	/*! \brief In case we manually set the added index buffer and the add data buffer we have to call this
+	 *         function before flush
+	 *
+	 *
+	 */
+	void preFlush()
+	{
+		blockMap.preFlush();
+	}
+
     void initializeGPUInsertBuffer()
     {
         //todo: Test if it's enough to just initialize masks to 0, without any background value

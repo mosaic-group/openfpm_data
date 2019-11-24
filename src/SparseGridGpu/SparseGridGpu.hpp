@@ -395,6 +395,44 @@ public:
 
 };
 
+template<typename AggregateT, unsigned int n_it, unsigned int ... prp>
+class data_ptr_fill
+{
+	typedef typename to_boost_vmpl<prp...>::type vprp;
+
+	//! data pointers
+	void * base_ptr;
+
+	mutable size_t tot = 0;
+
+	size_t i;
+
+	size_t sz = 0;
+
+	arr_arr_ptr<n_it,sizeof...(prp)> & arrs;
+
+public:
+
+	data_ptr_fill(void * base_ptr,size_t i,  arr_arr_ptr<n_it,sizeof...(prp)> & arrs, size_t sz)
+	:base_ptr(base_ptr),i(i),sz(sz),arrs(arrs)
+	{}
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		typedef typename boost::mpl::at<vprp,T>::type prp_cp;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::mpl::at<typename AggregateT::type,prp_cp>::type pack_type;
+
+		arrs.ptr[i][T::value] = (void *)((((unsigned char *)base_ptr) + tot));
+
+		tot += sz * sizeof(pack_type);
+	}
+
+};
+
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
@@ -407,6 +445,10 @@ class SparseGridGpu : public BlockMapGpu<
         threadBlockSize, indexT, layout_base>
 {
 private:
+
+	typedef BlockMapGpu<
+	        typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type,
+	        threadBlockSize, indexT, layout_base> BMG;
 
     const static unsigned char PADDING_BIT = 1;
 	typedef typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type AggregateBlockT;
@@ -776,7 +818,7 @@ private:
 						   Pack_stat & sts)
     {
     	arr_ptr<n_it> index_ptr;
-    	arr_ptr<n_it> data_ptr;
+    	arr_arr_ptr<n_it,sizeof...(prp)> data_ptr;
     	arr_ptr<n_it> scan_ptr;
     	arr_ptr<n_it> offset_ptr;
 
@@ -789,20 +831,31 @@ private:
     	sparsegridgpu_pack_request<AggregateT,prp ...> spq;
     	boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(spq);
 
+    	// Calculate total points
+
+    	for (size_t i = 0 ; i < pack_subs.size() ; i++)
+    	{
+    		size_t n_pnt = tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1);
+    		tot_pnt += n_pnt;
+    	}
+
     	// CUDA require aligned access, here we suppose 8 byte alligned and we ensure 8 byte aligned after
     	// the cycle
     	for (size_t i = 0 ; i < pack_subs.size() ; i++)
     	{
-    		size_t n_pnt = tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1);
     		size_t n_cnk = tmp.template get<1>((i+1)*(indexBuffer.size() + 1)-1);
 
     		// fill index_ptr data_ptr scan_ptr
     		index_ptr.ptr[i] = index_ptrs.get(i);
     		scan_ptr.ptr[i] = scan_ptrs.get(i);
-    		data_ptr.ptr[i] = data_ptrs.get(i);
+
+    		// for all properties fill the data pointer
+
+    		data_ptr_fill<AggregateT,n_it,prp...> dpf(data_ptrs.get(i),i,data_ptr,tot_pnt);
+    		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(dpf);
+
     		offset_ptr.ptr[i] = offset_ptrs.get(i);
 
-    		tot_pnt += n_pnt;
     		tot_cnk += n_cnk;
     	}
 
@@ -836,12 +889,14 @@ private:
 		ite = e_points.getGPUIterator();
 
 
-		CUDA_LAUNCH((SparseGridGpuKernels::pack_data<n_it,
+		CUDA_LAUNCH((SparseGridGpuKernels::pack_data<AggregateT,
+							   n_it,
+							   sizeof...(prp),
 							   indexT,
 							   decltype(e_points.toKernel()),
 							   decltype(pack_output.toKernel()),
-							   typename std::remove_reference<decltype(indexBuffer.toKernel())>::type,
-				               typename std::remove_reference<decltype(dataBuffer.toKernel())>::type,
+							   decltype(indexBuffer.toKernel()),
+				               decltype(dataBuffer.toKernel()),
 				               decltype(tmp.toKernel()),
 				               self::blockSize,
 				               prp ...>),
@@ -864,7 +919,7 @@ private:
     	ite.thr.y = 1;
     	ite.thr.z = 1;
 
-		CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),indexBuffer.size()+1);
+		CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),indexBuffer.size()+1,pack_subs.size());
     }
 
 public:
@@ -1076,10 +1131,10 @@ public:
         return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::template insert<p>(gridGeometry.LinId(coord));
     }
 
-    /*! \Brief Before inser any element you have to call this function to initialize the insert buffer
+    /*! \Brief Before insert any element you have to call this function to initialize the insert buffer
      *
      * \param nBlock number of blocks the insert buffer has
-     * \param nSlot maximum number of insertion each thread block does
+     * \param nSlot maximum number of insertion each block does
      *
      */
     template<typename dim3T>
@@ -1091,6 +1146,16 @@ public:
                 dim3SizeToInt(nSlot)
         );
     }
+
+	/*! \brief In case we manually set the added index buffer and the add data buffer we have to call this
+	 *         function before flush
+	 *
+	 *
+	 */
+	void preFlush()
+	{
+		BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::preFlush();
+	}
 
     template<typename stencil_type = NNStar<dim>>
     void tagBoundaries(mgpu::ofp_context_t &context, tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
@@ -1783,7 +1848,7 @@ public:
 		grid_key_dx<dim> key = sub_it.getStart();
 
 		for (int i = 0 ; i < dim ; i++)
-		{Packer<int,CudaMemory>::pack(mem,-key.get(i),sts);}
+		{Packer<int,CudaMemory>::pack(mem,key.get(i),sts);}
 
 		for (int i = 0 ; i < dim ; i++)
 		{Packer<int,CudaMemory>::pack(mem,(int)gridGeometry.getSize()[i],sts);}
@@ -1850,23 +1915,30 @@ public:
 	 * \note this function exist to respect the interface to work as distributed
 	 *
 	 */
-	void removeCopyReset()
+	void removeAddUnpackReset()
 	{
 		rem_sects.clear();
+
+    	auto & vad = BMG::blockMap.private_get_vct_add_data();
+    	auto & vai = BMG::blockMap.private_get_vct_add_index();
+
+    	vad.clear();
+    	vai.clear();
 	}
 
-	/*! \brief In this case it does nothing
+	/*! \brief This function remove the points we queue to remove and it flush all the added/unpacked data
 	 *
 	 * \note this function exist to respect the interface to work as distributed
 	 *
 	 */
-	void removeCopyFinalize(mgpu::ofp_context_t& context)
+	template<unsigned int ... prp>
+	void removeAddUnpackFinalize(mgpu::ofp_context_t& context)
 	{
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
 
 		// first we remove
-		if (rem_sects.size() != 0)
+/*		if (rem_sects.size() != 0)
 		{
 			rem_sects.template hostToDevice<0,1>();
 
@@ -1917,10 +1989,11 @@ public:
 					                                        dataBuffer.toKernel(),
 					                                        tmp2.toKernel(),
 					                                        rem_sects.toKernel());
-		}
+		}*/
 
+    	this->preFlush();
 
-
+		this->template flush<sRight_<prp>...>(context,flush_type::FLUSH_ON_DEVICE);
 
 	}
 
@@ -1978,6 +2051,7 @@ public:
 		mem.deviceToHost(ps.getOffset(),ps.getOffset() + sizeof(size_t) + 2*dim*sizeof(int));
 		Unpacker<size_t,S2>::unpack(mem,n_cnk,ps);
 
+
 		grid_key_dx<dim,int> origPack;
 		size_t sz[dim];
 
@@ -1997,22 +2071,36 @@ public:
 		}
 
 		// get the data pointers
-		indexT * ids = (indexT *)mem.getDevicePointer();
-		unsigned int * scan = (unsigned int *)((unsigned char *)mem.getDevicePointer() + n_cnk*sizeof(indexT) + ps.getOffset());
-		void * data = (void *)((unsigned char *)mem.getDevicePointer() + n_cnk*sizeof(indexT) + (n_cnk + 1)*sizeof(unsigned int) + ps.getOffset());
-		short int * offsets = (short int *)((unsigned char *)mem.getDevicePointer() + n_cnk*spq.point_size + ps.getOffset());
+		indexT * ids = (indexT *)((unsigned char *)mem.getDevicePointer() + ps.getOffset());
+		unsigned int * scan = (unsigned int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + n_cnk*sizeof(indexT));
 
-		mem.deviceToHost(ps.getOffset() + n_cnk*sizeof(indexT) + n_cnk*sizeof(unsigned int),
-						 ps.getOffset() + n_cnk*sizeof(indexT) + n_cnk*sizeof(unsigned int) + sizeof(unsigned int));
+		size_t actual_offset = n_cnk*sizeof(indexT);
 
+		mem.deviceToHost(ps.getOffset() + actual_offset + n_cnk*sizeof(unsigned int),
+						 ps.getOffset() + actual_offset + n_cnk*sizeof(unsigned int) + sizeof(unsigned int));
+
+		// Unpack number of points
 		// calculate the number of total points
-		size_t n_pnt = *(unsigned int *)((unsigned char *)mem.getPointer() + n_cnk*sizeof(indexT) + n_cnk*sizeof(unsigned int));
+		size_t n_pnt = *(unsigned int *)((unsigned char *)mem.getPointer() + ps.getOffset() + actual_offset + n_cnk*sizeof(unsigned int));
+
+
+		actual_offset += align_number(sizeof(indexT),(n_cnk+1)*sizeof(unsigned int));
+
+		arr_arr_ptr<1,sizeof...(prp)> data;
+
+		void * data_base_ptr = (void *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset );
+		data_ptr_fill<AggregateT,1,prp...> dpf(data_base_ptr,0,data,n_pnt);
+		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(dpf);
+
+		actual_offset += align_number(sizeof(indexT),n_pnt*(spq.point_size));
+
+		short int * offsets = (short int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset);
+
 
 		linearizer gridGeoPack(sz);
 
 		tmp.resize(n_pnt);
 		tmp2.resize(n_pnt);
-		auto ite = tmp.getGPUIterator();
 
 		grid_key_dx<dim,int> origUnpack;
 
@@ -2021,19 +2109,11 @@ public:
 
 		load_balance_search(n_pnt, (int *)scan,n_cnk, (int *)tmp2.template getDeviceBuffer<0>(),context);
 
-		/////////////////////////////// DEBUG /////////////////////////////////////////
-
-		tmp2.deviceToHost<0>();
-
-		for (int i = 0 ; i < tmp2.size() ; i++)
-		{
-			std::cout << "AAAA " << tmp2.template get<0>(i) << std::endl;
-		}
-
-		///////////////////////////////////////////////////////////////////////////////
+		auto ite = tmp.getGPUIterator();
 
 		// Calculate for each chunk the indexes where they should go + active points
 		CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_alignment<dim,blockSize,indexT>),ite,ids,offsets,scan,
+														  n_cnk,
 														  tmp2.toKernel(),
 				                                          gridGeoPack,origPack,
 				                                          gridGeometry,origUnpack,
@@ -2046,15 +2126,80 @@ public:
 				mgpu::template less_t<indexT>(),
 				context);
 
+		// mark the bound (we are packing data into chunks)
 
-		// mark the bound exchange
+		ite = tmp.getGPUIterator();
+
+		openfpm::vector_gpu<aggregate<int>> out;
+
+		out.resize(tmp.size()+1);
+		CUDA_LAUNCH((SparseGridGpuKernels::mark_unpack_chunks<blockSize>),ite,tmp.toKernel(),out.toKernel());
 
 		// scan them
 
+		openfpm::scan((int *)out.template getDeviceBuffer<0>(),out.size(),(int *)out.template getDeviceBuffer<0>(),context);
+
 		// resize the add buffer
+
+		out.template deviceToHost<0>(out.size()-1,out.size()-1);
+		n_cnk = out.template get<0>(out.size()-1);
 
 		// fill the data in the add buffer
 
+    	auto & vad = BMG::blockMap.private_get_vct_add_data();
+    	auto & vai = BMG::blockMap.private_get_vct_add_index();
+
+    	unsigned int start = vad.size();
+
+		vad.resize(vad.size() + n_cnk);
+		vai.resize(vai.size() + n_cnk);
+
+		// reset add buffer
+
+		ite.wthr.x = n_cnk;
+		ite.wthr.y = 1;
+		ite.wthr.z = 1;
+		ite.thr.x = blockSize;
+		ite.thr.y = 1;
+		ite.thr.z = 1;
+
+		CUDA_LAUNCH((SparseGridGpuKernels::resetMask<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,vad.toKernel(),start);
+
+		// Fill the add buffer
+
+		CUDA_LAUNCH((SparseGridGpuKernels::fill_add_buffer<blockSize,
+														   BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+														   AggregateT,
+														   indexT,
+														   decltype(tmp2.toKernel()),
+														   decltype(tmp.toKernel()),
+														   decltype(out.toKernel()),
+														   decltype(vai.toKernel()),
+														   decltype(data),
+														   decltype(vad.toKernel()),
+														   prp...>),ite,
+																ids,
+																tmp2.toKernel(),
+																tmp.toKernel(),
+																out.toKernel(),
+																vai.toKernel(),
+																data,
+																vad.toKernel(),start);
+
+		/////////////////////////////// DEBUG //////////////////////////////////////////////////
+
+		vai.template deviceToHost<0>();
+
+		for (size_t i = 0 ; i < vai.size() ; i++)
+		{
+			std::cout << "VAI: " << vai.template get<0>(i) << std::endl;
+		}
+
+		////////////////////////////////////////////////////////////////////////////////////////
+
+		actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(short int));
+
+		ps.addOffset(actual_offset);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////

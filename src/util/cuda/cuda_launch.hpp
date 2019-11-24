@@ -8,6 +8,11 @@
 #ifndef CUDA_LAUNCH_HPP_
 #define CUDA_LAUNCH_HPP_
 
+template<typename lambda_funct_type, typename ... Args_type>
+__global__ void lambda_launcher(lambda_funct_type lbf, Args_type ... args)
+{
+	lbf(args...);
+}
 
 #ifdef CUDA_GPU
 

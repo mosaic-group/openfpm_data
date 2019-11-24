@@ -105,6 +105,18 @@ struct sadd_
 
 #ifdef __NVCC__
 
+template<typename vect_type>
+__global__ void set_one_insert_buffer(vect_type vadd)
+{
+	// points
+    const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (p >= vadd.size())
+    {return;}
+
+    vadd.template get<0>(p) = 1;
+}
+
 template<typename type_t, unsigned int blockLength>
 struct plus_block_t  : public std::binary_function<type_t, type_t, type_t> {
 	__device__ __host__ type_t operator()(type_t a, type_t b) const {

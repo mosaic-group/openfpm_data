@@ -87,8 +87,11 @@ public:
 
     __host__ __device__ grid_smb(const grid_smb<dim, blockEdgeSize> &other)
     {
-        memcpy(blockSz, other.blockSz, dim * sizeof(size_t));
-        memcpy(sz, other.sz, dim * sizeof(size_t));
+    	for (size_t i = 0 ; i < dim ; i++)
+    	{
+            blockSz[i] = other.blockSz[i];
+            sz[i] = other.sz[i];
+    	}
     }
 
     __host__ __device__ grid_smb &operator=(const grid_smb<dim, blockEdgeSize> &other)
@@ -148,6 +151,25 @@ public:
         return coord;
     }
 
+    /*! \brief Invert from the linearized block id + local id to the position of the point in coordinates
+     *
+     * From the point coordinated x,y,z you can get the block coordinated block_x,block_y,block_z
+     *                and the local coordinates inside the chunk loc_x,loc_y,loc_z
+     *
+     * linearizing block coordinated you get blockId and linearizing the local coordinated you get localLinId
+     *
+     * each point in a sparse grid is identified by the formula blockId*blockSize + localLinId
+     *
+     * This function invert such formula.
+     *
+     * \param blockLinId is blockId
+     *
+     * \param localLinId is localLinId in the formula
+     *
+     *
+     * \return the spatial coordinates of the point
+     *
+     */
     inline __host__ __device__ grid_key_dx<dim, int> InvLinId(mem_id blockLinId, mem_id localLinId) const
     {
         grid_key_dx<dim, int> coord;

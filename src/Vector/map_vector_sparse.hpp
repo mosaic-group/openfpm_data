@@ -1827,6 +1827,21 @@ namespace openfpm
 			vct_nadd_index.template fill<0>(0);
 		}
 
+		/*! \brief In case we manually set the added index buffer and the add data buffer we have to call this
+		 *         function before flush
+		 *
+		 *
+		 */
+		void preFlush()
+		{
+#ifdef __NVCC__
+			vct_nadd_index.resize(vct_add_index.size());
+			auto ite = vct_nadd_index.getGPUIterator();
+			CUDA_LAUNCH((set_one_insert_buffer),ite,vct_nadd_index.toKernel());
+			n_gpu_add_block_slot = 1;
+#endif
+		}
+
         /*! \brief Get the GPU insert buffer
          *
          * \return the reference to the GPU insert buffer

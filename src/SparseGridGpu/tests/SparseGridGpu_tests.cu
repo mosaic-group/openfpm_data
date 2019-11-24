@@ -1312,7 +1312,7 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_remove_test)
     sparseGrid.remove(remove_section2);
     sparseGrid.remove(remove_section3);
 
-    sparseGrid.removeCopyFinalize(ctx);
+    sparseGrid.removeAddUnpackFinalize<>(ctx);
 
     sparseGrid.deviceToHost<0>();
 
