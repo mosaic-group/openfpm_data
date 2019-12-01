@@ -67,7 +67,24 @@ public:
 //    auto get(unsigned int linId) const -> decltype(blockMap.get(0));
 
     template<unsigned int p>
-    auto get(unsigned int linId) const -> const ScalarTypeOf<AggregateBlockT, p> &;
+    auto get(unsigned int linId) const -> const ScalarTypeOf<AggregateBlockT, p> &
+    {
+        typedef BlockTypeOf<AggregateBlockT, p> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        unsigned int offset = linId % BlockT::size;
+        auto aggregate = blockMap.get(blockId);
+        auto &block = aggregate.template get<p>();
+    	auto &mask = aggregate.template get<pMask>();
+    	// Now check if the element actually exists
+    	if (exist(mask[offset]))
+    	{
+    		return block[offset];
+    	}
+    	else
+    	{
+    		return blockMap.template getBackground<p>()[offset];
+    	}
+    }
 
     /*! \brief insert data, host version
      *
@@ -266,29 +283,17 @@ public:
 	{
     	return blockMap;
 	}
-};
 
-template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
-template<unsigned int p>
-auto
-BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::get(unsigned int linId) const -> const ScalarTypeOf<AggregateBlockT, p> &
-{
-    typedef BlockTypeOf<AggregateBlockT, p> BlockT;
-    unsigned int blockId = linId / BlockT::size;
-    unsigned int offset = linId % BlockT::size;
-    auto aggregate = blockMap.get(blockId);
-    auto &block = aggregate.template get<p>();
-	auto &mask = aggregate.template get<pMask>();
-	// Now check if the element actually exists
-	if (exist(mask[offset]))
+    /*! \brief Return internal structure block map
+     *
+     * \return the blockMap
+     *
+     */
+    const decltype(blockMap) & private_get_blockMap() const
 	{
-		return block[offset];
+    	return blockMap;
 	}
-	else
-	{
-		return blockMap.template getBackground<p>()[offset];
-	}
-}
+};
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
 void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::deviceToHost()

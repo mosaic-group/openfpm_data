@@ -121,6 +121,16 @@ struct has_vector_kernel<T, typename Void< typename T::vector_kernel >::type> : 
 {};
 
 template<typename T, typename Sfinae = void>
+struct has_set_d: std::false_type {};
+
+/*! \brief has_move check if a type has defined a method function move
+ *
+ */
+template<typename T>
+struct has_set_d<T, typename Void<decltype( std::declval<T>().set_d(0,0) )>::type> : std::true_type
+{};
+
+template<typename T, typename Sfinae = void>
 struct has_data: std::false_type {};
 
 /*! \brief has_data check if a type has defined a member data

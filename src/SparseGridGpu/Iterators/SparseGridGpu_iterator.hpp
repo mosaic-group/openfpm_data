@@ -80,6 +80,27 @@ public:
 		return data_id;
 	}
 
+	/*! \brief Set chunk position id
+	 *
+	 *
+	 * \param cnk_pos_id chunk position id
+	 *
+	 */
+	void set_cnk_pos_id(int cnk_pos_id)
+	{
+		this->cnk_pos_id = cnk_pos_id;
+	}
+
+	/*! \brief Set chunk local index (the returned index < getblockSize())
+	 *
+	 * \param data_id local id
+	 *
+	 */
+	void set_data_id(int data_id)
+	{
+		this->data_id = data_id;
+	}
+
 	/*! \brief return toPoint() + p
 	 *
 	 * \param p the point p
@@ -98,6 +119,38 @@ public:
 		}
 
 		return ret;
+	}
+
+	/*! \brief set the position of this key in direction i to n
+	 *
+	 * \param i direction
+	 * \param n position
+	 *
+	 */
+	inline void set_d(size_t i,int n)
+	{
+		auto indexCnk = sparseGrid.private_get_index_array().template get<0>(cnk_pos_id);
+
+		auto coord = sparseGrid.getCoord(indexCnk*sparseGrid.getBlockSize() + data_id);
+
+		coord.set_d(i,n);
+
+		auto key = sparseGrid.get_sparse(coord);
+
+		cnk_pos_id = key.cnk_pos_id;
+		data_id = key.data_id;
+	}
+
+	/* \brief Return the coordinate in direction i
+	 *
+	 * \return the coordinates in direction i
+	 *
+	 */
+	inline unsigned int get(unsigned int i) const
+	{
+		auto indexCnk = sparseGrid.private_get_index_array().template get<0>(cnk_pos_id);
+
+		return sparseGrid.getCoord(indexCnk*sparseGrid.getBlockSize() + data_id).get(i);
 	}
 };
 

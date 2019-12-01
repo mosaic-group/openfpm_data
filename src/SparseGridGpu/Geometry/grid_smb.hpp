@@ -109,6 +109,18 @@ public:
     	return sz;
 	}
 
+    /*! \brief Linearize the coordinate index
+     *
+     * The linearization is given by getting the block indexes and the local coordinate indexes
+     *
+     * Linearize the block index (blockLinId), linearize the local index (localLinId) and return
+     * blockLinId * blockSize + localLinId
+     *
+     * \param coord coordinates
+     *
+     * \return linearized index
+     *
+     */
     template<typename indexT>
     inline __host__ __device__ mem_id LinId(const grid_key_dx<dim, indexT> coord) const
     {

@@ -1763,6 +1763,24 @@ public:
 	template<unsigned int ... prp, typename context_type>
 	void removeAddUnpackFinalize(const context_type & ctx)
 	{}
+
+	/*! \brief In this case it does nothing
+	 *
+	 * \note this function exist to respect the interface to work as distributed
+	 *
+	 * \param ctx context
+	 *
+	 */
+	template<unsigned int ... prp, typename context_type>
+	void removeCopyToFinalize(const context_type & ctx)
+	{}
+
+	/*! \brief It does nothing
+	 *
+	 *
+	 */
+	void resetFlush()
+	{}
 };
 
 

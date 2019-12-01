@@ -433,6 +433,23 @@ public:
 
 };
 
+template<typename SparseGridType>
+struct sparse_grid_section
+{
+	SparseGridType * grd;
+
+	// Source box
+	Box<SparseGridType::dims,size_t> src;
+
+	// destination Box
+	Box<SparseGridType::dims,size_t> dst;
+
+	sparse_grid_section(SparseGridType & grd,const Box<SparseGridType::dims,size_t> & src, const Box<SparseGridType::dims,size_t> & dst)
+	:grd(&grd),src(src),dst(dst)
+	{}
+};
+
+
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
@@ -444,6 +461,10 @@ class SparseGridGpu : public BlockMapGpu<
         typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type,
         threadBlockSize, indexT, layout_base>
 {
+public:
+
+	 static constexpr unsigned int dims = dim;
+
 private:
 
 	typedef BlockMapGpu<
@@ -459,8 +480,15 @@ private:
     unsigned int ghostLayerSize;
     int req_index;
 
+    typedef SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer> self;
+
     // Queue of remove sections
     openfpm::vector_gpu<Box<dim,unsigned int>> rem_sects;
+
+    // Queue of copy sections
+    openfpm::vector<sparse_grid_section<self>> copySect;
+
+    CudaMemory mem;
 
     // pointers
     openfpm::vector<void *> index_ptrs;
@@ -496,8 +524,6 @@ private:
     //! contain the scan of the point for each iterator
     mutable openfpm::vector_gpu<aggregate<indexT>> scan_it;
 
-    typedef SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer> self;
-
     //! the set of all sub-set to pack
     mutable openfpm::vector_gpu<Box<dim,int>> pack_subs;
 
@@ -510,7 +536,6 @@ public:
 	//! it define that this data-structure is a grid
 	typedef int yes_i_am_grid;
 
-    static constexpr unsigned int dims = dim;
     static constexpr unsigned int blockEdgeSize_ = blockEdgeSize;
 
     typedef linearizer grid_info;
@@ -1079,6 +1104,34 @@ public:
     	return gridSize.getGPUIterator(start,stop,n_thr);
     }
 
+    /*! \brief Get an element using the point coordinates
+     *
+     * \tparam p property index
+     *
+     * \param coord point coordinates
+     *
+     * \return the element
+     *
+     */
+    template<typename CoordT>
+    base_key get_sparse(const grid_key_dx<dim,CoordT> & coord) const
+    {
+    	base_key k(*this,0,0);
+
+    	const auto & blockMap = this->private_get_blockMap();
+
+    	auto glid = gridGeometry.LinId(coord);
+
+    	auto bid = glid / blockSize;
+    	auto lid = glid % blockSize;
+
+    	auto key = blockMap.get_sparse(bid);
+
+    	k.set_cnk_pos_id(key.id);
+    	k.set_data_id(lid);
+
+        return k;
+    }
 
     /*! \brief Get an element using the point coordinates
      *
@@ -1671,6 +1724,11 @@ public:
 	{
 		pack_subs.clear();
 
+	    index_ptrs.clear();
+	    scan_ptrs.clear();
+	    data_ptrs.clear();
+	    offset_ptrs.clear();
+
 		req_index = 0;
 	}
 
@@ -1874,6 +1932,61 @@ public:
 		req_index++;
 	}
 
+
+	/*! \brief It finalize the queued operations of remove() and copy_to()
+	 *
+	 * \param ctx context
+	 *
+	 */
+	template<unsigned int ... prp>
+	void removeCopyToFinalize(mgpu::ofp_context_t & ctx)
+	{
+		this->packReset();
+
+		size_t req = 0;
+		// First we do counting of point to copy (as source)
+
+		for (size_t i = 0 ; i < copySect.size() ; i++)
+		{
+			auto sub_it = this->getIterator(copySect.get(i).src.getKP1(),copySect.get(i).src.getKP2());
+
+			this->packRequest(sub_it,req);
+		}
+
+		this->template packCalculate<prp...>(req,ctx);
+
+		mem.resize(req);
+
+		// Create an object of preallocated memory for properties
+		ExtPreAlloc<CudaMemory> & prAlloc_prp = *(new ExtPreAlloc<CudaMemory>(req,mem));
+
+		prAlloc_prp.incRef();
+
+		// Pack information
+		Pack_stat sts;
+
+		for (size_t i = 0 ; i < copySect.size() ; i++)
+		{
+			auto sub_it = this->getIterator(copySect.get(i).src.getKP1(),copySect.get(i).src.getKP2());
+
+			this->pack<prp ...>(prAlloc_prp,sub_it,sts);
+		}
+
+		this->template packFinalize<prp ...>(prAlloc_prp,sts);
+
+		// We unpack to the destination
+
+		prAlloc_prp.reset();
+		Unpack_stat ups;
+
+		for (size_t i = 0 ; i < copySect.size() ; i++)
+		{
+			auto sub_it = this->getIterator(copySect.get(i).dst.getKP1(),copySect.get(i).dst.getKP2());
+
+			copySect.get(i).grd->template unpack<prp...>(prAlloc_prp,sub_it,ups,ctx);
+		}
+	}
+
 	/*! \brief Finalize the packing procedure
 	 *
 	 * \tparam prp properties to pack
@@ -2019,10 +2132,22 @@ public:
 		return true;
 	}
 
-	void copy_to(const self & grid_src,
+	/*! \brief It queue a copy
+	 *
+	 * \param grid_src source grid
+	 * \param box_src gource box
+	 * \param box_dst destination box
+	 *
+	 */
+	void copy_to(self & grid_src,
 		         const Box<dim,size_t> & box_src,
 			     const Box<dim,size_t> & box_dst)
 	{
+		// first we launch a kernel to count the number of points we have
+
+		sparse_grid_section<self> sgs(*this,box_src,box_dst);
+
+		grid_src.copySect.add(sgs);
 	}
 
 	/*! \brief unpack the sub-grid object
@@ -2083,7 +2208,6 @@ public:
 		// calculate the number of total points
 		size_t n_pnt = *(unsigned int *)((unsigned char *)mem.getPointer() + ps.getOffset() + actual_offset + n_cnk*sizeof(unsigned int));
 
-
 		actual_offset += align_number(sizeof(indexT),(n_cnk+1)*sizeof(unsigned int));
 
 		arr_arr_ptr<1,sizeof...(prp)> data;
@@ -2096,106 +2220,105 @@ public:
 
 		short int * offsets = (short int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset);
 
-
-		linearizer gridGeoPack(sz);
-
-		tmp.resize(n_pnt);
-		tmp2.resize(n_pnt);
-
-		grid_key_dx<dim,int> origUnpack;
-
-		for (int i = 0 ; i < dim ; i++)
-		{origUnpack.set_d(i,sub_it.getStart().get(i));}
-
-		load_balance_search(n_pnt, (int *)scan,n_cnk, (int *)tmp2.template getDeviceBuffer<0>(),context);
-
-		auto ite = tmp.getGPUIterator();
-
-		// Calculate for each chunk the indexes where they should go + active points
-		CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_alignment<dim,blockSize,indexT>),ite,ids,offsets,scan,
-														  n_cnk,
-														  tmp2.toKernel(),
-				                                          gridGeoPack,origPack,
-				                                          gridGeometry,origUnpack,
-				                                          tmp.toKernel());
-
-		// sort these indexes ... keep the original position
-		mergesort((indexT *)tmp.template getDeviceBuffer<0>(),
-				(unsigned int *)tmp.template getDeviceBuffer<1>(),
-				tmp.size(),
-				mgpu::template less_t<indexT>(),
-				context);
-
-		// mark the bound (we are packing data into chunks)
-
-		ite = tmp.getGPUIterator();
-
-		openfpm::vector_gpu<aggregate<int>> out;
-
-		out.resize(tmp.size()+1);
-		CUDA_LAUNCH((SparseGridGpuKernels::mark_unpack_chunks<blockSize>),ite,tmp.toKernel(),out.toKernel());
-
-		// scan them
-
-		openfpm::scan((int *)out.template getDeviceBuffer<0>(),out.size(),(int *)out.template getDeviceBuffer<0>(),context);
-
-		// resize the add buffer
-
-		out.template deviceToHost<0>(out.size()-1,out.size()-1);
-		n_cnk = out.template get<0>(out.size()-1);
-
-		// fill the data in the add buffer
-
-    	auto & vad = BMG::blockMap.private_get_vct_add_data();
-    	auto & vai = BMG::blockMap.private_get_vct_add_index();
-
-    	unsigned int start = vad.size();
-
-		vad.resize(vad.size() + n_cnk);
-		vai.resize(vai.size() + n_cnk);
-
-		// reset add buffer
-
-		ite.wthr.x = n_cnk;
-		ite.wthr.y = 1;
-		ite.wthr.z = 1;
-		ite.thr.x = blockSize;
-		ite.thr.y = 1;
-		ite.thr.z = 1;
-
-		CUDA_LAUNCH((SparseGridGpuKernels::resetMask<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,vad.toKernel(),start);
-
-		// Fill the add buffer
-
-		CUDA_LAUNCH((SparseGridGpuKernels::fill_add_buffer<blockSize,
-														   BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-														   AggregateT,
-														   indexT,
-														   decltype(tmp2.toKernel()),
-														   decltype(tmp.toKernel()),
-														   decltype(out.toKernel()),
-														   decltype(vai.toKernel()),
-														   decltype(data),
-														   decltype(vad.toKernel()),
-														   prp...>),ite,
-																ids,
-																tmp2.toKernel(),
-																tmp.toKernel(),
-																out.toKernel(),
-																vai.toKernel(),
-																data,
-																vad.toKernel(),start);
-
-		/////////////////////////////// DEBUG //////////////////////////////////////////////////
-
-		vai.template deviceToHost<0>();
-
-		for (size_t i = 0 ; i < vai.size() ; i++)
+		if (n_pnt != 0)
 		{
-			std::cout << "VAI: " << vai.template get<0>(i) << std::endl;
-		}
+			linearizer gridGeoPack(sz);
 
-		////////////////////////////////////////////////////////////////////////////////////////
+			tmp.resize(n_pnt);
+			tmp2.resize(n_pnt);
+
+			grid_key_dx<dim,int> origUnpack;
+
+			for (int i = 0 ; i < dim ; i++)
+			{origUnpack.set_d(i,sub_it.getStart().get(i));}
+
+			load_balance_search(n_pnt, (int *)scan,n_cnk, (int *)tmp2.template getDeviceBuffer<0>(),context);
+
+			auto ite = tmp.getGPUIterator();
+
+			// Calculate for each chunk the indexes where they should go + active points
+			CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_alignment<dim,blockSize,indexT>),ite,ids,offsets,scan,
+															  n_cnk,
+															  tmp2.toKernel(),
+															  gridGeoPack,origPack,
+															  gridGeometry,origUnpack,
+															  tmp.toKernel());
+
+			// sort these indexes ... keep the original position
+			mergesort((indexT *)tmp.template getDeviceBuffer<0>(),
+					(unsigned int *)tmp.template getDeviceBuffer<1>(),
+					tmp.size(),
+					mgpu::template less_t<indexT>(),
+					context);
+
+			// mark the bound (we are packing data into chunks)
+
+			ite = tmp.getGPUIterator();
+
+			openfpm::vector_gpu<aggregate<int>> out;
+
+			out.resize(tmp.size()+1);
+			CUDA_LAUNCH((SparseGridGpuKernels::mark_unpack_chunks<blockSize>),ite,tmp.toKernel(),out.toKernel());
+
+			// scan them
+
+			openfpm::scan((int *)out.template getDeviceBuffer<0>(),out.size(),(int *)out.template getDeviceBuffer<0>(),context);
+
+			// resize the add buffer
+
+			out.template deviceToHost<0>(out.size()-1,out.size()-1);
+			n_cnk = out.template get<0>(out.size()-1);
+
+			// fill the data in the add buffer
+
+			auto & vad = BMG::blockMap.private_get_vct_add_data();
+			auto & vai = BMG::blockMap.private_get_vct_add_index();
+
+			unsigned int start = vad.size();
+
+			vad.resize(vad.size() + n_cnk);
+			vai.resize(vai.size() + n_cnk);
+
+			// reset add buffer
+
+			ite.wthr.x = n_cnk;
+			ite.wthr.y = 1;
+			ite.wthr.z = 1;
+			ite.thr.x = blockSize;
+			ite.thr.y = 1;
+			ite.thr.z = 1;
+
+			Unpack_stat ps;
+
+			CUDA_LAUNCH((SparseGridGpuKernels::resetMask<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,vad.toKernel(),start);
+
+			// Fill the add buffer
+
+			CUDA_LAUNCH((SparseGridGpuKernels::fill_add_buffer<blockSize,
+															   BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+															   AggregateT,
+															   indexT,
+															   decltype(tmp2.toKernel()),
+															   decltype(tmp.toKernel()),
+															   decltype(out.toKernel()),
+															   decltype(vai.toKernel()),
+															   decltype(data),
+															   decltype(vad.toKernel()),
+															   prp...>),ite,
+																	ids,
+																	tmp2.toKernel(),
+																	tmp.toKernel(),
+																	out.toKernel(),
+																	vai.toKernel(),
+																	data,
+																	vad.toKernel(),start);
+
+			////////////////////////////////// DEBUG ////////////////////////////
+
+			vad.template deviceToHost<0,1>();
+
+			/////////////////////////////////////////////////////////////////////
+		}
 
 		actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(short int));
 

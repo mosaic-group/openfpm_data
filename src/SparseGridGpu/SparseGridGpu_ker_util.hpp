@@ -72,9 +72,6 @@ struct sparsegridgpu_pack_impl
 		typedef typename boost::mpl::at<typename AggregateT::type,prp_cp>::type pack_type;
 
 		((pack_type *)data_ptr[prp_cp::value])[ppos] = dataBuff.template get<prp_cp::value>(dataBlockPos)[offset];
-
-
-//		printf("INTERNAL %f  %d  %d \n",dataBuff.template get<prp_cp::value>(dataBlockPos)[offset],dataBlockPos,offset);
 	}
 };
 
@@ -129,8 +126,6 @@ struct sparsegridgpu_unpack_impl
 		typedef typename boost::mpl::at<typename AggregateT::type,prp_cp>::type pack_type;
 
 		dataBuff.template get<T::value>(dataBlockPos)[offset] = ((pack_type *)data_ptr.ptr[0][T::value])[ppos];
-
-		printf("UNPACK: %f    %p \n",((pack_type *)data_ptr.ptr[0][T::value])[ppos],&((pack_type *)data_ptr.ptr[0][T::value])[ppos]);
 	}
 };
 

@@ -639,8 +639,6 @@ namespace SparseGridGpuKernels
 					int scan_id = scan.template get<0>(dataBlockPos + k*(indexBuffer.size() + 1)) + scan_it.template get<0>(k);
 					output.template get<0>(scan_id + p) = (offset + dataBlockPos * blockSize) * numCnt + k;
 					pack_output.template get<0>(scan_id + p) = p + sit;
-
-//					printf("EXPOINTS: DATABLOBKPOS %d   DATABLOCKPOSPACK %d    ID: %d  K: %d   %p \n",dataBlockPos,dataBlockPosPack,(int)indexBuffer.template get<0>(dataBlockPos),(int)k,&indexBuffer.template get<0>(0));
 				}
 			}
         }
@@ -695,7 +693,7 @@ namespace SparseGridGpuKernels
         add_index.template get<0>(dataBlockPos + start) = dataBlockId;
 
 		sparsegridgpu_unpack_impl<AggregateT, add_data_type ,prp ...>
-														spi(dataBlockPos + start,offset,add_data,p,data_ptrs);
+														spi(dataBlockPos + start,offset,add_data,ord,data_ptrs);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
 
@@ -746,16 +744,10 @@ namespace SparseGridGpuKernels
 
         auto id = ids[cid];
 
-        unsigned int poff = (cid == n_seg-1)?output.size():scan[cid+1];
-
-        unsigned int np = poff - scan[cid];
-
 		short int offset = offsets[p];
 		grid_key_dx<dim,int> pos = gridGeoPack.InvLinId(id,offset) - origPack + origUnpack;
 
 		unsigned int id_u;
-
-//		printf("GEOLIN: CID: %d      %d %d    %d %d    (%d %d)  %p \n",cid,pos.get(0),pos.get(1),origPack.get(0),origPack.get(1),(int)id,(int)offset,ids);
 
 		auto plin = gridGeo.LinId(pos);
 
@@ -896,15 +888,6 @@ namespace SparseGridGpuKernels
 
 		((indexT *)index_ptr.ptr[k])[dataBlockPosPack] = indexBuff.template get<0>(dataBlockPos);
 		((short int *)offset_ptr.ptr[k])[p_offset] = offset;
-
-//		printf("POINTERS SCAN %p    OFFSET %p      INDEX %p    DATA  %p    %f   %f    %d  %d \n",&((unsigned int *)scan_ptr.ptr[k])[dataBlockPosPack],
-//																			&((short int *)offset_ptr.ptr[k])[p_offset],
-//																			&((indexT *)index_ptr.ptr[k])[dataBlockPosPack],
-//																			&((float *)data_ptr.ptr[k][0])[p_offset],
-//																			dataBuff.template get<0>(dataBlockPos)[offset],
-//																			((float *)data_ptr.ptr[k][0])[p_offset],
-//																			dataBlockPos,
-//																			offset);
     }
 
     // Apply in-place operator on boundary

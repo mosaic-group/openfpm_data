@@ -356,6 +356,8 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	{
 #ifdef __NVCC__
 
+		CUDA_SAFE()
+
 		// Than we construct the ids
 
 		auto ite_gpu = pl.getGPUIteratorTo(stop-start);

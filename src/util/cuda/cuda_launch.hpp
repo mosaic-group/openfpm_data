@@ -8,17 +8,17 @@
 #ifndef CUDA_LAUNCH_HPP_
 #define CUDA_LAUNCH_HPP_
 
-template<typename lambda_funct_type, typename ... Args_type>
-__global__ void lambda_launcher(lambda_funct_type lbf, Args_type ... args)
-{
-	lbf(args...);
-}
-
 #ifdef CUDA_GPU
 
 #if defined(SE_CLASS1) || defined(CUDA_CHECK_LAUNCH)
 
 #include "cuda_kernel_error_checker.hpp"
+
+template<typename lambda_funct_type, typename ... Args_type>
+__global__ void lambda_launcher(lambda_funct_type lbf, Args_type ... args)
+{
+	lbf(args...);
+}
 
 #define CUDA_LAUNCH(cuda_call,ite, ...) \
         {\

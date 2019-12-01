@@ -90,7 +90,7 @@ class SparseGridGpu_iterator_sub
 
 			in_chunk_it.reinitialize(grid_key_dx_iterator_sub<dim>(chunk_sz,res.getKP1(),res.getKP2()));
 
-			while (in_chunk_it.isNext() == true && data->template get<pMask::value>(chunk)[chunk_sz.LinId(in_chunk_it.get())] == 0)
+			while (in_chunk_it.isNext() == true && (data->template get<pMask::value>(chunk)[chunk_sz.LinId(in_chunk_it.get())]&1ul) == 0)
 			{
 				++in_chunk_it;
 			}
@@ -100,7 +100,7 @@ class SparseGridGpu_iterator_sub
 	//! Select the first valid point chunk
 	void SelectValid()
 	{
-		while (in_chunk_it.isNext() == true && data->template get<pMask::value>(chunk)[chunk_sz.LinId(in_chunk_it.get())] == 0)
+		while (in_chunk_it.isNext() == true && (data->template get<pMask::value>(chunk)[chunk_sz.LinId(in_chunk_it.get())]&1ul) == 0)
 		{
 			++in_chunk_it;
 		}

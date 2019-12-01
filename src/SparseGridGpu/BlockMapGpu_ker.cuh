@@ -275,19 +275,6 @@ inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
                 ? block
                 : blockMap.template getBackground<p>()[offset];
 
-//    const auto & block = blockMap.template get<p>(blockId)[offset];
-//    const auto & mask = blockMap.template get<pMask>(blockId)[offset];
-//    // Now check if the element actually exists
-//    return exist(mask)
-//                ? block
-//                : blockMap.template getBackground<p>()[offset];
-
-//    const auto & block = blockMap.get(blockId).template get<p>()[offset];
-//    const auto & mask = blockMap.get(blockId).template get<pMask>()[offset];
-//    // Now check if the element actually exists
-//    return exist(mask)
-//                ? block
-//                : blockMap.template getBackground<p>()[offset];
 #else // __NVCC__
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif // __NVCC__

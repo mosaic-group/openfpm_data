@@ -1443,6 +1443,13 @@ public:
 	void removeAddUnpackReset()
 	{}
 
+	/*! \brief It does nothing
+	 *
+	 *
+	 */
+	void resetFlush()
+	{}
+
 	/*! \brief In this case it does nothing
 	 *
 	 * \note this function exist to respect the interface to work as distributed
@@ -1452,6 +1459,18 @@ public:
 	 */
 	template<unsigned int ... prp, typename context_type>
 	void removeAddUnpackFinalize(const context_type & ctx)
+	{}
+
+
+	/*! \brief In this case it does nothing
+	 *
+	 * \note this function exist to respect the interface to work as distributed
+	 *
+	 * \param ctx context
+	 *
+	 */
+	template<unsigned int ... prp, typename context_type>
+	void removeCopyToFinalize(const context_type & ctx)
 	{}
 
 	/*! \brief Pack finalize Finalize the pack of this object. In this case it does nothing

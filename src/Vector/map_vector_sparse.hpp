@@ -1082,6 +1082,7 @@ namespace openfpm
 						 vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_data_reord_map,
 				  	  	   mgpu::ofp_context_t & context)
 		{
+#ifdef __NVCC__
 			ite_gpu<1> itew;
 			itew.wthr.x = vct_index_tmp.size() / 128 + (vct_index_tmp.size() % 128 != 0);
 			itew.wthr.y = 1;
@@ -1150,6 +1151,9 @@ namespace openfpm
 
 			scalar_block_implementation_switch<impl2, block_functor>
 			        ::trimSegments(vct_add_index_unique);
+#else
+			std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+#endif
 		}
 
 		template<typename ... v_reduce>
@@ -1489,6 +1493,27 @@ namespace openfpm
         {
             return vct_data;
         }
+
+		/*! \brief Get the sparse index
+		 *
+		 * Get the sparse index of the element id
+		 *
+		 * \note use get_index and get to retrieve the value index associated to the sparse index
+		 *
+		 * \param id Element to get
+		 *
+		 * \return the element value requested
+		 *
+		 */
+		inline openfpm::sparse_index<Ti> get_sparse(Ti id) const
+		{
+			Ti di;
+			this->_branchfree_search<false>(id,di);
+			openfpm::sparse_index<Ti> sid;
+			sid.id = di;
+
+			return sid;
+		}
 
 		/*! \brief Get an element of the vector
 		 *
