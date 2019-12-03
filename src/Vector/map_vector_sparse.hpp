@@ -1165,7 +1165,7 @@ namespace openfpm
 #ifdef __NVCC__
 
 			// To avoid the case where you never called setGPUInsertBuffer
-			if (n_gpu_add_block_slot == 0)
+			if (n_gpu_add_block_slot == 0 || vct_add_index.size() == 0)
 			{
 				return;
 			}
@@ -1861,8 +1861,12 @@ namespace openfpm
 		{
 #ifdef __NVCC__
 			vct_nadd_index.resize(vct_add_index.size());
-			auto ite = vct_nadd_index.getGPUIterator();
-			CUDA_LAUNCH((set_one_insert_buffer),ite,vct_nadd_index.toKernel());
+
+			if (vct_nadd_index.size() != 0)
+			{
+				auto ite = vct_nadd_index.getGPUIterator();
+				CUDA_LAUNCH((set_one_insert_buffer),ite,vct_nadd_index.toKernel());
+			}
 			n_gpu_add_block_slot = 1;
 #endif
 		}

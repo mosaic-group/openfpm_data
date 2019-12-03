@@ -747,8 +747,6 @@ namespace SparseGridGpuKernels
 		short int offset = offsets[p];
 		grid_key_dx<dim,int> pos = gridGeoPack.InvLinId(id,offset) - origPack + origUnpack;
 
-		unsigned int id_u;
-
 		auto plin = gridGeo.LinId(pos);
 
 		output.template get<0>(p) = plin;
@@ -783,9 +781,6 @@ namespace SparseGridGpuKernels
 
         // NOTE: here we do 1 chunk per block! (we want to be sure to fit local memory constraints
         // since we will be loading also neighbouring elements!) (beware curse of dimensionality...)
-//        int pos = blockIdx.x * blockDim.x + threadIdx.x;
-//        const unsigned int dataBlockPos = pos / blockSize;
-//        const unsigned int offset = pos % blockSize;
         const unsigned int dataBlockPos = blockIdx.x;
         const unsigned int offset = threadIdx.x % blockSize;
 

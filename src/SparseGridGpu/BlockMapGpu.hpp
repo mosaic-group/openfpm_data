@@ -193,8 +193,12 @@ public:
         auto & insertBuffer = blockMap.getGPUInsertBuffer();
         typedef BlockTypeOf<AggregateInternalT, pMask> BlockType; // Here assuming that all block types in the aggregate have the same size!
         constexpr unsigned int chunksPerBlock = 1; // Floor is good here...
-        BlockMapGpuKernels::initializeInsertBuffer<pMask, chunksPerBlock> <<< insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size >>>(
+
+        if (insertBuffer.size() != 0)
+        {
+        	CUDA_LAUNCH_DIM3((BlockMapGpuKernels::initializeInsertBuffer<pMask, chunksPerBlock>),insertBuffer.size()/chunksPerBlock, chunksPerBlock*BlockType::size,
                 insertBuffer.toKernel());
+        }
 
     #ifdef SE_CLASS1
             is_initializeGPUInsertBuffer = true;

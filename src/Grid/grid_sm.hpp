@@ -80,6 +80,11 @@ struct ite_gpu
 		return wthr.x * wthr.y * wthr.z;
 	}
 
+	size_t nthrs()
+	{
+		return thr.x * thr.y * thr.z;
+	}
+
 #endif
 };
 

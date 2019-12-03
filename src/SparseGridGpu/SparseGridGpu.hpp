@@ -884,58 +884,62 @@ private:
     		tot_cnk += n_cnk;
     	}
 
-    	e_points.resize(tot_pnt);
-    	pack_output.resize(tot_pnt);
+    	ite_gpu<1> ite;
 
-		ite_gpu<1> ite;
-
-    	ite.wthr.x = indexBuffer.size();
-    	ite.wthr.y = 1;
-    	ite.wthr.z = 1;
-    	ite.thr.x = getBlockSize();
-    	ite.thr.y = 1;
-    	ite.thr.z = 1;
-
-		// Launch a kernel that count the number of element on each chunks
-		CUDA_LAUNCH((SparseGridGpuKernels::get_exist_points_with_boxes<dim,
-																	BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-																	n_it,
-																	indexT>),
-				 ite,
-				 indexBuffer.toKernel(),
-				 pack_subs.toKernel(),
-				 gridGeometry,
-				 dataBuffer.toKernel(),
-				 pack_output.toKernel(),
-				 tmp.toKernel(),
-				 scan_it.toKernel(),
-				 e_points.toKernel());
-
-		ite = e_points.getGPUIterator();
+    	if (tot_pnt != 0)
+    	{
+			e_points.resize(tot_pnt);
+			pack_output.resize(tot_pnt);
 
 
-		CUDA_LAUNCH((SparseGridGpuKernels::pack_data<AggregateT,
-							   n_it,
-							   sizeof...(prp),
-							   indexT,
-							   decltype(e_points.toKernel()),
-							   decltype(pack_output.toKernel()),
-							   decltype(indexBuffer.toKernel()),
-				               decltype(dataBuffer.toKernel()),
-				               decltype(tmp.toKernel()),
-				               self::blockSize,
-				               prp ...>),
-							   ite,
-							   e_points.toKernel(),
-							   dataBuffer.toKernel(),
-							   indexBuffer.toKernel(),
-							   tmp.toKernel(),
-							   pack_output.toKernel(),
-							   index_ptr,
-							   scan_ptr,
-							   data_ptr,
-							   offset_ptr,
-							   pack_subs.size());
+			ite.wthr.x = indexBuffer.size();
+			ite.wthr.y = 1;
+			ite.wthr.z = 1;
+			ite.thr.x = getBlockSize();
+			ite.thr.y = 1;
+			ite.thr.z = 1;
+
+			// Launch a kernel that count the number of element on each chunks
+			CUDA_LAUNCH((SparseGridGpuKernels::get_exist_points_with_boxes<dim,
+																		BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																		n_it,
+																		indexT>),
+					 ite,
+					 indexBuffer.toKernel(),
+					 pack_subs.toKernel(),
+					 gridGeometry,
+					 dataBuffer.toKernel(),
+					 pack_output.toKernel(),
+					 tmp.toKernel(),
+					 scan_it.toKernel(),
+					 e_points.toKernel());
+
+			ite = e_points.getGPUIterator();
+
+
+			CUDA_LAUNCH((SparseGridGpuKernels::pack_data<AggregateT,
+								   n_it,
+								   sizeof...(prp),
+								   indexT,
+								   decltype(e_points.toKernel()),
+								   decltype(pack_output.toKernel()),
+								   decltype(indexBuffer.toKernel()),
+								   decltype(dataBuffer.toKernel()),
+								   decltype(tmp.toKernel()),
+								   self::blockSize,
+								   prp ...>),
+								   ite,
+								   e_points.toKernel(),
+								   dataBuffer.toKernel(),
+								   indexBuffer.toKernel(),
+								   tmp.toKernel(),
+								   pack_output.toKernel(),
+								   index_ptr,
+								   scan_ptr,
+								   data_ptr,
+								   offset_ptr,
+								   pack_subs.size());
+    	}
 
     	ite.wthr.x = 1;
     	ite.wthr.y = 1;
@@ -1747,9 +1751,6 @@ public:
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
 
-    	if (indexBuffer.size() == 0)
-    	{return;}
-
     	ite.wthr.x = indexBuffer.size();
     	ite.wthr.y = 1;
     	ite.wthr.z = 1;
@@ -1759,69 +1760,72 @@ public:
 
     	tmp.resize((indexBuffer.size() + 1)*pack_subs.size());
 
-    	if (pack_subs.size() <= 32)
+    	if (indexBuffer.size() != 0)
     	{
-    		// Launch a kernel that count the number of element on each chunks
-    		CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
-    																	BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-    																	32,
-    																	indexT>),
-    				 ite,
-    				 indexBuffer.toKernel(),
-    				 pack_subs.toKernel(),
-    				 gridGeometry,
-    				 dataBuffer.toKernel(),
-    				 tmp.toKernel(),
-    				 indexBuffer.size() + 1);
-    	}
-    	else if (pack_subs.size() <= 64)
-    	{
-    		// Launch a kernel that count the number of element on each chunks
-    		CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
-    																	BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-    																	64,
-    																	indexT>),
-    				 ite,
-    				 indexBuffer.toKernel(),
-    				 pack_subs.toKernel(),
-    				 gridGeometry,
-    				 dataBuffer.toKernel(),
-    				 tmp.toKernel(),
-    				 indexBuffer.size() + 1);
-    	}
-    	else if (pack_subs.size() <= 96)
-    	{
-    		// Launch a kernel that count the number of element on each chunks
-    		CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
-    																	BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-    																	96,
-    																	indexT>),
-    				 ite,
-    				 indexBuffer.toKernel(),
-    				 pack_subs.toKernel(),
-    				 gridGeometry,
-    				 dataBuffer.toKernel(),
-    				 tmp.toKernel(),
-    				 indexBuffer.size() + 1);
-    	}
-    	else if (pack_subs.size() <= 128)
-    	{
-    		// Launch a kernel that count the number of element on each chunks
-    		CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
-    																	BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-    																	128,
-    																	indexT>),
-    				 ite,
-    				 indexBuffer.toKernel(),
-    				 pack_subs.toKernel(),
-    				 gridGeometry,
-    				 dataBuffer.toKernel(),
-    				 tmp.toKernel(),
-    				 indexBuffer.size() + 1);
-    	}
-    	else
-    	{
-    		std::cout << __FILE__ << ":" << __LINE__ << " error no implementation available of packCalculate, create a new case for " << pack_subs.size() << std::endl;
+			if (pack_subs.size() <= 32)
+			{
+				// Launch a kernel that count the number of element on each chunks
+				CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
+																			BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																			32,
+																			indexT>),
+						 ite,
+						 indexBuffer.toKernel(),
+						 pack_subs.toKernel(),
+						 gridGeometry,
+						 dataBuffer.toKernel(),
+						 tmp.toKernel(),
+						 indexBuffer.size() + 1);
+			}
+			else if (pack_subs.size() <= 64)
+			{
+				// Launch a kernel that count the number of element on each chunks
+				CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
+																			BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																			64,
+																			indexT>),
+						 ite,
+						 indexBuffer.toKernel(),
+						 pack_subs.toKernel(),
+						 gridGeometry,
+						 dataBuffer.toKernel(),
+						 tmp.toKernel(),
+						 indexBuffer.size() + 1);
+			}
+			else if (pack_subs.size() <= 96)
+			{
+				// Launch a kernel that count the number of element on each chunks
+				CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
+																			BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																			96,
+																			indexT>),
+						 ite,
+						 indexBuffer.toKernel(),
+						 pack_subs.toKernel(),
+						 gridGeometry,
+						 dataBuffer.toKernel(),
+						 tmp.toKernel(),
+						 indexBuffer.size() + 1);
+			}
+			else if (pack_subs.size() <= 128)
+			{
+				// Launch a kernel that count the number of element on each chunks
+				CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
+																			BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																			128,
+																			indexT>),
+						 ite,
+						 indexBuffer.toKernel(),
+						 pack_subs.toKernel(),
+						 gridGeometry,
+						 dataBuffer.toKernel(),
+						 tmp.toKernel(),
+						 indexBuffer.size() + 1);
+			}
+			else
+			{
+				std::cout << __FILE__ << ":" << __LINE__ << " error no implementation available of packCalculate, create a new case for " << pack_subs.size() << std::endl;
+			}
     	}
 
     	sparsegridgpu_pack_request<AggregateT,prp ...> spq;

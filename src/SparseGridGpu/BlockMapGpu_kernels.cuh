@@ -48,7 +48,7 @@ namespace BlockMapGpuKernels
 		pred_ids.template get<2>(p) = (k1 != k2) | (p == vct_index_merge.size()-1);
 
 		// predicate 3 is used to count old keys that does not reduce with new data
-		pred_ids.template get<3>(p) = id1 < m && (k1 != k2);
+		pred_ids.template get<3>(p) = id1 < m && ((k1 != k2) | (p == vct_index_merge.size()-1));
 
 		//predicate 1 is used to count the new index segments
 		pred_ids.template get<4>(p) = id1 < m;
