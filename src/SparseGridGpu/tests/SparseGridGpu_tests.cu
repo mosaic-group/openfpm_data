@@ -4,6 +4,7 @@
 
 #define BOOST_TEST_DYN_LINK
 
+#define OPENFPM_DATA_ENABLE_IO_MODULE
 #define DISABLE_MPI_WRITTERS
 
 #include <boost/test/unit_test.hpp>
@@ -1350,6 +1351,128 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_remove_test)
     }
 
     BOOST_REQUIRE_EQUAL(match,true);
+}
+
+BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
+{
+	size_t sz[] = {1000,1000,1000};
+
+	constexpr int blockEdgeSize = 4;
+	constexpr int dim = 3;
+
+	typedef SparseGridGpu<dim, aggregate<float,float[3]>, blockEdgeSize, 64, long int> SparseGridZ;
+
+	SparseGridZ sparseGridSrc(sz);
+	SparseGridZ sparseGridDst(sz);
+	mgpu::ofp_context_t ctx;
+	sparseGridSrc.template setBackgroundValue<0>(0);
+	sparseGridDst.template setBackgroundValue<0>(0);
+
+	// now create a 3D sphere
+
+    grid_key_dx<3,int> start({256,256,256});
+
+    dim3 gridSize(32,32,32);
+
+    // Insert values on the grid
+    sparseGridSrc.setGPUInsertBuffer(gridSize,dim3(1));
+    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
+            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
+            sparseGridSrc.toKernel(), start,64, 56, 1);
+
+    sparseGridSrc.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+    // Now we pack two vertical sections
+
+    Box<3,size_t> box1_src({256,256,256},{273,390,390});
+    Box<3,size_t> box2_src({320,256,256},{337,390,390});
+
+    Box<3,size_t> box1_dst({256,256,256},{273,390,390});
+    Box<3,size_t> box2_dst({274,256,256},{291,390,390});
+
+    // And two vertical sections
+
+    Box<3,size_t> box3_src({256,256,256},{273,320,390});
+    Box<3,size_t> box4_src({320,256,256},{337,320,390});
+
+    Box<3,size_t> box3_dst({300,256,256},{317,320,390});
+    Box<3,size_t> box4_dst({320,256,256},{337,320,390});
+
+    // Now we calculate the memory required to pack
+
+    sparseGridSrc.packReset();
+
+    size_t req = 0;
+    auto sub_it = sparseGridSrc.getIterator(box1_src.getKP1(),box1_src.getKP2());
+    sparseGridSrc.packRequest<0,1>(sub_it,req);
+
+    sub_it = sparseGridSrc.getIterator(box2_src.getKP1(),box2_src.getKP2());
+    sparseGridSrc.packRequest<0,1>(sub_it,req);
+
+    sub_it = sparseGridSrc.getIterator(box3_src.getKP1(),box3_src.getKP2());
+    sparseGridSrc.packRequest<0,1>(sub_it,req);
+
+    sub_it = sparseGridSrc.getIterator(box4_src.getKP1(),box4_src.getKP2());
+    sparseGridSrc.packRequest<0,1>(sub_it,req);
+
+    sparseGridSrc.packCalculate<0,1>(req,ctx);
+
+    CudaMemory mem;
+    mem.resize(req);
+
+	// Create an object of preallocated memory for properties
+	ExtPreAlloc<CudaMemory> & prAlloc_prp = *(new ExtPreAlloc<CudaMemory>(req,mem));
+
+	prAlloc_prp.incRef();
+
+	// Pack information
+	Pack_stat sts;
+
+    sub_it = sparseGridSrc.getIterator(box1_src.getKP1(),box1_src.getKP2());
+    sparseGridSrc.pack<0,1>(prAlloc_prp,sub_it,sts);
+
+    sub_it = sparseGridSrc.getIterator(box2_src.getKP1(),box2_src.getKP2());
+    sparseGridSrc.pack<0,1>(prAlloc_prp,sub_it,sts);
+
+    sub_it = sparseGridSrc.getIterator(box3_src.getKP1(),box3_src.getKP2());
+    sparseGridSrc.pack<0,1>(prAlloc_prp,sub_it,sts);
+
+    sub_it = sparseGridSrc.getIterator(box4_src.getKP1(),box4_src.getKP2());
+    sparseGridSrc.pack<0,1>(prAlloc_prp,sub_it,sts);
+
+
+	sparseGridSrc.template packFinalize<0,1>(prAlloc_prp,sts);
+
+	// Now we analyze the package
+
+	prAlloc_prp.reset();
+
+	Unpack_stat ps;
+
+	sparseGridDst.removeAddUnpackReset();
+
+	// sub-grid where to unpack
+	auto sub2 = sparseGridDst.getIterator(box1_dst.getKP1(),box1_dst.getKP2());
+	sparseGridDst.remove(box1_dst);
+	sparseGridDst.template unpack<0,1>(prAlloc_prp,sub2,ps,ctx);
+
+	sub2 = sparseGridDst.getIterator(box2_dst.getKP1(),box2_dst.getKP2());
+	sparseGridDst.remove(box2_dst);
+	sparseGridDst.template unpack<0,1>(prAlloc_prp,sub2,ps,ctx);
+
+	sub2 = sparseGridDst.getIterator(box3_dst.getKP1(),box3_dst.getKP2());
+	sparseGridDst.remove(box3_dst);
+	sparseGridDst.template unpack<0,1>(prAlloc_prp,sub2,ps,ctx);
+
+	sub2 = sparseGridDst.getIterator(box4_dst.getKP1(),box4_dst.getKP2());
+	sparseGridDst.remove(box4_dst);
+	sparseGridDst.template unpack<0,1>(prAlloc_prp,sub2,ps,ctx);
+
+	sparseGridDst.template removeAddUnpackFinalize<0,1>(ctx);
+
+	sparseGridDst.deviceToHost<0,1>();
+
+	sparseGridDst.write("sparse_out_test.vtk");
 }
 
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)

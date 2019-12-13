@@ -55,7 +55,9 @@ struct check_types
 		{
 			case PNP::UNKNOWN:
 			{
+#ifndef DISABLE_ALL_RTTI
 				std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " impossible to check the type " << demangle(typeid(tpy).name()) << " please consider to add a static method \"static bool noPointers()\" \n" ;
+#endif
 				ret = PNP::UNKNOWN;
 				break;
 			}

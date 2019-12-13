@@ -552,11 +552,11 @@ namespace SparseGridGpuKernels
 
         __syncthreads();
 
-		for (int k = 0 ; k < boxes.size() ; k++ )
-		{
-			output.template get<0>(dataBlockPos+k*stride_size) = ato_cnt[k];
-			output.template get<1>(dataBlockPos+k*stride_size) = (ato_cnt[k] != 0);
-		}
+        if (threadIdx.x < boxes.size())
+        {
+        		output.template get<0>(dataBlockPos+threadIdx.x*stride_size) = ato_cnt[threadIdx.x];
+        		output.template get<1>(dataBlockPos+threadIdx.x*stride_size) = (ato_cnt[threadIdx.x] != 0);
+    	}
     }
 
     /*! \brief
@@ -615,10 +615,10 @@ namespace SparseGridGpuKernels
         // calculate point coord;
         indexT id = indexBuffer.template get<0>(dataBlockPos);
         grid_key_dx<dim,int> pnt = grd.InvLinId(id*grd.getBlockSize() + offset);
-        Point<dim,int> p;
+        Point<dim,int> p_;
 
         for (int i = 0 ; i < dim ; i++)
-        {p.get(i) = pnt.get(i);}
+        {p_.get(i) = pnt.get(i);}
 
         // if this block intersect any box
 
@@ -628,7 +628,7 @@ namespace SparseGridGpuKernels
 			{
 				Box<dim,int> box = boxes.get(k);
 
-				if (box.isInside(p) == true)
+				if (box.isInside(p_) == true)
 				{
 					// We have an atomic counter for every packing box
 					int p = atomicAdd(&ato_cnt[k] , 1);
@@ -693,7 +693,7 @@ namespace SparseGridGpuKernels
         add_index.template get<0>(dataBlockPos + start) = dataBlockId;
 
 		sparsegridgpu_unpack_impl<AggregateT, add_data_type ,prp ...>
-														spi(dataBlockPos + start,offset,add_data,ord,data_ptrs);
+														spi(dataBlockPos + start,offset,add_data,ord,data_ptrs,pts.size());
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
 
@@ -852,10 +852,9 @@ namespace SparseGridGpuKernels
     						  pointOffset_type point_offsets,
     						  arr_ptr<n_it> index_ptr,
     						  arr_ptr<n_it> scan_ptr,
-    						  arr_arr_ptr<n_it,n_prp> data_ptr,
+    						  arr_arr_ptr<n_it,n_prp> * data_ptr,
     						  arr_ptr<n_it> offset_ptr,
-    						  unsigned int r_nit/*,
-    						  bool print*/)
+    						  unsigned int r_nit)
     {
         const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -875,7 +874,7 @@ namespace SparseGridGpuKernels
 		const unsigned int dataBlockPosPack = scan.template get<1>(dataBlockPos + k*(indexBuff.size() + 1));
 
 		sparsegridgpu_pack_impl<AggregateT, dataBuffer_type ,prp ...>
-														spi(dataBlockPos,offset,dataBuff,p_offset,data_ptr.ptr[k]);
+														spi(dataBlockPos,offset,dataBuff,p_offset,data_ptr->ptr[k],pntBuff.size());
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
 

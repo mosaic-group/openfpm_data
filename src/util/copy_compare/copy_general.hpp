@@ -138,7 +138,9 @@ struct copy_general
 	 */
 	inline copy_general(const T & src, T & dst)
 	{
+#ifndef DISABLE_ALL_RTTI
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << "  " << demangle(typeid(T).name()) << " does not have an operator= and is not an aggregate or an openfpm native structure, copy is not possible" << "\n";
+#endif
 	}
 };
 
@@ -210,7 +212,9 @@ struct copy_general_op
 	 */
 	inline copy_general_op(const T & src, T & dst)
 	{
+#ifndef DISABLE_ALL_RTTI
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << "  " << demangle(typeid(T).name()) << " does not have an operator " << demangle(typeid(op<T,T>).name()) << "defined" << std::endl;
+#endif
 	}
 };
 
@@ -248,20 +252,5 @@ struct copy_general_op<op,T,3>
 	}
 };
 
-//! specialization for aggregate type object that define an operator=
-//template<template<typename,typename> class op,typename T>
-//struct copy_general_op<op,T,3>
-//{
-//	/*! \brief copy objects that are aggregates but define an operator=
-//	 *
-//	 * \param src source object to copy
-//	 * \param dst destination object
-//	 *
-//	 */
-//	inline copy_general_op(const T & src, T & dst)
-//	{
-//		op<T,T>::operation(dst,src);
-//	}
-//};
 
 #endif /* OPENFPM_DATA_SRC_UTIL_COPY_GENERAL_HPP_ */

@@ -52,7 +52,9 @@ public:
 	 */
 	static void pack(ExtPreAlloc<Mem> , const T & obj)
 	{
+#ifndef DISABLE_ALL_RTTI
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " packing for the type " << demangle(typeid(T).name()) << " is not implemented\n";
+#endif
 	}
 
 	/*! \brief Error, no implementation
@@ -60,7 +62,9 @@ public:
 	 */
 	static size_t packRequest(const T & obj, size_t & req)
 	{
+#ifndef DISABLE_ALL_RTTI
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " packing for the type " << demangle(typeid(T).name()) << " is not implemented\n";
+#endif
 		return 0;
 	}
 };
@@ -304,7 +308,7 @@ public:
 	 */
 	static void pack(ExtPreAlloc<Mem> & ext, const T & obj, Pack_stat & sts)
 	{
-#ifdef DEBUG
+#ifdef SE_CLASS1
 		if (ext.ref() == 0)
 			std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << " the reference counter of mem should never be zero when packing \n";
 

@@ -53,6 +53,9 @@
 
 					int num_dev;
 					cudaGetDeviceCount(&num_dev);
+
+					if (num_dev == 0) {return;}
+
 					if (opt != gpu_context_opt::dummy)
 					{
 						cudaSetDevice(dev_num % num_dev);
@@ -208,6 +211,9 @@
 
 					int num_dev;
 					cudaGetDeviceCount(&num_dev);
+
+					if (num_dev == 0) {return;}
+
 					if (opt != gpu_context_opt::dummy)
 					{
 						cudaSetDevice(dev_num % num_dev);

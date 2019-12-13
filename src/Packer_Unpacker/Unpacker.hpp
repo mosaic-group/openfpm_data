@@ -38,7 +38,9 @@ public:
 	 */
 	static void unpack(ExtPreAlloc<Mem> , T & obj)
 	{
+#ifndef DISABLE_ALL_RTTI
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " packing for the type " << demangle(typeid(T).name()) << " is not implemented\n";
+#endif
 	}
 };
 

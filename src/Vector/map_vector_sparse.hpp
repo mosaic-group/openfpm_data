@@ -85,6 +85,33 @@ namespace openfpm
     	}
     };
 
+    template<typename reduction_type>
+    struct cpu_block_process<reduction_type,3>
+    {
+    	template<typename encap_src, typename encap_dst,unsigned int N1>
+    	static inline void process(encap_src & src, encap_dst (& dst)[N1])
+    	{
+    		for (unsigned int j = 0 ; j < N1 ; j++)
+    		{
+				for (size_t i = 0 ; i < encap_dst::size ; i++)
+				{
+					dst[i] = reduction_type::red(dst[i][j],src[j][i]);
+				}
+    		}
+    	}
+
+    	template<unsigned int N1, unsigned int blockSize, typename encap_src, typename encap_dst>
+    	static inline void process_e(encap_src & src, encap_dst & dst)
+    	{
+    		for (unsigned int j = 0 ; j < N1 ; j++)
+    		{
+				for (size_t i = 0 ; i < blockSize ; i++)
+				{
+					dst[i] = reduction_type::red(dst[i][j],src[i][j]);
+				}
+    		}
+    	}
+    };
 
     /*! \brief Functor switch to select the vector sparse for standars scalar and blocked implementation
      *
@@ -315,6 +342,80 @@ namespace openfpm
 		}
 	};
 
+	template<typename reduction_type, typename vector_reduction, typename T,unsigned int impl, typename red_type>
+	struct sparse_vector_reduction_cpu_impl
+	{
+		template<typename vector_data_type, typename vector_index_type,typename vector_index_type_reo>
+		static inline void red(size_t & i, vector_data_type & vector_data_red,
+				   vector_data_type & vector_data,
+				   vector_index_type & vector_index,
+				   vector_index_type_reo & reorder_add_index_cpu)
+		{
+			size_t start = reorder_add_index_cpu.get(i).id;
+			red_type red = vector_data.template get<reduction_type::prop::value>(i);
+
+			size_t j = 1;
+			for ( ; i+j < reorder_add_index_cpu.size() && reorder_add_index_cpu.get(i+j).id == start ; j++)
+			{
+				cpu_block_process<reduction_type,impl>::process(vector_data.template get<reduction_type::prop::value>(i+j),red);
+				//reduction_type::red(red,vector_data.template get<reduction_type::prop::value>(i+j));
+			}
+			vector_data_red.add();
+			vector_data_red.template get<reduction_type::prop::value>(vector_data_red.size()-1) = red;
+
+			if (T::value == 0)
+			{
+				vector_index.add();
+				vector_index.template get<0>(vector_index.size() - 1) = reorder_add_index_cpu.get(i).id;
+			}
+
+			i += j;
+		}
+	};
+
+
+	template<typename reduction_type, typename vector_reduction, typename T,unsigned int impl, typename red_type, unsigned int N1>
+	struct sparse_vector_reduction_cpu_impl<reduction_type,vector_reduction,T,impl,red_type[N1]>
+	{
+		template<typename vector_data_type, typename vector_index_type,typename vector_index_type_reo>
+		static inline void red(size_t & i, vector_data_type & vector_data_red,
+				   vector_data_type & vector_data,
+				   vector_index_type & vector_index,
+				   vector_index_type_reo & reorder_add_index_cpu)
+		{
+			size_t start = reorder_add_index_cpu.get(i).id;
+			red_type red[N1];
+
+			for (size_t k = 0 ; k < N1 ; k++)
+			{
+				red[k] = vector_data.template get<reduction_type::prop::value>(i)[k];
+			}
+
+			size_t j = 1;
+			for ( ; i+j < reorder_add_index_cpu.size() && reorder_add_index_cpu.get(i+j).id == start ; j++)
+			{
+				auto ev = vector_data.template get<reduction_type::prop::value>(i+j);
+				cpu_block_process<reduction_type,impl+1>::process(ev,red);
+				//reduction_type::red(red,vector_data.template get<reduction_type::prop::value>(i+j));
+			}
+
+			vector_data_red.add();
+
+			for (size_t k = 0 ; k < N1 ; k++)
+			{
+				vector_data_red.template get<reduction_type::prop::value>(vector_data_red.size()-1)[k] = red[k];
+			}
+
+			if (T::value == 0)
+			{
+				vector_index.add();
+				vector_index.template get<0>(vector_index.size() - 1) = reorder_add_index_cpu.get(i).id;
+			}
+
+			i += j;
+		}
+	};
+
 	/*! \brief this class is a functor for "for_each" algorithm
 	 *
 	 * This class is a functor for "for_each" algorithm. For each
@@ -368,7 +469,9 @@ namespace openfpm
 			{
     			for (size_t i = 0 ; i < reorder_add_index_cpu.size() ; )
     			{
-    				size_t start = reorder_add_index_cpu.get(i).id;
+    				sparse_vector_reduction_cpu_impl<reduction_type,vector_reduction,T,impl,red_type>::red(i,vector_data_red,vector_data,vector_index,reorder_add_index_cpu);
+
+/*    				size_t start = reorder_add_index_cpu.get(i).id;
     				red_type red = vector_data.template get<reduction_type::prop::value>(i);
 
     				size_t j = 1;
@@ -386,7 +489,7 @@ namespace openfpm
     					vector_index.template get<0>(vector_index.size() - 1) = reorder_add_index_cpu.get(i).id;
     				}
 
-    				i += j;
+    				i += j;*/
     			}
 			}
 		}
@@ -434,6 +537,34 @@ namespace openfpm
 		}
 	};
 
+
+	template<unsigned int impl,typename vector_reduction, typename T,typename red_type>
+	struct sparse_vector_reduction_solve_conflict_reduce_cpu_impl
+	{
+		template<typename encap_src, typename encap_dst>
+		static inline void red(encap_src & src, encap_dst & dst)
+		{
+			typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
+
+			cpu_block_process<reduction_type,impl>::process(src.template get<reduction_type::prop::value>(),dst.template get<reduction_type::prop::value>());
+		}
+	};
+
+	template<unsigned int impl, typename vector_reduction, typename T,typename red_type, unsigned int N1>
+	struct sparse_vector_reduction_solve_conflict_reduce_cpu_impl<impl,vector_reduction,T,red_type[N1]>
+	{
+		template<typename encap_src, typename encap_dst>
+		static inline void red(encap_src & src, encap_dst & dst)
+		{
+            typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
+
+			auto src_e = src.template get<reduction_type::prop::value>();
+			auto dst_e = dst.template get<reduction_type::prop::value>();
+
+			cpu_block_process<reduction_type,impl+1>::template process_e<N1,red_type::size>(src_e,dst_e);
+		}
+	};
+
 	/*! \brief this class is a functor for "for_each" algorithm
 	 *
 	 * This class is a functor for "for_each" algorithm. For each
@@ -472,8 +603,11 @@ namespace openfpm
 		inline void operator()(T& t) const
 		{
             typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
+            typedef typename boost::mpl::at<typename encap_src::T_type::type, typename reduction_type::prop>::type red_type;
 
-            cpu_block_process<reduction_type,impl>::process(src.template get<reduction_type::prop::value>(),dst.template get<reduction_type::prop::value>());
+            sparse_vector_reduction_solve_conflict_reduce_cpu_impl<impl,vector_reduction,T,red_type>::red(src,dst);
+
+//            cpu_block_process<reduction_type,impl>::process(src.template get<reduction_type::prop::value>(),dst.template get<reduction_type::prop::value>());
 //            reduction_type::red(dst.template get<reduction_type::prop::value>(),src.template get<reduction_type::prop::value>());
 		}
 	};

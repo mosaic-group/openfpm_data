@@ -198,6 +198,33 @@ bool has_work_gpu(ite_gpu<dim> & ite)
 	return tot_work != 0;
 }
 
+template<unsigned int dim>
+void move_work_to_blocks(ite_gpu<dim> & ite)
+{
+	if (dim == 1)
+	{
+		ite.wthr.x = ite.wthr.x * ite.thr.x;
+		ite.thr.x = 1;
+	}
+	else if(dim == 2)
+	{
+		ite.wthr.x = ite.wthr.x * ite.thr.x;
+		ite.wthr.y = ite.wthr.y * ite.thr.y;
+		ite.thr.x = 1;
+		ite.thr.y = 1;
+
+	}
+	else
+	{
+		ite.wthr.x = ite.wthr.x * ite.thr.x;
+		ite.wthr.x = ite.wthr.y * ite.thr.y;
+		ite.wthr.x = ite.wthr.z * ite.thr.z;
+		ite.thr.x = 1;
+		ite.thr.y = 1;
+		ite.thr.z = 1;
+	}
+}
+
 #endif
 
 #include "copy_grid_fast.hpp"
@@ -420,7 +447,7 @@ private:
 
 #endif
 
-	void resize_impl_device(const size_t (& sz)[dim],grid_base_impl<dim,T,S,layout,layout_base> & grid_new)
+	void resize_impl_device(const size_t (& sz)[dim],grid_base_impl<dim,T,S,layout,layout_base> & grid_new, unsigned int blockSize = 1)
 	{
 #if defined(CUDA_GPU) && defined(__NVCC__)
 
@@ -430,7 +457,12 @@ private:
 			for (size_t i = 0 ; i < dim ; i++)
 			{
 				start.set_d(i,0);
-				stop.set_d(i,sz[i]-1);
+
+				// take the smallest
+				if (grid_new.g1.size(i) < sz[i])
+				{stop.set_d(i,grid_new.g1.size(i)-1);}
+				else
+				{stop.set_d(i,sz[i]-1);}
 			}
 
 //			if (dim == 1)
@@ -446,7 +478,18 @@ private:
 
 				if (has_work == true)
 				{
-					CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+					if (blockSize == 1)
+					{
+						CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+					}
+					else
+					{
+						move_work_to_blocks(ite);
+
+						ite.thr.x = blockSize;
+
+						CUDA_LAUNCH((copy_ndim_grid_block_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+					}
 				}
 			}
 			else
@@ -1241,8 +1284,12 @@ public:
 	 * \param opt options for resize. In case we know that the data are only on device memory we can use DATA_ONLY_DEVICE,
 	 *                                In case we know that the data are only on host memory we can use DATA_ONLY_HOST
 	 *
+	 * \param blockSize The default is equal to 1. In case of accelerator buffer resize indicate the size of the block of
+	 *        threads ( this is used in case of a vector of blocks where the block object override to operator=
+	 *                  to distribute threads on each block element )
+	 *
 	 */
-	void resize(const size_t (& sz)[dim], size_t opt = DATA_ON_HOST | DATA_ON_DEVICE)
+	void resize(const size_t (& sz)[dim], size_t opt = DATA_ON_HOST | DATA_ON_DEVICE, unsigned int blockSize = 1)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -1270,7 +1317,7 @@ public:
 		{resize_impl_host(sz,grid_new);}
 
 		if (opt & DATA_ON_DEVICE && S::isDeviceHostSame() == false)
-		{resize_impl_device(sz,grid_new);}
+		{resize_impl_device(sz,grid_new,blockSize);}
 
 //		}
 

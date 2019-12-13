@@ -468,7 +468,7 @@ namespace BlockMapGpuKernels
             generalDimensionFunctor<DataType>::assignWithOffset(output.template get<p>(out_id), A[chunkId].data,
                                                                 offset);
 
-            generalDimensionFunctor<DataType>::assignWithOffset(output.template get<pMask>(out_id), AMask[chunkId],
+            generalDimensionFunctor<MaskType>::assignWithOffset(output.template get<pMask>(out_id), AMask[chunkId],
                                                                 offset);
         }
 #else // __NVCC__
@@ -625,16 +625,16 @@ struct sparse_vector_reduction_solve_conflict
             typedef typename std::remove_reference<vector_data_type>::type::value_type AggregateT;
 
             typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
-            typedef typename boost::mpl::at<
+            typedef typename std::remove_all_extents<typename boost::mpl::at<
                     typename std::remove_reference<vector_data_type>::type::value_type::type,
                     typename reduction_type::prop
-                    >::type::scalarType red_type;
+                    >::type>::type::scalarType red_type;
             typedef typename reduction_type::op_red<red_type> red_op;
 
             constexpr unsigned int p = reduction_type::prop::value;
             constexpr unsigned int pMask = AggregateT::max_prop_real - 1;
 
-            typedef BlockTypeOf<AggregateT, p> BlockT; // The type of the 0-th property
+            typedef typename std::remove_all_extents<BlockTypeOf<AggregateT, p>>::type BlockT; // The type of the 0-th property
 
             constexpr unsigned int chunksPerBlock = blockSize / BlockT::size;
             const unsigned int gridSize =

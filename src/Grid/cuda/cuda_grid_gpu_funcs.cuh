@@ -13,6 +13,19 @@
 #if defined(CUDA_GPU) && defined(__NVCC__)
 
 template<unsigned int dim, typename grid_type>
+__global__ void copy_ndim_grid_block_device(grid_type src, grid_type dst)
+{
+	unsigned int i = blockIdx.x;
+
+	if (i >= src.getGrid().size() || i >= dst.getGrid().size())
+	{return;}
+
+	auto key_src = src.getGrid().InvLinId(i);
+
+	dst.get_o(key_src) = src.get_o(key_src);
+};
+
+template<unsigned int dim, typename grid_type>
 struct copy_ndim_grid_impl
 {
 	static __device__ void copy(grid_type & src, grid_type & dst)

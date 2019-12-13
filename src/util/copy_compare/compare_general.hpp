@@ -30,7 +30,9 @@ struct compare_general
 	 */
 	static inline bool compare_general_f(const T & src, const T & dst)
 	{
+#ifndef DISABLE_ALL_RTTI
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << "  " << demangle(typeid(T).name()) << " does not have an operator== and is not an aggregate or an openfpm native structure, comparation is not possible" << "\n";
+#endif
 		return false;
 	}
 };

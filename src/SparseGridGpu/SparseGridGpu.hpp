@@ -60,10 +60,28 @@ struct default_edge<3>
 	typedef boost::mpl::int_<4> type;
 };
 
+template<typename T>
+struct type_identity
+{
+	typedef T type;
+};
+
+template<typename T, unsigned int dim, unsigned int blockEdgeSize>
+struct process_data_block
+{
+	typedef type_identity<DataBlock<T,IntPow<blockEdgeSize,dim>::value>> type;
+};
+
+template<typename T, unsigned int dim, unsigned int blockEdgeSize, unsigned int N1>
+struct process_data_block<T[N1],dim,blockEdgeSize>
+{
+	typedef type_identity<DataBlock<T,IntPow<blockEdgeSize,dim>::value>[N1]> type;
+};
+
 template<unsigned int dim, unsigned int blockEdgeSize, typename ... aggr_list>
 struct aggregate_transform_datablock_impl
 {
-	typedef aggregate<DataBlock<aggr_list,IntPow<blockEdgeSize,dim>::value>...> type;
+	typedef aggregate<typename process_data_block<aggr_list,dim,blockEdgeSize>::type::type ...> type;
 };
 
 template<unsigned int dim, unsigned int blockEdgeSize, typename aggr>
@@ -364,6 +382,28 @@ struct ct_par
 	static const unsigned int nLoop = nLoop_;
 };
 
+template<typename copy_type>
+struct copy_prop_to_vector_block_impl
+{
+	template<typename T, typename dst_type, typename src_type>
+	static inline void copy(src_type & src, dst_type & dst, unsigned int bPos)
+	{
+		dst.template get<T::value>() = src.template get<T::value>()[bPos];
+	}
+};
+
+template<typename copy_type,unsigned int N1>
+struct copy_prop_to_vector_block_impl<copy_type[N1]>
+{
+	template<typename T, typename dst_type, typename src_type>
+	static inline void copy(src_type & src, dst_type & dst, unsigned int bPos)
+	{
+		for (int i = 0 ; i < N1 ; i++)
+		{
+			dst.template get<T::value>()[i] = src.template get<T::value>()[i][bPos];
+		}
+	}
+};
 
 template<typename Tsrc,typename Tdst>
 class copy_prop_to_vector_block
@@ -390,10 +430,14 @@ public:
 	{
 		typedef typename std::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
 
-		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>()[bPos],dst.template get<T::value>());
+		copy_prop_to_vector_block_impl<copy_rtype>::template copy<T>(src,dst,bPos);
+
+		//meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>()[bPos],dst.template get<T::value>());
 	}
 
 };
+
+
 
 template<typename AggregateT, unsigned int n_it, unsigned int ... prp>
 class data_ptr_fill
@@ -876,7 +920,7 @@ private:
 
     		// for all properties fill the data pointer
 
-    		data_ptr_fill<AggregateT,n_it,prp...> dpf(data_ptrs.get(i),i,data_ptr,tot_pnt);
+    		data_ptr_fill<AggregateT,n_it,prp...> dpf(data_ptrs.get(i),i,data_ptr,tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1));
     		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(dpf);
 
     		offset_ptr.ptr[i] = offset_ptrs.get(i);
@@ -916,6 +960,23 @@ private:
 
 			ite = e_points.getGPUIterator();
 
+			// Here we copy the array of pointer of properties into a CudaMemory array
+
+			CudaMemory mem;
+			mem.allocate(sizeof(data_ptr));
+
+			// copy
+			arr_arr_ptr<n_it,sizeof...(prp)> * arr_data = (arr_arr_ptr<n_it,sizeof...(prp)> *)mem.getPointer();
+
+			for(int i = 0 ; i < n_it ; i++)
+			{
+				for (int j = 0 ; j < sizeof...(prp) ; j++)
+				{
+					arr_data->ptr[i][j] = data_ptr.ptr[i][j];
+				}
+			}
+
+			mem.hostToDevice();
 
 			CUDA_LAUNCH((SparseGridGpuKernels::pack_data<AggregateT,
 								   n_it,
@@ -936,7 +997,7 @@ private:
 								   pack_output.toKernel(),
 								   index_ptr,
 								   scan_ptr,
-								   data_ptr,
+								   (arr_arr_ptr<n_it,sizeof...(prp)> *)mem.getDevicePointer(),
 								   offset_ptr,
 								   pack_subs.size());
     	}
@@ -2055,7 +2116,7 @@ public:
     	auto & dataBuffer = private_get_data_array();
 
 		// first we remove
-/*		if (rem_sects.size() != 0)
+		if (rem_sects.size() != 0)
 		{
 			rem_sects.template hostToDevice<0,1>();
 
@@ -2066,47 +2127,52 @@ public:
 
 			auto ite = indexBuffer.getGPUIterator();
 
-			// mark all the chunks that must remove points
-			CUDA_LAUNCH((SparseGridGpuKernels::calc_remove_points_chunks_boxes<dim,
-														 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-					                                     blockEdgeSize>),ite,indexBuffer.toKernel(),rem_sects.toKernel(),
-					                                          gridGeometry,dataBuffer.toKernel(),
-					                                          tmp.toKernel());
+			if (has_work_gpu(ite) == true)
+			{
+				// mark all the chunks that must remove points
+				CUDA_LAUNCH((SparseGridGpuKernels::calc_remove_points_chunks_boxes<dim,
+															 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+															 blockEdgeSize>),ite,indexBuffer.toKernel(),rem_sects.toKernel(),
+																  gridGeometry,dataBuffer.toKernel(),
+																  tmp.toKernel());
 
-			// scan
-			openfpm::scan((unsigned int *)tmp.template getDeviceBuffer<1>(),tmp.size(),(unsigned int *)tmp.template getDeviceBuffer<1>(),context);
+				// scan
+				openfpm::scan((unsigned int *)tmp.template getDeviceBuffer<1>(),tmp.size(),(unsigned int *)tmp.template getDeviceBuffer<1>(),context);
 
-			tmp.template deviceToHost<1>(tmp.size()-1,tmp.size()-1);
+				tmp.template deviceToHost<1>(tmp.size()-1,tmp.size()-1);
 
-			// get the number of chunks involved
-			size_t nr_cnk = tmp.template get<1>(tmp.size()-1);
+				// get the number of chunks involved
+				size_t nr_cnk = tmp.template get<1>(tmp.size()-1);
 
-			tmp2.resize(nr_cnk);
+				tmp2.resize(nr_cnk);
 
-			// collect the chunks involved in the remove
-			ite = indexBuffer.getGPUIterator();
+				// collect the chunks involved in the remove
+				ite = indexBuffer.getGPUIterator();
 
-			CUDA_LAUNCH((SparseGridGpuKernels::collect_rem_chunks),ite,tmp.toKernel(),tmp2.toKernel());
+				if (has_work_gpu(ite) == false)	{return;}
 
-			// Launch to remove points
+				CUDA_LAUNCH((SparseGridGpuKernels::collect_rem_chunks),ite,tmp.toKernel(),tmp2.toKernel());
 
-			ite = tmp2.getGPUIterator();
+				// Launch to remove points
 
-	    	ite.wthr.x = tmp2.size();
-	    	ite.wthr.y = 1;
-	    	ite.wthr.z = 1;
-	    	ite.thr.x = getBlockSize();
-	    	ite.thr.y = 1;
-	    	ite.thr.z = 1;
+				ite = tmp2.getGPUIterator();
 
-			CUDA_LAUNCH((SparseGridGpuKernels::remove_points<dim,
-															BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
-					                                        ite,indexBuffer.toKernel(),
-					                                        gridGeometry,
-					                                        dataBuffer.toKernel(),
-					                                        tmp2.toKernel(),
-					                                        rem_sects.toKernel());
-		}*/
+				ite.wthr.x = tmp2.size();
+				ite.wthr.y = 1;
+				ite.wthr.z = 1;
+				ite.thr.x = getBlockSize();
+				ite.thr.y = 1;
+				ite.thr.z = 1;
+
+				CUDA_LAUNCH((SparseGridGpuKernels::remove_points<dim,
+																BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+																ite,indexBuffer.toKernel(),
+																gridGeometry,
+																dataBuffer.toKernel(),
+																tmp2.toKernel(),
+																rem_sects.toKernel());
+			}
+		}
 
     	this->preFlush();
 
@@ -2280,7 +2346,10 @@ public:
 
 			unsigned int start = vad.size();
 
-			vad.resize(vad.size() + n_cnk);
+			// Resize of a vector of dataBlock is not supported because the operator= in the DataBlock
+			// has been overriden to work differently
+			vad.resize(vad.size() + n_cnk, DATA_ON_DEVICE, blockSize);
+
 			vai.resize(vai.size() + n_cnk);
 
 			// reset add buffer
@@ -2297,6 +2366,8 @@ public:
 			CUDA_LAUNCH((SparseGridGpuKernels::resetMask<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,vad.toKernel(),start);
 
 			// Fill the add buffer
+
+			ite = tmp2.getGPUIterator();
 
 			CUDA_LAUNCH((SparseGridGpuKernels::fill_add_buffer<blockSize,
 															   BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
@@ -2316,12 +2387,6 @@ public:
 																	vai.toKernel(),
 																	data,
 																	vad.toKernel(),start);
-
-			////////////////////////////////// DEBUG ////////////////////////////
-
-			vad.template deviceToHost<0,1>();
-
-			/////////////////////////////////////////////////////////////////////
 		}
 
 		actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(short int));

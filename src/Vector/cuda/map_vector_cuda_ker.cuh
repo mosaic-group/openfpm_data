@@ -467,9 +467,11 @@ namespace openfpm
 
 		void print_size()
 		{
+#ifndef DISABLE_ALL_RTTI
 			std::cout << "the size of: " << demangle(typeid(self_type).name()) << " is " << sizeof(self_type) << std::endl;
 			std::cout << "    " << demangle(typeid(decltype(v_size)).name()) << ":" << sizeof(decltype(v_size)) << std::endl;
 			std::cout << "    " << demangle(typeid(decltype(base)).name()) << ":" << sizeof(decltype(base)) << std::endl;
+#endif
 		}
 
 #ifdef SE_CLASS1

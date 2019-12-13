@@ -364,11 +364,15 @@ namespace openfpm
 		 *
 		 * Resize the vector and allocate n elements
 		 *
-		 * \param slot number of elements
-		 * \param opt options
+		 * \param opt options for resize. In case we know that the data are only on device memory we can use DATA_ONLY_DEVICE,
+		 *                                In case we know that the data are only on host memory we can use DATA_ONLY_HOST
+		 *
+		 * \param blockSize The default is equal to 1. In case of accelerator buffer resize indicate the size of the block of
+		 *        threads ( this is used in case of a vector of blocks where the block object override to operator=
+		 *                  to distribute threads on each block element )
 		 *
 		 */
-		void resize(size_t slot, size_t opt = DATA_ON_DEVICE | DATA_ON_HOST)
+		void resize(size_t slot, size_t opt = DATA_ON_DEVICE | DATA_ON_HOST, unsigned int blockSize = 1)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -388,7 +392,7 @@ namespace openfpm
 				//! Resize the memory
 				size_t sz[1] = {gr};
 
-				base.resize(sz,opt);
+				base.resize(sz,opt,blockSize);
 			}
 
 			// update the vector size
@@ -1952,9 +1956,11 @@ namespace openfpm
 
 		void print_size()
 		{
+#ifndef DISABLE_ALL_RTTI
 			std::cout << "the size of: " << demangle(typeid(self_type).name()) << " is " << sizeof(self_type) << std::endl;
 			std::cout << "    " << demangle(typeid(decltype(v_size)).name()) << ":" << sizeof(decltype(v_size)) << std::endl;
 			std::cout << "    " << demangle(typeid(decltype(base)).name()) << ":" << sizeof(decltype(base)) << std::endl;
+#endif
 		}
 
 	};
