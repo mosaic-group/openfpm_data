@@ -245,4 +245,97 @@ __global__ void insertSphere3D_radius(SparseGridType sparseGrid, grid_key_dx<3,i
     sparseGrid.flush_block_insert();
 }
 
+template<unsigned int p, typename SparseGridType, typename ValueType>
+__global__ void insertSphere3D_radiusV(SparseGridType sparseGrid, grid_key_dx<3,int> start, float r1, float r2, ValueType value)
+{
+    constexpr unsigned int pMask = SparseGridType::pMask;
+    typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
+    typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
+
+    grid_key_dx<3,int> blk({
+                                   blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize(),
+                                   blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize(),
+                                   blockIdx.z + start.get(2) / sparseGrid.getBlockEdgeSize()});
+
+    unsigned int offset = threadIdx.x;
+
+    __shared__ bool is_block_empty;
+
+    if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0)
+    {is_block_empty = true;}
+
+    sparseGrid.init();
+
+    auto blockId = sparseGrid.getBlockLinId(blk);
+
+    grid_key_dx<3,int> keyg;
+    keyg = sparseGrid.getGlobalCoord(blk,offset);
+
+    const long int x = (long int)keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);
+    const long int y = (long int)keyg.get(1) - (start.get(1) + gridDim.y / 2 * SparseGridType::blockEdgeSize_);
+    const long int z = (long int)keyg.get(2) - (start.get(2) + gridDim.z / 2 * SparseGridType::blockEdgeSize_);
+
+    float radius = sqrt((float) (x*x + y*y + z*z));
+
+    bool is_active = radius < r1 && radius > r2;
+
+    if (is_active == true)
+    {
+        is_block_empty = false;
+    }
+
+    __syncthreads();
+
+    if (is_block_empty == false)
+    {
+        auto ec = sparseGrid.insertBlock(blockId);
+
+        if ( is_active == true)
+        {
+            ec.template get<p>()[offset] = x+y+z;
+            ec.template get<p+1>()[0][offset] = x;
+            ec.template get<p+1>()[1][offset] = y;
+            ec.template get<p+1>()[2][offset] = z;
+            BlockMapGpu_ker<>::setExist(ec.template get<pMask>()[offset]);
+        }
+    }
+
+    __syncthreads();
+
+    sparseGrid.flush_block_insert();
+}
+
+template<unsigned int p, typename SparseGridType, typename ValueType>
+__global__ void removeSphere3D_even_radiusV(SparseGridType sparseGrid, grid_key_dx<3,int> start, float r1, float r2, ValueType value)
+{
+    constexpr unsigned int pMask = SparseGridType::pMask;
+    typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
+    typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
+
+    grid_key_dx<3,int> blk({
+                                   blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize(),
+                                   blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize(),
+                                   blockIdx.z + start.get(2) / sparseGrid.getBlockEdgeSize()});
+
+    unsigned int offset = threadIdx.x;
+
+    auto blockId = sparseGrid.getBlockLinId(blk);
+
+    grid_key_dx<3,int> keyg;
+    keyg = sparseGrid.getGlobalCoord(blk,offset);
+
+    const long int x = (long int)keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);
+    const long int y = (long int)keyg.get(1) - (start.get(1) + gridDim.y / 2 * SparseGridType::blockEdgeSize_);
+    const long int z = (long int)keyg.get(2) - (start.get(2) + gridDim.z / 2 * SparseGridType::blockEdgeSize_);
+
+    float radius = sqrt((float) (x*x + y*y + z*z));
+
+    bool is_active = radius < r1 && radius > r2 && (keyg.get(0) + keyg.get(1) + keyg.get(2)) % 2 == 0;
+
+    if (is_active == true)
+    {
+    	sparseGrid.remove(keyg);
+    }
+}
+
 #endif //OPENFPM_PDATA_SPARSEGRIDGPU_TESTKERNELS_CUH

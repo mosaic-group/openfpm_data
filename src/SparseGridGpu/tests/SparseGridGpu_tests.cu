@@ -4,7 +4,6 @@
 
 #define BOOST_TEST_DYN_LINK
 
-#define OPENFPM_DATA_ENABLE_IO_MODULE
 #define DISABLE_MPI_WRITTERS
 
 #include <boost/test/unit_test.hpp>
@@ -1353,50 +1352,22 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_remove_test)
     BOOST_REQUIRE_EQUAL(match,true);
 }
 
-BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
+template<typename SG_type>
+void pack_unpack_test(SG_type & sparseGridDst, SG_type & sparseGridSrc,
+		Box<3,size_t> & box1_dst,
+		Box<3,size_t> & box2_dst,
+		Box<3,size_t> & box3_dst,
+		Box<3,size_t> & box4_dst,
+		mgpu::ofp_context_t & ctx,
+		bool test_pack)
 {
-	size_t sz[] = {1000,1000,1000};
-
-	constexpr int blockEdgeSize = 4;
-	constexpr int dim = 3;
-
-	typedef SparseGridGpu<dim, aggregate<float,float[3]>, blockEdgeSize, 64, long int> SparseGridZ;
-
-	SparseGridZ sparseGridSrc(sz);
-	SparseGridZ sparseGridDst(sz);
-	mgpu::ofp_context_t ctx;
-	sparseGridSrc.template setBackgroundValue<0>(0);
-	sparseGridDst.template setBackgroundValue<0>(0);
-
-	// now create a 3D sphere
-
-    grid_key_dx<3,int> start({256,256,256});
-
-    dim3 gridSize(32,32,32);
-
-    // Insert values on the grid
-    sparseGridSrc.setGPUInsertBuffer(gridSize,dim3(1));
-    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
-            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGridSrc.toKernel(), start,64, 56, 1);
-
-    sparseGridSrc.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-
-    // Now we pack two vertical sections
-
     Box<3,size_t> box1_src({256,256,256},{273,390,390});
     Box<3,size_t> box2_src({320,256,256},{337,390,390});
-
-    Box<3,size_t> box1_dst({256,256,256},{273,390,390});
-    Box<3,size_t> box2_dst({274,256,256},{291,390,390});
 
     // And two vertical sections
 
     Box<3,size_t> box3_src({256,256,256},{273,320,390});
     Box<3,size_t> box4_src({320,256,256},{337,320,390});
-
-    Box<3,size_t> box3_dst({300,256,256},{317,320,390});
-    Box<3,size_t> box4_dst({320,256,256},{337,320,390});
 
     // Now we calculate the memory required to pack
 
@@ -1404,18 +1375,18 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
 
     size_t req = 0;
     auto sub_it = sparseGridSrc.getIterator(box1_src.getKP1(),box1_src.getKP2());
-    sparseGridSrc.packRequest<0,1>(sub_it,req);
+    sparseGridSrc.template packRequest<0,1>(sub_it,req);
 
     sub_it = sparseGridSrc.getIterator(box2_src.getKP1(),box2_src.getKP2());
-    sparseGridSrc.packRequest<0,1>(sub_it,req);
+    sparseGridSrc.template packRequest<0,1>(sub_it,req);
 
     sub_it = sparseGridSrc.getIterator(box3_src.getKP1(),box3_src.getKP2());
-    sparseGridSrc.packRequest<0,1>(sub_it,req);
+    sparseGridSrc.template packRequest<0,1>(sub_it,req);
 
     sub_it = sparseGridSrc.getIterator(box4_src.getKP1(),box4_src.getKP2());
-    sparseGridSrc.packRequest<0,1>(sub_it,req);
+    sparseGridSrc.template packRequest<0,1>(sub_it,req);
 
-    sparseGridSrc.packCalculate<0,1>(req,ctx);
+    sparseGridSrc.template packCalculate<0,1>(req,ctx);
 
     CudaMemory mem;
     mem.resize(req);
@@ -1429,21 +1400,65 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
 	Pack_stat sts;
 
     sub_it = sparseGridSrc.getIterator(box1_src.getKP1(),box1_src.getKP2());
-    sparseGridSrc.pack<0,1>(prAlloc_prp,sub_it,sts);
+    sparseGridSrc.template pack<0,1>(prAlloc_prp,sub_it,sts);
 
     sub_it = sparseGridSrc.getIterator(box2_src.getKP1(),box2_src.getKP2());
-    sparseGridSrc.pack<0,1>(prAlloc_prp,sub_it,sts);
+    sparseGridSrc.template pack<0,1>(prAlloc_prp,sub_it,sts);
 
     sub_it = sparseGridSrc.getIterator(box3_src.getKP1(),box3_src.getKP2());
-    sparseGridSrc.pack<0,1>(prAlloc_prp,sub_it,sts);
+    sparseGridSrc.template pack<0,1>(prAlloc_prp,sub_it,sts);
 
     sub_it = sparseGridSrc.getIterator(box4_src.getKP1(),box4_src.getKP2());
-    sparseGridSrc.pack<0,1>(prAlloc_prp,sub_it,sts);
+    sparseGridSrc.template pack<0,1>(prAlloc_prp,sub_it,sts);
 
 
 	sparseGridSrc.template packFinalize<0,1>(prAlloc_prp,sts);
 
 	// Now we analyze the package
+
+	if (test_pack == true)
+	{
+		size_t ncnk = *(size_t *)mem.getPointer();
+		BOOST_REQUIRE_EQUAL(ncnk,1107);
+		size_t actual_offset = ncnk*sizeof(size_t) + sizeof(size_t) + 2*3*sizeof(int);
+		mem.deviceToHost(actual_offset + ncnk*sizeof(unsigned int),actual_offset + ncnk*sizeof(unsigned int) + sizeof(unsigned int));
+		unsigned int n_pnt = *(unsigned int *)((unsigned char *)mem.getPointer() + actual_offset + ncnk*sizeof(unsigned int));
+		BOOST_REQUIRE_EQUAL(n_pnt,41003);
+
+		actual_offset += align_number(sizeof(size_t),(ncnk+1)*sizeof(unsigned int));
+		actual_offset += align_number(sizeof(size_t),n_pnt*(16));
+		actual_offset += align_number(sizeof(size_t),n_pnt*sizeof(short int));
+
+
+		ncnk = *(size_t *)((unsigned char *)mem.getPointer() + actual_offset);
+		BOOST_REQUIRE_EQUAL(ncnk,1420);
+		actual_offset += ncnk*sizeof(size_t) + sizeof(size_t) + 2*3*sizeof(int);
+		mem.deviceToHost(actual_offset + ncnk*sizeof(unsigned int),actual_offset + ncnk*sizeof(unsigned int) + sizeof(unsigned int));
+		n_pnt = *(unsigned int *)((unsigned char *)mem.getPointer() + actual_offset + ncnk*sizeof(unsigned int));
+		BOOST_REQUIRE_EQUAL(n_pnt,54276);
+
+		actual_offset += align_number(sizeof(size_t),(ncnk+1)*sizeof(unsigned int));
+		actual_offset += align_number(sizeof(size_t),n_pnt*(16));
+		actual_offset += align_number(sizeof(size_t),n_pnt*sizeof(short int));
+
+		ncnk = *(size_t *)((unsigned char *)mem.getPointer() + actual_offset);
+		BOOST_REQUIRE_EQUAL(ncnk,610);
+		actual_offset += ncnk*sizeof(size_t) + sizeof(size_t) + 2*3*sizeof(int);
+		mem.deviceToHost(actual_offset + ncnk*sizeof(unsigned int),actual_offset + ncnk*sizeof(unsigned int) + sizeof(unsigned int));
+		n_pnt = *(unsigned int *)((unsigned char *)mem.getPointer() + actual_offset + ncnk*sizeof(unsigned int));
+		BOOST_REQUIRE_EQUAL(n_pnt,20828);
+
+		actual_offset += align_number(sizeof(size_t),(ncnk+1)*sizeof(unsigned int));
+		actual_offset += align_number(sizeof(size_t),n_pnt*(16));
+		actual_offset += align_number(sizeof(size_t),n_pnt*sizeof(short int));
+
+		ncnk = *(size_t *)((unsigned char *)mem.getPointer() + actual_offset);
+		BOOST_REQUIRE_EQUAL(ncnk,739);
+		actual_offset += ncnk*sizeof(size_t) + sizeof(size_t) + 2*3*sizeof(int);
+		mem.deviceToHost(actual_offset + ncnk*sizeof(unsigned int),actual_offset + ncnk*sizeof(unsigned int) + sizeof(unsigned int));
+		n_pnt = *(unsigned int *)((unsigned char *)mem.getPointer() + actual_offset + ncnk*sizeof(unsigned int));
+		BOOST_REQUIRE_EQUAL(n_pnt,27283);
+	}
 
 	prAlloc_prp.reset();
 
@@ -1470,9 +1485,253 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
 
 	sparseGridDst.template removeAddUnpackFinalize<0,1>(ctx);
 
-	sparseGridDst.deviceToHost<0,1>();
+	sparseGridDst.template deviceToHost<0,1>();
+}
 
-	sparseGridDst.write("sparse_out_test.vtk");
+BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
+{
+	size_t sz[] = {1000,1000,1000};
+
+	constexpr int blockEdgeSize = 4;
+	constexpr int dim = 3;
+
+    Box<3,size_t> box1_dst({256,256,256},{273,390,390});
+    Box<3,size_t> box2_dst({274,256,256},{291,390,390});
+
+    Box<3,size_t> box3_dst({300,256,256},{317,320,390});
+    Box<3,size_t> box4_dst({320,256,256},{337,320,390});
+
+	typedef SparseGridGpu<dim, aggregate<float,float[3]>, blockEdgeSize, 64, long int> SparseGridZ;
+
+	SparseGridZ sparseGridSrc(sz);
+	SparseGridZ sparseGridDst(sz);
+	mgpu::ofp_context_t ctx;
+	sparseGridSrc.template setBackgroundValue<0>(0);
+	sparseGridDst.template setBackgroundValue<0>(0);
+
+	// now create a 3D sphere
+
+    grid_key_dx<3,int> start({256,256,256});
+
+    dim3 gridSize(32,32,32);
+
+    // Insert values on the grid
+    sparseGridSrc.setGPUInsertBuffer(gridSize,dim3(1));
+    CUDA_LAUNCH_DIM3((insertSphere3D_radiusV<0>),
+            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
+            sparseGridSrc.toKernel(), start,64, 56, 1);
+
+    sparseGridSrc.flush < smax_< 0 >, smax_<1> > (ctx, flush_type::FLUSH_ON_DEVICE);
+
+    // Now we pack two vertical sections
+
+	pack_unpack_test(sparseGridDst,sparseGridSrc,
+					 box1_dst,box2_dst,
+					 box3_dst,box4_dst,
+					ctx,true);
+
+	sparseGridDst.template deviceToHost<0,1>();
+
+	int cnt1 = 0;
+	int cnt2 = 0;
+	int cnt3 = 0;
+	int cnt4 = 0;
+
+	auto it = sparseGridDst.getIterator();
+
+	bool match = true;
+
+	while (it.isNext())
+	{
+		auto p = it.get();
+
+		auto pt = p.toPoint();
+
+		if (box1_dst.isInside(pt) == true)
+		{
+			++cnt1;
+
+		    const long int x = (long int)pt.get(0) - (start.get(0) + gridSize.x / 2 * blockEdgeSize);
+		    const long int y = (long int)pt.get(1) - (start.get(1) + gridSize.y / 2 * blockEdgeSize);
+		    const long int z = (long int)pt.get(2) - (start.get(2) + gridSize.z / 2 * blockEdgeSize);
+
+		    float radius = sqrt((float) (x*x + y*y + z*z));
+
+		    bool is_active = radius < 64 && radius > 56;
+
+		    if (is_active == true)
+		    {match &= true;}
+		    else
+		    {match &= false;}
+		}
+		else if (box2_dst.isInside(pt) == true)
+		{
+			++cnt2;
+
+		    const long int x = (long int)pt.get(0) - (start.get(0) - 46 + gridSize.x / 2 * blockEdgeSize);
+		    const long int y = (long int)pt.get(1) - (start.get(1) + gridSize.y / 2 * blockEdgeSize);
+		    const long int z = (long int)pt.get(2) - (start.get(2) + gridSize.z / 2 * blockEdgeSize);
+
+		    float radius = sqrt((float) (x*x + y*y + z*z));
+
+		    bool is_active = radius < 64 && radius > 56;
+
+		    if (is_active == true)
+		    {match &= true;}
+		    else
+		    {match &= false;}
+		}
+		else if (box3_dst.isInside(pt) == true)
+		{
+			++cnt3;
+
+		    const long int x = (long int)pt.get(0) - (start.get(0) + 44 + gridSize.x / 2 * blockEdgeSize);
+		    const long int y = (long int)pt.get(1) - (start.get(1) + gridSize.y / 2 * blockEdgeSize);
+		    const long int z = (long int)pt.get(2) - (start.get(2) + gridSize.z / 2 * blockEdgeSize);
+
+		    float radius = sqrt((float) (x*x + y*y + z*z));
+
+		    bool is_active = radius < 64 && radius > 56;
+
+		    if (is_active == true)
+		    {match &= true;}
+		    else
+		    {match &= false;}
+		}
+		else if (box4_dst.isInside(pt) == true)
+		{
+			++cnt4;
+
+		    const long int x = (long int)pt.get(0) - (start.get(0) + gridSize.x / 2 * blockEdgeSize);
+		    const long int y = (long int)pt.get(1) - (start.get(1) + gridSize.y / 2 * blockEdgeSize);
+		    const long int z = (long int)pt.get(2) - (start.get(2) + gridSize.z / 2 * blockEdgeSize);
+
+		    float radius = sqrt((float) (x*x + y*y + z*z));
+
+		    bool is_active = radius < 64 && radius > 56;
+
+		    if (is_active == true)
+		    {match &= true;}
+		    else
+		    {match &= false;}
+		}
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+	BOOST_REQUIRE_EQUAL(cnt1,41003);
+	BOOST_REQUIRE_EQUAL(cnt2,54276);
+	BOOST_REQUIRE_EQUAL(cnt3,20828);
+	BOOST_REQUIRE_EQUAL(cnt4,27283);
+
+	// Now we remove even points
+
+    // Insert values on the grid
+    sparseGridSrc.setGPUInsertBuffer(gridSize,dim3(1));
+    CUDA_LAUNCH_DIM3((removeSphere3D_even_radiusV<0>),
+            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
+            sparseGridSrc.toKernel(), start,64, 56, 1);
+
+    pack_unpack_test(sparseGridDst,sparseGridSrc,
+			 	 	 box1_dst,box2_dst,
+			 	 	 box3_dst,box4_dst,
+    				ctx,false);
+
+	sparseGridDst.template deviceToHost<0,1>();
+
+	cnt1 = 0;
+	cnt2 = 0;
+	cnt3 = 0;
+	cnt4 = 0;
+
+	auto it2 = sparseGridDst.getIterator();
+
+	match = true;
+
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		auto pt = p.toPoint();
+
+		if (box1_dst.isInside(pt) == true)
+		{
+			++cnt1;
+
+			const long int x = (long int)pt.get(0) - (start.get(0) + gridSize.x / 2 * blockEdgeSize);
+			const long int y = (long int)pt.get(1) - (start.get(1) + gridSize.y / 2 * blockEdgeSize);
+			const long int z = (long int)pt.get(2) - (start.get(2) + gridSize.z / 2 * blockEdgeSize);
+
+			float radius = sqrt((float) (x*x + y*y + z*z));
+
+			bool is_active = radius < 64 && radius > 56;
+
+			if (is_active == true)
+			{match &= true;}
+			else
+			{match &= false;}
+		}
+		else if (box2_dst.isInside(pt) == true)
+		{
+			++cnt2;
+
+			const long int x = (long int)pt.get(0) - (start.get(0) - 46 + gridSize.x / 2 * blockEdgeSize);
+			const long int y = (long int)pt.get(1) - (start.get(1) + gridSize.y / 2 * blockEdgeSize);
+			const long int z = (long int)pt.get(2) - (start.get(2) + gridSize.z / 2 * blockEdgeSize);
+
+			float radius = sqrt((float) (x*x + y*y + z*z));
+
+			bool is_active = radius < 64 && radius > 56;
+
+			if (is_active == true)
+			{match &= true;}
+			else
+			{match &= false;}
+		}
+		else if (box3_dst.isInside(pt) == true)
+		{
+			++cnt3;
+
+			const long int x = (long int)pt.get(0) - (start.get(0) + 44 + gridSize.x / 2 * blockEdgeSize);
+			const long int y = (long int)pt.get(1) - (start.get(1) + gridSize.y / 2 * blockEdgeSize);
+			const long int z = (long int)pt.get(2) - (start.get(2) + gridSize.z / 2 * blockEdgeSize);
+
+			float radius = sqrt((float) (x*x + y*y + z*z));
+
+			bool is_active = radius < 64 && radius > 56;
+
+			if (is_active == true)
+			{match &= true;}
+			else
+			{match &= false;}
+		}
+		else if (box4_dst.isInside(pt) == true)
+		{
+			++cnt4;
+
+			const long int x = (long int)pt.get(0) - (start.get(0) + gridSize.x / 2 * blockEdgeSize);
+			const long int y = (long int)pt.get(1) - (start.get(1) + gridSize.y / 2 * blockEdgeSize);
+			const long int z = (long int)pt.get(2) - (start.get(2) + gridSize.z / 2 * blockEdgeSize);
+
+			float radius = sqrt((float) (x*x + y*y + z*z));
+
+			bool is_active = radius < 64 && radius > 56;
+
+			if (is_active == true)
+			{match &= true;}
+			else
+			{match &= false;}
+		}
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+	BOOST_REQUIRE_EQUAL(cnt1,20520);
+	BOOST_REQUIRE_EQUAL(cnt2,27152);
+	BOOST_REQUIRE_EQUAL(cnt3,10423);
+	BOOST_REQUIRE_EQUAL(cnt4,13649);
 }
 
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)

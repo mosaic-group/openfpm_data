@@ -589,6 +589,12 @@ public:
         }
     }
 
+    template<typename CoordT>
+    inline __device__ void remove(const grid_key_dx<dim, CoordT> & coord)
+    {
+    	BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::remove(grid.LinId(coord));
+    }
+
     template<typename BitMaskT>
     inline static __device__ bool isPadding(const BitMaskT &bitMask)
     {

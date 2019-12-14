@@ -129,7 +129,7 @@ struct sparsegridgpu_pack_impl
 								   unsigned int ppos,
 								   void * (& data_ptr)[sizeof...(prp)],
 								   unsigned int n_pnt)
-	:dataBlockPos(dataBlockPos),offset(offset),dataBuff(dataBuff),ppos(ppos),data_ptr(data_ptr)
+	:dataBlockPos(dataBlockPos),offset(offset),dataBuff(dataBuff),ppos(ppos),data_ptr(data_ptr),n_pnt(n_pnt)
 	{};
 
 	//! It call the copy function for each property
@@ -142,8 +142,6 @@ struct sparsegridgpu_pack_impl
 		typedef typename boost::mpl::at<typename AggregateT::type,prp_cp>::type pack_type;
 
 		meta_copy_block<pack_type,sizeof...(prp),prp_cp::value>::copy(data_ptr,dataBuff,ppos,dataBlockPos,offset,n_pnt);
-
-//		((pack_type *)data_ptr[prp_cp::value])[ppos] = dataBuff.template get<prp_cp::value>(dataBlockPos)[offset];
 	}
 };
 
@@ -189,7 +187,7 @@ struct sparsegridgpu_unpack_impl
 								   unsigned int ppos,
 								   arr_arr_ptr<1,sizeof...(prp)> & data_ptr,
 								   unsigned int n_pnt)
-	:dataBlockPos(dataBlockPos),offset(offset),dataBuff(dataBuff),ppos(ppos),data_ptr(data_ptr)
+	:dataBlockPos(dataBlockPos),offset(offset),dataBuff(dataBuff),ppos(ppos),data_ptr(data_ptr),n_pnt(n_pnt)
 	{};
 
 	//! It call the copy function for each property

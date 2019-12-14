@@ -890,6 +890,7 @@ private:
     	arr_arr_ptr<n_it,sizeof...(prp)> data_ptr;
     	arr_ptr<n_it> scan_ptr;
     	arr_ptr<n_it> offset_ptr;
+    	static_array<n_it,unsigned int> sar;
 
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
@@ -905,6 +906,7 @@ private:
     	for (size_t i = 0 ; i < pack_subs.size() ; i++)
     	{
     		size_t n_pnt = tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1);
+    		sar.sa[i] = n_pnt;
     		tot_pnt += n_pnt;
     	}
 
@@ -999,7 +1001,7 @@ private:
 								   scan_ptr,
 								   (arr_arr_ptr<n_it,sizeof...(prp)> *)mem.getDevicePointer(),
 								   offset_ptr,
-								   pack_subs.size());
+								   sar);
     	}
 
     	ite.wthr.x = 1;

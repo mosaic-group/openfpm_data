@@ -211,6 +211,38 @@ public:
         return get<pMask>(linId);
     }
 
+    inline __device__ void remove(unsigned int linId)
+    {
+    #ifdef __NVCC__
+        typedef BlockTypeOf<AggregateBlockT, pMask> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        unsigned int offset = linId % BlockT::size;
+        remove(blockId, offset);
+    #else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+    #endif // __NVCC__
+    }
+
+    inline __device__ void remove(unsigned int blockId, unsigned int offset)
+    {
+    #ifdef __NVCC__
+    //    const auto & aggregate = blockMap.get(blockId);
+    //    const auto & block = aggregate.template get<p>();
+    //    const auto & mask = aggregate.template get<pMask>();
+    //    // Now check if the element actually exists
+    //    return exist(mask[offset])
+    //                ? block[offset]
+    //                : blockMap.template getBackground<p>()[offset];
+    ////    return blockMap.template get<p>(blockId)[offset];
+
+        const auto sid = blockMap.get_sparse(blockId);
+        blockMap.template get<pMask>(sid)[offset] = 0;
+
+    #else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+    #endif // __NVCC__
+    }
+
 #ifdef SE_CLASS1
 
 		/*! \brief Check if the device pointer is owned by this structure
@@ -279,6 +311,7 @@ inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif // __NVCC__
 }
+
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
 inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
