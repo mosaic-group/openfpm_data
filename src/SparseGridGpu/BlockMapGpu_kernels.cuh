@@ -629,7 +629,7 @@ struct sparse_vector_reduction_solve_conflict
                     typename std::remove_reference<vector_data_type>::type::value_type::type,
                     typename reduction_type::prop
                     >::type>::type::scalarType red_type;
-            typedef typename reduction_type::op_red<red_type> red_op;
+            typedef typename reduction_type::template op_red<red_type> red_op;
 
             constexpr unsigned int p = reduction_type::prop::value;
             constexpr unsigned int pMask = AggregateT::max_prop_real - 1;

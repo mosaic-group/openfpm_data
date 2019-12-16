@@ -63,7 +63,7 @@ struct NN_gpu_int_base_hr_impl
 
 	cnt_type c_id;
 
-	__device__ inline void init_impl(const grid_key_dx<dim,ids_type> & cell_pos, const openfpm::array<ids_type,dim,cnt_type> & div_c)
+	__device__ __host__ inline void init_impl(const grid_key_dx<dim,ids_type> & cell_pos, const openfpm::array<ids_type,dim,cnt_type> & div_c)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -75,7 +75,7 @@ struct NN_gpu_int_base_hr_impl
 		c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_start);
 	}
 
-	__device__ inline void SelectValid_impl(const openfpm::array<ids_type,dim,cnt_type> & div_c)
+	__device__ __host__ inline void SelectValid_impl(const openfpm::array<ids_type,dim,cnt_type> & div_c)
 	{
 		cnt_type id = cell_act.get(0);
 		cell_act.set_d(0,id+1);
@@ -103,7 +103,7 @@ struct NN_gpu_int_base_hr_impl
 		c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_act);
 	}
 
-	__device__ inline bool isNext_impl()
+	__device__ __host__ inline bool isNext_impl()
 	{
 		return cell_act.get(dim-1) <= cell_stop.get(dim-1);
 	}
@@ -145,7 +145,7 @@ class NN_gpu_it: public NN_gpu_int_base<dim,r_int,openfpm::math::pow(2*r_int+1,d
 	cnt_type p_id;
 	cnt_type p_id_end;
 
-	inline __device__ void SelectValid()
+	inline __device__ __host__ void SelectValid()
 	{
 		while (p_id >= p_id_end && isNext())
 		{
@@ -161,7 +161,7 @@ class NN_gpu_it: public NN_gpu_int_base<dim,r_int,openfpm::math::pow(2*r_int+1,d
 
 public:
 
-	inline __device__ NN_gpu_it(const grid_key_dx<dim,ids_type> & cell_pos,
+	inline __device__ __host__ NN_gpu_it(const grid_key_dx<dim,ids_type> & cell_pos,
 			             const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & starts,
 			             const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & srt,
 			             const openfpm::array<ids_type,dim,cnt_type> & div_c,
@@ -178,17 +178,17 @@ public:
 		SelectValid();
 	}
 
-	inline __device__ cnt_type get_sort()
+	inline __device__ __host__ cnt_type get_sort()
 	{
 		return p_id;
 	}
 
-	inline __device__ cnt_type get()
+	inline __device__ __host__ cnt_type get()
 	{
 		return srt.template get<0>(p_id);
 	}
 
-	inline __device__ NN_gpu_it<dim,cnt_type,ids_type,r_int,is_sparse> & operator++()
+	inline __device__ __host__ NN_gpu_it<dim,cnt_type,ids_type,r_int,is_sparse> & operator++()
 	{
 		++p_id;
 
@@ -207,7 +207,7 @@ public:
 		return this->c_id;
 	}
 
-	inline __device__ bool isNext()
+	inline __device__ __host__ bool isNext()
 	{
 		return this->isNext_impl();
 	}
@@ -228,7 +228,7 @@ class NN_gpu_it<dim,cnt_type,ids_type,r_int,true>
 
 	const openfpm::vector_gpu_ker<aggregate<cnt_type,cnt_type>,memory_traits_inte> & cell_nn_list;
 
-	__device__ void SelectValid()
+	__device__ __host__ void SelectValid()
 	{
 		while (p_id >= p_id_end && isNext())
 		{
@@ -278,7 +278,7 @@ public:
 		return srt.template get<0>(p_id);
 	}
 
-	__device__ NN_gpu_it<dim,cnt_type,ids_type,r_int,true> & operator++()
+	__device__ __host__ NN_gpu_it<dim,cnt_type,ids_type,r_int,true> & operator++()
 	{
 		++p_id;
 
@@ -287,7 +287,7 @@ public:
 		return *this;
 	}
 
-	__device__ bool isNext()
+	__device__ __host__ bool isNext()
 	{
 		return cells_list_start < cells_list_stop;
 	}
@@ -313,7 +313,7 @@ class NN_gpu_it_radius
 	cnt_type p_id;
 	cnt_type c_id;
 
-	__device__ inline void SelectValid()
+	__device__ __host__ inline void SelectValid()
 	{
 		while (isNext() && p_id >= starts.template get<0>(c_id+1))
 		{
@@ -330,7 +330,7 @@ class NN_gpu_it_radius
 
 public:
 
-	__device__ inline NN_gpu_it_radius(const grid_key_dx<dim,ids_type> & cell_pos,
+	__device__ __host__ inline NN_gpu_it_radius(const grid_key_dx<dim,ids_type> & cell_pos,
 						 const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & cells,
 			             const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & starts,
 			             const openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> & srt,
@@ -357,7 +357,7 @@ public:
 		return srt.template get<0>(p_id);
 	}
 
-	__device__ NN_gpu_it_radius<dim,cnt_type,ids_type> & operator++()
+	__device__ __host__ NN_gpu_it_radius<dim,cnt_type,ids_type> & operator++()
 	{
 		++p_id;
 
@@ -376,7 +376,7 @@ public:
 		return c_id;
 	}
 
-	__device__ bool isNext()
+	__device__ __host__ bool isNext()
 	{
 		return act < cells.size();
 	}
@@ -456,14 +456,14 @@ public:
 
 
 	template<unsigned int stub = NO_CHECK>
-	inline __device__ NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> getNNIterator(const grid_key_dx<dim,ids_type> & cid)
+	inline __device__ __host__ NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> getNNIterator(const grid_key_dx<dim,ids_type> & cid)
 	{
 		NN_gpu_it<dim,cnt_type,ids_type,1,is_sparse> ngi(cid,starts,srt,this->get_div_c(),this->get_off());
 
 		return ngi;
 	}
 
-	inline __device__ NN_gpu_it_radius<dim,cnt_type,ids_type> getNNIteratorRadius(const grid_key_dx<dim,ids_type> & cid)
+	inline __device__ __host__ NN_gpu_it_radius<dim,cnt_type,ids_type> getNNIteratorRadius(const grid_key_dx<dim,ids_type> & cid)
 	{
 		NN_gpu_it_radius<dim,cnt_type,ids_type> ngi(cid,rad_cells,starts,srt,this->get_div_c(),this->get_off());
 

@@ -62,7 +62,7 @@ namespace SparseGridGpuKernels
 
         openfpm::sparse_index<unsigned int> sdataBlockPos;
         sdataBlockPos.id = dataBlockPos;
-        sparseGrid.loadGhostBlock<pMask>(dataBlock,sdataBlockPos,enlargedBlock);
+        sparseGrid.template loadGhostBlock<pMask>(dataBlock,sdataBlockPos,enlargedBlock);
 
         __syncthreads();
 
@@ -88,7 +88,7 @@ namespace SparseGridGpuKernels
         }
         // Write block back to global memory
         __syncthreads();
-        sparseGrid.storeBlock<pMask>(dataBlock, enlargedBlock);
+        sparseGrid.template storeBlock<pMask>(dataBlock, enlargedBlock);
     }
 
     /*! \brief find the neighborhood of each chunk

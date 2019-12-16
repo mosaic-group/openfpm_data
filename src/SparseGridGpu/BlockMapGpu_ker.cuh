@@ -117,7 +117,17 @@ public:
     inline __device__ ScalarTypeOf<AggregateBlockT, p> & getReference(unsigned int blockId, unsigned int offset);
 
     template<unsigned int p>
-    inline __device__ auto insert(unsigned int linId) -> ScalarTypeOf<AggregateBlockT, p>&;
+    inline __device__ auto insert(unsigned int linId) -> ScalarTypeOf<AggregateBlockT, p>&
+    {
+    #ifdef __NVCC__
+        typedef BlockTypeOf<AggregateBlockT, p> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        unsigned int offset = linId % BlockT::size;
+        return insert<p>(blockId, offset);
+    #else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+    #endif // __NVCC__
+    }
 
     template<unsigned int p>
     inline __device__ auto insert(unsigned int blockId, unsigned int offset) -> ScalarTypeOf<AggregateBlockT, p>&;
@@ -151,6 +161,11 @@ public:
 		    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 		#endif // __NVCC__
 	}
+
+    inline __device__ openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> & getblockMap()
+    {
+    	return blockMap;
+    }
 
     inline static __device__ unsigned int getBlockId(unsigned int linId)
     {
@@ -353,20 +368,6 @@ inline __device__ ScalarTypeOf<AggregateBlockT, p> & BlockMapGpu_ker<AggregateBl
 #endif // __NVCC__
 }
 
-template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
-template<unsigned int p>
-inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
-::insert(unsigned int linId) -> ScalarTypeOf<AggregateBlockT, p>&
-{
-#ifdef __NVCC__
-    typedef BlockTypeOf<AggregateBlockT, p> BlockT;
-    unsigned int blockId = linId / BlockT::size;
-    unsigned int offset = linId % BlockT::size;
-    return insert<p>(blockId, offset);
-#else // __NVCC__
-    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
-}
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
 template<unsigned int p>

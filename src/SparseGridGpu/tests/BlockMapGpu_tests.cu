@@ -47,7 +47,7 @@ __global__ void insertValuesBlocked(SparseGridType sparseGrid)
     unsigned int dataBlockId = pos / BlockT::size;
     unsigned int offset = pos % BlockT::size;
 
-    auto encap = sparseGrid.insertBlock<chunksPerBlock>(dataBlockId,BlockT::size);
+    auto encap = sparseGrid.template insertBlock<chunksPerBlock>(dataBlockId,BlockT::size);
 
 
     encap.template get<p>()[offset] = pos;

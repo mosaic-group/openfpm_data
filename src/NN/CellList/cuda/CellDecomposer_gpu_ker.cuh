@@ -64,17 +64,17 @@ public:
 		return spacing_c;
 	}
 
-	__device__ inline const openfpm::array<ids_type,dim,cnt_type> & get_div_c() const
+	__device__ __host__ inline const openfpm::array<ids_type,dim,cnt_type> & get_div_c() const
 	{
 		return div_c;
 	}
 
-	__device__ inline const openfpm::array<ids_type,dim,cnt_type> & get_off() const
+	__device__ __host__ inline const openfpm::array<ids_type,dim,cnt_type> & get_off() const
 	{
 		return off;
 	}
 
-	__device__ inline const transform & get_t() const
+	__device__ __host__ inline const transform & get_t() const
 	{
 		return t;
 	}

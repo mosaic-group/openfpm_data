@@ -1560,7 +1560,7 @@ public:
 
     //todo: Move implems into a functor for compile time choice of stencil mode
     template<typename stencil, typename... Args>
-    void applyStencils(StencilMode mode = STENCIL_MODE_INSERT, Args... args)
+    void applyStencils(StencilMode mode, Args... args)
     {
         // Apply the given stencil on all elements which are not boundary-tagged
         // The idea is to have this function launch a __global__ function (made by us) on all existing blocks

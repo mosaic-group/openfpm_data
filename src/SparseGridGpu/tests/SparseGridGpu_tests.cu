@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	sparseGrid.template setBackgroundValue<0>(666);
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 
-	insertValues<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel());
+	insertValues<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel());
 
 	mgpu::ofp_context_t ctx;
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(4 * 64);
 
-	copyBlocksToOutput<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), output.toKernel());
+	copyBlocksToOutput<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(testInsert3D)
 
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 
-	insertValues<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel());
+	insertValues<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel());
 
 	mgpu::ofp_context_t ctx;
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(testInsert3D)
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(sparseGrid.dim3SizeToInt(gridSize) * 64);
 
-	copyBlocksToOutput<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), output.toKernel());
+	copyBlocksToOutput<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -423,49 +423,49 @@ BOOST_AUTO_TEST_CASE(testTagBoundaries2)
 	{
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 		dim3 ptd1(6, 6, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd1, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd1, 1);
 		dim3 ptd2(6, 7, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd2, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd2, 1);
 		dim3 ptd3(7, 6, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd3, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd3, 1);
 		dim3 ptd4(7, 7, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd4, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd4, 1);
 		sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 	}
 	{
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 		dim3 ptd1(8, 6, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd1, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd1, 1);
 		dim3 ptd2(9, 6, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd2, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd2, 1);
 		dim3 ptd3(8, 7, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd3, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd3, 1);
 		dim3 ptd4(9, 7, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd4, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd4, 1);
 		sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 	}
 	{
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 		dim3 ptd1(6, 8, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd1, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd1, 1);
 		dim3 ptd2(7, 8, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd2, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd2, 1);
 		dim3 ptd3(6, 9, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd3, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd3, 1);
 		dim3 ptd4(7, 9, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd4, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd4, 1);
 		sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 	}
 	{
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 		dim3 ptd1(8, 8, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd1, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd1, 1);
 		dim3 ptd2(8, 9, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd2, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd2, 1);
 		dim3 ptd3(9, 8, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd3, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd3, 1);
 		dim3 ptd4(9, 9, 0);
-		insertOneValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), ptd4, 1);
+		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd4, 1);
 		sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 	}
 	///////
@@ -480,7 +480,7 @@ BOOST_AUTO_TEST_CASE(testTagBoundaries2)
 	openfpm::vector_gpu<AggregateT> output;
 	output.resize(4 * 64);
 
-	copyToOutputIfPadding<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), output.toKernel());
+	copyToOutputIfPadding<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 
 	// Insert values on the grid
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-	insertConstantValue<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), 0);
+	insertConstantValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
@@ -558,7 +558,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 	openfpm::vector_gpu<AggregateT> output;
 	output.resize(4 * 64);
 
-	copyBlocksToOutput<0> << < gridSize, blockSizeInsert >> > (sparseGrid.toKernel(), output.toKernel());
+	copyBlocksToOutput<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -783,7 +783,7 @@ struct Conv3x3x3
 
         __shared__ ScalarT enlargedBlock[enlargedBlockSize];
 
-        sparseGrid.loadGhostBlock<p_src>(dataBlockLoad,dataBlockIdPos,enlargedBlock);
+        sparseGrid.template loadGhostBlock<p_src>(dataBlockLoad,dataBlockIdPos,enlargedBlock);
 
         __syncthreads();
 

@@ -343,8 +343,7 @@ public:
 
     template<unsigned int p, typename CoordT>
     inline __device__ auto
-    get(const grid_key_dx<dim, CoordT> & coord) const -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template get<p>(
-            0))
+    get(const grid_key_dx<dim, CoordT> & coord) const -> ScalarTypeOf<AggregateBlockT, p>
     {
     	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template get<p>(grid.LinId(coord));
     }
@@ -358,7 +357,7 @@ public:
      */
     template<unsigned int p, typename CoordT>
     inline __device__ auto
-    get(const block_offset<CoordT> & coord) const -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::blockMap.template get_ele<p>(coord.pos)[coord.off])
+    get(const block_offset<CoordT> & coord) const -> decltype(std::declval<BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>>().getblockMap().template get_ele<p>(coord.pos)[coord.off])
     {
     	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::blockMap.template get_ele<p>(coord.pos)[coord.off];
     }
@@ -372,14 +371,14 @@ public:
      */
     template<unsigned int p, typename CoordT>
     inline __device__ auto
-    get(const block_offset<CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::blockMap.template get_ele<p>(coord.pos)[coord.off])
+    get(const block_offset<CoordT> & coord) -> decltype(std::declval<BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>>().getblockMap().template get_ele<p>(coord.pos)[coord.off])
     {
     	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::blockMap.template get_ele<p>(coord.pos)[coord.off];
     }
 
     template<unsigned int p, typename CoordT>
     inline __device__ auto
-    insert(const grid_key_dx<dim, CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template insert<p>(0))
+    insert(const grid_key_dx<dim, CoordT> & coord) -> ScalarTypeOf<AggregateBlockT, p>& // should be decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template insert<p>(0)) but LLVM complain
     {
     	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template insert<p>(grid.LinId(coord));
     }
@@ -421,7 +420,7 @@ public:
     inline __device__ auto
     insertBlock(const indexT blockLinId, const unsigned int stride = 8192) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(0))
     {
-        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock<chunksPerBlocks>(blockLinId,stride);
+        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template insertBlock<chunksPerBlocks>(blockLinId,stride);
     }
 
     /*! \brief Return the buffer of points
@@ -598,26 +597,26 @@ public:
     template<typename BitMaskT>
     inline static __device__ bool isPadding(const BitMaskT &bitMask)
     {
-        return getBit(bitMask, PADDING_BIT);
+        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBit(bitMask, PADDING_BIT);
     }
 
     template <typename keyIndexT>
     inline __device__ bool isPadding(grid_key_dx<dim, keyIndexT> coord) const
     {
-        auto mask = getMask(grid.LinId(coord));
+        auto mask = BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getMask(grid.LinId(coord));
         return isPadding(mask);
     }
 
     template<typename BitMaskT>
     inline static __device__ void setPadding(BitMaskT &bitMask)
     {
-        setBit(bitMask, PADDING_BIT);
+    	BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::setBit(bitMask, PADDING_BIT);
     }
 
     template<typename BitMaskT>
     inline static __device__ void unsetPadding(BitMaskT &bitMask)
     {
-        unsetBit(bitMask, PADDING_BIT);
+    	BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::unsetBit(bitMask, PADDING_BIT);
     }
 
     template<typename NNtype>

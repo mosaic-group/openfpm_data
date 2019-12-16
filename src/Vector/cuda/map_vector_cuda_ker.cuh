@@ -142,7 +142,7 @@ namespace openfpm
 		 *
 		 */
 
-		__device__ unsigned int capacity() const
+		__device__ __host__ unsigned int capacity() const
 		{
 			return base.size();
 		}
@@ -159,7 +159,7 @@ namespace openfpm
 		 *
 		 */
 		template <unsigned int p>
-		__device__ inline auto get(unsigned int id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+		__device__ __host__ inline auto get(unsigned int id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)
@@ -179,7 +179,7 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
-		__device__ inline auto get(unsigned int id) -> decltype(base.get_o(grid_key_dx<1>(id)))
+		__device__ __host__ inline auto get(unsigned int id) -> decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)
@@ -200,7 +200,7 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
-		inline __device__ auto get(unsigned int id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
+		inline __device__ __host__ auto get(unsigned int id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)
@@ -224,7 +224,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline __device__ auto get_o(unsigned int id) const -> decltype(base.get_o(id))
+		inline __device__ __host__ auto get_o(unsigned int id) const -> decltype(base.get_o(id))
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)
@@ -248,7 +248,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline __device__ auto get_o(unsigned int id) -> decltype(base.get_o(id))
+		inline __device__ __host__ auto get_o(unsigned int id) -> decltype(base.get_o(id))
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)

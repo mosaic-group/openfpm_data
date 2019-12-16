@@ -19,7 +19,7 @@ struct encap_shmem
 	static const int size = (sz / 4)*4 + (sz % 4 != 0)*4;
 	static const int nthr = (sz / 4) + (sz % 4 != 0);
 
-	static void copy(int * src, int * dst)
+	__device__ static void copy(int * src, int * dst)
 	{
 		if (threadIdx.x < nthr)
 		{dst[threadIdx.x] = src[threadIdx.x];}
