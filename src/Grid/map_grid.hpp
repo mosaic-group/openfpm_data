@@ -64,6 +64,7 @@ typedef HeapMemory CudaMemory;
 template<unsigned int dim, typename T, typename S=HeapMemory, typename layout = typename memory_traits_lin<T>::type >
 class grid_cpu
 {
+	void stub() {};
 };
 
 /*!

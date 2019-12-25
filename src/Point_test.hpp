@@ -335,7 +335,7 @@ public:
 	 * \return this
 	 *
 	 */
-	inline Point_test<T> operator= (const Point_test<T> & p)
+	__host__ __device__ inline Point_test<T> operator= (const Point_test<T> & p)
 	{
 		boost::fusion::at_c<0>(data) = boost::fusion::at_c<0>(p.data);
 		boost::fusion::at_c<1>(data) = boost::fusion::at_c<1>(p.data);

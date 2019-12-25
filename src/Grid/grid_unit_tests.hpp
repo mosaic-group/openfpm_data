@@ -42,11 +42,11 @@ template<unsigned int dim> void test_all_grid(size_t sz)
 #ifdef CUDA_GPU
 
 	{grid_gpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory();
+	c3.setMemory();
 	test_layout_gridNd<dim>(c3,sz);}
 
 	{grid_gpu<dim, Point_test<float> > c3(szz);
-	c3.template setMemory();
+	c3.setMemory();
 	test_layout_gridObjNd<dim>(c3,sz);}
 
 #endif

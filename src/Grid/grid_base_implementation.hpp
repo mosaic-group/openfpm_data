@@ -9,14 +9,53 @@
 #define OPENFPM_DATA_SRC_GRID_GRID_BASE_IMPLEMENTATION_HPP_
 
 #include "grid_base_impl_layout.hpp"
+#ifdef __NVCC__
 #include "util/cuda_util.hpp"
 #include "cuda/cuda_grid_gpu_funcs.cuh"
-#include "util/create_vmpl_sequence.hpp"
 #include "util/cuda/cuda_launch.hpp"
+#endif
+#include "util/create_vmpl_sequence.hpp"
+
 
 constexpr int DATA_ON_HOST = 32;
 constexpr int DATA_ON_DEVICE = 64;
 constexpr int EXACT_RESIZE = 128;
+
+#ifdef __NVCC__
+
+template<bool is_gpu_copy_possible>
+struct copy_ndim_grid_device_impl
+{
+	template<typename ite_type, typename grid_src_type, typename grid_dst_type>
+	static inline void copy(ite_type & ite, grid_src_type & src, grid_dst_type & dst)
+	{
+		CUDA_LAUNCH((copy_ndim_grid_device<grid_src_type::dims,decltype(dst.toKernel())>),ite,src.toKernel(),dst.toKernel());
+	}
+
+        template<typename ite_type, typename grid_src_type, typename grid_dst_type>
+        static inline void copy_block(ite_type & ite, grid_src_type & src, grid_dst_type & dst)
+        {
+        	CUDA_LAUNCH((copy_ndim_grid_block_device<grid_src_type::dims,decltype(dst.toKernel())>),ite,src.toKernel(),dst.toKernel());        
+        }
+};
+
+template<>
+struct copy_ndim_grid_device_impl<false>
+{
+	template<typename ite_type, typename grid_src_type, typename grid_dst_type>
+	static inline void copy(ite_type & ite, grid_src_type & src, grid_dst_type & dst)
+	{
+		std::cout << __FILE__ << ":" << __LINE__ << " Error we cannot copy complex objects on GPU" << std::endl;
+	}
+
+        template<typename ite_type, typename grid_src_type, typename grid_dst_type>
+        static inline void copy_block(ite_type & ite, grid_src_type & src, grid_dst_type & dst)
+        {
+                std::cout << __FILE__ << ":"<<  __LINE__ << " Error we cannot copy complex objects on GPU" << std::endl;
+        }
+};
+
+#endif
 
 template<bool np,typename T>
 struct skip_init
@@ -172,6 +211,15 @@ struct grid_p<1,ids_type>
 
 		return key;
 	}
+
+        __device__ static inline grid_key_dx<1,ids_type> get_grid_point(const openfpm::array<ids_type,1,unsigned int> & g)
+        {
+                grid_key_dx<1,ids_type> key;
+
+                key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+
+                return key;
+        }
 };
 
 #endif
@@ -480,15 +528,16 @@ private:
 				{
 					if (blockSize == 1)
 					{
-						CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+						copy_ndim_grid_device_impl<!has_pack_agg<T>::result::value>::copy(ite,*this,grid_new);
+						//CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
 					}
 					else
 					{
 						move_work_to_blocks(ite);
 
 						ite.thr.x = blockSize;
-
-						CUDA_LAUNCH((copy_ndim_grid_block_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+						copy_ndim_grid_device_impl<!has_pack_agg<T>::result::value>::copy_block(ite,*this,grid_new);
+						//CUDA_LAUNCH((copy_ndim_grid_block_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
 					}
 				}
 			}
@@ -506,7 +555,8 @@ private:
 
 				auto ite = getGPUIterator_impl<1>(g_sm_copy,start,stop);
 
-				CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+				copy_ndim_grid_device_impl<!has_pack_agg<T>::result::value>::copy(ite,*this,grid_new);
+				//CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
 			}
 #else
 

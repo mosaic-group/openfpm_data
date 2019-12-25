@@ -793,7 +793,6 @@ private:
         if (numScalars == 0) return;
 
         // NOTE: Here we want to work only on one data chunk per block!
-        constexpr unsigned int chunksPerBlock = 1;
         auto ite = e_points.getGPUIterator(BLOCK_SIZE_STENCIL);
 
         CUDA_LAUNCH((SparseGridGpuKernels::applyStencilInPlaceNoShared

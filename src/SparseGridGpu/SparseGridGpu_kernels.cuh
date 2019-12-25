@@ -8,6 +8,7 @@
 #include <SparseGridGpu/BlockMapGpu.hpp>
 #include <SparseGridGpu/TemplateUtils/mathUtils.hpp>
 #include "util/cuda_util.hpp"
+#include "SparseGridGpu/SparseGridGpu_ker_util.hpp"
 
 #ifndef SPARSEGRIDGPU_LAUNCH_BOUND_APPLY_STENCIL_IN_PLACE
 #define SPARSEGRIDGPU_LAUNCH_BOUND_APPLY_STENCIL_IN_PLACE

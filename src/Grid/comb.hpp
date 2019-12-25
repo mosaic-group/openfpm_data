@@ -3,6 +3,7 @@
 
 #define COMB_ERROR 1001lu
 
+#include <vector>
 #include "util/se_util.hpp"
 
 /*! \brief Position of the element of dimension d in the hyper-cube of dimension dim

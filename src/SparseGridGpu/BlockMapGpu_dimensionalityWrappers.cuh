@@ -5,6 +5,8 @@
 #ifndef OPENFPM_PDATA_BLOCKMAPGPU_DIMENSIONALITYWRAPPERS_CUH
 #define OPENFPM_PDATA_BLOCKMAPGPU_DIMENSIONALITYWRAPPERS_CUH
 
+#include <type_traits>
+
 // Type management and wrapping
 
 /**

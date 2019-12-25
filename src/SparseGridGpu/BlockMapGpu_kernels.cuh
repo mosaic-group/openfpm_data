@@ -8,11 +8,11 @@
 //#ifdef __NVCC__
 
 #include <cstdlib>
-#include "BlockMapGpu.hpp"
 #include "util/cuda_util.hpp"
 #include "BlockMapGpu_dimensionalityWrappers.cuh"
 #include "Vector/map_vector_sparse.hpp"
 #include "util/cuda/scan_ofp.cuh"
+#include "SparseGridGpu/BlockMapGpu_ker.cuh"
 
 namespace BlockMapGpuKernels
 {

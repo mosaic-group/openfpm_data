@@ -523,8 +523,6 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage_with_array )
 
 BOOST_AUTO_TEST_CASE( Point_expression_usage_with_conversion )
 {
-	float scal = 0.0;
-
 	Point<3,float> p1({0.1,0.1,0.1});
 	Point<3,float> p2({0.2,0.3,0.4});
 	Point<3,float> p3({0.6,0.7,0.9});
@@ -595,8 +593,6 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage_with_conversion )
 
 BOOST_AUTO_TEST_CASE( Point_expression_usage_with_conversion_array )
 {
-	float scal = 0.0;
-
 	float p1_p[] = {0.1,0.1,0.1};
 	float p2_p[] = {0.2,0.3,0.4};
 	float p3_p[] = {0.6,0.7,0.9};

@@ -13,6 +13,11 @@
 #include "util/cuda/cub/util_type.cuh"
 #include "util/cuda/cub/block/block_scan.cuh"
 #include "util/cuda/moderngpu/operators.hxx"
+#include "boost/mpl/int.hpp"
+#include "boost/mpl/at.hpp"
+#include "boost/mpl/vector.hpp"
+#include "util/for_each_ref.hpp"
+#include "boost/mpl/range_c.hpp"
 
 #endif
 

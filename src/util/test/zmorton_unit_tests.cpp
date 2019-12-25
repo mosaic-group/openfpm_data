@@ -533,7 +533,6 @@ BOOST_AUTO_TEST_CASE( zmorton_invlinearization_test )
 			}
 		}
 
-		diocane:
 
 		BOOST_REQUIRE(match == true);
 	}

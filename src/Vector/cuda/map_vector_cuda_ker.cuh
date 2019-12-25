@@ -8,6 +8,10 @@
 #ifndef MAP_VECTOR_CUDA_HPP_
 #define MAP_VECTOR_CUDA_HPP_
 
+#include "util/object_s_di.hpp"
+#include "memory/CudaMemory.cuh"
+#include "Grid/map_grid.hpp"
+
 #ifdef __NVCC__
 
 template<typename vector_src_type, typename vector_dst_type, unsigned int ... args>

@@ -8,6 +8,9 @@
 #ifndef MAP_VECTOR_STD_CUDA_KER_CUH_
 #define MAP_VECTOR_STD_CUDA_KER_CUH_
 
+#include "util/tokernel_transformation.hpp"
+#include "data_type/aggregate.hpp"
+#include "Vector/cuda/map_vector_cuda_ker.cuh"
 
 /*! \brief grid interface available when on gpu
  *
@@ -28,7 +31,7 @@ struct vector_custd_ker
 	unsigned int v_size;
 
 	//! 1-D static grid
-	vector_gpu_ker<T_,layout_base> base;
+	openfpm::vector_gpu_ker<T_,layout_base> base;
 
 public:
 
@@ -129,7 +132,7 @@ public:
 	vector_custd_ker()
 	{}
 
-	vector_custd_ker(int v_size, const vector_gpu_ker<T_,layout_base> & cpy)
+	vector_custd_ker(int v_size, const openfpm::vector_gpu_ker<T_,layout_base> & cpy)
 	:v_size(v_size),base(cpy)
 	{}
 };

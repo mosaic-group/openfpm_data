@@ -11,9 +11,13 @@
 #include "config.h"
 #include "Grid/grid_base_impl_layout.hpp"
 #include "util/tokernel_transformation.hpp"
+#include <boost/fusion/include/mpl.hpp>
+#include <boost/fusion/sequence/intrinsic/at_c.hpp>
+#include <boost/fusion/include/at_c.hpp>
 #ifdef CUDA_GPU
 #include "memory/CudaMemory.cuh"
 #endif
+#include "Grid/grid_sm.hpp"
 
 /*! \brief this class is a functor for "for_each" algorithm
  *

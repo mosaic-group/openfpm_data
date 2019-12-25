@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE( grid_sm_linearization )
 BOOST_AUTO_TEST_CASE( grid_iterator_sub_p )
 {
 	const grid_key_dx<3> key1(4,4,4);
-	const grid_key_dx<3> key2(-1,-1,-1);
+	const grid_key_dx<3> key2((size_t)-1,(size_t)-1,(size_t)-1);
 	const grid_key_dx<3> key3(9,9,9);
 	size_t sz[3] = {8,8,8};
 
@@ -144,8 +144,8 @@ BOOST_AUTO_TEST_CASE( grid_iterator_sub_p )
 
 	// case with no key
 
-	const grid_key_dx<3> key6(-1,-1,-1);
-	const grid_key_dx<3> key7(-1,-1,8);
+	const grid_key_dx<3> key6((size_t)-1,(size_t)-1,(size_t)-1);
+	const grid_key_dx<3> key7((size_t)-1,(size_t)-1,8);
 
 	grid_key_dx_iterator_sub_bc<3,no_stencil,do_not_print_warning_on_adjustment<3>> it5(gs,key6,key7,{NON_PERIODIC,NON_PERIODIC,NON_PERIODIC});
 

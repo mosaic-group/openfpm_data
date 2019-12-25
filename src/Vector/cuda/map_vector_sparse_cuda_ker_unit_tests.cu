@@ -5,8 +5,6 @@
  *      Author: i-bird
  */
 
-#ifndef MAP_VECTOR_SPARSE_CUDA_KER_UNIT_TESTS_CUH_
-#define MAP_VECTOR_SPARSE_CUDA_KER_UNIT_TESTS_CUH_
 
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
@@ -760,4 +758,3 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 
 BOOST_AUTO_TEST_SUITE_END()
 
-#endif /* MAP_VECTOR_SPARSE_CUDA_KER_UNIT_TESTS_CUH_ */

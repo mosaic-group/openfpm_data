@@ -5,6 +5,8 @@
 #ifndef OPENFPM_PDATA_SPARSEGRIDGPU_TESTKERNELS_CUH
 #define OPENFPM_PDATA_SPARSEGRIDGPU_TESTKERNELS_CUH
 
+#include "SparseGridGpu/SparseGridGpu.hpp"
+
 /////////////////// BOUNDARY STENCILS ////////////////////////
 
 template<unsigned int dim, unsigned int p_src, unsigned int p_dst>

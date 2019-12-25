@@ -16,47 +16,88 @@ if (TEST_PERFORMANCE)
 			 SparseGridGpu/performance/performancePlots.cpp)
 endif ()
 
-if (CUDA_FOUND)
-	set(CUDA_SOURCES ${CUDA_SOURCES}
-            Vector/vector_gpu_unit_tests.cu
-            Grid/cuda/cuda_grid_gpu_tests.cu
-            Vector/cuda/map_vector_cuda_funcs_tests.cu
-            ../../openfpm_devices/src/memory/CudaMemory.cu
-            NN/CellList/CellList_gpu_test.cu util/cuda/scan_sort_cuda_unit_tests.cu
-            Grid/cuda/cuda_grid_unit_tests_func.cu
-            util/cuda/modern_gpu_tests.cu
-            Vector/cuda/map_vector_sparse_cuda_ker_unit_tests.cu
-            Vector/cuda/map_vector_sparse_cuda_kernels_unit_tests.cu
-            NN/CellList/tests/CellDecomposer_gpu_ker_unit_test.cu
-            SparseGridGpu/tests/BlockMapGpu_tests.cu
-	    util/test/zmorton_unit_tests.cpp
-	    util/cuda/test/segreduce_block_cuda_tests.cu 
-	    SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu 
-	    SparseGridGpu/tests/SparseGridGpu_tests.cu
-            SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh)
-else ()
-    set(CUDA_SOURCES)
-endif ()
+set(CPP_SOURCES ../../openfpm_devices/src/Memleak_check.cpp
+                main.cpp
+		util/test/zmorton_unit_tests.cpp
+                Vector/map_vector_sparse_unit_tests.cpp
+                util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
+                memory_ly/memory_conf_unit_tests.cpp
+                Space/tests/SpaceBox_unit_tests.cpp
+                SparseGrid/SparseGrid_unit_tests.cpp
+                Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
+                ../../openfpm_devices/src/memory/HeapMemory.cpp
+                ../../openfpm_devices/src/memory/PtrMemory.cpp
+                SparseGridGpu/Geometry/tests/grid_smb_tests.cpp)
 
-add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp
-        ${CUDA_SOURCES}
-        main.cpp
-        Vector/map_vector_sparse_unit_tests.cpp
-        util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
-        memory_ly/memory_conf_unit_tests.cpp
-        Space/tests/SpaceBox_unit_tests.cpp
-	SparseGrid/SparseGrid_unit_tests.cpp
-        Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
-        ../../openfpm_devices/src/memory/HeapMemory.cpp
-        ../../openfpm_devices/src/memory/PtrMemory.cpp 
-	SparseGridGpu/Geometry/tests/grid_smb_tests.cpp)
+if ( HIP_ENABLE AND HIP_FOUND )
 
-add_executable(isolation
-	../../openfpm_devices/src/memory/CudaMemory.cu
-	../../openfpm_devices/src/memory/HeapMemory.cpp
-        SparseGridGpu/tests/SparseGridGpu_tests.cu
-	isolation.cpp
-        )
+        set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
+
+        if (CUDA_FOUND)
+                set(CUDA_SOURCES
+                Vector/vector_gpu_unit_tests_hipified.cpp
+                Grid/cuda/cuda_grid_gpu_tests_hipified.cpp
+                Vector/cuda/map_vector_cuda_funcs_tests_hipified.cpp
+                ../../openfpm_devices/src/memory/CudaMemory_hipified.cpp
+                NN/CellList/CellList_gpu_test_hipified.cpp
+		util/cuda/scan_sort_cuda_unit_tests_hipified.cpp
+                Grid/cuda/cuda_grid_unit_tests_func_hipified.cpp
+                util/cuda/modern_gpu_tests_hipified.cpp
+                Vector/cuda/map_vector_sparse_cuda_ker_unit_tests_hipified.cpp
+                Vector/cuda/map_vector_sparse_cuda_kernels_unit_tests_hipified.cpp
+                NN/CellList/tests/CellDecomposer_gpu_ker_unit_test_hipified.cpp
+                SparseGridGpu/tests/BlockMapGpu_tests_hipified.cpp
+                util/cuda/test/segreduce_block_cuda_tests_hipified.cpp
+                SparseGridGpu/tests/BlockMapGpu_kernels_tests_hipified.cpp
+                SparseGridGpu/tests/SparseGridGpu_tests_hipified.cpp)
+        else ()
+                set(CUDA_SOURCES)
+        endif ()
+
+        hip_add_executable(mem_map ${CUDA_SOURCES}
+                ${CPP_SOURCES})
+
+        hip_add_executable(isolation
+                ../../openfpm_devices/src/memory/CudaMemory_hipified.cpp
+                ../../openfpm_devices/src/memory/HeapMemory.cpp
+                SparseGridGpu/tests/SparseGridGpu_tests_hipified.cpp
+                isolation.cpp)
+
+else()
+
+	if (CUDA_FOUND)
+		set(CUDA_SOURCES ${CUDA_SOURCES}
+            	Vector/vector_gpu_unit_tests.cu
+            	Grid/cuda/cuda_grid_gpu_tests.cu
+            	Vector/cuda/map_vector_cuda_funcs_tests.cu
+            	../../openfpm_devices/src/memory/CudaMemory.cu
+            	NN/CellList/CellList_gpu_test.cu util/cuda/scan_sort_cuda_unit_tests.cu
+            	Grid/cuda/cuda_grid_unit_tests_func.cu
+            	util/cuda/modern_gpu_tests.cu
+            	Vector/cuda/map_vector_sparse_cuda_ker_unit_tests.cu
+            	Vector/cuda/map_vector_sparse_cuda_kernels_unit_tests.cu
+            	NN/CellList/tests/CellDecomposer_gpu_ker_unit_test.cu
+            	SparseGridGpu/tests/BlockMapGpu_tests.cu
+	    	util/cuda/test/segreduce_block_cuda_tests.cu 
+	    	SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu 
+	    	SparseGridGpu/tests/SparseGridGpu_tests.cu
+            	SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh)
+	else ()
+    		set(CUDA_SOURCES)
+	endif ()
+
+	add_executable(mem_map
+        	${CUDA_SOURCES}
+        	${CPP_SOURCES})
+
+	add_executable(isolation
+		../../openfpm_devices/src/memory/CudaMemory.cu
+		../../openfpm_devices/src/memory/HeapMemory.cpp
+        	SparseGridGpu/tests/SparseGridGpu_tests.cu
+		isolation.cpp)
+
+endif()
+
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
@@ -381,4 +422,5 @@ install(FILES util/cuda/moderngpu/context.hxx
 #    set_property(TARGET particle_test PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
 #  endif()
 #endif()
+
 

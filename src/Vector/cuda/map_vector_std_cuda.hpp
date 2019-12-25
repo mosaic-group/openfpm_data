@@ -8,7 +8,7 @@
 #ifndef MAP_VECTOR_STD_CUDA_HPP_
 #define MAP_VECTOR_STD_CUDA_HPP_
 
-#include "map_vector_std_cuda_ker.cuh"
+#include "Vector/cuda/map_vector_std_cuda_ker.cuh"
 
 /*! \brief Implementation of 1-D std::vector like structure
  *

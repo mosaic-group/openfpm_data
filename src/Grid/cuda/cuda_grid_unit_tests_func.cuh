@@ -8,6 +8,9 @@
 #ifndef OPENFPM_DATA_SRC_GRID_CUDA_GPU_COMPUTE_CUH_
 #define OPENFPM_DATA_SRC_GRID_CUDA_GPU_COMPUTE_CUH_
 
+#include "Grid/grid_key.hpp"
+#include "Grid/map_grid.hpp"
+
 typedef aggregate<float, float, float, float, float [3], float [3][3]> Point_aggr_test;
 
 void gpu_grid_3D_compute(grid_gpu<3,Point_aggr_test> & g);

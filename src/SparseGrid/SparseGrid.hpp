@@ -614,13 +614,13 @@ public:
 	 * \param v1 where you want to insert the element
 	 *
 	 */
-	inline auto insert_o(const grid_key_dx<dim> & v1, size_t & ele_id) -> decltype(chunks.template get_o(0))
+	inline auto insert_o(const grid_key_dx<dim> & v1, size_t & ele_id) -> decltype(chunks.get_o(0))
 	{
 		size_t active_cnk;
 
 		pre_insert(v1,active_cnk,ele_id);
 
-		return chunks.template get_o(active_cnk);
+		return chunks.get_o(active_cnk);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -1181,9 +1181,9 @@ public:
 				else
 				{
 					//Call a pack request
-					call_aggregatePackRequestChunking<decltype(chunks.template get_o(i)),
+					call_aggregatePackRequestChunking<decltype(chunks.get_o(i)),
 																  S,prp ... >
-																  ::call_packRequest(chunks.template get_o(i),mask_it[j],req);
+																  ::call_packRequest(chunks.get_o(i),mask_it[j],req);
 				}
 			}
 
@@ -1277,9 +1277,9 @@ public:
 						else
 						{
 							//Call a pack request
-							call_aggregatePackRequestChunking<decltype(chunks.template get_o(i)),
+							call_aggregatePackRequestChunking<decltype(chunks.get_o(i)),
 																  S,prp ... >
-																  ::call_packRequest(chunks.template get_o(i),sub_id,req);
+																  ::call_packRequest(chunks.get_o(i),sub_id,req);
 						}
 					}
 
@@ -1387,9 +1387,9 @@ public:
 
 					if (h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check)
 					{
-						Packer<decltype(chunks.template get_o(i)),
+						Packer<decltype(chunks.get_o(i)),
 									S,
-									PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<T,prp...>(mem,chunks.template get_o(i),sub_id,sts);
+									PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<T,prp...>(mem,chunks.get_o(i),sub_id,sts);
 
 						mask_to_pack[sub_id >> BIT_SHIFT_SIZE_T] |= mask_check;
 						has_packed = true;
@@ -1525,9 +1525,9 @@ public:
 
 			for (size_t j = 0 ; j < mask_nele ; j++)
 			{
-				Packer<decltype(chunks.template get_o(i)),
+				Packer<decltype(chunks.get_o(i)),
 								S,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<T,prp...>(mem,chunks.template get_o(i),mask_it[j],sts);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<T,prp...>(mem,chunks.get_o(i),mask_it[j],sts);
 			};
 		}
 	}
@@ -1728,9 +1728,9 @@ public:
 
 				pre_insert(v1,active_cnk,ele_id);
 
-				Unpacker<decltype(chunks.template get_o(mask_it[k])),
+				Unpacker<decltype(chunks.get_o(mask_it[k])),
 							S2,
-							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack<T,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack<T,prp...>(mem,chunks.get_o(active_cnk),ele_id,ps);
 
 			}
 		}
@@ -1839,15 +1839,15 @@ public:
 
 				if (exist == false)
 				{
-					Unpacker<decltype(chunks.template get_o(mask_it[k])),
+					Unpacker<decltype(chunks.get_o(mask_it[k])),
 								S2,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<replace_,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<replace_,prp...>(mem,chunks.get_o(active_cnk),ele_id,ps);
 				}
 				else
 				{
-					Unpacker<decltype(chunks.template get_o(mask_it[k])),
+					Unpacker<decltype(chunks.get_o(mask_it[k])),
 								S2,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks.get_o(active_cnk),ele_id,ps);
 				}
 
 			}

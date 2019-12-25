@@ -45,6 +45,30 @@
 namespace openfpm
 {
 
+#ifdef __NVCC__
+
+	template<bool is_gpu_copy_possible>
+	struct copy_two_vectors_impl
+	{
+		template<typename it_type, typename vector_src_type, typename vector_dst_type>
+		static inline void copy(it_type & it, vector_src_type & src, vector_dst_type & dst)
+		{
+			CUDA_LAUNCH(copy_two_vectors,it,src.toKernel(),dst.toKernel());
+		}
+	};
+
+	template<>
+	struct copy_two_vectors_impl<false>
+	{
+		template<typename it_type, typename vector_src_type, typename vector_dst_type>
+		static inline void copy(it_type & it, vector_src_type & src, vector_dst_type & dst)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " Error we cannot copy complex objects on GPU" << std::endl;
+		}
+	};
+
+#endif
+
 	template<bool is_ok_cuda,typename T, typename Memory,
 			 typename layout, template<typename> class layout_base,
 			 typename grow_p>
@@ -1171,7 +1195,8 @@ namespace openfpm
 				if (dup.size() != 0)
 				{
 					auto it = dup.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,dup.toKernel(),toKernel());
+					copy_two_vectors_impl<!has_pack_agg<T>::result::value>::copy(it,dup,*this);
+					//CUDA_LAUNCH(copy_two_vectors,it,dup.toKernel(),toKernel());
 				}
 #endif
 			}
@@ -1360,7 +1385,8 @@ namespace openfpm
 				if (mv.size() != 0)
 				{
 					auto it = mv.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
+					copy_two_vectors_impl<!has_pack_agg<T>::result::value>::copy(it,*this,mv);
+					//CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
 				}
 #endif
 			}
@@ -1421,7 +1447,8 @@ namespace openfpm
 				if (mv.size() != 0)
 				{
 					auto it = mv.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
+					copy_two_vectors_impl<!has_pack_agg<T>::result::value>::copy(it,*this,mv);
+					//CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
 				}
 #endif
 			}
@@ -1487,7 +1514,8 @@ namespace openfpm
 				if (mv.size() != 0)
 				{
 					auto it = mv.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
+					copy_two_vectors_impl<!has_pack_agg<T>::result::value>::copy(it,*this,mv);
+					// CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
 				}
 #endif
 			}

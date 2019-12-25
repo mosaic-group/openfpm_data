@@ -8,7 +8,9 @@
 #ifndef TOKERNEL_TRANSFORMATION_HPP_
 #define TOKERNEL_TRANSFORMATION_HPP_
 
-#include "data_type/aggregate.hpp"
+#include "Vector/util.hpp"
+#include "Space/Shape/Point.hpp"
+#include "Space/Shape/Box.hpp"
 
 /*! \brief this set of meta-functions traverse at compile time the tree-structure of types in Depth-first search.
  *         and transform any root node of type vector into vector_gpu_ker
