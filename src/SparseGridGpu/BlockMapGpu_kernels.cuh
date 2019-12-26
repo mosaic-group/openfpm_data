@@ -5,7 +5,6 @@
 #ifndef OPENFPM_PDATA_BLOCKMAPGPU_KERNELS_CUH
 #define OPENFPM_PDATA_BLOCKMAPGPU_KERNELS_CUH
 
-//#ifdef __NVCC__
 
 #include <cstdlib>
 #include "util/cuda_util.hpp"
@@ -109,7 +108,7 @@ namespace BlockMapGpuKernels
     template<unsigned int maskProp, unsigned int chunksPerBlock, typename InsertBufferT>
     __global__ void initializeInsertBuffer(InsertBufferT insertBuffer)
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         typedef typename InsertBufferT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, maskProp> MaskT;
 
@@ -133,9 +132,9 @@ namespace BlockMapGpuKernels
         {
             __syncthreads();
         }
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
     /**
@@ -151,7 +150,7 @@ namespace BlockMapGpuKernels
     template<typename op, typename ScalarT>
     __device__ inline void applyOp(ScalarT &a, ScalarT b, bool aExist, bool bExist)
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         op op_;
         if (aExist && bExist)
         {
@@ -161,9 +160,9 @@ namespace BlockMapGpuKernels
         {
             a = b;
         }
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
 
@@ -188,7 +187,7 @@ namespace BlockMapGpuKernels
             DataVectorT output
     )
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         typedef typename DataVectorT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, p> DataType;
         typedef BlockTypeOf<AggregateT, pMask> MaskType;
@@ -315,9 +314,9 @@ namespace BlockMapGpuKernels
             generalDimensionFunctor<DataType>::assignWithOffset(output.template get<p>(out_id), A[chunkId].data,
                                                                 offset);
         }
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
     // GridSize = number of segments
@@ -341,7 +340,7 @@ namespace BlockMapGpuKernels
             DataVectorT output
     )
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         typedef typename DataVectorT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, p> DataType;
         typedef BlockTypeOf<AggregateT, pMask> MaskType;
@@ -471,9 +470,9 @@ namespace BlockMapGpuKernels
             generalDimensionFunctor<MaskType>::assignWithOffset(output.template get<pMask>(out_id), AMask[chunkId],
                                                                 offset);
         }
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
     /**
@@ -489,7 +488,7 @@ namespace BlockMapGpuKernels
     template<typename DataVectorT, typename IndexVectorT>
     __global__ void copy_old_ker(IndexVectorT srcIndices, DataVectorT src, IndexVectorT dstIndices, DataVectorT dst)
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         typedef typename DataVectorT::value_type AggregateT;
         typedef BlockTypeOf<AggregateT, 0> BlockT0; // The type of the 0-th property
         unsigned int chunkSize = BlockT0::size;
@@ -507,16 +506,16 @@ namespace BlockMapGpuKernels
 
             dst.get(dstId) = src.get(srcId); //todo How does this = spread across threads...?
         }
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
 
     template<typename IndexVectorT, typename IndexVectorT2>
     __global__ void copyKeyToDstIndexIfPredicate(IndexVectorT keys, IndexVectorT2 dstIndices, IndexVectorT out)
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
        // dstIndices is exclusive scan of predicates
         unsigned int pos = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -533,9 +532,9 @@ namespace BlockMapGpuKernels
 		}
     }
 
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
 }
 
 /*! \brief this class is a functor for "for_each" algorithm
@@ -616,7 +615,7 @@ struct sparse_vector_reduction_solve_conflict
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
         typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
         typedef typename boost::mpl::at<typename ValueTypeOf<vector_data_type>::type,typename reduction_type::prop>::type red_type;
@@ -692,7 +691,7 @@ namespace BlockMapGpuFunctors
                                     vector_index_type &keysOut, vector_data_type &dataOut,
                                     mgpu::ofp_context_t & context)
         {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
             typedef ValueTypeOf<vector_data_type> AggregateT;
             typedef ValueTypeOf<vector_index_type> AggregateIndexT;
 
@@ -786,15 +785,14 @@ namespace BlockMapGpuFunctors
             }
 
             return true; //todo: check if error in kernel
-#else // __NVCC__
+#else //
             std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
             return true;
-#endif // __NVCC__
+#endif //
         }
     };
 }
 
 
-//#endif //__NVCC__
 
 #endif //OPENFPM_PDATA_BLOCKMAPGPU_KERNELS_CUH

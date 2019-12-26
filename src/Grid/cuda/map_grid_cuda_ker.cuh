@@ -104,7 +104,7 @@ __device__ void fill_grid_error_array_overflow(const void * sptr,grid_key_dx<dim
 	for (int i = 0 ; i < dim ; i++)
 	{ptr[i+5] = key.get(i);}
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 	ptr[5+dim] = blockIdx.x;
 	ptr[6+dim] = blockIdx.y;

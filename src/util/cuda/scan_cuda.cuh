@@ -10,7 +10,7 @@
 
 #include "Vector/map_vector.hpp"
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 ////////////////// Ratio reduction ///////////////////////////////////////////////////////////////
 

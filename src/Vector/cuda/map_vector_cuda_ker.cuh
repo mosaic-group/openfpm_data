@@ -12,7 +12,7 @@
 #include "memory/CudaMemory.cuh"
 #include "Grid/map_grid.hpp"
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 template<typename vector_src_type, typename vector_dst_type, unsigned int ... args>
 __global__ void merge_add_prp_device_impl(vector_src_type v_src, vector_dst_type v_dst, unsigned int old_sz)
@@ -56,7 +56,7 @@ __device__ void fill_vector_error_array_overflow(const void * sptr,int key)
 	for (int i = 0 ; i < 1 ; i++)
 	{ptr[i+5] = key;}
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 	ptr[5+1] = blockIdx.x;
 	ptr[6+1] = blockIdx.y;

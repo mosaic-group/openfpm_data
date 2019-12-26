@@ -12,7 +12,7 @@
 
 #ifdef CUDA_GPU
 
-	#ifdef __NVCC__
+	#if defined(__NVCC__) || defined(__HIPCC__)
 	#include "util/cuda/moderngpu/context.hxx"
 
 	namespace mgpu

@@ -9,7 +9,7 @@
 #define OPENFPM_DATA_SRC_GRID_GRID_BASE_IMPLEMENTATION_HPP_
 
 #include "grid_base_impl_layout.hpp"
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 #include "util/cuda_util.hpp"
 #include "cuda/cuda_grid_gpu_funcs.cuh"
 #include "util/cuda/cuda_launch.hpp"
@@ -21,7 +21,7 @@ constexpr int DATA_ON_HOST = 32;
 constexpr int DATA_ON_DEVICE = 64;
 constexpr int EXACT_RESIZE = 128;
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 template<bool is_gpu_copy_possible>
 struct copy_ndim_grid_device_impl
@@ -106,7 +106,7 @@ struct skip_init<true,T>
 										 if (key.get(0) > ite_gpu.stop.get(0) || key.get(1) > ite_gpu.stop.get(1))\
     									 {return;}
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 template<unsigned int dim, typename ids_type = int>
 struct grid_p
@@ -497,7 +497,7 @@ private:
 
 	void resize_impl_device(const size_t (& sz)[dim],grid_base_impl<dim,T,S,layout,layout_base> & grid_new, unsigned int blockSize = 1)
 	{
-#if defined(CUDA_GPU) && defined(__NVCC__)
+#if defined(CUDA_GPU) && (defined(__NVCC__) || defined(__HIPCC__))
 
 			grid_key_dx<dim> start;
 			grid_key_dx<dim> stop;

@@ -26,10 +26,10 @@ struct DataBlock
 
     __device__ __host__ DataBlock(const DataBlock &other)
     {
-#ifdef  __CUDA_ARCH__
-#ifdef __NVCC__
+#if  defined(__CUDA_ARCH__) || defined(__HIP_ARCH__)
+#if defined(__NVCC__) || defined(__HIPCC__)
         block[threadIdx.x % size] = other.block[threadIdx.x % size];
-#endif // __NVCC__
+#endif //
 #else // __CUDA_ARCH__
         memcpy(block, other.block, size * sizeof(ScalarT));
 #endif // __CUDA_ARCH__
@@ -37,10 +37,10 @@ struct DataBlock
 
     __device__ __host__ inline DataBlock & operator=(const DataBlock &other)
     {
-#ifdef  __CUDA_ARCH__
-#ifdef __NVCC__
+#if defined( __CUDA_ARCH__) || defined(__HIP_ARCH__)
+#if defined(__NVCC__) || defined(__HIPCC__)
         block[threadIdx.x % size] = other.block[threadIdx.x % size];
-#endif // __NVCC__
+#endif //
 #else
         memcpy(block, other.block, size * sizeof(ScalarT));
 #endif
@@ -49,10 +49,10 @@ struct DataBlock
 
     __device__ __host__ inline DataBlock & operator=(ScalarT v)
     {
-#ifdef  __CUDA_ARCH__
-#ifdef __NVCC__
+#if defined(__CUDA_ARCH__) || defined(__HIP_ARCH__)
+#if defined(__NVCC__) || defined(__HIPCC__)
         block[threadIdx.x % size] = v;
-#endif // __NVCC__
+#endif //
 #else
         for (unsigned int i = 0; i < size; ++i)
         {

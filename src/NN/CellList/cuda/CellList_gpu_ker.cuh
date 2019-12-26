@@ -13,7 +13,7 @@
 
 #ifdef USE_LOW_REGISTER_ITERATOR
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 __constant__ int cells_striding[126];
 #endif
 
@@ -28,7 +28,7 @@ struct NN_gpu_int_base_lr_impl
 
 	__device__ inline void init_impl(const grid_key_dx<dim,ids_type> & cell_pos, const openfpm::array<ids_type,dim,cnt_type> & div_c)
 	{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 		ca_pnt = 0;
 
 		ca_lin = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_pos);
@@ -38,7 +38,7 @@ struct NN_gpu_int_base_lr_impl
 
 	__device__ inline void SelectValid_impl(const openfpm::array<ids_type,dim,cnt_type> & div_c)
 	{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 		++ca_pnt;
 
 		c_id = ca_lin + cells_striding[ca_pnt];

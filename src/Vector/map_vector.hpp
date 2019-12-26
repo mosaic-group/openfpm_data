@@ -45,7 +45,7 @@
 namespace openfpm
 {
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 	template<bool is_gpu_copy_possible>
 	struct copy_two_vectors_impl
@@ -123,7 +123,7 @@ namespace openfpm
 	#endif
 				// merge the data on device
 
-	#if defined(CUDA_GPU) && defined(__NVCC__)
+	#if defined(CUDA_GPU) && (defined(__NVCC__) || defined(__HIPCC__))
 
 				size_t old_sz = this_.size();
 				this_.resize(this_.size() + v.size(),DATA_ON_DEVICE);
@@ -158,7 +158,7 @@ namespace openfpm
 	#endif
 				// merge the data on device
 
-	#if defined(CUDA_GPU) && defined(__NVCC__)
+	#if defined(CUDA_GPU) && (defined(__NVCC__) || defined(__HIPCC__))
 
 				auto ite = v.getGPUIterator();
 
@@ -994,7 +994,7 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#if defined(SE_CLASS1) && !defined(__NVCC__)
+#if defined(SE_CLASS1) && !(defined(__NVCC__) || defined(__HIPCC__))
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
@@ -1017,7 +1017,7 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#if defined(SE_CLASS1) && !defined(__NVCC__)
+#if defined(SE_CLASS1) && !(defined(__NVCC__) || defined(__HIPCC__))
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
@@ -1039,7 +1039,7 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#if defined(SE_CLASS1) && !defined(__NVCC__)
+#if defined(SE_CLASS1) && !(defined(__NVCC__) || defined(__HIPCC__))
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
@@ -1064,7 +1064,7 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#if defined(SE_CLASS1) && !defined(__NVCC__)
+#if defined(SE_CLASS1) && !(defined(__NVCC__) || defined(__HIPCC__))
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
@@ -1139,7 +1139,7 @@ namespace openfpm
 #ifdef SE_CLASS2
 			check_valid(this,8);
 #endif
-#if defined(SE_CLASS1) && !defined(__NVCC__)
+#if defined(SE_CLASS1) && !(defined(__NVCC__) || defined(__HIPCC__))
 			check_overflow(id);
 #endif
 			grid_key_dx<1> key(id);
@@ -1191,7 +1191,7 @@ namespace openfpm
 			// and device
 			if (Memory::isDeviceHostSame() == false)
 			{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 				if (dup.size() != 0)
 				{
 					auto it = dup.getGPUIterator();
@@ -1381,7 +1381,7 @@ namespace openfpm
 			// and device
 			if (Memory::isDeviceHostSame() == false)
 			{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 				if (mv.size() != 0)
 				{
 					auto it = mv.getGPUIterator();
@@ -1443,7 +1443,7 @@ namespace openfpm
 			// and device
 			if (Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false)
 			{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 				if (mv.size() != 0)
 				{
 					auto it = mv.getGPUIterator();
@@ -1510,7 +1510,7 @@ namespace openfpm
 			// and device
 			if (Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false)
 			{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 				if (mv.size() != 0)
 				{
 					auto it = mv.getGPUIterator();

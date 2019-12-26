@@ -8,7 +8,7 @@
 #ifndef MAP_VECTOR_SPARSE_CUDA_KERNELS_CUH_
 #define MAP_VECTOR_SPARSE_CUDA_KERNELS_CUH_
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 #include "util/cuda/cub/util_type.cuh"
 #include "util/cuda/cub/block/block_scan.cuh"
@@ -88,7 +88,7 @@ struct sadd_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 	template<typename red_type> using op_red = mgpu::plus_t<red_type>;
 #endif
 
@@ -108,7 +108,7 @@ struct sadd_
 	{}
 };
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 template<typename vect_type>
 __global__ void set_one_insert_buffer(vect_type vadd)
@@ -141,7 +141,7 @@ struct sadd_block_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 	template<typename red_type> using op_red = plus_block_t<red_type, blockLength>;
 #endif
 
@@ -171,7 +171,7 @@ struct smax_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 	template<typename red_type> using op_red = mgpu::maximum_t<red_type>;
 #endif
 
@@ -192,7 +192,7 @@ struct smax_
 	{}
 };
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 template<typename type_t, unsigned int blockLength>
 struct maximum_block_t  : public std::binary_function<type_t, type_t, type_t> {
@@ -213,7 +213,7 @@ struct smax_block_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 	template<typename red_type> using op_red = maximum_block_t<red_type, blockLength>;
 #endif
 
@@ -246,7 +246,7 @@ struct smin_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
 #endif
 
@@ -266,7 +266,7 @@ struct smin_
 	{}
 };
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 template<typename type_t, unsigned int blockLength>
 struct minimum_block_t  : public std::binary_function<type_t, type_t, type_t> {
@@ -287,7 +287,7 @@ struct smin_block_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 	template<typename red_type> using op_red = minimum_block_t<red_type, blockLength>;
 #endif
 
@@ -314,7 +314,7 @@ struct smin_block_
 };
 
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 template<typename type_t>
 struct bitwiseOr_t  : public std::binary_function<type_t, type_t, type_t> {

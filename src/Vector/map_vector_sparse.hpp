@@ -15,7 +15,7 @@
 #include <iostream>
 #include <limits>
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 #include "util/cuda/moderngpu/kernel_scan.hxx"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #include "util/cuda/moderngpu/kernel_segreduce.hxx"
@@ -123,21 +123,21 @@ namespace openfpm
         template <unsigned int p, typename vector_index_type>
         static void extendSegments(vector_index_type & segments, size_t dataSize)
         {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
             // Pass as there is nothing to append for mgpu
-#else // __NVCC__
+#else //
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
+#endif //
         }
 
         template <typename vector_index_type>
         static void trimSegments(vector_index_type & segments)
         {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
             // Pass as there is nothing to append for mgpu
-#else // __NVCC__
+#else //
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
+#endif //
         }
 
         template <unsigned int pSegment, typename vector_reduction, typename T, typename vector_data_type, typename vector_index_type , typename vector_index_type2>
@@ -149,7 +149,7 @@ namespace openfpm
                 block_functor & blf,
                 mgpu::ofp_context_t & context)
         {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
             typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
             typedef typename boost::mpl::at<typename vector_data_type::value_type::type,typename reduction_type::prop>::type red_type;
             typedef typename reduction_type::template op_red<red_type> red_op;
@@ -164,9 +164,9 @@ namespace openfpm
                     (int *)segment_offset.template getDeviceBuffer<1>(), segment_offset.size(),
                     (red_type *)vector_data_red.template getDeviceBuffer<reduction_type::prop::value>(),
                     red_op(), init, context);
-#else // __NVCC__
+#else
     std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
+#endif
         }
 
 
@@ -209,7 +209,7 @@ namespace openfpm
                 mgpu::ofp_context_t & context
                 )
         {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
             CUDA_LAUNCH((solve_conflicts<
                         decltype(vct_index_merge.toKernel()),
                         decltype(vct_data_old.toKernel()),
@@ -241,9 +241,9 @@ namespace openfpm
                 CUDA_LAUNCH(realign,itew,vct_index_out.toKernel(),vct_data_out.toKernel(),
                                       vct_index_old.toKernel(), vct_data_old.toKernel(),
                                       vct_index_dtmp.toKernel());
-#else // __NVCC__
+#else //
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
+#endif //
         }
     };
 
@@ -254,26 +254,26 @@ namespace openfpm
         template <unsigned int p, typename vector_index_type>
         static void extendSegments(vector_index_type & segments, size_t dataSize)
         {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
             // Append trailing element to segment (marks end of last segment)
             segments.resize(segments.size()+1);
             segments.template get<p>(segments.size() - 1) = dataSize;
             segments.template hostToDevice<p>(segments.size() - 1, segments.size() - 1);
-#else // __NVCC__
+#else // 
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
+#endif //
         }
 
         template <typename vector_index_type>
         static void trimSegments(vector_index_type & segments)
         {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
             // Append trailing element to segment (marks end of last segment)
             segments.resize(segments.size()-1);
             ////////////
-#else // __NVCC__
+#else //
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
+#endif //
         }
 
         template <unsigned int pSegment, typename vector_reduction, typename T, typename vector_data_type, typename vector_index_type ,typename vector_index_type2>
@@ -312,7 +312,7 @@ namespace openfpm
                 mgpu::ofp_context_t & context
         )
         {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
             blf.template solve_conflicts<1,
 			            decltype(vct_index_merge),
 			            decltype(segments_new),
@@ -324,9 +324,9 @@ namespace openfpm
 			            context);
                 vct_data_out.swap(vct_data);
 
-#else // __NVCC__
+#else //
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
+#endif //
         }
     };
 
@@ -677,7 +677,7 @@ namespace openfpm
 		template<typename T>
 		inline void operator()(T& t) const
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
             typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
             typedef typename boost::mpl::at<typename ValueTypeOf<vector_data_type>::type,typename reduction_type::prop>::type red_type;
@@ -768,7 +768,7 @@ namespace openfpm
 		template<typename T>
 		inline void operator()(T& t) const
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
             typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
             typedef typename boost::mpl::at<typename ValueTypeOf<vector_data_type>::type,typename reduction_type::prop>::type red_type;
@@ -849,7 +849,7 @@ namespace openfpm
 		template<typename T>
 		inline void operator()(T& t) const
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			typedef typename boost::mpl::at<vector_reduction,T>::type reduction_type;
 
@@ -983,7 +983,7 @@ namespace openfpm
 							  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_cont,
 							  mgpu::ofp_context_t & context)
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			// Add 0 to the last element to vct_nadd_index
 			vct_nadd_index.resize(vct_nadd_index.size()+1);
@@ -1063,7 +1063,7 @@ namespace openfpm
 							 vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_cont,
 							 mgpu::ofp_context_t & context)
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 			ite_gpu<1> itew;
 			itew.wthr.x = vct_nadd_index.size()-1;
 			itew.wthr.y = 1;
@@ -1110,7 +1110,7 @@ namespace openfpm
 				  	  	   vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_merge_index_map,
 				  	  	   mgpu::ofp_context_t & context)
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			typedef boost::mpl::vector<v_reduce...> vv_reduce;
 
@@ -1216,7 +1216,7 @@ namespace openfpm
 						 vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_data_reord_map,
 				  	  	   mgpu::ofp_context_t & context)
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 			ite_gpu<1> itew;
 			itew.wthr.x = vct_index_tmp.size() / 128 + (vct_index_tmp.size() % 128 != 0);
 			itew.wthr.y = 1;
@@ -1296,7 +1296,7 @@ namespace openfpm
 				  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
 				  mgpu::ofp_context_t & context)
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			// To avoid the case where you never called setGPUInsertBuffer
 			if (n_gpu_add_block_slot == 0 || vct_add_index.size() == 0)
@@ -1330,7 +1330,7 @@ namespace openfpm
 		void flush_on_gpu_remove(
 				  mgpu::ofp_context_t & context)
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			// Add 0 to the last element to vct_nadd_index
 			vct_nrem_index.resize(vct_nrem_index.size()+1);
@@ -1993,7 +1993,7 @@ namespace openfpm
 		 */
 		void preFlush()
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 			vct_nadd_index.resize(vct_add_index.size());
 
 			if (vct_nadd_index.size() != 0)

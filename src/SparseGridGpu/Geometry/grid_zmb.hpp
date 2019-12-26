@@ -42,14 +42,14 @@ public:
     :grid_smb<dim,blockEdgeSize>(blockGrid)
     {}
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
     //Constructors from dim3 and uint3 objects
     __host__ __device__ grid_zmb(const dim3 blockDimensions)
     :grid_smb<dim,blockEdgeSize>(blockDimensions)
     {}
 
 
-#endif // __NVCC__
+#endif //
 
     __host__ __device__ grid_zmb(const grid_zmb<dim, blockEdgeSize> &other)
     :grid_smb<dim,blockEdgeSize>(other)

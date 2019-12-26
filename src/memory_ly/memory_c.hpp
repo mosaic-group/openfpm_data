@@ -416,21 +416,10 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	//! define size_type
 	typedef typename openfpm::multi_array_ref_openfpm<base,size_p::value,Tv>::size_type size_type;
 
-//#ifdef __NVCC__
 
 	array_ord<size_p::value,typename boost::multi_array<T,size_p::value>::size_type> ord;
 
 	array_asc<size_p::value> asc;
-
-//#else
-
-    //! we generate the ordering buffer ord::data = {0,N-1 ...... 1 }
-//    typedef typename generate_array<typename boost::multi_array<T,size_p::value>::size_type,size_p::value, ordering>::result ord;
-
-    // we generate the ascending buffer
-//    typedef typename generate_array<bool,size_p::value, ascending>::result asc;
-
-//#endif
 
 	public:
 

@@ -29,7 +29,7 @@
 #include <boost/type_traits/is_same.hpp>
 #include <boost/utility/value_init.hpp>
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 #pragma hd_warning_disable
 #endif
 

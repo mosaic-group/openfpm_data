@@ -126,7 +126,7 @@ namespace openfpm
 		 */
 		__device__ inline void init()
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 			if (threadIdx.x == 0)
 			{
 				vct_atomic_add = 0;
@@ -142,7 +142,7 @@ namespace openfpm
 		 */
 		__device__ inline void init_ins_inc()
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 			if (threadIdx.x == 0)
 			{
 			    int blockId = dim3CoordToInt(blockIdx, gridDim);
@@ -158,7 +158,7 @@ namespace openfpm
 		 */
 		__device__ inline void init_rem_inc()
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 			if (threadIdx.x == 0)
 			{
 			    int blockId = dim3CoordToInt(blockIdx, gridDim);
@@ -306,7 +306,7 @@ namespace openfpm
 		template <unsigned int p>
 		__device__ auto insert(Ti ele) -> decltype(vct_data.template get<p>(0))
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
             int blockId = dim3CoordToInt(blockIdx, gridDim);
 		    int slot_base = blockId;
@@ -328,7 +328,7 @@ namespace openfpm
 		 */
 		__device__ void remove(Ti ele)
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
             int blockId = dim3CoordToInt(blockIdx, gridDim);
 		    int slot_base = blockId;
@@ -350,7 +350,7 @@ namespace openfpm
 		 */
 		__device__ auto insert(Ti ele) -> decltype(vct_add_data.get(0))
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
             int blockId = dim3CoordToInt(blockIdx, gridDim);
 		    int slot_base = blockId;
@@ -370,7 +370,7 @@ namespace openfpm
 		 */
 		__device__ void remove_b(Ti ele,Ti slot_base)
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			int pos = atomicAdd(&vct_atomic_rem,1);
 			vct_rem_index.template get<0>(slot_base*nslot_rem+pos) = ele;
@@ -387,7 +387,7 @@ namespace openfpm
 		template <unsigned int p>
 		__device__ auto insert_b(Ti ele,Ti slot_base) -> decltype(vct_data.template get<p>(0))
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			int pos = atomicAdd(&vct_atomic_add,1);
 			vct_add_index.template get<0>(slot_base*nslot_add+pos) = ele;
@@ -403,7 +403,7 @@ namespace openfpm
 		 */
 		__device__ auto insert_b(Ti ele,Ti slot_base) -> decltype(vct_add_data.get(0))
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			int pos = atomicAdd(&vct_atomic_add,1);
 			vct_add_index.template get<0>(slot_base*nslot_add+pos) = ele;
@@ -419,7 +419,7 @@ namespace openfpm
 		 */
 		__device__ void flush_block_insert()
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			__syncthreads();
 
@@ -440,7 +440,7 @@ namespace openfpm
 		 */
 		__device__ void flush_block_remove()
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			__syncthreads();
 
@@ -461,7 +461,7 @@ namespace openfpm
 		 */
 		__device__ void flush_block_insert(Ti b, bool flusher)
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			__syncthreads();
 
@@ -485,7 +485,7 @@ namespace openfpm
 		 */
 		__device__ void flush_block_remove(unsigned int b, bool flusher)
 		{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 			__syncthreads();
 

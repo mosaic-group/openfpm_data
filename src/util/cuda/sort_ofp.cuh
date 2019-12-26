@@ -9,7 +9,7 @@
 #define SORT_OFP_CUH_
 
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 #include "cub/cub.cuh"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"

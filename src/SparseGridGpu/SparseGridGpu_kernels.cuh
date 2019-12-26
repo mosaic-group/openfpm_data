@@ -33,7 +33,6 @@ namespace SparseGridGpuKernels
             typename nn_blocksT>
     __global__ void tagBoundaries(IndexBufT indexBuffer, DataBufT dataBuffer, SparseGridT sparseGrid,nn_blocksT nbT)
     {
-        //todo: #ifdef __NVCC__
         constexpr unsigned int pIndex = 0;
 
         typedef typename IndexBufT::value_type IndexAggregateT;
@@ -106,7 +105,6 @@ namespace SparseGridGpuKernels
             typename nn_blocksT>
     __global__ void findNeighbours(IndexBufT indexBuffer, SparseGridT sparseGrid, nn_blocksT nn_blocks)
     {
-        //todo: #ifdef __NVCC__
         constexpr unsigned int pIndex = 0;
 
         typedef typename IndexBufT::value_type IndexAggregateT;
@@ -767,8 +765,6 @@ namespace SparseGridGpuKernels
             SparseGridT sparseGrid,
             Args... args)
     {
-        //todo: #ifdef __NVCC__
-        constexpr unsigned int pIndex = 0;
 
         typedef typename IndexBufT::value_type IndexAggregateT;
         typedef BlockTypeOf<IndexAggregateT , pIndex> IndexT;

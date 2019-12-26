@@ -206,7 +206,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		cells_nn_test.template hostToDevice<0>();
 
-#if defined(__NVCC__) && defined(USE_LOW_REGISTER_ITERATOR)
+#if (defined(__NVCC__) || defined(__HIPCC__)) && defined(USE_LOW_REGISTER_ITERATOR)
 
 		// copy to the constant memory
 		cudaMemcpyToSymbol(cells_striding,cells_nn_test.template getPointer<0>(),cells_nn_test.size()*sizeof(int));
@@ -229,7 +229,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
  			   	   	   	  size_t stop,
   	   	   	 	 	 	  cl_construct_opt opt = cl_construct_opt::Full)
 	{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 		part_ids.resize(stop - start);
 		starts.resize(stop - start);
@@ -320,7 +320,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	 */
 	void construct_domain_ids(mgpu::ofp_context_t & mgpuContext, size_t start, size_t stop, size_t g_m)
 	{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 		sorted_domain_particles_dg.resize(stop-start+1);
 
 		auto ite = sorted_domain_particles_dg.getGPUIterator();
@@ -354,7 +354,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 			   	   	   	 size_t stop,
 			   	   	   	 cl_construct_opt opt = cl_construct_opt::Full)
 	{
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 		CUDA_SAFE()
 

@@ -30,40 +30,40 @@ struct InsertBlockWrapper
 
     InsertBlockWrapper(const InsertBlockWrapper<AggregateT, pMask> &other)
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         aggregate = other.aggregate;
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
     InsertBlockWrapper<AggregateT, pMask> &operator=(const InsertBlockWrapper<AggregateT, pMask> &other)
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         aggregate = other.aggregate;
         return *this;
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
     template <unsigned int p>
     inline auto get() -> decltype(aggregate.template get<p>())
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         return aggregate.template get<p>();
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
     inline auto getMask() -> decltype(aggregate.template get<pMask>())
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         return aggregate.template get<pMask>();
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 };
 
@@ -119,14 +119,14 @@ public:
     template<unsigned int p>
     inline __device__ auto insert(unsigned int linId) -> ScalarTypeOf<AggregateBlockT, p>&
     {
-    #ifdef __NVCC__
+    #if defined(__NVCC__) || defined(__HIPCC__)
         typedef BlockTypeOf<AggregateBlockT, p> BlockT;
         unsigned int blockId = linId / BlockT::size;
         unsigned int offset = linId % BlockT::size;
         return insert<p>(blockId, offset);
-    #else // __NVCC__
+    #else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-    #endif // __NVCC__
+    #endif //
     }
 
     template<unsigned int p>
@@ -141,7 +141,7 @@ public:
 
     	decltype(blockMap.insert(0)) ec_(blockMap.private_get_data(),0);
 
-		#ifdef __NVCC__
+	#if defined(__NVCC__) || defined(__HIPCC__)
     	if (threadIdx.x % stride == 0 && threadIdx.y == 0 && threadIdx.z == 0)
     	{
     		auto ec = blockMap.insert(blockId);
@@ -157,9 +157,9 @@ public:
     	ec_.private_set_k(mem_[offset]);
 
 		return ec_/* *(decltype(blockMap.insert(0)) *)mem[offset]*/;
-		#else // __NVCC__
+		#else //
 		    std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-		#endif // __NVCC__
+		#endif //
 	}
 
     inline __device__ openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> & getblockMap()
@@ -169,38 +169,38 @@ public:
 
     inline static __device__ unsigned int getBlockId(unsigned int linId)
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         return linId / BlockTypeOf<AggregateBlockT, 0>::size;
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
     inline static __device__ unsigned int getOffset(unsigned int linId)
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         return linId % BlockTypeOf<AggregateBlockT, 0>::size;
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
     inline __device__ void init()
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         blockMap.init();
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
     inline __device__ void flush_block_insert()
     {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
         blockMap.flush_block_insert();
-#else // __NVCC__
+#else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
     }
 
     template<typename BitMaskT>
@@ -228,19 +228,19 @@ public:
 
     inline __device__ void remove(unsigned int linId)
     {
-    #ifdef __NVCC__
+    #if defined(__NVCC__) || defined(__HIPCC__)
         typedef BlockTypeOf<AggregateBlockT, pMask> BlockT;
         unsigned int blockId = linId / BlockT::size;
         unsigned int offset = linId % BlockT::size;
         remove(blockId, offset);
-    #else // __NVCC__
+    #else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-    #endif // __NVCC__
+    #endif //
     }
 
     inline __device__ void remove(unsigned int blockId, unsigned int offset)
     {
-    #ifdef __NVCC__
+    #if defined(__NVCC__) || defined(__HIPCC__)
     //    const auto & aggregate = blockMap.get(blockId);
     //    const auto & block = aggregate.template get<p>();
     //    const auto & mask = aggregate.template get<pMask>();
@@ -253,9 +253,9 @@ public:
         const auto sid = blockMap.get_sparse(blockId);
         blockMap.template get<pMask>(sid)[offset] = 0;
 
-    #else // __NVCC__
+    #else //
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-    #endif // __NVCC__
+    #endif //
     }
 
 #ifdef SE_CLASS1
@@ -289,14 +289,14 @@ template<unsigned int p>
 inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 ::get(unsigned int linId) const -> ScalarTypeOf<AggregateBlockT, p>
 {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
     typedef BlockTypeOf<AggregateBlockT, p> BlockT;
     unsigned int blockId = linId / BlockT::size;
     unsigned int offset = linId % BlockT::size;
     return get<p>(blockId, offset);
-#else // __NVCC__
+#else //
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
 }
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
@@ -304,15 +304,7 @@ template<unsigned int p>
 inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 ::get(unsigned int blockId, unsigned int offset) const -> ScalarTypeOf<AggregateBlockT, p>
 {
-#ifdef __NVCC__
-//    const auto & aggregate = blockMap.get(blockId);
-//    const auto & block = aggregate.template get<p>();
-//    const auto & mask = aggregate.template get<pMask>();
-//    // Now check if the element actually exists
-//    return exist(mask[offset])
-//                ? block[offset]
-//                : blockMap.template getBackground<p>()[offset];
-////    return blockMap.template get<p>(blockId)[offset];
+#if defined(__NVCC__) || defined(__HIPCC__)
 
     const auto sid = blockMap.get_sparse(blockId);
     const auto & block = blockMap.template get_ele<p>(sid.id)[offset];
@@ -322,9 +314,9 @@ inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
                 ? block
                 : blockMap.template getBackground<p>()[offset];
 
-#else // __NVCC__
+#else //
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
 }
 
 
@@ -332,11 +324,11 @@ template<typename AggregateBlockT, typename indexT, template<typename> class lay
 inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 ::getBlock(unsigned int blockId) -> decltype(blockMap.get(0))
 {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
     return blockMap.get(blockId);
-#else // __NVCC__
+#else //
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
 }
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
@@ -345,14 +337,14 @@ inline __device__ ScalarTypeOf<AggregateBlockT, p> & BlockMapGpu_ker<AggregateBl
 ::getReference(const unsigned int linId)
 {
     // Only call this if you are TOTALLY SURE the element exists! Otherwise KABOOOOOM! :D
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
     typedef BlockTypeOf<AggregateBlockT, p> BlockT;
     unsigned int blockId = linId / BlockT::size;
     unsigned int offset = linId % BlockT::size;
     return getReference<p>(blockId, offset);
-#else // __NVCC__
+#else //
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
 }
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
@@ -361,11 +353,11 @@ inline __device__ ScalarTypeOf<AggregateBlockT, p> & BlockMapGpu_ker<AggregateBl
 ::getReference(const unsigned int blockId, const unsigned int offset)
 {
     // Only call this if you are TOTALLY SURE the element exists! Otherwise KABOOOOOM! :D
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
     return blockMap.template get<p>(blockId)[offset];
-#else // __NVCC__
+#else //
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
 }
 
 
@@ -374,15 +366,15 @@ template<unsigned int p>
 inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 ::insert(unsigned int blockId, unsigned int offset) -> ScalarTypeOf<AggregateBlockT, p>&
 {
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
     auto aggregate = blockMap.insert(blockId);
     auto &block = aggregate.template get<p>();
     auto &mask = aggregate.template get<pMask>();
     setExist(mask[offset]);
     return block[offset];
-#else // __NVCC__
+#else //
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
-#endif // __NVCC__
+#endif //
 }
 
 

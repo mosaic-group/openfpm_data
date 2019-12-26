@@ -8,7 +8,7 @@
 #ifndef SCAN_OFP_HPP_
 #define SCAN_OFP_HPP_
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 #include "cub/cub.cuh"
 #include "util/cuda/moderngpu/kernel_scan.hxx"

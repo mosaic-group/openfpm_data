@@ -308,7 +308,7 @@ __device__ __host__ cnt_type encode_phase_id(cnt_type ph_id,cnt_type pid)
 
 /////////////////////////// THIS ONLY WORK IF NVCC IS COMPILING THIS //////////////////////////////////////////////////////
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
 
 template<bool is_sparse,unsigned int dim, typename pos_type,
          typename cnt_type, typename ids_type, typename transform>
