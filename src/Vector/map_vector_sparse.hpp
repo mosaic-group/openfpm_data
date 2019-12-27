@@ -15,11 +15,13 @@
 #include <iostream>
 #include <limits>
 
-#if defined(__NVCC__) || defined(__HIPCC__)
+#if defined(__NVCC__)
 #include "util/cuda/moderngpu/kernel_scan.hxx"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #include "util/cuda/moderngpu/kernel_segreduce.hxx"
 #include "util/cuda/moderngpu/kernel_merge.hxx"
+#endif
+#if defined(__NVCC__) || defined(__HIPCC__)
 #include "util/cuda/kernels.cuh"
 #endif
 
