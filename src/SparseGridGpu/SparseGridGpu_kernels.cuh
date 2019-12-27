@@ -765,6 +765,7 @@ namespace SparseGridGpuKernels
             SparseGridT sparseGrid,
             Args... args)
     {
+	constexpr unsigned int pIndex = 0;
 
         typedef typename IndexBufT::value_type IndexAggregateT;
         typedef BlockTypeOf<IndexAggregateT , pIndex> IndexT;
