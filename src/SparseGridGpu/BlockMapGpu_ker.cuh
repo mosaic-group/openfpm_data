@@ -108,7 +108,7 @@ public:
     template<unsigned int p>
     inline __device__ auto get(unsigned int blockId, unsigned int offset) const -> ScalarTypeOf<AggregateBlockT, p>;
 
-    inline __device__ auto getBlock(unsigned int blockId) -> decltype(blockMap.get(0));
+    inline __device__ __host__ auto getBlock(unsigned int blockId) -> decltype(blockMap.get(0));
 
     template<unsigned int p>
     inline __device__ ScalarTypeOf<AggregateBlockT, p> & getReference(unsigned int linId);
@@ -165,6 +165,11 @@ public:
     inline __device__ openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> & getblockMap()
     {
     	return blockMap;
+    }
+
+    inline __device__ const openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> & getblockMap() const
+    {
+        return blockMap;
     }
 
     inline static __device__ unsigned int getBlockId(unsigned int linId)
@@ -321,7 +326,7 @@ inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
-inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
+inline __device__ __host__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 ::getBlock(unsigned int blockId) -> decltype(blockMap.get(0))
 {
 #if defined(__NVCC__) || defined(__HIPCC__)

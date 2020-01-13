@@ -8,18 +8,18 @@
 #ifndef MAP_VECTOR_SPARSE_CUDA_KERNELS_CUH_
 #define MAP_VECTOR_SPARSE_CUDA_KERNELS_CUH_
 
-#if defined(__NVCC__) || defined(__HIPCC__)
-
+#if defined(__NVCC__)
 #include "util/cuda/cub/util_type.cuh"
 #include "util/cuda/cub/block/block_scan.cuh"
 #include "util/cuda/moderngpu/operators.hxx"
+#else
+#include "hipcub/hipcub.hpp"
+#endif
 #include "boost/mpl/int.hpp"
 #include "boost/mpl/at.hpp"
 #include "boost/mpl/vector.hpp"
 #include "util/for_each_ref.hpp"
 #include "boost/mpl/range_c.hpp"
-
-#endif
 
 template<typename type_t>
 struct rightOperand_t  : public std::binary_function<type_t, type_t, type_t> {
@@ -88,8 +88,12 @@ struct sadd_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-#if defined(__NVCC__) || defined(__HIPCC__)
-	template<typename red_type> using op_red = mgpu::plus_t<red_type>;
+#if defined(__HIPCC__)
+
+        template<typename red_type> using op_red = rocprim::plus<red_type>;
+
+#else
+        template<typename red_type> using op_red = mgpu::plus_t<red_type>;
 #endif
 
 	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
@@ -171,12 +175,20 @@ struct smax_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-#if defined(__NVCC__) || defined(__HIPCC__)
+#if defined(__NVCC__)
 	template<typename red_type> using op_red = mgpu::maximum_t<red_type>;
+#else
+        template<typename red_type> using op_red = smax_<0>;
 #endif
 
 	template<typename red_type>
-	__device__ __host__ static red_type red(red_type & r1, red_type & r2)
+        __device__ __host__ red_type operator()(const red_type & r1, const red_type & r2)
+        {
+                return red(r1,r2);
+        }
+
+	template<typename red_type>
+	__device__ __host__ static red_type red(const red_type & r1, const red_type & r2)
 	{
 		return (r1 < r2)?r2:r1;
 	}
@@ -196,7 +208,7 @@ struct smax_
 
 template<typename type_t, unsigned int blockLength>
 struct maximum_block_t  : public std::binary_function<type_t, type_t, type_t> {
-  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  __device__ __host__ type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
@@ -246,7 +258,7 @@ struct smin_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-#if defined(__NVCC__) || defined(__HIPCC__)
+#if defined(__NVCC__)
 	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
 #endif
 
@@ -270,7 +282,7 @@ struct smin_
 
 template<typename type_t, unsigned int blockLength>
 struct minimum_block_t  : public std::binary_function<type_t, type_t, type_t> {
-  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  __device__ __host__ type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
@@ -318,7 +330,7 @@ struct smin_block_
 
 template<typename type_t>
 struct bitwiseOr_t  : public std::binary_function<type_t, type_t, type_t> {
-  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  __device__ __host__ type_t operator()(type_t a, type_t b) const {
     return a|b;
   }
 };
@@ -353,7 +365,9 @@ struct sstart_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+#ifdef __NVCC__
+        template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+#endif
 
 	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
 	{
@@ -378,7 +392,9 @@ struct sstop_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+#ifdef __NVCC__
+        template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+#endif
 
 	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
 	{
@@ -403,7 +419,9 @@ struct snum_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+#ifdef __NVCC__
+        template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+#endif
 
 	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
 	{
@@ -539,7 +557,7 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 	typedef typename std::remove_reference<decltype(vct_index.template get<0>(0))>::type index_type;
 
     // Specialize BlockScan for a 1D block of 256 threads on type int
-    typedef cub::BlockScan<int, block_dim> BlockScan;
+    typedef hipcub::BlockScan<int, block_dim> BlockScan;
     // Allocate shared memory for BlockScan
     __shared__ typename BlockScan::TempStorage temp_storage;
 
@@ -617,7 +635,7 @@ __global__ void solve_conflicts_remove(vector_index_type vct_index,
 	typedef typename std::remove_reference<decltype(vct_index.template get<0>(0))>::type index_type;
 
     // Specialize BlockScan for a 1D block of 256 threads on type int
-    typedef cub::BlockScan<int, block_dim> BlockScan;
+    typedef hipcub::BlockScan<int, block_dim> BlockScan;
     // Allocate shared memory for BlockScan
     __shared__ typename BlockScan::TempStorage temp_storage;
 

@@ -35,8 +35,10 @@ namespace openfpm
 		index_type id;
 	};
 
-	static __shared__ int vct_atomic_add;
-	static __shared__ int vct_atomic_rem;
+#ifdef __NVCC__ // this is supported only on CUDA
+        static __shared__ int vct_atomic_add;
+        static __shared__ int vct_atomic_rem;
+#endif
 
 	template<typename T,
 			 typename Ti,
@@ -126,6 +128,13 @@ namespace openfpm
 		 */
 		__device__ inline void init()
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 			if (threadIdx.x == 0)
 			{
@@ -142,6 +151,13 @@ namespace openfpm
 		 */
 		__device__ inline void init_ins_inc()
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 			if (threadIdx.x == 0)
 			{
@@ -158,6 +174,13 @@ namespace openfpm
 		 */
 		__device__ inline void init_rem_inc()
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 			if (threadIdx.x == 0)
 			{
@@ -180,7 +203,7 @@ namespace openfpm
 		 * \return the element value requested
 		 *
 		 */
-		__device__ inline openfpm::sparse_index<Ti> get_sparse(Ti id) const
+		__device__ __host__ inline openfpm::sparse_index<Ti> get_sparse(Ti id) const
 		{
 			Ti di;
 			this->_branchfree_search(id,di);
@@ -209,7 +232,7 @@ namespace openfpm
 		 *
 		 */
 		template <unsigned int p>
-		__device__ inline auto get(Ti id) const -> decltype(vct_data.template get<p>(id))
+		__host__ __device__ inline auto get(Ti id) const -> decltype(vct_data.template get<p>(id))
 		{
 			Ti di;
 			this->_branchfree_search(id,di);
@@ -306,6 +329,14 @@ namespace openfpm
 		template <unsigned int p>
 		__device__ auto insert(Ti ele) -> decltype(vct_data.template get<p>(0))
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 
             int blockId = dim3CoordToInt(blockIdx, gridDim);
@@ -328,6 +359,13 @@ namespace openfpm
 		 */
 		__device__ void remove(Ti ele)
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 
             int blockId = dim3CoordToInt(blockIdx, gridDim);
@@ -350,6 +388,13 @@ namespace openfpm
 		 */
 		__device__ auto insert(Ti ele) -> decltype(vct_add_data.get(0))
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 
             int blockId = dim3CoordToInt(blockIdx, gridDim);
@@ -370,6 +415,13 @@ namespace openfpm
 		 */
 		__device__ void remove_b(Ti ele,Ti slot_base)
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 
 			int pos = atomicAdd(&vct_atomic_rem,1);
@@ -387,6 +439,13 @@ namespace openfpm
 		template <unsigned int p>
 		__device__ auto insert_b(Ti ele,Ti slot_base) -> decltype(vct_data.template get<p>(0))
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 
 			int pos = atomicAdd(&vct_atomic_add,1);
@@ -403,6 +462,13 @@ namespace openfpm
 		 */
 		__device__ auto insert_b(Ti ele,Ti slot_base) -> decltype(vct_add_data.get(0))
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 
 			int pos = atomicAdd(&vct_atomic_add,1);
@@ -419,6 +485,13 @@ namespace openfpm
 		 */
 		__device__ void flush_block_insert()
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 
 			__syncthreads();
@@ -440,6 +513,13 @@ namespace openfpm
 		 */
 		__device__ void flush_block_remove()
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 
 			__syncthreads();
@@ -461,6 +541,13 @@ namespace openfpm
 		 */
 		__device__ void flush_block_insert(Ti b, bool flusher)
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 
 			__syncthreads();
@@ -485,6 +572,13 @@ namespace openfpm
 		 */
 		__device__ void flush_block_remove(unsigned int b, bool flusher)
 		{
+#if defined(__HIPCC__)
+
+                        extern __shared__ int vct_atomic_add;
+                        extern __shared__ int vct_atomic_rem;
+
+#endif
+
 #if defined(__NVCC__) || defined(__HIPCC__)
 
 			__syncthreads();

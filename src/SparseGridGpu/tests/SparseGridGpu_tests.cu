@@ -6,8 +6,10 @@
 
 #define DISABLE_MPI_WRITTERS
 
+#include <hip/hip_runtime.h>
+#include "config.h"
 #include <boost/test/unit_test.hpp>
-#include "SparseGridGpu/SparseGridGpu.hpp"
+#include "SparseGridGpu/SparseGridGpu.cuh"
 #include "SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh"
 #include "SparseGridGpu/tests/utils/SparseGridGpu_util_test.cuh"
 
@@ -228,7 +230,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	sparseGrid.template setBackgroundValue<0>(666);
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 
-	insertValues<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(insertValues<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel());
 
 	mgpu::ofp_context_t ctx;
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
@@ -237,7 +239,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(4 * 64);
 
-	copyBlocksToOutput<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(copyBlocksToOutput<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -281,7 +283,7 @@ BOOST_AUTO_TEST_CASE(testInsert3D)
 
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 
-	insertValues<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(insertValues<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel());
 
 	mgpu::ofp_context_t ctx;
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
@@ -290,7 +292,7 @@ BOOST_AUTO_TEST_CASE(testInsert3D)
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(sparseGrid.dim3SizeToInt(gridSize) * 64);
 
-	copyBlocksToOutput<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(copyBlocksToOutput<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -327,25 +329,25 @@ BOOST_AUTO_TEST_CASE(testTagBoundaries)
 
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 	dim3 pt1(0, 0, 0);
-	CUDA_LAUNCH_DIM3((insertOneValue<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), pt1, 1);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((insertOneValue<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), pt1, 1);
 	dim3 pt2(6, 6, 0);
-	CUDA_LAUNCH_DIM3((insertOneValue<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), pt2, 1);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((insertOneValue<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), pt2, 1);
 	dim3 pt3(7, 6, 0);
-	CUDA_LAUNCH_DIM3((insertOneValue<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), pt3, 1);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((insertOneValue<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), pt3, 1);
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 	dim3 pt4(8, 6, 0);
-	CUDA_LAUNCH_DIM3((insertOneValue<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), pt4, 1);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((insertOneValue<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), pt4, 1);
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 	/////////
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 	for (int y = 9; y <= 11; y++)
 	{
 		dim3 pt1(6, y, 0);
-		CUDA_LAUNCH_DIM3((insertOneValue<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), pt1, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((insertOneValue<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), pt1, 1);
 		dim3 pt2(7, y, 0);
-		CUDA_LAUNCH_DIM3((insertOneValue<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), pt2, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((insertOneValue<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), pt2, 1);
 	}
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
@@ -353,9 +355,9 @@ BOOST_AUTO_TEST_CASE(testTagBoundaries)
 	for (int y = 9; y <= 11; y++)
 	{
 		dim3 pt1(8, y, 0);
-		CUDA_LAUNCH_DIM3((insertOneValue<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), pt1, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((insertOneValue<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), pt1, 1);
 		dim3 pt2(9, y, 0);
-		CUDA_LAUNCH_DIM3((insertOneValue<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), pt2, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((insertOneValue<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), pt2, 1);
 	}
 	sparseGrid.template flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
@@ -371,7 +373,7 @@ BOOST_AUTO_TEST_CASE(testTagBoundaries)
 	openfpm::vector_gpu<AggregateT> output;
 	output.resize(4 * 64);
 
-	CUDA_LAUNCH_DIM3((copyToOutputIfPadding<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((copyToOutputIfPadding<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -423,49 +425,49 @@ BOOST_AUTO_TEST_CASE(testTagBoundaries2)
 	{
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 		dim3 ptd1(6, 6, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd1, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd1, 1);
 		dim3 ptd2(6, 7, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd2, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd2, 1);
 		dim3 ptd3(7, 6, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd3, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd3, 1);
 		dim3 ptd4(7, 7, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd4, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd4, 1);
 		sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 	}
 	{
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 		dim3 ptd1(8, 6, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd1, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd1, 1);
 		dim3 ptd2(9, 6, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd2, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd2, 1);
 		dim3 ptd3(8, 7, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd3, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd3, 1);
 		dim3 ptd4(9, 7, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd4, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd4, 1);
 		sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 	}
 	{
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 		dim3 ptd1(6, 8, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd1, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd1, 1);
 		dim3 ptd2(7, 8, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd2, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd2, 1);
 		dim3 ptd3(6, 9, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd3, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd3, 1);
 		dim3 ptd4(7, 9, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd4, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd4, 1);
 		sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 	}
 	{
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 		dim3 ptd1(8, 8, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd1, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd1, 1);
 		dim3 ptd2(8, 9, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd2, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd2, 1);
 		dim3 ptd3(9, 8, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd3, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd3, 1);
 		dim3 ptd4(9, 9, 0);
-		insertOneValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), ptd4, 1);
+		hipLaunchKernelGGL(HIP_KERNEL_NAME(insertOneValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), ptd4, 1);
 		sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 	}
 	///////
@@ -480,7 +482,7 @@ BOOST_AUTO_TEST_CASE(testTagBoundaries2)
 	openfpm::vector_gpu<AggregateT> output;
 	output.resize(4 * 64);
 
-	copyToOutputIfPadding<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(copyToOutputIfPadding<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -529,17 +531,17 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 
 	// Insert values on the grid
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-	insertConstantValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(insertConstantValue<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), 0);
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 	sparseGrid.tagBoundaries(ctx);
 
-    cudaDeviceSynchronize();
+    hipDeviceSynchronize();
 
     sparseGrid.template applyBoundaryStencils<BoundaryStencilSetXRescaled<dim,0,0>>(0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
 
-	cudaDeviceSynchronize();
+	hipDeviceSynchronize();
 
         // Now apply the laplacian operator
 	const unsigned int maxIter = 1000;
@@ -547,9 +549,9 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 	for (unsigned int iter=0; iter<maxIter; ++iter)
 	{
 		sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(STENCIL_MODE_INPLACE, 0.1);
-        cudaDeviceSynchronize();
+        hipDeviceSynchronize();
         sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(STENCIL_MODE_INPLACE, 0.1);
-        cudaDeviceSynchronize();
+        hipDeviceSynchronize();
 	}
 
 	sparseGrid.deviceToHost<0,1>();
@@ -558,7 +560,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 	openfpm::vector_gpu<AggregateT> output;
 	output.resize(4 * 64);
 
-	copyBlocksToOutput<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(copyBlocksToOutput<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -603,11 +605,11 @@ BOOST_AUTO_TEST_CASE(testStencilHeatInsert)
 
 	// Insert values on the grid
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-	CUDA_LAUNCH_DIM3((insertConstantValue2<0,1>),gridSize, blockSizeInsert,sparseGrid.toKernel(), 0);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((insertConstantValue2<0,1>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), 0);
 	sparseGrid.flush < smax_< 0 >, smax_<1>> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-	CUDA_LAUNCH_DIM3((insertBoundaryValuesHeat<0>),gridSize, blockSizeInsert,sparseGrid.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((insertBoundaryValuesHeat<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel());
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
@@ -630,7 +632,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeatInsert)
 	openfpm::vector_gpu<AggregateT> output;
 	output.resize(4 * 64);
 
-	CUDA_LAUNCH_DIM3((copyBlocksToOutput<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((copyBlocksToOutput<0>)), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -734,7 +736,7 @@ BOOST_AUTO_TEST_CASE(testFlushInsert)
 
 	grid_key_dx<3> key({3,6,7});
 
-	sparse_grid_get_test<<<1,1>>>(sparseGrid.toKernel(),key,(float *)mem.getDevicePointer());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(sparse_grid_get_test), dim3(1), dim3(1), 0, 0, sparseGrid.toKernel(),key,(float *)mem.getDevicePointer());
 
 	mem.deviceToHost();
 
@@ -742,7 +744,7 @@ BOOST_AUTO_TEST_CASE(testFlushInsert)
 
 	grid_key_dx<3> key2({131,76,17});
 
-	sparse_grid_get_test<<<1,1>>>(sparseGrid.toKernel(),key2,(float *)mem.getDevicePointer());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(sparse_grid_get_test), dim3(1), dim3(1), 0, 0, sparseGrid.toKernel(),key2,(float *)mem.getDevicePointer());
 
 	mem.deviceToHost();
 
@@ -900,9 +902,7 @@ void test_convolution_3x3x3()
 
     // Insert values on the grid
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
-            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+    hipLaunchKernelGGL(HIP_KERNEL_NAME((insertSphere3D_radius<0>)), dim3(gridSize), dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1), 0, 0, sparseGrid.toKernel(), start,64, 56, 1);
 
     sparseGrid.template flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
@@ -965,9 +965,7 @@ void test_convolution_3x3x3_no_shared()
 
     // Insert values on the grid
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
-            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+    hipLaunchKernelGGL(HIP_KERNEL_NAME((insertSphere3D_radius<0>)), dim3(gridSize), dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1), 0, 0, sparseGrid.toKernel(), start,64, 56, 1);
 
     sparseGrid.template flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
@@ -1066,9 +1064,7 @@ BOOST_AUTO_TEST_CASE(test_sparse_grid_iterator_sub_host)
 	// Sphere 1
 	grid_key_dx<3,int> start1({256,256,256});
 	sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-	CUDA_LAUNCH_DIM3((insertSphere3D<0>),
-					 gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
-					 sparseGrid.toKernel(), start1, 32, 0, 1);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((insertSphere3D<0>)), dim3(gridSize), dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1), 0, 0, sparseGrid.toKernel(), start1, 32, 0, 1);
 
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
@@ -1121,9 +1117,7 @@ BOOST_AUTO_TEST_CASE(test_sparse_grid_iterator_host)
 	// Sphere 1
 	grid_key_dx<3,int> start1({256,256,256});
 	sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-	CUDA_LAUNCH_DIM3((insertSphere3D<0>),
-					 gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
-					 sparseGrid.toKernel(), start1, 64, 32, 1);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((insertSphere3D<0>)), dim3(gridSize), dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1), 0, 0, sparseGrid.toKernel(), start1, 64, 32, 1);
 
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
@@ -1172,9 +1166,7 @@ BOOST_AUTO_TEST_CASE(test_pack_request)
 
     // Insert values on the grid
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
-            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+    hipLaunchKernelGGL(HIP_KERNEL_NAME((insertSphere3D_radius<0>)), dim3(gridSize), dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1), 0, 0, sparseGrid.toKernel(), start,64, 56, 1);
 
     sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
     sparseGrid.template deviceToHost<0>();
@@ -1212,9 +1204,7 @@ BOOST_AUTO_TEST_CASE(test_pack_request_with_iterator)
 
     // Insert values on the grid
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
-            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+    hipLaunchKernelGGL(HIP_KERNEL_NAME((insertSphere3D_radius<0>)), dim3(gridSize), dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1), 0, 0, sparseGrid.toKernel(), start,64, 56, 1);
 
     sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
@@ -1296,9 +1286,7 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_remove_test)
 
     // Insert values on the grid
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
-    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
-            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+    hipLaunchKernelGGL(HIP_KERNEL_NAME((insertSphere3D_radius<0>)), dim3(gridSize), dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1), 0, 0, sparseGrid.toKernel(), start,64, 56, 1);
 
     sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
@@ -1517,9 +1505,7 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
 
     // Insert values on the grid
     sparseGridSrc.setGPUInsertBuffer(gridSize,dim3(1));
-    CUDA_LAUNCH_DIM3((insertSphere3D_radiusV<0>),
-            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGridSrc.toKernel(), start,64, 56, 1);
+    hipLaunchKernelGGL(HIP_KERNEL_NAME((insertSphere3D_radiusV<0>)), dim3(gridSize), dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1), 0, 0, sparseGridSrc.toKernel(), start,64, 56, 1);
 
     sparseGridSrc.flush < smax_< 0 >, smax_<1> > (ctx, flush_type::FLUSH_ON_DEVICE);
 
@@ -1629,9 +1615,7 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
 
     // Insert values on the grid
     sparseGridSrc.setGPUInsertBuffer(gridSize,dim3(1));
-    CUDA_LAUNCH_DIM3((removeSphere3D_even_radiusV<0>),
-            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGridSrc.toKernel(), start,64, 56, 1);
+    hipLaunchKernelGGL(HIP_KERNEL_NAME((removeSphere3D_even_radiusV<0>)), dim3(gridSize), dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1), 0, 0, sparseGridSrc.toKernel(), start,64, 56, 1);
 
     pack_unpack_test(sparseGridDst,sparseGridSrc,
 			 	 	 box1_dst,box2_dst,
@@ -1758,9 +1742,9 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 	CUDA_LAUNCH_DIM3((insertSphere3D<0>),
 					 gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
 					 sparseGrid.toKernel(), start1, 64, 32, 1);
-	cudaDeviceSynchronize();
+	hipDeviceSynchronize();
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-	cudaDeviceSynchronize();
+	hipDeviceSynchronize();
 
 	// Sphere 2
 	grid_key_dx<3,int> start2({192,192,192});
@@ -1768,9 +1752,9 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 	CUDA_LAUNCH_DIM3((insertSphere3D<0>),
 					 gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
 					 sparseGrid.toKernel(), start2, 64, 44, 1);
-	cudaDeviceSynchronize();
+	hipDeviceSynchronize();
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-	cudaDeviceSynchronize();
+	hipDeviceSynchronize();
 
 	// Sphere 3
 	grid_key_dx<3,int> start3({340,192,192});
@@ -1778,9 +1762,9 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 	CUDA_LAUNCH_DIM3((insertSphere3D<0>),
 					 gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
 					 sparseGrid.toKernel(), start3, 20, 15, 1);
-	cudaDeviceSynchronize();
+	hipDeviceSynchronize();
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
-	cudaDeviceSynchronize();
+	hipDeviceSynchronize();
 	///// /////
 
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
@@ -1790,7 +1774,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 	sparseGrid.template applyBoundaryStencils<BoundaryStencilSetXRescaled<dim,0,0>>(
 			192, 384,
 			0.0, 10.0);
-	cudaDeviceSynchronize();
+	hipDeviceSynchronize();
 
 	// Now apply the laplacian operator
 //        const unsigned int maxIter = 1000;
@@ -1800,9 +1784,9 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 		for (int innerIter=0; innerIter<10; ++innerIter)
 		{
 			sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(STENCIL_MODE_INPLACE, 0.1);
-			cudaDeviceSynchronize();
+			hipDeviceSynchronize();
 			sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(STENCIL_MODE_INPLACE, 0.1);
-			cudaDeviceSynchronize();
+			hipDeviceSynchronize();
 		}
 	}
 
@@ -1863,14 +1847,14 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3D)
 			sparseGrid.toKernel(), start, 64, 56, 1);
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
-	cudaDeviceSynchronize();
+	hipDeviceSynchronize();
 
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 	sparseGrid.tagBoundaries(ctx);
 
 	sparseGrid.template applyBoundaryStencils<BoundaryStencilSetX<dim,0,0>>();
 
-	cudaDeviceSynchronize();
+	hipDeviceSynchronize();
 
 	sparseGrid.template deviceToHost<0>();
 

@@ -60,12 +60,14 @@ public:
         }
     }
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(__HIPCC__)
     //Constructors from dim3 and uint3 objects
     __host__ __device__ grid_smb(const dim3 blockDimensions)
     {
     	unsigned int i = 0;
+#ifndef __HIPCC__
         assert(dim <= 3);
+#endif
         blockSz[i] = blockDimensions.x;
         sz[i] = blockSz[i] * blockEdgeSize;
         if (dim > 1)

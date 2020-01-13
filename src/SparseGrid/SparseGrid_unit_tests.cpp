@@ -4,6 +4,7 @@
  *  Created on: Oct 22, 2017
  *      Author: i-bird
  */
+#include "config.h"
 
 #ifndef OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRID_UNIT_TESTS_CPP_
 #define OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRID_UNIT_TESTS_CPP_

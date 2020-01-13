@@ -11,7 +11,7 @@
 #include "Vector/map_vector.hpp"
 #include "Vector/cuda/map_vector_sparse_cuda_ker.cuh"
 #include "Vector/cuda/map_vector_sparse_cuda_kernels.cuh"
-#include "util/cuda/ofp_context.hxx"
+#include "util/cuda/ofp_context.cuh"
 #include <iostream>
 #include <limits>
 
@@ -151,7 +151,7 @@ namespace openfpm
                 block_functor & blf,
                 mgpu::ofp_context_t & context)
         {
-#if defined(__NVCC__) || defined(__HIPCC__)
+#if defined(__NVCC__)
             typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
             typedef typename boost::mpl::at<typename vector_data_type::value_type::type,typename reduction_type::prop>::type red_type;
             typedef typename reduction_type::template op_red<red_type> red_op;
@@ -166,6 +166,10 @@ namespace openfpm
                     (int *)segment_offset.template getDeviceBuffer<1>(), segment_offset.size(),
                     (red_type *)vector_data_red.template getDeviceBuffer<reduction_type::prop::value>(),
                     red_op(), init, context);
+#elif defined(__HIPCC__)
+
+	    std::cout << __FILE__ << ":" << __LINE__ << " error: on hip segmented reduce has not implemented yet" << std::endl;
+
 #else
     std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
 #endif
@@ -1200,11 +1204,17 @@ namespace openfpm
 
 			vct_index_dtmp.resize(itew.wthr.x);
 
+#if defined(__HIPCC__)
+			std::cout << __FILE__ << ":" << __LINE__ << " on hipcc merge operation has not implemented yet "  << std::endl;
+#else
+
 			// we merge with vct_index with vct_add_index_unique in vct_merge_index, vct_intex_tmp2 contain the merging index
 			//
 			mgpu::merge((Ti *)vct_index.template getDeviceBuffer<0>(),(Ti *)vct_m_index.template getDeviceBuffer<0>(),vct_index.size(),
 						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp4.template getDeviceBuffer<0>(),vct_add_index_unique.size(),
 						(Ti *)vct_merge_index.template getDeviceBuffer<0>(),(Ti *)vct_merge_index_map.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
+
+#endif
 
 #endif
 		}
@@ -1367,7 +1377,7 @@ namespace openfpm
 										n_gpu_rem_block_slot);
 
 			// now we sort
-			mergesort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
+			openfpm::sort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
 					vct_add_index_cont_0.size(), mgpu::template less_t<Ti>(), context);
 
 			auto ite = vct_add_index_cont_0.getGPUIterator();
@@ -1389,7 +1399,7 @@ namespace openfpm
 
 			vct_add_index_unique.resize(n_ele_unique);
 
-			mgpu::mergesort((Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
+			openfpm::sort((Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
 							vct_add_index_unique.size(),mgpu::template less_t<Ti>(),context);
 
 			// Then we merge the two list vct_index and vct_add_index_unique
@@ -1418,11 +1428,19 @@ namespace openfpm
 
 			vct_index_dtmp.resize(itew.wthr.x);
 
-			// we merge with vct_index with vct_add_index_unique in vct_index_tmp, vct_intex_tmp2 contain the merging index
-			//
-			mgpu::merge((Ti *)vct_index.template getDeviceBuffer<0>(),(Ti *)vct_m_index.template getDeviceBuffer<0>(),vct_index.size(),
-						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),vct_add_index_unique.size(),
-						(Ti *)vct_index_tmp.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp2.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
+#ifdef __HIPCC__
+
+			std::cout << __FILE__ << ":" << __LINE__ << " error hipcc does not have the operation merge " << std::endl;
+
+#else
+
+                        // we merge with vct_index with vct_add_index_unique in vct_index_tmp, vct_intex_tmp2 contain the merging index
+                        //
+                        mgpu::merge((Ti *)vct_index.template getDeviceBuffer<0>(),(Ti *)vct_m_index.template getDeviceBuffer<0>(),vct_index.size(),
+                                                (Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),vct_add_index_unique.size(),
+                                                (Ti *)vct_index_tmp.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp2.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
+
+#endif
 
 			vct_index_tmp3.resize(128*itew.wthr.x);
 

@@ -1667,7 +1667,7 @@ template<typename orig,
 		 typename exp4,
 		 unsigned int op2,
 		 typename check = typename std::enable_if<point_expression_op<orig,exp1,exp2,op1>::nvals == 1 || point_expression_op<orig,exp3,exp4,op2>::nvals == 1 >::type >
-inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL>
+__host__ __device__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL>
 operator*(const point_expression_op<orig,exp1,exp2,op1> & va, const point_expression_op<orig,exp3,exp4,op2> & vb)
 {
 	point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression_op<orig,exp3,exp4,op2>,POINT_MUL> exp_sum(va,vb);
@@ -1774,7 +1774,7 @@ public:
 	 * \param d array of dimension dim
 	 *
 	 */
-	inline point_expression(T (& d)[dim])
+	__device__ __host__ inline point_expression(T (& d)[dim])
 	:d(d)
 	{
 	}

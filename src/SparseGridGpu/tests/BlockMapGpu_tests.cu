@@ -4,6 +4,8 @@
 
 #define BOOST_TEST_DYN_LINK
 
+#include <hip/hip_runtime.h>
+#include "config.h"
 #include <boost/test/unit_test.hpp>
 #include "SparseGridGpu/BlockMapGpu.hpp"
 #include "SparseGridGpu/BlockMapGpu_ker.cuh"
@@ -106,7 +108,7 @@ BOOST_AUTO_TEST_CASE(testBackground)
 	// Get output
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(gridSize * blockSize);
-	copyBlocksToOutput<0> <<< gridSize, blockSize >>> (sparseGrid.toKernel(), output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(copyBlocksToOutput<0>), dim3(gridSize), dim3(blockSize), 0, 0, sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -139,7 +141,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
 	// Insert values
-	insertValues<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(insertValues<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, blockMap.toKernel());
 
 	// Flush inserts
 	mgpu::ofp_context_t ctx;
@@ -149,7 +151,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(gridSizeRead * blockSizeRead);
 
-	copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (blockMap.toKernel(), output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(copyBlocksToOutput<0>), dim3(gridSizeRead), dim3(blockSizeRead), 0, 0, blockMap.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	blockMap.template deviceToHost<0>();
@@ -189,7 +191,7 @@ BOOST_AUTO_TEST_CASE(testInsert_halfBlock) //todo
 	blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
 	// Insert values
-	insertValuesHalfBlock<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(insertValuesHalfBlock<0>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, blockMap.toKernel());
 
 	// Flush inserts
 	mgpu::ofp_context_t ctx;
@@ -199,7 +201,7 @@ BOOST_AUTO_TEST_CASE(testInsert_halfBlock) //todo
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(gridSizeRead * blockSizeRead);
 
-	copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (blockMap.toKernel(), output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(copyBlocksToOutput<0>), dim3(gridSizeRead), dim3(blockSizeRead), 0, 0, blockMap.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	blockMap.template deviceToHost<0>();
@@ -253,7 +255,7 @@ BOOST_AUTO_TEST_CASE(testInsert_blocked)
 	sparseGrid.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
 	// Insert values
-	insertValuesBlocked<0, 2> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(insertValuesBlocked<0, 2>), dim3(gridSize), dim3(blockSizeInsert), 0, 0, sparseGrid.toKernel());
 
 	// Flush inserts
 	mgpu::ofp_context_t ctx;
@@ -263,7 +265,7 @@ BOOST_AUTO_TEST_CASE(testInsert_blocked)
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(gridSizeRead * blockSizeRead);
 
-	copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (sparseGrid.toKernel(), output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(copyBlocksToOutput<0>), dim3(gridSizeRead), dim3(blockSizeRead), 0, 0, sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();

@@ -28,12 +28,12 @@
 #ifdef SE_CLASS2
 #include "Memleak_check.hpp"
 #endif
-#include "util/for_each_ref.hpp"
 #include "util.hpp"
 #include <utility>
 #ifdef CUDA_GPU
 #include "memory/CudaMemory.cuh"
 #endif
+#include "util/for_each_ref.hpp"
 #include "grid_sm.hpp"
 #include "Encap.hpp"
 #include "memory_ly/memory_array.hpp"

@@ -20,7 +20,7 @@ enum cl_construct_opt
 #if defined(CUDA_GPU) && defined(__NVCC__)
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #endif
-#include "util/cuda/ofp_context.hxx"
+#include "util/cuda/ofp_context.cuh"
 
 
 /*! \brief populate the Cell-list with particles non symmetric case on GPU

@@ -1,15 +1,21 @@
+
+#include <hip/hip_runtime.h>
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
 #include "util/cuda_util.hpp"
 #include "Vector/map_vector.hpp"
+#ifdef __NVCC__
 #include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #include "util/cuda/moderngpu/kernel_reduce.hxx"
 #include "util/cuda/moderngpu/kernel_segreduce.hxx"
+#endif
 
 BOOST_AUTO_TEST_SUITE( modern_gpu_tests )
+
+#ifdef __NVCC__
 
 BOOST_AUTO_TEST_CASE( modern_gpu_transform_lbs )
 {
@@ -208,6 +214,7 @@ BOOST_AUTO_TEST_CASE( modern_gpu_seg_reduce )
 	// Test the cell list
 }
 
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 

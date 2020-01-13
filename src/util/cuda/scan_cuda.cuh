@@ -331,9 +331,15 @@ __global__ void breduce(int n, const cnt_type *vin, cnt_type *vout)
 
     val[0] = reduction::reduction(val);
 
-#pragma unroll
+#ifdef __HIPCC__
+    #pragma unroll
+    for(int i = 16; i > 0; i >>= 1)
+    {val[0] += __shfl_down((int)val[0],i);}
+#else
+    #pragma unroll
     for(int i = 16; i > 0; i >>= 1)
     {val[0] += __shfl_down_sync(0xFFFFFFFF,(int)val[0],i);}
+#endif
 
     if (0 == lid)
     {shtmp[wid] = val[0];}
@@ -343,9 +349,15 @@ __global__ void breduce(int n, const cnt_type *vin, cnt_type *vout)
     {
         val[0] = (lid < NWARP) ? shtmp[lid] : 0;
 
-#pragma unroll
+#ifdef __HIPCC__
+	#pragma unroll
+        for(int i = 16; i > 0; i >>= 1)
+        {val[0] += __shfl_down((int)val[0], i);}
+#else
+	#pragma unroll
         for(int i = 16; i > 0; i >>= 1)
         {val[0] += __shfl_down_sync(0xFFFFFFFF,(int)val[0], i);}
+#endif
     }
 
     if (0 == threadIdx.x)
@@ -357,7 +369,7 @@ __global__ void breduce(int n, const cnt_type *vin, cnt_type *vout)
 template <int BDIM, typename cnt_type>
 __global__ void bexscan(int n, cnt_type *v)
 {
-    extern __shared__ unsigned int shtmp[];
+    HIP_DYNAMIC_SHARED(unsigned int, shtmp);
 
     for(int i = threadIdx.x; i < n; i += BDIM)
     {shtmp[i] = v[i];}
@@ -428,10 +440,16 @@ __global__ void gexscan(int n,
     typename extend::cnt_type_ tmp = extend::reduce(&tu4,val);
 
     tu4.w = tmp;
+#ifdef __HIPCC__
+#pragma unroll
+    for(int i = 1; i < 32; i <<= 1)
+    {tu4.w += (lid >= i)*__shfl_up((int)tu4.w, i);}
+#else
 #pragma unroll
     for(int i = 1; i < 32; i <<= 1)
     {tu4.w += (lid >= i)*__shfl_up_sync(0xFFFFFFFF,(int)tu4.w, i);}
-
+#endif
+    
     if (lid == 31)
     {
         if (wid < NWARP-1) woff[wid+1] = tu4.w;
@@ -445,10 +463,15 @@ __global__ void gexscan(int n,
     if (0 == wid)
     {
         tmp = (lid < NWARP) ? woff[lid] : 0;
+#ifdef __HIPCC__
+#pragma unroll
+        for(int i = 1; i < NWARP; i <<= 1)
+        {tmp += (lid >= i)*__shfl_up((int)tmp, i);}
+#else
 #pragma unroll
         for(int i = 1; i < NWARP; i <<= 1)
         {tmp += (lid >= i)*__shfl_up_sync(0xFFFFFFFF,(int)tmp, i);}
-
+#endif
         if (lid < NWARP) woff[lid] = tmp;
     }
     __syncthreads();
@@ -480,6 +503,7 @@ public:
 	void scan_(openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & cl_n,
 			  openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & cl_n_scan)
 	{
+#ifdef __NVCC__
 		constexpr int THREADS = 128;
 		constexpr int ratio = 4*sizeof(cnt_type)/sizeof(ids_type);
 
@@ -514,6 +538,7 @@ public:
 																							  static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(cl_n_scan.template getDeviceBuffer<0>()));
 
 		cl_n_scan.resize(raw_size);
+#endif
 	}
 
 };

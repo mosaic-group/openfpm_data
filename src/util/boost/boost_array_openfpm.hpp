@@ -115,12 +115,18 @@ namespace boost {
         // operator[]
         __device__ __host__ reference operator[](size_type i)
         {
-            return BOOST_ASSERT_MSG( i < N, "out of range" ), elems[i];
+#ifndef __HIPCC__
+	    BOOST_ASSERT_MSG( i < N, "out of range" );
+#endif
+            return elems[i];
         }
 
         /*BOOST_CONSTEXPR*/ __device__ __host__ const_reference operator[](size_type i) const
         {
-            return BOOST_ASSERT_MSG( i < N, "out of range" ), elems[i];
+#ifndef __HIPCC__
+	    BOOST_ASSERT_MSG( i < N, "out of range" );
+#endif
+            return elems[i];
         }
 
         // at() with range check

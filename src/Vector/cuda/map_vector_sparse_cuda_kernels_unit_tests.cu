@@ -1,9 +1,15 @@
 #define BOOST_TEST_DYN_LINK
+
+#include <hip/hip_runtime.h>
+#include "config.h"
 #include <boost/test/unit_test.hpp>
 #include <Vector/map_vector.hpp>
 #include <Vector/cuda/map_vector_sparse_cuda_kernels.cuh>
-#include "util/cuda/moderngpu/kernel_scan.hxx"
+#include "util/cuda/ofp_context.cuh"
+#include "util/cuda/scan_ofp.cuh"
+#ifdef __NVCC__
 #include "util/cuda/moderngpu/kernel_merge.hxx"
+#endif
 
 BOOST_AUTO_TEST_SUITE( vector_sparse_cuda_kernels )
 
@@ -24,10 +30,10 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	// fill block insert of some data
 	for (int i = 0 ; i < nblock ; i++)
 	{
-		block_n.template get<0>(i) = ((float)rand() / RAND_MAX) * 511;
+		block_n.template get<0>(i) = ((double)rand() / RAND_MAX) * 511;
 		for (int j = 0 ; j < block_n.template get<0>(i) ; j++)
 		{
-			block_insert.template get<0>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
+			block_insert.template get<0>(i*nslot + j) = ((double)rand() / RAND_MAX) * 511;
 		}
 	}
 
@@ -35,8 +41,8 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	block_insert.template hostToDevice<0>();
 	block_n.template hostToDevice<0>();
 
-	mgpu::standard_context_t context(false);
-	mgpu::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
+	mgpu::ofp_context_t context(false);
+	openfpm::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
 
 	block_n_scan.template deviceToHost<0>(block_n_scan.size()-1,block_n_scan.size()-1);
 	size_t n_ele = block_n_scan.template get<0>(block_n.size()-1);
@@ -54,7 +60,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	thr.y = 1;
 	thr.z = 1;
 
-	construct_insert_list_key_only<<<wthr,thr>>>(block_insert.toKernel(),block_n.toKernel(),
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(construct_insert_list_key_only), dim3(wthr), dim3(thr), 0, 0, block_insert.toKernel(),block_n.toKernel(),
 										block_n_scan.toKernel(),output_list_0.toKernel(),output_list_1.toKernel(),
 										nslot);
 
@@ -94,10 +100,10 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use_small_pool )
 	// fill block insert of some data
 	for (int i = 0 ; i < nblock ; i++)
 	{
-		block_n.template get<0>(i) = ((float)rand() / RAND_MAX) * 16;
+		block_n.template get<0>(i) = ((double)rand() / RAND_MAX) * 16;
 		for (int j = 0 ; j < block_n.template get<0>(i) ; j++)
 		{
-			block_insert.template get<0>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
+			block_insert.template get<0>(i*nslot + j) = ((double)rand() / RAND_MAX) * 511;
 		}
 	}
 
@@ -105,8 +111,8 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use_small_pool )
 	block_insert.template hostToDevice<0>();
 	block_n.template hostToDevice<0>();
 
-	mgpu::standard_context_t context(false);
-	mgpu::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
+	mgpu::ofp_context_t context(false);
+	openfpm::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
 
 	block_n_scan.template deviceToHost<0>(block_n_scan.size()-1,block_n_scan.size()-1);
 	size_t n_ele = block_n_scan.template get<0>(block_n.size()-1);
@@ -116,7 +122,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use_small_pool )
 
 	auto ite = block_insert.getGPUIterator();
 
-	CUDA_LAUNCH(construct_insert_list_key_only_small_pool,ite,block_insert.toKernel(),block_n.toKernel(),
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(construct_insert_list_key_only_small_pool), dim3(), dim3(), 0, 0, block_insert.toKernel(),block_n.toKernel(),
 										block_n_scan.toKernel(),output_list_0.toKernel(),output_list_1.toKernel(),
 										nslot);
 
@@ -152,7 +158,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	for (size_t i = 0 ; i < vct_index_old.size() ; i++)
 	{
-		vct_index_old.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_index_old.template get<0>(i) = 17*(double)rand()/RAND_MAX + i * 17;
 		vct_index_old.template get<1>(i) = i;
 	}
 
@@ -160,7 +166,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	for (size_t i = 0 ; i < vct_add_index.size() ; i++)
 	{
-		vct_add_index.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_add_index.template get<0>(i) = 17*(double)rand()/RAND_MAX + i * 17;
 		vct_add_index.template get<1>(i) = i+vct_index_old.size();
 	}
 
@@ -168,15 +174,23 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	vct_index.resize(vct_add_index.size() + vct_index_old.size());
 
-	mgpu::standard_context_t ctx(false);
+	mgpu::ofp_context_t ctx(false);
 
 	// host to device
 	vct_index_old.template hostToDevice<0,1>();
 	vct_add_index.template hostToDevice<0,1>();
 
+	#ifdef __HIPCC__
+	
+	std::cout << __FILE__ << ":" << __LINE__ << " In HIPCC we have not implemented jet merge" << std::endl;
+
+	#else
+
 	mgpu::merge((int *)vct_index_old.template getDeviceBuffer<0>(),(int *)vct_index_old.template getDeviceBuffer<1>(),vct_index_old.size(),
 			    (int *)vct_add_index.template getDeviceBuffer<0>(),(int *)vct_add_index.template getDeviceBuffer<1>(),vct_add_index.size(),
 			    (int *)vct_index.template getDeviceBuffer<0>(),(int *)vct_index.template getDeviceBuffer<1>(),mgpu::less_t<int>(),ctx);
+
+	#endif
 
 	vct_index.template deviceToHost<0,1>();
 
@@ -236,12 +250,12 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 
 	for (size_t i = 0 ; i < vct_index_old.size() ; i++)
 	{
-		vct_index_old.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_index_old.template get<0>(i) = 17*(double)rand()/RAND_MAX + i * 17;
 		vct_index_old.template get<1>(i) = i;
 
-		vct_data_old.template get<0>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data_old.template get<1>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data_old.template get<2>(i) = 128*(float)rand()/RAND_MAX;
+		vct_data_old.template get<0>(i) = 128*(double)rand()/RAND_MAX;
+		vct_data_old.template get<1>(i) = 128*(double)rand()/RAND_MAX;
+		vct_data_old.template get<2>(i) = 128*(double)rand()/RAND_MAX;
 	}
 
 	vct_add_index.resize(100);
@@ -249,12 +263,12 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 
 	for (size_t i = 0 ; i < vct_add_index.size() ; i++)
 	{
-		vct_add_index.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_add_index.template get<0>(i) = 17*(double)rand()/RAND_MAX + i * 17;
 		vct_add_index.template get<1>(i) = i+vct_index_old.size();
 
-		vct_add_data.template get<0>(i) = 128*(float)rand()/RAND_MAX;
-		vct_add_data.template get<1>(i) = 128*(float)rand()/RAND_MAX;
-		vct_add_data.template get<2>(i) = 128*(float)rand()/RAND_MAX;
+		vct_add_data.template get<0>(i) = 128*(double)rand()/RAND_MAX;
+		vct_add_data.template get<1>(i) = 128*(double)rand()/RAND_MAX;
+		vct_add_data.template get<2>(i) = 128*(double)rand()/RAND_MAX;
 	}
 
 	// Now we merge
@@ -262,7 +276,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 	vct_index.resize(vct_add_index.size() + vct_index_old.size());
 	merge_indexes.resize(vct_index.size());
 
-	mgpu::standard_context_t ctx(false);
+	mgpu::ofp_context_t ctx(false);
 
 	// host to device
 	vct_index_old.template hostToDevice<0,1>();
@@ -270,9 +284,17 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 	vct_data_old.template hostToDevice<0,1,2>();
 	vct_add_data.template hostToDevice<0,1,2>();
 
+        #ifdef __HIPCC__
+
+        std::cout << __FILE__ << ":" << __LINE__ << " In HIPCC we have not implemented jet merge" << std::endl;
+
+        #else
+
 	mgpu::merge((int *)vct_index_old.template getDeviceBuffer<0>(),(int *)vct_index_old.template getDeviceBuffer<1>(),vct_index_old.size(),
 			    (int *)vct_add_index.template getDeviceBuffer<0>(),(int *)vct_add_index.template getDeviceBuffer<1>(),vct_add_index.size(),
 			    (int *)vct_index.template getDeviceBuffer<0>(),(int *)merge_indexes.template getDeviceBuffer<0>(),mgpu::less_t<int>(),ctx);
+
+	#endif
 
 	constexpr int bdim = 128;
 
@@ -282,7 +304,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 	vct_data_out.resize(vct_index.size());
 	vct_tot_out.resize(ite.wthr.x);
 
-	solve_conflicts<decltype(vct_index.toKernel()),decltype(vct_data_old.toKernel()),decltype(vct_tot_out.toKernel()),bdim,sadd_<0>,smin_<1>,smax_<2>><<<ite.wthr,ite.thr>>>(vct_index.toKernel(),vct_data_old.toKernel(),
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(solve_conflicts<decltype(vct_index.toKernel()),decltype(vct_data_old.toKernel()),decltype(vct_tot_out.toKernel()),bdim,sadd_<0>,smin_<1>,smax_<2>>), dim3(ite.wthr), dim3(ite.thr), 0, 0, vct_index.toKernel(),vct_data_old.toKernel(),
 						  merge_indexes.toKernel(),vct_add_data.toKernel(),
 						  vct_index_out.toKernel(),vct_data_out.toKernel(),
 						  vct_tot_out.toKernel(),vct_data_old.size());
@@ -361,16 +383,16 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 
 	for (size_t i = 0 ; i < vct_index.size() ; i++)
 	{
-		vct_index.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_index.template get<0>(i) = 17*(double)rand()/RAND_MAX + i * 17;
 
-		vct_data.template get<0>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data.template get<1>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data.template get<2>(i) = 128*(float)rand()/RAND_MAX;
+		vct_data.template get<0>(i) = 128*(double)rand()/RAND_MAX;
+		vct_data.template get<1>(i) = 128*(double)rand()/RAND_MAX;
+		vct_data.template get<2>(i) = 128*(double)rand()/RAND_MAX;
 	}
 
 	for (size_t i = 0 ; i < vct_tot_out.size() ; i++)
 	{
-		vct_tot_out.template get<0>(i) = 128*(float)rand()/RAND_MAX;
+		vct_tot_out.template get<0>(i) = 128*(double)rand()/RAND_MAX;
 		vct_tot_out.template get<2>(i) = 1;
 	}
 
@@ -378,15 +400,15 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 	vct_data.template hostToDevice<0,1,2>();
 	vct_tot_out.template hostToDevice<0,2>();
 
-	mgpu::standard_context_t ctx(false);
-	mgpu::scan((int *)vct_tot_out.getDeviceBuffer<0>(),vct_tot_out.size(),(int *)vct_tot_out.getDeviceBuffer<1>(),ctx);
+	mgpu::ofp_context_t ctx(false);
+	openfpm::scan((int *)vct_tot_out.getDeviceBuffer<0>(),vct_tot_out.size(),(int *)vct_tot_out.getDeviceBuffer<1>(),ctx);
 
 	vct_tot_out.deviceToHost<0,1>();
 	vct_index_out.resize(vct_index.size());
 	vct_data_out.resize(vct_index.size());
 
 	int nblock = vct_tot_out.size();
-	realign<<<nblock,128>>>(vct_index.toKernel(),vct_data.toKernel(),vct_index_out.toKernel(),vct_data_out.toKernel(),vct_tot_out.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(realign), dim3(nblock), dim3(128), 0, 0, vct_index.toKernel(),vct_data.toKernel(),vct_index_out.toKernel(),vct_data_out.toKernel(),vct_tot_out.toKernel());
 
 	vct_index_out.deviceToHost<0>();
 	vct_data_out.deviceToHost<0,1,2>();

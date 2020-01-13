@@ -10,7 +10,7 @@
 
 #include "map_grid_cuda_ker.cuh"
 
-#if defined(CUDA_GPU) && defined(__NVCC__)
+#if defined(CUDA_GPU) && (defined(__NVCC__) || defined(__HIPCC__))
 
 template<unsigned int dim, typename grid_type>
 __global__ void copy_ndim_grid_block_device(grid_type src, grid_type dst)

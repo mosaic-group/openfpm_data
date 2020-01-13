@@ -7,6 +7,9 @@
 
 
 #define BOOST_TEST_DYN_LINK
+
+#include <hip/hip_runtime.h>
+#include "config.h"
 #include <boost/test/unit_test.hpp>
 #include "Vector/map_vector_sparse.hpp"
 #include "Vector/map_vector.hpp"
@@ -200,18 +203,18 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 	vs.setGPUInsertBuffer(10,1024);
 
 	// we launch a kernel to insert data
-	test_insert_sparse<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 	mgpu::ofp_context_t ctx;
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(10,1024);
-	test_insert_sparse2<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(4000,512);
-	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse3), dim3(4000), dim3(256), 0, 0, vs.toKernel());
 
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
@@ -219,7 +222,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 
 	output.resize(1500);
 
-	test_sparse_get_test<<<10,150>>>(vs.toKernel(),output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_sparse_get_test), dim3(10), dim3(150), 0, 0, vs.toKernel(),output.toKernel());
 
 	output.template deviceToHost<0,1,2>();
 	vs.template deviceToHost<0,1,2>();
@@ -236,7 +239,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 
 	vs.clear();
 
-	test_sparse_get_test<<<10,150>>>(vs.toKernel(),output.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_sparse_get_test), dim3(10), dim3(150), 0, 0, vs.toKernel(),output.toKernel());
 
 	output.template deviceToHost<0,1,2>();
 	vs.template deviceToHost<0,1,2>();
@@ -325,10 +328,10 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 	vs.setGPUInsertBuffer(10,1024);
 
 	// we launch a kernel to insert data
-	test_insert_sparse<<<10,100>>>(vs.toKernel());
-	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
-	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
-	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse), dim3(10), dim3(100), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2_inc), dim3(10), dim3(100), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2_inc), dim3(10), dim3(100), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2_inc), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 	mgpu::ofp_context_t ctx;
 
@@ -376,7 +379,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 	vs.setGPUInsertBuffer(10,1024);
 
 	// we launch a kernel to insert data
-	test_insert_sparse<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 
 	mgpu::ofp_context_t ctx;
@@ -395,7 +398,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 	BOOST_REQUIRE_EQUAL(match,true);
 
 	vs.setGPUInsertBuffer(10,1024);
-	test_insert_sparse2<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
@@ -433,7 +436,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 	BOOST_REQUIRE_EQUAL(match,true);
 
 	vs.setGPUInsertBuffer(4000,512);
-	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse3), dim3(4000), dim3(256), 0, 0, vs.toKernel());
 
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 	vs.template deviceToHost<0,1,2>();
@@ -488,10 +491,10 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_special_function )
 	vs.setGPUInsertBuffer(10,1024);
 
 	// we launch a kernel to insert data
-	test_insert_sparse<<<10,100>>>(vs.toKernel());
-	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
-	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
-	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse), dim3(10), dim3(100), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2_inc), dim3(10), dim3(100), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2_inc), dim3(10), dim3(100), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2_inc), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 	mgpu::ofp_context_t ctx;
 
@@ -620,24 +623,24 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 	vs.setGPUInsertBuffer(10,1024);
 
 	// we launch a kernel to insert data
-	test_insert_sparse<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 	mgpu::ofp_context_t ctx;
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(10,1024);
-	test_insert_sparse2<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(4000,512);
-	test_insert_sparse3<<<4000,256>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse3), dim3(4000), dim3(256), 0, 0, vs.toKernel());
 
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	// we launch a kernel to insert data
 	vs.setGPURemoveBuffer(10,1024);
-	test_remove_sparse<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_remove_sparse), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 	size_t sz = vs.size();
 
@@ -654,7 +657,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 
 	// we launch a kernel to insert data
 	vs.setGPURemoveBuffer(10,1024);
-	test_remove_sparse2<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_remove_sparse2), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 
@@ -669,7 +672,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 			    false);
 
 	vs.setGPURemoveBuffer(4000,512);
-	test_remove_sparse3<<<4000,256>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_remove_sparse3), dim3(4000), dim3(256), 0, 0, vs.toKernel());
 
 	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 
@@ -699,10 +702,10 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 	vs.setGPUInsertBuffer(10,1024);
 
 	// we launch a kernel to insert data
-	test_insert_sparse<<<10,100>>>(vs.toKernel());
-	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
-	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
-	test_insert_sparse2_inc<<<10,100>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse), dim3(10), dim3(100), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2_inc), dim3(10), dim3(100), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2_inc), dim3(10), dim3(100), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_insert_sparse2_inc), dim3(10), dim3(100), 0, 0, vs.toKernel());
 
 	mgpu::ofp_context_t ctx;
 
@@ -710,10 +713,10 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 
 	// we launch a kernel to insert data
 	vs.setGPURemoveBuffer(10,1024);
-	test_remove_sparse<<<10,100>>>(vs.toKernel());
-	test_remove_sparse2_inc<<<10,99>>>(vs.toKernel());
-	test_remove_sparse2_inc<<<10,99>>>(vs.toKernel());
-	test_remove_sparse2_inc<<<10,99>>>(vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_remove_sparse), dim3(10), dim3(100), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_remove_sparse2_inc), dim3(10), dim3(99), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_remove_sparse2_inc), dim3(10), dim3(99), 0, 0, vs.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(test_remove_sparse2_inc), dim3(10), dim3(99), 0, 0, vs.toKernel());
 
 	vs.flush_remove(ctx,flush_type::FLUSH_ON_DEVICE);
 

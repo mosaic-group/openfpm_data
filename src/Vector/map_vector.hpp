@@ -1879,6 +1879,16 @@ namespace openfpm
 			return base;
 		}
 
+                /*! \brief Internal function
+                 *
+                 * \return the internal 1D grid base
+                 *
+                 */
+                grid_cpu<1,T,Memory,layout> & getInternal_base()
+                {
+                        return base;
+                }
+
 		/*! \brief Copy the memory from host to device
 		 *
 		 *

@@ -158,7 +158,7 @@ template<unsigned int dim ,typename T> class Matrix
 	 * \return the identity matrix
 	 *
 	 */
-	inline static Matrix<dim,T> identity()
+	__device__ __host__ inline static Matrix<dim,T> identity()
 	{
 		Matrix<dim,T> ret;
 

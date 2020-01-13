@@ -15,6 +15,7 @@
 // $Revision: 55648 $
 // Changed from Pietro incardona to handle reference functor
 
+
 #include "util/cuda_util.hpp"
 #include <boost/mpl/is_sequence.hpp>
 #include <boost/mpl/begin_end.hpp>
@@ -25,7 +26,6 @@
 #include <boost/mpl/identity.hpp>
 #include <boost/mpl/assert.hpp>
 #include <boost/mpl/aux_/unwrap.hpp>
-
 #include <boost/type_traits/is_same.hpp>
 #include <boost/utility/value_init.hpp>
 
@@ -146,8 +146,9 @@ template<
     >
 BOOST_GPU_ENABLED inline void for_each_ref(F & f, Sequence* = 0, TransformOp* = 0)
 {
+#ifndef __HIPCC__
     BOOST_MPL_ASSERT(( is_sequence<Sequence> ));
-
+#endif
     typedef typename begin<Sequence>::type first;
     typedef typename end<Sequence>::type last;
 

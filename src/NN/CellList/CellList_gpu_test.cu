@@ -7,6 +7,8 @@
 
 #define BOOST_GPU_ENABLED __host__ __device__
 
+
+#include <hip/hip_runtime.h>
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
@@ -16,7 +18,6 @@
 #include "CellList.hpp"
 #include "util/boost/boost_array_openfpm.hpp"
 #include  "Point_test.hpp"
-#include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "util/cuda/scan_cuda.cuh"
 #include "util/cuda_util.hpp"
 
@@ -68,7 +69,7 @@ void test_sub_index()
 	}
 
 	cl_n.resize(17*17*17);
-	CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
+	CUDA_SAFE(hipMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
 	part_ids.resize(pl.size());
 
@@ -84,7 +85,7 @@ void test_sub_index()
 
 	no_transform_only<dim,T> t(mt,pt);
 
-	subindex<false,dim,T,cnt_type,ids_type,no_transform_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(subindex<false,dim,T,cnt_type,ids_type,no_transform_only<dim,T>>), dim3(ite.wthr), dim3(ite.thr), 0, 0, div,
 																	spacing,
 																	off,
 																	t,
@@ -217,7 +218,7 @@ void test_sub_index2()
 	}
 
 	cl_n.resize(17*17*17);
-	CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
+	CUDA_SAFE(hipMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
 	part_ids.resize(pl.size());
 
@@ -232,7 +233,7 @@ void test_sub_index2()
 
 	shift_only<dim,T> t(mt,pt);
 
-	subindex<false,dim,T,cnt_type,ids_type,shift_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(subindex<false,dim,T,cnt_type,ids_type,shift_only<dim,T>>), dim3(ite.wthr), dim3(ite.thr), 0, 0, div,
 																	spacing,
 																	off,
 																	t,
@@ -442,7 +443,7 @@ void test_fill_cell()
 	part_ids.template hostToDevice<0>();
 
 	// Here we test fill cell
-	fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>><<<itgg.wthr,itgg.thr>>>(0,
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>), dim3(itgg.wthr), dim3(itgg.thr), 0, 0, 0,
 																				   div_c,
 																				   off,
 																				   part_ids.size(),
@@ -450,7 +451,7 @@ void test_fill_cell()
 																				   0,
 																				   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
 																				   static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()),
-																				   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
+																				   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
 
 	cells.template deviceToHost<0>();
 
@@ -522,7 +523,7 @@ void test_cell_count_n()
 	size_t sz[] = {17,17,17};
 	grid_sm<3,void> gs(sz);
 
-	construct_cells<<<1,1>>>(vs.toKernel(),gs);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(construct_cells), dim3(1), dim3(1), 0, 0, vs.toKernel(),gs);
 
 	mgpu::ofp_context_t ctx;
 
@@ -552,7 +553,7 @@ void test_cell_count_n()
 	cells_nn_test.template hostToDevice<0>();
 
 	auto itgg = vs.getGPUIterator();
-	CUDA_LAUNCH((count_nn_cells),itgg,vs.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((count_nn_cells)), dim3(), dim3(), 0, 0, vs.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel());
 
 	cells_nn.deviceToHost<0>();
 
@@ -568,12 +569,12 @@ void test_cell_count_n()
 	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(9),1);
 
 	// now we scan
-	mgpu::scan((unsigned int *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (unsigned int *)cells_nn.template getDeviceBuffer<0>() , ctx);
+	openfpm::scan((unsigned int *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (unsigned int *)cells_nn.template getDeviceBuffer<0>() , ctx);
 
 	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> cell_nn_list;
 	cell_nn_list.resize(7*8 + 9 + 2 + 1);
 
-	CUDA_LAUNCH((fill_nn_cells),itgg,vs.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel(),cell_nn_list.toKernel(),200);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME((fill_nn_cells)), dim3(), dim3(), 0, 0, vs.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel(),cell_nn_list.toKernel(),200);
 
 	cell_nn_list.deviceToHost<0>();
 
@@ -721,11 +722,11 @@ void test_reorder_parts(size_t n_part)
 	parts_prp.template hostToDevice<0,1,2,3>();
 
 	// Here we test fill cell
-	reorder_parts<decltype(parts_prp.toKernel()),
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(reorder_parts<decltype(parts_prp.toKernel()),
 			      decltype(pl.toKernel()),
 			      decltype(sort_to_not_sort.toKernel()),
 			      cnt_type,
-			      shift_ph<0,cnt_type>><<<ite.wthr,ite.thr>>>(pl.size(),
+			      shift_ph<0,cnt_type>>), dim3(ite.wthr), dim3(ite.thr), 0, 0, pl.size(),
 			                                                  parts_prp.toKernel(),
 			                                                  parts_prp_out.toKernel(),
 			                                                  pl.toKernel(),
@@ -1202,7 +1203,7 @@ struct execute_cl_test
 	{
 		auto ite = pl.getGPUIterator();
 
-		CUDA_LAUNCH((calc_force_number),ite,pl.toKernel(),s_t_ns.toKernel(),
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((calc_force_number)), dim3(), dim3(), 0, 0, pl.toKernel(),s_t_ns.toKernel(),
 							   	   	   	   	cl2.toKernel(),n_out.toKernel());
 	}
 
@@ -1211,7 +1212,7 @@ struct execute_cl_test
 	{
 		auto ite = pl.getGPUIterator();
 
-		CUDA_LAUNCH((calc_force_list),ite,pl.toKernel(),
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((calc_force_list)), dim3(), dim3(), 0, 0, pl.toKernel(),
 							   	   	   s_t_ns.toKernel(),
 							   	   	   cl2.toKernel(),
 							   	   	   n_out_scan.toKernel(),
@@ -1240,11 +1241,10 @@ struct execute_cl_test<1>
 	{
 		auto ite = pl.getGPUIterator();
 
-		CUDA_LAUNCH((calc_force_number_rad<decltype(pl.toKernel()),
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((calc_force_number_rad<decltype(pl.toKernel()),
 				          decltype(s_t_ns.toKernel()),
 				          decltype(cl2.toKernel()),
-				          decltype(n_out.toKernel())>),
-							   ite,pl.toKernel(),
+				          decltype(n_out.toKernel())>)), dim3(), dim3(), 0, 0, pl.toKernel(),
 							   s_t_ns.toKernel(),
 							   cl2.toKernel(),
 							   n_out.toKernel());
@@ -1255,11 +1255,10 @@ struct execute_cl_test<1>
 	{
 		auto ite = pl.getGPUIterator();
 
-		CUDA_LAUNCH((calc_force_list_rad<decltype(pl.toKernel()),
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((calc_force_list_rad<decltype(pl.toKernel()),
 				          decltype(s_t_ns.toKernel()),
 				          decltype(cl2.toKernel()),
-				          decltype(nn_list.toKernel())>),
-							   ite,pl.toKernel(),
+				          decltype(nn_list.toKernel())>)), dim3(), dim3(), 0, 0, pl.toKernel(),
 							   s_t_ns.toKernel(),
 							   cl2.toKernel(),
 							   n_out_scan.toKernel(),
@@ -1288,11 +1287,10 @@ struct execute_cl_test<2>
 	{
 		auto ite = s_t_ns.getGPUIterator();
 
-		CUDA_LAUNCH((calc_force_number_box_noato<decltype(pl.toKernel()),
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((calc_force_number_box_noato<decltype(pl.toKernel()),
 				          decltype(s_t_ns.toKernel()),
 				          decltype(cl2.toKernel()),
-				          decltype(n_out.toKernel())>),
-							   ite,pl.toKernel(),
+				          decltype(n_out.toKernel())>)), dim3(), dim3(), 0, 0, pl.toKernel(),
 							   s_t_ns.toKernel(),
 							   cl2.toKernel(),
 							   n_out.toKernel(),
@@ -1304,12 +1302,10 @@ struct execute_cl_test<2>
 	{
 		auto ite = s_t_ns.getGPUIterator();
 
-		CUDA_LAUNCH((calc_force_number_box<decltype(pl.toKernel()),
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((calc_force_number_box<decltype(pl.toKernel()),
 				          decltype(s_t_ns.toKernel()),
 				          decltype(cl2.toKernel()),
-				          decltype(n_out.toKernel())>),
-							   ite,
-							   pl.toKernel(),
+				          decltype(n_out.toKernel())>)), dim3(), dim3(), 0, 0, pl.toKernel(),
 							   s_t_ns.toKernel(),
 							   cl2.toKernel(),
 							   n_out.toKernel(),
@@ -1321,11 +1317,10 @@ struct execute_cl_test<2>
 	{
 		auto ite = s_t_ns.getGPUIterator();
 
-		CUDA_LAUNCH((calc_force_list_box<decltype(pl.toKernel()),
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((calc_force_list_box<decltype(pl.toKernel()),
 				          decltype(s_t_ns.toKernel()),
 				          decltype(cl2.toKernel()),
-				          decltype(nn_list.toKernel())>),
-							   ite,pl.toKernel(),
+				          decltype(nn_list.toKernel())>)), dim3(), dim3(), 0, 0, pl.toKernel(),
 							   s_t_ns.toKernel(),
 							   cl2.toKernel(),
 							   n_out_scan.toKernel(),
@@ -1342,7 +1337,7 @@ struct execute_cl_test<2>
 	{
 		auto ite = s_t_ns.getGPUIterator();
 
-		CUDA_LAUNCH((calc_force_list_box_partial),ite,pl.toKernel(),
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((calc_force_list_box_partial)), dim3(), dim3(), 0, 0, pl.toKernel(),
 							   	   	   s_t_ns.toKernel(),
 							   	   	   cl2.toKernel(),
 							   	   	   n_out_scan.toKernel(),
@@ -1489,7 +1484,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	n_out_scan.resize(pl.size()+1);
 
-	mgpu::scan((unsigned int *)n_out.template getDeviceBuffer<0>(),n_out.size(),(unsigned int *)n_out_scan.template getDeviceBuffer<0>(),context);
+	openfpm::scan((unsigned int *)n_out.template getDeviceBuffer<0>(),n_out.size(),(unsigned int *)n_out_scan.template getDeviceBuffer<0>(),context);
 	n_out_scan.template deviceToHost<0>();
 
 	if (n_out_scan.template get<0>(pl.size()) == 0)
@@ -2024,7 +2019,7 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	cl1.hostToDevice();
 	v.hostToDevice<0>();
 
-	cl_offload_gpu<decltype(cl1.toKernel()),decltype(v.toKernel()),decltype(os.toKernel())><<<ite.wthr,ite.thr>>>(cl1.toKernel(),v.toKernel(),os.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(cl_offload_gpu<decltype(cl1.toKernel()),decltype(v.toKernel()),decltype(os.toKernel())>), dim3(ite.wthr), dim3(ite.thr), 0, 0, cl1.toKernel(),v.toKernel(),os.toKernel());
 
 	os.deviceToHost<0>();
 
@@ -2053,9 +2048,8 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	openfpm::vector_gpu<aggregate<int>> os_list;
 	os_list.resize(size_list);
 
-	cl_offload_gpu_list<decltype(cl1.toKernel()),decltype(v.toKernel()),
-			            decltype(os_scan.toKernel()),decltype(os_list.toKernel())><<<ite.wthr,ite.thr>>>
-			            (cl1.toKernel(),v.toKernel(),os_scan.toKernel(),os_list.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(cl_offload_gpu_list<decltype(cl1.toKernel()),decltype(v.toKernel()),
+			            decltype(os_scan.toKernel()),decltype(os_list.toKernel())>), dim3(ite.wthr), dim3(ite.thr), 0, 0, cl1.toKernel(),v.toKernel(),os_scan.toKernel(),os_list.toKernel());
 
 	os_list.deviceToHost<0>();
 

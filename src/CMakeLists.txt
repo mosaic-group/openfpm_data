@@ -114,6 +114,7 @@ target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../open
 target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories(mem_map PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories(mem_map PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(mem_map PUBLIC ${HIP_ROOT_DIR}/include)
 
 target_include_directories(isolation PUBLIC ${CUDA_INCLUDE_DIRS})
 target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -121,6 +122,7 @@ target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../op
 target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories(isolation PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories(isolation PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(isolation PUBLIC ${HIP_ROOT_DIR}/include)
 
 
 target_link_libraries(mem_map ${Boost_LIBRARIES})
@@ -132,6 +134,10 @@ target_link_libraries(isolation -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRAR
 if (TEST_COVERAGE)
     target_link_libraries(mem_map -lgcov)
 endif ()
+
+if (HIP_FOUND)
+        SET(CMAKE_EXE_LINKER_FLAGS  "--amdgpu-target=${AMD_ARCH_COMPILE}")
+endif()
 
 # Request that particles be built with -std=c++11
 # As this is a public compile feature anything that links to particles
@@ -334,7 +340,7 @@ install(DIRECTORY util/cuda/cub/
                   DESTINATION openfpm_data/include/util/cuda/cub )
 
 install(FILES util/cuda/scan_cuda.cuh
-        util/cuda/ofp_context.hxx
+        util/cuda/ofp_context.cuh
         util/cuda/cuda_launch.hpp
         util/cuda/cuda_kernel_error_checker.hpp
         util/cuda/kernels.cuh

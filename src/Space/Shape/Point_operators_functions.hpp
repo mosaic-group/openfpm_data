@@ -281,7 +281,7 @@ norm(const point_expression_op<orig,exp1,exp2,op1> & va)
  * \return d
  *
  */
-template <typename T>
+template <typename T, typename sfinae = typename std::enable_if<std::is_fundamental<T>::value>::type >
 __device__ __host__  T norm(T d)
 {
 	return d;

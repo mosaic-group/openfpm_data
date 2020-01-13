@@ -67,7 +67,7 @@ struct copy_switch_memory_c_no_cpy
 template<bool inte_or_lin,typename T>
 struct grid_gpu_ker_constructor_impl
 {
-	template<typename ggk_type> static inline void construct(const ggk_type & cpy,ggk_type & this_)
+	template<typename ggk_type> __device__ __host__ static inline void construct(const ggk_type & cpy,ggk_type & this_)
 	{
 		copy_switch_memory_c_no_cpy<decltype(cpy.get_data_()),decltype(this_.get_data_())> bp_mc(cpy.get_data_(),this_.get_data_());
 
@@ -78,7 +78,7 @@ struct grid_gpu_ker_constructor_impl
 template<typename T>
 struct grid_gpu_ker_constructor_impl<false,T>
 {
-	template<typename ggk_type> static inline void construct(const ggk_type & cpy,ggk_type & this_)
+	template<typename ggk_type> __device__ __host__ static inline void construct(const ggk_type & cpy,ggk_type & this_)
 	{
 		this_.get_data_().mem = cpy.get_data_().mem;
 		// Increment the reference of mem

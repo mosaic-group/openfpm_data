@@ -1,3 +1,5 @@
+
+#include <hip/hip_runtime.h>
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
@@ -35,14 +37,14 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_gpu_test_use )
 
 	openfpm::vector_gpu<aggregate<grid_key_dx<3,unsigned int>>> output(8);
 
-	check<<<1,1>>>(output.toKernel(),clk,0,Point<3,float>({0.2,0.2,0.2}));
-	check<<<1,1>>>(output.toKernel(),clk,1,Point<3,float>({0.1,0.2,0.3}));
-	check<<<1,1>>>(output.toKernel(),clk,2,Point<3,float>({0.25,0.55,0.45}));
-	check<<<1,1>>>(output.toKernel(),clk,3,Point<3,float>({0.15,0.15,0.95}));
-	check<<<1,1>>>(output.toKernel(),clk,4,Point<3,float>({1.05,1.05,1.05}));
-	check<<<1,1>>>(output.toKernel(),clk,5,Point<3,float>({1.15,1.15,1.15}));
-	check<<<1,1>>>(output.toKernel(),clk,6,Point<3,float>({-0.05,-0.05,-0.05}));
-	check<<<1,1>>>(output.toKernel(),clk,7,Point<3,float>({-0.15,-0.15,-0.15}));
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(check), dim3(1), dim3(1), 0, 0, output.toKernel(),clk,0,Point<3,float>({0.2,0.2,0.2}));
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(check), dim3(1), dim3(1), 0, 0, output.toKernel(),clk,1,Point<3,float>({0.1,0.2,0.3}));
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(check), dim3(1), dim3(1), 0, 0, output.toKernel(),clk,2,Point<3,float>({0.25,0.55,0.45}));
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(check), dim3(1), dim3(1), 0, 0, output.toKernel(),clk,3,Point<3,float>({0.15,0.15,0.95}));
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(check), dim3(1), dim3(1), 0, 0, output.toKernel(),clk,4,Point<3,float>({1.05,1.05,1.05}));
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(check), dim3(1), dim3(1), 0, 0, output.toKernel(),clk,5,Point<3,float>({1.15,1.15,1.15}));
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(check), dim3(1), dim3(1), 0, 0, output.toKernel(),clk,6,Point<3,float>({-0.05,-0.05,-0.05}));
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(check), dim3(1), dim3(1), 0, 0, output.toKernel(),clk,7,Point<3,float>({-0.15,-0.15,-0.15}));
 
 	output.template deviceToHost<0>();
 

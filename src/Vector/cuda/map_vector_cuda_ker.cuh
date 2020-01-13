@@ -462,7 +462,7 @@ namespace openfpm
 		 * \return the base
 		 *
 		 */
-		__device__ grid_gpu_ker<1,T_,layout_base> & getBase()
+		__host__ __device__ grid_gpu_ker<1,T_,layout_base> & getBase()
 		{
 			return base;
 		}
