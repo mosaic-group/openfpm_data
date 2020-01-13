@@ -529,7 +529,7 @@ void testConv3x3x3_perf(std::string testName)
 
 	for (unsigned int iter=0; iter<iterations; ++iter)
 	{
-		hipDeviceSynchronize();
+		cudaDeviceSynchronize();
 		conv_coeff cc;
 
 		for (int i = 0 ; i < 3 ; i++)
@@ -548,7 +548,7 @@ void testConv3x3x3_perf(std::string testName)
 
 		sparseGrid.template applyStencils<Conv3x3x3<dim,0,1>>(STENCIL_MODE_INPLACE,cc);
 
-		hipDeviceSynchronize();
+		cudaDeviceSynchronize();
 		ts.stop();
 
 		measures_tm.add(ts.getwct());
@@ -624,7 +624,7 @@ static void testConv3x3x3_no_shared_perf(std::string testName)
 
 	for (unsigned int iter=0; iter<iterations; ++iter)
 	{
-		hipDeviceSynchronize();
+		cudaDeviceSynchronize();
 		conv_coeff cc;
 
 		for (int i = 0 ; i < 3 ; i++)
@@ -643,7 +643,7 @@ static void testConv3x3x3_no_shared_perf(std::string testName)
 
 		sparseGrid.template applyStencils<Conv3x3x3_noshared<SparseGridZ::dims,0,1>>(STENCIL_MODE_INPLACE_NO_SHARED,cc);
 
-		hipDeviceSynchronize();
+		cudaDeviceSynchronize();
 		ts.stop();
 
 		measures_tm.add(ts.getwct());

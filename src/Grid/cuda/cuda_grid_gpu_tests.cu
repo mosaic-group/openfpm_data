@@ -5,8 +5,6 @@
  *      Author: i-bird
  */
 
-
-#include <hip/hip_runtime.h>
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
@@ -633,9 +631,9 @@ BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 	int dev_mem[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 	test_se1_crash_gt2<<<{32,1,1},{16,1,1}>>>(c3.toKernel(),c2.toKernel());
-	hipDeviceSynchronize();
+	cudaDeviceSynchronize();
 
-	hipMemcpyFromSymbol(dev_mem,global_cuda_error_array,sizeof(dev_mem));
+	cudaMemcpyFromSymbol(dev_mem,global_cuda_error_array,sizeof(dev_mem));
 
 	BOOST_REQUIRE_EQUAL(dev_mem[0],1);
 	BOOST_REQUIRE_EQUAL(*(size_t *)(&dev_mem[1]),(size_t)(c3.toKernel().template getPointer<1>()));
@@ -659,10 +657,10 @@ BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 	int dev_mem2[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 	test_se1_crash_gt3<<<{32,1,1},{16,1,1}>>>(c2.toKernel(),c3.toKernel());
-	hipDeviceSynchronize();
+	cudaDeviceSynchronize();
 
 
-	hipMemcpyFromSymbol(dev_mem2,global_cuda_error_array,sizeof(dev_mem2));
+	cudaMemcpyFromSymbol(dev_mem2,global_cuda_error_array,sizeof(dev_mem2));
 
 	BOOST_REQUIRE_EQUAL(dev_mem2[0],1);
 	BOOST_REQUIRE_EQUAL(*(size_t *)(&dev_mem2[1]),(size_t)(c2.toKernel().template getPointer<2>()));

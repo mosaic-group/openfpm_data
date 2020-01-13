@@ -8,8 +8,6 @@
 
 #define BOOST_GPU_ENABLED __host__ __device__
 
-
-#include <hip/hip_runtime.h>
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
@@ -169,7 +167,7 @@ BOOST_AUTO_TEST_CASE( vector_cuda_to_kernel_recursive2_test_toKernel )
 	openfpm::vector_gpu<aggregate<long int>> vg;
 	vg.resize(9);
 
-	hipLaunchKernelGGL(HIP_KERNEL_NAME(kernel_recursive_check), dim3(1), dim3(1), 0, 0, tt2.toKernel(),vg.toKernel());
+	kernel_recursive_check<<<1,1>>>(tt2.toKernel(),vg.toKernel());
 
 	vg.template deviceToHost<0>();
 

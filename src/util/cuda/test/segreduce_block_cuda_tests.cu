@@ -2,8 +2,6 @@
 // Created by tommaso on 20/05/19.
 //
 
-
-#include <hip/hip_runtime.h>
 #include "config.h"
 
 #define BOOST_TEST_DYN_LINK
@@ -170,16 +168,20 @@ BOOST_AUTO_TEST_SUITE(segreduce_block_cuda_tests)
         // template<unsigned int chunksPerBlock, typename op, typename SegType, typename DataType, typename MaskType>
         // segreduce(DataType *data, SegType *segments, MaskType *masks, DataType *output, MaskType *outputMasks)
 //        segreduce<2, mgpu::maximum_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
-        hipLaunchKernelGGL(HIP_KERNEL_NAME(segreduce_block<2, mgpu::plus_t<ScalarT>>), dim3(outputData.size()), dim3(2*BlockT::size), 0, 0, (BlockT *) data.template getDeviceBuffer<BLOCK>(),
+        segreduce_block<2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
+                        (BlockT *) data.template getDeviceBuffer<BLOCK>(),
                         (int *) segments.template getDeviceBuffer<0>(),
                         (MaskBlockT *) data.template getDeviceBuffer<BITMASK>(),
-                        (BlockT *) outputData.template getDeviceBuffer<BLOCK>());
+                        (BlockT *) outputData.template getDeviceBuffer<BLOCK>()
+                                );
 
         // Segreduce on mask
-        hipLaunchKernelGGL(HIP_KERNEL_NAME(segreduce_block<2, mgpu::maximum_t<unsigned char>>), dim3(outputData.size()), dim3(2*BlockT::size), 0, 0, (MaskBlockT *) data.template getDeviceBuffer<BITMASK>(),
+        segreduce_block<2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
+                        (MaskBlockT *) data.template getDeviceBuffer<BITMASK>(),
                         (int *) segments.template getDeviceBuffer<0>(),
                         (MaskBlockT *) data.template getDeviceBuffer<BITMASK>(),
-                        (MaskBlockT *) outputData.template getDeviceBuffer<BITMASK>());
+                        (MaskBlockT *) outputData.template getDeviceBuffer<BITMASK>()
+        );
 
 #else
 

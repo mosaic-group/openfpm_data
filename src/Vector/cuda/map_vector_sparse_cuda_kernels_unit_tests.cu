@@ -1,6 +1,4 @@
 #define BOOST_TEST_DYN_LINK
-
-#include <hip/hip_runtime.h>
 #include "config.h"
 #include <boost/test/unit_test.hpp>
 #include <Vector/map_vector.hpp>
@@ -60,7 +58,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	thr.y = 1;
 	thr.z = 1;
 
-	hipLaunchKernelGGL(HIP_KERNEL_NAME(construct_insert_list_key_only), dim3(wthr), dim3(thr), 0, 0, block_insert.toKernel(),block_n.toKernel(),
+	construct_insert_list_key_only<<<wthr,thr>>>(block_insert.toKernel(),block_n.toKernel(),
 										block_n_scan.toKernel(),output_list_0.toKernel(),output_list_1.toKernel(),
 										nslot);
 
@@ -122,7 +120,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use_small_pool )
 
 	auto ite = block_insert.getGPUIterator();
 
-	hipLaunchKernelGGL(HIP_KERNEL_NAME(construct_insert_list_key_only_small_pool), dim3(), dim3(), 0, 0, block_insert.toKernel(),block_n.toKernel(),
+	CUDA_LAUNCH(construct_insert_list_key_only_small_pool,ite,block_insert.toKernel(),block_n.toKernel(),
 										block_n_scan.toKernel(),output_list_0.toKernel(),output_list_1.toKernel(),
 										nslot);
 
@@ -304,7 +302,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 	vct_data_out.resize(vct_index.size());
 	vct_tot_out.resize(ite.wthr.x);
 
-	hipLaunchKernelGGL(HIP_KERNEL_NAME(solve_conflicts<decltype(vct_index.toKernel()),decltype(vct_data_old.toKernel()),decltype(vct_tot_out.toKernel()),bdim,sadd_<0>,smin_<1>,smax_<2>>), dim3(ite.wthr), dim3(ite.thr), 0, 0, vct_index.toKernel(),vct_data_old.toKernel(),
+	solve_conflicts<decltype(vct_index.toKernel()),decltype(vct_data_old.toKernel()),decltype(vct_tot_out.toKernel()),bdim,sadd_<0>,smin_<1>,smax_<2>><<<ite.wthr,ite.thr>>>(vct_index.toKernel(),vct_data_old.toKernel(),
 						  merge_indexes.toKernel(),vct_add_data.toKernel(),
 						  vct_index_out.toKernel(),vct_data_out.toKernel(),
 						  vct_tot_out.toKernel(),vct_data_old.size());
@@ -408,7 +406,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 	vct_data_out.resize(vct_index.size());
 
 	int nblock = vct_tot_out.size();
-	hipLaunchKernelGGL(HIP_KERNEL_NAME(realign), dim3(nblock), dim3(128), 0, 0, vct_index.toKernel(),vct_data.toKernel(),vct_index_out.toKernel(),vct_data_out.toKernel(),vct_tot_out.toKernel());
+	realign<<<nblock,128>>>(vct_index.toKernel(),vct_data.toKernel(),vct_index_out.toKernel(),vct_data_out.toKernel(),vct_tot_out.toKernel());
 
 	vct_index_out.deviceToHost<0>();
 	vct_data_out.deviceToHost<0,1,2>();

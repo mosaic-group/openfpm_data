@@ -19,11 +19,11 @@ enum memory_space_t {
 };
 
 struct cuda_exception_t : std::exception {
-  hipError_t result;
+  cudaError_t result;
 
-  cuda_exception_t(hipError_t result_) : result(result_) { }
+  cuda_exception_t(cudaError_t result_) : result(result_) { }
   virtual const char* what() const noexcept {
-    return hipGetErrorString(result);
+    return cudaGetErrorString(result);
   }
 };
 
@@ -48,13 +48,13 @@ inline std::string stringprintf(const char* format, ...) {
 
 } // namespace detail
 
-inline std::string device_prop_string(hipDeviceProp_t prop) {
+inline std::string device_prop_string(cudaDeviceProp prop) {
   int ordinal;
-  hipGetDevice(&ordinal);
+  cudaGetDevice(&ordinal);
 
   size_t freeMem, totalMem;
-  hipError_t result = hipMemGetInfo(&freeMem, &totalMem);
-  if(hipSuccess != result) throw cuda_exception_t(result);
+  cudaError_t result = cudaMemGetInfo(&freeMem, &totalMem);
+  if(cudaSuccess != result) throw cuda_exception_t(result);
 
   double memBandwidth = (prop.memoryClockRate * 1000.0) *
     (prop.memoryBusWidth / 8 * 2) / 1.0e9;
@@ -85,9 +85,9 @@ struct context_t {
   context_t(const context_t& rhs) = delete;
   context_t& operator=(const context_t& rhs) = delete;
 
-  virtual const hipDeviceProp_t& props() const = 0;
+  virtual const cudaDeviceProp& props() const = 0;
   virtual int ptx_version() const = 0;
-  virtual hipStream_t stream() = 0;
+  virtual cudaStream_t stream() = 0;
 
   // Alloc GPU memory.
   virtual void* alloc(size_t size, memory_space_t space) = 0;
@@ -96,7 +96,7 @@ struct context_t {
   // cudaStreamSynchronize or cudaDeviceSynchronize for stream 0.
   virtual void synchronize() = 0;
 
-  virtual hipEvent_t event() = 0;
+  virtual cudaEvent_t event() = 0;
   virtual void timer_begin() = 0;
   virtual double timer_end() = 0;
 };
