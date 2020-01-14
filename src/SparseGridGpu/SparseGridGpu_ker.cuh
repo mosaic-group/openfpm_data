@@ -349,6 +349,15 @@ public:
     	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template get<p>(grid.LinId(coord));
     }
 
+    // Data management methods
+
+    template<typename CoordT>
+    inline __device__ void
+    get_sparse(const grid_key_dx<dim, CoordT> & coord, unsigned int & dataBlockPos, unsigned int & offset) const
+    {
+    	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::get_sparse(grid.LinId(coord),dataBlockPos,offset);
+    }
+
     /*! \brief Access the grid point
      *
      * \param coord point

@@ -459,6 +459,12 @@ private:
     //! the set of all sub-set to pack
     mutable openfpm::vector_gpu<Box<dim,int>> pack_subs;
 
+    //! links of the padding points with real points of a coarse sparsegrid
+    openfpm::vector_gpu<aggregate<size_t>> links_up;
+
+    //! links of the padding points with real points of a finer sparsegrid
+    openfpm::vector_gpu<aggregate<size_t>> link_dw;
+
 protected:
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
     typedef AggregateBlockT AggregateInternalT;
@@ -1074,6 +1080,53 @@ public:
     auto insert(const CoordT &coord) -> ScalarTypeOf<AggregateBlockT, p> &
     {
         return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::template insert<p>(gridGeometry.LinId(coord));
+    }
+
+
+
+	/*! \brief construct link between levels
+	 *
+	 * \praram grid_up grid level up
+	 * \param grid_dw grid level down
+	 *
+	 */
+    void construct_link(self & grid_up, self & grid_dw, mgpu::ofp_context_t &context)
+    {
+        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
+        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+
+    	ite_gpu<1> ite;
+
+    	ite.wthr.x = indexBuffer.size();
+    	ite.wthr.y = 1;
+    	ite.wthr.z = 1;
+
+    	ite.thr.x = getBlockSize();
+    	ite.thr.y = 1;
+    	ite.thr.z = 1;
+
+    	openfpm::vector_gpu<aggregate<unsigned int>> output;
+    	output.resize(indexBuffer.size() + 1);
+
+    	CUDA_LAUNCH((SparseGridGpuKernels::link_construct<dim,
+    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								blockSize>),ite,grid_up.toKernel(),this->toKernel(),output.toKernel());
+
+
+    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
+
+    	output.template deviceToHost<0>(output.size()-1,output.size()-1);
+
+    	unsigned int np_lup = output.template get<0>(output.size()-1);
+
+    	links_up.resize(np_lup);
+
+    	CUDA_LAUNCH((SparseGridGpuKernels::link_construct_insert<dim,
+    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								blockSize>),ite,grid_up.toKernel(),this->toKernel(),output.toKernel(),links_up.toKernel());
+
+
     }
 
     /*! \Brief Before inser any element you have to call this function to initialize the insert buffer

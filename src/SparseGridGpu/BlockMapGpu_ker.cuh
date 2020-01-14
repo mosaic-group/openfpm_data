@@ -152,6 +152,23 @@ public:
 		#endif // __NVCC__
 	}
 
+    inline __device__ void get_sparse(unsigned int linId, unsigned int & dataBlockPos , unsigned int & offset)
+    {
+    #ifdef __NVCC__
+
+        typedef BlockTypeOf<AggregateBlockT, pMask> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        offset = linId % BlockT::size;
+
+        const auto sid = blockMap.get_sparse(blockId);
+
+        dataBlockPos = sid.id;
+
+    #else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+    #endif // __NVCC__
+    }
+
     inline static __device__ unsigned int getBlockId(unsigned int linId)
     {
 #ifdef __NVCC__
@@ -251,6 +268,7 @@ inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif // __NVCC__
 }
+
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
 template<unsigned int p>

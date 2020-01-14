@@ -91,6 +91,76 @@ namespace SparseGridGpuKernels
         sparseGrid.storeBlock<pMask>(dataBlock, enlargedBlock);
     }
 
+    /*! \brief construct the link between 2 sparse grid
+     *
+     *
+     */
+    template<unsigned int dim, unsigned int pMask, unsigned int chunk_size , typename SparseGridType, typename outputType>
+    __global__ void link_construct(SparseGridType grid_up, SparseGridType grid_cu, outputType out)
+    {
+        const unsigned int dataBlockPos = blockIdx.x;
+        const unsigned int offset = threadIdx.x;
+
+        auto & indexBuffer = grid_cu.getIndexBuffer();
+        auto & dataBuffer = grid_cu.getDataBuffer();
+
+        // if the point is a padding
+        if (dataBuffer.template get <pMask>(dataBlockPos)[offset] & 0x2)
+        {
+        	auto id = indexBuffer.template get<0>(dataBlockPos);
+        	grid_key_dx<dim> pos = grid_cu.getCoord(id*chunk_size + offset);
+
+        	for (int i = 0 ; i < dim ; i++)
+        	{pos.set_d(i,pos.get(i) / 2);}
+
+        	if (grid_up.template get<pMask>(pos)[offset] == 0x1)
+        	{
+        		atomic_add(&out.template get<0>(dataBlockPos),1);
+        	}
+        }
+    }
+
+    /*! \brief construct the link between 2 sparse grid
+     *
+     *
+     */
+    template<unsigned int dim, unsigned int pMask, unsigned int chunk_size, typename SparseGridType, typename scanType, typename outputType>
+    __global__ void link_construct_insert(SparseGridType grid_up, SparseGridType grid_cu, scanType scan, outputType out)
+    {
+        const unsigned int dataBlockPos = blockIdx.x;
+        const unsigned int offset = threadIdx.x;
+
+        auto & indexBuffer = grid_cu.getIndexBuffer();
+        auto & dataBuffer = grid_cu.getDataBuffer();
+
+        auto & dataBuffer_up = grid_up.getDataBuffer();
+
+        __shared__ int cnt;
+        cnt = 0;
+        __syncthreads();
+
+        // if the point is a padding
+        if (dataBuffer.template get <pMask>(dataBlockPos)[offset] & 0x2)
+        {
+        	auto id = indexBuffer.template get<0>(dataBlockPos);
+        	grid_key_dx<dim> pos = grid_cu.getCoord(id*chunk_size + offset);
+
+        	for (int i = 0 ; i < dim ; i++)
+        	{pos.set_d(i,pos.get(i) / 2);}
+
+        	unsigned int dataBlockPos_up;
+        	unsigned int offset_up;
+
+        	grid_up.get_sparse(pos,dataBlockPos_up,offset_up);
+
+        	if (dataBuffer_up.template get<pMask>(dataBlockPos_up) == 0x1)
+        	{
+        		int c = atomicAdd(&cnt,1);
+        		out.template get<0>(scan.template get<0>(dataBlockPos) + c) = dataBlockPos_up * chunk_size + offset_up;
+        	}
+        }
+    }
+
     /*! \brief find the neighborhood of each chunk
      *
      * \param indexBuffer Chunk indec buffer
