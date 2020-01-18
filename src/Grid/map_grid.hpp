@@ -52,6 +52,7 @@
 #include "Packer_Unpacker/has_pack_agg.hpp"
 #include "cuda/cuda_grid_gpu_funcs.cuh"
 #include "grid_base_implementation.hpp"
+#include "util/for_each_ref.hpp"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;

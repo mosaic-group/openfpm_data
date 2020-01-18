@@ -167,6 +167,23 @@ public:
     	return blockMap;
     }
 
+    inline __device__ void get_sparse(unsigned int linId, unsigned int & dataBlockPos , unsigned int & offset) const
+    {
+    #ifdef __NVCC__
+
+        typedef BlockTypeOf<AggregateBlockT, pMask> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        offset = linId % BlockT::size;
+
+        const auto sid = blockMap.get_sparse(blockId);
+
+        dataBlockPos = sid.id;
+
+    #else // __NVCC__
+        std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
+    #endif // __NVCC__
+    }
+
     inline static __device__ unsigned int getBlockId(unsigned int linId)
     {
 #ifdef __NVCC__
@@ -241,14 +258,6 @@ public:
     inline __device__ void remove(unsigned int blockId, unsigned int offset)
     {
     #ifdef __NVCC__
-    //    const auto & aggregate = blockMap.get(blockId);
-    //    const auto & block = aggregate.template get<p>();
-    //    const auto & mask = aggregate.template get<pMask>();
-    //    // Now check if the element actually exists
-    //    return exist(mask[offset])
-    //                ? block[offset]
-    //                : blockMap.template getBackground<p>()[offset];
-    ////    return blockMap.template get<p>(blockId)[offset];
 
         const auto sid = blockMap.get_sparse(blockId);
         blockMap.template get<pMask>(sid)[offset] = 0;
@@ -256,6 +265,26 @@ public:
     #else // __NVCC__
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
     #endif // __NVCC__
+    }
+
+    /*! \brief Return the index buffer for the sparse vector
+     *
+     *
+     *
+     */
+    inline __device__ auto getIndexBuffer() -> decltype(blockMap.getIndexBuffer())
+    {
+    	return blockMap.getIndexBuffer();
+    }
+
+    /*! \brief Return the data buffer for the sparse vector
+     *
+     *
+     *
+     */
+    inline __device__ auto getDataBuffer() -> decltype(blockMap.getDataBuffer())
+    {
+    	return blockMap.getDataBuffer();
     }
 
 #ifdef SE_CLASS1
@@ -298,6 +327,7 @@ inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif // __NVCC__
 }
+
 
 template<typename AggregateBlockT, typename indexT, template<typename> class layout_base>
 template<unsigned int p>

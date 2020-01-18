@@ -8,6 +8,12 @@
 #ifndef OPENFPM_DATA_SRC_GRID_GRID_BASE_IMPL_LAYOUT_HPP_
 #define OPENFPM_DATA_SRC_GRID_GRID_BASE_IMPL_LAYOUT_HPP_
 
+#include <boost/fusion/include/mpl.hpp>
+#include "memory_ly/memory_conf.hpp"
+#include <boost/fusion/include/for_each.hpp>
+#include "Grid/Encap.hpp"
+#include "Space/Shape/Box.hpp"
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each

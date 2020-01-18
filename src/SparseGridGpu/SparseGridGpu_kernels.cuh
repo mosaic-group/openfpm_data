@@ -91,6 +91,186 @@ namespace SparseGridGpuKernels
         sparseGrid.template storeBlock<pMask>(dataBlock, enlargedBlock);
     }
 
+    /*! \brief construct the link between 2 sparse grid
+     *
+     *
+     */
+    template<unsigned int dim, unsigned int pMask, unsigned int chunk_size , typename SparseGridType, typename outputType>
+    __global__ void link_construct(SparseGridType grid_up, SparseGridType grid_cu, outputType out)
+    {
+        const unsigned int dataBlockPos = blockIdx.x;
+        const unsigned int offset = threadIdx.x;
+
+        auto & indexBuffer = grid_cu.getIndexBuffer();
+        auto & dataBuffer = grid_cu.getDataBuffer();
+
+        // if the point is a padding
+        if (dataBuffer.template get <pMask>(dataBlockPos)[offset] & 0x2)
+        {
+        	auto id = indexBuffer.template get<0>(dataBlockPos);
+        	grid_key_dx<dim,int> pos = grid_cu.getCoord(id*chunk_size + offset);
+
+        	printf("HERE %d %d \n",pos.get(0),pos.get(1));
+
+        	for (int i = 0 ; i < dim ; i++)
+        	{pos.set_d(i,pos.get(i) / 2);}
+
+        	if (grid_up.template get<pMask>(pos) == 0x1)
+        	{
+        		atomicAdd(&out.template get<0>(dataBlockPos),1);
+        	}
+        }
+    }
+
+    /*! \brief count the padding particles
+     *
+     *
+     */
+    template<unsigned int dim, unsigned int pMask, unsigned int chunk_size , typename SparseGridType, typename outputType>
+    __global__ void count_paddings(SparseGridType grid_cu, outputType out)
+    {
+        const unsigned int dataBlockPos = blockIdx.x;
+        const unsigned int offset = threadIdx.x;
+
+        auto & indexBuffer = grid_cu.getIndexBuffer();
+        auto & dataBuffer = grid_cu.getDataBuffer();
+
+        // if the point is a padding
+        if (dataBuffer.template get <pMask>(dataBlockPos)[offset] & 0x2)
+        {
+        	atomicAdd(&out.template get<0>(dataBlockPos),1);
+        }
+    }
+
+    /*! \brief count the padding particles
+     *
+     *
+     */
+    template<unsigned int pMask, typename SparseGridType, typename ScanType, typename outputType>
+    __global__ void collect_paddings(SparseGridType grid_cu, ScanType stp, outputType out)
+    {
+        const unsigned int dataBlockPos = blockIdx.x;
+        const unsigned int offset = threadIdx.x;
+
+        __shared__ int counter;
+        counter = 0;
+        __syncthreads();
+
+        auto & indexBuffer = grid_cu.getIndexBuffer();
+        auto & dataBuffer = grid_cu.getDataBuffer();
+
+        int pad_offset = stp.template get<0>(dataBlockPos);
+
+        // if the point is a padding
+        if (dataBuffer.template get <pMask>(dataBlockPos)[offset] & 0x2)
+        {
+        	int cnt = atomicAdd(&counter,1);
+
+        	out.template get<0>(pad_offset + cnt) = dataBlockPos;
+        	out.template get<1>(pad_offset + cnt) = offset;
+        }
+    }
+
+    /*! \brief construct the link between 2 sparse grid
+     *
+     *
+     */
+    template<unsigned int dim, unsigned int pMask, unsigned int chunk_size,
+    		 typename padPointType , typename SparseGridType,
+    		 typename outputType>
+    __global__ void link_construct_dw_count(padPointType padPoints, SparseGridType grid_dw, SparseGridType grid_cu, outputType out, Point<dim,int> p_dw)
+    {
+    	const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+    	if (p >= padPoints.size())	{return;}
+
+        const unsigned int dataBlockPos = padPoints.template get<0>(p);
+        const unsigned int offset = padPoints.template get<1>(p);
+
+        auto & indexBuffer = grid_cu.getIndexBuffer();
+        auto & dataBuffer = grid_cu.getDataBuffer();
+
+		auto id = indexBuffer.template get<0>(dataBlockPos);
+		grid_key_dx<dim,int> pos = grid_cu.getCoord(id*chunk_size + offset);
+
+		for (int i = 0 ; i < dim ; i++)
+		{pos.set_d(i,pos.get(i) * 2 + p_dw.get(i) );}
+
+		for (int j = 0 ; j < 2*dim ; j++)
+		{
+			grid_key_dx<dim,int> kc;
+			for (int k = 0 ; k < dim ; k++)
+			{
+				kc.set_d(k,pos.get(k) + ((j >> k) & 0x1) );
+			}
+
+			printf("COUNT p: %d  dataBlockPos: %d   offset: %d     kc: %d %d   pos: %d %d\n",p,dataBlockPos,offset,kc.get(0),kc.get(1),pos.get(0),pos.get(1));
+
+			if (grid_dw.template get<pMask>(kc) & 0x1)
+			{
+				printf("COUNT 2   %d %d \n",kc.get(0),kc.get(1));
+
+				int a = atomicAdd(&out.template get<0>(p),1);
+			}
+		}
+    }
+
+    /*! \brief construct the link between 2 sparse grid
+     *
+     *
+     */
+    template<unsigned int dim, unsigned int pMask, unsigned int chunk_size,
+    typename padPointType , typename SparseGridType, typename scanType, typename outputType>
+    __global__ void link_construct_insert_dw(padPointType padPoints, SparseGridType grid_dw, SparseGridType grid_cu, scanType scan, outputType out, Point<dim,int> p_dw)
+    {
+    	const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+    	if (p >= padPoints.size())	{return;}
+
+        const unsigned int dataBlockPos = padPoints.template get<0>(p);
+        const unsigned int offset = padPoints.template get<1>(p);
+
+        auto & indexBuffer = grid_cu.getIndexBuffer();
+        auto & dataBuffer = grid_cu.getDataBuffer();
+
+        auto & dataBuffer_dw = grid_dw.getDataBuffer();
+
+		auto id = indexBuffer.template get<0>(dataBlockPos);
+		grid_key_dx<dim,int> pos = grid_cu.getCoord(id*chunk_size + offset);
+
+		for (int i = 0 ; i < dim ; i++)
+		{pos.set_d(i,pos.get(i) * 2 + p_dw.get(i) );}
+
+		unsigned int dataBlockPos_dw;
+		unsigned int offset_dw;
+
+		int link_offset = scan.template get<0>(p);
+
+		int c = 0;
+		for (int j = 0 ; j < 2*dim ; j++)
+		{
+			grid_key_dx<dim,int> kc;
+			for (int k = 0 ; k < dim ; k++)
+			{
+				kc.set_d(k,pos.get(k) + ((j >> k) & 0x1) );
+			}
+
+			grid_dw.get_sparse(kc,dataBlockPos_dw,offset_dw);
+
+			printf("HERE2 %d %d     %d %d     %d %d\n",pos.get(0),pos.get(1),kc.get(0),kc.get(1),dataBlockPos_dw,offset_dw);
+
+			if (dataBuffer_dw.template get<pMask>(dataBlockPos_dw)[offset_dw] & 0x1)
+			{
+				printf("ADD %d      %d       %d %d \n",offset_dw,p,link_offset,c);
+
+				out.template get<0>(link_offset + c) = dataBlockPos_dw;
+				out.template get<1>(link_offset + c) = offset_dw;
+
+				c++;
+			}
+		}
+    }
+
     /*! \brief find the neighborhood of each chunk
      *
      * \param indexBuffer Chunk indec buffer

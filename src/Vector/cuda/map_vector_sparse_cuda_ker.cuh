@@ -8,6 +8,8 @@
 #ifndef MAP_VECTOR_SPARSE_CUDA_KER_CUH_
 #define MAP_VECTOR_SPARSE_CUDA_KER_CUH_
 
+#include "util/for_each_ref.hpp"
+
 //todo: Check where it's a good place to put the following method...
 template<typename dim3Ta, typename dim3Tb>
 inline __device__ __host__ int dim3CoordToInt(const dim3Ta & coord, const dim3Tb & dimensions)
@@ -495,6 +497,33 @@ namespace openfpm
 #endif
 		}
 
+
+        /*! \brief Get the data buffer
+         *
+         * \return the reference to the data buffer
+         */
+        __device__ auto getDataBuffer() -> decltype(vct_data)&
+        {
+            return vct_data;
+        }
+
+        /*! \brief Get the indices buffer
+        *
+        * \return the reference to the indices buffer
+        */
+        __device__ auto getIndexBuffer() const -> const decltype(vct_index)&
+        {
+            return vct_index;
+        }
+
+        /*! \brief Get the data buffer
+         *
+         * \return the reference to the data buffer
+         */
+        __device__ auto getDataBuffer() const -> const decltype(vct_data)&
+        {
+            return vct_data;
+        }
 
 #ifdef SE_CLASS1
 
