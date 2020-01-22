@@ -143,34 +143,6 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 	    return true;
 	}
 
-	/*! \brief It absorb the allocated object from another memory_c
-	 *
-	 * \param mem_c Memory object
-	 *
-	 */
-/*	void move_copy(memory_c & mem_c)
-	{
-		// if mem_r is allocated delete it
-		if (mem_r != NULL)
-			delete(mem_r);
-
-		//if mem is already allocated, deallocate it
-		if (mem != NULL)
-			delete(mem);
-
-		// move the pointer
-		mem = mem_c.mem;
-
-		// Null the pointer to avoid double deallocation
-		mem_c.mem = NULL;
-
-		// move the pointer
-		mem_r = mem_c.mem_r;
-
-		// Null the pointer to avoid double deallocation
-		mem_c.mem_r = NULL;
-	}*/
-
 	//! constructor
 	memory_c():mem(NULL){}
 
@@ -228,43 +200,6 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 		mem_obj.mem_r.swap(mem_r);
 	}
 
-};
-
-
-/*!
- * \brief This class is a container for the memory interface like HeapMemory CudaMemory
- *
- * It store the object used to allocate memory and a representation of this memory as an array of objects T
- *
- * It is mainly used by memory_conf to create the correct memory layout
- *
- * \see memory_traits_inte memory_traits_lin
- *
- */
-template<typename T>
-class memory_c<T,MEMORY_C_REDUCED,memory>
-{
-	public:
-
-	//! define T
-	typedef memory_c<T> type;
-
-	//! define a reference to T
-	typedef T& reference;
-
-	//! define T
-	typedef T vtype;
-
-	//! object that represent the memory as an array of objects T
-	memory_array<T> mem_r;
-
-	//! constructor
-	memory_c() {}
-
-	//! destructor
-	~memory_c()
-	{
-	}
 };
 
 /*! \brief This class is a trick to indicate the compiler a specific

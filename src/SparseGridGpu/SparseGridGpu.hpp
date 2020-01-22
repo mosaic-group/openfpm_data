@@ -1258,6 +1258,18 @@ public:
         return private_get_data_array().template get<p>(coord.get_cnk_pos_id())[coord.get_data_id()];
     }
 
+    /*! \brief Return the flag of the point
+     *
+     * It indicate for example is if the point is a padding point (internaly it return the pMask flag)
+     *
+     * \return the flag
+     *
+     */
+    unsigned char getFlag(const sparse_grid_gpu_index<self> & coord) const
+    {
+    	return private_get_data_array().template get<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>(coord.get_cnk_pos_id())[coord.get_data_id()];
+    }
+
     template<unsigned int p, typename CoordT>
     auto insert(const CoordT &coord) -> ScalarTypeOf<AggregateBlockT, p> &
     {
@@ -1375,6 +1387,17 @@ public:
         pd_points.resize(padding_points);
 
         CUDA_LAUNCH((SparseGridGpuKernels::collect_paddings<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,this->toKernel(),output.toKernel(),pd_points.toKernel());
+
+        //////////////////// DEBUG //////////////////////
+
+        pd_points.template deviceToHost<0,1>();
+
+        for (int i = 0 ; i < pd_points.size() ; i++)
+        {
+        	std::cout << pd_points.template get<0>(i) << "  " << pd_points.template get<1>(i) << std::endl;
+        }
+
+        /////////////////////////////////////////////////
 
         // Count number of link down for padding points
 
@@ -2566,8 +2589,6 @@ public:
 			ite.thr.x = blockSize;
 			ite.thr.y = 1;
 			ite.thr.z = 1;
-
-			Unpack_stat ps;
 
 			CUDA_LAUNCH((SparseGridGpuKernels::resetMask<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,vad.toKernel(),start);
 

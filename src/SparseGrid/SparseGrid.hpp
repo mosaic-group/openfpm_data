@@ -908,6 +908,18 @@ public:
 		return chunks.template get<p>(v1.getChunk())[v1.getPos()];
 	}
 
+	/*! \brief Get the point flag (in this case it always return 0)
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return 0
+	 *
+	 */
+	inline unsigned char getFlag(const grid_key_dx<dim> & v1) const
+	{
+		return 0;
+	}
+
 	/*! \brief Return a Domain iterator
 	 *
 	 * \return return the domain iterator

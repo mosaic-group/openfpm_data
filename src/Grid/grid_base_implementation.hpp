@@ -957,6 +957,18 @@ public:
 		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
 	}
 
+	/*! \brief Get the point flag (in this case just return 0)
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return zero
+	 *
+	 */
+	__device__ __host__ inline unsigned char getFlag(const grid_key_dx<dim> & v1) const
+	{
+		return 0;
+	}
+
 	/*! \brief Get the const reference of the selected element
 	 *
 	 * \param v1 grid_key that identify the element in the grid
