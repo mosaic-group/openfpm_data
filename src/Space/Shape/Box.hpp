@@ -1093,7 +1093,7 @@ public:
 		return true;
 	}
 
-	/*! \brief Check if the point is inside the region
+	/*! \brief Check if the point is inside the region (Border included)
 	 *
 	 * \param p point to check
 	 * \return true if the point is inside the space
@@ -1122,6 +1122,34 @@ public:
 		return true;
 	}
 
+	/*! \brief Check if the point is inside the region (Border included)
+	 *
+	 * \param k key to check
+	 * \return true if the point is inside the space
+	 *
+	 */
+	template<typename KeyType>
+	__device__ __host__ inline bool isInsideKey(const KeyType & k) const
+	{
+		// check if bound
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			// if outside the region return false
+			if (   k.get(i) < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
+			    || k.get(i) > boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
+			{
+				// Out of bound
+
+				return false;
+			}
+
+		}
+
+		// In bound
+
+		return true;
+	}
 
 	/*! \brief Check if the Box is a valid box P2 >= P1
 	 *

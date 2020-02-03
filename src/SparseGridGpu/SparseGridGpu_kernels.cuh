@@ -26,11 +26,12 @@ namespace SparseGridGpuKernels
             unsigned int stencilSupportRadius,
             unsigned int pMask,
             typename NN_type,
+            typename checker_type,
             typename IndexBufT,
             typename DataBufT,
             typename SparseGridT,
             typename nn_blocksT>
-    __global__ void tagBoundaries(IndexBufT indexBuffer, DataBufT dataBuffer, SparseGridT sparseGrid,nn_blocksT nbT)
+    __global__ void tagBoundaries(IndexBufT indexBuffer, DataBufT dataBuffer, SparseGridT sparseGrid,nn_blocksT nbT, checker_type chk)
     {
         //todo: #ifdef __NVCC__
         constexpr unsigned int pIndex = 0;
@@ -66,8 +67,10 @@ namespace SparseGridGpuKernels
 
         __syncthreads();
 
+        bool check = chk.check(sparseGrid,dataBlockId,offset);
+
         //Here code for tagging the boundary
-        if (offset < blockSize)
+        if (offset < blockSize && check == true)
         {
             const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
             const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
@@ -204,12 +207,8 @@ namespace SparseGridGpuKernels
 				kc.set_d(k,pos.get(k) + ((j >> k) & 0x1) );
 			}
 
-			printf("COUNT p: %d  dataBlockPos: %d   offset: %d     kc: %d %d   pos: %d %d\n",p,dataBlockPos,offset,kc.get(0),kc.get(1),pos.get(0),pos.get(1));
-
 			if (grid_dw.template get<pMask>(kc) & 0x1)
 			{
-				printf("COUNT 2   %d %d \n",kc.get(0),kc.get(1));
-
 				int a = atomicAdd(&out.template get<0>(p),1);
 			}
 		}
@@ -257,12 +256,8 @@ namespace SparseGridGpuKernels
 
 			grid_dw.get_sparse(kc,dataBlockPos_dw,offset_dw);
 
-			printf("HERE2 %d %d     %d %d     %d %d\n",pos.get(0),pos.get(1),kc.get(0),kc.get(1),dataBlockPos_dw,offset_dw);
-
 			if (dataBuffer_dw.template get<pMask>(dataBlockPos_dw)[offset_dw] & 0x1)
 			{
-				printf("ADD %d      %d       %d %d \n",offset_dw,p,link_offset,c);
-
 				out.template get<0>(link_offset + c) = dataBlockPos_dw;
 				out.template get<1>(link_offset + c) = offset_dw;
 
@@ -855,6 +850,7 @@ namespace SparseGridGpuKernels
     								add_index_type add_index,
     								data_ptrs_type data_ptrs,
     								add_data_type add_data,
+    								unsigned char * masks_ptr,
     								unsigned int start)
     {
     	// points
@@ -877,7 +873,9 @@ namespace SparseGridGpuKernels
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
 
-		add_data.template get<pMask>(dataBlockPos + start)[offset] = 1;
+		printf("MASK %d  %d \n",(int)masks_ptr[ord],ord);
+
+		add_data.template get<pMask>(dataBlockPos + start)[offset] = masks_ptr[ord];
     }
 
     template<unsigned int blockSize, typename vector_type, typename output_type>
@@ -1014,7 +1012,8 @@ namespace SparseGridGpuKernels
 		((unsigned int *)scan_ptr.ptr[k])[pos] = ppos;
     }
 
-    template<typename AggregateT,
+    template<unsigned int pMask,
+             typename AggregateT,
     		 unsigned int n_it,
     		 unsigned int n_prp,
     		 typename indexT,
@@ -1034,6 +1033,7 @@ namespace SparseGridGpuKernels
     						  arr_ptr<n_it> scan_ptr,
     						  arr_arr_ptr<n_it,n_prp> * data_ptr,
     						  arr_ptr<n_it> offset_ptr,
+    						  arr_ptr<n_it> mask_ptr,
     						  static_array<n_it,unsigned int> sar)
     {
         const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1062,6 +1062,7 @@ namespace SparseGridGpuKernels
 
 		((indexT *)index_ptr.ptr[k])[dataBlockPosPack] = indexBuff.template get<0>(dataBlockPos);
 		((short int *)offset_ptr.ptr[k])[p_offset] = offset;
+		((unsigned char *)mask_ptr.ptr[k])[p_offset] = dataBuff.template get<pMask>(dataBlockPos)[offset];
     }
 
     // Apply in-place operator on boundary

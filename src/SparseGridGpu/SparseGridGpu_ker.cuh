@@ -126,6 +126,19 @@ public:
 
     }
 
+    /*! \brief The inversion of getLinId
+     *
+     * \param linearized index
+     *
+     * \return the point coordinate
+     *
+     */
+    inline __device__ grid_key_dx<dim, int> getCoord(size_t dataBlockId, unsigned offset) const
+    {
+        return grid.InvLinId(dataBlockId * blockSize + offset);
+
+    }
+
     /*! \brief Given a point to insert, return the block-id and offset of that point
      *
      * \param p Point the thread is processing

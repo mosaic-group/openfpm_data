@@ -539,6 +539,7 @@ private:
     openfpm::vector<void *> scan_ptrs;
     openfpm::vector<void *> data_ptrs;
     openfpm::vector<void *> offset_ptrs;
+    openfpm::vector<void *> mask_ptrs;
 
     //! set of existing points
     //! the formats is id/blockSize = data block poosition id % blockSize = offset
@@ -805,8 +806,6 @@ private:
 
         if (numScalars == 0) return;
 
-        // NOTE: Here we want to work only on one data chunk per block!
-        constexpr unsigned int chunksPerBlock = 1;
         auto ite = e_points.getGPUIterator(BLOCK_SIZE_STENCIL);
 
         CUDA_LAUNCH((SparseGridGpuKernels::applyStencilInPlaceNoShared
@@ -903,6 +902,7 @@ private:
     	arr_arr_ptr<n_it,sizeof...(prp)> data_ptr;
     	arr_ptr<n_it> scan_ptr;
     	arr_ptr<n_it> offset_ptr;
+    	arr_ptr<n_it> mask_ptr;
     	static_array<n_it,unsigned int> sar;
 
     	auto & indexBuffer = private_get_index_array();
@@ -939,6 +939,7 @@ private:
     		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(dpf);
 
     		offset_ptr.ptr[i] = offset_ptrs.get(i);
+    		mask_ptr.ptr[i] = mask_ptrs.get(i);
 
     		tot_cnk += n_cnk;
     	}
@@ -993,7 +994,8 @@ private:
 
 			mem.hostToDevice();
 
-			CUDA_LAUNCH((SparseGridGpuKernels::pack_data<AggregateT,
+			CUDA_LAUNCH((SparseGridGpuKernels::pack_data<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+					               AggregateT,
 								   n_it,
 								   sizeof...(prp),
 								   indexT,
@@ -1014,6 +1016,7 @@ private:
 								   scan_ptr,
 								   (arr_arr_ptr<n_it,sizeof...(prp)> *)mem.getDevicePointer(),
 								   offset_ptr,
+								   mask_ptr,
 								   sar);
     	}
 
@@ -1498,8 +1501,8 @@ public:
 		BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::preFlush();
 	}
 
-    template<typename stencil_type = NNStar<dim>>
-    void tagBoundaries(mgpu::ofp_context_t &context, tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
+    template<typename stencil_type = NNStar<dim>, typename checker_type = No_check>
+    void tagBoundaries(mgpu::ofp_context_t &context, checker_type chk = checker_type(), tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -1530,8 +1533,9 @@ public:
                     dim,
                     1,
                     BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                    stencil_type>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel());
+                    stencil_type,
+                    checker_type>),
+                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
         }
         else if (stencilSupportRadius == 2)
         {
@@ -1539,8 +1543,9 @@ public:
                     dim,
                     2,
                     BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                    stencil_type>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel());
+                    stencil_type,
+                    checker_type>),
+                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
         }
         else if (stencilSupportRadius == 0)
         {
@@ -1548,8 +1553,9 @@ public:
                     dim,
                     0,
                     BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                    stencil_type>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel());
+                    stencil_type,
+                    checker_type>),
+                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
         }
         else
         {
@@ -1980,7 +1986,7 @@ public:
 		req = sizeof(indexT) +               // byte required to pack the number
 			  sizeof(indexT)*indexBuffer.size() +    // byte required to pack the chunk indexes
 			  sizeof(indexT)*tmp.size() +            // byte required to pack the scan of the chunks points
-			  n_pnt*(spq.point_size + 2);    // byte required to pack data + offset position
+			  n_pnt*(spq.point_size + sizeof(short int) + sizeof(unsigned char));    // byte required to pack data + offset position
     }
 
 	/*! \brief Calculate the size to pack part of this structure
@@ -2022,6 +2028,7 @@ public:
 	    scan_ptrs.clear();
 	    data_ptrs.clear();
 	    offset_ptrs.clear();
+	    mask_ptrs.clear();
 
 		req_index = 0;
 	}
@@ -2154,7 +2161,8 @@ public:
     				  sizeof(indexT)*n_cnk +    				   // byte required to pack the chunk indexes
     				  align_number(sizeof(indexT),(n_cnk+1)*sizeof(unsigned int)) +            // byte required to pack the scan of the chunk point
     				  align_number(sizeof(indexT),n_pnt*(spq.point_size)) +  // byte required to pack data
-    				  align_number(sizeof(indexT),n_pnt*sizeof(short int));  // byte required to pack offsets
+    				  align_number(sizeof(indexT),n_pnt*sizeof(short int)) + // byte required to pack offsets
+    				  align_number(sizeof(indexT),n_pnt*sizeof(unsigned char));  // byte required to pack masks
     	}
 
     	scan_it.template hostToDevice<0>();
@@ -2219,9 +2227,13 @@ public:
 		mem.allocate( align_number(sizeof(indexT),n_pnt*(spq.point_size)) );
 		data_ptrs.add(mem.getDevicePointer());
 
-		// chunk data
+		// space for offsets
 		mem.allocate( align_number(sizeof(indexT),n_pnt*sizeof(short int) ) );
 		offset_ptrs.add(mem.getDevicePointer());
+
+		// space for offsets
+		mem.allocate( align_number(sizeof(indexT),n_pnt*sizeof(unsigned char) ) );
+		mask_ptrs.add(mem.getDevicePointer());
 
 		req_index++;
 	}
@@ -2519,6 +2531,12 @@ public:
 
 		short int * offsets = (short int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset);
 
+		actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(short));
+
+		unsigned char * masks_ptr = (unsigned char *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset);
+
+		std::cout << "UNACO" << std::endl;
+
 		if (n_pnt != 0)
 		{
 			linearizer gridGeoPack(sz);
@@ -2596,6 +2614,8 @@ public:
 
 			ite = tmp2.getGPUIterator();
 
+			std::cout << "FILL_ADD_BUFFER" << std::endl;
+
 			CUDA_LAUNCH((SparseGridGpuKernels::fill_add_buffer<blockSize,
 															   BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
 															   AggregateT,
@@ -2613,10 +2633,12 @@ public:
 																	out.toKernel(),
 																	vai.toKernel(),
 																	data,
-																	vad.toKernel(),start);
+																	vad.toKernel(),
+																	masks_ptr,
+																	start);
 		}
 
-		actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(short int));
+		actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(unsigned char));
 
 		ps.addOffset(actual_offset);
 	}

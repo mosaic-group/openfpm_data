@@ -16,6 +16,36 @@
 // Box need the definition of grid_key_dx_r
 #define HARDWARE 1
 
+
+struct No_check
+{
+	template<typename SparseGrid_type>
+	__device__ __host__ bool check(SparseGrid_type & sggt,unsigned int dataBlockPos, unsigned int offset)
+	{
+		return true;
+	}
+};
+
+template<unsigned int dim, typename T>
+struct Box_check
+{
+	Box<dim,T> box;
+
+	template<typename T2>
+	Box_check(Box<dim,T2> & box)
+	:box(box)
+	{}
+
+	template<typename SparseGridGpu_type>
+	__device__ __host__ bool check(SparseGridGpu_type & sggt,unsigned int dataBlockId, unsigned int offset)
+	{
+		auto key = sggt.getCoord(dataBlockId,offset);
+
+		return box.isInsideKey(key);
+	}
+};
+
+
 /*! \brief Class to check if the edge can be created or not
  *
  * Class to check if the edge can be created or not, in this case no check is implemented

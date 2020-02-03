@@ -974,7 +974,7 @@ void test_convolution_3x3x3_no_shared()
     sparseGrid.template findNeighbours<NNFull<3>>(); // Pre-compute the neighbours pos for each block!
 
     sparseGrid.template setNNType<NNFull<SparseGridZ::dims>>();
-    sparseGrid.template tagBoundaries<NNFull<3>>(ctx,tag_boundaries::CALCULATE_EXISTING_POINTS);
+    sparseGrid.template tagBoundaries<NNFull<3>>(ctx,No_check(),tag_boundaries::CALCULATE_EXISTING_POINTS);
 
     conv_coeff cc;
 
@@ -1242,14 +1242,19 @@ BOOST_AUTO_TEST_CASE(test_pack_request_with_iterator)
 
     size_t cnt = sparseGrid.countExistingElements();
 
-    size_t tot = 8 +                // how many chunks
-    		     sparseGrid.private_get_index_array().size()*16 + 8 +// store the scan + chunk indexes
-    		     cnt*(sizeof(float) + 2); // how much data
+    // The 2 come from the iterators
 
-    std::cout << __FILE__ << ":" << __LINE__ << "  To fix this" << std::endl;
-//    BOOST_REQUIRE_EQUAL(req,tot);
+    size_t tot = 2*8 +                // 2 numbers of chunks
+    		     2*2*dim*4 +          // 2 * 2 * dimension * integer
+    		     align_number(8,4685*8) + align_number(8,4475*8) +            // 4685 chunks + 4475 chunks
+    		     align_number(8,4686*4) + align_number(8,4476*4) +            // store the scan
+    		     align_number(8,185807*4) + align_number(8,176787*4) +        // store the points
+    		     align_number(8,185807*2) + align_number(8,176787*2) +        // store offsets
+    		     align_number(8,185807*1) + align_number(8,176787*1);         // store the mask
 
-    ////////////////////////////////// test something else
+    BOOST_REQUIRE_EQUAL(req,tot);
+
+    ////////////////////////////////// test packing two times the same thing
 
     req = 0;
     sparseGrid.packReset();
@@ -1268,11 +1273,15 @@ BOOST_AUTO_TEST_CASE(test_pack_request_with_iterator)
     }
 
 
-    tot = 8 +                // how many chunks
-    		     sparseGrid.private_get_index_array().size()*16 + 8 + // store the scan + chunk indexes
-    		     2*cnt*(sizeof(float) + 2); // how much data
+    tot = 2*8 +                // 2 numbers of chunks
+    		     2*2*dim*4 +          // 2 * 2 * dimension * integer
+    		     2*align_number(8,sparseGrid.private_get_index_array().size()*8) + //
+    		     2*align_number(8,(sparseGrid.private_get_index_array().size()+1)*4) + // store the scan
+    		     2*align_number(8,cnt*4) +        // store the points
+    		     2*align_number(8,cnt*2) +        // store offsets
+    		     2*align_number(8,cnt*1);          // store masks
 
-//    BOOST_REQUIRE_EQUAL(req,tot);
+    BOOST_REQUIRE_EQUAL(req,tot);
 }
 
 BOOST_AUTO_TEST_CASE(sparsegridgpu_remove_test)
@@ -1428,7 +1437,7 @@ void pack_unpack_test(SG_type & sparseGridDst, SG_type & sparseGridSrc,
 		actual_offset += align_number(sizeof(size_t),(ncnk+1)*sizeof(unsigned int));
 		actual_offset += align_number(sizeof(size_t),n_pnt*(16));
 		actual_offset += align_number(sizeof(size_t),n_pnt*sizeof(short int));
-
+		actual_offset += align_number(sizeof(size_t),n_pnt*sizeof(unsigned char));
 
 		ncnk = *(size_t *)((unsigned char *)mem.getPointer() + actual_offset);
 		BOOST_REQUIRE_EQUAL(ncnk,1420);
@@ -1440,6 +1449,7 @@ void pack_unpack_test(SG_type & sparseGridDst, SG_type & sparseGridSrc,
 		actual_offset += align_number(sizeof(size_t),(ncnk+1)*sizeof(unsigned int));
 		actual_offset += align_number(sizeof(size_t),n_pnt*(16));
 		actual_offset += align_number(sizeof(size_t),n_pnt*sizeof(short int));
+		actual_offset += align_number(sizeof(size_t),n_pnt*sizeof(unsigned char));
 
 		ncnk = *(size_t *)((unsigned char *)mem.getPointer() + actual_offset);
 		BOOST_REQUIRE_EQUAL(ncnk,610);
@@ -1451,6 +1461,7 @@ void pack_unpack_test(SG_type & sparseGridDst, SG_type & sparseGridSrc,
 		actual_offset += align_number(sizeof(size_t),(ncnk+1)*sizeof(unsigned int));
 		actual_offset += align_number(sizeof(size_t),n_pnt*(16));
 		actual_offset += align_number(sizeof(size_t),n_pnt*sizeof(short int));
+		actual_offset += align_number(sizeof(size_t),n_pnt*sizeof(unsigned char));
 
 		ncnk = *(size_t *)((unsigned char *)mem.getPointer() + actual_offset);
 		BOOST_REQUIRE_EQUAL(ncnk,739);
