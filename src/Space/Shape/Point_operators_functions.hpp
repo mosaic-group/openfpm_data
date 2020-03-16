@@ -28,6 +28,9 @@ public:\
 	typedef typename orig::coord_type return_type;\
 \
 	static const unsigned int nvals = exp1::nvals;\
+	\
+	typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;\
+	\
 \
 	inline point_expression_op(const exp1 & o1)\
 	:o1(o1),scal(0)\
@@ -111,6 +114,8 @@ public:
 	//! this operation produce a scalar as result
 	static const unsigned int nvals = 1;
 
+    typedef typename exp1::coord_type coord_type;
+
 	//! Constructor from expression
 	__device__ __host__ inline point_expression_op(const exp1 & o1)
 	:o1(o1),scal(0.0)
@@ -182,6 +187,8 @@ public:
 
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = 1;
+
+	typedef typename exp1::coord_type coord_type;
 
 	//! constructor from an expression
 	__device__ __host__  inline point_expression_op(const exp1 & o1)

@@ -1563,6 +1563,21 @@ namespace openfpm
 			return vector_key_iterator(v_size);
 		}
 
+        /*! \brief Get the vector elements iterator
+ *
+ *
+ * \return an iterator to iterate through all the elements of the vector
+ *
+ */
+        template<unsigned int p>
+        vector_key_iterator_ele<p,self_type> getIteratorElements() const
+        {
+#ifdef SE_CLASS2
+            check_valid(this,8);
+#endif
+            return vector_key_iterator_ele<p,self_type>(*this,size());
+        }
+
 #ifdef CUDA_GPU
 
 		/*! \brief Get an iterator for the GPU

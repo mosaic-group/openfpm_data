@@ -56,6 +56,34 @@ template<unsigned int dim ,typename T> class Point;
 
 /////////////////// Best cast rules ////////////////////////
 
+template<bool cond, typename exp1, typename exp2>
+struct first_or_second_pt
+{
+    typedef typename exp2::coord_type coord_type;
+};
+
+template<typename exp1, typename exp2>
+struct first_or_second_pt<true,exp1,exp2>
+{
+    typedef typename exp1::coord_type coord_type;
+};
+
+template<typename T, typename Sfinae = void>
+struct has_coordtype: std::false_type {};
+
+/*! \brief has_data check if a type has defined a member data
+ *
+ * ### Example
+ *
+ * \snippet util_test.hpp Check has_data
+ *
+ * return true if T::type is a valid type
+ *
+ */
+template<typename T>
+struct has_coordtype<T, typename Void<typename T::coord_type>::type> : std::true_type
+{};
+
 template<typename source1, typename source2>
 struct best_conv
 {
@@ -303,6 +331,9 @@ class point_expression_op<orig,exp1,exp2,POINT_SUM>
 
 public:
 
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
+
 	//! original type of the point expression
 	typedef orig orig_type;
 
@@ -363,6 +394,20 @@ public:
 		init();
 		return o1.value(0) + o2.value(0);
 	}
+
+    /*! \brief Get the component i
+     *
+     * \param i component
+     *
+     * \return the i-component
+     *
+     */
+    template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+            typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+    __device__ __host__  inline r_type operator[](size_t i)
+    {
+        return o1.value(i) + o2.value(i);
+    }
 };
 
 /*! \brief Subtraction operation
@@ -380,6 +425,9 @@ class point_expression_op<orig, exp1,exp2,POINT_SUB>
 	const exp2 o2;
 
 public:
+
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
 
 	//! Original type
 	typedef orig orig_type;
@@ -441,6 +489,8 @@ public:
 		init();
 		return o1.value(0) - o2.value(0);
 	}
+
+
 };
 
 /*! \brief expression that subtract two points
@@ -475,6 +525,9 @@ public:
 
 	//! result dimensionality of this expression
 	static const unsigned int nvals = exp1::nvals;
+
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
 
 	/*! constructor from expression
 	 *
@@ -534,6 +587,9 @@ class point_expression_op<orig,exp1,exp2,POINT_MUL_POINT>
 	mutable typename std::remove_const<typename orig::coord_type>::type scal;
 
 public:
+
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
 
 	//! base type of the expression
 	typedef orig orig_type;
@@ -615,6 +671,9 @@ class point_expression_op<orig,exp1,exp2,POINT_MUL>
 
 public:
 
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
+
 	//! origin type
 	typedef orig orig_type;
 
@@ -691,6 +750,10 @@ class point_expression_op<orig,exp1,exp2,POINT_DIV>
 	const exp2 o2;
 
 public:
+
+
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
 
 	//! original type
 	typedef orig orig_type;
@@ -1506,6 +1569,9 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = dim;
 
+    //! The type of the internal vector
+    typedef T coord_type;
+
 	/*! \brief constructor from an array
 	 *
 	 * \param d array of dimension dim
@@ -1586,6 +1652,9 @@ public:
 
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = dim;
+
+    //! The type of the internal vector
+    typedef T coord_type;
 
 	/*! \brief construct from an array of dimension dim
 	 *
