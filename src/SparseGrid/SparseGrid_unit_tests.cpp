@@ -700,6 +700,9 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil)
 	{
 		it.loadBlockBorder<0>(block_bord_src,mask);
 
+		for (int i = 0 ; i < 1 ; i++)
+		{
+
 		for (int k = it.start_b(2) ; k < it.stop_b(2) ; k++)
 		{
 			for (int j = it.start_b(1) ; j < it.stop_b(1) ; j++)
@@ -729,6 +732,8 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil)
 					block_bord_dst[it.LinB_off(i,j,k)] = (surround)?Lap:6.0;
 				}
 			}
+		}
+
 		}
 
 		it.storeBlock<1>(block_bord_dst);
