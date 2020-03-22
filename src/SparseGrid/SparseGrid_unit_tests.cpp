@@ -5,9 +5,6 @@
  *      Author: i-bird
  */
 
-#ifndef OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRID_UNIT_TESTS_CPP_
-#define OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRID_UNIT_TESTS_CPP_
-
 #define DISABLE_MPI_WRITTERS
 
 #define BOOST_TEST_DYN_LINK
@@ -15,6 +12,7 @@
 #include "SparseGrid/SparseGrid.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
 #include <math.h>
+#include "util/debug.hpp"
 
 BOOST_AUTO_TEST_SUITE( sparse_grid_test )
 
@@ -45,6 +43,50 @@ size_t fill_sphere(grid_type & grid, cell_decomposer & cdsm)
 				grid_key_dx<3> kd = cdsm.getCellGrid(p);
 
 				grid.template insert<0>(kd) = sin(omega)*sin(omega)*sin(2*phi);
+				grid.template insert<1>(kd) = 0;
+			}
+		}
+	}
+
+	auto it = grid.getIterator();
+
+	while (it.isNext())
+	{
+		tot_count++;
+
+		++it;
+	}
+
+	return tot_count;
+}
+
+template <typename grid_type, typename cell_decomposer>
+size_t fill_sphere_quad(grid_type & grid, cell_decomposer & cdsm)
+{
+	size_t tot_count = 0;
+	double r = 0.3;
+	double omega = 0.0;
+	double phi = 0.0;
+
+	// 3D sphere
+
+	for (r = 0.3 ; r < 0.4 ;r += 0.001)
+	{
+		for (omega = 0.0; omega < M_PI ; omega += 0.006)
+		{
+			for (phi = 0.0; phi < 2.0*M_PI ; phi += 0.006)
+			{
+				Point<3,float> p;
+
+				p.get(0) = r*sin(omega)*sin(phi) + 0.5;
+				p.get(1) = r*sin(omega)*cos(phi) + 0.5;
+				p.get(2) = r*cos(omega) + 0.5;
+
+				// convert point into grid point
+
+				grid_key_dx<3> kd = cdsm.getCellGrid(p);
+
+				grid.template insert<0>(kd) = kd.get(0)*kd.get(0) + kd.get(1)*kd.get(1) + kd.get(2)*kd.get(2);
 				grid.template insert<1>(kd) = 0;
 			}
 		}
@@ -619,6 +661,175 @@ BOOST_AUTO_TEST_CASE( sparse_grid_sub_grid_it_quarter_sphere)
 	BOOST_REQUIRE_EQUAL(error,false);
 }
 
+BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_cpu<3,aggregate<double,double,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere_quad(grid,cdsm);
+
+	grid_key_dx<3> start({1,1,1});
+	grid_key_dx<3> stop({499,499,499});
+
+	/////// Check
+
+	timer t;
+	t.start();
+
+
+	for (int i = 0 ; i < 100 ; i++)
+	{
+
+	auto it = grid.getBlockIterator<1>(start,stop);
+
+	unsigned char mask[decltype(it)::sizeBlockBord];
+	double block_bord_src[decltype(it)::sizeBlockBord];
+	double block_bord_dst[decltype(it)::sizeBlock];
+
+	while (it.isNext())
+	{
+		it.loadBlockBorder<0>(block_bord_src,mask);
+
+		for (int k = it.start_b(2) ; k < it.stop_b(2) ; k++)
+		{
+			for (int j = it.start_b(1) ; j < it.stop_b(1) ; j++)
+			{
+				for (int i = it.start_b(0) ; i < it.stop_b(0) ; i++)
+				{
+					int c = it.LinB(i,j,k);
+
+					int xp = it.LinB(i+1,j,k);
+					int xm = it.LinB(i-1,j,k);
+
+					int yp = it.LinB(i,j+1,k);
+					int ym = it.LinB(i,j-1,k);
+
+					int zp = it.LinB(i,j,k+1);
+					int zm = it.LinB(i,j,k-1);
+
+					// we do only id exist the point
+					if (mask[c] == false) {continue;}
+
+					bool surround = mask[xp] & mask[xm] & mask[ym] & mask[yp] & mask[zp] & mask[zm];
+
+					double Lap = block_bord_src[xp] + block_bord_src[xm] +
+					block_bord_src[yp] + block_bord_src[ym] +
+					block_bord_src[zp] + block_bord_src[zm] - 6.0*block_bord_src[c];
+
+					block_bord_dst[it.LinB_off(i,j,k)] = (surround)?Lap:6.0;
+				}
+			}
+		}
+
+		it.storeBlock<1>(block_bord_dst);
+
+		++it;
+	}
+
+	}
+
+	t.stop();
+
+	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << "   " << grid.size_all() << std::endl;
+
+	bool check = true;
+	auto it2 = grid.getIterator();
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		check &= grid.template get<1>(p) == 6;
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+	// Check correct-ness
+
+//	print_grid("debug_out",grid);
+}
+
+BOOST_AUTO_TEST_CASE( sparse_grid_slow_stencil)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_cpu<3,aggregate<double,double,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere_quad(grid,cdsm);
+
+	grid_key_dx<3> start({1,1,1});
+	grid_key_dx<3> stop({499,499,499});
+
+	/////// Check
+
+	timer t;
+	t.start();
+
+	auto it = grid.getIterator();
+
+	while (it.isNext())
+	{
+		// center point
+		auto p = it.get();
+
+		// plus,minus X,Y,Z
+		auto mx = p.move(0,-1);
+		auto px = p.move(0,1);
+		auto my = p.move(1,-1);
+		auto py = p.move(1,1);
+		auto mz = p.move(2,-1);
+		auto pz = p.move(2,1);
+
+		bool surround = grid.existPoint(mx) & grid.existPoint(px) & grid.existPoint(py) & grid.existPoint(my) & grid.existPoint(mz) & grid.existPoint(pz);
+
+		double Lap = grid.template get<0>(mz) + grid.template get<0>(pz) +
+				     grid.template get<0>(my) + grid.template get<0>(py) +
+				     grid.template get<0>(mx) + grid.template get<0>(px) - 6.0*grid.template get<0>(p);
+
+		grid.template insert<1>(p) = (surround)?Lap:6.0;
+
+		++it;
+	}
+
+	t.stop();
+
+	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << std::endl;
+
+	bool check = true;
+	auto it2 = grid.getIterator();
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		check &= grid.template get<1>(p) == 6;
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+	// Check correct-ness
+	//grid.write("debug_out");
+}
+
 template<typename sgrid> void Test_unpack_and_check_full(sgrid & grid)
 {
 	grid_key_dx<3> end;
@@ -1086,5 +1297,3 @@ BOOST_AUTO_TEST_CASE( sparse_operator_equal )
 
 BOOST_AUTO_TEST_SUITE_END()
 
-
-#endif /* OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRID_UNIT_TESTS_CPP_ */

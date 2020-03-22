@@ -275,7 +275,7 @@ struct copy_grid_fast_caller<index_tuple_sq<prp ...>>
  * \tparam layout_base layout memory meta-function (the meta-function used to construct layout_)
  *
  */
-template<unsigned int dim, typename T, typename S, typename layout_, template<typename> class layout_base >
+template<unsigned int dim, typename T, typename S, typename layout_, template<typename> class layout_base, typename ord_type = grid_sm<dim,T> >
 class grid_base_impl
 {
 	//! memory layout
@@ -304,7 +304,7 @@ protected:
 	layout data_;
 
 	//! This is a structure that store all information related to the grid and how indexes are linearized
-	grid_sm<dim,T> g1;
+	ord_type g1;
 
 private:
 
@@ -1076,6 +1076,30 @@ public:
 		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>
 			   ::get(const_cast<typename std::add_lvalue_reference<decltype(this->data_)>::type>(data_),
 					 g1,v1);
+	}
+
+
+	/*! \brief Get the of the selected element as a boost::fusion::vector
+	 *
+	 * Get the selected element as a boost::fusion::vector
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \see encap_c
+	 *
+	 * \return an encap_c that is the representation of the object (careful is not the object)
+	 *
+	 */
+	inline encapc<dim,T,layout> insert_o(const grid_key_dx<dim> & v1)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(v1);
+#endif
+		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
 	}
 
 	/*! \brief Get the of the selected element as a boost::fusion::vector

@@ -91,6 +91,30 @@ BOOST_AUTO_TEST_CASE( variadic_to_vmpl_test)
 
 	//! [to_boost_vmpl usage]
 	}
+
+	{
+	//! [vmpl_sum_constant usage]
+
+	typedef to_boost_vmpl<1,4,5,9>::type bfv;
+
+	typedef vmpl_sum_constant<5,bfv>::type vsc;
+
+	BOOST_REQUIRE_EQUAL(boost::mpl::size<vsc>::type::value,4);
+
+	bool val = std::is_same<boost::mpl::at<vsc,boost::mpl::int_<0>>::type,boost::mpl::int_<6>>::value;
+	BOOST_REQUIRE_EQUAL(val,true);
+
+	val = std::is_same<boost::mpl::at<vsc,boost::mpl::int_<1>>::type,boost::mpl::int_<9>>::value;
+	BOOST_REQUIRE_EQUAL(val,true);
+
+	val = std::is_same<boost::mpl::at<vsc,boost::mpl::int_<2>>::type,boost::mpl::int_<10>>::value;
+	BOOST_REQUIRE_EQUAL(val,true);
+
+	val = std::is_same<boost::mpl::at<vsc,boost::mpl::int_<3>>::type,boost::mpl::int_<14>>::value;
+	BOOST_REQUIRE_EQUAL(val,true);
+
+	//! [vmpl_sum_constant usage]
+	}
 }
 
 

@@ -129,14 +129,24 @@ namespace SparseGridGpuKernels
      *
      *
      */
-    template<unsigned int dim, unsigned int pMask, unsigned int chunk_size , typename SparseGridType, typename outputType>
-    __global__ void count_paddings(SparseGridType grid_cu, outputType out)
+    template<unsigned int dim, unsigned int pMask, unsigned int chunk_size , typename SparseGridType, typename outputType, typename BoxType>
+    __global__ void count_paddings(SparseGridType grid_cu, outputType out, BoxType box)
     {
         const unsigned int dataBlockPos = blockIdx.x;
         const unsigned int offset = threadIdx.x;
 
         auto & indexBuffer = grid_cu.getIndexBuffer();
         auto & dataBuffer = grid_cu.getDataBuffer();
+
+        auto id = indexBuffer.template get<0>(dataBlockPos);
+
+        // check if the point is inside the box
+        auto coord = grid_cu.getCoord(id,offset);
+
+        bool active = box.isInsideKey(coord);
+
+        if (active == false)
+        {return;}
 
         // if the point is a padding
         if (dataBuffer.template get <pMask>(dataBlockPos)[offset] & 0x2)
@@ -149,8 +159,8 @@ namespace SparseGridGpuKernels
      *
      *
      */
-    template<unsigned int pMask, typename SparseGridType, typename ScanType, typename outputType>
-    __global__ void collect_paddings(SparseGridType grid_cu, ScanType stp, outputType out)
+    template<unsigned int pMask, typename SparseGridType, typename ScanType, typename outputType, typename BoxType>
+    __global__ void collect_paddings(SparseGridType grid_cu, ScanType stp, outputType out, BoxType box)
     {
         const unsigned int dataBlockPos = blockIdx.x;
         const unsigned int offset = threadIdx.x;
@@ -161,6 +171,16 @@ namespace SparseGridGpuKernels
 
         auto & indexBuffer = grid_cu.getIndexBuffer();
         auto & dataBuffer = grid_cu.getDataBuffer();
+
+        auto id = indexBuffer.template get<0>(dataBlockPos);
+
+        // check if the point is inside the box
+        auto coord = grid_cu.getCoord(id,offset);
+
+        bool active = box.isInsideKey(coord);
+
+        if (active == false)
+        {return;}
 
         int pad_offset = stp.template get<0>(dataBlockPos);
 
@@ -219,6 +239,37 @@ namespace SparseGridGpuKernels
      *
      */
     template<unsigned int dim, unsigned int pMask, unsigned int chunk_size,
+    		 typename padPointType , typename SparseGridType,
+    		 typename outputType>
+    __global__ void link_construct_up_count(padPointType padPoints, SparseGridType grid_up, SparseGridType grid_cu, outputType out, Point<dim,int> p_up)
+    {
+    	const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+    	if (p >= padPoints.size())	{return;}
+
+        const unsigned int dataBlockPos = padPoints.template get<0>(p);
+        const unsigned int offset = padPoints.template get<1>(p);
+
+        auto & indexBuffer = grid_cu.getIndexBuffer();
+        auto & dataBuffer = grid_cu.getDataBuffer();
+
+		auto id = indexBuffer.template get<0>(dataBlockPos);
+		grid_key_dx<dim,int> pos = grid_cu.getCoord(id*chunk_size + offset);
+
+		for (int i = 0 ; i < dim ; i++)
+		{pos.set_d(i,(pos.get(i) - p_up.get(i)) / 2);}
+
+		if (grid_up.template get<pMask>(pos) & 0x1)
+		{
+			int a = atomicAdd(&out.template get<0>(p),1);
+		}
+    }
+
+    /*! \brief construct the link between 2 sparse grid
+     *
+     *
+     */
+    template<unsigned int dim, unsigned int pMask, unsigned int chunk_size,
     typename padPointType , typename SparseGridType, typename scanType, typename outputType>
     __global__ void link_construct_insert_dw(padPointType padPoints, SparseGridType grid_dw, SparseGridType grid_cu, scanType scan, outputType out, Point<dim,int> p_dw)
     {
@@ -263,6 +314,46 @@ namespace SparseGridGpuKernels
 
 				c++;
 			}
+		}
+    }
+
+    /*! \brief construct the link between 2 sparse grid
+     *
+     *
+     */
+    template<unsigned int dim, unsigned int pMask, unsigned int chunk_size,
+    typename padPointType , typename SparseGridType, typename scanType, typename outputType>
+    __global__ void link_construct_insert_up(padPointType padPoints, SparseGridType grid_up, SparseGridType grid_cu, scanType scan, outputType out, Point<dim,int> p_up)
+    {
+    	const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+    	if (p >= padPoints.size())	{return;}
+
+        const unsigned int dataBlockPos = padPoints.template get<0>(p);
+        const unsigned int offset = padPoints.template get<1>(p);
+
+        auto & indexBuffer = grid_cu.getIndexBuffer();
+        auto & dataBuffer = grid_cu.getDataBuffer();
+
+        auto & dataBuffer_dw = grid_up.getDataBuffer();
+
+		auto id = indexBuffer.template get<0>(dataBlockPos);
+		grid_key_dx<dim,int> pos = grid_cu.getCoord(id*chunk_size + offset);
+
+		for (int i = 0 ; i < dim ; i++)
+		{pos.set_d(i,(pos.get(i) - p_up.get(i)) / 2);}
+
+		unsigned int dataBlockPos_dw;
+		unsigned int offset_dw;
+
+		int link_offset = scan.template get<0>(p);
+
+		grid_up.get_sparse(pos,dataBlockPos_dw,offset_dw);
+
+		if (dataBuffer_dw.template get<pMask>(dataBlockPos_dw)[offset_dw] & 0x1)
+		{
+			out.template get<0>(link_offset) = dataBlockPos_dw;
+			out.template get<1>(link_offset) = offset_dw;
 		}
     }
 
@@ -872,8 +963,6 @@ namespace SparseGridGpuKernels
 														spi(dataBlockPos + start,offset,add_data,ord,data_ptrs,pts.size());
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
-
-		printf("MASK %d  %d \n",(int)masks_ptr[ord],ord);
 
 		add_data.template get<pMask>(dataBlockPos + start)[offset] = masks_ptr[ord];
     }

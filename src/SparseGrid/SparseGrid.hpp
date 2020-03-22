@@ -18,6 +18,7 @@
 #include "data_type/aggregate.hpp"
 #include "SparseGridUtil.hpp"
 #include "SparseGrid_iterator.hpp"
+#include "SparseGrid_iterator_block.hpp"
 // We do not want parallel writer
 
 #ifdef OPENFPM_DATA_ENABLE_IO_MODULE
@@ -158,8 +159,6 @@ struct copy_sz
 	}
 };
 
-#define BIT_SHIFT_SIZE_T 6
-
 template<unsigned int dim, typename T, typename S, typename chunking>
 class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 {
@@ -184,6 +183,8 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 	//Definition of the chunks
 	typedef typename v_transform_two<Ft_chunk,boost::mpl::int_<chunking::size::value>,typename T::type>::type chunk_def;
 
+	typedef sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking> self;
+
 	//! vector of chunks
 	openfpm::vector<aggregate_bfv<chunk_def>> chunks;
 
@@ -200,6 +201,72 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 	size_t sz_cnk[dim];
 
 	openfpm::vector<size_t> empty_v;
+
+	/*! \brief Given a key return the chunk than contain that key, in case that chunk does not exist return the key of the
+	 *         background chunk
+	 *
+	 * \param v1 point to search
+	 * \param return active_chunk
+	 * \param return index inside the chunk
+	 *
+	 */
+	inline void find_active_chunk(const grid_key_dx<dim> & kh,size_t & active_cnk,bool & exist)
+	{
+		long int lin_id = g_sm_shift.LinId(kh);
+
+		size_t id = 0;
+		for (size_t k = 0 ; k < SGRID_CACHE; k++)
+		{id += (cache[k] == lin_id)?k+1:0;}
+
+		if (id == 0)
+		{
+			// we do not have it in cache we check if we have it in the map
+
+			auto fnd = map.find(lin_id);
+			if (fnd == map.end())
+			{
+				exist = false;
+				return;
+			}
+			else
+			{active_cnk = fnd->second;}
+
+			// Add on cache the chunk
+			cache[cache_pnt] = lin_id;
+			cached_id[cache_pnt] = active_cnk;
+			cache_pnt++;
+			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
+		}
+		else
+		{
+			active_cnk = cached_id[id-1];
+			cache_pnt = id;
+			cache_pnt = (cache_pnt == SGRID_CACHE)?0:cache_pnt;
+		}
+
+		exist = true;
+	}
+
+	/*! \brief Given a key return the chunk than contain that key, in case that chunk does not exist return the key of the
+	 *         background chunk
+	 *
+	 * \param v1 point to search
+	 * \param return active_chunk
+	 * \param return index inside the chunk
+	 *
+	 */
+	inline void find_active_chunk_from_point(const grid_key_dx<dim> & v1,size_t & active_cnk, short int & sub_id)
+	{
+		grid_key_dx<dim> kh = v1;
+		grid_key_dx<dim> kl;
+
+		// shift the key
+		key_shift<dim,chunking>::shift(kh,kl);
+
+		find_active_chunk(kh,active_cnk);
+
+		sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
+	}
 
 	/*! \brief Remove
 	 *
@@ -531,6 +598,9 @@ public:
 	//! sub-grid iterator type
 	typedef grid_key_sparse_dx_iterator_sub<dim, chunking::size::value> sub_grid_iterator_type;
 
+	//! Background type
+	typedef T background_type;
+
 	/*! \brief Trivial constructor
 	 *
 	 *
@@ -586,7 +656,7 @@ public:
 	template<unsigned int p>
 	void setBackgroundValue(const typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type & val)
 	{
-		background.template get<p>() = val;
+		meta_copy<typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type>::meta_copy_(val,background.template get<p>());
 	}
 
 	/*! \brief Get the background value
@@ -942,6 +1012,22 @@ public:
 		return grid_key_sparse_dx_iterator_sub<dim,chunking::size::value>(header,pos_chunk,start,stop,sz_cnk);
 	}
 
+	/*! \brief Return an iterator over a sub-grid
+	 *
+	 * \tparam stencil size
+	 * \param start point
+	 * \param stop point
+	 *
+	 * \return an iterator over sub-grid blocks
+	 *
+	 */
+	template<unsigned int stencil_size = 0>
+	grid_key_sparse_dx_iterator_block_sub<dim,stencil_size,self,chunking>
+	getBlockIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
+	{
+		return grid_key_sparse_dx_iterator_block_sub<dim,stencil_size,self,chunking>(*this,start,stop,background);
+	}
+
 	/*! \brief Return the internal grid information
 	 *
 	 * Return the internal grid information
@@ -976,6 +1062,19 @@ public:
 	void remove_no_flush(const grid_key_dx<dim> & v1)
 	{
 		remove_point(v1);
+	}
+
+	/*! \brief Expand and tag boundaries
+	 *
+	 * \param stencil_type type of boundaries
+	 * \param start starting point where we tag the boundaries
+	 * \param stop point where we tag the boundaries
+	 *
+	 */
+	template<typename stencil_type>
+	void expandAndTagBoundaries(grid_key_dx<dim> & start, grid_key_dx<dim> & stop)
+	{
+
 	}
 
 	/*! \brief Remove the point
@@ -1570,6 +1669,18 @@ public:
 		return tot;
 	}
 
+	/*! \number of element inserted
+	 *
+	 * \warning this function is not as fast as the size in other structures
+	 *
+	 * \return the total number of elements inserted
+	 *
+	 */
+	size_t size_all() const
+	{
+		return header.size() * vmpl_reduce_prod<typename chunking::type>::type::value;
+	}
+
 	/*! \brief Remove all the points in this region
 	 *
 	 * \param box_src box to kill the points
@@ -1680,6 +1791,24 @@ public:
 
 			++it;
 		}
+	}
+
+	/*! \brief Give a grid point it return the chunk containing that point. In case the point does not exist it return the
+	 *         background chunk
+	 *
+	 * \param v1 key
+	 * \param exist return true if the chunk exist
+	 *
+	 * \return the chunk containing that point
+	 *
+	 */
+	size_t getChunk(grid_key_dx<dim> & v1, bool & exist)
+	{
+		size_t act_cnk = chunks.size()-1;
+
+		find_active_chunk(v1,act_cnk,exist);
+
+		return act_cnk;
 	}
 
 	/*! \brief unpack the sub-grid object
@@ -2078,6 +2207,26 @@ public:
 	static bool packMem()
 	{
 		return false;
+	}
+
+	/*! \brief return the header section of the blocks
+	 *
+	 * \return the header data section of the chunks stored
+	 *
+	 */
+	openfpm::vector<cheader<dim,chunking::size::value>> & private_get_header()
+	{
+		return header;
+	}
+
+	/*! \brief return the data of the blocks
+	 *
+	 * \return the data of the blocks
+	 *
+	 */
+	openfpm::vector<aggregate_bfv<chunk_def>> & private_get_data()
+	{
+		return chunks;
 	}
 };
 

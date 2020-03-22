@@ -44,76 +44,78 @@ struct default_chunking<1>
 template<>
 struct default_chunking<2>
 {
-	typedef boost::mpl::vector<boost::mpl::int_<64>,
-			                   boost::mpl::int_<8>> type;
+	typedef boost::mpl::vector<boost::mpl::int_<32>,
+			                   boost::mpl::int_<32>> type;
 
-	typedef boost::mpl::vector<boost::mpl::int_<6>,
-			                   boost::mpl::int_<3>> shift;
+	typedef boost::mpl::vector<boost::mpl::int_<5>,
+			                   boost::mpl::int_<5>> shift;
 
-	typedef boost::mpl::vector<boost::mpl::int_<6>,
-			                   boost::mpl::int_<9>> shift_c;
+	typedef boost::mpl::vector<boost::mpl::int_<5>,
+			                   boost::mpl::int_<10>> shift_c;
 
-	typedef boost::mpl::int_<512> size;
+	typedef boost::mpl::int_<1024> size;
 };
 
 template<>
 struct default_chunking<3>
 {
-	typedef boost::mpl::vector<boost::mpl::int_<64>,
+	typedef boost::mpl::vector<boost::mpl::int_<16>,
+			                   boost::mpl::int_<16>,
+							   boost::mpl::int_<16>> type;
+
+	typedef boost::mpl::vector<boost::mpl::int_<4>,
 			                   boost::mpl::int_<4>,
-							   boost::mpl::int_<4>> type;
+							   boost::mpl::int_<4>> shift;
 
-	typedef boost::mpl::vector<boost::mpl::int_<6>,
-			                   boost::mpl::int_<2>,
-							   boost::mpl::int_<2>> shift;
-
-	typedef boost::mpl::vector<boost::mpl::int_<6>,
+	typedef boost::mpl::vector<boost::mpl::int_<4>,
 			                   boost::mpl::int_<8>,
-							   boost::mpl::int_<10>> shift_c;
+							   boost::mpl::int_<12>> shift_c;
 
-	typedef boost::mpl::int_<1024> size;
+	typedef boost::mpl::int_<4096> size;
+
+	typedef boost::mpl::int_<1736> bord_size;
 };
 
 template<>
 struct default_chunking<4>
 {
-	typedef boost::mpl::vector<boost::mpl::int_<64>,
-			                   boost::mpl::int_<4>,
-							   boost::mpl::int_<4>,
-							   boost::mpl::int_<1>> type;
-
-	typedef boost::mpl::vector<boost::mpl::int_<6>,
-			                   boost::mpl::int_<2>,
-							   boost::mpl::int_<2>,
-							   boost::mpl::int_<0>> shift;
-
-	typedef boost::mpl::vector<boost::mpl::int_<6>,
+	typedef boost::mpl::vector<boost::mpl::int_<8>,
 			                   boost::mpl::int_<8>,
-							   boost::mpl::int_<10>,
-							   boost::mpl::int_<10>> shift_c;
+							   boost::mpl::int_<8>,
+							   boost::mpl::int_<8>> type;
 
-	typedef boost::mpl::int_<1024> size;
+	typedef boost::mpl::vector<boost::mpl::int_<3>,
+			                   boost::mpl::int_<3>,
+							   boost::mpl::int_<3>,
+							   boost::mpl::int_<3>> shift;
+
+	typedef boost::mpl::vector<boost::mpl::int_<3>,
+			                   boost::mpl::int_<6>,
+							   boost::mpl::int_<9>,
+							   boost::mpl::int_<12>> shift_c;
+
+	typedef boost::mpl::int_<4096> size;
 };
 
 template<>
 struct default_chunking<5>
 {
-	typedef boost::mpl::vector<boost::mpl::int_<64>,
+	typedef boost::mpl::vector<boost::mpl::int_<4>,
 			                   boost::mpl::int_<4>,
 							   boost::mpl::int_<4>,
-							   boost::mpl::int_<1>,
-							   boost::mpl::int_<1>> type;
+							   boost::mpl::int_<4>,
+							   boost::mpl::int_<4>> type;
 
-	typedef boost::mpl::vector<boost::mpl::int_<6>,
+	typedef boost::mpl::vector<boost::mpl::int_<2>,
 			                   boost::mpl::int_<2>,
 							   boost::mpl::int_<2>,
-							   boost::mpl::int_<0>,
-							   boost::mpl::int_<0>> shift;
+							   boost::mpl::int_<2>,
+							   boost::mpl::int_<2>> shift;
 
-	typedef boost::mpl::vector<boost::mpl::int_<6>,
-			                   boost::mpl::int_<8>,
-							   boost::mpl::int_<10>,
-							   boost::mpl::int_<10>,
+	typedef boost::mpl::vector<boost::mpl::int_<2>,
+			                   boost::mpl::int_<4>,
+							   boost::mpl::int_<6>,
+							   boost::mpl::int_<8>,
 							   boost::mpl::int_<10>> shift_c;
 
 	typedef boost::mpl::int_<1024> size;
@@ -123,28 +125,28 @@ struct default_chunking<5>
 template<>
 struct default_chunking<6>
 {
-	typedef boost::mpl::vector<boost::mpl::int_<64>,
+	typedef boost::mpl::vector<boost::mpl::int_<4>,
 			                   boost::mpl::int_<4>,
 							   boost::mpl::int_<4>,
-							   boost::mpl::int_<1>,
-							   boost::mpl::int_<1>,
-							   boost::mpl::int_<1>> type;
+							   boost::mpl::int_<4>,
+							   boost::mpl::int_<4>,
+							   boost::mpl::int_<4>> type;
 
-	typedef boost::mpl::vector<boost::mpl::int_<6>,
-			                   boost::mpl::int_<8>,
-							   boost::mpl::int_<10>,
-							   boost::mpl::int_<10>,
-							   boost::mpl::int_<10>,
-							   boost::mpl::int_<10>> shift_c;
-
-	typedef boost::mpl::vector<boost::mpl::int_<6>,
+	typedef boost::mpl::vector<boost::mpl::int_<2>,
 			                   boost::mpl::int_<2>,
 							   boost::mpl::int_<2>,
-							   boost::mpl::int_<0>,
-							   boost::mpl::int_<0>,
-							   boost::mpl::int_<0>> shift;
+							   boost::mpl::int_<2>,
+							   boost::mpl::int_<2>,
+							   boost::mpl::int_<2>> shift_c;
 
-	typedef boost::mpl::int_<1024> size;
+	typedef boost::mpl::vector<boost::mpl::int_<2>,
+			                   boost::mpl::int_<4>,
+							   boost::mpl::int_<6>,
+							   boost::mpl::int_<8>,
+							   boost::mpl::int_<10>,
+							   boost::mpl::int_<12>> shift;
+
+	typedef boost::mpl::int_<4096> size;
 };
 
 

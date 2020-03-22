@@ -616,7 +616,7 @@ static void testConv3x3x3_no_shared_perf(std::string testName)
 	sparseGrid.template findNeighbours<NNFull<3>>(); // Pre-compute the neighbours pos for each block!
 
 	sparseGrid.template setNNType<NNFull<SparseGridZ::dims>>();
-	sparseGrid.template tagBoundaries<NNFull<3>>(ctx,tag_boundaries::CALCULATE_EXISTING_POINTS);
+	sparseGrid.template tagBoundaries<NNFull<3>>(ctx,No_check(),tag_boundaries::CALCULATE_EXISTING_POINTS);
 
 
     openfpm::vector<double> measures_gf;

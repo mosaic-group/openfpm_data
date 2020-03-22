@@ -314,17 +314,6 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	/*! \brief In combination with generate_array is used to produce array at compile-time
 	 *
 	 * In combination with generate_array is used to produce at compile-time
-	 * arrays like {0,N-1,.........0} used in boost::multi_array for index ordering
-	 *
-	 */
-	template<size_t index,size_t N> struct ordering
-	{
-	    enum { value = (N-index) % N };
-	};
-
-	/*! \brief In combination with generate_array is used to produce array at compile-time
-	 *
-	 * In combination with generate_array is used to produce at compile-time
 	 * arrays like {true,true,.........true} used in boost::multi_array to
 	 * define ascending order
 	 *

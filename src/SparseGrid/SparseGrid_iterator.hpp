@@ -346,8 +346,6 @@ public:
 		return k_pos;
 	}
 
-	template<typename> struct Debug;
-
 	/*! \brief Return the actual point linearized
 	 *
 	 * The disadvantage is that in general you cannot use move in this type of key

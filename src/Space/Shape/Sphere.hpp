@@ -25,7 +25,7 @@ template<unsigned int dim ,typename T> class Sphere
 	public:
 
 	//! boost fusion that store the point
-	typedef boost::fusion::vector<T[3],T> type;
+	typedef boost::fusion::vector<T[dim],T> type;
 
 	//! Structure that store the data
 	type data;
@@ -66,6 +66,26 @@ template<unsigned int dim ,typename T> class Sphere
 		boost::fusion::at_c<r>(data) = radius;
 	}
 
+	/*! \brief Sphere constructor
+	 *
+	 * Sphere constructor
+	 *
+	 * \tparam k dimensionality of the center point (and the sphere)
+	 * \param c center point
+	 * \param radius
+	 *
+	 */
+	Sphere(Point<dim,double> & c, T radius)
+	{
+		// Copy the center
+		for (int i = 0 ;  i < dim ; i++)
+		{
+			boost::fusion::at_c<x>(data)[i] = c.get(i);
+		}
+
+		boost::fusion::at_c<r>(data) = radius;
+	}
+
 	/*! \brief Get the radius of the sphere
 	 *
 	 * \return the radius of the sphere
@@ -84,7 +104,35 @@ template<unsigned int dim ,typename T> class Sphere
 	 * \return true if the point is inside
 	 *
 	 */
-	template<typename Distance> T isInside(Point<dim,T> p)
+	bool isInside(Point<dim,T> p)
+	{
+		T dist;
+
+		// calculate the distance of the center from the point
+
+		for (int i = 0; i < dim ; i++)
+		{
+			dist += (boost::fusion::at_c<x>(data)[i] - p.get(i) )*(boost::fusion::at_c<x>(data)[i] - p.get(i) );
+		}
+
+		// Check if the distance is smaller than the radius
+
+		if (dist <= boost::fusion::at_c<r>(data)*boost::fusion::at_c<r>(data))
+		{return true;}
+
+
+		return false;
+	}
+
+	/*! \brief Check if a point is inside
+	 *
+	 * \tparam distance distance functor used to calculate the distance two points
+	 * \param p Point to check if it is inside
+	 *
+	 * \return true if the point is inside
+	 *
+	 */
+	template<typename Distance> bool isInside(Point<dim,T> p)
 	{
 		T dist;
 

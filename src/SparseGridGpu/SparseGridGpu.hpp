@@ -581,6 +581,12 @@ private:
     //! links of the padding points with real points of a finer sparsegrid
     openfpm::vector_gpu<aggregate<int,short int>> link_dw;
 
+    //! scan offsets of the links down
+    openfpm::vector_gpu<aggregate<unsigned int>> link_up_scan;
+
+    //! links of the padding points with real points of a finer sparsegrid
+    openfpm::vector_gpu<aggregate<int,short int>> link_up;
+
     bool findNN = false;
 
 protected:
@@ -1344,13 +1350,38 @@ public:
     	return link_dw;
     }
 
+    /*! \brief Get the offsets for each point of the links up
+     *
+     * \return the offsets of the links up
+     *
+     */
+    openfpm::vector_gpu<aggregate<unsigned int>> & getUpLinksOffsets()
+    {
+    	return link_up_scan;
+    }
+
+    /*! \brief Get the links up for each point
+     *
+     * \return the links up for each point
+     *
+     */
+    openfpm::vector_gpu<aggregate<int,short int>> & getUpLinks()
+    {
+    	return link_up;
+    }
+
 	/*! \brief construct link on the down level
 	 *
 	 * \param grid_dw grid level down
+	 * \param db domain box
+	 * \param p_dw point offset when you go down
+	 * \param gpu context
 	 *
 	 */
-    void construct_link_dw(self & grid_dw, Point<dim,int> p_dw, mgpu::ofp_context_t &context)
+    void construct_link_dw(self & grid_dw, const Box<dim,int> & db_, Point<dim,int> p_dw, mgpu::ofp_context_t &context)
     {
+    	Box<dim,int> db = db_;
+
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
         auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
@@ -1375,7 +1406,7 @@ public:
 
     	CUDA_LAUNCH((SparseGridGpuKernels::count_paddings<dim,
     								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-    								blockSize>),ite,this->toKernel(),output.toKernel());
+    								blockSize>),ite,this->toKernel(),output.toKernel(),db);
 
 
 
@@ -1389,18 +1420,7 @@ public:
         openfpm::vector_gpu<aggregate<unsigned int,short int>> pd_points;
         pd_points.resize(padding_points);
 
-        CUDA_LAUNCH((SparseGridGpuKernels::collect_paddings<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,this->toKernel(),output.toKernel(),pd_points.toKernel());
-
-        //////////////////// DEBUG //////////////////////
-
-        pd_points.template deviceToHost<0,1>();
-
-        for (int i = 0 ; i < pd_points.size() ; i++)
-        {
-        	std::cout << pd_points.template get<0>(i) << "  " << pd_points.template get<1>(i) << std::endl;
-        }
-
-        /////////////////////////////////////////////////
+        CUDA_LAUNCH((SparseGridGpuKernels::collect_paddings<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,this->toKernel(),output.toKernel(),pd_points.toKernel(),db);
 
         // Count number of link down for padding points
 
@@ -1436,12 +1456,17 @@ public:
 	 * \praram grid_up grid level up
 	 *
 	 */
-    void construct_link_up(self & grid_up, mgpu::ofp_context_t &context)
+    void construct_link_up(self & grid_up,  const Box<dim,int> & db_, Point<dim,int> p_up, mgpu::ofp_context_t &context)
     {
-/*        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
+    	Box<dim,int> db = db_;
+
+        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
         auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
 
+        // Count padding points
+
+        // First we count the padding points
     	ite_gpu<1> ite;
 
     	ite.wthr.x = indexBuffer.size();
@@ -1453,26 +1478,55 @@ public:
     	ite.thr.z = 1;
 
     	openfpm::vector_gpu<aggregate<unsigned int>> output;
-    	output.resize(indexBuffer.size() + 1);
+    	output.resize(indexBuffer.size()+1);
 
-    	CUDA_LAUNCH((SparseGridGpuKernels::link_construct<dim,
+    	output.fill<0>(0);
+
+    	CUDA_LAUNCH((SparseGridGpuKernels::count_paddings<dim,
     								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-    								blockSize>),ite,grid_up.toKernel(),this->toKernel(),output.toKernel());
+    								blockSize>),ite,this->toKernel(),output.toKernel(),db);
+
 
 
     	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
 
     	output.template deviceToHost<0>(output.size()-1,output.size()-1);
+        unsigned int padding_points = output.template get<0>(output.size()-1);
 
-    	unsigned int np_lup = output.template get<0>(output.size()-1);
+        // get the padding points
 
-    	links_up.resize(np_lup);
+        openfpm::vector_gpu<aggregate<unsigned int,short int>> pd_points;
+        pd_points.resize(padding_points);
 
-    	CUDA_LAUNCH((SparseGridGpuKernels::link_construct_insert<dim,
+        CUDA_LAUNCH((SparseGridGpuKernels::collect_paddings<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,this->toKernel(),output.toKernel(),pd_points.toKernel(),db);
+
+        // Count number of link down for padding points
+
+        // Calculate ghost
+
+    	link_up_scan.resize(padding_points+1);
+    	link_up_scan.fill<0>(0);
+
+    	ite = link_up_scan.getGPUIterator();
+
+    	CUDA_LAUNCH((SparseGridGpuKernels::link_construct_up_count<dim,
     								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-    								blockSize>),ite,grid_up.toKernel(),this->toKernel(),output.toKernel(),links_up.toKernel());
+    								blockSize>),
+    								ite,pd_points.toKernel(),grid_up.toKernel(),this->toKernel(),link_up_scan.toKernel(),p_up);
 
-*/
+    	openfpm::scan((unsigned int *)link_up_scan.template getDeviceBuffer<0>(),link_up_scan.size(),(unsigned int *)link_up_scan.template getDeviceBuffer<0>(),context);
+
+    	link_up_scan.template deviceToHost<0>(link_up_scan.size()-1,link_up_scan.size()-1);
+
+    	size_t np_lup = link_up_scan.template get<0>(link_up_scan.size()-1);
+
+    	link_up.resize(np_lup);
+
+    	CUDA_LAUNCH((SparseGridGpuKernels::link_construct_insert_up<dim,
+    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								blockSize>),ite,pd_points.toKernel(),grid_up.toKernel(),this->toKernel(),link_up_scan.toKernel(),link_up.toKernel(),p_up);
+
+    	link_up_scan.resize(link_up_scan.size()-1);
     }
 
     /*! \Brief Before insert any element you have to call this function to initialize the insert buffer
@@ -2535,8 +2589,6 @@ public:
 
 		unsigned char * masks_ptr = (unsigned char *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset);
 
-		std::cout << "UNACO" << std::endl;
-
 		if (n_pnt != 0)
 		{
 			linearizer gridGeoPack(sz);
@@ -2613,8 +2665,6 @@ public:
 			// Fill the add buffer
 
 			ite = tmp2.getGPUIterator();
-
-			std::cout << "FILL_ADD_BUFFER" << std::endl;
 
 			CUDA_LAUNCH((SparseGridGpuKernels::fill_add_buffer<blockSize,
 															   BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,

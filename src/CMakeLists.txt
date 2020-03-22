@@ -45,11 +45,13 @@ add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp
         util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
         memory_ly/memory_conf_unit_tests.cpp
         Space/tests/SpaceBox_unit_tests.cpp
-	SparseGrid/SparseGrid_unit_tests.cpp
+        Space/Shape/Sphere_unit_test.cpp
+		SparseGrid/SparseGrid_unit_tests.cpp
+		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
         Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
         ../../openfpm_devices/src/memory/HeapMemory.cpp
         ../../openfpm_devices/src/memory/PtrMemory.cpp 
-	SparseGridGpu/Geometry/tests/grid_smb_tests.cpp)
+		SparseGridGpu/Geometry/tests/grid_smb_tests.cpp)
 
 add_executable(isolation
 	../../openfpm_devices/src/memory/CudaMemory.cu
@@ -71,6 +73,12 @@ if (TEST_PERFORMANCE)
     target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
     target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
 endif ()
+
+IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
+    target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
+ENDIF()
+
 
 if (CUDA_FOUND)
 #    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
@@ -157,6 +165,18 @@ install(FILES Point_test.hpp
         Point_orig.hpp
         timer.hpp
         DESTINATION openfpm_data/include/)
+
+install(FILES SparseGrid/SparseGrid_iterator.hpp
+              SparseGrid/SparseGrid.hpp
+              SparseGrid/SparseGridUtil.hpp
+        DESTINATION openfpm_data/include/SparseGrid)
+
+install(FILES hash_map/hopscotch_hash.h
+              hash_map/hopscotch_map.h
+              hash_map/hopscotch_sc_map.h
+              hash_map/hopscotch_sc_set.h
+              hash_map/hopscotch_set.h
+        DESTINATION openfpm_data/include/hash_map)
 
 install(FILES memory_ly/memory_array.hpp
         memory_ly/memory_c.hpp

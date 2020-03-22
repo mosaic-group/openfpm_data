@@ -529,7 +529,8 @@ public:
 	 * linearize an arbitrary set of index
 	 *
 	 */
-	template<typename a, typename ...lT> inline mem_id Lin(a v,lT...t) const
+	template<typename a, typename ...lT>
+	__device__ __host__ inline mem_id Lin(a v,lT...t) const
 	{
 #ifdef SE_CLASS1
 		if (sizeof...(t)+1 > N)
