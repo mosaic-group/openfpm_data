@@ -12,7 +12,7 @@
 #include "SparseGrid/SparseGrid.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
 #include <math.h>
-#include "util/debug.hpp"
+//#include "util/debug.hpp"
 
 BOOST_AUTO_TEST_SUITE( sparse_grid_test )
 
@@ -666,7 +666,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil)
 	size_t sz[3] = {501,501,501};
 	size_t sz_cell[3] = {500,500,500};
 
-	sgrid_cpu<3,aggregate<double,double,int>,HeapMemory> grid(sz);
+	sgrid_soa<3,aggregate<double,double,int>,HeapMemory> grid(sz);
 
 	grid.getBackgroundValue().template get<0>() = 0.0;
 
@@ -693,8 +693,10 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil)
 	auto it = grid.getBlockIterator<1>(start,stop);
 
 	unsigned char mask[decltype(it)::sizeBlockBord];
-	double block_bord_src[decltype(it)::sizeBlockBord];
-	double block_bord_dst[decltype(it)::sizeBlock];
+	__attribute__ ((aligned (32))) double block_bord_src[decltype(it)::sizeBlockBord];
+	__attribute__ ((aligned (32))) double block_bord_dst[decltype(it)::sizeBlock];
+
+	const Vc::double_v six(6.0);
 
 	while (it.isNext())
 	{
@@ -707,29 +709,39 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil)
 		{
 			for (int j = it.start_b(1) ; j < it.stop_b(1) ; j++)
 			{
+				int c = it.LinB(it.start_b(0),j,k);
+
+				int xp = c+1;
+				int xm = c-1;
+
+				int yp = it.LinB(it.start_b(0),j+1,k);
+				int ym = it.LinB(it.start_b(0),j-1,k);
+
+				int zp = it.LinB(it.start_b(0),j,k+1);
+				int zm = it.LinB(it.start_b(0),j,k-1);
+
 				for (int i = it.start_b(0) ; i < it.stop_b(0) ; i++)
 				{
-					int c = it.LinB(i,j,k);
-
-					int xp = it.LinB(i+1,j,k);
-					int xm = it.LinB(i-1,j,k);
-
-					int yp = it.LinB(i,j+1,k);
-					int ym = it.LinB(i,j-1,k);
-
-					int zp = it.LinB(i,j,k+1);
-					int zm = it.LinB(i,j,k-1);
-
 					// we do only id exist the point
 					if (mask[c] == false) {continue;}
 
 					bool surround = mask[xp] & mask[xm] & mask[ym] & mask[yp] & mask[zp] & mask[zm];
 
 					double Lap = block_bord_src[xp] + block_bord_src[xm] +
-					block_bord_src[yp] + block_bord_src[ym] +
-					block_bord_src[zp] + block_bord_src[zm] - 6.0*block_bord_src[c];
+							           block_bord_src[yp] + block_bord_src[ym] +
+							           block_bord_src[zp] + block_bord_src[zm] - 6.0*block_bord_src[c];
 
-					block_bord_dst[it.LinB_off(i,j,k)] = (surround)?Lap:6.0;
+					Lap = (surround)?Lap:6.0;
+
+					block_bord_dst[it.LinB_off(i,j,k)] = Lap;
+
+					c++;
+					xp++;
+					xm++;
+					yp++;
+					ym++;
+					zp++;
+					zm++;
 				}
 			}
 		}
@@ -754,6 +766,251 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil)
 		auto p = it2.get();
 
 		check &= grid.template get<1>(p) == 6;
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+	// Check correct-ness
+
+//	print_grid("debug_out",grid);
+}
+
+BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_soa<3,aggregate<double,double,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere_quad(grid,cdsm);
+
+	grid_key_dx<3> start({1,1,1});
+	grid_key_dx<3> stop({499,499,499});
+
+	/////// Check
+
+	timer t;
+	t.start();
+
+
+	for (int i = 0 ; i < 100 ; i++)
+	{
+
+	auto it = grid.getBlockIterator<1>(start,stop);
+
+	unsigned char mask[decltype(it)::sizeBlockBord];
+	unsigned char mask_sum[decltype(it)::sizeBlockBord];
+	__attribute__ ((aligned (32))) double block_bord_src[decltype(it)::sizeBlockBord];
+	__attribute__ ((aligned (32))) double block_bord_dst[decltype(it)::sizeBlock];
+
+	typedef typename boost::mpl::at<decltype(it)::stop_border_vmpl,boost::mpl::int_<0>>::type sz0;
+	typedef typename boost::mpl::at<decltype(it)::stop_border_vmpl,boost::mpl::int_<1>>::type sz1;
+	typedef typename boost::mpl::at<decltype(it)::stop_border_vmpl,boost::mpl::int_<2>>::type sz2;
+
+	const Vc::double_v six(6.0);
+
+	while (it.isNext())
+	{
+		it.loadBlockBorder<0>(block_bord_src,mask);
+
+		// Sum the mask
+		for (int k = it.start_b(2) ; k < it.stop_b(2) ; k++)
+		{
+			for (int j = it.start_b(1) ; j < it.stop_b(1) ; j++)
+			{
+				int c = it.LinB(it.start_b(0),j,k);
+
+				int yp = it.LinB(it.start_b(0),j+1,k);
+				int ym = it.LinB(it.start_b(0),j-1,k);
+
+				int zp = it.LinB(it.start_b(0),j,k+1);
+				int zm = it.LinB(it.start_b(0),j,k-1);
+
+				for (int i = it.start_b(0) ; i < it.stop_b(0) ; i += sizeof(size_t))
+				{
+					size_t cmd = *(size_t *)&mask[c];
+
+					if (cmd == 0) {continue;}
+
+					size_t xpd = *(size_t *)&mask[c+1];
+					size_t xmd = *(size_t *)&mask[c-1];
+					size_t ypd = *(size_t *)&mask[yp];
+					size_t ymd = *(size_t *)&mask[ym];
+					size_t zpd = *(size_t *)&mask[zp];
+					size_t zmd = *(size_t *)&mask[zm];
+
+					size_t sum = xpd + xmd +
+									   ypd + ymd +
+									   zpd + zmd + cmd;
+
+					*(size_t *)&mask_sum[c] = sum;
+
+					c += sizeof(size_t);
+					yp += sizeof(size_t);
+					ym += sizeof(size_t);
+					zp += sizeof(size_t);
+					zm += sizeof(size_t);
+				}
+			}
+		}
+
+		for (int k = it.start_b(2) ; k < it.stop_b(2) ; k++)
+		{
+			for (int j = it.start_b(1) ; j < it.stop_b(1) ; j++)
+			{
+				int c = it.LinB(it.start_b(0),j,k);
+
+				int yp = it.LinB(it.start_b(0),j+1,k);
+				int ym = it.LinB(it.start_b(0),j-1,k);
+
+				int zp = it.LinB(it.start_b(0),j,k+1);
+				int zm = it.LinB(it.start_b(0),j,k-1);
+
+				int cd = it.LinB_off(it.start_b(0),j,k);
+
+				for (int i = it.start_b(0) ; i < it.stop_b(0) ; i += Vc::double_v::Size)
+				{
+					Vc::Mask<double> cmp;
+
+					cmp[0] = mask[c] == true;
+					cmp[1] = mask[c+1] ==  true;
+					cmp[2] = mask[c+2] == true;
+					cmp[3] = mask[c+3] == true;
+
+					// we do only id exist the point
+					if (Vc::none_of(cmp) == true) {continue;}
+
+					Vc::Mask<double> surround;
+
+					Vc::double_v xpd(&block_bord_src[c+1],Vc::Unaligned);
+					Vc::double_v xmd(&block_bord_src[c-1],Vc::Unaligned);
+					Vc::double_v ypd(&block_bord_src[c+sz0::value],Vc::Unaligned);
+					Vc::double_v ymd(&block_bord_src[c-sz0::value],Vc::Unaligned);
+					Vc::double_v zpd(&block_bord_src[zp],Vc::Unaligned);
+					Vc::double_v zmd(&block_bord_src[zm],Vc::Unaligned);
+					Vc::double_v cmd(&block_bord_src[c],Vc::Unaligned);
+
+					Vc::double_v Lap = xpd + xmd +
+					                   ypd + ymd +
+					                   zpd + zmd - 6.0*cmd;
+
+					surround[0] = (mask_sum[c] == 7);
+					surround[1] = (mask_sum[c+1] ==  7);
+					surround[2] = (mask_sum[c+2] == 7);
+					surround[3] = (mask_sum[c+3] == 7);
+
+					Lap = Vc::iif(surround,Lap,six);
+
+					Lap.store(&block_bord_dst[cd],cmp,Vc::Aligned);
+
+					c+=Vc::double_v::Size;
+					zp+=Vc::double_v::Size;
+					zm+=Vc::double_v::Size;
+					cd+=Vc::double_v::Size;
+				}
+			}
+		}
+
+		it.storeBlock<1>(block_bord_dst);
+
+		++it;
+	}
+
+	}
+
+	t.stop();
+
+	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << "   " << grid.size_all() << std::endl;
+
+	bool check = true;
+	auto it2 = grid.getIterator();
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		check &= grid.template get<1>(p) == 6;
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+	// Check correct-ness
+
+	//print_grid("debug_out",grid);
+}
+
+BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_simplified)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_soa<3,aggregate<double,double,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere_quad(grid,cdsm);
+
+	grid_key_dx<3> start({1,1,1});
+	grid_key_dx<3> stop({250,250,250});
+
+	/////// Check
+
+	timer t;
+	t.start();
+
+
+	for (int i = 0 ; i < 100 ; i++)
+	{
+
+		int stencil[6][3] = {{1,0,0},{-1,0,0},{0,-1,0},{0,1,0},{0,0,-1},{0,0,1}};
+
+		grid.conv<0,1,1>(stencil,start,stop,[](Vc::double_v (& xs)[7], unsigned char * mask_sum){
+																	Vc::double_v Lap = xs[1] + xs[2] +
+																					   xs[3] + xs[4] +
+																					   xs[5] + xs[6] - 6.0*xs[0];
+
+																	auto surround = load_mask<Vc::double_v>(mask_sum);
+
+																	auto sur_mask = (surround == 6.0);
+
+																	Lap = Vc::iif(sur_mask,Lap,Vc::double_v(6.0));
+
+																	return Lap;
+		                                                         });
+	}
+
+	t.stop();
+
+	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << "   " << grid.size_all() << std::endl;
+
+	bool check = true;
+	auto it2 = grid.getIterator(start,stop);
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		check &= grid.template get<1>(p) == 6;
+
+		if (check == false)
+		{
+			int debug = 0;
+			debug++;
+		}
 
 		++it2;
 	}
@@ -789,6 +1046,9 @@ BOOST_AUTO_TEST_CASE( sparse_grid_slow_stencil)
 	timer t;
 	t.start();
 
+	for (int i = 0 ; i < 100 ; i++)
+	{
+
 	auto it = grid.getIterator();
 
 	while (it.isNext())
@@ -815,6 +1075,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_slow_stencil)
 		++it;
 	}
 
+	}
 	t.stop();
 
 	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << std::endl;

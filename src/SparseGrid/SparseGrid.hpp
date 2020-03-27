@@ -159,8 +159,393 @@ struct copy_sz
 	}
 };
 
-template<unsigned int dim, typename T, typename S, typename chunking>
-class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
+template<unsigned int dim>
+struct conv_impl
+{
+	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size , unsigned int N, typename SparseGridType, typename lambda_f, typename ... ArgsT >
+	void conv(int (& stencil)[N][3], grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
+	{
+		std::cout << __FILE__ << ":" << __LINE__ << " error conv operation not implemented for this dimension " << std::endl;
+	}
+};
+
+template<>
+struct conv_impl<3>
+{
+	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size , unsigned int N, typename SparseGridType, typename lambda_f, typename ... ArgsT >
+	static void conv(int (& stencil)[N][3], grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
+	{
+		auto it = grid.template getBlockIterator<stencil_size>(start,stop);
+
+		typedef typename boost::mpl::at<typename SparseGridType::value_type::type, boost::mpl::int_<prop_src>>::type prop_type;
+
+		unsigned char mask[decltype(it)::sizeBlockBord];
+		unsigned char mask_sum[decltype(it)::sizeBlockBord];
+		__attribute__ ((aligned (32))) prop_type block_bord_src[decltype(it)::sizeBlockBord];
+		__attribute__ ((aligned (32))) prop_type block_bord_dst[decltype(it)::sizeBlock];
+
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<0>>::type sz0;
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<1>>::type sz1;
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<2>>::type sz2;
+
+		while (it.isNext())
+		{
+			it.template loadBlockBorder<prop_src>(block_bord_src,mask);
+
+			// Sum the mask
+			for (int k = it.start_b(2) ; k < it.stop_b(2) ; k++)
+			{
+				for (int j = it.start_b(1) ; j < it.stop_b(1) ; j++)
+				{
+					int cc = it.LinB(it.start_b(0),j,k);
+					int c[N];
+
+					for (int s = 0 ; s < N ; s++)
+					{
+						c[s] = it.LinB(it.start_b(0)+stencil[s][0],j+stencil[s][1],k+stencil[s][2]);
+					}
+
+					for (int i = it.start_b(0) ; i < it.stop_b(0) ; i += sizeof(size_t))
+					{
+						size_t cmd = *(size_t *)&mask[cc];
+
+						if (cmd == 0) {continue;}
+
+
+						size_t xm[N];
+
+						for (int s = 0 ; s < N ; s++)
+						{
+							xm[s] = *(size_t *)&mask[c[s]];
+						}
+
+						size_t sum = 0;
+						for (int s = 0 ; s < N ; s++)
+						{
+							sum += xm[s];
+						}
+
+						*(size_t *)&mask_sum[cc] = sum;
+
+						cc += sizeof(size_t);
+						for (int s = 0 ; s < N ; s++)
+						{
+							c[s] += sizeof(size_t);
+						}
+					}
+				}
+			}
+
+			for (int k = it.start_b(2) ; k < it.stop_b(2) ; k++)
+			{
+				for (int j = it.start_b(1) ; j < it.stop_b(1) ; j++)
+				{
+					int cc = it.LinB(it.start_b(0),j,k);
+					int c[N];
+
+					int cd = it.LinB_off(it.start_b(0),j,k);
+
+					for (int s = 0 ; s < N ; s++)
+					{
+						c[s] = it.LinB(it.start_b(0)+stencil[s][0],j+stencil[s][1],k+stencil[s][2]);
+					}
+
+					for (int i = it.start_b(0) ; i < it.stop_b(0) ; i += Vc::Vector<prop_type>::Size)
+					{
+						Vc::Mask<prop_type> cmp;
+
+						for (int s = 0 ; s < Vc::Vector<prop_type>::Size ; s++)
+						{
+							cmp[s] = (mask[cc+s] == true);
+						}
+
+						// we do only id exist the point
+						if (Vc::none_of(cmp) == true) {continue;}
+
+						Vc::Mask<prop_type> surround;
+
+						Vc::Vector<prop_type> xs[N+1];
+
+						xs[0] = Vc::Vector<prop_type>(&block_bord_src[cc],Vc::Unaligned);
+
+						for (int s = 1 ; s < N+1 ; s++)
+						{
+							xs[s] = Vc::Vector<prop_type>(&block_bord_src[c[s-1]],Vc::Unaligned);
+						}
+
+						auto res = func(xs, &mask_sum[cc], args ...);
+
+						res.store(&block_bord_dst[cd],cmp,Vc::Aligned);
+
+						cc += Vc::Vector<prop_type>::Size;
+						for (int s = 0 ; s < N ; s++)
+						{
+							c[s] += Vc::Vector<prop_type>::Size;
+						}
+						cd += Vc::Vector<prop_type>::Size;
+					}
+				}
+			}
+
+			it.template storeBlock<prop_dst>(block_bord_dst);
+
+			++it;
+		}
+	}
+
+
+
+	template<unsigned int prop_src1, unsigned int prop_src2,
+			 unsigned int prop_dst1, unsigned int prop_dst2,
+			 unsigned int stencil_size , unsigned int N,
+			 typename SparseGridType, typename lambda_f, typename ... ArgsT >
+	static void conv2(int (& stencil)[N][3], grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
+	{
+		auto it = grid.template getBlockIterator<stencil_size>(start,stop);
+
+		typedef typename boost::mpl::at<typename SparseGridType::value_type::type, boost::mpl::int_<prop_src1>>::type prop_type;
+
+		unsigned char mask1[decltype(it)::sizeBlockBord];
+		unsigned char mask_sum1[decltype(it)::sizeBlockBord];
+		unsigned char mask2[decltype(it)::sizeBlockBord];
+		unsigned char mask_sum2[decltype(it)::sizeBlockBord];
+		__attribute__ ((aligned (32))) prop_type block_bord_src1[decltype(it)::sizeBlockBord];
+		__attribute__ ((aligned (32))) prop_type block_bord_dst1[decltype(it)::sizeBlock];
+		__attribute__ ((aligned (32))) prop_type block_bord_src2[decltype(it)::sizeBlockBord];
+		__attribute__ ((aligned (32))) prop_type block_bord_dst2[decltype(it)::sizeBlock];
+
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<0>>::type sz0;
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<1>>::type sz1;
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<2>>::type sz2;
+
+		while (it.isNext())
+		{
+			it.template loadBlockBorder<prop_src1>(block_bord_src1,mask1);
+			it.template loadBlockBorder<prop_src1>(block_bord_src2,mask2);
+
+			// Sum the mask
+			for (int k = it.start_b(2) ; k < it.stop_b(2) ; k++)
+			{
+				for (int j = it.start_b(1) ; j < it.stop_b(1) ; j++)
+				{
+					int cc = it.LinB(it.start_b(0),j,k);
+					int c[N];
+
+					for (int s = 0 ; s < N ; s++)
+					{
+						c[s] = it.LinB(it.start_b(0)+stencil[s][0],j+stencil[s][1],k+stencil[s][2]);
+					}
+
+					for (int i = it.start_b(0) ; i < it.stop_b(0) ; i += sizeof(size_t))
+					{
+						size_t cmd1 = *(size_t *)&mask1[cc];
+						size_t cmd2 = *(size_t *)&mask2[cc];
+
+						if (cmd1 == 0 && cmd2 == 0) {continue;}
+
+
+						size_t xm1[N];
+						size_t xm2[N];
+
+						for (int s = 0 ; s < N ; s++)
+						{
+							xm1[s] = *(size_t *)&mask1[c[s]];
+							xm2[s] = *(size_t *)&mask2[c[s]];
+						}
+
+						size_t sum1 = 0;
+						size_t sum2 = 0;
+						for (int s = 0 ; s < N ; s++)
+						{
+							sum1 += xm1[s];
+							sum2 += xm2[s];
+						}
+
+						*(size_t *)&mask_sum1[cc] = sum1;
+						*(size_t *)&mask_sum2[cc] = sum1;
+
+						cc += sizeof(size_t);
+						for (int s = 0 ; s < N ; s++)
+						{
+							c[s] += sizeof(size_t);
+						}
+					}
+				}
+			}
+
+			for (int k = it.start_b(2) ; k < it.stop_b(2) ; k++)
+			{
+				for (int j = it.start_b(1) ; j < it.stop_b(1) ; j++)
+				{
+					int cc = it.LinB(it.start_b(0),j,k);
+					int c[N];
+
+					int cd = it.LinB_off(it.start_b(0),j,k);
+
+					for (int s = 0 ; s < N ; s++)
+					{
+						c[s] = it.LinB(it.start_b(0)+stencil[s][0],j+stencil[s][1],k+stencil[s][2]);
+					}
+
+					for (int i = it.start_b(0) ; i < it.stop_b(0) ; i += Vc::Vector<prop_type>::Size)
+					{
+						Vc::Mask<prop_type> cmp1;
+						Vc::Mask<prop_type> cmp2;
+
+						for (int s = 0 ; s < Vc::Vector<prop_type>::Size ; s++)
+						{
+							cmp1[s] = (mask1[cc+s] == true);
+							cmp2[s] = (mask2[cc+s] == true);
+						}
+
+						// we do only id exist the point
+						if (Vc::none_of(cmp1) == true && Vc::none_of(cmp2)) {continue;}
+
+						Vc::Mask<prop_type> surround1;
+						Vc::Mask<prop_type> surround2;
+
+						Vc::Vector<prop_type> xs1[N+1];
+						Vc::Vector<prop_type> xs2[N+1];
+
+						xs1[0] = Vc::Vector<prop_type>(&block_bord_src1[cc],Vc::Unaligned);
+						xs2[0] = Vc::Vector<prop_type>(&block_bord_src2[cc],Vc::Unaligned);
+
+						for (int s = 1 ; s < N+1 ; s++)
+						{
+							xs1[s] = Vc::Vector<prop_type>(&block_bord_src1[c[s-1]],Vc::Unaligned);
+							xs2[s] = Vc::Vector<prop_type>(&block_bord_src2[c[s-1]],Vc::Unaligned);
+						}
+
+						Vc::Vector<prop_type> vo1;
+						Vc::Vector<prop_type> vo2;
+
+						func(vo1, vo2, xs1, xs2, &mask_sum1[cc], &mask_sum2[cc], args ...);
+
+						vo1.store(&block_bord_dst1[cd],cmp1,Vc::Aligned);
+						vo2.store(&block_bord_dst2[cd],cmp2,Vc::Aligned);
+
+						cc += Vc::Vector<prop_type>::Size;
+						for (int s = 0 ; s < N ; s++)
+						{
+							c[s] += Vc::Vector<prop_type>::Size;
+						}
+						cd += Vc::Vector<prop_type>::Size;
+					}
+				}
+			}
+
+			it.template storeBlock<prop_dst1>(block_bord_dst1);
+			it.template storeBlock<prop_dst1>(block_bord_dst2);
+
+			++it;
+		}
+	}
+};
+
+template<unsigned int N>
+struct load_mask_impl
+{
+	template<typename Vc_type>
+	static inline void load(Vc_type & Vc)
+	{
+		std::cout << __FILE__ << ":" << __LINE__ << " unknown size " << std::endl;
+	}
+};
+
+template<>
+struct load_mask_impl<1>
+{
+	template<typename Vc_type>
+	static inline void load(Vc_type & Vc, unsigned char * mask_sum)
+	{
+		Vc[0] = mask_sum[0];
+	}
+};
+
+template<>
+struct load_mask_impl<2>
+{
+	template<typename Vc_type>
+	static inline void load(Vc_type & Vc, unsigned char * mask_sum)
+	{
+		Vc[0] = mask_sum[0];
+		Vc[1] = mask_sum[1];
+	}
+};
+
+template<>
+struct load_mask_impl<4>
+{
+	template<typename Vc_type>
+	static inline void load(Vc_type & Vc, unsigned char * mask_sum)
+	{
+		Vc[0] = mask_sum[0];
+		Vc[1] = mask_sum[1];
+		Vc[2] = mask_sum[2];
+		Vc[3] = mask_sum[3];
+	}
+};
+
+template<>
+struct load_mask_impl<8>
+{
+	template<typename Vc_type>
+	static inline void load(Vc_type & Vc, unsigned char * mask_sum)
+	{
+		Vc[0] = mask_sum[0];
+		Vc[1] = mask_sum[1];
+		Vc[2] = mask_sum[2];
+		Vc[3] = mask_sum[3];
+		Vc[4] = mask_sum[4];
+		Vc[5] = mask_sum[5];
+		Vc[6] = mask_sum[6];
+		Vc[7] = mask_sum[7];
+	}
+};
+
+template<>
+struct load_mask_impl<16>
+{
+	template<typename Vc_type>
+	static inline void load(Vc_type & Vc, unsigned char * mask_sum)
+	{
+		Vc[0] = mask_sum[0];
+		Vc[1] = mask_sum[1];
+		Vc[2] = mask_sum[2];
+		Vc[3] = mask_sum[3];
+		Vc[4] = mask_sum[4];
+		Vc[5] = mask_sum[5];
+		Vc[6] = mask_sum[6];
+		Vc[7] = mask_sum[7];
+		Vc[8] = mask_sum[8];
+		Vc[9] = mask_sum[9];
+		Vc[10] = mask_sum[10];
+		Vc[11] = mask_sum[11];
+		Vc[12] = mask_sum[12];
+		Vc[13] = mask_sum[13];
+		Vc[14] = mask_sum[14];
+		Vc[15] = mask_sum[15];
+	}
+};
+
+template<typename Vc_type>
+inline Vc_type load_mask(unsigned char * mask_sum)
+{
+	Vc_type v;
+
+	load_mask_impl<Vc_type::Size>::load(v,mask_sum);
+
+	return v;
+}
+
+template<unsigned int dim,
+		 typename T,
+		 typename S,
+		 typename grid_lin,
+		 typename layout,
+		 template<typename> class layout_base,
+		 typename chunking>
+class sgrid_cpu
 {
 	//! cache pointer
 	mutable size_t cache_pnt;
@@ -183,16 +568,16 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 	//Definition of the chunks
 	typedef typename v_transform_two<Ft_chunk,boost::mpl::int_<chunking::size::value>,typename T::type>::type chunk_def;
 
-	typedef sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking> self;
+	typedef sgrid_cpu<dim,T,S,grid_lin,layout,layout_base,chunking> self;
 
 	//! vector of chunks
 	openfpm::vector<aggregate_bfv<chunk_def>> chunks;
 
 	//! grid size information
-	grid_sm<dim,void> g_sm;
+	grid_lin g_sm;
 
 	//! grid size information with shift
-	grid_sm<dim,void> g_sm_shift;
+	grid_lin g_sm_shift;
 
 	//! conversion position in the chunks
 	grid_key_dx<dim> pos_chunk[chunking::size::value];
@@ -382,7 +767,7 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 	 * \param g_sm_shift chunks grid size
 	 *
 	 */
-	void set_g_shift_from_size(const size_t (& sz)[dim], grid_sm<dim,void> & g_sm_shift)
+	void set_g_shift_from_size(const size_t (& sz)[dim], grid_lin & g_sm_shift)
 	{
 		grid_key_dx<dim> cs;
 		grid_key_dx<dim> unused;
@@ -414,9 +799,9 @@ class sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking>
 		copy_sz<dim,typename chunking::type> cpsz(sz_cnk);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,dim> >(cpsz);
 
-		grid_sm<dim,void> gs(sz_cnk);
+		grid_lin gs(sz_cnk);
 
-		grid_key_dx_iterator<dim> it(gs);
+		grid_key_dx_iterator<dim,no_stencil,grid_lin> it(gs);
 		size_t cnt = 0;
 
 		while (it.isNext())
@@ -600,6 +985,10 @@ public:
 
 	//! Background type
 	typedef T background_type;
+
+	typedef layout_base<T> memory_traits;
+
+	typedef chunking chunking_type;
 
 	/*! \brief Trivial constructor
 	 *
@@ -1035,7 +1424,7 @@ public:
 	 * \return the internal grid
 	 *
 	 */
-	const grid_sm<dim,void> & getGrid() const
+	const grid_lin & getGrid() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -1261,7 +1650,7 @@ public:
 	template<int ... prp> inline
 	void packRequest(size_t & req) const
 	{
-		grid_sm<dim,void> gs_cnk(sz_cnk);
+		grid_lin gs_cnk(sz_cnk);
 
 		// For sure we have to pack the number of chunk we want to pack
 
@@ -1320,7 +1709,7 @@ public:
 	void packRequest(grid_key_sparse_dx_iterator_sub<dim,chunking::size::value> & sub_it,
 					 size_t & req) const
 	{
-		grid_sm<dim,void> gs_cnk(sz_cnk);
+		grid_lin gs_cnk(sz_cnk);
 
 		// For sure we have to pack the number of chunk we want to pack
 
@@ -1423,7 +1812,7 @@ public:
 									grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> & sub_it,
 									Pack_stat & sts)
 	{
-		grid_sm<dim,void> gs_cnk(sz_cnk);
+		grid_lin gs_cnk(sz_cnk);
 
 		// Here we allocate a size_t that indicate the number of chunk we are packing,
 		// because we do not know a priory, we will fill it later
@@ -1607,7 +1996,7 @@ public:
 	template<int ... prp> void pack(ExtPreAlloc<S> & mem,
 									Pack_stat & sts) const
 	{
-		grid_sm<dim,void> gs_cnk(sz_cnk);
+		grid_lin gs_cnk(sz_cnk);
 
 		// Here we allocate a size_t that indicate the number of chunk we are packing,
 		// because we do not know a priory, we will fill it later
@@ -1688,7 +2077,7 @@ public:
 	 */
 	void remove(Box<dim,size_t> & section_to_delete)
 	{
-		grid_sm<dim,void> gs_cnk(sz_cnk);
+		grid_lin gs_cnk(sz_cnk);
 
 		for (size_t i = 0 ; i < header.size() ; i++)
 		{
@@ -1750,7 +2139,7 @@ public:
 		remove_empty();
 	}
 
-	void copy_to(const sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking> & grid_src,
+	void copy_to(const self & grid_src,
 		         const Box<dim,size_t> & box_src,
 			     const Box<dim,size_t> & box_dst)
 	{
@@ -1772,7 +2161,7 @@ public:
 	}
 
 	template<template <typename,typename> class op, unsigned int ... prp >
-	void copy_to_op(const sgrid_cpu<dim,T,S,typename memory_traits_lin<T>::type,chunking> & grid_src,
+	void copy_to_op(const self & grid_src,
 		         const Box<dim,size_t> & box_src,
 			     const Box<dim,size_t> & box_dst)
 	{
@@ -1809,6 +2198,44 @@ public:
 		find_active_chunk(v1,act_cnk,exist);
 
 		return act_cnk;
+	}
+
+	/*! \brief Get the position of a chunk
+	 *
+	 * \param chunk_id
+	 *
+	 * \return the position of the chunk
+	 *
+	 */
+	grid_key_dx<dim> getChunkPos(size_t chunk_id)
+	{
+		grid_key_dx<dim> kl;
+		grid_key_dx<dim> kh = header.get(chunk_id).pos;
+
+		// shift the key
+		key_shift<dim,chunking>::shift(kh,kl);
+
+		return kh;
+	}
+
+	/*! \brief apply a convolution using the stencil N
+	 *
+	 *
+	 */
+	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, unsigned int N, typename lambda_f, typename ... ArgsT >
+	void conv(int (& stencil)[N][dim], grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	{
+		conv_impl<dim>::template conv<prop_src,prop_dst,stencil_size>(stencil,start,stop,*this,func);
+	}
+
+	/*! \brief apply a convolution using the stencil N
+	 *
+	 *
+	 */
+	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, unsigned int N, typename lambda_f, typename ... ArgsT >
+	void conv2(int (& stencil)[N][dim], grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	{
+		conv_impl<dim>::template conv2<prop_src,prop_dst,stencil_size>(stencil,start,stop,*this,func);
 	}
 
 	/*! \brief unpack the sub-grid object
@@ -2229,6 +2656,15 @@ public:
 		return chunks;
 	}
 };
+
+template<unsigned int dim,
+		 typename T,
+		 typename S,
+		 typename grid_lin = grid_zm<dim,void>,
+		 typename layout = typename memory_traits_inte<T>::type,
+		 template<typename> class layout_base = memory_traits_inte,
+		 typename chunking = default_chunking<dim>>
+using sgrid_soa = sgrid_cpu<dim,T,S,grid_lin,layout,layout_base,chunking>;
 
 
 #endif /* OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRID_HPP_ */

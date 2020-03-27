@@ -13,7 +13,7 @@
 #include "SparseGrid/SparseGrid.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
 #include <math.h>
-#include "util/debug.hpp"
+//#include "util/debug.hpp"
 #include "SparseGrid_chunk_copy.hpp"
 
 BOOST_AUTO_TEST_SUITE( sparse_grid_chunk_copy_test )
@@ -156,10 +156,6 @@ BOOST_AUTO_TEST_CASE( sparse_grid_chunk_test )
 	{
 		BOOST_REQUIRE_EQUAL(chunk_with_border[5*66*10+9*66+k],chunks.template get<0>(0)[0*64*8 + 0*64 + (k-1)]);
 	}
-
-
-
-	print_array("Arr.vtk",chunk_with_border,66,10,6);
 }
 
 
@@ -489,8 +485,6 @@ BOOST_AUTO_TEST_CASE( sparse_grid_chunk_test_2 )
 	BOOST_REQUIRE_EQUAL(chunk_with_border[7*68*12+10*68+67],chunks.template get<0>(0)[1*64*8 + 0*64 + 1]);
 	BOOST_REQUIRE_EQUAL(chunk_with_border[7*68*12+11*68+66],chunks.template get<0>(0)[1*64*8 + 1*64 + 0]);
 	BOOST_REQUIRE_EQUAL(chunk_with_border[7*68*12+11*68+67],chunks.template get<0>(0)[1*64*8 + 1*64 + 1]);*/
-
-	print_array("Arr.vtk",chunk_with_border,68,12,8);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

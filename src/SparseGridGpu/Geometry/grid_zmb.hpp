@@ -64,7 +64,6 @@ public:
     template<typename indexT>
     inline __host__ __device__ mem_id LinId(const grid_key_dx<dim, indexT> coord) const
     {
-        //todo: Check (in debug mode only) that the coordinates passed here are valid and not overflowing dimensions (???)
     	grid_key_dx<dim> key_b;
     	int localLinId = 0;
     	int sr = 1;

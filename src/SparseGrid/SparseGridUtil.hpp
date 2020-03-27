@@ -217,12 +217,11 @@ struct default_chunking<8>
 template<unsigned int dim,
          typename T,
 		 typename S,
+		 typename grid_lin = grid_sm<dim,void>,
 		 typename layout=typename memory_traits_lin<T>::type,
+		 template<typename> class layout_base = memory_traits_lin,
 		 typename chunking = default_chunking<dim>>
-class sgrid_cpu
-{
-
-};
+class sgrid_cpu;
 
 
 template<unsigned int dim, typename chunk>

@@ -62,6 +62,7 @@ add_executable(isolation
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
+    target_compile_options(mem_map PRIVATE "-mavx")
     if (TEST_COVERAGE)
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
     endif ()
@@ -113,12 +114,14 @@ target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories(isolation PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories(isolation PUBLIC ${Boost_INCLUDE_DIRS})
 
+target_include_directories(mem_map PUBLIC ${Vc_INCLUDE_DIR})
 
 target_link_libraries(mem_map ${Boost_LIBRARIES})
 target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 
 target_link_libraries(isolation ${Boost_LIBRARIES})
 target_link_libraries(isolation -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
+target_link_libraries(mem_map ${Vc_LIBRARIES})
 
 if (TEST_COVERAGE)
     target_link_libraries(mem_map -lgcov)
@@ -142,7 +145,9 @@ install(FILES Grid/comb.hpp
         Grid/grid_common.hpp
         Grid/grid_gpu.hpp Grid/Encap.hpp
         Grid/grid_key.hpp Grid/grid_key_dx_expression_unit_tests.hpp
-        Grid/grid_key_expression.hpp Grid/grid_sm.hpp
+        Grid/grid_key_expression.hpp 
+	Grid/grid_sm.hpp
+	Grid/grid_zm.hpp
         Grid/grid_unit_tests.hpp Grid/grid_util_test.hpp
         Grid/map_grid.hpp Grid/se_grid.hpp Grid/util.hpp
         Grid/iterators/grid_key_dx_iterator_sp.hpp

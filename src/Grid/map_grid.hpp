@@ -35,6 +35,7 @@
 #include "memory/CudaMemory.cuh"
 #endif
 #include "grid_sm.hpp"
+#include "grid_zm.hpp"
 #include "Encap.hpp"
 #include "memory_ly/memory_array.hpp"
 #include "memory_ly/memory_c.hpp"
