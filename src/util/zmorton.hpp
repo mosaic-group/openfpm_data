@@ -67,7 +67,6 @@ inline __device__ __host__  void invlin_zid(size_t lin, grid_key_dx<2,T> & key)
 	key.set_d(1,y);
 }
 
-
 static const size_t S3[] = {2, 4, 8, 16, 32};
 
 template<typename T>

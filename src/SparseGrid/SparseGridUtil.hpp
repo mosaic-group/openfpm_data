@@ -8,8 +8,12 @@
 #ifndef OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRIDUTIL_HPP_
 #define OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRIDUTIL_HPP_
 
+const static int cnk_pos = 0;
+const static int cnk_nele = 1;
+const static int cnk_mask = 2;
+
 //! sizeof the cache
-#define SGRID_CACHE 4
+#define SGRID_CACHE 2
 
 //! When we have more that 1024 to remove remove them
 #define FLUSH_REMOVE 1024
@@ -19,6 +23,58 @@ template <typename n_ele, typename T>
 struct Ft_chunk
 {
 	typedef std::array<typename std::remove_const<typename std::remove_reference<T>::type>::type,n_ele::value> type;
+};
+
+template<unsigned int dim>
+struct NNStar_c
+{
+	static const int nNN = openfpm::math::pow(2, dim);
+
+	static const int is_cross = false;
+};
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to set a grid info
+ *
+ * \tparam grid_sm_type
+ * \tparam vector_blocks_ext
+ *
+ */
+template<unsigned int dim, unsigned int stencil_size, typename vector_blocks_ext,typename vector_ext>
+struct get_block_sizes
+{
+	//! sizes in point with border
+	size_t sz_tot[dim];
+
+	//! sizes blocks
+	size_t sz_ext[dim];
+
+	//! sizes with border block
+	size_t sz_ext_b[dim];
+
+	//! sizes
+	size_t sz_block[dim];
+
+	/*! \brief constructor
+	 *
+	 * \param v set of pointer buffers to set
+	 *
+	 */
+	inline get_block_sizes()
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& val)
+	{
+		sz_tot[T::value] = boost::mpl::at<typename vector_blocks_ext::type,boost::mpl::int_<T::value>>::type::value * boost::mpl::at<vector_ext,boost::mpl::int_<T::value>>::type::value + 2*stencil_size;
+		sz_ext[T::value] = boost::mpl::at<vector_ext,boost::mpl::int_<T::value>>::type::value;
+		sz_ext_b[T::value] = boost::mpl::at<vector_ext,boost::mpl::int_<T::value>>::type::value + 2*stencil_size;
+		sz_block[T::value] = boost::mpl::at<typename vector_blocks_ext::type,boost::mpl::int_<T::value>>::type::value;
+	}
 };
 
 template<unsigned int dim>

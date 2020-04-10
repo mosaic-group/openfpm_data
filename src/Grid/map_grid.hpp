@@ -124,6 +124,9 @@ public:
 	//! sub-grid iterator type
 	typedef grid_key_dx_iterator_sub<dim> sub_grid_iterator_type;
 
+	//! linearizer type Z-morton Hilbert curve , normal striding
+	typedef typename grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>::linearizer_type linearizer_type;
+
 	//! Default constructor
 	inline grid_cpu() THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_lin>()
@@ -633,6 +636,9 @@ public:
 	//! Object container for T, it is the return type of get_o it return a object type trough
 	// you can access all the properties of T
 	typedef typename grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::container container;
+
+	//! linearizer type Z-morton Hilbert curve , normal striding
+	typedef typename grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::linearizer_type linearizer_type;
 
 	//! Default constructor
 	inline grid_cpu() THROW

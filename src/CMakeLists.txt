@@ -174,6 +174,8 @@ install(FILES Point_test.hpp
 install(FILES SparseGrid/SparseGrid_iterator.hpp
               SparseGrid/SparseGrid.hpp
               SparseGrid/SparseGridUtil.hpp
+	      SparseGrid/SparseGrid_iterator_block.hpp
+	      SparseGrid/SparseGrid_chunk_copy.hpp
         DESTINATION openfpm_data/include/SparseGrid)
 
 install(FILES hash_map/hopscotch_hash.h
@@ -252,6 +254,7 @@ install(FILES util/check_no_pointers.hpp
         util/for_each_ref.hpp
         util/mathutil.hpp util/object_creator.hpp
         util/object_s_di.hpp
+	util/zmorton.hpp
         util/object_si_d.hpp
         util/object_util.hpp
         util/util_debug.hpp

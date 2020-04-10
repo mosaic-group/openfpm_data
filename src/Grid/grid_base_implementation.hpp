@@ -275,7 +275,12 @@ struct copy_grid_fast_caller<index_tuple_sq<prp ...>>
  * \tparam layout_base layout memory meta-function (the meta-function used to construct layout_)
  *
  */
-template<unsigned int dim, typename T, typename S, typename layout_, template<typename> class layout_base, typename ord_type = grid_sm<dim,T> >
+template<unsigned int dim,
+         typename T,
+         typename S,
+         typename layout_,
+         template<typename> class layout_base,
+         typename ord_type = grid_sm<dim,void> >
 class grid_base_impl
 {
 	//! memory layout
@@ -297,6 +302,8 @@ public:
 
 	//! base layout type
 	typedef layout_base<T> layout_base_;
+
+	typedef ord_type linearizer_type;
 
 protected:
 
@@ -760,7 +767,7 @@ public:
 	 *
 	 */
 
-	const grid_sm<dim,T> & getGrid() const
+	const grid_sm<dim,void> & getGrid() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);

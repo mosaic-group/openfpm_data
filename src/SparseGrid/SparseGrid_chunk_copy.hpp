@@ -9,7 +9,8 @@
 #define SPARSEGRID_CHUNK_COPY_HPP_
 
 #include <Vc/Vc>
-#include <immintrin.h>
+#include "util/mathutil.hpp"
+
 
 /*! \brief Check if the point in the chunk exist
  *
@@ -22,9 +23,7 @@
 template<typename headerType>
 inline bool exist_sub(headerType & h, int sub_id)
 {
-	size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
-
-	return h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check;
+	return h.template get<cnk_mask>()[sub_id];
 }
 
 template<unsigned int v>
@@ -53,8 +52,8 @@ struct exist_sub_v_impl<2>
 
 		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
 
-		pmask[0] = m & mask_check;
-		pmask[1] = m & mask_check << 1;
+		pmask[0] = (m & mask_check) != 0;
+		pmask[1] = (m & (mask_check << 1)) != 0;
 	}
 };
 
@@ -66,14 +65,10 @@ struct exist_sub_v_impl<4>
 	template<typename headerType>
 	static inline void exist(headerType & h, int sub_id, unsigned char * pmask)
 	{
-		size_t m = h.mask[sub_id >> BIT_SHIFT_SIZE_T];
-
-		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
-
-		pmask[0] = (m & mask_check) != 0;
-		pmask[1] = (m & (mask_check << 1)) != 0;
-		pmask[2] = (m & (mask_check << 2)) != 0;
-		pmask[3] = (m & (mask_check << 3)) != 0;
+		pmask[0] = h.template get<cnk_mask>()[sub_id];
+		pmask[1] = h.template get<cnk_mask>()[sub_id+1];
+		pmask[2] = h.template get<cnk_mask>()[sub_id+2];
+		pmask[3] = h.template get<cnk_mask>()[sub_id+3];
 	}
 };
 
@@ -89,14 +84,14 @@ struct exist_sub_v_impl<8>
 
 		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
 
-		pmask[0] = m & mask_check;
-		pmask[1] = m & mask_check << 1;
-		pmask[2] = m & mask_check << 2;
-		pmask[3] = m & mask_check << 3;
-		pmask[4] = m & mask_check << 4;
-		pmask[5] = m & mask_check << 5;
-		pmask[6] = m & mask_check << 6;
-		pmask[7] = m & mask_check << 7;
+		pmask[0] = (m & mask_check) != 0;
+		pmask[1] = (m & (mask_check << 1)) != 0;
+		pmask[2] = (m & (mask_check << 2)) != 0;
+		pmask[3] = (m & (mask_check << 3)) != 0;
+		pmask[4] = (m & (mask_check << 4)) != 0;
+		pmask[5] = (m & (mask_check << 5)) != 0;
+		pmask[6] = (m & (mask_check << 6)) != 0;
+		pmask[7] = (m & (mask_check << 7)) != 0;
 	}
 };
 
@@ -801,5 +796,346 @@ struct copy_corner_3<layout_type,prop,stencil_size,chunking,true>
 	inline static void copy(T ptr[N1], const chunkType & chunk)
 	{}
 };
+
+///////////////////////////////////////////////////////////////////////// Chunk missalignment mapping
+
+template<unsigned int dim>
+struct key_int
+{
+	unsigned char i;
+	grid_key_dx<dim,long int> k;
+};
+
+/*! to move chunks from one Sparse grid to another SparseGrid chunk can be miss-aligned this function create a map between
+ *  the missaligned source and the destination chunks
+ *
+ * For example in an 8x8 chunk in which the chunk in the source sparse grid are shifted by two from the destination sparse-grid
+ * you will get a map like this
+ *
+/verbatim
+
+   2 2 3 3 3 3 3 3
+   2 2 3 3 3 3 3 3
+   2 2 3 3 3 3 3 3
+   2 2 3 3 3 3 3 3
+   0 0 1 1 1 1 1 1
+   0 0 1 1 1 1 1 1
+
+/endverbatim
+ *
+ *  and a vk filled with {-1,-1},0 {0,-1},1 {-1,0},2 {0,0},3
+ *
+ * in case we are comping a slice some of the index in vk can be filtered out. For example if we are copyng a slice in x = 0
+ * the vector will only have:
+ *
+ * {-1,-1},0 {-1,0},2
+ *
+ */
+template<unsigned int dim, unsigned int N, typename chunking>
+void construct_chunk_missalign_map(unsigned char miss_al_map[N],
+		                           short int mp_off[N],
+									 const Box<dim,long int> & b_src,
+									 const Box<dim,long int> & b_dst,
+									 openfpm::vector<key_int<dim>> & vk)
+{
+	typedef typename vmpl_create_constant<dim,1>::type one_vmpl;
+
+	get_block_sizes<dim,0,typename chunking::type,one_vmpl> gbs;
+	boost::mpl::for_each_ref< boost::mpl::range_c<int,0,dim> >(gbs);
+
+	grid_key_dx<dim> k_src = b_src.getKP1();
+	grid_key_dx<dim> k_dst = b_dst.getKP1();
+
+	grid_key_dx<dim,long int> kl1;
+	grid_key_dx<dim,long int> kl2;
+
+	// shift the key
+	key_shift<dim,chunking>::shift(k_src,kl1);
+
+	// shift the key
+	key_shift<dim,chunking>::shift(k_dst,kl2);
+
+	grid_key_dx<dim,long int> key_sub;
+
+	for (int i = 0 ; i < dim ; i++)
+	{
+		key_sub.set_d(i,kl2.get(i) - kl1.get(i) );
+	}
+
+	int c_id[openfpm::math::pow(2,dim)];
+	size_t sz[dim];
+
+	for (int i  = 0 ; i < dim ; i++)
+	{sz[i] = 3;}
+
+//	grid_sm<dim,void> g2(sz);
+//	grid_key_dx_iterator<dim> it2(g2);
+
+/*	grid_key_dx<dim> one;
+	one.one();
+
+	while (it2.isNext())
+	{
+		auto k1 = it2.get();
+
+		g2.LinId(k1);
+
+		key_int<dim> kk;
+
+		kk.i = g2.LinId(k1);
+		kk.k = k1 - one;
+
+		++it2;
+	}*/
+
+	grid_sm<dim,void> gcnk(gbs.sz_block);
+	grid_key_dx_iterator<dim> it(gcnk);
+	while (it.isNext())
+	{
+		auto k = it.get();
+
+		int off = 0;
+		int bid = 0;
+		int stride = 1;
+		int stride_off = 1;
+		for (int i = 0 ; i < dim ; i++)
+		{
+			if ((long int)k.get(i) + key_sub.get(i) >= (long int)gbs.sz_block[i])
+			{
+				bid += 2*stride;
+
+			}
+			else if ((long int)k.get(i) + key_sub.get(i) < 0)
+			{
+				bid += 0*stride;
+
+			}
+			else
+			{
+				bid += 1*stride;
+			}
+			off += (openfpm::math::positive_modulo(key_sub.get(i) + k.get(i),gbs.sz_block[i]))*stride_off;
+			stride *= 3;
+			stride_off *= gbs.sz_block[i];
+		}
+
+		miss_al_map[gcnk.LinId(k)] = bid;
+		mp_off[gcnk.LinId(k)] = off;
+
+		++it;
+	}
+
+	// Filtering: sometime in particular for ghost copy we have a slice to copy, in this case some of the index in the map
+	// are never touched so we can eliminate elements in the vk
+
+	Box<dim,long int> slice;
+
+	// calculate slice
+	for (int i = 0 ; i < dim ; i++)
+	{
+		if (kl1.get(i) + (b_src.getHigh(i) - b_src.getLow(i) + 1) > gbs.sz_block[i])
+		{
+			slice.setLow(i,0);
+			slice.setHigh(i,gbs.sz_block[i]-1);
+		}
+		else
+		{
+			slice.setLow(i,kl1.get(i));
+			slice.setHigh(i,kl1.get(i) + (b_src.getHigh(i) - b_src.getLow(i) + 1));
+		}
+	}
+
+	key_int<dim> l;
+	l.i = 0;
+	l.k.zero();
+	vk.add(l);
+
+	for (int i  = 0 ; i < dim ; i++)
+	{
+		if (key_sub.get(i) >= 0)
+		{
+			size_t bord = gbs.sz_block[i] - key_sub.get(i);
+
+			if (slice.getLow(i) < bord)
+			{
+				// set the component
+				for (int j = 0 ; j < vk.size() ; j++)
+				{
+					vk.get(j).k.set_d(i,0);
+				}
+				if (bord <=  slice.getHigh(i) )
+				{
+					int n_dup = vk.size();
+
+					// add the other parts with zero
+					for (int j = 0 ; j < n_dup ; j++)
+					{
+						key_int<dim> tmp;
+						tmp.k = vk.get(j).k;
+
+						tmp.k.set_d(i,1);
+
+						vk.add(tmp);
+					}
+				}
+			}
+			else
+			{
+				// set the component
+				for (int j = 0 ; j < vk.size() ; j++)
+				{
+					vk.get(j).k.set_d(i,0);
+				}
+			}
+		}
+		else
+		{
+			size_t bord = -key_sub.get(i);
+
+			if (slice.getLow(i) < bord)
+			{
+				// set the component
+				for (int j = 0 ; j < vk.size() ; j++)
+				{
+					vk.get(j).k.set_d(i,-1);
+				}
+				if (bord <=  slice.getHigh(i) )
+				{
+					int n_dup = vk.size();
+
+					// add the other parts with zero
+					for (int j = 0 ; j < n_dup ; j++)
+					{
+						key_int<dim> tmp;
+						tmp.k = vk.get(j).k;
+
+						tmp.k.set_d(i,0);
+
+						vk.add(tmp);
+					}
+				}
+			}
+			else
+			{
+				// set the component
+				for (int j = 0 ; j < vk.size() ; j++)
+				{
+					vk.get(j).k.set_d(i,0);
+				}
+			}
+		}
+
+/*		size_t bord = (gbs.sz_block[i] - key_sub.get(i));
+
+		if (slice.getLow(i) < (gbs.sz_block[i] - key_sub.get(i)))
+		{
+			// set the component
+			for (int j = 0 ; j < vk.size() ; j++)
+			{
+				vk.get(j).k.set_d(i,0);
+			}
+			if ((gbs.sz_block[i] - key_sub.get(i)) <=  slice.getHigh(i) )
+			{
+				int n_dup = vk.size();
+
+				// add the other parts with zero
+				for (int j = 0 ; j < n_dup ; j++)
+				{
+					key_int<dim> tmp;
+					tmp.k = vk.get(j).k;
+
+					tmp.k.set_d(i,0);
+
+					vk.add(tmp);
+				}
+			}
+		}
+		else
+		{
+			// set the component
+			for (int j = 0 ; j < vk.size() ; j++)
+			{
+				vk.get(j).k.set_d(i,0);
+			}
+		}*/
+	}
+}
+
+
+template<typename SparseGridType>
+void copy_remove_to_impl(const SparseGridType & grid_src,
+							   SparseGridType & grid_dst,
+        		  	  	  const Box<SparseGridType::dims,long int> & b_src,
+        		  	  	  const Box<SparseGridType::dims,long int> & b_dst)
+{
+	typedef typename vmpl_create_constant<SparseGridType::dims,1>::type one_vmpl;
+
+	get_block_sizes<SparseGridType::dims,0,typename SparseGridType::chunking_type::type,one_vmpl> gbs;
+	boost::mpl::for_each_ref< boost::mpl::range_c<int,0,SparseGridType::dims> >(gbs);
+
+	typedef typename vmpl_reduce_prod<typename SparseGridType::chunking_type::type>::type sizeBlock;
+
+	unsigned char miss_al_map[sizeBlock::value];
+	short int mp_off[sizeBlock::value];
+
+	openfpm::vector<key_int<SparseGridType::dims>> vk;
+
+	construct_chunk_missalign_map<SparseGridType::dims,
+	                              sizeBlock::value,
+	                              typename SparseGridType::chunking_type>
+	                             (miss_al_map,mp_off,
+								  b_src,b_dst,vk);
+
+	// Now we intersect every chunk source
+
+	Box<SparseGridType::dims,long int> b_inte;
+	Box<SparseGridType::dims,long int> b_c;
+
+	auto & data_src = grid_src.private_get_data();
+	auto & header_src = grid_src.private_get_header();
+
+	auto & data_dst = grid_src.private_get_data();
+	auto & header_dst = grid_src.private_get_header();
+
+	grid_sm<SparseGridType::dims,void> gb;
+
+	int chunk_pos[openfpm::math::pow(2,SparseGridType::dims)];
+
+	for (int i = 0 ; i < header_src.size() ; i++)
+	{
+		for (int j = 0 ; j < SparseGridType::dims ; j++)
+		{
+			b_c.setLow(j,header_src.get(i).pos.get(j));
+			b_c.setHigh(j,header_src.get(i).pos.get(j) + gbs.sz_block[j] - 1);
+		}
+
+		bool inte = b_src.Intersect(b_c,b_inte);
+
+		if (inte == true)
+		{
+			// Prepare destination chunks
+
+			for (int s = 0 ; s < vk.size() ; s++)
+			{
+				chunk_pos[vk.get(s).i] = grid_dst.getChunkCreate();
+			}
+
+			grid_key_dx_iterator_sub<SparseGridType::dims> it(gb,b_inte.getKP1(),b_inte.getKP2());
+
+			auto & block_src = data_src.get(i);
+
+			while (it.isNext())
+			{
+				auto id = gb.LinId(it.get());
+
+				int dest_bid = chunk_pos[miss_al_map[id]];
+
+				data_dst.get(dest_bid)[mp_off[id]] = block_src[i];
+
+				++it;
+			}
+		}
+	}
+}
 
 #endif /* SPARSEGRID_CHUNK_COPY_HPP_ */

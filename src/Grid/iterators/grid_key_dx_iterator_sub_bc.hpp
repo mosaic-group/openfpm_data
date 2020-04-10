@@ -15,8 +15,8 @@
  * In this case the boundaries are periodic
  *
  */
-template<unsigned int dim, typename stencil=no_stencil, typename warn=print_warning_on_adjustment<dim>>
-class grid_key_dx_iterator_sub_bc : public grid_key_dx_iterator_sub<dim,stencil,warn>
+template<unsigned int dim, typename stencil=no_stencil, typename linearizer = grid_sm<dim,void>, typename warn=print_warning_on_adjustment<dim,linearizer>>
+class grid_key_dx_iterator_sub_bc : public grid_key_dx_iterator_sub<dim,stencil,linearizer,warn>
 {
 	//! Boundary conditions
 	size_t bc[dim];
@@ -101,8 +101,7 @@ public:
 	 * \param bc boundary conditions
 	 *
 	 */
-	template<typename T>
-	grid_key_dx_iterator_sub_bc(const grid_sm<dim,T> & g,
+	grid_key_dx_iterator_sub_bc(const linearizer & g,
 								const grid_key_dx<dim> & start,
 								const grid_key_dx<dim> & stop,
 								const size_t (& bc)[dim])
@@ -119,7 +118,7 @@ public:
 	 * \param bc boundary conditions
 	 *
 	 */
-	template<typename T> void Initialize(const grid_sm<dim,T> & g,
+	void Initialize(const linearizer & g,
 										 const grid_key_dx<dim> & start ,
 										 const grid_key_dx<dim> & stop,
 										 const size_t (& bc)[dim])
@@ -200,7 +199,7 @@ public:
 
 		// initialize the first iterator
 		if (boxes.size() > 0)
-		{grid_key_dx_iterator_sub<dim,stencil,warn>::reinitialize(grid_key_dx_iterator_sub<dim>(g,boxes[0].getKP1(),boxes[0].getKP2()));}
+		{grid_key_dx_iterator_sub<dim,stencil,linearizer,warn>::reinitialize(grid_key_dx_iterator_sub<dim>(g,boxes[0].getKP1(),boxes[0].getKP2()));}
 	}
 
 	/*! \brief Get the next element
@@ -211,10 +210,10 @@ public:
 	 *
 	 */
 
-	grid_key_dx_iterator_sub_bc<dim,stencil,warn> & operator++()
+	grid_key_dx_iterator_sub_bc<dim,stencil,linearizer,warn> & operator++()
 	{
-		grid_key_dx_iterator_sub<dim,stencil,warn>::operator++();
-		if (grid_key_dx_iterator_sub<dim,stencil,warn>::isNext() == true)
+		grid_key_dx_iterator_sub<dim,stencil,linearizer,warn>::operator++();
+		if (grid_key_dx_iterator_sub<dim,stencil,linearizer,warn>::isNext() == true)
 		{
 			return *this;
 		}
@@ -222,7 +221,7 @@ public:
 		{
 			act++;
 			if (act < boxes.size())
-			{grid_key_dx_iterator_sub<dim,stencil,warn>::reinitialize(grid_key_dx_iterator_sub<dim>(this->getGridInfo(),boxes[act].getKP1(),boxes[act].getKP2()));}
+			{grid_key_dx_iterator_sub<dim,stencil,linearizer,warn>::reinitialize(grid_key_dx_iterator_sub<dim>(this->getGridInfo(),boxes[act].getKP1(),boxes[act].getKP2()));}
 		}
 
 		return *this;
@@ -248,7 +247,7 @@ public:
 	 */
 	inline const grid_key_dx<dim> get() const
 	{
-		return grid_key_dx_iterator_sub<dim,stencil,warn>::get();
+		return grid_key_dx_iterator_sub<dim,stencil,linearizer,warn>::get();
 	}
 
 	/*! \brief Reset the iterator (it restart from the beginning)

@@ -90,7 +90,7 @@ public:
 	inline static void pack(ExtPreAlloc<Mem> & ext, const T & obj, Pack_stat & sts)
 	{
 		ext.allocate(sizeof(T));
-		*(T *)ext.getPointer() = obj;
+		*(typename std::remove_const<T>::type *)ext.getPointer() = obj;
 
 		// update statistic
 		sts.incReq();
@@ -261,7 +261,7 @@ public:
 			std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " impossible to check the type " << demangle(typeid(T).name()) << " please consider to add a static method like \"static bool noPointers() {return true;}\" \n" ;
 #endif
 		ext.allocate(sizeof(T));
-		memcpy((T *)ext.getPointer(),&obj,sizeof(T));
+		memcpy((typename std::remove_reference<T>::type *)ext.getPointer(),&obj,sizeof(T));
 
 		// update statistic
 		sts.incReq();
@@ -316,7 +316,7 @@ public:
 			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(T).name()) << " has pointers inside, sending pointers values has no sense\n";
 #endif
 		ext.allocate(sizeof(T));
-		memcpy((T *)ext.getPointer(),&obj,sizeof(T));
+		memcpy((typename std::remove_const<T>::type *)ext.getPointer(),&obj,sizeof(T));
 
 		// Update statistic
 		sts.incReq();

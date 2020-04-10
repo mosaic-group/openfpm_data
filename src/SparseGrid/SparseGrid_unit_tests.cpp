@@ -700,7 +700,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil)
 
 	while (it.isNext())
 	{
-		it.loadBlockBorder<0>(block_bord_src,mask);
+		it.loadBlockBorder<0,NNStar_c<3>,false>(block_bord_src,mask);
 
 		for (int i = 0 ; i < 1 ; i++)
 		{
@@ -820,7 +820,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized)
 
 	while (it.isNext())
 	{
-		it.loadBlockBorder<0>(block_bord_src,mask);
+		it.loadBlockBorder<0,NNStar_c<3>,false>(block_bord_src,mask);
 
 		// Sum the mask
 		for (int k = it.start_b(2) ; k < it.stop_b(2) ; k++)
@@ -948,6 +948,204 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized)
 	//print_grid("debug_out",grid);
 }
 
+union data_i4
+{
+	unsigned char uc[4];
+	int i;
+};
+
+BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_soa<3,aggregate<double,double,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere_quad(grid,cdsm);
+
+	grid_key_dx<3> start({1,1,1});
+	grid_key_dx<3> stop({499,499,499});
+
+	/////// Check
+
+	timer t;
+	t.start();
+
+
+	for (int i = 0 ; i < 100 ; i++)
+	{
+
+	auto it = grid.getBlockIterator<1>(start,stop);
+
+	auto & datas = grid.private_get_data();
+	auto & headers = grid.private_get_header();
+
+	typedef typename boost::mpl::at<decltype(it)::stop_border_vmpl,boost::mpl::int_<0>>::type sz0;
+	typedef typename boost::mpl::at<decltype(it)::stop_border_vmpl,boost::mpl::int_<1>>::type sz1;
+	typedef typename boost::mpl::at<decltype(it)::stop_border_vmpl,boost::mpl::int_<2>>::type sz2;
+
+	typedef typename sgrid_soa<3,aggregate<double,double,int>,HeapMemory>::chunking_type chunking;
+
+	const Vc::double_v six(6.0);
+
+	while (it.isNext())
+	{
+		// Load
+		size_t offset_jump[6];
+		int load[4];
+
+		size_t cid = it.getChunkId();
+
+		auto chunk = datas.get(cid);
+
+		bool exist;
+		grid_key_dx<3> p = grid.getChunkPos(cid) + grid_key_dx<3>({-1,0,0});
+		long int r = grid.getChunk(p,exist);
+		offset_jump[0] = (r-cid)*decltype(it)::sizeBlock;
+
+		p = grid.getChunkPos(cid) + grid_key_dx<3>({1,0,0});
+		r = grid.getChunk(p,exist);
+		offset_jump[1] = (r-cid)*decltype(it)::sizeBlock;
+
+		p = grid.getChunkPos(cid) + grid_key_dx<3>({0,-1,0});
+		r = grid.getChunk(p,exist);
+		offset_jump[2] = (r-cid)*decltype(it)::sizeBlock;
+
+		p = grid.getChunkPos(cid) + grid_key_dx<3>({0,1,0});
+		r = grid.getChunk(p,exist);
+		offset_jump[3] = (r-cid)*decltype(it)::sizeBlock;
+
+		p = grid.getChunkPos(cid) + grid_key_dx<3>({0,0,-1});
+		r = grid.getChunk(p,exist);
+		offset_jump[4] = (r-cid)*decltype(it)::sizeBlock;
+
+		p = grid.getChunkPos(cid) + grid_key_dx<3>({0,0,1});
+		r = grid.getChunk(p,exist);
+		offset_jump[5] = (r-cid)*decltype(it)::sizeBlock;
+
+		// Load offset jumps
+
+		int s2 = 0;
+
+		typedef boost::mpl::at<typename chunking::type,boost::mpl::int_<2>>::type sz;
+		typedef boost::mpl::at<typename chunking::type,boost::mpl::int_<1>>::type sy;
+		typedef boost::mpl::at<typename chunking::type,boost::mpl::int_<0>>::type sx;
+
+		for (int v = 0 ; v < sz::value ; v++)
+		{
+			for (int j = 0 ; j < sy::value ; j++)
+			{
+				for (int k = 0 ; k < sx::value ; k += Vc::double_v::Size)
+				{
+					data_i4 mxm;
+
+					Vc::double_v cmd(&chunk.template get<0>()[s2]);
+
+					// Load x-1
+					load[0] = s2-1;
+					load[0] += (k==0)?offset_jump[0] + sx::value:0;
+					load[1] = s2;
+					load[2] = s2+1;
+					load[3] = s2+2;
+
+					Vc::double_v xm(&chunk.template get<0>()[0],load);
+
+
+					// Load x+1
+					load[0] = s2+1;
+					load[1] = s2+2;
+					load[2] = s2+3;
+					load[3] = s2+4;
+					load[3] += (k+4 == sx::value)?offset_jump[1] - sx::value:0;
+
+					Vc::double_v xp(&chunk.template get<0>()[0],load);
+
+					// Load y-1
+					long int sum = (j == 0)?offset_jump[2] + (sy::value-1)*sx::value:-sx::value;
+					load[0] = s2 + sum;
+					load[1] = s2+1+sum;
+					load[2] = s2+2+sum;
+					load[3] = s2+3+sum;
+
+					Vc::double_v ym(&chunk.template get<0>()[0],load);
+
+
+					// Load y+1
+					sum = (j == sy::value-1)?offset_jump[3] - (sy::value - 1)*sx::value:sx::value;
+					load[0] = s2 + sum;
+					load[1] = s2+1+sum;
+					load[2] = s2+2+sum;
+					load[3] = s2+3+sum;
+
+					Vc::double_v yp(&chunk.template get<0>()[0],load);
+
+					// Load z-1
+
+					sum = (v == 0)?offset_jump[4] + (sz::value-1)*sx::value*sy::value:-sx::value*sy::value;
+					load[0] = s2  + sum;
+					load[1] = s2+1+ sum;
+					load[2] = s2+2+ sum;
+					load[3] = s2+3+ sum;
+
+					Vc::double_v zm(&chunk.template get<0>()[0],load);
+
+					// Load z+1
+
+					sum = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
+					load[0] = s2  + sum;
+					load[1] = s2+1+ sum;
+					load[2] = s2+2+ sum;
+					load[3] = s2+3+ sum;
+
+					Vc::double_v zp(&chunk.template get<0>()[0],load);
+
+					// Calculate
+
+					Vc::double_v Lap = xp + xm +
+					                   yp + ym +
+					                   zp + zm - 6.0*cmd;
+
+					Lap.store(&chunk.template get<1>()[s2],Vc::Aligned);
+
+					s2 += Vc::double_v::Size;
+				}
+			}
+		}
+
+		++it;
+	}
+
+	}
+
+	t.stop();
+
+	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << "   " << grid.size_all() << std::endl;
+
+	bool check = true;
+	auto it2 = grid.getIterator();
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		check &= grid.template get<1>(p) == 6;
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+	// Check correct-ness
+
+	//print_grid("debug_out",grid);
+}
+
 BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_simplified)
 {
 	size_t sz[3] = {501,501,501};
@@ -1005,12 +1203,6 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_simplified)
 		auto p = it2.get();
 
 		check &= grid.template get<1>(p) == 6;
-
-		if (check == false)
-		{
-			int debug = 0;
-			debug++;
-		}
 
 		++it2;
 	}

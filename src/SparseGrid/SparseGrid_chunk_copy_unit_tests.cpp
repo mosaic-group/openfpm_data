@@ -48,11 +48,13 @@ BOOST_AUTO_TEST_CASE( sparse_grid_chunk_test )
 
 	//! vector of chunks
 	openfpm::vector<aggregate_bfv<chunk_def>> chunks;
-
 	chunks.resize(1);
 
-	cheader<3,4096> h;
-	memset(&h.mask[0],0xFF,65*sizeof(size_t));
+	openfpm::vector<aggregate<grid_key_dx<3>,int,unsigned char [64]>> header;
+	header.resize(1);
+	auto h = header.get(0);
+
+	memset(&h.template get<cnk_mask>()[0],0xFF,4096);
 
 	for (int i = 0 ; i < test_chunking3::size::value ; i++)
 	{chunks.template get<0>(0)[i] = i;}
@@ -175,8 +177,10 @@ BOOST_AUTO_TEST_CASE( sparse_grid_chunk_test_2 )
 
 	chunks.resize(1);
 
-	cheader<3,4096> h;
-	memset(&h.mask[0],0xFF,65*sizeof(size_t));
+	openfpm::vector<aggregate<grid_key_dx<3>,int,unsigned char [64]>> header;
+	header.resize(1);
+	auto h = header.get(0);
+	memset(&h.template get<cnk_mask>()[0],0xFF,4096);
 
 	for (int i = 0 ; i < test_chunking3::size::value ; i++)
 	{chunks.template get<0>(0)[i] = i;}
@@ -485,6 +489,241 @@ BOOST_AUTO_TEST_CASE( sparse_grid_chunk_test_2 )
 	BOOST_REQUIRE_EQUAL(chunk_with_border[7*68*12+10*68+67],chunks.template get<0>(0)[1*64*8 + 0*64 + 1]);
 	BOOST_REQUIRE_EQUAL(chunk_with_border[7*68*12+11*68+66],chunks.template get<0>(0)[1*64*8 + 1*64 + 0]);
 	BOOST_REQUIRE_EQUAL(chunk_with_border[7*68*12+11*68+67],chunks.template get<0>(0)[1*64*8 + 1*64 + 1]);*/
+}
+
+
+BOOST_AUTO_TEST_CASE( sparse_grid_chunk_missalign_copy_test )
+{
+	unsigned char mp[16*16*16];
+	short int mp_off[16*16*16];
+
+	// Aligned
+	Box<3,long int> box_src({17,19,3},{18,100,100});
+	Box<3,long int> box_dst({33,19,3},{34,100,100});
+
+	openfpm::vector<key_int<3>> vk;
+
+	construct_chunk_missalign_map<3,16*16*16,default_chunking<3>>(mp,mp_off,box_src,box_dst,vk);
+
+	size_t sz[3] = {16,16,16};
+	grid_sm<3,void> g_sm(sz);
+
+	for (int i = 0 ; i < 16 ; i++)
+	{
+		for (int j = 0 ; j < 16 ; j++)
+		{
+			for (int k = 0 ; k < 16 ; k++)
+			{
+				size_t id = g_sm.Lin(k,j,i);
+
+				BOOST_REQUIRE_EQUAL(mp[id],13);
+				BOOST_REQUIRE_EQUAL(mp_off[id],id);
+			}
+		}
+	}
+
+	BOOST_REQUIRE_EQUAL(vk.size(),1);
+
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(0),0);
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(1),0);
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(2),0);
+
+	BOOST_REQUIRE_EQUAL(vk.get(0).i,0);
+
+	// Miss-Aligned
+	Box<3,long int> box_src2({17,19,3},{18,100,100});
+	Box<3,long int> box_dst2({34,19,3},{35,100,100});
+
+	vk.clear();
+
+	construct_chunk_missalign_map<3,16*16*16,default_chunking<3>>(mp,mp_off,box_src2,box_dst2,vk);
+
+	for (int i = 0 ; i < 16 ; i++)
+	{
+		for (int j = 0 ; j < 16 ; j++)
+		{
+			for (int k = 0 ; k < 16 ; k++)
+			{
+				size_t id = g_sm.Lin(i,j,k);
+
+				if (k < 15)
+				{
+					BOOST_REQUIRE_EQUAL(mp[id],13);
+					BOOST_REQUIRE_EQUAL(mp_off[id],id+1);
+				}
+
+				if (k == 15)
+				{
+					BOOST_REQUIRE_EQUAL(mp[id],14);
+					BOOST_REQUIRE_EQUAL(mp_off[id],j*16+i*16*16);
+				}
+			}
+		}
+	}
+
+	BOOST_REQUIRE_EQUAL(vk.size(),1);
+
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(0),0);
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(1),0);
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(2),0);
+
+
+	BOOST_REQUIRE_EQUAL(vk.get(0).i,0);
+
+
+	// Miss-Aligned with 2 entry
+
+	// Miss-Aligned
+	Box<3,long int> box_src3({17,19,3},{30,100,100});
+	Box<3,long int> box_dst3({34,19,3},{47,100,100});
+
+	vk.clear();
+
+	construct_chunk_missalign_map<3,16*16*16,default_chunking<3>>(mp,mp_off,box_src3,box_dst3,vk);
+
+	for (int i = 0 ; i < 16 ; i++)
+	{
+		for (int j = 0 ; j < 16 ; j++)
+		{
+			for (int k = 0 ; k < 16 ; k++)
+			{
+				size_t id = g_sm.Lin(i,j,k);
+
+				if (k < 15)
+				{
+					BOOST_REQUIRE_EQUAL(mp[id],13);
+					BOOST_REQUIRE_EQUAL(mp_off[id],id+1);
+				}
+
+				if (k == 15)
+				{
+					BOOST_REQUIRE_EQUAL(mp[id],14);
+					BOOST_REQUIRE_EQUAL(mp_off[id],j*16+i*16*16);
+				}
+			}
+		}
+	}
+
+	BOOST_REQUIRE_EQUAL(vk.size(),2);
+
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(0),0);
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(1),0);
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(2),0);
+
+	BOOST_REQUIRE_EQUAL(vk.get(1).k.get(0),1);
+	BOOST_REQUIRE_EQUAL(vk.get(1).k.get(1),0);
+	BOOST_REQUIRE_EQUAL(vk.get(1).k.get(2),0);
+
+	BOOST_REQUIRE_EQUAL(vk.get(0).i,0);
+
+	// Miss-Aligned xy with 4 entry
+
+	// Miss-Aligned
+	Box<3,long int> box_src4({17,19,3},{30,100,100});
+	Box<3,long int> box_dst4({34,20,3},{47,101,100});
+
+	vk.clear();
+
+	construct_chunk_missalign_map<3,16*16*16,default_chunking<3>>(mp,mp_off,box_src4,box_dst4,vk);
+
+	for (int i = 0 ; i < 16 ; i++)
+	{
+		for (int j = 0 ; j < 16 ; j++)
+		{
+			for (int k = 0 ; k < 16 ; k++)
+			{
+				size_t id = g_sm.Lin(i,j,k);
+
+				if (k < 15)
+				{
+					if (j < 15)
+					{
+						BOOST_REQUIRE_EQUAL(mp[id],13);
+						BOOST_REQUIRE_EQUAL(mp_off[id],k+1+(j+1)*16+i*16*16);
+					}
+					else
+					{
+						BOOST_REQUIRE_EQUAL(mp[id],16);
+						BOOST_REQUIRE_EQUAL(mp_off[id],k+1+i*16*16);
+					}
+				}
+
+				if (k == 15)
+				{
+					if (j < 15)
+					{
+						BOOST_REQUIRE_EQUAL(mp[id],14);
+						BOOST_REQUIRE_EQUAL(mp_off[id],(j+1)*16+i*16*16);
+					}
+					else
+					{
+						BOOST_REQUIRE_EQUAL(mp[id],17);
+						BOOST_REQUIRE_EQUAL(mp_off[id],i*16*16);
+					}
+				}
+			}
+		}
+	}
+
+	BOOST_REQUIRE_EQUAL(vk.size(),4);
+
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(0),0);
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(1),0);
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(2),0);
+
+	BOOST_REQUIRE_EQUAL(vk.get(1).k.get(0),1);
+	BOOST_REQUIRE_EQUAL(vk.get(1).k.get(1),0);
+	BOOST_REQUIRE_EQUAL(vk.get(1).k.get(2),0);
+
+	BOOST_REQUIRE_EQUAL(vk.get(2).k.get(0),0);
+	BOOST_REQUIRE_EQUAL(vk.get(2).k.get(1),1);
+	BOOST_REQUIRE_EQUAL(vk.get(2).k.get(2),0);
+
+	BOOST_REQUIRE_EQUAL(vk.get(3).k.get(0),1);
+	BOOST_REQUIRE_EQUAL(vk.get(3).k.get(1),1);
+	BOOST_REQUIRE_EQUAL(vk.get(3).k.get(2),0);
+
+	// Now check the opposite
+
+	// Miss-Aligned
+	Box<3,long int> box_src5({17,19,3},{18,100,100});
+	Box<3,long int> box_dst5({32,19,3},{33,100,100});
+
+	vk.clear();
+
+	construct_chunk_missalign_map<3,16*16*16,default_chunking<3>>(mp,mp_off,box_src5,box_dst5,vk);
+
+	for (int i = 0 ; i < 16 ; i++)
+	{
+		for (int j = 0 ; j < 16 ; j++)
+		{
+			for (int k = 0 ; k < 16 ; k++)
+			{
+				size_t id = g_sm.Lin(i,j,k);
+
+				if (k == 0)
+				{
+					BOOST_REQUIRE_EQUAL(mp[id],12);
+					BOOST_REQUIRE_EQUAL(mp_off[id],15+j*16+i*16*16);
+				}
+
+				if (k > 0)
+				{
+					BOOST_REQUIRE_EQUAL(mp[id],13);
+					BOOST_REQUIRE_EQUAL(mp_off[id],(k-1)+j*16+i*16*16);
+				}
+			}
+		}
+	}
+
+	BOOST_REQUIRE_EQUAL(vk.size(),1);
+
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(0),0);
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(1),0);
+	BOOST_REQUIRE_EQUAL(vk.get(0).k.get(2),0);
+
+
+	BOOST_REQUIRE_EQUAL(vk.get(0).i,0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -125,10 +125,10 @@ template<unsigned int dim, typename T2, typename T>
 ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, size_t n_thr = 1024);
 
 //! Declaration print_warning_on_adjustment
-template <unsigned int dim> class print_warning_on_adjustment;
+template <unsigned int dim, typename linearizer> class print_warning_on_adjustment;
 
 //! Declaration grid_key_dx_iterator_sub
-template<unsigned int dim,typename stencil=no_stencil,typename warn=print_warning_on_adjustment<dim>> class grid_key_dx_iterator_sub;
+template<unsigned int dim,typename stencil=no_stencil, typename linearizer = grid_sm<dim,void>, typename warn=print_warning_on_adjustment<dim,linearizer>> class grid_key_dx_iterator_sub;
 
 /*! \brief class that store the information of the grid like number of point on each direction and
  *  define the index linearization by stride

@@ -50,48 +50,26 @@ public:
 	}
 };
 
+
 /*! \brief This function fill the set of all non zero elements
  *
  *
  */
-template<unsigned int n_ele>
+template<unsigned int n_ele,typename maskType>
 inline void fill_mask(short unsigned int (& mask_it)[n_ele],
-		       const size_t (& mask)[n_ele / (sizeof(size_t)*8) + (n_ele % (sizeof(size_t)*8) != 0) + 1],
-		       size_t & mask_nele)
+		       const maskType & mask,
+		       int & mask_nele)
 {
 	mask_nele = 0;
 	size_t index = 0;
 
-	for (size_t i = 0 ; i < n_ele / (sizeof(size_t) * 8) ; i++)
+	for (size_t i = 0 ; i < n_ele ; i++)
 	{
-		size_t mi = mask[i];
-		size_t tot_idx = 0;
-
-		do
+		if (mask[i] & 1)
 		{
-#if defined(__GNUC__) || defined(__clang__)
-			index = __builtin_ffsl(mi);
-#elif defined(__INTEL_COMPILER)
-			_BitScanForward64(&index,mi)
-			index += 1;
-#else
-			index = 0;
-			if (mi != 0)
-			{
-				while (mi >> index & 0x1 == 0)	{index++;}
-				index += 1;
-			}
-#endif
-			if (index != 0)
-			{
-				mask_it[mask_nele] = (index - 1 + tot_idx) + i*sizeof(size_t)*8;
-				mask_nele++;
-
-				mi = (index == 64)?0:mi >> index;
-				tot_idx += index;
-			}
+			mask_it[mask_nele] = i;
+			mask_nele++;
 		}
-		while (index != 0);
 	}
 }
 
@@ -99,9 +77,9 @@ inline void fill_mask(short unsigned int (& mask_it)[n_ele],
  *
  *
  */
-template<unsigned int dim, unsigned int n_ele>
+template<unsigned int dim, unsigned int n_ele,typename maskType>
 inline void fill_mask_box(short unsigned int (& mask_it)[n_ele],
-		       const size_t (& mask)[n_ele / (sizeof(size_t)*8) + (n_ele % (sizeof(size_t)*8) != 0) + 1],
+		       const maskType & mask,
 		       size_t & mask_nele,
 			   Box<dim,size_t> & bx,
 			   const grid_key_dx<dim> (& loc_grid)[n_ele])
@@ -109,54 +87,28 @@ inline void fill_mask_box(short unsigned int (& mask_it)[n_ele],
 	mask_nele = 0;
 	size_t index = 0;
 
-	for (size_t i = 0 ; i < n_ele / (sizeof(size_t) * 8) ; i++)
+	for (size_t i = 0 ; i < n_ele ; i++)
 	{
-		size_t mi = mask[i];
-		size_t tot_idx = 0;
+		size_t id = i;
 
-		do
+		bool is_inside = true;
+		// we check the point is inside inte
+		for (size_t i = 0 ; i < dim ; i++)
 		{
-#if defined(__GNUC__) || defined(__clang__)
-			index = __builtin_ffsl(mi);
-#elif defined(__INTEL_COMPILER)
-			_BitScanForward64(&index,mi)
-			index += 1;
-#else
-			index = 0;
-			if (mi != 0)
+			if (loc_grid[id].get(i) < (long int)bx.getLow(i) ||
+				loc_grid[id].get(i) > (long int)bx.getHigh(i))
 			{
-				while (mi >> index & 0x1 == 0)	{index++;}
-				index += 1;
-			}
-#endif
-			if (index != 0)
-			{
-				size_t id = (index - 1 + tot_idx) + i*sizeof(size_t)*8;
+				is_inside = false;
 
-				bool is_inside = true;
-				// we check the point is inside inte
-				for (size_t i = 0 ; i < dim ; i++)
-				{
-					if (loc_grid[id].get(i) < (long int)bx.getLow(i) ||
-						loc_grid[id].get(i) > (long int)bx.getHigh(i))
-					{
-						is_inside = false;
-
-						break;
-					}
-				}
-
-				if (is_inside == true)
-				{
-					mask_it[mask_nele] = id;
-					mask_nele++;
-				}
-
-				mi = (index == 64)?0:mi >> index;
-				tot_idx += index;
+				break;
 			}
 		}
-		while (index != 0);
+
+		if (is_inside == true)
+		{
+			mask_it[mask_nele] = id;
+			mask_nele++;
+		}
 	}
 }
 
@@ -184,11 +136,15 @@ struct cheader
  *
  *
  */
-template<unsigned dim, unsigned int n_ele>
+template<unsigned dim, unsigned int n_ele, typename vectorTypeHeader>
 class grid_key_sparse_dx_iterator_sub
 {
+	const static int cnk_pos = 0;
+	const static int cnk_nele = 1;
+	const static int cnk_mask = 2;
+
 	//! It store the information of each chunk
-	const openfpm::vector<cheader<dim,n_ele>> * header;
+	const vectorTypeHeader * header;
 
 	//! linearized id to position in coordinates conversion
 	const grid_key_dx<dim> (* lin_id_pos)[n_ele];
@@ -228,21 +184,21 @@ class grid_key_sparse_dx_iterator_sub
 
 		while (mask_nele == 0 && chunk_id < header->size())
 		{
-			auto & mask = header->get(chunk_id).mask;
+			auto mask = header->template get<cnk_mask>(chunk_id);
 
 			Box<dim,size_t> cnk_box;
 
 			for (size_t i = 0 ; i < dim ; i++)
 			{
-				cnk_box.setLow(i,header->get(chunk_id).pos.get(i));
-				cnk_box.setHigh(i,header->get(chunk_id).pos.get(i) + sz_cnk[i] - 1);
+				cnk_box.setLow(i,header->template get<cnk_pos>(chunk_id).get(i));
+				cnk_box.setHigh(i,header->template get<cnk_pos>(chunk_id).get(i) + sz_cnk[i] - 1);
 			}
 
 			Box<dim,size_t> inte;
 
 			if (bx.Intersect(cnk_box,inte) == true)
 			{
-				inte -= header->get(chunk_id).pos.toPoint();
+				inte -= header->template get<cnk_pos>(chunk_id).toPoint();
 				fill_mask_box<dim,n_ele>(mask_it,mask,mask_nele,inte,*lin_id_pos);
 			}
 			else
@@ -263,7 +219,7 @@ public:
 	 */
 	grid_key_sparse_dx_iterator_sub()	{};
 
-	grid_key_sparse_dx_iterator_sub(const openfpm::vector<cheader<dim,n_ele>> & header,
+	grid_key_sparse_dx_iterator_sub(const vectorTypeHeader & header,
 								const grid_key_dx<dim> (& lin_id_pos)[n_ele],
 								const grid_key_dx<dim> & start,
 								const grid_key_dx<dim> & stop,
@@ -290,7 +246,7 @@ public:
 	 * \param g_s_it grid_key_dx_iterator_sub
 	 *
 	 */
-	inline void reinitialize(const grid_key_sparse_dx_iterator_sub<dim,n_ele> & g_s_it)
+	inline void reinitialize(const grid_key_sparse_dx_iterator_sub<dim,n_ele,vectorTypeHeader> & g_s_it)
 	{
 		header = g_s_it.header;
 		lin_id_pos = g_s_it.lin_id_pos;
@@ -306,7 +262,7 @@ public:
 		memcpy(mask_it,g_s_it.mask_it,sizeof(short unsigned int)*n_ele);
 	}
 
-	inline grid_key_sparse_dx_iterator_sub<dim,n_ele> & operator++()
+	inline grid_key_sparse_dx_iterator_sub<dim,n_ele,vectorTypeHeader> & operator++()
 	{
 		mask_it_pnt++;
 
@@ -340,7 +296,7 @@ public:
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			k_pos.set_d(i,(*lin_id_pos)[lin_id].get(i) + header->get(chunk_id).pos.get(i));
+			k_pos.set_d(i,(*lin_id_pos)[lin_id].get(i) + header->template get<cnk_pos>(chunk_id).get(i));
 		}
 
 		return k_pos;
@@ -444,11 +400,15 @@ public:
  *
  *
  */
-template<unsigned dim, unsigned int n_ele>
+template<unsigned dim, unsigned int n_ele, typename vectorTypeHeader>
 class grid_key_sparse_dx_iterator
 {
+	const static int cnk_pos = 0;
+	const static int cnk_nele = 1;
+	const static int cnk_mask = 2;
+
 	//! It store the information of each chunk
-	const openfpm::vector<cheader<dim,n_ele>> * header;
+	const vectorTypeHeader * header;
 
 	//! linearized id to position in coordinates conversion
 	const grid_key_dx<dim> (* lin_id_pos)[n_ele];
@@ -457,7 +417,7 @@ class grid_key_sparse_dx_iterator
 	size_t chunk_id;
 
 	//! Number of points in mask_it
-	size_t mask_nele;
+	int mask_nele;
 
 	//! Actual point in mask it
 	size_t mask_it_pnt;
@@ -476,7 +436,7 @@ class grid_key_sparse_dx_iterator
 
 		while (mask_nele == 0 && chunk_id < header->size())
 		{
-			auto & mask = header->get(chunk_id).mask;
+			auto mask = header->template get<cnk_mask>(chunk_id);
 
 			fill_mask<n_ele>(mask_it,mask,mask_nele);
 
@@ -495,14 +455,14 @@ public:
 	 */
 	grid_key_sparse_dx_iterator()	{};
 
-	grid_key_sparse_dx_iterator(const openfpm::vector<cheader<dim,n_ele>> * header,
+	grid_key_sparse_dx_iterator(const vectorTypeHeader * header,
 								const grid_key_dx<dim> (* lin_id_pos)[n_ele])
 	:header(header),lin_id_pos(lin_id_pos),chunk_id(0),mask_nele(0),mask_it_pnt(0)
 	{
 		SelectValidAndFill_mask_it();
 	}
 
-	inline grid_key_sparse_dx_iterator<dim,n_ele> & operator++()
+	inline grid_key_sparse_dx_iterator<dim,n_ele,vectorTypeHeader> & operator++()
 	{
 		mask_it_pnt++;
 
@@ -530,7 +490,7 @@ public:
 	 * \param g_s_it grid_key_dx_iterator
 	 *
 	 */
-	inline void reinitialize(const grid_key_sparse_dx_iterator<dim,n_ele> & g_s_it)
+	inline void reinitialize(const grid_key_sparse_dx_iterator<dim,n_ele,vectorTypeHeader> & g_s_it)
 	{
 		header = g_s_it.header;
 		lin_id_pos = g_s_it.lin_id_pos;
@@ -549,7 +509,7 @@ public:
 	 * \param g_s_it grid_key_dx_iterator
 	 *
 	 */
-	inline void reinitialize(const grid_key_sparse_dx_iterator_sub<dim,n_ele> & g_s_it)
+	inline void reinitialize(const grid_key_sparse_dx_iterator_sub<dim,n_ele,vectorTypeHeader> & g_s_it)
 	{
 		header = g_s_it.private_get_header();
 		lin_id_pos = g_s_it.private_get_lin_id_pos();
@@ -583,7 +543,7 @@ public:
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			k_pos.set_d(i,(*lin_id_pos)[lin_id].get(i) + header->get(chunk_id).pos.get(i));
+			k_pos.set_d(i,(*lin_id_pos)[lin_id].get(i) + header->template get<cnk_pos>(chunk_id).get(i));
 		}
 
 		return k_pos;

@@ -8,11 +8,11 @@
 #ifndef CUDA_LAUNCH_HPP_
 #define CUDA_LAUNCH_HPP_
 
+#include "cuda_kernel_error_checker.hpp"
+
 #ifdef CUDA_GPU
 
 #if defined(SE_CLASS1) || defined(CUDA_CHECK_LAUNCH)
-
-#include "cuda_kernel_error_checker.hpp"
 
 template<typename lambda_funct_type, typename ... Args_type>
 __global__ void lambda_launcher(lambda_funct_type lbf, Args_type ... args)
