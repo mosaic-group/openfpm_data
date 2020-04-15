@@ -19,7 +19,7 @@ class HDF5_reader<GRID_DIST>
 {
 	template<typename device_grid> void load_block(long int bid,
 			        hssize_t mpi_size_old,
-					int * metadata_out,
+					long int * metadata_out,
 					openfpm::vector<size_t> & metadata_accum,
 					hid_t plist_id,
 					hid_t dataset_2,
@@ -42,24 +42,37 @@ class HDF5_reader<GRID_DIST>
 
 	    hsize_t count[1] = {1};
 
-		//Select file dataspace
-		hid_t file_dataspace_id_2 = H5Dget_space(dataset_2);
-
-        H5Sselect_hyperslab(file_dataspace_id_2, H5S_SELECT_SET, offset, NULL, count, block);
-
-        hsize_t mdim_2[1] = {block[0]};
-
-		//Create data space in memory
-		hid_t mem_dataspace_id_2 = H5Screate_simple(1, mdim_2, NULL);
-
 		// allocate the memory
 		HeapMemory pmem;
 		//pmem.allocate(req);
 		ExtPreAlloc<HeapMemory> & mem = *(new ExtPreAlloc<HeapMemory>(block[0],pmem));
 		mem.incRef();
 
-	  	// Read the dataset.
-	    H5Dread(dataset_2, H5T_NATIVE_CHAR, mem_dataspace_id_2, file_dataspace_id_2, plist_id, (char *)mem.getPointer());
+		//Select file dataspace
+		hid_t file_dataspace_id_2 = H5Dget_space(dataset_2);
+
+	    size_t to_read = block[0];
+	    size_t coffset = 0;
+
+	    while (to_read)
+	    {
+			hsize_t block_c[1];
+			block_c[0] = std::min((size_t)(to_read),(size_t)0x7FFFFFFF);
+
+			hsize_t offset_c[1] = {offset[0] + coffset};
+			H5Sselect_hyperslab(file_dataspace_id_2, H5S_SELECT_SET, offset_c, NULL, count, block_c);
+
+			hsize_t mdim_2[1] = {block_c[0]};
+
+			//Create data space in memory
+			hid_t mem_dataspace_id_2 = H5Screate_simple(1, mdim_2, NULL);
+
+			// Read the dataset.
+			H5Dread(dataset_2, H5T_NATIVE_CHAR, mem_dataspace_id_2, file_dataspace_id_2, plist_id, (char *)mem.getPointer() + coffset);
+
+			coffset += std::min((size_t)(to_read),(size_t)0x7FFFFFFF);
+			to_read -= std::min((size_t)(to_read),(size_t)0x7FFFFFFF);
+	    }
 
 		mem.allocate(pmem.size());
 
@@ -72,7 +85,10 @@ class HDF5_reader<GRID_DIST>
 		Unpacker<typename std::remove_reference<decltype(gdb_ext_old)>::type,HeapMemory>::unpack(mem,gdb_ext_old_unp,ps,1);
 
 		for (size_t i = 0; i < loc_grid_old_unp.size(); i++)
-			loc_grid_old.add(loc_grid_old_unp.get(i));
+		{
+			loc_grid_old.add();
+			loc_grid_old.last().swap(loc_grid_old_unp.get(i));
+		}
 
 		for (size_t i = 0; i < gdb_ext_old_unp.size(); i++)
 			gdb_ext_old.add(gdb_ext_old_unp.get(i));
@@ -120,7 +136,7 @@ public:
 			//printf ("\nOld MPI size: %llu\n", mpi_size_old);
 
 	  	//Where to read metadata
-	  	int metadata_out[mpi_size_old];
+	  	long int metadata_out[mpi_size_old];
 
 	  	for (int i = 0; i < mpi_size_old; i++)
 	  	{
@@ -133,30 +149,9 @@ public:
 		//Create data space in memory
 		hid_t mem_dataspace_id = H5Screate_simple(1, mdim, NULL);
 
-/*
-		if (mpi_rank == 0)
-		{
-			hssize_t size;
-
-			size = H5Sget_select_npoints (mem_dataspace_id);
-			printf ("\nmemspace_id size: %llu\n", size);
-			size = H5Sget_select_npoints (file_dataspace_id);
-			printf ("dataspace_id size: %llu\n", size);
-		}
-*/
 	  	// Read the dataset.
-	    H5Dread(dataset, H5T_NATIVE_INT, mem_dataspace_id, file_dataspace_id, plist_id, metadata_out);
-/*
-		if (mpi_rank == 0)
-		{
-			std::cout << "Metadata_out[]: ";
-			for (int i = 0; i < mpi_size_old; i++)
-			{
-				std::cout << metadata_out[i] << " ";
-			}
-			std::cout << " " << std::endl;
-		}
-*/
+	    H5Dread(dataset, H5T_NATIVE_LLONG, mem_dataspace_id, file_dataspace_id, plist_id, metadata_out);
+
 
 	    openfpm::vector<size_t> metadata_accum;
 	    metadata_accum.resize(mpi_size_old);
@@ -182,12 +177,6 @@ public:
 	  		n_block.get(i) = mpi_size_old / v_cl.getProcessingUnits();
 
 	  	size_t rest_block = mpi_size_old % v_cl.getProcessingUnits();
-
-	  //	std::cout << "MPI size old: " << mpi_size_old << std::endl;
-	  	//std::cout << "MPI size: " << v_cl.getProcessingUnits() << std::endl;
-
-
-	  //	std::cout << "Rest block: " << rest_block << std::endl;
 
 	  	size_t max_block;
 
