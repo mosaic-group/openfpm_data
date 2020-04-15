@@ -9,7 +9,9 @@
 #include "Vector/map_vector.hpp"
 #include "scan_cuda.cuh"
 
+#ifndef SCAN_WITH_CUB
 #define SCAN_WITH_CUB
+#endif
 
 #include "scan_ofp.cuh"
 

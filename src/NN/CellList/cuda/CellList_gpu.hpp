@@ -47,8 +47,8 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	//! \brief Cell scan with + operation of cl_n
 	vector_cnt_type starts;
 
-	//! \brief particle ids information the first "dim" is the cell-id in grid coordinates, the last is the local-id inside the cell
-	openfpm::vector<aggregate<ids_type[dim+1]>,Memory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
+	//! \brief particle ids information the first "dim" componets is the cell-id in grid coordinates, the last is the local-id inside the cell
+	openfpm::vector<aggregate<cnt_type[2]>,Memory,typename memory_traits_inte<aggregate<cnt_type[2]>>::type,memory_traits_inte> part_ids;
 
 	//! \brief for each sorted index it show the index in the unordered
 	vector_cnt_type sorted_to_not_sorted;
@@ -244,8 +244,6 @@ public:
 		cl_n.resize(this->gr_cell.size()+1);
 		CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
-		part_ids.resize(pl.size());
-
 		if (ite_gpu.wthr.x == 0)
 		{
 			// no particles
@@ -263,7 +261,7 @@ public:
 																		part_ids.capacity(),
 																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																		static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
-																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
+																		static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()));
 
 		// now we scan
 		starts.resize(cl_n.size());
@@ -274,6 +272,18 @@ public:
 		cells.resize(pl.size());
 		auto itgg = part_ids.getGPUIterator();
 
+#ifdef MAKE_CELLLIST_DETERMINISTIC
+
+		CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg,0,
+				                                                                  part_ids.size(),
+														                          static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
+
+		// sort
+
+		mgpu::mergesort(static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()),pl.size(),mgpu::less_t<cnt_type>(),mgpuContext);
+
+#else
+
 		CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg,0,
 																					   div_c,
 																					   off,
@@ -282,6 +292,8 @@ public:
 																					   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
 																					   static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()),
 																					   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
+
+#endif
 
 		sorted_to_not_sorted.resize(pl.size());
 		non_sorted_to_sorted.resize(pl.size());

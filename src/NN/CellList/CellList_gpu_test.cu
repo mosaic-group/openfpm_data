@@ -26,7 +26,7 @@ template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
 void test_sub_index()
 {
 	openfpm::vector<aggregate<cnt_type,cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type,cnt_type>>::type,memory_traits_inte> cl_n;
-	openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
+	openfpm::vector<aggregate<cnt_type[2]>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type[2]>>::type,memory_traits_inte> part_ids;
 
 	// fill with some particles
 
@@ -93,52 +93,23 @@ void test_sub_index()
 																	part_ids.capacity(),
 																	static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																	static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
-																	static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
+																	static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()));
 
 	cl_n.template deviceToHost<0>();
 	part_ids.template deviceToHost<0>();
 
 	// I have to find != 0 in the cell with particles
 
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[0],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[1],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[2],2);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[0],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[1],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[2],2);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[0],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[1],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[2],2);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[0],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[1],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[2],9);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[0],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[1],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[2],2);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[0],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[1],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[2],9);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[0],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[1],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[2],9);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[0],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[1],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[2],9);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[0],0);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[1],0);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[2],0);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[0],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[1],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[2],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[0],gr.LinId({2,2,2}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[0],gr.LinId({9,2,2}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[0],gr.LinId({2,9,2}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[0],gr.LinId({2,2,9}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[0],gr.LinId({9,9,2}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[0],gr.LinId({9,2,9}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[0],gr.LinId({2,9,9}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[0],gr.LinId({9,9,9}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[0],gr.LinId({0,0,0}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[0],gr.LinId({2,2,2}));
 
 	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({2,2,2})),2);
 	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({9,2,2})),1);
@@ -156,7 +127,7 @@ template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
 void test_sub_index2()
 {
 	openfpm::vector<aggregate<cnt_type,cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type,cnt_type>>::type,memory_traits_inte> cl_n;
-	openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
+	openfpm::vector<aggregate<cnt_type[2]>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type[2]>>::type,memory_traits_inte> part_ids;
 
 	// fill with some particles
 
@@ -240,52 +211,23 @@ void test_sub_index2()
 																	part_ids.capacity(),
 																	static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																	static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
-																	static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
+																	static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()));
 
 	cl_n.template deviceToHost<0>();
 	part_ids.template deviceToHost<0>();
 
 	// I have to find != 0 in the cell with particles
 
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[0],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[1],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[2],2);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[0],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[1],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[2],2);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[0],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[1],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[2],2);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[0],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[1],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[2],9);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[0],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[1],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[2],2);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[0],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[1],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[2],9);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[0],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[1],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[2],9);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[0],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[1],9);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[2],9);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[0],0);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[1],0);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[2],0);
-
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[0],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[1],2);
-	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[2],2);
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(0)[0],gr.LinId({2,2,2}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(1)[0],gr.LinId({9,2,2}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(2)[0],gr.LinId({2,9,2}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(3)[0],gr.LinId({2,2,9}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(4)[0],gr.LinId({9,9,2}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(5)[0],gr.LinId({9,2,9}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(6)[0],gr.LinId({2,9,9}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(7)[0],gr.LinId({9,9,9}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(8)[0],gr.LinId({0,0,0}));
+	BOOST_REQUIRE_EQUAL(part_ids.template get<0>(9)[0],gr.LinId({2,2,2}));
 
 	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({2,2,2})),2);
 	BOOST_REQUIRE_EQUAL(cl_n.template get<0>(gr.LinId({9,2,2})),1);
@@ -374,6 +316,8 @@ void create_starts_and_parts_ids(CellList<dim,T, Mem_fast<>> & cl,
 template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
 void test_fill_cell()
 {
+#ifndef MAKE_CELLLIST_DETERMINISTIC
+
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells_out;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> starts;
@@ -472,6 +416,8 @@ void test_fill_cell()
 	}
 
 	BOOST_REQUIRE(check == true);
+
+#endif
 }
 
 BOOST_AUTO_TEST_CASE( test_subindex_funcs )
@@ -1273,10 +1219,14 @@ template<unsigned int dim, typename T, typename CellS, int impl> void Test_cell_
 			gpu_list.add(nn_list.template get<0>(i));
 		}
 
-		// sort bost vector
+		// sort both vector
+
+#ifndef MAKE_CELLLIST_DETERMINISTIC
 
 		cpu_list.sort();
 		gpu_list.sort();
+
+#endif
 
 		for (size_t j = 0 ; j < cpu_list.size() ; j++)
 		{check &= cpu_list.get(j) == gpu_list.get(j);}

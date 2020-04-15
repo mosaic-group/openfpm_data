@@ -214,6 +214,7 @@ __device__ __host__ cnt_type encode_phase_id(cnt_type ph_id,cnt_type pid)
 
 #ifdef __NVCC__
 
+
 template<unsigned int dim, typename pos_type, typename cnt_type, typename ids_type, typename transform>
 __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
 						 openfpm::array<pos_type,dim,cnt_type> spacing,
@@ -224,7 +225,7 @@ __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
 						 int n_cap2,
 						 pos_type * p_pos,
 						 cnt_type *counts,
-						 ids_type * p_ids)
+						 cnt_type * p_ids)
 {
     cnt_type i, cid;
     ids_type e[dim+1];
@@ -241,9 +242,27 @@ __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
 
     e[dim] = atomicAdd(counts + cid, 1);
 
-    for (size_t k = 0 ; k <= dim ; k++)
-    {p_ids[i+k*(n_cap2)] = e[k];}
+    p_ids[i] = cid;
+    p_ids[i+1*(n_cap2)] = e[dim];
 }
+
+
+#ifdef MAKE_CELLLIST_DETERMINISTIC
+
+template<unsigned int dim, typename cnt_type, typename ids_type, typename ph>
+__global__ void fill_cells(cnt_type phase_id ,
+						   cnt_type n,
+		                   cnt_type *cells)
+{
+    cnt_type i;
+
+    i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= n) return;
+
+    cells[i] = encode_phase_id<cnt_type,ph>(phase_id,i);
+}
+
+#else
 
 template<unsigned int dim, typename cnt_type, typename ids_type, typename ph>
 __global__ void fill_cells(cnt_type phase_id ,
@@ -256,23 +275,19 @@ __global__ void fill_cells(cnt_type phase_id ,
 		                   cnt_type *cells)
 {
     cnt_type i, cid, id, start;
-    ids_type e[dim+1];
 
     i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= n) return;
 
-#pragma unroll
-    for (int j = 0 ; j < dim+1 ; j++)
-    {e[j] = p_ids[j*n_cap+i];}
-
-    cid = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c, e);
+    cid = p_ids[i];
 
     start = starts[cid];
-    id = start + e[dim];
+    id = start + p_ids[1*n_cap+i];
 
     cells[id] = encode_phase_id<cnt_type,ph>(phase_id,i);
 }
 
+#endif
 
 
 

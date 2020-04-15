@@ -26,6 +26,9 @@ if (CUDA_FOUND)
         endif()
 endif()
 
+add_definitions(-DSCAN_WITH_CUB)
+#add_definitions(-DMAKE_CELLLIST_DETERMINISTIC)
+
 target_include_directories (mem_map PUBLIC ${CUDA_INCLUDE_DIRS})
 target_include_directories (mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories (mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
