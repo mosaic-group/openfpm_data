@@ -275,7 +275,7 @@ void create_starts_and_parts_ids(CellList<dim,T, Mem_fast<>> & cl,
 								 size_t n_part,
 								 size_t n_cell,
 								 openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & starts,
-								 openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> & part_ids,
+								 openfpm::vector<aggregate<ids_type[2]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[2]>>::type,memory_traits_inte> & part_ids,
 								 openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & cells)
 {
 	// Construct starts and part_ids
@@ -298,14 +298,12 @@ void create_starts_and_parts_ids(CellList<dim,T, Mem_fast<>> & cl,
 		{
 			size_t p_id = cl.get(clin,j);
 
-			for (size_t k = 0 ; k < dim ; k++)
-			{part_ids.template get<0>(p_id)[k] = cell.get(k);}
+			part_ids.template get<0>(p_id)[0] = clin;
 
-			part_ids.template get<0>(p_id)[dim] = j;
+			part_ids.template get<0>(p_id)[1] = j;
 
 			cells.template get<0>(start+j) = p_id;
 		}
-
 		starts.template get<0>(clin) = start;
 		start += cl.getNelements(clin);
 
@@ -321,7 +319,7 @@ void test_fill_cell()
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells_out;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> starts;
-	openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
+	openfpm::vector<aggregate<cnt_type[2]>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type[2]>>::type,memory_traits_inte> part_ids;
 
 
 	// CellList to check the result
@@ -371,8 +369,7 @@ void test_fill_cell()
 		{
 			size_t p_id = cl.get(i,j);
 
-			for (size_t k = 0 ; k < dim ; k++)
-			{check &= part_ids.template get<0>(p_id)[k] == key.get(k);}
+			check &= part_ids.template get<0>(p_id)[0] == i;
 		}
 	}
 
@@ -390,7 +387,7 @@ void test_fill_cell()
 																				   part_ids.size(),
 																				   part_ids.capacity(),
 																				   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
-																				   static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()),
+																				   static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),
 																				   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
 
 	cells.template deviceToHost<0>();
@@ -450,7 +447,7 @@ void test_reorder_parts(size_t n_part)
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> starts;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> sort_to_not_sort;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> non_sort_to_sort;
-	openfpm::vector<aggregate<ids_type[dim+1]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[dim+1]>>::type,memory_traits_inte> part_ids;
+	openfpm::vector<aggregate<ids_type[2]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[2]>>::type,memory_traits_inte> part_ids;
 
 	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float,float[3],float[3][3]>>::type,memory_traits_inte> parts_prp;
 	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float,float[3],float[3][3]>>::type,memory_traits_inte> parts_prp_out;

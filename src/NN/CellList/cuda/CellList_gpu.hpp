@@ -290,7 +290,7 @@ public:
 																					   part_ids.size(),
 																					   part_ids.capacity(),
 																					   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
-																					   static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()),
+																					   static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),
 																					   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
 
 #endif

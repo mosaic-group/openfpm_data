@@ -271,7 +271,7 @@ __global__ void fill_cells(cnt_type phase_id ,
 		                   cnt_type n,
 		                   cnt_type n_cap,
 		                   const cnt_type *starts,
-		                   const ids_type * p_ids,
+		                   const cnt_type * p_ids,
 		                   cnt_type *cells)
 {
     cnt_type i, cid, id, start;
