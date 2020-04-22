@@ -25,9 +25,9 @@ struct BoundaryStencilSetX
             grid_key_dx<dim, int> & pointCoord,
             DataBlockWrapperT & dataBlockLoad,
             DataBlockWrapperT & dataBlockStore,
-            bool applyStencilHere)
+            unsigned char curMask)
     {
-        if (applyStencilHere)
+        if (curMask & mask_sparse::EXIST_AND_PADDING)
         {
             dataBlockStore.template get<p_dst>()[offset] = pointCoord.get(0);
         }
@@ -52,10 +52,10 @@ struct BoundaryStencilSetXRescaled
             grid_key_dx<dim, int> & pointCoord,
             DataBlockWrapperT & dataBlockLoad,
             DataBlockWrapperT & dataBlockStore,
-            bool applyStencilHere,
+            unsigned char curMask,
             ScalarT minX, ScalarT maxX, ScalarT minValue, ScalarT maxValue)
     {
-        if (applyStencilHere)
+        if (curMask & mask_sparse::EXIST_AND_PADDING)
         {
             const ScalarT x = pointCoord.get(0);
             auto value = maxValue * (x - minX) / (maxX - minX - 1);
@@ -69,6 +69,12 @@ struct BoundaryStencilSetXRescaled
             }
             dataBlockStore.template get<p_dst>()[offset] = value;
         }
+    }
+
+    template <typename SparseGridT, typename CtxT>
+    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+    {
+        // No flush
     }
 };
 

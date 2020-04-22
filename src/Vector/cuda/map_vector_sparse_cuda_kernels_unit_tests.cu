@@ -2,7 +2,7 @@
 #include <boost/test/unit_test.hpp>
 #include <Vector/map_vector.hpp>
 #include <Vector/cuda/map_vector_sparse_cuda_kernels.cuh>
-#include "util/cuda/moderngpu/kernel_scan.hxx"
+#include "util/cuda/scan_ofp.cuh"
 #include "util/cuda/moderngpu/kernel_merge.hxx"
 
 BOOST_AUTO_TEST_SUITE( vector_sparse_cuda_kernels )
@@ -35,8 +35,8 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	block_insert.template hostToDevice<0>();
 	block_n.template hostToDevice<0>();
 
-	mgpu::standard_context_t context(false);
-	mgpu::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
+	mgpu::ofp_context_t context;
+	openfpm::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
 
 	block_n_scan.template deviceToHost<0>(block_n_scan.size()-1,block_n_scan.size()-1);
 	size_t n_ele = block_n_scan.template get<0>(block_n.size()-1);
@@ -105,8 +105,8 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use_small_pool )
 	block_insert.template hostToDevice<0>();
 	block_n.template hostToDevice<0>();
 
-	mgpu::standard_context_t context(false);
-	mgpu::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
+	mgpu::ofp_context_t context;
+	openfpm::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
 
 	block_n_scan.template deviceToHost<0>(block_n_scan.size()-1,block_n_scan.size()-1);
 	size_t n_ele = block_n_scan.template get<0>(block_n.size()-1);
@@ -378,8 +378,8 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 	vct_data.template hostToDevice<0,1,2>();
 	vct_tot_out.template hostToDevice<0,2>();
 
-	mgpu::standard_context_t ctx(false);
-	mgpu::scan((int *)vct_tot_out.getDeviceBuffer<0>(),vct_tot_out.size(),(int *)vct_tot_out.getDeviceBuffer<1>(),ctx);
+	mgpu::ofp_context_t ctx;
+	openfpm::scan((int *)vct_tot_out.getDeviceBuffer<0>(),vct_tot_out.size(),(int *)vct_tot_out.getDeviceBuffer<1>(),ctx);
 
 	vct_tot_out.deviceToHost<0,1>();
 	vct_index_out.resize(vct_index.size());

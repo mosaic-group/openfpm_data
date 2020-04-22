@@ -28,7 +28,7 @@ struct Ft_chunk
 template<unsigned int dim>
 struct NNStar_c
 {
-	static const int nNN = openfpm::math::pow(2, dim);
+	static const int nNN = 2*dim;
 
 	static const int is_cross = false;
 };

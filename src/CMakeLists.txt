@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
+add_definitions(-DSCAN_WITH_CUB)
+
 if (TEST_PERFORMANCE)
 	set(CUDA_SOURCES SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_sparse.cu
 			 SparseGridGpu/performance/SparseGridGpu_performance_insert_stencil.cu
@@ -62,7 +64,7 @@ add_executable(isolation
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
-    target_compile_options(mem_map PRIVATE "-mavx")
+    target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -mavx>)
     if (TEST_COVERAGE)
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
     endif ()
@@ -86,7 +88,7 @@ if (CUDA_FOUND)
     # The below is for better performance on CUDA
     # "-rdc=true" is for Dynamic Parallelism (cooperative groups)
     #    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_50,code=sm_50 -g -lineinfo >) # For Maxwell
-    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_61,code=sm_61 -g -lineinfo >) # For Pascal
+    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_61,code=compute_61 -g -lineinfo >) # For Pascal
     if (TEST_COVERAGE)
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
     endif ()
@@ -94,7 +96,7 @@ if (CUDA_FOUND)
     # The below is for better performance on CUDA
     # "-rdc=true" is for Dynamic Parallelism (cooperative groups)
     # target_compile_options(isolation PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_50,code=sm_50 -g -lineinfo >) # For Maxwell
-    target_compile_options(isolation PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_61,code=sm_61 -g -lineinfo >) # For Pascal
+    target_compile_options(isolation PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_61,code=compute_61 -g -lineinfo >) # For Pascal
     if (TEST_COVERAGE)
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
     endif ()
@@ -353,6 +355,32 @@ install(FILES util/cuda/scan_cuda.cuh
         util/cuda/scan_ofp.cuh
 	util/cuda/sort_ofp.cuh
         DESTINATION openfpm_data/include/util/cuda)
+
+install(FILES util/stat/common_statistics.hpp
+        DESTINATION openfpm_data/include/util/stat)
+
+install(FILES SparseGridGpu/SparseGridGpu.hpp
+	      SparseGridGpu/SparseGridGpu_kernels.cuh
+	      SparseGridGpu/SparseGridGpu_ker.cuh
+	      SparseGridGpu/SparseGridGpu_ker_util.hpp
+	      SparseGridGpu/DataBlock.cuh
+	      SparseGridGpu/BlockMapGpu.hpp
+	      SparseGridGpu/BlockMapGpu_kernels.cuh
+	      SparseGridGpu/BlockMapGpu_ker.cuh
+	      SparseGridGpu/BlockMapGpu_dimensionalityWrappers.cuh
+              DESTINATION openfpm_data/include/SparseGridGpu)
+
+install (FILES SparseGridGpu/Geometry/grid_smb.hpp
+	      SparseGridGpu/Geometry/grid_zmb.hpp
+              DESTINATION openfpm_data/include/SparseGridGpu/Geometry/)
+
+install (FILES SparseGridGpu/Iterators/SparseGridGpu_iterator_sub.hpp
+	       SparseGridGpu/Iterators/SparseGridGpu_iterator.hpp
+               DESTINATION openfpm_data/include/SparseGridGpu/Iterators/ )
+
+install (FILES  SparseGridGpu/TemplateUtils/mathUtils.hpp
+	        SparseGridGpu/TemplateUtils/encap_shmem.hpp
+		DESTINATION openfpm_data/include/SparseGridGpu/TemplateUtils/ )
 
 install(FILES util/cuda/moderngpu/context.hxx
         util/cuda/moderngpu/context_reduced.hxx

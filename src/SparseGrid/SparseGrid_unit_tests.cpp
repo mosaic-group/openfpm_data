@@ -12,7 +12,6 @@
 #include "SparseGrid/SparseGrid.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
 #include <math.h>
-//#include "util/debug.hpp"
 
 BOOST_AUTO_TEST_SUITE( sparse_grid_test )
 
@@ -356,7 +355,10 @@ BOOST_AUTO_TEST_CASE( sparse_grid_resize_test)
 		auto key = it.get();
 
 		if (grid.template get<0>(key) != grid2.template get<0>(key))
-		{match = false;}
+		{
+			match = false;
+			break;
+		}
 
 		++it;
 	}
@@ -390,7 +392,10 @@ BOOST_AUTO_TEST_CASE( sparse_grid_resize_test)
 		if (cin == true)
 		{
 			if (grid.template get<0>(key) != grid2.template get<0>(key))
-			{match = false;}
+			{
+				match = false;
+				break;
+			}
 		}
 
 		++it2;
@@ -681,15 +686,10 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil)
 	grid_key_dx<3> start({1,1,1});
 	grid_key_dx<3> stop({499,499,499});
 
-	/////// Check
-
-	timer t;
-	t.start();
-
-
-	for (int i = 0 ; i < 100 ; i++)
+	for (int i = 0 ; i < 1 ; i++)
 	{
 
+	grid.private_get_nnlist().resize(NNStar_c<3>::nNN * grid.private_get_header_inf().size());
 	auto it = grid.getBlockIterator<1>(start,stop);
 
 	unsigned char mask[decltype(it)::sizeBlockBord];
@@ -755,10 +755,6 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil)
 
 	}
 
-	t.stop();
-
-	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << "   " << grid.size_all() << std::endl;
-
 	bool check = true;
 	auto it2 = grid.getIterator();
 	while (it2.isNext())
@@ -796,13 +792,9 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized)
 	grid_key_dx<3> start({1,1,1});
 	grid_key_dx<3> stop({499,499,499});
 
-	/////// Check
+	grid.private_get_nnlist().resize(NNStar_c<3>::nNN * grid.private_get_header_inf().size());
 
-	timer t;
-	t.start();
-
-
-	for (int i = 0 ; i < 100 ; i++)
+	for (int i = 0 ; i < 1 ; i++)
 	{
 
 	auto it = grid.getBlockIterator<1>(start,stop);
@@ -927,10 +919,6 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized)
 
 	}
 
-	t.stop();
-
-	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << "   " << grid.size_all() << std::endl;
-
 	bool check = true;
 	auto it2 = grid.getIterator();
 	while (it2.isNext())
@@ -947,12 +935,6 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized)
 
 	//print_grid("debug_out",grid);
 }
-
-union data_i4
-{
-	unsigned char uc[4];
-	int i;
-};
 
 BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 {
@@ -971,22 +953,18 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 
 	fill_sphere_quad(grid,cdsm);
 
+	grid.reorder();
+
 	grid_key_dx<3> start({1,1,1});
 	grid_key_dx<3> stop({499,499,499});
 
-	/////// Check
-
-	timer t;
-	t.start();
-
-
-	for (int i = 0 ; i < 100 ; i++)
+	for (int i = 0 ; i < 1 ; i++)
 	{
 
 	auto it = grid.getBlockIterator<1>(start,stop);
 
 	auto & datas = grid.private_get_data();
-	auto & headers = grid.private_get_header();
+	auto & headers = grid.private_get_header_mask();
 
 	typedef typename boost::mpl::at<decltype(it)::stop_border_vmpl,boost::mpl::int_<0>>::type sz0;
 	typedef typename boost::mpl::at<decltype(it)::stop_border_vmpl,boost::mpl::int_<1>>::type sz1;
@@ -994,17 +972,16 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 
 	typedef typename sgrid_soa<3,aggregate<double,double,int>,HeapMemory>::chunking_type chunking;
 
-	const Vc::double_v six(6.0);
+	const Vc::double_v one(1.0);
 
 	while (it.isNext())
 	{
 		// Load
-		size_t offset_jump[6];
-		int load[4];
-
+		long int offset_jump[6];
 		size_t cid = it.getChunkId();
 
 		auto chunk = datas.get(cid);
+		auto & mask = headers.get(cid);
 
 		bool exist;
 		grid_key_dx<3> p = grid.getChunkPos(cid) + grid_key_dx<3>({-1,0,0});
@@ -1033,7 +1010,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 
 		// Load offset jumps
 
-		int s2 = 0;
+		long int s2 = 0;
 
 		typedef boost::mpl::at<typename chunking::type,boost::mpl::int_<2>>::type sz;
 		typedef boost::mpl::at<typename chunking::type,boost::mpl::int_<1>>::type sy;
@@ -1045,73 +1022,90 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 			{
 				for (int k = 0 ; k < sx::value ; k += Vc::double_v::Size)
 				{
-					data_i4 mxm;
+					// we do only id exist the point
+					if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::double_v::Size; continue;}
+
+					Vc::Mask<double> surround;
+
+					data_il<4> mxm;
+					data_il<4> mxp;
+					data_il<4> mym;
+					data_il<4> myp;
+					data_il<4> mzm;
+					data_il<4> mzp;
+
+					Vc::double_v xm;
+					Vc::double_v xp;
 
 					Vc::double_v cmd(&chunk.template get<0>()[s2]);
 
 					// Load x-1
-					load[0] = s2-1;
-					load[0] += (k==0)?offset_jump[0] + sx::value:0;
-					load[1] = s2;
-					load[2] = s2+1;
-					load[3] = s2+2;
-
-					Vc::double_v xm(&chunk.template get<0>()[0],load);
-
+					long int sumxm = s2-1;
+					sumxm += (k==0)?offset_jump[0] + sx::value:0;
 
 					// Load x+1
-					load[0] = s2+1;
-					load[1] = s2+2;
-					load[2] = s2+3;
-					load[3] = s2+4;
-					load[3] += (k+4 == sx::value)?offset_jump[1] - sx::value:0;
+					long int sumxp = s2+4;
+					sumxp += (k+4 == sx::value)?offset_jump[1] - sx::value:0;
 
-					Vc::double_v xp(&chunk.template get<0>()[0],load);
+					long int sumym = (j == 0)?offset_jump[2] + (sy::value-1)*sx::value:-sx::value;
+					sumym += s2;
+					long int sumyp = (j == sy::value-1)?offset_jump[3] - (sy::value - 1)*sx::value:sx::value;
+					sumyp += s2;
+					long int sumzm = (v == 0)?offset_jump[4] + (sz::value-1)*sx::value*sy::value:-sx::value*sy::value;
+					sumzm += s2;
+					long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
+					sumzp += s2;
 
-					// Load y-1
-					long int sum = (j == 0)?offset_jump[2] + (sy::value-1)*sx::value:-sx::value;
-					load[0] = s2 + sum;
-					load[1] = s2+1+sum;
-					load[2] = s2+2+sum;
-					load[3] = s2+3+sum;
+					mxm.uc[0] = mask.mask[sumxm];
+					mxm.uc[1] = mask.mask[s2];
+					mxm.uc[2] = mask.mask[s2+1];
+					mxm.uc[3] = mask.mask[s2+2];
 
-					Vc::double_v ym(&chunk.template get<0>()[0],load);
+					mxp.uc[0] = mask.mask[s2+1];
+					mxp.uc[1] = mask.mask[s2+2];
+					mxp.uc[2] = mask.mask[s2+3];
+					mxp.uc[3] = mask.mask[sumxp];
+
+					mym.i = *(int *)&mask.mask[sumym];
+					myp.i = *(int *)&mask.mask[sumyp];
+
+					mzm.i = *(int *)&mask.mask[sumzm];
+					mzp.i = *(int *)&mask.mask[sumzp];
 
 
-					// Load y+1
-					sum = (j == sy::value-1)?offset_jump[3] - (sy::value - 1)*sx::value:sx::value;
-					load[0] = s2 + sum;
-					load[1] = s2+1+sum;
-					load[2] = s2+2+sum;
-					load[3] = s2+3+sum;
+					xm[0] = chunk.template get<0>()[sumxm];
+					xm[1] = cmd[0];
+					xm[2] = cmd[1];
+					xm[3] = cmd[2];
 
-					Vc::double_v yp(&chunk.template get<0>()[0],load);
 
-					// Load z-1
+					xp[0] = cmd[1];
+					xp[1] = cmd[2];
+					xp[2] = cmd[3];
+					xp[3] = chunk.template get<0>()[sumxp];
 
-					sum = (v == 0)?offset_jump[4] + (sz::value-1)*sx::value*sy::value:-sx::value*sy::value;
-					load[0] = s2  + sum;
-					load[1] = s2+1+ sum;
-					load[2] = s2+2+ sum;
-					load[3] = s2+3+ sum;
+					// Load y and z direction
 
-					Vc::double_v zm(&chunk.template get<0>()[0],load);
-
-					// Load z+1
-
-					sum = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
-					load[0] = s2  + sum;
-					load[1] = s2+1+ sum;
-					load[2] = s2+2+ sum;
-					load[3] = s2+3+ sum;
-
-					Vc::double_v zp(&chunk.template get<0>()[0],load);
+					Vc::double_v ym(&chunk.template get<0>()[sumym],Vc::Aligned);
+					Vc::double_v yp(&chunk.template get<0>()[sumyp],Vc::Aligned);
+					Vc::double_v zm(&chunk.template get<0>()[sumzm],Vc::Aligned);
+					Vc::double_v zp(&chunk.template get<0>()[sumzp],Vc::Aligned);
 
 					// Calculate
+
+					data_il<4> tot_m;
+					tot_m.i = mxm.i + mxp.i + mym.i + myp.i + mzm.i + mzp.i;
+
+					surround[0] = (tot_m.uc[0] == 6);
+					surround[1] = (tot_m.uc[1] == 6);
+					surround[2] = (tot_m.uc[2] == 6);
+					surround[3] = (tot_m.uc[3] == 6);
 
 					Vc::double_v Lap = xp + xm +
 					                   yp + ym +
 					                   zp + zm - 6.0*cmd;
+
+					Lap = Vc::iif(surround,Lap,one);
 
 					Lap.store(&chunk.template get<1>()[s2],Vc::Aligned);
 
@@ -1125,9 +1119,8 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 
 	}
 
-	t.stop();
-
-	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << "   " << grid.size_all() << std::endl;
+	int tot_six = 0;
+	int tot_one = 0;
 
 	bool check = true;
 	auto it2 = grid.getIterator();
@@ -1135,12 +1128,24 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 	{
 		auto p = it2.get();
 
-		check &= grid.template get<1>(p) == 6;
+		check &= (grid.template get<1>(p) == 6 || grid.template get<1>(p) == 1);
+
+		if (grid.template get<1>(p) == 1)
+		{
+			tot_one++;
+		}
+
+		if (grid.template get<1>(p) == 6)
+		{
+			tot_six++;
+		}
 
 		++it2;
 	}
 
 	BOOST_REQUIRE_EQUAL(check,true);
+	BOOST_REQUIRE_EQUAL(tot_six,15857813);
+	BOOST_REQUIRE_EQUAL(tot_one,2977262);
 	// Check correct-ness
 
 	//print_grid("debug_out",grid);
@@ -1166,13 +1171,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_simplified)
 	grid_key_dx<3> start({1,1,1});
 	grid_key_dx<3> stop({250,250,250});
 
-	/////// Check
-
-	timer t;
-	t.start();
-
-
-	for (int i = 0 ; i < 100 ; i++)
+	for (int i = 0 ; i < 1 ; i++)
 	{
 
 		int stencil[6][3] = {{1,0,0},{-1,0,0},{0,-1,0},{0,1,0},{0,0,-1},{0,0,1}};
@@ -1186,15 +1185,14 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_simplified)
 
 																	auto sur_mask = (surround == 6.0);
 
-																	Lap = Vc::iif(sur_mask,Lap,Vc::double_v(6.0));
+																	Lap = Vc::iif(sur_mask,Lap,Vc::double_v(1.0));
 
 																	return Lap;
 		                                                         });
 	}
 
-	t.stop();
-
-	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << "   " << grid.size_all() << std::endl;
+	int tot_six = 0;
+	int tot_one = 0;
 
 	bool check = true;
 	auto it2 = grid.getIterator(start,stop);
@@ -1202,12 +1200,101 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_simplified)
 	{
 		auto p = it2.get();
 
-		check &= grid.template get<1>(p) == 6;
+		check &= (grid.template get<1>(p) == 6 || grid.template get<1>(p) == 1);
+
+		if (grid.template get<1>(p) == 1)
+		{
+			tot_one++;
+		}
+
+		if (grid.template get<1>(p) == 6)
+		{
+			tot_six++;
+		}
 
 		++it2;
 	}
 
 	BOOST_REQUIRE_EQUAL(check,true);
+	BOOST_REQUIRE_EQUAL(tot_six,1391877);
+	BOOST_REQUIRE_EQUAL(tot_one,1005005);
+	// Check correct-ness
+
+//	print_grid("debug_out",grid);
+}
+
+BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_soa<3,aggregate<double,double,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere_quad(grid,cdsm);
+
+	//grid.reorder();
+
+	grid_key_dx<3> start({1,1,1});
+	grid_key_dx<3> stop({499,499,499});
+
+	for (int i = 0 ; i < 1 ; i++)
+	{
+		grid.conv_cross<0,1,1>(start,stop,[]( Vc::double_v & cmd, cross_stencil_v & s,
+				                              unsigned char * mask_sum){
+
+																	Vc::double_v Lap = s.xm + s.xp +
+																					   s.ym + s.yp +
+																					   s.zm + s.zp - 6.0*cmd;
+
+																	Vc::Mask<double> surround;
+
+																	surround[0] = (mask_sum[0] == 6);
+																	surround[1] = (mask_sum[1] == 6);
+																	surround[2] = (mask_sum[2] == 6);
+																	surround[3] = (mask_sum[3] == 6);
+
+
+																	Lap = Vc::iif(surround,Lap,Vc::double_v(1.0));
+
+																	return Lap;
+		                                                         });
+	}
+
+	int tot_six = 0;
+	int tot_one = 0;
+
+	bool check = true;
+	auto it2 = grid.getIterator(start,stop);
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		check &= (grid.template get<1>(p) == 6 || grid.template get<1>(p) == 1);
+
+		if (grid.template get<1>(p) == 1)
+		{
+			tot_one++;
+		}
+
+		if (grid.template get<1>(p) == 6)
+		{
+			tot_six++;
+		}
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+	BOOST_REQUIRE_EQUAL(tot_six,15857813);
+	BOOST_REQUIRE_EQUAL(tot_one,2977262);
 	// Check correct-ness
 
 //	print_grid("debug_out",grid);
@@ -1233,12 +1320,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_slow_stencil)
 	grid_key_dx<3> start({1,1,1});
 	grid_key_dx<3> stop({499,499,499});
 
-	/////// Check
-
-	timer t;
-	t.start();
-
-	for (int i = 0 ; i < 100 ; i++)
+	for (int i = 0 ; i < 1 ; i++)
 	{
 
 	auto it = grid.getIterator();
@@ -1268,9 +1350,6 @@ BOOST_AUTO_TEST_CASE( sparse_grid_slow_stencil)
 	}
 
 	}
-	t.stop();
-
-	std::cout << "Laplacian " << t.getwct() << " points: " << grid.size() << std::endl;
 
 	bool check = true;
 	auto it2 = grid.getIterator();

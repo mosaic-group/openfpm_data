@@ -702,6 +702,10 @@ private:
         const unsigned int linId = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
         // Actually load the data into the shared region
         //ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
+
+        printf("BLOCK SHARED %d %d linId \n",linId,pos);
+
+
         sharedRegionPtr[linId] = block.template get<p>()[pos];
     }
 

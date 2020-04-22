@@ -8,7 +8,9 @@
 #ifndef SPARSEGRID_CHUNK_COPY_HPP_
 #define SPARSEGRID_CHUNK_COPY_HPP_
 
+#ifndef __NVCC__
 #include <Vc/Vc>
+#endif
 #include "util/mathutil.hpp"
 
 
@@ -23,7 +25,7 @@
 template<typename headerType>
 inline bool exist_sub(headerType & h, int sub_id)
 {
-	return h.template get<cnk_mask>()[sub_id];
+	return h.mask[sub_id];
 }
 
 template<unsigned int v>
@@ -34,9 +36,7 @@ struct exist_sub_v_impl
 	template<typename headerType>
 	static inline void exist(headerType & h, int sub_id, unsigned char * pmask)
 	{
-		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
-
-		pmask[0] = h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check;
+		pmask[0] = h.mask[sub_id];
 	}
 };
 
@@ -48,12 +48,8 @@ struct exist_sub_v_impl<2>
 	template<typename headerType>
 	static inline void exist(headerType & h, int sub_id, unsigned char * pmask)
 	{
-		size_t m = h.mask[sub_id >> BIT_SHIFT_SIZE_T];
-
-		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
-
-		pmask[0] = (m & mask_check) != 0;
-		pmask[1] = (m & (mask_check << 1)) != 0;
+		pmask[0] = h.mask[0];
+		pmask[1] = h.mask[1];
 	}
 };
 
@@ -65,10 +61,10 @@ struct exist_sub_v_impl<4>
 	template<typename headerType>
 	static inline void exist(headerType & h, int sub_id, unsigned char * pmask)
 	{
-		pmask[0] = h.template get<cnk_mask>()[sub_id];
-		pmask[1] = h.template get<cnk_mask>()[sub_id+1];
-		pmask[2] = h.template get<cnk_mask>()[sub_id+2];
-		pmask[3] = h.template get<cnk_mask>()[sub_id+3];
+		pmask[0] = h.mask[sub_id];
+		pmask[1] = h.mask[sub_id+1];
+		pmask[2] = h.mask[sub_id+2];
+		pmask[3] = h.mask[sub_id+3];
 	}
 };
 
@@ -80,18 +76,14 @@ struct exist_sub_v_impl<8>
 	template<typename headerType>
 	static inline void exist(headerType & h, int sub_id, unsigned char * pmask)
 	{
-		size_t m = h.mask[sub_id >> BIT_SHIFT_SIZE_T];
-
-		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
-
-		pmask[0] = (m & mask_check) != 0;
-		pmask[1] = (m & (mask_check << 1)) != 0;
-		pmask[2] = (m & (mask_check << 2)) != 0;
-		pmask[3] = (m & (mask_check << 3)) != 0;
-		pmask[4] = (m & (mask_check << 4)) != 0;
-		pmask[5] = (m & (mask_check << 5)) != 0;
-		pmask[6] = (m & (mask_check << 6)) != 0;
-		pmask[7] = (m & (mask_check << 7)) != 0;
+		pmask[0] = h.mask[sub_id];
+		pmask[1] = h.mask[sub_id+1];
+		pmask[2] = h.mask[sub_id+2];
+		pmask[3] = h.mask[sub_id+3];
+		pmask[4] = h.mask[sub_id+4];
+		pmask[5] = h.mask[sub_id+5];
+		pmask[6] = h.mask[sub_id+6];
+		pmask[7] = h.mask[sub_id+7];
 	}
 };
 
@@ -107,23 +99,6 @@ template<unsigned int v, typename headerType>
 inline void exist_sub_v(headerType & h, int sub_id, unsigned char * pmask)
 {
 	exist_sub_v_impl<v>::exist(h,sub_id,pmask);
-}
-
-//! Linearize a set of index
-template<typename vmpl, typename a> __device__ __host__ inline size_t Lin_vmpl(a v)
-{
-	return v*vmpl_reduce_prod_stop<vmpl,(int)vmpl::size::value - 2>::type::value;
-}
-
-/*! \brief linearize an arbitrary set of index
- *
- * linearize an arbitrary set of index
- *
- */
-template<typename vmpl, typename a, typename ...lT>
-__device__ __host__ inline size_t Lin_vmpl(a v,lT...t)
-{
-		return v*vmpl_reduce_prod_stop<vmpl,(int)vmpl::size::value - sizeof...(t) - 2>::type::value + Lin_vmpl<vmpl>(t...);
 }
 
 
@@ -211,6 +186,8 @@ struct multi_mask<16>
 	typedef unsigned long int type;
 };
 
+#ifndef __NVCC__
+
 //! Copy block in 3D vectorized
 template<int prop, int stencil_size ,typename chunking,bool is_cross>
 struct copy_xyz<1,prop,stencil_size,chunking,is_cross>
@@ -286,6 +263,8 @@ struct copy_xyz<1,prop,stencil_size,chunking,is_cross>
 	}
 };
 
+#endif
+
 //! Copy XY surface in 3D
 template<int layout_type, int prop,int stencil_size, typename chunking,bool is_cross>
 struct copy_xy_3
@@ -339,6 +318,8 @@ struct copy_xy_3
 		}
 	}
 };
+
+#ifndef __NVCC__
 
 //! Copy XY surface in 3D
 template<int prop,int stencil_size, typename chunking,bool is_cross>
@@ -410,6 +391,8 @@ struct copy_xy_3<1,prop,stencil_size,chunking,is_cross>
 		}
 	}
 };
+
+#endif
 
 //! Copy XZ surface in 3D
 template<int layout_type, int prop, int stencil_size, typename chunking,bool is_cross>

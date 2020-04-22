@@ -102,14 +102,12 @@ struct cta_segreduce_t {
 ////////////////////////////////////////////////////////////////////////////////
 // Adds the carry-out for each segreduce CTA into the outputs.
 
-template<unsigned int ntParam = 512, typename output_it, typename type_t, typename op_t>
+template<typename output_it, typename type_t, typename op_t>
 void segreduce_fixup(output_it output, const type_t* values,
   const int* codes, int count, op_t op, type_t init,
   context_t& context) {
 
-  // enum { nt = 512 };
-  // enum { nt = 2 };
-  enum { nt = ntParam };
+  enum { nt = 512 };
   int num_ctas = div_up(count, nt);
 
   mem_t<type_t> carry_out(num_ctas, context);
@@ -182,7 +180,7 @@ void segreduce_fixup(output_it output, const type_t* values,
   cta_launch<nt>(k_fixup, num_ctas, context);
 
   if(num_ctas > 1)
-    segreduce_fixup<ntParam>(output, carry_out_data, codes_data, 
+    segreduce_fixup(output, carry_out_data, codes_data, 
       num_ctas, op, init, context);
 }
 
@@ -229,8 +227,6 @@ void segreduce(input_it input, int count, segments_it segments,
       type_t indices[nt * vt + 2];
     } shared;
 
-//    memset(&shared, 0, sizeof(decltype(shared)));
-
     merge_range_t merge_range = compute_merge_range(count, num_segments, 
       cta, nt * vt, mp_data[cta], mp_data[cta + 1]);
 
@@ -267,7 +263,7 @@ void segreduce(input_it input, int count, segments_it segments,
   cta_launch<launch_t>(k_reduce, num_ctas, context);
 
   if(num_ctas > 1)
-    detail::segreduce_fixup<launch_t::sm_ptx::nt>(output, carry_out_data, codes_data, num_ctas,
+    detail::segreduce_fixup(output, carry_out_data, codes_data, num_ctas,
       op, init, context);
 }
 
@@ -386,7 +382,7 @@ void lbs_segreduce(func_t f, int count, segments_it segments,
   cta_launch<launch_t>(k_reduce, num_ctas, context, args...);
 
   if(num_ctas > 1)
-    detail::segreduce_fixup<launch_t::sm_ptx::nt>(output, carry_out_data, codes_data, num_ctas,
+    detail::segreduce_fixup(output, carry_out_data, codes_data, num_ctas,
       op, init, context);
 }
 

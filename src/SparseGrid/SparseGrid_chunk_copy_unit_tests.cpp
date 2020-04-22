@@ -50,11 +50,9 @@ BOOST_AUTO_TEST_CASE( sparse_grid_chunk_test )
 	openfpm::vector<aggregate_bfv<chunk_def>> chunks;
 	chunks.resize(1);
 
-	openfpm::vector<aggregate<grid_key_dx<3>,int,unsigned char [64]>> header;
-	header.resize(1);
-	auto h = header.get(0);
+	mheader<4096> h;
 
-	memset(&h.template get<cnk_mask>()[0],0xFF,4096);
+	memset(&h.mask[0],0xFF,4096);
 
 	for (int i = 0 ; i < test_chunking3::size::value ; i++)
 	{chunks.template get<0>(0)[i] = i;}
@@ -177,10 +175,8 @@ BOOST_AUTO_TEST_CASE( sparse_grid_chunk_test_2 )
 
 	chunks.resize(1);
 
-	openfpm::vector<aggregate<grid_key_dx<3>,int,unsigned char [64]>> header;
-	header.resize(1);
-	auto h = header.get(0);
-	memset(&h.template get<cnk_mask>()[0],0xFF,4096);
+	mheader<4096> h;
+	memset(&h.mask[0],0xFF,4096);
 
 	for (int i = 0 ; i < test_chunking3::size::value ; i++)
 	{chunks.template get<0>(0)[i] = i;}

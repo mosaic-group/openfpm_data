@@ -230,7 +230,7 @@ struct HeatStencil
             const grid_key_dx<dim, int> & pointCoord,
             const DataBlockWrapperT & dataBlockLoad,
             DataBlockWrapperT & dataBlockStore,
-            bool isActive,
+            unsigned char curMask,
             float dt)
     {
         typedef typename SparseGridT::AggregateBlockType AggregateT;
@@ -248,7 +248,7 @@ struct HeatStencil
         decltype(sparseGrid.getLinIdInEnlargedBlock(0)) linId = 0;
         ScalarT res = 0;
 
-        if (isActive)
+        if ((curMask & mask_sparse::EXIST) && !(curMask & mask_sparse::PADDING))
         {
             const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
             // const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
@@ -268,7 +268,7 @@ struct HeatStencil
             res = cur + dt * laplacian;
         }
         __syncthreads();
-        if (isActive)
+        if ((curMask & mask_sparse::EXIST) && !(curMask & mask_sparse::PADDING))
         {
             enlargedBlock[linId] = res;
         }

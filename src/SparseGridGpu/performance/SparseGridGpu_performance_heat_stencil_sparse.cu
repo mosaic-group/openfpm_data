@@ -82,7 +82,7 @@ void testStencilHeatSparse_perf(unsigned int i, std::string base, float fillMult
     unsigned long long numElements = existingElements - boundaryElements;
 
     // Now apply some boundary conditions
-    sparseGrid.template applyBoundaryStencils<BoundaryStencilSetXRescaled<dim,0,0>>(
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(STENCIL_MODE_INPLACE,
             centerPoint, centerPoint + 2*blockEdgeSize*gridEdgeSize,
             0.0, 10.0);
     cudaDeviceSynchronize();

@@ -110,9 +110,7 @@ struct aggregate_add<aggregate<types ...>>
 
 enum StencilMode
 {
-    STENCIL_MODE_INSERT = 0,
     STENCIL_MODE_INPLACE = 1,
-    STENCIL_MODE_INSERT_NOFLUSH = 2,
     STENCIL_MODE_INPLACE_NO_SHARED = 3
 };
 
@@ -297,83 +295,7 @@ struct NNFull
 	}
 };
 
-template<unsigned int dim>
-struct NNStar
-{
-	static const int nNN = IntPow<2, dim>::value;
 
-	template<typename indexT, typename blockCoord_type, typename blockMap_type, typename SparseGrid_type>
-	__device__ static inline indexT getNNpos(blockCoord_type & blockCoord,
-								  blockMap_type & blockMap,
-								  SparseGrid_type & sparseGrid,
-								  const unsigned int offset)
-	{
-        //todo: also do the full neighbourhood version, this is just cross
-        int neighbourPos = -1;
-        if (offset < 2*dim)
-        {
-            unsigned int d = offset/2;
-            int dPos = blockCoord.get(d) + (offset%2)*2 - 1;
-            blockCoord.set_d(d, dPos);
-            neighbourPos = blockMap.get_sparse(sparseGrid.getBlockLinId(blockCoord)).id;
-        }
-        return neighbourPos;
-	}
-
-	template<typename indexT, unsigned int blockEdgeSize, typename coordType>
-	__host__ static inline indexT getNNskin(coordType & coord, int stencilSupportRadius)
-	{
-        int neighbourNum = -1;
-        int ctr = 0;
-        for (int j = 0; j < dim; ++j)
-        {
-            int c = static_cast<int>(coord.get(j)) - static_cast<int>(stencilSupportRadius);
-            if (c < 0)
-            {
-                neighbourNum = 2*j;
-                ++ctr;
-            }
-            else if (c >= blockEdgeSize)
-            {
-                neighbourNum = 2*j + 1;
-                ++ctr;
-            }
-        }
-        if (ctr > 1) // If we are on a "corner"
-        {
-            neighbourNum = 0;
-        }
-
-        return neighbourNum;
-	}
-
-	template<typename sparseGrid_type, typename coord_type, typename Mask_type,unsigned int eb_size>
-	__device__ static inline bool isPadding(sparseGrid_type & sparseGrid, coord_type & coord, Mask_type (& enlargedBlock)[eb_size])
-	{
-		bool isPadding_ = false;
-		for (int d=0; d<dim; ++d)
-		{
-			auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
-			auto nMinusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, -1);
-			typename std::remove_all_extents<Mask_type>::type neighbourPlus = enlargedBlock[nPlusId];
-			typename std::remove_all_extents<Mask_type>::type neighbourMinus = enlargedBlock[nMinusId];
-			isPadding_ = isPadding_ || (!sparseGrid.exist(neighbourPlus));
-			isPadding_ = isPadding_ || (!sparseGrid.exist(neighbourMinus));
-			if (isPadding_) break;
-		}
-
-		return isPadding_;
-	}
-
-	/*! \brief given a coordinate give the neighborhood chunk position and the offset in the neighborhood chunk
-	 *
-	 *
-	 */
-	__device__ static inline bool getNNindex_offset()
-	{
-		return false;
-	}
-};
 
 template<unsigned int nNN_, unsigned int nLoop_>
 struct ct_par
@@ -602,6 +524,8 @@ public:
 
     typedef linearizer grid_info;
 
+    typedef linearizer linearizer_type;
+
     template<typename Tfunc> using layout_mfunc = memory_traits_inte<Tfunc>;
 
     typedef sparse_grid_gpu_index<self> base_key;
@@ -745,31 +669,9 @@ private:
         gridSize.setDimensions(res);
     }
 
-    // This is for testing stencil application in Host, remember to deviceToHost the sparse grid before doing this!
-    template <typename stencil, typename... Args>
-    void applyStencilInPlaceHost(Args... args)
-    {
-        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
-
-        const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
-        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
-
-        if (numScalars == 0) return;
-
-        SparseGridGpuKernels::applyStencilInPlaceHost
-                <dim,
-                        BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                        stencil>(
-                         indexBuffer,
-                         dataBuffer,
-                         *this,
-                         args...);
-    }
 
     template <typename stencil, typename... Args>
-    void applyStencilInPlace(StencilMode & mode,Args... args)
+    void applyStencilInPlace(const Box<dim,int> & box, StencilMode & mode,Args... args)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -794,6 +696,7 @@ private:
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
                 stencil>),
                 threadGridSize, localThreadBlockSize,
+                        box,
                         indexBuffer.toKernel(),
                         dataBuffer.toKernel(),
                         this->template toKernelNN<stencil::stencil_type::nNN, nLoop>(),
@@ -801,7 +704,7 @@ private:
     }
 
     template <typename stencil, typename... Args>
-    void applyStencilInPlaceNoShared(StencilMode & mode,Args... args)
+    void applyStencilInPlaceNoShared(const Box<dim,int> & box, StencilMode & mode,Args... args)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -819,85 +722,11 @@ private:
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
                 stencil>),
                 ite,
+                        box,
                         indexBuffer.toKernel(),
                         dataBuffer.toKernel(),
                         this->template toKernelNN<stencil::stencil_type::nNN, 0>(),
                         args...);
-    }
-
-    //todo: the applyInsert should also allocate the gpu insert buffer, initialize it, etc
-    template <typename stencil, typename... Args>
-    void applyStencilInsert(StencilMode & mode, Args... args)
-    {
-        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
-
-        const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
-        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
-
-        if (numScalars == 0) return;
-
-        // NOTE: Here we want to work only on one data chunk per block!
-        constexpr unsigned int chunksPerBlock = 1;
-        const unsigned int localThreadBlockSize = dataChunkSize * chunksPerBlock;
-        const unsigned int threadGridSize = numScalars % localThreadBlockSize == 0
-                                      ? numScalars / localThreadBlockSize
-                                      : 1 + numScalars / localThreadBlockSize;
-
-        constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value - IntPow<blockEdgeSize, dim>::value), (blockSize * chunksPerBlock)>::value; // todo: This works only for stencilSupportSize==1
-
-        setGPUInsertBuffer(threadGridSize, chunksPerBlock);
-//        setGPUInsertBuffer(threadGridSize, localThreadBlockSize);
-
-        CUDA_LAUNCH_DIM3((SparseGridGpuKernels::applyStencilInsert
-                <dim,
-                BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                stencil>),
-                threadGridSize, localThreadBlockSize,
-                        indexBuffer.toKernel(),
-                        dataBuffer.toKernel(),
-                        this->template toKernelNN<stencil::stencil_type::nNN, nLoop>(),
-                        args...);
-
-
-        if (mode != STENCIL_MODE_INSERT_NOFLUSH)
-        {
-        	mgpu::ofp_context_t ctx;
-        	stencil::flush(*this, ctx);
-        }
-    }
-
-    template <typename stencil, typename... Args>
-    void applyBoundaryStencilInPlace(Args... args)
-    {
-        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
-
-        const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
-        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
-
-        if (numScalars == 0) return;
-
-        // NOTE: Here we want to work only on one data chunk per block!
-        constexpr unsigned int chunksPerBlock = 1;
-        const unsigned int localThreadBlockSize = dataChunkSize * chunksPerBlock;
-        const unsigned int threadGridSize = numScalars % localThreadBlockSize == 0
-                                            ? numScalars / localThreadBlockSize
-                                            : 1 + numScalars / localThreadBlockSize;
-
-        constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value - IntPow<blockEdgeSize, dim>::value), (blockSize * chunksPerBlock)>::value; // todo: This works only for stencilSupportSize==1
-
-        CUDA_LAUNCH_DIM3((SparseGridGpuKernels::applyBoundaryStencilInPlace
-                <dim,
-                        BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-                        stencil>),
-                         threadGridSize, localThreadBlockSize,
-                         indexBuffer.toKernel(),
-                         dataBuffer.toKernel(),
-                         this->template toKernelNN<stencil::stencil_type::nNN, nLoop>(),
-                         args...);
     }
 
     template<unsigned int n_it, unsigned int ... prp>
@@ -1818,36 +1647,112 @@ public:
         standard_deviation(measures, mean, deviation);
     }
 
-    template<typename stencil, typename... Args>
-    void applyStencilsHost(StencilMode mode = STENCIL_MODE_INPLACE, Args... args)
-    {
-        // Apply the given stencil on all elements which are not boundary-tagged
-        // The idea is to have this function launch a __global__ function (made by us) on all existing blocks
-        // then this kernel checks if elements exist && !padding and on those it calls the user-provided
-        // __device__ functor. The mode of the stencil application is used basically to choose how we load the block
-        // that we pass to the user functor as storeBlock: in case of Insert, we get the block through an insert (and
-        // we also call the necessary aux functions); in case of an In-place we just get the block from the data buffer.
-        switch (mode)
-        {
-            case STENCIL_MODE_INPLACE:
-                applyStencilInPlaceHost<stencil>(args...);
-                break;
-            case STENCIL_MODE_INSERT:
-//                applyStencilInsertHost<stencil>(args...);
-                std::cout << "No insert mode stencil application available on Host!" << std::endl;
-                break;
-        }
-    }
-    template<typename stencil1, typename stencil2, typename ... otherStencils, typename... Args>
-    void applyStencilsHost(StencilMode mode = STENCIL_MODE_INSERT, Args... args)
-    {
-        applyStencilsHost<stencil1>(mode, args...);
-        applyStencilsHost<stencil2, otherStencils ...>(mode, args...);
-    }
+    /*! \brief Apply a convolution using a cross like stencil
+     *
+     * in 2D for example the stencil is
+     *
+     \verbatim
+
+         *
+       * * *
+         *
+
+     \endverbatim
+     *
+     *
+     */
+	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv_cross(grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	{
+		Box<dim,int> box;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			box.setLow(i,start.get(i));
+			box.setHigh(i,stop.get(i));
+		}
+
+		applyStencils< SparseGridGpuKernels::stencil_cross_func<dim,prop_src,prop_dst,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+	}
+
+    /*! \brief Apply a free type convolution using blocks
+     *
+     *
+     */
+	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv(grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	{
+		Box<dim,int> box;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			box.setLow(i,start.get(i));
+			box.setHigh(i,stop.get(i));
+		}
+
+		applyStencils< SparseGridGpuKernels::stencil_cross_func_conv<dim,prop_src,prop_dst,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+	}
+
+    /*! \brief Apply a free type convolution using blocks
+     *
+     *
+     */
+	template<unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1 , unsigned int prop_dst2, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv2(grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	{
+		Box<dim,int> box;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			box.setLow(i,start.get(i));
+			box.setHigh(i,stop.get(i));
+		}
+
+		applyStencils< SparseGridGpuKernels::stencil_cross_func_conv2<dim,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+	}
+
+	/*! \brief Return a Box with the  range if the SparseGrid
+	 *
+	 * \return the range of the grid
+	 *
+	 */
+	Box<dim,int> getBox()
+	{
+		Box<dim,int> b;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			b.setLow(i,0);
+			b.setHigh(i,gridGeometry.getSize()[i]);
+		}
+
+		return b;
+	}
+
+    /*! \brief Apply a free type convolution using blocks
+     *
+     *
+     */
+	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size>
+	cp_block<typename boost::mpl::at<typename AggregateT::type,boost::mpl::int_<prop_src>>::type,
+	         stencil_size,
+	         typename vmpl_sum_constant<2*stencil_size,typename vmpl_create_constant<dim,blockEdgeSize>::type >::type,
+	         dim>
+	conv_blockType()
+	{
+		typedef typename boost::mpl::at<typename AggregateT::type,boost::mpl::int_<prop_src>>::type ScalarT;
+
+        typedef typename vmpl_create_constant<dim,blockEdgeSize>::type block_sizes;
+        typedef typename vmpl_sum_constant<2*stencil_size,block_sizes>::type vmpl_sizes;
+
+        ScalarT arr[vmpl_reduce_prod<vmpl_sizes>::type::value];
+
+		return cp_block<ScalarT,stencil_size,vmpl_sizes,dim>(arr);
+	}
 
     //todo: Move implems into a functor for compile time choice of stencil mode
     template<typename stencil, typename... Args>
-    void applyStencils(StencilMode mode, Args... args)
+    void applyStencils(const Box<dim,int> & box, StencilMode mode, Args... args)
     {
         // Apply the given stencil on all elements which are not boundary-tagged
         // The idea is to have this function launch a __global__ function (made by us) on all existing blocks
@@ -1858,53 +1763,18 @@ public:
         switch (mode)
         {
             case STENCIL_MODE_INPLACE:
-                applyStencilInPlace<stencil>(mode,args...);
-                break;
-            case STENCIL_MODE_INSERT:
-                applyStencilInsert<stencil>(mode,args...);
-                break;
-            case STENCIL_MODE_INSERT_NOFLUSH:
-                applyStencilInsert<stencil>(mode,args...);
+                applyStencilInPlace<stencil>(box,mode,args...);
                 break;
             case STENCIL_MODE_INPLACE_NO_SHARED:
-                applyStencilInPlaceNoShared<stencil>(mode,args...);
+                applyStencilInPlaceNoShared<stencil>(box,mode,args...);
                 break;
         }
     }
     template<typename stencil1, typename stencil2, typename ... otherStencils, typename... Args>
-    void applyStencils(StencilMode mode = STENCIL_MODE_INSERT, Args... args)
+    void applyStencils(Box<dim,int> box, StencilMode mode, Args... args)
     {
-        applyStencils<stencil1>(mode, args...);
-        applyStencils<stencil2, otherStencils ...>(mode, args...);
-    }
-
-    //todo: Move implems into a functor for compile time choice of stencil mode
-    template<typename stencil, typename... Args>
-    void applyBoundaryStencils(Args... args)
-    {
-        // Apply the given stencil on all elements which are not boundary-tagged
-        // The idea is to have this function launch a __global__ function (made by us) on all existing blocks
-        // then this kernel checks if elements exist && !padding and on those it calls the user-provided
-        // __device__ functor. The mode of the stencil application is used basically to choose how we load the block
-        // that we pass to the user functor as storeBlock: in case of Insert, we get the block through an insert (and
-        // we also call the necessary aux functions); in case of an In-place we just get the block from the data buffer.
-        StencilMode mode = STENCIL_MODE_INPLACE;
-        switch (mode)
-        {
-            case STENCIL_MODE_INPLACE:
-                applyBoundaryStencilInPlace<stencil>(args...);
-                break;
-            case STENCIL_MODE_INSERT:
-//                applyBoundaryStencilInsert<stencil>(args...);
-                std::cout << "No insert mode stencil application available on BOUNDARY!" << std::endl;
-                break;
-        }
-    }
-    template<typename stencil1, typename stencil2, typename ... otherStencils, typename... Args>
-    void applyBoundaryStencils(Args... args)
-    {
-        applyBoundaryStencils<stencil1>(args...);
-        applyBoundaryStencils<stencil2, otherStencils ...>(args...);
+        applyStencils<stencil1>(box,mode, args...);
+        applyStencils<stencil2, otherStencils ...>(box,mode, args...);
     }
 
     template<typename BitMaskT>

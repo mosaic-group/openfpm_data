@@ -422,14 +422,13 @@ public:
 	 *
 	 * It construct an iterator over an hyper-cube defined by start and stop,
 	 *
-	 * \tparam T type of object that the grid store
 	 *
 	 * \param g Grid on which iterate
 	 * \param start starting point
 	 * \param stop end point
 	 *
 	 */
-	template<typename T> grid_key_dx_iterator_sub(const linearizer & g,
+	grid_key_dx_iterator_sub(const linearizer & g,
 												  const size_t (& start)[dim],
 												  const size_t (& stop)[dim])
 	:grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)

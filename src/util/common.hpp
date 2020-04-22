@@ -28,6 +28,7 @@ namespace std
 	}
 }
 
+
 /*! \brief convert a type into constant type
  *
  * \param T type tp convert

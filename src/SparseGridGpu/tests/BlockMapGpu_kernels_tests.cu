@@ -278,28 +278,28 @@ BOOST_AUTO_TEST_CASE(test_maps_create)
 
 	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,merge_keys.toKernel(),merge_indexes.toKernel(),9,p_ids.toKernel());
 
-	mgpu::standard_context_t context(false);
-	mgpu::scan((int *)p_ids.template getDeviceBuffer<0>(),
+	mgpu::ofp_context_t context;
+	openfpm::scan((int *)p_ids.template getDeviceBuffer<0>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<0>(),
                 context);
 
-	mgpu::scan((int *)p_ids.template getDeviceBuffer<1>(),
+	openfpm::scan((int *)p_ids.template getDeviceBuffer<1>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<1>(),
                 context);
 
-	mgpu::scan((int *)p_ids.template getDeviceBuffer<2>(),
+	openfpm::scan((int *)p_ids.template getDeviceBuffer<2>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<2>(),
                 context);
 
-	mgpu::scan((int *)p_ids.template getDeviceBuffer<3>(),
+	openfpm::scan((int *)p_ids.template getDeviceBuffer<3>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<3>(),
                 context);
 
-	mgpu::scan((int *)p_ids.template getDeviceBuffer<4>(),
+	openfpm::scan((int *)p_ids.template getDeviceBuffer<4>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<4>(),
                 context);

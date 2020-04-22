@@ -568,7 +568,7 @@ void test_cell_count_n()
 	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(9),1);
 
 	// now we scan
-	mgpu::scan((unsigned int *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (unsigned int *)cells_nn.template getDeviceBuffer<0>() , ctx);
+	openfpm::scan((unsigned int *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (unsigned int *)cells_nn.template getDeviceBuffer<0>() , ctx);
 
 	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> cell_nn_list;
 	cell_nn_list.resize(7*8 + 9 + 2 + 1);
@@ -1489,7 +1489,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	n_out_scan.resize(pl.size()+1);
 
-	mgpu::scan((unsigned int *)n_out.template getDeviceBuffer<0>(),n_out.size(),(unsigned int *)n_out_scan.template getDeviceBuffer<0>(),context);
+	openfpm::scan((unsigned int *)n_out.template getDeviceBuffer<0>(),n_out.size(),(unsigned int *)n_out_scan.template getDeviceBuffer<0>(),context);
 	n_out_scan.template deviceToHost<0>();
 
 	if (n_out_scan.template get<0>(pl.size()) == 0)

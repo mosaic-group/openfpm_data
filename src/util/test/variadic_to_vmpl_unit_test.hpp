@@ -117,5 +117,29 @@ BOOST_AUTO_TEST_CASE( variadic_to_vmpl_test)
 	}
 }
 
+BOOST_AUTO_TEST_CASE( lin_vmpl_test )
+{
+	typedef boost::mpl::vector<boost::mpl::int_<16>,boost::mpl::int_<17>,boost::mpl::int_<18>> vector;
+
+	typedef boost::mpl::vector<boost::mpl::int_<1>,boost::mpl::int_<2>,boost::mpl::int_<3>> offset;
+
+	int lino = Lin_vmpl_off<vector,offset>(0,0,0);
+	int lin = Lin_vmpl<vector>(0,0,0);
+
+	BOOST_REQUIRE_EQUAL(lino,1+2*16+3*16*17);
+	BOOST_REQUIRE_EQUAL(lin,0);
+
+	lino = Lin_vmpl_off<vector,offset>(0,1,0);
+	lin = Lin_vmpl<vector>(0,1,0);
+
+	BOOST_REQUIRE_EQUAL(lino,1+3*16+3*16*17);
+	BOOST_REQUIRE_EQUAL(lin,16);
+
+	lino = Lin_vmpl_off<vector,offset>(0,0,1);
+	lin = Lin_vmpl<vector>(0,0,1);
+
+	BOOST_REQUIRE_EQUAL(lino,1+2*16+4*16*17);
+	BOOST_REQUIRE_EQUAL(lin,16*17);
+}
 
 #endif /* SRC_UTIL_VARIADIC_TO_VMPL_UNIT_TEST_HPP_ */

@@ -8,8 +8,6 @@
 #ifndef SPARSEGRID_ITERATOR_BLOCK_HPP_
 #define SPARSEGRID_ITERATOR_BLOCK_HPP_
 
-#define BIT_SHIFT_SIZE_T 6
-
 #include "Grid/iterators/grid_skin_iterator.hpp"
 #include "SparseGrid_chunk_copy.hpp"
 
@@ -93,8 +91,8 @@ struct fill_chunk_block
 	template<typename T>
 	inline void operator()(T& val)
 	{
-		cnk_box.setLow(T::value,header.template get<cnk_pos>(chunk_id).get(T::value));
-		cnk_box.setHigh(T::value,header.template get<cnk_pos>(chunk_id).get(T::value) + boost::mpl::at<typename vector_blocks_ext::type,T>::type::value - 1);
+		cnk_box.setLow(T::value,header.get(chunk_id).pos.get(T::value));
+		cnk_box.setHigh(T::value,header.get(chunk_id).pos.get(T::value) + boost::mpl::at<typename vector_blocks_ext::type,T>::type::value - 1);
 	}
 };
 
@@ -115,9 +113,9 @@ struct loadBlock_impl
 		grid_key_dx_iterator<dim> it_in_block(g_in_block);
 
 		auto & data = sgt.private_get_data();
-		auto & header = sgt.private_get_header();
+		auto & header_mask = sgt.private_get_header_mask();
 
-		auto & h = header.get(chunk_id);
+		auto & h = header_mask.get(chunk_id);
 
 		auto & ref_block = data.template get<prop>(chunk_id);
 
@@ -154,7 +152,7 @@ struct loadBlock_impl
 		grid_key_dx_iterator<dim> it_in_block(g_in_block);
 
 		auto & data = sgt.private_get_data();
-		auto & header = sgt.private_get_header();
+		auto & header_mask = sgt.private_get_header_mask();
 
 		auto & ref_block = data.template get<prop>(chunk_id);
 
@@ -187,7 +185,7 @@ struct loadBlock_impl
 		grid_key_dx_iterator<dim> it_in_block(g_in_block);
 
 		auto & data = sgt.private_get_data();
-		auto & header = sgt.private_get_header();
+		auto & header_mask = sgt.private_get_header_mask();
 
 		auto & ref_block = data.template get<prop>(chunk_id);
 
@@ -222,9 +220,11 @@ struct loadBlock_impl
 		typedef typename generate_array_vector<size_t,typename vector_blocks_exts::type>::result size;
 
 		auto & data = sgt.private_get_data();
-		auto & header = sgt.private_get_header();
+		auto & header_mask = sgt.private_get_header_mask();
+		auto & header_inf = sgt.private_get_header_inf();
 
-		auto & h = header.get(chunk_id);
+		auto & hm = header_mask.get(chunk_id);
+		auto & hc = header_inf.get(chunk_id);
 
 		maps_blk.resize(block_skin.size());
 
@@ -233,7 +233,7 @@ struct loadBlock_impl
 			grid_key_dx<dim> p;
 
 			for (int j = 0 ; j < dim ; j++)
-			{p.set_d(j,block_skin.get(i).get(j) + header.get(chunk_id).pos.get(j) / size::data[j] - 1);}
+			{p.set_d(j,block_skin.get(i).get(j) + hc.pos.get(j) / size::data[j] - 1);}
 
 			maps_blk.get(i) = sgt.getChunk(p);
 		}
@@ -245,7 +245,7 @@ struct loadBlock_impl
 			size_t b = bord.get(i);
 			size_t off = offsets.template get<0>(i);
 
-			auto & h = header.get(ac);
+			auto & h = header_mask.get(ac);
 
 			arr[b] = (ac == data.size()-1)?background.template get<prop>():data.template get<prop>(ac)[off];
 			mask[b] = (ac == data.size()-1)?0:exist_sub(h,off);
@@ -263,9 +263,9 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 	inline static void loadBlock(T arr[N1], SparseGridType & sgt, int chunk_id, unsigned char mask[N1])
 	{
 		auto & data = sgt.private_get_data();
-		auto & header = sgt.private_get_header();
+		auto & header_mask = sgt.private_get_header_mask();
 
-		auto h = header.get(chunk_id);
+		auto & h = header_mask.get(chunk_id);
 
 		// Faster version
 
@@ -280,7 +280,7 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 	{
 
 		auto & data = sgt.private_get_data();
-		auto & header = sgt.private_get_header();
+		auto & header_mask = sgt.private_get_header_mask();
 
 		// Faster version
 
@@ -312,10 +312,10 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		typedef typename generate_array_vector<size_t,typename vector_blocks_exts::type>::result size;
 
 		auto & data = sgt.private_get_data();
-		auto & header = sgt.private_get_header();
+		auto & header_mask = sgt.private_get_header_mask();
 		auto & NNlist = sgt.private_get_nnlist();
 
-		auto h = header.get(chunk_id);
+		auto & h = header_mask.get(chunk_id);
 
 
 		typedef typename generate_array_vector<size_t,typename vector_blocks_exts::type>::result size;
@@ -341,7 +341,7 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		}
 		if (exist == true)
 		{
-			auto h = header.get(r);
+			auto & h = header_mask.get(r);
 			copy_xy_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<0,stencil_size+sz2::value,N1>(arr,mask,h,data.get(r));
 		}
 		else
@@ -361,7 +361,7 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		}
 		if (exist == true)
 		{
-			auto h = header.get(r);
+			auto & h = header_mask.get(r);
 			copy_xy_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<sz2::value - stencil_size,0,N1>(arr,mask,h,data.get(r));
 		}
 		else
@@ -382,7 +382,7 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		}
 		if (exist == true)
 		{
-			auto h = header.get(r);
+			auto & h = header_mask.get(r);
 			copy_xz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<0,stencil_size+sz1::value,N1>(arr,mask,h,data.get(r));
 		}
 		else
@@ -402,7 +402,7 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		}
 		if (exist == true)
 		{
-			auto h = header.get(r);
+			auto & h = header_mask.get(r);
 			copy_xz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<sz1::value-stencil_size,0,N1>(arr,mask,h,data.get(r));
 		}
 		else
@@ -423,7 +423,7 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		}
 		if (exist == true)
 		{
-			auto h = header.get(r);
+			auto & h = header_mask.get(r);
 			copy_yz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<0,sz0::value+stencil_size,N1>(arr,mask,h,data.get(r));
 		}
 		else
@@ -443,7 +443,7 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		}
 		if (exist == true)
 		{
-			auto h = header.get(r);
+			auto & h = header_mask.get(r);
 			copy_yz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<sz0::value-stencil_size,0,N1>(arr,mask,h,data.get(r));
 		}
 		else
@@ -465,10 +465,6 @@ template<unsigned dim,
 		 typename vector_ext = typename vmpl_create_constant<dim,1>::type>
 class grid_key_sparse_dx_iterator_block_sub
 {
-	const static int cnk_pos = 0;
-	const static int cnk_nele = 1;
-	const static int cnk_mask = 2;
-
 	//! SparseGrid
 	SparseGridType & spg;
 
@@ -497,7 +493,8 @@ class grid_key_sparse_dx_iterator_block_sub
     openfpm::vector<grid_key_dx<dim>> block_skin;
 
     // chunk header container
-    decltype(spg.private_get_header().get(0)) h;
+    mheader<SparseGridType::chunking_type::size::value> * hm;
+    cheader<dim> * hc;
 
     // temporary buffer for Load border
     openfpm::vector<unsigned int> maps_blk;
@@ -514,11 +511,12 @@ class grid_key_sparse_dx_iterator_block_sub
 	 */
 	void SelectValid()
 	{
-		auto & header = spg.private_get_header();
+		auto & header = spg.private_get_header_inf();
+		auto & header_mask = spg.private_get_header_mask();
 
 		while (chunk_id < header.size())
 		{
-			auto mask = header.template get<cnk_mask>(chunk_id);
+			auto & mask = header_mask.get(chunk_id).mask;
 
 			fill_chunk_block<dim,decltype(header),vector_blocks_exts> fcb(header,chunk_id);
 
@@ -526,7 +524,7 @@ class grid_key_sparse_dx_iterator_block_sub
 
 			if (bx.Intersect(fcb.cnk_box,block_it) == true)
 			{
-				block_it -= header.template get<cnk_pos>(chunk_id).toPoint();
+				block_it -= header.get(chunk_id).pos.toPoint();
 				break;
 			}
 			else
@@ -560,8 +558,8 @@ public:
 								const grid_key_dx<dim> & start,
 								const grid_key_dx<dim> & stop,
 								typename SparseGridType::background_type & background)
-	:spg(spg),chunk_id(0),
-	 start_(start),stop_(stop),background(background),h(spg.private_get_header().get(0))
+	:spg(spg),chunk_id(1),
+	 start_(start),stop_(stop),background(background)
 	{
 		// Create border coeficents
 		get_block_sizes<dim,stencil_size,vector_blocks_exts,vector_ext> gbs;
@@ -659,7 +657,7 @@ public:
 	 * \param g_s_it grid_key_dx_iterator_sub
 	 *
 	 */
-	inline void reinitialize(const grid_key_sparse_dx_iterator_sub<dim,vector_blocks_exts::size::value,typename SparseGridType::maskVectorType> & g_s_it)
+	inline void reinitialize(const grid_key_sparse_dx_iterator_sub<dim,vector_blocks_exts::size::value> & g_s_it)
 	{
 		spg = g_s_it.spg;
 		chunk_id = g_s_it.chunk_id;
@@ -670,7 +668,7 @@ public:
 
 	inline grid_key_sparse_dx_iterator_block_sub<dim,stencil_size,SparseGridType,vector_blocks_exts> & operator++()
 	{
-		auto & header = spg.private_get_header();
+		auto & header = spg.private_get_header_inf();
 
 		chunk_id++;
 
@@ -689,7 +687,7 @@ public:
 	 */
 	bool isNext()
 	{
-		auto & header = spg.private_get_header();
+		auto & header = spg.private_get_header_inf();
 
 		return chunk_id < header.size();
 	}
@@ -718,43 +716,51 @@ public:
 	template<unsigned int prop, typename T>
 	void loadBlock(T arr[sizeBlock])
 	{
-		auto & header = spg.private_get_header();
+		auto & header_mask = spg.private_get_header_mask();
+		auto & header_inf = spg.private_get_header_inf();
 
 		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template loadBlock<prop>(arr,spg,chunk_id);
 
-		h = &header.get(chunk_id);
+		hm = &header_mask.get(chunk_id);
+		hc = &header_inf.get(chunk_id);
 	}
 
 	template<unsigned int prop,typename T>
 	void loadBlock(T arr[sizeBlock], unsigned char mask[sizeBlock])
 	{
-		auto & header = spg.private_get_header();
+		auto & header_mask = spg.private_get_header_mask();
+		auto & header_inf = spg.private_get_header_inf();
 
 		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template loadBlock<prop>(arr,spg,chunk_id,mask);
 
-		h = &header.get(chunk_id);
+		hm = &header_mask.get(chunk_id);
+		hc = &header_inf.get(chunk_id);
 	}
 
 	template<unsigned int prop,typename T>
 	void storeBlock(T arr[sizeBlock])
 	{
-		auto & header = spg.private_get_header();
+		auto & header_mask = spg.private_get_header_mask();
+		auto & header_inf = spg.private_get_header_inf();
 
 		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template storeBlock<prop>(arr,spg,chunk_id);
 
-		h = header.get(chunk_id);
+		hm = &header_mask.get(chunk_id);
+		hc = &header_inf.get(chunk_id);
 	}
 
 
 	template<unsigned int prop, typename NNtype, bool findNN, typename T>
 	void loadBlockBorder(T arr[sizeBlockBord],unsigned char mask[sizeBlockBord])
 	{
-		auto & header = spg.private_get_header();
+		auto & header_mask = spg.private_get_header_mask();
+		auto & header_inf = spg.private_get_header_inf();
 
 		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template loadBlock<prop>(arr,spg,chunk_id,mask);
 		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template loadBorder<findNN,NNtype,prop>(arr,spg,chunk_id,bord,block_skin,chunk_shifts,offsets,mask,background,maps_blk);
 
-		h = header.get(chunk_id);
+		hm = &header_mask.get(chunk_id);
+		hc = &header_inf.get(chunk_id);
 	}
 
 
@@ -776,6 +782,26 @@ public:
 	constexpr int stop_b(int i) const
 	{
 		return block_it.getHigh(i) + 1 + stencil_size;
+	}
+
+	/*! \brief starting point of the computation block
+	 *
+	 * \param i coordinate
+	 *
+	 */
+	constexpr int start(int i) const
+	{
+		return block_it.getLow(i);
+	}
+
+	/*! \brief stopping point of the computation block
+	 *
+	 * \param i coordinate
+	 *
+	 */
+	constexpr int stop(int i) const
+	{
+		return block_it.getHigh(i) + 1;
 	}
 
 	/*! \brief linearize an arbitrary set of index
@@ -860,7 +886,7 @@ public:
 	{
 		size_t l = LinB_off(args ...);
 
-		return spg.exist_sub(*h,l);
+		return spg.exist_sub(*hm,l);
 	}
 
 	/*! \brief Return the chunk id

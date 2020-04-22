@@ -19,12 +19,41 @@
 #include "SparseGridUtil.hpp"
 #include "SparseGrid_iterator.hpp"
 #include "SparseGrid_iterator_block.hpp"
+//#include "util/debug.hpp"
 // We do not want parallel writer
 
 #ifdef OPENFPM_DATA_ENABLE_IO_MODULE
 #define NO_PARALLEL
 #include "VTKWriter/VTKWriter.hpp"
 #endif
+
+template<typename Tsrc,typename Tdst>
+class copy_bck
+{
+	//! source
+	Tsrc & src;
+
+	//! destination
+	Tdst & dst;
+
+	size_t pos;
+
+public:
+
+	copy_bck(Tsrc & src, Tdst & dst,size_t pos)
+	:src(src),dst(dst),pos(pos)
+	{}
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		typedef typename std::remove_reference<decltype(dst.template get<T::value>()[pos])>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(dst.template get<T::value>()[pos],src.template get<T::value>());
+	}
+
+};
 
 template<typename Tsrc,typename Tdst>
 class copy_prop_to_vector
@@ -158,6 +187,47 @@ public:
 
 };
 
+template<unsigned int l>
+union data_il
+{
+};
+
+template<>
+union data_il<8>
+{
+	typedef long int type;
+
+	unsigned char uc[8];
+	long int i;
+};
+
+template<>
+union data_il<4>
+{
+	typedef int type;
+
+	unsigned char uc[4];
+	int i;
+};
+
+template<>
+union data_il<2>
+{
+	typedef short int type;
+
+	unsigned char uc[2];
+	short int i;
+};
+
+template<>
+union data_il<1>
+{
+	typedef char type;
+
+	unsigned char uc[4];
+	char i;
+};
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -197,8 +267,57 @@ struct conv_impl
 	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size , unsigned int N, typename SparseGridType, typename lambda_f, typename ... ArgsT >
 	void conv(int (& stencil)[N][3], grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
 	{
+#ifndef __NVCC__
 		std::cout << __FILE__ << ":" << __LINE__ << " error conv operation not implemented for this dimension " << std::endl;
+#else
+		std::cout << __FILE__ << ":" << __LINE__ << " error conv is unsupported when compiled on NVCC " << std::endl;
+#endif
 	}
+
+	template<bool findNN, unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, typename SparseGridType, typename lambda_f, typename ... ArgsT >
+	static void conv_cross(grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
+	{
+#ifndef __NVCC__
+		std::cout << __FILE__ << ":" << __LINE__ << " error conv_cross operation not implemented for this dimension " << std::endl;
+#else
+		std::cout << __FILE__ << ":" << __LINE__ << " error conv_cross is unsupported when compiled on NVCC " << std::endl;
+#endif
+	}
+
+	template<bool findNN, typename NNType, unsigned int prop_src1, unsigned int prop_src2,
+			 unsigned int prop_dst1, unsigned int prop_dst2,
+			 unsigned int stencil_size , unsigned int N,
+			 typename SparseGridType, typename lambda_f, typename ... ArgsT >
+	static void conv2(int (& stencil)[N][3], grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
+	{
+#ifndef __NVCC__
+		std::cout << __FILE__ << ":" << __LINE__ << " error conv2 operation not implemented for this dimension " << std::endl;
+#else
+		std::cout << __FILE__ << ":" << __LINE__ << " error conv2 is unsupported when compiled on NVCC " << std::endl;
+#endif
+	}
+
+	template<bool findNN, unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1, unsigned int prop_dst2, unsigned int stencil_size, typename SparseGridType, typename lambda_f, typename ... ArgsT >
+	static void conv_cross2(grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
+	{
+#ifndef __NVCC__
+		std::cout << __FILE__ << ":" << __LINE__ << " error conv_cross2 operation not implemented for this dimension " << std::endl;
+#else
+		std::cout << __FILE__ << ":" << __LINE__ << " error conv_cross2 is unsupported when compiled on NVCC " << std::endl;
+#endif
+	}
+};
+
+#ifndef __NVCC__
+
+struct cross_stencil_v
+{
+	Vc::double_v xm;
+	Vc::double_v xp;
+	Vc::double_v ym;
+	Vc::double_v yp;
+	Vc::double_v zm;
+	Vc::double_v zp;
 };
 
 template<>
@@ -325,6 +444,162 @@ struct conv_impl<3>
 		}
 	}
 
+	template<bool findNN, unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, typename SparseGridType, typename lambda_f, typename ... ArgsT >
+	static void conv_cross(grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
+	{
+		auto it = grid.template getBlockIterator<1>(start,stop);
+
+		auto & datas = grid.private_get_data();
+		auto & headers = grid.private_get_header_mask();
+
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<0>>::type sz0;
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<1>>::type sz1;
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<2>>::type sz2;
+
+		typedef typename SparseGridType::chunking_type chunking;
+
+		typedef typename boost::mpl::at<typename SparseGridType::value_type::type, boost::mpl::int_<prop_src>>::type prop_type;
+
+		while (it.isNext())
+		{
+			// Load
+			long int offset_jump[6];
+
+			size_t cid = it.getChunkId();
+
+			auto chunk = datas.get(cid);
+			auto & mask = headers.get(cid);
+
+			bool exist;
+			grid_key_dx<3> p = grid.getChunkPos(cid) + grid_key_dx<3>({-1,0,0});
+			long int r = grid.getChunk(p,exist);
+			offset_jump[0] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({1,0,0});
+			r = grid.getChunk(p,exist);
+			offset_jump[1] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,-1,0});
+			r = grid.getChunk(p,exist);
+			offset_jump[2] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,1,0});
+			r = grid.getChunk(p,exist);
+			offset_jump[3] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,0,-1});
+			r = grid.getChunk(p,exist);
+			offset_jump[4] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,0,1});
+			r = grid.getChunk(p,exist);
+			offset_jump[5] = (r-cid)*decltype(it)::sizeBlock;
+
+			// Load offset jumps
+
+			// construct a row mask
+
+			long int s2 = 0;
+
+			typedef typename boost::mpl::at<typename chunking::type,boost::mpl::int_<2>>::type sz;
+			typedef typename boost::mpl::at<typename chunking::type,boost::mpl::int_<1>>::type sy;
+			typedef typename boost::mpl::at<typename chunking::type,boost::mpl::int_<0>>::type sx;
+
+
+			bool mask_row[sx::value];
+
+			for (int k = 0 ; k < sx::value ; k++)
+			{
+				mask_row[k] = (k >= it.start(0) && k < it.stop(0))?true:false;
+			}
+
+			for (int v = it.start(2) ; v < it.stop(2) ; v++)
+			{
+				for (int j = it.start(1) ; j < it.stop(1) ; j++)
+				{
+					s2 = it.Lin(0,j,v);
+					for (int k = 0 ; k < sx::value ; k += Vc::double_v::Size)
+					{
+						// we do only id exist the point
+						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::double_v::Size; continue;}
+
+						data_il<4> mxm;
+						data_il<4> mxp;
+						data_il<4> mym;
+						data_il<4> myp;
+						data_il<4> mzm;
+						data_il<4> mzp;
+
+						cross_stencil_v cs;
+
+						Vc::double_v cmd(&chunk.template get<prop_src>()[s2]);
+
+						// Load x-1
+						long int sumxm = s2-1;
+						sumxm += (k==0)?offset_jump[0] + sx::value:0;
+
+						// Load x+1
+						long int sumxp = s2+4;
+						sumxp += (k+4 == sx::value)?offset_jump[1] - sx::value:0;
+
+						long int sumym = (j == 0)?offset_jump[2] + (sy::value-1)*sx::value:-sx::value;
+						sumym += s2;
+						long int sumyp = (j == sy::value-1)?offset_jump[3] - (sy::value - 1)*sx::value:sx::value;
+						sumyp += s2;
+						long int sumzm = (v == 0)?offset_jump[4] + (sz::value-1)*sx::value*sy::value:-sx::value*sy::value;
+						sumzm += s2;
+						long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
+						sumzp += s2;
+
+						mxm.i = *(int *)&mask.mask[s2];
+						mxm.i = mxm.i << 8;
+						mxm.i |= (int)mask.mask[sumxm];
+
+						mxp.i = *(int *)&mask.mask[s2];
+						mxp.i = mxp.i >> 8;
+						mxp.i |= ((int)mask.mask[sumxp]) << (Vc::double_v::Size - 1)*8;
+
+						mym.i = *(int *)&mask.mask[sumym];
+						myp.i = *(int *)&mask.mask[sumyp];
+
+						mzm.i = *(int *)&mask.mask[sumzm];
+						mzp.i = *(int *)&mask.mask[sumzp];
+
+						cs.xm = cmd;
+						cs.xm = cs.xm.shifted(-1);
+						cs.xm[0] = chunk.template get<prop_src>()[sumxm];
+
+
+						cs.xp = cmd;
+						cs.xp = cs.xp.shifted(1);
+						cs.xp[3] = chunk.template get<prop_src>()[sumxp];
+
+						// Load y and z direction
+
+						cs.ym.load(&chunk.template get<prop_src>()[sumym],Vc::Aligned);
+						cs.yp.load(&chunk.template get<prop_src>()[sumyp],Vc::Aligned);
+						cs.zm.load(&chunk.template get<prop_src>()[sumzm],Vc::Aligned);
+						cs.zp.load(&chunk.template get<prop_src>()[sumzp],Vc::Aligned);
+
+						// Calculate
+
+						data_il<4> tot_m;
+						tot_m.i = mxm.i + mxp.i + mym.i + myp.i + mzm.i + mzp.i;
+
+						Vc::double_v res = func(cmd,cs,tot_m.uc,args ... );
+
+						Vc::Mask<prop_type> m(&mask_row[k]);
+
+						res.store(&chunk.template get<prop_dst>()[s2],m,Vc::Aligned);
+
+						s2 += Vc::double_v::Size;
+					}
+				}
+			}
+
+			++it;
+		}
+	}
 
 
 	template<bool findNN, typename NNType, unsigned int prop_src1, unsigned int prop_src2,
@@ -461,7 +736,184 @@ struct conv_impl<3>
 			++it;
 		}
 	}
+
+	template<bool findNN, unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1, unsigned int prop_dst2, unsigned int stencil_size, typename SparseGridType, typename lambda_f, typename ... ArgsT >
+	static void conv_cross2(grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
+	{
+		auto it = grid.template getBlockIterator<1>(start,stop);
+
+		auto & datas = grid.private_get_data();
+		auto & headers = grid.private_get_header_mask();
+
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<0>>::type sz0;
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<1>>::type sz1;
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<2>>::type sz2;
+
+		typedef typename SparseGridType::chunking_type chunking;
+
+		typedef typename boost::mpl::at<typename SparseGridType::value_type::type, boost::mpl::int_<prop_src1>>::type prop_type;
+
+		while (it.isNext())
+		{
+			// Load
+			long int offset_jump[6];
+
+			size_t cid = it.getChunkId();
+
+			auto chunk = datas.get(cid);
+			auto & mask = headers.get(cid);
+
+			bool exist;
+			grid_key_dx<3> p = grid.getChunkPos(cid) + grid_key_dx<3>({-1,0,0});
+			long int r = grid.getChunk(p,exist);
+			offset_jump[0] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({1,0,0});
+			r = grid.getChunk(p,exist);
+			offset_jump[1] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,-1,0});
+			r = grid.getChunk(p,exist);
+			offset_jump[2] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,1,0});
+			r = grid.getChunk(p,exist);
+			offset_jump[3] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,0,-1});
+			r = grid.getChunk(p,exist);
+			offset_jump[4] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,0,1});
+			r = grid.getChunk(p,exist);
+			offset_jump[5] = (r-cid)*decltype(it)::sizeBlock;
+
+			// Load offset jumps
+
+			// construct a row mask
+
+			long int s2 = 0;
+
+			typedef typename boost::mpl::at<typename chunking::type,boost::mpl::int_<2>>::type sz;
+			typedef typename boost::mpl::at<typename chunking::type,boost::mpl::int_<1>>::type sy;
+			typedef typename boost::mpl::at<typename chunking::type,boost::mpl::int_<0>>::type sx;
+
+
+			bool mask_row[sx::value];
+
+			for (int k = 0 ; k < sx::value ; k++)
+			{
+				mask_row[k] = (k >= it.start(0) && k < it.stop(0))?true:false;
+			}
+
+			for (int v = it.start(2) ; v < it.stop(2) ; v++)
+			{
+				for (int j = it.start(1) ; j < it.stop(1) ; j++)
+				{
+					s2 = it.Lin(0,j,v);
+					for (int k = 0 ; k < sx::value ; k += Vc::double_v::Size)
+					{
+						// we do only id exist the point
+						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::double_v::Size; continue;}
+
+						data_il<4> mxm;
+						data_il<4> mxp;
+						data_il<4> mym;
+						data_il<4> myp;
+						data_il<4> mzm;
+						data_il<4> mzp;
+
+						cross_stencil_v cs1;
+						cross_stencil_v cs2;
+
+						Vc::double_v cmd1(&chunk.template get<prop_src1>()[s2]);
+						Vc::double_v cmd2(&chunk.template get<prop_src2>()[s2]);
+
+						// Load x-1
+						long int sumxm = s2-1;
+						sumxm += (k==0)?offset_jump[0] + sx::value:0;
+
+						// Load x+1
+						long int sumxp = s2+4;
+						sumxp += (k+4 == sx::value)?offset_jump[1] - sx::value:0;
+
+						long int sumym = (j == 0)?offset_jump[2] + (sy::value-1)*sx::value:-sx::value;
+						sumym += s2;
+						long int sumyp = (j == sy::value-1)?offset_jump[3] - (sy::value - 1)*sx::value:sx::value;
+						sumyp += s2;
+						long int sumzm = (v == 0)?offset_jump[4] + (sz::value-1)*sx::value*sy::value:-sx::value*sy::value;
+						sumzm += s2;
+						long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
+						sumzp += s2;
+
+						mxm.i = mask.mask[s2];
+						mxm.i = mxm.i << 8;
+						mxm.i |= (int)mask.mask[sumxm];
+
+						mxp.i = mask.mask[s2+1];
+						mxp.i |= ((int)mask.mask[sumxm]) << (Vc::double_v::Size - 1)*8;
+
+						mym.i = *(int *)&mask.mask[sumym];
+						myp.i = *(int *)&mask.mask[sumyp];
+
+						mzm.i = *(int *)&mask.mask[sumzm];
+						mzp.i = *(int *)&mask.mask[sumzp];
+
+						cs1.xm = cmd1;
+						cs1.xm = cs1.xm.shifted(-1);
+						cs1.xm[0] = chunk.template get<prop_src1>()[sumxm];
+
+						cs2.xm = cmd2;
+						cs2.xm = cs2.xm.shifted(-1);
+						cs2.xm[0] = chunk.template get<prop_src2>()[sumxm];
+
+						cs1.xp = cmd1;
+						cs1.xp = cs1.xp.shifted(1);
+						cs1.xp[3] = chunk.template get<prop_src1>()[sumxp];
+
+						cs2.xp = cmd2;
+						cs2.xp = cs2.xp.shifted(1);
+						cs2.xp[3] = chunk.template get<prop_src2>()[sumxp];
+
+						// Load y and z direction
+
+						cs1.ym.load(&chunk.template get<prop_src1>()[sumym],Vc::Aligned);
+						cs1.yp.load(&chunk.template get<prop_src1>()[sumyp],Vc::Aligned);
+						cs1.zm.load(&chunk.template get<prop_src1>()[sumzm],Vc::Aligned);
+						cs1.zp.load(&chunk.template get<prop_src1>()[sumzp],Vc::Aligned);
+
+						cs2.ym.load(&chunk.template get<prop_src2>()[sumym],Vc::Aligned);
+						cs2.yp.load(&chunk.template get<prop_src2>()[sumyp],Vc::Aligned);
+						cs2.zm.load(&chunk.template get<prop_src2>()[sumzm],Vc::Aligned);
+						cs2.zp.load(&chunk.template get<prop_src2>()[sumzp],Vc::Aligned);
+
+						// Calculate
+
+						data_il<4> tot_m;
+						tot_m.i = mxm.i + mxp.i + mym.i + myp.i + mzm.i + mzp.i;
+
+						Vc::double_v res1;
+						Vc::double_v res2;
+
+						func(res1,res2,cmd1,cmd2,cs1,cs2,tot_m.uc,args ... );
+
+						Vc::Mask<prop_type> m(&mask_row[k]);
+
+						res1.store(&chunk.template get<prop_dst1>()[s2],m,Vc::Aligned);
+						res2.store(&chunk.template get<prop_dst2>()[s2],m,Vc::Aligned);
+
+						s2 += Vc::double_v::Size;
+					}
+				}
+			}
+
+			++it;
+		}
+	}
+
 };
+
+#endif
 
 template<unsigned int N>
 struct load_mask_impl
@@ -568,10 +1020,6 @@ template<unsigned int dim,
 		 typename chunking>
 class sgrid_cpu
 {
-	const static int cnk_pos = 0;
-	const static int cnk_nele = 1;
-	const static int cnk_mask = 2;
-
 	//! cache pointer
 	mutable size_t cache_pnt;
 
@@ -587,12 +1035,10 @@ class sgrid_cpu
 	//! Map to convert from grid coordinates to chunk
 	tsl::hopscotch_map<size_t, size_t> map;
 
-	typedef aggregate<grid_key_dx<dim>,int,unsigned char [chunking::size::value]> mask_ele_type;
-
 	//! indicate which element in the chunk are really filled
-	openfpm::vector<mask_ele_type,S> header;
+	openfpm::vector<cheader<dim>,S> header_inf;
 
-	openfpm::vector<mask_ele_type,S> header_mask;
+	openfpm::vector<mheader<chunking::size::value>,S> header_mask;
 
 	//Definition of the chunks
 	typedef typename v_transform_two<Ft_chunk,boost::mpl::int_<chunking::size::value>,typename T::type>::type chunk_def;
@@ -646,6 +1092,7 @@ class sgrid_cpu
 			if (fnd == map.end())
 			{
 				exist = false;
+				active_cnk = 0;
 				return;
 			}
 			else
@@ -712,9 +1159,9 @@ class sgrid_cpu
 		// reconstruct map
 
 		map.clear();
-		for (size_t i = 0 ; i < header.size() ; i++)
+		for (size_t i = 1 ; i < header_inf.size() ; i++)
 		{
-			grid_key_dx<dim> kh = header.template get<cnk_pos>(i);
+			grid_key_dx<dim> kh = header_inf.get(i).pos;
 			grid_key_dx<dim> kl;
 
 			// shift the key
@@ -746,11 +1193,12 @@ class sgrid_cpu
 
 			for (int i = empty_v.size() - 1 ; i >= 0  ; i--)
 			{
-				if (header.template get<cnk_nele>(empty_v.get(i)) != 0)
+				if (header_inf.get(empty_v.get(i)).nele != 0)
 				{empty_v.remove(i);}
 			}
 
-			header.remove(empty_v);
+			header_inf.remove(empty_v);
+			header_mask.remove(empty_v);
 			chunks.remove(empty_v);
 
 			// reconstruct map
@@ -846,6 +1294,31 @@ class sgrid_cpu
 			++cnt;
 			++it;
 		}
+
+		// Add the bachground chunk at the begining
+
+		chunks.add();
+		header_inf.add();
+		for(int i = 0 ; i < dim ; i++)
+		{header_inf.last().pos.set_d(i,std::numeric_limits<long int>::min());};
+		header_inf.last().nele = 0;
+		header_mask.add();
+
+		// set the mask to null
+		auto & h = header_mask.last().mask;
+
+		for (size_t i = 0 ; i < chunking::size::value ; i++)
+		{h[i] = 0;}
+
+		// set the data to background
+		for (size_t i = 0 ; i < chunking::size::value ; i++)
+		{
+			auto c = chunks.get(0);
+
+			copy_bck<decltype(background),decltype(c)> cb(background,c,i);
+
+			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cb);
+		}
 	}
 
 	/*! \brief Before insert data you have to do this
@@ -883,17 +1356,18 @@ class sgrid_cpu
 
 				map[lin_id] = chunks.size();
 				chunks.add();
-				header.add();
-				header.last().template get<cnk_pos>() = kh;
-				header.last().template get<cnk_nele>() = 0;
+				header_inf.add();
+				header_inf.last().pos = kh;
+				header_inf.last().nele = 0;
+				header_mask.add();
 
 				// set the mask to null
-				auto & h = header.last().template get<cnk_mask>();
+				auto & h = header_mask.last().mask;
 
-				for (size_t i = 0 ; i < chunking::size::value / (sizeof(size_t)*8) + (chunking::size::value % (sizeof(size_t)*8) != 0) + 1 ; i++)
+				for (size_t i = 0 ; i < chunking::size::value ; i++)
 				{h[i] = 0;}
 
-				key_shift<dim,chunking>::cpos(header.last().template get<cnk_pos>());
+				key_shift<dim,chunking>::cpos(header_inf.last().pos);
 
 				active_cnk = chunks.size() - 1;
 			}
@@ -922,11 +1396,12 @@ class sgrid_cpu
 		// the chunk is in cache, solve
 
 		// we notify that we added one element
-		auto h = header.get(active_cnk);
+		auto & hc = header_inf.get(active_cnk);
+		auto & hm = header_mask.get(active_cnk);
 
-		exist = h.template get<cnk_mask>()[sub_id];
-		h.template get<cnk_nele>() = (exist)?h.template get<cnk_nele>():h.template get<cnk_nele>() + 1;
-		h.template get<cnk_mask>()[sub_id] |= 1;
+		exist = hm.mask[sub_id];
+		hc.nele = (exist)?hc.nele:hc.nele + 1;
+		hm.mask[sub_id] |= 1;
 
 		return exist;
 	}
@@ -974,17 +1449,15 @@ class sgrid_cpu
 
 		// eliminate the element
 
-		// set the mask to null
-		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
+		auto & hm = header_mask.get(active_cnk);
+		auto & hc = header_inf.get(active_cnk);
+		unsigned char swt = hm.mask[sub_id];
 
-		auto & h = header.get(active_cnk);
-		size_t swt = h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check;
+		hc.nele = (swt)?hc.nele-1:hc.nele;
 
-		h.nele = (swt)?h.nele-1:h.nele;
+		hm.mask[sub_id] = 0;
 
-		h.mask[sub_id >> BIT_SHIFT_SIZE_T] &= ~mask_check;
-
-		if (h.nele == 0 && swt != 0)
+		if (hc.nele == 0 && swt != 0)
 		{
 			// Add the chunks in the empty list
 			empty_v.add(active_cnk);
@@ -1006,11 +1479,8 @@ public:
 	//! The object type the grid is storing
 	typedef T value_type;
 
-	//! Type for the mask vector
-	typedef openfpm::vector<mask_ele_type,S,typename layout_base<mask_ele_type>::type,layout_base> maskVectorType;
-
 	//! sub-grid iterator type
-	typedef grid_key_sparse_dx_iterator_sub<dim, chunking::size::value,maskVectorType> sub_grid_iterator_type;
+	typedef grid_key_sparse_dx_iterator_sub<dim, chunking::size::value> sub_grid_iterator_type;
 
 	//! Background type
 	typedef T background_type;
@@ -1104,13 +1574,13 @@ public:
 	 * \param v1 where you want to insert the element
 	 *
 	 */
-	inline auto insert_o(const grid_key_dx<dim> & v1, size_t & ele_id) -> decltype(chunks.template get_o(0))
+	inline auto insert_o(const grid_key_dx<dim> & v1, size_t & ele_id) -> decltype(chunks.get_o(0))
 	{
 		size_t active_cnk;
 
 		pre_insert(v1,active_cnk,ele_id);
 
-		return chunks.template get_o(active_cnk);
+		return chunks.get_o(active_cnk);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -1148,17 +1618,18 @@ public:
 
 				map[lin_id] = chunks.size();
 				chunks.add();
-				header.add();
-				header.last().template get<cnk_pos>() = kh;
-				header.last().template get<cnk_nele>() = 0;
+				header_inf.add();
+				header_inf.last().pos = kh;
+				header_inf.last().nele = 0;
+				header_mask.add();
 
 				// set the mask to null
-				auto & h = header.last().template get<cnk_mask>();
+				auto & h = header_mask.last().mask;
 
-				for (size_t i = 0 ; i < chunking::size::value / (sizeof(size_t)*8) + (chunking::size::value % (sizeof(size_t)*8) != 0) + 1 ; i++)
+				for (size_t i = 0 ; i < chunking::size::value ; i++)
 				{h[i] = 0;}
 
-				key_shift<dim,chunking>::cpos(header.last().template get<cnk_pos>());
+				key_shift<dim,chunking>::cpos(header_inf.last().pos);
 
 				active_cnk = chunks.size() - 1;
 			}
@@ -1187,12 +1658,13 @@ public:
 		// the chunk is in cache, solve
 
 		// we notify that we added one element
-		auto h = header.get(active_cnk);
+		auto & hc = header_inf.get(active_cnk);
+		auto & hm = header_mask.get(active_cnk);
 
 		// we set the mask
 
-		h.template get<cnk_nele>() = (h.template get<cnk_mask>()[sub_id] & 1)?h.template get<cnk_nele>():h.template get<cnk_nele>() + 1;
-		h.template get<cnk_mask>()[sub_id] |= 1;
+		hc.nele = (hm.mask[sub_id] & 1)?hc.nele:hc.nele + 1;
+		hm.mask[sub_id] |= 1;
 
 		return chunks.template get<p>(active_cnk)[sub_id];
 	}
@@ -1213,14 +1685,12 @@ public:
 		// the chunk is in cache, solve
 
 		// we notify that we added one element
-		auto & h = header.get(active_cnk);
+		auto & hm = header_mask.get(active_cnk);
+		auto & hc = header_inf.get(active_cnk);
 
 		// we set the mask
-
-		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
-
-		h.nele = (h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check)?h.nele:h.nele + 1;
-		h.mask[sub_id >> BIT_SHIFT_SIZE_T] |= mask_check;
+		hc.nele = (hm.mask[sub_id] & 1)?hc.nele:hc.nele + 1;
+		hm.mask[sub_id] |= 1;
 
 		return chunks.template get<p>(active_cnk)[sub_id];
 	}
@@ -1267,12 +1737,9 @@ public:
 		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
 
 		// we check the mask
-		auto & h = header.get(active_cnk);
+		auto & hm = header_mask.get(active_cnk);
 
-		// We check the mask
-		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
-
-		if ((h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check) == 0)
+		if ((hm.mask[sub_id] & 1) == 0)
 		{return background.template get<p>();}
 
 		return chunks.template get<p>(active_cnk)[sub_id];
@@ -1320,9 +1787,10 @@ public:
 		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
 
 		// we check the mask
-		auto h = header.get(active_cnk);
+		auto & hc = header_inf.get(active_cnk);
+		auto & hm = header_mask.get(active_cnk);
 
-		if (h.template get<cnk_mask>()[sub_id] & 1)
+		if ((hm.mask[sub_id] & 1) == 0)
 		{return background.template get<p>();}
 
 		return chunks.template get<p>(active_cnk)[sub_id];
@@ -1369,12 +1837,9 @@ public:
 		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
 
 		// we check the mask
-		auto & h = header.get(active_cnk);
+		auto & hm = header_mask.get(active_cnk);
 
-		// We check the mask
-		size_t mask_check = (size_t)1 << (sub_id & ((1 << BIT_SHIFT_SIZE_T) - 1));
-
-		if ((h.mask[sub_id >> BIT_SHIFT_SIZE_T] & mask_check) == 0)
+		if ((hm.mask[sub_id] & 1) == 0)
 		{return false;}
 
 		return true;
@@ -1400,9 +1865,9 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	inline auto getBlock(const grid_key_sparse_lin_dx & v1) const -> decltype(chunks.template get(0))
+	inline auto getBlock(const grid_key_sparse_lin_dx & v1) const -> decltype(chunks.get(0))
 	{
-		return chunks.template get(v1.getChunk());
+		return chunks.get(v1.getChunk());
 	}
 
 	/*! \brief Get the point flag (in this case it always return 0)
@@ -1422,10 +1887,10 @@ public:
 	 * \return return the domain iterator
 	 *
 	 */
-	grid_key_sparse_dx_iterator<dim,chunking::size::value,maskVectorType>
+	grid_key_sparse_dx_iterator<dim,chunking::size::value>
 	getIterator(size_t opt = 0) const
 	{
-		return grid_key_sparse_dx_iterator<dim,chunking::size::value,maskVectorType>(&header,&pos_chunk);
+		return grid_key_sparse_dx_iterator<dim,chunking::size::value>(&header_mask,&header_inf,&pos_chunk);
 	}
 
 	/*! \brief Return an iterator over a sub-grid
@@ -1433,10 +1898,10 @@ public:
 	 * \return return an iterator over a sub-grid
 	 *
 	 */
-	grid_key_sparse_dx_iterator_sub<dim,chunking::size::value,maskVectorType>
+	grid_key_sparse_dx_iterator_sub<dim,chunking::size::value>
 	getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop, size_t opt = 0) const
 	{
-		return grid_key_sparse_dx_iterator_sub<dim,chunking::size::value,maskVectorType>(header,pos_chunk,start,stop,sz_cnk);
+		return grid_key_sparse_dx_iterator_sub<dim,chunking::size::value>(header_mask,header_inf,pos_chunk,start,stop,sz_cnk);
 	}
 
 	/*! \brief Return an iterator over a sub-grid
@@ -1571,14 +2036,14 @@ public:
 
 		// in this case we have to crop data, we go through all the headers
 
-		for (size_t i = 0 ; i < header.size() ; i++)
+		for (size_t i = 1 ; i < header_inf.size() ; i++)
 		{
 			Box<dim,size_t> cnk;
 
 			for (size_t j = 0 ; j < dim ; j++)
 			{
-				cnk.setLow(j,header.template get<cnk_pos>(i).get(j));
-				cnk.setHigh(j,sz_cnk[j] + header.template get<cnk_pos>(i).get(j));
+				cnk.setLow(j,header_inf.get(i).pos.get(j));
+				cnk.setHigh(j,sz_cnk[j] + header_inf.get(i).pos.get(j));
 			}
 
 			// if the chunk is not fully contained in the new smaller sparse grid
@@ -1601,8 +2066,8 @@ public:
 					int mask_nele;
 					short unsigned int mask_it[chunking::size::value];
 
-					auto & mask = header.template get<cnk_mask>(i);
-					auto & n_ele = header.template get<cnk_nele>(i);
+					auto & mask = header_mask.get(i).mask;
+					auto & n_ele = header_inf.get(i).nele;
 
 					// ok so the box is not fully contained so we must crop data
 
@@ -1630,7 +2095,8 @@ public:
 			}
 		}
 
-		header.remove(rmh,0);
+		header_inf.remove(rmh,0);
+		header_mask.remove(rmh,0);
 		chunks.remove(rmh,0);
 
 		reconstruct_map();
@@ -1695,16 +2161,16 @@ public:
 		req += sizeof(size_t);
 		req += dim*sizeof(size_t);
 
-		// Here we have to calculate the number of points to pack
+		// Here we have to calculate the number of points to pack (skip the background)
 
-		for (size_t i = 0 ; i < header.size() ; i++)
+		for (size_t i = 1 ; i < header_inf.size() ; i++)
 		{
-			auto & h = header.get(i);
+			auto & hm = header_mask.get(i);
 
-			size_t mask_nele;
+			int mask_nele;
 			short unsigned int mask_it[chunking::size::value];
 
-			fill_mask(mask_it,h.mask,mask_nele);
+			fill_mask(mask_it,hm.mask,mask_nele);
 
 			for (size_t j = 0 ; j < mask_nele ; j++)
 			{
@@ -1719,18 +2185,18 @@ public:
 				else
 				{
 					//Call a pack request
-					call_aggregatePackRequestChunking<decltype(chunks.template get_o(i)),
+					call_aggregatePackRequestChunking<decltype(chunks.get_o(i)),
 																  S,prp ... >
-																  ::call_packRequest(chunks.template get_o(i),mask_it[j],req);
+																  ::call_packRequest(chunks.get_o(i),mask_it[j],req);
 				}
 			}
 
 			// There are point to send. So we have to save the mask chunk
-			req += sizeof(header.get(i).mask);
+			req += sizeof(header_mask.get(i).mask);
 			// the chunk position
-			req += sizeof(header.get(i).pos);
+			req += sizeof(header_inf.get(i).pos);
 			// and the number of element
-			req += sizeof(header.get(i).nele);
+			req += sizeof(header_inf.get(i).nele);
 		}
 	}
 
@@ -1744,7 +2210,7 @@ public:
 	 *
 	 */
 	template<int ... prp> inline
-	void packRequest(grid_key_sparse_dx_iterator_sub<dim,chunking::size::value,maskVectorType> & sub_it,
+	void packRequest(grid_key_sparse_dx_iterator_sub<dim,chunking::size::value> & sub_it,
 					 size_t & req) const
 	{
 		grid_sm<dim,void> gs_cnk(sz_cnk);
@@ -1764,16 +2230,16 @@ public:
 			section_to_pack.setHigh(i,sub_it.getStop().get(i));
 		}
 
-		for (size_t i = 0 ; i < header.size() ; i++)
+		for (size_t i = 0 ; i < header_inf.size() ; i++)
 		{
-			auto & h = header.get(i);
+			auto & hm = header_mask.get(i);
 
 			Box<dim,size_t> bc;
 
 			for (size_t j = 0 ; j < dim ; j++)
 			{
-				bc.setLow(j,header.template get<cnk_pos>(i).get(j));
-				bc.setHigh(j,header.template get<cnk_pos>(i).get(j) + sz_cnk[j] - 1);
+				bc.setLow(j,header_inf.get(i).pos.get(j));
+				bc.setHigh(j,header_inf.get(i).pos.get(j) + sz_cnk[j] - 1);
 			}
 
 			// now we intersect the chunk box with the box
@@ -1786,7 +2252,7 @@ public:
 				// If it is intersect ok we have to check if there are points to pack
 				// we shift inte to be relative to the chunk origin
 
-				inte -= header.template get<cnk_pos>(i).toPoint();
+				inte -= header_inf.get(i).pos.toPoint();
 
 				// we iterate all the points
 
@@ -1799,7 +2265,7 @@ public:
 
 					size_t sub_id = gs_cnk.LinId(key);
 
-					if (h.template get<cnk_mask>()[sub_id] & 1)
+					if (hm.mask[sub_id] & 1)
 					{
 						// If all of the aggregate properties do not have a "pack()" member
 						if (has_pack_agg<T,prp...>::result::value == false)
@@ -1813,9 +2279,9 @@ public:
 						else
 						{
 							//Call a pack request
-							call_aggregatePackRequestChunking<decltype(chunks.template get_o(i)),
+							call_aggregatePackRequestChunking<decltype(chunks.get_o(i)),
 																  S,prp ... >
-																  ::call_packRequest(chunks.template get_o(i),sub_id,req);
+																  ::call_packRequest(chunks.get_o(i),sub_id,req);
 						}
 					}
 
@@ -1825,11 +2291,11 @@ public:
 				if (old_req != req)
 				{
 					// There are point to send. So we have to save the mask chunk
-					req += sizeof(header.template get<cnk_mask>(i));
+					req += sizeof(header_mask.get(i));
 					// the chunk position
-					req += sizeof(header.template get<cnk_pos>(i));
+					req += sizeof(header_inf.get(i).pos);
 					// and the number of element
-					req += sizeof(header.template get<cnk_nele>(i));
+					req += sizeof(header_inf.get(i).nele);
 				}
 			}
 		}
@@ -1845,7 +2311,7 @@ public:
 	 *
 	 */
 	template<int ... prp> void pack(ExtPreAlloc<S> & mem,
-									grid_key_sparse_dx_iterator_sub<dims,chunking::size::value,maskVectorType> & sub_it,
+									grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> & sub_it,
 									Pack_stat & sts)
 	{
 		grid_sm<dim,void> gs_cnk(sz_cnk);
@@ -1873,16 +2339,17 @@ public:
 
 		size_t n_packed_chunk = 0;
 
-		for (size_t i = 0 ; i < header.size() ; i++)
+		for (size_t i = 0 ; i < header_inf.size() ; i++)
 		{
-			auto h = header.get(i);
+			auto & hc = header_inf.get(i);
+			auto & hm = header_mask.get(i);
 
 			Box<dim,size_t> bc;
 
 			for (size_t j = 0 ; j < dim ; j++)
 			{
-				bc.setLow(j,header.template get<cnk_pos>(i).get(j));
-				bc.setHigh(j,header.template get<cnk_pos>(i).get(j) + sz_cnk[j] - 1);
+				bc.setLow(j,hc.pos.get(j));
+				bc.setHigh(j,hc.pos.get(j) + sz_cnk[j] - 1);
 			}
 
 			// now we intersect the chunk box with the box
@@ -1897,7 +2364,7 @@ public:
 
 				unsigned char mask_to_pack[chunking::size::value];
 				memset(mask_to_pack,0,sizeof(mask_to_pack));
-				mem.allocate_nocheck(sizeof(header.template get<cnk_mask>(i)) + sizeof(header.template get<cnk_pos>(i)) + sizeof(header.template get<cnk_nele>(i)));
+				mem.allocate_nocheck(sizeof(header_mask.get(i)) + sizeof(header_inf.get(i).pos) + sizeof(header_inf.get(i).nele));
 
 				// here we get the pointer of the memory in case we have to pack the header
 				// and we also shift the memory pointer by an offset equal to the header
@@ -1907,7 +2374,7 @@ public:
 				// If it is intersect ok we have to check if there are points to pack
 				// we shift inte intp the chunk origin
 
-				inte -= header.template get<cnk_pos>(i).toPoint();
+				inte -= hc.pos.toPoint();
 
 				// we iterate all the points
 
@@ -1919,11 +2386,11 @@ public:
 
 					size_t sub_id = gs_cnk.LinId(key);
 
-					if (h.template get<cnk_mask>()[sub_id] & 1)
+					if (hm.mask[sub_id] & 1)
 					{
-						Packer<decltype(chunks.template get_o(i)),
+						Packer<decltype(chunks.get_o(i)),
 									S,
-									PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<T,prp...>(mem,chunks.template get_o(i),sub_id,sts);
+									PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<T,prp...>(mem,chunks.get_o(i),sub_id,sts);
 
 						mask_to_pack[sub_id] |= 1;
 						has_packed = true;
@@ -1945,11 +2412,11 @@ public:
 
 					 // The position of the chunks
 
-					 grid_key_dx<dim> pos = header.template get<cnk_pos>(i) - sub_it.getStart();
+					 grid_key_dx<dim> pos = header_inf.get(i).pos - sub_it.getStart();
 
-					 Packer<decltype(header.template get<cnk_mask>(i)),S>::pack(mem,mask_to_pack,sts);
-					 Packer<decltype(header.template get<cnk_pos>(i)),S>::pack(mem,pos,sts);
-					 Packer<decltype(header.template get<cnk_nele>(i)),S>::pack(mem,header.template get<cnk_nele>(i),sts);
+					 Packer<decltype(header_mask.get(i).mask),S>::pack(mem,mask_to_pack,sts);
+					 Packer<decltype(header_inf.get(i).pos),S>::pack(mem,pos,sts);
+					 Packer<decltype(header_inf.get(i).nele),S>::pack(mem,header_inf.get(i).nele,sts);
 
 					 size_t shift_for = ptr_final_for - (unsigned char *)mem.getPointer();
 
@@ -2035,33 +2502,34 @@ public:
 		// Here we allocate a size_t that indicate the number of chunk we are packing,
 		// because we do not know a priory, we will fill it later
 
-		Packer<size_t,S>::pack(mem,header.size(),sts);
+		Packer<size_t,S>::pack(mem,header_inf.size()-1,sts);
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{Packer<size_t,S>::pack(mem,getGrid().size(i),sts);}
 
-		// Here we have to calculate the number of points to pack
+		// Here we pack the memory (skip the first background chunk)
 
-		for (size_t i = 0 ; i < header.size() ; i++)
+		for (size_t i = 1 ; i < header_inf.size() ; i++)
 		{
-			auto & h = header.get(i);
+			auto & hm = header_mask.get(i);
+			auto & hc = header_inf.get(i);
 
-			Packer<decltype(header.get(i).mask),S>::pack(mem,h.mask,sts);
-			Packer<decltype(header.get(i).pos),S>::pack(mem,h.pos,sts);
-			Packer<decltype(header.get(i).nele),S>::pack(mem,h.nele,sts);
+			Packer<decltype(hm.mask),S>::pack(mem,hm.mask,sts);
+			Packer<decltype(hc.pos),S>::pack(mem,hc.pos,sts);
+			Packer<decltype(hc.nele),S>::pack(mem,hc.nele,sts);
 
 			// we iterate all the points
 
-			size_t mask_nele;
+			int mask_nele;
 			short unsigned int mask_it[chunking::size::value];
 
-			fill_mask(mask_it,h.mask,mask_nele);
+			fill_mask(mask_it,hm.mask,mask_nele);
 
 			for (size_t j = 0 ; j < mask_nele ; j++)
 			{
-				Packer<decltype(chunks.template get_o(i)),
+				Packer<decltype(chunks.get_o(i)),
 								S,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<T,prp...>(mem,chunks.template get_o(i),mask_it[j],sts);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template pack<T,prp...>(mem,chunks.get_o(i),mask_it[j],sts);
 			};
 		}
 	}
@@ -2084,9 +2552,9 @@ public:
 	{
 		size_t tot = 0;
 
-		for (size_t i = 0 ; i < header.size() ; i++)
+		for (size_t i = 1 ; i < header_inf.size() ; i++)
 		{
-			tot += header.template get<cnk_nele>(i);
+			tot += header_inf.get(i).nele;
 		}
 
 		return tot;
@@ -2101,7 +2569,7 @@ public:
 	 */
 	size_t size_all() const
 	{
-		return header.size() * vmpl_reduce_prod<typename chunking::type>::type::value;
+		return header_inf.size() * vmpl_reduce_prod<typename chunking::type>::type::value;
 	}
 
 	/*! \brief Remove all the points in this region
@@ -2113,16 +2581,17 @@ public:
 	{
 		grid_sm<dim,void> gs_cnk(sz_cnk);
 
-		for (size_t i = 0 ; i < header.size() ; i++)
+		for (size_t i = 0 ; i < header_inf.size() ; i++)
 		{
-			auto h = header.get(i);
+			auto & hm = header_mask.get(i);
+			auto & hc = header_inf.get(i);
 
 			Box<dim,size_t> bc;
 
 			for (size_t j = 0 ; j < dim ; j++)
 			{
-				bc.setLow(j,header.template get<cnk_pos>(i).get(j));
-				bc.setHigh(j,header.template get<cnk_pos>(i).get(j) + sz_cnk[j] - 1);
+				bc.setLow(j,hc.pos.get(j));
+				bc.setHigh(j,hc.pos.get(j) + sz_cnk[j] - 1);
 			}
 
 			// now we intersect the chunk box with the box
@@ -2135,7 +2604,7 @@ public:
 				// If it is intersect ok we have to check if there are points to pack
 				// we shift inte intp the chunk origin
 
-				inte -= header.template get<cnk_pos>(i).toPoint();
+				inte -= header_inf.get(i).pos.toPoint();
 
 				// we iterate all the points
 
@@ -2147,12 +2616,12 @@ public:
 
 					size_t sub_id = gs_cnk.LinId(key);
 
-					unsigned char swt = header.template get<cnk_mask>(i)[sub_id];
+					unsigned char swt = header_mask.get(i).mask[sub_id];
 
-					h.template get<cnk_nele>() = (swt)?h.template get<cnk_nele>()-1:h.template get<cnk_nele>();
-					h.template get<cnk_mask>()[sub_id] = 0;
+					hc.nele = (swt)?hc.nele-1:hc.nele;
+					hm.mask[sub_id] = 0;
 
-					if (h.template get<cnk_nele>() == 0 && swt != 0)
+					if (hc.nele == 0 && swt != 0)
 					{
 						// Add the chunks in the empty list
 						empty_v.add(i);
@@ -2261,7 +2730,7 @@ public:
 	grid_key_dx<dim> getChunkPos(size_t chunk_id)
 	{
 		grid_key_dx<dim> kl;
-		grid_key_dx<dim> kh = header.get(chunk_id).pos;
+		grid_key_dx<dim> kh = header_inf.get(chunk_id).pos;
 
 		// shift the key
 		key_shift<dim,chunking>::shift(kh,kl);
@@ -2290,6 +2759,23 @@ public:
 	 *
 	 *
 	 */
+	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv_cross(grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	{
+		NNlist.resize(2*dim * chunks.size());
+
+		if (findNN == false)
+		{conv_impl<dim>::template conv_cross<false,prop_src,prop_dst,stencil_size>(start,stop,*this,func);}
+		else
+		{conv_impl<dim>::template conv_cross<true,prop_src,prop_dst,stencil_size>(start,stop,*this,func);}
+
+		findNN = true;
+	}
+
+	/*! \brief apply a convolution using the stencil N
+	 *
+	 *
+	 */
 	template<unsigned int prop_src1, unsigned int prop_src2 ,unsigned int prop_dst1, unsigned int prop_dst2 ,unsigned int stencil_size, unsigned int N, typename lambda_f, typename ... ArgsT >
 	void conv2(int (& stencil)[N][dim], grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
 	{
@@ -2299,6 +2785,23 @@ public:
 		{conv_impl<dim>::template conv2<false,NNStar_c<dim>,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size>(stencil,start,stop,*this,func);}
 		else
 		{conv_impl<dim>::template conv2<true,NNStar_c<dim>,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size>(stencil,start,stop,*this,func);}
+
+		findNN = true;
+	}
+
+	/*! \brief apply a convolution using the stencil N
+	 *
+	 *
+	 */
+	template<unsigned int prop_src1, unsigned int prop_src2 ,unsigned int prop_dst1, unsigned int prop_dst2 ,unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv_cross2(grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	{
+		NNlist.resize(NNStar_c<dim>::nNN * chunks.size());
+
+		if (findNN == false)
+		{conv_impl<dim>::template conv_cross2<false,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size>(start,stop,*this,func);}
+		else
+		{conv_impl<dim>::template conv_cross2<true,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size>(start,stop,*this,func);}
 
 		findNN = true;
 	}
@@ -2314,7 +2817,7 @@ public:
 	 */
 	template<unsigned int ... prp, typename S2,typename context_type>
 	void unpack(ExtPreAlloc<S2> & mem,
-				grid_key_sparse_dx_iterator_sub<dims,chunking::size::value,maskVectorType> & sub_it,
+				grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> & sub_it,
 				Unpack_stat & ps,
 				context_type & context)
 	{
@@ -2330,40 +2833,43 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)
 		{Unpacker<size_t,S2>::unpack(mem,sz[i],ps);}
 
-		maskVectorType header_tmp;
+		openfpm::vector<cheader<dim>> header_inf_tmp;
+		openfpm::vector<mheader<chunking::size::value>> header_mask_tmp;
 		openfpm::vector<aggregate_bfv<chunk_def>,S,typename layout_base<aggregate_bfv<chunk_def>>::type,layout_base > chunks_tmp;
 
-		header_tmp.resize(n_chunks);
+		header_inf_tmp.resize(n_chunks);
+		header_mask_tmp.resize(n_chunks);
 		chunks_tmp.resize(n_chunks);
 
 		for (size_t i = 0 ; i < n_chunks ; i++)
 		{
-			auto h = header_tmp.get(i);
+			auto & hc = header_inf_tmp.get(i);
+			auto & hm = header_mask_tmp.get(i);
 
-			Unpacker<typename std::remove_reference<decltype(header.template get<cnk_mask>(i))>::type ,S2>::unpack(mem,h.template get<cnk_mask>(),ps);
-			Unpacker<typename std::remove_reference<decltype(header.template get<cnk_pos>(i))>::type ,S2>::unpack(mem,h.template get<cnk_pos>(),ps);
-			Unpacker<typename std::remove_reference<decltype(header.template get<cnk_nele>(i))>::type ,S2>::unpack(mem,h.template get<cnk_nele>(),ps);
+			Unpacker<typename std::remove_reference<decltype(header_mask.get(i).mask)>::type ,S2>::unpack(mem,hm.mask,ps);
+			Unpacker<typename std::remove_reference<decltype(header_inf.get(i).pos)>::type ,S2>::unpack(mem,hc.pos,ps);
+			Unpacker<typename std::remove_reference<decltype(header_inf.get(i).nele)>::type ,S2>::unpack(mem,hc.nele,ps);
 
 			// fill the mask_it
 
-			fill_mask(mask_it,h.template get<cnk_mask>(),h.template get<cnk_nele>());
+			fill_mask(mask_it,hm.mask,hc.nele);
 
 			// now we unpack the information
 			size_t active_cnk;
 			size_t ele_id;
 
-			for (size_t k = 0 ; k < h.template get<cnk_nele>() ; k++)
+			for (size_t k = 0 ; k < hc.nele ; k++)
 			{
 				// construct v1
 				grid_key_dx<dim> v1;
 				for (size_t i = 0 ; i < dim ; i++)
-				{v1.set_d(i,h.template get<cnk_pos>().get(i) + pos_chunk[mask_it[k]].get(i) + sub_it.getStart().get(i));}
+				{v1.set_d(i,hc.pos.get(i) + pos_chunk[mask_it[k]].get(i) + sub_it.getStart().get(i));}
 
 				pre_insert(v1,active_cnk,ele_id);
 
-				Unpacker<decltype(chunks.template get_o(mask_it[k])),
+				Unpacker<decltype(chunks.get_o(mask_it[k])),
 							S2,
-							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack<T,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+							PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack<T,prp...>(mem,chunks.get_o(active_cnk),ele_id,ps);
 
 			}
 		}
@@ -2424,7 +2930,7 @@ public:
 	 */
 	template<template<typename,typename> class op, typename S2, unsigned int ... prp>
 	void unpack_with_op(ExtPreAlloc<S2> & mem,
-						grid_key_sparse_dx_iterator_sub<dim,chunking::size::value,maskVectorType> & sub2,
+						grid_key_sparse_dx_iterator_sub<dim,chunking::size::value> & sub2,
 						Unpack_stat & ps)
 	{
 		short unsigned int mask_it[chunking::size::value];
@@ -2439,34 +2945,37 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)
 		{Unpacker<size_t,S2>::unpack(mem,sz[i],ps);}
 
-		openfpm::vector<cheader<dim,chunking::size::value>> header_tmp;
+		openfpm::vector<cheader<dim>> header_inf_tmp;
+		openfpm::vector<mheader<chunking::size::value>> header_mask_tmp;
 		openfpm::vector<aggregate_bfv<chunk_def>> chunks_tmp;
 
-		header_tmp.resize(n_chunks);
+		header_inf_tmp.resize(n_chunks);
+		header_mask_tmp.resize(n_chunks);
 		chunks_tmp.resize(n_chunks);
 
 		for (size_t i = 0 ; i < n_chunks ; i++)
 		{
-			auto & h = header_tmp.get(i);
+			auto & hc = header_inf_tmp.get(i);
+			auto & hm = header_mask_tmp.get(i);
 
-			Unpacker<decltype(header.template get<cnk_mask>(i)),S2>::unpack(mem,h.mask,ps);
-			Unpacker<decltype(header.template get<cnk_pos>(i).pos),S2>::unpack(mem,h.pos,ps);
-			Unpacker<decltype(header.template get<cnk_nele>(i).nele),S2>::unpack(mem,h.nele,ps);
+			Unpacker<decltype(hm.mask),S2>::unpack(mem,hm.mask,ps);
+			Unpacker<decltype(hc.pos),S2>::unpack(mem,hc.pos,ps);
+			Unpacker<decltype(hc.nele),S2>::unpack(mem,hc.nele,ps);
 
 			// fill the mask_it
 
-			fill_mask(mask_it,h.mask,h.nele);
+			fill_mask(mask_it,hm.mask,hc.nele);
 
 			// now we unpack the information
 			size_t active_cnk;
 			size_t ele_id;
 
-			for (size_t k = 0 ; k < h.nele ; k++)
+			for (size_t k = 0 ; k < hc.nele ; k++)
 			{
 				// construct v1
 				grid_key_dx<dim> v1;
 				for (size_t i = 0 ; i < dim ; i++)
-				{v1.set_d(i,h.pos.get(i) + pos_chunk[mask_it[k]].get(i) + sub2.getStart().get(i));}
+				{v1.set_d(i,hc.pos.get(i) + pos_chunk[mask_it[k]].get(i) + sub2.getStart().get(i));}
 
 				bool exist = pre_insert(v1,active_cnk,ele_id);
 
@@ -2493,10 +3002,10 @@ public:
 	 *
 	 */
 	template <typename stencil = no_stencil>
-	static grid_key_sparse_dx_iterator_sub<dim, chunking::size::value,maskVectorType>
+	static grid_key_sparse_dx_iterator_sub<dim, chunking::size::value>
 	type_of_subiterator()
 	{
-		return  grid_key_sparse_dx_iterator_sub<dim, chunking::size::value,maskVectorType>();
+		return  grid_key_sparse_dx_iterator_sub<dim, chunking::size::value>();
 	}
 
 	/*! \brief This is a meta-function return which type of sub iterator a grid produce
@@ -2504,10 +3013,10 @@ public:
 	 * \return the type of the sub-grid iterator
 	 *
 	 */
-	static grid_key_sparse_dx_iterator<dim, chunking::size::value,maskVectorType>
+	static grid_key_sparse_dx_iterator<dim, chunking::size::value>
 	type_of_iterator()
 	{
-		return  grid_key_sparse_dx_iterator<dim, chunking::size::value,maskVectorType>();
+		return  grid_key_sparse_dx_iterator<dim, chunking::size::value>();
 	}
 
 	/*! \brief Here we convert the linearized sparse key into the grid_key_dx
@@ -2518,7 +3027,7 @@ public:
 	 */
 	void convert_key(grid_key_dx<dim> & key_out, const grid_key_sparse_lin_dx & key_in) const
 	{
-		auto & ph = header.get(key_in.getChunk()).pos;
+		auto & ph = header_inf.get(key_in.getChunk()).pos;
 		auto & pos_h = pos_chunk[key_in.getPos()];
 
 		for (size_t i = 0 ; i < dim ; i++)
@@ -2545,7 +3054,8 @@ public:
 
 		//! Map to convert from grid coordinates to chunk
 		map = sg.map;
-		header = sg.header;
+		header_inf = sg.header_inf;
+		header_mask = sg.header_mask;
 		chunks = sg.chunks;
 		g_sm = sg.g_sm;
 		g_sm_shift = sg.g_sm_shift;
@@ -2562,6 +3072,71 @@ public:
 		empty_v = sg.empty_v;
 
 		return *this;
+	}
+
+	/*! \brief Reorder based on index
+	 *
+	 *
+	 */
+	void reorder()
+	{
+		openfpm::vector<cheader<dim>,S> header_inf_tmp;
+		openfpm::vector<mheader<chunking::size::value>,S> header_mask_tmp;
+		openfpm::vector<aggregate_bfv<chunk_def>,S,typename layout_base<aggregate_bfv<chunk_def>>::type,layout_base > chunks_tmp;
+
+		header_inf_tmp.resize(header_inf.size());
+		header_mask_tmp.resize(header_mask.size());
+		chunks_tmp.resize(chunks.size());
+
+		struct pair_int
+		{
+			int id;
+			int pos;
+
+			bool operator<(const pair_int & tmp) const
+			{
+				return id < tmp.id;
+			}
+		};
+
+		openfpm::vector<pair_int> srt;
+		srt.resize(header_inf.size());
+
+		for (int i = 0 ; i < header_inf.size() ; i++)
+		{
+			grid_key_dx<dim> kh = header_inf.get(i).pos;
+			grid_key_dx<dim> kl;
+
+			// shift the key
+			key_shift<dim,chunking>::shift(kh,kl);
+
+			long int lin_id = g_sm_shift.LinId(kh);
+
+			srt.get(i).id = lin_id;
+			srt.get(i).pos = i;
+		}
+
+		srt.sort();
+
+		// now reoder
+
+		for (int i = 0 ; i < srt.size() ; i++)
+		{
+			chunks_tmp.get(i) = chunks.get(srt.get(i).pos);
+			header_inf_tmp.get(i) = header_inf.get(srt.get(i).pos);
+			header_mask_tmp.get(i) = header_mask.get(srt.get(i).pos);
+		}
+
+		chunks_tmp.swap(chunks);
+		header_inf_tmp.swap(header_inf);
+		header_mask_tmp.swap(header_mask);
+
+		clear_cache();
+		reconstruct_map();
+
+		empty_v.clear();
+		findNN = false;
+		NNlist.clear();
 	}
 
 	/*! \brief copy an sparse grid
@@ -2582,7 +3157,8 @@ public:
 
 		//! Map to convert from grid coordinates to chunk
 		map.swap(sg.map);
-		header.swap(sg.header);
+		header_inf.swap(sg.header_inf);
+		header_mask.swap(sg.header_mask);
 		chunks.swap(sg.chunks);
 		g_sm = sg.g_sm;
 		g_sm_shift = sg.g_sm_shift;
@@ -2617,7 +3193,8 @@ public:
 	 */
 	void clear()
 	{
-		header.clear();
+		header_inf.clear();
+		header_mask.clear();
 		chunks.clear();
 
 		clear_cache();
@@ -2706,9 +3283,19 @@ public:
 	 * \return the header data section of the chunks stored
 	 *
 	 */
-	openfpm::vector<cheader<dim,chunking::size::value>> & private_get_header()
+	openfpm::vector<cheader<dim>> & private_get_header_inf()
 	{
-		return header;
+		return header_inf;
+	}
+
+	/*! \brief return the header section of the blocks
+	 *
+	 * \return the header data section of the chunks stored
+	 *
+	 */
+	openfpm::vector<mheader<chunking::size::value>> & private_get_header_mask()
+	{
+		return header_mask;
 	}
 
 	/*! \brief return the NN list for each block
@@ -2736,9 +3323,19 @@ public:
 	 * \return the header data section of the chunks stored
 	 *
 	 */
-	const openfpm::vector<cheader<dim,chunking::size::value>> & private_get_header() const
+	const openfpm::vector<cheader<dim>> & private_get_header_inf() const
 	{
-		return header;
+		return header_inf;
+	}
+
+	/*! \brief return the header section of the blocks
+	 *
+	 * \return the header data section of the chunks stored
+	 *
+	 */
+	const openfpm::vector<mheader<chunking::size::value>> & private_get_header_mask() const
+	{
+		return header_mask;
 	}
 
 	/*! \brief return the data of the blocks
@@ -2749,6 +3346,38 @@ public:
 	const openfpm::vector<aggregate_bfv<chunk_def>> & private_get_data() const
 	{
 		return chunks;
+	}
+
+	/*! \brief This function check the consistency of the sparse grid
+	 *
+	 *
+	 */
+	void consistency()
+	{
+		size_t tot = 0;
+		for (int i = 1 ; i < header_mask.size() ; i++)
+		{
+			auto & m = header_mask.get(i);
+
+			size_t np_mask = 0;
+
+			for (int j = 0 ; j < chunking::size::value ; j++)
+			{
+				if (m.mask[j] & 0x1)
+				{np_mask++;}
+			}
+
+			if (header_inf.get(i).nele != np_mask)
+			{
+				std::cout << __FILE__ << ":" << __LINE__ << " error chunk: " << i << " has " <<  np_mask << " points but header report " << header_inf.get(i).nele << std::endl;
+			}
+			tot += np_mask;
+		}
+
+		if (size() != tot)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " Total point is inconsistent: " << size() << " " << tot << std::endl;
+		}
 	}
 };
 

@@ -55,13 +55,12 @@ public:
  *
  *
  */
-template<unsigned int n_ele,typename maskType>
+template<unsigned int n_ele>
 inline void fill_mask(short unsigned int (& mask_it)[n_ele],
-		       const maskType & mask,
+		       const unsigned char (& mask)[n_ele],
 		       int & mask_nele)
 {
 	mask_nele = 0;
-	size_t index = 0;
 
 	for (size_t i = 0 ; i < n_ele ; i++)
 	{
@@ -77,15 +76,14 @@ inline void fill_mask(short unsigned int (& mask_it)[n_ele],
  *
  *
  */
-template<unsigned int dim, unsigned int n_ele,typename maskType>
+template<unsigned int dim, unsigned int n_ele>
 inline void fill_mask_box(short unsigned int (& mask_it)[n_ele],
-		       const maskType & mask,
+		       const unsigned char (& mask)[n_ele],
 		       size_t & mask_nele,
 			   Box<dim,size_t> & bx,
 			   const grid_key_dx<dim> (& loc_grid)[n_ele])
 {
 	mask_nele = 0;
-	size_t index = 0;
 
 	for (size_t i = 0 ; i < n_ele ; i++)
 	{
@@ -93,10 +91,10 @@ inline void fill_mask_box(short unsigned int (& mask_it)[n_ele],
 
 		bool is_inside = true;
 		// we check the point is inside inte
-		for (size_t i = 0 ; i < dim ; i++)
+		for (size_t j = 0 ; j < dim ; j++)
 		{
-			if (loc_grid[id].get(i) < (long int)bx.getLow(i) ||
-				loc_grid[id].get(i) > (long int)bx.getHigh(i))
+			if (loc_grid[id].get(j) < (long int)bx.getLow(j) ||
+				loc_grid[id].get(j) > (long int)bx.getHigh(j))
 			{
 				is_inside = false;
 
@@ -104,7 +102,7 @@ inline void fill_mask_box(short unsigned int (& mask_it)[n_ele],
 			}
 		}
 
-		if (is_inside == true)
+		if (is_inside == true && (mask[i] & 1))
 		{
 			mask_it[mask_nele] = id;
 			mask_nele++;
@@ -118,33 +116,46 @@ inline void fill_mask_box(short unsigned int (& mask_it)[n_ele],
  * \tparam n_ele number of elements in the chunk
  *
  */
-template<unsigned int dim, unsigned int n_ele>
+template<unsigned int n_ele>
+struct mheader
+{
+	//! which elements in the chunks are set
+	unsigned char mask[n_ele];
+};
+
+
+/*! \brief This structure contain the information of a chunk
+ *
+ * \tparam dim dimensionality of the chunk
+ * \tparam n_ele number of elements in the chunk
+ *
+ */
+template<unsigned int dim>
 struct cheader
 {
 	//! where is located the chunk
 	grid_key_dx<dim> pos;
 
 	//! how many elements in the chunk are set
-	size_t nele;
-
-	//! which elements in the chunks are set
-	size_t mask[n_ele / (sizeof(size_t)*8) + (n_ele % (sizeof(size_t)*8) != 0) + 1];
+	int nele;
 };
-
 
 /*! \brief Grid key sparse iterator on a sub-part of the domain
  *
  *
  */
-template<unsigned dim, unsigned int n_ele, typename vectorTypeHeader>
+template<unsigned dim, unsigned int n_ele>
 class grid_key_sparse_dx_iterator_sub
 {
 	const static int cnk_pos = 0;
 	const static int cnk_nele = 1;
 	const static int cnk_mask = 2;
 
-	//! It store the information of each chunk
-	const vectorTypeHeader * header;
+	//! It store the information of each chunk mask
+	const openfpm::vector<mheader<n_ele>> * header_mask;
+
+	//! it store the information of each chunk
+	const openfpm::vector<cheader<dim>> * header_inf;
 
 	//! linearized id to position in coordinates conversion
 	const grid_key_dx<dim> (* lin_id_pos)[n_ele];
@@ -182,23 +193,23 @@ class grid_key_sparse_dx_iterator_sub
 		mask_it_pnt = 0;
 		mask_nele = 0;
 
-		while (mask_nele == 0 && chunk_id < header->size())
+		while (mask_nele == 0 && chunk_id < header_inf->size())
 		{
-			auto mask = header->template get<cnk_mask>(chunk_id);
+			auto & mask = header_mask->get(chunk_id).mask;
 
 			Box<dim,size_t> cnk_box;
 
 			for (size_t i = 0 ; i < dim ; i++)
 			{
-				cnk_box.setLow(i,header->template get<cnk_pos>(chunk_id).get(i));
-				cnk_box.setHigh(i,header->template get<cnk_pos>(chunk_id).get(i) + sz_cnk[i] - 1);
+				cnk_box.setLow(i,header_inf->get(chunk_id).pos.get(i));
+				cnk_box.setHigh(i,header_inf->get(chunk_id).pos.get(i) + sz_cnk[i] - 1);
 			}
 
 			Box<dim,size_t> inte;
 
 			if (bx.Intersect(cnk_box,inte) == true)
 			{
-				inte -= header->template get<cnk_pos>(chunk_id).toPoint();
+				inte -= header_inf->get(chunk_id).pos.toPoint();
 				fill_mask_box<dim,n_ele>(mask_it,mask,mask_nele,inte,*lin_id_pos);
 			}
 			else
@@ -219,12 +230,13 @@ public:
 	 */
 	grid_key_sparse_dx_iterator_sub()	{};
 
-	grid_key_sparse_dx_iterator_sub(const vectorTypeHeader & header,
+	grid_key_sparse_dx_iterator_sub(const openfpm::vector<mheader<n_ele>> & header_mask,
+			                    const openfpm::vector<cheader<dim>> & header_inf,
 								const grid_key_dx<dim> (& lin_id_pos)[n_ele],
 								const grid_key_dx<dim> & start,
 								const grid_key_dx<dim> & stop,
 								const size_t (& sz_cnk)[dim])
-	:header(&header),lin_id_pos(&lin_id_pos),chunk_id(0),
+	:header_mask(&header_mask),header_inf(&header_inf),lin_id_pos(&lin_id_pos),chunk_id(1),
 	 mask_nele(0),mask_it_pnt(0),start(start),stop(stop)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
@@ -246,9 +258,10 @@ public:
 	 * \param g_s_it grid_key_dx_iterator_sub
 	 *
 	 */
-	inline void reinitialize(const grid_key_sparse_dx_iterator_sub<dim,n_ele,vectorTypeHeader> & g_s_it)
+	inline void reinitialize(const grid_key_sparse_dx_iterator_sub<dim,n_ele> & g_s_it)
 	{
-		header = g_s_it.header;
+		header_inf = g_s_it.header_inf;
+		header_mask = g_s_it.header_mask;
 		lin_id_pos = g_s_it.lin_id_pos;
 		chunk_id = g_s_it.chunk_id;
 		mask_nele = g_s_it.mask_nele;
@@ -262,7 +275,7 @@ public:
 		memcpy(mask_it,g_s_it.mask_it,sizeof(short unsigned int)*n_ele);
 	}
 
-	inline grid_key_sparse_dx_iterator_sub<dim,n_ele,vectorTypeHeader> & operator++()
+	inline grid_key_sparse_dx_iterator_sub<dim,n_ele> & operator++()
 	{
 		mask_it_pnt++;
 
@@ -274,7 +287,7 @@ public:
 		chunk_id++;
 		mask_it_pnt = 0;
 
-		if (chunk_id < header->size())
+		if (chunk_id < header_inf->size())
 		{
 			SelectValidAndFill_mask_it();
 		}
@@ -296,7 +309,7 @@ public:
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			k_pos.set_d(i,(*lin_id_pos)[lin_id].get(i) + header->template get<cnk_pos>(chunk_id).get(i));
+			k_pos.set_d(i,(*lin_id_pos)[lin_id].get(i) + header_inf->get(chunk_id).pos.get(i));
 		}
 
 		return k_pos;
@@ -321,7 +334,7 @@ public:
 	 */
 	bool isNext()
 	{
-		return chunk_id < header->size();
+		return chunk_id < header_inf->size();
 	}
 
 	/*! \brief Return the starting point for the iteration
@@ -349,8 +362,16 @@ public:
 	 * \return header
 	 *
 	 */
-	const openfpm::vector<cheader<dim,n_ele>> * private_get_header() const
-	{return header;}
+	const openfpm::vector<cheader<dim>> * private_get_header_inf() const
+	{return header_inf;}
+
+	/*! \brief Return the private member header
+	 *
+	 * \return header
+	 *
+	 */
+	const openfpm::vector<mheader<n_ele>> * private_get_header_mask() const
+	{return header_mask;}
 
 	/*! \brief Return the private member lin_id_pos
 	 *
@@ -400,15 +421,14 @@ public:
  *
  *
  */
-template<unsigned dim, unsigned int n_ele, typename vectorTypeHeader>
+template<unsigned dim, unsigned int n_ele>
 class grid_key_sparse_dx_iterator
 {
-	const static int cnk_pos = 0;
-	const static int cnk_nele = 1;
-	const static int cnk_mask = 2;
+	//! It store the information of each chunk
+	const openfpm::vector<mheader<n_ele>> * header_mask;
 
 	//! It store the information of each chunk
-	const vectorTypeHeader * header;
+	const openfpm::vector<cheader<dim>> * header_inf;
 
 	//! linearized id to position in coordinates conversion
 	const grid_key_dx<dim> (* lin_id_pos)[n_ele];
@@ -434,9 +454,9 @@ class grid_key_sparse_dx_iterator
 		mask_nele = 0;
 		mask_it_pnt = 0;
 
-		while (mask_nele == 0 && chunk_id < header->size())
+		while (mask_nele == 0 && chunk_id < header_inf->size())
 		{
-			auto mask = header->template get<cnk_mask>(chunk_id);
+			auto & mask = header_mask->get(chunk_id).mask;
 
 			fill_mask<n_ele>(mask_it,mask,mask_nele);
 
@@ -455,14 +475,15 @@ public:
 	 */
 	grid_key_sparse_dx_iterator()	{};
 
-	grid_key_sparse_dx_iterator(const vectorTypeHeader * header,
+	grid_key_sparse_dx_iterator(const openfpm::vector<mheader<n_ele>> * header_mask,
+							    const openfpm::vector<cheader<dim>> * header_inf,
 								const grid_key_dx<dim> (* lin_id_pos)[n_ele])
-	:header(header),lin_id_pos(lin_id_pos),chunk_id(0),mask_nele(0),mask_it_pnt(0)
+	:header_mask(header_mask),header_inf(header_inf),lin_id_pos(lin_id_pos),chunk_id(1),mask_nele(0),mask_it_pnt(0)
 	{
 		SelectValidAndFill_mask_it();
 	}
 
-	inline grid_key_sparse_dx_iterator<dim,n_ele,vectorTypeHeader> & operator++()
+	inline grid_key_sparse_dx_iterator<dim,n_ele> & operator++()
 	{
 		mask_it_pnt++;
 
@@ -474,7 +495,7 @@ public:
 		chunk_id++;
 		mask_it_pnt = 0;
 
-		if (chunk_id < header->size())
+		if (chunk_id < header_inf->size())
 		{
 			SelectValidAndFill_mask_it();
 		}
@@ -490,9 +511,10 @@ public:
 	 * \param g_s_it grid_key_dx_iterator
 	 *
 	 */
-	inline void reinitialize(const grid_key_sparse_dx_iterator<dim,n_ele,vectorTypeHeader> & g_s_it)
+	inline void reinitialize(const grid_key_sparse_dx_iterator<dim,n_ele> & g_s_it)
 	{
-		header = g_s_it.header;
+		header_mask = g_s_it.header_mask;
+		header_inf = g_s_it.header_inf;
 		lin_id_pos = g_s_it.lin_id_pos;
 		chunk_id = g_s_it.chunk_id;
 		mask_nele = g_s_it.mask_nele;
@@ -509,9 +531,10 @@ public:
 	 * \param g_s_it grid_key_dx_iterator
 	 *
 	 */
-	inline void reinitialize(const grid_key_sparse_dx_iterator_sub<dim,n_ele,vectorTypeHeader> & g_s_it)
+	inline void reinitialize(const grid_key_sparse_dx_iterator_sub<dim,n_ele> & g_s_it)
 	{
-		header = g_s_it.private_get_header();
+		header_mask = g_s_it.private_get_header_mask();
+		header_inf = g_s_it.private_get_header_inf();
 		lin_id_pos = g_s_it.private_get_lin_id_pos();
 		chunk_id = 0;
 
@@ -543,7 +566,7 @@ public:
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			k_pos.set_d(i,(*lin_id_pos)[lin_id].get(i) + header->template get<cnk_pos>(chunk_id).get(i));
+			k_pos.set_d(i,(*lin_id_pos)[lin_id].get(i) + header_inf->get(chunk_id).pos.get(i));
 		}
 
 		return k_pos;
@@ -556,7 +579,7 @@ public:
 	 */
 	bool isNext()
 	{
-		return chunk_id < header->size();
+		return chunk_id < header_inf->size();
 	}
 };
 

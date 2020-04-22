@@ -10,6 +10,91 @@
 
 #include "util/variadic_to_vmpl.hpp"
 
+template<unsigned int dim,typename T>
+struct cross_stencil
+{
+	T xm[dim];
+	T xp[dim];
+};
+
+template<unsigned int dim>
+struct NNStar
+{
+	static const int nNN = IntPow<2, dim>::value;
+
+	template<typename indexT, typename blockCoord_type, typename blockMap_type, typename SparseGrid_type>
+	__device__ static inline indexT getNNpos(blockCoord_type & blockCoord,
+								  blockMap_type & blockMap,
+								  SparseGrid_type & sparseGrid,
+								  const unsigned int offset)
+	{
+        //todo: also do the full neighbourhood version, this is just cross
+        int neighbourPos = -1;
+        if (offset < 2*dim)
+        {
+            unsigned int d = offset/2;
+            int dPos = blockCoord.get(d) + (offset%2)*2 - 1;
+            blockCoord.set_d(d, dPos);
+            neighbourPos = blockMap.get_sparse(sparseGrid.getBlockLinId(blockCoord)).id;
+        }
+        return neighbourPos;
+	}
+
+	template<typename indexT, unsigned int blockEdgeSize, typename coordType>
+	__host__ static inline indexT getNNskin(coordType & coord, int stencilSupportRadius)
+	{
+        int neighbourNum = -1;
+        int ctr = 0;
+        for (int j = 0; j < dim; ++j)
+        {
+            int c = static_cast<int>(coord.get(j)) - static_cast<int>(stencilSupportRadius);
+            if (c < 0)
+            {
+                neighbourNum = 2*j;
+                ++ctr;
+            }
+            else if (c >= blockEdgeSize)
+            {
+                neighbourNum = 2*j + 1;
+                ++ctr;
+            }
+        }
+        if (ctr > 1) // If we are on a "corner"
+        {
+            neighbourNum = 0;
+        }
+
+        return neighbourNum;
+	}
+
+	template<typename sparseGrid_type, typename coord_type, typename Mask_type,unsigned int eb_size>
+	__device__ static inline bool isPadding(sparseGrid_type & sparseGrid, coord_type & coord, Mask_type (& enlargedBlock)[eb_size])
+	{
+		bool isPadding_ = false;
+		for (int d=0; d<dim; ++d)
+		{
+			auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
+			auto nMinusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, -1);
+			typename std::remove_all_extents<Mask_type>::type neighbourPlus = enlargedBlock[nPlusId];
+			typename std::remove_all_extents<Mask_type>::type neighbourMinus = enlargedBlock[nMinusId];
+			isPadding_ = isPadding_ || (!sparseGrid.exist(neighbourPlus));
+			isPadding_ = isPadding_ || (!sparseGrid.exist(neighbourMinus));
+			if (isPadding_) break;
+		}
+
+		return isPadding_;
+	}
+
+	/*! \brief given a coordinate give the neighborhood chunk position and the offset in the neighborhood chunk
+	 *
+	 *
+	 */
+	__device__ static inline bool getNNindex_offset()
+	{
+		return false;
+	}
+};
+
 template<unsigned int n_it>
 struct arr_ptr
 {
@@ -289,6 +374,17 @@ inline __device__ void linToCoordWithOffset(const unsigned int linId, const unsi
 	{
 		coord[d] = linIdTmp % edgeSize;
 		coord[d] += offset;
+		linIdTmp /= edgeSize;
+	}
+}
+
+template<unsigned int edgeSize, unsigned int dim>
+inline __device__ void linToCoord(const unsigned int linId, unsigned int (&coord)[dim])
+{
+	unsigned int linIdTmp = linId;
+	for (unsigned int d = 0; d < dim; ++d)
+	{
+		coord[d] = linIdTmp % edgeSize;
 		linIdTmp /= edgeSize;
 	}
 }

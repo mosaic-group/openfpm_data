@@ -233,31 +233,16 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	mgpu::ofp_context_t ctx;
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
-	// Get output
-	openfpm::vector_gpu<AggregateOutT> output;
-	output.resize(4 * 64);
-
-	copyBlocksToOutput<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
-
-	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
 
 	// Compare
 	bool match = true;
-	for (size_t i = 0; i < output.size(); i++)
+	for (size_t i = 0; i < 4*64 ; i++)
 	{
 		auto coord = sparseGrid.getCoord(i);
 		auto expectedValue = coord.get(0);
 
-		std::cout << "sparseGrid(" << coord.get(0) << "," << coord.get(1) << ") = "
-				  << sparseGrid.template get<0>(coord)
-				  << " == "
-				  << expectedValue
-				  << " == "
-				  << output.template get<0>(i) << " = output(" << i << ")"
-				  << std::endl;
-		match &= output.template get<0>(i) == sparseGrid.template get<0>(coord);
-		match &= output.template get<0>(i) == expectedValue;
+		match &= sparseGrid.template get<0>(coord) == expectedValue;
 	}
 
 	BOOST_REQUIRE_EQUAL(match, true);
@@ -286,24 +271,16 @@ BOOST_AUTO_TEST_CASE(testInsert3D)
 	mgpu::ofp_context_t ctx;
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
-	// Get output
-	openfpm::vector_gpu<AggregateOutT> output;
-	output.resize(sparseGrid.dim3SizeToInt(gridSize) * 64);
-
-	copyBlocksToOutput<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
-
-	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
 
 	// Compare
 	bool match = true;
-	for (size_t i = 0; i < output.size(); i++)
+	for (size_t i = 0; i < 64*4 ; i++)
 	{
 		auto coord = sparseGrid.getCoord(i);
 		auto expectedValue = coord.get(0);
 
-		match &= output.template get<0>(i) == sparseGrid.template get<0>(coord);
-		match &= output.template get<0>(i) == expectedValue;
+		match &= sparseGrid.template get<0>(coord) == expectedValue;
 	}
 
 	BOOST_REQUIRE_EQUAL(match, true);
@@ -537,7 +514,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 
     cudaDeviceSynchronize();
 
-    sparseGrid.template applyBoundaryStencils<BoundaryStencilSetXRescaled<dim,0,0>>(0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
 
 	cudaDeviceSynchronize();
 
@@ -546,46 +523,29 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 //    const unsigned int maxIter = 100;
 	for (unsigned int iter=0; iter<maxIter; ++iter)
 	{
-		sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(STENCIL_MODE_INPLACE, 0.1);
+		sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
-        sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
 	}
 
-	sparseGrid.deviceToHost<0,1>();
-
-	// Get output
-	openfpm::vector_gpu<AggregateT> output;
-	output.resize(4 * 64);
-
-	copyBlocksToOutput<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), output.toKernel());
-
-	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
 
 	// Compare
 	bool match = true;
-	for (size_t i = 0; i < output.size(); i++)
+	for (size_t i = 0; i < 64*4 ; i++)
 	{
 		auto coord = sparseGrid.getCoord(i);
 		float expectedValue = 10.0 * coord.get(0) / (gridSize.x * blockEdgeSize - 1);
 
-		std::cout
-				<< "sparseGrid(" << coord.get(0) << "," << coord.get(1) << ") = "
-				<< sparseGrid.template get<0>(coord) << " | "
-				<< expectedValue
-				<< " == "
-				<< output.template get<0>(i) << " = output(" << i << ")"
-				<< std::endl;
-		match &= fabs(output.template get<0>(i) - expectedValue) < 1e-2;
+		match &= fabs(sparseGrid.template get<0>(coord) - expectedValue) < 1e-2;
 
 	}
 
 	BOOST_REQUIRE_EQUAL(match, true);
-//        BOOST_REQUIRE_CLOSE(output.template get<0>(255), 3.20309591e-05, 1e-6);
 }
 
-BOOST_AUTO_TEST_CASE(testStencilHeatInsert)
+BOOST_AUTO_TEST_CASE(testStencil_lap_simplified)
 {
 	printf("\n");
 
@@ -603,63 +563,270 @@ BOOST_AUTO_TEST_CASE(testStencilHeatInsert)
 
 	// Insert values on the grid
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-	CUDA_LAUNCH_DIM3((insertConstantValue2<0,1>),gridSize, blockSizeInsert,sparseGrid.toKernel(), 0);
-	sparseGrid.flush < smax_< 0 >, smax_<1>> (ctx, flush_type::FLUSH_ON_DEVICE);
-
-	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-	CUDA_LAUNCH_DIM3((insertBoundaryValuesHeat<0>),gridSize, blockSizeInsert,sparseGrid.toKernel());
+	insertConstantValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
-
-//        // Now tag the boundaries
 	sparseGrid.tagBoundaries(ctx);
 
-	sparseGrid.template deviceToHost<0,1>();
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
 
-	// Now apply the laplacian operator
+        // Now apply the laplacian operator
 	const unsigned int maxIter = 1000;
-//        const unsigned int maxIter = 10;
+//    const unsigned int maxIter = 100;
 	for (unsigned int iter=0; iter<maxIter; ++iter)
 	{
-		sparseGrid.applyStencils<HeatStencil<dim, 0,0>>(STENCIL_MODE_INSERT, 0.1);
+		sparseGrid.conv_cross<0, 1, 1>({0,0},{16,16},[] __device__ (float & u, cross_stencil<2,float> & cs){
+			return u + (cs.xm[0] + cs.xp[0] +
+			       cs.xm[1] + cs.xp[1] - 4.0*u)*0.1;
+		});
+        sparseGrid.conv_cross<1, 0, 1>({0,0},{16,16},[] __device__ (float & u, cross_stencil<2,float> & cs){
+			return u + (cs.xm[0] + cs.xp[0] +
+			       cs.xm[1] + cs.xp[1] - 4.0*u)*0.1;
+        });
 	}
 
+	sparseGrid.deviceToHost<0,1>();
 
 	// Get output
-	openfpm::vector_gpu<AggregateT> output;
-	output.resize(4 * 64);
-
-	CUDA_LAUNCH_DIM3((copyBlocksToOutput<0>),gridSize, blockSizeInsert,sparseGrid.toKernel(), output.toKernel());
-
-	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
 
 	// Compare
 	bool match = true;
-	for (size_t i = 0; i < output.size(); i++)
+	for (size_t i = 0; i < 64*4; i++)
 	{
-		grid_key_dx<dim, int> coord = sparseGrid.getCoord(i);
+		auto coord = sparseGrid.getCoord(i);
 		float expectedValue = 10.0 * coord.get(0) / (gridSize.x * blockEdgeSize - 1);
 
-		unsigned int check = sparseGrid.getLinId(coord);
+		match &= fabs(sparseGrid.template get<0>(coord) - expectedValue) < 1e-2;
+	}
 
-		std::cout
-				<< "invLinId=" << check << ", "
-//                    << "sparseGrid(" << coord.get(0) << "," << coord.get(1) << "," << coord.get(2) << ") = "
-				<< "sparseGrid(" << coord.get(0) << "," << coord.get(1) << ") = "
-				<< sparseGrid.template get<0>(coord) << " | "
-				<< expectedValue
-				<< " == "
-				<< output.template get<0>(i) << " = output(" << i << ")"
-				<< std::endl;
-		match &= fabs(output.template get<0>(i) - expectedValue) < 1e-2;
+	BOOST_REQUIRE_EQUAL(match, true);
+}
+
+BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified)
+{
+	printf("\n");
+
+	constexpr unsigned int dim = 2;
+	constexpr unsigned int blockEdgeSize = 8;
+	typedef aggregate<float,float> AggregateT;
+
+	dim3 gridSize(2, 2);
+	dim3 blockSizeInsert(blockEdgeSize, blockEdgeSize);
+
+	grid_smb<dim, blockEdgeSize> blockGeometry(gridSize);
+	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
+	mgpu::ofp_context_t ctx;
+	sparseGrid.template setBackgroundValue<0>(0);
+
+	// Insert values on the grid
+	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
+	insertConstantValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
+	insertConstantValue<1> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
+	sparseGrid.flush < smax_< 0 >, smax_< 1 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
+	sparseGrid.tagBoundaries(ctx);
+
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,1,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
+
+    typedef decltype(sparseGrid.template conv_blockType<0, 1, 1>()) CpBlockType;
+
+    /*
+     *
+     * The initial condition is
+     *
+     *   0     Linear increase x 10
+     *   *                       *
+     *
+     *   0                       10
+     *
+     *
+     *   *   Linear increase x   *
+     *   0                       10
+     */
+
+        // Now apply the laplacian operator
+	const unsigned int maxIter = 1000;
+
+	for (unsigned int iter=0; iter<maxIter; ++iter)
+	{
+		sparseGrid.conv<0, 1, 1>({0,0},{16,16},[] __device__ (CpBlockType & u,int i, int j){
+			float c = u(i,j);
+			return c + (u(i-1,j) + u(i+1,j) +
+			                 u(i,j-1) + u(i,j+1) - 4.0*c)*0.1;
+		});
+
+        sparseGrid.conv<1, 0, 1>({0,0},{16,16},[] __device__ (CpBlockType & u,int i, int j){
+			float c = u(i,j);
+			return c + (u(i-1,j) + u(i+1,j) +
+			                 u(i,j-1) + u(i,j+1) - 4.0*c)*0.1;
+        });
+	}
+
+	sparseGrid.template deviceToHost<0>();
+
+	// Compare
+	bool match = true;
+	for (size_t i = 0; i < 64*4; i++)
+	{
+		auto coord = sparseGrid.getCoord(i);
+		float expectedValue = 10.0 * coord.get(0) / (gridSize.x * blockEdgeSize - 1);
+
+		match &= fabs(sparseGrid.template get<0>(coord) - expectedValue) < 1e-2;
 
 	}
 
 	BOOST_REQUIRE_EQUAL(match, true);
-//        BOOST_REQUIRE_CLOSE(output.template get<0>(255), 3.20309591e-05, 1e-6);
 }
+
+BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified2)
+{
+	printf("\n");
+
+	constexpr unsigned int dim = 2;
+	constexpr unsigned int blockEdgeSize = 8;
+	typedef aggregate<float,float,float,float> AggregateT;
+
+	dim3 gridSize(2, 2);
+	dim3 blockSizeInsert(blockEdgeSize, blockEdgeSize);
+
+	grid_smb<dim, blockEdgeSize> blockGeometry(gridSize);
+	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
+	mgpu::ofp_context_t ctx;
+	sparseGrid.template setBackgroundValue<0>(0);
+
+	// Insert values on the grid
+	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
+	insertConstantValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
+	insertConstantValue<1> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
+	insertConstantValue<2> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
+	insertConstantValue<3> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
+	sparseGrid.flush < smax_< 0 >, smax_< 1 >, smax_< 2 >, smax_< 3 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
+	sparseGrid.tagBoundaries(ctx);
+
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,2,2>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 5.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,1,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,3,3>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 5.0);
+
+    typedef decltype(sparseGrid.template conv_blockType<0, 1, 1>()) CpBlockType;
+
+    /*
+     *
+     * The initial condition is
+     *
+     *   0     Linear increase x 10
+     *   *                       *
+     *
+     *   0                       10
+     *
+     *
+     *   *   Linear increase x   *
+     *   0                       10
+     */
+
+        // Now apply the laplacian operator
+	const unsigned int maxIter = 1000;
+
+	for (unsigned int iter=0; iter<maxIter; ++iter)
+	{
+		sparseGrid.conv2<0,1,2,3,1>({0,0},{16,16},[] __device__ (float & u_out, float & v_out, CpBlockType & u, CpBlockType & v,int i, int j){
+			float cu = u(i,j);
+			float cv = v(i,j);
+			u_out = cu + (u(i-1,j) + u(i+1,j) +
+			                 u(i,j-1) + u(i,j+1) - 4.0*cu)*0.1;
+
+			v_out = cv + (v(i-1,j) + v(i+1,j) +
+			                 v(i,j-1) + v(i,j+1) - 4.0*cv)*0.1;
+		});
+
+        sparseGrid.conv2<2,3,0,1,1>({0,0},{16,16},[] __device__ (float & u_out, float & v_out ,CpBlockType & u, CpBlockType & v, int i, int j){
+			float cu = u(i,j);
+			float cv = v(i,j);
+			u_out = cu + (u(i-1,j) + u(i+1,j) +
+			                 u(i,j-1) + u(i,j+1) - 4.0*cu)*0.1;
+
+			v_out = cv + (v(i-1,j) + v(i+1,j) +
+			                 v(i,j-1) + v(i,j+1) - 4.0*cv)*0.1;
+        });
+	}
+
+	sparseGrid.template deviceToHost<0,1>();
+
+	// Compare
+	bool match = true;
+	for (size_t i = 0; i < 64*4; i++)
+	{
+		auto coord = sparseGrid.getCoord(i);
+		float expectedValue = 10.0 * coord.get(0) / (gridSize.x * blockEdgeSize - 1);
+		float expectedValue2 = 5.0 * coord.get(0) / (gridSize.x * blockEdgeSize - 1);
+
+		match &= fabs(sparseGrid.template get<0>(coord) - expectedValue) < 1e-2;
+		match &= fabs(sparseGrid.template get<1>(coord) - expectedValue2) < 1e-2;
+	}
+
+	BOOST_REQUIRE_EQUAL(match, true);
+}
+
+BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified_subset)
+{
+	printf("\n");
+
+	constexpr unsigned int dim = 2;
+	constexpr unsigned int blockEdgeSize = 8;
+	typedef aggregate<float,float> AggregateT;
+
+	dim3 gridSize(2, 2);
+	dim3 blockSizeInsert(blockEdgeSize, blockEdgeSize);
+
+	grid_smb<dim, blockEdgeSize> blockGeometry(gridSize);
+	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
+	mgpu::ofp_context_t ctx;
+	sparseGrid.template setBackgroundValue<0>(0);
+
+	// Insert values on the grid
+	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
+	insertConstantValue<0> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
+	insertConstantValue<1> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0);
+	sparseGrid.flush < smax_< 0 >, smax_< 1 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
+	sparseGrid.tagBoundaries(ctx);
+
+    typedef decltype(sparseGrid.template conv_blockType<0, 1, 1>()) CpBlockType;
+
+	sparseGrid.conv<0, 1, 1>({3,3},{11,11},[] __device__ (CpBlockType & u,int i, int j){
+		return 5.0;
+	});
+
+
+	sparseGrid.template deviceToHost<1>();
+
+	// Compare
+	bool match = true;
+	for (size_t i = 0; i < 64*4; i++)
+	{
+		auto coord = sparseGrid.getCoord(i);
+
+		if (coord.get(0) >= 3 && coord.get(1) >= 3 && coord.get(0) <= 11 && coord.get(1) <= 11)
+		{
+			match &= sparseGrid.template get<1>(coord) == 5.0;
+		}
+		else
+		{
+			match &= sparseGrid.template get<1>(coord) == 0.0;
+		}
+	}
+
+	BOOST_REQUIRE_EQUAL(match, true);
+}
+
+
 
 template<typename sparsegrid_type>
 __global__ void sparse_grid_get_test(sparsegrid_type sparseGrid, grid_key_dx<3> key, float * data)
@@ -772,7 +939,7 @@ struct Conv3x3x3
             grid_key_dx<dim, int> & pointCoord,
             DataBlockWrapperT & dataBlockLoad,
             DataBlockWrapperT & dataBlockStore,
-            bool applyStencilHere,
+            unsigned char curMask,
             conv_coeff & cc)
     {
         typedef typename SparseGridT::AggregateBlockType AggregateT;
@@ -787,7 +954,7 @@ struct Conv3x3x3
 
         __syncthreads();
 
-        if (applyStencilHere)
+        if ((curMask & mask_sparse::EXIST) && !(curMask & mask_sparse::PADDING))
         {
             const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
             const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
@@ -839,7 +1006,7 @@ struct Conv3x3x3_noshared
             grid_key_dx<dim, int> & pointCoord,
             DataBlockWrapperT & dataBlockLoad,
             DataBlockWrapperT & dataBlockStore,
-            bool applyStencilHere,
+            unsigned char curMask,
             conv_coeff & cc)
     {
         typedef typename SparseGridT::AggregateBlockType AggregateT;
@@ -849,7 +1016,7 @@ struct Conv3x3x3_noshared
 
         __shared__ block_offset<int> pos[BLOCK_SIZE_STENCIL];
 
-        if (applyStencilHere)
+        if ((curMask & mask_sparse::EXIST) && !(curMask & mask_sparse::PADDING))
         {
             ScalarT tot = 0.0;
             for (int i = 0; i < dim; ++i)
@@ -925,7 +1092,7 @@ void test_convolution_3x3x3()
     }
 
 
-    sparseGrid.template applyStencils<Conv3x3x3<3,0,1>>(STENCIL_MODE_INPLACE,cc);
+    sparseGrid.template applyStencils<Conv3x3x3<3,0,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,cc);
 
     sparseGrid.template deviceToHost<0,1>();
 
@@ -989,7 +1156,7 @@ void test_convolution_3x3x3_no_shared()
     	}
     }
 
-    sparseGrid.template applyStencils<Conv3x3x3_noshared<SparseGridZ::dims,0,1>>(STENCIL_MODE_INPLACE_NO_SHARED,cc);
+    sparseGrid.template applyStencils<Conv3x3x3_noshared<SparseGridZ::dims,0,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE_NO_SHARED,cc);
 
     sparseGrid.template deviceToHost<0,1>();
 
@@ -1186,7 +1353,7 @@ BOOST_AUTO_TEST_CASE(test_pack_request)
 
     size_t tot = 8 +                // how many chunks
     		     sparseGrid.private_get_index_array().size()*16 + 8 +// store the scan + chunk indexes
-    		     cnt*(sizeof(float) + 2); // how much data
+    		     cnt*(sizeof(float) + 2 + 1); // how much data
 
     BOOST_REQUIRE_EQUAL(req,tot);
 }
@@ -1798,7 +1965,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 	sparseGrid.tagBoundaries(ctx);
 
 	// Now apply some boundary conditions
-	sparseGrid.template applyBoundaryStencils<BoundaryStencilSetXRescaled<dim,0,0>>(
+	sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(STENCIL_MODE_INPLACE,
 			192, 384,
 			0.0, 10.0);
 	cudaDeviceSynchronize();
@@ -1879,7 +2046,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3D)
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 	sparseGrid.tagBoundaries(ctx);
 
-	sparseGrid.template applyBoundaryStencils<BoundaryStencilSetX<dim,0,0>>();
+	sparseGrid.template applyStencils<BoundaryStencilSetX<dim,0,0>>(STENCIL_MODE_INPLACE);
 
 	cudaDeviceSynchronize();
 

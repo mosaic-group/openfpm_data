@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(testBackground)
 	bool match = true;
 	for (size_t i = 0; i < output.size(); i++)
 	{
-//            std::cout << "output(" << i << ") = " << output.template get<0>(i) << std::endl;
+		match &= output.template get<0>(i) == 666;
 		match &= output.template get<0>(i) == sparseGrid.template get<0>(i);
 	}
 
@@ -159,12 +159,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	for (size_t i = 0; i < output.size(); i++)
 	{
 		auto expectedValue = (i < gridSize * blockSizeInsert) ? i : 666;
-		std::cout << "blockMap(" << i << ") = " << blockMap.template get<0>(i)
-				<< " == "
-				<< expectedValue
-				<< " == "
-				<< output.template get<0>(i) << " = output(" << i << ")"
-						<< std::endl;
+
 		match &= output.template get<0>(i) == blockMap.template get<0>(i);
 		match &= output.template get<0>(i) == expectedValue;
 	}
@@ -172,7 +167,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	BOOST_REQUIRE_EQUAL(match, true);
 }
 
-BOOST_AUTO_TEST_CASE(testInsert_halfBlock) //todo
+BOOST_AUTO_TEST_CASE(testInsert_halfBlock)
 {
 	typedef aggregate<DataBlock<float, 64>> AggregateT;
 	typedef aggregate<float> AggregateOutT;
@@ -215,12 +210,7 @@ BOOST_AUTO_TEST_CASE(testInsert_halfBlock) //todo
 		{
 			expectedValue = 666; // Just the first half of each block was inserted
 		}
-		std::cout << "blockMap(" << i << ") = " << blockMap.template get<0>(i)
-				  << " == "
-				  << expectedValue
-				  << " == "
-				  << output.template get<0>(i) << " = output(" << i << ")"
-				  << std::endl;
+
 		match &= output.template get<0>(i) == blockMap.template get<0>(i);
 		match &= output.template get<0>(i) == expectedValue;
 	}
@@ -240,14 +230,6 @@ BOOST_AUTO_TEST_CASE(testInsert_blocked)
 	const unsigned int blockSizeInsert = 128;
 	const unsigned int gridSizeRead = gridSize + 1;
 	const unsigned int blockSizeRead = 128;
-
-////////// DEBUG
-//        const unsigned int gridSize = 2;
-//        const unsigned int bufferPoolSize = 128; // Should be multiple of BlockT::size
-//        const unsigned int blockSizeInsert = 64;
-//        const unsigned int gridSizeRead = gridSize + 1;
-//        const unsigned int blockSizeRead = 64;
-//////////
 
 	// Prealloc insert buffer
 	sparseGrid.setGPUInsertBuffer(gridSize, bufferPoolSize);
@@ -273,12 +255,6 @@ BOOST_AUTO_TEST_CASE(testInsert_blocked)
 	for (size_t i = 0; i < output.size(); i++)
 	{
 		auto expectedValue = (i < gridSize * blockSizeInsert) ? i : 666;
-		std::cout << "sparseGrid(" << i << ") = " << sparseGrid.template get<0>(i)
-				  << " == "
-				  << expectedValue
-				  << " == "
-				  << output.template get<0>(i) << " = output(" << i << ")"
-				  << std::endl;
 		match &= output.template get<0>(i) == sparseGrid.template get<0>(i);
 		match &= output.template get<0>(i) == expectedValue;
 	}
