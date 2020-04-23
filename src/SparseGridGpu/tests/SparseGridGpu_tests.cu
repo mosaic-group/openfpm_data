@@ -632,7 +632,7 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified)
     sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
     sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,1,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
 
-    typedef decltype(sparseGrid.template conv_blockType<0, 1, 1>()) CpBlockType;
+    typedef typename GetCpBlockType<decltype(sparseGrid),0,1>::type CpBlockType;
 
     /*
      *
@@ -710,11 +710,11 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified2)
 	sparseGrid.tagBoundaries(ctx);
 
     sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,2,2>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 5.0);
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,1,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,1,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 5.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,2,2>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
     sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,3,3>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 5.0);
 
-    typedef decltype(sparseGrid.template conv_blockType<0, 1, 1>()) CpBlockType;
+    typedef typename GetCpBlockType<decltype(sparseGrid),0,1>::type CpBlockType;
 
     /*
      *
@@ -798,7 +798,7 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified_subset)
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 	sparseGrid.tagBoundaries(ctx);
 
-    typedef decltype(sparseGrid.template conv_blockType<0, 1, 1>()) CpBlockType;
+	typedef typename GetCpBlockType<decltype(sparseGrid),0,1>::type CpBlockType;
 
 	sparseGrid.conv<0, 1, 1>({3,3},{11,11},[] __device__ (CpBlockType & u,int i, int j){
 		return 5.0;
@@ -1092,8 +1092,8 @@ void test_convolution_3x3x3()
     }
 
 
-    sparseGrid.template applyStencils<Conv3x3x3<3,0,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,cc);
 
+    sparseGrid.template applyStencils<Conv3x3x3<3,0,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,cc);
     sparseGrid.template deviceToHost<0,1>();
 
 	auto & bm = sparseGrid.private_get_blockMap();

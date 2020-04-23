@@ -114,6 +114,20 @@ enum StencilMode
     STENCIL_MODE_INPLACE_NO_SHARED = 3
 };
 
+/*! \brief get the type of the block
+ *
+ *
+ */
+template<typename SGridGpu, unsigned int prp, unsigned int stencil_size>
+struct GetCpBlockType
+{
+	typedef cp_block<typename boost::mpl::at<typename SGridGpu::device_grid_type::value_type::type,boost::mpl::int_<prp>>::type,
+	         stencil_size,
+	         typename vmpl_sum_constant<2*stencil_size,typename vmpl_create_constant<SGridGpu::dims,SGridGpu::device_grid_type::blockEdgeSize_>::type >::type,
+	         SGridGpu::device_grid_type::dims> type;
+};
+
+
 /*! \brief Check if is padding
  *
  *
@@ -862,12 +876,15 @@ private:
     	ite.thr.y = 1;
     	ite.thr.z = 1;
 
-		CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),indexBuffer.size()+1,pack_subs.size());
+    	if (pack_subs.size() != 0)
+		{CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),indexBuffer.size()+1,pack_subs.size());}
     }
 
 public:
 
     typedef AggregateT value_type;
+
+    typedef self device_grid_type;
 
     SparseGridGpu()
 	:stencilSupportRadius(1)
@@ -1398,6 +1415,7 @@ public:
         if (findNN == false)
         {
         	findNeighbours<stencil_type>();
+        	findNN = true;
         }
 
         // NOTE: Here we want to work only on one data chunk per block!
@@ -1698,7 +1716,7 @@ public:
      *
      */
 	template<unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1 , unsigned int prop_dst2, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
-	void conv2(grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	void conv2(grid_key_dx<dim> start, grid_key_dx<dim> stop , lambda_f func, ArgsT ... args)
 	{
 		Box<dim,int> box;
 
@@ -1708,7 +1726,7 @@ public:
 			box.setHigh(i,stop.get(i));
 		}
 
-		applyStencils< SparseGridGpuKernels::stencil_cross_func_conv2<dim,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+		applyStencils< SparseGridGpuKernels::stencil_func_conv2<dim,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
 	}
 
 	/*! \brief Return a Box with the  range if the SparseGrid
@@ -1729,31 +1747,16 @@ public:
 		return b;
 	}
 
-    /*! \brief Apply a free type convolution using blocks
-     *
-     *
-     */
-	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size>
-	cp_block<typename boost::mpl::at<typename AggregateT::type,boost::mpl::int_<prop_src>>::type,
-	         stencil_size,
-	         typename vmpl_sum_constant<2*stencil_size,typename vmpl_create_constant<dim,blockEdgeSize>::type >::type,
-	         dim>
-	conv_blockType()
-	{
-		typedef typename boost::mpl::at<typename AggregateT::type,boost::mpl::int_<prop_src>>::type ScalarT;
-
-        typedef typename vmpl_create_constant<dim,blockEdgeSize>::type block_sizes;
-        typedef typename vmpl_sum_constant<2*stencil_size,block_sizes>::type vmpl_sizes;
-
-        ScalarT arr[vmpl_reduce_prod<vmpl_sizes>::type::value];
-
-		return cp_block<ScalarT,stencil_size,vmpl_sizes,dim>(arr);
-	}
-
     //todo: Move implems into a functor for compile time choice of stencil mode
     template<typename stencil, typename... Args>
     void applyStencils(const Box<dim,int> & box, StencilMode mode, Args... args)
     {
+        if (findNN == false)
+        {
+        	findNeighbours<typename stencil::stencil_type>();
+        	findNN = true;
+        }
+
         // Apply the given stencil on all elements which are not boundary-tagged
         // The idea is to have this function launch a __global__ function (made by us) on all existing blocks
         // then this kernel checks if elements exist && !padding and on those it calls the user-provided
@@ -2242,10 +2245,6 @@ public:
     	else if (pack_subs.size() <= 64)
     	{
     		pack_sg_implement<64, prp...>(mem,sts);
-    	}
-    	else if (pack_subs.size() <= 96)
-    	{
-    		pack_sg_implement<96, prp...>(mem,sts);
     	}
     	else
     	{

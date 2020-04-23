@@ -188,7 +188,7 @@ namespace SparseGridGpuKernels
 	};
 
 	template<unsigned int dim, unsigned int p_src1, unsigned int p_src2, unsigned int p_dst1, unsigned int p_dst2, unsigned int stencil_size>
-	struct stencil_cross_func_conv2
+	struct stencil_func_conv2
 	{
 		typedef NNStar<dim> stencil_type;
 
