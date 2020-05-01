@@ -1187,6 +1187,15 @@ public:
 	void remove(Box<dim,size_t> & section_to_delete)
 	{}
 
+	/*! \brief Reset the queue to remove and copy section of grids
+	 *
+	 * \note for this particular implementation it does nothing
+	 *
+	 */
+	void copyRemoveReset()
+	{
+	}
+
 	/*! \brief copy an external grid into a specific place into this grid
 	 *
 	 * It copy the area indicated by the  box_src from grid_src into this grid
@@ -1862,7 +1871,7 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeCopyToFinalize(const context_type & ctx)
+	void removeCopyToFinalize(const context_type & ctx, rem_copy_opt opt)
 	{}
 
 	/*! \brief It does nothing

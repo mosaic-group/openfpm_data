@@ -518,10 +518,10 @@ struct conv_impl<3>
 				for (int j = it.start(1) ; j < it.stop(1) ; j++)
 				{
 					s2 = it.Lin(0,j,v);
-					for (int k = 0 ; k < sx::value ; k += Vc::double_v::Size)
+					for (int k = 0 ; k < sx::value ; k += Vc::Vector<prop_type>::Size)
 					{
 						// we do only id exist the point
-						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::double_v::Size; continue;}
+						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::Vector<prop_type>::Size; continue;}
 
 						data_il<4> mxm;
 						data_il<4> mxp;
@@ -532,15 +532,15 @@ struct conv_impl<3>
 
 						cross_stencil_v cs;
 
-						Vc::double_v cmd(&chunk.template get<prop_src>()[s2]);
+						Vc::Vector<prop_type> cmd(&chunk.template get<prop_src>()[s2]);
 
 						// Load x-1
 						long int sumxm = s2-1;
 						sumxm += (k==0)?offset_jump[0] + sx::value:0;
 
 						// Load x+1
-						long int sumxp = s2+4;
-						sumxp += (k+4 == sx::value)?offset_jump[1] - sx::value:0;
+						long int sumxp = s2+Vc::Vector<prop_type>::Size;
+						sumxp += (k+Vc::Vector<prop_type>::Size == sx::value)?offset_jump[1] - sx::value:0;
 
 						long int sumym = (j == 0)?offset_jump[2] + (sy::value-1)*sx::value:-sx::value;
 						sumym += s2;
@@ -557,7 +557,7 @@ struct conv_impl<3>
 
 						mxp.i = *(int *)&mask.mask[s2];
 						mxp.i = mxp.i >> 8;
-						mxp.i |= ((int)mask.mask[sumxp]) << (Vc::double_v::Size - 1)*8;
+						mxp.i |= ((int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
 
 						mym.i = *(int *)&mask.mask[sumym];
 						myp.i = *(int *)&mask.mask[sumyp];
@@ -572,7 +572,7 @@ struct conv_impl<3>
 
 						cs.xp = cmd;
 						cs.xp = cs.xp.shifted(1);
-						cs.xp[3] = chunk.template get<prop_src>()[sumxp];
+						cs.xp[Vc::Vector<prop_type>::Size - 1] = chunk.template get<prop_src>()[sumxp];
 
 						// Load y and z direction
 
@@ -586,13 +586,13 @@ struct conv_impl<3>
 						data_il<4> tot_m;
 						tot_m.i = mxm.i + mxp.i + mym.i + myp.i + mzm.i + mzp.i;
 
-						Vc::double_v res = func(cmd,cs,tot_m.uc,args ... );
+						Vc::Vector<prop_type> res = func(cmd,cs,tot_m.uc,args ... );
 
 						Vc::Mask<prop_type> m(&mask_row[k]);
 
 						res.store(&chunk.template get<prop_dst>()[s2],m,Vc::Aligned);
 
-						s2 += Vc::double_v::Size;
+						s2 += Vc::Vector<prop_type>::Size;
 					}
 				}
 			}
@@ -740,7 +740,7 @@ struct conv_impl<3>
 	template<bool findNN, unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1, unsigned int prop_dst2, unsigned int stencil_size, typename SparseGridType, typename lambda_f, typename ... ArgsT >
 	static void conv_cross2(grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
 	{
-		auto it = grid.template getBlockIterator<1>(start,stop);
+		auto it = grid.template getBlockIterator<stencil_size>(start,stop);
 
 		auto & datas = grid.private_get_data();
 		auto & headers = grid.private_get_header_mask();
@@ -811,10 +811,10 @@ struct conv_impl<3>
 				for (int j = it.start(1) ; j < it.stop(1) ; j++)
 				{
 					s2 = it.Lin(0,j,v);
-					for (int k = 0 ; k < sx::value ; k += Vc::double_v::Size)
+					for (int k = 0 ; k < sx::value ; k += Vc::Vector<prop_type>::Size)
 					{
 						// we do only id exist the point
-						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::double_v::Size; continue;}
+						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::Vector<prop_type>::Size; continue;}
 
 						data_il<4> mxm;
 						data_il<4> mxp;
@@ -826,16 +826,16 @@ struct conv_impl<3>
 						cross_stencil_v cs1;
 						cross_stencil_v cs2;
 
-						Vc::double_v cmd1(&chunk.template get<prop_src1>()[s2]);
-						Vc::double_v cmd2(&chunk.template get<prop_src2>()[s2]);
+						Vc::Vector<prop_type> cmd1(&chunk.template get<prop_src1>()[s2]);
+						Vc::Vector<prop_type> cmd2(&chunk.template get<prop_src2>()[s2]);
 
 						// Load x-1
 						long int sumxm = s2-1;
 						sumxm += (k==0)?offset_jump[0] + sx::value:0;
 
 						// Load x+1
-						long int sumxp = s2+4;
-						sumxp += (k+4 == sx::value)?offset_jump[1] - sx::value:0;
+						long int sumxp = s2+Vc::Vector<prop_type>::Size;
+						sumxp += (k+Vc::Vector<prop_type>::Size == sx::value)?offset_jump[1] - sx::value:0;
 
 						long int sumym = (j == 0)?offset_jump[2] + (sy::value-1)*sx::value:-sx::value;
 						sumym += s2;
@@ -846,12 +846,13 @@ struct conv_impl<3>
 						long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
 						sumzp += s2;
 
-						mxm.i = mask.mask[s2];
+						mxm.i = *(int *)&mask.mask[s2];
 						mxm.i = mxm.i << 8;
 						mxm.i |= (int)mask.mask[sumxm];
 
-						mxp.i = mask.mask[s2+1];
-						mxp.i |= ((int)mask.mask[sumxm]) << (Vc::double_v::Size - 1)*8;
+						mxp.i = *(int *)&mask.mask[s2];
+						mxp.i = mxp.i >> 8;
+						mxp.i |= ((int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
 
 						mym.i = *(int *)&mask.mask[sumym];
 						myp.i = *(int *)&mask.mask[sumyp];
@@ -869,11 +870,11 @@ struct conv_impl<3>
 
 						cs1.xp = cmd1;
 						cs1.xp = cs1.xp.shifted(1);
-						cs1.xp[3] = chunk.template get<prop_src1>()[sumxp];
+						cs1.xp[Vc::Vector<prop_type>::Size - 1] = chunk.template get<prop_src1>()[sumxp];
 
 						cs2.xp = cmd2;
 						cs2.xp = cs2.xp.shifted(1);
-						cs2.xp[3] = chunk.template get<prop_src2>()[sumxp];
+						cs2.xp[Vc::Vector<prop_type>::Size - 1] = chunk.template get<prop_src2>()[sumxp];
 
 						// Load y and z direction
 
@@ -892,8 +893,8 @@ struct conv_impl<3>
 						data_il<4> tot_m;
 						tot_m.i = mxm.i + mxp.i + mym.i + myp.i + mzm.i + mzp.i;
 
-						Vc::double_v res1;
-						Vc::double_v res2;
+						Vc::Vector<prop_type> res1;
+						Vc::Vector<prop_type> res2;
 
 						func(res1,res2,cmd1,cmd2,cs1,cs2,tot_m.uc,args ... );
 
@@ -902,7 +903,7 @@ struct conv_impl<3>
 						res1.store(&chunk.template get<prop_dst1>()[s2],m,Vc::Aligned);
 						res2.store(&chunk.template get<prop_dst2>()[s2],m,Vc::Aligned);
 
-						s2 += Vc::double_v::Size;
+						s2 += Vc::Vector<prop_type>::Size;
 					}
 				}
 			}
@@ -1269,6 +1270,8 @@ class sgrid_cpu
 	 */
 	void init()
 	{
+		findNN = false;
+
 		for (size_t i = 0 ; i < SGRID_CACHE ; i++)
 		{cache[i] = -1;}
 
@@ -2200,6 +2203,15 @@ public:
 		}
 	}
 
+	/*! \brief Reset the queue to remove and copy section of grids
+	 *
+	 * \note for this particular implementation it does nothing
+	 *
+	 */
+	void copyRemoveReset()
+	{
+	}
+
 	/*! \brief Insert an allocation request
 	 *
 	 * \tparam prp set of properties to pack
@@ -2471,7 +2483,7 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeCopyToFinalize(const context_type & ctx)
+	void removeCopyToFinalize(const context_type & ctx, rem_copy_opt opt)
 	{}
 
 	/*! \brief Pack finalize Finalize the pack of this object. In this case it does nothing

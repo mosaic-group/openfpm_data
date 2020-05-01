@@ -178,6 +178,7 @@ install(FILES SparseGrid/SparseGrid_iterator.hpp
               SparseGrid/SparseGridUtil.hpp
 	      SparseGrid/SparseGrid_iterator_block.hpp
 	      SparseGrid/SparseGrid_chunk_copy.hpp
+	      SparseGrid/cp_block.hpp
         DESTINATION openfpm_data/include/SparseGrid)
 
 install(FILES hash_map/hopscotch_hash.h
@@ -368,6 +369,7 @@ install(FILES SparseGridGpu/SparseGridGpu.hpp
 	      SparseGridGpu/BlockMapGpu_kernels.cuh
 	      SparseGridGpu/BlockMapGpu_ker.cuh
 	      SparseGridGpu/BlockMapGpu_dimensionalityWrappers.cuh
+	      SparseGridGpu/encap_num.hpp
               DESTINATION openfpm_data/include/SparseGridGpu)
 
 install (FILES SparseGridGpu/Geometry/grid_smb.hpp

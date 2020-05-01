@@ -505,7 +505,7 @@ namespace BlockMapGpuKernels
             auto dstId = dstIndices.template get<0>(p);
             auto srcId = srcIndices.template get<0>(p);
 
-            dst.get(dstId) = src.get(srcId); //todo How does this = spread across threads...?
+            dst.get(dstId) = src.get(srcId);
         }
 #else // __NVCC__
         std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;

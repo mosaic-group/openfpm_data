@@ -148,7 +148,7 @@ public:
 	 * \param stop stop point
 	 *
 	 */
-	inline SparseGridGpu_iterator_sub(const SparseGridType & sparseGrid,const grid_key_dx<dim> & start,const  grid_key_dx<dim> & stop)
+	inline SparseGridGpu_iterator_sub(const SparseGridType & sparseGrid,const grid_key_dx<dim> & start,const  grid_key_dx<dim> & stop, int is_to_init)
 	:chunk(0),
 	 sparseGrid(&sparseGrid),
 	 ids(&sparseGrid.private_get_index_array()),
@@ -161,10 +161,13 @@ public:
 		}
 
 		initialize_chunk_sz();
-		in_chunk_it.invalidate();
-		initialize_chunk_it();
+		if (is_to_init == 1)
+		{
+			in_chunk_it.invalidate();
+			initialize_chunk_it();
 
-		SelectValid();
+			SelectValid();
+		}
 	}
 
 	/*! \brief Return the starting point

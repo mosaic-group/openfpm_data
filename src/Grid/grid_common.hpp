@@ -250,6 +250,14 @@ struct mem_reference
 	typedef T& type;
 };
 
-
+/*! \brief Options for remove copy
+ *
+ *
+ */
+enum rem_copy_opt
+{
+	PHASE1,
+	PHASE2
+};
 
 #endif /* OPENFPM_DATA_SRC_GRID_GRID_COMMON_HPP_ */

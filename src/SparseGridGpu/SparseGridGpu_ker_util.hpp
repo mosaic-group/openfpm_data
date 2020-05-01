@@ -107,31 +107,31 @@ struct arr_arr_ptr
 	void * ptr[n_it][n_prp];
 };
 
-template<typename copy_type, unsigned int nprp, unsigned int prp_val>
+template<typename copy_type, unsigned int nprp, unsigned int prp_val, unsigned int prp_id>
 struct meta_copy_block
 {
 	template<typename dataBuffer_type>
 	__device__ __host__ static void copy(void * (& data_ptr)[nprp], dataBuffer_type & dataBuff, unsigned int ppos, unsigned int dataBlockPos, unsigned int offset, unsigned int n_pnt)
 	{
-		((copy_type *)data_ptr[prp_val])[ppos] = dataBuff.template get<prp_val>(dataBlockPos)[offset];
+		((copy_type *)data_ptr[prp_id])[ppos] = dataBuff.template get<prp_val>(dataBlockPos)[offset];
 	}
 
 	template<typename dataBuffer_type>
 	__device__ __host__ static void copy_inv(arr_arr_ptr<1,nprp> & data_ptr, dataBuffer_type & dataBuff, unsigned int ppos, unsigned int dataBlockPos, unsigned int offset, unsigned int n_pnt)
 	{
-		dataBuff.template get<prp_val>(dataBlockPos)[offset] = ((copy_type *)data_ptr.ptr[0][prp_val])[ppos];
+		dataBuff.template get<prp_val>(dataBlockPos)[offset] = ((copy_type *)data_ptr.ptr[0][prp_id])[ppos];
 	}
 };
 
-template<typename copy_type, unsigned int nprp, unsigned int prp_val, unsigned int N1>
-struct meta_copy_block<copy_type[N1],nprp,prp_val>
+template<typename copy_type, unsigned int nprp, unsigned int prp_val, unsigned int prp_id, unsigned int N1>
+struct meta_copy_block<copy_type[N1],nprp,prp_val,prp_id>
 {
 	template<typename dataBuffer_type>
 	__device__ __host__ static void copy(void * (& data_ptr)[nprp], dataBuffer_type & dataBuff, unsigned int ppos, unsigned int dataBlockPos, unsigned int offset, unsigned int n_pnt)
 	{
 		for (int i = 0 ; i < N1 ; i++)
 		{
-			((copy_type *)data_ptr[prp_val])[ppos+i*n_pnt] = dataBuff.template get<prp_val>(dataBlockPos)[i][offset];
+			((copy_type *)data_ptr[prp_id])[ppos+i*n_pnt] = dataBuff.template get<prp_val>(dataBlockPos)[i][offset];
 		}
 	}
 
@@ -140,13 +140,13 @@ struct meta_copy_block<copy_type[N1],nprp,prp_val>
 	{
 		for (int i = 0 ; i < N1 ; i++)
 		{
-			dataBuff.template get<prp_val>(dataBlockPos)[i][offset] = ((copy_type *)data_ptr.ptr[0][prp_val])[ppos+i*n_pnt];
+			dataBuff.template get<prp_val>(dataBlockPos)[i][offset] = ((copy_type *)data_ptr.ptr[0][prp_id])[ppos+i*n_pnt];
 		}
 	}
 };
 
-template<typename copy_type, unsigned int nprp, unsigned int prp_val, unsigned int N1, unsigned int N2>
-struct meta_copy_block<copy_type[N1][N2],nprp,prp_val>
+template<typename copy_type, unsigned int nprp, unsigned int prp_val, unsigned int prp_id, unsigned int N1, unsigned int N2>
+struct meta_copy_block<copy_type[N1][N2],nprp,prp_val,prp_id>
 {
 	template<typename dataBuffer_type>
 	__device__ __host__ static void copy(void * (& data_ptr)[nprp], dataBuffer_type & dataBuff, unsigned int ppos, unsigned int dataBlockPos, unsigned int offset, unsigned int n_pnt)
@@ -155,7 +155,7 @@ struct meta_copy_block<copy_type[N1][N2],nprp,prp_val>
 		{
 			for (int j = 0 ; j < N2 ; j++)
 			{
-				((copy_type *)data_ptr[prp_val])[ppos + (i*N2 + j)*n_pnt] = dataBuff.template get<prp_val>(dataBlockPos)[i][j][offset];
+				((copy_type *)data_ptr[prp_id])[ppos + (i*N2 + j)*n_pnt] = dataBuff.template get<prp_val>(dataBlockPos)[i][j][offset];
 			}
 		}
 	}
@@ -167,7 +167,7 @@ struct meta_copy_block<copy_type[N1][N2],nprp,prp_val>
 		{
 			for (int j = 0 ; j < N2 ; j++)
 			{
-				dataBuff.template get<prp_val>(dataBlockPos)[i][j][offset] = ((copy_type *)data_ptr.ptr[0][prp_val])[ppos + (i*N2 + j)*n_pnt];
+				dataBuff.template get<prp_val>(dataBlockPos)[i][j][offset] = ((copy_type *)data_ptr.ptr[0][prp_id])[ppos + (i*N2 + j)*n_pnt];
 			}
 		}
 	}
@@ -226,7 +226,7 @@ struct sparsegridgpu_pack_impl
 		// Remove the reference from the type to copy
 		typedef typename boost::mpl::at<typename AggregateT::type,prp_cp>::type pack_type;
 
-		meta_copy_block<pack_type,sizeof...(prp),prp_cp::value>::copy(data_ptr,dataBuff,ppos,dataBlockPos,offset,n_pnt);
+		meta_copy_block<pack_type,sizeof...(prp),prp_cp::value,T::value>::copy(data_ptr,dataBuff,ppos,dataBlockPos,offset,n_pnt);
 	}
 };
 
@@ -284,9 +284,7 @@ struct sparsegridgpu_unpack_impl
 		// Remove the reference from the type to copy
 		typedef typename boost::mpl::at<typename AggregateT::type,prp_cp>::type pack_type;
 
-		meta_copy_block<pack_type,sizeof...(prp),prp_cp::value>::copy_inv(data_ptr,dataBuff,ppos,dataBlockPos,offset,n_pnt);
-
-		//dataBuff.template get<T::value>(dataBlockPos)[offset] = ((pack_type *)data_ptr.ptr[0][T::value])[ppos];
+		meta_copy_block<pack_type,sizeof...(prp),prp_cp::value,T::value>::copy_inv(data_ptr,dataBuff,ppos,dataBlockPos,offset,n_pnt);
 	}
 };
 

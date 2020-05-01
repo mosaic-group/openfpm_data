@@ -278,6 +278,17 @@ public:
         unsetBit(bitMask, EXIST_BIT);
     }
 
+
+    /*! \brief Return internal structure block map
+     *
+     * \return the blockMap
+     *
+     */
+    decltype(blockMap) & private_get_blockMap_non_const()
+	{
+    	return blockMap;
+	}
+
     /*! \brief Return internal structure block map
      *
      * \return the blockMap

@@ -497,6 +497,14 @@ namespace openfpm
 #endif
 		}
 
+        /*! \brief Get the data buffer
+         *
+         * \return the reference to the data buffer
+         */
+        __device__ auto getAddDataBuffer() -> decltype(vct_add_data)&
+        {
+            return vct_add_data;
+        }
 
         /*! \brief Get the data buffer
          *
@@ -505,6 +513,15 @@ namespace openfpm
         __device__ auto getDataBuffer() -> decltype(vct_data)&
         {
             return vct_data;
+        }
+
+        /*! \brief Get the indices buffer
+        *
+        * \return the reference to the indices buffer
+        */
+        __device__ auto getAddIndexBuffer() const -> const decltype(vct_add_index)&
+        {
+            return vct_add_index;
         }
 
         /*! \brief Get the indices buffer

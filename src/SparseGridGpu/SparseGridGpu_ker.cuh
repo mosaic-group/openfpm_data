@@ -41,6 +41,7 @@ protected:
 
 public:
     static constexpr unsigned int d = dim;
+    static constexpr unsigned int dims = dim;
     static constexpr unsigned int blockEdgeSize_ = blockEdgeSize;
     unsigned int stencilSupportRadius;
     typedef AggregateBlockT AggregateBlockType;

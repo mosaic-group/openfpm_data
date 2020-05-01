@@ -27,6 +27,8 @@ constexpr int BLOCK_SIZE_STENCIL = 128;
 #include "VCluster/VCluster.hpp"
 #endif
 
+constexpr int NO_ITERATOR_INIT = 0;
+
 // todo: Move all the following utils into some proper file inside TemplateUtils
 
 enum tag_boundaries
@@ -127,6 +129,17 @@ struct GetCpBlockType
 	         SGridGpu::device_grid_type::dims> type;
 };
 
+#include "encap_num.hpp"
+
+/*! \brief get the type of the insertBlock
+ *
+ *
+ */
+template<typename SGridGpu>
+struct GetAddBlockType
+{
+	typedef enc_num<typename SGridGpu::device_grid_type::insert_encap> type;
+};
 
 /*! \brief Check if is padding
  *
@@ -543,6 +556,8 @@ public:
     template<typename Tfunc> using layout_mfunc = memory_traits_inte<Tfunc>;
 
     typedef sparse_grid_gpu_index<self> base_key;
+
+    typedef decltype(std::declval<BMG>().toKernel().insertBlock(0)) insert_encap;
 
     /*! \brief return the size of the grid
      *
@@ -1693,6 +1708,7 @@ public:
 		applyStencils< SparseGridGpuKernels::stencil_cross_func<dim,prop_src,prop_dst,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
 	}
 
+
     /*! \brief Apply a free type convolution using blocks
      *
      *
@@ -2169,10 +2185,11 @@ public:
 	/*! \brief It finalize the queued operations of remove() and copy_to()
 	 *
 	 * \param ctx context
+	 * \param options
 	 *
 	 */
 	template<unsigned int ... prp>
-	void removeCopyToFinalize(mgpu::ofp_context_t & ctx)
+	void removeCopyToFinalize(mgpu::ofp_context_t & ctx, rem_copy_opt opt)
 	{
 		this->packReset();
 
@@ -2181,7 +2198,7 @@ public:
 
 		for (size_t i = 0 ; i < copySect.size() ; i++)
 		{
-			auto sub_it = this->getIterator(copySect.get(i).src.getKP1(),copySect.get(i).src.getKP2());
+			auto sub_it = this->getIterator(copySect.get(i).src.getKP1(),copySect.get(i).src.getKP2(),NO_ITERATOR_INIT);
 
 			this->packRequest(sub_it,req);
 		}
@@ -2200,7 +2217,7 @@ public:
 
 		for (size_t i = 0 ; i < copySect.size() ; i++)
 		{
-			auto sub_it = this->getIterator(copySect.get(i).src.getKP1(),copySect.get(i).src.getKP2());
+			auto sub_it = this->getIterator(copySect.get(i).src.getKP1(),copySect.get(i).src.getKP2(),NO_ITERATOR_INIT);
 
 			this->pack<prp ...>(prAlloc_prp,sub_it,sts);
 		}
@@ -2214,7 +2231,7 @@ public:
 
 		for (size_t i = 0 ; i < copySect.size() ; i++)
 		{
-			auto sub_it = this->getIterator(copySect.get(i).dst.getKP1(),copySect.get(i).dst.getKP2());
+			auto sub_it = this->getIterator(copySect.get(i).dst.getKP1(),copySect.get(i).dst.getKP2(),NO_ITERATOR_INIT);
 
 			copySect.get(i).grd->template unpack<prp...>(prAlloc_prp,sub_it,ups,ctx);
 		}
@@ -2342,6 +2359,16 @@ public:
 
 		this->template flush<sRight_<prp>...>(context,flush_type::FLUSH_ON_DEVICE);
 
+	}
+
+	/*! \brief Reset the queue to remove and copy section of grids
+	 *
+	 *
+	 */
+	void copyRemoveReset()
+	{
+		rem_sects.clear();
+		copySect.clear();
 	}
 
 	/*! \brief Remove all the points in this region
@@ -2579,10 +2606,11 @@ public:
      * \return a SparseGrid iterator on a subset of elements
      *
      */
-    decltype(self::type_of_subiterator()) getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
+    decltype(self::type_of_subiterator()) getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop, int is_to_init = 1) const
     {
-    	return decltype(self::type_of_subiterator())(*this,start,stop);
+    	return decltype(self::type_of_subiterator())(*this,start,stop,is_to_init);
     }
+
 
     /*! \brief Return the index array of the blocks
      *
