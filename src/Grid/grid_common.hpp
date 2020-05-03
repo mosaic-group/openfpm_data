@@ -257,7 +257,8 @@ struct mem_reference
 enum rem_copy_opt
 {
 	PHASE1,
-	PHASE2
+	PHASE2,
+	PHASE3
 };
 
 #endif /* OPENFPM_DATA_SRC_GRID_GRID_COMMON_HPP_ */

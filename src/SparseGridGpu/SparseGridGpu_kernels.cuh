@@ -1230,6 +1230,72 @@ namespace SparseGridGpuKernels
 
     template<unsigned int dim,
     		 unsigned int blockSize,
+    		 unsigned int nshifts,
+    		 typename indexT,
+    		 typename linearizer,
+    		 typename shiftTypeVector,
+    		 typename outputType>
+    __global__ void convert_chunk_ids(indexT * ids,
+    										int n_cnk,
+    		                                linearizer gridGeoPack,
+    		                                grid_key_dx<dim,int> origPack,
+    		                                linearizer gridGeo,
+    		                                grid_key_dx<dim,int> origUnpack,
+    		                                outputType output,
+    		                                shiftTypeVector shifts,
+    		                                int bs)
+    {
+    	// points
+        const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (p >= n_cnk)
+        {return;}
+
+        auto id = ids[p];
+
+        for (int i = 0 ; i < nshifts ; i++)
+        {
+        	grid_key_dx<dim,int> pos = gridGeoPack.InvLinId(id,0) - origPack + origUnpack;
+
+        	auto plin = gridGeo.LinId(pos);
+
+        	output.template get<0>(p*nshifts + i + bs) = plin / blockSize;
+        }
+    }
+
+/*    template<typename shiftTypeVector,
+    		 typename convertDataBlockType
+    		 typename blockAddMapType,
+    		 typename dabaBlockType>
+    __global__ void convert_point_offets(short int * offsets,
+    										int n_pnt,
+    										int * cnk_pos_v,
+    										dataBlockType data,
+    										blockAddMapType bma,
+    		                                shiftTypeVector output,
+    		                                convertDataBlockType conv_db,
+    		                                int base)
+    {
+    	// points
+        const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (p >= n_pnt)
+        {return;}
+
+        auto off = offsets[p];
+        int bs = conv_cb.template get<0>(0)[off];
+        short int off_c = bs & 0xFFFF;
+        bs = bs >> 16;
+
+        int cnk_pos = cnk_pos_v[p] - base;
+
+        int pos = bma.template get<0>(cnk_pos*n_shift + bs);
+
+        data.template get<>(pos)[off_c] = ;
+    }*/
+
+    template<unsigned int dim,
+    		 unsigned int blockSize,
     		 typename indexT,
     		 typename linearizer,
     		 typename segType,
