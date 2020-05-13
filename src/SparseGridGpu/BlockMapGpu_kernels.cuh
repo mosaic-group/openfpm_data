@@ -685,7 +685,18 @@ namespace BlockMapGpuFunctors
     	openfpm::vector_gpu<aggregate<unsigned int>> outputMap;
     	openfpm::vector_gpu<aggregate<int>> segments_oldData;
 
-
+    	/*! \brief Create the array of the merged datas with no more conflicts (repeated chunk ids)
+    	 *
+    	 * \param keys Old chunk id already present in the data structure
+    	 * \param mergeIndeces array of the merged indexes (with conflicts repeated chunks ids)
+    	 * \param segments_new
+    	 * \param dataMap it store the index where the data is located in the original add buffer
+    	 * \param dataOld chunk data for the old chunks
+    	 * \param dataNew chunk data for the new chunk
+    	 * \param keysOut array with the chunks ids (without conflicts)
+    	 * \param dataOut array of the merged data (without conflicts)
+    	 *
+    	 */
         template<unsigned int pSegment, typename vector_index_type, typename vector_index_type2, typename vector_data_type, typename ... v_reduce>
         bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices, vector_index_type2 &segments_new, vector_index_type &data_map,
                                     vector_data_type &dataOld, vector_data_type &dataNew,
@@ -791,6 +802,16 @@ namespace BlockMapGpuFunctors
             return true;
 #endif // __NVCC__
         }
+
+        openfpm::vector_gpu<aggregate<unsigned int>> & get_outputMap()
+		{
+        	return outputMap;
+		}
+
+        const openfpm::vector_gpu<aggregate<unsigned int>> & get_outputMap() const
+		{
+        	return outputMap;
+		}
     };
 }
 

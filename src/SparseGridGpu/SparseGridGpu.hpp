@@ -18,6 +18,7 @@ constexpr int BLOCK_SIZE_STENCIL = 128;
 #include "util/stat/common_statistics.hpp"
 #include "Iterators/SparseGridGpu_iterator.hpp"
 #include "util/cuda/moderngpu/kernel_load_balance.hxx"
+#include "Space/SpaceBox.hpp"
 
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
 #include "VTKWriter/VTKWriter.hpp"
@@ -483,12 +484,23 @@ private:
 
     CudaMemory mem;
 
-    // pointers
+    // pointers for unpack
     openfpm::vector<void *> index_ptrs;
     openfpm::vector<void *> scan_ptrs;
     openfpm::vector<void *> data_ptrs;
     openfpm::vector<void *> offset_ptrs;
     openfpm::vector<void *> mask_ptrs;
+
+    // pointers for copyRemove
+    openfpm::vector<void *> offset_ptrs_cp;
+    openfpm::vector<void *> scan_ptrs_cp;
+    openfpm::vector<void *> data_base_ptr_cp;
+    openfpm::vector<int> n_cnk_cp;
+    openfpm::vector<int> n_pnt_cp;
+    openfpm::vector<int> n_shifts_cp;
+	typedef typename aggregate_convert<dim,blockEdgeSize,aggregate<int>>::type convertAggr;
+	openfpm::vector_gpu<convertAggr> convert_blk;
+	openfpm::vector<Box<dim,size_t>> box_cp;
 
     //! set of existing points
     //! the formats is id/blockSize = data block poosition id % blockSize = offset
@@ -761,8 +773,34 @@ private:
                         args...);
     }
 
+    template<typename ids_type>
+    void fill_chunks_boxes(openfpm::vector<SpaceBox<dim,double>> & chunks_box, ids_type & chunk_ids, Point<dim,double> & spacing, Point<dim,double> & offset)
+    {
+    	for (int i = 0 ; i < chunk_ids.size() ; i++)
+    	{
+    		SpaceBox<dim,double> box;
+
+    		auto c_pos = gridGeometry.InvLinId(chunk_ids.template get<0>(i)*blockSize);
+
+    		for (int j = 0 ; j < dim ; j++)
+    		{
+    			box.setLow(j,c_pos.get(j) * spacing[j] - 0.5*spacing[j] + offset.get(j)*spacing[j]);
+    			box.setHigh(j,(c_pos.get(j) + blockEdgeSize)*spacing[j] - 0.5*spacing[j] + offset.get(j)*spacing[j]);
+    		}
+
+    		chunks_box.add(box);
+    	}
+    }
+
 	template<unsigned int ... prp>
 	void removeCopyToFinalize_phase1(mgpu::ofp_context_t & ctx, rem_copy_opt opt)
+	{
+		if (opt & rem_copy_opt::KEEP_GEOMETRY == false)
+		{removePoints(ctx);}
+	}
+
+	template<unsigned int ... prp>
+	void removeCopyToFinalize_phase2(mgpu::ofp_context_t & ctx, rem_copy_opt opt)
 	{
 		this->packReset();
 
@@ -800,8 +838,6 @@ private:
 
 		// Convert the packed chunk ids
 
-		tmp.clear();
-
 		prAlloc_prp->reset();
 		Unpack_stat ups;
 
@@ -813,13 +849,14 @@ private:
 		}
 
 		// Add in the flush buffer
-
-
 	}
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase2(mgpu::ofp_context_t & ctx, rem_copy_opt opt)
+	void removeCopyToFinalize_phase3(mgpu::ofp_context_t & ctx, rem_copy_opt opt)
 	{
+		if (tmp2.size() == 0)
+		{return;}
+
 		// Fill the add buffer given tmp and than flush
 
 		setGPUInsertBuffer(tmp2.size(),1ul);
@@ -827,33 +864,84 @@ private:
 		auto & add_buff = this->blockMap.private_get_vct_add_index();
 		add_buff.swap(tmp2);
 
-		this->template flush<>(ctx,flush_type::FLUSH_ON_DEVICE);
-	}
+		auto & nadd_buff = this->blockMap.private_get_vct_nadd_index();
+		auto ite = nadd_buff.getGPUIterator();
+		CUDA_LAUNCH(SparseGridGpuKernels::set_one,ite,nadd_buff.toKernel());
 
-	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase3(mgpu::ofp_context_t & ctx, rem_copy_opt opt)
-	{
-		// We unpack to the destination
+		int sz_b =  this->private_get_index_array().size();
 
-		prAlloc_prp->reset();
-		Unpack_stat ups;
+		this->template flush<sLeft_<prp>...>(ctx,flush_type::FLUSH_ON_DEVICE);
 
-		for (size_t i = 0 ; i < copySect.size() ; i++)
+		// get the map of the new inserted elements
+
+	    auto & m_map = this->getMergeIndexMapVector();
+	    auto & a_map = this->getMappingVector();
+	    auto & o_map = this->getSegmentToOutMap();
+	    auto & segments_data = this->getSegmentToMergeIndexMap();
+
+	    openfpm::vector_gpu<aggregate<int>> new_map;
+		new_map.resize(a_map.size());
+
+		// construct new to old map
+
+		ite = segments_data.getGPUIterator();
+
+		if (ite.nblocks() != 0)
+		CUDA_LAUNCH(SparseGridGpuKernels::construct_new_chunk_map<1>,ite,new_map.toKernel(),a_map.toKernel(),m_map.toKernel(),o_map.toKernel(),segments_data.toKernel(),sz_b);
+
+		convert_blk.template hostToDevice<0>();
+
+		// for each packed chunk
+
+		size_t n_accu_cnk = 0;
+		for (size_t i = 0 ; i < n_cnk_cp.size() ; i++)
 		{
-			auto sub_it = this->getIterator(copySect.get(i).dst.getKP1(),copySect.get(i).dst.getKP2(),NO_ITERATOR_INIT);
+			arr_arr_ptr<1,sizeof...(prp)> data;
+			size_t n_pnt = n_pnt_cp.get(i);
 
-			copySect.get(i).grd->template unpack<prp...>(*prAlloc_prp,sub_it,ups,ctx);
+			void * data_base_ptr = data_base_ptr_cp.get(i);
+			data_ptr_fill<AggregateT,1,prp...> dpf(data_base_ptr,0,data,n_pnt);
+			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(dpf);
+
+			ite.wthr.x = n_cnk_cp.get(i);
+
+			// calculate best number of threads
+			Box<dim,size_t> ub = box_cp.get(i);
+
+			ite.thr.x = 1;
+			for (int j = 0 ; j < dim ; j++)
+			{
+				size_t l = ub.getHigh(j) - ub.getLow(j) + 1;
+
+				if (l >= blockEdgeSize)
+				{ite.thr.x *= blockEdgeSize;}
+				else
+				{ite.thr.x *= l;}
+			}
+
+			// copy to new (1 block for each packed chunk)
+			if (ite.nblocks() != 0 && ite.thr.x != 0)
+			{
+				auto & chunks = private_get_data_array();
+
+				CUDA_LAUNCH((SparseGridGpuKernels::copy_packed_data_to_chunks<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+						 	 	 	 	 	 	 	 	 	 	 	 	 	  AggregateT,decltype(convert_blk.toKernel()),decltype(new_map.toKernel()),
+						                                                      decltype(data),decltype(chunks.toKernel()),prp... >),ite,
+																				 (unsigned int *)scan_ptrs_cp.get(i),
+																				 (unsigned short int *)offset_ptrs_cp.get(i),
+																				 convert_blk.toKernel(),
+																				 new_map.toKernel(),
+																				 data,
+																				 chunks.toKernel(),
+																				 n_cnk_cp.get(i),
+																				 n_shifts_cp.get(i),
+																				 n_pnt_cp.get(i),
+																				 i,
+																				 n_accu_cnk);
+			}
+
+			n_accu_cnk += n_cnk_cp.get(i)*n_shifts_cp.get(i);
 		}
-
-		return;
-
-		// Flush empty
-
-		// convert ids into chunk position
-
-		// convert offsets
-
-		// copy data into destination
 	}
 
     template<unsigned int n_it, unsigned int ... prp>
@@ -1020,7 +1108,8 @@ private:
 		mem.deviceToHost(ps.getOffset(),ps.getOffset() + sizeof(size_t) + 2*dim*sizeof(int));
 		Unpacker<size_t,S2>::unpack(mem,n_cnk,ps);
 
-		grid_key_dx<dim,int> origPack;
+		grid_key_dx<dim,int> origPack_pnt;
+		grid_key_dx<dim,int> origPack_cnk;
 		size_t sz[dim];
 
 		// Unpack origin of the chunk indexing
@@ -1028,7 +1117,8 @@ private:
 		{
 			int tmp;
 			Unpacker<int,S2>::unpack(mem,tmp,ps);
-			origPack.set_d(i,tmp);
+			origPack_cnk.set_d(i,((int)(tmp / blockEdgeSize))*blockEdgeSize);
+			origPack_pnt.set_d(i,tmp);
 		}
 
 		for (int i = 0 ; i < dim ; i++)
@@ -1039,22 +1129,43 @@ private:
 		}
 
 		size_t actual_offset = n_cnk*sizeof(indexT);
+		// get the id pointers
+		indexT * ids = (indexT *)((unsigned char *)mem.getDevicePointer() + ps.getOffset());
+		unsigned int * scan = (unsigned int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + n_cnk*sizeof(indexT));
 
 		mem.deviceToHost(ps.getOffset() + actual_offset + n_cnk*sizeof(unsigned int),
 						 ps.getOffset() + actual_offset + n_cnk*sizeof(unsigned int) + sizeof(unsigned int));
+
+
 
 		// Unpack number of points
 		// calculate the number of total points
 		size_t n_pnt = *(unsigned int *)((unsigned char *)mem.getPointer() + ps.getOffset() + actual_offset + n_cnk*sizeof(unsigned int));
 		actual_offset += align_number(sizeof(indexT),(n_cnk+1)*sizeof(unsigned int));
+
+		void * data_base_ptr = (void *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset );
+
 		actual_offset += align_number(sizeof(indexT),n_pnt*(spq.point_size));
 
 		short int * offsets = (short int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset);
 
-		actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(short));
+		offset_ptrs_cp.add(offsets);
+		scan_ptrs_cp.add(scan);
+		n_cnk_cp.add(n_cnk);
+		n_pnt_cp.add(n_pnt);
+		data_base_ptr_cp.add(data_base_ptr);
 
-		// get the data pointers
-		indexT * ids = (indexT *)((unsigned char *)mem.getDevicePointer() + ps.getOffset());
+		Box<dim,size_t> bx;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			bx.setLow(i,sub_it.getStart().get(i));
+			bx.setHigh(i,sub_it.getStop().get(i));
+		}
+
+		box_cp.add(bx);
+
+		actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(short));
 
 		if (n_cnk != 0)
 		{
@@ -1068,10 +1179,10 @@ private:
 
 			for (int i = 0 ; i < dim ; i++)
 			{
-				int op_q = origPack.get(i) % blockEdgeSize;
+				int op_q = origPack_pnt.get(i) % blockEdgeSize;
 				int ou_q = sub_it.getStart().get(i) % blockEdgeSize;
-				int quot = (ou_q - op_q) % blockEdgeSize;
-				int squot = openfpm::math::sgn(quot);
+				int quot = abs(ou_q - op_q) % blockEdgeSize;
+				int squot = openfpm::math::sgn(ou_q - op_q);
 				if (quot != 0)
 				{
 					n_shift *= 2;
@@ -1082,7 +1193,7 @@ private:
 						shifts.add();
 						for (int k = 0 ; k < dim ; k++)
 						{
-							shifts.last().template get<0>()[k] = shifts.template get<0>(j)[k] + (i == k)?squot:0;
+							shifts.last().template get<0>()[k] = shifts.template get<0>(j)[k] + ((i == k)?squot:0);
 						}
 					}
 				}
@@ -1097,59 +1208,74 @@ private:
 			grid_sm<1,void> g(sz);
 			auto ite = g.getGPUIterator();
 
-			grid_key_dx<dim,int> origUnpack;
+			grid_key_dx<dim,int> sz_g;
+			grid_key_dx<dim,int> origUnpack_cnk;
 
 			for (int i = 0 ; i < dim ; i++)
-			{origUnpack.set_d(i,sub_it.getStart().get(i));}
+			{
+				sz_g.set_d(i,gridGeometry.getSize()[i]);
+				origUnpack_cnk.set_d(i,(int)(sub_it.getStart().get(i) / blockEdgeSize)*blockEdgeSize);
+			}
 
 			bs = tmp2.size();
 			tmp2.resize(tmp2.size() + n_cnk * shifts.size());
+
+			n_shifts_cp.add(shifts.size());
 
 			switch (shifts.size())
 			{
 			case 1:
 				// Calculate for each chunk the indexes where they should go + active points
-				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,1,indexT>),ite,ids,
+				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,1,indexT>),ite,ids,
 															  n_cnk,
-															  gridGeoPack,origPack,
-															  gridGeometry,origUnpack,
+															  gridGeoPack,origPack_cnk,
+															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
 															  shifts.toKernel(),
+															  sz_g,
 															  bs);
 				break;
 			case 2:
 				// Calculate for each chunk the indexes where they should go + active points
-				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,2,indexT>),ite,ids,
+				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,2,indexT>),ite,ids,
 															  n_cnk,
-															  gridGeoPack,origPack,
-															  gridGeometry,origUnpack,
+															  gridGeoPack,origPack_cnk,
+															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
 															  shifts.toKernel(),
+															  sz_g,
 															  bs);
 				break;
 			case 4:
 				// Calculate for each chunk the indexes where they should go + active points
-				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,4,indexT>),ite,ids,
+				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,4,indexT>),ite,ids,
 															  n_cnk,
-															  gridGeoPack,origPack,
-															  gridGeometry,origUnpack,
+															  gridGeoPack,origPack_cnk,
+															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
 															  shifts.toKernel(),
+															  sz_g,
 															  bs);
 				break;
 			case 8:
 				// Calculate for each chunk the indexes where they should go + active points
-				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,8,indexT>),ite,ids,
+				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,8,indexT>),ite,ids,
 															  n_cnk,
-															  gridGeoPack,origPack,
-															  gridGeometry,origUnpack,
+															  gridGeoPack,origPack_cnk,
+															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
 															  shifts.toKernel(),
+															  sz_g,
 															  bs);
 				break;
 			}
 
-			convertChunkIds(offsets,origPack,sub_it);
+			convertChunkIds(offsets,origPack_pnt,sub_it);
+		}
+		else
+		{
+			convert_blk.add();
+			n_shifts_cp.add(0);
 		}
 
 		actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(unsigned char));
@@ -1164,8 +1290,6 @@ private:
 	template<typename origPackType, typename IteratorType>
 	void convertChunkIds(short int * offset, origPackType & origPack, IteratorType & sub_it)
 	{
-		typedef typename aggregate_convert<dim,blockEdgeSize,aggregate<int>>::type convertAggr;
-
 		int quot_diff[dim];
 		for (int i = 0 ; i < dim ; i++)
 		{
@@ -1175,7 +1299,6 @@ private:
 			quot_diff[i] = openfpm::math::sgn(ou_q - op_q)*quot;
 		}
 
-		openfpm::vector_gpu<convertAggr> convert_blk;
 		convert_blk.add();
 
 		// Create conversion block
@@ -1210,16 +1333,12 @@ private:
 
 				pos += pos_c*c;
 				pos_c *= blockEdgeSize;
-				bp_c *= 2;
+				bp_c *= (quot_diff[i] != 0)?2:1;
 				x /= blockEdgeSize;
 			}
 
-			convert_blk.template get<0>(0)[pos] = bpos << 16 + offset;
+			convert_blk.template get<0>(convert_blk.size()-1)[pos] = (bpos << 16) + offset;
 		}
-
-		convert_blk.template hostToDevice<0>();
-
-
 	}
 
 public:
@@ -2441,6 +2560,26 @@ public:
 								scan_it.size(), (indexT *)scan_it. template getDeviceBuffer<0>(), context);
 	}
 
+	/*! \brief Return the mapping vector used to know where the data has been added
+	 *
+	 * \return the mapping vector
+	 *
+	 */
+	auto getMappingVector() -> decltype(this->blockMap.getMappingVector())
+	{
+		return this->blockMap.getMappingVector();
+	}
+
+	/*! \brief Return the mapping vector used to know where the data has been added
+	 *
+	 * \return the mapping vector
+	 *
+	 */
+	auto getMergeIndexMapVector() -> decltype(this->blockMap.getMergeIndexMapVector())
+	{
+		return this->blockMap.getMergeIndexMapVector();
+	}
+
 	/*! \brief Pack the object into the memory given an iterator
 	 *
 	 * \warning the pack does not happen here but it happen in packFinalize, the request is just queued
@@ -2511,6 +2650,16 @@ public:
 
 	/*! \brief It finalize the queued operations of remove() and copy_to()
 	 *
+	 * \warning you have to call this function with opt rem_copy_opt::PHASE1 than rem_copy_opt::PHASE2
+	 *          and finally rem_copy_opt::PHASE3
+	 *
+	 * In particular suppose we have 3 grids and we copy sections of the grid 1 into 2 and 3 , sections of grid 2 into
+	 * 1 and 3 and sections of grid 3 into 1 and 2. Than we have to first call on all 3 grids removeCopyFinalize with
+	 * PHASE1. Than we call removeCopyFinalize with PHASE2 on all 3 grids and finally removeCopyFinalize with PHASE3
+	 *
+	 * In case we can guarantee that the chunks structure has not changed we can pass the option KEEP_GEOMETRY to make
+	 * this function faster
+	 *
 	 * \param ctx context
 	 * \param options
 	 *
@@ -2580,13 +2729,14 @@ public:
     	vai.clear();
 	}
 
-	/*! \brief This function remove the points we queue to remove and it flush all the added/unpacked data
+	/*! \brief Remove the points we queues to remove
 	 *
-	 * \note this function exist to respect the interface to work as distributed
+	 * \see
+	 *
+	 * \param context modern gpu context
 	 *
 	 */
-	template<unsigned int ... prp>
-	void removeAddUnpackFinalize(mgpu::ofp_context_t& context)
+	void removePoints(mgpu::ofp_context_t& context)
 	{
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
@@ -2647,8 +2797,24 @@ public:
 																dataBuffer.toKernel(),
 																tmp2.toKernel(),
 																rem_sects.toKernel());
+
+				tmp2.clear();
 			}
 		}
+	}
+
+	/*! \brief This function remove the points we queue to remove and it flush all the added/unpacked data
+	 *
+	 * \note this function exist to respect the interface to work as distributed
+	 *
+	 */
+	template<unsigned int ... prp>
+	void removeAddUnpackFinalize(mgpu::ofp_context_t& context)
+	{
+    	auto & indexBuffer = private_get_index_array();
+    	auto & dataBuffer = private_get_data_array();
+
+    	removePoints(context);
 
     	this->preFlush();
 
@@ -2664,6 +2830,17 @@ public:
 	{
 		rem_sects.clear();
 		copySect.clear();
+		offset_ptrs_cp.clear();
+		scan_ptrs_cp.clear();
+		data_base_ptr_cp.clear();
+		n_cnk_cp.clear();
+		n_pnt_cp.clear();
+	    n_shifts_cp.clear();
+		convert_blk.clear();
+		box_cp.clear();
+		data_base_ptr_cp.clear();
+
+		tmp2.clear();
 	}
 
 	/*! \brief Remove all the points in this region
@@ -2906,6 +3083,25 @@ public:
     	return decltype(self::type_of_subiterator())(*this,start,stop,is_to_init);
     }
 
+    /*! \brief Return the index array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_add_index_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.private_get_vct_add_index()) &
+    {
+    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.private_get_vct_add_index();
+    }
+
+    /*! \brief Return the index array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_add_index_array() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.private_get_vct_add_index()) &
+    {
+    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.private_get_vct_add_index();
+    }
 
     /*! \brief Return the index array of the blocks
      *
@@ -2916,6 +3112,26 @@ public:
     {
     	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
     }
+
+	auto getSegmentToOutMap() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToOutMap())
+	{
+		return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToOutMap();
+	}
+
+	auto getSegmentToOutMap() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToOutMap())
+	{
+		return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToOutMap();
+	}
+
+	auto getSegmentToMergeIndexMap() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToMergeIndexMap())
+	{
+		return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToMergeIndexMap();
+	}
+
+	auto getSegmentToMergeIndexMap() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToMergeIndexMap())
+	{
+		return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToMergeIndexMap();
+	}
 
     /*! \brief Return the index array of the blocks
      *
@@ -2958,7 +3174,7 @@ public:
     }
 
 
-#if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
+#if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST) || defined(VTKWRITER_HPP_)
 
 	/*! \brief write the sparse grid into VTK
 	 *
@@ -2966,6 +3182,23 @@ public:
 	 *
 	 */
 	template<typename Tw = float> bool write(const std::string & output)
+	{
+		Point<dim,double> spacing;
+		Point<dim,double> offset;
+
+		spacing.one();
+		offset.zero();
+
+		return write_with_spacing_offset(output,spacing,offset);
+	}
+
+	/*! \brief write the sparse grid into VTK
+	 *
+	 * \param out VTK output
+	 *
+	 */
+	template<typename Tw = float>
+	bool write_with_spacing_offset(const std::string & output, Point<dim,double> spacing, Point<dim,double> offset)
 	{
 		file_type ft = file_type::BINARY;
 
@@ -2995,7 +3228,7 @@ public:
 					grid_key_dx<dim,int> keyg = gridGeometry.InvLinId(index.template get<0>(key),i);
 
 					for (size_t k = 0 ; k < dim ; k++)
-					{p.get(k) = keyg.get(k);}
+					{p.get(k) = keyg.get(k)*spacing[k] + offset[k]*spacing[k];}
 
 					tmp_pos.add(p);
 
@@ -3020,6 +3253,32 @@ public:
 
 		// Write the VTK file
 		return vtk_writer.write(output,prp_names,"sparse_grid","",ft);
+	}
+
+	/*! \brief write the sparse grid into VTK
+	 *
+	 * \param out VTK output
+	 *
+	 */
+	template<typename Tw = float> bool write_debug(const std::string & output, Point<dim,double> spacing, Point<dim,double> offset)
+	{
+		//! subdomains_X.vtk domain for the local processor (X) as union of sub-domain
+		VTKWriter<openfpm::vector<SpaceBox<dim, double>>, VECTOR_BOX> vtk_box1;
+
+		openfpm::vector<SpaceBox<dim,double>> chunks_box;
+
+		auto & ids = private_get_index_array();
+
+		fill_chunks_boxes(chunks_box,ids,spacing,offset);
+
+		vtk_box1.add(chunks_box);
+		vtk_box1.write(std::string("chunks_") + output + std::string(".vtk"));
+
+		//write data
+
+		write_with_spacing_offset(std::string("data_") + output + std::string(".vtk"),spacing,offset);
+
+		return true;
 	}
 
 #endif

@@ -29,7 +29,8 @@
 enum flush_type
 {
 	FLUSH_ON_HOST = 0,
-	FLUSH_ON_DEVICE = 1
+	FLUSH_ON_DEVICE = 1,
+	FLUSH_NO_DATA = 2
 };
 
 template<typename OfpmVectorT>
@@ -122,16 +123,6 @@ namespace openfpm
     {
         template <unsigned int p, typename vector_index_type>
         static void extendSegments(vector_index_type & segments, size_t dataSize)
-        {
-#ifdef __NVCC__
-            // Pass as there is nothing to append for mgpu
-#else // __NVCC__
-            std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
-        }
-
-        template <typename vector_index_type>
-        static void trimSegments(vector_index_type & segments)
         {
 #ifdef __NVCC__
             // Pass as there is nothing to append for mgpu
@@ -259,18 +250,6 @@ namespace openfpm
             segments.resize(segments.size()+1);
             segments.template get<p>(segments.size() - 1) = dataSize;
             segments.template hostToDevice<p>(segments.size() - 1, segments.size() - 1);
-#else // __NVCC__
-            std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif // __NVCC__
-        }
-
-        template <typename vector_index_type>
-        static void trimSegments(vector_index_type & segments)
-        {
-#ifdef __NVCC__
-            // Append trailing element to segment (marks end of last segment)
-            segments.resize(segments.size()-1);
-            ////////////
 #else // __NVCC__
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
 #endif // __NVCC__
@@ -698,95 +677,6 @@ namespace openfpm
 		}
 	};
 
-	/*! \brief this class is a functor for "for_each" algorithm
-	 *
-	 * This class is a functor for "for_each" algorithm. For each
-	 * element of the boost::vector the operator() is called.
-	 * Is mainly used to copy one encap into another encap object
-	 *
-	 * \tparam encap source
-	 * \tparam encap dst
-	 *
-	 */
-	template<typename vector_data_type,
-	        typename vector_index_type,
-	        typename vector_index_type2,
-	        typename vector_reduction,
-	        typename block_functor,
-	        unsigned int impl2, unsigned int pSegment=1>
-	struct sparse_vector_reduction_total
-	{
-		//! old data
-		vector_data_type & vector_data_old;
-
-		//! Data to add (new) still to reduce
-		vector_data_type & vector_data_new;
-
-		//! vector map index for the new data
-		vector_index_type & vector_index_map;
-
-		//! vector copy old (index of old vector to copy)
-		vector_index_type & vct_copy_old;
-
-		//! Vector output of the reduction
-		vector_data_type & vector_out_red;
-
-		//! segment of offsets
-		vector_index_type2 & segment_offset;
-
-		//! vector output map
-		vector_index_type & vector_out_map;
-
-		//! vector segments old
-		vector_index_type & vector_seg_old;
-
-		//! gpu context
-		mgpu::ofp_context_t & context;
-
-		/*! \brief constructor
-		 *
-		 * \param src source encapsulated object
-		 * \param dst source encapsulated object
-		 *
-		 */
-		inline sparse_vector_reduction_total(vector_data_type & vector_data_old,
-									   vector_data_type & vector_data_new,
-									   vector_index_type & vector_index_map,
-									   vector_index_type & vct_copy_old,
-									   vector_data_type & vector_out_red,
-									   vector_index_type2 & segment_offset,
-									   vector_index_type & vector_out_map,
-									   vector_index_type & vector_seg_old,
-									   mgpu::ofp_context_t & context)
-		:vector_data_old(vector_data_old),vector_data_new(vector_data_new),
-		 vector_index_map(vector_index_map),vct_copy_old(vct_copy_old),vector_out_red(vector_out_red),
-		 segment_offset(segment_offset),vector_out_map(vector_out_map),
-		 vector_seg_old(vector_seg_old),context(context)
-		{};
-
-		//! It call the copy function for each property
-		template<typename T>
-		inline void operator()(T& t) const
-		{
-#ifdef __NVCC__
-
-            typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
-            typedef typename boost::mpl::at<typename ValueTypeOf<vector_data_type>::type,typename reduction_type::prop>::type red_type;
-            if (reduction_type::is_special() == false)
-			{
-			    scalar_block_implementation_switch<impl2, block_functor>::template segreduce_total<pSegment, vector_reduction, T>(
-			    		segment_offset, vector_data_old,vector_out_red,
-			    		        					   vct_copy_old,
-			    		        					   vector_data_new, vector_index_map,
-			    		        					   vector_out_map,
-			    		        					   vector_seg_old,
-			    		        					   context);
-			}
-#else
-			std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
-#endif
-		}
-	};
 
 	struct stub_block_functor
 	{
@@ -804,6 +694,18 @@ namespace openfpm
                                     mgpu::ofp_context_t & context)
 		{
 			return true;
+		}
+
+		openfpm::vector_gpu<aggregate<unsigned int>> outputMap;
+
+        openfpm::vector_gpu<aggregate<unsigned int>> & get_outputMap()
+		{
+        	return outputMap;
+		}
+
+        const openfpm::vector_gpu<aggregate<unsigned int>> & get_outputMap() const
+		{
+        	return outputMap;
 		}
 	};
 
@@ -964,6 +866,7 @@ namespace openfpm
 			Ti v = _branchfree_search_nobck<prefetch>(x,id);
 			id = (x == v)?id:vct_data.size()-1;
 		}
+
 
 		/* \brief take the indexes for the insertion pools and create a continuos array
 		 *
@@ -1198,7 +1101,7 @@ namespace openfpm
 
 			vct_index_dtmp.resize(itew.wthr.x);
 
-			// we merge with vct_index with vct_add_index_unique in vct_merge_index, vct_intex_tmp2 contain the merging index
+			// we merge with vct_index with vct_add_index_unique in vct_merge_index, vct_merge_index contain the merged indexes
 			//
 			mgpu::merge((Ti *)vct_index.template getDeviceBuffer<0>(),(Ti *)vct_m_index.template getDeviceBuffer<0>(),vct_index.size(),
 						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp4.template getDeviceBuffer<0>(),vct_add_index_unique.size(),
@@ -1283,8 +1186,6 @@ namespace openfpm
                         context
                     );
 
-			scalar_block_implementation_switch<impl2, block_functor>
-			        ::trimSegments(vct_add_index_unique);
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif
@@ -2086,7 +1987,93 @@ namespace openfpm
 		{
 			return vct_add_index;
 		}
+
+		const vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & private_get_vct_add_index() const
+		{
+			return vct_add_index;
+		}
+
+		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & private_get_vct_nadd_index()
+		{
+			return vct_nadd_index;
+		}
+
+		const vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & private_get_vct_nadd_index() const
+		{
+			return vct_nadd_index;
+		}
+
+		auto getSegmentToOutMap() -> decltype(blf.get_outputMap())
+		{
+			return blf.get_outputMap();
+		}
+
+		auto getSegmentToOutMap() const -> decltype(blf.get_outputMap())
+		{
+			return blf.get_outputMap();
+		}
+
+		/* \brief Return the offsets of the segments for the merge indexes
+		 *
+		 *
+		 */
+		vector<aggregate<Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti>>::type,layout_base,grow_p> & getSegmentToMergeIndexMap()
+		{
+			return vct_add_index_unique;
+		}
+
+		vector<aggregate<Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti>>::type,layout_base,grow_p> & getSegmentToMergeIndexMap() const
+		{
+			return vct_add_index_unique;
+		}
+
+		/*! \brief Return the mapping vector
+		 *
+		 * When we add new elements this vector contain the merged old elements and new elements position
+		 *
+		 * For example the old vector contain
+		 *
+		 * Old: 5 10 35 50 66 79 (6 elements)
+		 * New: 7 44 7 9 44      (5 elements)  (in order are 7 7 9 44 44)
+		 *
+		 * The merged indexes are (when reordered)
+		 *
+		 * 5 7 7 9 10 35 44 44 50 66 79
+		 *
+		 * The returned map contain 5 elements indicating the position of the reordered elements:
+		 *
+		 *  0  2  3   1   4
+		 * (7)(7)(9)(44)(44)
+		 */
+		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & getMappingVector()
+		{
+			return vct_add_index_cont_1;
+		}
+
+		/*! \brief Return the merge mapping vector
+		 *
+		 * When we add new elements this vector contain the merged old elements and new elements position
+		 *
+		 * For example the old vector contain
+		 *
+		 * Old: 5 10 35 50 66 79 (6 elements)
+		 * New: 7 44 7 9 44      (5 elements)  (in order are 7 7 9 44 44)
+		 *
+		 * The merged indexes are (when reordered)
+		 *
+		 * 5 7 7 9 10 35 44 44 50 66 79
+		 *
+		 * The returned map contain 5 elements indicating the position of the reordered elements:
+		 *
+		 *  0  6  7  8   1   2   9  10   3   4   5
+		 * (5)(7)(7)(9)(10)(35)(44)(44)(50)(66)(79)
+		 */
+		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & getMergeIndexMapVector()
+		{
+			return vct_index_tmp2;
+		}
 	};
+
 
 	template<typename T, unsigned int blockSwitch = VECTOR_SPARSE_STANDARD, typename block_functor = stub_block_functor>
 	using vector_sparse_gpu = openfpm::vector_sparse<

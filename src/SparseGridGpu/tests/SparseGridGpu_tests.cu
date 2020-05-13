@@ -1358,6 +1358,64 @@ BOOST_AUTO_TEST_CASE(test_pack_request)
     BOOST_REQUIRE_EQUAL(req,tot);
 }
 
+BOOST_AUTO_TEST_CASE(test_MergeIndexMap)
+{
+	size_t sz[] = {1000,1000,1000};
+
+	constexpr int blockEdgeSize = 4;
+	constexpr int dim = 3;
+
+	typedef SparseGridGpu<dim, aggregate<float>, blockEdgeSize, 64, long int> SparseGridZ;
+
+	SparseGridZ sparseGrid(sz);
+	mgpu::ofp_context_t ctx;
+	sparseGrid.template setBackgroundValue<0>(0);
+
+	// now create a 3D sphere
+
+    grid_key_dx<3,int> start({256,256,256});
+
+    dim3 gridSize(32,32,32);
+
+    // Insert values on the grid
+    sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
+    CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
+            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
+            sparseGrid.toKernel(), start,64, 56, 1);
+
+    size_t sz_b =  sparseGrid.private_get_index_array().size();
+
+    sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+
+    auto & m_map = sparseGrid.getMergeIndexMapVector();
+    auto & a_map = sparseGrid.getMappingVector();
+
+    m_map.template deviceToHost<0>();
+    a_map.template deviceToHost<0>();
+
+    bool match = true;
+
+    auto & indexes = sparseGrid.private_get_index_array();
+    indexes.template deviceToHost<0>();
+    auto & a_indexes = sparseGrid.private_get_add_index_array();
+    a_indexes.template deviceToHost<0>();
+    auto & m_out = sparseGrid.getSegmentToOutMap();
+    m_out.template deviceToHost<0>();
+
+    for (int i = 0 ; i < m_map.size() ; i++)
+    {
+    	if (m_map.template get<0>(i) >= sz_b)
+    	{
+    		int c = a_map.template get<0>(m_map.template get<0>(i) - sz_b);
+    		int ci = m_out.template get<0>(i);
+
+    		match &= (a_indexes.template get<0>(c) == indexes.template get<0>(ci));
+    	}
+    }
+
+    BOOST_REQUIRE_EQUAL(match,true);
+}
+
 BOOST_AUTO_TEST_CASE(test_pack_request_with_iterator)
 {
 	size_t sz[] = {1000,1000,1000};

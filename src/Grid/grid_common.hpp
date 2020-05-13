@@ -256,9 +256,11 @@ struct mem_reference
  */
 enum rem_copy_opt
 {
-	PHASE1,
-	PHASE2,
-	PHASE3
+	PHASE1 = 0,
+	PHASE2 = 1,
+	PHASE3 = 2,
+	// This option indicate that the geometrical structure of the sparse-grid has not changed
+	KEEP_GEOMETRY = 4
 };
 
 #endif /* OPENFPM_DATA_SRC_GRID_GRID_COMMON_HPP_ */

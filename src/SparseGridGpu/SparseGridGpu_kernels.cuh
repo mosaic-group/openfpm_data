@@ -1230,6 +1230,7 @@ namespace SparseGridGpuKernels
 
     template<unsigned int dim,
     		 unsigned int blockSize,
+    		 unsigned int blockEdgeSize,
     		 unsigned int nshifts,
     		 typename indexT,
     		 typename linearizer,
@@ -1243,6 +1244,7 @@ namespace SparseGridGpuKernels
     		                                grid_key_dx<dim,int> origUnpack,
     		                                outputType output,
     		                                shiftTypeVector shifts,
+    		                                grid_key_dx<dim,int> sz,
     		                                int bs)
     {
     	// points
@@ -1257,42 +1259,104 @@ namespace SparseGridGpuKernels
         {
         	grid_key_dx<dim,int> pos = gridGeoPack.InvLinId(id,0) - origPack + origUnpack;
 
+        	for (int j = 0 ; j < dim ; j++)
+        	{
+        		pos.set_d(j,pos.get(j) + shifts.template get<0>(i)[j]*blockEdgeSize);
+        		if (pos.get(j) < 0)
+        		{
+        			pos.set_d(j,0);
+        		}
+        		if (pos.get(j) >= sz.get(j))
+        		{
+        			pos.set_d(j,pos.get(j) - blockEdgeSize);
+        		}
+        	}
+
         	auto plin = gridGeo.LinId(pos);
 
         	output.template get<0>(p*nshifts + i + bs) = plin / blockSize;
         }
     }
 
-/*    template<typename shiftTypeVector,
-    		 typename convertDataBlockType
-    		 typename blockAddMapType,
-    		 typename dabaBlockType>
-    __global__ void convert_point_offets(short int * offsets,
-    										int n_pnt,
-    										int * cnk_pos_v,
-    										dataBlockType data,
-    										blockAddMapType bma,
-    		                                shiftTypeVector output,
-    		                                convertDataBlockType conv_db,
-    		                                int base)
+    template<typename vectorType>
+    __global__ void set_one(vectorType vt)
     {
     	// points
         const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
 
-        if (p >= n_pnt)
+        if (p >= vt.size())
         {return;}
 
-        auto off = offsets[p];
-        int bs = conv_cb.template get<0>(0)[off];
-        short int off_c = bs & 0xFFFF;
-        bs = bs >> 16;
+        vt.template get<0>(p) = 1;
+    }
 
-        int cnk_pos = cnk_pos_v[p] - base;
+    template<unsigned int pSegment,typename newMapType, typename mergeMapType,
+             typename dataMapType, typename segmentOffsetType,
+             typename outMapType>
+    __global__ void construct_new_chunk_map(newMapType new_map, dataMapType dataMap,
+    		                                mergeMapType merge_id, outMapType outMap,
+    		                                segmentOffsetType segments_data, int start_p)
+    {
+    	// points
+        const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
 
-        int pos = bma.template get<0>(cnk_pos*n_shift + bs);
+        if (p >= segments_data.size()-1)
+        {return;}
 
-        data.template get<>(pos)[off_c] = ;
-    }*/
+        unsigned int st = segments_data.template get<pSegment>(p);
+
+        int segmentSize = segments_data.template get<pSegment>(p + 1)
+                          - segments_data.template get<pSegment>(p);
+
+        for (int j = 0 ; j < segmentSize ; j++)
+        {
+        	int dm = dataMap.template get<0>(st+j);
+        	new_map.template get<0>(dm) = outMap.template get<0>(p);
+        }
+    }
+
+    template<unsigned int pMask, typename AggregateT, typename blockConvertType, typename newMapType, typename dataType_ptrs, typename dataType, unsigned int ... prp>
+    __global__ void copy_packed_data_to_chunks(unsigned int * scan,
+    										   unsigned short int * offsets,
+    										   blockConvertType blc,
+    										   newMapType new_map,
+    										   dataType_ptrs data_ptrs,
+    										   dataType data_buff,
+    										   unsigned int n_cnk,
+    										   unsigned int n_shf,
+    										   unsigned int n_pnt,
+    										   unsigned int i,
+    										   unsigned int n_accu_cnk)
+    {
+    	// points
+        const unsigned int p = blockIdx.x;
+
+        if (p >= n_cnk)
+        {return;}
+
+        int scan_pp = scan[p];
+        int n_block_pnt = scan[p+1] - scan_pp;
+
+        if (threadIdx.x < n_block_pnt)
+        {
+        	unsigned short int off = offsets[scan[p] + threadIdx.x];
+
+        	int conv = blc.template get<0>(i)[off];
+
+        	unsigned short int off_c = conv & 0xFFFF;
+        	unsigned short int shf_c = conv >> 16;
+
+        	unsigned int pos_c = new_map.template get<0>(n_shf*p + shf_c + n_accu_cnk);
+
+    		sparsegridgpu_unpack_impl<AggregateT, dataType ,prp ...>
+    														spi(pos_c,off_c,data_buff,scan_pp + threadIdx.x,data_ptrs,n_pnt);
+
+    		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
+
+    		data_buff.template get<pMask>(pos_c)[off_c] |= 0x1;
+        }
+    }
+
 
     template<unsigned int dim,
     		 unsigned int blockSize,
