@@ -1871,7 +1871,7 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeCopyToFinalize(const context_type & ctx, rem_copy_opt opt)
+	void removeCopyToFinalize(const context_type & ctx, int opt)
 	{}
 
 	/*! \brief It does nothing

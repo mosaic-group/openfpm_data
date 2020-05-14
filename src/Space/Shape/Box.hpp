@@ -762,6 +762,26 @@ public:
 		return *this;
 	}
 
+	/*! \brief Translate the box
+	 *
+	 * \param p Point translation vector
+	 *
+	 * \return the translated box
+	 *
+	 */
+	inline Box<dim,T> operator+(const Point<dim,T> & p)
+	{
+		Box<dim,T> b;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			b.setHigh(i,boost::fusion::at_c<p2>(data)[i] + p.get(i));
+			b.setLow(i,boost::fusion::at_c<p1>(data)[i] + p.get(i));
+		}
+
+		return b;
+	}
+
 	/*! \brief expand the box by a vector
 	 *
 	 * only P2 is expanded

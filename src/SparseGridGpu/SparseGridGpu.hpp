@@ -530,6 +530,9 @@ private:
     //! contain the scan of the point for each iterator
     mutable openfpm::vector_gpu<aggregate<indexT>> scan_it;
 
+    //! Map between the (Last) added chunks and their position in chunks data
+    mutable openfpm::vector_gpu<aggregate<int>> new_map;
+
     //! the set of all sub-set to pack
     mutable openfpm::vector_gpu<Box<dim,int>> pack_subs;
 
@@ -793,103 +796,124 @@ private:
     }
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase1(mgpu::ofp_context_t & ctx, rem_copy_opt opt)
+	void removeCopyToFinalize_phase1(mgpu::ofp_context_t & ctx, int opt)
 	{
-		if (opt & rem_copy_opt::KEEP_GEOMETRY == false)
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{removePoints(ctx);}
 	}
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase2(mgpu::ofp_context_t & ctx, rem_copy_opt opt)
+	void removeCopyToFinalize_phase2(mgpu::ofp_context_t & ctx, int opt)
 	{
-		this->packReset();
-
-		size_t req = 0;
-		// First we do counting of point to copy (as source)
-
-		for (size_t i = 0 ; i < copySect.size() ; i++)
-		{
-			auto sub_it = this->getIterator(copySect.get(i).src.getKP1(),copySect.get(i).src.getKP2(),NO_ITERATOR_INIT);
-
-			this->packRequest(sub_it,req);
-		}
-
-		this->template packCalculate<prp...>(req,ctx);
-
-		mem.resize(req);
-
-		// Create an object of preallocated memory for properties
-		prAlloc_prp = new ExtPreAlloc<CudaMemory>(req,mem);
-		prAlloc_prp->incRef();
-
 		// Pack information
 		Pack_stat sts;
 
-		for (size_t i = 0 ; i < copySect.size() ; i++)
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{
-			auto sub_it = this->getIterator(copySect.get(i).src.getKP1(),copySect.get(i).src.getKP2(),NO_ITERATOR_INIT);
+			this->packReset();
 
-			this->pack<prp ...>(*prAlloc_prp,sub_it,sts);
+			size_t req = 0;
+			// First we do counting of point to copy (as source)
+
+			for (size_t i = 0 ; i < copySect.size() ; i++)
+			{
+				auto sub_it = this->getIterator(copySect.get(i).src.getKP1(),copySect.get(i).src.getKP2(),NO_ITERATOR_INIT);
+
+				this->packRequest(sub_it,req);
+			}
+
+			this->template packCalculate<prp...>(req,ctx);
+
+			mem.resize(req);
+
+			// Create an object of preallocated memory for properties
+			prAlloc_prp = new ExtPreAlloc<CudaMemory>(req,mem);
+			prAlloc_prp->incRef();
+
+			for (size_t i = 0 ; i < copySect.size() ; i++)
+			{
+				auto sub_it = this->getIterator(copySect.get(i).src.getKP1(),copySect.get(i).src.getKP2(),NO_ITERATOR_INIT);
+
+				this->pack<prp ...>(*prAlloc_prp,sub_it,sts);
+			}
 		}
 
 		this->template packFinalize<prp ...>(*prAlloc_prp,sts);
 
-		//////////////////////////////////////////////////// NEW CODE
-
-		// Convert the packed chunk ids
-
-		prAlloc_prp->reset();
-		Unpack_stat ups;
-
-		for (size_t i = 0 ; i < copySect.size() ; i++)
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{
-			auto sub_it = this->getIterator(copySect.get(i).dst.getKP1(),copySect.get(i).dst.getKP2(),NO_ITERATOR_INIT);
+			// Convert the packed chunk ids
 
-			copySect.get(i).grd->template addAndConvertPackedChunkToTmp<prp ...>(*prAlloc_prp,sub_it,ups,ctx);
+			prAlloc_prp->reset();
+			Unpack_stat ups;
+
+			for (size_t i = 0 ; i < copySect.size() ; i++)
+			{
+				auto sub_it = this->getIterator(copySect.get(i).dst.getKP1(),copySect.get(i).dst.getKP2(),NO_ITERATOR_INIT);
+
+				copySect.get(i).grd->template addAndConvertPackedChunkToTmp<prp ...>(*prAlloc_prp,sub_it,ups,ctx);
+			}
+
+			// Add in the flush buffer
+
+			prAlloc_prp->decRef();
+			delete prAlloc_prp;
 		}
-
-		// Add in the flush buffer
 	}
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase3(mgpu::ofp_context_t & ctx, rem_copy_opt opt)
+	void removeCopyToFinalize_phase3(mgpu::ofp_context_t & ctx, int opt)
 	{
-		if (tmp2.size() == 0)
-		{return;}
+		ite_gpu<1> ite;
 
-		// Fill the add buffer given tmp and than flush
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+		{
+			if (tmp2.size() == 0)
+			{return;}
 
-		setGPUInsertBuffer(tmp2.size(),1ul);
+			// Fill the add buffer given tmp and than flush
 
-		auto & add_buff = this->blockMap.private_get_vct_add_index();
-		add_buff.swap(tmp2);
+			setGPUInsertBuffer(tmp2.size(),1ul);
 
-		auto & nadd_buff = this->blockMap.private_get_vct_nadd_index();
-		auto ite = nadd_buff.getGPUIterator();
-		CUDA_LAUNCH(SparseGridGpuKernels::set_one,ite,nadd_buff.toKernel());
+			auto & add_buff = this->blockMap.private_get_vct_add_index();
+			add_buff.swap(tmp2);
 
-		int sz_b =  this->private_get_index_array().size();
+			auto & nadd_buff = this->blockMap.private_get_vct_nadd_index();
+			ite = nadd_buff.getGPUIterator();
+			CUDA_LAUNCH(SparseGridGpuKernels::set_one,ite,nadd_buff.toKernel());
 
-		this->template flush<sLeft_<prp>...>(ctx,flush_type::FLUSH_ON_DEVICE);
+			int sz_b =  this->private_get_index_array().size();
 
-		// get the map of the new inserted elements
+			this->template flush<sLeft_<prp>...>(ctx,flush_type::FLUSH_ON_DEVICE);
 
-	    auto & m_map = this->getMergeIndexMapVector();
-	    auto & a_map = this->getMappingVector();
-	    auto & o_map = this->getSegmentToOutMap();
-	    auto & segments_data = this->getSegmentToMergeIndexMap();
+			// get the map of the new inserted elements
 
-	    openfpm::vector_gpu<aggregate<int>> new_map;
-		new_map.resize(a_map.size());
+			auto & m_map = this->getMergeIndexMapVector();
+			auto & a_map = this->getMappingVector();
+			auto & o_map = this->getSegmentToOutMap();
+			auto & segments_data = this->getSegmentToMergeIndexMap();
 
-		// construct new to old map
+			new_map.resize(a_map.size());
 
-		ite = segments_data.getGPUIterator();
+			// construct new to old map
 
-		if (ite.nblocks() != 0)
-		CUDA_LAUNCH(SparseGridGpuKernels::construct_new_chunk_map<1>,ite,new_map.toKernel(),a_map.toKernel(),m_map.toKernel(),o_map.toKernel(),segments_data.toKernel(),sz_b);
+			ite = segments_data.getGPUIterator();
 
-		convert_blk.template hostToDevice<0>();
+			if (ite.nblocks() != 0)
+			CUDA_LAUNCH(SparseGridGpuKernels::construct_new_chunk_map<1>,ite,new_map.toKernel(),a_map.toKernel(),m_map.toKernel(),o_map.toKernel(),segments_data.toKernel(),sz_b);
+
+			convert_blk.template hostToDevice<0>();
+		}
+		else
+		{
+			ite.wthr.x = 1;
+			ite.wthr.y = 1;
+			ite.wthr.z = 1;
+
+			ite.thr.x = 1;
+			ite.thr.y = 1;
+			ite.thr.z = 1;
+		}
 
 		// for each packed chunk
 
@@ -2665,13 +2689,13 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp>
-	void removeCopyToFinalize(mgpu::ofp_context_t & ctx, rem_copy_opt opt)
+	void removeCopyToFinalize(mgpu::ofp_context_t & ctx, int opt)
 	{
-		if (opt == rem_copy_opt::PHASE1)
+		if ((opt & 0x3) == rem_copy_opt::PHASE1)
 		{
 			this->template removeCopyToFinalize_phase1<prp ...>(ctx,opt);
 		}
-		else if (opt == rem_copy_opt::PHASE2)
+		else if ((opt & 0x3) == rem_copy_opt::PHASE2)
 		{
 			this->template removeCopyToFinalize_phase2<prp ...>(ctx,opt);
 		}
@@ -2789,6 +2813,8 @@ public:
 				ite.thr.x = getBlockSize();
 				ite.thr.y = 1;
 				ite.thr.z = 1;
+
+				if (has_work_gpu(ite) == false)	{return;}
 
 				CUDA_LAUNCH((SparseGridGpuKernels::remove_points<dim,
 																BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),

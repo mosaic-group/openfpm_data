@@ -256,6 +256,7 @@ struct mem_reference
  */
 enum rem_copy_opt
 {
+	NONE_OPT = 0,
 	PHASE1 = 0,
 	PHASE2 = 1,
 	PHASE3 = 2,
