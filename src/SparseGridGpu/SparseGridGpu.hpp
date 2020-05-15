@@ -486,10 +486,15 @@ private:
 
     // pointers for unpack
     openfpm::vector<void *> index_ptrs;
+    openfpm::vector<void *> index_ptrs_swp;
     openfpm::vector<void *> scan_ptrs;
+    openfpm::vector<void *> scan_ptrs_swp;
     openfpm::vector<void *> data_ptrs;
+    openfpm::vector<void *> data_ptrs_swp;
     openfpm::vector<void *> offset_ptrs;
+    openfpm::vector<void *> offset_ptrs_swp;
     openfpm::vector<void *> mask_ptrs;
+    openfpm::vector<void *> mask_ptrs_swp;
 
     // pointers for copyRemove
     openfpm::vector<void *> offset_ptrs_cp;
@@ -505,9 +510,11 @@ private:
     //! set of existing points
     //! the formats is id/blockSize = data block poosition id % blockSize = offset
     openfpm::vector_gpu<aggregate<indexT>> e_points;
+    openfpm::vector_gpu<aggregate<indexT>> e_points_swp;
 
     //! Helper array to pack points
     openfpm::vector_gpu<aggregate<unsigned int>> pack_output;
+    openfpm::vector_gpu<aggregate<unsigned int>> pack_output_swp;
 
     //! For stencil in a block-wise computation we have to load blocks + ghosts area. The ghost area live in neighborhood blocks
     //! For example the left ghost margin live in the right part of the left located neighborhood block, the right margin live in the
@@ -520,6 +527,7 @@ private:
 
     //! temporal
     mutable openfpm::vector_gpu<aggregate<indexT,unsigned int>> tmp;
+    mutable openfpm::vector_gpu<aggregate<indexT,unsigned int>> tmp_swp;
 
     //! temporal 2
     mutable openfpm::vector_gpu<aggregate<indexT>> tmp2;
@@ -631,6 +639,75 @@ public:
                 ::template flush<v_reduce ...>(context, opt);
 
         findNN = false;
+    }
+
+    void savePackVariableIfNotKeepGeometry(int opt)
+    {
+		if (!(opt & KEEP_GEOMETRY))
+		{
+			index_ptrs_swp.swap(index_ptrs);
+			scan_ptrs_swp.swap(scan_ptrs);
+			data_ptrs_swp.swap(data_ptrs);
+			offset_ptrs_swp.swap(offset_ptrs);
+			mask_ptrs_swp.swap(mask_ptrs);
+
+			e_points_swp.swap(e_points);
+			pack_output_swp.swap(pack_output);
+			tmp_swp.swap(tmp);
+		}
+    }
+
+    void RestorePackVariableIfKeepGeometry(int opt)
+    {
+		if (opt & KEEP_GEOMETRY)
+		{
+			index_ptrs_swp.swap(index_ptrs);
+			scan_ptrs_swp.swap(scan_ptrs);
+			data_ptrs_swp.swap(data_ptrs);
+			offset_ptrs_swp.swap(offset_ptrs);
+			mask_ptrs_swp.swap(mask_ptrs);
+
+			e_points_swp.swap(e_points);
+			pack_output_swp.swap(pack_output);
+			tmp_swp.swap(tmp);
+		}
+    }
+
+    template<unsigned int n_it>
+    void calculatePackingPointsFromBoxes(int opt,size_t tot_pnt)
+    {
+		if (!(opt & KEEP_GEOMETRY))
+		{
+	    	auto & indexBuffer = private_get_index_array();
+	    	auto & dataBuffer = private_get_data_array();
+
+			e_points.resize(tot_pnt);
+			pack_output.resize(tot_pnt);
+
+			ite_gpu<1> ite;
+
+			ite.wthr.x = indexBuffer.size();
+			ite.wthr.y = 1;
+			ite.wthr.z = 1;
+			ite.thr.x = getBlockSize();
+			ite.thr.y = 1;
+			ite.thr.z = 1;
+
+			// Launch a kernel that count the number of element on each chunks
+			CUDA_LAUNCH((SparseGridGpuKernels::get_exist_points_with_boxes<dim,
+																		BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																		n_it,
+																		indexT>),
+					 ite,
+					 indexBuffer.toKernel(),
+					 pack_subs.toKernel(),
+					 gridGeometry,
+					 dataBuffer.toKernel(),
+					 pack_output.toKernel(),
+					 tmp.toKernel(),
+					 scan_it.toKernel(),
+					 e_points.toKernel());
+		}
     }
 
 private:
@@ -808,8 +885,8 @@ private:
 		// Pack information
 		Pack_stat sts;
 
-		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-		{
+//		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+//		{
 			this->packReset();
 
 			size_t req = 0;
@@ -836,12 +913,12 @@ private:
 
 				this->pack<prp ...>(*prAlloc_prp,sub_it,sts);
 			}
-		}
+//		}
 
-		this->template packFinalize<prp ...>(*prAlloc_prp,sts);
+		this->template packFinalize<prp ...>(*prAlloc_prp,sts,opt);
 
-		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-		{
+//		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+//		{
 			// Convert the packed chunk ids
 
 			prAlloc_prp->reset();
@@ -858,7 +935,7 @@ private:
 
 			prAlloc_prp->decRef();
 			delete prAlloc_prp;
-		}
+//		}
 	}
 
 	template<unsigned int ... prp>
@@ -866,8 +943,8 @@ private:
 	{
 		ite_gpu<1> ite;
 
-		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-		{
+//		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+//		{
 			if (tmp2.size() == 0)
 			{return;}
 
@@ -903,7 +980,7 @@ private:
 			CUDA_LAUNCH(SparseGridGpuKernels::construct_new_chunk_map<1>,ite,new_map.toKernel(),a_map.toKernel(),m_map.toKernel(),o_map.toKernel(),segments_data.toKernel(),sz_b);
 
 			convert_blk.template hostToDevice<0>();
-		}
+/*		}
 		else
 		{
 			ite.wthr.x = 1;
@@ -913,7 +990,7 @@ private:
 			ite.thr.x = 1;
 			ite.thr.y = 1;
 			ite.thr.z = 1;
-		}
+		}*/
 
 		// for each packed chunk
 
@@ -970,7 +1047,8 @@ private:
 
     template<unsigned int n_it, unsigned int ... prp>
     void pack_sg_implement(ExtPreAlloc<CudaMemory> & mem,
-						   Pack_stat & sts)
+						   Pack_stat & sts,
+						   int opt)
     {
     	arr_ptr<n_it> index_ptr;
     	arr_arr_ptr<n_it,sizeof...(prp)> data_ptr;
@@ -997,6 +1075,8 @@ private:
     		tot_pnt += n_pnt;
     	}
 
+    	RestorePackVariableIfKeepGeometry(opt);
+
     	// CUDA require aligned access, here we suppose 8 byte alligned and we ensure 8 byte aligned after
     	// the cycle
     	for (size_t i = 0 ; i < pack_subs.size() ; i++)
@@ -1022,31 +1102,7 @@ private:
 
     	if (tot_pnt != 0)
     	{
-			e_points.resize(tot_pnt);
-			pack_output.resize(tot_pnt);
-
-
-			ite.wthr.x = indexBuffer.size();
-			ite.wthr.y = 1;
-			ite.wthr.z = 1;
-			ite.thr.x = getBlockSize();
-			ite.thr.y = 1;
-			ite.thr.z = 1;
-
-			// Launch a kernel that count the number of element on each chunks
-			CUDA_LAUNCH((SparseGridGpuKernels::get_exist_points_with_boxes<dim,
-																		BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
-																		n_it,
-																		indexT>),
-					 ite,
-					 indexBuffer.toKernel(),
-					 pack_subs.toKernel(),
-					 gridGeometry,
-					 dataBuffer.toKernel(),
-					 pack_output.toKernel(),
-					 tmp.toKernel(),
-					 scan_it.toKernel(),
-					 e_points.toKernel());
+    		calculatePackingPointsFromBoxes<n_it>(opt,tot_pnt);
 
 			ite = e_points.getGPUIterator();
 
@@ -1103,6 +1159,8 @@ private:
 
     	if (pack_subs.size() != 0)
 		{CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),indexBuffer.size()+1,pack_subs.size());}
+
+    	savePackVariableIfNotKeepGeometry(opt);
     }
 
 
@@ -2718,18 +2776,19 @@ public:
 	 *
 	 */
 	template<int ... prp> void packFinalize(ExtPreAlloc<CudaMemory> & mem,
-									Pack_stat & sts)
+									Pack_stat & sts,
+									int opt = 0)
 	{
 		if (req_index != pack_subs.size())
 		{std::cerr << __FILE__ << ":" << __LINE__ << " error the packing request number differ from the number of packed objects" << std::endl;}
 
     	if (pack_subs.size() <= 32)
     	{
-    		pack_sg_implement<32,prp...>(mem,sts);
+    		pack_sg_implement<32,prp...>(mem,sts,opt);
     	}
     	else if (pack_subs.size() <= 64)
     	{
-    		pack_sg_implement<64, prp...>(mem,sts);
+    		pack_sg_implement<64, prp...>(mem,sts,opt);
     	}
     	else
     	{
