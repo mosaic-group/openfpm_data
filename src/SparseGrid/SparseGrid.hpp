@@ -2486,15 +2486,27 @@ public:
 	void removeCopyToFinalize(const context_type & ctx, int opt)
 	{}
 
+    /*! \brief This function check if keep geometry is possible for this grid
+     *
+     * \return false it does not exist this feature on this type of grids
+     *
+     */
+    bool isSkipLabellingPossible()
+    {
+    	return false;
+    }
+
 	/*! \brief Pack finalize Finalize the pack of this object. In this case it does nothing
 	 *
 	 * \tparam prp properties to pack
 	 *
 	 * \param mem preallocated memory where to pack the objects
 	 * \param sts pack statistic
+	 * \param opt options
+	 * \param is_pack_remote indicate this pack is remote
 	 *
 	 */
-	template<int ... prp> void packFinalize(ExtPreAlloc<S> & mem, Pack_stat & sts)
+	template<int ... prp> void packFinalize(ExtPreAlloc<S> & mem, Pack_stat & sts, int opt, bool is_pack_remote)
 	{}
 
 	/*! \brief Pack the object into the memory given an iterator

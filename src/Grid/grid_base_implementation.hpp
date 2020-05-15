@@ -1196,6 +1196,16 @@ public:
 	{
 	}
 
+    /*! \brief This function check if keep geometry is possible for this grid
+     *
+     * \return false it does not exist this feature on this type of grids
+     *
+     */
+    bool isSkipLabellingPossible()
+    {
+    	return false;
+    }
+
 	/*! \brief copy an external grid into a specific place into this grid
 	 *
 	 * It copy the area indicated by the  box_src from grid_src into this grid

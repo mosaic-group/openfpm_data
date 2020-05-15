@@ -363,7 +363,7 @@ struct unpack_simple_cond<true, prp ...>
 	 * \param sts pack statistic
 	 *
 	 */
-	template<int ... prp> void packFinalize(ExtPreAlloc<S> & mem, Pack_stat & sts)
+	template<int ... prp> void packFinalize(ExtPreAlloc<S> & mem, Pack_stat & sts,int opt, bool is_pack_remote)
 	{}
 	
 	/*! \brief Pack the object into the memory given an iterator

@@ -473,6 +473,8 @@ private:
     unsigned int stencilSupportRadius;
     unsigned int ghostLayerSize;
     int req_index;
+    int req_index_swp;
+    int req_index_swp_r;
 
     typedef SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer> self;
 
@@ -487,14 +489,19 @@ private:
     // pointers for unpack
     openfpm::vector<void *> index_ptrs;
     openfpm::vector<void *> index_ptrs_swp;
+    openfpm::vector<void *> index_ptrs_swp_r;
     openfpm::vector<void *> scan_ptrs;
     openfpm::vector<void *> scan_ptrs_swp;
+    openfpm::vector<void *> scan_ptrs_swp_r;
     openfpm::vector<void *> data_ptrs;
     openfpm::vector<void *> data_ptrs_swp;
+    openfpm::vector<void *> data_ptrs_swp_r;
     openfpm::vector<void *> offset_ptrs;
     openfpm::vector<void *> offset_ptrs_swp;
+    openfpm::vector<void *> offset_ptrs_swp_r;
     openfpm::vector<void *> mask_ptrs;
     openfpm::vector<void *> mask_ptrs_swp;
+    openfpm::vector<void *> mask_ptrs_swp_r;
 
     // pointers for copyRemove
     openfpm::vector<void *> offset_ptrs_cp;
@@ -511,10 +518,12 @@ private:
     //! the formats is id/blockSize = data block poosition id % blockSize = offset
     openfpm::vector_gpu<aggregate<indexT>> e_points;
     openfpm::vector_gpu<aggregate<indexT>> e_points_swp;
+    openfpm::vector_gpu<aggregate<indexT>> e_points_swp_r;
 
     //! Helper array to pack points
     openfpm::vector_gpu<aggregate<unsigned int>> pack_output;
     openfpm::vector_gpu<aggregate<unsigned int>> pack_output_swp;
+    openfpm::vector_gpu<aggregate<unsigned int>> pack_output_swp_r;
 
     //! For stencil in a block-wise computation we have to load blocks + ghosts area. The ghost area live in neighborhood blocks
     //! For example the left ghost margin live in the right part of the left located neighborhood block, the right margin live in the
@@ -528,6 +537,7 @@ private:
     //! temporal
     mutable openfpm::vector_gpu<aggregate<indexT,unsigned int>> tmp;
     mutable openfpm::vector_gpu<aggregate<indexT,unsigned int>> tmp_swp;
+    mutable openfpm::vector_gpu<aggregate<indexT,unsigned int>> tmp_swp_r;
 
     //! temporal 2
     mutable openfpm::vector_gpu<aggregate<indexT>> tmp2;
@@ -543,6 +553,14 @@ private:
 
     //! the set of all sub-set to pack
     mutable openfpm::vector_gpu<Box<dim,int>> pack_subs;
+    mutable openfpm::vector_gpu<Box<dim,int>> pack_subs_swp;
+    mutable openfpm::vector_gpu<Box<dim,int>> pack_subs_swp_r;
+
+    //! Size of the index vector packed. These varaible are unsed to understand if the option
+    //! KEEP_GEOMETRY can be used keep geometry option infact require that when we record the
+    //! packing variables the number of chunks (and chunks indexes) does not change
+    mutable int index_size_swp;
+    mutable int index_size_swp_r;
 
     //! links of the padding points with real points of a coarse sparsegrid
     openfpm::vector_gpu<aggregate<size_t>> links_up;
@@ -641,9 +659,9 @@ public:
         findNN = false;
     }
 
-    void savePackVariableIfNotKeepGeometry(int opt)
+    void savePackVariableIfNotKeepGeometry(int opt, bool is_pack_remote)
     {
-		if (!(opt & KEEP_GEOMETRY))
+		if (!(opt & KEEP_GEOMETRY) && is_pack_remote == false)
 		{
 			index_ptrs_swp.swap(index_ptrs);
 			scan_ptrs_swp.swap(scan_ptrs);
@@ -654,12 +672,33 @@ public:
 			e_points_swp.swap(e_points);
 			pack_output_swp.swap(pack_output);
 			tmp_swp.swap(tmp);
+
+			pack_subs_swp.swap(pack_subs);
+			req_index_swp = req_index;
+			index_size_swp = private_get_index_array().size();
+		}
+
+		if (!(opt & KEEP_GEOMETRY) && is_pack_remote == true)
+		{
+			index_ptrs_swp_r.swap(index_ptrs);
+			scan_ptrs_swp_r.swap(scan_ptrs);
+			data_ptrs_swp_r.swap(data_ptrs);
+			offset_ptrs_swp_r.swap(offset_ptrs);
+			mask_ptrs_swp_r.swap(mask_ptrs);
+
+			e_points_swp_r.swap(e_points);
+			pack_output_swp_r.swap(pack_output);
+			tmp_swp_r.swap(tmp);
+
+			pack_subs_swp_r.swap(pack_subs);
+			req_index_swp_r = req_index;
+			index_size_swp_r = private_get_index_array().size();
 		}
     }
 
-    void RestorePackVariableIfKeepGeometry(int opt)
+    void RestorePackVariableIfKeepGeometry(int opt, bool is_pack_remote)
     {
-		if (opt & KEEP_GEOMETRY)
+		if (opt & KEEP_GEOMETRY && is_pack_remote == false)
 		{
 			index_ptrs_swp.swap(index_ptrs);
 			scan_ptrs_swp.swap(scan_ptrs);
@@ -670,6 +709,25 @@ public:
 			e_points_swp.swap(e_points);
 			pack_output_swp.swap(pack_output);
 			tmp_swp.swap(tmp);
+
+			pack_subs_swp.swap(pack_subs);
+			req_index = req_index_swp;
+		}
+
+		if (opt & KEEP_GEOMETRY && is_pack_remote == true)
+		{
+			index_ptrs_swp_r.swap(index_ptrs);
+			scan_ptrs_swp_r.swap(scan_ptrs);
+			data_ptrs_swp_r.swap(data_ptrs);
+			offset_ptrs_swp_r.swap(offset_ptrs);
+			mask_ptrs_swp_r.swap(mask_ptrs);
+
+			e_points_swp_r.swap(e_points);
+			pack_output_swp_r.swap(pack_output);
+			tmp_swp_r.swap(tmp);
+
+			pack_subs_swp_r.swap(pack_subs);
+			req_index = req_index_swp_r;
 		}
     }
 
@@ -1048,7 +1106,8 @@ private:
     template<unsigned int n_it, unsigned int ... prp>
     void pack_sg_implement(ExtPreAlloc<CudaMemory> & mem,
 						   Pack_stat & sts,
-						   int opt)
+						   int opt,
+						   bool is_pack_remote)
     {
     	arr_ptr<n_it> index_ptr;
     	arr_arr_ptr<n_it,sizeof...(prp)> data_ptr;
@@ -1059,6 +1118,9 @@ private:
 
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
+
+		if (req_index != pack_subs.size())
+		{std::cerr << __FILE__ << ":" << __LINE__ << " error the packing request number differ from the number of packed objects" << std::endl;}
 
     	size_t tot_pnt = 0;
     	size_t tot_cnk = 0;
@@ -1074,8 +1136,6 @@ private:
     		sar.sa[i] = n_pnt;
     		tot_pnt += n_pnt;
     	}
-
-    	RestorePackVariableIfKeepGeometry(opt);
 
     	// CUDA require aligned access, here we suppose 8 byte alligned and we ensure 8 byte aligned after
     	// the cycle
@@ -1159,8 +1219,6 @@ private:
 
     	if (pack_subs.size() != 0)
 		{CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),indexBuffer.size()+1,pack_subs.size());}
-
-    	savePackVariableIfNotKeepGeometry(opt);
     }
 
 
@@ -1639,6 +1697,16 @@ public:
     auto get(const sparse_grid_gpu_index<self> & coord) const -> const ScalarTypeOf<AggregateBlockT, p> &
     {
         return private_get_data_array().template get<p>(coord.get_cnk_pos_id())[coord.get_data_id()];
+    }
+
+    /*! \brief This function check if keep geometry is possible for this grid
+     *
+     * \return true if skip labelling is possible
+     *
+     */
+    bool isSkipLabellingPossible()
+    {
+    	return (index_size_swp_r == private_get_index_array().size()) && (index_size_swp == private_get_index_array().size());
     }
 
     /*! \brief Get an element using sparse_grid_gpu_index (using this index it guarantee that the point exist)
@@ -2777,23 +2845,26 @@ public:
 	 */
 	template<int ... prp> void packFinalize(ExtPreAlloc<CudaMemory> & mem,
 									Pack_stat & sts,
-									int opt = 0)
+									int opt = 0,
+									bool is_pack_remote = false)
 	{
-		if (req_index != pack_subs.size())
-		{std::cerr << __FILE__ << ":" << __LINE__ << " error the packing request number differ from the number of packed objects" << std::endl;}
+
+    	RestorePackVariableIfKeepGeometry(opt,is_pack_remote);
 
     	if (pack_subs.size() <= 32)
     	{
-    		pack_sg_implement<32,prp...>(mem,sts,opt);
+    		pack_sg_implement<32,prp...>(mem,sts,opt,is_pack_remote);
     	}
     	else if (pack_subs.size() <= 64)
     	{
-    		pack_sg_implement<64, prp...>(mem,sts,opt);
+    		pack_sg_implement<64, prp...>(mem,sts,opt,is_pack_remote);
     	}
     	else
     	{
     		std::cout << __FILE__ << ":" << __LINE__ << " error no implementation available of packCalculate, create a new case for " << pack_subs.size() << std::endl;
     	}
+
+    	savePackVariableIfNotKeepGeometry(opt,is_pack_remote);
 	}
 
 	/*! \brief In this case it does nothing
