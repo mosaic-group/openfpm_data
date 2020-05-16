@@ -819,13 +819,13 @@ public:
 		}
 #endif
 
-		return v*vmpl_reduce_prod_stop<typename vector_blocks_exts::type,dim - sizeof...(t) - 2>::type::value + Lin(t...);
+		return v*vmpl_reduce_prod_stop<typename vector_blocks_exts::type,(int)dim - sizeof...(t) - 2>::type::value + Lin(t...);
 	}
 
 	//! Linearize a set of index
 	template<typename a> __device__ __host__ inline size_t Lin(a v) const
 	{
-		return v*vmpl_reduce_prod_stop<typename vector_blocks_exts::type,dim - 2>::type::value;
+		return v*vmpl_reduce_prod_stop<typename vector_blocks_exts::type,(int)dim - 2>::type::value;
 	}
 
 	/*! \brief linearize an arbitrary set of index
