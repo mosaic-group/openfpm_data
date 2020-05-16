@@ -771,8 +771,6 @@ public:
 		// first we sort the vectors
 		recursive_sort(xy ... );
 
-		constexpr int size = sizeof...(xy);
-
 		size_t counters[sizeof...(X)];
 		memset(&counters,0,sizeof(counters));
 

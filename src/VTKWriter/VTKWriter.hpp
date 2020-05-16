@@ -24,27 +24,27 @@
 template <typename T> std::string getType()
 {
 	// Create a property string based on the type of the property
-	if (typeid(T) == typeid(float))
+	if (std::is_same<T,float>::value)
 		return "float";
-	else if (typeid(T) == typeid(double))
+	else if (std::is_same<T,double>::value)
 		return "double";
-	else if (typeid(T) == typeid(char))
+	else if (std::is_same<T,char>::value)
 		return "char";
-	else if (typeid(T) == typeid(unsigned char))
+	else if (std::is_same<T,unsigned char>::value)
 		return "unsigned_char";
-	else if (typeid(T) == typeid(short))
+	else if (std::is_same<T,short>::value)
 		return "short";
-	else if (typeid(T) == typeid(unsigned short))
+	else if (std::is_same<T,unsigned short>::value)
 		return "unsigned_short";
-	else if (typeid(T) == typeid(int))
+	else if (std::is_same<T,int>::value)
 		return "int";
-	else if (typeid(T) == typeid(unsigned int))
+	else if (std::is_same<T,unsigned int>::value)
 		return "unsigned_int";
-	else if (typeid(T) == typeid(long int))
+	else if (std::is_same<T,long int>::value)
 		return "int";
-	else if (typeid(T) == typeid(unsigned long int))
+	else if (std::is_same<T,unsigned long int>::value )
 		return "unsigned_int";
-	else if (typeid(T) == typeid(bool))
+	else if (std::is_same<T,bool>::value )
 		return "bit";
 
 	return "";

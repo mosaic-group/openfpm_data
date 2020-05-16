@@ -89,7 +89,9 @@ template<unsigned int i, typename ele_g, bool has_attributes> std::string get_po
 			// if the type is not supported skip-it
 			if (type.size() == 0)
 			{
+#ifndef DISABLE_ALL_RTTI
 				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(ctype).name()) << " is not supported by vtk\n";
+#endif
 				return "";
 			}
 
@@ -312,7 +314,7 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
 						{v_out += std::to_string(vg.get(k).g.template get<I::value>(it.get())[i1]) + " ";}
 
 						if (N1 == 2)
-						{v_out += "0.0";}
+						{v_out += std::to_string((decltype(vg.get(k).g.template get<I::value>(it.get())[0])) 0);}
 
 						v_out += "\n";
 					}

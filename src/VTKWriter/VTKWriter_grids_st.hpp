@@ -371,7 +371,9 @@ class VTKWriter<pair,VECTOR_ST_GRIDS>
 		// if the type is not supported return
 		if (type.size() == 0)
 		{
+#ifndef DISABLE_ALL_RTTI
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " the type " << demangle(typeid(ctype).name()) << " is not supported by vtk\n";
+#endif
 			return "";
 		}
 

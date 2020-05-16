@@ -137,7 +137,8 @@ struct csv_value_str
 template<typename T,size_t N1, bool is_writable>
 struct csv_value_str<T[N1], is_writable>
 {
-	inline csv_value_str(const T v[N1], std::stringstream & str)
+	template<typename ArrObject>
+	inline csv_value_str(const ArrObject v, std::stringstream & str)
 	{
 		for (size_t i = 0 ; i < N1 ; i++)
 			str << "," << v[i];
@@ -148,7 +149,8 @@ struct csv_value_str<T[N1], is_writable>
 template<typename T,size_t N1,size_t N2, bool is_writable>
 struct csv_value_str<T[N1][N2], is_writable>
 {
-	inline csv_value_str(const T v[N1][N2], std::stringstream & str)
+	template<typename ArrObject>
+	inline csv_value_str(const ArrObject v[N1][N2], std::stringstream & str)
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -164,7 +166,8 @@ struct csv_value_str<T[N1][N2], is_writable>
 template<typename T,size_t N1,size_t N2,size_t N3, bool is_writable>
 struct csv_value_str<T[N1][N2][N3], is_writable>
 {
-	inline csv_value_str(const T v[N1][N2][N3], std::stringstream & str)
+	template<typename ArrObject>
+	inline csv_value_str(const ArrObject v[N1][N2][N3], std::stringstream & str)
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -183,7 +186,8 @@ struct csv_value_str<T[N1][N2][N3], is_writable>
 template<typename T,size_t N1,size_t N2,size_t N3,size_t N4, bool is_writable>
 struct csv_value_str<T[N1][N2][N3][N4],is_writable>
 {
-	inline csv_value_str(const T v[N1][N2][N3][N4], std::stringstream & str)
+	template<typename ArrObject>
+	inline csv_value_str(const ArrObject v[N1][N2][N3][N4], std::stringstream & str)
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{

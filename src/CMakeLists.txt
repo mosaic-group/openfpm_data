@@ -24,6 +24,11 @@ endif()
 if (CUDA_FOUND)
 	target_compile_options(io PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
 	target_include_directories (io PUBLIC ${MPI_C_INCLUDE_DIRS})
+
+   	if( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0 )
+        	add_compile_options( "-fabi-version=6" )
+    	endif()
+
         if (TEST_COVERAGE)
                 target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage">)
         endif()
