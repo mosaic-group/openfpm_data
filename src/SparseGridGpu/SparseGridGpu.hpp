@@ -661,7 +661,7 @@ public:
 
     void savePackVariableIfNotKeepGeometry(int opt, bool is_pack_remote)
     {
-		if (!(opt & KEEP_GEOMETRY) && is_pack_remote == false)
+		if (is_pack_remote == false)
 		{
 			index_ptrs_swp.swap(index_ptrs);
 			scan_ptrs_swp.swap(scan_ptrs);
@@ -678,7 +678,7 @@ public:
 			index_size_swp = private_get_index_array().size();
 		}
 
-		if (!(opt & KEEP_GEOMETRY) && is_pack_remote == true)
+		if (is_pack_remote == true)
 		{
 			index_ptrs_swp_r.swap(index_ptrs);
 			scan_ptrs_swp_r.swap(scan_ptrs);
@@ -943,8 +943,8 @@ private:
 		// Pack information
 		Pack_stat sts;
 
-//		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-//		{
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+		{
 			this->packReset();
 
 			size_t req = 0;
@@ -971,12 +971,20 @@ private:
 
 				this->pack<prp ...>(*prAlloc_prp,sub_it,sts);
 			}
-//		}
+		}
+		else
+		{
+			size_t req = mem.size();
 
-		this->template packFinalize<prp ...>(*prAlloc_prp,sts,opt);
+			// Create an object of preallocated memory for properties
+			prAlloc_prp = new ExtPreAlloc<CudaMemory>(req,mem);
+			prAlloc_prp->incRef();
+		}
 
-//		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-//		{
+		this->template packFinalize<prp ...>(*prAlloc_prp,sts,opt,false);
+
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+		{
 			// Convert the packed chunk ids
 
 			prAlloc_prp->reset();
@@ -993,7 +1001,12 @@ private:
 
 			prAlloc_prp->decRef();
 			delete prAlloc_prp;
-//		}
+		}
+		else
+		{
+			prAlloc_prp->decRef();
+			delete prAlloc_prp;
+		}
 	}
 
 	template<unsigned int ... prp>
@@ -1001,8 +1014,8 @@ private:
 	{
 		ite_gpu<1> ite;
 
-//		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-//		{
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+		{
 			if (tmp2.size() == 0)
 			{return;}
 
@@ -1038,7 +1051,7 @@ private:
 			CUDA_LAUNCH(SparseGridGpuKernels::construct_new_chunk_map<1>,ite,new_map.toKernel(),a_map.toKernel(),m_map.toKernel(),o_map.toKernel(),segments_data.toKernel(),sz_b);
 
 			convert_blk.template hostToDevice<0>();
-/*		}
+		}
 		else
 		{
 			ite.wthr.x = 1;
@@ -1048,7 +1061,7 @@ private:
 			ite.thr.x = 1;
 			ite.thr.y = 1;
 			ite.thr.z = 1;
-		}*/
+		}
 
 		// for each packed chunk
 
