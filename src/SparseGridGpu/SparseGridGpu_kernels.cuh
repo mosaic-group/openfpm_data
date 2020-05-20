@@ -1348,6 +1348,8 @@ namespace SparseGridGpuKernels
 
         	unsigned int pos_c = new_map.template get<0>(n_shf*p + shf_c + n_accu_cnk);
 
+        	printf("OFFSET %d     %d %d \n",off,off_c,pos_c);
+
     		sparsegridgpu_unpack_impl<AggregateT, dataType ,prp ...>
     														spi(pos_c,off_c,data_buff,scan_pp + threadIdx.x,data_ptrs,n_pnt);
 

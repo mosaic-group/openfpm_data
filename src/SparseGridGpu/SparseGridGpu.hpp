@@ -930,6 +930,26 @@ private:
     	}
     }
 
+    template<typename MemType, unsigned int ... prp>
+    void preUnpack(ExtPreAlloc<MemType> * prAlloc_prp, mgpu::ofp_context_t & ctx, int opt)
+    {
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+		{
+			// Convert the packed chunk ids
+
+			prAlloc_prp->reset();
+			Unpack_stat ups;
+
+			for (size_t i = 0 ; i < copySect.size() ; i++)
+			{
+				auto sub_it = this->getIterator(copySect.get(i).dst.getKP1(),copySect.get(i).dst.getKP2(),NO_ITERATOR_INIT);
+
+				copySect.get(i).grd->template addAndConvertPackedChunkToTmp<prp ...>(*prAlloc_prp,sub_it,ups,ctx);
+			}
+		}
+    }
+
+
 	template<unsigned int ... prp>
 	void removeCopyToFinalize_phase1(mgpu::ofp_context_t & ctx, int opt)
 	{
@@ -983,30 +1003,10 @@ private:
 
 		this->template packFinalize<prp ...>(*prAlloc_prp,sts,opt,false);
 
-		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-		{
-			// Convert the packed chunk ids
+		preUnpack<CudaMemory,prp ...>(prAlloc_prp,ctx,opt);
 
-			prAlloc_prp->reset();
-			Unpack_stat ups;
-
-			for (size_t i = 0 ; i < copySect.size() ; i++)
-			{
-				auto sub_it = this->getIterator(copySect.get(i).dst.getKP1(),copySect.get(i).dst.getKP2(),NO_ITERATOR_INIT);
-
-				copySect.get(i).grd->template addAndConvertPackedChunkToTmp<prp ...>(*prAlloc_prp,sub_it,ups,ctx);
-			}
-
-			// Add in the flush buffer
-
-			prAlloc_prp->decRef();
-			delete prAlloc_prp;
-		}
-		else
-		{
-			prAlloc_prp->decRef();
-			delete prAlloc_prp;
-		}
+		prAlloc_prp->decRef();
+		delete prAlloc_prp;
 	}
 
 	template<unsigned int ... prp>
@@ -1049,6 +1049,23 @@ private:
 
 			if (ite.nblocks() != 0)
 			CUDA_LAUNCH(SparseGridGpuKernels::construct_new_chunk_map<1>,ite,new_map.toKernel(),a_map.toKernel(),m_map.toKernel(),o_map.toKernel(),segments_data.toKernel(),sz_b);
+
+			////////////// DEBUG /////////////////
+
+			add_buff.template deviceToHost<0>();
+
+			for (int i = 0 ; i < add_buff.size() ; i++)
+			{
+				std::cout << "ADD: " << add_buff.template get<0>(i) << std::endl;
+			}
+
+			new_map.deviceToHost<0>();
+			for (int i = 0 ; i < new_map.size() ; i++)
+			{
+				std::cout << "NEWMAP: " << new_map.template get<0>(i) << std::endl;
+			}
+
+			//////////////////////////////////////
 
 			convert_blk.template hostToDevice<0>();
 		}
@@ -2894,6 +2911,8 @@ public:
 
     	vad.clear();
     	vai.clear();
+
+    	tmp2.clear();
 	}
 
 	/*! \brief Remove the points we queues to remove
@@ -2980,14 +2999,14 @@ public:
 	template<unsigned int ... prp>
 	void removeAddUnpackFinalize(mgpu::ofp_context_t& context)
 	{
-    	auto & indexBuffer = private_get_index_array();
+/*    	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
 
     	removePoints(context);
 
     	this->preFlush();
 
-		this->template flush<sRight_<prp>...>(context,flush_type::FLUSH_ON_DEVICE);
+		this->template flush<sRight_<prp>...>(context,flush_type::FLUSH_ON_DEVICE);*/
 
 	}
 
@@ -3065,9 +3084,38 @@ public:
 	void unpack(ExtPreAlloc<S2> & mem,
 				SparseGridGpu_iterator_sub<dim,self> & sub_it,
 				Unpack_stat & ps,
-				mgpu::ofp_context_t &context)
+				mgpu::ofp_context_t &context,
+				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
 	{
-    	sparsegridgpu_pack_request<AggregateT,prp ...> spq;
+		////////////////////////////////////////////////////////////
+
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+		{
+			// Clear variables
+			offset_ptrs_cp.clear();
+			scan_ptrs_cp.clear();
+			n_cnk_cp.clear();
+			n_pnt_cp.clear();
+			data_base_ptr_cp.clear();
+			box_cp.clear();
+			n_shifts_cp.clear();
+			convert_blk.clear();
+			tmp2.clear();
+
+//			size_t debug_ps = ps.getOffset();
+
+			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,context);
+
+//			ps.setOffset(debug_ps);
+
+			removeCopyToFinalize_phase3<prp ...>(context,opt);
+
+			// readjust mem
+		}
+
+		////////////////////////////////////////////////////////////
+
+/*    	sparsegridgpu_pack_request<AggregateT,prp ...> spq;
     	boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(spq);
 
 		// First get the number of chunks
@@ -3227,7 +3275,7 @@ public:
 
 		actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(unsigned char));
 
-		ps.addOffset(actual_offset);
+		ps.addOffset(actual_offset);*/
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
