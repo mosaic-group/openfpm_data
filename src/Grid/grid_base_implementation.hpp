@@ -1870,7 +1870,7 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeAddUnpackFinalize(const context_type & ctx)
+	void removeAddUnpackFinalize(const context_type & ctx, int opt)
 	{}
 
 	/*! \brief In this case it does nothing

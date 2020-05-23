@@ -1549,7 +1549,7 @@ template<typename sgrid> void Test_unpack_and_check(sgrid & grid, sgrid & grid2,
 
 	int ctx = 0;
 	Unpack_stat usts;
-	grid2.template unpack<0>(mem,sub_it,usts,ctx);
+	grid2.template unpack<0>(mem,sub_it,usts,ctx,rem_copy_opt::NONE_OPT);
 
 	bool match = true;
 	auto it = grid.getIterator();

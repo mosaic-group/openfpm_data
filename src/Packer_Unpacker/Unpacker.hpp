@@ -20,6 +20,7 @@
 #include "util/multi_array_openfpm/multi_array_ref_openfpm.hpp"
 #include "has_pack_encap.hpp"
 #include "util/object_creator.hpp"
+#include "Grid/grid_common.hpp"
 
 /*! \brief Unpacker class
  *
@@ -261,9 +262,9 @@ public:
 
 	template<typename grid_sub_it_type,
 			 typename context_type,
-			 unsigned int ... prp> static void unpack(ExtPreAlloc<Mem> & mem, grid_sub_it_type & sub_it, T & obj, Unpack_stat & ps, context_type & context)
+			 unsigned int ... prp> static void unpack(ExtPreAlloc<Mem> & mem, grid_sub_it_type & sub_it, T & obj, Unpack_stat & ps, context_type & context, rem_copy_opt opt)
 	{
-		obj.template unpack<prp...>(mem, sub_it, ps, context);
+		obj.template unpack<prp...>(mem, sub_it, ps, context, opt);
 	}
 };
 

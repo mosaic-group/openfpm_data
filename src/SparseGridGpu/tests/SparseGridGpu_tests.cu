@@ -1546,7 +1546,7 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_remove_test)
     sparseGrid.remove(remove_section2);
     sparseGrid.remove(remove_section3);
 
-    sparseGrid.removeAddUnpackFinalize<>(ctx);
+    sparseGrid.removeAddUnpackFinalize<>(ctx,0);
 
     sparseGrid.deviceToHost<0>();
 
@@ -1719,7 +1719,7 @@ void pack_unpack_test(SG_type & sparseGridDst, SG_type & sparseGridSrc,
 	sparseGridDst.remove(box4_dst);
 	sparseGridDst.template unpack<0,1>(prAlloc_prp,sub2,ps,ctx);
 
-	sparseGridDst.template removeAddUnpackFinalize<0,1>(ctx);
+	sparseGridDst.template removeAddUnpackFinalize<0,1>(ctx,0);
 
 	sparseGridDst.template deviceToHost<0,1>();
 }

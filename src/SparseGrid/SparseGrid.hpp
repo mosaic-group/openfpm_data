@@ -2471,7 +2471,7 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeAddUnpackFinalize(const context_type & ctx)
+	void removeAddUnpackFinalize(const context_type & ctx, int opt)
 	{}
 
 
@@ -2843,7 +2843,8 @@ public:
 	void unpack(ExtPreAlloc<S2> & mem,
 				grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> & sub_it,
 				Unpack_stat & ps,
-				context_type & context)
+				context_type & context,
+				rem_copy_opt opt)
 	{
 		short unsigned int mask_it[chunking::size::value];
 
@@ -2939,7 +2940,7 @@ public:
 		auto sub_it = this->getIterator(start,stop);
 
 		int ctx;
-		unpack<prp...>(mem,sub_it,ps,ctx);
+		unpack<prp...>(mem,sub_it,ps,ctx,rem_copy_opt::NONE_OPT);
 	}
 
 	/*! \brief unpack the sub-grid object applying an operation

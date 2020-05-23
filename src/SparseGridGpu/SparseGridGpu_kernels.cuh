@@ -1153,80 +1153,8 @@ namespace SparseGridGpuKernels
         }
     }
 
-    template<unsigned int pMask, typename add_data_type>
-    __global__ void resetMask(add_data_type add_data, unsigned int start)
-    {
-    	// points
-        const unsigned int bid = blockIdx.x + start;
-        const unsigned int tid = threadIdx.x;
 
-        if (bid >= add_data.size())
-        {return;}
 
-    	add_data.template get<pMask>(bid)[tid] = 0;
-    }
-
-    template<unsigned int blockSize,
-    		 unsigned int pMask,
-    		 typename AggregateT,
-    		 typename indexT,
-    		 typename point_buffer,
-    		 typename chunk_arr_type,
-    		 typename convertion_type,
-    		 typename add_index_type,
-    		 typename data_ptrs_type,
-    		 typename add_data_type,
-    		 unsigned int ... prp>
-    __global__ void fill_add_buffer(indexT * ptr_id,
-    								point_buffer pts,
-    								chunk_arr_type chunk_arr,
-    								convertion_type conv,
-    								add_index_type add_index,
-    								data_ptrs_type data_ptrs,
-    								add_data_type add_data,
-    								unsigned char * masks_ptr,
-    								unsigned int start)
-    {
-    	// points
-        const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
-
-        if (p >= pts.size())
-        {return;}
-
-        auto dataBlockPos = conv.template get<0>(p);
-        auto ord = chunk_arr.template get<1>(p);
-        auto plin = chunk_arr.template get<0>(p);
-
-        auto dataBlockId = plin / blockSize;
-        short int offset = plin % blockSize;
-
-        add_index.template get<0>(dataBlockPos + start) = dataBlockId;
-
-		sparsegridgpu_unpack_impl<AggregateT, add_data_type ,prp ...>
-														spi(dataBlockPos + start,offset,add_data,ord,data_ptrs,pts.size());
-
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
-
-		add_data.template get<pMask>(dataBlockPos + start)[offset] = masks_ptr[ord];
-    }
-
-    template<unsigned int blockSize, typename vector_type, typename output_type>
-    __global__ void mark_unpack_chunks(vector_type vd, output_type output)
-    {
-    	// points
-        const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
-
-        if (p >= vd.size())
-        {return;}
-
-        auto cp = vd.template get<0>(p) / blockSize;
-        decltype(cp) cp_p1;
-
-        if (p == vd.size()-1)	{cp_p1 = -1;}
-        else {cp_p1 = vd.template get<0>(p+1) / blockSize;}
-
-        output.template get<0>(p) = cp_p1 != cp;
-    }
 
     template<unsigned int dim,
     		 unsigned int blockSize,
@@ -1348,8 +1276,6 @@ namespace SparseGridGpuKernels
 
         	unsigned int pos_c = new_map.template get<0>(n_shf*p + shf_c + n_accu_cnk);
 
-        	printf("OFFSET %d     %d %d \n",off,off_c,pos_c);
-
     		sparsegridgpu_unpack_impl<AggregateT, dataType ,prp ...>
     														spi(pos_c,off_c,data_buff,scan_pp + threadIdx.x,data_ptrs,n_pnt);
 
@@ -1357,42 +1283,6 @@ namespace SparseGridGpuKernels
 
     		data_buff.template get<pMask>(pos_c)[off_c] |= 0x1;
         }
-    }
-
-
-    template<unsigned int dim,
-    		 unsigned int blockSize,
-    		 typename indexT,
-    		 typename linearizer,
-    		 typename segType,
-    		 typename outputType>
-    __global__ void convert_chunk_alignment(indexT * ids, short int * offsets, unsigned int * scan,
-    										unsigned int n_seg,
-    										segType segments,
-    		                                linearizer gridGeoPack,
-    		                                grid_key_dx<dim,int> origPack,
-    		                                linearizer gridGeo,
-    		                                grid_key_dx<dim,int> origUnpack,
-    		                                outputType output)
-    {
-    	// points
-        const unsigned int p = blockIdx.x * blockDim.x + threadIdx.x;
-
-        if (p >= output.size())
-        {return;}
-
-        // get the chunk index
-        int cid = segments.template get<0>(p);
-
-        auto id = ids[cid];
-
-		short int offset = offsets[p];
-		grid_key_dx<dim,int> pos = gridGeoPack.InvLinId(id,offset) - origPack + origUnpack;
-
-		auto plin = gridGeo.LinId(pos);
-
-		output.template get<0>(p) = plin;
-		output.template get<1>(p) = p;
     }
 
 
