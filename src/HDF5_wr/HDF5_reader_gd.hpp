@@ -54,7 +54,13 @@ class HDF5_reader<GRID_DIST>
 	    size_t to_read = block[0];
 	    size_t coffset = 0;
 
-	    while (to_read)
+	    auto & v_cl = create_vcluster();
+
+	    int read_test = (to_read != 0);
+	    v_cl.max(read_test);
+	    v_cl.execute();
+
+	    while (read_test)
 	    {
 			hsize_t block_c[1];
 			block_c[0] = std::min((size_t)(to_read),(size_t)0x7FFFFFFF);
@@ -72,6 +78,10 @@ class HDF5_reader<GRID_DIST>
 
 			coffset += std::min((size_t)(to_read),(size_t)0x7FFFFFFF);
 			to_read -= std::min((size_t)(to_read),(size_t)0x7FFFFFFF);
+
+			read_test = (to_read != 0);
+			v_cl.max(read_test);
+			v_cl.execute();
 	    }
 
 		mem.allocate(pmem.size());
