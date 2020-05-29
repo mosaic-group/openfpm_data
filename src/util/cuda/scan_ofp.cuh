@@ -15,7 +15,12 @@
 
 #if defined(__NVCC__) || defined(__HIPCC__)
 
+#if defined(__HIPCC__)
+#include "hipcub/hipcub.hpp"
+#else
 #include "cub/cub.cuh"
+#endif
+
 #ifdef __NVCC__
 #include "util/cuda/moderngpu/kernel_scan.hxx"
 #endif

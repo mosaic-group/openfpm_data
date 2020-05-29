@@ -10,7 +10,7 @@
 
 #ifdef __HIPCC__
 
-        #ifdef CUDA_GPU
+	#ifdef CUDA_GPU
 
         #if defined(SE_CLASS1) || defined(CUDA_CHECK_LAUNCH)
 
@@ -107,10 +107,8 @@
 	#define CUDA_CHECK()
 
 	#endif
-
+	
 	#endif
-
-
 
 #else
 

@@ -9,8 +9,10 @@
 #define MAP_VECTOR_SPARSE_HPP_
 
 #include "Vector/map_vector.hpp"
+#if defined(__NVCC__) || defined(__HIPCC__)
 #include "Vector/cuda/map_vector_sparse_cuda_ker.cuh"
 #include "Vector/cuda/map_vector_sparse_cuda_kernels.cuh"
+#endif
 #include "util/cuda/ofp_context.cuh"
 #include <iostream>
 #include <limits>
