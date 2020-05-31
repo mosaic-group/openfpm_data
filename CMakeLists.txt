@@ -20,7 +20,7 @@ set (CMAKE_CUDA_STANDARD 11)
 if (ENABLE_GPU)
 	enable_language(CUDA)
 	find_package(CUDA)
-
+	if (CMAKE_EXPORT_COMPILE_COMMANDS==OFF)
         if (CUDA_VERSION_MAJOR EQUAL 9 AND CUDA_VERSION_MINOR EQUAL 2)
                 message("CUDA is compatible")
                 set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda)
@@ -38,7 +38,7 @@ if (ENABLE_GPU)
 	else()
                 message(FATAL_ERROR "CUDA is incompatible, version 9.2 and 10.1 is only supported")
         endif()
-
+	endif()
 endif()
 
 find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem)
