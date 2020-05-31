@@ -1373,7 +1373,7 @@ public:
 
         }
 
-        cudaDeviceSynchronize();
+        hipDeviceSynchronize();
     }
 
     template<typename NNtype = NNStar<dim>>

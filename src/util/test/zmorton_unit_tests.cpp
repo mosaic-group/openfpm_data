@@ -9,6 +9,7 @@
 #define ZMORTON_UNIT_TESTS_HPP_
 
 #define BOOST_TEST_DYN_LINK
+#include "util/cuda_util.hpp"
 #include <boost/test/unit_test.hpp>
 
 #include "util/zmorton.hpp"

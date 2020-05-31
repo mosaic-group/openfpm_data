@@ -1,5 +1,7 @@
 #define BOOST_GPU_ENABLED __host__ __device__
 
+
+#include <hip/hip_runtime.h>
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
@@ -47,7 +49,7 @@ void test_compress()
 
 	cl_n.template hostToDevice<0>();
 
-	compress4<cnt_type,ids_type><<<ite.wthr,ite.thr>>>(cl_n.size(),
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(compress4<cnt_type,ids_type>), dim3(ite.wthr), dim3(ite.thr), 0, 0, cl_n.size(),
 														  static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 														  static_cast<ids_type *>(compressed.template getDeviceBuffer<0>()));
 
@@ -134,7 +136,7 @@ void test_breduce()
 
 	cl_n.template hostToDevice<0>();
 
-	breduce<THREADS/32,cnt_type,ids_type,ratio_reduction<cnt_type,ids_type>><<<nblocks,THREADS>>>(cl_n.size()/ratio*4,
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(breduce<THREADS/32,cnt_type,ids_type,ratio_reduction<cnt_type,ids_type>>), dim3(nblocks), dim3(THREADS), 0, 0, cl_n.size()/ratio*4,
 														  static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
 														  static_cast<cnt_type *>(red.template getDeviceBuffer<0>()));
 
@@ -164,7 +166,7 @@ void test_bexscan()
 
 	base.template hostToDevice<0>();
 
-	bexscan<THREADS,cnt_type><<<1,THREADS,nblocks*sizeof(unsigned int)>>>(nblocks,
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(bexscan<THREADS,cnt_type>), dim3(1), dim3(THREADS), nblocks*sizeof(unsigned int), 0, nblocks,
 														  	  	  	  	  static_cast<cnt_type *>(base.template getDeviceBuffer<0>()));
 
 	base.template deviceToHost<0>();
@@ -205,7 +207,7 @@ void test_gexscan()
 	cl_n.template hostToDevice<0>();
 	base.template hostToDevice<0>();
 
-	gexscan<THREADS/32,ratio_extend<cnt_type,ids_type>> <<< cl_n.size() / 4 / ratio / THREADS, THREADS >>>(nblocks,
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(gexscan<THREADS/32,ratio_extend<cnt_type,ids_type>>), dim3(cl_n.size() / 4 / ratio / THREADS), dim3(THREADS), 0, 0, nblocks,
 																									  static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(cl_n.template getDeviceBuffer<0>()),
 																									  static_cast<cnt_type *>(base.template getDeviceBuffer<0>()),
 												                                                      static_cast<typename ratio_extend<cnt_type,ids_type>::cnt_type4 *>(cl_n_scan.template getDeviceBuffer<0>()));

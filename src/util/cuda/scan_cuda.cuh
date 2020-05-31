@@ -369,7 +369,7 @@ __global__ void breduce(int n, const cnt_type *vin, cnt_type *vout)
 template <int BDIM, typename cnt_type>
 __global__ void bexscan(int n, cnt_type *v)
 {
-    extern __shared__ unsigned int shtmp[];
+    HIP_DYNAMIC_SHARED(unsigned int, shtmp);
 
     for(int i = threadIdx.x; i < n; i += BDIM)
     {shtmp[i] = v[i];}

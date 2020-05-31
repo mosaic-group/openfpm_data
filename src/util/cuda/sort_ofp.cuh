@@ -18,7 +18,7 @@
 #ifdef __HIPCC__
 #include "hipcub/hipcub.hpp"
 #else
-#include "cub/cub.cuh"
+#include "hipcub/hipcub.hpp"
 #endif
 
 #ifdef __NVCC__

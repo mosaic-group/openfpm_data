@@ -4,6 +4,7 @@
 
 #define BOOST_TEST_DYN_LINK
 
+#include "util/cuda_util.hpp"
 #include <boost/test/unit_test.hpp>
 #include "SparseGridGpu/Geometry/grid_smb.hpp"
 

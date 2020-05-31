@@ -1,4 +1,5 @@
 #define BOOST_TEST_DYN_LINK
+#include "util/cuda_util.hpp"
 #include <boost/test/unit_test.hpp>
 #include "memory_ly/memory_conf.hpp"
 #include "Vector/map_vector.hpp"

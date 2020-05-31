@@ -557,7 +557,7 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 	typedef typename std::remove_reference<decltype(vct_index.template get<0>(0))>::type index_type;
 
     // Specialize BlockScan for a 1D block of 256 threads on type int
-    typedef cub::BlockScan<int, block_dim> BlockScan;
+    typedef hipcub::BlockScan<int, block_dim> BlockScan;
     // Allocate shared memory for BlockScan
     __shared__ typename BlockScan::TempStorage temp_storage;
 
@@ -635,7 +635,7 @@ __global__ void solve_conflicts_remove(vector_index_type vct_index,
 	typedef typename std::remove_reference<decltype(vct_index.template get<0>(0))>::type index_type;
 
     // Specialize BlockScan for a 1D block of 256 threads on type int
-    typedef cub::BlockScan<int, block_dim> BlockScan;
+    typedef hipcub::BlockScan<int, block_dim> BlockScan;
     // Allocate shared memory for BlockScan
     __shared__ typename BlockScan::TempStorage temp_storage;
 

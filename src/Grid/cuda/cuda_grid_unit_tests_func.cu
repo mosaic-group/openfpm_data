@@ -1,3 +1,5 @@
+
+#include <hip/hip_runtime.h>
 #include "config.h"
 #include <Grid/map_grid.hpp>
 #include "Point_test.hpp"
@@ -82,7 +84,7 @@ void gpu_grid_3D_one(grid_gpu<3,Point_aggr_test> & g)
 
     float * prp_0 = (float *)g.getDeviceBuffer<0>();
 
-	fill_one<<< grid, threads >>>(prp_0,64);
+	hipLaunchKernelGGL(fill_one, dim3(grid), dim3(threads), 0, 0, prp_0,64);
 }
 
 // call compute
@@ -95,7 +97,7 @@ void gpu_grid_3D_compute(grid_gpu<3,Point_aggr_test> & g)
 
     float * prp_0 = (float *)g.getDeviceBuffer<0>();
 
-	fill_count<<< grid, threads >>>(prp_0,64);
+	hipLaunchKernelGGL(fill_count, dim3(grid), dim3(threads), 0, 0, prp_0,64);
 }
 
 void gpu_grid_3D_compute_stencil(grid_gpu<3,Point_aggr_test> & g1, grid_gpu<3,Point_aggr_test> & g2,
@@ -108,7 +110,7 @@ void gpu_grid_3D_compute_stencil(grid_gpu<3,Point_aggr_test> & g1, grid_gpu<3,Po
 
     auto gpu_it = g2.getGPUIterator(start,stop);
 
-    compute_stencil<<< gpu_it.thr, gpu_it.wthr >>>(prp_0,prp_1,64,start,stop);
+    hipLaunchKernelGGL(compute_stencil, dim3(gpu_it.thr), dim3(gpu_it.wthr), 0, 0, prp_0,prp_1,64,start,stop);
 }
 
 void gpu_grid_3D_compute_grid_stencil(grid_gpu<3,Point_aggr_test> & g1, grid_gpu<3,Point_aggr_test> & g2,
@@ -119,27 +121,27 @@ void gpu_grid_3D_compute_grid_stencil(grid_gpu<3,Point_aggr_test> & g1, grid_gpu
 	auto g1k = g1.toKernel();
 	auto g2k = g2.toKernel();
 
-	compute_stencil_grid<<< gpu_it.thr, gpu_it.wthr >>>(g1k,g2k,gpu_it);
+	hipLaunchKernelGGL(compute_stencil_grid, dim3(gpu_it.thr), dim3(gpu_it.wthr), 0, 0, g1k,g2k,gpu_it);
 }
 
 void gpu_grid_fill_vector(grid_gpu<3,Point_aggr_test> & g1, grid_key_dx<3> & start, grid_key_dx<3> & stop)
 {
 	auto gpu_it = g1.getGPUIterator(start,stop);
 
-	grid_fill_vector<<< gpu_it.thr, gpu_it.wthr >>>(g1.toKernel(),gpu_it);
+	hipLaunchKernelGGL(grid_fill_vector, dim3(gpu_it.thr), dim3(gpu_it.wthr), 0, 0, g1.toKernel(),gpu_it);
 }
 
 void gpu_grid_fill_vector2(grid_gpu<3,Point_aggr_test> & g1, grid_key_dx<3> & start, grid_key_dx<3> & stop)
 {
 	auto gpu_it = g1.getGPUIterator(start,stop);
 
-	grid_fill_vector2<<< gpu_it.thr, gpu_it.wthr >>>(g1.toKernel(),gpu_it);
+	hipLaunchKernelGGL(grid_fill_vector2, dim3(gpu_it.thr), dim3(gpu_it.wthr), 0, 0, g1.toKernel(),gpu_it);
 }
 
 void gpu_grid_gradient_vector(grid_gpu<3,Point_aggr_test> & g1, grid_gpu<3,Point_aggr_test> & g2, grid_key_dx<3> & start, grid_key_dx<3> & stop)
 {
 	auto gpu_it = g1.getGPUIterator(start,stop);
 
-	grid_gradient_vector<<< gpu_it.thr, gpu_it.wthr >>>(g1.toKernel(),g2.toKernel(),gpu_it);
+	hipLaunchKernelGGL(grid_gradient_vector, dim3(gpu_it.thr), dim3(gpu_it.wthr), 0, 0, g1.toKernel(),g2.toKernel(),gpu_it);
 }
 

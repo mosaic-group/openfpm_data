@@ -61,6 +61,9 @@ if ( HIP_ENABLE )
                 SparseGridGpu/tests/SparseGridGpu_tests.cu
                 isolation.cpp)
 
+        target_compile_definitions(mem_map PUBLIC BOOST_GPU_ENABLED="__device__ __host__")
+        target_compile_definitions(isolation PUBLIC BOOST_GPU_ENABLED="__device__ __host__")
+
 else()
 
 	add_executable(mem_map

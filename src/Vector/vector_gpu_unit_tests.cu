@@ -8,6 +8,8 @@
 
 #define BOOST_GPU_ENABLED __host__ __device__
 
+
+#include <hip/hip_runtime.h>
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
@@ -95,7 +97,7 @@ BOOST_AUTO_TEST_CASE ( test_vector_of_vector_gpu )
 
 	auto ite = vb_int_proc.getGPUIterator();
 
-	vv_test_size<decltype(vb_int_proc.toKernel()),decltype(out.toKernel())><<<ite.wthr,ite.thr>>>(vb_int_proc.toKernel(),out.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(vv_test_size<decltype(vb_int_proc.toKernel()),decltype(out.toKernel())>), dim3(ite.wthr), dim3(ite.thr), 0, 0, vb_int_proc.toKernel(),out.toKernel());
 
 	out.deviceToHost<0>();
 
@@ -107,7 +109,7 @@ BOOST_AUTO_TEST_CASE ( test_vector_of_vector_gpu )
 	openfpm::vector_gpu<aggregate<size_t,size_t>> out_pointer;
 	out_pointer.resize(vb_int_proc.size());
 
-	vv_test_pointer<decltype(vb_int_proc.toKernel()),decltype(out_pointer.toKernel())><<<ite.wthr,ite.thr>>>(vb_int_proc.toKernel(),out_pointer.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(vv_test_pointer<decltype(vb_int_proc.toKernel()),decltype(out_pointer.toKernel())>), dim3(ite.wthr), dim3(ite.thr), 0, 0, vb_int_proc.toKernel(),out_pointer.toKernel());
 
 	out_pointer.deviceToHost<0,1>();
 
@@ -122,7 +124,7 @@ BOOST_AUTO_TEST_CASE ( test_vector_of_vector_gpu )
 
 	auto ite2 = out_data.getGPUIterator();
 
-	vv_test_data_get<decltype(vb_int_proc.toKernel()),decltype(out_data.toKernel())><<<ite2.wthr,ite2.thr>>>(vb_int_proc.toKernel(),out_data.toKernel(),7);
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(vv_test_data_get<decltype(vb_int_proc.toKernel()),decltype(out_data.toKernel())>), dim3(ite2.wthr), dim3(ite2.thr), 0, 0, vb_int_proc.toKernel(),out_data.toKernel(),7);
 
 	out_data.template deviceToHost<0,1>();
 

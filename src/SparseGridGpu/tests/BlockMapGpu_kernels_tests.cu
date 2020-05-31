@@ -3,6 +3,8 @@
 //
 
 #define BOOST_TEST_DYN_LINK
+
+#include <hip/hip_runtime.h>
 #include "config.h"
 #include <boost/test/unit_test.hpp>
 #include "SparseGridGpu/BlockMapGpu.hpp"
@@ -130,8 +132,7 @@ BOOST_AUTO_TEST_CASE(testSegreduce_total)
 
 #ifndef __HIPCC__
 
-		CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>>),segments.size()-1, 2*BlockT::size,
-		data_new.toKernel(),
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((BlockMapGpuKernels::segreduce_total<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>>)), dim3(segments.size()-1), dim3(2*BlockT::size), 0, 0, data_new.toKernel(),
 		data_old.toKernel(),
 		segments.toKernel(),
 		segment_dataMap.toKernel(),
@@ -140,8 +141,7 @@ BOOST_AUTO_TEST_CASE(testSegreduce_total)
 		outputData.toKernel());
 
 		// Segreduce on mask
-		CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>>),segments.size()-1, 2*BlockT::size,
-		data_new.toKernel(),
+		hipLaunchKernelGGL(HIP_KERNEL_NAME((BlockMapGpuKernels::segreduce_total<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>>)), dim3(segments.size()-1), dim3(2*BlockT::size), 0, 0, data_new.toKernel(),
 		data_old.toKernel(),
 		segments.toKernel(),
 		segment_dataMap.toKernel(),
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(test_maps_create)
 
 	auto ite = merge_indexes.getGPUIterator();
 
-	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,merge_keys.toKernel(),merge_indexes.toKernel(),9,p_ids.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(BlockMapGpuKernels::compute_predicate), dim3(), dim3(), 0, 0, merge_keys.toKernel(),merge_indexes.toKernel(),9,p_ids.toKernel());
 
 	mgpu::ofp_context_t context(false);
 	openfpm::scan((int *)p_ids.template getDeviceBuffer<0>(),
@@ -324,7 +324,7 @@ BOOST_AUTO_TEST_CASE(test_maps_create)
 	copy_old_src.resize(copy_old_size);
 	copy_old_dst.resize(copy_old_size);
 
-	CUDA_LAUNCH(BlockMapGpuKernels::maps_create,ite,s_ids.toKernel(),p_ids.toKernel(),segments_oldData.toKernel(),outputMap.toKernel(),copy_old_dst.toKernel(),copy_old_src.toKernel());
+	hipLaunchKernelGGL(HIP_KERNEL_NAME(BlockMapGpuKernels::maps_create), dim3(), dim3(), 0, 0, s_ids.toKernel(),p_ids.toKernel(),segments_oldData.toKernel(),outputMap.toKernel(),copy_old_dst.toKernel(),copy_old_src.toKernel());
 
 	segments_oldData.template deviceToHost<0>();
 	outputMap.template deviceToHost<0>();
