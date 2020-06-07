@@ -227,7 +227,7 @@ template<typename vmpl, typename a> __device__ __host__ inline unsigned int Lin_
 template<typename vmpl, typename a, typename ...lT>
 __device__ __host__ inline unsigned int Lin_vmpl(a v,lT...t)
 {
-		return v*vmpl_reduce_prod_stop<vmpl,((int)vmpl::size::value) - sizeof...(t) - 2>::type::value + Lin_vmpl<vmpl>(t...);
+		return v*vmpl_reduce_prod_stop<vmpl,(int)vmpl::size::value - (int)sizeof...(t) - 2>::type::value + Lin_vmpl<vmpl>(t...);
 }
 
 //! Linearize a set of index
