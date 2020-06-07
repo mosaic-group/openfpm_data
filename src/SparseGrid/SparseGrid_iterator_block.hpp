@@ -843,13 +843,13 @@ public:
 		}
 #endif
 
-		return v*vmpl_reduce_prod_stop<stop_border_vmpl,dim - sizeof...(t) - 2>::type::value + LinB(t...);
+		return v*vmpl_reduce_prod_stop<stop_border_vmpl,(int)dim - (int)sizeof...(t) - 2>::type::value + LinB(t...);
 	}
 
 	//! Linearize a set of index
 	template<typename a> __device__ __host__ inline size_t LinB(a v) const
 	{
-		return v*vmpl_reduce_prod_stop<stop_border_vmpl,dim - 2>::type::value;
+		return v*vmpl_reduce_prod_stop<stop_border_vmpl,(int)dim - 2>::type::value;
 	}
 
 	/*! \brief linearize an arbitrary set of index
