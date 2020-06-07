@@ -38,7 +38,7 @@ endif()
 
 find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem)
 find_package(LibHilbert REQUIRED)
-find_package(Vc REQUIRED)
+find_package(Vc REQUIRED PATHS ${Vc_ROOT})
 
 
 ###### CONFIG.h FILE ######
