@@ -36,9 +36,11 @@ if (ENABLE_GPU)
         endif()
 endif()
 
+set(Vc_DIR ${Vc_ROOT})
+
 find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem)
 find_package(LibHilbert REQUIRED)
-find_package(Vc REQUIRED PATHS ${Vc_ROOT})
+find_package(Vc REQUIRED)
 
 
 ###### CONFIG.h FILE ######
