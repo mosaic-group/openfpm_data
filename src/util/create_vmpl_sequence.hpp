@@ -216,7 +216,7 @@ struct vmpl_reduce_prod_stop<vmpl,-1>
 //! Linearize a set of index
 template<typename vmpl, typename a> __device__ __host__ inline unsigned int Lin_vmpl(a v)
 {
-	return v*vmpl_reduce_prod_stop<vmpl,(int)vmpl::size::value - 2>::type::value;
+	return v*vmpl_reduce_prod_stop<vmpl,((int)vmpl::size::value) - 2>::type::value;
 }
 
 /*! \brief linearize an arbitrary set of index
@@ -227,13 +227,13 @@ template<typename vmpl, typename a> __device__ __host__ inline unsigned int Lin_
 template<typename vmpl, typename a, typename ...lT>
 __device__ __host__ inline unsigned int Lin_vmpl(a v,lT...t)
 {
-		return v*vmpl_reduce_prod_stop<vmpl,(int)vmpl::size::value - sizeof...(t) - 2>::type::value + Lin_vmpl<vmpl>(t...);
+		return v*vmpl_reduce_prod_stop<vmpl,((int)vmpl::size::value) - sizeof...(t) - 2>::type::value + Lin_vmpl<vmpl>(t...);
 }
 
 //! Linearize a set of index
 template<typename vmpl, typename vmpl_off, typename a> __device__ __host__ inline unsigned int Lin_vmpl_off(a v)
 {
-	return (v + boost::mpl::at<vmpl_off,boost::mpl::int_< vmpl::size::value - 1 > >::type::value )*vmpl_reduce_prod_stop<vmpl,(int)vmpl::size::value - 2>::type::value;
+	return (v + boost::mpl::at<vmpl_off,boost::mpl::int_< ((int)vmpl::size::value) - 1 > >::type::value )*vmpl_reduce_prod_stop<vmpl,(int)vmpl::size::value - 2>::type::value;
 }
 
 /*! \brief linearize an arbitrary set of index
@@ -244,7 +244,7 @@ template<typename vmpl, typename vmpl_off, typename a> __device__ __host__ inlin
 template<typename vmpl, typename vmpl_off, typename a, typename ...lT>
 __device__ __host__ inline unsigned int Lin_vmpl_off(a v,lT...t)
 {
-	return (v + boost::mpl::at<vmpl_off,boost::mpl::int_<(int)vmpl::size::value - (int)sizeof...(t) - 1> >::type::value)*vmpl_reduce_prod_stop<vmpl,(int)((int)vmpl::size::value - sizeof...(t)  - 2)>::type::value + Lin_vmpl_off<vmpl,vmpl_off>(t...);
+	return (v + boost::mpl::at<vmpl_off,boost::mpl::int_<((int)vmpl::size::value) - (int)sizeof...(t) - 1> >::type::value)*vmpl_reduce_prod_stop<vmpl,(int)((int)vmpl::size::value - sizeof...(t)  - 2)>::type::value + Lin_vmpl_off<vmpl,vmpl_off>(t...);
 }
 
 #endif
