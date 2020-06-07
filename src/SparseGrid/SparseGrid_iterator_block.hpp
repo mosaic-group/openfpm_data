@@ -819,7 +819,7 @@ public:
 		}
 #endif
 
-		return v*vmpl_reduce_prod_stop<typename vector_blocks_exts::type,(int)dim - sizeof...(t) - 2>::type::value + Lin(t...);
+		return v*vmpl_reduce_prod_stop<typename vector_blocks_exts::type,(int)dim - (int)sizeof...(t) - 2>::type::value + Lin(t...);
 	}
 
 	//! Linearize a set of index
