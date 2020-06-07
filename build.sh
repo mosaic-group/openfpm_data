@@ -15,6 +15,9 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then
 	./install_LIBHILBERT.sh $HOME/openfpm_dependencies/openfpm_data/ 4
 fi
 
+if [ ! -d $HOME/openfpm_dependencies/openfpm_data/VCDEVEL ]; then
+        ./install_VCDEVEL.sh $HOME/openfpm_dependencies/openfpm_data/ 4
+fi
 
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 	if [ x"$hostname" == x"cifarm-mac-node" ]; then
