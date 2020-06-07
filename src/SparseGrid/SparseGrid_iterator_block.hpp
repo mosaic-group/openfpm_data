@@ -867,13 +867,13 @@ public:
 		}
 #endif
 
-		return (v-stencil_size)*vmpl_reduce_prod_stop<typename vector_blocks_exts::type,dim - sizeof...(t) - 2>::type::value + LinB_off(t...);
+		return (v-stencil_size)*vmpl_reduce_prod_stop<typename vector_blocks_exts::type,(int)dim - (int)sizeof...(t) - 2>::type::value + LinB_off(t...);
 	}
 
 	//! Linearize a set of index
 	template<typename a> __device__ __host__ inline size_t LinB_off(a v) const
 	{
-		return (v-stencil_size)*(vmpl_reduce_prod_stop<typename vector_blocks_exts::type,dim - 2>::type::value);
+		return (v-stencil_size)*(vmpl_reduce_prod_stop<typename vector_blocks_exts::type,(int)dim - 2>::type::value);
 	}
 
 	/*! Check if the point exist
