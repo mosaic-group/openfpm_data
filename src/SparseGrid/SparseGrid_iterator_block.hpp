@@ -757,7 +757,7 @@ public:
 		auto & header_inf = spg.private_get_header_inf();
 
 		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template loadBlock<sizeBlockBord>(arr,spg,chunk_id,mask);
-		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template loadBorder<findNN,NNtype,prop>(arr,spg,chunk_id,bord,block_skin,chunk_shifts,offsets,mask,background,maps_blk);
+		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template loadBorder<findNN,NNtype,sizeBlockBord>(arr,spg,chunk_id,bord,block_skin,chunk_shifts,offsets,mask,background,maps_blk);
 
 		hm = &header_mask.get(chunk_id);
 		hc = &header_inf.get(chunk_id);
