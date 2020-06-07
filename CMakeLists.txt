@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 project(openfpm_pdata LANGUAGES C CXX)
 
+if (POLICY CMP0074)
+        cmake_policy(SET CMP0074 OLD)
+endif ()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules/)
 
@@ -20,13 +23,13 @@ if (ENABLE_GPU)
 	find_package(CUDA)
 
         if (CUDA_VERSION_MAJOR EQUAL 9 AND CUDA_VERSION_MINOR EQUAL 2)
-                message("CUDA is compatible")
+                message("CUDA is compatible 9.2")
                 set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda)
         elseif ( CUDA_VERSION_MAJOR EQUAL 10 AND CUDA_VERSION_MINOR EQUAL 1 )
-                message("CUDA is compatible")
+                message("CUDA is compatible 10.1")
                 set(WARNING_SUPPRESSION_AND_OPTION_NVCC -Xcudafe "--display_error_number --diag_suppress=2915 --diag_suppress=2914 --diag_suppress=2912 --diag_suppress=2913 --diag_suppress=111 --diag_suppress=186 --diag_suppress=611 --diag_suppress=1301 --diag_suppress=177 --diag_suppress=2928 --diag_suppress=2929 --diag_suppress=2930 --diag_suppress=2931" --expt-extended-lambda)
         elseif ( CUDA_VERSION_MAJOR EQUAL 10 AND CUDA_VERSION_MINOR EQUAL 2 )
-                message("CUDA is compatible")
+                message("CUDA is compatible 10.2")
                 set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=2976 --diag_suppress=2977 --diag_suppress=2979 --diag_suppress=186" --expt-extended-lambda)
         else()
                 message(FATAL_ERROR "CUDA is incompatible, version 9.2 is only supported")
@@ -35,6 +38,7 @@ endif()
 
 find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem)
 find_package(LibHilbert REQUIRED)
+find_package(Vc REQUIRED)
 
 
 ###### CONFIG.h FILE ######

@@ -1692,8 +1692,10 @@ void Test_cell_gpu_force_split(SpaceBox<dim,T> & box, size_t npart, const size_t
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out_scan;
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> nn_list;
 
-	scan<unsigned int,unsigned char> sc;
-	sc.scan_(n_out,n_out_scan);
+	n_out_scan.resize(n_out.size());
+
+	openfpm::scan((unsigned int *)n_out.template getDeviceBuffer<0>(),n_out.size(),(unsigned int *)n_out_scan.template getDeviceBuffer<0>(),context);
+
 	n_out_scan.template deviceToHost<0>();
 
 	if (n_out_scan.template get<0>(pl.size()) == 0)
@@ -2043,8 +2045,8 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	openfpm::vector_gpu<aggregate<int>> os_scan;
 	os_scan.resize(v.size());
 
-	scan<int,int>sc;
-	sc.scan_(os,os_scan);
+	mgpu::ofp_context_t ctx;
+	openfpm::scan((int *)os.template getDeviceBuffer<0>(),os.size(),(int *)os_scan.template getDeviceBuffer<0>(),ctx);
 
 	os_scan.deviceToHost<0>();
 	os.deviceToHost<0>(os.size()-1,os.size()-1);

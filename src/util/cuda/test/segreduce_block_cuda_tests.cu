@@ -188,11 +188,20 @@ BOOST_AUTO_TEST_SUITE(segreduce_block_cuda_tests)
             BlockT outBlock = outputData.template get<BLOCK>(j);
             MaskBlockT outMask = outputData.template get<BITMASK>(j);
 
+            int seg_sz = segments.template get<0>(j+1) - segments.template get<0>(j);
+
             for (int i = 0; i < BlockT::size; ++i)
             {
-                std::cout << outBlock[i] << " " << outMask[i] << " ";
+                if (i < 32)
+                {
+                	BOOST_REQUIRE_EQUAL(outBlock[i],seg_sz*(i+1));
+                	BOOST_REQUIRE_EQUAL(outMask[i],1);
+                }
+                else
+                {
+                	BOOST_REQUIRE_EQUAL(outMask[i],0);
+                }
             }
-            std::cout << std::endl;
         }
     }
 

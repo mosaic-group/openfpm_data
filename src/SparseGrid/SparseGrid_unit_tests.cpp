@@ -1216,8 +1216,8 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_simplified)
 	}
 
 	BOOST_REQUIRE_EQUAL(check,true);
-	BOOST_REQUIRE_EQUAL(tot_six,1391877);
-	BOOST_REQUIRE_EQUAL(tot_one,1005005);
+	BOOST_REQUIRE_EQUAL(tot_six,2062163);
+	BOOST_REQUIRE_EQUAL(tot_one,334719);
 	// Check correct-ness
 
 //	print_grid("debug_out",grid);

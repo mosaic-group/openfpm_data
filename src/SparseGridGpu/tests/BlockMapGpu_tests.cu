@@ -122,6 +122,7 @@ BOOST_AUTO_TEST_CASE(testBackground)
 	BOOST_REQUIRE_EQUAL(match, true);
 }
 
+
 BOOST_AUTO_TEST_CASE(testInsert)
 {
 	typedef aggregate<DataBlock<float, 64>> AggregateT;

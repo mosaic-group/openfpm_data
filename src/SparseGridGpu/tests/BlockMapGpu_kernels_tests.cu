@@ -151,26 +151,6 @@ BOOST_AUTO_TEST_CASE(testSegreduce_total)
 
         outputData.template deviceToHost<BITMASK, BLOCK>();
 
-        std::cout << "------------------------------------------------------------" << std::endl;
-
-		for (int j = 0; j < outputMap.size(); ++j)
-		{
-			size_t j_ = outputMap.template get<0>(j);
-
-			std::cout << "Index: " << j_ << std::endl;
-
-			BlockT outBlock = outputData.template get<BLOCK>(j_);
-			MaskBlockT outMask = outputData.template get<BITMASK>(j_);
-
-			for (int i = 0; i < BlockT::size; ++i)
-			{
-				std::cout << outBlock[i] << ":" << (int)outMask[i] << " ";
-			}
-			std::cout << std::endl;
-		}
-
-		std::cout << "------------------------------------------------------------" << std::endl;
-
         // Check
 
         for (int j = 0 ; j < outputMap.size() ; j++)
@@ -482,15 +462,6 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 	// Now retrieve the dataDst vector
 	keysOut.deviceToHost<pInd>();
 	dataOut.deviceToHost<p, pMask>();
-
-	// Debug output
-	for (int i=0; i<dataOut.size(); ++i)
-	{
-		std::cout
-			<< "dataOut[" << i << "][0] = " << dataOut.template get<p>(i)[0]
-			<< ", dataOut[" << i << "][1] = " << dataOut.template get<p>(i)[1]
-			<< std::endl;
-	}
 
 	// Validation
 	BOOST_REQUIRE_EQUAL(dataOut.template get<p>(0)[0], 1);

@@ -11,6 +11,7 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
+#include "util/cuda_util.hpp"
 #include "util/zmorton.hpp"
 
 template<typename T>

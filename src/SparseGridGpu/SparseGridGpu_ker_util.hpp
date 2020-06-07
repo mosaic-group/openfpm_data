@@ -104,7 +104,7 @@ struct arr_ptr
 template<unsigned int n_it,unsigned int n_prp>
 struct arr_arr_ptr
 {
-	void * ptr[n_it][n_prp];
+	void * ptr[n_it][n_prp+1];
 };
 
 template<typename copy_type, unsigned int nprp, unsigned int prp_val, unsigned int prp_id>
@@ -200,7 +200,7 @@ struct sparsegridgpu_pack_impl
 	unsigned int ppos;
 
 	//! data pointer
-	void * (& data_ptr)[sizeof...(prp)];
+	void * (& data_ptr)[sizeof...(prp)+1];
 
 	//! Number of points to pack
 	unsigned int n_pnt;
@@ -212,7 +212,7 @@ struct sparsegridgpu_pack_impl
 								   unsigned int offset,
 								   dataBuffer_type & dataBuff,
 								   unsigned int ppos,
-								   void * (& data_ptr)[sizeof...(prp)],
+								   void * (& data_ptr)[sizeof...(prp)+1],
 								   unsigned int n_pnt)
 	:dataBlockPos(dataBlockPos),offset(offset),dataBuff(dataBuff),ppos(ppos),data_ptr(data_ptr),n_pnt(n_pnt)
 	{};
@@ -226,7 +226,7 @@ struct sparsegridgpu_pack_impl
 		// Remove the reference from the type to copy
 		typedef typename boost::mpl::at<typename AggregateT::type,prp_cp>::type pack_type;
 
-		meta_copy_block<pack_type,sizeof...(prp),prp_cp::value,T::value>::copy(data_ptr,dataBuff,ppos,dataBlockPos,offset,n_pnt);
+		meta_copy_block<pack_type,sizeof...(prp)+1,prp_cp::value,T::value>::copy(data_ptr,dataBuff,ppos,dataBlockPos,offset,n_pnt);
 	}
 };
 
