@@ -36,7 +36,7 @@ if (ENABLE_GPU)
         endif()
 endif()
 
-set(Vc_DIR ${Vc_ROOT})
+set(Vc_DIR "${Vc_ROOT}/lib/cmake/Vc/")
 
 find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem)
 find_package(LibHilbert REQUIRED)
