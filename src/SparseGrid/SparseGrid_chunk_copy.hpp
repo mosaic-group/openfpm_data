@@ -48,8 +48,8 @@ struct exist_sub_v_impl<2>
 	template<typename headerType>
 	static inline void exist(headerType & h, int sub_id, unsigned char * pmask)
 	{
-		pmask[0] = h.mask[0];
-		pmask[1] = h.mask[1];
+		pmask[0] = h.mask[sub_id];
+		pmask[1] = h.mask[sub_id+1];
 	}
 };
 
