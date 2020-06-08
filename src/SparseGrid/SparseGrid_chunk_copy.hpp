@@ -851,26 +851,6 @@ void construct_chunk_missalign_map(unsigned char miss_al_map[N],
 	for (int i  = 0 ; i < dim ; i++)
 	{sz[i] = 3;}
 
-//	grid_sm<dim,void> g2(sz);
-//	grid_key_dx_iterator<dim> it2(g2);
-
-/*	grid_key_dx<dim> one;
-	one.one();
-
-	while (it2.isNext())
-	{
-		auto k1 = it2.get();
-
-		g2.LinId(k1);
-
-		key_int<dim> kk;
-
-		kk.i = g2.LinId(k1);
-		kk.k = k1 - one;
-
-		++it2;
-	}*/
-
 	grid_sm<dim,void> gcnk(gbs.sz_block);
 	grid_key_dx_iterator<dim> it(gcnk);
 	while (it.isNext())

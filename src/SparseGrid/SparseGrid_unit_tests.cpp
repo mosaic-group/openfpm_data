@@ -873,10 +873,24 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized)
 				{
 					Vc::Mask<double> cmp;
 
-					cmp[0] = mask[c] == true;
-					cmp[1] = mask[c+1] ==  true;
-					cmp[2] = mask[c+2] == true;
-					cmp[3] = mask[c+3] == true;
+                    if (Vc::double_v::Size == 2)
+                    {
+                            cmp[0] = mask[c] == true;
+                            cmp[1] = mask[c+1] ==  true;
+                    }
+                    else if (Vc::double_v::Size == 4)
+                    {
+                            cmp[0] = mask[c] == true;
+                            cmp[1] = mask[c+1] ==  true;
+                            cmp[2] = mask[c+2] == true;
+                            cmp[3] = mask[c+3] == true;
+                    }
+                    else
+                    {
+                            std::cout << "UNSUPPORTED" << std::endl;
+                            exit(1);
+                    }
+
 
 					// we do only id exist the point
 					if (Vc::none_of(cmp) == true) {continue;}
@@ -895,10 +909,18 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized)
 					                   ypd + ymd +
 					                   zpd + zmd - 6.0*cmd;
 
-					surround[0] = (mask_sum[c] == 7);
-					surround[1] = (mask_sum[c+1] ==  7);
-					surround[2] = (mask_sum[c+2] == 7);
-					surround[3] = (mask_sum[c+3] == 7);
+                    if (Vc::double_v::Size == 2)
+                    {
+                            surround[0] = (mask_sum[c] == 7);
+                            surround[1] = (mask_sum[c+1] ==  7);
+                    }
+                    else if (Vc::double_v::Size == 4)
+                    {
+                            surround[0] = (mask_sum[c] == 7);
+                            surround[1] = (mask_sum[c+1] ==  7);
+                            surround[2] = (mask_sum[c+2] == 7);
+                            surround[3] = (mask_sum[c+3] == 7);
+                    }
 
 					Lap = Vc::iif(surround,Lap,six);
 
