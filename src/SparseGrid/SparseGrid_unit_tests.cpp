@@ -1084,7 +1084,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
                     	mxm.uc[1] = mask.mask[s2];
 
                     	mxp.uc[0] = mask.mask[s2+1];
-                    	mxp.uc[3] = mask.mask[sumxp];
+                    	mxp.uc[1] = mask.mask[sumxp];
                     }
                     else if (Vc::double_v::Size == 4)
                     {
@@ -1116,7 +1116,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 						xm[1] = cmd[0];
 
 						xp[0] = cmd[1];
-						xp[3] = chunk.template get<0>()[sumxp];
+						xp[1] = chunk.template get<0>()[sumxp];
                     }
                     else if (Vc::double_v::Size == 4)
                     {
