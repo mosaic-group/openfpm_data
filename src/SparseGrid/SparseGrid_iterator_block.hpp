@@ -543,6 +543,9 @@ public:
 	typedef typename generate_array_vector<size_t,start_border_vmpl>::result start_b_;
 	typedef typename generate_array_vector<size_t,stop_border_vmpl>::result stop_b_;
 
+	typedef vector_blocks_exts vector_blocks_exts_type;
+	typedef vector_ext vector_ext_type;
+
 	static const int sizeBlock = vector_blocks_exts::size::value;
 	static const int sizeBlockBord = vmpl_reduce_prod<stop_border_vmpl>::type::value;
 
@@ -607,12 +610,6 @@ public:
 			auto p = gsi.get();
 
 			grid_key_dx<dim> sh;
-
-			if (bord.size() == 1109)
-			{
-				int debug = 0;
-				debug++;
-			}
 
 			bord.add(g_sm.LinId(p));
 

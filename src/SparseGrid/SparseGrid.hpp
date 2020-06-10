@@ -332,6 +332,7 @@ struct conv_impl<3>
 
 		unsigned char mask[decltype(it)::sizeBlockBord];
 		unsigned char mask_sum[decltype(it)::sizeBlockBord];
+		unsigned char mask_unused[decltype(it)::sizeBlock];
 		__attribute__ ((aligned (32))) prop_type block_bord_src[decltype(it)::sizeBlockBord];
 		__attribute__ ((aligned (32))) prop_type block_bord_dst[decltype(it)::sizeBlock];
 
@@ -342,6 +343,15 @@ struct conv_impl<3>
 		while (it.isNext())
 		{
 			it.template loadBlockBorder<prop_src,NNtype,findNN>(block_bord_src,mask);
+
+			if (it.start_b(2) != stencil_size || it.start_b(1) != stencil_size || it.start_b(0) != stencil_size ||
+			    it.stop_b(2) != sz2::value+stencil_size || it.stop_b(1) != sz1::value+stencil_size || it.stop_b(0) != sz0::value+stencil_size)
+			{
+				auto & header_mask = grid.private_get_header_mask();
+				auto & header_inf = grid.private_get_header_inf();
+
+				loadBlock_impl<prop_dst,0,3,typename decltype(it)::vector_blocks_exts_type, typename decltype(it)::vector_ext_type>::template loadBlock<decltype(it)::sizeBlock>(block_bord_dst,grid,it.getChunkId(),mask_unused);
+			}
 
 			// Sum the mask
 			for (int k = it.start_b(2) ; k < it.stop_b(2) ; k++)
@@ -360,23 +370,23 @@ struct conv_impl<3>
 					{
 						size_t cmd = *(size_t *)&mask[cc];
 
-						if (cmd == 0) {continue;}
-
-
-						size_t xm[N];
-
-						for (int s = 0 ; s < N ; s++)
+						if (cmd != 0)
 						{
-							xm[s] = *(size_t *)&mask[c[s]];
-						}
+							size_t xm[N];
 
-						size_t sum = 0;
-						for (int s = 0 ; s < N ; s++)
-						{
-							sum += xm[s];
-						}
+							for (int s = 0 ; s < N ; s++)
+							{
+								xm[s] = *(size_t *)&mask[c[s]];
+							}
 
-						*(size_t *)&mask_sum[cc] = sum;
+							size_t sum = 0;
+							for (int s = 0 ; s < N ; s++)
+							{
+								sum += xm[s];
+							}
+
+							*(size_t *)&mask_sum[cc] = sum;
+						}
 
 						cc += sizeof(size_t);
 						for (int s = 0 ; s < N ; s++)
@@ -407,26 +417,27 @@ struct conv_impl<3>
 
 						for (int s = 0 ; s < Vc::Vector<prop_type>::Size ; s++)
 						{
-							cmp[s] = (mask[cc+s] == true);
+							cmp[s] = (mask[cc+s] == true && i+s < it.stop_b(0));
 						}
 
-						// we do only id exist the point
-						if (Vc::none_of(cmp) == true) {continue;}
-
-						Vc::Mask<prop_type> surround;
-
-						Vc::Vector<prop_type> xs[N+1];
-
-						xs[0] = Vc::Vector<prop_type>(&block_bord_src[cc],Vc::Unaligned);
-
-						for (int s = 1 ; s < N+1 ; s++)
+						// we do only if exist the point
+						if (Vc::none_of(cmp) == false)
 						{
-							xs[s] = Vc::Vector<prop_type>(&block_bord_src[c[s-1]],Vc::Unaligned);
+							Vc::Mask<prop_type> surround;
+
+							Vc::Vector<prop_type> xs[N+1];
+
+							xs[0] = Vc::Vector<prop_type>(&block_bord_src[cc],Vc::Unaligned);
+
+							for (int s = 1 ; s < N+1 ; s++)
+							{
+								xs[s] = Vc::Vector<prop_type>(&block_bord_src[c[s-1]],Vc::Unaligned);
+							}
+
+							auto res = func(xs, &mask_sum[cc], args ...);
+
+							res.store(&block_bord_dst[cd],cmp,Vc::Aligned);
 						}
-
-						auto res = func(xs, &mask_sum[cc], args ...);
-
-						res.store(&block_bord_dst[cd],cmp,Vc::Aligned);
 
 						cc += Vc::Vector<prop_type>::Size;
 						for (int s = 0 ; s < N ; s++)

@@ -12,6 +12,7 @@
 #include "SparseGrid/SparseGrid.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
 #include <math.h>
+#include "util/debug.hpp"
 
 BOOST_AUTO_TEST_SUITE( sparse_grid_test )
 
@@ -1257,6 +1258,34 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_simplified)
 
 		check &= (grid.template get<1>(p) == 6 || grid.template get<1>(p) == 1);
 
+		// Check the six should be a six
+		auto xp = p.move(0,1);
+		auto xm = p.move(0,-1);
+
+		auto yp = p.move(1,1);
+		auto ym = p.move(1,-1);
+
+		auto zp = p.move(2,1);
+		auto zm = p.move(2,-1);
+
+		bool is_six;
+		if (grid.existPoint(xp) && grid.existPoint(xm) &&
+			grid.existPoint(yp) && grid.existPoint(ym) &&
+			grid.existPoint(zp) && grid.existPoint(zm))
+		{
+			is_six = true;
+		}
+		else
+		{
+			is_six = false;
+		}
+
+		if (is_six == true && grid.template get<1>(p) != 6.0)
+		{
+			check = false;
+			break;
+		}
+
 		if (grid.template get<1>(p) == 1)
 		{
 			tot_one++;
@@ -1271,11 +1300,11 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_simplified)
 	}
 
 	BOOST_REQUIRE_EQUAL(check,true);
-	BOOST_REQUIRE_EQUAL(tot_six,2062163);
-	BOOST_REQUIRE_EQUAL(tot_one,334719);
+	BOOST_REQUIRE_EQUAL(tot_six,2020091);
+	BOOST_REQUIRE_EQUAL(tot_one,376791);
 	// Check correct-ness
 
-//	print_grid("debug_out",grid);
+//	print_grid("debug_out.vtk",grid);
 }
 
 BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified)
@@ -1333,6 +1362,34 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified)
 		auto p = it2.get();
 
 		check &= (grid.template get<1>(p) == 6 || grid.template get<1>(p) == 1);
+
+		// Check the six should be a six
+		auto xp = p.move(0,1);
+		auto xm = p.move(0,-1);
+
+		auto yp = p.move(1,1);
+		auto ym = p.move(1,-1);
+
+		auto zp = p.move(2,1);
+		auto zm = p.move(2,-1);
+
+		bool is_six;
+		if (grid.existPoint(xp) && grid.existPoint(xm) &&
+			grid.existPoint(yp) && grid.existPoint(ym) &&
+			grid.existPoint(zp) && grid.existPoint(zm))
+		{
+			is_six = true;
+		}
+		else
+		{
+			is_six = false;
+		}
+
+		if (is_six == true && grid.template get<1>(p) != 6.0)
+		{
+			check = false;
+			break;
+		}
 
 		if (grid.template get<1>(p) == 1)
 		{
