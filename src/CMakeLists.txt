@@ -30,7 +30,7 @@ if (CUDA_FOUND)
     	endif()
 
         if (TEST_COVERAGE)
-                target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage">)
+                target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
         endif()
 endif()
 
