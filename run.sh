@@ -5,7 +5,7 @@ branch=$3
 
 # Make a directory in /tmp/openfpm_data
 
-cd "$1/openfpm_io"
+cd "openfpm_io"
 
 echo "CHECKING MACHINE"
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
