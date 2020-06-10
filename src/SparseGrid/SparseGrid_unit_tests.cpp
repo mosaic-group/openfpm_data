@@ -12,7 +12,7 @@
 #include "SparseGrid/SparseGrid.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
 #include <math.h>
-#include "util/debug.hpp"
+//#include "util/debug.hpp"
 
 BOOST_AUTO_TEST_SUITE( sparse_grid_test )
 
