@@ -15,7 +15,7 @@ centos_run:
   dependencies:
     - centos_build
   script:
-    - ./openfpm_io/build/src/io
+    - ./run.sh
 
 mac_build:
   stage: build
@@ -34,7 +34,7 @@ mac_run:
   dependencies:
     - mac_build
   script:
-    - ./openfpm_io/build/src/io
+    - ./run.sh
 
 ubuntu_build:
   stage: build
@@ -53,5 +53,5 @@ ubuntu_run:
   dependencies:
     - ubuntu_build
   script:
-    - ./openfpm_io/build/src/io
+    - ./run.sh
 
