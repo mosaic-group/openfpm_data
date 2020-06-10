@@ -534,12 +534,12 @@ struct conv_impl<3>
 						// we do only id exist the point
 						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::Vector<prop_type>::Size; continue;}
 
-						data_il<4> mxm;
-						data_il<4> mxp;
-						data_il<4> mym;
-						data_il<4> myp;
-						data_il<4> mzm;
-						data_il<4> mzp;
+						data_il<Vc::Vector<prop_type>::Size> mxm;
+						data_il<Vc::Vector<prop_type>::Size> mxp;
+						data_il<Vc::Vector<prop_type>::Size> mym;
+						data_il<Vc::Vector<prop_type>::Size> myp;
+						data_il<Vc::Vector<prop_type>::Size> mzm;
+						data_il<Vc::Vector<prop_type>::Size> mzp;
 
 						cross_stencil_v cs;
 
@@ -562,19 +562,42 @@ struct conv_impl<3>
 						long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
 						sumzp += s2;
 
-						mxm.i = *(int *)&mask.mask[s2];
-						mxm.i = mxm.i << 8;
-						mxm.i |= (int)mask.mask[sumxm];
+						if (Vc::Vector<prop_type>::Size == 2)
+						{
+							mxm.i = *(short int *)&mask.mask[s2];
+							mxm.i = mxm.i << 8;
+							mxm.i |= (short int)mask.mask[sumxm];
 
-						mxp.i = *(int *)&mask.mask[s2];
-						mxp.i = mxp.i >> 8;
-						mxp.i |= ((int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
+							mxp.i = *(short int *)&mask.mask[s2];
+							mxp.i = mxp.i >> 8;
+							mxp.i |= ((short int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
 
-						mym.i = *(int *)&mask.mask[sumym];
-						myp.i = *(int *)&mask.mask[sumyp];
+							mym.i = *(short int *)&mask.mask[sumym];
+							myp.i = *(short int *)&mask.mask[sumyp];
 
-						mzm.i = *(int *)&mask.mask[sumzm];
-						mzp.i = *(int *)&mask.mask[sumzp];
+							mzm.i = *(short int *)&mask.mask[sumzm];
+							mzp.i = *(short int *)&mask.mask[sumzp];
+						}
+						else if (Vc::Vector<prop_type>::Size == 4)
+						{
+							mxm.i = *(int *)&mask.mask[s2];
+							mxm.i = mxm.i << 8;
+							mxm.i |= (int)mask.mask[sumxm];
+
+							mxp.i = *(int *)&mask.mask[s2];
+							mxp.i = mxp.i >> 8;
+							mxp.i |= ((int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
+
+							mym.i = *(int *)&mask.mask[sumym];
+							myp.i = *(int *)&mask.mask[sumyp];
+
+							mzm.i = *(int *)&mask.mask[sumzm];
+							mzp.i = *(int *)&mask.mask[sumzp];
+						}
+						else
+						{
+							std::cout << __FILE__ << ":" << __LINE__ << " UNSUPPORTED" << std::endl;
+						}
 
 						cs.xm = cmd;
 						cs.xm = cs.xm.shifted(-1);
@@ -594,7 +617,7 @@ struct conv_impl<3>
 
 						// Calculate
 
-						data_il<4> tot_m;
+						data_il<Vc::Vector<prop_type>::Size> tot_m;
 						tot_m.i = mxm.i + mxp.i + mym.i + myp.i + mzm.i + mzp.i;
 
 						Vc::Vector<prop_type> res = func(cmd,cs,tot_m.uc,args ... );
