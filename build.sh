@@ -28,6 +28,7 @@ cd ..
 git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git openfpm_pdata
 cd openfpm_pdata
 git checkout sparse_cl
+cd ..
 git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 cd openfpm_vcluster
 git checkout sparse_cl
