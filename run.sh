@@ -7,12 +7,7 @@ branch=$3
 
 cd "$1/openfpm_io"
 
-if [ "$2" == "gin" ]
-then
- module load gcc/4.9.2
- module load boost/1.54.0
-fi
-
+echo "CHECKING MACHINE"
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
 	echo "CENTOS"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5/lib"
