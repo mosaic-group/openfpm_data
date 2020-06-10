@@ -25,6 +25,8 @@ if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
 	export DYLD_LIBRARY_PATH="$DYLD_LIBRARY_PATH:$HOME/openfpm_dependencies/openfpm_io/$branch/BOOST/lib"
 fi
 
+pwd
+ls
 ls test_data/csv_out_test.csv
 
 ./build/src/io
