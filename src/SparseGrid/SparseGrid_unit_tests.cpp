@@ -1340,11 +1340,8 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified)
 
 																	Vc::Mask<double> surround;
 
-																	surround[0] = (mask_sum[0] == 6);
-																	surround[1] = (mask_sum[1] == 6);
-																	surround[2] = (mask_sum[2] == 6);
-																	surround[3] = (mask_sum[3] == 6);
-
+																	for (int i = 0 ; i < Vc::double_v::Size ; i++)
+																	{surround[i] = (mask_sum[i] == 6);}
 
 																	Lap = Vc::iif(surround,Lap,Vc::double_v(1.0));
 
