@@ -26,8 +26,6 @@ if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
 fi
 
 pwd
-ls
-ls test_data/csv_out_test.csv
 
 ./build/src/io
 

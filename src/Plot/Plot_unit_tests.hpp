@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE( google_chart )
 
 	//! [Producing an Histogram graph]
 
-	bool test = compare("gc_out.html","gc_out_test.html");
+	bool test = compare("gc_out.html","test_data/gc_out_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE( google_chart2 )
 	cg.AddHistGraph(x,y,yn,options);
 	cg.write("gc_out2.html");
 
-	bool test = compare("gc_out2.html","gc_out2_test.html");
+	bool test = compare("gc_out2.html","test_data/gc_out2_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE( google_chart3 )
 	cg.AddHistGraph(x,y,yn,options);
 	cg.write("gc_out3.html");
 
-	bool test = compare("gc_out3.html","gc_out3_test.html");
+	bool test = compare("gc_out3.html","test_data/gc_out3_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE( google_chart4 )
 	cg.AddHistGraph(x,y,yn);
 	cg.write("gc_out4.html");
 
-	bool test = compare("gc_out4.html","gc_out4_test.html");
+	bool test = compare("gc_out4.html","test_data/gc_out4_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE( google_chart5 )
 	cg.AddHistGraph(x,y);
 	cg.write("gc_out5.html");
 
-	bool test = compare("gc_out5.html","gc_out5_test.html");
+	bool test = compare("gc_out5.html","test_data/gc_out5_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE( google_chart6 )
 	cg.AddHistGraph(y);
 	cg.write("gc_out6.html");
 
-	bool test = compare("gc_out6.html","gc_out6_test.html");
+	bool test = compare("gc_out6.html","test_data/gc_out6_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -383,7 +383,7 @@ BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 
 	//! [Producing a set of histograms graphs]
 
-	bool test = compare("gc_out7.html","gc_out7_test.html");
+	bool test = compare("gc_out7.html","test_data/gc_out7_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE( google_chart_number )
 
 	//! [Producing a set of histograms graphs]
 
-	bool test = compare("gc_num_plot.html","gc_num_plot_test.html");
+	bool test = compare("gc_num_plot.html","test_data/gc_num_plot_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -503,7 +503,7 @@ BOOST_AUTO_TEST_CASE( google_chart_number_lines_different_x )
 
 	//! [Producing a set of histograms graphs]
 
-	bool test = compare("gc_num_ydif_plot.html","gc_num_ydif_plot_test.html");
+	bool test = compare("gc_num_ydif_plot.html","test_data/gc_num_ydif_plot_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -570,7 +570,7 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 
 	//! [Producing lines graph with style]
 
-	bool test = compare("gc_plot_out.html","gc_plot_out_test.html");
+	bool test = compare("gc_plot_out.html","test_data/gc_plot_out_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -619,7 +619,7 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot2 )
 
 	//! [Producing lines]
 
-	bool test = compare("gc_plot2_out.html","gc_plot2_out_test.html");
+	bool test = compare("gc_plot2_out.html","test_data/gc_plot2_out_test.html");
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
