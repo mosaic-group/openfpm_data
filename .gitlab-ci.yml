@@ -5,6 +5,7 @@ centos_build:
   artifacts:
     paths:
       - ./openfpm_io/build/src/io
+      - ./openfpm_io/test_data
   script:
     - ./build.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
 
@@ -24,6 +25,7 @@ mac_build:
   artifacts:
     paths:
       - ./openfpm_io/build/src/io
+      - ./openfpm_io/test_data
   script:
     - ./build.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
 
@@ -43,6 +45,7 @@ ubuntu_build:
   artifacts:
     paths:
       - ./openfpm_io/build/src/io
+      - ./openfpm_io/test_data
   script:
     - ./build.sh $CI_PROJECT_DIR $CI_RUNNER_EXECUTABLE_TAGS NO $CI_COMMIT_REF_NAME
 
@@ -54,4 +57,3 @@ ubuntu_run:
     - ubuntu_build
   script:
     - ./run.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
-
