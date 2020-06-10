@@ -15,7 +15,7 @@ centos_run:
   dependencies:
     - centos_build
   script:
-    - ./run.sh
+    - ./run.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
 
 mac_build:
   stage: build
@@ -34,7 +34,7 @@ mac_run:
   dependencies:
     - mac_build
   script:
-    - ./run.sh
+    - ./run.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
 
 ubuntu_build:
   stage: build
@@ -53,5 +53,5 @@ ubuntu_run:
   dependencies:
     - ubuntu_build
   script:
-    - ./run.sh
+    - ./run.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
 
