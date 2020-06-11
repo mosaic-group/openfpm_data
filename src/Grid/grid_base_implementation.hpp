@@ -478,6 +478,7 @@ public:
 	:g1(0),isExternal(false)
 	{
 		sh_handle.id = -1;
+		//setMemory();
 		// Add this pointer
 #ifdef SE_CLASS2
 		check_new(this,8,GRID_EVENT,1);
@@ -1333,7 +1334,8 @@ public:
 
 	inline handle_shmem get_shmem_handle()
 	{
-		return mem_shmem<layout_base<T>,decltype(this->data_),boost::mpl::size<typename T::type>::type::value == 0>::get_shmem_handle(data_);
+//        return mem_shmem<layout_base<T>,decltype(this->data_),boost::mpl::size<typename T::type>::type::value == 0>::get_shmem_handle(data_);
+		return this->sh_handle/*mem_shmem<layout_base<T>,decltype(this->data_),boost::mpl::size<typename T::type>::type::value == 0>::get_shmem_handle(data_)*/;
 	}
 
 	inline void set_shmem_handle(handle_shmem sh)
@@ -1461,6 +1463,7 @@ public:
 	 */
 	void init_shmem(handle_shmem shid)
 	{
+        set_shmem_handle(shid);
 		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::init_shmem(data_,shid);
 	}
 };
