@@ -124,7 +124,7 @@ namespace SparseGridGpuKernels
 		}
 	};
 
-	template<unsigned int dim, unsigned int p_src, unsigned int p_dst, unsigned int stencil_size>
+	template<unsigned int dim, unsigned int n_loop, unsigned int p_src, unsigned int p_dst, unsigned int stencil_size>
 	struct stencil_cross_func_conv
 	{
 		typedef NNStar<dim> stencil_type;
@@ -151,6 +151,16 @@ namespace SparseGridGpuKernels
 	                SparseGridT::getBlockEdgeSize() + 2 * supportRadius, dim>::value;
 
 	        __shared__ ScalarT enlargedBlock[enlargedBlockSize];
+
+	        for (int i = 0; i < n_loop ; i++)
+	        {
+	        	if (i*IntPow<SparseGridT::getBlockEdgeSize(), dim>::value + threadIdx.x < enlargedBlockSize)
+	        	{
+	        		enlargedBlock[i*IntPow<SparseGridT::getBlockEdgeSize(), dim>::value + threadIdx.x] = sparseGrid.getblockMap().template getBackground<p_src>()[0];
+	        	}
+	        }
+
+	        __syncthreads();
 
 	        typedef typename vmpl_create_constant<dim,SparseGridT::blockEdgeSize_>::type block_sizes;
 	        typedef typename vmpl_sum_constant<2*stencil_size,block_sizes>::type vmpl_sizes;
@@ -187,7 +197,7 @@ namespace SparseGridGpuKernels
 	    }
 	};
 
-	template<unsigned int dim, unsigned int p_src1, unsigned int p_src2, unsigned int p_dst1, unsigned int p_dst2, unsigned int stencil_size>
+	template<unsigned int dim, unsigned int n_loop, unsigned int p_src1, unsigned int p_src2, unsigned int p_dst1, unsigned int p_dst2, unsigned int stencil_size>
 	struct stencil_func_conv2
 	{
 		typedef NNStar<dim> stencil_type;
@@ -216,6 +226,8 @@ namespace SparseGridGpuKernels
 
 	        __shared__ ScalarT1 enlargedBlock1[enlargedBlockSize];
 	        __shared__ ScalarT2 enlargedBlock2[enlargedBlockSize];
+
+	        // fill with background
 
 	        typedef typename vmpl_create_constant<dim,SparseGridT::blockEdgeSize_>::type block_sizes;
 	        typedef typename vmpl_sum_constant<2*stencil_size,block_sizes>::type vmpl_sizes;

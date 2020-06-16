@@ -24,12 +24,16 @@ template<unsigned int dim,
         typename indexT,
         template<typename> class layout_base,
         typename GridSmT,
-        typename linearizer>
+        typename linearizer,
+        typename BcT>
 class SparseGridGpu_ker : public BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 {
 private:
     linearizer grid;
     GridSmT blockWithGhostGrid;
+
+	//! background values
+	BcT background;
 
 protected:
     const static unsigned char PADDING_BIT = 1;
@@ -64,7 +68,8 @@ public:
                       openfpm::vector_gpu_ker<aggregate<short int,short int>,memory_traits_inte> ghostLayerToThreadsMapping,
                       openfpm::vector_gpu_ker<aggregate<indexT>,memory_traits_inte> nn_blocks,
                       openfpm::vector_gpu_ker<aggregate<indexT>,memory_traits_inte> buffPnt,
-                      unsigned int ghostLayerSize)
+                      unsigned int ghostLayerSize,
+                      BcT & bck)
             : BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>(blockMap),
               grid(grid),
               blockWithGhostGrid(extendedBlockGeometry),
@@ -72,7 +77,8 @@ public:
               ghostLayerSize(ghostLayerSize),
               ghostLayerToThreadsMapping(ghostLayerToThreadsMapping),
               nn_blocks(nn_blocks),
-              buffPnt(buffPnt)
+              buffPnt(buffPnt),
+              background(bck)
     {}
 
     /*! \brief Get the coordinate of the block and the offset id inside the block it give the global coordinate
@@ -520,6 +526,13 @@ public:
         __loadGhostBlock<p>(dataBlockLoad,blockLinId, sharedRegion);
     }
 
+    template<unsigned int p, typename AggrWrapperT>
+    inline __device__ void
+    loadGhostBlock(const AggrWrapperT & dataBlockLoad, const openfpm::sparse_index<unsigned int> blockLinId, ScalarTypeOf<AggregateBlockT, p> *sharedRegion, unsigned char * mask)
+    {
+        __loadGhostBlock<p>(dataBlockLoad,blockLinId, sharedRegion,mask);
+    }
+
     /**
      * Load the ghost layer of a data block into the boundary part of a shared memory region.
      * The given shared memory region should be shaped as a dim-dimensional array and sized so that it
@@ -704,9 +717,6 @@ private:
         // Actually load the data into the shared region
         //ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
 
-        printf("BLOCK SHARED %d %d linId \n",linId,pos);
-
-
         sharedRegionPtr[linId] = block.template get<p>()[pos];
     }
 
@@ -769,14 +779,42 @@ private:
     inline __device__ void
     __loadGhostBlock(const AggrWrapperT &block, const openfpm::sparse_index<unsigned int> blockId, SharedPtrT * sharedRegionPtr)
     {
-    	loadGhostBlock_impl<ct_params::nLoop,dim,AggrWrapperT,p,ct_params,blockEdgeSize>::load(block,
+    	constexpr int pM = BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::pMask;
+
+    	loadGhostBlock_impl<ct_params::nLoop,dim,AggrWrapperT,pM,p,ct_params,blockEdgeSize>::load(block,
     															   sharedRegionPtr,
     															   ghostLayerToThreadsMapping,
     															   nn_blocks,
     															   this->blockMap,
     															   stencilSupportRadius,
     															   ghostLayerSize,
-    															   blockId.id);
+    															   blockId.id,
+    															   background);
+    }
+
+    /*! \brief Load the ghost area in the shared region
+     *
+     * \param blockId Index of the center block
+     * \param neighboursPos neighborhood blocks around blockId (if neighbourPos is null loadGhost)
+     * \param sharedRegionPtr shared region
+     *
+     */
+    template<unsigned int p, typename AggrWrapperT ,typename SharedPtrT>
+    inline __device__ void
+    __loadGhostBlock(const AggrWrapperT &block, const openfpm::sparse_index<unsigned int> blockId, SharedPtrT * sharedRegionPtr, unsigned char * maskPtr)
+    {
+    	constexpr int pM = BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::pMask;
+
+    	loadGhostBlock_impl<ct_params::nLoop,dim,AggrWrapperT,pM,p,ct_params,blockEdgeSize>::load(block,
+    															   sharedRegionPtr,
+    															   maskPtr,
+    															   ghostLayerToThreadsMapping,
+    															   nn_blocks,
+    															   this->blockMap,
+    															   stencilSupportRadius,
+    															   ghostLayerSize,
+    															   blockId.id,
+    															   background);
     }
 
     template<unsigned int p, unsigned int ... props>

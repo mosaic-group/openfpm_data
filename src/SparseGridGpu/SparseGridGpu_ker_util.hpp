@@ -10,6 +10,24 @@
 
 #include "util/variadic_to_vmpl.hpp"
 
+template<bool to_set>
+struct set_compile_condition
+{
+	template<unsigned int p, typename SrcType, typename AggrType>
+	__device__ __host__ static inline void set(SrcType & src,AggrType & aggr)
+	{
+		src = aggr.template get<p>();
+	}
+};
+
+template<>
+struct set_compile_condition<false>
+{
+	template<unsigned int p, typename SrcType, typename AggrType>
+	__device__ __host__ static inline void set(SrcType & src,AggrType & aggr)
+	{}
+};
+
 template<unsigned int dim,typename T>
 struct cross_stencil
 {
@@ -390,10 +408,15 @@ inline __device__ void linToCoord(const unsigned int linId, unsigned int (&coord
 constexpr int gt = 0;
 constexpr int nt = 1;
 
-template<unsigned int nLoop, unsigned int dim, typename AggregateBlockT, unsigned int p, typename ct_params, unsigned int blockEdgeSize>
+template<unsigned int nLoop, unsigned int dim, typename AggregateBlockT, unsigned int pMask , unsigned int p, typename ct_params, unsigned int blockEdgeSize>
 struct loadGhostBlock_impl
 {
-	template<typename AggrWrapperT, typename SharedPtrT, typename vector_type, typename vector_type2, typename blockMapType>
+	template<typename AggrWrapperT,
+	         typename SharedPtrT,
+	         typename vector_type,
+	         typename vector_type2,
+	         typename blockMapType,
+	         typename AggrBck>
 	__device__ static inline void load(const AggrWrapperT &block,
 							SharedPtrT * sharedRegionPtr,
 							const vector_type & ghostLayerToThreadsMapping,
@@ -401,16 +424,22 @@ struct loadGhostBlock_impl
 							const blockMapType & blockMap,
 							unsigned int stencilSupportRadius,
 							unsigned int ghostLayerSize,
-							const unsigned int blockId)
+							const unsigned int blockId,
+							AggrBck & bck)
 	{
 		printf("Error to implement loadGhostBlock_impl with nLoop=%d \n",nLoop);
 	}
 };
 
-template<unsigned int dim, typename AggregateBlockT, unsigned int p, typename ct_params, unsigned int blockEdgeSize>
-struct loadGhostBlock_impl<1,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
+template<unsigned int dim, typename AggregateBlockT, unsigned int pMask , unsigned int p, typename ct_params, unsigned int blockEdgeSize>
+struct loadGhostBlock_impl<1,dim,AggregateBlockT,pMask,p,ct_params,blockEdgeSize>
 {
-	template<typename AggrWrapperT, typename SharedPtrT, typename vector_type, typename vector_type2, typename blockMapType>
+	template<typename AggrWrapperT,
+			 typename SharedPtrT,
+			 typename vector_type,
+			 typename vector_type2,
+			 typename blockMapType,
+			 typename AggrBck>
 	__device__ static inline void load(const AggrWrapperT &block,
 							SharedPtrT * sharedRegionPtr,
 							const vector_type & ghostLayerToThreadsMapping,
@@ -418,7 +447,8 @@ struct loadGhostBlock_impl<1,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
 							const blockMapType & blockMap,
 							unsigned int stencilSupportRadius,
 							unsigned int ghostLayerSize,
-							const unsigned int blockIdPos)
+							const unsigned int blockIdPos,
+							AggrBck & bck)
 	{
 			typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
@@ -469,15 +499,26 @@ struct loadGhostBlock_impl<1,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
 			//ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
 			auto bdata = block.template get<p>()[threadIdx.x];
 
+			auto bmask = block.template get<pMask>()[threadIdx.x];
+			auto gmask = blockMap.template get_ele<pMask>(nPos)[offset];
+
+			if (bmask == 0)	{ set_compile_condition<pMask != p>::template set<p>(bdata,bck);}
+			if (gmask == 0)	{ set_compile_condition<pMask != p>::template set<p>(gdata,bck);}
+
 			sharedRegionPtr[linId] = gdata;
 			sharedRegionPtr[linId2] = bdata;
 	}
 };
 
-template<unsigned int dim, typename AggregateBlockT, unsigned int p, typename ct_params, unsigned int blockEdgeSize>
-struct loadGhostBlock_impl<2,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
+template<unsigned int dim, typename AggregateBlockT, unsigned int pMask , unsigned int p, typename ct_params, unsigned int blockEdgeSize>
+struct loadGhostBlock_impl<2,dim,AggregateBlockT,pMask,p,ct_params,blockEdgeSize>
 {
-    template<typename AggrWrapperT, typename SharedPtrT, typename vector_type, typename vector_type2, typename blockMapType>
+    template<typename AggrWrapperT,
+    		 typename SharedPtrT,
+    		 typename vector_type,
+    		 typename vector_type2,
+    		 typename blockMapType,
+    		 typename AggrBck>
     __device__ static inline void load(const AggrWrapperT &block,
                                        SharedPtrT * sharedRegionPtr,
                                        const vector_type & ghostLayerToThreadsMapping,
@@ -485,7 +526,8 @@ struct loadGhostBlock_impl<2,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
                                        const blockMapType & blockMap,
                                        unsigned int stencilSupportRadius,
                                        unsigned int ghostLayerSize,
-                                       const unsigned int blockIdPos)
+                                       const unsigned int blockIdPos,
+                                       AggrBck & bck)
     {
         typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
@@ -548,16 +590,32 @@ struct loadGhostBlock_impl<2,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
         //ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
         auto bdata = block.template get<p>()[threadIdx.x];
 
+        auto gmask = blockMap.template get_ele<pMask>(nPos)[offset];
+        auto gmask2 = blockMap.template get_ele<pMask>(nPos2)[offset2];
+
+        // Actually load the data into the shared region
+        //ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
+        auto bmask = block.template get<pMask>()[threadIdx.x];
+
+		if (bmask == 0)	{set_compile_condition<pMask != p>::template set<p>(bdata,bck);}
+		if (gmask == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata,bck);}
+		if (gmask2 == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata2,bck);}
+
         sharedRegionPtr[linId] = gdata;
         sharedRegionPtr[linId2] = gdata2;
         sharedRegionPtr[linId_b] = bdata;
     }
 };
 
-template<unsigned int dim, typename AggregateBlockT, unsigned int p, typename ct_params, unsigned int blockEdgeSize>
-struct loadGhostBlock_impl<3,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
+template<unsigned int dim, typename AggregateBlockT, unsigned int pMask , unsigned int p, typename ct_params, unsigned int blockEdgeSize>
+struct loadGhostBlock_impl<3,dim,AggregateBlockT,pMask,p,ct_params,blockEdgeSize>
 {
-    template<typename AggrWrapperT, typename SharedPtrT, typename vector_type, typename vector_type2, typename blockMapType>
+    template<typename AggrWrapperT,
+             typename SharedPtrT,
+             typename vector_type,
+             typename vector_type2,
+             typename blockMapType,
+             typename AggrBck>
     __device__ static inline void load(const AggrWrapperT &block,
                                        SharedPtrT * sharedRegionPtr,
                                        const vector_type & ghostLayerToThreadsMapping,
@@ -565,7 +623,8 @@ struct loadGhostBlock_impl<3,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
                                        const blockMapType & blockMap,
                                        unsigned int stencilSupportRadius,
                                        unsigned int ghostLayerSize,
-                                       const unsigned int blockIdPos)
+                                       const unsigned int blockIdPos,
+                                       AggrBck & bck)
     {
         typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
@@ -639,6 +698,19 @@ struct loadGhostBlock_impl<3,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
         //ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
         auto bdata = block.template get<p>()[threadIdx.x];
 
+        auto gmask = blockMap.template get_ele<pMask>(nPos)[offset];
+        auto gmask2 = blockMap.template get_ele<pMask>(nPos2)[offset2];
+        auto gmask3 = blockMap.template get_ele<pMask>(nPos3)[offset3];
+
+        // Actually load the data into the shared region
+        //ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
+        auto bmask = block.template get<pMask>()[threadIdx.x];
+
+		if (bmask == 0)	{set_compile_condition<pMask != p>::template set<p>(bdata,bck);}
+		if (gmask == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata,bck);}
+		if (gmask2 == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata2,bck);}
+		if (gmask3 == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata3,bck);}
+
         sharedRegionPtr[linId] = gdata;
         sharedRegionPtr[linId2] = gdata2;
         sharedRegionPtr[linId3] = gdata3;
@@ -646,10 +718,15 @@ struct loadGhostBlock_impl<3,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
     }
 };
 
-template<unsigned int dim, typename AggregateBlockT, unsigned int p, typename ct_params, unsigned int blockEdgeSize>
-struct loadGhostBlock_impl<7,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
+template<unsigned int dim, typename AggregateBlockT, unsigned int pMask , unsigned int p, typename ct_params, unsigned int blockEdgeSize>
+struct loadGhostBlock_impl<7,dim,AggregateBlockT,pMask,p,ct_params,blockEdgeSize>
 {
-    template<typename AggrWrapperT, typename SharedPtrT, typename vector_type, typename vector_type2, typename blockMapType>
+    template<typename AggrWrapperT,
+             typename SharedPtrT,
+             typename vector_type,
+             typename vector_type2,
+             typename blockMapType,
+             typename AggrBck>
     __device__ static inline void load(const AggrWrapperT &block,
                                        SharedPtrT * sharedRegionPtr,
                                        const vector_type & ghostLayerToThreadsMapping,
@@ -657,7 +734,8 @@ struct loadGhostBlock_impl<7,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
                                        const blockMapType & blockMap,
                                        unsigned int stencilSupportRadius,
                                        unsigned int ghostLayerSize,
-                                       const unsigned int blockIdPos)
+                                       const unsigned int blockIdPos,
+                                       AggrBck & bck)
     {
         typedef ScalarTypeOf<AggregateBlockT, p> ScalarT;
 
@@ -774,6 +852,24 @@ struct loadGhostBlock_impl<7,dim,AggregateBlockT,p,ct_params,blockEdgeSize>
         // Actually load the data into the shared region
         //ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
         auto bdata = block.template get<p>()[threadIdx.x];
+
+        auto bmask = block.template get<pMask>()[threadIdx.x];
+        auto gmask = blockMap.template get_ele<pMask>(nPos)[offset];
+        auto gmask2 = blockMap.template get_ele<pMask>(nPos2)[offset2];
+        auto gmask3 = blockMap.template get_ele<pMask>(nPos3)[offset3];
+        auto gmask4 = blockMap.template get_ele<pMask>(nPos4)[offset4];
+        auto gmask5 = blockMap.template get_ele<pMask>(nPos5)[offset5];
+        auto gmask6 = blockMap.template get_ele<pMask>(nPos6)[offset6];
+        auto gmask7 = blockMap.template get_ele<pMask>(nPos7)[offset7];
+
+		if (bmask == 0)	{bdata = bck.template get<p>();}
+		if (gmask == 0)	{gdata = bck.template get<p>();}
+		if (gmask2 == 0)	{gdata2 = bck.template get<p>();}
+		if (gmask3 == 0)	{gdata3 = bck.template get<p>();}
+		if (gmask4 == 0)	{gdata4 = bck.template get<p>();}
+		if (gmask5 == 0)	{gdata5 = bck.template get<p>();}
+		if (gmask6 == 0)	{gdata6 = bck.template get<p>();}
+		if (gmask7 == 0)	{gdata7 = bck.template get<p>();}
 
         sharedRegionPtr[linId] = gdata;
         sharedRegionPtr[linId2] = gdata2;

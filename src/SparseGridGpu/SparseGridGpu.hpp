@@ -476,6 +476,8 @@ private:
     int req_index_swp;
     int req_index_swp_r;
 
+    AggregateT bck;
+
     typedef SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer> self;
 
     // Queue of remove sections
@@ -1622,7 +1624,8 @@ public:
                     indexT,
                     layout_base,
                     decltype(extendedBlockGeometry),
-                    linearizer
+                    linearizer,
+                    AggregateT
             > toKernel()
     {
         SparseGridGpu_ker
@@ -1634,7 +1637,8 @@ public:
                         indexT,
                         layout_base,
                         decltype(extendedBlockGeometry),
-                        linearizer
+                        linearizer,
+                        AggregateT
                 > toKer(
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.toKernel(),
                 gridGeometry,
@@ -1643,7 +1647,8 @@ public:
                 ghostLayerToThreadsMapping.toKernel(),
                 nn_blocks.toKernel(),
                 e_points.toKernel(),
-                ghostLayerSize);
+                ghostLayerSize,
+                bck);
         return toKer;
     }
 
@@ -1657,7 +1662,8 @@ public:
                     indexT,
                     layout_base,
                     decltype(extendedBlockGeometry),
-                    linearizer
+                    linearizer,
+                    AggregateT
             > toKernelNN()
     {
         SparseGridGpu_ker
@@ -1669,7 +1675,8 @@ public:
                         indexT,
                         layout_base,
                         decltype(extendedBlockGeometry),
-                        linearizer
+                        linearizer,
+                        AggregateT
                 > toKer(
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.toKernel(),
                 gridGeometry,
@@ -1678,7 +1685,8 @@ public:
                 ghostLayerToThreadsMapping.toKernel(),
                 nn_blocks.toKernel(),
                 e_points.toKernel(),
-                ghostLayerSize);
+                ghostLayerSize,
+                bck);
         return toKer;
     }
 
@@ -2411,7 +2419,9 @@ public:
 			box.setHigh(i,stop.get(i));
 		}
 
-		applyStencils< SparseGridGpuKernels::stencil_cross_func_conv<dim,prop_src,prop_dst,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+		constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value), (blockSize)>::value;
+
+		applyStencils< SparseGridGpuKernels::stencil_cross_func_conv<dim,nLoop,prop_src,prop_dst,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
 	}
 
     /*! \brief Apply a free type convolution using blocks
@@ -2429,7 +2439,9 @@ public:
 			box.setHigh(i,stop.get(i));
 		}
 
-		applyStencils< SparseGridGpuKernels::stencil_func_conv2<dim,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+        constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value), (blockSize)>::value;
+
+		applyStencils< SparseGridGpuKernels::stencil_func_conv2<dim,nLoop,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
 	}
 
 	/*! \brief Return a Box with the  range if the SparseGrid
@@ -2567,6 +2579,19 @@ public:
 
     		std::cout << std::endl;
     	}
+    }
+
+    /*! \brief set the background for property p
+     *
+     * \tparam p property p
+     *
+     */
+    template<unsigned int p>
+    void setBackgroundValue(ScalarTypeOf<AggregateBlockT, p> backgroundValue)
+    {
+        bck.template get<p>() = backgroundValue;
+
+        BMG::template setBackgroundValue<p>(backgroundValue);
     }
 
     /////////////////////////////////// DISTRIBUTED INTERFACE ///////////////////////
