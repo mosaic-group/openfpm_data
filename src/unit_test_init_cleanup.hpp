@@ -30,9 +30,6 @@ struct ut_start
     //! post procedure to call after the test
     ~ut_start()
     {
-#ifdef PERFORMANCE_TEST
-    	write_performance_report();
-#endif
     }
 };
 

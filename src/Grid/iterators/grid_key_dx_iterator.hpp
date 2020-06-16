@@ -24,7 +24,7 @@
  * \snippet grid_sm_unit_tests.hpp Grid iterator test usage
  *
  */
-template<unsigned int dim, typename stencil=no_stencil>
+template<unsigned int dim, typename stencil=no_stencil, typename linearizer = grid_sm<dim,void>>
 class grid_key_dx_iterator
 {
 #ifdef SE_CLASS1
@@ -34,7 +34,7 @@ class grid_key_dx_iterator
 #endif
 
 	//! information of the grid where this iterator iterate
-	grid_sm<dim,void> grid_base;
+	linearizer grid_base;
 
 	/*! \brief return the index i of the gk key
 	 *
@@ -100,8 +100,8 @@ public:
 	 * \param stencil_pnt stencil points
 	 *
 	 */
-	template<typename T>
-	grid_key_dx_iterator(const grid_sm<dim,T> & g,
+	template<typename grid_lin>
+	grid_key_dx_iterator(const grid_lin & g,
 			             const grid_key_dx<dim> (& stencil_pnt)[stencil::nsp])
 	:grid_base(g)
 	{
@@ -135,7 +135,7 @@ public:
 	 *
 	 * \param g info of the grid on which iterate
 	 */
-	template<typename T> grid_key_dx_iterator(const grid_sm<dim,T> & g)
+	grid_key_dx_iterator(const linearizer & g)
 	: grid_base(g)
 	{
 		reset();
@@ -170,7 +170,7 @@ public:
 	 *
 	 */
 
-	inline grid_key_dx_iterator<dim,stencil> & operator++()
+	inline grid_key_dx_iterator<dim,stencil,linearizer> & operator++()
 	{
 		//! increment the first index
 
@@ -282,7 +282,7 @@ public:
 	 * \return the grid info
 	 *
 	 */
-	inline const grid_sm<dim,void> & getGridInfo() const
+	inline const linearizer & getGridInfo() const
 	{
 		return grid_base;
 	}

@@ -24,7 +24,8 @@ public:
 	 * \param exp grid_key_dx expression
 	 *
 	 */
-	template<typename exp1> inline grid_key_dx(const grid_key_dx_expression<dim,exp1> & exp)
+	template<typename exp1>
+	__device__ __host__ inline grid_key_dx(const grid_key_dx_expression<dim,exp1> & exp)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			this->k[i] = exp.value(i);
@@ -116,6 +117,17 @@ public:
 		{this->k[i] = k[i];}
 	}
 
+	/*! \brief Constructor from buffer reference
+	 *
+	 * \param k reference buffer
+	 *
+	 */
+	__device__ __host__ inline grid_key_dx(const unsigned int (&k)[dim])
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{this->k[i] = k[i];}
+	}
+
 	/*! \brief Construct a grid key from a list of numbers
 	 *
 	 * \param cmb combination
@@ -202,7 +214,8 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx<dim> & operator+=(const grid_key_dx<dim> & p)
+	__device__ __host__
+	inline grid_key_dx<dim,index_type> & operator+=(const grid_key_dx<dim,index_type> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			k[i] += p.k[i];
@@ -217,7 +230,8 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx<dim> & operator-=(const grid_key_dx<dim> & p)
+	__device__ __host__
+	inline grid_key_dx<dim,index_type> & operator-=(const grid_key_dx<dim,index_type> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 			k[i] -= p.k[i];
@@ -232,9 +246,11 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx_sum<dim,grid_key_dx<dim>,grid_key_dx<dim>> operator+(const grid_key_dx<dim> & p) const
+	__device__ __host__
+	inline grid_key_dx_sum<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>>
+	operator+(const grid_key_dx<dim,index_type> & p) const
 	{
-		grid_key_dx_sum<dim,grid_key_dx<dim>,grid_key_dx<dim>> exp_sum(*this,p);
+		grid_key_dx_sum<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>> exp_sum(*this,p);
 
 		return exp_sum;
 	}
@@ -246,7 +262,9 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx_sum<dim,grid_key_dx<dim>,Point<dim,long int>> operator+(const Point<dim,long int> & p) const
+	__device__ __host__
+	inline grid_key_dx_sum<dim,grid_key_dx<dim>,Point<dim,long int>>
+	operator+(const Point<dim,long int> & p) const
 	{
 		grid_key_dx_sum<dim,grid_key_dx<dim>,Point<dim,long int>> exp_sum(*this,p);
 
@@ -260,6 +278,7 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
+	__device__ __host__
 	inline grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> operator+(const comb<dim> & cmb) const
 	{
 		grid_key_dx_sum<dim,grid_key_dx<dim>,comb<dim>> exp_sum(*this,cmb);
@@ -274,9 +293,11 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	inline grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx<dim>> operator-(const grid_key_dx<dim> & cmb) const
+	__device__ __host__
+	inline grid_key_dx_sub<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>>
+	operator-(const grid_key_dx<dim,index_type> & cmb) const
 	{
-		grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx<dim>> exp_sum(*this,cmb);
+		grid_key_dx_sub<dim,grid_key_dx<dim,index_type>,grid_key_dx<dim,index_type>> exp_sum(*this,cmb);
 
 		return exp_sum;
 	}
@@ -288,9 +309,10 @@ public:
 	 * \return a grid_key_dx_expression that encapsulate the expression
 	 *
 	 */
-	template <typename T> inline grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx_expression<dim,T>> operator-(const grid_key_dx_expression<dim,T> & cmb) const
+	template <typename T>
+	__device__ __host__ inline grid_key_dx_sub<dim,grid_key_dx<dim,index_type>,grid_key_dx_expression<dim,T>> operator-(const grid_key_dx_expression<dim,T> & cmb) const
 	{
-		grid_key_dx_sub<dim,grid_key_dx<dim>,grid_key_dx_expression<dim,T>> exp_sum(*this,cmb);
+		grid_key_dx_sub<dim,grid_key_dx<dim,index_type>,grid_key_dx_expression<dim,T>> exp_sum(*this,cmb);
 
 		return exp_sum;
 	}
@@ -302,7 +324,7 @@ public:
 	 * \return true if the two key are equal
 	 *
 	 */
-	template<unsigned int dim_t> bool operator==(const grid_key_dx<dim_t> & key_t) const
+	template<unsigned int dim_t> bool operator==(const grid_key_dx<dim_t,index_type> & key_t) const
 	{
 		if (dim != dim_t)
 		{
@@ -331,7 +353,7 @@ public:
 	 * \return true if the two key are equal
 	 *
 	 */
-	template<unsigned int dim_t> bool operator!=(const grid_key_dx<dim_t> & key_t)
+	template<unsigned int dim_t> bool operator!=(const grid_key_dx<dim_t,index_type> & key_t)
 	{
 		return !this->operator==(key_t);
 	}
@@ -343,7 +365,7 @@ public:
      * \return true if this is lexicographically less than other key
      *
      */
-    bool operator<(const grid_key_dx<dim> & key_t) const
+    bool operator<(const grid_key_dx<dim,index_type> & key_t) const
     {
     	// Check the two key index by index
 
@@ -363,6 +385,10 @@ public:
         return false;
     }
 
+	static bool noPointers()
+	{
+		return true;
+	}
 
 	/*! \brief set the Key from a list of numbers
 	 *
@@ -427,9 +453,10 @@ public:
 	 * \return a point unsigned long int
 	 *
 	 */
-	Point<dim,size_t> toPoint() const
+	template<typename typeT = size_t>
+	__host__ __device__ inline Point<dim,typeT> toPoint() const
 	{
-		Point<dim,size_t> p;
+		Point<dim,typeT> p;
 
 		for (size_t i = 0; i < dim ; i++)
 		{
@@ -460,7 +487,7 @@ public:
 	 * \return the index value
 	 *
 	 */
-	__device__ __host__  mem_id get(size_t i) const
+	__device__ __host__  index_type get(index_type i) const
 	{
 		return k[i];
 	}
@@ -473,7 +500,7 @@ public:
 	 * \param id value to set
 	 *
 	 */
-	__device__ __host__   void set_d(size_t i, mem_id id)
+	__device__ __host__   void set_d(index_type i, index_type id)
 	{
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 

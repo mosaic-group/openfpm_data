@@ -11,9 +11,12 @@
 #include "grid_base_impl_layout.hpp"
 #include "util/cuda_util.hpp"
 #include "cuda/cuda_grid_gpu_funcs.cuh"
+#include "util/create_vmpl_sequence.hpp"
+#include "util/cuda/cuda_launch.hpp"
 
-#define DATA_ON_HOST 32
-#define DATA_ON_DEVICE 64
+constexpr int DATA_ON_HOST = 32;
+constexpr int DATA_ON_DEVICE = 64;
+constexpr int EXACT_RESIZE = 128;
 
 template<bool np,typename T>
 struct skip_init
@@ -64,97 +67,114 @@ struct skip_init<true,T>
 										 if (key.get(0) > ite_gpu.stop.get(0) || key.get(1) > ite_gpu.stop.get(1))\
     									 {return;}
 
-template<unsigned int dim>
-struct ite_gpu
-{
-	dim3 thr;
-	dim3 wthr;
+#ifdef __NVCC__
 
-	grid_key_dx<dim> start;
-	grid_key_dx<dim> stop;
+template<unsigned int dim, typename ids_type = int>
+struct grid_p
+{
+	__device__ static inline grid_key_dx<dim,ids_type> get_grid_point(const grid_sm<dim,void> & g)
+	{
+		grid_key_dx<dim,ids_type> key;
+
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+
+		unsigned int bz = blockIdx.z * blockDim.z + threadIdx.z;
+		key.set_d(2,bz % g.size(2));
+
+		for (unsigned int i = 3 ; i < dim ; i++)
+		{
+			bz /= g.size(i);
+			key.set_d(i,bz % g.size(i));
+		}
+
+		return key;
+	}
+
+	__device__ static inline grid_key_dx<dim,ids_type> get_grid_point(const openfpm::array<ids_type,dim,unsigned int> & g)
+	{
+		grid_key_dx<dim,ids_type> key;
+
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+
+		unsigned int bz = blockIdx.z * blockDim.z + threadIdx.z;
+		key.set_d(2,bz % g[2]);
+
+		for (unsigned int i = 3 ; i < dim ; i++)
+		{
+			bz /= g[i];
+			key.set_d(i,bz % g[i]);
+		}
+
+		return key;
+	}
 };
 
-
-template<unsigned int dim, typename T>
-ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T> & g1, grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024)
+template<typename ids_type>
+struct grid_p<3,ids_type>
 {
-	size_t tot_work = 1;
-	for (size_t i = 0 ; i < dim ; i++)
-	{tot_work *= key2.get(i) - key1.get(i) + 1;}
-
-	size_t n = (tot_work <= n_thr)?openfpm::math::round_big_2(tot_work):n_thr;
-
-	// Work to do
-	ite_gpu<dim> ig;
-
-	if (tot_work == 0)
+	__device__ static inline grid_key_dx<3,ids_type> get_grid_point(const grid_sm<3,void> & g)
 	{
-		ig.thr.x = 0;
-		ig.thr.y = 0;
-		ig.thr.z = 0;
+		grid_key_dx<3,unsigned int> key;
 
-		ig.wthr.x = 0;
-		ig.wthr.y = 0;
-		ig.wthr.z = 0;
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+		key.set_d(2,blockIdx.z * blockDim.z + threadIdx.z);
 
-		return ig;
+		return key;
 	}
 
-	ig.thr.x = 1;
-	ig.thr.y = 1;
-	ig.thr.z = 1;
-
-	int dir = 0;
-
-	while (n != 1)
+	__device__ static inline grid_key_dx<3,ids_type> get_grid_point(const openfpm::array<ids_type,3,unsigned int> & g)
 	{
-		if (dir % 3 == 0)
-		{ig.thr.x = ig.thr.x << 1;}
-		else if (dir % 3 == 1)
-		{ig.thr.y = ig.thr.y << 1;}
-		else if (dir % 3 == 2)
-		{ig.thr.z = ig.thr.z << 1;}
+		grid_key_dx<3,ids_type> key;
 
-		n = n >> 1;
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+		key.set_d(2,blockIdx.z * blockDim.z + threadIdx.z);
 
-		dir++;
-		dir %= dim;
+		return key;
+	}
+};
+
+template<typename ids_type>
+struct grid_p<2,ids_type>
+{
+	__device__ static inline grid_key_dx<2,ids_type> get_grid_point(const grid_sm<2,void> & g)
+	{
+		grid_key_dx<2,ids_type> key;
+
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+
+		return key;
 	}
 
-	if (dim >= 1)
-	{ig.wthr.x = (key2.get(0) - key1.get(0) + 1) / ig.thr.x + (((key2.get(0) - key1.get(0) + 1)%ig.thr.x != 0)?1:0);}
-
-	if (dim >= 2)
-	{ig.wthr.y = (key2.get(1) - key1.get(1) + 1) / ig.thr.y + (((key2.get(1) - key1.get(1) + 1)%ig.thr.y != 0)?1:0);}
-	else
-	{ig.wthr.y = 1;}
-
-	if (dim >= 3)
+	__device__ static inline grid_key_dx<2,ids_type> get_grid_point(const openfpm::array<ids_type,2,unsigned int> & g)
 	{
-		// Roll the other dimensions on z
-		ig.wthr.z = 1;
-		for (size_t i = 2 ; i < dim ; i++)
-		{ig.wthr.z *= (key2.get(i) - key1.get(i) + 1) / ig.thr.z + (((key2.get(i) - key1.get(i) + 1)%ig.thr.z != 0)?1:0);}
+		grid_key_dx<2,ids_type> key;
+
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
+		key.set_d(1,blockIdx.y * blockDim.y + threadIdx.y);
+
+		return key;
 	}
-	else
-	{ig.wthr.z = 1;}
+};
 
-	// crop if wthr == 1
+template<typename ids_type>
+struct grid_p<1,ids_type>
+{
+	__device__ static inline grid_key_dx<1,unsigned int> get_grid_point(const grid_sm<1,void> & g)
+	{
+		grid_key_dx<1,unsigned int> key;
 
-	if (dim >= 1 && ig.wthr.x == 1)
-	{ig.thr.x = (key2.get(0) - key1.get(0) + 1);}
+		key.set_d(0,blockIdx.x * blockDim.x + threadIdx.x);
 
-	if (dim >= 2 && ig.wthr.y == 1)
-	{ig.wthr.y = key2.get(1) - key1.get(1) + 1;}
+		return key;
+	}
+};
 
-	if (dim == 3 && ig.wthr.z == 1)
-	{ig.wthr.z = key2.get(2) - key1.get(2) + 1;}
-
-	ig.start = key1;
-	ig.stop = key2;
-
-	return ig;
-}
+#endif
 
 template<unsigned int dim>
 bool has_work_gpu(ite_gpu<dim> & ite)
@@ -178,10 +198,71 @@ bool has_work_gpu(ite_gpu<dim> & ite)
 	return tot_work != 0;
 }
 
+template<unsigned int dim>
+void move_work_to_blocks(ite_gpu<dim> & ite)
+{
+	if (dim == 1)
+	{
+		ite.wthr.x = ite.wthr.x * ite.thr.x;
+		ite.thr.x = 1;
+	}
+	else if(dim == 2)
+	{
+		ite.wthr.x = ite.wthr.x * ite.thr.x;
+		ite.wthr.y = ite.wthr.y * ite.thr.y;
+		ite.thr.x = 1;
+		ite.thr.y = 1;
+
+	}
+	else
+	{
+		ite.wthr.x = ite.wthr.x * ite.thr.x;
+		ite.wthr.x = ite.wthr.y * ite.thr.y;
+		ite.wthr.x = ite.wthr.z * ite.thr.z;
+		ite.thr.x = 1;
+		ite.thr.y = 1;
+		ite.thr.z = 1;
+	}
+}
+
 #endif
 
 #include "copy_grid_fast.hpp"
 
+template<typename T>
+struct copy_grid_fast_caller
+{
+	template<typename grid_type>
+	static void call(grid_type & gd, const grid_type & gs, const Box<grid_type::dims,size_t> & box_src, const Box<grid_type::dims,size_t> & box_dst)
+	{
+		std::cout << "Error: " << __FILE__ << ":" << __LINE__ << " copy_grid_fast_caller failure" << std::endl;
+	}
+};
+
+template<int ... prp>
+struct copy_grid_fast_caller<index_tuple_sq<prp ...>>
+{
+	template<typename grid_type>
+	static void call(grid_type & gd, const grid_type & gs, const Box<grid_type::dims,size_t> & box_src, const Box<grid_type::dims,size_t> & box_dst)
+	{
+        grid_key_dx<grid_type::dims> cnt[1];
+        cnt[0].zero();
+
+        typedef typename std::remove_reference<decltype(gd)>::type grid_cp;
+        typedef typename std::remove_reference<decltype(gd.getGrid())>::type grid_info_cp;
+
+        typedef typename to_int_sequence<0,grid_type::value_type::max_prop>::type result;
+
+        copy_grid_fast<!is_contiguos<prp...>::type::value || has_pack_gen<typename grid_type::value_type>::value,
+                                   grid_type::dims,
+                                   grid_cp,
+                                   grid_info_cp>::copy(gs.getGrid(),
+                                   gd.getGrid(),
+                                   box_src,
+                                   box_dst,
+                                   gs,gd,cnt);
+	}
+};
 
 /*! \brief
  *
@@ -194,7 +275,12 @@ bool has_work_gpu(ite_gpu<dim> & ite)
  * \tparam layout_base layout memory meta-function (the meta-function used to construct layout_)
  *
  */
-template<unsigned int dim, typename T, typename S, typename layout_, template<typename> class layout_base >
+template<unsigned int dim,
+         typename T,
+         typename S,
+         typename layout_,
+         template<typename> class layout_base,
+         typename ord_type = grid_sm<dim,void> >
 class grid_base_impl
 {
 	//! memory layout
@@ -217,13 +303,15 @@ public:
 	//! base layout type
 	typedef layout_base<T> layout_base_;
 
+	typedef ord_type linearizer_type;
+
 protected:
 
 	//! Memory layout specification + memory chunk pointer
 	layout data_;
 
 	//! This is a structure that store all information related to the grid and how indexes are linearized
-	grid_sm<dim,T> g1;
+	ord_type g1;
 
 private:
 
@@ -241,7 +329,7 @@ private:
 	 */
 	inline void check_init() const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		if (is_mem_init == false)
 		{
 			std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " you must call SetMemory before access the grid\n";
@@ -257,7 +345,7 @@ private:
 	 */
 	inline void check_bound(const grid_key_dx<dim> & v1) const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		for (long int i = 0 ; i < dim ; i++)
 		{
 			if (v1.get(i) >= (long int)getGrid().size(i))
@@ -281,7 +369,7 @@ private:
 	 */
 	inline void check_bound(size_t v1) const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		if (v1 >= getGrid().size())
 		{
 			std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << v1<< " >= " << getGrid().size() << "\n";
@@ -300,7 +388,7 @@ private:
 	 */
 	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const grid_key_dx<dim> & key2) const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (key2.get(i) >= (long int)g.getGrid().size(i))
@@ -328,7 +416,7 @@ private:
 	template<typename Mem, typename layout2, template <typename>
 	class layout_base2> inline void check_bound(const grid_base_impl<dim,T,Mem,layout2,layout_base2> & g,const grid_key_dx<dim> & key2) const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			if (key2.get(i) >= (long int)g.getGrid().size(i))
@@ -355,7 +443,7 @@ private:
 	 */
 	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const size_t & key2) const
 	{
-#ifndef __NVCC__
+#ifndef __CUDA_ARCH__
 		if (key2 >= g.getGrid().size())
 		{
 			std::cerr << "Error " __FILE__ << ":" << __LINE__ <<" grid overflow " << key2 << " >= " << getGrid().size() << "\n";
@@ -366,7 +454,7 @@ private:
 
 #endif
 
-	void resize_impl_device(const size_t (& sz)[dim],grid_base_impl<dim,T,S,layout,layout_base> & grid_new)
+	void resize_impl_device(const size_t (& sz)[dim],grid_base_impl<dim,T,S,layout,layout_base> & grid_new, unsigned int blockSize = 1)
 	{
 #if defined(CUDA_GPU) && defined(__NVCC__)
 
@@ -376,7 +464,12 @@ private:
 			for (size_t i = 0 ; i < dim ; i++)
 			{
 				start.set_d(i,0);
-				stop.set_d(i,g1.size(i)-1);
+
+				// take the smallest
+				if (grid_new.g1.size(i) < sz[i])
+				{stop.set_d(i,grid_new.g1.size(i)-1);}
+				else
+				{stop.set_d(i,sz[i]-1);}
 			}
 
 //			if (dim == 1)
@@ -391,7 +484,20 @@ private:
 				bool has_work = has_work_gpu(ite);
 
 				if (has_work == true)
-				{copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());}
+				{
+					if (blockSize == 1)
+					{
+						CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+					}
+					else
+					{
+						move_work_to_blocks(ite);
+
+						ite.thr.x = blockSize;
+
+						CUDA_LAUNCH((copy_ndim_grid_block_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+					}
+				}
 			}
 			else
 			{
@@ -405,9 +511,9 @@ private:
 
 				grid_sm<1,void> g_sm_copy(sz);
 
-				auto ite = getGPUIterator_impl<1,void>(g_sm_copy,start,stop);
+				auto ite = getGPUIterator_impl<1>(g_sm_copy,start,stop);
 
-				copy_ndim_grid_device<dim,decltype(grid_new.toKernel())><<<ite.wthr,ite.thr>>>(this->toKernel(),grid_new.toKernel());
+				CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
 			}
 #else
 
@@ -457,7 +563,7 @@ public:
 	// Implementation of packer and unpacker for grid
 	#include "grid_pack_unpack.ipp"
 
-	//! it define that it is a grid
+	//! it define that this data-structure is a grid
 	typedef int yes_i_am_grid;
 
 	//! Definition of the layout
@@ -661,7 +767,7 @@ public:
 	 *
 	 */
 
-	const grid_sm<dim,T> & getGrid() const
+	const grid_sm<dim,void> & getGrid() const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -686,7 +792,7 @@ public:
 		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::setMemory(data_,g1,is_mem_init);
 	}
 
-	/*! \brief Get the object that provide memory
+	/*! \brief Set the object that provide memory from outside
 	 *
 	 * An external allocator is useful with allocator like PreAllocHeapMem
 	 * to have contiguous in memory vectors. Or to force the system to retain
@@ -714,6 +820,32 @@ public:
 		bool skip_ini = skip_init<has_noPointers<T>::value,T>::skip_();
 
 		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemory<p>(data_,m,g1.size(),skip_ini);
+
+		is_mem_init = true;
+	}
+
+	/*! \brief Set the object that provide memory from outside
+	 *
+	 * An external allocator is useful with allocator like PreAllocHeapMem
+	 * to have contiguous in memory vectors. Or to force the system to retain
+	 * memory
+	 *
+	 * \tparam S memory type
+	 *
+	 * \param m external memory allocator
+	 *
+	 */
+	void setMemoryArray(S * m)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		//! Is external
+		isExternal = true;
+
+		bool skip_ini = skip_init<has_noPointers<T>::value,T>::skip_();
+
+		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemoryArray(*this,m,g1.size(),skip_ini);
 
 		is_mem_init = true;
 	}
@@ -752,30 +884,64 @@ public:
 		return mem_getpointer<decltype(data_),layout_base_>::template getPointer<p>(data_);
 	}
 
-	/*! \brief Get the address of the selected element
+
+	/*! \brief In this case insert is equivalent to get
 	 *
 	 * \param v1 grid_key that identify the element in the grid
 	 *
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(&mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
-	__device__ __host__ inline r_type get_address(const grid_key_dx<dim> & v1)
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	inline r_type insert(const grid_key_dx<dim> & v1)
 	{
-		return &mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(v1);
+#endif
+		return this->get<p>(v1);
 	}
 
-	/*! \brief Get the address of the selected element
+
+	/*! \brief Get the reference of the selected element
 	 *
 	 * \param v1 grid_key that identify the element in the grid
 	 *
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(&mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
-	__device__ __host__ inline r_type get_address(const grid_key_dx<dim> & v1) const
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	__device__ __host__ inline r_type get_usafe(const grid_key_dx<dim> & v1)
 	{
-		return &mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+#endif
+		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
+	}
+
+	/*! \brief Get the const reference of the selected element
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return the const reference of the element
+	 *
+	 */
+	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
+	__device__ __host__ inline r_type get_unsafe(const grid_key_dx<dim> & v1) const
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+#endif
+		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -796,6 +962,18 @@ public:
 		check_bound(v1);
 #endif
 		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
+	}
+
+	/*! \brief Get the point flag (in this case just return 0)
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return zero
+	 *
+	 */
+	__device__ __host__ inline unsigned char getFlag(const grid_key_dx<dim> & v1) const
+	{
+		return 0;
 	}
 
 	/*! \brief Get the const reference of the selected element
@@ -855,7 +1033,7 @@ public:
 		check_init();
 		check_bound(lin_id);
 #endif
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin(data_,g1,lin_id);
+		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin_const(data_,g1,lin_id);
 	}
 
 
@@ -905,6 +1083,30 @@ public:
 		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>
 			   ::get(const_cast<typename std::add_lvalue_reference<decltype(this->data_)>::type>(data_),
 					 g1,v1);
+	}
+
+
+	/*! \brief Get the of the selected element as a boost::fusion::vector
+	 *
+	 * Get the selected element as a boost::fusion::vector
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \see encap_c
+	 *
+	 * \return an encap_c that is the representation of the object (careful is not the object)
+	 *
+	 */
+	inline encapc<dim,T,layout> insert_o(const grid_key_dx<dim> & v1)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+#ifdef SE_CLASS1
+		check_init();
+		check_bound(v1);
+#endif
+		return mem_geto<dim,T,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
 	}
 
 	/*! \brief Get the of the selected element as a boost::fusion::vector
@@ -975,18 +1177,181 @@ public:
 		memset(getPointer(),fl,size() * sizeof(T));
 	}
 
-	/*! \brief Resize the space
+	/*! \brief Remove all the points in this region
 	 *
-	 * Resize the space to a new grid, the element are retained on the new grid,
-	 * if the new grid is bigger the new element are now initialized, if is smaller
-	 * the data are cropped
+	 * For this case this function does nothing
+	 *
+	 * \param box_src box to kill the points
+	 *
+	 */
+	void remove(Box<dim,size_t> & section_to_delete)
+	{}
+
+	/*! \brief Reset the queue to remove and copy section of grids
+	 *
+	 * \note for this particular implementation it does nothing
+	 *
+	 */
+	void copyRemoveReset()
+	{
+	}
+
+    /*! \brief This function check if keep geometry is possible for this grid
+     *
+     * \return false it does not exist this feature on this type of grids
+     *
+     */
+    bool isSkipLabellingPossible()
+    {
+    	return false;
+    }
+
+	/*! \brief copy an external grid into a specific place into this grid
+	 *
+	 * It copy the area indicated by the  box_src from grid_src into this grid
+	 * at the place box_dst. The volume of box_src and box_dst
+	 *
+	 * box_dst and box_src are adjusted if box_dst overflow the destination grid
+	 *
+	 * \param grid_src source grid
+	 * \param box_src source box
+	 * \param box_dst destination box
+	 *
+	 */
+	void copy_to(const grid_base_impl<dim,T,S,layout_,layout_base> & grid_src,
+			     const Box<dim,long int> & box_src,
+				 const Box<dim,long int> & box_dst)
+	{
+		// fix box_dst
+
+	     Box<dim,size_t> box_src_;
+		 Box<dim,size_t> box_dst_;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			if (box_dst.getHigh(i) >= g1.size(i))
+			{
+				long int shift = box_dst.getHigh(i) - g1.size(i) + 1;
+				box_dst_.setHigh(i,box_dst.getHigh(i) - shift);
+				box_src_.setHigh(i,box_src.getHigh(i) - shift);
+			}
+			else
+			{
+				box_dst_.setHigh(i,box_dst.getHigh(i));
+				box_src_.setHigh(i,box_src.getHigh(i));
+			}
+
+			if (box_dst.getLow(i) < 0)
+			{
+				long int shift = -box_dst.getLow(i);
+				box_dst_.setLow(i,box_dst.getLow(i) - shift);
+				box_src_.setLow(i,box_src.getLow(i) - shift);
+			}
+			else
+			{
+				box_dst_.setLow(i,box_dst.getLow(i));
+				box_src_.setLow(i,box_src.getLow(i));
+			}
+		}
+
+        typedef typename to_int_sequence<0,T::max_prop>::type result;
+
+        copy_grid_fast_caller<result>::call(*this,grid_src,box_src_,box_dst_);
+
+/*        copy_grid_fast<!is_contiguos<prp...>::type::value || has_pack_gen<typename device_grid::value_type>::value,
+                                   dim,
+                                   grid_cp,
+                                   grid_info_cp>::copy(grid_src.getGrid(),
+                                   this->getGrid(),
+                                   box_src,
+                                   box_dst,
+                                   grid_src,*this,cnt);*/
+
+		/////////////////////////////////////////
+	}
+
+	/*! \brief copy an external grid into a specific place into this grid
+	 *
+	 * It copy the area indicated by the  box_src from grid_src into this grid
+	 * at the place box_dst. The volume of box_src and box_dst
+	 *
+	 * \param grid_src source grid
+	 * \param box_src source box
+	 * \param box_dst destination box
+	 *
+	 */
+	template<unsigned int ... prp>
+	void copy_to_prp(const grid_base_impl<dim,T,S,layout_,layout_base> & grid_src,
+			     const Box<dim,size_t> & box_src,
+				 const Box<dim,size_t> & box_dst)
+	{
+        typedef typename std::remove_reference<decltype(grid_src)>::type grid_cp;
+        typedef typename std::remove_reference<decltype(grid_src.getGrid())>::type grid_info_cp;
+
+        grid_key_dx<dim> cnt[1];
+        cnt[0].zero();
+
+        copy_grid_fast<!is_contiguos<prp...>::type::value || has_pack_gen<T>::value,
+                                   dim,
+                                   grid_cp,
+                                   grid_info_cp>::copy(grid_src.getGrid(),
+                                   this->getGrid(),
+                                   box_src,
+                                   box_dst,
+                                   grid_src,*this,cnt);
+	}
+
+	/*! \brief It does nothing
+	 *
+	 *
+	 *
+	 */
+	void clear()
+	{}
+
+	/*! \brief copy an external grid into a specific place into this grid
+	 *
+	 * It copy the area indicated by the  box_src from grid_src into this grid
+	 * at the place box_dst. The volume of box_src and box_dst
+	 *
+	 * \param grid_src source grid
+	 * \param box_src source box
+	 * \param box_dst destination box
+	 *
+	 */
+	template<template<typename,typename> class op, unsigned int ... prp>
+	void copy_to_op(const grid_base_impl<dim,T,S,layout_,layout_base> & gs,
+			     const Box<dim,size_t> & bx_src,
+				 const Box<dim,size_t> & bx_dst)
+	{
+		grid_key_dx_iterator_sub<dim> sub_src(gs.getGrid(),bx_src.getKP1(),bx_src.getKP2());
+		grid_key_dx_iterator_sub<dim> sub_dst(this->getGrid(),bx_dst.getKP1(),bx_dst.getKP2());
+
+		while (sub_src.isNext())
+		{
+			// write the object in the last element
+			object_s_di_op<op,decltype(gs.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(gs.get_o(sub_src.get()),this->get_o(sub_dst.get()));
+
+			++sub_src;
+			++sub_dst;
+		}
+	}
+
+	/*! \brief Resize the grid
+	 *
+	 * Resize the grid to the old information is retained on the new grid,
+	 * if the new grid is bigger. if is smaller the data are cropped
 	 *
 	 * \param sz reference to an array of dimension dim
 	 * \param opt options for resize. In case we know that the data are only on device memory we can use DATA_ONLY_DEVICE,
 	 *                                In case we know that the data are only on host memory we can use DATA_ONLY_HOST
 	 *
+	 * \param blockSize The default is equal to 1. In case of accelerator buffer resize indicate the size of the block of
+	 *        threads ( this is used in case of a vector of blocks where the block object override to operator=
+	 *                  to distribute threads on each block element )
+	 *
 	 */
-	void resize(const size_t (& sz)[dim], size_t opt = DATA_ON_HOST | DATA_ON_DEVICE)
+	void resize(const size_t (& sz)[dim], size_t opt = DATA_ON_HOST | DATA_ON_DEVICE, unsigned int blockSize = 1)
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -1014,7 +1379,7 @@ public:
 		{resize_impl_host(sz,grid_new);}
 
 		if (opt & DATA_ON_DEVICE && S::isDeviceHostSame() == false)
-		{resize_impl_device(sz,grid_new);}
+		{resize_impl_device(sz,grid_new,blockSize);}
 
 //		}
 
@@ -1072,13 +1437,61 @@ public:
 		data_.move(&this->template get<0>());
 	}
 
+	/*! \brief It swap the objects A become B and B become A using A.swap(B);
+	 *
+	 * This is a different from the standard swap and require long explanation.
+	 *
+	 * This object by default when it construct after we call setMemory() it create an internal memory object
+	 * and use it allocate memory internally.
+	 *
+	 * If instead we use setMemory(external_mem) this object does not create an internal memory object but use
+	 * the passed object to allocate memory. Because the external memory can already have a pool of memory preallocated
+	 * we can re-use the memory.
+	 *
+	 * Despite this setMemory can be used to do memory retaining/re-use  and/or garbage collection.
+	 * It can be seen from a different prospective of making the data structures act like a representation of external
+	 *  memory. De facto we are giving meaning to the external memory so we are shaping or re-shaping pre-existing
+	 *   external memory.
+	 *
+	 * In the following I will call these two mode Mode1 and Mode2
+	 *
+	 * Using the structure in this way has consequences, because now in Mode2 the memory (and so its life-span) is disentangled
+	 *  by its structure.
+	 *
+	 *
+	 * The main difference comes when we swap object in which one of both are in Mode2
+	 *
+	 * Let's suppose object A is in Mode1 and object B is is Mode2. The normal swap, fully swap the objects
+	 *
+	 * A.swap(B) A become B (in mode 2) and B become A (in mode 1)
+	 *
+	 * A.swap_nomode(B) In this case the mode is not swapped  A become B (in mode 1) and B become A (in mode 2).
+	 *                  So the mode is not swapped and remain the original
+	 *
+	 * \param grid object B
+	 *
+	 */
 
-	/*! \brief It move the allocated object from one grid to another
+	void swap_nomode(grid_base_impl<dim,T,S,layout,layout_base> & grid)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+
+		mem_swap<T,layout_base<T>,decltype(data_),decltype(grid)>::template swap_nomode<S>(data_,grid.data_);
+
+		// exchange the grid info
+		g1.swap(grid.g1);
+
+		// exchange the init status
+		bool exg = is_mem_init;
+		is_mem_init = grid.is_mem_init;
+		grid.is_mem_init = exg;
+	}
+
+	/*! \brief It swap the objects A become B and B become A using A.swap(B);
 	 *
-	 * It move the allocated object from one grid to another, after this
-	 * call the argument grid is no longer valid
-	 *
-	 * \param grid to move/copy
+	 * \param grid to swap with
 	 *
 	 */
 
@@ -1303,7 +1716,7 @@ public:
 	 * \return a sub-grid iterator
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<dim> getSubIterator(grid_key_dx<dim> & start, grid_key_dx<dim> & stop) const
+	inline grid_key_dx_iterator_sub<dim> getSubIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
 	{
 #ifdef SE_CLASS2
 		check_valid(this,8);
@@ -1440,6 +1853,43 @@ public:
 		return -1;
 #endif
 	}
+
+	/*! \brief In this case it does nothing
+	 *
+	 * \note this function exist to respect the interface to work as distributed
+	 *
+	 */
+	void removeAddUnpackReset()
+	{}
+
+	/*! \brief In this case it does nothing
+	 *
+	 * \note this function exist to respect the interface to work as distributed
+	 *
+	 * \param ctx context
+	 *
+	 */
+	template<unsigned int ... prp, typename context_type>
+	void removeAddUnpackFinalize(const context_type & ctx, int opt)
+	{}
+
+	/*! \brief In this case it does nothing
+	 *
+	 * \note this function exist to respect the interface to work as distributed
+	 *
+	 * \param ctx context
+	 *
+	 */
+	template<unsigned int ... prp, typename context_type>
+	void removeCopyToFinalize(const context_type & ctx, int opt)
+	{}
+
+	/*! \brief It does nothing
+	 *
+	 *
+	 */
+	void resetFlush()
+	{}
 };
 
 

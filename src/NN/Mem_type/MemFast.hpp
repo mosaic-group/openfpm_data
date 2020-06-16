@@ -136,9 +136,18 @@ public:
 	 * \return the number of elements
 	 *
 	 */
-	inline size_t size()
+	inline size_t size() const
 	{
 		return cl_n.size();
+	}
+
+	/*! \brief Destroy the internal memory including the retained one
+	 *
+	 */
+	inline void destroy()
+	{
+		cl_n.swap(openfpm::vector<aggregate<local_index>,Memory>());
+		cl_base.swap(base());
 	}
 
 	/*! \brief Initialize the data to zero

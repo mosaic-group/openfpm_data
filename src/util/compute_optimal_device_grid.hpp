@@ -82,6 +82,7 @@ void calculate_optimal_device_grid(device_grid<dim> & dg,
 
 		dg.grids.z = 1;
 		for (size_t k = 2 ; k < dim ; k++)
+		// coverty[dead_error_line]
 		{dg.grids.z *= sz[k];}
 
 		return;
@@ -166,7 +167,7 @@ void calculate_optimal_device_grid(device_grid<dim> & dg,
 			{dg.grids.z *= z[jz];}
 
 			for (size_t k = 3 ; k < dim ; k++)
-			/* coverty[dead_error_line] */
+			// coverty[dead_error_line]
 			{dg.grids.z *= sz[k];}
 
 			return;

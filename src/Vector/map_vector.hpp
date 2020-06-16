@@ -39,6 +39,7 @@
 #include "util/cuda_util.hpp"
 #include "util/cuda/cuda_launch.hpp"
 #include "cuda/map_vector_cuda_ker.cuh"
+#include "map_vector_printers.hpp"
 #include "util/cuda/cuda_launch.hpp"
 
 namespace openfpm
@@ -144,6 +145,7 @@ namespace openfpm
 	#endif
 		}
 	};
+
 
 	/*! \brief Implementation of 1-D std::vector like structure
 	 *
@@ -344,15 +346,33 @@ namespace openfpm
 			resize(0);
 		}
 
+		/*! \brief Clear the vector
+		 *
+		 * Eliminate all the elements for from the vector
+		 *
+		 */
+		void shrink_to_fit()
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			size_t sz[1] = {size()};
+			base.resize(sz);
+		}
+
 		/*! \brief Resize the vector
 		 *
 		 * Resize the vector and allocate n elements
 		 *
-		 * \param slot number of elements
-		 * \param opt options
+		 * \param opt options for resize. In case we know that the data are only on device memory we can use DATA_ONLY_DEVICE,
+		 *                                In case we know that the data are only on host memory we can use DATA_ONLY_HOST
+		 *
+		 * \param blockSize The default is equal to 1. In case of accelerator buffer resize indicate the size of the block of
+		 *        threads ( this is used in case of a vector of blocks where the block object override to operator=
+		 *                  to distribute threads on each block element )
 		 *
 		 */
-		void resize(size_t slot, size_t opt = DATA_ON_DEVICE | DATA_ON_HOST)
+		void resize(size_t slot, size_t opt = DATA_ON_DEVICE | DATA_ON_HOST, unsigned int blockSize = 1)
 		{
 #ifdef SE_CLASS2
 			check_valid(this,8);
@@ -361,11 +381,18 @@ namespace openfpm
 
 			if (slot > base.size())
 			{
-				size_t gr = grow_p::grow(base.size(),slot);
+				size_t gr = slot;
+				// If you increase by one we smartly resize the internal capacity more than 1
+				// This is to make faster patterns like resize(size()+1)
+				if (slot - base.size() == 1 && opt && (opt & EXACT_RESIZE) == 0)
+				{
+					gr = grow_p::grow(base.size(),slot);
+				}
 
 				//! Resize the memory
 				size_t sz[1] = {gr};
-				base.resize(sz,opt);
+
+				base.resize(sz,opt,blockSize);
 			}
 
 			// update the vector size
@@ -948,6 +975,7 @@ namespace openfpm
 #endif
 			grid_key_dx<1> key(id);
 
+
 			return base.template get<p>(key);
 		}
 
@@ -1135,6 +1163,19 @@ namespace openfpm
 			dup.v_size = v_size;
 			dup.base.swap(base.duplicate());
 
+			// copy the device part
+			// and device
+			if (Memory::isDeviceHostSame() == false)
+			{
+#ifdef __NVCC__
+				if (dup.size() != 0)
+				{
+					auto it = dup.getGPUIterator();
+					CUDA_LAUNCH(copy_two_vectors,it,dup.toKernel(),toKernel());
+				}
+#endif
+			}
+
 			return dup;
 		}
 
@@ -1266,6 +1307,7 @@ namespace openfpm
 			base.set(id,v.base,src);
 		}
 
+
 		/*! \brief Assignment operator
 		 *
 		 * move semantic movement operator=
@@ -1302,8 +1344,7 @@ namespace openfpm
 #endif
 			v_size = mv.v_size;
 			size_t rsz[1] = {v_size};
-			if (base.size() < v_size)
-				base.resize(rsz);
+			base.resize(rsz);
 
 			// copy the object on cpu
 			for (size_t i = 0 ; i < v_size ; i++ )
@@ -1373,6 +1414,18 @@ namespace openfpm
 				base.set(key,mv.getInternal_base(),key);
 			}
 
+			// and device
+			if (Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false)
+			{
+#ifdef __NVCC__
+				if (mv.size() != 0)
+				{
+					auto it = mv.getGPUIterator();
+					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
+				}
+#endif
+			}
+
 			return *this;
 		}
 
@@ -1427,6 +1480,18 @@ namespace openfpm
 				base.set_general(key,mv.getInternal_base(),key);
 			}
 
+			// and device
+			if (Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false)
+			{
+#ifdef __NVCC__
+				if (mv.size() != 0)
+				{
+					auto it = mv.getGPUIterator();
+					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
+				}
+#endif
+			}
+
 			return *this;
 		}
 
@@ -1460,6 +1525,28 @@ namespace openfpm
 			}
 
 			return true;
+		}
+
+		/*! \brief Swap the memory with another vector
+		 *
+		 * \note this is different from the normal swap please look a grid_base_implementation.hpp method swap_nomode
+		 *       for info
+		 *
+		 * \param v vector
+		 *
+		 */
+		void swap_nomode(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & v)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			size_t sz_sp = v_size;
+
+			// swap the v_size
+			v_size = v.v_size;
+
+			base.swap_nomode(v.base);
+			v.v_size = sz_sp;
 		}
 
 		/*! \brief Swap the memory with another vector
@@ -1679,6 +1766,19 @@ namespace openfpm
 			base.template setMemory<p>(mem);
 		}
 
+		/*! \brief Set the memory of the base structure using an object
+		 *
+		 * \param mem Memory object to use for allocation
+		 *
+		 */
+		void setMemoryArray(Memory * mem)
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			base.setMemoryArray(mem);
+		}
+
 		/*! \brief Return the pointer that store the data
 		 *
 		 * \tparam property from which take the pointer
@@ -1798,9 +1898,6 @@ namespace openfpm
 		 */
 		vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> toKernel()
 		{
-//			if (base.size() == 0)
-//			{std::cout << __FILE__ << ":" << __LINE__ << " Warning you are off-loading with toGPU a vector that seem to be empty or not initialized" << std::endl; }
-
 			vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> v(v_size,this->base.toKernel());
 
 			return v;
@@ -1823,13 +1920,47 @@ namespace openfpm
 			return v;
 		}
 
+		/*! Convert this vector into a string
+		 *
+		 * \param prefix prefix to use for printing
+		 *
+		 * \return a string showing thid vector
+		 *
+		 */
+		template<unsigned int ... prps>
+		const std::string toString(std::string prefix = std::string())
+		{
+			std::stringstream ss;
+			auto it = getIterator();
+
+			while (it.isNext())
+			{
+				auto p = it.get();
+
+				ss << prefix;
+
+				ss << prefix <<  " element[" << p << "]" << " ";
+
+				vector_printer<self_type,prps ...> vp(*this,p,ss);
+				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prps)>>(vp);
+
+				ss << std::endl;
+
+				++it;
+			}
+
+			return ss.str();
+		}
+
 		void * internal_get_size_pointer()	{return &v_size;}
 
 		void print_size()
 		{
+#ifndef DISABLE_ALL_RTTI
 			std::cout << "the size of: " << demangle(typeid(self_type).name()) << " is " << sizeof(self_type) << std::endl;
 			std::cout << "    " << demangle(typeid(decltype(v_size)).name()) << ":" << sizeof(decltype(v_size)) << std::endl;
 			std::cout << "    " << demangle(typeid(decltype(base)).name()) << ":" << sizeof(decltype(base)) << std::endl;
+#endif
 		}
 
 	};

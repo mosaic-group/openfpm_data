@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 
 	openfpm::vector<size_t> keys_old;
 
-	keys_old.load("NN_hilb_keys");
+	keys_old.load("test_data/NN_hilb_keys");
 
 	for (size_t i = 0; i < keys_old.size(); i++)
 	{
@@ -462,6 +462,8 @@ BOOST_AUTO_TEST_CASE( ParticleIt_Cells_iterator )
 
 	while (it_cl.isNext())
 	{
+		auto i = it_cl.get();
+
 		count++;
 		++it_cl;
 	}

@@ -691,7 +691,7 @@ public:
 	static const int max_prop = T::max_prop;
 
 	//! constructor require a key and a memory data
-	encapc(typename memory_traits_inte<T>::type & data, size_t k)
+	__device__ __host__ encapc(typename memory_traits_inte<T>::type & data, size_t k)
 	:data(data),k(k)
 	{}
 
@@ -702,7 +702,8 @@ public:
 	 * \return The reference of the data
 	 *
 	 */
-	template <unsigned int p> __device__ __host__  auto get() -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
+	template <unsigned int p>
+	__device__ __host__ auto get() -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
 	{
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
@@ -718,6 +719,13 @@ public:
 	{
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
+
+//    __device__ __host__ encapc(const encapc<dim,T,Mem> & ec) = delete;
+    __device__ __host__ encapc(const encapc<dim,T,Mem> & ec) : data(ec.data), k(ec.k)
+    {
+//        printf("ciao\n");
+    }
+//    __device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec) = delete; //DEBUG
 
 	/*! \brief Assignment
 	 *
@@ -765,6 +773,27 @@ public:
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 
 		return *this;
+	}
+
+	__device__ __host__ inline void private_set_data_k(Mem & data_c, size_t k)
+	{
+		this->data = data;
+		this->k = k;
+	}
+
+	__device__ __host__ inline Mem & private_get_data()
+	{
+		return data;
+	}
+
+	__device__ __host__ inline size_t private_get_k()
+	{
+		return k;
+	}
+
+	__device__ __host__ inline size_t private_set_k(unsigned int k)
+	{
+		return this->k = k;
 	}
 };
 

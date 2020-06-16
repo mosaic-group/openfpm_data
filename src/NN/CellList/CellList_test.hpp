@@ -378,8 +378,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_NN_iterator_rad
 	//! [Usage of cell list multi]
 
 	// CellS = CellListM<dim,T,8>
-	CellS cl1(box,div);
-	CellS cl2(box,div2,2);
+	CellS cl1(box,div,2);
+	CellS cl2(box,div2,3);
 
 	T radius = (box.getHigh(0) - box.getLow(0))/div[0];
 

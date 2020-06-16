@@ -281,11 +281,33 @@ norm(const point_expression_op<orig,exp1,exp2,op1> & va)
  * \return d
  *
  */
-template <typename T>__device__ __host__  T norm(T d)
+template <typename T>
+__device__ __host__  T norm(T d)
 {
 	return d;
 }
 
+/* \brief Calculate the norm of the point
+ *
+ * \param va point expression one
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename T, typename vmpl>
+__device__ __host__  inline point_expression_op<Point<subar_dim<vmpl>::type::value,T>,
+												point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+												void,
+												POINT_NORM>
+norm(const point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & d)
+{
+        point_expression_op<Point<subar_dim<vmpl>::type::value,T>,
+        					point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>,
+        					void,
+        					POINT_NORM> exp_sum( (point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>(d)) );
+
+        return exp_sum;
+}
 
 /* \brief Calculate the norm of the point
  *

@@ -32,6 +32,8 @@
 #define PACKER_OBJECTS_WITH_POINTER_CHECK 7
 //! Compile time array packing
 #define PACKER_ARRAY_CP_PRIMITIVE 8
+//! Packer in case of ENCAP with chunking
+#define PACKER_ENCAP_OBJECTS_CHUNKING 9
 
 #define IS_ENCAP 4
 #define IS_GRID 2

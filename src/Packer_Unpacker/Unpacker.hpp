@@ -18,6 +18,9 @@
 #include "memory/PtrMemory.hpp"
 #include "Packer_util.hpp"
 #include "util/multi_array_openfpm/multi_array_ref_openfpm.hpp"
+#include "has_pack_encap.hpp"
+#include "util/object_creator.hpp"
+#include "Grid/grid_common.hpp"
 
 /*! \brief Unpacker class
  *
@@ -36,7 +39,9 @@ public:
 	 */
 	static void unpack(ExtPreAlloc<Mem> , T & obj)
 	{
+#ifndef DISABLE_ALL_RTTI
 		std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " packing for the type " << demangle(typeid(T).name()) << " is not implemented\n";
+#endif
 	}
 };
 
@@ -97,6 +102,23 @@ public:
 	}
 };
 
+template <typename T, bool is_array>
+struct get_pointer_unpack
+{
+	static void * getpointer(T & obj)
+	{
+		return &obj;
+	}
+};
+
+template <typename T>
+struct get_pointer_unpack<T,true>
+{
+	static void * getpointer(T & obj)
+	{
+		return obj;
+	}
+};
 
 template<typename T, typename Mem>
 class Unpacker<T,Mem,PACKER_ARRAY_CP_PRIMITIVE>
@@ -122,7 +144,7 @@ public:
 	{
 		typedef typename std::remove_extent<T>::type prim_type;
 
-		meta_copy<T>::meta_copy_((prim_type *)ext.getPointer(),obj);
+		meta_copy<T>::meta_copy_((prim_type *)ext.getPointerOffset(ps.getOffset()),obj);
 
 		ps.addOffset(sizeof(T));
 	}
@@ -159,11 +181,14 @@ public:
 	 *
 	 * \param ext preallocated memory from where to unpack the object
 	 * \param obj object where to unpack
+	 * \param ps unpack statistic
 	 *
 	 */
 	static void unpack(ExtPreAlloc<Mem> & ext, T & obj, Unpack_stat & ps)
 	{
-		memcpy(&obj,(T *)ext.getPointerOffset(ps.getOffset()),sizeof(T));
+		memcpy(get_pointer_unpack<T,std::is_array<T>::value>::getpointer(obj),
+			   (void *)ext.getPointerOffset(ps.getOffset()),
+			   sizeof(T));
 
 		ps.addOffset(sizeof(T));
 	}
@@ -235,9 +260,92 @@ public:
 		obj.template unpack<prp...>(mem, ps);
 	}
 
-	template<unsigned int ... prp> static void unpack(ExtPreAlloc<Mem> & mem, grid_key_dx_iterator_sub<T::dims> & sub_it, T & obj, Unpack_stat & ps)
+	template<typename grid_sub_it_type,
+			 typename context_type,
+			 unsigned int ... prp> static void unpack(ExtPreAlloc<Mem> & mem, grid_sub_it_type & sub_it, T & obj, Unpack_stat & ps, context_type & context, rem_copy_opt opt)
 	{
-		obj.template unpack<prp...>(mem, sub_it, ps);
+		obj.template unpack<prp...>(mem, sub_it, ps, context, opt);
+	}
+};
+
+
+//! It copy one element of the chunk for each property
+/*template<typename e_src, typename e_dst, int ... prp>
+struct copy_unpacker_chunk
+{
+	//! encapsulated object source
+	const e_src & src;
+	//! encapsulated object destination
+	e_dst & dst;
+
+	//! element to copy
+	size_t sub_id;*/
+
+	/*! \brief constructor
+	 *
+	 *
+	 * \param src source encapsulated object
+	 * \param dst destination encapsulated object
+	 *
+	 */
+/*	inline copy_unpacker_chunk(const e_src & src, e_dst & dst, size_t sub_id)
+	:src(src),dst(dst),sub_id(sub_id)
+	{
+	};
+
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		// Convert variadic to boost::vector
+		typedef typename boost::mpl::vector_c<unsigned int,prp...> prpv;
+
+		// element id to copy applying an operation
+		typedef typename boost::mpl::at<prpv,T>::type ele_cop;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(src.template get< ele_cop::value >())>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get< ele_cop::value >(),dst.template get< ele_cop::value >()[sub_id]);
+	}
+};*/
+
+//! It copy one element of the chunk for each property
+template<typename e_src, typename e_dst>
+struct copy_unpacker_chunk
+{
+	//! encapsulated object source
+	const e_src & src;
+	//! encapsulated object destination
+	e_dst & dst;
+
+	//! element to copy
+	size_t sub_id;
+
+	/*! \brief constructor
+	 *
+	 *
+	 * \param src source encapsulated object
+	 * \param dst destination encapsulated object
+	 *
+	 */
+	inline copy_unpacker_chunk(const e_src & src, e_dst & dst, size_t sub_id)
+	:src(src),dst(dst),sub_id(sub_id)
+	{
+	};
+
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(src.template get< T::value >())>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get< T::value >(),dst.template get< T::value >()[sub_id]);
 	}
 };
 
@@ -248,34 +356,84 @@ public:
  *
  */
 template<typename T, typename Mem>
-class Unpacker<T,Mem,PACKER_ENCAP_OBJECTS>
+class Unpacker<T,Mem,PACKER_ENCAP_OBJECTS_CHUNKING>
 {
 public:
-
-	// TODO
 
 	/*! \brief
 	 *
 	 * is this needed
 	 *
 	 */
-/*	void pack(ExtPreAlloc<Mem> & mem, T & eobj)
+	template<typename T_nc, unsigned int ... prp>
+	static void unpack(ExtPreAlloc<Mem> & mem,
+						T & obj,
+						size_t sub_id,
+						Unpack_stat & ps)
 	{
-		// Create an object out of the encapsulated object and copy
-		typename T::type obj = eobj;
+		if (has_pack_encap<T,prp ...>::result::value == true)
+		{call_encapUnpackChunking<T,Mem,prp ...>::call_unpack(obj,sub_id,mem,ps);}
+		else
+		{
+			// get the first element to get the chunking size
+			typedef typename boost::mpl::at<typename T::T_type::type,boost::mpl::int_<0>>::type cnk_size;
 
-		memcpy(mem.getPointer(),&obj,sizeof(T::type));
-	}*/
+			if (sizeof...(prp) == 0)
+			{
+				encapc<1,T_nc,typename memory_traits_lin< T_nc >::type> enc(*static_cast<typename T_nc::type *>((void *)((unsigned char *)mem.getPointerBase() + ps.getOffset())));
+				copy_unpacker_chunk<encapc<1,T_nc,typename memory_traits_lin< T_nc >::type>,
+									decltype(obj)> cp(enc,obj,sub_id);
+
+				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::T_type::max_prop>>(cp);
+				ps.addOffset(sizeof(T_nc));
+			}
+			else
+			{
+				typedef object<typename object_creator_chunking<typename T::type,prp...>::type> prp_object;
+				encapc<1,prp_object,typename memory_traits_lin< prp_object >::type> enc(*static_cast<typename prp_object::type *>((void *)((unsigned char *)mem.getPointerBase() + ps.getOffset())));
+				object_s_di<decltype(enc),T,OBJ_ENCAP_CHUNKING,prp ... >(enc,obj,sub_id);
+				ps.addOffset(sizeof(prp_object));
+			}
+		}
+
+		// update statistic
+	}
 
 	/*! \brief
 	 *
+	 * is this needed
 	 *
 	 */
-/*	void packRequest(std::vector<size_t> & v)
+	template<template<typename,typename> class op, unsigned int ... prp>
+	static void unpack_op(ExtPreAlloc<Mem> & mem,
+						T & obj,
+						size_t sub_id,
+						Unpack_stat & ps)
 	{
-		v.push_back(sizeof(T::type));
-	}*/
+		if (has_pack_encap<T,prp ...>::result::value == true)
+		{call_encapUnpackChunking<T,Mem,prp ...>::call_unpack(obj,sub_id,mem,ps);}
+		else
+		{
+			if (sizeof...(prp) == 0)
+			{
+				encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type> enc(*static_cast<typename T::T_type::type *>(mem.getPointer()));
+				copy_unpacker_chunk<encapc<1,typename T::T_type,typename memory_traits_lin< typename T::T_type >::type>,
+									decltype(obj)>(enc,obj,sub_id);
+				ps.addOffset(sizeof(typename T::T_type));
+			}
+			else
+			{
+				typedef object<typename object_creator_chunking<typename T::type,prp...>::type> prp_object;
+				encapc<1,prp_object,typename memory_traits_lin< prp_object >::type> enc(*static_cast<typename prp_object::type *>((void *)((unsigned char *)mem.getPointerBase() + ps.getOffset())));
+				object_s_di_op<op,decltype(enc),T,OBJ_ENCAP_CHUNKING,prp ... >(enc,obj,sub_id);
+				ps.addOffset(sizeof(prp_object));
+			}
+		}
+
+		// update statistic
+	}
 };
+
 
 
 #endif /* SRC_UNPACKER_HPP_ */

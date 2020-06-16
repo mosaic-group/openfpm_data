@@ -91,7 +91,7 @@ public:
 	 * \return true if they intersect
 	 *
 	 */
-	bool Intersect(const Box<dim,T> & b, Box<dim,T> & b_out) const
+	__device__ __host__ bool Intersect(const Box<dim,T> & b, Box<dim,T> & b_out) const
 	{
 		// check if p1 of b is smaller than
 
@@ -114,6 +114,8 @@ public:
 		return true;
 	}
 
+
+
 	/*! \brief Intersect
 	 *
 	 * Intersect two boxes and return the result boxes, if the boxes does not intersect, return false
@@ -124,9 +126,11 @@ public:
 	 * \return true if they intersect
 	 *
 	 */
-	template<typename Mem> bool Intersect(const encapc<1,Box<dim,T>,Mem> & e_b, Box<dim,T> & b_out) const
+	template<typename Mem>
+	__device__ __host__
+	bool Intersect(const encapc<1,Box<dim,T>,Mem> & e_b, Box<dim,T> & b_out) const
 	{
-		return Intersect(e_b,b_out);
+		return Intersect(Box<dim,T>(e_b),b_out);
 	}
 
 	/*!
@@ -294,7 +298,7 @@ public:
 	public:
 
 	//! default constructor
-	Box()
+	__device__ __host__ Box()
 	{}
 
 	/*! \brief Constructor from two points
@@ -407,7 +411,8 @@ public:
 	 * \param box_data fusion vector from which to construct the vector
 	 *
 	 */
-	template<unsigned int dimS> __device__ inline Box(boost::fusion::vector<T[dimS],T[dimS]> & box_data)
+	template<unsigned int dimS>
+	__device__ __host__ inline Box(boost::fusion::vector<T[dimS],T[dimS]> & box_data)
 	{
 		// we copy the data
 
@@ -423,7 +428,9 @@ public:
 	 * \param b box from which to construct the vector (encapsulated)
 	 *
 	 */
-	template<typename Mem> __device__ __host__ inline Box(const encapc<1,Box<dim,T>,Mem> & b)
+	template<typename Mem>
+	__device__ __host__
+	inline Box(const encapc<1,Box<dim,T>,Mem> & b)
 	{
 		// we copy the data
 
@@ -439,7 +446,9 @@ public:
 	 * \param b box
 	 *
 	 */
-	template <typename S> inline Box(const Box<dim,S> & b)
+	template <typename S>
+	__device__ __host__
+	inline Box(const Box<dim,S> & b)
 	{
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setLow(d,b.getLow(d));}
@@ -664,6 +673,32 @@ public:
 		return ret;
 	}
 
+	/*! \brief Get the point p1 as grid_key_dx
+	 *
+	 * \return the key
+	 *
+	 */
+	grid_key_dx<dim,int> getKP1int() const
+	{
+		// grid key to return
+		grid_key_dx<dim,int> ret(boost::fusion::at_c<p1>(data));
+
+		return ret;
+	}
+
+	/*! \brief Get the point p12 as grid_key_dx
+	 *
+	 * \return the key
+	 *
+	 */
+	grid_key_dx<dim,int> getKP2int() const
+	{
+		// grid key to return
+		grid_key_dx<dim,int> ret(boost::fusion::at_c<p2>(data));
+
+		return ret;
+	}
+
 	/*! \brief Get the point p1
 	 *
 	 * \return the point p1
@@ -725,6 +760,26 @@ public:
 		}
 
 		return *this;
+	}
+
+	/*! \brief Translate the box
+	 *
+	 * \param p Point translation vector
+	 *
+	 * \return the translated box
+	 *
+	 */
+	inline Box<dim,T> operator+(const Point<dim,T> & p)
+	{
+		Box<dim,T> b;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			b.setHigh(i,boost::fusion::at_c<p2>(data)[i] + p.get(i));
+			b.setLow(i,boost::fusion::at_c<p1>(data)[i] + p.get(i));
+		}
+
+		return b;
 	}
 
 	/*! \brief expand the box by a vector
@@ -944,7 +999,8 @@ public:
 	 *
 	 */
 
-	inline bool isInside(const Point<dim,T> & p) const
+	inline
+	__host__ __device__ bool isInside(const Point<dim,T> & p) const
 	{
 		// check if bound
 
@@ -1057,7 +1113,7 @@ public:
 		return true;
 	}
 
-	/*! \brief Check if the point is inside the region
+	/*! \brief Check if the point is inside the region (Border included)
 	 *
 	 * \param p point to check
 	 * \return true if the point is inside the space
@@ -1086,6 +1142,34 @@ public:
 		return true;
 	}
 
+	/*! \brief Check if the point is inside the region (Border included)
+	 *
+	 * \param k key to check
+	 * \return true if the point is inside the space
+	 *
+	 */
+	template<typename KeyType>
+	__device__ __host__ inline bool isInsideKey(const KeyType & k) const
+	{
+		// check if bound
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			// if outside the region return false
+			if (   k.get(i) < boost::fusion::at_c<Box<dim,T>::p1>(this->data)[i]
+			    || k.get(i) > boost::fusion::at_c<Box<dim,T>::p2>(this->data)[i])
+			{
+				// Out of bound
+
+				return false;
+			}
+
+		}
+
+		// In bound
+
+		return true;
+	}
 
 	/*! \brief Check if the Box is a valid box P2 >= P1
 	 *
@@ -1207,7 +1291,8 @@ public:
 	 *
 	 */
 
-	template <typename Mem> inline bool isInside(const encapc<1,Point<dim,T>,Mem> & p)
+	template <typename Mem>
+	inline bool isInside(const encapc<1,Point<dim,T>,Mem> & p)
 	{
 		// check if bound
 
@@ -1227,6 +1312,19 @@ public:
 		// In bound
 
 		return true;
+	}
+
+	/*! \brief Get the worst extension
+	 *
+	 * \return the worst extension
+	 */
+	inline T getRcut() const
+	{
+		T r_cut = 0;
+		for (size_t i = 0 ; i < dim ; i++)
+		{r_cut = std::max(r_cut,getHigh(i));}
+
+		return r_cut;
 	}
 
 	/*! \brief Get the volume of the box

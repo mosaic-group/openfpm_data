@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 #endif
 	size_total_old = size_total;
 
-	Packer<grid_cpu<3,Point_test<float>>,HeapMemory>::packRequest<pt::x,pt::v>(g,sub,size_total);
+	Packer<grid_cpu<3,Point_test<float>>,HeapMemory>::packRequest<decltype(sub),pt::x,pt::v>(g,sub,size_total);
 #ifndef SE_CLASS3
 	BOOST_REQUIRE_EQUAL(size_total - size_total_old,(sizeof(float) + sizeof(float[3])) * sub.getVolume());
 #endif
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 	Packer<double,HeapMemory>::pack(mem,10,sts);
 	Packer<Point_test<float>,HeapMemory>::pack(mem,p,sts);
 	Packer<openfpm::vector<Point_test<float>>,HeapMemory>::pack<pt::x,pt::v>(mem,v,sts);
-	Packer<grid_cpu<3,Point_test<float>>,HeapMemory>::pack<pt::x,pt::v>(mem,g,sub,sts);
+	Packer<grid_cpu<3,Point_test<float>>,HeapMemory>::pack<decltype(sub),pt::x,pt::v>(mem,g,sub,sts);
 
 	//! [Pack into a message primitives objects vectors and grids]
 
@@ -267,7 +267,8 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 
 	grid_key_dx_iterator_sub<3> sub2(g_test.getGrid(),{1,2,3},{5,6,7});
 
-	Unpacker<grid_cpu<3,Point_test<float>>,HeapMemory>::unpack<pt::x,pt::v>(mem,sub2,g_test,ps);
+	int ctx = 0;
+	Unpacker<grid_cpu<3,Point_test<float>>,HeapMemory>::unpack<decltype(sub2),int,pt::x,pt::v>(mem,sub2,g_test,ps,ctx,rem_copy_opt::NONE_OPT);
 
 	// Check the unpacked grid
 	sub2.reset();

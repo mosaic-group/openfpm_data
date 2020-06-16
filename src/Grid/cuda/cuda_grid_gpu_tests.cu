@@ -13,6 +13,7 @@
 #include "Grid/grid_util_test.hpp"
 #include "cuda_grid_unit_tests_func.cuh"
 #include "util/cuda/cuda_launch.hpp"
+#include "Grid/grid_test_utils.hpp"
 
 BOOST_AUTO_TEST_SUITE( grid_gpu_func_test )
 
@@ -681,5 +682,32 @@ BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 
 #endif
 }
+
+BOOST_AUTO_TEST_CASE(grid_test_copy_to_gpu_2d)
+{
+	size_t sz_dst[] = {5,5};
+	size_t sz_src[] = {3,2};
+	grid_gpu<2,aggregate<float,float[3],float[3][3]>> g_dst(sz_dst);
+	grid_gpu<2,aggregate<float,float[3],float[3][3]>> g_src(sz_src);
+
+	Box<2,size_t> box_dst({1,2},{2,3});
+	Box<2,size_t> box_src({1,0},{2,1});
+
+	copy_test(g_src,g_dst,box_src,box_dst);
+}
+
+BOOST_AUTO_TEST_CASE(grid_test_copy_to_gpu_3d)
+{
+	size_t sz_dst[] = {5,5,5};
+	size_t sz_src[] = {3,2,2};
+	grid_gpu<3,aggregate<float,float[3],float[3][3]>> g_dst(sz_dst);
+	grid_gpu<3,aggregate<float,float[3],float[3][3]>> g_src(sz_src);
+
+	Box<3,size_t> box_dst({1,2,2},{2,3,3});
+	Box<3,size_t> box_src({1,0,0},{2,1,1});
+
+	copy_test(g_src,g_dst,box_src,box_dst);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

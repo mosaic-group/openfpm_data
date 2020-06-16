@@ -54,6 +54,16 @@ public:
 		}
 	}
 
+	/*! \brief Constructor from initializer list
+	 *
+	 * \param p1 Low point, initialize as a list example {0.0,0.0,0.0}
+	 * \param p2 High point, initialized as a list example {1.0,1.0,1.0}
+	 *
+	 */
+	Ghost(std::initializer_list<T> p1, std::initializer_list<T> p2)
+	:Box<dim,T>(p1,p2)
+	{}
+
 	// construct a ghost based on interaction radius
 	inline Ghost(T r)
 	{
@@ -103,7 +113,6 @@ public:
 
 		return false;
 	}
-
 };
 
 /*! \brief Class that contain Padding information on each direction positive and Negative direction

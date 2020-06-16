@@ -80,46 +80,6 @@ struct copy_aggregate_op
 	}
 };
 
-/*! \brief Structure to copy aggregates applying an operation
- *         limited to some properties
- *
- * \tparam op operation to apply
- * \tparam aggregate to copy
- * \tparam prp properties involved
- *
- */
-/*template<template<typename,typename> class op, typename S, unsigned int ... prp >
-struct copy_aggregate_op_prp
-{
-	//! src
-	const S & src;
-
-	//! Destination object
-	S & dst;
-
-	//! copy_aggregate
-	inline copy_aggregate_op_prp(const S & src, S & dst)
-	:src(src),dst(dst){};
-
-	//! It call the copy function for each member
-	template<typename T>
-	inline void operator()(T& t) const
-	{
-		// This is the type of the object we have to copy
-		typedef typename boost::fusion::result_of::at_c<typename S::type,T::value>::type copy_type;
-
-		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
-
-		// Convert variadic to boost::vector
-		typedef typename boost::mpl::vector_c<unsigned int,prp...> prpv;
-
-		// element id to copy applying an operation
-		typedef typename boost::mpl::at<prpv,T>::type ele_cop;
-
-		meta_copy_op<op,copy_rtype>::meta_copy_op_(src.template get< ele_cop::value >(),dst.template get< ele_cop::value >());
-	}
-};*/
 
 /*! \brief Structure to compare aggregates
  *

@@ -11,6 +11,19 @@ namespace openfpm
 {
 	namespace math
 	{
+		/*! \brief return the sign of an integer
+		 *
+		 * \param val integer
+		 *
+		 * \return the sign of the function
+		 *
+		 */
+		template <typename T>
+		int sgn(T val)
+		{
+			return (T(0) < val) - (val < T(0));
+		}
+
 		/*! \brief calculate the factorial
 		 *
 		 * calculate the factorial of a number

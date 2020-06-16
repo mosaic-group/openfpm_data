@@ -42,6 +42,15 @@ public:
 	{
 		return cnt;
 	}
+
+	/*! \brief set the actual counter
+	 *
+	 *
+	 */
+	inline void setOffset(size_t c)
+	{
+		cnt = c;
+	}
 };
 
 /*! \brief Packing status object

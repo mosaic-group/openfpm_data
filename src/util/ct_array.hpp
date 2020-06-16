@@ -183,9 +183,9 @@ struct generate_array_vector_impl {
 
 //! terminator of the variadic template
 template<class T, class F, unsigned... args>
-struct generate_array_vector_impl<T,1, F, args...> {
+struct generate_array_vector_impl<T,0, F, args...> {
 	//! compile-time array generation
-    typedef ArrayHolder<T,boost::mpl::at<F,boost::mpl::int_<1> >::type::value, args...> result;
+    typedef ArrayHolder<T,boost::mpl::at<F,boost::mpl::int_<0> >::type::value, args...> result;
 };
 
 /*! \brief Main class to generate an array from a boost::mpl::vector of numbers

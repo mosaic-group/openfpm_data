@@ -7,9 +7,17 @@
 #include "util/for_each_ref.hpp"
 #include "util/variadic_to_vmpl.hpp"
 
+constexpr int RUN_ON_DEVICE = 1024;
+
 #define GCC_VERSION (__GNUC__ * 10000 \
                                + __GNUC_MINOR__ * 100 \
                                + __GNUC_PATCHLEVEL__)
+
+template<unsigned int N,typename T>
+struct static_array
+{
+	T sa[N];
+};
 
 namespace std
 {
@@ -19,6 +27,7 @@ namespace std
 		return s;
 	}
 }
+
 
 /*! \brief convert a type into constant type
  *
@@ -103,6 +112,32 @@ struct has_typedef_type<T, typename Void< typename T::type>::type> : std::true_t
 {};
 
 template<typename T, typename Sfinae = void>
+struct has_vector_kernel: std::false_type {};
+
+/*! \brief has_vector_kernel check if a type has defined a member data
+ *
+ * ### Example
+ *
+ * \snippet util_test.hpp Check has_data
+ *
+ * return true if T::vector_kernel is a valid type
+ *
+ */
+template<typename T>
+struct has_vector_kernel<T, typename Void< typename T::vector_kernel >::type> : std::true_type
+{};
+
+template<typename T, typename Sfinae = void>
+struct has_set_d: std::false_type {};
+
+/*! \brief has_move check if a type has defined a method function move
+ *
+ */
+template<typename T>
+struct has_set_d<T, typename Void<decltype( std::declval<T>().set_d(0,0) )>::type> : std::true_type
+{};
+
+template<typename T, typename Sfinae = void>
 struct has_data: std::false_type {};
 
 /*! \brief has_data check if a type has defined a member data
@@ -121,17 +156,30 @@ struct has_data<T, typename Void<decltype( T::data )>::type> : std::true_type
 template<typename T, typename Sfinae = void>
 struct has_posMask: std::false_type {};
 
-/*! \brief has_data check if a type has defined a member data
+/*! \brief has_posMask check if a type has defined a member stag_mask
  *
- * ### Example
+ * It is used to indicate a staggered grid
  *
- * \snippet util_test.hpp Check has_data
- *
- * return true if T::type is a valid type
+ * return true if T::stag_mask is a valid type
  *
  */
 template<typename T>
 struct has_posMask<T, typename Void<decltype( T::stag_mask )>::type> : std::true_type
+{};
+
+template<typename T, typename Sfinae = void>
+struct has_check_device_pointer: std::false_type {};
+
+/*! \brief has_check_device_pointer check if a type has defined a member yes_has_check_device_pointer
+ *
+ * This mean that the class support a way to check if it is the owner od a particular device pointer
+ *
+ *
+ * return true if T::yes_has_check_device_pointer is a valid type
+ *
+ */
+template<typename T>
+struct has_check_device_pointer<T, typename Void< typename T::yes_has_check_device_pointer >::type> : std::true_type
 {};
 
 /*! \brief check if T::type and T.data has the same type
@@ -208,6 +256,24 @@ template<typename ObjType>
 struct has_pack<ObjType, typename Void<decltype( ObjType::pack() )>::type> : std::true_type
 {};
 
+/*! \brief has_toKernel check if a type has defined a
+ * method called toKernel
+ *
+ * ### Example
+ *
+ * \snippet
+ *
+ * return true if T.toKernel() is a valid expression
+ * and produce a defined type
+ *
+ */
+
+template<typename ObjType, typename Sfinae = void>
+struct has_toKernel: std::false_type {};
+
+template<typename ObjType>
+struct has_toKernel<ObjType, typename Void<decltype( std::declval<ObjType>().toKernel() )>::type> : std::true_type
+{};
 
 /*! \brief has_packRequest check if a type has defined a
  * method called packRequest
@@ -302,5 +368,26 @@ template<size_t index, size_t N> struct MetaFunc {
 template<size_t index, size_t N> struct MetaFuncOrd {
    enum { value = index };
 };
+
+///////////// Check if the
+
+template<typename ObjType, typename Sfinae = void>
+struct isDynStruct: std::false_type
+{
+	constexpr static bool value()
+	{
+		return false;
+	}
+};
+
+template<typename ObjType>
+struct isDynStruct<ObjType, typename Void<decltype( ObjType::isCompressed() )>::type> : std::true_type
+{
+	constexpr static bool value()
+	{
+		return ObjType::isCompressed();
+	}
+};
+
 
 #endif

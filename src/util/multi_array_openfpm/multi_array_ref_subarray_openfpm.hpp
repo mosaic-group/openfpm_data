@@ -11,6 +11,16 @@
 #include "multi_array_view_openfpm.hpp"
 #include "multi_array_ref_base_openfpm.hpp"
 
+/*! \brief return the dimension of the sub_array
+ *
+ *
+ */
+template<typename vmpl>
+struct subar_dim
+{
+	typedef typename boost::mpl::at<vmpl,boost::mpl::int_<0>>::type type;
+};
+
 namespace openfpm {
 namespace detail {
 namespace multi_array {
@@ -117,6 +127,9 @@ public:
     return size_ct::type::value;
   }
 
+  __device__ __host__ const_sub_array_openfpm (TPtr base, const index* strides)
+  :base_(base), strides_(strides)
+  {}
 
 #ifndef BOOST_NO_MEMBER_TEMPLATE_FRIENDS
 protected:
@@ -126,9 +139,6 @@ protected:
 public:  // Should be protected
 #endif
 
-  __device__ __host__ const_sub_array_openfpm (TPtr base, const index* strides)
-  :base_(base), strides_(strides)
-  {}
 
   TPtr base_;
   const index* strides_;
@@ -213,32 +223,6 @@ public:
                               this->strides(),
                               this->base_);
   }
-
-  // see generate_array_view in base.hpp
-/*  template <int NDims>
-  __device__ __host__ typename array_view<NDims>::type
-  operator[](const boost::detail::multi_array::
-             index_gen<NumDims,NDims>& indices) {
-    typedef typename array_view<NDims>::type return_type;
-
-    return
-      super_type::generate_array_view(boost::type<return_type>(),
-                                      indices,
-                                      this->shape(),
-                                      this->strides(),
-                                      this->index_bases(),
-                                      origin());
-  }
-
-  template <class IndexList>
-  element& operator()(const IndexList& indices) {
-    boost::function_requires<
-      boost::CollectionConcept<IndexList> >();
-    return super_type::access_element(boost::type<element&>(),
-                                      indices,origin(),
-                                      this->shape(),this->strides(),
-                                      this->index_bases());
-  }*/
 
   __device__ __host__ iterator begin()
   {

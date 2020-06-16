@@ -62,7 +62,7 @@ compile
 depcomp
 missing
 src/mem_map
-**/performance/
+#**/performance/
 previous_measure
 previous_measureg
 previous_measurev

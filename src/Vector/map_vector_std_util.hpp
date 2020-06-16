@@ -28,7 +28,9 @@ struct push_back_op_neste
 	 */
 	static inline void push_back(std::vector<T> & base, const S & obj)
 	{
+#ifndef DISABLE_ALL_RTTI
 		std::cerr << __FILE__ << ":" << __LINE__ << " error cannot push " << demangle(typeid(S).name()) << " into a vector of " << demangle(typeid(T).name()) << std::endl;
+#endif
 	}
 };
 
@@ -75,7 +77,9 @@ struct push_back_std_op_neste
 	 */
 	static inline void push_back(std::vector<T> & base, const S & obj)
 	{
+#ifndef DISABLE_ALL_RTTI
 		std::cerr << __FILE__ << ":" << __LINE__ << " error cannot push " << demangle(typeid(S).name()) << " into a vector of " << demangle(typeid(T).name()) << std::endl;
+#endif
 	}
 };
 
@@ -96,7 +100,11 @@ template<bool is_t, bool is_s,typename T, typename S>
 struct push_back_op
 {
 	static inline void push_back(std::vector<T> & base, const S & obj)
-	{std::cerr << __FILE__ << ":" << __LINE__ << " error cannot push " << demangle(typeid(S).name()) << " into a vector of " << demangle(typeid(T).name()) << std::endl;}
+	{
+#ifndef DISABLE_ALL_RTTI
+		std::cerr << __FILE__ << ":" << __LINE__ << " error cannot push " << demangle(typeid(S).name()) << " into a vector of " << demangle(typeid(T).name()) << std::endl;
+#endif
+	}
 };
 
 template<typename T, typename S>
