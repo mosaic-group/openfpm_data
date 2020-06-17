@@ -241,51 +241,6 @@ install(FILES NN/VerletList/VerletList.hpp
         DESTINATION openfpm_data/include/NN/VerletList/)
 
 install(FILES Space/Ghost.hpp Space/Matrix.hpp Space/SpaceBox.hpp
-<<<<<<< HEAD
-	DESTINATION openfpm_data/include/Space/ )
-
-install(FILES Space/Shape/AdaptiveCylinderCone.hpp 
-	      Space/Shape/Box.hpp 
-	      Space/Shape/Box_unit_tests.hpp 
-	      Space/Shape/HyperCube.hpp 
-	      Space/Shape/HyperCube_unit_test.hpp 
-	      Space/Shape/Point.hpp 
-	      Space/Shape/Point_unit_test.hpp 
-	      Space/Shape/Point_operators_functions.hpp 
-	      Space/Shape/Point_operators.hpp  
-	      Space/Shape/Sphere.hpp
-	      DESTINATION openfpm_data/include/Space/Shape )
-
-
-
-install(FILES util/check_no_pointers.hpp 
-	      util/common.hpp util/convert.hpp 
-	      util/create_vmpl_sequence.hpp 
-	      util/ct_array.hpp 
-	      util/for_each_ref.hpp
-	      util/for_each_ref_host.hpp 
-	      util/mathutil.hpp util/object_creator.hpp 
-	      util/object_s_di.hpp 
-	      util/object_si_d.hpp 
-	      util/object_util.hpp 
-	      util/util_debug.hpp 
-	      util/variadic_to_vmpl.hpp 
-	      util/Pack_stat.hpp
-	      util/tokernel_transformation.hpp
-	      util/SimpleRNG.hpp
-	      util/math_util_complex.hpp
-	      util/mul_array_extents.hpp
-	      util/cuda/cuda_launch.hpp
-	      DESTINATION openfpm_data/include/util )
-
-install(FILES util/copy_compare/compare_fusion_vector.hpp 
-	      util/copy_compare/compare_general.hpp 
-	      util/copy_compare/copy_compare_aggregates.hpp 
-	      util/copy_compare/copy_fusion_vector.hpp 
-	      util/copy_compare/copy_general.hpp util/copy_compare/meta_compare.hpp 
-	      util/copy_compare/meta_copy.hpp
-	      DESTINATION openfpm_data/include/util/copy_compare/ )
-=======
         DESTINATION openfpm_data/include/Space/)
 
 install(FILES Space/Shape/AdaptiveCylinderCone.hpp
@@ -327,7 +282,6 @@ install(FILES util/copy_compare/compare_fusion_vector.hpp
         util/copy_compare/copy_general.hpp util/copy_compare/meta_compare.hpp
         util/copy_compare/meta_copy.hpp
         DESTINATION openfpm_data/include/util/copy_compare/)
->>>>>>> sparse_cl_broken
 
 install(FILES Packer_Unpacker/Pack_selector.hpp
         Packer_Unpacker/Packer_nested_tests.hpp

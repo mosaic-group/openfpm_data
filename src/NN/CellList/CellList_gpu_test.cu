@@ -1703,6 +1703,16 @@ void Test_cell_gpu_force_split(SpaceBox<dim,T> & box, size_t npart, const size_t
 		for (size_t j = 0 ; j < cpu_list.size() ; j++)
 		{check &= cpu_list.get(j) == gpu_list.get(j);}
 
+		if (check == false)
+		{
+			std::cout << "NPARTS: " << npart << std::endl;
+
+			for (size_t j = 0 ; j < cpu_list.size() ; j++)
+			{std::cout << cpu_list.get(j) << "  " << gpu_list.get(j) << std::endl;}
+
+			break;
+		}
+
 		++it;
 	}
 

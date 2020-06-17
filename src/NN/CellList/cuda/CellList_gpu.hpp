@@ -253,7 +253,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																		start,
 																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																		static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
-																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
+																		static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()));
 
 		// now we construct the cells
 
@@ -385,7 +385,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																		start,
 																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
 																		static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
-																		static_cast<ids_type *>(part_ids.template getDeviceBuffer<0>()));
+																		static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()));
 
 		// now we scan
 		starts.resize(cl_n.size());
@@ -414,6 +414,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
                                                                                                                                                                            off,
                                                                                                                                                                            part_ids.size(),
                                                                                                                                                                            part_ids.capacity(),
+																					   start,
                                                                                                                                                                            static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
                                                                                                                                                                            static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),
                                                                                                                                                                            static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
