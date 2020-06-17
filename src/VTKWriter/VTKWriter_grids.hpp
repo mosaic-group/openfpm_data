@@ -117,10 +117,36 @@ struct prop_out_g
 			// if there is the next element
 			while (it.isNext())
 			{
-				if (vg.get(k).dom.isInside(it.get().toPoint()) == true)
-					v_out += "1.0\n";
+				if (ft == file_type::ASCII)
+				{
+					if (vg.get(k).dom.isInside(it.get().toPoint()) == true)
+					{
+						float flag = 1.0;
+						flag += vg.get(k).g.getFlag(it.get()) * 2;
+						v_out += std::to_string(flag) + "\n";
+					}
+					else
+					{
+						float flag = 0.0;
+						flag += vg.get(k).g.getFlag(it.get()) * 2;
+						v_out += std::to_string(flag) + "\n";
+					}
+				}
 				else
-					v_out += "0.0\n";
+				{
+					if (vg.get(k).dom.isInside(it.get().toPoint()) == true)
+					{
+						float flag = 1.0;
+						flag = swap_endian_lt(flag);
+						v_out.append((const char *)&flag,sizeof(flag));
+					}
+					else
+					{
+						float flag = 0.0;
+						flag = swap_endian_lt(flag);
+						v_out.append((const char *)&flag,sizeof(flag));
+					}
+				}
 
 				// increment the iterator and counter
 				++it;
@@ -142,8 +168,8 @@ template <typename pair>
 class VTKWriter<pair,VECTOR_GRIDS>
 {
 	//! Vector of grids
-	openfpm::vector< ele_g<typename pair::first,typename pair::second> > vg;
 
+	openfpm::vector< ele_g<typename pair::first,typename pair::second> > vg;
 	/*! \brief Get the total number of points
 	 *
 	 * \return the total number
@@ -380,9 +406,9 @@ public:
 		prop_out_g< ele_g<typename pair::first,typename pair::second>, typename pair::second > pp(point_data, vg, prop_names, ft);
 
 		if (prp == -1)
-			boost::mpl::for_each< boost::mpl::range_c<int,0, pair::first::value_type::max_prop> >(pp);
+		{boost::mpl::for_each< boost::mpl::range_c<int,0, pair::first::value_type::max_prop> >(pp);}
 		else
-			boost::mpl::for_each< boost::mpl::range_c<int,prp, prp> >(pp);
+		{boost::mpl::for_each< boost::mpl::range_c<int,prp, prp> >(pp);}
 
 		// Add the last property
 		pp.lastProp();
