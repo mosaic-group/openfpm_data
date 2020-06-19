@@ -1194,7 +1194,7 @@ public:
  * the object A is called.This vector differ in this behaviour. the destructor is not called. This give the possibility
  * to have a set of fully retained objects. This class is just a simple wrapper for the normal openfpm::vector where
  * size and resize are redefined to change the behaviour. A destructive resize is callable with resize_base(), and the internal
- * size of the base vactor can be querried with size_base()
+ * size of the base vactor can be queried with size_base()
  *
  * \param T base type
  *
