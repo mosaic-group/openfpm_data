@@ -350,7 +350,7 @@ public:
 	template<unsigned int p>
 	void setBackgroundValue(const typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type & val)
 	{
-		meta_copy<typename std::remove_reference<decltype(val)>::type>::meta_copy_(val,background.template get<p>());
+		meta_copy<typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type>::meta_copy_(val,background.template get<p>());
 	}
 
 

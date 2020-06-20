@@ -803,10 +803,10 @@ struct ger
 		return point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>(a);
 	}
 
-	__device__ __host__ static point_expression<const T[dim]>
+	__device__ __host__ static point_expression<T[dim]>
 	getExprL(T (& a)[dim])
 	{
-		return point_expression<const T[dim]>(a);
+		return point_expression<T[dim]>(a);
 	}
 };
 
@@ -1793,6 +1793,24 @@ public:
 	 */
 	template<typename orig, typename exp1, typename exp2, unsigned int op>
 	__device__ __host__  point_expression<T[dim]> & operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
+	{
+		p_exp.init();
+
+		for (size_t i = 0; i < dim ; i++)
+		{d[i] = p_exp.value(i);}
+
+		return *this;
+	}
+
+	/*! \brief Operator= for point expression
+	 *
+	 * \param point expression
+	 *
+	 * \return a point expression
+	 *
+	 */
+	template<typename T_>
+	__device__ __host__  point_expression<T[dim]> & operator=(const point_expression<T_> & p_exp)
 	{
 		p_exp.init();
 
