@@ -36,6 +36,7 @@ target_include_directories (mem_map PUBLIC ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(mem_map ${Boost_LIBRARIES})
 target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
+target_link_libraries(mem_map -pthread)
 
 if (TEST_COVERAGE)
     target_link_libraries(mem_map -lgcov)
