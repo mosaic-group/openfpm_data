@@ -284,7 +284,7 @@ namespace openfpm
 #include "vector_pack_unpack.ipp"
 
 		/*! \brief Return the size of the vector
-		 *
+
 		 * \return the size
 		 *
 		 */
@@ -1828,7 +1828,7 @@ namespace openfpm
 		 * \
 		 *
 		 */
-		void init_shmem(handle_shmem shid)
+        void init_shmem(handle_shmem shid)
 		{
 			base.init_shmem(shid);
 		}
