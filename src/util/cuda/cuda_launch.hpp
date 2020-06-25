@@ -32,7 +32,8 @@ __global__ void lambda_launcher(lambda_funct_type lbf, Args_type ... args)
 			}\
 		}\
 	    CHECK_SE_CLASS1_PRE\
-		cuda_call<<<ite.wthr,ite.thr>>>(__VA_ARGS__); \
+	    if (ite.wthr.x != 0)\
+		{cuda_call<<<ite.wthr,ite.thr>>>(__VA_ARGS__);}\
 		cudaDeviceSynchronize(); \
 		{\
 			cudaError_t e = cudaGetLastError();\
@@ -57,7 +58,7 @@ __global__ void lambda_launcher(lambda_funct_type lbf, Args_type ... args)
 			}\
 		}\
 	    CHECK_SE_CLASS1_PRE\
-		cuda_call<<<wthr,thr>>>(__VA_ARGS__); \
+		cuda_call<<<wthr,thr>>>(__VA_ARGS__);\
 		cudaDeviceSynchronize(); \
 		{\
 			cudaError_t e = cudaGetLastError();\
@@ -97,7 +98,8 @@ __global__ void lambda_launcher(lambda_funct_type lbf, Args_type ... args)
 #else
 
 #define CUDA_LAUNCH(cuda_call,ite, ...) \
-		cuda_call<<<ite.wthr,ite.thr>>>(__VA_ARGS__);
+	    if (ite.wthr.x != 0)\
+		{cuda_call<<<ite.wthr,ite.thr>>>(__VA_ARGS__);}
 
 #define CUDA_LAUNCH_DIM3(cuda_call,wthr,thr, ...) \
 		cuda_call<<<wthr,thr>>>(__VA_ARGS__);

@@ -1625,10 +1625,10 @@ namespace openfpm
 		 *
 		 *
 		 */
-		ite_gpu<1> getGPUIteratorTo(size_t stop, size_t n_thr = 1024) const
+		ite_gpu<1> getGPUIteratorTo(long int stop, size_t n_thr = 1024) const
 		{
-			grid_key_dx<1> start(0);
-			grid_key_dx<1> stop_(stop);
+			grid_key_dx<1,long int> start(0);
+			grid_key_dx<1,long int> stop_(stop);
 
 			return base.getGPUIterator(start,stop_,n_thr);
 		}

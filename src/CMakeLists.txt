@@ -95,7 +95,7 @@ if (CUDA_FOUND)
     # "-rdc=true" is for Dynamic Parallelism (cooperative groups)
     #    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_50,code=sm_50 -g -lineinfo >) # For Maxwell
     target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_61,code=compute_61 -g -lineinfo >) # For Pascal
-    target_compile_options(isolation PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_75,code=sm_75 -g -lineinfo >)
+    target_compile_options(isolation PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_61,code=compute_61 -g -lineinfo >)
     if (TEST_COVERAGE)
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
     endif ()
