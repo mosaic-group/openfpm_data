@@ -7,11 +7,12 @@
 #include "Space/Shape/HyperCube.hpp"
 #include "timer.hpp"
 #include "grid_util_test.hpp"
+#include "grid_test_utils.hpp"
 
 #ifdef TEST_COVERAGE_MODE
-#define GS_SIZE 8
+constexpr int GS_SIZE = 8;
 #else
-#define GS_SIZE 128
+constexpr int GS_SIZE = 128;
 #endif
 
 template<unsigned int dim, typename g> void test_layout_gridNd(g & c3, size_t sz);
@@ -774,6 +775,21 @@ BOOST_AUTO_TEST_CASE(copy_encap_vector_fusion_test)
 	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[2][1],g.template get<2>(key1)[2][1]);
 	BOOST_REQUIRE_EQUAL(g.template get<2>(key)[2][2],g.template get<2>(key1)[2][2]);
 }
+
+
+BOOST_AUTO_TEST_CASE(grid_test_copy_to)
+{
+	size_t sz_dst[] = {5,5};
+	size_t sz_src[] = {3,2};
+	grid_cpu<2,aggregate<float,float[3],float[3][3]>> g_dst(sz_dst);
+	grid_cpu<2,aggregate<float,float[3],float[3][3]>> g_src(sz_src);
+
+	Box<2,size_t> box_dst({1,2},{2,3});
+	Box<2,size_t> box_src({1,0},{2,1});
+
+	copy_test(g_src,g_dst,box_src,box_dst);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

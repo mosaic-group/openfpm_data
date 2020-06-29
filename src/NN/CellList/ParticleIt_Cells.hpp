@@ -94,6 +94,12 @@ public:
 		stop = &cli.getStopId(s_cell);
 
 		selectValid();
+
+		while (*start >= g_m)
+		{
+			++start;
+			selectValid();
+		}
 	}
 
 	/*! \brief Increment to the next particle

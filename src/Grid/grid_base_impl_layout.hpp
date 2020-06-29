@@ -8,6 +8,12 @@
 #ifndef OPENFPM_DATA_SRC_GRID_GRID_BASE_IMPL_LAYOUT_HPP_
 #define OPENFPM_DATA_SRC_GRID_GRID_BASE_IMPL_LAYOUT_HPP_
 
+#include <boost/fusion/include/mpl.hpp>
+#include "memory_ly/memory_conf.hpp"
+#include <boost/fusion/include/for_each.hpp>
+#include "Grid/Encap.hpp"
+#include "Space/Shape/Box.hpp"
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -69,25 +75,90 @@ struct frswap
 };
 
 
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called
+ *
+ * \param T Type of memory allocator
+ * \param Mem_type Memory type
+ *
+ */
+
+template<typename s_m, typename Mem_type>
+struct frswap_nomode
+{
+	s_m & swap_src;
+	s_m & swap_dst;
+
+	//! constructor
+	frswap_nomode(s_m & swap_dst, s_m & swap_src)
+	:swap_src(swap_src),swap_dst(swap_dst)
+	{};
+
+	//! It call the allocate function for each member
+	template<typename T>
+	void operator()(T& t) const
+	{
+		boost::fusion::at_c<T::value>(swap_dst).template swap_nomode<Mem_type>(boost::fusion::at_c<T::value>(swap_src));
+	}
+};
+
 //! Case memory_traits_lin
 template<unsigned int p, typename layout, typename data_type, typename g1_type, typename key_type, unsigned int sel = 2*is_layout_mlin<layout>::value + is_layout_inte<layout>::value >
 struct mem_get
 {
+        /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get(data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(boost::fusion::at_c<p>(data_.mem_r.operator[](g1.LinId(v1)))) &
 	{
 		return boost::fusion::at_c<p>(data_.mem_r.operator[](g1.LinId(v1)));
 	}
 
+        /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get_lin(data_type & data_, const g1_type & g1, const size_t lin_id) -> decltype(boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id))) &
 	{
 		return boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id));
 	}
 
+        /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get_c(const data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(boost::fusion::at_c<p>(data_.mem_r.operator[](g1.LinId(v1)))) &
 	{
 		return boost::fusion::at_c<p>(data_.mem_r.operator[](g1.LinId(v1)));
 	}
 
+        /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get_lin_c(const data_type & data_, const g1_type & g1, const size_t lin_id) -> decltype(boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id))) &
 	{
 		return boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id));
@@ -98,21 +169,57 @@ struct mem_get
 template<unsigned int p, typename layout, typename data_type, typename g1_type, typename key_type>
 struct mem_get<p,layout,data_type,g1_type,key_type,1>
 {
+        /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get(data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(boost::fusion::at_c<p>(data_).mem_r.operator[](g1.LinId(v1)))
 	{
 		return boost::fusion::at_c<p>(data_).mem_r.operator[](g1.LinId(v1));
 	}
 
+        /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get_lin(data_type & data_, const g1_type & g1, size_t lin_id) -> decltype(boost::fusion::at_c<p>(data_).mem_r.operator[](lin_id))
 	{
 		return boost::fusion::at_c<p>(data_).mem_r.operator[](lin_id);
 	}
 
+	 /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a const reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get_c(const data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(boost::fusion::at_c<p>(data_).mem_r.operator[](g1.LinId(v1)))
 	{
 		return boost::fusion::at_c<p>(data_).mem_r.operator[](g1.LinId(v1));
 	}
 
+        /*! \brief Return a reference to the selected element
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a const reference to the object selected
+         *
+         */
 	__host__ __device__ static inline auto get_lin_c(const data_type & data_, const g1_type & g1, size_t lin_id) -> decltype(boost::fusion::at_c<p>(data_).mem_r.operator[](lin_id))
 	{
 		return boost::fusion::at_c<p>(data_).mem_r.operator[](lin_id);
@@ -236,6 +343,46 @@ struct mem_setext_prp
 	}
 };
 
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to set an external memory for each
+ *
+ *
+ */
+template<typename grid_type, typename Memory>
+struct mem_setarray
+{
+	grid_type & grid_new;
+
+	Memory * mem;
+
+	size_t sz;
+
+	bool np;
+
+	/*! \brief constructor
+	 *
+	 *
+	 *
+	 */
+	inline mem_setarray(grid_type & g_new, Memory * mem, size_t sz, bool np)
+	:grid_new(g_new),mem(mem),sz(sz),np(np)
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t)
+	{
+		grid_new.template setMemory<T::value>(mem[T::value]);
+
+		//! Allocate the memory and create the reppresentation
+		if (sz != 0) boost::fusion::at_c<T::value>(grid_new.get_internal_data_()).allocate(sz,np);
+	}
+};
+
 //! Case memory_traits_inte
 template<typename grid_type, typename S , typename layout, typename data_type>
 struct mem_setext<grid_type,S,layout,data_type,1>
@@ -262,6 +409,13 @@ struct mem_swap
 		// move the data
 		data_dst.swap(data_src);
 	}
+
+	template<typename Mem_type>
+	static inline void swap_nomode(data_type & data_dst, data_type & data_src)
+	{
+		// move the data
+		data_dst.swap_nomode(data_src);
+	}
 };
 
 //! Case memory_traits_inte
@@ -272,6 +426,15 @@ struct mem_swap<T,layout,data_type,grid_type,1>
 	{
 		// swap the data for each property
 		frswap<decltype(data_dst)> sw(data_dst,data_src);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(sw);
+	}
+
+	template<typename Mem_type>
+	static inline void swap_nomode(data_type & data_dst, data_type & data_src)
+	{
+		// swap the data for each property
+		frswap_nomode<decltype(data_dst),Mem_type> sw(data_dst,data_src);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(sw);
 	}
@@ -316,6 +479,15 @@ struct mem_setmemory
 		//! Allocate the memory and create the reppresentation
 		if (sz != 0) data_.allocate(sz,np);
 	}
+
+	static void setMemoryArray(data_type & data_, Mem_type * m, size_t sz, bool np)
+	{
+		//! Create and set the memory allocator
+		data_.setMemory(m[0]);
+
+		//! Allocate the memory and create the reppresentation
+		if (sz != 0) data_.allocate(sz,np);
+	}
 };
 
 template<typename data_type, typename Mem_type, typename layout>
@@ -328,6 +500,14 @@ struct mem_setmemory<data_type,Mem_type,layout,1>
 
 		//! Allocate the memory and create the reppresentation
 		if (sz != 0) boost::fusion::at_c<p>(data_).allocate(sz,np);
+	}
+
+	template<typename grid_type> static void setMemoryArray(grid_type & grid, Mem_type * m, size_t sz,bool np)
+	{
+		mem_setarray<grid_type,Mem_type> ma(grid,m,sz,np);
+
+		// Create an empty memory allocator for the actual structure
+		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,grid_type::value_type::max_prop>>(ma);
 	}
 };
 

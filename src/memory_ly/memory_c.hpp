@@ -143,34 +143,6 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 	    return true;
 	}
 
-	/*! \brief It absorb the allocated object from another memory_c
-	 *
-	 * \param mem_c Memory object
-	 *
-	 */
-/*	void move_copy(memory_c & mem_c)
-	{
-		// if mem_r is allocated delete it
-		if (mem_r != NULL)
-			delete(mem_r);
-
-		//if mem is already allocated, deallocate it
-		if (mem != NULL)
-			delete(mem);
-
-		// move the pointer
-		mem = mem_c.mem;
-
-		// Null the pointer to avoid double deallocation
-		mem_c.mem = NULL;
-
-		// move the pointer
-		mem_r = mem_c.mem_r;
-
-		// Null the pointer to avoid double deallocation
-		mem_c.mem_r = NULL;
-	}*/
-
 	//! constructor
 	memory_c():mem(NULL){}
 
@@ -204,43 +176,30 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 		mem_obj.mem_r.swap(mem_r);
 	}
 
-};
-
-
-/*!
- * \brief This class is a container for the memory interface like HeapMemory CudaMemory
- *
- * It store the object used to allocate memory and a representation of this memory as an array of objects T
- *
- * It is mainly used by memory_conf to create the correct memory layout
- *
- * \see memory_traits_inte memory_traits_lin
- *
- */
-template<typename T>
-class memory_c<T,MEMORY_C_REDUCED,memory>
-{
-	public:
-
-	//! define T
-	typedef memory_c<T> type;
-
-	//! define a reference to T
-	typedef T& reference;
-
-	//! define T
-	typedef T vtype;
-
-	//! object that represent the memory as an array of objects T
-	memory_array<T> mem_r;
-
-	//! constructor
-	memory_c() {}
-
-	//! destructor
-	~memory_c()
+	/*! \brief swap the memory
+	 *
+	 * swap the memory between objects
+	 *
+	 */
+	template<typename Mem_type>
+	__host__ void swap_nomode(memory_c & mem_obj)
 	{
+		// It would be better a dynamic_cast, unfortunately nvcc
+		// does not accept it. It seems that for some reason nvcc want to
+		// produce device code out of this method. While it is true
+		// that this method is called inside a generic __device__ __host__
+		// function, tagging this method only __host__ does not stop
+		// nvcc from the intention to produce device code.
+		// The workaround is to use static_cast. Another workaround (to test)
+		// could be create a duplicate for_each function tagged only __host__ ,
+		// but I have to intention to duplicate code
+
+		Mem_type * mem_tmp = static_cast<Mem_type*>(mem);
+		mem_tmp->swap(*static_cast<Mem_type*>(mem_obj.mem));
+
+		mem_obj.mem_r.swap(mem_r);
 	}
+
 };
 
 /*! \brief This class is a trick to indicate the compiler a specific
@@ -355,17 +314,6 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	/*! \brief In combination with generate_array is used to produce array at compile-time
 	 *
 	 * In combination with generate_array is used to produce at compile-time
-	 * arrays like {0,N-1,.........0} used in boost::multi_array for index ordering
-	 *
-	 */
-	template<size_t index,size_t N> struct ordering
-	{
-	    enum { value = (N-index) % N };
-	};
-
-	/*! \brief In combination with generate_array is used to produce array at compile-time
-	 *
-	 * In combination with generate_array is used to produce at compile-time
 	 * arrays like {true,true,.........true} used in boost::multi_array to
 	 * define ascending order
 	 *
@@ -391,22 +339,6 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 
 	//! define size_type
 	typedef typename openfpm::multi_array_ref_openfpm<base,size_p::value,Tv>::size_type size_type;
-
-//#ifdef __NVCC__
-
-	array_ord<size_p::value,typename boost::multi_array<T,size_p::value>::size_type> ord;
-
-	array_asc<size_p::value> asc;
-
-//#else
-
-    //! we generate the ordering buffer ord::data = {0,N-1 ...... 1 }
-//    typedef typename generate_array<typename boost::multi_array<T,size_p::value>::size_type,size_p::value, ordering>::result ord;
-
-    // we generate the ascending buffer
-//    typedef typename generate_array<bool,size_p::value, ascending>::result asc;
-
-//#endif
 
 	public:
 
@@ -536,6 +468,35 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 		mem_obj.mem = static_cast<D*>(mem_tmp);
 
 		mem_r.swap(mem_obj.mem_r);
+	}
+
+
+	/*! \brief swap the memory
+	 *
+	 * While the previous one swap the mem the swap_nomode call the swap member of the mem object
+	 *
+	 * \note calling the swap member require knowledge of the object type, we cannot work on abtsract objects
+	 *
+	 * swap the memory between objects
+	 *
+	 */
+	template<typename Mem_type>
+	__host__ void swap_nomode(memory_c & mem_obj)
+	{
+		// It would be better a dynamic_cast, unfortunately nvcc
+		// does not accept it. It seems that for some reason nvcc want to
+		// produce device code out of this method. While it is true
+		// that this function is called inside a generic __device__ __host__
+		// function, tagging this method only __host__ does not stop
+		// nvcc from the intention to produce device code.
+		// The workaround is to use static_cast. Another workaround (to test)
+		// could be create a duplicate for_each function tagged only __host__ ,
+		// but I have to intention to duplicate code
+
+		Mem_type * mem_tmp = static_cast<Mem_type*>(mem);
+		mem_tmp->swap(*static_cast<Mem_type*>(mem_obj.mem));
+
+		mem_obj.mem_r.swap(mem_r);
 	}
 };
 

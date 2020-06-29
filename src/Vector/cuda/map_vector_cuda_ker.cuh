@@ -35,6 +35,43 @@ __global__ void copy_two_vectors(vector_src_type v_dst, vector_dst_type v_src)
 
 #endif
 
+
+template<int prp>
+__device__ void fill_vector_error_array_overflow(const void * sptr,int key)
+{
+#ifdef CUDA_GPU
+
+	int * ptr = (int *)&global_cuda_error_array[0];
+
+	ptr[0] = 1;
+    ptr[1] = ((size_t)sptr) & 0xFFFFFFFF;
+    ptr[2] = (((size_t)sptr) & 0xFFFFFFFF00000000) >> 32;
+	ptr[3] = prp;
+	ptr[4] = 1;
+
+	for (int i = 0 ; i < 1 ; i++)
+	{ptr[i+5] = key;}
+
+#ifdef __NVCC__
+
+	ptr[5+1] = blockIdx.x;
+	ptr[6+1] = blockIdx.y;
+	ptr[7+1] = blockIdx.z;
+
+	ptr[8+1] = blockDim.x;
+	ptr[9+1] = blockDim.y;
+	ptr[10+1] = blockDim.z;
+
+	ptr[11+1] = threadIdx.x;
+	ptr[12+1] = threadIdx.y;
+	ptr[13+1] = threadIdx.z;
+
+#endif
+
+#endif
+}
+
+
 namespace openfpm
 {
 
@@ -59,6 +96,18 @@ namespace openfpm
 		//! 1-D static grid
 		grid_gpu_ker<1,T_,layout_base> base;
 
+		/*! \brief Check that the key is inside the grid
+		 *
+		 * \param key
+		 *
+		 * \return true if it is bound
+		 *
+		 */
+		__device__ __host__ inline bool check_bound(size_t v1) const
+		{
+			return v1 < size();
+		}
+
 	public:
 
 		//! it define that it is a vector
@@ -74,12 +123,15 @@ namespace openfpm
 		//! Type of the value the vector is storing
 		typedef T_ value_type;
 
+		//! Indicate this structure has a function to check the device pointer
+		typedef int yes_has_check_device_pointer;
+
 		/*! \brief Return the size of the vector
 		 *
 		 * \return the size
 		 *
 		 */
-		__device__ unsigned int size() const
+		__device__ __host__ unsigned int size() const
 		{
 			return v_size;
 		}
@@ -90,7 +142,7 @@ namespace openfpm
 		 *
 		 */
 
-		__device__ unsigned int capacity() const
+		__device__ __host__ unsigned int capacity() const
 		{
 			return base.size();
 		}
@@ -107,8 +159,12 @@ namespace openfpm
 		 *
 		 */
 		template <unsigned int p>
-		__device__ inline auto get(size_t id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+		__device__ __host__ inline auto get(unsigned int id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
+#ifdef SE_CLASS1
+			if (check_bound(id) == false)
+			{fill_vector_error_array_overflow<p>(this->getPointer<p>(),id);}
+#endif
 			grid_key_dx<1> key(id);
 
 			return base.template get<p>(key);
@@ -123,8 +179,13 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
-		inline __device__ auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>(id)))
+		__device__ __host__ inline auto get(unsigned int id) -> decltype(base.get_o(grid_key_dx<1>(id)))
 		{
+#ifdef SE_CLASS1
+			if (check_bound(id) == false)
+			{fill_vector_error_array_overflow<-1>(this->template getPointer<0>(),id);}
+#endif
+
 			grid_key_dx<1> key(id);
 
 			return base.get_o(key);
@@ -139,8 +200,13 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
-		inline __device__ auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
+		inline __device__ __host__ auto get(unsigned int id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
 		{
+#ifdef SE_CLASS1
+			if (check_bound(id) == false)
+			{fill_vector_error_array_overflow<-1>(this->getPointer<0>(),id);}
+#endif
+
 			grid_key_dx<1> key(id);
 
 			return base.get_o(key);
@@ -158,8 +224,13 @@ namespace openfpm
 		 *
 		 */
 
-		inline __device__ auto get_o(size_t id) const -> decltype(base.get_o(id))
+		inline __device__ __host__ auto get_o(unsigned int id) const -> decltype(base.get_o(id))
 		{
+#ifdef SE_CLASS1
+			if (check_bound(id) == false)
+			{fill_vector_error_array_overflow<-1>(this->template getPointer<0>(),id);}
+#endif
+
 			grid_key_dx<1> key(id);
 
 			return base.get_o(key);
@@ -177,8 +248,13 @@ namespace openfpm
 		 *
 		 */
 
-		inline __device__ auto get_o(size_t id) -> decltype(base.get_o(id))
+		inline __device__ __host__ auto get_o(unsigned int id) -> decltype(base.get_o(id))
 		{
+#ifdef SE_CLASS1
+			if (check_bound(id) == false)
+			{fill_vector_error_array_overflow<-1>(this->template getPointer<0>(),id);}
+#endif
+
 			grid_key_dx<1> key(id);
 
 			return base.get_o(key);
@@ -207,8 +283,13 @@ namespace openfpm
 		 *
 		 */
 		template <unsigned int p>
-		__device__ __host__ inline auto get(size_t id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+		__device__ __host__ inline auto get(unsigned int id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
+#ifdef SE_CLASS1
+			if (check_bound(id) == false)
+			{fill_vector_error_array_overflow<p>(this->template getPointer<p>(),id);}
+#endif
+
 			grid_key_dx<1> key(id);
 
 			return base.template get<p>(key);
@@ -227,6 +308,7 @@ namespace openfpm
 		}
 
 		vector_gpu_ker()
+		:v_size(0)
 		{}
 
 		vector_gpu_ker(int v_size, const grid_gpu_ker<1,T_,layout_base> & cpy)
@@ -242,6 +324,11 @@ namespace openfpm
 		 */
 		__device__ void set(int id, const container & obj)
 		{
+#ifdef SE_CLASS1
+			if (check_bound(id) == false)
+			{fill_vector_error_array_overflow<-1>(this->template getPointer<0>(),id);}
+#endif
+
 			//! copy the element
 			base.set(id,obj);
 		}
@@ -252,6 +339,17 @@ namespace openfpm
 		 *
 		 */
 		template<unsigned int p> __device__ __host__ void * getPointer()
+		{
+			//! copy the element
+			return base.template getPointer<p>();
+		}
+
+		/*! \brief Get the pointer for the property p
+		 *
+		 * \tparam property p
+		 *
+		 */
+		template<unsigned int p> __device__ __host__ const void * getPointer() const
 		{
 			//! copy the element
 			return base.template getPointer<p>();
@@ -272,8 +370,13 @@ namespace openfpm
 		 * \param v source vector
 		 *
 		 */
-		template <typename encap_S, unsigned int ...args> void set_o(size_t i, const encap_S & obj)
+		template <typename encap_S, unsigned int ...args> void set_o(unsigned int i, const encap_S & obj)
 		{
+#ifdef SE_CLASS1
+			if (check_bound(i) == false)
+			{fill_vector_error_array_overflow<-1>(this->template getPointer<0>(),i);}
+#endif
+
 			// write the object in the last element
 			object_s_di<encap_S,decltype(get(i)),OBJ_ENCAP,args...>(obj,get(i));
 		}
@@ -285,8 +388,13 @@ namespace openfpm
 		 * \param src source element
 		 *
 		 */
-		__device__ void set(size_t id, const vector_gpu_ker<T_,layout_base> & v, size_t src)
+		__device__ void set(unsigned int id, const vector_gpu_ker<T_,layout_base> & v, unsigned int src)
 		{
+#ifdef SE_CLASS1
+			if (check_bound(id) == false)
+			{fill_vector_error_array_overflow<-1>(this->template getPointer<0>(),id);}
+#endif
+
 			base.set(id,v.base,src);
 		}
 
@@ -297,9 +405,39 @@ namespace openfpm
 		 * \param src source element
 		 *
 		 */
-		template<unsigned int ... prp> __device__ void set(size_t id, const vector_gpu_ker<T_,layout_base> & v, size_t src)
+		template<unsigned int ... prp>
+		__device__ void set(unsigned int id, const vector_gpu_ker<T_,layout_base> & v, unsigned int src)
 		{
+#ifdef SE_CLASS1
+			if (check_bound(id) == false)
+			{fill_vector_error_array_overflow<-1>(this->template getPointer<0>(),id);}
+#endif
+
 			base.template set<prp...>(id,v.base,src);
+		}
+
+		/*! \brief Get an iterator for the GPU
+		 *
+		 *
+		 */
+		__host__ ite_gpu<1> getGPUIterator(size_t n_thr = 1024) const
+		{
+			grid_key_dx<1> start(0);
+			grid_key_dx<1> stop(size()-1);
+
+			return base.getGPUIterator(start,stop,n_thr);
+		}
+
+		/*! \brief Get an iterator for the GPU
+		 *
+		 *
+		 */
+		ite_gpu<1> getGPUIteratorTo(size_t stop, size_t n_thr = 1024) const
+		{
+			grid_key_dx<1> start(0);
+			grid_key_dx<1> stop_(stop);
+
+			return base.getGPUIterator(start,stop_,n_thr);
 		}
 
 		/*! \brief operator= this operator absorb the pointers, consider that this object wrap device pointers
@@ -315,14 +453,53 @@ namespace openfpm
 			return *this;
 		}
 
+		/*! \brief Return the base
+		 *
+		 * \return the base
+		 *
+		 */
+		__device__ grid_gpu_ker<1,T_,layout_base> & getBase()
+		{
+			return base;
+		}
+
 		void * internal_get_size_pointer()	{return &v_size;}
 
 		void print_size()
 		{
+#ifndef DISABLE_ALL_RTTI
 			std::cout << "the size of: " << demangle(typeid(self_type).name()) << " is " << sizeof(self_type) << std::endl;
 			std::cout << "    " << demangle(typeid(decltype(v_size)).name()) << ":" << sizeof(decltype(v_size)) << std::endl;
 			std::cout << "    " << demangle(typeid(decltype(base)).name()) << ":" << sizeof(decltype(base)) << std::endl;
+#endif
 		}
+
+#ifdef SE_CLASS1
+
+		/*! \brief Check if the device pointer is owned by this structure
+		 *
+		 * \return a structure pointer check with information about the match
+		 *
+		 */
+		pointer_check check_device_pointer(void * ptr)
+		{
+			pointer_check pc;
+			pc.match = false;
+
+			check_device_ptr<self_type> ptr_chk(ptr,*this);
+
+			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(ptr_chk);
+
+			if (ptr_chk.result == true)
+			{
+				pc.match = true;
+				pc.match_str += std::string("Property: ") + std::to_string(ptr_chk.prp) + "\n";
+			}
+
+			return pc;
+		}
+
+#endif
 	};
 
 }

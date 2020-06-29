@@ -14,7 +14,7 @@
 
 ////////////////// Ratio reduction ///////////////////////////////////////////////////////////////
 
-template<typename cnt_type, typename ids_type, unsigned int rt = sizeof(cnt_type)/sizeof(ids_type)>
+/*template<typename cnt_type, typename ids_type, unsigned int rt = sizeof(cnt_type)/sizeof(ids_type)>
 struct ratio_reduction
 {
 	static inline __device__ cnt_type reduction(cnt_type * rd)
@@ -293,11 +293,11 @@ struct ratio_extend<cnt_type,ids_type,4>
 	{
 		return make4<cnt_type4>::make();
 	}
-};
+};*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<typename cnt_type, typename ids_type>
+/*template<typename cnt_type, typename ids_type>
 __global__ void compress4(const cnt_type n_cell, const cnt_type *const count, ids_type *const compressed)
 {
     const int gid = 4*(threadIdx.x + blockDim.x * blockIdx.x);
@@ -462,14 +462,14 @@ __global__ void gexscan(int n,
 #pragma unroll
     for(int i = 0; i < extend::size::value; i++)
     {vout[i] = val[i];}
-}
+}*/
 
 /*! \brief Scan is a class because it use internally temporary buffers that are heavy to reconstruct
  *
  *
  *
  */
-template<typename cnt_type, typename ids_type>
+/*template<typename cnt_type, typename ids_type>
 class scan
 {
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> red;
@@ -516,7 +516,7 @@ public:
 		cl_n_scan.resize(raw_size);
 	}
 
-};
+};*/
 
 #else
 

@@ -8,6 +8,7 @@
 #ifndef CELLLIST_HPP_
 #define CELLLIST_HPP_
 
+#include "CellList_def.hpp"
 #include "Vector/map_vector.hpp"
 #include "CellDecomposer.hpp"
 #include "Space/SpaceBox.hpp"
@@ -270,6 +271,7 @@ void NNcalc_rad(T r_cut, openfpm::vector<long int> & NNcell, const Box<dim,T> & 
 		cell_zero.setHigh(i,(n_cell_mid[i]+1)*spacing.get(i));
 	}
 
+	NNcell.clear();
 	while (gkdi.isNext())
 	{
 		auto key = gkdi.get();
@@ -958,7 +960,8 @@ public:
 	 * \return An iterator across the neighhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL,impl> getNNIterator(size_t cell)
+	template<unsigned int impl=NO_CHECK>
+	__attribute__((always_inline)) inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL,impl> getNNIterator(size_t cell)
 	{
 		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL,impl> cln(cell,NNc_full,*this);
 		return cln;
@@ -975,7 +978,8 @@ public:
 	 * \return An iterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,impl> getNNIteratorRadius(size_t cell, T r_cut)
+	template<unsigned int impl=NO_CHECK>
+	__attribute__((always_inline)) inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,impl> getNNIteratorRadius(size_t cell, T r_cut)
 	{
 		openfpm::vector<long int> & NNc = rcache[r_cut];
 
@@ -1010,7 +1014,7 @@ public:
 	 *
 	 */
 	template<unsigned int impl>
-	inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)SYM,impl>
+	__attribute__((always_inline)) inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)SYM,impl>
 	getNNIteratorSym(size_t cell, size_t p, const vector_pos_type & v)
 	{
 #ifdef SE_CLASS1
@@ -1045,7 +1049,7 @@ public:
 	 *
 	 */
 	template<unsigned int impl, typename vector_pos_type2>
-	inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,(unsigned int)SYM,impl>
+	__attribute__((always_inline)) inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,(unsigned int)SYM,impl>
 	getNNIteratorSymMP(size_t cell, size_t p, const vector_pos_type2 & v_p1, const vector_pos_type2 & v_p2)
 	{
 #ifdef SE_CLASS1
@@ -1098,6 +1102,14 @@ public:
 		Mem_type::clear();
 	}
 
+	/*! \brief Litterary destroy the memory of the cell list, including the retained one
+	 *
+	 */
+	void destroy()
+	{
+		Mem_type::destroy();
+	}
+
 	/*! \brief Return the starting point of the cell p
 	 *
 	 * \param cell_id cell id
@@ -1105,7 +1117,7 @@ public:
 	 * \return the index
 	 *
 	 */
-	inline const typename Mem_type::local_index_type & getStartId(typename Mem_type::local_index_type cell_id) const
+	__attribute__((always_inline)) inline const typename Mem_type::local_index_type & getStartId(typename Mem_type::local_index_type cell_id) const
 	{
 		return Mem_type::getStartId(cell_id);
 	}
@@ -1117,7 +1129,7 @@ public:
 	 * \return the stop index
 	 *
 	 */
-	inline const typename Mem_type::local_index_type & getStopId(typename Mem_type::local_index_type cell_id) const
+	__attribute__((always_inline)) inline const typename Mem_type::local_index_type & getStopId(typename Mem_type::local_index_type cell_id) const
 	{
 		return Mem_type::getStopId(cell_id);
 	}
@@ -1129,7 +1141,7 @@ public:
 	 * \return the neighborhood id
 	 *
 	 */
-	inline const typename Mem_type::local_index_type & get_lin(const typename Mem_type::local_index_type * part_id) const
+	__attribute__((always_inline)) inline const typename Mem_type::local_index_type & get_lin(const typename Mem_type::local_index_type * part_id) const
 	{
 		return Mem_type::get_lin(part_id);
 	}
@@ -1210,6 +1222,9 @@ public:
 	}
 
 /////////////////////////////////////
+
+	void re_setBoxNN()
+	{}
 
 /////////////////////////////////////
 

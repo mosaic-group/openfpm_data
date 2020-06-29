@@ -96,8 +96,8 @@ struct add_prp_impl<OBJECT_ADD,vect_dst>
  * \param T base type
  *
  */
-template<typename T>
-class vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,grow_policy_double,STD_VECTOR>
+template<typename T, typename grow_p>
+class vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,grow_p,STD_VECTOR>
 {
 	// Memory layout
 	typedef typename memory_traits_lin<T>::type layout;
@@ -182,6 +182,17 @@ public:
 		base.clear();
 	}
 
+	/*! \brief Fit the memory to the size of the vector
+	 *
+	 */
+	inline void shrink_to_fit()
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		base.shrink_to_fit();
+	}
+
 	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
 	 *
 	 * \param v element to add
@@ -197,6 +208,12 @@ public:
 		check_valid(this,8);
 		void * ptr_old = &base[0];
 #endif
+
+		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
+		{
+			// we reserve just one space more to avoid the capacity to increase by two
+			base.reserve(base.size()+1);
+		}
 
 		base.push_back(v);
 
@@ -226,6 +243,12 @@ public:
 		check_valid(this,8);
 		void * ptr_old = &base[0];
 #endif
+
+		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
+		{
+			// we reserve just one space more to avoid the capacity to increase by two
+			base.reserve(base.size()+1);
+		}
 
 		base.emplace_back(v);
 
@@ -276,6 +299,12 @@ public:
 		void * ptr_old = &base[0];
 #endif
 
+		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
+		{
+			// we reserve just one space more to avoid the capacity to increase by two
+			base.reserve(base.size() + eles.size());
+		}
+
 		size_t start = base.size();
 		base.resize(base.size() + eles.size());
 
@@ -293,7 +322,7 @@ public:
 #endif
 	}
 
-	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
+	/*! \brief It insert a new object on the vector, eventually it reallocate the object
 	 *
 	 * \param v element to add
 	 *
@@ -337,6 +366,12 @@ public:
 		check_valid(this,8);
 		void * ptr_old = &base[0];
 #endif
+
+		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
+		{
+			// we reserve just one space more to avoid the capacity to increase by two
+			base.reserve(base.size() + 1);
+		}
 
 		base.push_back(v);
 
@@ -465,6 +500,51 @@ public:
 		vector_overflow(key);
 #endif
 		base.erase(base.begin() + key);
+	}
+
+	/*! \brief Remove several entries from the vector
+	 *
+	 * \warning the keys in the vector MUST be sorted
+	 *
+	 * \param keys objects id to remove
+	 * \param start key starting point
+	 *
+	 */
+	void remove(openfpm::vector<size_t> & keys, size_t start = 0)
+	{
+#ifdef SE_CLASS2
+		check_valid(this,8);
+#endif
+		// Nothing to remove return
+		if (keys.size() <= start )
+			return;
+
+		size_t a_key = start;
+		size_t d_k = keys.get(a_key);
+		size_t s_k = keys.get(a_key) + 1;
+
+		// keys
+		while (s_k < size())
+		{
+			// s_k should always point to a key that is not going to be deleted
+			while (a_key+1 < keys.size() && s_k == keys.get(a_key+1))
+			{
+				a_key++;
+				s_k = keys.get(a_key) + 1;
+			}
+
+			// In case of overflow
+			if (s_k >= size())
+				break;
+
+			base[d_k] = base[s_k];
+			d_k++;
+			s_k++;
+		}
+
+		// re-calculate the vector size
+
+		base.resize(base.size() - (keys.size() - start));
 	}
 
 	/*! \brief Return an std compatible iterator to the first element
@@ -1114,7 +1194,7 @@ public:
  * the object A is called.This vector differ in this behaviour. the destructor is not called. This give the possibility
  * to have a set of fully retained objects. This class is just a simple wrapper for the normal openfpm::vector where
  * size and resize are redefined to change the behaviour. A destructive resize is callable with resize_base(), and the internal
- * size of the base vactor can be querried with size_base()
+ * size of the base vactor can be queried with size_base()
  *
  * \param T base type
  *

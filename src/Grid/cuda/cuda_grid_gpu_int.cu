@@ -27,8 +27,6 @@ __global__ void test_launch(vector_pos_type set_points, vector_prop_type prop, B
 	v[0] = prop.template get<1>(p)[0];
 	v[1] = prop.template get<1>(p)[1];
 	v[2] = prop.template get<1>(p)[2];
-
-	printf("Point p %f %f %f     scalar: %f  vector: %f %f %f \n",pos[0],pos[1],pos[2],scalar,v[0],v[1],v[2]);
 }
 
 template<typename grid_type>

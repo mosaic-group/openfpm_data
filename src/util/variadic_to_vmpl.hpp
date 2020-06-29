@@ -196,22 +196,6 @@ struct v_transform_two
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//! implementation of to_boost_vmpl
-template <int a, int... id>
-struct to_boost_vmpl_impl
-{
-	//! push in front the next number
-	typedef typename boost::mpl::push_front<typename to_boost_vmpl_impl<id...>::type,boost::mpl::int_<a>>::type type;
-};
-
-//! terminator for to_boost_mpl with last parameter
-template <int a>
-struct to_boost_vmpl_impl<a>
-{
-	//! create a boost mpl vector with the last number
-	typedef boost::mpl::vector<boost::mpl::int_<a>> type;
-};
-
 /*!
 *
 * It convert a variadic template into a boost::mpl::vector
@@ -226,16 +210,8 @@ struct to_boost_vmpl_impl<a>
 template <int... id>
 struct to_boost_vmpl
 {
-	//! constrict an mpl vector from the variadic
-	typedef typename to_boost_vmpl_impl<id...>::type type;
-};
-
-//! terminator for to_boost_mpl with last parameter
-template <>
-struct to_boost_vmpl<>
-{
-	//! terminator
-	typedef typename boost::mpl::vector<>::type type;
+	//! construct an mpl vector from the variadic
+	typedef boost::mpl::vector<boost::mpl::int_<id>...> type;
 };
 
 ///////////////////// Meta-code to restrieve first and last of variadic template

@@ -107,6 +107,37 @@ struct call_pack_enc_functor
 	}
 };
 
+//A functor for call_aggregatePack
+template<typename encap, typename Mem>
+struct call_pack_enc_functor_chunking
+{
+	//! Memory that pack/serialize the object
+	ExtPreAlloc<Mem> & mem;
+
+	//! Object to serialize
+	const encap & obj;
+
+	//! Element id
+	size_t sub_id;
+
+	//! serialization status
+	Pack_stat & sts;
+
+	call_pack_enc_functor_chunking(ExtPreAlloc<Mem> & mem,const encap & obj, size_t sub_id, Pack_stat & sts)
+	:mem(mem), obj(obj),sub_id(sub_id),sts(sts)
+	{
+	}
+
+	//! It calls the packer for each property
+	template<typename T>
+	inline void operator()(T& t)
+	{
+		typedef typename boost::mpl::at<typename encap::type,T>::type::value_type obj_type;
+
+		Packer<obj_type,Mem>::pack(mem,obj.template get<T::value>()[sub_id],sts);
+	}
+};
+
 //Calls a packer in nested way
 template<typename encap, typename Mem, int ... prp>
 struct call_encapPack
@@ -123,6 +154,21 @@ struct call_encapPack
 	}
 };
 
+//Calls a packer in nested way
+template<typename encap, typename Mem, int ... prp>
+struct call_encapPackChunking
+{
+	static inline void call_pack(const encap & obj, size_t sub_id, ExtPreAlloc<Mem> & mem, Pack_stat & sts)
+	{
+		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
+		typedef typename prp_all_zero<typename encap::T_type,sizeof...(prp) == 0,prp...>::type b_prp;
+
+		call_pack_enc_functor_chunking<encap,Mem> functor(mem,obj,sub_id,sts);
+
+		//Apply functor for each property
+		boost::mpl::for_each_ref<b_prp>(functor);
+	}
+};
 
 //A functor for call_aggregateUnpack
 template<typename encap, typename Mem, int ... prp>
@@ -147,6 +193,31 @@ struct call_unpack_encap_functor
 	}
 };
 
+//A functor for call_aggregateUnpack
+template<typename encap, typename Mem, int ... prp>
+struct call_unpack_encap_functor_chunking
+{
+	ExtPreAlloc<Mem> & mem;
+	const encap & obj;
+	Unpack_stat & ps;
+
+	size_t sub_id;
+
+	call_unpack_encap_functor_chunking(ExtPreAlloc<Mem> & mem, const encap & obj, size_t sub_id, Unpack_stat & ps)
+	:mem(mem), obj(obj), ps(ps),sub_id(sub_id)
+	{
+	}
+
+	//! It calls the unpacker for each property
+	template<typename T>
+	inline void operator()(T& t)
+	{
+		typedef typename boost::mpl::at<typename encap::type,T>::type::value_type obj_type;
+
+		Unpacker<obj_type,Mem>::unpack(mem,obj.template get<T::value>()[sub_id],ps);
+	}
+};
+
 //Calls an unpacker in nested way
 template<typename encap, typename Mem, int ... prp>
 struct call_encapUnpack
@@ -156,7 +227,23 @@ struct call_encapUnpack
 		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
 		typedef typename prp_all_zero<encap,sizeof...(prp) == 0,prp...>::type b_prp;
 
-		call_unpack_encap_functor<encap,Mem,prp ... > functor(mem,obj,ps);
+		call_unpack_encap_functor_chunking<encap,Mem,prp ... > functor(mem,obj,ps);
+
+		//Apply functor for each property
+		boost::mpl::for_each_ref<b_prp>(functor);
+	}
+};
+
+//Calls an unpacker in nested way
+template<typename encap, typename Mem, int ... prp>
+struct call_encapUnpackChunking
+{
+	static inline void call_unpack(encap & obj, size_t sub_id, ExtPreAlloc<Mem> & mem, Unpack_stat & ps)
+	{
+		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
+		typedef typename prp_all_zero<encap,sizeof...(prp) == 0,prp...>::type b_prp;
+
+		call_unpack_encap_functor_chunking<encap,Mem,prp ... > functor(mem,obj,sub_id,ps);
 
 		//Apply functor for each property
 		boost::mpl::for_each_ref<b_prp>(functor);
@@ -216,6 +303,32 @@ struct call_packRequest_agg_functor
 	}
 };
 
+template<typename obj_type, typename Mem>
+struct call_packRequest_agg_functor_cnk
+{
+	//! object to pack
+	const obj_type & obj;
+
+	//! offset of the packed memory
+	size_t & req;
+
+	//! element id
+	size_t sub_id;
+
+	call_packRequest_agg_functor_cnk(const obj_type & obj, size_t sub_id ,size_t & req)
+	:obj(obj),req(req),sub_id(sub_id)
+	{}
+
+	//! It calls the pack request for each property
+	template<typename T>
+	inline void operator()(T& t)
+	{
+		typedef decltype(obj.template get<T::value>()[sub_id]) obj_t;
+
+		//for (size_t i = 0; i < obj_type::max_prop ; i++)
+		Packer<obj_t,Mem>::packRequest(obj.template get<T::value>()[sub_id],req);
+	}
+};
 
 //Calls a pack request in nested way
 template<typename obj_type, typename Mem, int ... prp>
@@ -247,6 +360,28 @@ struct pack_pack_op
 		typedef typename boost::mpl::at<typename obj_type::type,boost::mpl::int_<p>>::type obj_t;
 
 		Packer<obj_t,Mem>::pack(mem,obj.template get<p>(),sts);
+	}
+};
+
+//Calls a pack request in nested way
+template<typename obj_type, typename Mem, int ... prp>
+struct call_aggregatePackRequestChunking
+{
+	/*! \brief Pack the object
+	 *
+	 * \param obj object to pack
+	 * \param req offset of the packed memory
+	 *
+	 */
+	static inline void call_packRequest(const obj_type & obj, size_t sub_id, size_t & req)
+	{
+		//Property sequence into boost::mpl::range_c or boost::mpl::vector, depending on sizeof...(prp)
+		typedef typename prp_all_zero<obj_type,sizeof...(prp) == 0,prp...>::type b_prp;
+
+		call_packRequest_agg_functor_cnk<obj_type,Mem> functor(obj,sub_id,req);
+
+		//Apply functor for each property
+		boost::mpl::for_each_ref<b_prp>(functor);
 	}
 };
 

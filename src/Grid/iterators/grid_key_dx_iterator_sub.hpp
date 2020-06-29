@@ -17,7 +17,7 @@
  * \tparam dim dimensionality
  *
  */
-template <unsigned int dim>
+template <unsigned int dim, typename linearizer>
 class print_warning_on_adjustment
 {
 public:
@@ -52,7 +52,7 @@ public:
 	 * \param grid_base grid information
 	 *
 	 */
-	inline static void pw4(size_t i, const grid_key_dx<dim> & gk_stop, const grid_sm<dim,void> & grid_base) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop index bigger than cell domain x[" << i << "]=" << gk_stop.get(i) << " > " << grid_base.size(i) << "\n";}
+	inline static void pw4(size_t i, const grid_key_dx<dim> & gk_stop, const linearizer & grid_base) {std::cerr << "Warning: " << __FILE__ << ":" << __LINE__ << " stop index bigger than cell domain x[" << i << "]=" << gk_stop.get(i) << " > " << grid_base.size(i) << "\n";}
 
 	/*! \brief print warning type5
 	 *
@@ -68,7 +68,7 @@ public:
  * \tparam gb type of grid
  *
  */
-template <unsigned int dim>
+template <unsigned int dim, typename linearizer>
 class do_not_print_warning_on_adjustment
 {
 public:
@@ -102,7 +102,7 @@ public:
 	 * \param grid_base grid information
 	 *
 	 */
-	inline static void pw4(size_t i, const grid_key_dx<dim> & gk_stop, const grid_sm<dim,void> & grid_base) {}
+	inline static void pw4(size_t i, const grid_key_dx<dim> & gk_stop, const linearizer & grid_base) {}
 
 	/*! \brief print warning type5
 	 *
@@ -111,14 +111,14 @@ public:
 	inline static void pw5() {}
 };
 
-template<unsigned int dim, typename stl_type>
+template<unsigned int dim, typename stl_type, typename linearizer>
 struct post_increment_sub_impl
 {
 	static inline void inc(grid_key_dx<dim> & gk,
 										grid_key_dx<dim> & gk_start,
 										grid_key_dx<dim> & gk_stop,
 										stl_type & stl_code,
-										grid_sm<dim,void> & grid_base)
+										linearizer & grid_base)
 	{
 		long int i = 0;
 		for ( ; i < dim-1 ; i++)
@@ -158,15 +158,15 @@ struct post_increment_sub_impl
  *
  */
 
-template<unsigned int dim, typename stencil, typename warn>
-class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim,stencil>
+template<unsigned int dim, typename stencil, typename linearizer, typename warn>
+class grid_key_dx_iterator_sub : public grid_key_dx_iterator<dim,stencil,linearizer>
 {
 #ifdef SE_CLASS1
 	bool initialized = false;
 #endif
 
 	//! grid base where we are iterating
-	grid_sm<dim,void> grid_base;
+	linearizer grid_base;
 
 	//! start point
 	grid_key_dx<dim> gk_start;
@@ -286,7 +286,7 @@ public:
 	 * \param g_s_it grid_key_dx_iterator_sub
 	 *
 	 */
-	grid_key_dx_iterator_sub(const grid_key_dx_iterator_sub<dim,stencil> & g_s_it)
+	grid_key_dx_iterator_sub(const grid_key_dx_iterator_sub<dim,stencil,linearizer> & g_s_it)
 	:grid_key_dx_iterator<dim,stencil>(g_s_it),grid_base(g_s_it.grid_base),gk_start(g_s_it.gk_start), gk_stop(g_s_it.gk_stop)
 	{
 #ifdef SE_CLASS1
@@ -319,8 +319,10 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
-	: grid_key_dx_iterator<dim,stencil>(g),grid_base(g),gk_start(start), gk_stop(stop)
+	grid_key_dx_iterator_sub(const linearizer & g,
+												  const grid_key_dx<dim> & start,
+												  const grid_key_dx<dim> & stop)
+	: grid_key_dx_iterator<dim,stencil,linearizer>(g),grid_base(g),gk_start(start), gk_stop(stop)
 	{
 #ifdef SE_CLASS1
 		//! If we are on debug check that the stop grid_key id bigger than the start
@@ -353,12 +355,11 @@ public:
 	 * \param stencil_pnt stencil points
 	 *
 	 */
-	template<typename T>
-	grid_key_dx_iterator_sub(const grid_sm<dim,T> & g,
+	grid_key_dx_iterator_sub(const linearizer & g,
 			                 const grid_key_dx<dim> & start,
 							 const grid_key_dx<dim> & stop,
 							 const grid_key_dx<dim> (& stencil_pnt)[stencil::nsp])
-	:grid_key_dx_iterator<dim,stencil>(g,stencil_pnt),grid_base(g),gk_start(start), gk_stop(stop)
+	:grid_key_dx_iterator<dim,stencil,linearizer>(g,stencil_pnt),grid_base(g),gk_start(start), gk_stop(stop)
 	{
 #ifdef SE_CLASS1
 		//! If we are on debug check that the stop grid_key id bigger than the start
@@ -403,7 +404,7 @@ public:
 	 * \param m Margin of the domain
 	 *
 	 */
-	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const size_t m)
+	grid_key_dx_iterator_sub(const linearizer & g, const size_t m)
 	:grid_key_dx_iterator<dim>(g),grid_base(g)
 	{
 		// Initialize the start and stop point
@@ -421,14 +422,15 @@ public:
 	 *
 	 * It construct an iterator over an hyper-cube defined by start and stop,
 	 *
-	 * \tparam T type of object that the grid store
 	 *
 	 * \param g Grid on which iterate
 	 * \param start starting point
 	 * \param stop end point
 	 *
 	 */
-	template<typename T> grid_key_dx_iterator_sub(const grid_sm<dim,T> & g, const size_t (& start)[dim], const size_t (& stop)[dim])
+	grid_key_dx_iterator_sub(const linearizer & g,
+												  const size_t (& start)[dim],
+												  const size_t (& stop)[dim])
 	:grid_key_dx_iterator<dim>(g),grid_base(g),gk_start(start), gk_stop(stop)
 	{
 #ifdef SE_CLASS1
@@ -454,7 +456,7 @@ public:
 	 * \return the next grid_key
 	 *
 	 */
-	grid_key_dx_iterator_sub<dim,stencil,warn> & operator++()
+	grid_key_dx_iterator_sub<dim,stencil,linearizer,warn> & operator++()
 	{
 #ifdef SE_CLASS1
 		if (initialized == false)
@@ -467,6 +469,8 @@ public:
 		this->gk.set_d(0,id+1);
 
 		this->stl_code.increment();
+
+		//! check the overflow of all the index with exception of the last dimensionality
 
 		post_increment();
 
@@ -482,7 +486,7 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (initialized == false)
-		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
+		{std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using unitialized iterator" << "\n";}
 #endif
 
 		for (size_t i = 0 ; i < nsteps ; i++)
@@ -504,7 +508,7 @@ public:
 	{
 #ifdef SE_CLASS1
 		if (initialized == false)
-		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
+		{std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " using unitialized iterator" << "\n";}
 #endif
 
 		if (this->gk.get(dim-1) <= gk_stop.get(dim-1))
@@ -530,7 +534,7 @@ public:
 		{std::cerr << "Error: " << __FILE__ << __LINE__ << " using unitialized iterator" << "\n";}
 #endif
 
-		return grid_key_dx_iterator<dim,stencil>::get();
+		return grid_key_dx_iterator<dim,stencil,linearizer>::get();
 	}
 
 	/*! \brief Reinitialize the iterator
@@ -541,7 +545,6 @@ public:
 	 * \param g_s_it grid_key_dx_iterator_sub
 	 *
 	 */
-
 	inline void reinitialize(const grid_key_dx_iterator_sub<dim> & g_s_it)
 	{
 		// Reinitialize the iterator
@@ -597,7 +600,7 @@ public:
 	 *
 	 *
 	 */
-	inline const grid_sm<dim,void> & getGridInfo() const
+	inline const linearizer & getGridInfo() const
 	{
 		return grid_base;
 	}
@@ -641,6 +644,19 @@ public:
 	inline void private_adjust(size_t tot_add)
 	{
 		this->stl_code.private_adjust(tot_add);
+	}
+
+	/* \brief Set the iterator in a way that isNext return false
+	 *
+	 */
+	void invalidate()
+	{
+		this->gk.set_d(dim-1,1);
+		this->gk_stop.set_d(dim-1,0);
+
+#ifdef SE_CLASS1
+		this->initialized = true;
+#endif
 	}
 };
 

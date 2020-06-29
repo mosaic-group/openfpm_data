@@ -59,6 +59,52 @@ struct object_si_d_e
     }
 };
 
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy the selected properties
+ *
+ * \tparam v_src source object
+ * \tparam d_src destination object
+ *
+ */
+
+template<typename v_src,typename v_dst, int... prp>
+struct object_si_d_e_cnk
+{
+	// Convert the packed properties into an MPL vector
+	typedef typename to_boost_vmpl<prp...>::type v_prp;
+
+	// Source object
+	const v_src & src;
+
+	// Destination object
+	v_dst & dst;
+
+	// Element id
+	size_t sub_id;
+
+	/*! \brief Constructor
+	 *
+	 * \param src source object
+	 * \param dst destination object
+	 *
+	 */
+	object_si_d_e_cnk(const v_src & src, size_t sub_id, v_dst & dst)
+	:src(src),dst(dst),sub_id(sub_id)
+	{
+	};
+
+	//! It call the functor for each member
+    template<typename T>
+    void operator()(T& t)
+    {
+    	typedef typename boost::mpl::at<typename v_dst::type,typename boost::mpl::int_<T::value>>::type ctype;
+
+    	meta_copy<ctype>::meta_copy_(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>()[sub_id],dst.template get<T::value>());
+    }
+};
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -106,6 +152,7 @@ struct object_si_d_f
 
 #define OBJ_ENCAP 1
 #define OBJ_NORMAL 2
+#define OBJ_ENCAP_CHUNKING 3
 
 /*! \brief It copy the properties from one object to another
  *
@@ -175,6 +222,37 @@ struct object_si_d<v_src,v_dst,OBJ_ENCAP,prp...>
 	__device__ __host__ inline object_si_d(const v_src & vs, v_dst & vd)
 	{
 		object_si_d_e<v_src,v_dst,prp...> obj(vs,vd);
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_dst::max_prop> >(obj);
+	}
+};
+
+
+/*! \brief It copy the properties from one object to another
+ *
+ * Given a set of properties for the source object (0,1,3) it copy that properties
+ * to the destination object properties (0,1,2)
+ *
+ * For object we mean an object that follow the OpenFPM data structure format, see openFPM_data wiki
+ * for more information
+ *
+ * ## Create a compile-time object and copy *from* the selected properties
+ * \snippet util_test.hpp object copy example
+ * ## Create a compile-time Encap object and copy *from* the selected properties
+ * \snippet util_test.hpp object copy encap example
+ *
+ */
+template<typename v_src, typename v_dst, int... prp>
+struct object_si_d<v_src,v_dst,OBJ_ENCAP_CHUNKING,prp...>
+{
+	inline object_si_d(const v_src && vs, size_t sub_id, v_dst && vd)
+	{
+		object_si_d_e_cnk<v_src,v_dst,prp...> obj(vs,sub_id,vd);
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_dst::max_prop> >(obj);
+	}
+
+	inline object_si_d(const v_src & vs, size_t sub_id, v_dst & vd)
+	{
+		object_si_d_e_cnk<v_src,v_dst,prp...> obj(vs,sub_id,vd);
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,v_dst::max_prop> >(obj);
 	}
 };

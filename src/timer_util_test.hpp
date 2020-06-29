@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE( timer_use )
 	sleep(1);
 
 	// get the elapsed real time and cpu time without stop
-	BOOST_REQUIRE_CLOSE(t.getwct(),1.0,10.0);
+	BOOST_REQUIRE_CLOSE(t.getwct(),1.0,20.0);
 	BOOST_REQUIRE_SMALL(t.getcputime(),10.0);
 
 	sleep(1);
@@ -41,12 +41,12 @@ BOOST_AUTO_TEST_CASE( timer_use )
 	t.getwct();
 
 	// get the elapsed real time and cpu time without stop
-	BOOST_REQUIRE_CLOSE(t.getwct(),2.0,10.0);
+	BOOST_REQUIRE_CLOSE(t.getwct(),2.0,20.0);
 	BOOST_REQUIRE_SMALL(t.getcputime(),10.0);
 
 	t.reset();
 
-	BOOST_REQUIRE_CLOSE(t.getwct(),0.0,10.0);
+	BOOST_REQUIRE_CLOSE(t.getwct(),0.0,20.0);
 	BOOST_REQUIRE_SMALL(t.getcputime(),10.0);
 
 	//! [timer usage and behavior]
