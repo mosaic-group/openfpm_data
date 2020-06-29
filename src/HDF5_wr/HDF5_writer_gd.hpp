@@ -92,12 +92,6 @@ public:
 		//Create data space in file
 		hid_t file_dataspace_id_2 = H5Screate_simple(1, fdim2, NULL);
 
-		//Size for data space in memory
-		hsize_t mdim[1] = {pmem.size()};
-
-		//Create data space in memory
-		hid_t mem_dataspace_id = H5Screate_simple(1, mdim, NULL);
-
 		//if (mpi_rank == 0)
 			//std::cout << "Total object size: " << sum << std::endl;
 
@@ -105,7 +99,7 @@ public:
 		hid_t file_dataset = H5Dcreate (file, "grid_dist", H5T_NATIVE_CHAR, file_dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 		//Create data set 2 in file
-		hid_t file_dataset_2 = H5Dcreate (file, "metadata", H5T_NATIVE_INT, file_dataspace_id_2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		hid_t file_dataset_2 = H5Dcreate (file, "metadata", H5T_NATIVE_LLONG, file_dataspace_id_2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 	    //H5Pclose(plist_id);
 	    H5Sclose(file_dataspace_id);
@@ -132,45 +126,51 @@ public:
 
 	//    std::cout << "MPI rank: " << mpi_rank << ", MPI size: " << mpi_size << ", Offset: " << offset[0] << ", Block: " << block[0] << std::endl;
 
-	    int metadata[mpi_size];
+	    long int metadata[mpi_size];
 
 	    for (int i = 0; i < mpi_size; i++)
 	    	metadata[i] = sz_others.get(i);
 
 	    //Select hyperslab in the file.
 	    file_dataspace_id = H5Dget_space(file_dataset);
-	    H5Sselect_hyperslab(file_dataspace_id, H5S_SELECT_SET, offset, NULL, count, block);
+
+            //Create property list for collective dataset write.
+            plist_id = H5Pcreate(H5P_DATASET_XFER);
+            H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+
+	    // We slipt the write in chunk of 2GB maximum
+	    size_t to_write = block[0];
+	    size_t coffset = 0;
+	    while (to_write)
+	    {
+			hsize_t block_c[1];
+			block_c[0] = std::min((size_t)(to_write),(size_t)0x7FFFFFFF);
+
+			//Create data space in memory
+			hid_t mem_dataspace_id = H5Screate_simple(1, block_c, NULL);
+
+			hsize_t offset_c[1] = {offset[0] + coffset};
+			H5Sselect_hyperslab(file_dataspace_id, H5S_SELECT_SET, offset_c, NULL, count, block_c);
+
+			//Write a data set to a file
+			H5Dwrite(file_dataset, H5T_NATIVE_CHAR, mem_dataspace_id, file_dataspace_id, plist_id, (const char *)pmem.getPointer() + coffset);
+
+			coffset += std::min((size_t)(to_write),(size_t)0x7FFFFFFF);
+			to_write -= std::min((size_t)(to_write),(size_t)0x7FFFFFFF);
+
+			H5Sclose(mem_dataspace_id);
+	    }
 
 	    file_dataspace_id_2 = H5Dget_space(file_dataset_2);
 
-
-	    //Create property list for collective dataset write.
-	    plist_id = H5Pcreate(H5P_DATASET_XFER);
-	    H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-
-		//Write a data set to a file
-		H5Dwrite(file_dataset, H5T_NATIVE_CHAR, mem_dataspace_id, file_dataspace_id, plist_id, (const char *)pmem.getPointer());
-
-		//Write a data set 2 to a file
-		H5Dwrite(file_dataset_2, H5T_NATIVE_INT, H5S_ALL, file_dataspace_id_2, plist_id, metadata);
-/*
-		for (size_t i = 0; i < gdb_ext.size(); i++)
-		{
-			Box<dim,long int> box = gdb_ext.get(i).Dbox;
-			std::cout << "Dboxes saved: (" << box.getLow(0) << "; " << box.getLow(1) << "); (" << box.getHigh(0) << "; " << box.getHigh(1) << ")" << std::endl;
-		}
-
-		for (size_t i = 0; i < loc_grid.size(); i++)
-		{
-			std::cout << "loc_grids saved: (" << loc_grid.get(i).getGrid().getBox().getLow(0) << "; " << loc_grid.get(i).getGrid().getBox().getLow(1) << "); (" << loc_grid.get(i).getGrid().getBox().getHigh(0) << "; " << loc_grid.get(i).getGrid().getBox().getHigh(1) << ")" << std::endl;
-		}
-*/
+	    //Write a data set 2 to a file
+	    H5Dwrite(file_dataset_2, H5T_NATIVE_LLONG, H5S_ALL, file_dataspace_id_2, plist_id, metadata);
+	    
 	    //Close/release resources.
 	    H5Dclose(file_dataset);
 	    H5Sclose(file_dataspace_id);
 	    H5Dclose(file_dataset_2);
 	    H5Sclose(file_dataspace_id_2);
-	    H5Sclose(mem_dataspace_id);
 	    H5Pclose(plist_id);
 	    H5Fclose(file);
 	}

@@ -125,17 +125,17 @@ struct vertex_prop
     		{cnt++; return ;}
 
     		// Create a property string based on the type of the property
-    		if (typeid(T) == typeid(float))
+    		if (std::is_same<T,float>::value)
     			v_prop += "<key id=\"vk" + std::to_string(cnt) + "\" for=\"node\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"float\"/>\n";
-    		else if (typeid(T) == typeid(double))
+    		else if (std::is_same<T,double>::value)
     			v_prop += "<key id=\"vk" + std::to_string(cnt) + "\" for=\"node\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"double\"/>\n";
-    		else if (typeid(T) == typeid(int))
+    		else if (std::is_same<T,int>::value)
     			v_prop += "<key id=\"vk" + std::to_string(cnt) + "\" for=\"node\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"int\"/>\n";
-    		else if (typeid(T) == typeid(long int))
+    		else if (std::is_same<T,long int>::value)
     			v_prop += "<key id=\"vk" + std::to_string(cnt) + "\" for=\"node\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"long\"/>\n";
-    		else if (typeid(T) == typeid(bool))
+    		else if (std::is_same<T,bool>::value)
     			v_prop += "<key id=\"vk" + std::to_string(cnt) + "\" for=\"node\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"boolean\"/>\n";
-    		else if (typeid(T) == typeid(std::string))
+    		else if (std::is_same<T,std::string>::value)
     			v_prop += "<key id=\"vk" + std::to_string(cnt) + "\" for=\"node\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"string\"/>\n";
     	}
 
@@ -278,18 +278,20 @@ struct vertex_node
     	//! Create an entry for the attribute
     	if (T::value < n_attr)
     	{
+    		typedef typename std::remove_reference<decltype(vo.template get<T::value>())>::type type_get;
+
     		// Create a property string based on the type of the property
-    		if (typeid(decltype(vo.template get<T::value>())) == typeid(float))
+    		if (std::is_same<type_get,float>::value)
     			v_node += "  <data key=\"vk" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
-    		else if (typeid(decltype(vo.template get<T::value>())) == typeid(double))
+    		else if (std::is_same<type_get,double>::value)
     			v_node += "  <data key=\"vk" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
-    		else if (typeid(decltype(vo.template get<T::value>())) == typeid(int))
+    		else if (std::is_same<type_get,int>::value )
     			v_node += "  <data key=\"vk" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
-    		else if (typeid(decltype(vo.template get<T::value>())) == typeid(long int))
+    		else if (std::is_same<type_get,long int>::value)
     			v_node += "  <data key=\"vk" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
-    		else if (typeid(decltype(vo.template get<T::value>())) == typeid(bool))
+    		else if (std::is_same<type_get,bool>::value)
     			v_node += "  <data key=\"vk" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
-    		else if (typeid(decltype(vo.template get<T::value>())) == typeid(std::string))
+    		else if (std::is_same<type_get,std::string>::value)
     			v_node += "  <data key=\"vk" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
     	}
 
@@ -379,17 +381,17 @@ struct edge_prop
     	if (cnt < n_attr)
     	{
     		// Create a property string based on the type of the property
-    		if (typeid(T) == typeid(float))
+    		if (std::is_same<T,float>::value)
     			e_prop += "<key id=\"ek" + std::to_string(cnt) + "\" for=\"edge\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"float\"/>\n";
-    		else if (typeid(T) == typeid(double))
+    		else if (std::is_same<T,double>::value)
     			e_prop += "<key id=\"ek" + std::to_string(cnt) + "\" for=\"edge\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"double\"/>\n";
-    		else if (typeid(T) == typeid(int))
+    		else if (std::is_same<T,int>::value)
     			e_prop += "<key id=\"ek" + std::to_string(cnt) + "\" for=\"edge\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"int\"/>\n";
-    		else if (typeid(T) == typeid(long int))
+    		else if (std::is_same<T,long int>::value)
     			e_prop += "<key id=\"ek" + std::to_string(cnt) + "\" for=\"edge\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"long\"/>\n";
-    		else if (typeid(T) == typeid(bool))
+    		else if (std::is_same<T,bool>::value)
     			e_prop += "<key id=\"ek" + std::to_string(cnt) + "\" for=\"edge\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"boolean\"/>\n";
-    		else if (typeid(T) == typeid(std::string))
+    		else if (std::is_same<T,std::string>::value)
     			e_prop += "<key id=\"ek" + std::to_string(cnt) + "\" for=\"edge\" attr.name=\"" + attributes_names[cnt] + "\" attr.type=\"string\"/>\n";
     	}
 
@@ -510,18 +512,20 @@ struct edge_node
     	//! Create an entry for the attribute
     	if (T::value < n_attr)
     	{
+    		typedef typename std::remove_reference<decltype(vo.template get<T::value>())>::type type_get;
+
     		// Create a property string based on the type of the property
-    		if (typeid(decltype(vo.template get<T::value>())) == typeid(float))
+    		if (std::is_same<type_get,float>::value)
     			e_node += "  <data key=\"ek" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
-    		else if (typeid(decltype(vo.template get<T::value>())) == typeid(double))
+    		else if (std::is_same<type_get,double>::value)
     			e_node += "  <data key=\"ek" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
-    		else if (typeid(decltype(vo.template get<T::value>())) == typeid(int))
+    		else if (std::is_same<type_get,int>::value)
     			e_node += "  <data key=\"ek" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
-    		else if (typeid(decltype(vo.template get<T::value>())) == typeid(long int))
+    		else if (std::is_same<type_get,long int>::value)
     			e_node += "  <data key=\"ek" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
-    		else if (typeid(decltype(vo.template get<T::value>())) == typeid(bool))
+    		else if (std::is_same<type_get,bool>::value)
     			e_node += "  <data key=\"ek" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
-    		else if (typeid(decltype(vo.template get<T::value>())) == typeid(std::string))
+    		else if (std::is_same<type_get,std::string>::value)
     			e_node += "  <data key=\"ek" + std::to_string(cnt) + "\">" + std::to_string(vo.template get<T::value>()) + "</data>\n";
     	}
 

@@ -14,7 +14,7 @@
 #include <fstream>
 #include "util/common.hpp"
 #include <boost/mpl/range_c.hpp>
-#include <boost/mpl/for_each.hpp>
+#include "util/for_each_ref_host.hpp"
 #include "csv_multiarray.hpp"
 #include "util/util.hpp"
 #include "is_csv_writable.hpp"
@@ -56,12 +56,12 @@ struct csv_prp
     template<typename T>
     void operator()(T& t)
     {
-		// This is the type of the csv column
-		typedef decltype(obj.template get<T::value>()) col_type;
+        // This is the type of the csv column
+        typedef typename boost::mpl::at<typename Tobj::type,T>::type col_type;
 
-		// Remove the reference from the column type
-		typedef typename boost::remove_reference<col_type>::type col_rtype;
-		typedef typename std::remove_all_extents<col_rtype>::type base_col_rtype;
+        // Remove the reference from the column type
+        typedef typename boost::remove_reference<col_type>::type col_rtype;
+        typedef typename std::remove_all_extents<col_rtype>::type base_col_rtype;
 
     	csv_value_str<col_rtype, is_csv_writable<base_col_rtype>::value >(obj.template get<T::value>(),str);
     }
@@ -183,7 +183,7 @@ class CSVWriter
 		csv_col<typename v_prp::value_type,has_attributes<typename v_prp::value_type>::value> col(str);
 
 		// Iterate through all the vertex and create the vertex list
-		boost::mpl::for_each< boost::mpl::range_c<int,0,v_prp::value_type::max_prop> >(col);
+		boost::mpl::for_each_ref_host< boost::mpl::range_c<int,0,v_prp::value_type::max_prop> >(col);
 
 		str << "\n";
 
@@ -225,7 +225,7 @@ class CSVWriter
 			csv_prp<decltype(obj)> c_prp(str,obj);
 
 			// write the properties to the stream string
-			boost::mpl::for_each< boost::mpl::range_c<int,0,v_prp::value_type::max_prop> >(c_prp);
+			boost::mpl::for_each_ref_host< boost::mpl::range_c<int,0,v_prp::value_type::max_prop> >(c_prp);
 
 			str << "\n";
 		}

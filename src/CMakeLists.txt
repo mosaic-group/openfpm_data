@@ -22,10 +22,15 @@ endif()
 ###########################
 
 if (CUDA_FOUND)
-	target_compile_options(io PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:-Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111" --expt-extended-lambda>)
+	target_compile_options(io PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
 	target_include_directories (io PUBLIC ${MPI_C_INCLUDE_DIRS})
+
+   	if( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0 )
+        	add_compile_options( "-fabi-version=6" )
+    	endif()
+
         if (TEST_COVERAGE)
-                target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage">)
+                target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
         endif()
 endif()
 
@@ -46,8 +51,8 @@ if (PETSC_FOUND)
 endif()
 
 target_link_libraries(io ${Boost_LIBRARIES})
-target_link_libraries(io -L${HDF5_ROOT}/lib hdf5 hdf5_hl)
-target_link_libraries(io -L${TINYOBJLOADER_LIBRARY_DIRS} -ltinyobjloader )
+target_link_libraries(io ${HDF5_LIBRARIES})
+target_link_libraries(io ${TINYOBJLOADER_LIBRARIES} )
 if (PETSC_FOUND)
 	target_link_libraries(io ${PETSC_LIBRARIES})
 endif()

@@ -19,13 +19,19 @@ mv /tmp/openfpm_io openfpm_io
 
 git clone git@git.mpi-cbg.de:openfpm/openfpm_devices.git openfpm_devices
 cd openfpm_devices
+git checkout master
 cd ..
 git clone git@git.mpi-cbg.de:openfpm/openfpm_data.git openfpm_data
 cd openfpm_data
+git checkout master
 cd ..
 git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git openfpm_pdata
+cd openfpm_pdata
+git checkout master
+cd ..
 git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 cd openfpm_vcluster
+git checkout master
 cd ..
 
 cd "$1/openfpm_io"

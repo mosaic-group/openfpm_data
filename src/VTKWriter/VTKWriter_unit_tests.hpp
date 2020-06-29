@@ -1049,6 +1049,9 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 
 	vtk_v3.write("vtk_points_pp_header.vtk",prp_names,"points","time=5.123");
 
+	// We try binary
+	vtk_v3.write("vtk_points_pp_header_bin.vtk",prp_names,"points","time=5.123",file_type::BINARY);
+
 #ifndef SE_CLASS3
 
 	// Check that match

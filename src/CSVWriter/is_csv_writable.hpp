@@ -141,5 +141,37 @@ struct is_csv_writable<bool>
 	};
 };
 
+//! Indicate if the property T is writable in CSV
+template<typename T, unsigned int N1>
+struct is_csv_writable<T[N1]>
+{
+	//! bool is writable
+	enum
+	{
+		value = true
+	};
+};
+
+//! Indicate if the property T is writable in CSV
+template<typename T, unsigned int N1, unsigned int N2>
+struct is_csv_writable<T[N1][N2]>
+{
+	//! bool is writable
+	enum
+	{
+		value = true
+	};
+};
+
+//! Indicate if the property T is writable in CSV
+template<typename T, unsigned int N1, unsigned int N2, unsigned int N3>
+struct is_csv_writable<T[N1][N2][N3]>
+{
+	//! bool is writable
+	enum
+	{
+		value = true
+	};
+};
 
 #endif /* OPENFPM_IO_SRC_CSVWRITER_IS_CSV_WRITABLE_HPP_ */
