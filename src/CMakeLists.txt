@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 if (CUDA_FOUND)
-	set(CUDA_SOURCES Vector/vector_gpu_unit_tests.cu Grid/cuda/cuda_grid_gpu_tests.cu  Vector/cuda/map_vector_cuda_funcs_tests.cu  ../../openfpm_devices/src/memory/CudaMemory.cu NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu  Grid/cuda/cuda_grid_unit_tests_func.cu  util/cuda/modern_gpu_tests.cu)
+	set(CUDA_SOURCES Vector/vector_gpu_unit_tests.cu Grid/cuda/cuda_grid_gpu_tests.cu  Vector/cuda/map_vector_cuda_funcs_tests.cu  ../../openfpm_devices/src/memory/CudaMemory.cu NN/CellList/CellList_gpu_test.cu util/cuda/scan_cuda_unit_tests.cu  Grid/cuda/cuda_grid_unit_tests_func.cu  util/cuda/modern_gpu_tests.cu util/cuda/cub_gpu_tests.cu)
 else()
  	set(CUDA_SOURCES )
 endif()
@@ -22,7 +22,7 @@ endif()
 if (CUDA_FOUND)
 	target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
         if (TEST_COVERAGE)
-                target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage">)
+                target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
         endif()
 endif()
 
@@ -148,7 +148,8 @@ install(FILES util/check_no_pointers.hpp
 	      util/common.hpp util/convert.hpp 
 	      util/create_vmpl_sequence.hpp 
 	      util/ct_array.hpp 
-	      util/for_each_ref.hpp 
+	      util/for_each_ref.hpp
+	      util/for_each_ref_host.hpp 
 	      util/mathutil.hpp util/object_creator.hpp 
 	      util/object_s_di.hpp 
 	      util/object_si_d.hpp 
@@ -231,8 +232,12 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
 	      util/multi_array_openfpm/types.hpp 
 	      DESTINATION openfpm_data/include/util/multi_array_openfpm )
 
+install(DIRECTORY util/cuda/cub/
+                  DESTINATION openfpm_data/include/util/cuda/cub )
+
 install(FILES util/cuda/scan_cuda.cuh
 	      util/cuda/ofp_context.hxx
+	      util/cuda/scan_ofp.cuh
 	      util/cuda/cuda_launch.hpp
 	      util/cuda/cuda_kernel_error_checker.hpp
 	      DESTINATION openfpm_data/include/util/cuda )
