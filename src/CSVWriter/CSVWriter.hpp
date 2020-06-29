@@ -149,7 +149,7 @@ struct csv_col<Tobj,false>
     }
 };
 
-#define VECTOR 1
+//#define VECTOR 1
 
 /*! \brief CSV Writer
  *
@@ -159,7 +159,7 @@ struct csv_col<Tobj,false>
  * \tparam v_prp Property vector
  *
  */
-template <typename v_pos, typename v_prp, unsigned int impl = VECTOR>
+template <typename v_pos, typename v_prp, unsigned int impl = 1>
 class CSVWriter
 {
 	/*! \brief Get the colums name (also the positional name)
