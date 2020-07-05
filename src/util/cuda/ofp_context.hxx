@@ -200,6 +200,8 @@
 				cudaEvent_t _timer[2];
 				cudaEvent_t _event;
 
+				openfpm::vector<aggregate<unsigned char>> tmem;
+
 				// Making this a template argument means we won't generate an instance
 				// of dummy_k for each translation unit.
 				template<int dummy_arg = 0>

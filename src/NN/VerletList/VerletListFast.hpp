@@ -507,6 +507,7 @@ public:
 
 		// Initialize a cell-list
 		cli.Initialize(bt,div);
+
 		initCl(cli,pos,g_m,opt);
 
 		// Unuseful empty vector

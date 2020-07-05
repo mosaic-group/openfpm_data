@@ -1229,7 +1229,7 @@ public:
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			if (box_dst.getHigh(i) >= g1.size(i))
+			if (box_dst.getHigh(i) >= (long int)g1.size(i))
 			{
 				long int shift = box_dst.getHigh(i) - g1.size(i) + 1;
 				box_dst_.setHigh(i,box_dst.getHigh(i) - shift);

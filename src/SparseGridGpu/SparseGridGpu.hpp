@@ -576,11 +576,11 @@ private:
     mutable openfpm::vector_gpu<Box<dim,int>> pack_subs_swp;
     mutable openfpm::vector_gpu<Box<dim,int>> pack_subs_swp_r;
 
-    //! Size of the index vector packed. These varaible are unsed to understand if the option
+    //! Size of the index vector packed. These varaible are used to understand if the option
     //! KEEP_GEOMETRY can be used keep geometry option infact require that when we record the
     //! packing variables the number of chunks (and chunks indexes) does not change
-    mutable int index_size_swp;
-    mutable int index_size_swp_r;
+    mutable int index_size_swp = -1;
+    mutable int index_size_swp_r = -1;
 
     //! links of the padding points with real points of a coarse sparsegrid
     openfpm::vector_gpu<aggregate<size_t>> links_up;
@@ -2793,9 +2793,11 @@ public:
         	size_t n_cnk = 0;
 
     		tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1) = 0;
+    		tmp.template get<1>((i+1)*(indexBuffer.size() + 1)-1) = 0;
 
     		// put a zero at the end
     		tmp.template hostToDevice<0>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
+    		tmp.template hostToDevice<1>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
 
     		openfpm::scan(((indexT *)tmp. template getDeviceBuffer<0>()) + i*(indexBuffer.size() + 1),
     						indexBuffer.size() + 1, (indexT *)tmp. template getDeviceBuffer<0>() + i*(indexBuffer.size() + 1), context);
