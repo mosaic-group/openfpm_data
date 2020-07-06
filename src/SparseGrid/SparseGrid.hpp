@@ -3042,13 +3042,13 @@ public:
 				{
 					Unpacker<decltype(chunks.template get_o(mask_it[k])),
 								S2,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<replace_,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<replace_,prp...>(mem,chunks.get_o(active_cnk),ele_id,ps);
 				}
 				else
 				{
 					Unpacker<decltype(chunks.template get_o(mask_it[k])),
 								S2,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks.get_o(active_cnk),ele_id,ps);
 				}
 
 			}

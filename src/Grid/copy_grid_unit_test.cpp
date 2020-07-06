@@ -10,6 +10,7 @@
 #include "Grid/map_grid.hpp"
 #include "data_type/aggregate.hpp"
 #include "Vector/map_vector.hpp"
+#include "Point_test.hpp"
 
 BOOST_AUTO_TEST_SUITE( copy_grid_test )
 
@@ -238,8 +239,8 @@ BOOST_AUTO_TEST_CASE( copy_grid_test_invalid)
 	size_t sz2_dst[2] = {3,7};
 	size_t sz2_src[2] = {3,4};
 
-	grid_cpu<2,aggregate<double>> g2_src(sz2_src);
-	grid_cpu<2,aggregate<double>> g2_dst(sz2_dst);
+	grid_cpu<2,Point_test<double>> g2_src(sz2_src);
+	grid_cpu<2,Point_test<double>> g2_dst(sz2_dst);
 	g2_src.setMemory();
 	g2_dst.setMemory();
 
@@ -268,7 +269,7 @@ BOOST_AUTO_TEST_CASE( copy_grid_test_invalid)
 		++it3;
 	}
 
-	//g2_dst.copy_to(g2_src,bsrc_2,bdst_2);
+	g2_dst.copy_to(g2_src,bsrc_2,bdst_2);
 
 	auto it2 = g2_dst.getIterator();
 
