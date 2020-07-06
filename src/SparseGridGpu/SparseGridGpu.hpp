@@ -3129,7 +3129,7 @@ public:
 	 * \param box_src box to kill the points
 	 *
 	 */
-	void remove(const Box<dim,unsigned int> & section_to_delete)
+	void remove(const Box<dim,int> & section_to_delete)
 	{
 		rem_sects.add(section_to_delete);
 	}

@@ -2635,7 +2635,7 @@ public:
 	 * \param box_src box to kill the points
 	 *
 	 */
-	void remove(Box<dim,size_t> & section_to_delete)
+	void remove(Box<dim,long int> & section_to_delete)
 	{
 		grid_sm<dim,void> gs_cnk(sz_cnk);
 

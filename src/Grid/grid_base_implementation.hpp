@@ -1184,7 +1184,7 @@ public:
 	 * \param box_src box to kill the points
 	 *
 	 */
-	void remove(Box<dim,size_t> & section_to_delete)
+	void remove(Box<dim,long int> & section_to_delete)
 	{}
 
 	/*! \brief Reset the queue to remove and copy section of grids
