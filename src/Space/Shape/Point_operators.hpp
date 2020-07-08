@@ -269,6 +269,8 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = 1;
 
+	typedef T coord_type;
+
 	/*! \brief constructor from a value
 	 *
 	 * \param d value
@@ -1993,6 +1995,9 @@ public:
 
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = subar_dim<vmpl>::type::value;
+
+    //! The type of the internal vector
+    typedef T coord_type;
 
 	/*! \brief construct from an array of dimension dim
 	 *
