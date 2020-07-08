@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 add_definitions(-DSCAN_WITH_CUB)
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(pdata PRIVATE -Wno-undefined-var-template -Wno-macro-redefined)
+endif()
 
 if (TEST_PERFORMANCE)
 	set(CUDA_SOURCES SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_sparse.cu

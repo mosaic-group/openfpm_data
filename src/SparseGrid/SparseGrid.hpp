@@ -3040,15 +3040,15 @@ public:
 
 				if (exist == false)
 				{
-					Unpacker<decltype(chunks.template get_o(mask_it[k])),
+					Unpacker<decltype(chunks. get_o(mask_it[k])),
 								S2,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<replace_,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<replace_,prp...>(mem,chunks. get_o(active_cnk),ele_id,ps);
 				}
 				else
 				{
-					Unpacker<decltype(chunks.template get_o(mask_it[k])),
+					Unpacker<decltype(chunks. get_o(mask_it[k])),
 								S2,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks.template get_o(active_cnk),ele_id,ps);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks. get_o(active_cnk),ele_id,ps);
 				}
 
 			}
@@ -3301,8 +3301,8 @@ public:
 			tmp_pos.add(p);
 
 			tmp_prp.add();
-			copy_prop_to_vector<decltype(chunks.template get_o(key.getChunk())),decltype(tmp_prp.last())>
-			cp(chunks.template get_o(key.getChunk()),tmp_prp.last(),key.getPos());
+			copy_prop_to_vector<decltype(chunks. get_o(key.getChunk())),decltype(tmp_prp.last())>
+			cp(chunks. get_o(key.getChunk()),tmp_prp.last(),key.getPos());
 
 			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
 
