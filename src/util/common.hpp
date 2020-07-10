@@ -13,6 +13,7 @@ constexpr int RUN_ON_DEVICE = 1024;
                                + __GNUC_MINOR__ * 100 \
                                + __GNUC_PATCHLEVEL__)
 
+
 template<unsigned int N,typename T>
 struct static_array
 {

@@ -702,4 +702,21 @@ template<typename T>
 struct is_Point<T, typename Void< typename T::yes_is_point>::type> : std::true_type
 {};
 
+/*! \brief like std::rank but it also work for openfpm structures like Point where it return 1
+ *
+ * \tparam T structure to check
+ *
+ */
+template<typename T, bool is_point = is_Point<T>::value>
+struct rank_gen
+{
+	typedef boost::mpl::int_<std::rank<T>::value> type;
+};
+
+template<typename T>
+struct rank_gen<T,true>
+{
+	typedef boost::mpl::int_<1> type;
+};
+
 #endif
