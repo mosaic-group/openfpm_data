@@ -12,12 +12,19 @@ add_executable(io main.cpp
 				  ../../openfpm_devices/src/Memleak_check.cpp 
 				  ../../openfpm_devices/src/memory/PtrMemory.cpp)
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(io PRIVATE "-Wno-undefined-var-template")
+	target_compile_options(io PRIVATE "-Wno-macro-redefined")
+endif()
+
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(io PRIVATE "-Wno-deprecated-declarations")
     if (TEST_COVERAGE)
         target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
     endif()
 endif()
+
+
 
 ###########################
 
