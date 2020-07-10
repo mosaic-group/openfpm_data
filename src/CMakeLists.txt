@@ -4,9 +4,6 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 ########################### Executables
 
 add_definitions(-DSCAN_WITH_CUB)
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	target_compile_options(pdata PRIVATE -Wno-undefined-var-template -Wno-macro-redefined)
-endif()
 
 if (TEST_PERFORMANCE)
 	set(CUDA_SOURCES SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_sparse.cu
@@ -65,6 +62,11 @@ add_executable(isolation
         SparseGridGpu/tests/SparseGridGpu_tests.cu
 	isolation.cpp
         )
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(mem_map PRIVATE "-Wno-undefined-var-template")
+	target_compile_options(mem_map PRIVATE "-Wno-macro-redefined")
+endif()
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
