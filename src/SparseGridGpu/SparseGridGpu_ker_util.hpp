@@ -862,14 +862,14 @@ struct loadGhostBlock_impl<7,dim,AggregateBlockT,pMask,p,ct_params,blockEdgeSize
         auto gmask6 = blockMap.template get_ele<pMask>(nPos6)[offset6];
         auto gmask7 = blockMap.template get_ele<pMask>(nPos7)[offset7];
 
-		if (bmask == 0)	{bdata = bck.template get<p>();}
-		if (gmask == 0)	{gdata = bck.template get<p>();}
-		if (gmask2 == 0)	{gdata2 = bck.template get<p>();}
-		if (gmask3 == 0)	{gdata3 = bck.template get<p>();}
-		if (gmask4 == 0)	{gdata4 = bck.template get<p>();}
-		if (gmask5 == 0)	{gdata5 = bck.template get<p>();}
-		if (gmask6 == 0)	{gdata6 = bck.template get<p>();}
-		if (gmask7 == 0)	{gdata7 = bck.template get<p>();}
+		if (bmask == 0)	{set_compile_condition<pMask != p>::template set<p>(bdata,bck);}
+		if (gmask == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata,bck);}
+		if (gmask2 == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata2,bck);}
+		if (gmask3 == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata3,bck);}
+		if (gmask4 == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata4,bck);}
+		if (gmask5 == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata5,bck);}
+		if (gmask6 == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata6,bck);}
+		if (gmask7 == 0)	{set_compile_condition<pMask != p>::template set<p>(gdata7,bck);}
 
         sharedRegionPtr[linId] = gdata;
         sharedRegionPtr[linId2] = gdata2;

@@ -2002,7 +2002,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 	sparseGrid.tagBoundaries(ctx);
 
 	// Now apply some boundary conditions
-	sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(STENCIL_MODE_INPLACE,
+	sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,
 			192, 384,
 			0.0, 10.0);
 
@@ -2014,9 +2014,9 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 	{
 		for (int innerIter=0; innerIter<10; ++innerIter)
 		{
-			sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(STENCIL_MODE_INPLACE, 0.1);
+			sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
 
-			sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(STENCIL_MODE_INPLACE, 0.1);
+			sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
 
 		}
 	}
@@ -2082,7 +2082,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3D)
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 	sparseGrid.tagBoundaries(ctx);
 
-	sparseGrid.template applyStencils<BoundaryStencilSetX<dim,0,0>>(STENCIL_MODE_INPLACE);
+	sparseGrid.template applyStencils<BoundaryStencilSetX<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE);
 
 
 	sparseGrid.template deviceToHost<0>();

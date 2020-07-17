@@ -4,7 +4,6 @@
  *  Created on: Sep 10, 2019
  *      Author: i-bird
  */
-#define SCAN_WITH_CUB
 #define BOOST_TEST_DYN_LINK
 #define DISABLE_MPI_WRITTERS
 
@@ -66,9 +65,9 @@ void testStencilHeat_perf(unsigned int i, std::string base)
         timer ts;
         ts.start();
 
-        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.template applyStencils<Stencil01T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
-        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.template applyStencils<Stencil10T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
 
         ts.stop();
