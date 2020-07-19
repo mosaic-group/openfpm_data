@@ -33,7 +33,7 @@ class cp_block: public cp_block_base<T,stencil_size,vector_vmpl,dim>
 
 public:
 
-	__device__ __host__ cp_block(T (& ptr)[base::sizeBlock])
+	__device__ __host__ explicit cp_block(T (& ptr)[base::sizeBlock])
 	:ptr(ptr)
 	{}
 
@@ -55,7 +55,7 @@ class cp_block<T,stencil_size,vector_vmpl,2>: public cp_block_base<T,stencil_siz
 
 public:
 
-	__device__ __host__ cp_block(T (& ptr)[base::sizeBlock])
+	__device__ __host__ explicit cp_block(T (& ptr)[base::sizeBlock])
 	:ptr(ptr)
 	{}
 
@@ -81,7 +81,7 @@ class cp_block<T,stencil_size,vector_vmpl,3>: public cp_block_base<T,stencil_siz
 
 public:
 
-	__device__ __host__ cp_block(T (& ptr)[base::sizeBlock])
+	__device__ __host__ explicit cp_block(T (& ptr)[base::sizeBlock])
 	:ptr(ptr)
 	{}
 
