@@ -1111,52 +1111,6 @@ class sgrid_cpu
 	 * \param return index inside the chunk
 	 *
 	 */
-	inline void find_active_chunk(const grid_key_dx<dim> & kh,size_t & active_cnk,bool & exist)
-	{
-		long int lin_id = g_sm_shift.LinId(kh);
-
-		size_t id = 0;
-		for (size_t k = 0 ; k < SGRID_CACHE; k++)
-		{id += (cache[k] == lin_id)?k+1:0;}
-
-		if (id == 0)
-		{
-			// we do not have it in cache we check if we have it in the map
-
-			auto fnd = map.find(lin_id);
-			if (fnd == map.end())
-			{
-				exist = false;
-				active_cnk = 0;
-				return;
-			}
-			else
-			{active_cnk = fnd->second;}
-
-			// Add on cache the chunk
-			cache[cache_pnt] = lin_id;
-			cached_id[cache_pnt] = active_cnk;
-			cache_pnt++;
-			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
-		}
-		else
-		{
-			active_cnk = cached_id[id-1];
-			cache_pnt = id;
-			cache_pnt = (cache_pnt == SGRID_CACHE)?0:cache_pnt;
-		}
-
-		exist = true;
-	}
-
-	/*! \brief Given a key return the chunk than contain that key, in case that chunk does not exist return the key of the
-	 *         background chunk
-	 *
-	 * \param v1 point to search
-	 * \param return active_chunk
-	 * \param return index inside the chunk
-	 *
-	 */
 	inline void find_active_chunk_from_point(const grid_key_dx<dim> & v1,size_t & active_cnk, short int & sub_id)
 	{
 		grid_key_dx<dim> kh = v1;
@@ -1358,21 +1312,16 @@ class sgrid_cpu
 		}
 	}
 
-	/*! Given a key v1 in coordinates it calculate the chunk position and the  position in the chunk
+	/*! \brief Given a key return the chunk than contain that key, in case that chunk does not exist return the key of the
+	 *         background chunk
 	 *
-	 * \param v1 coordinates
-	 * \param chunk position
-	 * \param sub_id element id
+	 * \param v1 point to search
+	 * \param return active_chunk
+	 * \param return index inside the chunk
 	 *
 	 */
-	inline void pre_get(const grid_key_dx<dim> & v1, size_t & active_cnk, size_t & sub_id) const
+	inline void find_active_chunk(const grid_key_dx<dim> & kh,size_t & active_cnk,bool & exist) const
 	{
-		grid_key_dx<dim> kh = v1;
-		grid_key_dx<dim> kl;
-
-		// shift the key
-		key_shift<dim,chunking>::shift(kh,kl);
-
 		long int lin_id = g_sm_shift.LinId(kh);
 
 		size_t id = 0;
@@ -1381,22 +1330,50 @@ class sgrid_cpu
 
 		if (id == 0)
 		{
-			auto it = map.find(lin_id);
+			// we do not have it in cache we check if we have it in the map
 
-			if (it == map.end())
+			auto fnd = map.find(lin_id);
+			if (fnd == map.end())
 			{
-				active_cnk = chunks.size();
+				exist = false;
+				active_cnk = 0;
 				return;
 			}
+			else
+			{active_cnk = fnd->second;}
 
-			add_on_cache(lin_id,it->second);
-
-			active_cnk = it->second;
+			// Add on cache the chunk
+			cache[cache_pnt] = lin_id;
+			cached_id[cache_pnt] = active_cnk;
+			cache_pnt++;
+			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
 		}
 		else
 		{
 			active_cnk = cached_id[id-1];
+			cache_pnt = id;
+			cache_pnt = (cache_pnt == SGRID_CACHE)?0:cache_pnt;
 		}
+
+		exist = true;
+	}
+
+	/*! Given a key v1 in coordinates it calculate the chunk position and the  position in the chunk
+	 *
+	 * \param v1 coordinates
+	 * \param chunk position
+	 * \param sub_id element id
+	 *
+	 */
+	inline void pre_get(const grid_key_dx<dim> & v1, size_t & active_cnk, size_t & sub_id, bool & exist) const
+	{
+		grid_key_dx<dim> kh = v1;
+		grid_key_dx<dim> kl;
+
+		// shift the key
+		key_shift<dim,chunking>::shift(kh,kl);
+
+		find_active_chunk(kh,active_cnk,exist);
 
 		sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
 	}
@@ -1488,44 +1465,14 @@ class sgrid_cpu
 
 	inline void remove_point(const grid_key_dx<dim> & v1)
 	{
+		bool exist;
 		size_t active_cnk = 0;
+		size_t sub_id;
 
-		grid_key_dx<dim> kh = v1;
-		grid_key_dx<dim> kl;
+		pre_get(v1,active_cnk,sub_id,exist);
 
-		// shift the key
-		key_shift<dim,chunking>::shift(kh,kl);
-
-		long int lin_id = g_sm_shift.LinId(kh);
-
-		size_t id = 0;
-		for (size_t k = 0 ; k < SGRID_CACHE; k++)
-		{id += (cache[k] == lin_id)?k+1:0;}
-
-		if (id == 0)
-		{
-			// we do not have it in cache we check if we have it in the map
-
-			auto fnd = map.find(lin_id);
-			if (fnd == map.end())
-			{return;}
-			else
-			{active_cnk = fnd->second;}
-
-			// Add on cache the chunk
-			cache[cache_pnt] = lin_id;
-			cached_id[cache_pnt] = active_cnk;
-			cache_pnt++;
-			cache_pnt = (cache_pnt >= SGRID_CACHE)?0:cache_pnt;
-		}
-		else
-		{
-			active_cnk = cached_id[id-1];
-			cache_pnt = id;
-			cache_pnt = (cache_pnt == SGRID_CACHE)?0:cache_pnt;
-		}
-
-		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);
+		if (exist == false)
+		{return;}
 
 		// eliminate the element
 
@@ -1717,41 +1664,13 @@ public:
 	template <unsigned int p>
 	inline auto get(const grid_key_dx<dim> & v1) const -> decltype(openfpm::as_const(chunks.template get<p>(0))[0])
 	{
+		bool exist;
 		size_t active_cnk;
 		size_t sub_id;
-/*		grid_key_dx<dim> kh = v1;
-		grid_key_dx<dim> kl;
 
-		// shift the key
-		key_shift<dim,chunking>::shift(kh,kl);
+		pre_get(v1,active_cnk,sub_id,exist);
 
-		long int lin_id = g_sm_shift.LinId(kh);
-
-		size_t id = 0;
-		for (size_t k = 0 ; k < SGRID_CACHE; k++)
-		{id += (cache[k] == lin_id)?k+1:0;}
-
-		if (id == 0)
-		{
-			auto it = map.find(lin_id);
-
-			if (it == map.end())
-			{return background.template get<p>();}
-
-			add_on_cache(lin_id,it->second);
-
-			active_cnk = it->second;
-		}
-		else
-		{
-			active_cnk = cached_id[id-1];
-		}
-
-		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);*/
-
-		pre_get(v1,active_cnk,sub_id);
-
-		if (active_cnk >= header_mask.size())
+		if (exist == false)
 		{return background.template get<p>();}
 
 		// we check the mask
@@ -1773,41 +1692,13 @@ public:
 	template <unsigned int p>
 	inline auto get(const grid_key_dx<dim> & v1) -> decltype(openfpm::as_const(chunks.template get<p>(0))[0])
 	{
+		bool exist;
 		size_t active_cnk;
 		size_t sub_id;
-/*		grid_key_dx<dim> kh = v1;
-		grid_key_dx<dim> kl;
 
-		// shift the key
-		key_shift<dim,chunking>::shift(kh,kl);
+		pre_get(v1,active_cnk,sub_id,exist);
 
-		long int lin_id = g_sm_shift.LinId(kh);
-
-		size_t id = 0;
-		for (size_t k = 0 ; k < SGRID_CACHE; k++)
-		{id += (cache[k] == lin_id)?k+1:0;}
-
-		if (id == 0)
-		{
-			auto it = map.find(lin_id);
-
-			if (it == map.end())
-			{return background.template get<p>();}
-
-			add_on_cache(lin_id,it->second);
-
-			active_cnk = it->second;
-		}
-		else
-		{
-			active_cnk = cached_id[id-1];
-		}
-
-		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);*/
-
-		pre_get(v1,active_cnk,sub_id);
-
-		if (active_cnk >= header_mask.size())
+		if (exist == false)
 		{return background.template get<p>();}
 
 		// we check the mask
@@ -1829,41 +1720,13 @@ public:
 	 */
 	inline bool existPoint(const grid_key_dx<dim> & v1) const
 	{
+		bool exist;
 		size_t active_cnk;
 		size_t sub_id;
-/*		grid_key_dx<dim> kh = v1;
-		grid_key_dx<dim> kl;
 
-		// shift the key
-		key_shift<dim,chunking>::shift(kh,kl);
+		pre_get(v1,active_cnk,sub_id,exist);
 
-		long int lin_id = g_sm_shift.LinId(kh);
-
-		size_t id = 0;
-		for (size_t k = 0 ; k < SGRID_CACHE; k++)
-		{id += (cache[k] == lin_id)?k+1:0;}
-
-		if (id == 0)
-		{
-			auto it = map.find(lin_id);
-
-			if (it == map.end())
-			{return false;}
-
-			add_on_cache(lin_id,it->second);
-
-			active_cnk = it->second;
-		}
-		else
-		{
-			active_cnk = cached_id[id-1];
-		}
-
-		size_t sub_id = sublin<dim,typename chunking::shift_c>::lin(kl);*/
-
-		pre_get(v1,active_cnk,sub_id);
-
-		if (active_cnk >= header_mask.size())
+		if (exist == false)
 		{return false;}
 
 		// we check the mask
