@@ -184,7 +184,7 @@ public:
 	static const unsigned int nvals = 1;
 
 	//! constructor from an expression
-	__device__ __host__  inline point_expression_op(const exp1 & o1)
+	__device__ __host__  inline explicit point_expression_op(const exp1 & o1)
 	:o1(o1),scal(0.0)
 	{}
 

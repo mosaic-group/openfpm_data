@@ -602,6 +602,29 @@ private:
 
     bool findNN = false;
 
+    void swap_internal_remote()
+    {
+		n_cnk_cp_swp_r.swap(n_cnk_cp);
+		n_pnt_cp_swp_r.swap(n_pnt_cp);
+		n_shift_cp_swp_r.swap(n_shifts_cp);
+		convert_blk_swp_r.swap(convert_blk);
+		box_cp_swp_r.swap(box_cp);
+		new_map_swp_r.swap(new_map);
+    }
+
+    void swap_internal_local()
+    {
+		offset_ptrs_cp_swp.swap(offset_ptrs_cp);
+		scan_ptrs_cp_swp.swap(scan_ptrs_cp);
+		data_base_ptr_cp_swp.swap(data_base_ptr_cp);
+		n_cnk_cp_swp.swap(n_cnk_cp);
+		n_pnt_cp_swp.swap(n_pnt_cp);
+		n_shift_cp_swp.swap(n_shifts_cp);
+		convert_blk_swp.swap(convert_blk);
+		box_cp_swp.swap(box_cp);
+		new_map_swp.swap(new_map);
+    }
+
 protected:
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
     typedef AggregateBlockT AggregateInternalT;
@@ -680,56 +703,23 @@ public:
     }
 
 
+
     void saveUnpackVariableIfNotKeepGeometry(int opt, bool is_unpack_remote)
     {
     	if (is_unpack_remote == true)
-    	{
-    		n_cnk_cp_swp_r.swap(n_cnk_cp);
-    		n_pnt_cp_swp_r.swap(n_pnt_cp);
-    		n_shift_cp_swp_r.swap(n_shifts_cp);
-    		convert_blk_swp_r.swap(convert_blk);
-    		box_cp_swp_r.swap(box_cp);
-    		new_map_swp_r.swap(new_map);
-    	}
+    	{swap_internal_remote();}
 
     	if (is_unpack_remote == false)
-    	{
-    		offset_ptrs_cp_swp.swap(offset_ptrs_cp);
-    		scan_ptrs_cp_swp.swap(scan_ptrs_cp);
-    		data_base_ptr_cp_swp.swap(data_base_ptr_cp);
-    		n_cnk_cp_swp.swap(n_cnk_cp);
-    		n_pnt_cp_swp.swap(n_pnt_cp);
-    		n_shift_cp_swp.swap(n_shifts_cp);
-    		convert_blk_swp.swap(convert_blk);
-    		box_cp_swp.swap(box_cp);
-    		new_map_swp.swap(new_map);
-    	}
+    	{swap_internal_local();}
     }
 
     void RestoreUnpackVariableIfKeepGeometry(int opt, bool is_unpack_remote)
     {
 		if (opt & KEEP_GEOMETRY && is_unpack_remote == true)
-		{
-	        n_cnk_cp_swp_r.swap(n_cnk_cp);
-	        n_pnt_cp_swp_r.swap(n_pnt_cp);
-	        n_shift_cp_swp_r.swap(n_shifts_cp);
-	    	convert_blk_swp_r.swap(convert_blk);
-	    	box_cp_swp_r.swap(box_cp);
-	    	new_map_swp_r.swap(new_map);
-		}
+		{swap_internal_remote();}
 
 		if (opt & KEEP_GEOMETRY && is_unpack_remote == false)
-		{
-	        offset_ptrs_cp_swp.swap(offset_ptrs_cp);
-	        scan_ptrs_cp_swp.swap(scan_ptrs_cp);
-	        data_base_ptr_cp_swp.swap(data_base_ptr_cp);
-	        n_cnk_cp_swp.swap(n_cnk_cp);
-	        n_pnt_cp_swp.swap(n_pnt_cp);
-	        n_shift_cp_swp.swap(n_shifts_cp);
-	    	convert_blk_swp.swap(convert_blk);
-	    	box_cp_swp.swap(box_cp);
-	    	new_map_swp.swap(new_map);
-		}
+		{swap_internal_local();}
     }
 
 
