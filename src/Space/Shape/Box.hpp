@@ -364,7 +364,7 @@ public:
 	 * \param box_data from which to construct
 	 *
 	 */
-	inline Box(type box_data)
+	explicit inline Box(type box_data)
 	{
 		// we copy the data
 

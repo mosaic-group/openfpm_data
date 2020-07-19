@@ -8,8 +8,9 @@
 #ifndef MULTI_ARRAY_VIEW_OPENFPM_HPP_
 #define MULTI_ARRAY_VIEW_OPENFPM_HPP_
 
-#include "util/boost/boost_multi_array_base_openfpm.hpp"
+//#include "util/boost/boost_multi_array_base_openfpm.hpp"
 #include "boost/utility/enable_if.hpp"
+#include "boost/multi_array/index_gen.hpp"
 
 namespace openfpm {
 namespace detail {
@@ -41,19 +42,19 @@ public:
   // template typedefs
   template <std::size_t NDims>
   struct const_array_view_openfpm {
-    typedef boost::detail::multi_array::const_multi_array_view_openfpm<T,NDims,vector> type;
+    typedef openfpm::detail::multi_array::const_multi_array_view_openfpm<T,NDims,vector> type;
   };
 
   template <std::size_t NDims>
   struct array_view_openfpm {
-    typedef boost::detail::multi_array::multi_array_view_openfpm<T,NDims> type;
+    typedef openfpm::detail::multi_array::multi_array_view_openfpm<T,NDims> type;
   };
 
   template <typename OPtr>
   const_multi_array_view_openfpm(const
                          const_multi_array_view_openfpm<T,NumDims,OPtr>& other) :
     base_(other.base_), origin_offset_(other.origin_offset_),
-    num_elements_(other.num_elements_), extent(extent),
+    num_elements_(other.num_elements_),
     stride_list_(other.stride_list_), index_base_list_(other.index_base_list_)
   { }
 

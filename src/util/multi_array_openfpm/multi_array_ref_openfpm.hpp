@@ -267,19 +267,6 @@ public:
 
   __device__ __host__ const element* origin() const { return super_type::origin(); }
 
-/*  element* data() { return super_type::base_; }
-
-  template <class IndexList>
-  element& operator()(const IndexList& indices) {
-    boost::function_requires<
-      CollectionConcept<IndexList> >();
-    return super_type::access_element(boost::type<element&>(),
-                                      indices,origin(),
-                                      this->shape(),this->strides(),
-                                      this->index_bases());
-  }*/
-
-
   __device__ __host__ reference operator[](index idx)
   {
     return super_type::access(boost::type<reference>(),
@@ -289,51 +276,12 @@ public:
   }
 
 
-  // See note attached to generate_array_view in base.hpp
-/*  template <int NDims>
-  typename array_view_openfpm<NDims>::type
-  operator[](const detail::multi_array::
-             index_gen<NumDims,NDims>& indices) {
-    typedef typename array_view_openfpm<NDims>::type return_type;
-    return
-      super_type::generate_array_view(boost::type<return_type>(),
-                                      indices,
-                                      this->shape(),
-                                      this->strides(),
-                                      this->index_bases(),
-                                      origin());
-  }*/
-
 
   iterator begin()
   {return iterator(0,origin(),this->size(),this->strides());}
 
   iterator end()
   {return iterator(this->size(),origin(),this->size(),this->strides());}
-
-  // rbegin() and rend() written naively to thwart MSVC ICE.
-/*  reverse_iterator rbegin() {
-    reverse_iterator ri(end());
-    return ri;
-  }
-
-  reverse_iterator rend() {
-    reverse_iterator ri(begin());
-    return ri;
-  }
-
-  // Using declarations don't seem to work for g++
-  // These are the proxies to work around this.
-
-  const element* origin() const { return super_type::origin(); }
-  const element* data() const { return super_type::data(); }
-
-  template <class IndexList>
-  const element& operator()(const IndexList& indices) const {
-    boost::function_requires<
-      CollectionConcept<IndexList> >();
-    return super_type::operator()(indices);
-  }*/
 
   __inline__ const_reference operator[](index idx) const
   {
@@ -343,37 +291,11 @@ public:
                               this->origin());
   }
 
-  // See note attached to generate_array_view in base.hpp
-/*  template <int NDims>
-  typename const_array_view_openfpm<NDims>::type
-  operator[](const detail::multi_array::
-             index_gen<NumDims,NDims>& indices)
-    const {
-    return super_type::operator[](indices);
-  }*/
-
   const_iterator begin() const
   {return super_type::begin();}
 
   const_iterator end() const
   {return super_type::end();}
-
-/*  const_reverse_iterator rbegin() const {
-    return super_type::rbegin();
-  }
-
-  const_reverse_iterator rend() const {
-    return super_type::rend();
-  }
-
-protected:
-  // This is only supplied to support multi_array's default constructor
-  explicit multi_array_ref_openfpm(T* base,
-                           const storage_order_type& so,
-                           const index* index_bases,
-                           const size_type* extents) :
-    super_type(base,so,index_bases,extents) { }*/
-
 };
 
 template<typename T, typename Sfinae = void>

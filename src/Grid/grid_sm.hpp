@@ -32,7 +32,7 @@ struct Box_check
 	Box<dim,T> box;
 
 	template<typename T2>
-	Box_check(Box<dim,T2> & box)
+	explicit Box_check(Box<dim,T2> & box)
 	:box(box)
 	{}
 
