@@ -296,13 +296,7 @@ install(FILES Packer_Unpacker/Pack_selector.hpp
         Packer_Unpacker/has_max_prop.hpp
         DESTINATION openfpm_data/include/Packer_Unpacker)
 
-install(FILES util/boost/boost_multi_array_base_openfpm.hpp
-        util/boost/boost_multi_array_openfpm.hpp
-        util/boost/boost_multi_array_subarray_openfpm.hpp
-        util/boost/boost_multi_array_ref_openfpm.hpp
-        util/boost/boost_multi_array_view_openfpm.hpp
-        util/boost/boost_array_openfpm.hpp
-        util/boost/boost_multi_array_iterator_openfpm.hpp
+install(FILES util/boost/boost_array_openfpm.hpp
         DESTINATION openfpm_data/include/util/boost/)
 
 install(FILES Grid/iterators/grid_key_dx_iterator_sp.hpp

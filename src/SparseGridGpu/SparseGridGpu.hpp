@@ -602,7 +602,7 @@ private:
 
     bool findNN = false;
 
-    void swap_internal_remote()
+    inline void swap_internal_remote()
     {
 		n_cnk_cp_swp_r.swap(n_cnk_cp);
 		n_pnt_cp_swp_r.swap(n_pnt_cp);
@@ -612,7 +612,7 @@ private:
 		new_map_swp_r.swap(new_map);
     }
 
-    void swap_internal_local()
+    inline void swap_internal_local()
     {
 		offset_ptrs_cp_swp.swap(offset_ptrs_cp);
 		scan_ptrs_cp_swp.swap(scan_ptrs_cp);
@@ -623,6 +623,40 @@ private:
 		convert_blk_swp.swap(convert_blk);
 		box_cp_swp.swap(box_cp);
 		new_map_swp.swap(new_map);
+    }
+
+    inline void swap_local_pack()
+    {
+		index_ptrs_swp.swap(index_ptrs);
+		scan_ptrs_swp.swap(scan_ptrs);
+		data_ptrs_swp.swap(data_ptrs);
+		offset_ptrs_swp.swap(offset_ptrs);
+		mask_ptrs_swp.swap(mask_ptrs);
+
+		e_points_swp.swap(e_points);
+		pack_output_swp.swap(pack_output);
+		tmp_swp.swap(tmp);
+
+		pack_subs_swp.swap(pack_subs);
+		req_index_swp = req_index;
+		index_size_swp = private_get_index_array().size();
+    }
+
+    inline void swap_remote_pack()
+    {
+		index_ptrs_swp_r.swap(index_ptrs);
+		scan_ptrs_swp_r.swap(scan_ptrs);
+		data_ptrs_swp_r.swap(data_ptrs);
+		offset_ptrs_swp_r.swap(offset_ptrs);
+		mask_ptrs_swp_r.swap(mask_ptrs);
+
+		e_points_swp_r.swap(e_points);
+		pack_output_swp_r.swap(pack_output);
+		tmp_swp_r.swap(tmp);
+
+		pack_subs_swp_r.swap(pack_subs);
+		req_index_swp_r = req_index;
+		index_size_swp_r = private_get_index_array().size();
     }
 
 protected:
@@ -726,73 +760,19 @@ public:
     void savePackVariableIfNotKeepGeometry(int opt, bool is_pack_remote)
     {
 		if (is_pack_remote == false)
-		{
-			index_ptrs_swp.swap(index_ptrs);
-			scan_ptrs_swp.swap(scan_ptrs);
-			data_ptrs_swp.swap(data_ptrs);
-			offset_ptrs_swp.swap(offset_ptrs);
-			mask_ptrs_swp.swap(mask_ptrs);
-
-			e_points_swp.swap(e_points);
-			pack_output_swp.swap(pack_output);
-			tmp_swp.swap(tmp);
-
-			pack_subs_swp.swap(pack_subs);
-			req_index_swp = req_index;
-			index_size_swp = private_get_index_array().size();
-		}
+		{swap_local_pack();}
 
 		if (is_pack_remote == true)
-		{
-			index_ptrs_swp_r.swap(index_ptrs);
-			scan_ptrs_swp_r.swap(scan_ptrs);
-			data_ptrs_swp_r.swap(data_ptrs);
-			offset_ptrs_swp_r.swap(offset_ptrs);
-			mask_ptrs_swp_r.swap(mask_ptrs);
-
-			e_points_swp_r.swap(e_points);
-			pack_output_swp_r.swap(pack_output);
-			tmp_swp_r.swap(tmp);
-
-			pack_subs_swp_r.swap(pack_subs);
-			req_index_swp_r = req_index;
-			index_size_swp_r = private_get_index_array().size();
-		}
+		{swap_remote_pack();}
     }
 
     void RestorePackVariableIfKeepGeometry(int opt, bool is_pack_remote)
     {
 		if (opt & KEEP_GEOMETRY && is_pack_remote == false)
-		{
-			index_ptrs_swp.swap(index_ptrs);
-			scan_ptrs_swp.swap(scan_ptrs);
-			data_ptrs_swp.swap(data_ptrs);
-			offset_ptrs_swp.swap(offset_ptrs);
-			mask_ptrs_swp.swap(mask_ptrs);
-
-			e_points_swp.swap(e_points);
-			pack_output_swp.swap(pack_output);
-			tmp_swp.swap(tmp);
-
-			pack_subs_swp.swap(pack_subs);
-			req_index = req_index_swp;
-		}
+		{swap_local_pack();}
 
 		if (opt & KEEP_GEOMETRY && is_pack_remote == true)
-		{
-			index_ptrs_swp_r.swap(index_ptrs);
-			scan_ptrs_swp_r.swap(scan_ptrs);
-			data_ptrs_swp_r.swap(data_ptrs);
-			offset_ptrs_swp_r.swap(offset_ptrs);
-			mask_ptrs_swp_r.swap(mask_ptrs);
-
-			e_points_swp_r.swap(e_points);
-			pack_output_swp_r.swap(pack_output);
-			tmp_swp_r.swap(tmp);
-
-			pack_subs_swp_r.swap(pack_subs);
-			req_index = req_index_swp_r;
-		}
+		{swap_remote_pack();}
     }
 
     template<unsigned int n_it>
