@@ -184,6 +184,7 @@ install(FILES SparseGrid/SparseGrid_iterator.hpp
               SparseGrid/SparseGridUtil.hpp
 	      SparseGrid/SparseGrid_iterator_block.hpp
 	      SparseGrid/SparseGrid_chunk_copy.hpp
+	      SparseGrid/SparseGrid_conv_opt.hpp
 	      SparseGrid/cp_block.hpp
         DESTINATION openfpm_data/include/SparseGrid)
 
