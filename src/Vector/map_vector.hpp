@@ -94,9 +94,6 @@ namespace openfpm
 				  unsigned int ...args>
 		static void run(vector<T,Memory,layout,layout_base,grow_p,impl> & this_ ,const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
 		{
-	#ifdef SE_CLASS2
-				check_valid(&this_,8);
-	#endif
 				// merge the data on device
 
 	#if defined(CUDA_GPU) && defined(__NVCC__)
@@ -129,9 +126,6 @@ namespace openfpm
 					    const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v,
 					    unsigned int offset)
 		{
-	#ifdef SE_CLASS2
-				check_valid(&this_,8);
-	#endif
 				// merge the data on device
 
 	#if defined(CUDA_GPU) && defined(__NVCC__)
@@ -292,9 +286,6 @@ namespace openfpm
 		 */
 		size_t size() const
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			return v_size;
 		}
 
@@ -306,9 +297,6 @@ namespace openfpm
 
 		size_t capacity()
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			return base.size();
 		}
 
@@ -322,9 +310,6 @@ namespace openfpm
 
 		void reserve(size_t sp)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			if (sp > base.size())
 			{
 				//! Resize the memory
@@ -340,9 +325,6 @@ namespace openfpm
 		 */
 		void clear()
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			resize(0);
 		}
 
@@ -353,9 +335,6 @@ namespace openfpm
 		 */
 		void shrink_to_fit()
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			size_t sz[1] = {size()};
 			base.resize(sz);
 		}
@@ -374,9 +353,6 @@ namespace openfpm
 		 */
 		void resize(size_t slot, size_t opt = DATA_ON_DEVICE | DATA_ON_HOST, unsigned int blockSize = 1)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			// If we need more space than what we allocated, allocate new memory
 
 			if (slot > base.size())
@@ -410,9 +386,6 @@ namespace openfpm
 		 */
 		void resize_no_device(size_t slot)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			// If we need more space than what we allocated, allocate new memory
 
 			if (slot > base.size())
@@ -439,9 +412,6 @@ namespace openfpm
 		 */
 		void add()
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			//! Check if we have enough space
 
 			if (v_size >= base.size())
@@ -464,9 +434,6 @@ namespace openfpm
 		 */
 		void add_no_device()
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			//! Check if we have enough space
 
 			if (v_size >= base.size())
@@ -491,9 +458,6 @@ namespace openfpm
 		 */
 		void add(const T & v)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			//! Check if we have enough space
 
 			if (v_size >= base.size())
@@ -522,9 +486,6 @@ namespace openfpm
 		 */
 		void add(const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container & v)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			//! Check if we have enough space
 
 			if (v_size >= base.size())
@@ -549,9 +510,6 @@ namespace openfpm
 		 */
 		template <typename M, typename gp> void add(const vector<T, M,layout, layout_base,gp,OPENFPM_NATIVE> & v)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			//! Add the element of v
 			for (size_t i = 0 ; i < v.size() ; i++)
 				add(v.get(i));
@@ -596,9 +554,6 @@ namespace openfpm
 		void merge_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v,
 				 	   const openfpm::vector<size_t> & opart)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 
 			if (v.size() != opart.size())
@@ -658,10 +613,6 @@ namespace openfpm
 		void merge_prp_device(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v,
 				 	   unsigned int start)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
-
 			merge_prp_device_impl<std::is_same<Memory,CudaMemory>::value,T,Memory,layout,layout_base,grow_p>
 			::template run<S,M,gp,OPENFPM_NATIVE,layout_base,args...>(*this,v,start);
 		}
@@ -711,9 +662,6 @@ namespace openfpm
 		void merge_prp_v(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
 						 const openfpm::vector<aggregate<size_t,size_t>> & opart)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 
 			if (v.size() != opart.size())
@@ -778,9 +726,6 @@ namespace openfpm
 		void merge_prp_v(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
 				         size_t start)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			//! Add the element of v
 			for (size_t i = 0 ; i < v.size() ; i++)
 			{
@@ -817,9 +762,6 @@ namespace openfpm
 				  unsigned int ...args>
 		void add_prp(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			//! Add the element of v
 			for (size_t i = 0 ; i < v.size() ; i++)
 			{
@@ -864,9 +806,6 @@ namespace openfpm
 		 */
 		void insert(size_t key)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			add();
 
 			long int d_k = (long int)size()-1;
@@ -889,9 +828,6 @@ namespace openfpm
 		 */
 		void remove(size_t key)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			size_t d_k = key;
 			size_t s_k = key + 1;
 
@@ -918,9 +854,6 @@ namespace openfpm
 		 */
 		void remove(openfpm::vector<size_t> & keys, size_t start = 0)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			// Nothing to remove return
 			if (keys.size() <= start )
 				return;
@@ -967,9 +900,6 @@ namespace openfpm
 		template <unsigned int p>
 		inline auto get(size_t id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
 #endif
@@ -990,9 +920,6 @@ namespace openfpm
 		 */
 		inline auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>(id)))
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
 #endif
@@ -1012,9 +939,6 @@ namespace openfpm
 		 */
 		inline auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
 #endif
@@ -1037,9 +961,6 @@ namespace openfpm
 
 		inline const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container get_o(size_t id) const
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
 #endif
@@ -1090,9 +1011,6 @@ namespace openfpm
 		 */
 		inline const typename grid_cpu<1,T,Memory,layout>::container last() const
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			grid_key_dx<1> key(size()-1);
 
 			return base.get_o(key);
@@ -1112,9 +1030,6 @@ namespace openfpm
 		template <unsigned int p>
 		inline auto get(size_t id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
 #endif
@@ -1131,9 +1046,6 @@ namespace openfpm
 
 		inline typename grid_cpu<1,T,Memory,typename layout_base<T>::type >::container last()
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			grid_key_dx<1> key(size()-1);
 
 			return base.get_o(key);
@@ -1143,9 +1055,6 @@ namespace openfpm
 		~vector() THROW
 		{
 			// Eliminate the pointer
-	#ifdef SE_CLASS2
-			check_delete(this);
-	#endif
 		}
 
 		/*! \brief It duplicate the vector
@@ -1155,9 +1064,6 @@ namespace openfpm
 		 */
 		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> duplicate() const
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> dup;
 
 			dup.v_size = v_size;
@@ -1187,10 +1093,6 @@ namespace openfpm
 		vector(vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> && v)
 		:v_size(0)
 		{
-			// Add this pointer
-#ifdef SE_CLASS2
-			check_new(this,8,VECTOR_EVENT,1);
-#endif
 			swap(v);
 		}
 
@@ -1202,9 +1104,6 @@ namespace openfpm
 		vector(const vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & v) THROW
 		:v_size(0)
 		{
-#ifdef SE_CLASS2
-			check_new(this,8,VECTOR_EVENT,1);
-#endif
 			swap(v.duplicate());
 		}
 
@@ -1212,9 +1111,6 @@ namespace openfpm
 		vector() THROW
 		:v_size(0),base(0)
 		{
-#ifdef SE_CLASS2
-			check_new(this,8,VECTOR_EVENT,1);
-#endif
 			base.setMemory();
 		}
 
@@ -1222,9 +1118,6 @@ namespace openfpm
 		vector(size_t sz) THROW
 		:v_size(sz),base(sz)
 		{
-#ifdef SE_CLASS2
-			check_new(this,8,VECTOR_EVENT,1);
-#endif
 			base.setMemory();
 		}
 
@@ -1236,9 +1129,6 @@ namespace openfpm
 		 */
 		void set(size_t id, const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container & obj)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 			check_overflow(id);
 #endif
@@ -1263,10 +1153,6 @@ namespace openfpm
 		 */
 		template <typename encap_S, unsigned int ...args> void set_o(size_t i, const encap_S & obj)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
-
 			// write the object in the last element
 			object_s_di<encap_S,decltype(get(i)),OBJ_ENCAP,args...>(obj,get(i));
 		}
@@ -1279,9 +1165,6 @@ namespace openfpm
 		 */
 		void set(size_t id, const T & obj)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 			check_overflow(id);
 #endif
@@ -1298,9 +1181,6 @@ namespace openfpm
 		 */
 		void set(size_t id, vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & v, size_t src)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 			check_overflow(id);
 #endif
@@ -1319,9 +1199,6 @@ namespace openfpm
 		 */
 		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Memory, layout, layout_base,grow_p,OPENFPM_NATIVE> && mv)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			v_size = mv.v_size;
 			base.swap(mv.base);
 
@@ -1339,9 +1216,6 @@ namespace openfpm
 		 */
 		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Memory, layout, layout_base ,grow_p,OPENFPM_NATIVE> & mv)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			v_size = mv.v_size;
 			size_t rsz[1] = {v_size};
 			base.resize(rsz);
@@ -1380,9 +1254,6 @@ namespace openfpm
 		 */
 		template<typename Mem, typename gp> vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Mem, layout, layout_base,gp,OPENFPM_NATIVE> && mv)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			v_size = mv.v_size;
 			base.swap(mv.base);
 
@@ -1400,9 +1271,6 @@ namespace openfpm
 		 */
 		template<typename Mem, typename gp> vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Mem, layout, layout_base ,gp,OPENFPM_NATIVE> & mv)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			v_size = mv.getInternal_v_size();
 			size_t rsz[1] = {v_size};
 			base.resize(rsz);
@@ -1441,9 +1309,6 @@ namespace openfpm
 		template<typename Mem, template <typename> class layout_base2>
 		vector<T, Memory,layout,layout_base2,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Mem, layout, layout_base2,grow_p,OPENFPM_NATIVE> && mv)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			v_size = mv.v_size;
 			base.swap(mv.base);
 
@@ -1466,9 +1331,6 @@ namespace openfpm
 		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> &
 		operator=(const vector<T, Mem, layout2, layout_base2 ,grow_p,OPENFPM_NATIVE> & mv)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			v_size = mv.getInternal_v_size();
 			size_t rsz[1] = {v_size};
 			base.resize(rsz);
@@ -1537,9 +1399,6 @@ namespace openfpm
 		 */
 		void swap_nomode(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & v)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			size_t sz_sp = v_size;
 
 			// swap the v_size
@@ -1556,9 +1415,6 @@ namespace openfpm
 		 */
 		void swap(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & v)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			size_t sz_sp = v_size;
 
 			// swap the v_size
@@ -1575,9 +1431,6 @@ namespace openfpm
 		 */
 		void swap(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> && v)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			size_t sz_sp = v_size;
 
 			// swap the v_size
@@ -1596,9 +1449,6 @@ namespace openfpm
 		 */
 		vector_key_iterator getIteratorFrom(size_t start) const
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			return vector_key_iterator(v_size,start);
 		}
 
@@ -1613,9 +1463,6 @@ namespace openfpm
 		 */
 		vector_key_iterator getIteratorTo(size_t stop) const
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			return vector_key_iterator(stop,0);
 		}
 
@@ -1644,9 +1491,6 @@ namespace openfpm
 
 		vector_key_iterator getIterator() const
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			return vector_key_iterator(v_size);
 		}
 
@@ -1673,9 +1517,6 @@ namespace openfpm
 
 		size_t packObjectSize()
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			return base.packObjectSize();
 		}
 
@@ -1688,9 +1529,6 @@ namespace openfpm
 		 */
 		size_t packObject(void * mem)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			return base.packObject(mem);
 		}
 
@@ -1760,9 +1598,6 @@ namespace openfpm
 		 */
 		template<unsigned int p = 0> void setMemory(Memory & mem)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			base.template setMemory<p>(mem);
 		}
 
@@ -1773,9 +1608,6 @@ namespace openfpm
 		 */
 		void setMemoryArray(Memory * mem)
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			base.setMemoryArray(mem);
 		}
 
@@ -1788,9 +1620,6 @@ namespace openfpm
 		 */
 		template<unsigned int p = 0> void * getPointer()
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			return base.template getPointer<p>();
 		}
 
@@ -1801,9 +1630,6 @@ namespace openfpm
 		 */
 		template<unsigned int p = 0> const void * getPointer() const
 		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
 			return base.getPointer();
 		}
 
@@ -1815,20 +1641,6 @@ namespace openfpm
 		static bool noPointers()
 		{
 			return false;
-		}
-
-		/* \brief It return the id of structure in the allocation list
-		 *
-		 * \see print_alloc and SE_CLASS2
-		 *
-		 */
-		long int who()
-		{
-#ifdef SE_CLASS2
-			return check_whoami(this,8);
-#else
-			return -1;
-#endif
 		}
 
 		/*! \brief Internal function

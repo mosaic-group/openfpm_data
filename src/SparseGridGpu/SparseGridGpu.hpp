@@ -638,7 +638,6 @@ private:
 		tmp_swp.swap(tmp);
 
 		pack_subs_swp.swap(pack_subs);
-		req_index_swp = req_index;
 		index_size_swp = private_get_index_array().size();
     }
 
@@ -655,7 +654,7 @@ private:
 		tmp_swp_r.swap(tmp);
 
 		pack_subs_swp_r.swap(pack_subs);
-		req_index_swp_r = req_index;
+		//req_index_swp_r = req_index;
 		index_size_swp_r = private_get_index_array().size();
     }
 
@@ -760,19 +759,31 @@ public:
     void savePackVariableIfNotKeepGeometry(int opt, bool is_pack_remote)
     {
 		if (is_pack_remote == false)
-		{swap_local_pack();}
+		{
+			swap_local_pack();
+			req_index_swp = req_index;
+		}
 
 		if (is_pack_remote == true)
-		{swap_remote_pack();}
+		{
+			swap_remote_pack();
+			req_index_swp_r = req_index;
+		}
     }
 
     void RestorePackVariableIfKeepGeometry(int opt, bool is_pack_remote)
     {
 		if (opt & KEEP_GEOMETRY && is_pack_remote == false)
-		{swap_local_pack();}
+		{
+			swap_local_pack();
+			req_index = req_index_swp;
+		}
 
 		if (opt & KEEP_GEOMETRY && is_pack_remote == true)
-		{swap_remote_pack();}
+		{
+			swap_remote_pack();
+			req_index = req_index_swp_r;
+		}
     }
 
     template<unsigned int n_it>
@@ -1183,7 +1194,7 @@ private:
     	auto & dataBuffer = private_get_data_array();
 
 		if (req_index != pack_subs.size())
-		{std::cerr << __FILE__ << ":" << __LINE__ << " error the packing request number differ from the number of packed objects" << std::endl;}
+		{std::cerr << __FILE__ << ":" << __LINE__ << " error the packing request number differ from the number of packed objects " << req_index << "  " << pack_subs.size() << std::endl;}
 
     	size_t tot_pnt = 0;
     	size_t tot_cnk = 0;

@@ -41,9 +41,9 @@ else ()
     set(CUDA_SOURCES)
 endif ()
 
-add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp
-        ${CUDA_SOURCES}
+add_executable(mem_map ${CUDA_SOURCES}
         main.cpp
+        data_type/aggregate_unit_tests.cpp
         Vector/map_vector_sparse_unit_tests.cpp
         util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
         memory_ly/memory_conf_unit_tests.cpp

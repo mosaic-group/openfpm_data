@@ -10,6 +10,7 @@
 
 #include <boost/fusion/container/vector.hpp>
 #include <Packer_Unpacker/has_pack_agg.hpp>
+#include "util/copy_compare/copy_compare_aggregates.hpp"
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -268,5 +269,19 @@ template<typename T>
 struct is_aggregate<T, typename Void< typename T::yes_is_aggregate>::type> : std::true_type
 {};
 
+namespace openfpm
+{
+	template<unsigned int p, typename aggr>
+	auto at_c(aggr & agg) -> decltype(boost::fusion::at_c<p>(agg.data))
+	{
+		return boost::fusion::at_c<p>(agg.data);
+	}
+
+	template<unsigned int p, typename aggr>
+	auto get(aggr & agg) -> decltype(boost::fusion::at_c<p>(agg.data))
+	{
+		return boost::fusion::at_c<p>(agg.data);
+	}
+}
 
 #endif /* OPENFPM_DATA_SRC_UTIL_AGGREGATE_HPP_ */

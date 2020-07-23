@@ -59,9 +59,6 @@ public:
 	//! return the size of the vector
 	inline size_t size() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return base.size();
 	}
 
@@ -73,22 +70,7 @@ public:
 	 */
 	inline void resize(size_t slot)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-
-		// here we have to check if the vector go into reallocation
-		void * ptr_old = &base[0];
-#endif
-
 		base.resize_no_device(slot);
-
-#ifdef SE_CLASS2
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],slot*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-#endif
 	}
 
 	/*! \brief Remove all the element from the vector
@@ -96,9 +78,6 @@ public:
 	 */
 	inline void clear()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.clear();
 	}
 
@@ -113,23 +92,8 @@ public:
 	 */
 	inline void add(const T & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base[0];
-#endif
-
 		base.add_no_device();
 		base.template get<0>(size()-1) = v;
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
@@ -143,23 +107,8 @@ public:
 	 */
 	inline void add(T && v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base.template get<0>(0);
-#endif
-
 		base.add_no_device();
 		base.template get<0>(size()-1).swap(v);
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base.template get<0>(0))
-		{
-			check_delete(ptr_old);
-			check_new(&base.template get<0>(0),base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief Add an empty object (it call the default constructor () ) at the end of the vector
@@ -167,22 +116,7 @@ public:
 	 */
 	inline void add()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base.template get<0>(0);
-#endif
-
 		base.add_no_device();
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base.template get<0>(0))
-		{
-			check_delete(ptr_old);
-			check_new(&base.template get<0>(0),base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief Get the last element
@@ -192,9 +126,6 @@ public:
 	 */
 	inline T & last()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (base.size() == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
@@ -209,9 +140,6 @@ public:
 	 */
 	inline const T & last() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (base.size() == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
@@ -226,9 +154,6 @@ public:
 	 */
 	void swap(vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> && v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.swap(v.base);
 	}
 
@@ -246,9 +171,6 @@ public:
 	 */
 	inline T& operator[](int id)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		vector_overflow(id);
 #endif
@@ -265,9 +187,6 @@ public:
 	 */
 	inline T& get(int id)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		vector_overflow(id);
 #endif
@@ -286,9 +205,6 @@ public:
 	 */
 	inline const T& get(int id) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		vector_overflow(id);
 #endif
@@ -305,9 +221,6 @@ public:
 	 */
 	inline T & get(size_t id)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		vector_overflow(id);
 #endif
@@ -323,9 +236,6 @@ public:
 	 */
 	inline const T & get(size_t id) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		vector_overflow(id);
 #endif
@@ -339,9 +249,6 @@ public:
 	 */
 	inline void reserve(size_t ns)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.reserve(ns);
 	}
 
@@ -349,41 +256,19 @@ public:
 	vector() noexcept
 	:err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-#endif
 	}
 
 	//! Constructor, vector of size sz
 	vector(size_t sz) noexcept
 	:base(sz),err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-		check_new(&base[0],sizeof(T)*sz,VECTOR_STD_EVENT,1);
-#endif
 	}
 
 	//! Constructor from another vector
 	vector(const vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> & v) noexcept
 	:err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-		void * ptr_old = &base[0];
-#endif
-
 		base = v.base;
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief Initializer from constructor
@@ -394,30 +279,18 @@ public:
 	vector(const std::initializer_list<T> & v)
 	:base(v)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-		check_new(&base[0],sizeof(T)*v.size(),VECTOR_STD_EVENT,1);
-#endif
 	}
 
 	//! Constructor from another vector
 	vector(vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> && v) noexcept
 	:err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-#endif
-
 		base.swap(v.base);
 	}
 
 	//! destructor
 	~vector() noexcept
 	{
-#ifdef SE_CLASS2
-		check_delete(this);
-		check_delete(&base.template get<0>(0));
-#endif
 	}
 
 	/*! swap the content of the vector
@@ -427,9 +300,6 @@ public:
 	 */
 	void swap(vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.swap(v.base);
 	}
 
@@ -443,22 +313,7 @@ public:
 	vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> &
 	operator=(const vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base[0];
-#endif
-
 		base = v.base;
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 
 		return *this;
 	}
@@ -470,9 +325,6 @@ public:
 	 */
 	vector_key_iterator getIterator() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return vector_key_iterator(base.size());
 	}
 
@@ -485,9 +337,6 @@ public:
 	 */
 	vector_key_iterator getIteratorTo(size_t k) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return vector_key_iterator(k);
 	}
 
@@ -498,9 +347,6 @@ public:
 	 */
 	void * getPointer()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return &base.template get<0>(0);
 	}
 
@@ -579,9 +425,6 @@ public:
 	 */
 	size_t getLastError()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return err_code;
 	}
 
@@ -600,22 +443,6 @@ public:
 
 			ACTION_ON_ERROR(VECTOR_ERROR_OBJECT);\
 		}
-	}
-
-	/* \brief It return the id of structure in the allocation list
-	 *
-	 * \see print_alloc and SE_CLASS2
-	 *
-	 * \return the allocation id of this class
-	 *
-	 */
-	long int who()
-	{
-#ifdef SE_CLASS2
-		return check_whoami(this,8);
-#else
-		return -1;
-#endif
 	}
 };
 

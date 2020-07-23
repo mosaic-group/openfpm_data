@@ -211,8 +211,6 @@ BOOST_AUTO_TEST_CASE( copy_grid_test_use)
 
 	Test_copy_grid_cmp(g2_src,g2_dst,bsrc_2,bdst_2);
 
-#ifndef SE_CLASS2
-
 	Box<3,size_t> bsrc_3({4,7,1},{11,20,6});
 	Box<3,size_t> bdst_3({20,5,10},{27,18,15});
 
@@ -228,7 +226,6 @@ BOOST_AUTO_TEST_CASE( copy_grid_test_use)
 	Box<4,size_t> bdst_4({20,5,10,13},{27,18,15,16});
 
 	Test_copy_grid_cmp(g4_src,g4_dst,bsrc_4,bdst_4);
-#endif
 #endif
 	}
 }

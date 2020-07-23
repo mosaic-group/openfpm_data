@@ -10,7 +10,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules/)
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIR} CACHE PATH "Include directory for BOOST")
 set(LIBHILBERT_ROOT CACHE PATH "LibHilbert root path")
 set(SE_CLASS1 CACHE BOOL "Activate compilation with SE_CLASS1")
-set(SE_CLASS2 CACHE BOOL "Activate compilation with SE_CLASS2")
 set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
 set(ENABLE_GPU CACHE BOOL "Disable the GPU code independently that a cuda compiler is found")
 set(TEST_PERFORMANCE CACHE BOOL "Enable test performance")
@@ -48,10 +47,6 @@ find_package(Vc REQUIRED)
 
 if(SE_CLASS1)
 	set(DEFINE_SE_CLASS1 "#define SE_CLASS1")
-endif()
-
-if(SE_CLASS2)
-	set(DEFINE_SE_CLASS2 "#define SE_CLASS2")
 endif()
 
 if(SE_CLASS3)

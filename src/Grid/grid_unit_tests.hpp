@@ -301,23 +301,6 @@ template<unsigned int dim, typename g> void test_layout_gridObjNd(g & c3, size_t
 
 BOOST_AUTO_TEST_SUITE( grid_test )
 
-////////// Test function ///////////
-
-#ifdef SE_CLASS2
-
-grid_cpu<3,aggregate<float>> & test_error()
-{
-	size_t sz[] = {16,16,16};
-
-	grid_cpu<3,aggregate<float>> g(sz);
-
-	return g;
-}
-
-#endif
-
-/////////////////////////////////////
-
 BOOST_AUTO_TEST_CASE( grid_safety_check )
 {
 #if defined(SE_CLASS1) && defined (THROW_ON_ERROR)
@@ -414,38 +397,6 @@ BOOST_AUTO_TEST_CASE( grid_safety_check )
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
-
-	#if defined(SE_CLASS2) && defined (THROW_ON_ERROR)
-
-	error = false;
-
-	// Create a grid
-
-	grid_cpu<3,aggregate<float>> * gp = new grid_cpu<3,aggregate<float>>(sz);
-	delete gp;
-
-	// Try to access the class
-
-	try
-	{gp->size();}
-	catch (std::exception & e)
-	{
-		error = true;
-		BOOST_REQUIRE_EQUAL(e.what(),"Runtime memory error");
-	}
-	BOOST_REQUIRE_EQUAL(error,true);
-
-	error = false;
-	try
-	{grid_cpu<3,aggregate<float>> gr = test_error();}
-	catch (std::exception & e)
-	{
-		error = true;
-		BOOST_REQUIRE_EQUAL(e.what(),"Runtime memory error");
-	}
-	BOOST_REQUIRE_EQUAL(error,true);
-
-	#endif
 
 #endif
 }

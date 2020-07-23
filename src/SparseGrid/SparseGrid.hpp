@@ -1096,9 +1096,6 @@ public:
 	 */
 	const grid_lin & getGrid() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return g_sm;
 	}
 
