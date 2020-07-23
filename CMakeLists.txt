@@ -14,7 +14,6 @@ endif()
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIR} CACHE PATH "Include directory for BOOST")
 set(HDF5_ROOT CACHE PATH "HDF5 root path")
 set(SE_CLASS1 CACHE BOOL "Activate compilation with SE_CLASS1")
-set(SE_CLASS2 CACHE BOOL "Activate compilation with SE_CLASS2")
 set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
 set(ENV{HDF5_ROOT} ${HDF5_ROOT})
 set(OPENFPM_PDATA_DIR CACHE PATH "OpenFPM_pdata dirs")
@@ -66,10 +65,6 @@ endif()
 
 if(SE_CLASS1)
 	set(DEFINE_SE_CLASS1 "#define SE_CLASS1")
-endif()
-
-if(SE_CLASS2)
-	set(DEFINE_SE_CLASS2 "#define SE_CLASS2")
 endif()
 
 if(SE_CLASS3)
