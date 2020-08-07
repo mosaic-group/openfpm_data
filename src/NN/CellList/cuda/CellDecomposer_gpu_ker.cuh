@@ -30,6 +30,9 @@ class CellDecomposer_gpu_ker
 
 public:
 
+	__device__ __host__ CellDecomposer_gpu_ker()
+	{}
+
 	__device__ __host__ CellDecomposer_gpu_ker(openfpm::array<T,dim,cnt_type> & spacing_c,
 	         	 	 	  openfpm::array<ids_type,dim,cnt_type> & div_c,
 	         	 	 	  openfpm::array<ids_type,dim,cnt_type> & off,

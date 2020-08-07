@@ -84,6 +84,7 @@ struct call_recursive_host_device_if_vector
 
 		for(size_t i = start ; i < stop ; i++)
 		{
+			new (&ptr_tt[i]) T_ker();
 			ptr_tt[i] = ptr[i].toKernel();
 		}
 
@@ -166,6 +167,56 @@ struct call_recursive_host_device_if_vector<T,T_ker,type_prp,layout_base,4>
 	template<typename obj_type>
 	static void call(obj_type & obj, size_t start, size_t stop) {}
 };
+
+/////////// destructor
+
+
+template<typename T, typename T_ker, typename type_prp, template<typename> class layout_base , int is_vector>
+struct call_recursive_destructor_if_vector
+{
+	template<typename mem_type, typename obj_type> static void destruct(mem_type * mem, obj_type & obj)
+	{
+		size_t sz = mem->size() / sizeof(type_prp);
+		// The type of device and the type on host does not match (in general)
+		// So we have to convert before transfer
+
+		mem_type tmp;
+
+		tmp.allocate(mem->size());
+
+		mem->deviceToHost(tmp);
+		T_ker * ptr = static_cast<T_ker *>(tmp.getPointer());
+
+		for(size_t i = 0 ; i < sz ; i++)
+		{
+			ptr->~T_ker();
+			++ptr;
+		}
+	}
+};
+
+template<typename T, typename T_ker, typename type_prp ,template<typename> class layout_base>
+struct call_recursive_destructor_if_vector<T,T_ker,type_prp,layout_base,0>
+{
+	template<typename mem_type,typename obj_type> static void destruct(mem_type * mem, obj_type & obj)
+	{}
+};
+
+template<typename T, typename T_ker, typename type_prp ,template<typename> class layout_base>
+struct call_recursive_destructor_if_vector<T,T_ker,type_prp,layout_base,3>
+{
+	template<typename mem_type,typename obj_type> static void destruct(mem_type * mem, obj_type & obj)
+	{}
+};
+
+template<typename T, typename T_ker, typename type_prp ,template<typename> class layout_base>
+struct call_recursive_destructor_if_vector<T,T_ker,type_prp,layout_base,4>
+{
+	template<typename mem_type,typename obj_type> static void destruct(mem_type * mem, obj_type & obj)
+	{}
+};
+
+///////////////////////
 
 /*! \brief this class is a functor for "for_each" algorithm
  *

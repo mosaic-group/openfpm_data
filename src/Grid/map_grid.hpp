@@ -499,6 +499,57 @@ struct host_to_device_impl
  * \tparam encap dst
  *
  */
+template<typename T_type, template<typename> class layout_base , typename Memory>
+struct deconstruct_impl
+{
+	//! object to destruct
+	typename memory_traits_inte<T_type>::type & dst;
+
+	/*! \brief constructor
+	 *
+	 * \param src source encapsulated object
+	 * \param dst source encapsulated object
+	 *
+	 */
+	inline deconstruct_impl(typename memory_traits_inte<T_type>::type & dst)
+	:dst(dst)
+	{};
+
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		typedef decltype(boost::fusion::at_c<T::value>(dst).mem_r) mem_r_type;
+
+		typedef typename boost::mpl::at<typename T_type::type,T>::type type_prp;
+
+		typedef typename toKernel_transform<layout_base,typename mem_r_type::value_type>::type kernel_type;
+
+		typedef boost::mpl::int_<(is_vector<typename mem_r_type::value_type>::value ||
+								  is_vector_dist<typename mem_r_type::value_type>::value ||
+								  is_gpu_celllist<typename mem_r_type::value_type>::value) + 2*std::is_array<type_prp>::value + std::rank<type_prp>::value> crh_cond;
+
+		call_recursive_destructor_if_vector<typename mem_r_type::value_type,
+											 kernel_type,
+											 type_prp,
+											 layout_base,
+											 crh_cond::value>
+		::template destruct<Memory,mem_r_type>(static_cast<Memory *>(boost::fusion::at_c<T::value>(dst).mem),
+									 boost::fusion::at_c<T::value>(dst).mem_r);
+	}
+};
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to copy one encap into another encap object
+ *
+ * \tparam encap source
+ * \tparam encap dst
+ *
+ */
 template<typename T_type, unsigned int ... prp>
 struct device_to_host_impl
 {
@@ -850,6 +901,13 @@ public:
 		grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::operator=(base);
 
 		return *this;
+	}
+
+	~grid_cpu()
+	{
+		deconstruct_impl<T,memory_traits_inte,S> dth(this->data_);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(dth);
 	}
 };
 

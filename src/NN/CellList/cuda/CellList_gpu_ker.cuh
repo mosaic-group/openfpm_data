@@ -440,6 +440,10 @@ public:
 	//! Indicate this structure has a function to check the device pointer
 	typedef int yes_has_check_device_pointer;
 
+	__host__ __device__ inline CellList_gpu_ker()
+	:g_m(0)
+	{}
+
 	__host__ __device__ inline CellList_gpu_ker(openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> starts,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt,
