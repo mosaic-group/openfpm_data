@@ -7,6 +7,7 @@
 #include "Space/Shape/HyperCube.hpp"
 #include "timer.hpp"
 #include "grid_util_test.hpp"
+#include "memory/ShmBuffer.hpp"
 
 #ifdef TEST_COVERAGE_MODE
 #define GS_SIZE 8
@@ -723,6 +724,63 @@ BOOST_AUTO_TEST_CASE(grid_resize_less)
 	g1.resize(sz2);
 
 	BOOST_REQUIRE_EQUAL(g1.size(),25ul);
+}
+
+BOOST_AUTO_TEST_CASE(grid_shm_resize_less)
+{
+    size_t sz1[] = {256,256};
+    size_t sz2[] = {5,5};
+    size_t sz3[] = {512,512};
+
+    handle_shmem h = create_shmanager().create("/", 0);
+
+    grid_cpu<2,Box<2,float>> g1(sz1);
+    g1.set_shmem_handle(h);
+    g1.setMemory();
+
+    fill_2_grid_data(g1,g1);
+
+    ShmBuffer * memBuf = new ShmBuffer("/", 0, false);
+
+    ptr_with_size pws;
+    size_t bufSize = 0;
+    memBuf->update_key(true);
+    pws = memBuf->attach();
+    bufSize = pws.size - extra_pad - MEM_ALIGNMENT;
+    memBuf->detach(false);
+
+    BOOST_REQUIRE_EQUAL(bufSize,256*256*sizeof(Box<2,float>));
+
+    Box<2,float>* ptr = (Box<2,float>*)pws.ptr;
+
+    auto it1 = g1.getIterator();
+    for(size_t i = 0; i < g1.size(); i++, ++it1)
+    {
+        auto key = it1.get();
+        BOOST_REQUIRE_EQUAL(g1.get<0>(key)[0], ptr[i].getLow(0));
+        BOOST_REQUIRE_EQUAL(g1.get<1>(key)[1], ptr[i].getHigh(1));
+    }
+
+
+    g1.resize(sz2);
+
+    BOOST_REQUIRE_EQUAL(g1.size(),25ul);
+    memBuf->update_key(true);
+    pws = memBuf->attach();
+    bufSize = pws.size - extra_pad - MEM_ALIGNMENT;
+    memBuf->detach(false);
+
+    BOOST_REQUIRE_EQUAL(bufSize,25*sizeof(Box<2,float>));
+
+    g1.resize(sz3);
+
+    BOOST_REQUIRE_EQUAL(g1.size(),512*512);
+    memBuf->update_key(true);
+    pws = memBuf->attach();
+    bufSize = pws.size - extra_pad - MEM_ALIGNMENT;
+    memBuf->detach(false);
+
+    BOOST_REQUIRE_EQUAL(bufSize,512*512*sizeof(Box<2,float>));
 }
 
 BOOST_AUTO_TEST_CASE(copy_encap_vector_fusion_test)
