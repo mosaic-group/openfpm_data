@@ -239,10 +239,7 @@ class VTKWriter<pair,VECTOR_POINTS>
 
 		// write the number of vertex
 
-		if (ft == file_type::ASCII)
-		{v_out += "POINTS " + std::to_string(get_total()) + " float" + "\n";}
-		else
-		{v_out += "POINTS " + std::to_string(get_total()) + " " + getType<typename pair::first::value_type::coord_type>() + "\n";}
+		v_out += "POINTS " + std::to_string(get_total()) + " " + getType<typename pair::first::value_type::coord_type>() + "\n";
 
 		// return the vertex properties string
 		return v_out;
