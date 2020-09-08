@@ -173,6 +173,9 @@ public:
 	    H5Sclose(file_dataspace_id_2);
 	    H5Pclose(plist_id);
 	    H5Fclose(file);
+
+	    mem.decRef();
+	    delete &mem;
 	}
 
 };
