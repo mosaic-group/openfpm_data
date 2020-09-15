@@ -989,22 +989,6 @@ namespace openfpm
 			return false;
 		}
 
-		/*! \brief Get an element of the vector
-		 *
-		 * Get an element of the vector
-		 *
-		 * \tparam p Property to get
-		 * \param id Element to get
-		 *
-		 * \return the element value requested
-		 *
-		 */
-		template <unsigned int p, typename keyType>
-		inline auto getProp(keyType id) const -> decltype(this->template get<p>(id.getKey()))
-		{
-			return this->template get<p>(id.getKey());
-		}
-
 
 		/*! \brief Get an element of the vector
 		 *
@@ -1138,6 +1122,22 @@ namespace openfpm
 
 		template <unsigned int p,typename KeyType>
 		inline auto getProp(KeyType id) -> decltype(this->template get<p>(id.getKey()))
+		{
+			return this->template get<p>(id.getKey());
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \tparam p Property to get
+		 * \param id Element to get
+		 *
+		 * \return the element value requested
+		 *
+		 */
+		template <unsigned int p, typename keyType>
+		inline auto getProp(keyType id) const -> decltype(this->template get<p>(id.getKey()))
 		{
 			return this->template get<p>(id.getKey());
 		}
