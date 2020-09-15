@@ -45,14 +45,14 @@ public:
 	 * \param g ghost
 	 *
 	 */
-	template <typename S> inline Ghost(const Ghost<dim,S> & g)
+/*	template <typename S> inline Ghost(const Ghost<dim,S> & g)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			this->setLow(i,g.getLow(i));
 			this->setHigh(i,g.getHigh(i));
 		}
-	}
+	}*/
 
 	/*! \brief Constructor from initializer list
 	 *

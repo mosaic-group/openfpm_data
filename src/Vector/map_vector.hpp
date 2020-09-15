@@ -979,6 +979,33 @@ namespace openfpm
 			return base.template get<p>(key);
 		}
 
+		/*! \brief Indicate that this class is not a subset
+		 *
+		 * \return false
+		 *
+		 */
+		bool isSubset() const
+		{
+			return false;
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \tparam p Property to get
+		 * \param id Element to get
+		 *
+		 * \return the element value requested
+		 *
+		 */
+		template <unsigned int p, typename keyType>
+		inline auto getProp(keyType id) const -> decltype(this->template get<p>(id.getKey()))
+		{
+			return this->template get<p>(id.getKey());
+		}
+
+
 		/*! \brief Get an element of the vector
 		 *
 		 * Get an element of the vector
@@ -1096,6 +1123,23 @@ namespace openfpm
 			grid_key_dx<1> key(size()-1);
 
 			return base.get_o(key);
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \tparam p Property to get
+		 * \param id Element to get
+		 *
+		 * \return the element value requested
+		 *
+		 */
+
+		template <unsigned int p,typename KeyType>
+		inline auto getProp(KeyType id) -> decltype(this->template get<p>(id.getKey()))
+		{
+			return this->template get<p>(id.getKey());
 		}
 
 		/*! \brief Get an element of the vector
@@ -1305,6 +1349,12 @@ namespace openfpm
 			check_overflow(id);
 #endif
 			base.set(id,v.base,src);
+		}
+
+		template<typename key_type>
+		key_type getOriginKey(key_type vec_key)
+		{
+			return vec_key;
 		}
 
 
@@ -1634,6 +1684,21 @@ namespace openfpm
 		}
 
 #endif
+
+		/*! \brief Get the vector elements iterator
+		 *
+		 *
+		 * \return an iterator to iterate through all the elements of the vector
+		 *
+		 */
+
+		vector_key_iterator getDomainIterator() const
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			return getIterator();
+		}
 
 		/*! \brief Get the vector elements iterator
 		 *
