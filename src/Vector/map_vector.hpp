@@ -1014,28 +1014,6 @@ namespace openfpm
 
 		/*! \brief Get an element of the vector
 		 *
-		 * Get an element of the vector
-		 *
-		 * \param id Element to get
-		 *
-		 * \return the element (encapsulated)
-		 *
-		 */
-		inline auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
-		{
-#ifdef SE_CLASS2
-			check_valid(this,8);
-#endif
-#if defined(SE_CLASS1) && !defined(__NVCC__)
-			check_overflow(id);
-#endif
-			grid_key_dx<1> key(id);
-
-			return base.get_o(key);
-		}
-
-		/*! \brief Get an element of the vector
-		 *
 		 * \deprecated
 		 *
 		 * exactly as get, exist to keep the compatibility with grid
@@ -1121,7 +1099,7 @@ namespace openfpm
 		 */
 
 		template <unsigned int p,typename KeyType>
-		inline auto getProp(KeyType id) -> decltype(this->template get<p>(id.getKey()))
+		inline auto getProp(const KeyType & id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
 			return this->template get<p>(id.getKey());
 		}
@@ -1137,7 +1115,7 @@ namespace openfpm
 		 *
 		 */
 		template <unsigned int p, typename keyType>
-		inline auto getProp(keyType id) const -> decltype(this->template get<p>(id.getKey()))
+		inline auto getProp(const keyType & id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
 			return this->template get<p>(id.getKey());
 		}
@@ -1165,6 +1143,28 @@ namespace openfpm
 			grid_key_dx<1> key(id);
 
 			return base.template get<p>(key);
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \param id Element to get
+		 *
+		 * \return the element (encapsulated)
+		 *
+		 */
+		inline auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#if defined(SE_CLASS1) && !defined(__NVCC__)
+			check_overflow(id);
+#endif
+			grid_key_dx<1> key(id);
+
+			return base.get_o(key);
 		}
 
 		/*! \brief Get the last element of the vector
