@@ -44,6 +44,15 @@ find_package(LibHilbert REQUIRED)
 find_package(Vc REQUIRED)
 
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(pdata PRIVATE "-Wno-undefined-var-template")
+    target_compile_options(pdata PRIVATE "-Wno-macro-redefined")
+endif()
+if ( CMAKE_COMPILER_IS_GNUCC )
+    target_compile_options(pdata PRIVATE "-Wno-deprecated-declarations")
+    target_compile_options(pdata PRIVATE "-Wno-undefined-var-template")
+    target_compile_options(pdata PRIVATE "-Wno-macro-redefined")
+endif()
 ###### CONFIG.h FILE ######
 
 if(SE_CLASS1)
