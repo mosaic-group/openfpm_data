@@ -525,6 +525,8 @@ private:
     openfpm::vector<int> n_shift_cp_swp;
     openfpm::vector<int> n_shift_cp_swp_r;
 	typedef typename aggregate_convert<dim,blockEdgeSize,aggregate<int>>::type convertAggr;
+
+	// Map to convert blocks from missaligned chunks
 	openfpm::vector_gpu<convertAggr> convert_blk;
 	openfpm::vector_gpu<convertAggr> convert_blk_swp;
 	openfpm::vector_gpu<convertAggr> convert_blk_swp_r;

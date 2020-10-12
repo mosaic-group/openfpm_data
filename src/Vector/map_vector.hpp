@@ -658,9 +658,10 @@ namespace openfpm
 				  typename M,
 				  typename gp,
 				  template <typename> class layout_base2,
+				  typename vector_opart_type,
 				  unsigned int ...args>
 		void merge_prp_v(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
-						 const openfpm::vector<aggregate<size_t,size_t>> & opart)
+						 const vector_opart_type & opart)
 		{
 #ifdef SE_CLASS1
 
@@ -680,6 +681,215 @@ namespace openfpm
 				// write the object in the last element
 				object_s_di_op<op,decltype(v.get(i)),decltype(get(size()-1)),OBJ_ENCAP,args...>(v.get(i),get(opart.template get<0>(i)));
 			}
+		}
+
+		/*! \brief It merge the elements of a source vector to this vector
+		 *
+		 * Given 2 vector v1 and v2 of size 7,3. and as merging operation the function add.
+		 * Merging the second vector v2 to
+		 * the first one v1 starting from the element 2. Mean
+		 *
+		 * \verbarim
+		 *
+		 * 6   8  3   2  1   0  3    v1 elements
+		 *        |   |  |
+		 *       op  op  op
+		 *        |   |  |
+		 *        5   1  9           v2 elements
+		 *
+		 *-------------------------------------
+		 * 6   8  8   3  10  0   3   updated v1 elements
+		 *
+		 * This operation is done for each selected property in args
+		 *
+		 * \endverbatim
+		 *
+		 * The number of properties in the source vector must be smaller than the destination
+		 * all the properties of S must be mapped so if S has 3 properties
+		 * 3 numbers for args are required
+		 *
+		 * \tparam op merging operation
+		 * \tparam S Base object of the source vector
+		 * \tparam M memory type of the source vector
+		 * \tparam gp Grow policy of the source vector
+		 * \tparam args one or more number that define which property to set-up
+		 *
+		 * \param v source vector
+		 * \param offset offset from where to copy in v
+		 * \param start index from where to start the merging
+		 *
+		 */
+		template <template<typename,typename> class op,
+		          typename S,
+				  typename M,
+				  typename gp,
+				  template <typename> class layout_base2,
+				  typename vector_opart_type,
+				  unsigned int ...args>
+		void merge_prp_v(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
+				         unsigned int offset,
+						 const vector_opart_type & opart)
+		{
+			size_t i2 = 0;
+
+			for (size_t i = offset ; i < v.size() ; i++)
+			{
+				auto dst = v.get(opart.template get<0>(i2));
+				auto src = v.get(i);
+				copy_cpu_encap_encap_op_prp<op,decltype(v.get(0)),decltype(v.get(0)),args...> cp(src,dst);
+
+				boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(args)> >(cp);
+				i2++;
+			}
+		}
+
+		/*! \brief It merge the elements of a source vector to this vector
+		 *
+		 * Given 2 vector v1 and v2 of size 7,3. and as merging operation the function add.
+		 * Merging the second vector v2 to
+		 * the first one v1 starting from the element 2. Mean
+		 *
+		 * \verbarim
+		 *
+		 * 6   8  3   2  1   0  3    v1 elements
+		 *        |   |  |
+		 *       op  op  op
+		 *        |   |  |
+		 *        5   1  9           v2 elements
+		 *
+		 *-------------------------------------
+		 * 6   8  8   3  10  0   3   updated v1 elements
+		 *
+		 * This operation is done for each selected property in args
+		 *
+		 * \endverbatim
+		 *
+		 * The number of properties in the source vector must be smaller than the destination
+		 * all the properties of S must be mapped so if S has 3 properties
+		 * 3 numbers for args are required
+		 *
+		 * \tparam op merging operation
+		 * \tparam S Base object of the source vector
+		 * \tparam M memory type of the source vector
+		 * \tparam gp Grow policy of the source vector
+		 * \tparam args one or more number that define which property to set-up
+		 *
+		 * \param v source vector
+		 * \param opart merging indexes (property 1)
+		 * \param start starting merging index for opart
+		 * \param stop stop merging index for opart
+		 *
+		 */
+		template <template<typename,typename> class op,
+		          typename S,
+				  typename M,
+				  typename gp,
+				  template <typename> class layout_base2,
+				  typename vector_opart_type,
+				  unsigned int ...args>
+		void merge_prp_v_device(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
+						 const vector_opart_type & opart,
+						 unsigned int start,
+						 unsigned int stop)
+		{
+#ifdef SE_CLASS1
+
+			if (v.size() != opart.size())
+				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be the same as o_part.size()" << opart.size() << std::endl;
+
+#endif
+
+#ifdef __NVCC__
+
+			size_t sz[1] = {stop - start};
+			grid_sm<1,void> nm(sz);
+
+			auto ite = nm.getGPUIterator();
+
+			// write the object in the last element
+			CUDA_LAUNCH((merge_add_prp_device_impl_src_dst_opar_offset<op,
+					                                                   decltype(v.toKernel()),
+																	   decltype(this->toKernel()),
+			                                                           decltype(opart.toKernel()),
+																	   args...>),ite,v.toKernel(),this->toKernel(),opart.toKernel(),start);
+
+			// calculate
+#else
+			std::cout << __FILE__ << ":" << __LINE__ << " Error you have to compile map_vector.hpp with nvcc to make GPU code working" << std::endl;
+
+#endif
+		}
+
+		/*! \brief It merge the elements of a source vector to this vector
+		 *
+		 * Given 2 vector v1 and v2 of size 7,3. and as merging operation the function add.
+		 * Merging the second vector v2 to
+		 * the first one v1 starting from the element 2. Mean
+		 *
+		 * \verbarim
+		 *
+		 * 6   8  3   2  1   0  3    v1 elements
+		 *        |   |  |
+		 *       op  op  op
+		 *        |   |  |
+		 *        5   1  9           v2 elements
+		 *
+		 *-------------------------------------
+		 * 6   8  8   3  10  0   3   updated v1 elements
+		 *
+		 * This operation is done for each selected property in args
+		 *
+		 * \endverbatim
+		 *
+		 * The number of properties in the source vector must be smaller than the destination
+		 * all the properties of S must be mapped so if S has 3 properties
+		 * 3 numbers for args are required
+		 *
+		 * \tparam op merging operation
+		 * \tparam S Base object of the source vector
+		 * \tparam M memory type of the source vector
+		 * \tparam gp Grow policy of the source vector
+		 * \tparam args one or more number that define which property to set-up
+		 *
+		 * \param v source vector
+		 * \param opart merging indexes (property 0)
+		 * \param i starting mergong indexes
+		 *
+		 */
+		template <template<typename,typename> class op,
+		          typename S,
+				  typename M,
+				  typename gp,
+				  template <typename> class layout_base2,
+				  typename vector_opart_type,
+				  unsigned int ...args>
+		void merge_prp_v_device(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
+						 unsigned int start,
+						 const vector_opart_type & opart)
+		{
+#ifdef SE_CLASS1
+
+			if (v.size() != opart.size())
+				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be the same as o_part.size()" << opart.size() << std::endl;
+
+#endif
+
+#ifdef __NVCC__
+
+			auto ite = opart.getGPUIterator();
+
+			// write the object in the last element
+			CUDA_LAUNCH((merge_add_prp_device_impl_src_offset_dst_opar<op,
+					                                                   decltype(v.toKernel()),
+																	   decltype(this->toKernel()),
+																	   decltype(opart.toKernel()),
+																	   args... >),ite,v.toKernel(),this->toKernel(),opart.toKernel(),start);
+
+			// calculate
+#else
+			std::cout << __FILE__ << ":" << __LINE__ << " Error you have to compile map_vector.hpp with nvcc to make GPU code working" << std::endl;
+
+#endif
 		}
 
 		/*! \brief It merge the elements of a source vector to this vector

@@ -74,9 +74,30 @@ struct add_
 	 * \param src Source object
 	 *
 	 */
-	static inline void operation(Tdst & dst, const Tsrc & src)
+	__device__ __host__ static inline void operation(Tdst & dst, const Tsrc & src)
 	{
 		dst += src;
+	}
+};
+
+/*! \brief This structure define the operation add to use with copy general
+ *
+ * \tparam Tdst destination object type
+ * \tparam Tsrc source object type
+ *
+ */
+template<typename Tdst, typename Tsrc>
+struct add_atomic_
+{
+	/*! \brief Defition of the add operation
+	 *
+	 * \param dst Destination object
+	 * \param src Source object
+	 *
+	 */
+	__device__ __host__ static inline void operation(Tdst & dst, const Tsrc & src)
+	{
+		atomicAdd(&dst,src);
 	}
 };
 

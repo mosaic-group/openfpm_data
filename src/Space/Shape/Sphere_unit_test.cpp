@@ -25,6 +25,9 @@ BOOST_AUTO_TEST_CASE( Sphere_test_use)
 
 	BOOST_REQUIRE_EQUAL(s.isInside(p1),true);
 	BOOST_REQUIRE_EQUAL(s.isInside(p3),false);
+
+	double dist = s.distance(p3);
+	BOOST_REQUIRE_EQUAL(dist,0.0866025403784);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

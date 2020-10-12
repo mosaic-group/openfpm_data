@@ -314,9 +314,6 @@ template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT
 void BlockMapGpu<AggregateBlockT, threadBlockSize, indexT, layout_base>::deviceToHost()
 {
     blockMap.template deviceToHost<pMask>();
-    /////////////// DEBUG ////////////////////
-    auto indexBuffer = blockMap.getIndexBuffer();
-    //////////////////////////////////////////
 }
 
 template<typename AggregateBlockT, unsigned int threadBlockSize, typename indexT, template<typename> class layout_base>
