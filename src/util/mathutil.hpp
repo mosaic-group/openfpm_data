@@ -108,6 +108,24 @@ namespace openfpm
 			return (exponent == 0) ? 1 : (base * pow(base, exponent-1));
 		}
 
+        template<class T>
+        double intpowlog(const T x, unsigned const e)
+        {
+            if (e == 0) return 1.0;
+            if (e % 2 == 0)
+            {
+                double h = intpowlog(x, e / 2);
+                return h * h;
+            }
+            else
+            {
+                double h = intpowlog(x, e / 2);
+                return h * h * x;
+            }
+        }
+
+
+
 		/* \brief Return the positive modulo of a number
 		 *
 		 * # Example
