@@ -108,7 +108,7 @@ install(FILES HDF5_wr/HDF5_wr.hpp
 install(FILES RawReader/InitGridWithPixel.hpp
 	DESTINATION openfpm/io/include/RawReader/)
 
-install(FILES util/PathAndFiles.hpp
+install(FILES util/PathsAndFiles.hpp
 	DESTINATION openfpm_io/include/util)
 
 install(FILES Plot/GoogleChart.hpp Plot/util.hpp
