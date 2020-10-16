@@ -794,8 +794,8 @@ namespace openfpm
 		{
 #ifdef SE_CLASS1
 
-			if (v.size() != opart.size())
-				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be the same as o_part.size()" << opart.size() << std::endl;
+			if (v.size() != stop - start)
+				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be the same as stop - start" << stop - start << std::endl;
 
 #endif
 
@@ -869,8 +869,8 @@ namespace openfpm
 		{
 #ifdef SE_CLASS1
 
-			if (v.size() != opart.size())
-				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be the same as o_part.size()" << opart.size() << std::endl;
+			if (v.size() < opart.size() + start)
+				std::cerr << __FILE__ << ":" << __LINE__ << " error merge_prp: v.size()=" << v.size() << " must be snaller than o_part.size() + start " << opart.size() + start << std::endl;
 
 #endif
 
