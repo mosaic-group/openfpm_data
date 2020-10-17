@@ -16,7 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include <boost/filesystem.hpp>
-/**@brief Gets the current working directory and returns path as string without the "cmake-build-debug".
+/**@brief Gets the current working directory and returns path as string.
  *
  * @return Std::string of path to current working directory.
  */
@@ -29,12 +29,9 @@ std::string get_cwd()
 	// convert current directory to string
 	std::string s_cwd;
 	s_cwd = cwd;
-	// split string into file and path (to get rid of "cmake-build-debug" at the end of cwd)
-	std::size_t botDirPos = s_cwd.find_last_of("/");
-	std::string dir = s_cwd.substr(0, botDirPos);
-	dir = dir + "/";
+
 	//	std::cout << "The current working directory is: " << dir << std::endl;
-	return dir;
+	return s_cwd;
 }
 /**@brief Checks if a file already exists.
  *

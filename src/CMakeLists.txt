@@ -106,7 +106,7 @@ install(FILES HDF5_wr/HDF5_wr.hpp
 	DESTINATION openfpm_io/include/HDF5_wr)
 
 install(FILES RawReader/InitGridWithPixel.hpp
-	DESTINATION openfpm/io/include/RawReader/)
+	DESTINATION openfpm_io/include/RawReader/)
 
 install(FILES util/PathsAndFiles.hpp
 	DESTINATION openfpm_io/include/util)

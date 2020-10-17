@@ -24,7 +24,7 @@
 #include "data_type/aggregate.hpp"
 #include "Decomposition/CartDecomposition.hpp"
 
-#include "../redistancing_Sussman/HelpFunctionsForGrid.hpp"
+#include "level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp"
 typedef signed char BYTE;
 /**@brief Read the number of pixels per dimension from a csv-file in order to create a grid with the same size.
  *
