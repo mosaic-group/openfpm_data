@@ -9,7 +9,6 @@ add_executable(io main.cpp
 				  ../../openfpm_vcluster/src/VCluster/VCluster.cpp 
 				  ../../openfpm_devices/src/memory/CudaMemory.cu 
 				  ../../openfpm_devices/src/memory/HeapMemory.cpp 
-				  ../../openfpm_devices/src/Memleak_check.cpp 
 				  ../../openfpm_devices/src/memory/PtrMemory.cpp)
 
 if ( CMAKE_COMPILER_IS_GNUCC )
@@ -105,6 +104,12 @@ install(FILES HDF5_wr/HDF5_wr.hpp
 	HDF5_wr/HDF5_reader.hpp 
 	HDF5_wr/HDF5_reader_vd.hpp
 	DESTINATION openfpm_io/include/HDF5_wr)
+
+install(FILES RawReader/InitGridWithPixel.hpp
+	DESTINATION openfpm_io/include/RawReader/)
+
+install(FILES util/PathsAndFiles.hpp
+	DESTINATION openfpm_io/include/util)
 
 install(FILES Plot/GoogleChart.hpp Plot/util.hpp
 	DESTINATION openfpm_io/include/Plot )

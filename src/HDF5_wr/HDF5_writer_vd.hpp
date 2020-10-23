@@ -156,6 +156,8 @@ public:
 		H5Sclose(mem_dataspace_id);
 		H5Pclose(plist_id);
 		H5Fclose(file);
+		mem.decRef();
+		delete &mem;
 	}
 
 	/*! \brief Return the equivalent HDF5 type for T
