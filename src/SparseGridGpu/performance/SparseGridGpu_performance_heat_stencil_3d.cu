@@ -4,7 +4,6 @@
  *  Created on: Sep 10, 2019
  *      Author: i-bird
  */
-#define SCAN_WITH_CUB
 #define BOOST_TEST_DYN_LINK
 #define DISABLE_MPI_WRITTERS
 
@@ -72,9 +71,9 @@ void testStencilHeat3D_perf(unsigned int i, std::string base)
         timer ts;
         ts.start();
 
-        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.template applyStencils<Stencil01T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
-        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.template applyStencils<Stencil10T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
 
         ts.stop();
@@ -163,7 +162,6 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMu
     openfpm::vector<double> measures_tm;
 
     dim3 gridSize(gridEdgeSize, gridEdgeSize, gridEdgeSize);
-    dim3 blockSize(blockEdgeSize, blockEdgeSize, blockEdgeSize);
     unsigned int spatialEdgeSize = 10000;
     size_t sz[3] = {spatialEdgeSize, spatialEdgeSize, spatialEdgeSize};
     typename SparseGridZ::grid_info blockGeometry(sz);
@@ -201,23 +199,19 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMu
     unsigned long long numElements = existingElements - boundaryElements;
 
     // Now apply some boundary conditions
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(STENCIL_MODE_INPLACE,
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,
             centerPoint, centerPoint + 2*blockEdgeSize*gridEdgeSize,
             0.0, 10.0);
-    cudaDeviceSynchronize();
 
     iterations /= 2;
     for (unsigned int iter=0; iter<iterations; ++iter)
     {
-        cudaDeviceSynchronize();
 
         timer ts;
         ts.start();
 
-        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
-        cudaDeviceSynchronize();
-        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
-        cudaDeviceSynchronize();
+        sparseGrid.template applyStencils<Stencil01T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.template applyStencils<Stencil10T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
 
         ts.stop();
 

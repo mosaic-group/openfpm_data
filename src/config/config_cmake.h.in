@@ -137,9 +137,6 @@ ${DEFINE_PERFORMANCE_TEST}
 /* Security enhancement class 1 */
 ${DEFINE_SE_CLASS1}
 
-/* Security enhancement class 2 */
-${DEFINE_SE_CLASS2}
-
 /* Security enhancement class 3 */
 ${DEFINE_SE_CLASS3}
 

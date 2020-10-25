@@ -12,9 +12,6 @@
 #include "util/copy_compare/meta_copy.hpp"
 #include "boost/mpl/range_c.hpp"
 #include <boost/fusion/container/vector.hpp>
-#ifdef SE_CLASS2
-#include "Memleak_check.hpp"
-#endif
 #include "util/se_util.hpp"
 #include "util/copy_compare/copy_fusion_vector.hpp"
 #include "util/copy_compare/compare_fusion_vector.hpp"
@@ -489,9 +486,6 @@ public:
 	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))>
 	__device__ __host__ inline r_type get()
 	{
-#ifdef SE_CLASS2
-		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
-#endif
 		return boost::fusion::at_c<p>(data_c);
 	}
 
@@ -503,9 +497,6 @@ public:
 	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))>
 	__device__ __host__ inline const r_type get() const
 	{
-#ifdef SE_CLASS2
-		check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
-#endif
 		return boost::fusion::at_c<p>(data_c);
 	}
 
@@ -519,9 +510,6 @@ public:
 	template <unsigned int p> inline
 	__device__ __host__ void set(decltype(boost::fusion::at_c<p>(data_c)) & ele)
 	{
-#ifdef SE_CLASS2
-			check_valid(&boost::fusion::at_c<p>(data_c),sizeof(typename boost::mpl::at<type,boost::mpl::int_<p>>::type));
-#endif
 			return boost::fusion::at_c<p>(data_c) = ele;
 	}
 

@@ -1,3 +1,4 @@
+#! \bin\bash
 
 $pre_command ./build/src/mem_map
 if [ $? -ne 0 ]; then

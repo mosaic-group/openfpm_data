@@ -10,7 +10,6 @@
 
 #include "Plot/GoogleChart.hpp"
 #include "timer.hpp"
-#include "Memleak_check.hpp"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include "util/performance/performance_util.hpp"

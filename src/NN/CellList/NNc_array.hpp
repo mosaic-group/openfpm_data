@@ -272,6 +272,8 @@ public:
 		sym_mid = nnc.sym_mid;
 
 		full_or_sym = nnc.full_or_sym;
+
+		return *this;
 	}
 
 	/*! \brief swap the NNc_array

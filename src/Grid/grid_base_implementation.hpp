@@ -581,9 +581,6 @@ public:
 	:g1(0),isExternal(false)
 	{
 		// Add this pointer
-#ifdef SE_CLASS2
-		check_new(this,8,GRID_EVENT,1);
-#endif
 	}
 
 	/*! \brief create a grid from another grid
@@ -607,9 +604,6 @@ public:
 	:g1(sz),isExternal(false)
 	{
 		// Add this pointer
-#ifdef SE_CLASS2
-		check_new(this,8,GRID_EVENT,1);
-#endif
 	}
 
 	/*! \brief Constructor
@@ -623,18 +617,12 @@ public:
 	:g1(sz),isExternal(false)
 	{
 		// Add this pointer
-#ifdef SE_CLASS2
-		check_new(this,8,GRID_EVENT,1);
-#endif
 	}
 
 	//! Destructor
 	~grid_base_impl() THROW
 	{
 		// delete this pointer
-#ifdef SE_CLASS2
-		check_delete(this);
-#endif
 	}
 
 	/*! \brief It copy a grid
@@ -646,10 +634,6 @@ public:
 	 */
 	grid_base_impl<dim,T,S,layout,layout_base> & operator=(const grid_base_impl<dim,T,S,layout,layout_base> & g)
 	{
-		// Add this pointer
-#ifdef SE_CLASS2
-		check_new(this,8,GRID_EVENT,1);
-#endif
 		swap(g.duplicate());
 
 		return *this;
@@ -664,11 +648,6 @@ public:
 	 */
 	grid_base_impl<dim,T,S,layout,layout_base> & operator=(grid_base_impl<dim,T,S,layout,layout_base> && g)
 	{
-		// Add this pointer
-#ifdef SE_CLASS2
-		check_new(this,8,GRID_EVENT,1);
-#endif
-
 		swap(g);
 
 		return *this;
@@ -709,9 +688,6 @@ public:
 	 */
 	grid_base_impl<dim,T,S,layout,layout_base> duplicate() const THROW
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		//! Create a completely new grid with sz
 
 		grid_base_impl<dim,T,S,layout,layout_base> grid_new(g1.getSize());
@@ -769,9 +745,6 @@ public:
 
 	const grid_sm<dim,void> & getGrid() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return g1;
 	}
 
@@ -785,10 +758,6 @@ public:
 
 	void setMemory()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-
 		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::setMemory(data_,g1,is_mem_init);
 	}
 
@@ -805,9 +774,6 @@ public:
 	 */
 	template<unsigned int p = 0> void setMemory(S & m)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		//! Is external
 		isExternal = true;
 
@@ -837,9 +803,6 @@ public:
 	 */
 	void setMemoryArray(S * m)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		//! Is external
 		isExternal = true;
 
@@ -860,10 +823,6 @@ public:
 
 	template<unsigned int p = 0> void * getPointer()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-
 		return mem_getpointer<decltype(data_),layout_base_>::template getPointer<p>(data_);
 	}
 
@@ -877,10 +836,6 @@ public:
 
 	template<unsigned int p = 0> const void * getPointer() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-
 		return mem_getpointer<decltype(data_),layout_base_>::template getPointer<p>(data_);
 	}
 
@@ -895,9 +850,6 @@ public:
 	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
 	inline r_type insert(const grid_key_dx<dim> & v1)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
@@ -916,9 +868,6 @@ public:
 	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline r_type get_usafe(const grid_key_dx<dim> & v1)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 #endif
@@ -935,9 +884,6 @@ public:
 	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline r_type get_unsafe(const grid_key_dx<dim> & v1) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 #endif
@@ -954,9 +900,6 @@ public:
 	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline r_type get(const grid_key_dx<dim> & v1)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
@@ -986,9 +929,6 @@ public:
 	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline r_type get(const grid_key_dx<dim> & v1) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
@@ -1006,9 +946,6 @@ public:
 	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))>
 	__device__ __host__ inline r_type get(const size_t lin_id)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(lin_id);
@@ -1026,9 +963,6 @@ public:
 	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))>
 	__device__ __host__ inline const r_type get(size_t lin_id) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(lin_id);
@@ -1050,9 +984,6 @@ public:
 	 */
 	inline encapc<dim,T,layout> get_o(const grid_key_dx<dim> & v1)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
@@ -1073,9 +1004,6 @@ public:
 	 */
 	inline const encapc<dim,T,layout> get_o(const grid_key_dx<dim> & v1) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
@@ -1099,9 +1027,6 @@ public:
 	 */
 	inline encapc<dim,T,layout> insert_o(const grid_key_dx<dim> & v1)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
@@ -1122,9 +1047,6 @@ public:
 	 */
 	inline encapc<dim,T,layout> get_o(size_t v1)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
@@ -1145,9 +1067,6 @@ public:
 	 */
 	inline const encapc<dim,T,layout> get_o(size_t v1) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
@@ -1166,9 +1085,6 @@ public:
 	template<int prp>
 	void fill(unsigned char fl)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		if (prp != 0 || is_layout_mlin<layout_base<T>>::type::value == false)
 		{
 			std::cout << "Error: " << __FILE__ << ":" << __LINE__ << " unsupported fill operation " << std::endl;
@@ -1184,7 +1100,7 @@ public:
 	 * \param box_src box to kill the points
 	 *
 	 */
-	void remove(Box<dim,size_t> & section_to_delete)
+	void remove(Box<dim,long int> & section_to_delete)
 	{}
 
 	/*! \brief Reset the queue to remove and copy section of grids
@@ -1229,7 +1145,7 @@ public:
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			if (box_dst.getHigh(i) >= g1.size(i))
+			if (box_dst.getHigh(i) >= (long int)g1.size(i))
 			{
 				long int shift = box_dst.getHigh(i) - g1.size(i) + 1;
 				box_dst_.setHigh(i,box_dst.getHigh(i) - shift);
@@ -1353,9 +1269,6 @@ public:
 	 */
 	void resize(const size_t (& sz)[dim], size_t opt = DATA_ON_HOST | DATA_ON_DEVICE, unsigned int blockSize = 1)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		//! Create a completely new grid with sz
 
 		grid_base_impl<dim,T,S,layout,layout_base> grid_new(sz);
@@ -1401,9 +1314,6 @@ public:
 	 */
 	void resize_no_device(const size_t (& sz)[dim])
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		//! Create a completely new grid with sz
 
 		grid_base_impl<dim,T,S,layout,layout_base> grid_new(sz);
@@ -1421,9 +1331,6 @@ public:
 	 */
 	void remove(size_t key)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		if (dim != 1)
 		{
 #ifdef SE_CLASS1
@@ -1474,10 +1381,6 @@ public:
 
 	void swap_nomode(grid_base_impl<dim,T,S,layout,layout_base> & grid)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-
 		mem_swap<T,layout_base<T>,decltype(data_),decltype(grid)>::template swap_nomode<S>(data_,grid.data_);
 
 		// exchange the grid info
@@ -1497,10 +1400,6 @@ public:
 
 	void swap(grid_base_impl<dim,T,S,layout,layout_base> & grid)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-
 		mem_swap<T,layout_base<T>,decltype(data_),decltype(grid)>::swap(data_,grid.data_);
 
 		// exchange the grid info
@@ -1528,9 +1427,6 @@ public:
 
 	void swap(grid_base_impl<dim,T,S,layout,layout_base> && grid)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		swap(grid);
 	}
 
@@ -1561,9 +1457,6 @@ public:
 	 */
 	template<typename Memory> inline void set(grid_key_dx<dim> dx, const encapc<1,T,Memory> & obj)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(dx);
@@ -1587,9 +1480,6 @@ public:
 
 	inline void set(grid_key_dx<dim> dx, const T & obj)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(dx);
@@ -1611,9 +1501,6 @@ public:
 			        const grid_base_impl<dim,T,S,layout,layout_base> & g,
 					const grid_key_dx<dim> & key2)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(key1);
@@ -1635,9 +1522,6 @@ public:
 			        const grid_base_impl<dim,T,S,layout,layout_base> & g,
 					const size_t key2)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(key1);
@@ -1657,9 +1541,6 @@ public:
 
 	template<typename Mem> inline void set(const grid_key_dx<dim> & key1,const grid_base_impl<dim,T,Mem,layout,layout_base> & g, const grid_key_dx<dim> & key2)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(key1);
@@ -1681,9 +1562,6 @@ public:
 												   const grid_base_impl<dim,T,Mem,layout2,layout_base2> & g,
 												   const grid_key_dx<dim> & key2)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(key1);
@@ -1700,9 +1578,6 @@ public:
 	 */
 	inline size_t size() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return g1.size();
 	}
 
@@ -1718,9 +1593,6 @@ public:
 	 */
 	inline grid_key_dx_iterator_sub<dim> getSubIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return g1.getSubIterator(start,stop);
 	}
 
@@ -1735,9 +1607,6 @@ public:
 	 */
 	inline grid_key_dx_iterator_sub<dim> getSubIterator(size_t m)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return grid_key_dx_iterator_sub<dim>(g1,m);
 	}
 
@@ -1750,9 +1619,6 @@ public:
 	 */
 	inline grid_key_dx_iterator<dim> getIterator() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return grid_key_dx_iterator<dim>(g1);
 	}
 
@@ -1791,9 +1657,6 @@ public:
 	inline grid_key_dx_iterator<dim,stencil_offset_compute<dim,Np>>
 	getIteratorStencil(const grid_key_dx<dim> (& stencil_pnt)[Np]) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return grid_key_dx_iterator<dim,stencil_offset_compute<dim,Np>>(g1,stencil_pnt);
 	}
 
@@ -1810,9 +1673,6 @@ public:
 	 */
 	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		// get the starting point and the end point of the real domain
 
 		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
@@ -1836,22 +1696,6 @@ public:
 	const layout & get_internal_data_() const
 	{
 		return data_;
-	}
-
-	/*! \brief It return the id of structure in the allocation list
-	 *
-	 * \see print_alloc and SE_CLASS2
-	 *
-	 * \return the id
-	 *
-	 */
-	long int who()
-	{
-#ifdef SE_CLASS2
-		return check_whoami(this,8);
-#else
-		return -1;
-#endif
 	}
 
 	/*! \brief In this case it does nothing

@@ -9,7 +9,6 @@
 #define MEMORY_ARRAY_HPP_
 
 #include "memory/memory.hpp"
-#include "Memleak_check.hpp"
 
 #include "util/cuda_util.hpp"
 
@@ -73,9 +72,6 @@ class memory_array
 	{
 		this->ptr = static_cast<T *>(ptr);
 
-#ifdef SE_CLASS2
-		check_valid(ptr,sz);
-#endif
 
 		// Initialize the constructors
 

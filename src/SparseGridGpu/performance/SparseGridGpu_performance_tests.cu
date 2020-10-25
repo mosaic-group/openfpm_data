@@ -1,8 +1,6 @@
 //
 // Created by tommaso on 4/07/19.
 //
-
-#define SCAN_WITH_CUB
 #define BOOST_TEST_DYN_LINK
 #define DISABLE_MPI_WRITTERS
 
@@ -83,9 +81,9 @@ void testStencilHeatGet_perf(unsigned int i, std::string base)
         timer ts;
         ts.start();
 
-        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.template applyStencils<Stencil01T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
-        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.template applyStencils<Stencil10T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
 
         ts.stop();
@@ -207,9 +205,9 @@ void testStencilSkeleton_perf(unsigned int i, std::string base)
         timer ts;
         ts.start();
 
-        sparseGrid.template applyStencils<Stencil01T>(STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.template applyStencils<Stencil01T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
-        sparseGrid.template applyStencils<Stencil10T>(STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.template applyStencils<Stencil10T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         cudaDeviceSynchronize();
 
         ts.stop();
@@ -280,7 +278,6 @@ void launch_testConv3x3x3_perf_no_shared_z_morton(std::string testURI, unsigned 
 {
     constexpr unsigned int dim = 3;
     typedef aggregate<float,float> AggregateT;
-    constexpr unsigned int chunkSize = IntPow<8,dim>::value;
 
     std::string base(testURI + "(" + std::to_string(i) + ")");
     report_sparsegrid_funcs.graphs.put(base + ".test.name","Conv3x3x3");
@@ -292,7 +289,6 @@ void launch_testConv3x3x3_perf_no_shared(std::string testURI, unsigned int i)
 {
     constexpr unsigned int dim = 3;
     typedef aggregate<float,float> AggregateT;
-    constexpr unsigned int chunkSize = IntPow<8,dim>::value;
 
     std::string base(testURI + "(" + std::to_string(i) + ")");
     report_sparsegrid_funcs.graphs.put(base + ".test.name","Conv3x3x3");

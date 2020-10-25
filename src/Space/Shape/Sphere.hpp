@@ -112,7 +112,7 @@ template<unsigned int dim ,typename T> class Sphere
 	 * \return the radius of the sphere
 	 *
 	 */
-	__device__ __host__ T radius()
+	__device__ __host__ T radius() const
 	{
 		return boost::fusion::at_c<r>(data);
 	}
@@ -205,6 +205,26 @@ template<unsigned int dim ,typename T> class Sphere
 		{return true;}
 
 		return false;
+	}
+
+	/*! \brief Return the distance from the surface
+	 *
+	 * \param p point
+	 * \return the distance from the surface. The sign indicate if is outside or inside the shape
+	 *
+	 */
+	__device__ __host__ T distance(Point<dim,T> & p) const
+	{
+		T dist = 0.0;
+
+		// calculate the distance of the center from the point
+
+		for (int i = 0; i < dim ; i++)
+		{
+			dist += (boost::fusion::at_c<x>(data)[i] - p.get(i))*(boost::fusion::at_c<x>(data)[i] - p.get(i));
+		}
+
+		return sqrt(dist) - radius();
 	}
 };
 

@@ -32,7 +32,7 @@ public:\
 	typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;\
 	\
 \
-	inline point_expression_op(const exp1 & o1)\
+	inline explicit point_expression_op(const exp1 & o1)\
 	:o1(o1),scal(0)\
 	{}\
 \
@@ -117,7 +117,7 @@ public:
     typedef typename exp1::coord_type coord_type;
 
 	//! Constructor from expression
-	__device__ __host__ inline point_expression_op(const exp1 & o1)
+	__device__ __host__ inline explicit point_expression_op(const exp1 & o1)
 	:o1(o1),scal(0.0)
 	{}
 
@@ -191,7 +191,7 @@ public:
 	typedef typename exp1::coord_type coord_type;
 
 	//! constructor from an expression
-	__device__ __host__  inline point_expression_op(const exp1 & o1)
+	__device__ __host__  inline explicit point_expression_op(const exp1 & o1)
 	:o1(o1),scal(0.0)
 	{}
 

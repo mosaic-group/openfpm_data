@@ -5,7 +5,6 @@
 #include <boost/test/unit_test.hpp>
 
 #include "util/cuda_util.hpp"
-#include "util/boost/boost_array_openfpm.hpp"
 #include "Vector/map_vector.hpp"
 #include "scan_cuda.cuh"
 

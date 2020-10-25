@@ -35,10 +35,6 @@ struct add_prp_impl
 	 */
 	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
 	{
-#ifdef SE_CLASS2
-		check_valid(&v_src,8);
-		check_valid(&v_dst,8);
-#endif
 		//! Add the element of v
 		for (size_t i = 0 ; i < v_src.size() ; i++)
 		{
@@ -72,10 +68,6 @@ struct add_prp_impl<OBJECT_ADD,vect_dst>
 	 */
 	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
 	{
-#ifdef SE_CLASS2
-		check_valid((void *)&v_dst,8);
-		check_valid((void *)&v_src,8);
-#endif
 			// Add a new element
 			v_dst.add();
 
@@ -139,9 +131,6 @@ public:
 	//! return the size of the vector
 	inline size_t size() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return base.size();
 	}
 
@@ -153,22 +142,7 @@ public:
 	 */
 	inline void resize(size_t slot)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-
-		// here we have to check if the vector go into reallocation
-		void * ptr_old = &base[0];
-#endif
-
 		base.resize(slot);
-
-#ifdef SE_CLASS2
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],slot*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-#endif
 	}
 
 	/*! \brief Remove all the element from the vector
@@ -176,9 +150,6 @@ public:
 	 */
 	inline void clear()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.clear();
 	}
 
@@ -187,9 +158,6 @@ public:
 	 */
 	inline void shrink_to_fit()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.shrink_to_fit();
 	}
 
@@ -204,11 +172,6 @@ public:
 	 */
 	inline void add(const T & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base[0];
-#endif
-
 		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
 		{
 			// we reserve just one space more to avoid the capacity to increase by two
@@ -216,16 +179,6 @@ public:
 		}
 
 		base.push_back(v);
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
@@ -239,11 +192,6 @@ public:
 	 */
 	inline void add(T && v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base[0];
-#endif
-
 		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
 		{
 			// we reserve just one space more to avoid the capacity to increase by two
@@ -251,16 +199,6 @@ public:
 		}
 
 		base.emplace_back(v);
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief Add an empty object (it call the default constructor () ) at the end of the vector
@@ -268,22 +206,7 @@ public:
 	 */
 	inline void add()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base[0];
-#endif
-
 		base.emplace_back(T());
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief add elements to the vector
@@ -293,12 +216,6 @@ public:
 	 */
 	template<typename Mem,typename l,template<typename> class lb,typename gp> inline void add(const openfpm::vector<T,Mem,l,lb,gp> & eles)
 	{
-
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base[0];
-#endif
-
 		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
 		{
 			// we reserve just one space more to avoid the capacity to increase by two
@@ -310,16 +227,6 @@ public:
 
 		// copy the elements
 		std::copy(eles.begin(),eles.end(),base.begin()+start);
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief It insert a new object on the vector, eventually it reallocate the object
@@ -333,22 +240,7 @@ public:
 	 */
 	template<typename S> inline void add(const S & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base[0];
-#endif
-
 		push_back_op<is_vector<T>::value,is_vector<S>::value,T,S>::push_back(base,v);
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief It insert a new object on the vector, eventually it reallocate the grid
@@ -362,11 +254,6 @@ public:
 	 */
 	template<typename S> inline void add(const S && v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base[0];
-#endif
-
 		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
 		{
 			// we reserve just one space more to avoid the capacity to increase by two
@@ -374,16 +261,6 @@ public:
 		}
 
 		base.push_back(v);
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief It add the element of a source vector to this vector
@@ -408,10 +285,6 @@ public:
 			  unsigned int ...args>
 	void add_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-
 		add_prp_impl<std::is_same<S,T>::value,typename std::remove_pointer<decltype(*this)>::type>::template add<S,M,gp,impl,args...>(v,*this);
 	}
 
@@ -437,10 +310,6 @@ public:
 			  unsigned int ...args>
 	void add_prp_device(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-
 		add_prp_impl<std::is_same<S,T>::value,typename std::remove_pointer<decltype(*this)>::type>::template add<S,M,gp,impl,args...>(v,*this);
 	}
 
@@ -465,9 +334,6 @@ public:
 			  unsigned int ...args>
 	void add_prp(const T & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		add(v);
 	}
 
@@ -479,10 +345,6 @@ public:
 	 */
 	void erase(typename std::vector<T>::iterator start, typename std::vector<T>::iterator end)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
-
 		base.erase(start,end);
 	}
 
@@ -493,9 +355,6 @@ public:
 	 */
 	void remove(size_t key)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		vector_overflow(key);
 #endif
@@ -512,9 +371,6 @@ public:
 	 */
 	void remove(openfpm::vector<size_t> & keys, size_t start = 0)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		// Nothing to remove return
 		if (keys.size() <= start )
 			return;
@@ -594,9 +450,6 @@ public:
 	 */
 	inline T & last()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (base.size() == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
@@ -611,9 +464,6 @@ public:
 	 */
 	inline const T & last() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (base.size() == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
@@ -628,9 +478,6 @@ public:
 	 */
 	openfpm::vector<T> duplicate() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return *this;
 	}
 
@@ -641,9 +488,6 @@ public:
 	 */
 	void swap(std::vector<T> && v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.swap(v);
 	}
 
@@ -654,9 +498,6 @@ public:
 	 */
 	void unique()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		auto it = std::unique(base.begin(),base.end());
 		base.resize( std::distance(base.begin(),it) );
 	}
@@ -668,9 +509,6 @@ public:
 	 */
 	void sort()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		std::sort(base.begin(), base.end());
 	}
 
@@ -685,9 +523,6 @@ public:
 	 */
 	template <unsigned int p>inline T& get(size_t id)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (p != 0)
 		{std::cerr << "Error the property does not exist" << "\n";}
@@ -709,9 +544,6 @@ public:
 	 */
 	template <unsigned int p>inline const T& get(size_t id) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (p != 0)
 		{std::cerr << "Error the property does not exist" << "\n";}
@@ -731,9 +563,6 @@ public:
 	 */
 	inline T & get(size_t id)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		vector_overflow(id);
 #endif
@@ -749,9 +578,6 @@ public:
 	 */
 	inline const T & get(size_t id) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		vector_overflow(id);
 #endif
@@ -768,9 +594,6 @@ public:
 	 */
 	inline void fill(unsigned char fl)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		memset(&base[0],fl,base.size() * sizeof(T));
 	}
 
@@ -781,9 +604,6 @@ public:
 	 */
 	inline void reserve(size_t ns)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.reserve(ns);
 	}
 
@@ -791,41 +611,19 @@ public:
 	vector() noexcept
 	:err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-#endif
 	}
 
 	//! Constructor, vector of size sz
 	vector(size_t sz) noexcept
 	:base(sz),err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-		check_new(&base[0],sizeof(T)*sz,VECTOR_STD_EVENT,1);
-#endif
 	}
 
 	//! Constructor from another vector
 	vector(const vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v) noexcept
 	:err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-		void * ptr_old = &base[0];
-#endif
-
 		base = v.base;
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 	}
 
 	/*! \brief Initializer from constructor
@@ -836,30 +634,18 @@ public:
 	vector(const std::initializer_list<T> & v)
 	:base(v)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-		check_new(&base[0],sizeof(T)*v.size(),VECTOR_STD_EVENT,1);
-#endif
 	}
 
 	//! Constructor from another vector
 	vector(vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v) noexcept
 	:err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-#endif
-
 		base.swap(v.base);
 	}
 
 	//! destructor
 	~vector() noexcept
 	{
-#ifdef SE_CLASS2
-		check_delete(this);
-		check_delete(&base[0]);
-#endif
 	}
 
 	/*! swap the content of the vector
@@ -869,9 +655,6 @@ public:
 	 */
 	void swap(openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.swap(v.base);
 	}
 
@@ -882,9 +665,6 @@ public:
 	 */
 	void swap(openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.swap(v.base);
 	}
 
@@ -897,22 +677,7 @@ public:
 	 */
 	vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base[0];
-#endif
-
 		base = v.base;
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 
 		return *this;
 	}
@@ -924,24 +689,9 @@ public:
 	 */
 	template<typename Mem, typename gp> vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR> & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-		void * ptr_old = &base[0];
-#endif
-
 		base_copy<has_base_to_copy<vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR>>::value,
 		          decltype(*this),
 				  vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR> >::copy(*this,v);
-
-#ifdef SE_CLASS2
-
-		if (ptr_old != &base[0])
-		{
-			check_delete(ptr_old);
-			check_new(&base[0],base.size()*sizeof(T),VECTOR_STD_EVENT,1);
-		}
-
-#endif
 
 		return *this;
 	}
@@ -955,9 +705,6 @@ public:
 	 */
 	vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.swap(v.base);
 
 		return *this;
@@ -972,9 +719,6 @@ public:
 	 */
 	template<typename Mem, typename gp>  vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR> && v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		base.swap(v.base);
 
 		return *this;
@@ -1011,9 +755,6 @@ public:
 	 */
 	vector_key_iterator getIterator() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return vector_key_iterator(base.size());
 	}
 
@@ -1026,9 +767,6 @@ public:
 	 */
 	vector_key_iterator getIteratorTo(size_t k) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return vector_key_iterator(k);
 	}
 
@@ -1088,9 +826,6 @@ public:
 	 */
 	void * getPointer()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return &base[0];
 	}
 
@@ -1147,9 +882,6 @@ public:
 	 */
 	size_t getLastError()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return err_code;
 	}
 
@@ -1168,22 +900,6 @@ public:
 
 			ACTION_ON_ERROR(VECTOR_ERROR_OBJECT);\
 		}
-	}
-
-	/* \brief It return the id of structure in the allocation list
-	 *
-	 * \see print_alloc and SE_CLASS2
-	 *
-	 * \return the allocation id of this class
-	 *
-	 */
-	long int who()
-	{
-#ifdef SE_CLASS2
-		return check_whoami(this,8);
-#else
-		return -1;
-#endif
 	}
 };
 

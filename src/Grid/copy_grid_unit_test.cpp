@@ -10,6 +10,7 @@
 #include "Grid/map_grid.hpp"
 #include "data_type/aggregate.hpp"
 #include "Vector/map_vector.hpp"
+#include "Point_test.hpp"
 
 BOOST_AUTO_TEST_SUITE( copy_grid_test )
 
@@ -210,8 +211,6 @@ BOOST_AUTO_TEST_CASE( copy_grid_test_use)
 
 	Test_copy_grid_cmp(g2_src,g2_dst,bsrc_2,bdst_2);
 
-#ifndef SE_CLASS2
-
 	Box<3,size_t> bsrc_3({4,7,1},{11,20,6});
 	Box<3,size_t> bdst_3({20,5,10},{27,18,15});
 
@@ -228,7 +227,58 @@ BOOST_AUTO_TEST_CASE( copy_grid_test_use)
 
 	Test_copy_grid_cmp(g4_src,g4_dst,bsrc_4,bdst_4);
 #endif
-#endif
+	}
+}
+
+BOOST_AUTO_TEST_CASE( copy_grid_test_invalid)
+{
+	{
+	size_t sz2_dst[2] = {3,7};
+	size_t sz2_src[2] = {3,4};
+
+	grid_cpu<2,Point_test<double>> g2_src(sz2_src);
+	grid_cpu<2,Point_test<double>> g2_dst(sz2_dst);
+	g2_src.setMemory();
+	g2_dst.setMemory();
+
+	Box<2,long int> bsrc_2({2,1},{1,1});
+	Box<2,long int> bdst_2({0,1},{-1,1});
+
+	auto it = g2_src.getIterator();
+
+	while (it.isNext())
+	{
+		auto key = it.get();
+
+		g2_src.template get<0>(key) = 0.0;
+
+		++it;
+	}
+
+	auto it3 = g2_dst.getIterator();
+
+	while (it3.isNext())
+	{
+		auto key = it3.get();
+
+		g2_dst.template get<0>(key) = 1.0;
+
+		++it3;
+	}
+
+	g2_dst.copy_to(g2_src,bsrc_2,bdst_2);
+
+	auto it2 = g2_dst.getIterator();
+
+	while (it2.isNext())
+	{
+		auto key = it2.get();
+
+		BOOST_REQUIRE_EQUAL(g2_dst.template get<0>(key),1.0);
+
+		++it2;
+	}
+
 	}
 }
 

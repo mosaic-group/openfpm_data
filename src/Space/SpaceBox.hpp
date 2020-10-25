@@ -54,7 +54,7 @@ class SpaceBox : public Box<dim,T>
 	 * \param b box
 	 *
 	 */
-	template <typename S> inline SpaceBox(const Box<dim,S> & b)
+	template <typename S>inline SpaceBox(const Box<dim,S> & b)
 	{
 		for (size_t d = 0 ; d < dim ; d++)
 		{this->setLow(d,b.getLow(d));}
@@ -83,7 +83,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	SpaceBox(const Box<dim,T> & b)
+	explicit SpaceBox(const Box<dim,T> & b)
 	:Box<dim,T>(b)
 	{
 	}
@@ -94,7 +94,7 @@ class SpaceBox : public Box<dim,T>
 	 *
 	 */
 
-	template<unsigned int dim_s,typename Mem>SpaceBox(const encapc<dim_s,Box<dim,T>,Mem> & box)
+	template<unsigned int dim_s,typename Mem> SpaceBox(const encapc<dim_s,Box<dim,T>,Mem> & box)
 	{
 		// for each dimension set high and low
 
@@ -110,7 +110,7 @@ class SpaceBox : public Box<dim,T>
 	 * \param box box (Encapsulated)
 	 *
 	 */
-	template<unsigned int dim_s,typename Mem>SpaceBox(const encapc<dim_s,SpaceBox<dim,T>,Mem> & box)
+	template<unsigned int dim_s,typename Mem> SpaceBox(const encapc<dim_s,SpaceBox<dim,T>,Mem> & box)
 	{
 		// for each dimension set high and low
 

@@ -42,9 +42,6 @@ public:
 	//! return the size of the vector
 	inline size_t size() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return v_size;
 	}
 
@@ -56,9 +53,6 @@ public:
 	 */
 	inline void resize(size_t slot)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		// resize is valid only if v_size is 0 and it match the size of PtrMemory
 		if (slot > mem->size()/sizeof(T))
 			std::cerr << __FILE__ << ":" << __LINE__ << " error: this vector cannot be bigger than " << mem->size()/sizeof(T) << " elements\n";
@@ -70,9 +64,6 @@ public:
 	 */
 	inline void clear()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		v_size = 0;
 	}
 
@@ -87,9 +78,6 @@ public:
 	 */
 	inline void add(const T & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: you cannot add a new element to this vector \n";
 	}
 
@@ -104,9 +92,6 @@ public:
 	 */
 	inline void add(T && v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: you cannot add new element to this vector \n";
 	}
 
@@ -116,9 +101,6 @@ public:
 
 	inline void add()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		v_size++;
 
 		if (v_size > mem->size()/sizeof(T))
@@ -133,9 +115,6 @@ public:
 	 */
 	void erase(typename std::vector<T>::iterator start, typename std::vector<T>::iterator end)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: you cannot erase element from this vector \n";
 	}
 
@@ -146,9 +125,6 @@ public:
 	 */
 	void remove(size_t key)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		vector_overflow(key);
 #endif
@@ -202,9 +178,6 @@ public:
 	 */
 	inline T & last()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (v_size == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0\n";
@@ -219,9 +192,6 @@ public:
 	 */
 	inline const T & last() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (v_size == 0)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " vector of size 0" << std::endl;
@@ -240,9 +210,6 @@ public:
 	 */
 	template <unsigned int p>inline T& get(size_t id)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (p != 0)
 		{std::cerr << "Error the property does not exist" << "\n";}
@@ -269,9 +236,6 @@ public:
 	 */
 	template <unsigned int p>inline const T& get(size_t id) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (p != 0)
 		{std::cerr << "Error the property does not exist" << "\n";}
@@ -291,9 +255,6 @@ public:
 	 */
 	inline T & get(size_t id)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		if (id >= v_size)
 			std::cerr << "Error vector: " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
@@ -310,9 +271,6 @@ public:
 	 */
 	inline const T & get(size_t id) const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 #ifdef SE_CLASS1
 		vector_overflow(id);
 #endif
@@ -330,9 +288,6 @@ public:
 
 	inline void fill(unsigned char fl)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		memset(mem->getPointer(),fl,v_size * sizeof(T));
 	}
 
@@ -344,37 +299,24 @@ public:
 
 	inline void reserve(size_t ns)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 	}
 
 	//! Constructor, vector of size 0
 	vector() noexcept
 	:v_size(0),mem(NULL),err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-#endif
 	}
 
 	//! Constructor, vector of size sz
 	vector(size_t sz) noexcept
 	:v_size(sz),err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-#endif
 	}
 
 	//! Constructor from another vector
 	vector(const vector<T,PtrMemory,layout,layout_base,gp,STD_VECTOR> & v) noexcept
 	:v_size(0),err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-#endif
-
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: copy constructor is not supported by this vector \n";
 	}
 
@@ -383,19 +325,12 @@ public:
 	vector(vector<T,PtrMemory,layout,layout_base,gp,STD_VECTOR> && v) noexcept
 	:v_size(0),err_code(0)
 	{
-#ifdef SE_CLASS2
-		check_new(this,8,VECTOR_STD_EVENT,1);
-#endif
-
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: copy constructor is not supported by this vector \n";
 	}
 
 	//! destructor
 	~vector() noexcept
 	{
-#ifdef SE_CLASS2
-		check_delete(this);
-#endif
 	}
 
 	/*! swap the content of the vector
@@ -405,9 +340,6 @@ public:
 	 */
 	void swap(openfpm::vector<T,PtrMemory,layout,layout_base,gp,STD_VECTOR> & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: swap is not supported by this vector \n";
 	}
 
@@ -418,9 +350,6 @@ public:
 	 */
 	vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator= is not supported by this vector \n";
 
 		return *this;
@@ -435,9 +364,6 @@ public:
 	 */
 	vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> && v)
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator= is not supported by this vector \n";
 
 		return *this;
@@ -478,9 +404,6 @@ public:
 	 */
 	vector_key_iterator getIterator() const
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return vector_key_iterator(v_size);
 	}
 
@@ -514,9 +437,6 @@ public:
 	 */
 	void * getPointer()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return mem->getPointer();
 	}
 
@@ -547,9 +467,6 @@ public:
 	 */
 	size_t getLastError()
 	{
-#ifdef SE_CLASS2
-		check_valid(this,8);
-#endif
 		return err_code;
 	}
 
@@ -567,22 +484,6 @@ public:
 			*err_code_pointer = 2001;\
 			ACTION_ON_ERROR(VECTOR_ERROR_OBJECT);\
 		}
-	}
-
-	/* \brief It return the id of structure in the allocation list
-	 *
-	 * \see print_alloc and SE_CLASS2
-	 *
-	 * \return the allocation id
-	 *
-	 */
-	long int who()
-	{
-#ifdef SE_CLASS2
-		return check_whoami(this,8);
-#else
-		return -1;
-#endif
 	}
 };
 

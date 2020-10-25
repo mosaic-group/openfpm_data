@@ -41,9 +41,10 @@ else ()
     set(CUDA_SOURCES)
 endif ()
 
-add_executable(mem_map ../../openfpm_devices/src/Memleak_check.cpp
-        ${CUDA_SOURCES}
+
+add_executable(mem_map ${CUDA_SOURCES}
         main.cpp
+        data_type/aggregate_unit_tests.cpp
         Vector/map_vector_sparse_unit_tests.cpp
         util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
         memory_ly/memory_conf_unit_tests.cpp
@@ -189,6 +190,7 @@ install(FILES SparseGrid/SparseGrid_iterator.hpp
               SparseGrid/SparseGridUtil.hpp
 	      SparseGrid/SparseGrid_iterator_block.hpp
 	      SparseGrid/SparseGrid_chunk_copy.hpp
+	      SparseGrid/SparseGrid_conv_opt.hpp
 	      SparseGrid/cp_block.hpp
         DESTINATION openfpm_data/include/SparseGrid)
 
@@ -301,13 +303,7 @@ install(FILES Packer_Unpacker/Pack_selector.hpp
         Packer_Unpacker/has_max_prop.hpp
         DESTINATION openfpm_data/include/Packer_Unpacker)
 
-install(FILES util/boost/boost_multi_array_base_openfpm.hpp
-        util/boost/boost_multi_array_openfpm.hpp
-        util/boost/boost_multi_array_subarray_openfpm.hpp
-        util/boost/boost_multi_array_ref_openfpm.hpp
-        util/boost/boost_multi_array_view_openfpm.hpp
-        util/boost/boost_array_openfpm.hpp
-        util/boost/boost_multi_array_iterator_openfpm.hpp
+install(FILES util/boost/boost_array_openfpm.hpp
         DESTINATION openfpm_data/include/util/boost/)
 
 install(FILES Grid/iterators/grid_key_dx_iterator_sp.hpp

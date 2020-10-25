@@ -525,6 +525,8 @@ private:
     openfpm::vector<int> n_shift_cp_swp;
     openfpm::vector<int> n_shift_cp_swp_r;
 	typedef typename aggregate_convert<dim,blockEdgeSize,aggregate<int>>::type convertAggr;
+
+	// Map to convert blocks from missaligned chunks
 	openfpm::vector_gpu<convertAggr> convert_blk;
 	openfpm::vector_gpu<convertAggr> convert_blk_swp;
 	openfpm::vector_gpu<convertAggr> convert_blk_swp_r;
@@ -576,11 +578,11 @@ private:
     mutable openfpm::vector_gpu<Box<dim,int>> pack_subs_swp;
     mutable openfpm::vector_gpu<Box<dim,int>> pack_subs_swp_r;
 
-    //! Size of the index vector packed. These varaible are unsed to understand if the option
+    //! Size of the index vector packed. These varaible are used to understand if the option
     //! KEEP_GEOMETRY can be used keep geometry option infact require that when we record the
     //! packing variables the number of chunks (and chunks indexes) does not change
-    mutable int index_size_swp;
-    mutable int index_size_swp_r;
+    mutable int index_size_swp = -1;
+    mutable int index_size_swp_r = -1;
 
     //! links of the padding points with real points of a coarse sparsegrid
     openfpm::vector_gpu<aggregate<size_t>> links_up;
@@ -601,6 +603,62 @@ private:
     ExtPreAlloc<CudaMemory> * prAlloc_prp;
 
     bool findNN = false;
+
+    inline void swap_internal_remote()
+    {
+		n_cnk_cp_swp_r.swap(n_cnk_cp);
+		n_pnt_cp_swp_r.swap(n_pnt_cp);
+		n_shift_cp_swp_r.swap(n_shifts_cp);
+		convert_blk_swp_r.swap(convert_blk);
+		box_cp_swp_r.swap(box_cp);
+		new_map_swp_r.swap(new_map);
+    }
+
+    inline void swap_internal_local()
+    {
+		offset_ptrs_cp_swp.swap(offset_ptrs_cp);
+		scan_ptrs_cp_swp.swap(scan_ptrs_cp);
+		data_base_ptr_cp_swp.swap(data_base_ptr_cp);
+		n_cnk_cp_swp.swap(n_cnk_cp);
+		n_pnt_cp_swp.swap(n_pnt_cp);
+		n_shift_cp_swp.swap(n_shifts_cp);
+		convert_blk_swp.swap(convert_blk);
+		box_cp_swp.swap(box_cp);
+		new_map_swp.swap(new_map);
+    }
+
+    inline void swap_local_pack()
+    {
+		index_ptrs_swp.swap(index_ptrs);
+		scan_ptrs_swp.swap(scan_ptrs);
+		data_ptrs_swp.swap(data_ptrs);
+		offset_ptrs_swp.swap(offset_ptrs);
+		mask_ptrs_swp.swap(mask_ptrs);
+
+		e_points_swp.swap(e_points);
+		pack_output_swp.swap(pack_output);
+		tmp_swp.swap(tmp);
+
+		pack_subs_swp.swap(pack_subs);
+		index_size_swp = private_get_index_array().size();
+    }
+
+    inline void swap_remote_pack()
+    {
+		index_ptrs_swp_r.swap(index_ptrs);
+		scan_ptrs_swp_r.swap(scan_ptrs);
+		data_ptrs_swp_r.swap(data_ptrs);
+		offset_ptrs_swp_r.swap(offset_ptrs);
+		mask_ptrs_swp_r.swap(mask_ptrs);
+
+		e_points_swp_r.swap(e_points);
+		pack_output_swp_r.swap(pack_output);
+		tmp_swp_r.swap(tmp);
+
+		pack_subs_swp_r.swap(pack_subs);
+		//req_index_swp_r = req_index;
+		index_size_swp_r = private_get_index_array().size();
+    }
 
 protected:
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
@@ -680,56 +738,23 @@ public:
     }
 
 
+
     void saveUnpackVariableIfNotKeepGeometry(int opt, bool is_unpack_remote)
     {
     	if (is_unpack_remote == true)
-    	{
-    		n_cnk_cp_swp_r.swap(n_cnk_cp);
-    		n_pnt_cp_swp_r.swap(n_pnt_cp);
-    		n_shift_cp_swp_r.swap(n_shifts_cp);
-    		convert_blk_swp_r.swap(convert_blk);
-    		box_cp_swp_r.swap(box_cp);
-    		new_map_swp_r.swap(new_map);
-    	}
+    	{swap_internal_remote();}
 
     	if (is_unpack_remote == false)
-    	{
-    		offset_ptrs_cp_swp.swap(offset_ptrs_cp);
-    		scan_ptrs_cp_swp.swap(scan_ptrs_cp);
-    		data_base_ptr_cp_swp.swap(data_base_ptr_cp);
-    		n_cnk_cp_swp.swap(n_cnk_cp);
-    		n_pnt_cp_swp.swap(n_pnt_cp);
-    		n_shift_cp_swp.swap(n_shifts_cp);
-    		convert_blk_swp.swap(convert_blk);
-    		box_cp_swp.swap(box_cp);
-    		new_map_swp.swap(new_map);
-    	}
+    	{swap_internal_local();}
     }
 
     void RestoreUnpackVariableIfKeepGeometry(int opt, bool is_unpack_remote)
     {
 		if (opt & KEEP_GEOMETRY && is_unpack_remote == true)
-		{
-	        n_cnk_cp_swp_r.swap(n_cnk_cp);
-	        n_pnt_cp_swp_r.swap(n_pnt_cp);
-	        n_shift_cp_swp_r.swap(n_shifts_cp);
-	    	convert_blk_swp_r.swap(convert_blk);
-	    	box_cp_swp_r.swap(box_cp);
-	    	new_map_swp_r.swap(new_map);
-		}
+		{swap_internal_remote();}
 
 		if (opt & KEEP_GEOMETRY && is_unpack_remote == false)
-		{
-	        offset_ptrs_cp_swp.swap(offset_ptrs_cp);
-	        scan_ptrs_cp_swp.swap(scan_ptrs_cp);
-	        data_base_ptr_cp_swp.swap(data_base_ptr_cp);
-	        n_cnk_cp_swp.swap(n_cnk_cp);
-	        n_pnt_cp_swp.swap(n_pnt_cp);
-	        n_shift_cp_swp.swap(n_shifts_cp);
-	    	convert_blk_swp.swap(convert_blk);
-	    	box_cp_swp.swap(box_cp);
-	    	new_map_swp.swap(new_map);
-		}
+		{swap_internal_local();}
     }
 
 
@@ -737,36 +762,14 @@ public:
     {
 		if (is_pack_remote == false)
 		{
-			index_ptrs_swp.swap(index_ptrs);
-			scan_ptrs_swp.swap(scan_ptrs);
-			data_ptrs_swp.swap(data_ptrs);
-			offset_ptrs_swp.swap(offset_ptrs);
-			mask_ptrs_swp.swap(mask_ptrs);
-
-			e_points_swp.swap(e_points);
-			pack_output_swp.swap(pack_output);
-			tmp_swp.swap(tmp);
-
-			pack_subs_swp.swap(pack_subs);
+			swap_local_pack();
 			req_index_swp = req_index;
-			index_size_swp = private_get_index_array().size();
 		}
 
 		if (is_pack_remote == true)
 		{
-			index_ptrs_swp_r.swap(index_ptrs);
-			scan_ptrs_swp_r.swap(scan_ptrs);
-			data_ptrs_swp_r.swap(data_ptrs);
-			offset_ptrs_swp_r.swap(offset_ptrs);
-			mask_ptrs_swp_r.swap(mask_ptrs);
-
-			e_points_swp_r.swap(e_points);
-			pack_output_swp_r.swap(pack_output);
-			tmp_swp_r.swap(tmp);
-
-			pack_subs_swp_r.swap(pack_subs);
+			swap_remote_pack();
 			req_index_swp_r = req_index;
-			index_size_swp_r = private_get_index_array().size();
 		}
     }
 
@@ -774,33 +777,13 @@ public:
     {
 		if (opt & KEEP_GEOMETRY && is_pack_remote == false)
 		{
-			index_ptrs_swp.swap(index_ptrs);
-			scan_ptrs_swp.swap(scan_ptrs);
-			data_ptrs_swp.swap(data_ptrs);
-			offset_ptrs_swp.swap(offset_ptrs);
-			mask_ptrs_swp.swap(mask_ptrs);
-
-			e_points_swp.swap(e_points);
-			pack_output_swp.swap(pack_output);
-			tmp_swp.swap(tmp);
-
-			pack_subs_swp.swap(pack_subs);
+			swap_local_pack();
 			req_index = req_index_swp;
 		}
 
 		if (opt & KEEP_GEOMETRY && is_pack_remote == true)
 		{
-			index_ptrs_swp_r.swap(index_ptrs);
-			scan_ptrs_swp_r.swap(scan_ptrs);
-			data_ptrs_swp_r.swap(data_ptrs);
-			offset_ptrs_swp_r.swap(offset_ptrs);
-			mask_ptrs_swp_r.swap(mask_ptrs);
-
-			e_points_swp_r.swap(e_points);
-			pack_output_swp_r.swap(pack_output);
-			tmp_swp_r.swap(tmp);
-
-			pack_subs_swp_r.swap(pack_subs);
+			swap_remote_pack();
 			req_index = req_index_swp_r;
 		}
     }
@@ -1213,7 +1196,7 @@ private:
     	auto & dataBuffer = private_get_data_array();
 
 		if (req_index != pack_subs.size())
-		{std::cerr << __FILE__ << ":" << __LINE__ << " error the packing request number differ from the number of packed objects" << std::endl;}
+		{std::cerr << __FILE__ << ":" << __LINE__ << " error the packing request number differ from the number of packed objects " << req_index << "  " << pack_subs.size() << std::endl;}
 
     	size_t tot_pnt = 0;
     	size_t tot_cnk = 0;
@@ -2793,9 +2776,11 @@ public:
         	size_t n_cnk = 0;
 
     		tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1) = 0;
+    		tmp.template get<1>((i+1)*(indexBuffer.size() + 1)-1) = 0;
 
     		// put a zero at the end
     		tmp.template hostToDevice<0>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
+    		tmp.template hostToDevice<1>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
 
     		openfpm::scan(((indexT *)tmp. template getDeviceBuffer<0>()) + i*(indexBuffer.size() + 1),
     						indexBuffer.size() + 1, (indexT *)tmp. template getDeviceBuffer<0>() + i*(indexBuffer.size() + 1), context);
@@ -3127,7 +3112,7 @@ public:
 	 * \param box_src box to kill the points
 	 *
 	 */
-	void remove(const Box<dim,unsigned int> & section_to_delete)
+	void remove(const Box<dim,int> & section_to_delete)
 	{
 		rem_sects.add(section_to_delete);
 	}

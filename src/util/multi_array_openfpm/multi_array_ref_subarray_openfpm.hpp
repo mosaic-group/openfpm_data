@@ -54,12 +54,12 @@ public:
   // template typedefs
   template <std::size_t NDims>
   struct const_array_view {
-    typedef boost::detail::multi_array::const_multi_array_view_openfpm<T,NDims> type;
+    typedef openfpm::detail::multi_array::const_multi_array_view_openfpm<T,NDims> type;
   };
 
   template <std::size_t NDims>
   struct array_view {
-    typedef boost::detail::multi_array::multi_array_view_openfpm<T,NDims> type;
+    typedef openfpm::detail::multi_array::multi_array_view_openfpm<T,NDims> type;
   };
 
   // Allow default copy constructor as well.
@@ -261,15 +261,6 @@ public:
   const_reference operator[](index idx) const {
     return super_type::operator[](idx);
   }
-
-  // see generate_array_view in base.hpp
-/*  template <int NDims>
-  typename const_array_view<NDims>::type
-  operator[](const boost::detail::multi_array::
-             index_gen<NumDims,NDims>& indices)
-    const {
-    return super_type::operator[](indices);
-  }*/
 
   const_iterator begin() const {
     return super_type::begin();

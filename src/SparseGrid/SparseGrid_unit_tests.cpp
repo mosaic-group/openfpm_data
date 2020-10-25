@@ -1753,7 +1753,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_remove_area)
 
 
 	Box<3,size_t> bx_create({100,100,100},{400,400,400});
-	Box<3,size_t> bx_delete({150,150,150},{350,350,350});
+	Box<3,long int> bx_delete({150,150,150},{350,350,350});
 
 	grid_sm<3,void> gs(sz);
 	grid_key_dx_iterator_sub<3> sub(gs,bx_create.getKP1(),bx_create.getKP2());

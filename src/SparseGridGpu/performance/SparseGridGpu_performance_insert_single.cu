@@ -4,7 +4,6 @@
  *  Created on: Sep 10, 2019
  *      Author: i-bird
  */
-#define SCAN_WITH_CUB
 #define BOOST_TEST_DYN_LINK
 #define DISABLE_MPI_WRITTERS
 

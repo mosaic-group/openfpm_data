@@ -479,17 +479,6 @@ BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
 ////////// Test function ///////////
 /////////////////////////////////////
 
-#ifdef SE_CLASS2
-
-openfpm::vector<aggregate<float>> & test_error_v()
-{
-	openfpm::vector<aggregate<float>> v(16);
-
-	return v;
-}
-
-#endif
-
 BOOST_AUTO_TEST_CASE( vector_safety_check )
 {
 #if defined(SE_CLASS1) && defined (THROW_ON_ERROR)
@@ -566,39 +555,6 @@ BOOST_AUTO_TEST_CASE( vector_safety_check )
 		BOOST_REQUIRE_EQUAL(e.what(),"Runtime grid error");
 	}
 	BOOST_REQUIRE_EQUAL(error,true);
-
-	#if defined(SE_CLASS2) && defined (THROW_ON_ERROR)
-
-	error = false;
-
-	// Create a vector
-
-	openfpm::vector<aggregate<float>> * v3 = new openfpm::vector<aggregate<float>>(16);
-	delete v3;
-
-	// Try to access the class
-
-	try
-	{v3->size();}
-	catch (std::exception & e)
-	{
-		error = true;
-		BOOST_REQUIRE_EQUAL(e.what(),"Runtime memory error");
-	}
-	BOOST_REQUIRE_EQUAL(error,true);
-
-	try
-	{
-		openfpm::vector<aggregate<float>> vr = test_error_v();
-	}
-	catch (std::exception & e)
-	{
-		error = true;
-		BOOST_REQUIRE_EQUAL(e.what(),"Runtime memory error");
-	}
-	BOOST_REQUIRE_EQUAL(error,true);
-
-	#endif
 
 #endif
 }

@@ -153,6 +153,14 @@ class shift_only
 
 public:
 
+	/*! \brief Default constructor
+	 *
+	 */
+	shift_only()
+	{
+		sh.zero();
+	}
+
 	/*! \brief Constructor
 	 *
 	 * \param t Matrix transformation

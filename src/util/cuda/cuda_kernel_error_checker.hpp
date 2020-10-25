@@ -118,8 +118,13 @@ template<typename ... Args>pos_pc error_arg(void * ptr, int prp, Args ... args)
 								 std::cout << ")";\
 								 std::cout << " thread: " << "(" << dev_mem[6+i] << "," << dev_mem[7+i] << "," << dev_mem[8+i] << ")*(" << dev_mem[9+i] << "," << dev_mem[10+i] << "," << dev_mem[11+i] << ")+(" << dev_mem[12+i] << "," << dev_mem[13+i] << "," << dev_mem[14+i] << ")" << std::endl;\
 		                    	 std::cout << "Internal error report: " << ea.pc.match_str << std::endl;\
+		                    	 int dev_mem_null[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};\
+		                    	 cudaMemcpyToSymbol(global_cuda_error_array,dev_mem_null,sizeof(dev_mem_null),0,cudaMemcpyHostToDevice);\
 								 ACTION_ON_ERROR(CUDA_LAUNCH_ERROR_OBJECT);\
-		                     }
+		                     }\
+
+
+
 #else
 #define CHECK_SE_CLASS1_PRE
 #define CHECK_SE_CLASS1_POST(kernel_call,...)

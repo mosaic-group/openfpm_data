@@ -546,7 +546,7 @@ void testConv3x3x3_perf(std::string testName)
 		timer ts;
 		ts.start();
 
-		sparseGrid.template applyStencils<Conv3x3x3<dim,0,1>>(STENCIL_MODE_INPLACE,cc);
+		sparseGrid.template applyStencils<Conv3x3x3<dim,0,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,cc);
 
 		cudaDeviceSynchronize();
 		ts.stop();
@@ -641,7 +641,7 @@ static void testConv3x3x3_no_shared_perf(std::string testName)
 		timer ts;
 		ts.start();
 
-		sparseGrid.template applyStencils<Conv3x3x3_noshared<SparseGridZ::dims,0,1>>(STENCIL_MODE_INPLACE_NO_SHARED,cc);
+		sparseGrid.template applyStencils<Conv3x3x3_noshared<SparseGridZ::dims,0,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE_NO_SHARED,cc);
 
 		cudaDeviceSynchronize();
 		ts.stop();

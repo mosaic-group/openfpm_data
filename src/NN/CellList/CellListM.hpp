@@ -13,8 +13,6 @@
 
 struct PV_cl
 {
-	//! particle id
-	size_t ele;
 	//! phase id
 	size_t v;
 };
