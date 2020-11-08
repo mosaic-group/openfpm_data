@@ -305,6 +305,8 @@ public:
 
 	typedef ord_type linearizer_type;
 
+	typedef T background_type;
+
 protected:
 
 	//! Memory layout specification + memory chunk pointer

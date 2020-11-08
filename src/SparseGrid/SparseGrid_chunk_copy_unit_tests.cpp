@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_chunk_test )
 {
 	typedef aggregate<double> T;
 
-	typedef typename v_transform_two<Ft_chunk,boost::mpl::int_<test_chunking3::size::value>,typename T::type>::type chunk_def;
+	typedef typename v_transform_two_v2<Ft_chunk,boost::mpl::int_<test_chunking3::size::value>,typename T::type>::type chunk_def;
 
 	double chunk_with_border[66*10*6];
 	unsigned char mask[66*10*6];
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_chunk_test_2 )
 {
 	typedef aggregate<double> T;
 
-	typedef typename v_transform_two<Ft_chunk,boost::mpl::int_<test_chunking3::size::value>,typename T::type>::type chunk_def;
+	typedef typename v_transform_two_v2<Ft_chunk,boost::mpl::int_<test_chunking3::size::value>,typename T::type>::type chunk_def;
 
 	double chunk_with_border[68*12*8];
 	unsigned char mask[68*12*8];

@@ -49,6 +49,20 @@ union data_il<1>
 	char i;
 };
 
+
+template<unsigned int dim, unsigned int sz>
+struct ids_crs
+{
+	long int sumdm[dim];
+	long int sumdp[dim];
+
+	long int s2;
+	bool mask_row[sz];
+	int k;
+};
+
+
+
 template<unsigned int dim>
 struct conv_impl
 {
@@ -97,6 +111,93 @@ struct conv_impl
 };
 
 #ifndef __NVCC__
+
+
+template<unsigned int dir,int p, unsigned int prop_src1,typename chunk_type, typename vect_type, typename ids_type>
+void load_crs(vect_type & cs1, chunk_type & chunk, ids_type & ids)
+{
+	if (dir == 0 && p < 0)
+	{
+		Vc::Vector<typename vect_type::EntryType> cmd1(&chunk.template get<prop_src1>()[ids.s2]);
+
+		cs1 = cmd1;
+		cs1 = cs1.shifted(-1);
+		cs1[0] = chunk.template get<prop_src1>()[ids.sumdm[dir]];
+	}
+	else if (dir == 0 && p > 0)
+	{
+		Vc::Vector<typename vect_type::EntryType> cmd1(&chunk.template get<prop_src1>()[ids.s2]);
+
+		cs1 = cmd1;
+		cs1 = cs1.shifted(1);
+		cs1[Vc::Vector<typename vect_type::EntryType>::Size - 1] = chunk.template get<prop_src1>()[ids.sumdp[0]];
+	}
+	else if (p < 0)
+	{
+		cs1.load(&chunk.template get<prop_src1>()[ids.sumdm[dir]],Vc::Aligned);
+	}
+	else if (p > 0)
+	{
+		cs1.load(&chunk.template get<prop_src1>()[ids.sumdp[dir]],Vc::Aligned);
+	}
+	else
+	{
+		Vc::Vector<typename vect_type::EntryType> cmd1(&chunk.template get<prop_src1>()[ids.s2]);
+
+		cs1 = cmd1;
+	}
+}
+
+template<unsigned int prop_dst1,typename chunk_type, typename vect_type, typename ids_type>
+void store_crs(chunk_type & chunk, vect_type & res, ids_type & ids)
+{
+	Vc::Mask<typename vect_type::EntryType> m(&ids.mask_row[ids.k]);
+
+	res.store(&chunk.template get<prop_dst1>()[ids.s2],m,Vc::Aligned);
+}
+
+template<unsigned int prop_dst1,unsigned int comp, typename chunk_type, typename vect_type, typename ids_type>
+void store_crs_v(chunk_type & chunk, vect_type & res, ids_type & ids)
+{
+	Vc::Mask<typename vect_type::EntryType> m(&ids.mask_row[ids.k]);
+
+	res.store(&chunk.template get<prop_dst1>()[comp][ids.s2],m,Vc::Aligned);
+}
+
+template<unsigned int dir,int p, unsigned int comp, unsigned int prop_src1,typename chunk_type, typename vect_type, typename ids_type>
+void load_crs_v(vect_type & cs1, chunk_type & chunk,  ids_type & ids)
+{
+	if (dir == 0 && p < 0)
+	{
+		Vc::Vector<typename vect_type::EntryType> cmd1(&chunk.template get<prop_src1>()[comp][ids.s2]);
+
+		cs1 = cmd1;
+		cs1 = cs1.shifted(-1);
+		cs1[0] = chunk.template get<prop_src1>()[comp][ids.sumdm[dir]];
+	}
+	else if (dir == 0 && p > 0)
+	{
+		Vc::Vector<typename vect_type::EntryType> cmd1(&chunk.template get<prop_src1>()[comp][ids.s2]);
+
+		cs1 = cmd1;
+		cs1 = cs1.shifted(1);
+		cs1[Vc::Vector<typename vect_type::EntryType>::Size - 1] = chunk.template get<prop_src1>()[comp][ids.sumdp[dir]];
+	}
+	else if (p < 0)
+	{
+		cs1.load(&chunk.template get<prop_src1>()[comp][ids.sumdm[dir]],Vc::Aligned);
+	}
+	else if (p > 0)
+	{
+		cs1.load(&chunk.template get<prop_src1>()[comp][ids.sumdp[dir]],Vc::Aligned);
+	}
+	else
+	{
+		Vc::Vector<typename vect_type::EntryType> cmd1(&chunk.template get<prop_src1>()[comp][ids.s2]);
+
+		cs1 = cmd1;
+	}
+}
 
 struct cross_stencil_v
 {
@@ -724,6 +825,140 @@ struct conv_impl<3>
 
 						res1.store(&chunk.template get<prop_dst1>()[s2],m,Vc::Aligned);
 						res2.store(&chunk.template get<prop_dst2>()[s2],m,Vc::Aligned);
+
+						s2 += Vc::Vector<prop_type>::Size;
+					}
+				}
+			}
+
+			++it;
+		}
+	}
+
+	template<bool findNN, unsigned int stencil_size, typename prop_type, typename SparseGridType, typename lambda_f, typename ... ArgsT >
+	static void conv_cross_ids(grid_key_dx<3> & start, grid_key_dx<3> & stop, SparseGridType & grid , lambda_f func, ArgsT ... args)
+	{
+		auto it = grid.template getBlockIterator<stencil_size>(start,stop);
+
+		auto & datas = grid.private_get_data();
+		auto & headers = grid.private_get_header_mask();
+
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<0>>::type sz0;
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<1>>::type sz1;
+		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<2>>::type sz2;
+
+		typedef typename SparseGridType::chunking_type chunking;
+
+		while (it.isNext())
+		{
+			// Load
+			long int offset_jump[6];
+
+			size_t cid = it.getChunkId();
+
+			auto chunk = datas.get(cid);
+			auto & mask = headers.get(cid);
+
+			bool exist;
+			grid_key_dx<3> p = grid.getChunkPos(cid) + grid_key_dx<3>({-1,0,0});
+			long int r = grid.getChunk(p,exist);
+			offset_jump[0] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({1,0,0});
+			r = grid.getChunk(p,exist);
+			offset_jump[1] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,-1,0});
+			r = grid.getChunk(p,exist);
+			offset_jump[2] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,1,0});
+			r = grid.getChunk(p,exist);
+			offset_jump[3] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,0,-1});
+			r = grid.getChunk(p,exist);
+			offset_jump[4] = (r-cid)*decltype(it)::sizeBlock;
+
+			p = grid.getChunkPos(cid) + grid_key_dx<3>({0,0,1});
+			r = grid.getChunk(p,exist);
+			offset_jump[5] = (r-cid)*decltype(it)::sizeBlock;
+
+			// Load offset jumps
+
+			// construct a row mask
+
+			long int s2 = 0;
+
+			typedef typename boost::mpl::at<typename chunking::type,boost::mpl::int_<2>>::type sz;
+			typedef typename boost::mpl::at<typename chunking::type,boost::mpl::int_<1>>::type sy;
+			typedef typename boost::mpl::at<typename chunking::type,boost::mpl::int_<0>>::type sx;
+
+			ids_crs<3,sx::value> ids;
+
+			for (int k = 0 ; k < sx::value ; k++)
+			{
+				ids.mask_row[k] = (k >= it.start(0) && k < it.stop(0))?true:false;
+			}
+
+			for (int v = it.start(2) ; v < it.stop(2) ; v++)
+			{
+				for (int j = it.start(1) ; j < it.stop(1) ; j++)
+				{
+					s2 = it.Lin(0,j,v);
+					for (int k = 0 ; k < sx::value ; k += Vc::Vector<prop_type>::Size)
+					{
+						// we do only id exist the point
+						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::Vector<prop_type>::Size; continue;}
+
+						data_il<4> mxm;
+						data_il<4> mxp;
+						data_il<4> mym;
+						data_il<4> myp;
+						data_il<4> mzm;
+						data_il<4> mzp;
+
+						ids.k = k;
+
+						// Load x-1
+						ids.sumdm[0] = s2-1;
+						ids.sumdm[0] += (k==0)?offset_jump[0] + sx::value:0;
+
+						// Load x+1
+						ids.sumdp[0] = s2+Vc::Vector<prop_type>::Size;
+						ids.sumdp[0] += (k+Vc::Vector<prop_type>::Size == sx::value)?offset_jump[1] - sx::value:0;
+
+						ids.sumdm[1] = (j == 0)?offset_jump[2] + (sy::value-1)*sx::value:-sx::value;
+						ids.sumdm[1] += s2;
+						ids.sumdp[1] = (j == sy::value-1)?offset_jump[3] - (sy::value - 1)*sx::value:sx::value;
+						ids.sumdp[1] += s2;
+						ids.sumdm[2] = (v == 0)?offset_jump[4] + (sz::value-1)*sx::value*sy::value:-sx::value*sy::value;
+						ids.sumdm[2] += s2;
+						ids.sumdp[2] = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
+						ids.sumdp[2] += s2;
+
+						ids.s2 = s2;
+
+						mxm.i = *(int *)&mask.mask[s2];
+						mxm.i = mxm.i << 8;
+						mxm.i |= (int)mask.mask[ids.sumdm[0]];
+
+						mxp.i = *(int *)&mask.mask[s2];
+						mxp.i = mxp.i >> 8;
+						mxp.i |= ((int)mask.mask[ids.sumdp[0]]) << (Vc::Vector<prop_type>::Size - 1)*8;
+
+						mym.i = *(int *)&mask.mask[ids.sumdm[1]];
+						myp.i = *(int *)&mask.mask[ids.sumdp[1]];
+
+						mzm.i = *(int *)&mask.mask[ids.sumdm[2]];
+						mzp.i = *(int *)&mask.mask[ids.sumdp[2]];
+
+						// Calculate
+
+						data_il<4> tot_m;
+						tot_m.i = mxm.i + mxp.i + mym.i + myp.i + mzm.i + mzp.i;
+
+						func(chunk,ids,tot_m.uc,args ... );
 
 						s2 += Vc::Vector<prop_type>::Size;
 					}

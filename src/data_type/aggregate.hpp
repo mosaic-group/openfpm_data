@@ -127,15 +127,6 @@ struct aggregate
 		return boost::fusion::at_c<i>(data);
 	}
 
-	/*! \brief it return false if this aggregate has no pointers
-	 *
-	 *
-	 */
-	static bool noPointers()
-	{
-		return !has_pack_gen<aggregate<list ...>>::value;
-	}
-
 	/*! \brief get the properties i
 	 *
 	 * \return the property i
@@ -144,6 +135,15 @@ struct aggregate
 	template<unsigned int i> const typename boost::mpl::at<type,boost::mpl::int_<i>>::type & get() const
 	{
 		return boost::fusion::at_c<i>(data);
+	}
+
+	/*! \brief it return false if this aggregate has no pointers
+	 *
+	 *
+	 */
+	static bool noPointers()
+	{
+		return !has_pack_gen<aggregate<list ...>>::value;
 	}
 
 	aggregate<list...> & operator=(const aggregate<list...> & ag)
@@ -179,6 +179,26 @@ struct aggregate_bfv
 
 	//! data to store
 	type data;
+
+	/*! \brief get the properties i
+	 *
+	 * \return the property i
+	 *
+	 */
+	template<unsigned int i> typename boost::mpl::at<type,boost::mpl::int_<i>>::type & get()
+	{
+		return boost::fusion::at_c<i>(data);
+	}
+
+	/*! \brief get the properties i
+	 *
+	 * \return the property i
+	 *
+	 */
+	template<unsigned int i> const typename boost::mpl::at<type,boost::mpl::int_<i>>::type & get() const
+	{
+		return boost::fusion::at_c<i>(data);
+	}
 
 	static const unsigned int max_prop = boost::mpl::size<type>::type::value;
 };
