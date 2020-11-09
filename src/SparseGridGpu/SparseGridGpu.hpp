@@ -3223,6 +3223,15 @@ public:
 		}
 	}
 
+	/*! \brief Eliminate many internal temporary buffer you can use this between flushes if you get some out of memory
+	 *
+	 *
+	 */
+	void removeUnusedBuffers()
+	{
+		BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::removeUnusedBuffers();
+	}
+
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /*! \brief Return a SparseGrid iterator
