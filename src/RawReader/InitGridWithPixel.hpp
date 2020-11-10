@@ -129,7 +129,7 @@ void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <
 		// in case that the grid has a different resolution than the underlying image stack:
 		// create a key which is used to get the offset for the file reading
 		// the indices in this key are corrected by the refinement factor
-		for (size_t d = 1; d < grid_type::dims; d++)
+		for (size_t d = 0; d < grid_type::dims; d++)
 		{
 			gkey.set_d(d, std::round(gkey.get(d) / refinement[d]));
 		}
