@@ -1669,11 +1669,12 @@ public:
 	 *
 	 * \param start point
 	 * \param stop point
+	 * \param to_init unused bool
 	 *
 	 * \return a sub-grid iterator
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
+	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop, bool to_init = false) const
 	{
 		// get the starting point and the end point of the real domain
 
