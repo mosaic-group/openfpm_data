@@ -1669,6 +1669,9 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified_ids_v
 																	{surround[i] = (mask_sum[i] == 6);}
 
 																	Lap = Vc::iif(surround,Lap,Vc::double_v(1.0));
+																	Lap_x = Vc::iif(surround,Lap_x,Vc::double_v(1.0));
+																	Lap_y = Vc::iif(surround,Lap_y,Vc::double_v(1.0));
+																	Lap_z = Vc::iif(surround,Lap_z,Vc::double_v(1.0));
 
 																	store_crs<1>(grid,Lap,ids);
 																	store_crs_v<4,x>(grid,Lap_x,ids);
