@@ -31,9 +31,9 @@
 template<typename chunk_def>
 struct sparse_grid_bck_value
 {
-	chunk_def & bck;
+	chunk_def bck;
 
-	sparse_grid_bck_value(chunk_def & bck)
+	sparse_grid_bck_value(chunk_def bck)
 	:bck(bck)
 	{}
 
@@ -194,7 +194,52 @@ public:
 
 };
 
-template<unsigned int dim, typename Tsrc,typename Tdst>
+template<typename T>
+struct copy_sparse_to_sparse_bb_impl
+{
+	template<unsigned int prop, typename Tsrc, typename Tdst>
+	static void copy(const Tsrc & src, Tdst & dst,short int pos_id_src, short int pos_id_dst)
+	{
+		typedef typename std::remove_reference<decltype(dst.template get<prop>()[pos_id_dst])>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get<prop>()[pos_id_src],dst.template get<prop>()[pos_id_dst]);
+	}
+};
+
+template<typename T, unsigned int N1>
+struct copy_sparse_to_sparse_bb_impl<T[N1]>
+{
+	template<unsigned int prop, typename Tsrc, typename Tdst>
+	static void copy(const Tsrc & src, Tdst & dst,short int pos_id_src, short int pos_id_dst)
+	{
+		typedef typename std::remove_reference<decltype(dst.template get<prop>()[0][pos_id_dst])>::type copy_rtype;
+
+		for (int i = 0 ; i < N1 ; i++)
+		{
+			meta_copy<copy_rtype>::meta_copy_(src.template get<prop>()[i][pos_id_src],dst.template get<prop>()[i][pos_id_dst]);
+		}
+	}
+};
+
+template<typename T, unsigned int N1, unsigned int N2>
+struct copy_sparse_to_sparse_bb_impl<T[N1][N2]>
+{
+	template<unsigned int prop, typename Tsrc, typename Tdst>
+	static void copy(const Tsrc & src, Tdst & dst,short int pos_id_src, short int pos_id_dst)
+	{
+		typedef typename std::remove_reference<decltype(dst.template get<prop>()[0][0][pos_id_dst])>::type copy_rtype;
+
+		for (int i = 0 ; i < N1 ; i++)
+		{
+			for (int j = 0 ; j < N2 ; j++)
+			{
+				meta_copy<copy_rtype>::meta_copy_(src.template get<prop>()[i][j][pos_id_src],dst.template get<prop>()[i][j][pos_id_dst]);
+			}
+		}
+	}
+};
+
+template<unsigned int dim, typename Tsrc,typename Tdst, typename aggrType>
 class copy_sparse_to_sparse_bb
 {
 	//! source
@@ -219,9 +264,13 @@ public:
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		typedef typename std::remove_reference<decltype(dst.template get<T::value>()[pos_id_dst])>::type copy_rtype;
+/*		typedef typename std::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
 
-		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>()[pos_id_src],dst.template get<T::value>()[pos_id_dst]);
+		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>()[pos_id_src],dst.template get<T::value>()[pos_id_dst]);*/
+
+		typedef typename boost::mpl::at<typename aggrType::type, T>::type copy_rtype;
+
+		copy_sparse_to_sparse_bb_impl<copy_rtype>::template copy<T::value>(src,dst,pos_id_src,pos_id_dst);
 	}
 
 };
@@ -427,7 +476,7 @@ class sgrid_cpu
 	typedef typename v_transform_two_v2<Ft_chunk,boost::mpl::int_<chunking::size::value>,typename T::type>::type chunk_def;
 
 	//! background values
-	aggregate_bfv<chunk_def> background;
+	//aggregate_bfv<chunk_def> background;
 
 	typedef sgrid_cpu<dim,T,S,grid_lin,layout,layout_base,chunking> self;
 
@@ -657,9 +706,9 @@ class sgrid_cpu
 		{
 			auto c = chunks.get(0);
 
-			copy_bck<decltype(background),decltype(c)> cb(background,c,i);
+			//copy_bck<decltype(background),decltype(c)> cb(background,c,i);
 
-			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cb);
+			//boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cb);
 		}
 	}
 
@@ -924,7 +973,8 @@ public:
 	template<unsigned int p>
 	void setBackgroundValue(const typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type & val)
 	{
-		meta_copy<typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type>::meta_copy_(val,background.template get<p>()[0]);
+		for (int i = 0 ; i < chunking::size::value ; i++)
+		{meta_copy<typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type>::meta_copy_(val,chunks.get(0).template get<p>()[i]);}
 	}
 
 	/*! \brief Get the background value
@@ -932,9 +982,9 @@ public:
 	 * \return background value
 	 *
 	 */
-	sparse_grid_bck_value<aggregate_bfv<chunk_def>> getBackgroundValue()
+	sparse_grid_bck_value<typename std::remove_reference<decltype(chunks.get(0))>::type> getBackgroundValue()
 	{
-		return sparse_grid_bck_value<aggregate_bfv<chunk_def>>(background);
+		return sparse_grid_bck_value<typename std::remove_reference<decltype(chunks.get(0))>::type>(chunks.get(0));
 	}
 
 	/*! \brief Get the background value
@@ -942,9 +992,9 @@ public:
 	 * \return background value
 	 *
 	 */
-	aggregate_bfv<chunk_def> & getBackgroundValueAggr()
+	auto getBackgroundValueAggr() -> decltype(chunks.get(0))
 	{
-		return background;
+		return chunks.get(0);
 	}
 
 	/*! \brief This is a multiresolution sparse grid so is a compressed format
@@ -1038,7 +1088,7 @@ public:
 		auto & hm = header_mask.get(active_cnk);
 
 		if ((hm.mask[sub_id] & 1) == 0)
-		{return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,active_cnk,sub_id);}
+		{return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,0,sub_id);}
 
 		return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,active_cnk,sub_id);
 	}
@@ -1067,7 +1117,7 @@ public:
 		auto & hm = header_mask.get(active_cnk);
 
 		if ((hm.mask[sub_id] & 1) == 0)
-		{return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,active_cnk,sub_id);}
+		{return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,0,sub_id);}
 
 		return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,active_cnk,sub_id);
 	}
@@ -1171,7 +1221,7 @@ public:
 	grid_key_sparse_dx_iterator_block_sub<dim,stencil_size,self,chunking>
 	getBlockIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
 	{
-		return grid_key_sparse_dx_iterator_block_sub<dim,stencil_size,self,chunking>(*this,start,stop,background);
+		return grid_key_sparse_dx_iterator_block_sub<dim,stencil_size,self,chunking>(*this,start,stop);
 	}
 
 	/*! \brief Return the internal grid information
@@ -1943,7 +1993,7 @@ public:
 			auto block_src = grid_src.getBlock(key_src_s);
 			auto block_dst = this->insert_o(key_dst,pos_dst_id);
 
-			copy_sparse_to_sparse_bb<dim,decltype(block_src),decltype(block_dst)> caps(block_src,block_dst,pos_src_id,pos_dst_id);
+			copy_sparse_to_sparse_bb<dim,decltype(block_src),decltype(block_dst),T> caps(block_src,block_dst,pos_src_id,pos_dst_id);
 			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(caps);
 
 			++it;
@@ -2347,8 +2397,6 @@ public:
 	sgrid_cpu & operator=(const sgrid_cpu & sg)
 	{
 		cache_pnt = sg.cache_pnt;
-		copy_aggregate<decltype(background)> ca(sg.background,background);
-		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(ca);
 
 		for (size_t i = 0 ; i < SGRID_CACHE ; i++)
 		{
@@ -2451,7 +2499,6 @@ public:
 	sgrid_cpu & operator=(sgrid_cpu && sg)
 	{
 		cache_pnt = sg.cache_pnt;
-		meta_copy<T>::meta_copy_(sg.background,background);
 
 		for (size_t i = 0 ; i < SGRID_CACHE ; i++)
 		{

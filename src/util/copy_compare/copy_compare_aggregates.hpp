@@ -24,13 +24,13 @@ template<typename S, typename S2>
 struct copy_aggregate_dual
 {
 	//! src
-	const S & src;
+	const S src;
 
 	//! Destination grid
 	S2 & dst;
 
 	//! copy_aggregate
-	inline copy_aggregate_dual(const S & src, S2 & dst)
+	inline copy_aggregate_dual(S src, S2 & dst)
 	:src(src),dst(dst){};
 
 	//! It call the copy function for each member

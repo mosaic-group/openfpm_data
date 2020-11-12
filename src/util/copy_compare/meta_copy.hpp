@@ -803,7 +803,7 @@ struct meta_copy_op_d
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_op_d_(const Tsrc & src, Tdst & dst)
+	__device__ __host__ static inline void meta_copy_op_d_(const Tsrc & src, Tdst & dst)
 	{
 		copy_general_op<op,Tsrc>(src,dst);
 	}
@@ -814,7 +814,7 @@ struct meta_copy_op_d
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_op_d_(const Tsrc & src, Tdst && dst)
+	__device__ __host__ static inline void meta_copy_op_d_(const Tsrc & src, Tdst && dst)
 	{
 		copy_general_op<op,Tsrc>(src,dst);
 	}
@@ -830,7 +830,7 @@ struct meta_copy_op_d<op,Tsrc[N1],Tdst>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_op_d_(const Tsrc src[N1], Tdst && dst)
+	__device__ __host__ static inline void meta_copy_op_d_(const Tsrc src[N1], Tdst && dst)
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -849,7 +849,7 @@ struct meta_copy_op_d<op,Tsrc,Tdst[N1]>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_op_d_(const Tsrc & src, Tdst dst[N1])
+	__device__ __host__ static inline void meta_copy_op_d_(const Tsrc & src, Tdst dst[N1])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -868,7 +868,7 @@ struct meta_copy_op_d<op,openfpm::detail::multi_array::sub_array_openfpm<Tsrc,1,
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_op_d_(const openfpm::detail::multi_array::sub_array_openfpm<Tsrc,1,vmpl> src, openfpm::detail::multi_array::sub_array_openfpm<Tdst,1,vmpl> dst)
+	__device__ __host__ static inline void meta_copy_op_d_(const openfpm::detail::multi_array::sub_array_openfpm<Tsrc,1,vmpl> src, openfpm::detail::multi_array::sub_array_openfpm<Tdst,1,vmpl> dst)
 	{
 		for (size_t i1 = 0 ; i1 < boost::mpl::at<vmpl,boost::mpl::int_<0>>::type::value ; i1++)
 		{
@@ -887,7 +887,7 @@ struct meta_copy_op_d<op,Tsrc[N1],Tdst[N1]>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_op_d_(const Tsrc src[N1], Tdst dst[N1])
+	__device__ __host__ static inline void meta_copy_op_d_(const Tsrc src[N1], Tdst dst[N1])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -906,7 +906,7 @@ struct meta_copy_op_d<op,Tsrc[N1][N2],Tdst[N1][N2]>
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_op_d_(const Tsrc src[N1][N2], Tdst dst[N1][N2])
+	__device__ __host__ static inline void meta_copy_op_d_(const Tsrc src[N1][N2], Tdst dst[N1][N2])
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
@@ -928,7 +928,7 @@ struct meta_copy_op_d<op,openfpm::detail::multi_array::sub_array_openfpm<Tsrc,2,
 	 * \param dst destination object
 	 *
 	 */
-	static inline void meta_copy_op_d_(const openfpm::detail::multi_array::sub_array_openfpm<Tsrc,2,vmpl> src, openfpm::detail::multi_array::sub_array_openfpm<Tdst,2,vmpl> dst)
+	__device__ __host__ static inline void meta_copy_op_d_(const openfpm::detail::multi_array::sub_array_openfpm<Tsrc,2,vmpl> src, openfpm::detail::multi_array::sub_array_openfpm<Tdst,2,vmpl> dst)
 	{
 		for (size_t i1 = 0 ; i1 < boost::mpl::at<vmpl,boost::mpl::int_<0>>::type::value ; i1++)
 		{
