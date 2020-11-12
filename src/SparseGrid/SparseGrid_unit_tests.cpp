@@ -2293,5 +2293,38 @@ BOOST_AUTO_TEST_CASE( sparse_operator_equal )
 	BOOST_REQUIRE_EQUAL(match,true);
 }
 
+BOOST_AUTO_TEST_CASE( sparse_testing_clear )
+{
+	size_t sz[3] = {10000,10000,10000};
+
+	sgrid_cpu<3,aggregate<float>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 555.0;
+
+	grid_key_dx<3> key1({5000,5000,5000});
+	grid_key_dx<3> key2({5001,5001,5001});
+	grid_key_dx<3> key3({5002,5003,5003});
+
+	grid.template insert<0>(key1) = 1.0;
+	grid.template insert<0>(key2) = 2.0;
+	grid.template insert<0>(key3) = 3.0;
+
+
+	grid.clear();
+
+	grid_key_dx<3> keyzero({0,0,0});
+	BOOST_REQUIRE_EQUAL(grid.template get<0>(keyzero),555.0);
+
+	grid.template insert<0>(key1) = 1.0;
+	grid.template insert<0>(key2) = 2.0;
+	grid.template insert<0>(key3) = 3.0;
+
+	BOOST_REQUIRE_EQUAL(grid.template get<0>(key1),1.0);
+	BOOST_REQUIRE_EQUAL(grid.template get<0>(key2),2.0);
+	BOOST_REQUIRE_EQUAL(grid.template get<0>(key3),3.0);
+
+	BOOST_REQUIRE_EQUAL(grid.template get<0>(keyzero),555.0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 

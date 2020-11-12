@@ -10,6 +10,7 @@
 
 #include <boost/type_traits.hpp>
 #include <boost/mpl/vector_c.hpp>
+#include <iostream>
 
 template<typename T> struct meta_copy;
 template<template<typename,typename> class op, typename T> struct meta_copy_op;

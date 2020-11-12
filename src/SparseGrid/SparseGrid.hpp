@@ -2544,9 +2544,9 @@ public:
 	 */
 	void clear()
 	{
-		header_inf.clear();
-		header_mask.clear();
-		chunks.clear();
+		header_inf.resize(1);
+		header_mask.resize(1);
+		chunks.resize(1);
 
 		clear_cache();
 		reconstruct_map();
