@@ -144,7 +144,9 @@ __global__ void insertSphere3D(SparseGridType sparseGrid, grid_key_dx<3,int> sta
     typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
     typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
 
-    grid_key_dx<3,int> blk({
+    typedef typename SparseGridType::indexT_ idType;
+
+    grid_key_dx<3,idType> blk({
                                    blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize(),
                                    blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize(),
                                    blockIdx.z + start.get(2) / sparseGrid.getBlockEdgeSize()});
@@ -160,7 +162,7 @@ __global__ void insertSphere3D(SparseGridType sparseGrid, grid_key_dx<3,int> sta
 
     auto blockId = sparseGrid.getBlockLinId(blk);
 
-    grid_key_dx<3,int> keyg;
+    grid_key_dx<3,idType> keyg;
     keyg = sparseGrid.getGlobalCoord(blk,offset);
 
     const long int x = (long int)keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);
@@ -201,7 +203,9 @@ __global__ void insertSphere3D_radius(SparseGridType sparseGrid, grid_key_dx<3,i
     typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
     typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
 
-    grid_key_dx<3,int> blk({
+    typedef typename SparseGridType::indexT_ idType;
+
+    grid_key_dx<3,idType> blk({
                                    blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize(),
                                    blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize(),
                                    blockIdx.z + start.get(2) / sparseGrid.getBlockEdgeSize()});
@@ -217,7 +221,7 @@ __global__ void insertSphere3D_radius(SparseGridType sparseGrid, grid_key_dx<3,i
 
     auto blockId = sparseGrid.getBlockLinId(blk);
 
-    grid_key_dx<3,int> keyg;
+    grid_key_dx<3,idType> keyg;
     keyg = sparseGrid.getGlobalCoord(blk,offset);
 
     const long int x = (long int)keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);
@@ -258,7 +262,9 @@ __global__ void insertSphere3D_radiusV(SparseGridType sparseGrid, grid_key_dx<3,
     typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
     typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
 
-    grid_key_dx<3,int> blk({
+    typedef typename SparseGridType::indexT_ idType;
+
+    grid_key_dx<3,idType> blk({
                                    blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize(),
                                    blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize(),
                                    blockIdx.z + start.get(2) / sparseGrid.getBlockEdgeSize()});
@@ -274,7 +280,7 @@ __global__ void insertSphere3D_radiusV(SparseGridType sparseGrid, grid_key_dx<3,
 
     auto blockId = sparseGrid.getBlockLinId(blk);
 
-    grid_key_dx<3,int> keyg;
+    grid_key_dx<3,idType> keyg;
     keyg = sparseGrid.getGlobalCoord(blk,offset);
 
     const long int x = (long int)keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);
@@ -318,7 +324,9 @@ __global__ void removeSphere3D_even_radiusV(SparseGridType sparseGrid, grid_key_
     typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
     typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
 
-    grid_key_dx<3,int> blk({
+    typedef typename SparseGridType::indexT_ idType;
+
+    grid_key_dx<3,idType> blk({
                                    blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize(),
                                    blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize(),
                                    blockIdx.z + start.get(2) / sparseGrid.getBlockEdgeSize()});
@@ -327,7 +335,7 @@ __global__ void removeSphere3D_even_radiusV(SparseGridType sparseGrid, grid_key_
 
     auto blockId = sparseGrid.getBlockLinId(blk);
 
-    grid_key_dx<3,int> keyg;
+    grid_key_dx<3,idType> keyg;
     keyg = sparseGrid.getGlobalCoord(blk,offset);
 
     const long int x = (long int)keyg.get(0) - (start.get(0) + gridDim.x / 2 * SparseGridType::blockEdgeSize_);

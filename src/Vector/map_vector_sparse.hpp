@@ -2097,10 +2097,10 @@ namespace openfpm
 	};
 
 
-	template<typename T, unsigned int blockSwitch = VECTOR_SPARSE_STANDARD, typename block_functor = stub_block_functor>
+	template<typename T, unsigned int blockSwitch = VECTOR_SPARSE_STANDARD, typename block_functor = stub_block_functor, typename indexT = int>
 	using vector_sparse_gpu = openfpm::vector_sparse<
 	        T,
-	        int,
+	        indexT,
 	        CudaMemory,
 	        typename memory_traits_inte<T>::type,
 	        memory_traits_inte,
@@ -2110,10 +2110,10 @@ namespace openfpm
             block_functor
             >;
 
-	template<typename T, typename block_functor = stub_block_functor>
+	template<typename T, typename block_functor = stub_block_functor, typename indexT = long int>
 	using vector_sparse_gpu_block = openfpm::vector_sparse<
 	        T,
-	        long int,
+	        indexT,
 	        CudaMemory,
 	        typename memory_traits_inte<T>::type,
 	        memory_traits_inte,

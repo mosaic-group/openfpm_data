@@ -450,7 +450,7 @@ template<unsigned int dim,
 		 unsigned int threadBlockSize = 128,
 		 typename indexT=long int,
 		 template<typename> class layout_base=memory_traits_inte,
-		 typename linearizer = grid_smb<dim, blockEdgeSize>>
+		 typename linearizer = grid_smb<dim, blockEdgeSize, indexT>>
 class SparseGridGpu : public BlockMapGpu<
         typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type,
         threadBlockSize, indexT, layout_base>
@@ -905,6 +905,7 @@ private:
             extBlockDims[d] = blockEdgeSize + 2*stencilSupportRadius;
         }
         extendedBlockGeometry.setDimensions(extBlockDims);
+
         gridSize.setDimensions(res);
     }
 
@@ -1595,7 +1596,12 @@ public:
             : gridGeometry(gridGeometry),
               stencilSupportRadius(stencilSupportRadius)
     {
-    	initialize(gridGeometry.getSize());
+        // convert to size_t
+        size_t sz_st[dim];
+
+        for (int i = 0 ; i < dim ; i++)	{sz_st[i] = gridGeometry.getSize()[i];}
+
+    	initialize(sz_st);
     };
 
     SparseGridGpu_ker
@@ -3461,7 +3467,17 @@ template<unsigned int dim,
 		 unsigned int threadBlockSize = 128,
 		 typename indexT=long int,
 		 template<typename> class layout_base=memory_traits_inte,
-		 typename linearizer = grid_zmb<dim, blockEdgeSize>>
+		 typename linearizer = grid_zmb<dim, blockEdgeSize,indexT>>
 using SparseGridGpu_z = SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer>;
+
+template<unsigned int dim,
+		 typename AggregateT,
+		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
+		 unsigned int threadBlockSize = 128,
+		 typename indexT=int,
+		 template<typename> class layout_base=memory_traits_inte,
+		 typename linearizer = grid_zmb<dim, blockEdgeSize,indexT>>
+using SparseGridGpu_zi = SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer>;
+
 
 #endif //OPENFPM_PDATA_SPARSEGRIDGPU_HPP
