@@ -2805,7 +2805,7 @@ public:
     		n_pnt = tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1);
     		n_cnk = tmp.template get<1>((i+1)*(indexBuffer.size() + 1)-1);
 
-    		req += sizeof(indexT) +               // byte required to pack the number of chunk packed
+    		req += sizeof(size_t) +               // byte required to pack the number of chunk packed
     				2*dim*sizeof(int) +           // starting point + size of the indexing packing
     				  sizeof(indexT)*n_cnk +    				   // byte required to pack the chunk indexes
     				  align_number(sizeof(indexT),(n_cnk+1)*sizeof(unsigned int)) +            // byte required to pack the scan of the chunk point
@@ -3088,7 +3088,8 @@ public:
 	template<unsigned int ... prp>
 	void removeAddUnpackFinalize(mgpu::ofp_context_t& context, int opt)
 	{
-    	removePoints(context);
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+		{removePoints(context);}
 
 		removeCopyToFinalize_phase3<prp ...>(context,opt,true);
 	}
