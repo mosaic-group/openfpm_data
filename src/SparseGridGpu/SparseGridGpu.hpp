@@ -48,19 +48,22 @@ struct default_edge
 template<>
 struct default_edge<1>
 {
-	typedef boost::mpl::int_<64> type;
+	typedef boost::mpl::int_<256> type;
+	typedef boost::mpl::int_<256> tb;
 };
 
 template<>
 struct default_edge<2>
 {
-	typedef boost::mpl::int_<8> type;
+	typedef boost::mpl::int_<16> type;
+	typedef boost::mpl::int_<256> tb;
 };
 
 template<>
 struct default_edge<3>
 {
-	typedef boost::mpl::int_<4> type;
+	typedef boost::mpl::int_<8> type;
+	typedef boost::mpl::int_<512> tb;
 };
 
 template<typename T>
@@ -447,7 +450,7 @@ struct sparse_grid_section
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
-		 unsigned int threadBlockSize = 128,
+		 unsigned int threadBlockSize = default_edge<dim>::tb::value,
 		 typename indexT=long int,
 		 template<typename> class layout_base=memory_traits_inte,
 		 typename linearizer = grid_smb<dim, blockEdgeSize, indexT>>

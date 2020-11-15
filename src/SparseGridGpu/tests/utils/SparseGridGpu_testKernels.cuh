@@ -87,7 +87,9 @@ __global__ void insertSphere(SparseGridType sparseGrid, grid_key_dx<2,int> start
     typedef BlockTypeOf<typename SparseGridType::AggregateType, p> BlockT;
     typedef BlockTypeOf<typename SparseGridType::AggregateType, pMask> MaskBlockT;
 
-    grid_key_dx<2,int> blk({
+    typedef typename SparseGridType::indexT_ idType;
+
+    grid_key_dx<2,idType> blk({
         blockIdx.x + start.get(0) / sparseGrid.getBlockEdgeSize(),
         blockIdx.y + start.get(1) / sparseGrid.getBlockEdgeSize()
     });
@@ -103,7 +105,7 @@ __global__ void insertSphere(SparseGridType sparseGrid, grid_key_dx<2,int> start
 
     auto blockId = sparseGrid.getBlockLinId(blk);
 
-    grid_key_dx<2,int> keyg;
+    grid_key_dx<2,idType> keyg;
     keyg = sparseGrid.getGlobalCoord(blk,offset);
 
     float radius = sqrt( (float)
