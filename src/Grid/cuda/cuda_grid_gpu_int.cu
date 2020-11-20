@@ -107,7 +107,6 @@ BOOST_AUTO_TEST_CASE (gpu_p2m)
 	openfpm::vector_gpu<Point<3,float>> pos;
 	openfpm::vector_gpu<aggregate<float,float[3]>> prop;
 
-
 	pos.resize(100);
 	prop.resize(100);
 
