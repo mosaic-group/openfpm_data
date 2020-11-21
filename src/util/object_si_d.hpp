@@ -1,12 +1,12 @@
 /*
- * vector_prop_copy.hpp
+ * object_si_d.hpp
  *
  *  Created on: May 31, 2015
  *      Author: Pietro Incardona
  */
 
-#ifndef VECTOR_PROP_COPY_HPP_
-#define VECTOR_PROP_COPY_HPP_
+#ifndef OBJECT_SI_D_HPP_
+#define OBJECT_SI_D_HPP_
 
 #include "for_each_ref.hpp"
 #include <boost/mpl/range_c.hpp>
