@@ -278,6 +278,14 @@ public:
         unsetBit(bitMask, EXIST_BIT);
     }
 
+	/*! \brief Eliminate many internal temporary buffer you can use this between flushes if you get some out of memory
+	 *
+	 *
+	 */
+	void removeUnusedBuffers()
+	{
+		blockMap.removeUnusedBuffers();
+	}
 
     /*! \brief Return internal structure block map
      *

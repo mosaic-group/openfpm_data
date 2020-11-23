@@ -9,6 +9,11 @@ branch=$4
 
 echo "Build on: $hostname with $type_compile branch: $branch"
 
+if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
+        echo "CentOS node"
+        source /opt/rh/devtoolset-7/enable
+fi
+
 # Check if libHilbert is installed
 
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then

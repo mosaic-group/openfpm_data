@@ -1976,6 +1976,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 
 	sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
+	sparseGrid.removeUnusedBuffers();
 
 	// Sphere 2
 	grid_key_dx<3,int> start2({192,192,192});

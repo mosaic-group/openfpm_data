@@ -269,6 +269,7 @@ install(FILES util/check_no_pointers.hpp
         util/for_each_ref.hpp
 	util/for_each_ref_host.hpp
         util/mathutil.hpp util/object_creator.hpp
+	util/object_si_di.hpp
         util/object_s_di.hpp
 	util/zmorton.hpp
         util/object_si_d.hpp

@@ -339,6 +339,18 @@ public:
 		return background;
 	}
 
+	/*! \brief Get the background value
+	 *
+	 * For dense grid this function is useless
+	 *
+	 * \return background value
+	 *
+	 */
+	T & getBackgroundValueAggr()
+	{
+		return background;
+	}
+
 	/*! \brief Set the background value
 	 *
 	 * \tparam p property to set
@@ -875,6 +887,18 @@ public:
 	 *
 	 */
 	T & getBackgroundValue()
+	{
+		return background;
+	}
+
+	/*! \brief Get the background value
+	 *
+	 * For dense grid this function is useless
+	 *
+	 * \return background value
+	 *
+	 */
+	T & getBackgroundValueAggr()
 	{
 		return background;
 	}

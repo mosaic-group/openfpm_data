@@ -34,7 +34,9 @@ struct setBackground_impl
 	inline void operator()(T& t)
 	{
 		for (size_t i = 0 ; i < loc_grid.size() ; i++)
-		{loc_grid.get(i).template setBackgroundValue<T::value>(bck.template get<T::value>());}
+		{
+			loc_grid.get(i).template setBackgroundValue<T::value>(bck.template get<T::value>());
+		}
 	}
 };
 

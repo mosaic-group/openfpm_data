@@ -18,11 +18,25 @@ const static int cnk_mask = 2;
 //! When we have more that 1024 to remove remove them
 #define FLUSH_REMOVE 1024
 
-//! transform T=aggregate<float,double,int> into aggregate<float[n_ele],double[n_ele],int[n_ele]>
+template<typename T>
+struct encapsulated_type
+{
+	typedef T type;
+};
+
+//! transform T=aggregate<float,double,int> into aggregate<std::array<float,n_ele>,std::array<double,n_ele>,std::array<int,n_ele>>
 template <typename n_ele, typename T>
 struct Ft_chunk
 {
-	typedef std::array<typename std::remove_const<typename std::remove_reference<T>::type>::type,n_ele::value> type;
+	typedef encapsulated_type<std::array<typename std::remove_const<typename std::remove_reference<T>::type>::type,n_ele::value>> type;
+};
+
+//! Special case for vector
+template <typename n_ele, typename T, int N1>
+struct Ft_chunk<n_ele,const T(&)[N1]>
+{
+//	typedef typename T::culo culo;
+	typedef encapsulated_type<std::array<T,n_ele::value>[N1]> type;
 };
 
 template<unsigned int dim>

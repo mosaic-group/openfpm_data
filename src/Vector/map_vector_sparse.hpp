@@ -2013,6 +2013,28 @@ namespace openfpm
 			return blf.get_outputMap();
 		}
 
+		/*! \brief Eliminate many internal temporary buffer you can use this between flushes if you get some out of memory
+		 *
+		 *
+		 */
+		void removeUnusedBuffers()
+		{
+			vct_add_data.resize(0);
+			vct_add_data.shrink_to_fit();
+
+			vct_add_data.resize(0);
+			vct_add_data.shrink_to_fit();
+
+			vct_add_data_reord.resize(0);
+			vct_add_data_reord.shrink_to_fit();
+
+			vct_add_data_cont.resize(0);
+			vct_add_data_cont.shrink_to_fit();
+
+			vct_add_data_unique.resize(0);
+			vct_add_data_unique.shrink_to_fit();
+		}
+
 		/* \brief Return the offsets of the segments for the merge indexes
 		 *
 		 *
