@@ -13,6 +13,7 @@
 #include "cuda/cuda_grid_gpu_funcs.cuh"
 #include "util/create_vmpl_sequence.hpp"
 #include "util/cuda/cuda_launch.hpp"
+#include "util/object_si_di.hpp"
 
 constexpr int DATA_ON_HOST = 32;
 constexpr int DATA_ON_DEVICE = 64;
@@ -304,6 +305,8 @@ public:
 	typedef layout_base<T> layout_base_;
 
 	typedef ord_type linearizer_type;
+
+	typedef T background_type;
 
 protected:
 
@@ -1246,7 +1249,7 @@ public:
 		while (sub_src.isNext())
 		{
 			// write the object in the last element
-			object_s_di_op<op,decltype(gs.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(gs.get_o(sub_src.get()),this->get_o(sub_dst.get()));
+			object_si_di_op<op,decltype(gs.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(gs.get_o(sub_src.get()),this->get_o(sub_dst.get()));
 
 			++sub_src;
 			++sub_dst;
@@ -1667,11 +1670,12 @@ public:
 	 *
 	 * \param start point
 	 * \param stop point
+	 * \param to_init unused bool
 	 *
 	 * \return a sub-grid iterator
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
+	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop, bool to_init = false) const
 	{
 		// get the starting point and the end point of the real domain
 

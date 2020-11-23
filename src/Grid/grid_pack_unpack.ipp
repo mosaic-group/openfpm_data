@@ -500,7 +500,9 @@ struct unpack_simple_cond<true, prp ...>
 		for (size_t i = 0 ; i < dim ; i++)
 		{tot *= sz[i];}
 
-		tot *= sizeof(T);
+		typedef object<typename object_creator<typename T::type,prp...>::type> prp_object;
+
+		tot *= sizeof(prp_object);
 
 #ifdef SE_CLASS1
 
@@ -513,7 +515,7 @@ struct unpack_simple_cond<true, prp ...>
 		ptr1 = new PtrMemory(((char *)mem.getPointerBase()+ps.getOffset()),tot);
 
 		// create vector representation to a piece of memory already allocated
-		grid_base_impl<dim,T,PtrMemory,typename memory_traits_lin<T>::type,memory_traits_lin,ord_type> gs;
+		grid_base_impl<dim,prp_object,PtrMemory,typename memory_traits_lin<prp_object>::type,memory_traits_lin,ord_type> gs;
 
 		gs.setMemory(*ptr1);
 

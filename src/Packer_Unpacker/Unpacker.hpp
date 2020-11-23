@@ -269,48 +269,53 @@ public:
 };
 
 
-//! It copy one element of the chunk for each property
-/*template<typename e_src, typename e_dst, int ... prp>
-struct copy_unpacker_chunk
+template<unsigned int prop, typename T>
+struct std_array_copy_chunks
 {
-	//! encapsulated object source
-	const e_src & src;
-	//! encapsulated object destination
-	e_dst & dst;
-
-	//! element to copy
-	size_t sub_id;*/
-
-	/*! \brief constructor
-	 *
-	 *
-	 * \param src source encapsulated object
-	 * \param dst destination encapsulated object
-	 *
-	 */
-/*	inline copy_unpacker_chunk(const e_src & src, e_dst & dst, size_t sub_id)
-	:src(src),dst(dst),sub_id(sub_id)
+	template<typename Tsrc, typename Tdst>
+	static void copy(Tsrc & src, Tdst & dst, size_t pos)
 	{
-	};
+		typedef typename std::remove_reference<decltype(dst.template get<prop>()[0])>::type copy_rtype;
 
-
-
-	//! It call the copy function for each property
-	template<typename T>
-	inline void operator()(T& t) const
-	{
-		// Convert variadic to boost::vector
-		typedef typename boost::mpl::vector_c<unsigned int,prp...> prpv;
-
-		// element id to copy applying an operation
-		typedef typename boost::mpl::at<prpv,T>::type ele_cop;
-
-		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<decltype(src.template get< ele_cop::value >())>::type copy_rtype;
-
-		meta_copy<copy_rtype>::meta_copy_(src.template get< ele_cop::value >(),dst.template get< ele_cop::value >()[sub_id]);
+		meta_copy<copy_rtype>::meta_copy_(src.template get<prop>()[0],dst.template get<prop>()[pos]);
 	}
-};*/
+
+	template<typename Tsrc, typename Tdst>
+	static void copy_unpack(Tsrc & src, Tdst & dst, size_t pos)
+	{
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(src.template get< prop >())>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get< prop >(),dst.template get< prop >()[pos]);
+	}
+};
+
+template<unsigned int prop, typename T, unsigned int N1>
+struct std_array_copy_chunks<prop,T[N1]>
+{
+	template<typename Tsrc, typename Tdst>
+	static void copy(Tsrc & src, Tdst & dst, size_t pos)
+	{
+		typedef typename std::remove_reference<decltype(dst.template get<prop>()[0][pos])>::type copy_rtype;
+
+		for (int i = 0 ; i < N1 ; i++)
+		{
+			meta_copy<copy_rtype>::meta_copy_(dst.template get<prop>()[i][pos],src.template get<prop>()[i][0]);
+		}
+	}
+
+	template<typename Tsrc, typename Tdst>
+	static void copy_unpack(Tsrc & src, Tdst & dst, size_t pos)
+	{
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(src.template get< prop >()[0])>::type copy_rtype;
+
+		for (int i = 0 ; i < N1 ; i++)
+		{
+			meta_copy<copy_rtype>::meta_copy_(src.template get< prop >()[i],dst.template get< prop >()[i][pos]);
+		}
+	}
+};
 
 //! It copy one element of the chunk for each property
 template<typename e_src, typename e_dst>
@@ -342,10 +347,9 @@ struct copy_unpacker_chunk
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<decltype(src.template get< T::value >())>::type copy_rtype;
+		typedef typename std::remove_reference<decltype(src.template get<T::value>())>::type copy_rtype;
 
-		meta_copy<copy_rtype>::meta_copy_(src.template get< T::value >(),dst.template get< T::value >()[sub_id]);
+		std_array_copy_chunks<T::value,copy_rtype>::copy_unpack(src,dst,sub_id);
 	}
 };
 

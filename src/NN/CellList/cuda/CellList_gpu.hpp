@@ -191,7 +191,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		int mid = gs.LinId(middle);
 
-		grid_key_dx_iterator_sub<3> it(gs,start,stop);
+		grid_key_dx_iterator_sub<dim> it(gs,start,stop);
 
 		size_t i = 0;
 		while (it.isNext())

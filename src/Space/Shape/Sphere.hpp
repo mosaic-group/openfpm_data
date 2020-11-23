@@ -127,7 +127,7 @@ template<unsigned int dim ,typename T> class Sphere
 	 */
 	__device__ __host__ bool isInside(Point<dim,T> p) const
 	{
-		T dist;
+		T dist = 0.0;
 
 		// calculate the distance of the center from the point
 
@@ -156,7 +156,7 @@ template<unsigned int dim ,typename T> class Sphere
 	template<typename Distance>
 	__device__ __host__ bool isInside(Point<dim,T> p) const
 	{
-		T dist;
+		T dist = 0.0;
 
 		// Object to calculate distances
 		Distance d;
@@ -187,7 +187,7 @@ template<unsigned int dim ,typename T> class Sphere
 	template<typename Distance> bool
 	__device__ __host__ isInside(float * pnt) const
 	{
-		T dist;
+		T dist = 0.0;
 
 		// Object to calculate distances
 		Distance d;

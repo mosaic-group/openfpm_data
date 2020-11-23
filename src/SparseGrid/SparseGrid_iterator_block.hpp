@@ -205,7 +205,7 @@ struct loadBlock_impl
 	 *
 	 *
 	 */
-	template<unsigned int N1, typename T, typename SparseGridType,typename backgroundType>
+	template<unsigned int N1, typename T, typename SparseGridType>
 	static void loadBorder(T arr[N1],
 			         SparseGridType & sgt,
 			         size_t chunk_id,
@@ -214,7 +214,6 @@ struct loadBlock_impl
 			         openfpm::vector<unsigned int> & chunk_ids ,
 			         openfpm::vector<short int> & offsets,
 			         unsigned char mask[N1],
-			         backgroundType & background,
 			         openfpm::vector<unsigned int> & maps_blk)
 	{
 		typedef typename generate_array_vector<size_t,typename vector_blocks_exts::type>::result size;
@@ -247,7 +246,7 @@ struct loadBlock_impl
 
 			auto & h = header_mask.get(ac);
 
-			arr[b] = (ac == data.size()-1)?background.template get<prop>():data.template get<prop>(ac)[off];
+			arr[b] = (ac == data.size()-1)?data.template get<prop>(0)[off]:data.template get<prop>(ac)[off];
 			mask[b] = (ac == data.size()-1)?0:exist_sub(h,off);
 		}
 	}
@@ -297,7 +296,7 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 	 *
 	 *
 	 */
-	template<bool findNN, typename NNType, unsigned int N1, typename T, typename SparseGridType,typename backgroundType>
+	template<bool findNN, typename NNType, unsigned int N1, typename T, typename SparseGridType>
 	inline static void loadBorder(T arr[N1],
 			         SparseGridType & sgt,
 			         size_t chunk_id,
@@ -306,7 +305,6 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 			         openfpm::vector<unsigned int> & chunk_ids ,
 			         openfpm::vector<short int> & offsets,
 			         unsigned char mask[N1],
-			         backgroundType & background,
 			         openfpm::vector<unsigned int> & maps_blk)
 	{
 		typedef typename generate_array_vector<size_t,typename vector_blocks_exts::type>::result size;
@@ -499,9 +497,6 @@ class grid_key_sparse_dx_iterator_block_sub
     // temporary buffer for Load border
     openfpm::vector<unsigned int> maps_blk;
 
-    //! background value
-    typename SparseGridType::background_type & background;
-
     //!iteration block
     Box<dim,size_t> block_it;
 
@@ -559,10 +554,9 @@ public:
 
 	grid_key_sparse_dx_iterator_block_sub(SparseGridType & spg,
 								const grid_key_dx<dim> & start,
-								const grid_key_dx<dim> & stop,
-								typename SparseGridType::background_type & background)
+								const grid_key_dx<dim> & stop)
 	:spg(spg),chunk_id(1),
-	 start_(start),stop_(stop),background(background)
+	 start_(start),stop_(stop)
 	{
 		// Create border coeficents
 		get_block_sizes<dim,stencil_size,vector_blocks_exts,vector_ext> gbs;
@@ -754,7 +748,7 @@ public:
 		auto & header_inf = spg.private_get_header_inf();
 
 		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template loadBlock<sizeBlockBord>(arr,spg,chunk_id,mask);
-		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template loadBorder<findNN,NNtype,sizeBlockBord>(arr,spg,chunk_id,bord,block_skin,chunk_shifts,offsets,mask,background,maps_blk);
+		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template loadBorder<findNN,NNtype,sizeBlockBord>(arr,spg,chunk_id,bord,block_skin,chunk_shifts,offsets,mask,maps_blk);
 
 		hm = &header_mask.get(chunk_id);
 		hc = &header_inf.get(chunk_id);

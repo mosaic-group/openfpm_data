@@ -13,6 +13,10 @@
 #include "Vector/vect_isel.hpp"
 #include "Vector/util.hpp"
 
+constexpr int SOA_layout_IA = 2;
+constexpr int SOA_layout = 1;
+constexpr int AOS_layout = 0;
+
 /*! \brief This class convert a boost::mpl::fusion/vector to a boost::mpl::fusion/vector with memory_c interleaved
  *
  * This class convert a boost::mpl::fusion/vector to a boost::mpl::fusion/vector with memory_c interleaved
@@ -80,6 +84,8 @@ struct memory_traits_inte
 
 	//! indicate that it change the memory layout from the original
 	typedef int yes_is_inte;
+
+	typedef boost::mpl::int_<SOA_layout_IA> type_value;
 };
 
 /*! \brief Transform the boost::fusion::vector into memory specification (memory_traits)
@@ -144,6 +150,8 @@ struct memory_traits_lin
 	typedef typename memory_traits_lin_type<T,openfpm::vect_isel<T>::value == OPENFPM_NATIVE>::type type;
 
 	typedef int yes_is_tlin;
+
+	typedef boost::mpl::int_<AOS_layout> type_value;
 };
 
 

@@ -10,6 +10,43 @@
 
 #include <boost/type_traits.hpp>
 #include <boost/mpl/vector_c.hpp>
+#include <iostream>
+
+template<typename T> struct meta_copy;
+template<template<typename,typename> class op, typename T> struct meta_copy_op;
+template<typename T> struct meta_compare;
+
+/*! \brief Structure to copy aggregates
+ *
+ * \tparam aggregate to copy
+ *
+ */
+template<typename S, typename S2>
+struct copy_aggregate_dual
+{
+	//! src
+	const S src;
+
+	//! Destination grid
+	S2 & dst;
+
+	//! copy_aggregate
+	inline copy_aggregate_dual(S src, S2 & dst)
+	:src(src),dst(dst){};
+
+	//! It call the copy function for each member
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		// This is the type of the object we have to copy
+		typedef typename boost::fusion::result_of::at_c<typename S2::type,T::value>::type copy_type;
+
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<T::value>());
+	}
+};
 
 template<typename T> struct meta_copy;
 template<template<typename,typename> class op, typename T> struct meta_copy_op;
