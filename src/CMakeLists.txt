@@ -41,7 +41,6 @@ else ()
     set(CUDA_SOURCES)
 endif ()
 
-
 add_executable(mem_map ${CUDA_SOURCES}
         main.cpp
         data_type/aggregate_unit_tests.cpp
