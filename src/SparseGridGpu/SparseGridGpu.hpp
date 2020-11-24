@@ -2266,7 +2266,7 @@ public:
         return numExistingElements;
     }
 
-    size_t countBoundaryElements()
+    size_t countBoundaryElements() const
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -2295,6 +2295,17 @@ public:
         }
 
         return numBoundaryElements;
+    }
+
+    /*! \brief Return the local total number of points inserted in the grid
+	 *	This is required by the grid_dist_id
+	 *
+	 * \return number of points
+	 *
+	 */
+    size_t size_inserted() const
+    {
+    	return this->countExistingElements() - this->countBoundaryElements();
     }
 
     // Also count mean+stdDev of occupancy of existing blocks
@@ -2382,7 +2393,7 @@ public:
      *
      */
 	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
-	void conv_cross(grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	void conv_cross(grid_key_dx<dim> start, grid_key_dx<dim> stop , lambda_f func, ArgsT ... args)
 	{
 		Box<dim,int> box;
 
