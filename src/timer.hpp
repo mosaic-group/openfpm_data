@@ -42,6 +42,9 @@ class timer
     // Fill the stop point
     void check()
     {
+#if defined(SYNC_BEFORE_TAKE_TIME) && defined(__NVCC__) 
+        cudaDeviceSynchronize();
+#endif
 
 #ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
         clock_serv_t cclock;
@@ -75,6 +78,10 @@ public:
     	// time is running
     	running = true;
 
+#if defined(SYNC_BEFORE_TAKE_TIME) && defined(__NVCC__) 
+        cudaDeviceSynchronize();
+#endif
+
 #ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
         clock_serv_t cclock;
         mach_timespec_t mts;
@@ -86,6 +93,11 @@ public:
 #else
         clock_gettime(CLOCK_REALTIME, &tsstart);
 #endif
+
+#if defined(SYNC_BEFORE_TAKE_TIME) && defined(__NVCC__)
+	cudaDeviceSynchronize();
+#endif
+	
         cstart = clock();
 
     }
