@@ -21,8 +21,8 @@ set(PETSC_ROOT CACHE PATH "If compiling with linear algebra indicate the PETSC r
 set(ENV{PETSC_DIR} ${PETSC_ROOT})
 
 
-set (CMAKE_CXX_STANDARD 11)
-set (CMAKE_CUDA_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CUDA_STANDARD 14)
 
 if(NOT TINYOBJLOADER_FOUND)
 	set(TINYOBJLOADER_ROOT CACHE PATH "TinyObjLoader library path")
@@ -40,12 +40,15 @@ if(ENABLE_GPU)
                 set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111 " --expt-extended-lambda)
         elseif ( CUDA_VERSION_MAJOR EQUAL 10 AND CUDA_VERSION_MINOR EQUAL 1 )
                 message("CUDA is compatible")
-                set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=2915 --diag_suppress=2912 --diag_suppress=2913 --diag_suppress=111 --diag_suppress=186 --diag_suppress=611 " --expt-extended-lambda)
+		set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=2931 --diag_suppress=2930 --diag_suppress=2929 --diag_suppress=2928 --diag_suppress=1835  --diag_suppress=128 --diag_suppress=186 --diag_suppress=611 " --expt-extended-lambda )
         elseif ( CUDA_VERSION_MAJOR EQUAL 10 AND CUDA_VERSION_MINOR EQUAL 2 )
                 message("CUDA is compatible")
                 set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=2977 --diag_suppress=2976 --diag_suppress=2979 --diag_suppress=186" --expt-extended-lambda)
+        elseif ( CUDA_VERSION_MAJOR EQUAL 11 AND CUDA_VERSION_MINOR EQUAL 0 )
+                message("CUDA is compatible")
+                set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=3059 --diag_suppress=3058 --diag_suppress=3057 --diag_suppress=3056 --diag_suppress=611 --diag_suppress=186" --expt-extended-lambda)
         else()
-                message(FATAL_ERROR "CUDA is incompatible, version 9.2 10.1 and 10.2 is only supported")
+                message(FATAL_ERROR "CUDA is incompatible, version 9.2 10.1 10.2 and 11.0 is only supported")
         endif()
 endif()
 
