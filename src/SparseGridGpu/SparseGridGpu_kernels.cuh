@@ -29,6 +29,35 @@ enum mask_sparse
 // Kernels for SparseGridGpu
 namespace SparseGridGpuKernels
 {
+	template<typename SparseGridGpuType, typename pointers_type, typename headers_type>
+	__global__ void unpack_headers(pointers_type pointers, headers_type headers, int * result, unsigned int sz_pack, int n_slot)
+	{
+		int t = threadIdx.x;
+
+		if (t > pointers.size()) {return;}
+
+		unsigned char * data_pack = (unsigned char *)pointers.template get<0>(t);
+
+		while (data_pack < pointers.template get<1>(t) )
+		{
+			int ih = pointers.template get<2>(t);
+			if (n_slot > ih)
+			{
+				headers.template get<0>(t*n_slot + ih) = *(size_t *)data_pack;
+				data_pack += sizeof(size_t);
+				data_pack += SparseGridGpuType::unpack_headers(headers,data_pack,t*n_slot + ih,sz_pack);
+				pointers.template get<2>(t) += 1;
+			}
+			else
+			{
+				// report error
+				result[0] = 1;
+				return;
+			}			
+		}
+	}
+
+
 	template<unsigned int dim>
 	struct stencil_cross_func_impl
 	{

@@ -81,6 +81,36 @@ public:
               background(bck)
     {}
 
+    /*! \brief  
+     *
+     * \param 
+     * 
+     */
+    template<typename headers_type>
+    __device__ static int unpack_headers(headers_type & headers, unsigned char * data, int ih, int sz_pack)
+    {
+        size_t n_cnk = ((size_t *)data)[0];
+        headers.template get<1>(ih) = n_cnk;
+//        for (int i = 0 ; i < dim ; i++)
+//        {headers.template get<3>(ih)[i] = data[2*sizeof(size_t) + i*sizeof(int)];}
+        
+//        for (int i = 0 ; i < dim ; i++)
+//        {headers.template get<4>(ih)[i] = data[2*sizeof(size_t) + dim*sizeof(int) + i*sizeof(int)];}
+
+		size_t actual_offset = n_cnk*sizeof(indexT);
+
+		unsigned int n_pnt = *(unsigned int *)&(data[sizeof(size_t) + 2*dim*sizeof(int) + actual_offset + n_cnk*sizeof(unsigned int)]);
+        headers.template get<2>(ih) = n_pnt;
+
+        return sizeof(size_t) +               // byte required to pack the number of chunk packed
+    				2*dim*sizeof(int) +           // starting point + size of the indexing packing
+    				  sizeof(indexT)*n_cnk +    				   // byte required to pack the chunk indexes
+    				  align_number_device(sizeof(indexT),(n_cnk+1)*sizeof(unsigned int)) +            // byte required to pack the scan of the chunk point
+    				  align_number_device(sizeof(indexT),n_pnt*sz_pack) +  // byte required to pack data
+    				  align_number_device(sizeof(indexT),n_pnt*sizeof(short int)) + // byte required to pack offsets
+    				  align_number_device(sizeof(indexT),n_pnt*sizeof(unsigned char));  // byte required to pack masks;
+    }
+
     /*! \brief Get the coordinate of the block and the offset id inside the block it give the global coordinate
      *
      * \param blockCoord block coordinate

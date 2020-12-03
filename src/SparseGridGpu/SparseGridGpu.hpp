@@ -3155,6 +3155,103 @@ public:
 		grid_src.copySect.add(sgs);
 	}
 
+	/*! \brief Stub does not do anything
+	*
+	*/
+	template<typename pointers_type, 
+			 typename headers_type, 
+			 typename result_type, 
+			 unsigned int ... prp >
+	static void unpack_headers(pointers_type & pointers, headers_type & headers, result_type & result, int n_slot)
+	{
+		// we have to increment ps by the right amount
+	    sparsegridgpu_pack_request<AggregateT,prp ...> spq;
+	    boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(spq);
+
+		result.allocate(sizeof(int));
+
+		CUDA_LAUNCH_DIM3((SparseGridGpuKernels::unpack_headers<decltype(std::declval<self>().toKernel())>),1,pointers.size(),
+																											 pointers.toKernel(),
+																											 headers.toKernel(),
+																											 (int *)result.getDevicePointer(),
+																											 spq.point_size,
+																											 n_slot)
+	}
+
+	/*! \brief unpack the sub-grid object
+	 *
+	 * \tparam prp properties to unpack
+	 *
+	 * \param mem preallocated memory from where to unpack the object
+	 * \param sub sub-grid iterator
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<unsigned int ... prp, typename S2, typename header_type>
+	void unpack_with_headers(ExtPreAlloc<S2> & mem,
+				SparseGridGpu_iterator_sub<dim,self> & sub_it,
+				header_type & headers,
+				int ih,
+				Unpack_stat & ps,
+				mgpu::ofp_context_t &context,
+				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
+	{
+		////////////////////////////////////////////////////////////
+
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+		{
+			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,context);
+
+			// readjust mem
+		}
+		else
+		{
+			// we have to increment ps by the right amount
+	    	sparsegridgpu_pack_request<AggregateT,prp ...> spq;
+	    	boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(spq);
+
+			// First get the number of chunks
+
+			size_t n_cnk = headers.template get<1>(ih);
+			ps.addOffset(sizeof(size_t));
+
+			// Unpack origin of the chunk indexing
+			for (int i = 0 ; i < dim ; i++)
+			{
+				int tmp;
+				Unpacker<int,S2>::unpack(mem,tmp,ps);
+			}
+
+			for (int i = 0 ; i < dim ; i++)
+			{
+				int tmp;
+				Unpacker<int,S2>::unpack(mem,tmp,ps);
+			}
+
+			size_t actual_offset = n_cnk*sizeof(indexT);
+			unsigned int * scan = (unsigned int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + n_cnk*sizeof(indexT));
+
+			// Unpack number of points
+			// calculate the number of total points
+			size_t n_pnt = headers.template get<2>(ih);
+			actual_offset += align_number(sizeof(indexT),(n_cnk+1)*sizeof(unsigned int));
+
+			void * data_base_ptr = (void *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset );
+
+			actual_offset += align_number(sizeof(indexT),n_pnt*(spq.point_size));
+			short int * offsets = (short int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset);
+
+			actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(short));
+			actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(unsigned char));
+
+			scan_ptrs_cp.add(scan);
+			offset_ptrs_cp.add(offsets);
+			data_base_ptr_cp.add(data_base_ptr);
+
+			ps.addOffset(actual_offset);
+		}
+	}
+
 	/*! \brief unpack the sub-grid object
 	 *
 	 * \tparam prp properties to unpack
