@@ -544,6 +544,7 @@ void testConv3x3x3_perf(std::string testName)
 		}
 
 		timer ts;
+        cudaDeviceSynchronize();
 		ts.start();
 
 		sparseGrid.template applyStencils<Conv3x3x3<dim,0,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,cc);
