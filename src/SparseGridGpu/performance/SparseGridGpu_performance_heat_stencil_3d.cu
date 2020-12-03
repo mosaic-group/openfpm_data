@@ -206,13 +206,14 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMu
     iterations /= 2;
     for (unsigned int iter=0; iter<iterations; ++iter)
     {
-
         timer ts;
+        cudaDeviceSynchronize();
         ts.start();
 
         sparseGrid.template applyStencils<Stencil01T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
         sparseGrid.template applyStencils<Stencil10T>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
-
+        
+        cudaDeviceSynchronize();
         ts.stop();
 
         measures_tm.add(ts.getwct());
