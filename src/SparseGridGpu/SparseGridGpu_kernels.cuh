@@ -43,7 +43,14 @@ namespace SparseGridGpuKernels
 			int ih = pointers.template get<2>(t);
 			if (n_slot > ih)
 			{
-				headers.template get<0>(t*n_slot + ih) = *(size_t *)data_pack;
+                if (sizeof(typename SparseGridGpuType::indexT_) == 8)
+                {headers.template get<0>(t*n_slot + ih) = *(size_t *)data_pack;}
+                else
+                {
+                    unsigned int dp1 = *(unsigned int *)data_pack;
+                    unsigned int dp2 = *(unsigned int *)&(data_pack[4]);
+                    headers.template get<0>(t*n_slot + ih) = (size_t)dp1 + (((size_t)dp2) << 32);
+                }
 				data_pack += sizeof(size_t);
 				data_pack += SparseGridGpuType::unpack_headers(headers,data_pack,t*n_slot + ih,sz_pack);
 				pointers.template get<2>(t) += 1;

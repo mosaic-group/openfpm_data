@@ -89,7 +89,15 @@ public:
     template<typename headers_type>
     __device__ static int unpack_headers(headers_type & headers, unsigned char * data, int ih, int sz_pack)
     {
-        size_t n_cnk = ((size_t *)data)[0];
+        size_t n_cnk;
+        if (sizeof(indexT) == 8)
+        {n_cnk = ((size_t *)data)[0];}
+        else
+        {
+                unsigned int dp1 = ((unsigned int *)data)[0];
+                unsigned int dp2 = ((unsigned int *)&data[4])[0];
+                n_cnk = (size_t)dp1 + ((size_t)dp2 << 32);
+        }
         headers.template get<1>(ih) = n_cnk;
 //        for (int i = 0 ; i < dim ; i++)
 //        {headers.template get<3>(ih)[i] = data[2*sizeof(size_t) + i*sizeof(int)];}
