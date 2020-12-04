@@ -605,6 +605,9 @@ private:
     //! Memory to remove copy finalize
     ExtPreAlloc<CudaMemory> * prAlloc_prp;
 
+	//! shifts for chunk conversion
+	openfpm::vector_gpu<aggregate<int[dim]>> shifts;
+
     bool findNN = false;
 
     inline void swap_internal_remote()
@@ -1102,7 +1105,7 @@ private:
 			auto & o_map = this->getSegmentToOutMap();
 			auto & segments_data = this->getSegmentToMergeIndexMap();
 
-			new_map.resize(a_map.size());
+			new_map.resize(a_map.size(),0);
 
 			// construct new to old map
 
@@ -1389,7 +1392,7 @@ private:
 
 		if (n_cnk != 0)
 		{
-			openfpm::vector_gpu<aggregate<int[dim]>> shifts;
+			shifts.clear();
 
 			int n_shift = 1;
 			shifts.add();
