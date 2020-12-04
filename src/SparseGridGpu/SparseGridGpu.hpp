@@ -3214,19 +3214,7 @@ public:
 
 			size_t n_cnk = headers.template get<1>(ih);
 			ps.addOffset(sizeof(size_t));
-
-			// Unpack origin of the chunk indexing
-			for (int i = 0 ; i < dim ; i++)
-			{
-				int tmp;
-				Unpacker<int,S2>::unpack(mem,tmp,ps);
-			}
-
-			for (int i = 0 ; i < dim ; i++)
-			{
-				int tmp;
-				Unpacker<int,S2>::unpack(mem,tmp,ps);
-			}
+			ps.addOffset(2*dim*sizeof(unsigned int));
 
 			size_t actual_offset = n_cnk*sizeof(indexT);
 			unsigned int * scan = (unsigned int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + n_cnk*sizeof(indexT));
@@ -3291,7 +3279,7 @@ public:
 			Unpacker<size_t,S2>::unpack(mem,n_cnk,ps);
 
 			// Unpack origin of the chunk indexing
-			for (int i = 0 ; i < dim ; i++)
+/*			for (int i = 0 ; i < dim ; i++)
 			{
 				int tmp;
 				Unpacker<int,S2>::unpack(mem,tmp,ps);
@@ -3301,7 +3289,9 @@ public:
 			{
 				int tmp;
 				Unpacker<int,S2>::unpack(mem,tmp,ps);
-			}
+			}*/
+
+			ps.addOffset(2*dim*sizeof(unsigned int));
 
 			size_t actual_offset = n_cnk*sizeof(indexT);
 			unsigned int * scan = (unsigned int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + n_cnk*sizeof(indexT));

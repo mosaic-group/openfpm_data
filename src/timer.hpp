@@ -93,10 +93,6 @@ public:
 #else
         clock_gettime(CLOCK_REALTIME, &tsstart);
 #endif
-
-#if defined(SYNC_BEFORE_TAKE_TIME) && defined(__NVCC__)
-	cudaDeviceSynchronize();
-#endif
 	
         cstart = clock();
 
