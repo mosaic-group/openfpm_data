@@ -13,6 +13,7 @@
 #include "cuda/cuda_grid_gpu_funcs.cuh"
 #include "util/create_vmpl_sequence.hpp"
 #include "util/cuda/cuda_launch.hpp"
+#include "util/object_si_di.hpp"
 
 constexpr int DATA_ON_HOST = 32;
 constexpr int DATA_ON_DEVICE = 64;
@@ -1248,7 +1249,7 @@ public:
 		while (sub_src.isNext())
 		{
 			// write the object in the last element
-			object_s_di_op<op,decltype(gs.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(gs.get_o(sub_src.get()),this->get_o(sub_dst.get()));
+			object_si_di_op<op,decltype(gs.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(gs.get_o(sub_src.get()),this->get_o(sub_dst.get()));
 
 			++sub_src;
 			++sub_dst;

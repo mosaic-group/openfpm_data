@@ -769,19 +769,42 @@ struct conv_impl<3>
 						long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
 						sumzp += s2;
 
-						mxm.i = *(int *)&mask.mask[s2];
-						mxm.i = mxm.i << 8;
-						mxm.i |= (int)mask.mask[sumxm];
+						if (Vc::Vector<prop_type>::Size == 2)
+						{
+							mxm.i = *(short int *)&mask.mask[s2];
+							mxm.i = mxm.i << 8;
+							mxm.i |= (short int)mask.mask[sumxm];
 
-						mxp.i = *(int *)&mask.mask[s2];
-						mxp.i = mxp.i >> 8;
-						mxp.i |= ((int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
+							mxp.i = *(short int *)&mask.mask[s2];
+							mxp.i = mxp.i >> 8;
+							mxp.i |= ((short int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
 
-						mym.i = *(int *)&mask.mask[sumym];
-						myp.i = *(int *)&mask.mask[sumyp];
+							mym.i = *(short int *)&mask.mask[sumym];
+							myp.i = *(short int *)&mask.mask[sumyp];
 
-						mzm.i = *(int *)&mask.mask[sumzm];
-						mzp.i = *(int *)&mask.mask[sumzp];
+							mzm.i = *(short int *)&mask.mask[sumzm];
+							mzp.i = *(short int *)&mask.mask[sumzp];
+						}
+						else if (Vc::Vector<prop_type>::Size == 4)
+						{
+							mxm.i = *(int *)&mask.mask[s2];
+							mxm.i = mxm.i << 8;
+							mxm.i |= (int)mask.mask[sumxm];
+
+							mxp.i = *(int *)&mask.mask[s2];
+							mxp.i = mxp.i >> 8;
+							mxp.i |= ((int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
+
+							mym.i = *(int *)&mask.mask[sumym];
+							myp.i = *(int *)&mask.mask[sumyp];
+
+							mzm.i = *(int *)&mask.mask[sumzm];
+							mzp.i = *(int *)&mask.mask[sumzp];
+						}
+						else
+						{
+							std::cout << __FILE__ << ":" << __LINE__ << " UNSUPPORTED" << std::endl;
+						}
 
 						cs1.xm = cmd1;
 						cs1.xm = cs1.xm.shifted(-1);
@@ -939,19 +962,42 @@ struct conv_impl<3>
 
 						ids.s2 = s2;
 
-						mxm.i = *(int *)&mask.mask[s2];
-						mxm.i = mxm.i << 8;
-						mxm.i |= (int)mask.mask[ids.sumdm[0]];
+                        if (Vc::Vector<prop_type>::Size == 2)
+                        {
+                            mxm.i = *(short int *)&mask.mask[s2];
+                            mxm.i = mxm.i << 8;
+                            mxm.i |= (short int)mask.mask[ids.sumdm[0]];
 
-						mxp.i = *(int *)&mask.mask[s2];
-						mxp.i = mxp.i >> 8;
-						mxp.i |= ((int)mask.mask[ids.sumdp[0]]) << (Vc::Vector<prop_type>::Size - 1)*8;
+                            mxp.i = *(short int *)&mask.mask[s2];
+                            mxp.i = mxp.i >> 8;
+                            mxp.i |= ((short int)mask.mask[ids.sumdp[0]]) << (Vc::Vector<prop_type>::Size - 1)*8;
 
-						mym.i = *(int *)&mask.mask[ids.sumdm[1]];
-						myp.i = *(int *)&mask.mask[ids.sumdp[1]];
+                            mym.i = *(short int *)&mask.mask[ids.sumdm[1]];
+                            myp.i = *(short int *)&mask.mask[ids.sumdp[1]];
 
-						mzm.i = *(int *)&mask.mask[ids.sumdm[2]];
-						mzp.i = *(int *)&mask.mask[ids.sumdp[2]];
+                            mzm.i = *(short int *)&mask.mask[ids.sumdm[2]];
+                            mzp.i = *(short int *)&mask.mask[ids.sumdp[2]];
+                        }
+                        else if (Vc::Vector<prop_type>::Size == 4)
+                        {
+                            mxm.i = *(int *)&mask.mask[s2];
+                            mxm.i = mxm.i << 8;
+                            mxm.i |= (int)mask.mask[ids.sumdm[0]];
+
+                            mxp.i = *(int *)&mask.mask[s2];
+                            mxp.i = mxp.i >> 8;
+                            mxp.i |= ((int)mask.mask[ids.sumdp[0]]) << (Vc::Vector<prop_type>::Size - 1)*8;
+
+                        	mym.i = *(int *)&mask.mask[ids.sumdm[1]];
+                            myp.i = *(int *)&mask.mask[ids.sumdp[1]];
+
+                        	mzm.i = *(int *)&mask.mask[ids.sumdm[2]];
+                            mzp.i = *(int *)&mask.mask[ids.sumdp[2]];
+                        }
+                        else
+                        {
+                            std::cout << __FILE__ << ":" << __LINE__ << " UNSUPPORTED" << std::endl;
+                        }
 
 						// Calculate
 
