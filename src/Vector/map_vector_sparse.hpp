@@ -2017,7 +2017,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		auto removeUnusedBuffers()
+		void removeUnusedBuffers()
 		{
 			vct_add_data.resize(0);
 			vct_add_data.shrink_to_fit();
