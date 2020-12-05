@@ -3243,6 +3243,14 @@ public:
 		}
 	}
 
+	/*! \brief Indicate that unpacking the header is supported
+     *
+	 * \return true
+	 * 
+	 */
+	static bool is_unpack_header_supported()
+	{return true;}
+
 	/*! \brief unpack the sub-grid object
 	 *
 	 * \tparam prp properties to unpack

@@ -1113,6 +1113,14 @@ public:
 		return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,active_cnk,sub_id);
 	}
 
+	/*! \brief Indicate that unpacking the header is supported
+     *
+	 * \return false
+	 * 
+	 */
+	static bool is_unpack_header_supported()
+	{return false;}
+
 	/*! \brief Get the reference of the selected element
 	 *
 	 * \param v1 grid_key that identify the element in the grid

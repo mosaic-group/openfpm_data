@@ -1255,6 +1255,14 @@ public:
 		}
 	}
 
+	/*! \brief Indicate that unpacking the header is supported
+     *
+	 * \return false
+	 * 
+	 */
+	static bool is_unpack_header_supported()
+	{return false;}
+
 	/*! \brief Resize the grid
 	 *
 	 * Resize the grid to the old information is retained on the new grid,
