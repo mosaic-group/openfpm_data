@@ -80,6 +80,84 @@ fun_name(const Point<dim,T> & va)\
 	return exp_sum;\
 }
 
+/*! \brief Point norm Infinity operation
+ *
+ * \tparam orig original type
+ * \tparam exp1 expression1
+ * \tparam exp2 expression2
+ * \tparam op operation
+ *
+ */
+template <typename orig, typename exp1, typename exp2>
+class point_expression_op<orig,exp1,exp2,POINT_NORM_INF>
+{
+    const exp1 o1;
+
+    //! Scalar value
+    mutable typename std::remove_const<typename orig::coord_type>::type scal;
+
+public:
+
+    //! Origin type
+    typedef orig orig_type;
+
+    //! indicate that this class encapsulate an expression
+    typedef int is_expression;
+
+    //! indicate that init must be called before value
+    typedef int has_init;
+
+    //! return type of the expression
+    typedef typename orig::coord_type return_type;
+
+    //! this operation produce a scalar as result
+    static const unsigned int nvals = 1;
+
+    typedef typename exp1::coord_type coord_type;
+
+    //! Constructor from expression
+    __device__ __host__ inline explicit point_expression_op(const exp1 & o1)
+            :o1(o1),scal(0.0)
+    {}
+
+    /*! \brief This function must be called before value
+     *
+     * it calculate the scalar product before return the values
+     *
+     */
+    __device__ __host__ inline void init() const
+    {
+        scal = 0.0;
+
+        for (size_t i = 0 ; i < orig::dims ; i++) {
+            if (fabs(o1.value(i)) > scal) {
+                scal=fabs(o1.value(i));
+            }
+        }
+            //scal += o1.value(i) * o1.value(i);
+
+        //scal = sqrt(scal);
+
+        o1.init();
+    }
+
+    /*! \brief Evaluate the expression
+     *
+     * \param key where to evaluate the expression
+     *
+     */
+    template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__ inline r_type value(size_t k) const
+    {
+        return scal;
+    }
+
+    template <typename T>__device__ __host__  operator T() const
+    {
+        init();
+        return scal;
+    }
+};
+
 
 /*! \brief Point norm operation
  *
@@ -425,6 +503,84 @@ norm2(const Point<dim,T> & va)
 template <typename T, typename P> __device__ __host__  auto distance(T exp1, P exp2) -> decltype(norm(exp1 - exp2))
 {
 	return norm(exp1 - exp2);
+}
+
+
+
+//////////////////////////////////////// normINF operation //////////////////
+
+/* \brief Calculate the norm of the point
+ *
+ * \param va point expression one
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<typename orig,typename exp1, typename exp2, unsigned int op1>
+__device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_NORM_INF>
+norm_inf(const point_expression_op<orig,exp1,exp2,op1> & va)
+{
+    point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,void,POINT_NORM_INF> exp_sum(va);
+
+    return exp_sum;
+}
+
+
+/* \brief norm of a scalar
+ *
+ * \param d scalar double or float
+ *
+ * \return d
+ *
+ */
+template <typename T>__device__ __host__ T norm_inf(T d)
+{
+    return abs(d);
+}
+
+
+/* \brief Calculate the norm of the point
+ *
+ * \param va point expression one
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int dim, typename T>
+__device__ __host__ inline point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM_INF>
+norm_inf(const point_expression<T[dim]> & d)
+{
+    point_expression_op<Point<dim,T>,point_expression<T[dim]>,void,POINT_NORM_INF> exp_sum( (point_expression<T[dim]>(d)) );
+
+    return exp_sum;
+}
+
+
+/* \brief Divide two points expression
+ *
+ * \param va point expression one
+ * \param vb point expression two
+ *
+ * \return an object that encapsulate the expression
+ *
+ */
+template<unsigned int dim, typename T>
+__device__ __host__ inline point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM_INF>
+norm_inf(const Point<dim,T> & va)
+{
+    point_expression_op<Point<dim,T>,Point<dim,T>,void,POINT_NORM_INF> exp_sum(va);
+
+    return exp_sum;
+}
+
+
+/*! \brief General distance formula
+ *
+ *
+ */
+template <typename T, typename P> __device__ __host__  auto distance_inf(T exp1, P exp2) -> decltype(norm_inf(exp1 - exp2))
+{
+    return norm_inf(exp1 - exp2);
 }
 
 
