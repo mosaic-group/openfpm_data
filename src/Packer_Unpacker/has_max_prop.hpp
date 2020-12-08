@@ -48,7 +48,7 @@ struct max_prop_nn<T,false>
 template<typename T, bool hvt>
 struct has_max_prop
 {
-	typedef has_max_prop<typename T::value_type,has_value_type< typename T::value_type >::value> hmp;
+	typedef has_max_prop<typename T::value_type,has_value_type_ofp< typename T::value_type >::value> hmp;
 
 	enum
 	{
