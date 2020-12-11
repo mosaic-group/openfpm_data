@@ -11,15 +11,19 @@
 #ifdef __NVCC__
 
 #include "cub/cub.cuh"
+#if CUDART_VERSION < 11000
 #include "util/cuda/moderngpu/kernel_scan.hxx"
+#else
+#ifndef SCAN_WITH_CUB
+#define SCAN_WITH_CUB
+#endif
+#endif
 #include "util/cuda/ofp_context.hxx"
 
 namespace openfpm
 {
-	template<mgpu::scan_type_t scan_type = mgpu::scan_type_exc,
-			typename launch_arg_t = mgpu::empty_t,
-			typename input_it, typename output_it>
-			void scan(input_it input, int count, output_it output, mgpu::ofp_context_t& context)
+	template<typename input_it, typename output_it>
+			 void scan(input_it input, int count, output_it output, mgpu::ofp_context_t& context)
 	{
 #ifdef SCAN_WITH_CUB
 

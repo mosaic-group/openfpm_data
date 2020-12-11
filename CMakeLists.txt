@@ -13,6 +13,8 @@ set(SE_CLASS1 CACHE BOOL "Activate compilation with SE_CLASS1")
 set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
 set(ENABLE_GPU CACHE BOOL "Disable the GPU code independently that a cuda compiler is found")
 set(TEST_PERFORMANCE CACHE BOOL "Enable test performance")
+set(ALPAKA_ROOT CACHE PATH "Alpaka root path")
+set(CUDA_ON_CPU CACHE BOOL "Make Cuda work on heap")
 
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CUDA_STANDARD 14)
@@ -44,7 +46,7 @@ endif()
 set(Vc_DIR "${Vc_ROOT}/lib/cmake/Vc/")
 message("Searching Vc in ${Vc_DIR}")
 
-find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem)
+find_package(Boost 1.68.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem fiber)
 find_package(LibHilbert REQUIRED)
 find_package(Vc REQUIRED)
 

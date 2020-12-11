@@ -12,7 +12,13 @@
 #ifdef __NVCC__
 
 #include "cub/cub.cuh"
+#if CUDART_VERSION < 11000
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
+#else
+#ifndef SORT_WITH_CUB
+#define SORT_WITH_CUB
+#endif
+#endif
 #include "util/cuda/ofp_context.hxx"
 
 namespace openfpm

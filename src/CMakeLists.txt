@@ -5,6 +5,10 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 add_definitions(-DSCAN_WITH_CUB)
 
+if (CUDA_ON_CPU)
+	add_definitions(-DCUDA_ON_CPU)
+endif()
+
 if (TEST_PERFORMANCE)
 	set(CUDA_SOURCES SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_sparse.cu
 			 SparseGridGpu/performance/SparseGridGpu_performance_insert_stencil.cu
@@ -38,7 +42,7 @@ if (CUDA_FOUND)
 	    SparseGridGpu/tests/SparseGridGpu_tests.cu
             SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh)
 else ()
-    set(CUDA_SOURCES)
+    set(CUDA_SOURCES ../../openfpm_devices/src/util/cudify_vars.cpp)
 endif ()
 
 add_executable(mem_map ${CUDA_SOURCES}
@@ -114,6 +118,7 @@ target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../open
 target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories(mem_map PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories(mem_map PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(mem_map PUBLIC ${ALPAKA_ROOT}/include)
 
 target_include_directories(isolation PUBLIC ${CUDA_INCLUDE_DIRS})
 target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

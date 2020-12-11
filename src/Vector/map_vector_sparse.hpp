@@ -16,8 +16,6 @@
 #include <limits>
 
 #ifdef __NVCC__
-#include "util/cuda/moderngpu/kernel_scan.hxx"
-#include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #include "util/cuda/moderngpu/kernel_segreduce.hxx"
 #include "util/cuda/moderngpu/kernel_merge.hxx"
 #include "util/cuda/kernels.cuh"
@@ -1266,7 +1264,7 @@ namespace openfpm
 										n_gpu_rem_block_slot);
 
 			// now we sort
-			mergesort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
+			openfpm::sort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
 					vct_add_index_cont_0.size(), mgpu::template less_t<Ti>(), context);
 
 			auto ite = vct_add_index_cont_0.getGPUIterator();
@@ -1288,7 +1286,7 @@ namespace openfpm
 
 			vct_add_index_unique.resize(n_ele_unique);
 
-			mgpu::mergesort((Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
+			openfpm::sort((Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
 							vct_add_index_unique.size(),mgpu::template less_t<Ti>(),context);
 
 			// Then we merge the two list vct_index and vct_add_index_unique

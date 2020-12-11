@@ -12,6 +12,7 @@
 #include <iostream>
 #include "util/mathutil.hpp"
 #include "iterators/stencil_type.hpp"
+#include "util/cuda_launch.hpp"
 
 // Box need the definition of grid_key_dx_r
 #define HARDWARE 1

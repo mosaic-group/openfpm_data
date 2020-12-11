@@ -37,10 +37,9 @@
 #include "data_type/aggregate.hpp"
 #include "vector_map_iterator.hpp"
 #include "util/cuda_util.hpp"
-#include "util/cuda/cuda_launch.hpp"
+#include "util/cuda_launch.hpp"
 #include "cuda/map_vector_cuda_ker.cuh"
 #include "map_vector_printers.hpp"
-#include "util/cuda/cuda_launch.hpp"
 
 namespace openfpm
 {

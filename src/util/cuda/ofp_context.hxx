@@ -174,7 +174,11 @@
 
 	#else
 
+	#ifndef CUDA_ON_CPU
 	#include "util/cuda/moderngpu/context_reduced.hxx"
+	#else
+	struct context_t {};
+	#endif
 
 	namespace mgpu
 	{
@@ -189,6 +193,8 @@
 		////////////////////////////////////////////////////////////////////////////////
 		// standard_context_t is a trivial implementation of context_t. Users can
 		// derive this type to provide a custom allocator.
+
+		#ifndef CUDA_ON_CPU
 
 		class ofp_context_t : public context_t
 		{
@@ -324,6 +330,94 @@
 					return dev;
 				}
 		};
+
+		#else
+
+		class ofp_context_t : public context_t
+		{
+			protected:
+
+				std::string _props;
+
+				openfpm::vector<aggregate<unsigned char>> tmem;
+
+				// Making this a template argument means we won't generate an instance
+				// of dummy_k for each translation unit.
+				template<int dummy_arg = 0>
+				void init(int dev_num, gpu_context_opt opt)
+				{}
+
+			public:
+
+				/*! \brief gpu context constructor
+				 *
+				 * \param opt options for this gpu context
+				 *
+				 */
+				ofp_context_t(gpu_context_opt opt = gpu_context_opt::no_print_props , int dev_num = 0, int stream_ = 0)
+				{}
+
+				~ofp_context_t()
+				{}
+
+				virtual const std::string& props() const
+				{
+					return _props;
+				}
+
+				virtual int ptx_version() const
+				{
+					return 0;
+				}
+
+				virtual int stream() 
+				{
+					std::cout << __FILE__ << ":" << __LINE__ << " Not implemented" << std::endl;
+					return 0; 
+				}
+
+				// Alloc GPU memory.
+				virtual void* alloc(size_t size, int space)
+				{
+					std::cout << __FILE__ << ":" << __LINE__ << " Not implemented" << std::endl;
+					return NULL;
+				}
+
+				virtual void free(void* p, int space)
+				{
+					std::cout << __FILE__ << ":" << __LINE__ << " Not implemented"  << std::endl;
+				}
+
+				virtual void synchronize()
+				{
+					std::cout << __FILE__ << ":" << __LINE__ << " Not implemented"  << std::endl;
+				}
+
+				virtual int event()
+				{
+					std::cout << __FILE__ << ":" << __LINE__ << " Not implemented"  << std::endl;
+					return 0;
+				}
+
+				virtual void timer_begin()
+				{
+					std::cout << __FILE__ << ":" << __LINE__ << " Not implemented"  << std::endl;
+				}
+
+				virtual double timer_end()
+				{
+					std::cout << __FILE__ << ":" << __LINE__ << " Not implemented"  << std::endl;
+					return 0.0;
+				}
+
+				virtual int getDevice()
+				{
+					std::cout << __FILE__ << ":" << __LINE__ << " Not implemented"  << std::endl;
+					return 0;
+				}
+		};
+
+		#endif
 
 	}
 

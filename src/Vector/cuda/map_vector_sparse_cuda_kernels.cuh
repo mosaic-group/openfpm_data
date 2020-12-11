@@ -10,8 +10,13 @@
 
 #ifdef __NVCC__
 
+#if CUDART_VERSION < 11000
 #include "util/cuda/cub/util_type.cuh"
 #include "util/cuda/cub/block/block_scan.cuh"
+#else
+#include "cub/util_type.cuh"
+#include "cub/block/block_scan.cuh"
+#endif
 #include "util/cuda/moderngpu/operators.hxx"
 
 #endif
