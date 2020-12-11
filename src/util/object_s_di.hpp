@@ -163,7 +163,7 @@ struct object_s_di_e_op
 	{
 	};
 
-#ifdef DEBUG
+#ifdef SE_CLASS1
 	/*! \brief Constructor
 	 *
 	 * Calling this constructor produce an error. This class store the reference of the object,

@@ -33,6 +33,7 @@ __global__ void copy_two_vectors(vector_src_type v_dst, vector_dst_type v_src)
 	v_dst.get(i) = v_src.get(i);
 }
 
+
 template<template<typename,typename> class op,
          typename vector_src_type,
 		 typename vector_dst_type,
@@ -61,8 +62,10 @@ __global__ void merge_add_prp_device_impl_src_offset_dst_opar(vector_src_type v_
 	if (i >= opart.size())
 	{return;}
 
+	typedef typename vector_src_type::value_type TT;
+
 	// write the object in the last element
-	object_s_di_op<op,decltype(v_src.get(0)),decltype(v_dst.get(0)),OBJ_ENCAP,args...>(v_src.get(start + i),v_dst.get(opart.template get<0>(i)));
+	object_si_di_op<op,decltype(v_src.get(0)),decltype(v_dst.get(0)),OBJ_ENCAP,args...>(v_src.get(start + i),v_dst.get(opart.template get<0>(i)));
 }
 
 #endif
