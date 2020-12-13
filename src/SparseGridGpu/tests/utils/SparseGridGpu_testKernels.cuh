@@ -27,7 +27,7 @@ struct BoundaryStencilSetX
             DataBlockWrapperT & dataBlockStore,
             unsigned char curMask)
     {
-        if (curMask & mask_sparse::EXIST_AND_PADDING)
+        if (curMask == mask_sparse::EXIST_AND_PADDING)
         {
             dataBlockStore.template get<p_dst>()[offset] = pointCoord.get(0);
         }
@@ -55,9 +55,10 @@ struct BoundaryStencilSetXRescaled
             unsigned char curMask,
             ScalarT minX, ScalarT maxX, ScalarT minValue, ScalarT maxValue)
     {
-        if (curMask & mask_sparse::EXIST_AND_PADDING)
+        if (curMask == mask_sparse::EXIST_AND_PADDING)
         {
             const ScalarT x = pointCoord.get(0);
+
             auto value = maxValue * (x - minX) / (maxX - minX - 1);
             if (x < minX)
             {

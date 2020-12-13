@@ -70,7 +70,7 @@ __global__ void test_launch_cuda_native(float * scalar, float * vector, int sxy,
 
 constexpr int NN_num = 4;
 
-template<typename celllist_type>
+/*template<typename celllist_type>
 __global__ void test_launch_cell_list(celllist_type cell, ite_gpu<3> ite_gpu)
 {
 	GRID_ID_3(ite_gpu)
@@ -98,7 +98,7 @@ __global__ void test_launch_cell_list(celllist_type cell, ite_gpu<3> ite_gpu)
 	}
 
 	printf("CELLLIST %d %d %d  nn_part: %d NN: %d %d %d %d \n",(int)key.get(0),(int)key.get(1),(int)key.get(2),nn_part,NN[0],NN[1],NN[2],NN[3]);
-}
+}*/
 
 BOOST_AUTO_TEST_SUITE( grid_gpu_func_interp )
 

@@ -846,8 +846,8 @@ namespace SparseGridGpuKernels
         {
             // Read local mask to register
             curMask = dataBlockLoad.template get<pMask>()[offset];
-            if (bx.isInsideKey(pointCoord) == false)
-            {curMask = 0;}
+			for (int i = 0 ; i < dim ; i++)
+			{curMask &= (pointCoord.get(i) < bx.getLow(i) || pointCoord.get(i) > bx.getHigh(i))?0:0xFF;}
         }
 
         openfpm::sparse_index<unsigned int> sdataBlockPos;

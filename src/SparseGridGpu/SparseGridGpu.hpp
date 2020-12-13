@@ -3566,7 +3566,7 @@ public:
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
-		 unsigned int threadBlockSize = 128,
+		 unsigned int threadBlockSize = default_edge<dim>::tb::value,
 		 typename indexT=long int,
 		 template<typename> class layout_base=memory_traits_inte,
 		 typename linearizer = grid_zmb<dim, blockEdgeSize,indexT>>
@@ -3575,11 +3575,19 @@ using SparseGridGpu_z = SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSi
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
-		 unsigned int threadBlockSize = 128,
+		 unsigned int threadBlockSize = default_edge<dim>::tb::value,
 		 typename indexT=int,
 		 template<typename> class layout_base=memory_traits_inte,
 		 typename linearizer = grid_zmb<dim, blockEdgeSize,indexT>>
 using SparseGridGpu_zi = SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer>;
 
+template<unsigned int dim,
+		 typename AggregateT,
+		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
+		 unsigned int threadBlockSize = default_edge<dim>::tb::value,
+		 typename indexT=int,
+		 template<typename> class layout_base=memory_traits_inte,
+		 typename linearizer = grid_smb<dim, blockEdgeSize,indexT>>
+using SparseGridGpu_i = SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer>;
 
 #endif //OPENFPM_PDATA_SPARSEGRIDGPU_HPP

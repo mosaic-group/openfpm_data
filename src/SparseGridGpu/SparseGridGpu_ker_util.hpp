@@ -35,6 +35,54 @@ struct cross_stencil
 	T xp[dim];
 };
 
+/*template<unsigned int dim, unsigned int block_edge_size>
+struct shift_position
+{
+    __device__ static inline int shift(int pos, int stencilRadius)
+    {
+        int accu = 1;
+        int pos_s = 0;
+        for (int i = 0 ; i < dim ; i++)
+        {
+            pos_s += (pos % block_edge_size + stencilRadius)*accu;
+            accu *= (block_edge_size + 2*stencilRadius);
+            pos /= block_edge_size;
+        }
+
+        return pos_s;
+    }
+};
+
+template<unsigned int block_edge_size>
+struct shift_position<2,block_edge_size>
+{
+    __device__ static inline int shift(int pos, int stencilRadius)
+    {
+        unsigned int x = pos % block_edge_size;
+        unsigned int y = (pos / block_edge_size);
+
+        unsigned int g_sz = block_edge_size + 2*stencilRadius;
+
+        return (x+stencilRadius) + (y+stencilRadius)*g_sz;
+    }
+};
+
+
+template<unsigned int block_edge_size>
+struct shift_position<3,block_edge_size>
+{
+    __device__ static inline int shift(int pos, int stencilRadius)
+    {
+        unsigned int x = pos % block_edge_size;
+        unsigned int y = (pos / block_edge_size) % block_edge_size;
+        unsigned int z = (pos / (block_edge_size*block_edge_size));
+
+        unsigned int g_sz = block_edge_size + 2*stencilRadius;
+
+        return (x+stencilRadius) + (y+stencilRadius)*g_sz + (z+stencilRadius)*g_sz*g_sz;
+    }
+};*/
+
 template<unsigned int dim>
 struct NNStar
 {
@@ -53,7 +101,12 @@ struct NNStar
             unsigned int d = offset/2;
             int dPos = blockCoord.get(d) + (offset%2)*2 - 1;
             blockCoord.set_d(d, dPos);
-            neighbourPos = blockMap.get_sparse(sparseGrid.getBlockLinId(blockCoord)).id;
+
+            int bl = sparseGrid.getBlockLinId(blockCoord);
+
+            bl = (dPos < 0)?-1:bl;
+
+            neighbourPos = blockMap.get_sparse(bl).id;
         }
         return neighbourPos;
 	}
@@ -479,7 +532,7 @@ struct loadGhostBlock_impl<1,dim,AggregateBlockT,pMask,p,ct_params,blockEdgeSize
 			// Convert pos into a linear id accounting for the ghost offsets
 			unsigned int coord[dim];
 			linToCoordWithOffset<blockEdgeSize>(threadIdx.x, stencilSupportRadius, coord);
-			const int linId2 = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+			const unsigned int linId2 = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
 
 			unsigned int nnb = nn_blocks.template get<0>(blockIdPos*ct_params::nNN + (threadIdx.x % ct_params::nNN));
 
@@ -569,6 +622,9 @@ struct loadGhostBlock_impl<2,dim,AggregateBlockT,pMask,p,ct_params,blockEdgeSize
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(threadIdx.x, stencilSupportRadius, coord);
         const int linId_b = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+//        const unsigned int linId_b = shift_position<dim,blockEdgeSize>::shift(threadIdx.x,stencilSupportRadius);
+
+//        printf("AAA %d %d \n",linId_b,linId_b_test);
 
         unsigned int nnb = nn_blocks.template get<0>(blockIdPos*ct_params::nNN + (threadIdx.x % ct_params::nNN));
 
@@ -675,6 +731,9 @@ struct loadGhostBlock_impl<3,dim,AggregateBlockT,pMask,p,ct_params,blockEdgeSize
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(threadIdx.x, stencilSupportRadius, coord);
         const int linId_b = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+//        const unsigned int linId_b = shift_position<dim,blockEdgeSize>::shift(threadIdx.x,stencilSupportRadius);
+
+//        printf("AAA %d %d \n",linId_b,linId_b_test);
 
         unsigned int nnb = nn_blocks.template get<0>(blockIdPos*ct_params::nNN + (threadIdx.x % ct_params::nNN));
 
@@ -822,6 +881,9 @@ struct loadGhostBlock_impl<7,dim,AggregateBlockT,pMask,p,ct_params,blockEdgeSize
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(threadIdx.x, stencilSupportRadius, coord);
         const int linId_b = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+//        const unsigned int linId_b = shift_position<dim,blockEdgeSize>::shift(threadIdx.x,stencilSupportRadius);
+
+//        printf("AAA %d %d \n",linId_b,linId_b_test);
 
         unsigned int nnb = nn_blocks.template get<0>(blockIdPos*ct_params::nNN + (threadIdx.x % ct_params::nNN));
 

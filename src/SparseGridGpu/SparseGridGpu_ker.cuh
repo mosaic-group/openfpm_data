@@ -337,6 +337,8 @@ public:
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(pos, stencilSupportRadius, coord);
         const unsigned int linId = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+//        const unsigned int linId = shift_position<dim,blockEdgeSize>::shift(pos,stencilSupportRadius);
+
         return linId;
     }
 
@@ -354,6 +356,8 @@ public:
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(offset, stencilSupportRadius, coord);
         return coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+
+//        return shift_position<dim,blockEdgeSize>::shift(offset,stencilSupportRadius);
     }
 
     template<typename Coordtype>
@@ -752,6 +756,9 @@ private:
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(pos, stencilSupportRadius, coord);
         const unsigned int linId = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+
+//        const unsigned int linId = shift_position<dim,blockEdgeSize>::shift(pos,stencilSupportRadius);
+
         // Actually load the data into the shared region
         //ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
 
@@ -884,6 +891,8 @@ private:
             unsigned int coord[dim];
             linToCoordWithOffset<blockEdgeSize>(pos, stencilSupportRadius, coord);
             const unsigned int linId = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+//            const unsigned int linId = shift_position<dim,blockEdgeSize>::shift(pos,stencilSupportRadius);
+
             // Actually store the data from the shared region
             ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
 
