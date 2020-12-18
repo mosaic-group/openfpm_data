@@ -15,9 +15,11 @@
 #include <iostream>
 #include <limits>
 
-#ifdef __NVCC__
+#if defined(__NVCC__) && !defined(CUDA_ON_CPU)
 #include "util/cuda/moderngpu/kernel_segreduce.hxx"
 #include "util/cuda/moderngpu/kernel_merge.hxx"
+#include "util/cuda/kernels.cuh"
+#else
 #include "util/cuda/kernels.cuh"
 #endif
 

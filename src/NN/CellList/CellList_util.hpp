@@ -17,9 +17,6 @@ enum cl_construct_opt
 	Only_reorder
 };
 
-#if defined(CUDA_GPU) && defined(__NVCC__)
-#include "util/cuda/moderngpu/kernel_mergesort.hxx"
-#endif
 #include "util/cuda/ofp_context.hxx"
 
 

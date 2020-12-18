@@ -521,30 +521,6 @@ __global__ void fill_nn_cells(cl_sparse_type cl_sparse, vector_type starts, vect
 	}
 };
 
-template<typename T>
-struct to_type4
-{
-	typedef void type;
-};
-
-template<>
-struct to_type4<unsigned int>
-{
-	typedef uint4 type;
-};
-
-
-template<>
-struct to_type4<int>
-{
-	typedef int4 type;
-};
-
-template<>
-struct to_type4<float>
-{
-	typedef float4 type;
-};
 
 /////////////////////////// THIS ONLY WORK IF NVCC IS COMPILING THIS //////////////////////////////////////////////////////
 

@@ -12,7 +12,7 @@
 #include "Point_test.hpp"
 #include "Grid/grid_util_test.hpp"
 #include "cuda_grid_unit_tests_func.cuh"
-#include "util/cuda/cuda_launch.hpp"
+#include "util/cuda_launch.hpp"
 #include "Grid/grid_test_utils.hpp"
 
 BOOST_AUTO_TEST_SUITE( grid_gpu_func_test )

@@ -5,9 +5,6 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 add_definitions(-DSCAN_WITH_CUB)
 
-if (CUDA_ON_CPU)
-	add_definitions(-DCUDA_ON_CPU)
-endif()
 
 if (TEST_PERFORMANCE)
 	set(CUDA_SOURCES SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_sparse.cu
@@ -23,7 +20,7 @@ if (TEST_PERFORMANCE)
 			 SparseGridGpu/performance/performancePlots.cpp)
 endif ()
 
-if (CUDA_FOUND)
+if (CUDA_FOUND OR CUDA_ON_CPU)
 	set(CUDA_SOURCES ${CUDA_SOURCES}
             Vector/vector_gpu_unit_tests.cu
             Grid/cuda/cuda_grid_gpu_tests.cu
@@ -39,11 +36,18 @@ if (CUDA_FOUND)
 	    util/test/zmorton_unit_tests.cpp
 	    util/cuda/test/segreduce_block_cuda_tests.cu 
 	    SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu 
-	    SparseGridGpu/tests/SparseGridGpu_tests.cu
-            SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh)
+	    SparseGridGpu/tests/SparseGridGpu_tests.cu)
 else ()
     set(CUDA_SOURCES ../../openfpm_devices/src/util/cudify_vars.cpp)
 endif ()
+
+if (CUDA_ON_CPU)
+	add_definitions(-DCUDA_ON_CPU -D__NVCC__ -DCUDA_GPU -DCUDART_VERSION=11000)
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
+       	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        	add_definitions("-x c++")
+        endif()
+endif()
 
 add_executable(mem_map ${CUDA_SOURCES}
         main.cpp
@@ -57,12 +61,14 @@ add_executable(mem_map ${CUDA_SOURCES}
 		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
         Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
         ../../openfpm_devices/src/memory/HeapMemory.cpp
-        ../../openfpm_devices/src/memory/PtrMemory.cpp 
+        ../../openfpm_devices/src/memory/PtrMemory.cpp
+        ../../openfpm_devices/src/util/cudify_vars.cpp
 		SparseGridGpu/Geometry/tests/grid_smb_tests.cpp)
 
 add_executable(isolation
 	../../openfpm_devices/src/memory/CudaMemory.cu
 	../../openfpm_devices/src/memory/HeapMemory.cpp
+        ../../openfpm_devices/src/util/cudify_vars.cpp
         SparseGridGpu/tests/SparseGridGpu_tests.cu
 	isolation.cpp
         )
@@ -126,6 +132,7 @@ target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../op
 target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories(isolation PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories(isolation PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(isolation PUBLIC ${ALPAKA_ROOT}/include)
 
 target_include_directories(mem_map PUBLIC ${Vc_INCLUDE_DIR})
 

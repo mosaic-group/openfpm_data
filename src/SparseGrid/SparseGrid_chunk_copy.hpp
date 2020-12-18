@@ -8,7 +8,7 @@
 #ifndef SPARSEGRID_CHUNK_COPY_HPP_
 #define SPARSEGRID_CHUNK_COPY_HPP_
 
-#ifndef __NVCC__
+#if !defined(__NVCC__) || defined(CUDA_ON_CPU)
 #include <Vc/Vc>
 #endif
 #include "util/mathutil.hpp"

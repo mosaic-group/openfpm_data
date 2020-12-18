@@ -17,7 +17,6 @@ constexpr int BLOCK_SIZE_STENCIL = 128;
 #include "Geometry/grid_zmb.hpp"
 #include "util/stat/common_statistics.hpp"
 #include "Iterators/SparseGridGpu_iterator.hpp"
-#include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "Space/SpaceBox.hpp"
 
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)

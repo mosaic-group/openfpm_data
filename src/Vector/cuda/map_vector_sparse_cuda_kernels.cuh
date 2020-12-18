@@ -14,10 +14,12 @@
 #include "util/cuda/cub/util_type.cuh"
 #include "util/cuda/cub/block/block_scan.cuh"
 #else
-#include "cub/util_type.cuh"
-#include "cub/block/block_scan.cuh"
+	#if !defined(CUDA_ON_CPU)
+	#include "cub/util_type.cuh"
+	#include "cub/block/block_scan.cuh"
+	#include "util/cuda/moderngpu/operators.hxx"
+	#endif
 #endif
-#include "util/cuda/moderngpu/operators.hxx"
 
 #endif
 
