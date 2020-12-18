@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
+if (CUDA_ON_CPU)
+	add_definitions(-DCUDA_ON_CPU)
+endif()
+
 add_executable(io main.cpp 
 				  MetaParser/MetaParser_unit_test.cpp 
 				  HDF5_wr/HDF5_writer_cuda.cu 
@@ -9,7 +13,8 @@ add_executable(io main.cpp
 				  ../../openfpm_vcluster/src/VCluster/VCluster.cpp 
 				  ../../openfpm_devices/src/memory/CudaMemory.cu 
 				  ../../openfpm_devices/src/memory/HeapMemory.cpp 
-				  ../../openfpm_devices/src/memory/PtrMemory.cpp)
+				  ../../openfpm_devices/src/memory/PtrMemory.cpp
+				  ../../openfpm_devices/src/util/cudify_vars.cpp)
 
 if ( CMAKE_COMPILER_IS_GNUCC )
     target_compile_options(io PRIVATE "-Wno-deprecated-declarations")
@@ -44,6 +49,7 @@ target_include_directories (io PUBLIC ${HDF5_ROOT}/include)
 target_include_directories (io PUBLIC ${TINYOBJLOADER_INCLUDE_DIRS} )
 target_include_directories (io PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories (io PUBLIC ${OPENFPM_PDATA_DIR}/src)
+target_include_directories (io PUBLIC ${ALPAKA_ROOT}/include)
 
 if (PETSC_FOUND)
 	target_include_directories(io PUBLIC ${PETSC_INCLUDES})

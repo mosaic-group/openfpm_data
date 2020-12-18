@@ -21,8 +21,8 @@ set(PETSC_ROOT CACHE PATH "If compiling with linear algebra indicate the PETSC r
 set(ENV{PETSC_DIR} ${PETSC_ROOT})
 
 
-set (CMAKE_CXX_STANDARD 11)
-set (CMAKE_CUDA_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CUDA_STANDARD 14)
 
 if(NOT TINYOBJLOADER_FOUND)
 	set(TINYOBJLOADER_ROOT CACHE PATH "TinyObjLoader library path")
@@ -52,7 +52,7 @@ if(ENABLE_GPU)
         endif()
 endif()
 
-find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options)
+find_package(Boost 1.66.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options fiber)
 find_package(MPI REQUIRED)
 find_package(HDF5 REQUIRED)
 find_package(TinyObjLoader)
