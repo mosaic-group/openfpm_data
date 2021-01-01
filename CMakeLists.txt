@@ -46,7 +46,7 @@ endif()
 set(Vc_DIR "${Vc_ROOT}/lib/cmake/Vc/")
 message("Searching Vc in ${Vc_DIR}")
 
-find_package(Boost 1.68.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem fiber)
+find_package(Boost 1.72.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem OPTIONAL_COMPONENTS fiber context)
 find_package(LibHilbert REQUIRED)
 find_package(Vc REQUIRED)
 
