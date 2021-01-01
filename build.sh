@@ -51,7 +51,7 @@ cd "$workspace/openfpm_data"
 pre_command=""
 sh ./autogen.sh
 options="$options --disable-gpu "
-options="$options --with-vcdevel=$HOME/openfpm_dependencies/openfpm_data/VCDEVEL --with-boost=$HOME/openfpm_dependencies/openfpm_data/BOOST  --with-libhilbert=$HOME/openfpm_dependencies/openfpm_data/LIBHILBERT"
+options="$options --with-vcdevel=$HOME/openfpm_dependencies/openfpm_data/VCDEVEL --with-boost=$HOME/openfpm_dependencies/openfpm_data/BOOST  --with-libhilbert=$HOME/openfpm_dependencies/openfpm_data/LIBHILBERT --enable-cuda_on_cpu"
 
 if [ x"$3" == x"SE"  ]; then
   options="$options --enable-se-class1 --enable-se-class2 --enable-se-class3 --with-action-on-error=throw --enable-test-coverage"
