@@ -67,7 +67,7 @@ struct object_si_di_e_op
 
 	//! It call the functor for each member
     template<typename T>
-    void operator()(T& t)
+    __device__ __host__ void operator()(T& t)
     {
 		// Remove the reference from the type to copy
 		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type copy_dtype;
