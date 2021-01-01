@@ -214,16 +214,18 @@ void swap(key_val_ref<key_t,val_t> a, key_val_ref<key_t,val_t> b)
 	b.val = vt;
 }
 
-template<typename key_t, typename val_t>
-struct std::iterator_traits<key_val_it<key_t,val_t>>
-{        
-    typedef size_t difference_type; //almost always ptrdiff_t
-    typedef key_val<key_t,val_t> value_type; //almost always T
-    typedef key_val<key_t,val_t> & reference; //almost always T& or const T&
-    typedef key_val<key_t,val_t> & pointer; //almost always T* or const T*
-    typedef std::random_access_iterator_tag iterator_category;  //usually std::forward_iterator_tag or similar
-};
-
+namespace std
+{
+	template<typename key_t, typename val_t>
+	struct iterator_traits<key_val_it<key_t,val_t>>
+	{        
+		typedef size_t difference_type; //almost always ptrdiff_t
+		typedef key_val<key_t,val_t> value_type; //almost always T
+		typedef key_val<key_t,val_t> & reference; //almost always T& or const T&
+		typedef key_val<key_t,val_t> & pointer; //almost always T* or const T*
+		typedef std::random_access_iterator_tag iterator_category;  //usually std::forward_iterator_tag or similar
+	};
+}
 
 
 namespace openfpm
