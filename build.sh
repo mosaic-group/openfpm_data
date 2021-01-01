@@ -7,6 +7,8 @@ hostname=$(hostname)
 type_compile=$3
 branch=$4
 
+rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
+
 echo "Build on: $hostname with $type_compile branch: $branch"
 
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then

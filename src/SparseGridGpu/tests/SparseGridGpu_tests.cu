@@ -64,8 +64,8 @@ __global__ void insertValues(SparseGridType sparseGrid)
 
     size_t pos = sparseGrid.getLinId(coord);
 
-    sparseGrid.template insert<p>(coord) = x;
-
+	sparseGrid.template insert<p>(coord) = x;
+	
     sparseGrid.flush_block_insert();
 
     // Compiler avoid warning
@@ -471,8 +471,6 @@ BOOST_AUTO_TEST_CASE(testTagBoundaries2)
 
 BOOST_AUTO_TEST_CASE(testStencilHeat)
 {
-	printf("\n");
-
 	constexpr unsigned int dim = 2;
 	constexpr unsigned int blockEdgeSize = 8;
 	typedef aggregate<float,float> AggregateT;
@@ -522,8 +520,6 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 
 BOOST_AUTO_TEST_CASE(testStencil_lap_simplified)
 {
-	printf("\n");
-
 	constexpr unsigned int dim = 2;
 	constexpr unsigned int blockEdgeSize = 8;
 	typedef aggregate<float,float> AggregateT;
@@ -581,8 +577,6 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_simplified)
 
 BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified)
 {
-	printf("\n");
-
 	constexpr unsigned int dim = 2;
 	constexpr unsigned int blockEdgeSize = 8;
 	typedef aggregate<float,float> AggregateT;
@@ -659,8 +653,6 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified)
 
 BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified2)
 {
-	printf("\n");
-
 	constexpr unsigned int dim = 2;
 	constexpr unsigned int blockEdgeSize = 8;
 	typedef aggregate<float,float,float,float> AggregateT;
@@ -675,10 +667,10 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified2)
 
 	// Insert values on the grid
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-	CUDA_LAUNCH_DIM3((insertConstantValue<0>), gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0));
-	CUDA_LAUNCH_DIM3((insertConstantValue<1>), gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0));
-	CUDA_LAUNCH_DIM3((insertConstantValue<2>), gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0));
-	CUDA_LAUNCH_DIM3((insertConstantValue<3>), gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0));
+	CUDA_LAUNCH_DIM3((insertConstantValue<0>), gridSize, blockSizeInsert,sparseGrid.toKernel(), 0);
+	CUDA_LAUNCH_DIM3((insertConstantValue<1>), gridSize, blockSizeInsert,sparseGrid.toKernel(), 0);
+	CUDA_LAUNCH_DIM3((insertConstantValue<2>), gridSize, blockSizeInsert,sparseGrid.toKernel(), 0);
+	CUDA_LAUNCH_DIM3((insertConstantValue<3>), gridSize, blockSizeInsert,sparseGrid.toKernel(), 0);
 	sparseGrid.flush < smax_< 0 >, smax_< 1 >, smax_< 2 >, smax_< 3 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
@@ -750,8 +742,6 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified2)
 
 BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified_subset)
 {
-	printf("\n");
-
 	constexpr unsigned int dim = 2;
 	constexpr unsigned int blockEdgeSize = 8;
 	typedef aggregate<float,float> AggregateT;
@@ -766,8 +756,8 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified_subset)
 
 	// Insert values on the grid
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
-	CUDA_LAUNCH_DIM3((insertConstantValue<0>), gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0));
-	CUDA_LAUNCH_DIM3((insertConstantValue<1>), gridSize, blockSizeInsert >>> (sparseGrid.toKernel(), 0));
+	CUDA_LAUNCH_DIM3((insertConstantValue<0>), gridSize, blockSizeInsert,sparseGrid.toKernel(), 0);
+	CUDA_LAUNCH_DIM3((insertConstantValue<1>), gridSize, blockSizeInsert,sparseGrid.toKernel(), 0);
 	sparseGrid.flush < smax_< 0 >, smax_< 1 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
@@ -811,8 +801,6 @@ __global__ void sparse_grid_get_test(sparsegrid_type sparseGrid, grid_key_dx<3> 
 
 BOOST_AUTO_TEST_CASE(testFlushInsert)
 {
-	printf("\n");
-
 	constexpr unsigned int dim = 3;
 	constexpr unsigned int blockEdgeSize = 4;
 	typedef aggregate<float,float> AggregateT;
@@ -987,10 +975,6 @@ struct Conv3x3x3_noshared
         typedef typename SparseGridT::AggregateBlockType AggregateT;
         typedef ScalarTypeOf<AggregateT, p_src> ScalarT;
 
-        __syncthreads();
-
-        __shared__ block_offset<int> pos[BLOCK_SIZE_STENCIL];
-
         if ((curMask & mask_sparse::EXIST) && !(curMask & mask_sparse::PADDING))
         {
             ScalarT tot = 0.0;
@@ -1007,9 +991,9 @@ struct Conv3x3x3_noshared
                     	key.set_d(1,j-1);
                     	key.set_d(2,i-1);
 
-                    	pos[threadIdx.x] = sparseGrid.template getNNPoint<stencil_type>(dataBlockIdPos, offset, key);
+                    	block_offset<int> pos = sparseGrid.template getNNPoint<stencil_type>(dataBlockIdPos, offset, key);
 
-                    	tot += sparseGrid.template get<p_src>(pos[threadIdx.x]) * cc.coeff[i][j][k];
+                    	tot += sparseGrid.template get<p_src>(pos) * cc.coeff[i][j][k];
                     }
                 }
             }

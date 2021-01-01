@@ -443,6 +443,10 @@ public:
 
 private:
 
+#ifdef SE_CLASS1
+	bool init = false;
+#endif
+
 	//! reference to the encapsulated object
 	type & data_c;
 
@@ -452,7 +456,26 @@ private:
 	//! layout of the encapsulated object
 	typedef typename memory_traits_inte<T>::type Mem2;
 
+#ifdef SE_CLASS1
+	void check_init() const
+	{
+		if (init == false)
+		{
+			#ifdef CUDA_ON_CPU
+			std::cout << __FILE__ << ":" << __LINE__ << " Error using unallocated pointer" << std::endl;
+			#else
+			assert(init == true);
+			#endif
+		}
+	}
+#endif
+
 public:
+
+#ifdef SE_CLASS1
+	~encapc()
+	{init = false;}
+#endif
 
 	//! indicate the it is an encapsulated object
 	typedef int yes_i_am_encap;
@@ -466,7 +489,12 @@ public:
 	//! constructor from a reference object
 	inline encapc(type & data_c)
 	:data_c(data_c)
-	{}
+	{
+#ifdef SE_CLASS1
+		init = true;
+#endif
+	}
+
 
 	/*! \brief Return the address of the base
 	 *
@@ -475,6 +503,9 @@ public:
 	 */
 	inline type * operator&()
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return &data_c;
 	}
 
@@ -486,6 +517,9 @@ public:
 	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))>
 	__device__ __host__ inline r_type get()
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return boost::fusion::at_c<p>(data_c);
 	}
 
@@ -497,6 +531,9 @@ public:
 	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))>
 	__device__ __host__ inline const r_type get() const
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return boost::fusion::at_c<p>(data_c);
 	}
 
@@ -510,6 +547,9 @@ public:
 	template <unsigned int p> inline
 	__device__ __host__ void set(decltype(boost::fusion::at_c<p>(data_c)) & ele)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 			return boost::fusion::at_c<p>(data_c) = ele;
 	}
 
@@ -526,6 +566,9 @@ public:
 	template<unsigned int dim2>
 	__device__ __host__ inline encapc<dim,T,Mem> & set(const encapc<dim2,T,Mem> & ec)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_cpu_encap_encap<encapc<dim2,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -542,6 +585,9 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_cpu_encap_single<encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -558,6 +604,9 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem2> & ec)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_cpu_encap_encap_general<encapc<dim,T,Mem2>,encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -574,6 +623,9 @@ public:
 	 */
 	__device__  __host__ inline encapc<dim,T,Mem> & operator=(const T & obj)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_fusion_vector<typename T::type> cp(obj.data,data_c);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -590,6 +642,9 @@ public:
 	 */
 	inline bool operator==(const encapc<dim,T,Mem> & ec) const
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		compare_fusion_vector<typename T::type> cp(ec.data_c,data_c);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -606,6 +661,9 @@ public:
 	 */
 	inline bool operator!=(const encapc<dim,T,Mem> & ec) const
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return ! this->operator==(ec);
 	}
 };
@@ -664,6 +722,24 @@ class encapc<dim,T,typename memory_traits_inte<T>::type>
 	//! element id
 	size_t k;
 
+#ifdef SE_CLASS1
+	bool init = false;
+#endif
+
+#ifdef SE_CLASS1
+	void check_init() const
+	{
+		if (init == false)
+		{
+			#ifdef CUDA_ON_CPU
+			std::cout << __FILE__ << ":" << __LINE__ << " Error using unallocated pointer" << std::endl;
+			#else
+			assert(init == true);
+			#endif
+		}
+	}
+#endif
+
 public:
 
 	//! Original list if types
@@ -678,10 +754,19 @@ public:
 	//! number of properties
 	static const int max_prop = T::max_prop;
 
+#ifdef SE_CLASS1
+	~encapc()
+	{init = false;}
+#endif
+
 	//! constructor require a key and a memory data
 	__device__ __host__ encapc(typename memory_traits_inte<T>::type & data, size_t k)
 	:data(data),k(k)
-	{}
+	{
+#ifdef SE_CLASS1
+		init = true;
+#endif
+	}
 
 	/*! \brief Access the data
 	 *
@@ -693,6 +778,9 @@ public:
 	template <unsigned int p>
 	__device__ __host__ auto get() -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
 
@@ -705,13 +793,18 @@ public:
 	 */
 	template <unsigned int p> __device__ __host__ auto get() const -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
 
 //    __device__ __host__ encapc(const encapc<dim,T,Mem> & ec) = delete;
     __device__ __host__ encapc(const encapc<dim,T,Mem> & ec) : data(ec.data), k(ec.k)
     {
-//        printf("ciao\n");
+#ifdef SE_CLASS1
+		init = true;
+#endif
     }
 //    __device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec) = delete; //DEBUG
 
@@ -724,6 +817,9 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_cpu_encap_single<encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -740,6 +836,9 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem2> & ec)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_cpu_encap_encap_general<encapc<dim,T,Mem2>,encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -756,6 +855,9 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const T & obj)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_fusion_vector_encap<typename T::type,decltype(*this)> cp(obj.data,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -765,22 +867,34 @@ public:
 
 	__device__ __host__ inline void private_set_data_k(Mem & data_c, size_t k)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		this->data = data;
 		this->k = k;
 	}
 
 	__device__ __host__ inline Mem & private_get_data()
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return data;
 	}
 
 	__device__ __host__ inline size_t private_get_k()
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return k;
 	}
 
 	__device__ __host__ inline size_t private_set_k(unsigned int k)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return this->k = k;
 	}
 };

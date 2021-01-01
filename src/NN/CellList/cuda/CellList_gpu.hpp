@@ -599,7 +599,7 @@ public:
 
 		NNcalc_rad(radius,nnc_rad_,this->getCellBox(),this->getGrid());
 
-		nnc_rad.resize(nnc_rad_.size());
+		nnc_rad.resize(nnc_rad_.size(),0);
 
 		// copy to nnc_rad
 

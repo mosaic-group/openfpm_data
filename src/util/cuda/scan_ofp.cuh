@@ -32,10 +32,15 @@ namespace openfpm
 	{
 #ifdef CUDA_ON_CPU
 
+	if (count == 0)	{return;}
+
+	auto prec = input[0];
 	output[0] = 0;
 	for (int i = 1 ; i < count ; i++)
 	{
-		output[i] = input[i-1] + output[i-1];
+		auto next = prec + output[i-1];
+		prec = input[i];
+		output[i] = next;
 	}
 
 #else

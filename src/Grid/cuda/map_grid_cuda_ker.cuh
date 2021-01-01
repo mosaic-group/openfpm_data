@@ -341,12 +341,7 @@ public:
 
 #endif
 
-		T_ tmp;
-
-		copy_encap_vector_fusion<decltype(g.get_o(key2)),typename T_::type> cp(g.get_o(key2),tmp.data);
-		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
-
-		this->get_o(key1) = tmp;
+		this->get_o(key1) = g.get_o(key2);
 	}
 
 	template<unsigned int ... prp> __device__ inline void set(const grid_key_dx<dim> & key1,const grid_gpu_ker<dim,T_,layout_base> & g, const grid_key_dx<dim> & key2)
@@ -361,8 +356,9 @@ public:
 #endif
 
 		auto edest = this->get_o(key1);
+		auto esrc = g.get_o(key2);
 
-		copy_cpu_encap_encap_prp<decltype(g.get_o(key2)),decltype(this->get_o(key1)),prp...> ec(g.get_o(key2),edest);
+		copy_cpu_encap_encap_prp<decltype(g.get_o(key2)),decltype(this->get_o(key1)),prp...> ec(esrc,edest);
 
 		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(ec);
 	}

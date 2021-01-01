@@ -409,6 +409,7 @@ inline __device__ auto BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
     auto &block = aggregate.template get<p>();
     auto &mask = aggregate.template get<pMask>();
     setExist(mask[offset]);
+
     return block[offset];
 #else // __NVCC__
     std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;

@@ -35,12 +35,9 @@ namespace openfpm
 		index_type id;
 	};
 
-#ifdef __NVCC__
+#if defined(__NVCC__) && !defined(CUDA_ON_CPU)
 	static __shared__ int vct_atomic_add;
 	static __shared__ int vct_atomic_rem;
-#else
-        static int vct_atomic_add;
-        static int vct_atomic_rem;
 #endif
 
 	template<typename T,

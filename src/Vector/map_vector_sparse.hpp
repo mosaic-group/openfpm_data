@@ -19,7 +19,7 @@
 #include "util/cuda/moderngpu/kernel_segreduce.hxx"
 #include "util/cuda/moderngpu/kernel_merge.hxx"
 #include "util/cuda/kernels.cuh"
-#else
+#elif defined(CUDA_ON_CPU)
 #include "util/cuda/kernels.cuh"
 #endif
 
@@ -201,6 +201,7 @@ namespace openfpm
                 )
         {
 #ifdef __NVCC__
+
             CUDA_LAUNCH((solve_conflicts<
                         decltype(vct_index_merge.toKernel()),
                         decltype(vct_data_old.toKernel()),
@@ -232,6 +233,8 @@ namespace openfpm
                 CUDA_LAUNCH(realign,itew,vct_index_out.toKernel(),vct_data_out.toKernel(),
                                       vct_index_old.toKernel(), vct_data_old.toKernel(),
                                       vct_index_dtmp.toKernel());
+
+
 #else // __NVCC__
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
 #endif // __NVCC__
@@ -1107,6 +1110,7 @@ namespace openfpm
 						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp4.template getDeviceBuffer<0>(),vct_add_index_unique.size(),
 						(Ti *)vct_merge_index.template getDeviceBuffer<0>(),(Ti *)vct_merge_index_map.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
 
+
 #endif
 		}
 
@@ -1186,6 +1190,7 @@ namespace openfpm
                         context
                     );
 
+
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif
@@ -1218,7 +1223,6 @@ namespace openfpm
 			merge_indexes<v_reduce ... >(vct_add_index_cont_0,vct_add_index_unique,
 										 vct_index_tmp,vct_index_tmp2,
 										 context);
-
 
 			merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_index_unique,vct_add_data,vct_add_index_cont_1,context);
 

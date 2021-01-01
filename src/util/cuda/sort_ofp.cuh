@@ -49,6 +49,11 @@ struct key_val
 		return key < tmp.key;
 	}
 
+	bool operator>(const key_val & tmp) const
+	{
+		return key > tmp.key;
+	}
+
 	key_val & operator=(const key_val_ref<key_t,val_t> & tmp)
 	{
 		key = tmp.key;
@@ -57,6 +62,7 @@ struct key_val
 		return *this;
 	}
 };
+
 
 template<typename key_t, typename val_t>
 struct key_val_ref
@@ -93,9 +99,19 @@ struct key_val_ref
 		return key < tmp.key;
 	}
 
+	bool operator>(const key_val_ref<key_t,val_t> & tmp)
+	{
+		return key > tmp.key;
+	}
+
 	bool operator<(const key_val<key_t,val_t> & tmp)
 	{
 		return key < tmp.key;
+	}
+
+	bool operator>(const key_val<key_t,val_t> & tmp)
+	{
+		return key > tmp.key;
 	}
 };
 
@@ -221,7 +237,7 @@ namespace openfpm
 
 	key_val_it<key_t,val_t> kv(keys_input,vals_input);
 
-	std::sort(kv,kv+count);
+	std::sort(kv,kv+count,comp);
 
 #else
 

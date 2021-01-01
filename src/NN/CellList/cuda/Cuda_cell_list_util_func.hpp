@@ -275,11 +275,13 @@ __global__ void fill_cells_sparse(vector_sparse vs, vector_cell vc)
 
 	int p = blockIdx.x*blockDim.x + threadIdx.x;
 
-	if (p >= vc.size())	{return;}
+	int c = 0;
+	if (p < vc.size())	
+	{
+		c = vc.template get<0>(p);
+		vs.template insert<0>(c) = p;
+	}
 
-	int c = vc.template get<0>(p);
-
-	vs.template insert<0>(c) = p;
 	vs.flush_block_insert();
 }
 
@@ -403,6 +405,7 @@ __global__ void reorder_parts(int n,
     if (i >= n) return;
 
     cnt_type code = cells[i];
+
     reorder(input, output, code,i);
     reorder(input_pos,output_pos,code,i);
 
