@@ -52,7 +52,7 @@ if(ENABLE_GPU)
         endif()
 endif()
 
-find_package(Boost 1.72.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options fiber)
+find_package(Boost 1.72.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options OPTIONAL_COMPONENTS fiber context)
 find_package(MPI REQUIRED)
 find_package(HDF5 REQUIRED)
 find_package(TinyObjLoader)
