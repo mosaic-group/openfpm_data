@@ -36,6 +36,7 @@ cd ..
 
 cd "$1/openfpm_io"
 
+rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/
 
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
