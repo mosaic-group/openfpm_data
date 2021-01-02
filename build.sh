@@ -36,9 +36,9 @@ cd ..
 
 cd "$1/openfpm_io"
 
-#rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/MPI
-#rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/HDF5
-#rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/BOOST
+rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/MPI
+rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/HDF5
+rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/BOOST
 
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
 	source /opt/rh/devtoolset-7/enable
