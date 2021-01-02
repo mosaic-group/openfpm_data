@@ -78,7 +78,7 @@ if (Boost_FOUND)
                 set(DEFINE_HAVE_BOOST_CONTEXT "#define HAVE_BOOST_CONTEXT")
         else()
                 #if context is not there CUDA_ON_CPU cannot be activated
-                unset(CUDA_ON_CPU)
+                set(CUDA_ON_CPU OFF)
         endif()
         if (Boost_FIBER_FOUND)
                 set(DEFINE_HAVE_BOOST_FIBER "#define HAVE_BOOST_FIBER")
