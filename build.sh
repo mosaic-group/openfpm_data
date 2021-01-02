@@ -15,6 +15,11 @@ if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
         source /opt/rh/devtoolset-7/enable
 fi
 
+if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
+        echo "Ubuntu node"
+        export PATH="/opt/bin:$PATH"
+fi
+
 # Check if libHilbert is installed
 
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then
