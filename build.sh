@@ -36,8 +36,11 @@ cd ..
 
 cd "$1/openfpm_io"
 
+rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/MPI
+rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/HDF5
 
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
+	source /opt/rh/devtoolset-7/enable
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="/opt/bin:$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
         ./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
