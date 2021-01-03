@@ -128,5 +128,5 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_cmake.h.in ${CMAKE_
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 add_subdirectory (src)
-add_subdirectory (../openfpm_vcluster build)
+add_subdirectory (../openfpm_vcluster openfpm_vcluster)
 
