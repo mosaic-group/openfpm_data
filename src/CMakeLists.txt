@@ -342,8 +342,8 @@ install(FILES Vector/cuda/map_vector_cuda_ker.cuh
         Vector/cuda/map_vector_sparse_cuda_kernels.cuh
         DESTINATION openfpm_data/include/Vector/cuda/)
 
-install(DIRECTORY util/cuda/cub/
-        DESTINATION openfpm_data/include/util/cuda/cub)
+install(DIRECTORY util/cuda/cub_old/
+        DESTINATION openfpm_data/include/util/cuda/cub_old)
 
 install(FILES util/multi_array_openfpm/array_openfpm.hpp
         util/multi_array_openfpm/multi_array_iterator_openfpm.hpp
@@ -355,8 +355,6 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
         util/multi_array_openfpm/types.hpp
         DESTINATION openfpm_data/include/util/multi_array_openfpm)
 
-install(DIRECTORY util/cuda/cub/
-                  DESTINATION openfpm_data/include/util/cuda/cub )
 
 install(FILES util/cuda/scan_cuda.cuh
         util/cuda/ofp_context.hxx
