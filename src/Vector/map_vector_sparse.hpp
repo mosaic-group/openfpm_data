@@ -16,12 +16,12 @@
 #include <iostream>
 #include <limits>
 
-#if defined(__NVCC__) && !defined(CUDA_ON_CPU)
-#include "util/cuda/moderngpu/kernel_segreduce.hxx"
-#include "util/cuda/moderngpu/kernel_merge.hxx"
-#include "util/cuda/kernels.cuh"
-#elif defined(CUDA_ON_CPU)
-#include "util/cuda/kernels.cuh"
+#if defined(__NVCC__)
+  #if !defined(CUDA_ON_CPU)
+	#include "util/cuda/moderngpu/kernel_segreduce.hxx"
+	#include "util/cuda/moderngpu/kernel_merge.hxx"
+  #endif
+ #include "util/cuda/kernels.cuh"
 #endif
 
 #include "util/cuda/scan_ofp.cuh"
