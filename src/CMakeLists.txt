@@ -40,7 +40,7 @@ if (CUDA_FOUND OR CUDA_ON_CPU)
 endif ()
 
 if (CUDA_ON_CPU)
-	add_definitions(-DCUDA_ON_CPU -D__NVCC__ -DCUDA_GPU -DCUDART_VERSION=11000)
+	add_definitions(-DCUDA_ON_CPU -D__NVCC__ -DCUDART_VERSION=11000)
         set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
        	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         	add_definitions("-x c++")
@@ -358,12 +358,10 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
 
 install(FILES util/cuda/scan_cuda.cuh
         util/cuda/ofp_context.hxx
-        util/cuda/cuda_launch.hpp
-        util/cuda/cuda_kernel_error_checker.hpp
         util/cuda/kernels.cuh
-        util/cuda/cuda_launch.hpp
         util/cuda/scan_ofp.cuh
 	util/cuda/sort_ofp.cuh
+	util/cuda/reduce_ofp.cuh
         DESTINATION openfpm_data/include/util/cuda)
 
 install(FILES util/stat/common_statistics.hpp

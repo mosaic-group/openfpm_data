@@ -2,6 +2,7 @@
 #define GRID_HPP
 
 #include "config.h"
+#include "util/cuda_launch.hpp"
 #include <boost/shared_array.hpp>
 #include <vector>
 #include <initializer_list>

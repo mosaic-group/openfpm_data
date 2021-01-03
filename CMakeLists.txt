@@ -65,6 +65,10 @@ if(CUDA_FOUND)
 	set(DEFINE_CUDA_GPU "#define CUDA_GPU")
 endif()
 
+if(CUDA_ON_CPU)
+        set(DEFINE_CUDA_GPU "#define CUDA_GPU")
+endif()
+
 if(TEST_PERFORMANCE)
         set(DEFINE_PERFORMANCE_TEST "#define PERFORMANCE_TEST")
 endif()
