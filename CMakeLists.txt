@@ -61,14 +61,6 @@ if(SE_CLASS3)
 	set(DEFINE_SE_CLASS3 "#define SE_CLASS3")
 endif()
 
-if(ENABLE_GPU AND CUDA_FOUND)
-	set(DEFINE_CUDA_GPU "#define CUDA_GPU")
-endif()
-
-if(CUDA_ON_CPU)
-        set(DEFINE_CUDA_GPU "#define CUDA_GPU")
-endif()
-
 if(TEST_PERFORMANCE)
         set(DEFINE_PERFORMANCE_TEST "#define PERFORMANCE_TEST")
 endif()
@@ -89,6 +81,14 @@ if (Boost_FOUND)
         endif()
 else()
 	message( FATAL_ERROR "BOOST is required in order to install OpenFPM" )
+endif()
+
+if(ENABLE_GPU AND CUDA_FOUND)
+        set(DEFINE_CUDA_GPU "#define CUDA_GPU")
+endif()
+
+if(CUDA_ON_CPU)
+        set(DEFINE_CUDA_GPU "#define CUDA_GPU")
 endif()
 
 if(LIBHILBERT_FOUND)
