@@ -97,5 +97,5 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_cmake.h.in ${CMAKE_
 
 
 add_subdirectory (src)
-add_subdirectory (../openfpm_devices/ build)
+add_subdirectory (../openfpm_devices/ openfpm_devices)
 
