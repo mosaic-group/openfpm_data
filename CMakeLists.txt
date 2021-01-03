@@ -61,7 +61,7 @@ if(SE_CLASS3)
 	set(DEFINE_SE_CLASS3 "#define SE_CLASS3")
 endif()
 
-if(CUDA_FOUND)
+if(ENABLE_GPU AND CUDA_FOUND)
 	set(DEFINE_CUDA_GPU "#define CUDA_GPU")
 endif()
 
