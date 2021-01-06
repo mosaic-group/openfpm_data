@@ -447,5 +447,4 @@ public:
 	}
 };
 
-
 #endif /* MAP_GRID_CUDA_KER_HPP_ */

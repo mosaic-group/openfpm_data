@@ -44,17 +44,21 @@ namespace openfpm
 
 			void *d_temp_storage = NULL;
 			size_t temp_storage_bytes = 0;
-			cub::DeviceScan::Reduce(d_temp_storage, temp_storage_bytes,input,
+			cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes,input,
 																		output,
-																		count);
+																		count,
+																		op,
+																		false);
 
 			auto & temporal = context.getTemporalCUB();
 			temporal.resize(temp_storage_bytes);
 
 			// Run
-			cub::DeviceScan::Reduce(temporal.template getDeviceBuffer<0>(), temp_storage_bytes,input,
+			cub::DeviceReduce::Reduce(temporal.template getDeviceBuffer<0>(), temp_storage_bytes,input,
 					output,
-					count);
+					count,
+					op,
+					false);
 
 	#else
 			mgpu::reduce(input,count,output,context);

@@ -17,6 +17,7 @@
 #include "util/copy_compare/compare_fusion_vector.hpp"
 #include "memory_ly/memory_conf.hpp"
 
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -79,6 +80,7 @@ struct copy_cpu_encap_encap_prp
 		meta_copy<copy_rtype>::meta_copy_(src.template get<prp_cp::value>(),dst.template get<prp_cp::value>());
 	}
 };
+
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -203,7 +205,6 @@ struct copy_cpu_encap_encap_general
 		meta_copy_d<copy_stype,copy_dtype>::meta_copy_d_(src.template get<T::value>(),dst.template get<T::value>());
 	}
 };
-
 
 
 /*! \brief this class is a functor for "for_each" algorithm
@@ -457,7 +458,7 @@ private:
 	typedef typename memory_traits_inte<T>::type Mem2;
 
 #ifdef SE_CLASS1
-	void check_init() const
+	__device__ __host__ void check_init() const
 	{
 		if (init == false)
 		{
@@ -473,7 +474,7 @@ private:
 public:
 
 #ifdef SE_CLASS1
-	~encapc()
+	__device__ __host__ ~encapc()
 	{init = false;}
 #endif
 
@@ -727,7 +728,7 @@ class encapc<dim,T,typename memory_traits_inte<T>::type>
 #endif
 
 #ifdef SE_CLASS1
-	void check_init() const
+	__device__ __host__ void check_init() const
 	{
 		if (init == false)
 		{
@@ -755,7 +756,7 @@ public:
 	static const int max_prop = T::max_prop;
 
 #ifdef SE_CLASS1
-	~encapc()
+	__device__ __host__ ~encapc()
 	{init = false;}
 #endif
 

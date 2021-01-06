@@ -630,8 +630,14 @@ BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 
 	int dev_mem[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-	dim3 wthr({32,1,1});
-	dim3 thr({16,1,1});
+	dim3 wthr;
+	wthr.x = 32;
+	wthr.y = 1;
+	wthr.z = 1;
+	dim3 thr;
+	thr.x = 16;
+	thr.y = 1;
+	thr.z = 1;
 
 	CUDA_LAUNCH_DIM3(test_se1_crash_gt2,wthr,thr,c3.toKernel(),c2.toKernel());
 	cudaDeviceSynchronize();
@@ -660,8 +666,14 @@ BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 	int dev_mem2[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 	{
-	dim3 wthr({32,1,1});
-	dim3 thr({16,1,1});
+	dim3 wthr;
+	wthr.x = 32;
+	wthr.y = 1;
+	wthr.z = 1;
+	dim3 thr;
+	thr.x = 16;
+	thr.y = 1;
+	thr.z = 1;
 
 	CUDA_LAUNCH_DIM3(test_se1_crash_gt3,wthr,thr,c2.toKernel(),c3.toKernel());
 	cudaDeviceSynchronize();

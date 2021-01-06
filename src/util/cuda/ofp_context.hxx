@@ -142,6 +142,8 @@ namespace mgpu
 					cudaEvent_t _event;
 
 					openfpm::vector_gpu<aggregate<unsigned char>> tmem;
+					openfpm::vector_gpu<aggregate<unsigned char>> tmem2;
+					openfpm::vector_gpu<aggregate<unsigned char>> tmem3;
 
 					// Making this a template argument means we won't generate an instance
 					// of dummy_k for each translation unit.
@@ -269,6 +271,16 @@ namespace mgpu
 					openfpm::vector_gpu<aggregate<unsigned char>> & getTemporalCUB()
 					{
 						return tmem;
+					}
+
+					openfpm::vector_gpu<aggregate<unsigned char>> & getTemporalCUB2()
+					{
+						return tmem2;
+					}
+
+					openfpm::vector_gpu<aggregate<unsigned char>> & getTemporalCUB3()
+					{
+						return tmem3;
 					}
 			};
 
