@@ -10,20 +10,22 @@
 
 #ifdef __NVCC__
 
-#if !defined(CUDA_ON_CPU) 
-#include "cub/cub.cuh"
-#else
 #include "util/cuda_launch.hpp"
-#endif
 
-
-#if CUDART_VERSION < 11000
-#include "util/cuda/moderngpu/kernel_reduce.hxx"
+#if CUDART_VERSION >= 11000
+	#ifndef CUDA_ON_CPU 
+	// Here we have for sure CUDA >= 11
+	#include "cub/cub.cuh"
+	#ifndef REDUCE_WITH_CUB
+		#define REDUCE_WITH_CUB
+	#endif
+	#endif
 #else
-#ifndef REDUCE_WITH_CUB
-#define REDUCE_WITH_CUB
+	// Here we have old CUDA
+	#include "cub_old/cub.cuh"
+	#include "util/cuda/moderngpu/kernel_reduce.hxx"
 #endif
-#endif
+
 #include "util/cuda/ofp_context.hxx"
 
 namespace openfpm

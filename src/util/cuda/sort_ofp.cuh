@@ -11,19 +11,22 @@
 
 #ifdef __NVCC__
 
-#if defined(CUDA_ON_CPU) 
 #include "util/cuda_launch.hpp"
+
+#if CUDART_VERSION >= 11000
+	#ifndef CUDA_ON_CPU 
+	// Here we have for sure CUDA >= 11
+	#include "cub/cub.cuh"
+	#ifndef SORT_WITH_CUB
+		#define SORT_WITH_CUB
+	#endif
+	#endif
+#else
+	// Here we have old CUDA
+	#include "cub_old/cub.cuh"
+	#include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #endif
 
-#if CUDART_VERSION < 11000
-#include "cub_old/cub.cuh"
-#include "util/cuda/moderngpu/kernel_mergesort.hxx"
-#else
-#include "cub/cub.cuh"
-#ifndef SORT_WITH_CUB
-#define SORT_WITH_CUB
-#endif
-#endif
 #include "util/cuda/ofp_context.hxx"
 
 template<typename key_t, typename val_t>
