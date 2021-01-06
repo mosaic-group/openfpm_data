@@ -63,7 +63,7 @@ namespace openfpm
 					false);
 
 	#else
-			mgpu::reduce(input,count,output,context);
+			mgpu::reduce(input,count,output,op,context);
 	#endif
 #endif
 	}
