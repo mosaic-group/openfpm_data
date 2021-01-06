@@ -10,18 +10,20 @@
 
 #ifdef __NVCC__
 
-#if defined(CUDA_ON_CPU)
 #include "util/cuda_launch.hpp"
-#endif
 
-#if CUDART_VERSION < 11000
-#include "cub_old/cub.cuh"
-#include "util/cuda/moderngpu/kernel_scan.hxx"
+#if CUDART_VERSION >= 11000
+	#ifndef CUDA_ON_CPU 
+	// Here we have for sure CUDA >= 11
+	#include "cub/cub.cuh"
+	#ifndef SCAN_WITH_CUB
+		#define SCAN_WITH_CUB
+	#endif
+	#endif
 #else
-#include "cub/cub.cuh"
-#ifndef SCAN_WITH_CUB
-#define SCAN_WITH_CUB
-#endif
+	// Here we have old CUDA
+	#include "cub_old/cub.cuh"
+	#include "util/cuda/moderngpu/kernel_scan.hxx"
 #endif
 #include "util/cuda/ofp_context.hxx"
 
@@ -67,6 +69,6 @@ namespace openfpm
 	}
 }
 
-#endif
+#endif /* __NVCC__ */
 
 #endif /* SCAN_OFP_HPP_ */
