@@ -46,6 +46,8 @@ if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
 	export PATH="$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
         ./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_HDF5.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
+	./install_LIBHILBERT.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
+        ./install_VCDEVEL.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4 gcc g++
 fi
 
 if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
@@ -53,6 +55,8 @@ if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
 	export PATH="/opt/bin:$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
 	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_HDF5.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
+        ./install_LIBHILBERT.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
+        ./install_VCDEVEL.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4 gcc g++
 fi
 
 if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
@@ -61,6 +65,8 @@ if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
 	export PATH="$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
 	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_HDF5.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
+        ./install_LIBHILBERT.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
+        ./install_VCDEVEL.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4 gcc g++
 fi
 
 # Go in the right branch
