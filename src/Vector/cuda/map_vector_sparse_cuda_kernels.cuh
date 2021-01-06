@@ -13,6 +13,7 @@
 #if CUDART_VERSION < 11000
 #include "util/cuda/cub_old/util_type.cuh"
 #include "util/cuda/cub_old/block/block_scan.cuh"
+#include "util/cuda/moderngpu/operators.hxx"
 #else
 	#if !defined(CUDA_ON_CPU)
 	#include "cub/util_type.cuh"
