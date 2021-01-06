@@ -11,15 +11,15 @@
 
 #ifdef __NVCC__
 
-#if !defined(CUDA_ON_CPU) 
-#include "cub/cub.cuh"
-#else
+#if defined(CUDA_ON_CPU) 
 #include "util/cuda_launch.hpp"
 #endif
 
 #if CUDART_VERSION < 11000
+#include "cub_old/cub.cuh"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #else
+#include "cub/cub.cuh"
 #ifndef SORT_WITH_CUB
 #define SORT_WITH_CUB
 #endif
