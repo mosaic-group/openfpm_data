@@ -20,6 +20,11 @@ set(OPENFPM_PDATA_DIR CACHE PATH "OpenFPM_pdata dirs")
 set(PETSC_ROOT CACHE PATH "If compiling with linear algebra indicate the PETSC root directory")
 set(ENV{PETSC_DIR} ${PETSC_ROOT})
 
+if (ENABLE_GPU)
+    set(CUDA_ON_CPU OFF)
+    enable_language(CUDA)
+    find_package(CUDA)
+endif()
 
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CUDA_STANDARD 14)
@@ -30,30 +35,6 @@ endif()
 
 set(ENV{PATH} "$ENV{PATH}:${HDF5_ROOT}/bin")
 set(HDF5_PREFER_PARALLEL TRUE)
-
-if(ENABLE_GPU)
-	enable_language(CUDA)
-	find_package(CUDA)
-
-        if (CUDA_VERSION_MAJOR EQUAL 9 AND CUDA_VERSION_MINOR EQUAL 2)
-                message("CUDA is compatible")
-                set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=611 --diag_suppress=2885 --diag_suppress=2886  --diag_suppress=2887  --diag_suppress=2888 --diag_suppress=186 --diag_suppress=111 " --expt-extended-lambda)
-        elseif ( CUDA_VERSION_MAJOR EQUAL 10 AND CUDA_VERSION_MINOR EQUAL 1 )
-                message("CUDA is compatible")
-		set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=2931 --diag_suppress=2930 --diag_suppress=2929 --diag_suppress=2928 --diag_suppress=1835  --diag_suppress=128 --diag_suppress=186 --diag_suppress=611 " --expt-extended-lambda )
-        elseif ( CUDA_VERSION_MAJOR EQUAL 10 AND CUDA_VERSION_MINOR EQUAL 2 )
-                message("CUDA is compatible")
-                set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=2977 --diag_suppress=2976 --diag_suppress=2979 --diag_suppress=186" --expt-extended-lambda)
-        elseif ( CUDA_VERSION_MAJOR EQUAL 11 AND CUDA_VERSION_MINOR EQUAL 0 )
-                message("CUDA is compatible 11.0")
-                set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=3059 --diag_suppress=3058 --diag_suppress=3057 --diag_suppress=3056 --diag_suppress=611  --diag_suppress=186" --expt-extended-lambda)
-	elseif ( CUDA_VERSION_MAJOR EQUAL 11 AND CUDA_VERSION_MINOR EQUAL 1 )
-                message("CUDA is compatible 11.1")
-                set(WARNING_SUPPRESSION_AND_OPTION_NVCC  -Xcudafe "--display_error_number --diag_suppress=3124 --diag_suppress=3126 --diag_suppress=3125 --diag_suppress=3123 --diag_suppress=611  --diag_suppress=186 --diag_suppress=128" --expt-extended-lambda)
-	else()
-                message(FATAL_ERROR "CUDA is incompatible, version 9.2 10.1 10.2 11.0 and 11.1 is only supported")
-        endif()
-endif()
 
 find_package(Boost 1.72.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options OPTIONAL_COMPONENTS fiber context)
 find_package(MPI REQUIRED)
@@ -127,6 +108,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_cmake.h.in ${CMAKE_
 
 include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
-add_subdirectory (src)
 add_subdirectory (../openfpm_vcluster openfpm_vcluster)
+
+set(WARNING_SUPPRESSION_AND_OPTION_NVCC ${WARNING_SUPPRESSION_AND_OPTION_NVCC} PARENT_SCOPE)
+set(WARNING_SUPPRESSION_AND_OPTION_NVCC_TEXT ${WARNING_SUPPRESSION_AND_OPTION_NVCC_TEXT} PARENT_SCOPE)
+
+add_subdirectory (src)
 
