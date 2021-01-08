@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
 
