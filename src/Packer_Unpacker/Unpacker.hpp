@@ -266,6 +266,21 @@ public:
 	{
 		obj.template unpack<prp...>(mem, sub_it, ps, context, opt);
 	}
+
+	template<typename grid_sub_it_type,
+			 typename header_type,
+			 typename context_type,
+			 unsigned int ... prp> static void unpack_with_header(ExtPreAlloc<Mem> & mem, 
+			 													  grid_sub_it_type & sub_it, 
+																  T & obj, 
+																  header_type & header, 
+																  int ih, 
+																  Unpack_stat & ps, 
+																  context_type & context, 
+																  rem_copy_opt opt)
+	{
+		obj.template unpack_with_headers<prp...>(mem, sub_it, header, ih, ps, context, opt);
+	}
 };
 
 

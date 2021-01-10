@@ -499,10 +499,10 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 	for (unsigned int iter=0; iter<maxIter; ++iter)
 	{
 		sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
-        sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
+        sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.01);
 	}
 
-	sparseGrid.template deviceToHost<0>();
+	sparseGrid.template deviceToHost<0,1>();
 
 	// Compare
 	bool match = true;
@@ -511,7 +511,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 		auto coord = sparseGrid.getCoord(i);
 		float expectedValue = 10.0 * coord.get(0) / (gridSize.x * blockEdgeSize - 1);
 
-		match &= fabs(sparseGrid.template get<0>(coord) - expectedValue) < 1e-2;
+		match &= fabs(sparseGrid.template get<1>(coord) - expectedValue) < 1e-2;
 
 	}
 

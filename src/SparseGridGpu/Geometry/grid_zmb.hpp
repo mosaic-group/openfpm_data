@@ -22,7 +22,7 @@
  * tuned for blocked data.
  */
 template<unsigned int dim, unsigned int blockEdgeSize, typename indexT>
-class grid_zmb : private grid_smb<dim,blockEdgeSize>
+class grid_zmb : private grid_smb<dim,blockEdgeSize,indexT>
 {
 
 public:
@@ -30,34 +30,34 @@ public:
     grid_zmb()	{}
 
     __host__ __device__ grid_zmb(const size_t (& sz)[dim])
-    :grid_smb<dim,blockEdgeSize>(sz)
+    :grid_smb<dim,blockEdgeSize,indexT>(sz)
     {}
 
     __host__ __device__ grid_zmb(const size_t domainBlockEdgeSize)
-    :grid_smb<dim,blockEdgeSize>(domainBlockEdgeSize)
+    :grid_smb<dim,blockEdgeSize,indexT>(domainBlockEdgeSize)
     {}
 
     template<typename T>
     __host__ __device__ grid_zmb(const grid_sm<dim, T> blockGrid)
-    :grid_smb<dim,blockEdgeSize>(blockGrid)
+    :grid_smb<dim,blockEdgeSize,indexT>(blockGrid)
     {}
 
 #ifdef __NVCC__
     //Constructors from dim3 and uint3 objects
     __host__ __device__ grid_zmb(const dim3 blockDimensions)
-    :grid_smb<dim,blockEdgeSize>(blockDimensions)
+    :grid_smb<dim,blockEdgeSize,indexT>(blockDimensions)
     {}
 
 
 #endif // __NVCC__
 
     __host__ __device__ grid_zmb(const grid_zmb<dim, blockEdgeSize, indexT> &other)
-    :grid_smb<dim,blockEdgeSize>(other)
+    :grid_smb<dim,blockEdgeSize,indexT>(other)
     {}
 
     __host__ __device__ grid_zmb &operator=(const grid_zmb<dim, blockEdgeSize, indexT> &other)
     {
-    	((grid_smb<dim,blockEdgeSize> *)this)->operator=(other);
+    	((grid_smb<dim,blockEdgeSize,indexT> *)this)->operator=(other);
         return *this;
     }
 
@@ -115,7 +115,7 @@ public:
 
     __host__ __device__ const indexT (& getSize() const)[dim]
 	{
-    	return grid_smb<dim,blockEdgeSize>::getSize();
+    	return grid_smb<dim,blockEdgeSize,indexT>::getSize();
 	}
 
 
@@ -123,12 +123,12 @@ public:
     template<typename indexT_>
     inline __host__ __device__ grid_key_dx<dim,indexT> getGlobalCoord(const grid_key_dx<dim, indexT_> & blockCoord, unsigned int offset) const
     {
-    	return grid_smb<dim,blockEdgeSize>::getGlobalCoord(blockCoord,offset);
+    	return grid_smb<dim,blockEdgeSize,indexT>::getGlobalCoord(blockCoord,offset);
     }
 
     inline indexT getBlockSize() const
     {
-    	return grid_smb<dim,blockEdgeSize>::getBlockSize();
+    	return grid_smb<dim,blockEdgeSize,indexT>::getBlockSize();
     }
 };
 

@@ -163,6 +163,26 @@ public:
 	{
 	}
 
+	/*! \brief Stub does not do anything
+	*
+	*/
+	template<typename pointers_type, 
+			 typename headers_type, 
+			 typename result_type, 
+			 unsigned int ... prp >
+	static void unpack_headers(pointers_type & pointers, headers_type & headers, result_type & result, int n_slot)
+	{}
+
+	template<unsigned int ... prp, typename S2, typename header_type, typename ite_type, typename context_type>
+	void unpack_with_headers(ExtPreAlloc<S2> & mem,
+				ite_type & sub_it,
+				header_type & headers,
+				int ih,
+				Unpack_stat & ps,
+				context_type &context,
+				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
+	{}
+
 	/*! \brief It copy a grid
 	 *
 	 * \param g grid to copy
@@ -742,6 +762,12 @@ public:
 	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(sz)
 	{
 	}
+
+	/*! \brief Stub does not do anything
+	*
+	*/
+	static void unpack_headers()
+	{}
 
 	/*! \brief Fill the memory with a byte
 	 *

@@ -25,7 +25,6 @@ endif()
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CUDA_STANDARD 14)
 
-
 set(Vc_DIR "${Vc_ROOT}/lib/cmake/Vc/")
 message("Searching Vc in ${Vc_DIR}")
 
