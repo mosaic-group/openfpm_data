@@ -8,6 +8,7 @@
 #ifndef MAP_VECTOR_SPARSE_HPP_
 #define MAP_VECTOR_SPARSE_HPP_
 
+#include "util/cuda_launch.hpp"
 #include "Vector/map_vector.hpp"
 #include "Vector/cuda/map_vector_sparse_cuda_ker.cuh"
 #include "Vector/cuda/map_vector_sparse_cuda_kernels.cuh"
@@ -15,12 +16,12 @@
 #include <iostream>
 #include <limits>
 
-#ifdef __NVCC__
-#include "util/cuda/moderngpu/kernel_scan.hxx"
-#include "util/cuda/moderngpu/kernel_mergesort.hxx"
-#include "util/cuda/moderngpu/kernel_segreduce.hxx"
-#include "util/cuda/moderngpu/kernel_merge.hxx"
-#include "util/cuda/kernels.cuh"
+#if defined(__NVCC__)
+  #if !defined(CUDA_ON_CPU)
+	#include "util/cuda/moderngpu/kernel_segreduce.hxx"
+	#include "util/cuda/moderngpu/kernel_merge.hxx"
+  #endif
+ #include "util/cuda/kernels.cuh"
 #endif
 
 #include "util/cuda/scan_ofp.cuh"
@@ -201,6 +202,7 @@ namespace openfpm
                 )
         {
 #ifdef __NVCC__
+
             CUDA_LAUNCH((solve_conflicts<
                         decltype(vct_index_merge.toKernel()),
                         decltype(vct_data_old.toKernel()),
@@ -232,6 +234,8 @@ namespace openfpm
                 CUDA_LAUNCH(realign,itew,vct_index_out.toKernel(),vct_data_out.toKernel(),
                                       vct_index_old.toKernel(), vct_data_old.toKernel(),
                                       vct_index_dtmp.toKernel());
+
+
 #else // __NVCC__
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
 #endif // __NVCC__
@@ -1107,6 +1111,7 @@ namespace openfpm
 						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp4.template getDeviceBuffer<0>(),vct_add_index_unique.size(),
 						(Ti *)vct_merge_index.template getDeviceBuffer<0>(),(Ti *)vct_merge_index_map.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
 
+
 #endif
 		}
 
@@ -1186,6 +1191,7 @@ namespace openfpm
                         context
                     );
 
+
 #else
 			std::cout << __FILE__ << ":" << __LINE__ << " error: you are supposed to compile this file with nvcc, if you want to use it with gpu" << std::endl;
 #endif
@@ -1218,7 +1224,6 @@ namespace openfpm
 			merge_indexes<v_reduce ... >(vct_add_index_cont_0,vct_add_index_unique,
 										 vct_index_tmp,vct_index_tmp2,
 										 context);
-
 
 			merge_datas<v_reduce ... >(vct_add_data_reord,vct_add_index_unique,vct_add_data,vct_add_index_cont_1,context);
 
@@ -1266,7 +1271,7 @@ namespace openfpm
 										n_gpu_rem_block_slot);
 
 			// now we sort
-			mergesort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
+			openfpm::sort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
 					vct_add_index_cont_0.size(), mgpu::template less_t<Ti>(), context);
 
 			auto ite = vct_add_index_cont_0.getGPUIterator();
@@ -1288,7 +1293,7 @@ namespace openfpm
 
 			vct_add_index_unique.resize(n_ele_unique);
 
-			mgpu::mergesort((Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
+			openfpm::sort((Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
 							vct_add_index_unique.size(),mgpu::template less_t<Ti>(),context);
 
 			// Then we merge the two list vct_index and vct_add_index_unique

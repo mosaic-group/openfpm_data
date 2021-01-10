@@ -7,6 +7,8 @@
 
 constexpr int BLOCK_SIZE_STENCIL = 128;
 
+#include "config.h"
+#include "util/cuda_launch.hpp"
 #include <cstdlib>
 #include <SparseGridGpu/BlockMapGpu.hpp>
 #include <Grid/iterators/grid_skin_iterator.hpp>
@@ -17,15 +19,10 @@ constexpr int BLOCK_SIZE_STENCIL = 128;
 #include "Geometry/grid_zmb.hpp"
 #include "util/stat/common_statistics.hpp"
 #include "Iterators/SparseGridGpu_iterator.hpp"
-#include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "Space/SpaceBox.hpp"
 
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
 #include "VTKWriter/VTKWriter.hpp"
-#endif
-
-#ifdef OPENFPM_PDATA
-#include "VCluster/VCluster.hpp"
 #endif
 
 constexpr int NO_ITERATOR_INIT = 0;

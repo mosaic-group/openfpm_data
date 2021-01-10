@@ -2,6 +2,7 @@
 #ifndef BOX_HPP_
 #define BOX_HPP_
 
+
 #include "Space/Shape/Sphere.hpp"
 #include <boost/fusion/sequence/intrinsic/at_c.hpp>
 #include "Grid/grid_key.hpp"

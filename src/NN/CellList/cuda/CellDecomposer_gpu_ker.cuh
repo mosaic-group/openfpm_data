@@ -8,6 +8,7 @@
 #ifndef CELLDECOMPOSER_GPU_KER_HPP_
 #define CELLDECOMPOSER_GPU_KER_HPP_
 
+#include "util/cuda_launch.hpp"
 #include "util/multi_array_openfpm/array_openfpm.hpp"
 #include "Grid/grid_sm.hpp"
 #include "NN/CellList/cuda/Cuda_cell_list_util_func.hpp"

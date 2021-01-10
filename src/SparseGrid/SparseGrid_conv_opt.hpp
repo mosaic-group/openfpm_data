@@ -110,7 +110,7 @@ struct conv_impl
 	}
 };
 
-#ifndef __NVCC__
+#if !defined(__NVCC__) || defined(CUDA_ON_CPU)
 
 
 template<unsigned int dir,int p, unsigned int prop_src1,typename chunk_type, typename vect_type, typename ids_type>

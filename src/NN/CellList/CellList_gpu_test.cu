@@ -6,7 +6,7 @@
  */
 
 #define BOOST_GPU_ENABLED __host__ __device__
-
+#include "util/cuda_launch.hpp"
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
@@ -16,7 +16,6 @@
 #include "CellList.hpp"
 #include "util/boost/boost_array_openfpm.hpp"
 #include  "Point_test.hpp"
-#include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "util/cuda/scan_cuda.cuh"
 #include "util/cuda_util.hpp"
 
@@ -68,7 +67,8 @@ void test_sub_index()
 	}
 
 	cl_n.resize(17*17*17);
-	CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
+	cl_n.template fill<0>(0);
+	//CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
 	part_ids.resize(pl.size());
 
@@ -84,7 +84,7 @@ void test_sub_index()
 
 	no_transform_only<dim,T> t(mt,pt);
 
-	subindex<false,dim,T,cnt_type,ids_type,no_transform_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
+	CUDA_LAUNCH_DIM3((subindex<false,dim,T,cnt_type,ids_type,no_transform_only<dim,T>>),ite.wthr,ite.thr,div,
 																	spacing,
 																	off,
 																	t,
@@ -188,7 +188,8 @@ void test_sub_index2()
 	}
 
 	cl_n.resize(17*17*17);
-	CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
+	cl_n.template fill<0>(0);
+//	CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
 	part_ids.resize(pl.size());
 
@@ -203,7 +204,7 @@ void test_sub_index2()
 
 	shift_only<dim,T> t(mt,pt);
 
-	subindex<false,dim,T,cnt_type,ids_type,shift_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
+	CUDA_LAUNCH_DIM3((subindex<false,dim,T,cnt_type,ids_type,shift_only<dim,T>>),ite.wthr,ite.thr,div,
 																	spacing,
 																	off,
 																	t,
@@ -383,7 +384,7 @@ void test_fill_cell()
 	part_ids.template hostToDevice<0>();
 
 	// Here we test fill cell
-	fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>><<<itgg.wthr,itgg.thr>>>(0,
+	CUDA_LAUNCH_DIM3((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg.wthr,itgg.thr,0,
 																				   div_c,
 																				   off,
 																				   part_ids.size(),
@@ -465,7 +466,7 @@ void test_cell_count_n()
 	size_t sz[] = {17,17,17};
 	grid_sm<3,void> gs(sz);
 
-	construct_cells<<<1,1>>>(vs.toKernel(),gs);
+	CUDA_LAUNCH_DIM3(construct_cells,1,1,vs.toKernel(),gs);
 
 	mgpu::ofp_context_t ctx;
 
@@ -664,11 +665,11 @@ void test_reorder_parts(size_t n_part)
 	parts_prp.template hostToDevice<0,1,2,3>();
 
 	// Here we test fill cell
-	reorder_parts<decltype(parts_prp.toKernel()),
+	CUDA_LAUNCH_DIM3((reorder_parts<decltype(parts_prp.toKernel()),
 			      decltype(pl.toKernel()),
 			      decltype(sort_to_not_sort.toKernel()),
 			      cnt_type,
-			      shift_ph<0,cnt_type>><<<ite.wthr,ite.thr>>>(pl.size(),
+			      shift_ph<0,cnt_type>>),ite.wthr,ite.thr,pl.size(),
 			                                                  parts_prp.toKernel(),
 			                                                  parts_prp_out.toKernel(),
 			                                                  pl.toKernel(),
@@ -1983,7 +1984,7 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	cl1.hostToDevice();
 	v.hostToDevice<0>();
 
-	cl_offload_gpu<decltype(cl1.toKernel()),decltype(v.toKernel()),decltype(os.toKernel())><<<ite.wthr,ite.thr>>>(cl1.toKernel(),v.toKernel(),os.toKernel());
+	CUDA_LAUNCH_DIM3((cl_offload_gpu<decltype(cl1.toKernel()),decltype(v.toKernel()),decltype(os.toKernel())>),ite.wthr,ite.thr,cl1.toKernel(),v.toKernel(),os.toKernel());
 
 	os.deviceToHost<0>();
 
@@ -2012,9 +2013,9 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	openfpm::vector_gpu<aggregate<int>> os_list;
 	os_list.resize(size_list);
 
-	cl_offload_gpu_list<decltype(cl1.toKernel()),decltype(v.toKernel()),
-			            decltype(os_scan.toKernel()),decltype(os_list.toKernel())><<<ite.wthr,ite.thr>>>
-			            (cl1.toKernel(),v.toKernel(),os_scan.toKernel(),os_list.toKernel());
+	CUDA_LAUNCH_DIM3((cl_offload_gpu_list<decltype(cl1.toKernel()),decltype(v.toKernel()),
+			            decltype(os_scan.toKernel()),decltype(os_list.toKernel())>),ite.wthr,ite.thr,
+			            cl1.toKernel(),v.toKernel(),os_scan.toKernel(),os_list.toKernel());
 
 	os_list.deviceToHost<0>();
 

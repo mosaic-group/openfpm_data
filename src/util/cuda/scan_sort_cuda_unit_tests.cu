@@ -2,6 +2,7 @@
 
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
+#include "util/cuda_launch.hpp"
 #include <boost/test/unit_test.hpp>
 
 #include "util/cuda_util.hpp"

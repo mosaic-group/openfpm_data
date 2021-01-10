@@ -3,7 +3,9 @@
 #include <Vector/map_vector.hpp>
 #include <Vector/cuda/map_vector_sparse_cuda_kernels.cuh>
 #include "util/cuda/scan_ofp.cuh"
+#ifndef CUDA_ON_CPU
 #include "util/cuda/moderngpu/kernel_merge.hxx"
+#endif
 
 BOOST_AUTO_TEST_SUITE( vector_sparse_cuda_kernels )
 
@@ -54,7 +56,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	thr.y = 1;
 	thr.z = 1;
 
-	construct_insert_list_key_only<<<wthr,thr>>>(block_insert.toKernel(),block_n.toKernel(),
+	CUDA_LAUNCH_DIM3(construct_insert_list_key_only,wthr,thr,block_insert.toKernel(),block_n.toKernel(),
 										block_n_scan.toKernel(),output_list_0.toKernel(),output_list_1.toKernel(),
 										nslot);
 
@@ -168,7 +170,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	vct_index.resize(vct_add_index.size() + vct_index_old.size());
 
-	mgpu::standard_context_t ctx(false);
+	mgpu::ofp_context_t ctx;
 
 	// host to device
 	vct_index_old.template hostToDevice<0,1>();
@@ -262,7 +264,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 	vct_index.resize(vct_add_index.size() + vct_index_old.size());
 	merge_indexes.resize(vct_index.size());
 
-	mgpu::standard_context_t ctx(false);
+	mgpu::ofp_context_t ctx;
 
 	// host to device
 	vct_index_old.template hostToDevice<0,1>();
@@ -282,7 +284,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 	vct_data_out.resize(vct_index.size());
 	vct_tot_out.resize(ite.wthr.x);
 
-	solve_conflicts<decltype(vct_index.toKernel()),decltype(vct_data_old.toKernel()),decltype(vct_tot_out.toKernel()),bdim,sadd_<0>,smin_<1>,smax_<2>><<<ite.wthr,ite.thr>>>(vct_index.toKernel(),vct_data_old.toKernel(),
+	CUDA_LAUNCH_DIM3((solve_conflicts<decltype(vct_index.toKernel()),decltype(vct_data_old.toKernel()),decltype(vct_tot_out.toKernel()),bdim,sadd_<0>,smin_<1>,smax_<2>>),ite.wthr,ite.thr,vct_index.toKernel(),vct_data_old.toKernel(),
 						  merge_indexes.toKernel(),vct_add_data.toKernel(),
 						  vct_index_out.toKernel(),vct_data_out.toKernel(),
 						  vct_tot_out.toKernel(),vct_data_old.size());
@@ -386,7 +388,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 	vct_data_out.resize(vct_index.size());
 
 	int nblock = vct_tot_out.size();
-	realign<<<nblock,128>>>(vct_index.toKernel(),vct_data.toKernel(),vct_index_out.toKernel(),vct_data_out.toKernel(),vct_tot_out.toKernel());
+	CUDA_LAUNCH_DIM3(realign,nblock,128,vct_index.toKernel(),vct_data.toKernel(),vct_index_out.toKernel(),vct_data_out.toKernel(),vct_tot_out.toKernel());
 
 	vct_index_out.deviceToHost<0>();
 	vct_data_out.deviceToHost<0,1,2>();

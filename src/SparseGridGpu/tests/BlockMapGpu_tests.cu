@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(testBackground)
 	// Get output
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(gridSize * blockSize);
-	copyBlocksToOutput<0> <<< gridSize, blockSize >>> (sparseGrid.toKernel(), output.toKernel());
+	CUDA_LAUNCH_DIM3((copyBlocksToOutput<0>), gridSize, blockSize, sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
 	// Insert values
-	insertValues<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
+	CUDA_LAUNCH_DIM3((insertValues<0>), gridSize, blockSizeInsert ,blockMap.toKernel());
 
 	// Flush inserts
 	mgpu::ofp_context_t ctx;
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(gridSizeRead * blockSizeRead);
 
-	copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (blockMap.toKernel(), output.toKernel());
+	CUDA_LAUNCH_DIM3((copyBlocksToOutput<0>), gridSizeRead, blockSizeRead,blockMap.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	blockMap.template deviceToHost<0>();
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE(testInsert_halfBlock)
 	blockMap.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
 	// Insert values
-	insertValuesHalfBlock<0> <<< gridSize, blockSizeInsert >>> (blockMap.toKernel());
+	CUDA_LAUNCH_DIM3((insertValuesHalfBlock<0>), gridSize, blockSizeInsert, blockMap.toKernel());
 
 	// Flush inserts
 	mgpu::ofp_context_t ctx;
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(testInsert_halfBlock)
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(gridSizeRead * blockSizeRead);
 
-	copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (blockMap.toKernel(), output.toKernel());
+	CUDA_LAUNCH_DIM3((copyBlocksToOutput<0>), gridSizeRead, blockSizeRead ,blockMap.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	blockMap.template deviceToHost<0>();
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(testInsert_blocked)
 	sparseGrid.setGPUInsertBuffer(gridSize, bufferPoolSize);
 
 	// Insert values
-	insertValuesBlocked<0, 2> <<< gridSize, blockSizeInsert >>> (sparseGrid.toKernel());
+	CUDA_LAUNCH_DIM3((insertValuesBlocked<0, 2>), gridSize, blockSizeInsert,sparseGrid.toKernel());
 
 	// Flush inserts
 	mgpu::ofp_context_t ctx;
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(testInsert_blocked)
 	openfpm::vector_gpu<AggregateOutT> output;
 	output.resize(gridSizeRead * blockSizeRead);
 
-	copyBlocksToOutput<0> <<< gridSizeRead, blockSizeRead >>> (sparseGrid.toKernel(), output.toKernel());
+	CUDA_LAUNCH_DIM3((copyBlocksToOutput<0>), gridSizeRead, blockSizeRead, sparseGrid.toKernel(), output.toKernel());
 
 	output.template deviceToHost<0>();
 	sparseGrid.template deviceToHost<0>();
