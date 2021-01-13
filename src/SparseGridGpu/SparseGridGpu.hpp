@@ -2961,18 +2961,22 @@ public:
 
     	RestorePackVariableIfKeepGeometry(opt,is_pack_remote);
 
-    	if (pack_subs.size() <= 32)
-    	{
-    		pack_sg_implement<32,prp...>(mem,sts,opt,is_pack_remote);
-    	}
-    	else if (pack_subs.size() <= 64)
-    	{
-    		pack_sg_implement<64, prp...>(mem,sts,opt,is_pack_remote);
-    	}
-    	else
-    	{
-    		std::cout << __FILE__ << ":" << __LINE__ << " error no implementation available of packCalculate, create a new case for " << pack_subs.size() << std::endl;
-    	}
+        if (pack_subs.size() <= 32)
+        {
+                pack_sg_implement<32,prp...>(mem,sts,opt,is_pack_remote);
+        }
+        else if (pack_subs.size() <= 64)
+        {
+                pack_sg_implement<64, prp...>(mem,sts,opt,is_pack_remote);
+        }
+        else if (pack_subs.size() <= 80)
+        {
+                pack_sg_implement<80, prp...>(mem,sts,opt,is_pack_remote);
+        }
+        else
+        {
+                std::cout << __FILE__ << ":" << __LINE__ << " error no implementation available of packCalculate, create a new case for " << pack_subs.size() << std::endl;
+        }
 
     	savePackVariableIfNotKeepGeometry(opt,is_pack_remote);
 	}
