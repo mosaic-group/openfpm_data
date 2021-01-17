@@ -266,15 +266,6 @@ struct HeatStencil
             }
             // enlargedBlock[linId] = cur + dt * laplacian;
             res = cur + dt * laplacian;
-
-            if (pointCoord.get(0) == 0 && pointCoord.get(1) == 8)
-            {
-            auto nPlusIdX = enlargedBlock[sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, 0, 1)];
-            auto nMinusIdX = enlargedBlock[sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, 0, -1)];
-            auto nPlusIdY = enlargedBlock[sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, 1, 1)];
-            auto nMinusIdY = enlargedBlock[sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, 1, -1)];
-            printf("POINT STENCIL: %f %f %f %f %f DIFF: %f\n",nPlusIdX,nMinusIdX,nPlusIdY,nMinusIdY,cur,nPlusIdX+nMinusIdX+nPlusIdY+nMinusIdY-4.0*cur);
-            }
         }
 
         __syncthreads();
