@@ -98,7 +98,7 @@ class memory_array
 	}
 
 	//! Return the pointer
-	void * get_pointer() const
+	__device__ __host__ void * get_pointer() const
 	{
 		return ptr;
 	}

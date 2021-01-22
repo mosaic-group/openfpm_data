@@ -410,6 +410,14 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 			match &= vct_data_out.template get<1>(pr) == vct_data.template get<1>(i*128 + j);
 			match &= vct_data_out.template get<2>(pr) == vct_data.template get<2>(i*128 + j);
 
+			if (match == false)
+			{
+				std::cout << 0 << " " << pr << " " << i*128 + j << "  " << vct_index_out.template get<0>(pr) << "  " << vct_index.template get<0>(i*128 + j) << std::endl;
+				std::cout << 1 << " " << pr << " " << i*128 + j << "  " << vct_data_out.template get<0>(pr) << "  " << vct_data.template get<0>(i*128 + j) << std::endl;
+				std::cout << 2 << " " << pr << " " << i*128 + j << "  " << vct_data_out.template get<1>(pr) << "  " << vct_data.template get<1>(i*128 + j) << std::endl;
+				std::cout << 3 << " " << pr << " " << i*128 + j << "  " << vct_data_out.template get<2>(pr) << "  " << vct_data.template get<2>(i*128 + j) << std::endl;
+			}
+
 			++pr;
 		}
 	}

@@ -365,7 +365,9 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 
 		if (match == false)
 		{
-			std::cout << vs.template get<2>(9000 - 2*i) << "   " << 2*i + 23000 << std::endl;
+			std::cout << 0 << " " << vs.template get<0>(9000 - 2*i) << "   " << 2*i + 3000 + 2*i + 1100 << std::endl;
+			std::cout << 1 << " " << vs.template get<1>(9000 - 2*i) << "   " << 2*i + 11100 << std::endl;
+			std::cout << 2 << " " << vs.template get<2>(9000 - 2*i) << "   " << 2*i + 23000 << std::endl;
 		}
 	}
 
@@ -398,6 +400,13 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 		match &= vs.template get<0>(2*i) == 5 - 2*i + 3000 + 9000;
 		match &= vs.template get<1>(2*i) == 1;
 		match &= vs.template get<2>(2*i) == 23000 + 9000 - 2*i;
+
+		if (match == false)
+		{
+			std::cout << i << "  " << vs.template get<0>(2*i) << "   " << 5 - 2*i + 3000 + 9000 << std::endl;
+			std::cout << i << "  " << vs.template get<1>(2*i) << "   " << 1 << std::endl;
+			std::cout << i << "  " << vs.template get<2>(2*i) << "   " << 23000 + 9000 - 2*i << std::endl;
+		}
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);

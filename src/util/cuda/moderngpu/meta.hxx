@@ -37,7 +37,11 @@
 
 #ifndef PRAGMA_UNROLL
 #ifdef __CUDA_ARCH__
+  #ifndef __clang__
   #define PRAGMA_UNROLL #pragma PRAGMA_UNROLL
+  #else
+  #define PRAGMA_UNROLL
+  #endif
 #else
   #define PRAGMA_UNROLL
 #endif

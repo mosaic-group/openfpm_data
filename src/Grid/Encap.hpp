@@ -488,7 +488,7 @@ public:
 	static const int max_prop = T::max_prop;
 
 	//! constructor from a reference object
-	inline encapc(type & data_c)
+	__device__ __host__ inline encapc(type & data_c)
 	:data_c(data_c)
 	{
 #ifdef SE_CLASS1

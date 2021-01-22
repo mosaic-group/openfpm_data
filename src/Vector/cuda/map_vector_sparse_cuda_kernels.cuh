@@ -690,12 +690,15 @@ __global__ void realign(vector_index_type vct_index, vector_data_type vct_data,
 
 	int tot = vct_tot_out_scan.template get<0>(blockIdx.x);
 
-	//! It is xorrect > not >=, The last thread in the block of solveConflict always copy the data
+	//! It is xorrect > not >=, The last thread in the block of solveConflict always copy the data 
 	//! This mean that threadIdx.x == tot have always data to copy independently that the indexes are equal
 	//! or different
-	if (threadIdx.x > tot)
+	if (threadIdx.x > tot) // NOTE COMMENT UP !!!!!!!!!
 	{return;}
 
+    if (threadIdx.x == tot && vct_tot_out_scan.template get<2>(blockIdx.x) == 1)
+	{return;}
+	
 	// this branch exist if the previous block (last thread) had a predicate == 0 in resolve_conflict in that case
 	// the thread 0 of the next block does not have to produce any data
 	if (threadIdx.x == 0 && blockIdx.x != 0 && vct_tot_out_scan.template get<2>(blockIdx.x - 1) == 0)
