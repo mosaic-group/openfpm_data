@@ -68,10 +68,11 @@ if (CUDA_FOUND)
 		isolation.cu
         	)
 
+	add_dependencies(isolation ofpmmemory)
+
 endif()
 
 add_dependencies(mem_map ofpmmemory)
-add_dependencies(isolation ofpmmemory)
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
@@ -100,7 +101,9 @@ endif ()
 
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
-    target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
+    if (CUDA_FOUND)
+    	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
+    endif()
 ENDIF()
 
 
