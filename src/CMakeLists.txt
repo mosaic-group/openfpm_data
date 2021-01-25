@@ -62,9 +62,13 @@ add_executable(mem_map ${CUDA_SOURCES}
 
 set_property(TARGET mem_map PROPERTY CUDA_ARCHITECTURES 60 75)
 
-add_executable(isolation
-	isolation.cu
-        )
+if (CUDA_FOUND)
+
+	add_executable(isolation
+		isolation.cu
+        	)
+
+endif()
 
 add_dependencies(mem_map ofpmmemory)
 add_dependencies(isolation ofpmmemory)
