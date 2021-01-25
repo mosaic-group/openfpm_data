@@ -29,11 +29,11 @@ public:\
 \
 	static const unsigned int nvals = exp1::nvals;\
 \
-	inline explicit point_expression_op(const exp1 & o1)\
+	__device__ __host__ inline explicit point_expression_op(const exp1 & o1)\
 	:o1(o1),scal(0)\
 	{}\
 \
-	inline void init() const\
+	__device__ __host__ inline void init() const\
 	{\
 		o1.init();\
 	}\

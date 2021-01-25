@@ -422,7 +422,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the value
 	 *
 	 */
-	inline T value(size_t i) const
+	__device__ __host__ inline T value(size_t i) const
 	{
 		return get(i);
 	}

@@ -1107,6 +1107,7 @@ namespace openfpm
 
 			// we merge with vct_index with vct_add_index_unique in vct_merge_index, vct_merge_index contain the merged indexes
 			//
+
 			mgpu::merge((Ti *)vct_index.template getDeviceBuffer<0>(),(Ti *)vct_m_index.template getDeviceBuffer<0>(),vct_index.size(),
 						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp4.template getDeviceBuffer<0>(),vct_add_index_unique.size(),
 						(Ti *)vct_merge_index.template getDeviceBuffer<0>(),(Ti *)vct_merge_index_map.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);

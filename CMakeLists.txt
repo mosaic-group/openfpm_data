@@ -17,15 +17,9 @@ set(ALPAKA_ROOT CACHE PATH "Alpaka root path")
 set(CUDA_ON_CPU CACHE BOOL "Make Cuda work on heap")
 
 if (ENABLE_GPU)
-#    set(CUDA_ON_CPU OFF)
-#    enable_language(CUDA)
-#    find_package(CUDA)
-#-----------------------------
-        find_package(CUDA)
-        set(CMAKE_CUDA_COMPILER_LIBRARY_ROOT ${CUDA_TOOLKIT_ROOT_DIR})
-        message("AAAAAAAAAAAAAAAAAAAAAAAAA ${CUDA_TOOLKIT_ROOT_DIR}    ${CMAKE_CUDA_COMPILER_LIBRARY_ROOT}")
-        set(CMAKE_CUDA_COMPILER clang)
-        enable_language(CUDA)
+    set(CUDA_ON_CPU OFF)
+    enable_language(CUDA)
+    find_package(CUDA)
 endif()
 
 set (CMAKE_CXX_STANDARD 14)

@@ -158,7 +158,7 @@ struct object_s_di_e_op
 	 * \param dst destination object
 	 *
 	 */
-	object_s_di_e_op(const v_src & src, v_dst & dst)
+	__device__ __host__ object_s_di_e_op(const v_src & src, v_dst & dst)
 	:src(src),dst(dst)
 	{
 	};

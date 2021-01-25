@@ -26,10 +26,10 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	// fill block insert of some data
 	for (int i = 0 ; i < nblock ; i++)
 	{
-		block_n.template get<0>(i) = ((float)rand() / RAND_MAX) * 511;
+		block_n.template get<0>(i) = ((float)rand() / (float)RAND_MAX) * 511;
 		for (int j = 0 ; j < block_n.template get<0>(i) ; j++)
 		{
-			block_insert.template get<0>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
+			block_insert.template get<0>(i*nslot + j) = ((float)rand() / (float)RAND_MAX) * 511;
 		}
 	}
 
@@ -96,10 +96,10 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use_small_pool )
 	// fill block insert of some data
 	for (int i = 0 ; i < nblock ; i++)
 	{
-		block_n.template get<0>(i) = ((float)rand() / RAND_MAX) * 16;
+		block_n.template get<0>(i) = ((float)rand() / (float)RAND_MAX) * 16;
 		for (int j = 0 ; j < block_n.template get<0>(i) ; j++)
 		{
-			block_insert.template get<0>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
+			block_insert.template get<0>(i*nslot + j) = ((float)rand() / (float)RAND_MAX) * 511;
 		}
 	}
 
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	for (size_t i = 0 ; i < vct_index_old.size() ; i++)
 	{
-		vct_index_old.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_index_old.template get<0>(i) = 17*(float)rand()/(float)RAND_MAX + i * 17;
 		vct_index_old.template get<1>(i) = i;
 	}
 
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	for (size_t i = 0 ; i < vct_add_index.size() ; i++)
 	{
-		vct_add_index.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_add_index.template get<0>(i) = 17*(float)rand()/(float)RAND_MAX + i * 17;
 		vct_add_index.template get<1>(i) = i+vct_index_old.size();
 	}
 
@@ -238,12 +238,12 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 
 	for (size_t i = 0 ; i < vct_index_old.size() ; i++)
 	{
-		vct_index_old.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_index_old.template get<0>(i) = 17*(float)rand()/(float)RAND_MAX + i * 17;
 		vct_index_old.template get<1>(i) = i;
 
-		vct_data_old.template get<0>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data_old.template get<1>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data_old.template get<2>(i) = 128*(float)rand()/RAND_MAX;
+		vct_data_old.template get<0>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_data_old.template get<1>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_data_old.template get<2>(i) = 128*(float)rand()/(float)RAND_MAX;
 	}
 
 	vct_add_index.resize(100);
@@ -251,12 +251,12 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 
 	for (size_t i = 0 ; i < vct_add_index.size() ; i++)
 	{
-		vct_add_index.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_add_index.template get<0>(i) = 17*(float)rand()/(float)RAND_MAX + i * 17;
 		vct_add_index.template get<1>(i) = i+vct_index_old.size();
 
-		vct_add_data.template get<0>(i) = 128*(float)rand()/RAND_MAX;
-		vct_add_data.template get<1>(i) = 128*(float)rand()/RAND_MAX;
-		vct_add_data.template get<2>(i) = 128*(float)rand()/RAND_MAX;
+		vct_add_data.template get<0>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_add_data.template get<1>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_add_data.template get<2>(i) = 128*(float)rand()/(float)RAND_MAX;
 	}
 
 	// Now we merge
@@ -363,16 +363,16 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 
 	for (size_t i = 0 ; i < vct_index.size() ; i++)
 	{
-		vct_index.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_index.template get<0>(i) = 17*(float)rand()/(float)RAND_MAX + i * 17;
 
-		vct_data.template get<0>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data.template get<1>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data.template get<2>(i) = 128*(float)rand()/RAND_MAX;
+		vct_data.template get<0>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_data.template get<1>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_data.template get<2>(i) = 128*(float)rand()/(float)RAND_MAX;
 	}
 
 	for (size_t i = 0 ; i < vct_tot_out.size() ; i++)
 	{
-		vct_tot_out.template get<0>(i) = 128*(float)rand()/RAND_MAX;
+		vct_tot_out.template get<0>(i) = 128*(float)rand()/(float)RAND_MAX;
 		vct_tot_out.template get<2>(i) = 1;
 	}
 

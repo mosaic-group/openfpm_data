@@ -42,6 +42,7 @@ endif ()
 if (CUDA_ON_CPU)
 	add_definitions(-DCUDA_ON_CPU -D__NVCC__ -DCUDART_VERSION=11000)
         set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
+	set_source_files_properties(isolation.cu PROPERTIES LANGUAGE CXX)
        	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         	add_definitions("-x c++")
         endif()
@@ -58,6 +59,8 @@ add_executable(mem_map ${CUDA_SOURCES}
 		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
         Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
 		SparseGridGpu/Geometry/tests/grid_smb_tests.cpp)
+
+set_property(TARGET mem_map PROPERTY CUDA_ARCHITECTURES 60 75)
 
 add_executable(isolation
 	isolation.cu

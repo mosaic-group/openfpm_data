@@ -1941,6 +1941,9 @@ template<typename sgrid> void Test_unpack_and_check_full_noprp(sgrid & grid)
 	ExtPreAlloc<HeapMemory> & mem3 = *(new ExtPreAlloc<HeapMemory>(req3,pmem3));
 	mem3.incRef();
 
+	mem2.fill(0);
+	mem3.fill(0);
+
 	grid.template pack(mem2,sts2);
 	grid.template pack<0,1>(mem3,sub_it,sts3);
 
