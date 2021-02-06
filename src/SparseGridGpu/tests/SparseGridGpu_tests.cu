@@ -601,8 +601,8 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified)
     sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
     sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,1,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
 
-    typedef typename GetCpBlockType<decltype(sparseGrid),0,1>::type CpBlockType;
-
+	typedef typename GetCpBlockType<decltype(sparseGrid),0,1>::type CpBlockType;
+	
     /*
      *
      * The initial condition is
