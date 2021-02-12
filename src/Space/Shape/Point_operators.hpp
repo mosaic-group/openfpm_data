@@ -55,6 +55,8 @@ template<unsigned int dim ,typename T> class Point;
 #define POINT_NEARBYINT 39
 #define POINT_RINT 40
 #define POINT_SUB_UNI 41
+#define POINT_NORM_INF 42
+
 
 /////////////////// Best cast rules ////////////////////////
 

@@ -7,17 +7,6 @@
 #include "DataBlock.cuh"
 #include <set>
 
-template<typename BlockT, typename T>
-struct AggregateAppend
-{
-};
-
-template<typename BlockT, typename ... list>
-struct AggregateAppend<BlockT, aggregate<list ...>>
-{
-    typedef aggregate<list..., BlockT> type;
-};
-
 template<typename AggregateT, unsigned int p>
 using BlockTypeOf = typename std::remove_reference<typename boost::fusion::result_of::at_c<typename AggregateT::type, p>::type>::type;
 

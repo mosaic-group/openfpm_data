@@ -304,4 +304,15 @@ namespace openfpm
 	}
 }
 
+template<typename BlockT, typename T>
+struct AggregateAppend
+{
+};
+
+template<typename BlockT, typename ... list>
+struct AggregateAppend<BlockT, aggregate<list ...>>
+{
+    typedef aggregate<list..., BlockT> type;
+};
+
 #endif /* OPENFPM_DATA_SRC_UTIL_AGGREGATE_HPP_ */
