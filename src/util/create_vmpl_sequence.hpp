@@ -196,7 +196,7 @@ struct vmpl_reduce_prod_impl<c,accu,stop,vmpl,true>
 
 
 template<typename vmpl>
-struct vmpl_reduce_prod_impl
+struct vmpl_reduce_prod
 {
 	typedef typename vmpl_reduce_prod_impl<0,1,(int)vmpl::size::value-1,vmpl,false>::type type;
 };
