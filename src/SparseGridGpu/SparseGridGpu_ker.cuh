@@ -99,11 +99,6 @@ public:
                 n_cnk = (size_t)dp1 + ((size_t)dp2 << 32);
         }
         headers.template get<1>(ih) = n_cnk;
-//        for (int i = 0 ; i < dim ; i++)
-//        {headers.template get<3>(ih)[i] = data[2*sizeof(size_t) + i*sizeof(int)];}
-        
-//        for (int i = 0 ; i < dim ; i++)
-//        {headers.template get<4>(ih)[i] = data[2*sizeof(size_t) + dim*sizeof(int) + i*sizeof(int)];}
 
 		size_t actual_offset = n_cnk*sizeof(indexT);
 
