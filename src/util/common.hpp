@@ -328,7 +328,7 @@ struct is_openfpm_native<T,true> : std::true_type
 {};
 
 template<typename T, typename Sfinae = void>
-struct has_value_type: std::false_type {};
+struct has_value_type_ofp: std::false_type {};
 
 /*! \brief has_value_type check if a type has defined a member value_type
  *
@@ -341,7 +341,7 @@ struct has_value_type: std::false_type {};
  */
 template<typename T>
 //struct has_value_type<T, typename Void<decltype( typename T::value_type )>::type> : std::true_type
-struct has_value_type<T, typename Void< typename T::value_type>::type> : std::true_type
+struct has_value_type_ofp<T, typename Void< typename T::value_type>::type> : std::true_type
 {};
 
 
