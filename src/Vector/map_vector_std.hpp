@@ -964,6 +964,24 @@ public:
 		v_size = sz;
 	}
 
+	/*! \brief Eliminate all elements
+	 *
+	 *
+	 */
+	void clear()
+	{
+		resize(0);
+	}
+
+	/*! \brief Add another element
+	 *
+	 *
+	 */
+	void add()
+	{
+		resize(v_size+1);
+	}
+
 	/*! \brief resize the base vector (this kill the objects)
 	 *
 	 * \param new size of the vector
