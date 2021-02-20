@@ -62,7 +62,7 @@ add_executable(mem_map ${CUDA_SOURCES}
 		SparseGrid/SparseGrid_unit_tests.cpp
 		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
         Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
-		SparseGridGpu/Geometry/tests/grid_smb_tests.cpp)
+		Grid/Geometry/tests/grid_smb_tests.cpp)
 
 set_property(TARGET mem_map PROPERTY CUDA_ARCHITECTURES 60 75)
 
@@ -398,8 +398,8 @@ install(FILES SparseGridGpu/SparseGridGpu.hpp
 	      SparseGridGpu/encap_num.hpp
               DESTINATION openfpm_data/include/SparseGridGpu)
 
-install (FILES SparseGridGpu/Geometry/grid_smb.hpp
-	      SparseGridGpu/Geometry/grid_zmb.hpp
+install (FILES Grid/Geometry/grid_smb.hpp
+	      Grid/Geometry/grid_zmb.hpp
               DESTINATION openfpm_data/include/SparseGridGpu/Geometry/)
 
 install (FILES SparseGridGpu/Iterators/SparseGridGpu_iterator_sub.hpp

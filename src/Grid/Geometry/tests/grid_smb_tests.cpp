@@ -5,7 +5,7 @@
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
-#include "SparseGridGpu/Geometry/grid_smb.hpp"
+#include "Grid/Geometry/grid_smb.hpp"
 
 template <unsigned int dim, typename BGT>
 void testStandardLinearizations(BGT geometry)

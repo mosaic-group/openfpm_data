@@ -52,6 +52,8 @@
 #include "cuda/cuda_grid_gpu_funcs.cuh"
 #include "grid_base_implementation.hpp"
 #include "util/for_each_ref.hpp"
+#include "Geometry/grid_smb.hpp"
+#include "Geometry/grid_zmb.hpp"
 
 #ifndef CUDA_GPU
 typedef HeapMemory CudaMemory;
@@ -61,8 +63,8 @@ typedef HeapMemory CudaMemory;
 /*! Stub grid class
  *
  */
-template<unsigned int dim, typename T, typename S=HeapMemory, typename layout = typename memory_traits_lin<T>::type >
-class grid_cpu
+template<unsigned int dim, typename T, typename S=HeapMemory, typename layout = typename memory_traits_lin<T>::type, typename linearizer = grid_sm<dim,void>  >
+class grid_base
 {
 };
 
@@ -97,8 +99,8 @@ class grid_cpu
  * \snippet grid_unit_tests.hpp Create a grid g1 and copy into another g2
  *
  */
-template<unsigned int dim, typename T, typename S>
-class grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>
+template<unsigned int dim, typename T, typename S, typename linearizer>
+class grid_base<dim,T,S,typename memory_traits_lin<T>::type, linearizer> : public grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin,linearizer>
 {
 	typedef typename apply_transform<memory_traits_lin,T>::type T_;
 
@@ -113,7 +115,7 @@ public:
 	// you can access all the properties of T
 	typedef typename grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>::container container;
 
-	//! Grid_cpu has no grow policy
+	//! grid_base has no grow policy
 	typedef void grow_policy;
 
 	//! type that identify one point in the grid
@@ -126,7 +128,7 @@ public:
 	typedef typename grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>::linearizer_type linearizer_type;
 
 	//! Default constructor
-	inline grid_cpu() THROW
+	inline grid_base() THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_lin>()
 	{}
 
@@ -138,7 +140,7 @@ public:
 	 * \param mem memory object (only used for template deduction)
 	 *
 	 */
-	inline grid_cpu(const grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & g) THROW
+	inline grid_base(const grid_base<dim,T,S,typename memory_traits_lin<T>::type> & g) THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_lin>(g)
 	{
 	}
@@ -148,7 +150,7 @@ public:
 	 * \param sz size if the grid on each directions
 	 *
 	 */
-	inline grid_cpu(const size_t & sz) THROW
+	inline grid_base(const size_t & sz) THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_lin>(sz)
 	{
 	}
@@ -158,7 +160,7 @@ public:
 	 * \param sz size of the grid in each dimension
 	 *
 	 */
-	inline grid_cpu(const size_t (& sz)[dim]) THROW
+	inline grid_base(const size_t (& sz)[dim]) THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_lin>(sz)
 	{
 	}
@@ -188,7 +190,7 @@ public:
 	 * \param g grid to copy
 	 *
 	 */
-	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & g)
+	grid_base<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_base<dim,T,S,typename memory_traits_lin<T>::type> & g)
 	{
 		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g.duplicate());
 
@@ -202,7 +204,7 @@ public:
 	 * \param g grid to copy
 	 *
 	 */
-	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> && g)
+	grid_base<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_base<dim,T,S,typename memory_traits_lin<T>::type> && g)
 	{
 		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g);
 
@@ -389,7 +391,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> & base)
+	grid_base<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> & base)
 	{
 		grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::operator=(base);
 
@@ -401,7 +403,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	grid_cpu<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> && base)
+	grid_base<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> && base)
 	{
 		grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>::operator=((grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> &&)base);
 
@@ -703,7 +705,7 @@ struct device_grid
  *
  */
 template<unsigned int dim, typename T, typename S>
-class grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>
+class grid_base<dim,T,S,typename memory_traits_inte<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>
 {
 	typedef typename apply_transform<memory_traits_inte,T>::type T_;
 
@@ -722,7 +724,7 @@ public:
 	typedef typename grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::linearizer_type linearizer_type;
 
 	//! Default constructor
-	inline grid_cpu() THROW
+	inline grid_base() THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_inte>()
 	{
 	}
@@ -732,7 +734,7 @@ public:
 	 * \param g the grid to copy
 	 *
 	 */
-	inline grid_cpu(const grid_cpu & g) THROW
+	inline grid_base(const grid_base & g) THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(g)
 	{
 	}
@@ -742,7 +744,7 @@ public:
 	 * \param g the grid to copy
 	 *
 	 */
-	inline grid_cpu(grid_cpu && g) THROW
+	inline grid_base(grid_base && g) THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(g)
 	{
 	}
@@ -752,13 +754,13 @@ public:
 	 * \param sz grid size in each direction
 	 *
 	 */
-	inline grid_cpu(const size_t & sz) THROW
+	inline grid_base(const size_t & sz) THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(sz)
 	{
 	}
 
 	//! Constructor allocate memory and give them a representation
-	inline grid_cpu(const size_t (& sz)[dim]) THROW
+	inline grid_base(const size_t (& sz)[dim]) THROW
 	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(sz)
 	{
 	}
@@ -935,7 +937,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> & operator=(const grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte> & base)
+	grid_base<dim,T,S,typename memory_traits_inte<T>::type> & operator=(const grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte> & base)
 	{
 		grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::operator=(base);
 
@@ -947,14 +949,14 @@ public:
 	 * \return itself
 	 *
 	 */
-	grid_cpu<dim,T,S,typename memory_traits_inte<T>::type> & operator=(grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte> && base)
+	grid_base<dim,T,S,typename memory_traits_inte<T>::type> & operator=(grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte> && base)
 	{
 		grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::operator=(base);
 
 		return *this;
 	}
 
-	~grid_cpu()
+	~grid_base()
 	{
 		deconstruct_impl<T,memory_traits_inte,S> dth(this->data_);
 
@@ -963,7 +965,11 @@ public:
 };
 
 //! short formula for a grid on gpu
-template <unsigned int dim, typename T> using grid_gpu = grid_cpu<dim,T,CudaMemory,typename memory_traits_inte<T>::type>;
+template <unsigned int dim, typename T, typename linearizer = grid_sm<dim,void> > using grid_gpu = grid_base<dim,T,CudaMemory,typename memory_traits_inte<T>::type>;
+
+//! short formula for a grid on gpu
+template <unsigned int dim, typename T, typename linearizer = grid_sm<dim,void> > using grid_cpu = grid_base<dim,T,HeapMemory,typename memory_traits_lin<T>::type>;
+
 
 #endif
 

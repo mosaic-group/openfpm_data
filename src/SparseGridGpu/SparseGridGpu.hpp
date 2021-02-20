@@ -12,11 +12,11 @@ constexpr int BLOCK_SIZE_STENCIL = 128;
 #include <cstdlib>
 #include <SparseGridGpu/BlockMapGpu.hpp>
 #include <Grid/iterators/grid_skin_iterator.hpp>
-#include <SparseGridGpu/Geometry/grid_smb.hpp>
+#include <Grid/Geometry/grid_smb.hpp>
 #include "SparseGridGpu_ker.cuh"
 #include "SparseGridGpu_kernels.cuh"
 #include "Iterators/SparseGridGpu_iterator_sub.hpp"
-#include "Geometry/grid_zmb.hpp"
+#include "Grid/Geometry/grid_zmb.hpp"
 #include "util/stat/common_statistics.hpp"
 #include "Iterators/SparseGridGpu_iterator.hpp"
 #include "Space/SpaceBox.hpp"

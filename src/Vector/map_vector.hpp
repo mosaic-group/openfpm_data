@@ -204,7 +204,7 @@ namespace openfpm
 		size_t v_size;
 
 		//! 1-D static grid
-		grid_cpu<1,T,Memory,typename layout_base<T>::type> base;
+		grid_base<1,T,Memory,typename layout_base<T>::type> base;
 
 		/*! \brief If the argument is zero return 1 otherwise return the argument
 		 *
@@ -258,7 +258,7 @@ namespace openfpm
 
 		//! Object container for T, it is the return type of get_o it return a object type trough
 		// you can access all the properties of T
-		typedef typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container container;
+		typedef typename grid_base<1,T,Memory,typename layout_base<T>::type>::container container;
 
 		//! Type of the value the vector is storing
 		typedef T value_type;
@@ -483,7 +483,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		void add(const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container & v)
+		void add(const typename grid_base<1,T,Memory,typename layout_base<T>::type>::container & v)
 		{
 			//! Check if we have enough space
 
@@ -1168,7 +1168,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container get_o(size_t id) const
+		inline const typename grid_base<1,T,Memory,typename layout_base<T>::type>::container get_o(size_t id) const
 		{
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
@@ -1218,7 +1218,7 @@ namespace openfpm
 		 * \return the last element (encapsulated)
 		 *
 		 */
-		inline const typename grid_cpu<1,T,Memory,layout>::container last() const
+		inline const typename grid_base<1,T,Memory,layout>::container last() const
 		{
 			grid_key_dx<1> key(size()-1);
 
@@ -1253,7 +1253,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline typename grid_cpu<1,T,Memory,typename layout_base<T>::type >::container last()
+		inline typename grid_base<1,T,Memory,typename layout_base<T>::type >::container last()
 		{
 			grid_key_dx<1> key(size()-1);
 
@@ -1336,7 +1336,7 @@ namespace openfpm
 		 * \param obj object (encapsulated)
 		 *
 		 */
-		void set(size_t id, const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container & obj)
+		void set(size_t id, const typename grid_base<1,T,Memory,typename layout_base<T>::type>::container & obj)
 		{
 #ifdef SE_CLASS1
 			check_overflow(id);
@@ -1867,7 +1867,7 @@ namespace openfpm
 		 * \return the internal 1D grid base
 		 *
 		 */
-		const grid_cpu<1,T,Memory,layout> & getInternal_base() const
+		const grid_base<1,T,Memory,layout> & getInternal_base() const
 		{
 			return base;
 		}
