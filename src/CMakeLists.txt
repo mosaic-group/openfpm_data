@@ -400,7 +400,7 @@ install(FILES SparseGridGpu/SparseGridGpu.hpp
 
 install (FILES Grid/Geometry/grid_smb.hpp
 	      Grid/Geometry/grid_zmb.hpp
-              DESTINATION openfpm_data/include/SparseGridGpu/Geometry/)
+              DESTINATION openfpm_data/include/Grid/Geometry/)
 
 install (FILES SparseGridGpu/Iterators/SparseGridGpu_iterator_sub.hpp
 	       SparseGridGpu/Iterators/SparseGridGpu_iterator.hpp
