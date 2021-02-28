@@ -11,7 +11,7 @@
 
 #include <type_traits>
 #include "util/common.hpp"
-#include "Grid/Encap.hpp"
+#include "memory_ly/Encap.hpp"
 #include "Grid/util.hpp"
 #include "Vector/util.hpp"
 #include "Packer_Unpacker/has_pack_agg.hpp"

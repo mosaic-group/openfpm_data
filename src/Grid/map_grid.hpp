@@ -34,7 +34,7 @@
 #endif
 #include "grid_sm.hpp"
 #include "grid_zm.hpp"
-#include "Encap.hpp"
+#include "memory_ly/Encap.hpp"
 #include "memory_ly/memory_array.hpp"
 #include "memory_ly/memory_c.hpp"
 #include <vector>
@@ -100,7 +100,7 @@ class grid_base
  *
  */
 template<unsigned int dim, typename T, typename S, typename linearizer>
-class grid_base<dim,T,S,typename memory_traits_lin<T>::type, linearizer> : public grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin,linearizer>
+class grid_base<dim,T,S,typename memory_traits_lin<T>::type, linearizer> : public grid_base_impl<dim,T,S, memory_traits_lin,linearizer>
 {
 	typedef typename apply_transform<memory_traits_lin,T>::type T_;
 
@@ -113,7 +113,7 @@ public:
 
 	//! Object container for T, it is the return type of get_o it return a object type trough
 	// you can access all the properties of T
-	typedef typename grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>::container container;
+	typedef typename grid_base_impl<dim,T,S, memory_traits_lin>::container container;
 
 	//! grid_base has no grow policy
 	typedef void grow_policy;
@@ -125,11 +125,11 @@ public:
 	typedef grid_key_dx_iterator_sub<dim> sub_grid_iterator_type;
 
 	//! linearizer type Z-morton Hilbert curve , normal striding
-	typedef typename grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>::linearizer_type linearizer_type;
+	typedef typename grid_base_impl<dim,T,S, memory_traits_lin>::linearizer_type linearizer_type;
 
 	//! Default constructor
 	inline grid_base() THROW
-	:grid_base_impl<dim,T,S,layout,memory_traits_lin>()
+	:grid_base_impl<dim,T,S,memory_traits_lin, linearizer>()
 	{}
 
 	/*! \brief create a grid from another grid
@@ -141,7 +141,7 @@ public:
 	 *
 	 */
 	inline grid_base(const grid_base<dim,T,S,typename memory_traits_lin<T>::type> & g) THROW
-	:grid_base_impl<dim,T,S,layout,memory_traits_lin>(g)
+	:grid_base_impl<dim,T,S,memory_traits_lin, linearizer>(g)
 	{
 	}
 
@@ -151,7 +151,7 @@ public:
 	 *
 	 */
 	inline grid_base(const size_t & sz) THROW
-	:grid_base_impl<dim,T,S,layout,memory_traits_lin>(sz)
+	:grid_base_impl<dim,T,S,memory_traits_lin,linearizer>(sz)
 	{
 	}
 
@@ -161,7 +161,7 @@ public:
 	 *
 	 */
 	inline grid_base(const size_t (& sz)[dim]) THROW
-	:grid_base_impl<dim,T,S,layout,memory_traits_lin>(sz)
+	:grid_base_impl<dim,T,S,memory_traits_lin,linearizer>(sz)
 	{
 	}
 
@@ -190,9 +190,9 @@ public:
 	 * \param g grid to copy
 	 *
 	 */
-	grid_base<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_base<dim,T,S,typename memory_traits_lin<T>::type> & g)
+	grid_base<dim,T,S> & operator=(const grid_base<dim,T,S> & g)
 	{
-		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g.duplicate());
+		(static_cast<grid_base_impl<dim,T,S, memory_traits_lin> *>(this))->swap(g.duplicate());
 
 		meta_copy<T>::meta_copy_(g.background,background);
 
@@ -206,7 +206,7 @@ public:
 	 */
 	grid_base<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_base<dim,T,S,typename memory_traits_lin<T>::type> && g)
 	{
-		(static_cast<grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> *>(this))->swap(g);
+		(static_cast<grid_base_impl<dim,T,S, memory_traits_lin> *>(this))->swap(g);
 
 		meta_copy<T>::meta_copy_(g.background,background);
 
@@ -391,9 +391,9 @@ public:
 	 * \return itself
 	 *
 	 */
-	grid_base<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> & base)
+	grid_base<dim,T,S,typename memory_traits_lin<T>::type> & operator=(const grid_base_impl<dim,T,S, memory_traits_lin> & base)
 	{
-		grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::operator=(base);
+		grid_base_impl<dim,T,S, memory_traits_inte>::operator=(base);
 
 		return *this;
 	}
@@ -403,9 +403,9 @@ public:
 	 * \return itself
 	 *
 	 */
-	grid_base<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> && base)
+	grid_base<dim,T,S,typename memory_traits_lin<T>::type> & operator=(grid_base_impl<dim,T,S, memory_traits_lin> && base)
 	{
-		grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin>::operator=((grid_base_impl<dim,T,S,typename memory_traits_lin<T>::type, memory_traits_lin> &&)base);
+		grid_base_impl<dim,T,S, memory_traits_lin>::operator=((grid_base_impl<dim,T,S, memory_traits_lin> &&)base);
 
 		return *this;
 	}
@@ -705,7 +705,7 @@ struct device_grid
  *
  */
 template<unsigned int dim, typename T, typename S>
-class grid_base<dim,T,S,typename memory_traits_inte<T>::type> : public grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>
+class grid_base<dim,T,S,typename memory_traits_inte<T>::type> : public grid_base_impl<dim,T,S, memory_traits_inte>
 {
 	typedef typename apply_transform<memory_traits_inte,T>::type T_;
 
@@ -718,14 +718,14 @@ public:
 
 	//! Object container for T, it is the return type of get_o it return a object type trough
 	// you can access all the properties of T
-	typedef typename grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::container container;
+	typedef typename grid_base_impl<dim,T,S, memory_traits_inte>::container container;
 
 	//! linearizer type Z-morton Hilbert curve , normal striding
-	typedef typename grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::linearizer_type linearizer_type;
+	typedef typename grid_base_impl<dim,T,S, memory_traits_inte>::linearizer_type linearizer_type;
 
 	//! Default constructor
 	inline grid_base() THROW
-	:grid_base_impl<dim,T,S,layout,memory_traits_inte>()
+	:grid_base_impl<dim,T,S,memory_traits_inte>()
 	{
 	}
 
@@ -735,7 +735,7 @@ public:
 	 *
 	 */
 	inline grid_base(const grid_base & g) THROW
-	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(g)
+	:grid_base_impl<dim,T,S,memory_traits_inte>(g)
 	{
 	}
 
@@ -745,7 +745,7 @@ public:
 	 *
 	 */
 	inline grid_base(grid_base && g) THROW
-	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(g)
+	:grid_base_impl<dim,T,S,memory_traits_inte>(g)
 	{
 	}
 
@@ -755,13 +755,13 @@ public:
 	 *
 	 */
 	inline grid_base(const size_t & sz) THROW
-	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(sz)
+	:grid_base_impl<dim,T,S,memory_traits_inte>(sz)
 	{
 	}
 
 	//! Constructor allocate memory and give them a representation
 	inline grid_base(const size_t (& sz)[dim]) THROW
-	:grid_base_impl<dim,T,S,layout,memory_traits_inte>(sz)
+	:grid_base_impl<dim,T,S,memory_traits_inte>(sz)
 	{
 	}
 
@@ -937,9 +937,9 @@ public:
 	 * \return itself
 	 *
 	 */
-	grid_base<dim,T,S,typename memory_traits_inte<T>::type> & operator=(const grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte> & base)
+	grid_base<dim,T,S,typename memory_traits_inte<T>::type> & operator=(const grid_base_impl<dim,T,S, memory_traits_inte> & base)
 	{
-		grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::operator=(base);
+		grid_base_impl<dim,T,S, memory_traits_inte>::operator=(base);
 
 		return *this;
 	}
@@ -949,9 +949,9 @@ public:
 	 * \return itself
 	 *
 	 */
-	grid_base<dim,T,S,typename memory_traits_inte<T>::type> & operator=(grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte> && base)
+	grid_base<dim,T,S,typename memory_traits_inte<T>::type> & operator=(grid_base_impl<dim,T,S, memory_traits_inte> && base)
 	{
-		grid_base_impl<dim,T,S,typename memory_traits_inte<T>::type, memory_traits_inte>::operator=(base);
+		grid_base_impl<dim,T,S, memory_traits_inte>::operator=(base);
 
 		return *this;
 	}
@@ -968,7 +968,7 @@ public:
 template <unsigned int dim, typename T, typename linearizer = grid_sm<dim,void> > using grid_gpu = grid_base<dim,T,CudaMemory,typename memory_traits_inte<T>::type>;
 
 //! short formula for a grid on gpu
-template <unsigned int dim, typename T, typename linearizer = grid_sm<dim,void> > using grid_cpu = grid_base<dim,T,HeapMemory,typename memory_traits_lin<T>::type>;
+template <unsigned int dim, typename T, typename linearizer = grid_sm<dim,void> > using grid_cpu = grid_base<dim,T,HeapMemory,typename memory_traits_lin<T>::type,linearizer>;
 
 
 #endif

@@ -130,6 +130,21 @@ public:
     {
     	return grid_smb<dim,blockEdgeSize,indexT>::getBlockSize();
     }
+
+    __host__ __device__ const indexT & size(int i) const
+	{
+    	return grid_smb<dim,blockEdgeSize,indexT>::size(i);
+	}
+
+    __host__ __device__ inline void swap(grid_zmb<dim, blockEdgeSize, indexT> &other)
+    {
+        grid_smb<dim,blockEdgeSize,indexT>::swap(other);
+    }
+
+    __host__ __device__ inline indexT size() const
+    {
+        return grid_smb<dim,blockEdgeSize,indexT>::size();
+    }
 };
 
 

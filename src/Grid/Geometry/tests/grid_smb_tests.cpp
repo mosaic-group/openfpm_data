@@ -6,6 +6,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include "Grid/Geometry/grid_smb.hpp"
+#include "Grid/Geometry/grid_zmb.hpp"
 
 template <unsigned int dim, typename BGT>
 void testStandardLinearizations(BGT geometry)
@@ -71,6 +72,33 @@ BOOST_AUTO_TEST_CASE(testCopyAssignOp)
 
 	// Then test...
 	testStandardLinearizations<dim>(geometry);
+}
+
+template<typename gsmb_type>
+void test_swap()
+{
+	const size_t sz[2] = {3*8,7*8};
+	gsmb_type geometry0(sz);
+
+	const size_t sz2[2] = {3*8+50,7*8+50};
+	gsmb_type geometry1(sz2);
+
+    geometry1.swap(geometry0);
+
+
+    BOOST_REQUIRE_EQUAL(geometry1.size(0),3*8);
+    BOOST_REQUIRE_EQUAL(geometry1.size(1),7*8);
+
+    BOOST_REQUIRE_EQUAL(geometry0.size(0),3*8+50);
+    BOOST_REQUIRE_EQUAL(geometry0.size(1),7*8+50);
+}
+
+BOOST_AUTO_TEST_CASE(testSwap)
+{
+    constexpr unsigned int dim = 2;
+
+    test_swap<grid_smb<dim, 8>>();
+    test_swap<grid_zmb<dim, 8, long int>>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

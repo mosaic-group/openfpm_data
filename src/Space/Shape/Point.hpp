@@ -8,7 +8,7 @@
 #include <boost/fusion/container/vector/vector_fwd.hpp>
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
-#include "Grid/Encap.hpp"
+#include "memory_ly/Encap.hpp"
 #include "Point_operators.hpp"
 
 

@@ -188,23 +188,28 @@ install(FILES Grid/comb.hpp
         Grid/iterators/grid_key_dx_iterator_sp.hpp
         Grid/grid_key_dx_iterator_hilbert.hpp
         Grid/grid_key_dx_iterator_hilbert.hpp
-        DESTINATION openfpm_data/include/Grid/)
+        DESTINATION openfpm_data/include/Grid/
+	COMPONENT OpenFPM)
 
 install(FILES Grid/cuda/cuda_grid_gpu_funcs.cuh
         Grid/cuda/map_grid_cuda_ker.cuh
-        DESTINATION openfpm_data/include/Grid/cuda/)
+        DESTINATION openfpm_data/include/Grid/cuda/
+	COMPONENT OpenFPM)
 
 install(FILES data_type/aggregate.hpp
-        DESTINATION openfpm_data/include/data_type)
+        DESTINATION openfpm_data/include/data_type
+	COMPONENT OpenFPM)
 
 install(FILES Graph/CartesianGraphFactory.hpp
         Graph/map_graph.hpp
-        DESTINATION openfpm_data/include/Graph)
+        DESTINATION openfpm_data/include/Graph
+	COMPONENT OpenFPM)
 
 install(FILES Point_test.hpp
         Point_orig.hpp
         timer.hpp
-        DESTINATION openfpm_data/include/)
+        DESTINATION openfpm_data/include/
+	COMPONENT OpenFPM)
 
 install(FILES SparseGrid/SparseGrid_iterator.hpp
               SparseGrid/SparseGrid.hpp
@@ -213,25 +218,29 @@ install(FILES SparseGrid/SparseGrid_iterator.hpp
 	      SparseGrid/SparseGrid_chunk_copy.hpp
 	      SparseGrid/SparseGrid_conv_opt.hpp
 	      SparseGrid/cp_block.hpp
-        DESTINATION openfpm_data/include/SparseGrid)
+        DESTINATION openfpm_data/include/SparseGrid
+	COMPONENT OpenFPM)
 
 install(FILES hash_map/hopscotch_hash.h
               hash_map/hopscotch_map.h
               hash_map/hopscotch_sc_map.h
               hash_map/hopscotch_sc_set.h
               hash_map/hopscotch_set.h
-        DESTINATION openfpm_data/include/hash_map)
+        DESTINATION openfpm_data/include/hash_map
+	COMPONENT OpenFPM)
 
 install(FILES memory_ly/memory_array.hpp
         memory_ly/memory_c.hpp
         memory_ly/memory_conf.hpp
         memory_ly/t_to_memory_c.hpp
-        DESTINATION openfpm_data/include/memory_ly)
+        DESTINATION openfpm_data/include/memory_ly
+	COMPONENT OpenFPM)
 
 install(FILES NN/Mem_type/MemBalanced.hpp
         NN/Mem_type/MemFast.hpp
         NN/Mem_type/MemMemoryWise.hpp
-        DESTINATION openfpm_data/include/NN/Mem_type)
+        DESTINATION openfpm_data/include/NN/Mem_type
+	COMPONENT OpenFPM)
 
 install(FILES NN/CellList/CellListNNIteratorRadius.hpp
         NN/CellList/CellListIterator.hpp
@@ -251,14 +260,16 @@ install(FILES NN/CellList/CellListNNIteratorRadius.hpp
         NN/CellList/CellNNIteratorRuntime.hpp
         NN/CellList/CellNNIteratorRuntimeM.hpp
 	NN/CellList/CellList_def.hpp
-        DESTINATION openfpm_data/include/NN/CellList)
+        DESTINATION openfpm_data/include/NN/CellList
+	COMPONENT OpenFPM)
 
 install(FILES NN/CellList/cuda/CellList_cpu_ker.cuh
         NN/CellList/cuda/CellList_gpu_ker.cuh
         NN/CellList/cuda/CellList_gpu.hpp
         NN/CellList/cuda/Cuda_cell_list_util_func.hpp
 	NN/CellList/cuda/CellDecomposer_gpu_ker.cuh
-        DESTINATION openfpm_data/include/NN/CellList/cuda)
+        DESTINATION openfpm_data/include/NN/CellList/cuda
+	COMPONENT OpenFPM)
 
 
 install(FILES NN/VerletList/VerletList.hpp
@@ -266,10 +277,12 @@ install(FILES NN/VerletList/VerletList.hpp
         NN/VerletList/VerletNNIterator.hpp
         NN/VerletList/VerletListM.hpp
         NN/VerletList/VerletNNIteratorM.hpp
-        DESTINATION openfpm_data/include/NN/VerletList/)
+        DESTINATION openfpm_data/include/NN/VerletList/
+	COMPONENT OpenFPM)
 
 install(FILES Space/Ghost.hpp Space/Matrix.hpp Space/SpaceBox.hpp
-        DESTINATION openfpm_data/include/Space/)
+        DESTINATION openfpm_data/include/Space/
+	COMPONENT OpenFPM)
 
 install(FILES Space/Shape/AdaptiveCylinderCone.hpp
         Space/Shape/Box.hpp
@@ -281,7 +294,8 @@ install(FILES Space/Shape/AdaptiveCylinderCone.hpp
         Space/Shape/Point_operators_functions.hpp
         Space/Shape/Point_operators.hpp
         Space/Shape/Sphere.hpp
-        DESTINATION openfpm_data/include/Space/Shape)
+        DESTINATION openfpm_data/include/Space/Shape
+	COMPONENT OpenFPM)
 
 
 install(FILES util/check_no_pointers.hpp
@@ -303,7 +317,8 @@ install(FILES util/check_no_pointers.hpp
         util/SimpleRNG.hpp
         util/math_util_complex.hpp
         util/mul_array_extents.hpp
-        DESTINATION openfpm_data/include/util)
+        DESTINATION openfpm_data/include/util
+	COMPONENT OpenFPM)
 
 install(FILES util/copy_compare/compare_fusion_vector.hpp
         util/copy_compare/compare_general.hpp
@@ -311,7 +326,8 @@ install(FILES util/copy_compare/compare_fusion_vector.hpp
         util/copy_compare/copy_fusion_vector.hpp
         util/copy_compare/copy_general.hpp util/copy_compare/meta_compare.hpp
         util/copy_compare/meta_copy.hpp
-        DESTINATION openfpm_data/include/util/copy_compare/)
+        DESTINATION openfpm_data/include/util/copy_compare/
+	COMPONENT OpenFPM)
 
 install(FILES Packer_Unpacker/Pack_selector.hpp
         Packer_Unpacker/Packer_nested_tests.hpp
@@ -323,10 +339,12 @@ install(FILES Packer_Unpacker/Pack_selector.hpp
         Packer_Unpacker/has_pack_encap.hpp
         Packer_Unpacker/has_pack_agg.hpp
         Packer_Unpacker/has_max_prop.hpp
-        DESTINATION openfpm_data/include/Packer_Unpacker)
+        DESTINATION openfpm_data/include/Packer_Unpacker
+	COMPONENT OpenFPM)
 
 install(FILES util/boost/boost_array_openfpm.hpp
-        DESTINATION openfpm_data/include/util/boost/)
+        DESTINATION openfpm_data/include/util/boost/
+	COMPONENT OpenFPM)
 
 install(FILES Grid/iterators/grid_key_dx_iterator_sp.hpp
         Grid/iterators/stencil_type.hpp
@@ -334,7 +352,8 @@ install(FILES Grid/iterators/grid_key_dx_iterator_sp.hpp
         Grid/iterators/grid_key_dx_iterator_sub.hpp
         Grid/iterators/grid_key_dx_iterator.hpp
         Grid/iterators/grid_skin_iterator.hpp
-        DESTINATION openfpm_data/include/Grid/iterators)
+        DESTINATION openfpm_data/include/Grid/iterators
+	COMPONENT OpenFPM)
 
 install(FILES Vector/map_vector.hpp
         Vector/vector_def.hpp
@@ -352,17 +371,20 @@ install(FILES Vector/map_vector.hpp
         Vector/vector_map_iterator.hpp
         Vector/map_vector_printers.hpp
         Vector/map_vector_sparse.hpp
-        DESTINATION openfpm_data/include/Vector)
+        DESTINATION openfpm_data/include/Vector
+	COMPONENT OpenFPM)
 
 install(FILES Vector/cuda/map_vector_cuda_ker.cuh
         Vector/cuda/map_vector_std_cuda_ker.cuh
         Vector/cuda/map_vector_std_cuda.hpp
         Vector/cuda/map_vector_sparse_cuda_ker.cuh
         Vector/cuda/map_vector_sparse_cuda_kernels.cuh
-        DESTINATION openfpm_data/include/Vector/cuda/)
+        DESTINATION openfpm_data/include/Vector/cuda/
+	COMPONENT OpenFPM)
 
 install(DIRECTORY util/cuda/cub_old/
-        DESTINATION openfpm_data/include/util/cuda/cub_old)
+        DESTINATION openfpm_data/include/util/cuda/cub_old
+	COMPONENT OpenFPM)
 
 install(FILES util/multi_array_openfpm/array_openfpm.hpp
         util/multi_array_openfpm/multi_array_iterator_openfpm.hpp
@@ -372,7 +394,8 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
         util/multi_array_openfpm/multi_array_view_openfpm.hpp
         util/multi_array_openfpm/storage_order.hpp
         util/multi_array_openfpm/types.hpp
-        DESTINATION openfpm_data/include/util/multi_array_openfpm)
+        DESTINATION openfpm_data/include/util/multi_array_openfpm
+	COMPONENT OpenFPM)
 
 
 install(FILES util/cuda/scan_cuda.cuh
@@ -381,10 +404,12 @@ install(FILES util/cuda/scan_cuda.cuh
         util/cuda/scan_ofp.cuh
 	util/cuda/sort_ofp.cuh
 	util/cuda/reduce_ofp.cuh
-        DESTINATION openfpm_data/include/util/cuda)
+        DESTINATION openfpm_data/include/util/cuda
+	COMPONENT OpenFPM)
 
 install(FILES util/stat/common_statistics.hpp
-        DESTINATION openfpm_data/include/util/stat)
+        DESTINATION openfpm_data/include/util/stat
+	COMPONENT OpenFPM)
 
 install(FILES SparseGridGpu/SparseGridGpu.hpp
 	      SparseGridGpu/SparseGridGpu_kernels.cuh
@@ -396,19 +421,23 @@ install(FILES SparseGridGpu/SparseGridGpu.hpp
 	      SparseGridGpu/BlockMapGpu_ker.cuh
 	      SparseGridGpu/BlockMapGpu_dimensionalityWrappers.cuh
 	      SparseGridGpu/encap_num.hpp
-              DESTINATION openfpm_data/include/SparseGridGpu)
+              DESTINATION openfpm_data/include/SparseGridGpu
+	      COMPONENT OpenFPM)
 
 install (FILES Grid/Geometry/grid_smb.hpp
 	      Grid/Geometry/grid_zmb.hpp
-              DESTINATION openfpm_data/include/Grid/Geometry/)
+              DESTINATION openfpm_data/include/Grid/Geometry/
+	      COMPONENT OpenFPM)
 
 install (FILES SparseGridGpu/Iterators/SparseGridGpu_iterator_sub.hpp
 	       SparseGridGpu/Iterators/SparseGridGpu_iterator.hpp
-               DESTINATION openfpm_data/include/SparseGridGpu/Iterators/ )
+               DESTINATION openfpm_data/include/SparseGridGpu/Iterators/ 
+	       COMPONENT OpenFPM)
 
 install (FILES  SparseGridGpu/TemplateUtils/mathUtils.hpp
 	        SparseGridGpu/TemplateUtils/encap_shmem.hpp
-		DESTINATION openfpm_data/include/SparseGridGpu/TemplateUtils/ )
+		DESTINATION openfpm_data/include/SparseGridGpu/TemplateUtils/ 
+		COMPONENT OpenFPM)
 
 install(FILES util/cuda/moderngpu/context.hxx
         util/cuda/moderngpu/context_reduced.hxx
@@ -447,7 +476,8 @@ install(FILES util/cuda/moderngpu/context.hxx
         util/cuda/moderngpu/tuple.hxx
         util/cuda/moderngpu/types.hxx
         util/cuda/moderngpu/util.hxx
-        DESTINATION openfpm_data/include/util/cuda/moderngpu/)
+        DESTINATION openfpm_data/include/util/cuda/moderngpu/
+	COMPONENT OpenFPM)
 
 #if(BUILD_TESTING)
 

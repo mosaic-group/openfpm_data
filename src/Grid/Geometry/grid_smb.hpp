@@ -117,6 +117,11 @@ public:
     	return sz;
 	}
 
+    __host__ __device__ const indexT & size(int i) const
+	{
+    	return sz[i];
+	}
+
     /*! \brief Linearize the coordinate index
      *
      * The linearization is given by getting the block indexes and the local coordinate indexes
@@ -252,7 +257,7 @@ public:
         return blockCoord;
     }
 
-    inline indexT size() const
+    inline indexT size_blocks() const
     {
     	indexT sz = 1;
 
@@ -262,9 +267,36 @@ public:
     	return sz;
     }
 
+    inline indexT size() const
+    {
+    	indexT sz = 1;
+
+    	for (indexT i = 0 ; i < dim ; i++)
+    	{sz *= this->sz[i];}
+
+    	return sz;
+    }
+
     __host__ __device__ inline indexT getBlockSize() const
     {
     	return blockSize;
+    }
+
+    __host__ __device__ inline void swap(grid_smb<dim, blockEdgeSize, indexT> &other)
+    {
+        indexT blockSz_tmp[dim];
+        indexT sz_tmp[dim];
+
+    	for (indexT i = 0 ; i < dim ; i++)
+    	{
+            blockSz_tmp[i] = blockSz[i];
+            blockSz[i] = other.blockSz[i];
+            other.blockSz[i] = blockSz_tmp[i];
+
+            sz_tmp[i] = sz[i];
+            sz[i] = other.sz[i];
+            other.sz[i] = sz_tmp[i];
+    	}
     }
 };
 

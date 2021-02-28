@@ -227,7 +227,7 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename ids_type,typename r_type=decltype(mem_get<p,layout_base<T_>,layout,grid_sm<dim,T_>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	template <unsigned int p, typename ids_type,typename r_type=decltype(layout_base<T_>::template get<p>(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline r_type get(const grid_key_dx<dim,ids_type> & v1)
 	{
 #ifdef SE_CLASS1
@@ -235,7 +235,7 @@ public:
 		{fill_grid_error_array_overflow<dim,p>(this->template getPointer<p>(),v1);}
 #endif
 
-		return mem_get<p,layout_base<T_>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
+		return layout_base<T_>::template get<p>(data_,g1,v1);
 	}
 
 	/*! \brief Get the const reference of the selected element
@@ -245,14 +245,14 @@ public:
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p, typename ids_type, typename r_type=decltype(mem_get<p,layout_base<T_>,layout,grid_sm<dim,T_>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
+	template <unsigned int p, typename ids_type, typename r_type=decltype(layout_base<T_>::template get_c<p>(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline const r_type get(const grid_key_dx<dim,ids_type> & v1) const
 	{
 #ifdef SE_CLASS1
 		if (check_bound(v1) == false)
 		{fill_grid_error_array_overflow<dim,p>(this->template getPointer<p>(),v1);}
 #endif
-		return mem_get<p,layout_base<T_>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
+		return layout_base<T_>::template get_c<p>(data_,g1,v1);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -262,14 +262,14 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T_>,layout,grid_sm<dim,T_>,grid_key_dx<dim>>::get_lin(data_,g1,0))>
+	template <unsigned int p, typename r_type=decltype(layout_base<T_>::template get_lin<p>(data_,g1,0))>
 	__device__ __host__ inline r_type get(const size_t lin_id)
 	{
 #ifdef SE_CLASS1
 		if (check_bound(lin_id) == false)
 		{fill_grid_error_array_overflow<p>(this->getPointer(),lin_id);}
 #endif
-		return mem_get<p,memory_traits_inte<T_>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin(data_,g1,lin_id);
+		return layout_base<T_>::template get_lin<p>(data_,g1,lin_id);
 	}
 
 	/*! \brief Get the const reference of the selected element
@@ -279,14 +279,14 @@ public:
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T_>,layout,grid_sm<dim,T_>,grid_key_dx<dim>>::get_lin(data_,g1,0))>
+	template <unsigned int p, typename r_type=decltype(layout_base<T_>::template get_lin<p>(data_,g1,0))>
 	__device__ __host__ inline const r_type get(size_t lin_id) const
 	{
 #ifdef SE_CLASS1
 		if (check_bound(lin_id) == false)
 		{fill_grid_error_array_overflow<p>(this->getPointer(),lin_id);}
 #endif
-		return mem_get<p,layout_base<T_>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin(data_,g1,lin_id);
+		return layout_base<T_>::template get_lin<p>(data_,g1,lin_id);
 	}
 
 	/*! \brief Get the of the selected element as a boost::fusion::vector

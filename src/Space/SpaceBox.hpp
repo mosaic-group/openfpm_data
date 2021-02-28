@@ -5,7 +5,7 @@
 #include "Shape/Point.hpp"
 #include "Shape/Box.hpp"
 #include <boost/fusion/include/vector.hpp>
-#include "Grid/Encap.hpp"
+#include "memory_ly/Encap.hpp"
 #include "Ghost.hpp"
 #include <stdlib.h>     /* srand, rand */
 
@@ -231,8 +231,6 @@ struct is_typedef_and_data_same<true,SpaceBox<dim,St>>
 		value = 1
 	};
 };
-
-#include "Grid/Encap.hpp"
 
 
 #endif

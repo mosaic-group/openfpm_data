@@ -263,6 +263,7 @@ class grid_sm
 
 public:
 
+
 	/*! \brief Return the box enclosing the grid
 	 *
 	 * \return the box
