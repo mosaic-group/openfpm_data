@@ -6,6 +6,7 @@ if (CUDA_ON_CPU)
 	add_definitions(-DCUDA_ON_CPU)
 endif()
 
+
 add_executable(io main.cpp 
 				  MetaParser/MetaParser_unit_test.cpp 
 				  HDF5_wr/HDF5_writer_cuda.cu 
@@ -19,6 +20,10 @@ if ( CMAKE_COMPILER_IS_GNUCC )
     if (TEST_COVERAGE)
         target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fprofile-arcs -ftest-coverage>)
     endif()
+endif()
+
+if (CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
+        add_definitions(-D__STRICT_ANSI__)
 endif()
 
 ###########################
@@ -73,18 +78,22 @@ endif()
 
 install(FILES RawReader/RawReader.hpp 
 	      RawReader/RawReader_unit_tests.hpp 
-	      DESTINATION openfpm_io/include/RawReader )
+	      DESTINATION openfpm_io/include/RawReader 
+	      COMPONENT OpenFPM)
 
 install(FILES CSVWriter/csv_multiarray.hpp 
 	      CSVWriter/CSVWriter.hpp 
 	      CSVWriter/is_csv_writable.hpp
-	      DESTINATION openfpm_io/include/CSVWriter/ )
+	      DESTINATION openfpm_io/include/CSVWriter/ 
+	      COMPONENT OpenFPM)
       
 install(FILES GraphMLWriter/GraphMLWriter.hpp 
-	DESTINATION openfpm_io/include/GraphMLWriter )
+	DESTINATION openfpm_io/include/GraphMLWriter 
+	COMPONENT OpenFPM)
 
 install(FILES util/util.hpp util/GBoxes.hpp
-	DESTINATION openfpm_io/include/util )
+	DESTINATION openfpm_io/include/util 
+	COMPONENT OpenFPM)
 
 install(FILES VTKWriter/VTKWriter.hpp 
 	      VTKWriter/byteswap_portable.hpp 
@@ -96,10 +105,12 @@ install(FILES VTKWriter/VTKWriter.hpp
 	      VTKWriter/VTKWriter_grids_util.hpp 
 	      VTKWriter/VTKWriter_vector_box.hpp 
 	      VTKWriter/is_vtk_writable.hpp
-	DESTINATION openfpm_io/include/VTKWriter/ )
+	DESTINATION openfpm_io/include/VTKWriter/ 
+	COMPONENT OpenFPM)
 
 install(FILES MetaParser/MetaParser.hpp
-	DESTINATION openfpm_io/include/MetaParser/ )
+	DESTINATION openfpm_io/include/MetaParser/ 
+	COMPONENT OpenFPM)
 
 install(FILES HDF5_wr/HDF5_wr.hpp
 	HDF5_wr/HDF5_writer.hpp 
@@ -108,16 +119,20 @@ install(FILES HDF5_wr/HDF5_wr.hpp
 	HDF5_wr/HDF5_reader_gd.hpp  
 	HDF5_wr/HDF5_reader.hpp 
 	HDF5_wr/HDF5_reader_vd.hpp
-	DESTINATION openfpm_io/include/HDF5_wr)
+	DESTINATION openfpm_io/include/HDF5_wr
+	COMPONENT OpenFPM)
 
 install(FILES RawReader/InitGridWithPixel.hpp
-	DESTINATION openfpm_io/include/RawReader/)
+	DESTINATION openfpm_io/include/RawReader/
+	COMPONENT OpenFPM)
 
 install(FILES util/PathsAndFiles.hpp
-	DESTINATION openfpm_io/include/util)
+	DESTINATION openfpm_io/include/util
+	COMPONENT OpenFPM)
 
 install(FILES Plot/GoogleChart.hpp Plot/util.hpp
-	DESTINATION openfpm_io/include/Plot )
+	DESTINATION openfpm_io/include/Plot 
+	COMPONENT OpenFPM)
 
 
 #if(BUILD_TESTING)
