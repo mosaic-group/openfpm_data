@@ -178,7 +178,7 @@ install(FILES Grid/comb.hpp
         Grid/grid_pack_unpack.ipp
         Grid/grid_base_impl_layout.hpp
         Grid/grid_common.hpp
-        Grid/grid_gpu.hpp Grid/Encap.hpp
+        Grid/grid_gpu.hpp
         Grid/grid_key.hpp Grid/grid_key_dx_expression_unit_tests.hpp
         Grid/grid_key_expression.hpp 
 	Grid/grid_sm.hpp
@@ -229,7 +229,8 @@ install(FILES hash_map/hopscotch_hash.h
         DESTINATION openfpm_data/include/hash_map
 	COMPONENT OpenFPM)
 
-install(FILES memory_ly/memory_array.hpp
+install(FILES memory_ly/Encap.hpp
+	memory_ly/memory_array.hpp
         memory_ly/memory_c.hpp
         memory_ly/memory_conf.hpp
         memory_ly/t_to_memory_c.hpp
