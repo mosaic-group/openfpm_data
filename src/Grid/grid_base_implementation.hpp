@@ -387,7 +387,7 @@ private:
 	 * \param key2
 	 *
 	 */
-	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const grid_key_dx<dim> & key2) const
+	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout_base, ord_type> & g,const grid_key_dx<dim> & key2) const
 	{
 #ifndef __CUDA_ARCH__
 		for (size_t i = 0 ; i < dim ; i++)
@@ -414,8 +414,8 @@ private:
 	 * \param key2
 	 *
 	 */
-	template<typename Mem, typename layout2, template <typename>
-	class layout_base2> inline void check_bound(const grid_base_impl<dim,T,Mem,layout2,layout_base2> & g,const grid_key_dx<dim> & key2) const
+	template<typename Mem, template <typename> class layout_base2> 
+	inline void check_bound(const grid_base_impl<dim,T,Mem,layout_base2,ord_type> & g,const grid_key_dx<dim> & key2) const
 	{
 #ifndef __CUDA_ARCH__
 		for (size_t i = 0 ; i < dim ; i++)
@@ -442,7 +442,7 @@ private:
 	 * \param key2
 	 *
 	 */
-	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const size_t & key2) const
+	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout_base> & g,const size_t & key2) const
 	{
 #ifndef __CUDA_ARCH__
 		if (key2 >= g.getGrid().size())
@@ -744,7 +744,7 @@ public:
 	 *
 	 */
 
-	const grid_sm<dim,void> & getGrid() const
+	const ord_type & getGrid() const
 	{
 		return g1;
 	}
