@@ -59,7 +59,7 @@ struct pack_simple_cond
 
 		// Sending property object and vector
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout_base>::value_type::type,prp...>::type> prp_object;
-		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,typename layout_base<prp_object>::type,layout_base,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,layout_base,openfpm::grow_policy_identity> dtype;
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -106,7 +106,7 @@ struct pack_simple_cond<true, prp ...>
 		}		
 
 		// Sending property object
-		typedef openfpm::vector<T,ExtPreAlloc<S>,typename layout_base<T>::type,layout_base,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<T,ExtPreAlloc<S>,layout_base,openfpm::grow_policy_identity> dtype;
 		
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -155,7 +155,7 @@ struct unpack_simple_cond
 		
 		// object that store the information in mem
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout_base,ord_type>::value_type::type,prp...>::type> prp_object;
-		typedef openfpm::vector<prp_object,PtrMemory,typename layout_base<prp_object>::type,layout_base,openfpm::grow_policy_identity> stype;
+		typedef openfpm::vector<prp_object,PtrMemory,layout_base,openfpm::grow_policy_identity> stype;
 
 		// Calculate the size to pack the object
 		size_t size = obj.template packMem<prp...>(obj.size(),0);
@@ -210,7 +210,7 @@ struct unpack_simple_cond<true, prp ...>
 		obj.setMemory();
 		
 		// Sending property object
-		typedef openfpm::vector<T,PtrMemory,typename layout_base<T>::type,layout_base,openfpm::grow_policy_identity> stype;
+		typedef openfpm::vector<T,PtrMemory,layout_base,openfpm::grow_policy_identity> stype;
 
 		// Calculate the size to pack the object
 		size_t size = obj.template packMem<prp...>(obj.size(),0);
@@ -384,7 +384,7 @@ struct unpack_simple_cond<true, prp ...>
 
 		// Sending property object
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout_base,ord_type>::value_type::type,prp...>::type> prp_object;
-		typedef openfpm::vector<prp_object,ExtPreAlloc<S>,typename layout_base<prp_object>::type, layout_base,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<S>, layout_base,openfpm::grow_policy_identity> dtype;
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -422,7 +422,7 @@ struct unpack_simple_cond<true, prp ...>
 	 */
 	template<int ... prp> void packRequest(grid_key_dx_iterator_sub<dims> & sub, size_t & req)
 	{
-		typedef openfpm::vector<typename grid_base_impl<dim,T,S,layout_base,ord_type>::value_type,ExtPreAlloc<S>,layout,layout_base,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<typename grid_base_impl<dim,T,S,layout_base,ord_type>::value_type,ExtPreAlloc<S>,layout_base,openfpm::grow_policy_identity> dtype;
 		dtype dvect;
 
 		// Calculate the required memory for packing
@@ -446,7 +446,7 @@ struct unpack_simple_cond<true, prp ...>
 	{
 		// object that store the information in mem
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout_base,ord_type>::value_type::type,prp...>::type> prp_object;
-		typedef openfpm::vector<prp_object,PtrMemory, typename memory_traits_lin<prp_object>::type, memory_traits_lin ,openfpm::grow_policy_identity> stype;
+		typedef openfpm::vector<prp_object,PtrMemory, memory_traits_lin ,openfpm::grow_policy_identity> stype;
 
 		size_t size = stype::template calculateMem(sub_it.getVolume(),0);
 

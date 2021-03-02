@@ -420,7 +420,7 @@ template <typename vector> void test_vector_load_and_save_check()
 BOOST_AUTO_TEST_CASE (vector_iterator_test)
 {
 	test_iterator< openfpm::vector<Point_test<float>> >();
-	test_iterator< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type,memory_traits_inte> >();
+	test_iterator< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte> >();
 }
 
 // Test the openfpm vector
@@ -430,7 +430,7 @@ BOOST_AUTO_TEST_CASE( vector_use)
 	std::cout << "Vector unit test start" << "\n";
 
 	test_vector_use<openfpm::vector<Point_test<float>>>();
-	test_vector_use< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type,memory_traits_inte> >();
+	test_vector_use< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte> >();
 
 	std::cout << "Vector unit test end" << "\n";
 }
@@ -443,37 +443,37 @@ size_t n_alloc = sizeof(alloc)/sizeof(size_t);
 BOOST_AUTO_TEST_CASE(vector_remove )
 {
 	test_vector_remove<openfpm::vector<Point_test<float>>>();
-	test_vector_remove< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type, memory_traits_inte> >();
+	test_vector_remove< openfpm::vector<Point_test<float>,HeapMemory, memory_traits_inte> >();
 }
 
 BOOST_AUTO_TEST_CASE(vector_insert )
 {
 	test_vector_insert<openfpm::vector<Point_test<float>>>();
-	test_vector_insert< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type, memory_traits_inte > >();
+	test_vector_insert< openfpm::vector<Point_test<float>,HeapMemory, memory_traits_inte > >();
 }
 
 BOOST_AUTO_TEST_CASE(vector_clear )
 {
 	test_vector_clear< openfpm::vector<Point_test<float>> >();
-	test_vector_clear< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type, memory_traits_inte> >();
+	test_vector_clear< openfpm::vector<Point_test<float>,HeapMemory, memory_traits_inte> >();
 }
 
 BOOST_AUTO_TEST_CASE( vector_add_test_case )
 {
 	test_vector_add_test_case<openfpm::vector<Point_test<float>>,memory_traits_lin>();
-	test_vector_add_test_case<openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type,memory_traits_inte>, memory_traits_inte >();
+	test_vector_add_test_case<openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte>, memory_traits_inte >();
 }
 
 BOOST_AUTO_TEST_CASE( vector_copy_and_compare )
 {
 	test_vector_copy_and_compare< openfpm::vector<Point_test<float>> >();
-	test_vector_copy_and_compare< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type, memory_traits_inte> >();
+	test_vector_copy_and_compare< openfpm::vector<Point_test<float>,HeapMemory, memory_traits_inte> >();
 }
 
 BOOST_AUTO_TEST_CASE( vector_load_and_save_check )
 {
 	test_vector_load_and_save_check< openfpm::vector<Point_test<float>> >();
-	test_vector_load_and_save_check< openfpm::vector<Point_test<float>,HeapMemory,memory_traits_inte<Point_test<float>>::type, memory_traits_inte> >();
+	test_vector_load_and_save_check< openfpm::vector<Point_test<float>,HeapMemory, memory_traits_inte> >();
 }
 
 ////////// Test function ///////////
@@ -607,7 +607,7 @@ BOOST_AUTO_TEST_CASE( vector_memory_repr )
 
 	// create vector representation to a piece of memory already allocated
 
-	openfpm::vector<Point_test<float>,PtrMemory,typename memory_traits_lin<Point_test<float>>::type, memory_traits_lin,openfpm::grow_policy_identity> v2;
+	openfpm::vector<Point_test<float>,PtrMemory, memory_traits_lin,openfpm::grow_policy_identity> v2;
 
 	v2.setMemory(*ptr1);
 
@@ -802,7 +802,7 @@ BOOST_AUTO_TEST_CASE( vector_cuda_to_kernel_recursive )
 	typedef openfpm::vector_gpu<aggregate<int,long int>> test1_type;
 	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<aggregate<long int>>>> test2_type;
 	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<aggregate<Box<2,float>>>>> test3_type;
-	typedef openfpm::vector<Box<3,float>,CudaMemory,typename memory_traits_inte<Box<3,float>>::type,memory_traits_inte> test4_type;
+	typedef openfpm::vector<Box<3,float>,CudaMemory,memory_traits_inte> test4_type;
 	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<Box<2,float>>>> test5_type;
 
 	typedef typename toKernel_transform<memory_traits_inte,test1_type>::type tker1;

@@ -10,7 +10,7 @@
 
 
 template<typename T,typename gp>
-class vector<T,PtrMemory,typename memory_traits_lin<T>::type,memory_traits_lin,gp,STD_VECTOR>
+class vector<T,PtrMemory,memory_traits_lin,gp,STD_VECTOR>
 {
 	//! Memory layout
 	typedef typename memory_traits_lin<T>::type layout;
@@ -314,7 +314,7 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(const vector<T,PtrMemory,layout,layout_base,gp,STD_VECTOR> & v) noexcept
+	vector(const vector<T,PtrMemory,layout_base,gp,STD_VECTOR> & v) noexcept
 	:v_size(0),err_code(0)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: copy constructor is not supported by this vector \n";
@@ -322,7 +322,7 @@ public:
 
 
 	//! Constructor from another vector
-	vector(vector<T,PtrMemory,layout,layout_base,gp,STD_VECTOR> && v) noexcept
+	vector(vector<T,PtrMemory,layout_base,gp,STD_VECTOR> && v) noexcept
 	:v_size(0),err_code(0)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: copy constructor is not supported by this vector \n";
@@ -338,7 +338,7 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(openfpm::vector<T,PtrMemory,layout,layout_base,gp,STD_VECTOR> & v)
+	void swap(openfpm::vector<T,PtrMemory,layout_base,gp,STD_VECTOR> & v)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: swap is not supported by this vector \n";
 	}
@@ -348,7 +348,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & v)
+	vector<T,HeapMemory,layout_base,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,layout_base,grow_policy_double,STD_VECTOR> & v)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator= is not supported by this vector \n";
 
@@ -362,7 +362,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,layout,layout_base,grow_policy_double,STD_VECTOR> && v)
+	vector<T,HeapMemory,layout_base,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,layout_base,grow_policy_double,STD_VECTOR> && v)
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator= is not supported by this vector \n";
 
@@ -376,7 +376,7 @@ public:
 	 * \return true if the two vector match
 	 *
 	 */
-	bool operator!=(const vector<T, HeapMemory, layout, layout_base,grow_policy_double,STD_VECTOR> & v) const
+	bool operator!=(const vector<T, HeapMemory, layout_base,grow_policy_double,STD_VECTOR> & v) const
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator!= is not supported by this vector \n";
 
@@ -390,7 +390,7 @@ public:
 	 * \return true if the vector match
 	 *
 	 */
-	bool operator==(const vector<T, HeapMemory, layout, layout_base,grow_policy_double,STD_VECTOR> & v) const
+	bool operator==(const vector<T, HeapMemory, layout_base,grow_policy_double,STD_VECTOR> & v) const
 	{
 		std::cerr << __FILE__ << ":" << __LINE__ << " error: operator== is not supported by this vector \n";
 
