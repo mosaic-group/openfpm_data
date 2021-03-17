@@ -1115,6 +1115,54 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_properties )
 	}
 }
 
+BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_check_out_precision )
+{
+	Vcluster<> & v_cl = create_vcluster();
+
+	if (v_cl.getProcessUnitID() != 0)
+		return;
+
+	{
+	// Create 3 vectors with random particles
+	openfpm::vector<Point<3,double>> v1ps;
+	openfpm::vector<aggregate<float,double[3]>> v1pp;
+
+	// fill the vector with random data
+	v1ps.resize(100);
+	v1pp.resize(100);
+
+	for (size_t i = 0 ; i < v1ps.size(); i++)
+	{
+		v1ps.template get<0>(i)[0] = std::numeric_limits<double>::max();
+		v1ps.template get<0>(i)[1] = std::numeric_limits<double>::max();
+		v1ps.template get<0>(i)[2] = std::numeric_limits<double>::max();
+
+
+		v1pp.template get<0>(i) = std::numeric_limits<float>::max();
+		v1pp.template get<1>(i)[0] = std::numeric_limits<double>::max();
+		v1pp.template get<1>(i)[1] = std::numeric_limits<double>::max();
+		v1pp.template get<1>(i)[2] = std::numeric_limits<double>::max();
+	}
+
+	openfpm::vector<std::string> prop_names;
+
+	// Create a writer and write adding names to the properties
+	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,double[3]>>>,VECTOR_POINTS> vtk_v;
+	vtk_v.add(v1ps,v1pp,75);
+	openfpm::vector<std::string> prp_names({"scalar","vector"});
+	vtk_v.write("vtk_points_with_prp_names_prec_check.vtk",prp_names);
+
+#ifndef SE_CLASS3
+
+	// Check that match
+	bool test = compare("vtk_points_with_prp_names_prec_check.vtk","test_data/vtk_points_with_prp_names_prec_check_test.vtk");
+	BOOST_REQUIRE_EQUAL(test,true);
+
+#endif
+
+	}
+}
+
 BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 {
 	Vcluster<> & v_cl = create_vcluster();

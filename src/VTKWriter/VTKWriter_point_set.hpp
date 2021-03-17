@@ -224,14 +224,13 @@ class VTKWriter<pair,VECTOR_POINTS>
 		return v_out;
 	}
 
-	/*! \brief It get the vertex properties list
+	/*! \brief It get the point position header string
 	 *
-	 * It get the vertex properties list of the vertex defined as a VTK header
+	 * It get the vertex position header of the vertex defined as a VTK header
 	 *
-	 * \return a string that define the vertex properties in graphML format
+	 * \return a string that define the vertex position format
 	 *
 	 */
-
 	std::string get_point_properties_list(file_type ft)
 	{
 		//! vertex property output string
