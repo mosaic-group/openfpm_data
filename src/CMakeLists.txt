@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 add_definitions(-DSCAN_WITH_CUB)
 
+
 if (TEST_PERFORMANCE)
 	set(CUDA_SOURCES SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_sparse.cu
 			 SparseGridGpu/performance/SparseGridGpu_performance_insert_stencil.cu
@@ -19,12 +20,12 @@ if (TEST_PERFORMANCE)
 			 SparseGridGpu/performance/performancePlots.cpp)
 endif ()
 
-if (CUDA_FOUND)
+if (CUDA_FOUND OR CUDA_ON_CPU)
 	set(CUDA_SOURCES ${CUDA_SOURCES}
+	    Vector/map_vector_sparse_unit_tests.cu
             Vector/vector_gpu_unit_tests.cu
             Grid/cuda/cuda_grid_gpu_tests.cu
             Vector/cuda/map_vector_cuda_funcs_tests.cu
-            ../../openfpm_devices/src/memory/CudaMemory.cu
             NN/CellList/CellList_gpu_test.cu util/cuda/scan_sort_cuda_unit_tests.cu
             Grid/cuda/cuda_grid_unit_tests_func.cu
             util/cuda/modern_gpu_tests.cu
@@ -35,16 +36,25 @@ if (CUDA_FOUND)
 	    util/test/zmorton_unit_tests.cpp
 	    util/cuda/test/segreduce_block_cuda_tests.cu 
 	    SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu 
-	    SparseGridGpu/tests/SparseGridGpu_tests.cu
-            SparseGridGpu/tests/utils/SparseGridGpu_testKernels.cuh)
-else ()
-    set(CUDA_SOURCES)
+	    SparseGridGpu/tests/SparseGridGpu_tests.cu)
 endif ()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+	add_definitions("-DBOOST_MPL_CFG_HAS_TYPEOF")
+endif()
+
+if (CUDA_ON_CPU)
+	add_definitions(-DCUDA_ON_CPU -D__NVCC__ -DCUDART_VERSION=11000)
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
+	set_source_files_properties(isolation.cu PROPERTIES LANGUAGE CXX)
+       	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+        	add_definitions("-x c++")
+        endif()
+endif()
 
 add_executable(mem_map ${CUDA_SOURCES}
         main.cpp
         data_type/aggregate_unit_tests.cpp
-        Vector/map_vector_sparse_unit_tests.cpp
         util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
         memory_ly/memory_conf_unit_tests.cpp
         Space/tests/SpaceBox_unit_tests.cpp
@@ -52,16 +62,21 @@ add_executable(mem_map ${CUDA_SOURCES}
 		SparseGrid/SparseGrid_unit_tests.cpp
 		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
         Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
-        ../../openfpm_devices/src/memory/HeapMemory.cpp
-        ../../openfpm_devices/src/memory/PtrMemory.cpp 
 		SparseGridGpu/Geometry/tests/grid_smb_tests.cpp)
 
-add_executable(isolation
-	../../openfpm_devices/src/memory/CudaMemory.cu
-	../../openfpm_devices/src/memory/HeapMemory.cpp
-        SparseGridGpu/tests/SparseGridGpu_tests.cu
-	isolation.cpp
-        )
+set_property(TARGET mem_map PROPERTY CUDA_ARCHITECTURES 60 75)
+
+if (CUDA_FOUND)
+
+	add_executable(isolation
+		isolation.cu
+        	)
+
+	add_dependencies(isolation ofpmmemory)
+
+endif()
+
+add_dependencies(mem_map ofpmmemory)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	target_compile_options(mem_map PRIVATE "-Wno-undefined-var-template")
@@ -81,6 +96,11 @@ if (CMAKE_COMPILER_IS_GNUCC)
     endif ()
 endif ()
 
+if (CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
+        add_definitions(-D__STRICT_ANSI__)
+endif()
+
+
 ###########################
 
 if (TEST_PERFORMANCE)
@@ -90,24 +110,23 @@ endif ()
 
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
-    target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
+    if (CUDA_FOUND)
+    	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
+    endif()
 ENDIF()
 
 
 if (CUDA_FOUND)
-#    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
-    # The below is for better performance on CUDA
-    # "-rdc=true" is for Dynamic Parallelism (cooperative groups)
-    #    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_50,code=sm_50 -g -lineinfo >) # For Maxwell
-    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_61,code=compute_61 -g -lineinfo >) # For Pascal
-    target_compile_options(isolation PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_61,code=compute_61 -g -lineinfo >)
+    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
+    	target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_61,code=compute_61 -g -lineinfo >)
+    	target_compile_options(isolation PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_61,code=compute_61 -g -lineinfo >)
+    else()
+	target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: -D__NVCC__ -D__CUDACC_VER_MAJOR__=${CUDA_VERSION_MAJOR} -D__CUDACC_VER_MINOR__=${CUDA_VERSION_MINOR} -D__CUDACC_VER_BUILD__=0 >)
+        target_compile_options(isolation PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: -D__NVCC__ -D__CUDACC_VER_MAJOR__=${CUDA_VERSION_MAJOR} -D__CUDACC_VER_MINOR__=${CUDA_VERSION_MINOR} -D__CUDACC_VER_BUILD__=0 >)
+    endif()
     if (TEST_COVERAGE)
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
     endif ()
-#    target_compile_options(mem_map PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} >)
-    # The below is for better performance on CUDA
-    # "-rdc=true" is for Dynamic Parallelism (cooperative groups)
-    # target_compile_options(isolation PUBLIC $<$<COMPILE_LANGUAGE:CUDA>: ${WARNING_SUPPRESSION_AND_OPTION_NVCC} -use_fast_math -gencode arch=compute_50,code=sm_50 -g -lineinfo >) # For Maxwell
     if (TEST_COVERAGE)
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
     endif ()
@@ -119,22 +138,30 @@ target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../open
 target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories(mem_map PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories(mem_map PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(mem_map PUBLIC ${ALPAKA_ROOT}/include)
 
-target_include_directories(isolation PUBLIC ${CUDA_INCLUDE_DIRS})
-target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
-target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
-target_include_directories(isolation PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
-target_include_directories(isolation PUBLIC ${Boost_INCLUDE_DIRS})
+if (CUDA_FOUND)
+	target_include_directories(isolation PUBLIC ${CUDA_INCLUDE_DIRS})
+	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
+	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
+	target_include_directories(isolation PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
+	target_include_directories(isolation PUBLIC ${Boost_INCLUDE_DIRS})
+	target_include_directories(isolation PUBLIC ${ALPAKA_ROOT}/include)
+endif()
 
 target_include_directories(mem_map PUBLIC ${Vc_INCLUDE_DIR})
 
 target_link_libraries(mem_map ${Boost_LIBRARIES})
 target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
-
-target_link_libraries(isolation ${Boost_LIBRARIES})
-target_link_libraries(isolation -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
+target_link_libraries(mem_map ofpmmemory)
 target_link_libraries(mem_map ${Vc_LIBRARIES})
+
+if (CUDA_FOUND)
+	target_link_libraries(isolation ${Boost_LIBRARIES})
+	target_link_libraries(isolation -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
+	target_link_libraries(isolation ofpmmemory)
+endif()
 
 if (TEST_COVERAGE)
     target_link_libraries(mem_map -lgcov)
@@ -339,8 +366,8 @@ install(FILES Vector/cuda/map_vector_cuda_ker.cuh
         Vector/cuda/map_vector_sparse_cuda_kernels.cuh
         DESTINATION openfpm_data/include/Vector/cuda/)
 
-install(DIRECTORY util/cuda/cub/
-        DESTINATION openfpm_data/include/util/cuda/cub)
+install(DIRECTORY util/cuda/cub_old/
+        DESTINATION openfpm_data/include/util/cuda/cub_old)
 
 install(FILES util/multi_array_openfpm/array_openfpm.hpp
         util/multi_array_openfpm/multi_array_iterator_openfpm.hpp
@@ -352,17 +379,13 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
         util/multi_array_openfpm/types.hpp
         DESTINATION openfpm_data/include/util/multi_array_openfpm)
 
-install(DIRECTORY util/cuda/cub/
-                  DESTINATION openfpm_data/include/util/cuda/cub )
 
 install(FILES util/cuda/scan_cuda.cuh
         util/cuda/ofp_context.hxx
-        util/cuda/cuda_launch.hpp
-        util/cuda/cuda_kernel_error_checker.hpp
         util/cuda/kernels.cuh
-        util/cuda/cuda_launch.hpp
         util/cuda/scan_ofp.cuh
 	util/cuda/sort_ofp.cuh
+	util/cuda/reduce_ofp.cuh
         DESTINATION openfpm_data/include/util/cuda)
 
 install(FILES util/stat/common_statistics.hpp

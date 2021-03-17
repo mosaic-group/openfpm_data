@@ -4,10 +4,14 @@
 
 #include "util/cuda_util.hpp"
 #include "Vector/map_vector.hpp"
+
+#ifndef CUDA_ON_CPU
+
 #include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #include "util/cuda/moderngpu/kernel_reduce.hxx"
 #include "util/cuda/moderngpu/kernel_segreduce.hxx"
+
 
 BOOST_AUTO_TEST_SUITE( modern_gpu_tests )
 
@@ -62,7 +66,7 @@ BOOST_AUTO_TEST_CASE( modern_gpu_sort )
 
 	for (size_t i = 0 ; i < count ; i++)
 	{
-		vgpu.template get<0>(i) = ((float)rand() / RAND_MAX) * 17;
+		vgpu.template get<0>(i) = ((float)rand() / (float)RAND_MAX) * 17;
 		vgpu.template get<1>(i) = i;
 
 		gpu_ns.template get<0>(i) = vgpu.template get<0>(i);
@@ -104,7 +108,7 @@ BOOST_AUTO_TEST_CASE( modern_gpu_reduce )
 
 	for (size_t i = 0 ; i < count ; i++)
 	{
-		vgpu.template get<0>(i) = ((float)rand() / RAND_MAX) * 17;
+		vgpu.template get<0>(i) = ((float)rand() / (float)RAND_MAX) * 17;
 	}
 
 	vgpu.hostToDevice<0>();
@@ -149,7 +153,7 @@ BOOST_AUTO_TEST_CASE( modern_gpu_seg_reduce )
 
 	for (size_t i = 0 ; i < count ; i++)
 	{
-		vgpu.template get<0>(i) = ((float)rand() / RAND_MAX) * 17;
+		vgpu.template get<0>(i) = ((float)rand() / (float)RAND_MAX) * 17;
 	}
 
 	segment_offset.add();
@@ -157,7 +161,7 @@ BOOST_AUTO_TEST_CASE( modern_gpu_seg_reduce )
 	size_t base = 0;
 	while (1)
 	{
-		int c = ((float)rand() / RAND_MAX) * 17;
+		int c = ((float)rand() / (float)RAND_MAX) * 17;
 
 		if (c + base >= count)
 		{break;}
@@ -210,4 +214,6 @@ BOOST_AUTO_TEST_CASE( modern_gpu_seg_reduce )
 
 
 BOOST_AUTO_TEST_SUITE_END()
+
+#endif
 

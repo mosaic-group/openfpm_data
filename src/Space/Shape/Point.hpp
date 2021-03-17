@@ -100,7 +100,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \param p Point
 	 *
 	 */
-	template <typename S> inline Point(const Point<dim,S> & p)
+	template <typename S> __device__ __host__ inline Point(const Point<dim,S> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{get(i) = static_cast<S>(p.get(i));}
@@ -422,7 +422,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the value
 	 *
 	 */
-	inline T value(size_t i) const
+	__device__ __host__ inline T value(size_t i) const
 	{
 		return get(i);
 	}

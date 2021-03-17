@@ -36,7 +36,7 @@
 #endif // #ifdef __CUDACC__
 
 #ifndef PRAGMA_UNROLL
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) && !defined(__clang__)
   #define PRAGMA_UNROLL #pragma PRAGMA_UNROLL
 #else
   #define PRAGMA_UNROLL

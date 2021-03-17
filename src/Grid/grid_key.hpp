@@ -474,7 +474,7 @@ public:
 	 * \return the index value
 	 *
 	 */
-	inline mem_id value(size_t i) const
+	__device__ __host__ inline mem_id value(size_t i) const
 	{
 		return k[i];
 	}
@@ -524,7 +524,7 @@ private:
 	 * \param t list of numbers
 	 *
 	 */
-	template<typename a, typename ...T>void invert_assign(a v,T...t)
+	template<typename a, typename ...T> __device__ __host__ void invert_assign(a v,T...t)
 	{
 		k[sizeof...(T)] = v;
 		invert_assign(t...);
@@ -535,13 +535,13 @@ private:
 	 * \param v list of number
 	 *
 	 */
-	template<typename a, typename ...T>void invert_assign(a v)
+	template<typename a, typename ...T> __device__ __host__ void invert_assign(a v)
 	{
 		k[0] = v;
 	}
 
 	//! Constructor
-	void invert_assign()
+	__device__ __host__ void invert_assign()
 	{
 	}
 

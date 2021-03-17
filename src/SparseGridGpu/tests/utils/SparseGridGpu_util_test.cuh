@@ -267,6 +267,7 @@ struct HeatStencil
             // enlargedBlock[linId] = cur + dt * laplacian;
             res = cur + dt * laplacian;
         }
+
         __syncthreads();
         if ((curMask & mask_sparse::EXIST) && !(curMask & mask_sparse::PADDING))
         {

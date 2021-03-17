@@ -168,20 +168,6 @@ template<typename T>
 struct has_posMask<T, typename Void<decltype( T::stag_mask )>::type> : std::true_type
 {};
 
-template<typename T, typename Sfinae = void>
-struct has_check_device_pointer: std::false_type {};
-
-/*! \brief has_check_device_pointer check if a type has defined a member yes_has_check_device_pointer
- *
- * This mean that the class support a way to check if it is the owner od a particular device pointer
- *
- *
- * return true if T::yes_has_check_device_pointer is a valid type
- *
- */
-template<typename T>
-struct has_check_device_pointer<T, typename Void< typename T::yes_has_check_device_pointer >::type> : std::true_type
-{};
 
 /*! \brief check if T::type and T.data has the same type
  *
@@ -355,7 +341,6 @@ struct has_value_type_ofp: std::false_type {};
  *
  */
 template<typename T>
-//struct has_value_type_ofp<T, typename Void<decltype( typename T::value_type )>::type> : std::true_type
 struct has_value_type_ofp<T, typename Void< typename T::value_type>::type> : std::true_type
 {};
 

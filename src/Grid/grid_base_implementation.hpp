@@ -12,7 +12,7 @@
 #include "util/cuda_util.hpp"
 #include "cuda/cuda_grid_gpu_funcs.cuh"
 #include "util/create_vmpl_sequence.hpp"
-#include "util/cuda/cuda_launch.hpp"
+#include "util/cuda_launch.hpp"
 #include "util/object_si_di.hpp"
 
 constexpr int DATA_ON_HOST = 32;
@@ -1255,6 +1255,14 @@ public:
 			++sub_dst;
 		}
 	}
+
+	/*! \brief Indicate that unpacking the header is supported
+     *
+	 * \return false
+	 * 
+	 */
+	static bool is_unpack_header_supported()
+	{return false;}
 
 	/*! \brief Resize the grid
 	 *

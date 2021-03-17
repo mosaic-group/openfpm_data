@@ -9,7 +9,7 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
 #include "Point.hpp"
-#include <Space/Shape/Point.hpp>
+
 
 /*! \brief This class implement the Sphere concept in an N-dimensional space
  *

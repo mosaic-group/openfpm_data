@@ -35,7 +35,8 @@ protected:
     static const unsigned int pMask = AggregateInternalT::max_prop_real - 1;
     openfpm::vector_sparse_gpu_block<
             AggregateInternalT,
-            BlockMapGpuFunctors::BlockFunctor<threadBlockSize>
+            BlockMapGpuFunctors::BlockFunctor<threadBlockSize>,
+			indexT
             > blockMap;
 
 public:

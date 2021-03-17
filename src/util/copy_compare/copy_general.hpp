@@ -80,6 +80,15 @@ struct add_
 	}
 };
 
+#ifdef __clang__
+template<typename Tsrc>
+__host__ Tsrc atomicAdd(Tsrc * ptr, Tsrc value)
+{
+	std::cout << __FILE__ << ":" << __LINE__ << "Error: atomicAdd is supported only in device code not host" << std::endl;
+	return 0;
+}
+#endif
+
 /*! \brief This structure define the operation add to use with copy general
  *
  * \tparam Tdst destination object type
@@ -249,7 +258,7 @@ struct copy_general_op<op,T,1>
 	 * \param dst destination object
 	 *
 	 */
-	inline copy_general_op(const T & src, T & dst)
+	__device__ __host__ inline copy_general_op(const T & src, T & dst)
 	{
 		op<T,T>::operation(dst,src);
 	}
@@ -265,7 +274,7 @@ struct copy_general_op<op,T,3>
 	 * \param dst destination object
 	 *
 	 */
-	inline copy_general_op(const T & src, T & dst)
+	__device__ __host__ inline copy_general_op(const T & src, T & dst)
 	{
 		copy_aggregate_op<op,T> cp(src,dst);
 

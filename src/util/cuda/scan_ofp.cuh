@@ -10,39 +10,65 @@
 
 #ifdef __NVCC__
 
-#include "cub/cub.cuh"
-#include "util/cuda/moderngpu/kernel_scan.hxx"
+#include "util/cuda_launch.hpp"
+
+#if CUDART_VERSION >= 11000
+	#ifndef CUDA_ON_CPU 
+	// Here we have for sure CUDA >= 11
+	#include "cub/cub.cuh"
+	#ifndef SCAN_WITH_CUB
+		#define SCAN_WITH_CUB
+	#endif
+	#endif
+#else
+	// Here we have old CUDA
+	#include "cub_old/cub.cuh"
+	#include "util/cuda/moderngpu/kernel_scan.hxx"
+#endif
 #include "util/cuda/ofp_context.hxx"
 
 namespace openfpm
 {
-	template<mgpu::scan_type_t scan_type = mgpu::scan_type_exc,
-			typename launch_arg_t = mgpu::empty_t,
-			typename input_it, typename output_it>
-			void scan(input_it input, int count, output_it output, mgpu::ofp_context_t& context)
+	template<typename input_it, typename output_it>
+			 void scan(input_it input, int count, output_it output, mgpu::ofp_context_t& context)
 	{
-#ifdef SCAN_WITH_CUB
+#ifdef CUDA_ON_CPU
 
-	    void *d_temp_storage = NULL;
-	    size_t temp_storage_bytes = 0;
-	    cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes,input,
-	    		                                                    output,
-	    		                                                    count);
+	if (count == 0)	{return;}
 
-	    auto & temporal = context.getTemporalCUB();
-	    temporal.resize(temp_storage_bytes);
-
-	    // Run
-	    cub::DeviceScan::ExclusiveSum(temporal.template getDeviceBuffer<0>(), temp_storage_bytes,input,
-	            output,
-	            count);
+	auto prec = input[0];
+	output[0] = 0;
+	for (int i = 1 ; i < count ; i++)
+	{
+		auto next = prec + output[i-1];
+		prec = input[i];
+		output[i] = next;
+	}
 
 #else
-		mgpu::scan(input,count,output,context);
+	#ifdef SCAN_WITH_CUB
+
+			void *d_temp_storage = NULL;
+			size_t temp_storage_bytes = 0;
+			cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes,input,
+																		output,
+																		count);
+
+			auto & temporal = context.getTemporalCUB();
+			temporal.resize(temp_storage_bytes);
+
+			// Run
+			cub::DeviceScan::ExclusiveSum(temporal.template getDeviceBuffer<0>(), temp_storage_bytes,input,
+					output,
+					count);
+
+	#else
+			mgpu::scan(input,count,output,context);
+	#endif
 #endif
 	}
 }
 
-#endif
+#endif /* __NVCC__ */
 
 #endif /* SCAN_OFP_HPP_ */

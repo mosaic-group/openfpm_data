@@ -81,6 +81,39 @@ public:
               background(bck)
     {}
 
+    /*! \brief  
+     *
+     * \param 
+     * 
+     */
+    template<typename headers_type>
+    __device__ static int unpack_headers(headers_type & headers, unsigned char * data, int ih, int sz_pack)
+    {
+        size_t n_cnk;
+        if (sizeof(indexT) == 8)
+        {n_cnk = ((size_t *)data)[0];}
+        else
+        {
+                unsigned int dp1 = ((unsigned int *)data)[0];
+                unsigned int dp2 = ((unsigned int *)&data[4])[0];
+                n_cnk = (size_t)dp1 + ((size_t)dp2 << 32);
+        }
+        headers.template get<1>(ih) = n_cnk;
+
+		size_t actual_offset = n_cnk*sizeof(indexT);
+
+		unsigned int n_pnt = *(unsigned int *)&(data[sizeof(size_t) + 2*dim*sizeof(int) + actual_offset + n_cnk*sizeof(unsigned int)]);
+        headers.template get<2>(ih) = n_pnt;
+
+        return sizeof(size_t) +               // byte required to pack the number of chunk packed
+    				2*dim*sizeof(int) +           // starting point + size of the indexing packing
+    				  sizeof(indexT)*n_cnk +    				   // byte required to pack the chunk indexes
+    				  align_number_device(sizeof(indexT),(n_cnk+1)*sizeof(unsigned int)) +            // byte required to pack the scan of the chunk point
+    				  align_number_device(sizeof(indexT),n_pnt*sz_pack) +  // byte required to pack data
+    				  align_number_device(sizeof(indexT),n_pnt*sizeof(short int)) + // byte required to pack offsets
+    				  align_number_device(sizeof(indexT),n_pnt*sizeof(unsigned char));  // byte required to pack masks;
+    }
+
     /*! \brief Get the coordinate of the block and the offset id inside the block it give the global coordinate
      *
      * \param blockCoord block coordinate
@@ -299,6 +332,8 @@ public:
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(pos, stencilSupportRadius, coord);
         const unsigned int linId = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+//        const unsigned int linId = shift_position<dim,blockEdgeSize>::shift(pos,stencilSupportRadius);
+
         return linId;
     }
 
@@ -316,6 +351,8 @@ public:
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(offset, stencilSupportRadius, coord);
         return coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+
+//        return shift_position<dim,blockEdgeSize>::shift(offset,stencilSupportRadius);
     }
 
     template<typename Coordtype>
@@ -714,6 +751,9 @@ private:
         unsigned int coord[dim];
         linToCoordWithOffset<blockEdgeSize>(pos, stencilSupportRadius, coord);
         const unsigned int linId = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+
+//        const unsigned int linId = shift_position<dim,blockEdgeSize>::shift(pos,stencilSupportRadius);
+
         // Actually load the data into the shared region
         //ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
 
@@ -846,6 +886,8 @@ private:
             unsigned int coord[dim];
             linToCoordWithOffset<blockEdgeSize>(pos, stencilSupportRadius, coord);
             const unsigned int linId = coordToLin<blockEdgeSize>(coord, stencilSupportRadius);
+//            const unsigned int linId = shift_position<dim,blockEdgeSize>::shift(pos,stencilSupportRadius);
+
             // Actually store the data from the shared region
             ScalarT *basePtr = (ScalarT *)sharedRegionPtr;
 

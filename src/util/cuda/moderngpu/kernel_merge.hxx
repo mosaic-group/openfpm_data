@@ -46,6 +46,16 @@ void merge(a_keys_it a_keys, a_vals_it a_vals, int a_count,
     merge_range_t range = compute_merge_range(a_count, b_count, cta, nv, 
       mp0, mp1);
 
+// Any attempt to debug the problem on clang failed (if you remove this will crash on clang)
+#ifdef __clang__
+
+    if (range.b_end > b_count)
+    {
+      return;
+    }
+
+#endif
+
     merge_pair_t<type_t, vt> merge = cta_merge_from_mem<bounds_lower, nt, vt>(
       a_keys, b_keys, range, tid, comp, shared.keys);
 

@@ -3,7 +3,9 @@
 #include <Vector/map_vector.hpp>
 #include <Vector/cuda/map_vector_sparse_cuda_kernels.cuh>
 #include "util/cuda/scan_ofp.cuh"
+#ifndef CUDA_ON_CPU
 #include "util/cuda/moderngpu/kernel_merge.hxx"
+#endif
 
 BOOST_AUTO_TEST_SUITE( vector_sparse_cuda_kernels )
 
@@ -24,10 +26,10 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	// fill block insert of some data
 	for (int i = 0 ; i < nblock ; i++)
 	{
-		block_n.template get<0>(i) = ((float)rand() / RAND_MAX) * 511;
+		block_n.template get<0>(i) = ((float)rand() / (float)RAND_MAX) * 511;
 		for (int j = 0 ; j < block_n.template get<0>(i) ; j++)
 		{
-			block_insert.template get<0>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
+			block_insert.template get<0>(i*nslot + j) = ((float)rand() / (float)RAND_MAX) * 511;
 		}
 	}
 
@@ -54,7 +56,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	thr.y = 1;
 	thr.z = 1;
 
-	construct_insert_list_key_only<<<wthr,thr>>>(block_insert.toKernel(),block_n.toKernel(),
+	CUDA_LAUNCH_DIM3(construct_insert_list_key_only,wthr,thr,block_insert.toKernel(),block_n.toKernel(),
 										block_n_scan.toKernel(),output_list_0.toKernel(),output_list_1.toKernel(),
 										nslot);
 
@@ -94,10 +96,10 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use_small_pool )
 	// fill block insert of some data
 	for (int i = 0 ; i < nblock ; i++)
 	{
-		block_n.template get<0>(i) = ((float)rand() / RAND_MAX) * 16;
+		block_n.template get<0>(i) = ((float)rand() / (float)RAND_MAX) * 16;
 		for (int j = 0 ; j < block_n.template get<0>(i) ; j++)
 		{
-			block_insert.template get<0>(i*nslot + j) = ((float)rand() / RAND_MAX) * 511;
+			block_insert.template get<0>(i*nslot + j) = ((float)rand() / (float)RAND_MAX) * 511;
 		}
 	}
 
@@ -152,7 +154,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	for (size_t i = 0 ; i < vct_index_old.size() ; i++)
 	{
-		vct_index_old.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_index_old.template get<0>(i) = 17*(float)rand()/(float)RAND_MAX + i * 17;
 		vct_index_old.template get<1>(i) = i;
 	}
 
@@ -160,7 +162,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	for (size_t i = 0 ; i < vct_add_index.size() ; i++)
 	{
-		vct_add_index.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_add_index.template get<0>(i) = 17*(float)rand()/(float)RAND_MAX + i * 17;
 		vct_add_index.template get<1>(i) = i+vct_index_old.size();
 	}
 
@@ -168,7 +170,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	vct_index.resize(vct_add_index.size() + vct_index_old.size());
 
-	mgpu::standard_context_t ctx(false);
+	mgpu::ofp_context_t ctx;
 
 	// host to device
 	vct_index_old.template hostToDevice<0,1>();
@@ -236,12 +238,12 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 
 	for (size_t i = 0 ; i < vct_index_old.size() ; i++)
 	{
-		vct_index_old.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_index_old.template get<0>(i) = 17*(float)rand()/(float)RAND_MAX + i * 17;
 		vct_index_old.template get<1>(i) = i;
 
-		vct_data_old.template get<0>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data_old.template get<1>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data_old.template get<2>(i) = 128*(float)rand()/RAND_MAX;
+		vct_data_old.template get<0>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_data_old.template get<1>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_data_old.template get<2>(i) = 128*(float)rand()/(float)RAND_MAX;
 	}
 
 	vct_add_index.resize(100);
@@ -249,12 +251,12 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 
 	for (size_t i = 0 ; i < vct_add_index.size() ; i++)
 	{
-		vct_add_index.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_add_index.template get<0>(i) = 17*(float)rand()/(float)RAND_MAX + i * 17;
 		vct_add_index.template get<1>(i) = i+vct_index_old.size();
 
-		vct_add_data.template get<0>(i) = 128*(float)rand()/RAND_MAX;
-		vct_add_data.template get<1>(i) = 128*(float)rand()/RAND_MAX;
-		vct_add_data.template get<2>(i) = 128*(float)rand()/RAND_MAX;
+		vct_add_data.template get<0>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_add_data.template get<1>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_add_data.template get<2>(i) = 128*(float)rand()/(float)RAND_MAX;
 	}
 
 	// Now we merge
@@ -262,7 +264,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 	vct_index.resize(vct_add_index.size() + vct_index_old.size());
 	merge_indexes.resize(vct_index.size());
 
-	mgpu::standard_context_t ctx(false);
+	mgpu::ofp_context_t ctx;
 
 	// host to device
 	vct_index_old.template hostToDevice<0,1>();
@@ -282,7 +284,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 	vct_data_out.resize(vct_index.size());
 	vct_tot_out.resize(ite.wthr.x);
 
-	solve_conflicts<decltype(vct_index.toKernel()),decltype(vct_data_old.toKernel()),decltype(vct_tot_out.toKernel()),bdim,sadd_<0>,smin_<1>,smax_<2>><<<ite.wthr,ite.thr>>>(vct_index.toKernel(),vct_data_old.toKernel(),
+	CUDA_LAUNCH_DIM3((solve_conflicts<decltype(vct_index.toKernel()),decltype(vct_data_old.toKernel()),decltype(vct_tot_out.toKernel()),bdim,sadd_<0>,smin_<1>,smax_<2>>),ite.wthr,ite.thr,vct_index.toKernel(),vct_data_old.toKernel(),
 						  merge_indexes.toKernel(),vct_add_data.toKernel(),
 						  vct_index_out.toKernel(),vct_data_out.toKernel(),
 						  vct_tot_out.toKernel(),vct_data_old.size());
@@ -361,16 +363,16 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 
 	for (size_t i = 0 ; i < vct_index.size() ; i++)
 	{
-		vct_index.template get<0>(i) = 17*(float)rand()/RAND_MAX + i * 17;
+		vct_index.template get<0>(i) = 17*(float)rand()/(float)RAND_MAX + i * 17;
 
-		vct_data.template get<0>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data.template get<1>(i) = 128*(float)rand()/RAND_MAX;
-		vct_data.template get<2>(i) = 128*(float)rand()/RAND_MAX;
+		vct_data.template get<0>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_data.template get<1>(i) = 128*(float)rand()/(float)RAND_MAX;
+		vct_data.template get<2>(i) = 128*(float)rand()/(float)RAND_MAX;
 	}
 
 	for (size_t i = 0 ; i < vct_tot_out.size() ; i++)
 	{
-		vct_tot_out.template get<0>(i) = 128*(float)rand()/RAND_MAX;
+		vct_tot_out.template get<0>(i) = 128*(float)rand()/(float)RAND_MAX;
 		vct_tot_out.template get<2>(i) = 1;
 	}
 
@@ -386,7 +388,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 	vct_data_out.resize(vct_index.size());
 
 	int nblock = vct_tot_out.size();
-	realign<<<nblock,128>>>(vct_index.toKernel(),vct_data.toKernel(),vct_index_out.toKernel(),vct_data_out.toKernel(),vct_tot_out.toKernel());
+	CUDA_LAUNCH_DIM3(realign,nblock,128,vct_index.toKernel(),vct_data.toKernel(),vct_index_out.toKernel(),vct_data_out.toKernel(),vct_tot_out.toKernel());
 
 	vct_index_out.deviceToHost<0>();
 	vct_data_out.deviceToHost<0,1,2>();
@@ -407,6 +409,14 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 			match &= vct_data_out.template get<0>(pr) == vct_data.template get<0>(i*128 + j);
 			match &= vct_data_out.template get<1>(pr) == vct_data.template get<1>(i*128 + j);
 			match &= vct_data_out.template get<2>(pr) == vct_data.template get<2>(i*128 + j);
+
+			if (match == false)
+			{
+				std::cout << 0 << " " << pr << " " << i*128 + j << "  " << vct_index_out.template get<0>(pr) << "  " << vct_index.template get<0>(i*128 + j) << std::endl;
+				std::cout << 1 << " " << pr << " " << i*128 + j << "  " << vct_data_out.template get<0>(pr) << "  " << vct_data.template get<0>(i*128 + j) << std::endl;
+				std::cout << 2 << " " << pr << " " << i*128 + j << "  " << vct_data_out.template get<1>(pr) << "  " << vct_data.template get<1>(i*128 + j) << std::endl;
+				std::cout << 3 << " " << pr << " " << i*128 + j << "  " << vct_data_out.template get<2>(pr) << "  " << vct_data.template get<2>(i*128 + j) << std::endl;
+			}
 
 			++pr;
 		}

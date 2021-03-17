@@ -734,7 +734,7 @@ public:
 		auto & header_mask = spg.private_get_header_mask();
 		auto & header_inf = spg.private_get_header_inf();
 
-		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template storeBlock<prop>(arr,spg,chunk_id);
+		loadBlock_impl<prop,stencil_size,dim,vector_blocks_exts,vector_ext>::template storeBlock<sizeBlock>(arr,spg,chunk_id);
 
 		hm = &header_mask.get(chunk_id);
 		hc = &header_inf.get(chunk_id);

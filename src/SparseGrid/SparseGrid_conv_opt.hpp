@@ -110,7 +110,7 @@ struct conv_impl
 	}
 };
 
-#ifndef __NVCC__
+#if !defined(__NVCC__) || defined(CUDA_ON_CPU)
 
 
 template<unsigned int dir,int p, unsigned int prop_src1,typename chunk_type, typename vect_type, typename ids_type>
@@ -537,10 +537,10 @@ struct conv_impl<3>
 
 		unsigned char mask[decltype(it)::sizeBlockBord];
 		unsigned char mask_sum[decltype(it)::sizeBlockBord];
-		__attribute__ ((aligned (32))) prop_type block_bord_src1[decltype(it)::sizeBlockBord];
-		__attribute__ ((aligned (32))) prop_type block_bord_dst1[decltype(it)::sizeBlock];
-		__attribute__ ((aligned (32))) prop_type block_bord_src2[decltype(it)::sizeBlockBord];
-		__attribute__ ((aligned (32))) prop_type block_bord_dst2[decltype(it)::sizeBlock];
+		__attribute__ ((aligned (64))) prop_type block_bord_src1[decltype(it)::sizeBlockBord];
+		__attribute__ ((aligned (64))) prop_type block_bord_dst1[decltype(it)::sizeBlock+16];
+		__attribute__ ((aligned (64))) prop_type block_bord_src2[decltype(it)::sizeBlockBord];
+		__attribute__ ((aligned (64))) prop_type block_bord_dst2[decltype(it)::sizeBlock+16];
 
 		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<0>>::type sz0;
 		typedef typename boost::mpl::at<typename decltype(it)::stop_border_vmpl,boost::mpl::int_<1>>::type sz1;
@@ -640,8 +640,8 @@ struct conv_impl<3>
 
 						func(vo1, vo2, xs1, xs2, &mask_sum[cc], args ...);
 
-						vo1.store(&block_bord_dst1[cd],cmp,Vc::Aligned);
-						vo2.store(&block_bord_dst2[cd],cmp,Vc::Aligned);
+						vo1.store(&block_bord_dst1[cd],cmp,Vc::Unaligned);
+						vo2.store(&block_bord_dst2[cd],cmp,Vc::Unaligned);
 
 						cc += Vc::Vector<prop_type>::Size;
 						for (int s = 0 ; s < N ; s++)

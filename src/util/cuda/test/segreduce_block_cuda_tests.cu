@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_SUITE(segreduce_block_cuda_tests)
         // template<unsigned int chunksPerBlock, typename op, typename SegType, typename DataType, typename MaskType>
         // segreduce(DataType *data, SegType *segments, MaskType *masks, DataType *output, MaskType *outputMasks)
 //        segreduce<2, mgpu::maximum_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
-        segreduce_block<2, mgpu::plus_t<ScalarT>> <<< outputData.size(), 2*BlockT::size >>> (
+        CUDA_LAUNCH_DIM3((segreduce_block<2, mgpu::plus_t<ScalarT>>), outputData.size(), 2*BlockT::size,
                         (BlockT *) data.template getDeviceBuffer<BLOCK>(),
                         (int *) segments.template getDeviceBuffer<0>(),
                         (MaskBlockT *) data.template getDeviceBuffer<BITMASK>(),
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_SUITE(segreduce_block_cuda_tests)
                                 );
 
         // Segreduce on mask
-        segreduce_block<2, mgpu::maximum_t<unsigned char>> <<< outputData.size(), 2*BlockT::size >>> (
+        CUDA_LAUNCH_DIM3((segreduce_block<2, mgpu::maximum_t<unsigned char>>), outputData.size(), 2*BlockT::size,
                         (MaskBlockT *) data.template getDeviceBuffer<BITMASK>(),
                         (int *) segments.template getDeviceBuffer<0>(),
                         (MaskBlockT *) data.template getDeviceBuffer<BITMASK>(),

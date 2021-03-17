@@ -15,6 +15,9 @@ struct ut_start
 	//! start procedure before running the test
     ut_start()
     {
+#ifdef CUDA_ON_CPU
+        init_wrappers();
+#endif
 #ifdef PERFORMANCE_TEST
     	test_dir = getenv("OPENFPM_PERFORMANCE_TEST_DIR");
 
