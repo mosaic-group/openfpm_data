@@ -19,26 +19,26 @@ mv /tmp/openfpm_io openfpm_io
 
 git clone git@git.mpi-cbg.de:openfpm/openfpm_devices.git openfpm_devices
 cd openfpm_devices
-git checkout master
+git checkout develop
 cd ..
 git clone git@git.mpi-cbg.de:openfpm/openfpm_data.git openfpm_data
 cd openfpm_data
-git checkout master
+git checkout develop
 cd ..
 git clone git@git.mpi-cbg.de:openfpm/openfpm_pdata.git openfpm_pdata
 cd openfpm_pdata
-git checkout master
+git checkout develop
 cd ..
 git clone git@git.mpi-cbg.de:openfpm/openfpm_vcluster.git openfpm_vcluster
 cd openfpm_vcluster
-git checkout master
+git checkout develop
 cd ..
 
 cd "$1/openfpm_io"
 
 #rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/MPI
 #rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/HDF5
-#rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/BOOST
+rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/BOOST
 
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
 	source /opt/rh/devtoolset-7/enable
