@@ -16,8 +16,9 @@ if (TEST_PERFORMANCE)
 			 SparseGridGpu/performance/SparseGridGpu_performance_insert_single.cu
 			 SparseGridGpu/performance/SparseGridGpu_performance_tests.cu
 			 SparseGridGpu/performance/SparseGridGpu_performance_insert_block.cu
-			 SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_3d.cu
-			 SparseGridGpu/performance/performancePlots.cpp)
+                         SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_3d.cu
+                         SparseGridGpu/performance/performancePlots.cpp
+                         Vector/performance/vector_performance_test.cu)
 endif ()
 
 if (CUDA_FOUND OR CUDA_ON_CPU)
