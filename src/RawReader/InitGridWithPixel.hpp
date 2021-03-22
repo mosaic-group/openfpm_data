@@ -9,7 +9,7 @@
  *
  * @details Can be run in parallel.
  *
- * @author Justina Stark
+ * @author Justina Stark & Pietro Incardona
  * @date November 2019 - August 2020
  */
 #ifndef IMAGE_BASED_RECONSTRUCTION_GETINITIALGRID_HPP
