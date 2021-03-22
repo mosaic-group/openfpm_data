@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE( vector_cuda_to_kernel_recursive2 )
 	typedef openfpm::vector_gpu<aggregate<int,long int>> test1_type;
 	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<aggregate<long int>>>> test2_type;
 	typedef openfpm::vector_gpu<aggregate<int,openfpm::vector_gpu<aggregate<Box<2,float>>>>> test3_type;
-	typedef openfpm::vector<Box<3,float>,CudaMemory,typename memory_traits_inte<Box<3,float>>::type,memory_traits_inte> test4_type;
+	typedef openfpm::vector<Box<3,float>,CudaMemory,memory_traits_inte> test4_type;
 
 	typedef typename toKernel_transform<memory_traits_inte,test1_type>::type tker1;
 	typedef typename toKernel_transform<memory_traits_inte,test2_type>::type tker2;
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE( vector_cuda_to_cpu_operator_equal )
 {
 	openfpm::vector_gpu<aggregate<int,int,double>> v1;
 	openfpm::vector<aggregate<int,int,double>> v2;
-	openfpm::vector<aggregate<int,int,double>,HeapMemory,typename memory_traits_inte<aggregate<int,int,double>>::type, memory_traits_inte > v3;
+	openfpm::vector<aggregate<int,int,double>,HeapMemory, memory_traits_inte > v3;
 	openfpm::vector<aggregate<int,int,double>> v4;
 
 	v2.resize(3000);

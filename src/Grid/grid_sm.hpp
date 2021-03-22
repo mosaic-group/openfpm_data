@@ -244,7 +244,25 @@ class grid_sm
 		}
 	}
 
+	/*! \brief linearize an arbitrary set of index
+	 *
+	 * linearize an arbitrary set of index
+	 *
+	 */
+	template<typename a, typename ...lT>
+	__device__ __host__ inline mem_id Lin_impl(a v,lT...t) const
+	{
+		return v*sz_s[sizeof...(t)-1] + Lin_impl(t...);
+	}
+
+	//! Linearize a set of index
+	template<typename a> __device__ __host__ inline mem_id Lin_impl(a v) const
+	{
+		return v;
+	}
+
 public:
+
 
 	/*! \brief Return the box enclosing the grid
 	 *
@@ -532,23 +550,10 @@ public:
 	 * linearize an arbitrary set of index
 	 *
 	 */
-	template<typename a, typename ...lT>
+	template<typename a, typename ...lT, typename enabler = typename std::enable_if<sizeof...(lT) == N-1>::type >
 	__device__ __host__ inline mem_id Lin(a v,lT...t) const
 	{
-#ifdef SE_CLASS1
-		if (sizeof...(t)+1 > N)
-		{
-			std::cerr << "Error incorrect grid cannot linearize more index than its dimensionality" << "\n";
-		}
-#endif
-
-		return v*sz_s[sizeof...(t)-1] + Lin(t...);
-	}
-
-	//! Linearize a set of index
-	template<typename a> __device__ __host__ inline mem_id Lin(a v) const
-	{
-		return v;
+		return v*sz_s[sizeof...(t)-1] + Lin_impl(t...);
 	}
 
 	//! Construct
@@ -574,27 +579,6 @@ public:
 		return gk;
 	}
 
-	/*! \brief Linearization of the grid_key_d
-	 *
-	 * Linearization of the grid_key_d given a key, it spit out a number that is just the 1D linearization
-	 * of the key. In this case is the linearization of N index
-	 *
-	 * \param gk grid key to access the element on a key
-	 * \return index of the memory
-	 *
-	 */
-
-	//#pragma openfpm layout(get)
-	template<unsigned int dim, unsigned int p> inline mem_id LinId(const grid_key_d<dim,p> & gk) const
-	{
-		mem_id lid = gk.k[0];
-		for (mem_id i = 1 ; i < dim ; i++)
-		{
-			lid += gk.k[i] * sz_s[i-1];
-		}
-
-		return lid;
-	}
 
 	/*! \brief Linearization of an array of mem_id (long int)
 	 *

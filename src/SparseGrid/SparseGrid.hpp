@@ -481,7 +481,7 @@ class sgrid_cpu
 	typedef sgrid_cpu<dim,T,S,grid_lin,layout,layout_base,chunking> self;
 
 	//! vector of chunks
-	openfpm::vector<aggregate_bfv<chunk_def>,S,typename layout_base<aggregate_bfv<chunk_def>>::type,layout_base > chunks;
+	openfpm::vector<aggregate_bfv<chunk_def>,S,layout_base > chunks;
 
 	//! grid size information
 	grid_lin g_sm;
@@ -2216,7 +2216,7 @@ public:
 
 		openfpm::vector<cheader<dim>> header_inf_tmp;
 		openfpm::vector<mheader<chunking::size::value>> header_mask_tmp;
-		openfpm::vector<aggregate_bfv<chunk_def>,S,typename layout_base<aggregate_bfv<chunk_def>>::type,layout_base > chunks_tmp;
+		openfpm::vector<aggregate_bfv<chunk_def>,S,layout_base > chunks_tmp;
 
 		header_inf_tmp.resize(n_chunks);
 		header_mask_tmp.resize(n_chunks);
@@ -2462,7 +2462,7 @@ public:
 	{
 		openfpm::vector<cheader<dim>,S> header_inf_tmp;
 		openfpm::vector<mheader<chunking::size::value>,S> header_mask_tmp;
-		openfpm::vector<aggregate_bfv<chunk_def>,S,typename layout_base<aggregate_bfv<chunk_def>>::type,layout_base > chunks_tmp;
+		openfpm::vector<aggregate_bfv<chunk_def>,S,layout_base > chunks_tmp;
 
 		header_inf_tmp.resize(header_inf.size());
 		header_mask_tmp.resize(header_mask.size());
@@ -2692,7 +2692,7 @@ public:
 	 * \return the data of the blocks
 	 *
 	 */
-	openfpm::vector<aggregate_bfv<chunk_def>,S,typename layout_base<aggregate_bfv<chunk_def>>::type,layout_base > & private_get_data()
+	openfpm::vector<aggregate_bfv<chunk_def>,S,layout_base > & private_get_data()
 	{
 		return chunks;
 	}

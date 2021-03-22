@@ -22,13 +22,13 @@
  *
  */
 template<typename T>
-class vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR>
+class vector<T,CudaMemory,memory_traits_inte,grow_policy_double,STD_VECTOR>
 {
 	// Memory layout
 	typedef typename memory_traits_inte<aggregate<T>>::type layout;
 
 	//! 1-D static grid
-	vector<aggregate<T>,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double> base;
+	vector<aggregate<T>,CudaMemory,memory_traits_inte,grow_policy_double> base;
 
 	//! Error code
 	size_t err_code = 0;
@@ -152,7 +152,7 @@ public:
 	 * \param v vector to swap
 	 *
 	 */
-	void swap(vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> && v)
+	void swap(vector<T,CudaMemory,memory_traits_inte,grow_policy_double,STD_VECTOR> && v)
 	{
 		base.swap(v.base);
 	}
@@ -265,7 +265,7 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(const vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> & v) noexcept
+	vector(const vector<T,CudaMemory,memory_traits_inte,grow_policy_double,STD_VECTOR> & v) noexcept
 	:err_code(0)
 	{
 		base = v.base;
@@ -282,7 +282,7 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> && v) noexcept
+	vector(vector<T,CudaMemory,memory_traits_inte,grow_policy_double,STD_VECTOR> && v) noexcept
 	:err_code(0)
 	{
 		base.swap(v.base);
@@ -298,7 +298,7 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> & v)
+	void swap(vector<T,CudaMemory,memory_traits_inte,grow_policy_double,STD_VECTOR> & v)
 	{
 		base.swap(v.base);
 	}
@@ -310,8 +310,8 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> &
-	operator=(const vector<T,CudaMemory,typename memory_traits_inte<aggregate<T>>::type,memory_traits_inte,grow_policy_double,STD_VECTOR> & v)
+	vector<T,CudaMemory,memory_traits_inte,grow_policy_double,STD_VECTOR> &
+	operator=(const vector<T,CudaMemory,memory_traits_inte,grow_policy_double,STD_VECTOR> & v)
 	{
 		base = v.base;
 

@@ -787,33 +787,33 @@ namespace openfpm
 			 typename block_functor = stub_block_functor>
 	class vector_sparse
 	{
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_index;
-		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p,impl> vct_data;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_m_index;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_index;
+		vector<T,Memory,layout_base,grow_p,impl> vct_data;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_m_index;
 
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_add_index;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_rem_index;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_nadd_index;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_nrem_index;
-		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> vct_add_data;
-		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> vct_add_data_reord;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_add_index;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_rem_index;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_nadd_index;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_nrem_index;
+		vector<T,Memory,layout_base,grow_p> vct_add_data;
+		vector<T,Memory,layout_base,grow_p> vct_add_data_reord;
 
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_add_index_cont_0;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_add_index_cont_1;
-		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> vct_add_data_cont;
-		vector<aggregate<Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti>>::type,layout_base,grow_p> vct_add_index_unique;
-		vector<aggregate<int,int>,Memory,typename layout_base<aggregate<int,int>>::type,layout_base,grow_p> segments_int;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_add_index_cont_0;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_add_index_cont_1;
+		vector<T,Memory,layout_base,grow_p> vct_add_data_cont;
+		vector<aggregate<Ti,Ti>,Memory,layout_base,grow_p> vct_add_index_unique;
+		vector<aggregate<int,int>,Memory,layout_base,grow_p> segments_int;
 
-		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p,impl> vct_add_data_unique;
+		vector<T,Memory,layout_base,grow_p,impl> vct_add_data_unique;
 
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_index_tmp4;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_index_tmp;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_index_tmp2;
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_index_tmp3;
-		vector<aggregate<Ti,Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti,Ti>>::type,layout_base,grow_p> vct_index_dtmp;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_index_tmp4;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_index_tmp;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_index_tmp2;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_index_tmp3;
+		vector<aggregate<Ti,Ti,Ti>,Memory,layout_base,grow_p> vct_index_dtmp;
 
 		// segments map (This is used only in case of Blocked data)
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_segment_index_map;
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_segment_index_map;
 
 		block_functor blf;
 
@@ -882,12 +882,12 @@ namespace openfpm
 		 * \param contect mgpu context
 		 *
 		 */
-		size_t make_continuos(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_nadd_index,
-							  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index,
-							  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_cont_index,
-							  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_cont_index_map,
-							  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data,
-							  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_cont,
+		size_t make_continuos(vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_nadd_index,
+							  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index,
+							  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_cont_index,
+							  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_cont_index_map,
+							  vector<T,Memory,layout_base,grow_p> & vct_add_data,
+							  vector<T,Memory,layout_base,grow_p> & vct_add_data_cont,
 							  mgpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
@@ -964,10 +964,10 @@ namespace openfpm
 		 * \param vct_add_data_cont added data in a continuos unsorted array
 		 *
 		 */
-		void reorder_indexes(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_cont_index,
-							 vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_cont_index_map,
-							 vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
-							 vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_cont,
+		void reorder_indexes(vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_cont_index,
+							 vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_cont_index_map,
+							 vector<T,Memory,layout_base,grow_p> & vct_add_data_reord,
+							 vector<T,Memory,layout_base,grow_p> & vct_add_data_cont,
 							 mgpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
@@ -1011,10 +1011,10 @@ namespace openfpm
 		 *
 		 */
 		template<typename ... v_reduce>
-		void merge_indexes(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_sort,
-						   vector<aggregate<Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti>>::type,layout_base,grow_p> & vct_add_index_unique,
-				  	  	   vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_merge_index,
-				  	  	   vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_merge_index_map,
+		void merge_indexes(vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_sort,
+						   vector<aggregate<Ti,Ti>,Memory,layout_base,grow_p> & vct_add_index_unique,
+				  	  	   vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_merge_index,
+				  	  	   vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_merge_index_map,
 				  	  	   mgpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
@@ -1119,10 +1119,10 @@ namespace openfpm
 
 
 		template<typename ... v_reduce>
-		void merge_datas(vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
-						 vector<aggregate<Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti>>::type,layout_base,grow_p> & segments_new,
-						 vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data,
-						 vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_data_reord_map,
+		void merge_datas(vector<T,Memory,layout_base,grow_p> & vct_add_data_reord,
+						 vector<aggregate<Ti,Ti>,Memory,layout_base,grow_p> & segments_new,
+						 vector<T,Memory,layout_base,grow_p> & vct_add_data,
+						 vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_data_reord_map,
 				  	  	   mgpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
@@ -1199,9 +1199,9 @@ namespace openfpm
 		}
 
 		template<typename ... v_reduce>
-		void flush_on_gpu_insert(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_0,
-				  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_1,
-				  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
+		void flush_on_gpu_insert(vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_cont_0,
+				  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_cont_1,
+				  vector<T,Memory,layout_base,grow_p> & vct_add_data_reord,
 				  mgpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
@@ -1372,9 +1372,9 @@ namespace openfpm
 		}
 
 		template<typename ... v_reduce>
-		void flush_on_gpu(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_0,
-						  vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_1,
-						  vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
+		void flush_on_gpu(vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_cont_0,
+						  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_cont_1,
+						  vector<T,Memory,layout_base,grow_p> & vct_add_data_reord,
 						  mgpu::ofp_context_t & context)
 		{
 			flush_on_gpu_insert<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context);
@@ -1420,8 +1420,8 @@ namespace openfpm
 
 			// merge the the data
 
-			vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p,impl> vct_data_tmp;
-			vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> vct_index_tmp;
+			vector<T,Memory,layout_base,grow_p,impl> vct_data_tmp;
+			vector<aggregate<Ti>,Memory,layout_base,grow_p> vct_index_tmp;
 
 			vct_data_tmp.resize(vct_data.size() + vct_add_data_unique.size());
 			vct_index_tmp.resize(vct_index.size() + vct_add_index_unique.size());
@@ -1609,7 +1609,7 @@ namespace openfpm
 		 * \param iv
 		 *
 		 */
-		void swapIndexVector(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & iv)
+		void swapIndexVector(vector<aggregate<Ti>,Memory,layout_base,grow_p> & iv)
 		{
 			vct_index.swap(iv);
 		}
@@ -1740,7 +1740,7 @@ namespace openfpm
 		 *
 		 */
 		template<typename ... v_reduce>
-		void flush_v(vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & vct_add_index_cont_0,
+		void flush_v(vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_cont_0,
 				     mgpu::ofp_context_t & context,
 				     flush_type opt = FLUSH_ON_HOST,
 				     int i = 0)
@@ -1764,7 +1764,7 @@ namespace openfpm
 		 *
 		 */
 		template<typename ... v_reduce>
-		void flush_vd(vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & vct_add_data_reord,
+		void flush_vd(vector<T,Memory,layout_base,grow_p> & vct_add_data_reord,
 				     mgpu::ofp_context_t & context,
 				     flush_type opt = FLUSH_ON_HOST)
 		{
@@ -1830,7 +1830,7 @@ namespace openfpm
 		 *
 		 * \return return the sorted vector of the indexes
 		 */
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> &
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> &
 		private_get_vct_index()
 		{
 			return vct_index;
@@ -1984,27 +1984,27 @@ namespace openfpm
 			this->max_ele = max_ele_;
 		}
 
-		vector<T,Memory,typename layout_base<T>::type,layout_base,grow_p> & private_get_vct_add_data()
+		vector<T,Memory,layout_base,grow_p> & private_get_vct_add_data()
 		{
 			return vct_add_data;
 		}
 
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & private_get_vct_add_index()
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> & private_get_vct_add_index()
 		{
 			return vct_add_index;
 		}
 
-		const vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & private_get_vct_add_index() const
+		const vector<aggregate<Ti>,Memory,layout_base,grow_p> & private_get_vct_add_index() const
 		{
 			return vct_add_index;
 		}
 
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & private_get_vct_nadd_index()
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> & private_get_vct_nadd_index()
 		{
 			return vct_nadd_index;
 		}
 
-		const vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & private_get_vct_nadd_index() const
+		const vector<aggregate<Ti>,Memory,layout_base,grow_p> & private_get_vct_nadd_index() const
 		{
 			return vct_nadd_index;
 		}
@@ -2045,12 +2045,12 @@ namespace openfpm
 		 *
 		 *
 		 */
-		vector<aggregate<Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti>>::type,layout_base,grow_p> & getSegmentToMergeIndexMap()
+		vector<aggregate<Ti,Ti>,Memory,layout_base,grow_p> & getSegmentToMergeIndexMap()
 		{
 			return vct_add_index_unique;
 		}
 
-		vector<aggregate<Ti,Ti>,Memory,typename layout_base<aggregate<Ti,Ti>>::type,layout_base,grow_p> & getSegmentToMergeIndexMap() const
+		vector<aggregate<Ti,Ti>,Memory,layout_base,grow_p> & getSegmentToMergeIndexMap() const
 		{
 			return vct_add_index_unique;
 		}
@@ -2073,7 +2073,7 @@ namespace openfpm
 		 *  0  2  3   1   4
 		 * (7)(7)(9)(44)(44)
 		 */
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & getMappingVector()
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> & getMappingVector()
 		{
 			return vct_add_index_cont_1;
 		}
@@ -2096,7 +2096,7 @@ namespace openfpm
 		 *  0  6  7  8   1   2   9  10   3   4   5
 		 * (5)(7)(7)(9)(10)(35)(44)(44)(50)(66)(79)
 		 */
-		vector<aggregate<Ti>,Memory,typename layout_base<aggregate<Ti>>::type,layout_base,grow_p> & getMergeIndexMapVector()
+		vector<aggregate<Ti>,Memory,layout_base,grow_p> & getMergeIndexMapVector()
 		{
 			return vct_index_tmp2;
 		}

@@ -9,7 +9,7 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
 #include "Point_orig.hpp"
-#include "Grid/Encap.hpp"
+#include "memory_ly/Encap.hpp"
 #include "data_type/aggregate.hpp"
 
 

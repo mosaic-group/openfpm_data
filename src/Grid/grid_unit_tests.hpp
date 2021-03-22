@@ -499,6 +499,101 @@ BOOST_AUTO_TEST_CASE( grid_use)
 	std::cout << "Grid unit test end" << "\n";
 }
 
+BOOST_AUTO_TEST_CASE( grid_use_smb)
+{
+	/*  tensor<int,3,3,3> c;
+	  tensor<tensor<int,3,3,3>,3,3,3> c2;*/
+
+	std::cout << "Grid smb unit test start" << "\n";
+
+	size_t sz[3] = {GS_SIZE,GS_SIZE,GS_SIZE};
+
+
+	// Test the 3d gpu grid with CudaMemory and HeapMemory with different size
+
+	for (int i = 0 ; i <= GS_SIZE ; i+=4)
+	{
+#ifdef CUDA_GPU
+
+		{
+		//! [Definition and allocation of a 3D grid on GPU memory]
+		grid_gpu<3, Point_test<float>, grid_smb<3,4> > c3(sz);
+		c3.setMemory();
+		//! [Definition and allocation of a 3D grid on GPU memory]
+		test_layout_grid3d(c3,i);
+		}
+
+#endif
+
+		{grid_cpu<3, Point_test<float>, grid_smb<3,4> > c3(sz);
+		c3.setMemory();
+		test_layout_grid3d(c3,i);}
+
+		{
+		//! [Definition and allocation of a 3D grid on CPU memory]
+		grid_cpu<3, Point_test<float>, grid_smb<3,4> > c3(sz);
+		c3.setMemory();
+		//! [Definition and allocation of a 3D grid on CPU memory]
+		test_layout_grid3d(c3,i);}
+
+		// Test the 3d cpu grid with Cudamemory and HeapMemory
+
+		{grid_cpu<3, Point_test<float>, grid_smb<3,4> > c3(sz);
+		c3.setMemory();
+		test_layout_grid3d(c3,i);}
+
+	}
+
+	std::cout << "Grid unit test end" << "\n";
+}
+
+BOOST_AUTO_TEST_CASE( grid_use_zmb)
+{
+	/*  tensor<int,3,3,3> c;
+	  tensor<tensor<int,3,3,3>,3,3,3> c2;*/
+
+	std::cout << "Grid zmb unit test start" << "\n";
+
+	size_t sz[3] = {GS_SIZE,GS_SIZE,GS_SIZE};
+
+	// Test the 3d gpu grid with CudaMemory and HeapMemory with different size
+
+	for (int i = 4 ; i <= GS_SIZE ; i*=2)
+	{
+#ifdef CUDA_GPU
+
+		{
+		//! [Definition and allocation of a 3D grid on GPU memory]
+		grid_gpu<3, Point_test<float>, grid_zmb<3,4, long int> > c3(sz);
+		c3.setMemory();
+		//! [Definition and allocation of a 3D grid on GPU memory]
+		test_layout_grid3d(c3,i);
+		}
+
+#endif
+
+		{grid_cpu<3, Point_test<float>, grid_zmb<3,4, long int> > c3(sz);
+		c3.setMemory();
+		test_layout_grid3d(c3,i);}
+
+		{
+		//! [Definition and allocation of a 3D grid on CPU memory]
+		grid_cpu<3, Point_test<float>, grid_zmb<3,4, long int> > c3(sz);
+		c3.setMemory();
+		//! [Definition and allocation of a 3D grid on CPU memory]
+		test_layout_grid3d(c3,i);}
+
+		// Test the 3d cpu grid with Cudamemory and HeapMemory
+
+		{grid_cpu<3, Point_test<float>, grid_zmb<3,4, long int> > c3(sz);
+		c3.setMemory();
+		test_layout_grid3d(c3,i);}
+
+	}
+
+	std::cout << "Grid unit test end" << "\n";
+}
+
 /* \brief This is an ordinary test simple 3D with plain C array
  *
  * This is an ordinary test simple 3D with plain C array

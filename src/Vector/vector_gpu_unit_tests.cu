@@ -62,9 +62,9 @@ BOOST_AUTO_TEST_SUITE( vector_cuda_tests )
 
 BOOST_AUTO_TEST_CASE ( test_vector_of_vector_gpu )
 {
-	typedef openfpm::vector<Box<3,float>,CudaMemory,typename memory_traits_inte<Box<3,float>>::type,memory_traits_inte> proc_boxes;
+	typedef openfpm::vector<Box<3,float>,CudaMemory,memory_traits_inte> proc_boxes;
 
-	openfpm::vector<aggregate<proc_boxes>,CudaMemory,typename memory_traits_inte<aggregate<proc_boxes>>::type,memory_traits_inte> vb_int_proc;
+	openfpm::vector<aggregate<proc_boxes>,CudaMemory,memory_traits_inte> vb_int_proc;
 
 	vb_int_proc.resize_no_device(5);
 

@@ -45,7 +45,7 @@ namespace openfpm
 {
 
 	template<bool is_ok_cuda,typename T, typename Memory,
-			 typename layout, template<typename> class layout_base,
+			 template<typename> class layout_base,
 			 typename grow_p>
 	struct add_prp_device_impl
 	{
@@ -55,14 +55,14 @@ namespace openfpm
 				  unsigned int impl,
 				  template <typename> class layout_base2,
 				  unsigned int ...args>
-		static void run(openfpm::vector<T,Memory,layout,layout_base,grow_p,impl> & this_ ,const openfpm::vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
+		static void run(openfpm::vector<T,Memory,layout_base,grow_p,impl> & this_ ,const openfpm::vector<S,M,layout_base2,gp,impl> & v)
 		{
 			std::cout << __FILE__ << ":" << __LINE__ << " Error the function add_prp_device only work with cuda enabled vector" << std::endl;
 		}
 	};
 
 	template<bool is_ok_cuda,typename T, typename Memory,
-			 typename layout, template<typename> class layout_base,
+			 template<typename> class layout_base,
 			 typename grow_p>
 	struct merge_prp_device_impl
 	{
@@ -72,8 +72,8 @@ namespace openfpm
 				  unsigned int impl,
 				  template <typename> class layout_base2,
 				  unsigned int ...args>
-		static void run(openfpm::vector<T,Memory,layout,layout_base,grow_p,impl> & this_ ,
-				        const openfpm::vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v,
+		static void run(openfpm::vector<T,Memory,layout_base,grow_p,impl> & this_ ,
+				        const openfpm::vector<S,M,layout_base2,gp,impl> & v,
 				        unsigned int offset)
 		{
 			std::cout << __FILE__ << ":" << __LINE__ << " Error the function merge_prp_device only work with cuda enabled vector" << std::endl;
@@ -81,9 +81,9 @@ namespace openfpm
 	};
 
 	template<typename T, typename Memory,
-			 typename layout, template<typename> class layout_base,
+			 template<typename> class layout_base,
 			 typename grow_p>
-	struct add_prp_device_impl<true,T,Memory,layout,layout_base,grow_p>
+	struct add_prp_device_impl<true,T,Memory,layout_base,grow_p>
 	{
 		template <typename S,
 				  typename M,
@@ -91,7 +91,7 @@ namespace openfpm
 				  unsigned int impl,
 				  template <typename> class layout_base2,
 				  unsigned int ...args>
-		static void run(vector<T,Memory,layout,layout_base,grow_p,impl> & this_ ,const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
+		static void run(vector<T,Memory,layout_base,grow_p,impl> & this_ ,const vector<S,M,layout_base2,gp,impl> & v)
 		{
 				// merge the data on device
 
@@ -111,9 +111,9 @@ namespace openfpm
 	};
 
 	template<typename T, typename Memory,
-			 typename layout, template<typename> class layout_base,
+			 template<typename> class layout_base,
 			 typename grow_p>
-	struct merge_prp_device_impl<true,T,Memory,layout,layout_base,grow_p>
+	struct merge_prp_device_impl<true,T,Memory,layout_base,grow_p>
 	{
 		template <typename S,
 				  typename M,
@@ -121,8 +121,8 @@ namespace openfpm
 				  unsigned int impl,
 				  template <typename> class layout_base2,
 				  unsigned int ...args>
-		static void run(vector<T,Memory,layout,layout_base,grow_p,impl> & this_ ,
-					    const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v,
+		static void run(vector<T,Memory,layout_base,grow_p,impl> & this_ ,
+					    const vector<S,M,layout_base2,gp,impl> & v,
 					    unsigned int offset)
 		{
 				// merge the data on device
@@ -154,7 +154,7 @@ namespace openfpm
 	 * \see vector<T,Memory,grow_p,OPENFPM_NATIVE>
 	 *
 	 */
-	template<typename T, typename Memory, typename layout, template<typename> class layout_base, typename grow_p, unsigned int impl>
+	template<typename T, typename Memory, template<typename> class layout_base, typename grow_p, unsigned int impl>
 	class vector
 	{
 		/*! \brief Stub size
@@ -193,10 +193,10 @@ namespace openfpm
 	 * OPENFPM_NATIVE implementation
 	 *
 	 */
-	template<typename T,typename Memory, typename layout, template <typename> class layout_base, typename grow_p>
-	class vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE>
+	template<typename T,typename Memory, template <typename> class layout_base, typename grow_p>
+	class vector<T,Memory,layout_base,grow_p,OPENFPM_NATIVE>
 	{
-		typedef vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> self_type;
+		typedef vector<T,Memory,layout_base,grow_p,OPENFPM_NATIVE> self_type;
 
 		//! Actual size of the vector, warning: it is not the space allocated in grid
 		//! grid size increase by a fixed amount every time we need a vector bigger than
@@ -204,7 +204,7 @@ namespace openfpm
 		size_t v_size;
 
 		//! 1-D static grid
-		grid_cpu<1,T,Memory,typename layout_base<T>::type> base;
+		grid_base<1,T,Memory,typename layout_base<T>::type> base;
 
 		/*! \brief If the argument is zero return 1 otherwise return the argument
 		 *
@@ -248,7 +248,7 @@ namespace openfpm
 		typedef int yes_i_am_vector_native;
 
 		//! Type of the encapsulation memory parameter
-		typedef layout layout_type;
+		typedef typename layout_base<T>::type layout_type;
 
 		//! Type of the encapsulation memory parameter
 		typedef layout_base<T> layout_base_;
@@ -258,7 +258,7 @@ namespace openfpm
 
 		//! Object container for T, it is the return type of get_o it return a object type trough
 		// you can access all the properties of T
-		typedef typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container container;
+		typedef typename grid_base<1,T,Memory,typename layout_base<T>::type>::container container;
 
 		//! Type of the value the vector is storing
 		typedef T value_type;
@@ -493,7 +493,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		void add(const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container & v)
+		void add(const typename grid_base<1,T,Memory,typename layout_base<T>::type>::container & v)
 		{
 			//! Check if we have enough space
 
@@ -517,7 +517,7 @@ namespace openfpm
 		 * \param v from where to take the vector
 		 *
 		 */
-		template <typename M, typename gp> void add(const vector<T, M,layout, layout_base,gp,OPENFPM_NATIVE> & v)
+		template <typename M, typename gp> void add(const vector<T, M, layout_base,gp,OPENFPM_NATIVE> & v)
 		{
 			//! Add the element of v
 			for (size_t i = 0 ; i < v.size() ; i++)
@@ -560,7 +560,7 @@ namespace openfpm
 		 *
 		 */
 		template <template<typename,typename> class op, typename S, typename M, typename gp, unsigned int ...args>
-		void merge_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v,
+		void merge_prp(const vector<S,M,layout_base,gp,OPENFPM_NATIVE> & v,
 				 	   const openfpm::vector<size_t> & opart)
 		{
 #ifdef SE_CLASS1
@@ -619,10 +619,10 @@ namespace openfpm
 		 *
 		 */
 		template <template<typename,typename> class op, typename S, typename M, typename gp, unsigned int ...args>
-		void merge_prp_device(const vector<S,M,typename layout_base<S>::type,layout_base,gp,OPENFPM_NATIVE> & v,
+		void merge_prp_device(const vector<S,M,layout_base,gp,OPENFPM_NATIVE> & v,
 				 	   unsigned int start)
 		{
-			merge_prp_device_impl<std::is_same<Memory,CudaMemory>::value,T,Memory,layout,layout_base,grow_p>
+			merge_prp_device_impl<std::is_same<Memory,CudaMemory>::value,T,Memory,layout_base,grow_p>
 			::template run<S,M,gp,OPENFPM_NATIVE,layout_base,args...>(*this,v,start);
 		}
 
@@ -669,7 +669,7 @@ namespace openfpm
 				  template <typename> class layout_base2,
 				  typename vector_opart_type,
 				  unsigned int ...args>
-		void merge_prp_v(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
+		void merge_prp_v(const vector<S,M,layout_base2,gp,OPENFPM_NATIVE> & v,
 						 const vector_opart_type & opart)
 		{
 #ifdef SE_CLASS1
@@ -735,7 +735,7 @@ namespace openfpm
 				  template <typename> class layout_base2,
 				  typename vector_opart_type,
 				  unsigned int ...args>
-		void merge_prp_v(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
+		void merge_prp_v(const vector<S,M,layout_base2,gp,OPENFPM_NATIVE> & v,
 				         unsigned int offset,
 						 const vector_opart_type & opart)
 		{
@@ -796,7 +796,7 @@ namespace openfpm
 				  template <typename> class layout_base2,
 				  typename vector_opart_type,
 				  unsigned int ...args>
-		void merge_prp_v_device(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
+		void merge_prp_v_device(const vector<S,M,layout_base2,gp,OPENFPM_NATIVE> & v,
 						 const vector_opart_type & opart,
 						 unsigned int start,
 						 unsigned int stop)
@@ -872,7 +872,7 @@ namespace openfpm
 				  template <typename> class layout_base2,
 				  typename vector_opart_type,
 				  unsigned int ...args>
-		void merge_prp_v_device(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
+		void merge_prp_v_device(const vector<S,M,layout_base2,gp,OPENFPM_NATIVE> & v,
 						 unsigned int start,
 						 const vector_opart_type & opart)
 		{
@@ -942,7 +942,7 @@ namespace openfpm
 				  typename gp,
 				  template <typename> class layout_base2,
 				  unsigned int ...args>
-		void merge_prp_v(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,OPENFPM_NATIVE> & v,
+		void merge_prp_v(const vector<S,M,layout_base2,gp,OPENFPM_NATIVE> & v,
 				         size_t start)
 		{
 			//! Add the element of v
@@ -979,7 +979,7 @@ namespace openfpm
 				  unsigned int impl,
 				  template <typename> class layout_base2,
 				  unsigned int ...args>
-		void add_prp(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
+		void add_prp(const vector<S,M,layout_base2,gp,impl> & v)
 		{
 			//! Add the element of v
 			for (size_t i = 0 ; i < v.size() ; i++)
@@ -1012,9 +1012,9 @@ namespace openfpm
 				  unsigned int impl,
 				  template <typename> class layout_base2,
 				  unsigned int ...args>
-		void add_prp_device(const vector<S,M,typename layout_base2<S>::type,layout_base2,gp,impl> & v)
+		void add_prp_device(const vector<S,M,layout_base2,gp,impl> & v)
 		{
-			add_prp_device_impl<std::is_same<Memory,CudaMemory>::value,T,Memory,layout,layout_base,grow_p>
+			add_prp_device_impl<std::is_same<Memory,CudaMemory>::value,T,Memory,layout_base,grow_p>
 			::template run<S,M,gp,impl,layout_base2,args...>(*this,v);
 		}
 
@@ -1169,7 +1169,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container get_o(size_t id) const
+		inline const typename grid_base<1,T,Memory,typename layout_base<T>::type>::container get_o(size_t id) const
 		{
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
@@ -1219,7 +1219,7 @@ namespace openfpm
 		 * \return the last element (encapsulated)
 		 *
 		 */
-		inline const typename grid_cpu<1,T,Memory,layout>::container last() const
+		inline const typename grid_base<1,T,Memory,layout_type>::container last() const
 		{
 			grid_key_dx<1> key(size()-1);
 
@@ -1309,7 +1309,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline typename grid_cpu<1,T,Memory,typename layout_base<T>::type >::container last()
+		inline typename grid_base<1,T,Memory,typename layout_base<T>::type >::container last()
 		{
 			grid_key_dx<1> key(size()-1);
 
@@ -1327,9 +1327,9 @@ namespace openfpm
 		 * \return a duplicated vector
 		 *
 		 */
-		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> duplicate() const
+		vector<T, Memory,layout_base,grow_p,OPENFPM_NATIVE> duplicate() const
 		{
-			vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> dup;
+			vector<T, Memory,layout_base,grow_p,OPENFPM_NATIVE> dup;
 
 			dup.v_size = v_size;
 			dup.base.swap(base.duplicate());
@@ -1355,7 +1355,7 @@ namespace openfpm
 		 * \param v the vector
 		 *
 		 */
-		vector(vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> && v)
+		vector(vector<T, Memory,layout_base,grow_p,OPENFPM_NATIVE> && v)
 		:v_size(0)
 		{
 			swap(v);
@@ -1366,7 +1366,7 @@ namespace openfpm
 		 * \param v the vector
 		 *
 		 */
-		vector(const vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & v) THROW
+		vector(const vector<T, Memory,layout_base,grow_p,OPENFPM_NATIVE> & v) THROW
 		:v_size(0)
 		{
 			swap(v.duplicate());
@@ -1392,7 +1392,7 @@ namespace openfpm
 		 * \param obj object (encapsulated)
 		 *
 		 */
-		void set(size_t id, const typename grid_cpu<1,T,Memory,typename layout_base<T>::type>::container & obj)
+		void set(size_t id, const typename grid_base<1,T,Memory,typename layout_base<T>::type>::container & obj)
 		{
 #ifdef SE_CLASS1
 			check_overflow(id);
@@ -1444,7 +1444,7 @@ namespace openfpm
 		 * \param src source element
 		 *
 		 */
-		void set(size_t id, vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & v, size_t src)
+		void set(size_t id, vector<T,Memory,layout_base,grow_p,OPENFPM_NATIVE> & v, size_t src)
 		{
 #ifdef SE_CLASS1
 			check_overflow(id);
@@ -1468,7 +1468,7 @@ namespace openfpm
 		 * \return itself
 		 *
 		 */
-		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Memory, layout, layout_base,grow_p,OPENFPM_NATIVE> && mv)
+		vector<T, Memory,layout_base,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Memory, layout_base,grow_p,OPENFPM_NATIVE> && mv)
 		{
 			v_size = mv.v_size;
 			base.swap(mv.base);
@@ -1485,7 +1485,7 @@ namespace openfpm
 		 * \return itself
 		 *
 		 */
-		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Memory, layout, layout_base ,grow_p,OPENFPM_NATIVE> & mv)
+		vector<T, Memory,layout_base,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Memory, layout_base ,grow_p,OPENFPM_NATIVE> & mv)
 		{
 			v_size = mv.v_size;
 			size_t rsz[1] = {v_size};
@@ -1523,7 +1523,7 @@ namespace openfpm
 		 * \return itself
 		 *
 		 */
-		template<typename Mem, typename gp> vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Mem, layout, layout_base,gp,OPENFPM_NATIVE> && mv)
+		template<typename Mem, typename gp> vector<T, Memory,layout_base,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Mem, layout_base,gp,OPENFPM_NATIVE> && mv)
 		{
 			v_size = mv.v_size;
 			base.swap(mv.base);
@@ -1540,7 +1540,7 @@ namespace openfpm
 		 * \return itself
 		 *
 		 */
-		template<typename Mem, typename gp> vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Mem, layout, layout_base ,gp,OPENFPM_NATIVE> & mv)
+		template<typename Mem, typename gp> vector<T, Memory,layout_base,grow_p,OPENFPM_NATIVE> & operator=(const vector<T, Mem, layout_base ,gp,OPENFPM_NATIVE> & mv)
 		{
 			v_size = mv.getInternal_v_size();
 			size_t rsz[1] = {v_size};
@@ -1578,7 +1578,7 @@ namespace openfpm
 		 *
 		 */
 		template<typename Mem, template <typename> class layout_base2>
-		vector<T, Memory,layout,layout_base2,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Mem, layout, layout_base2,grow_p,OPENFPM_NATIVE> && mv)
+		vector<T, Memory,layout_base2,grow_p,OPENFPM_NATIVE> & operator=(vector<T, Mem, layout_base2,grow_p,OPENFPM_NATIVE> && mv)
 		{
 			v_size = mv.v_size;
 			base.swap(mv.base);
@@ -1596,11 +1596,10 @@ namespace openfpm
 		 *
 		 */
 		template<typename Mem,
-		         typename layout2,
 		         template <typename> class layout_base2,
-		         typename check = typename std::enable_if<!std::is_same<layout2,layout>::value >::type>
-		vector<T, Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> &
-		operator=(const vector<T, Mem, layout2, layout_base2 ,grow_p,OPENFPM_NATIVE> & mv)
+		         typename check = typename std::enable_if<!std::is_same<typename layout_base2<T>::type,typename layout_base<T>::type>::value >::type>
+		vector<T, Memory,layout_base,grow_p,OPENFPM_NATIVE> &
+		operator=(const vector<T, Mem, layout_base2 ,grow_p,OPENFPM_NATIVE> & mv)
 		{
 			v_size = mv.getInternal_v_size();
 			size_t rsz[1] = {v_size};
@@ -1633,7 +1632,7 @@ namespace openfpm
 		 * \param vector to compare
 		 *
 		 */
-		bool operator!=(const vector<T, Memory, layout, layout_base,grow_p,OPENFPM_NATIVE> & v) const
+		bool operator!=(const vector<T, Memory, layout_base,grow_p,OPENFPM_NATIVE> & v) const
 		{
 			return !this->operator==(v);
 		}
@@ -1643,7 +1642,7 @@ namespace openfpm
 		 * \param vector to compare
 		 *
 		 */
-		bool operator==(const vector<T, Memory, layout, layout_base, grow_p,OPENFPM_NATIVE> & v) const
+		bool operator==(const vector<T, Memory, layout_base, grow_p,OPENFPM_NATIVE> & v) const
 		{
 			if (v_size != v.v_size)
 				return false;
@@ -1668,7 +1667,7 @@ namespace openfpm
 		 * \param v vector
 		 *
 		 */
-		void swap_nomode(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & v)
+		void swap_nomode(openfpm::vector<T,Memory, layout_base,grow_p,OPENFPM_NATIVE> & v)
 		{
 			size_t sz_sp = v_size;
 
@@ -1684,7 +1683,7 @@ namespace openfpm
 		 * \param v vector
 		 *
 		 */
-		void swap(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & v)
+		void swap(openfpm::vector<T,Memory, layout_base,grow_p,OPENFPM_NATIVE> & v)
 		{
 			size_t sz_sp = v_size;
 
@@ -1700,7 +1699,7 @@ namespace openfpm
 		 * \param v vector
 		 *
 		 */
-		void swap(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> && v)
+		void swap(openfpm::vector<T,Memory, layout_base,grow_p,OPENFPM_NATIVE> && v)
 		{
 			size_t sz_sp = v_size;
 
@@ -1959,7 +1958,7 @@ namespace openfpm
 		 * \return the internal 1D grid base
 		 *
 		 */
-		const grid_cpu<1,T,Memory,layout> & getInternal_base() const
+		const grid_base<1,T,Memory,layout_type> & getInternal_base() const
 		{
 			return base;
 		}
@@ -2078,10 +2077,10 @@ namespace openfpm
 
 	};
 
-	template <typename T> using vector_std = vector<T, HeapMemory, typename memory_traits_lin<T>::type, memory_traits_lin, openfpm::grow_policy_double, STD_VECTOR>;
-	template<typename T> using vector_gpu = openfpm::vector<T,CudaMemory,typename memory_traits_inte<T>::type,memory_traits_inte>;
-	template<typename T> using vector_gpu_single = openfpm::vector<T,CudaMemory,typename memory_traits_inte<T>::type,memory_traits_inte,openfpm::grow_policy_identity>;
-	template<typename T> using vector_custd = vector<T, CudaMemory, typename memory_traits_inte<aggregate<T>>::type, memory_traits_inte, openfpm::grow_policy_double, STD_VECTOR>;
+	template <typename T> using vector_std = vector<T, HeapMemory, memory_traits_lin, openfpm::grow_policy_double, STD_VECTOR>;
+	template<typename T> using vector_gpu = openfpm::vector<T,CudaMemory,memory_traits_inte>;
+	template<typename T> using vector_gpu_single = openfpm::vector<T,CudaMemory,memory_traits_inte,openfpm::grow_policy_identity>;
+	template<typename T> using vector_custd = vector<T, CudaMemory, memory_traits_inte, openfpm::grow_policy_double, STD_VECTOR>;
 }
 
 #endif

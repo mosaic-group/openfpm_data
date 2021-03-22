@@ -72,14 +72,6 @@ struct get_block_sizes
 	//! sizes
 	size_t sz_block[dim];
 
-	/*! \brief constructor
-	 *
-	 * \param v set of pointer buffers to set
-	 *
-	 */
-	inline get_block_sizes()
-	{};
-
 	//! It call the copy function for each property
 	template<typename T>
 	inline void operator()(T& val)

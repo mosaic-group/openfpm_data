@@ -5,7 +5,7 @@
 #ifndef OPENFPM_PDATA_SPARSEGRIDGPU_KER_CUH
 #define OPENFPM_PDATA_SPARSEGRIDGPU_KER_CUH
 
-#include <SparseGridGpu/Geometry/grid_smb.hpp>
+#include <Grid/Geometry/grid_smb.hpp>
 #include "BlockMapGpu.hpp"
 #include "SparseGridGpu_ker_util.hpp"
 

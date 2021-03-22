@@ -14,6 +14,8 @@
 #include <mach/mach.h>
 #endif
 
+#include "util/cuda_util.hpp"
+
 /*! \brief Class for cpu time benchmarking
  *
  * Usage:
@@ -38,6 +40,10 @@ class timer
 
     //! stop time from epoch
     clock_t cstop;
+
+#if defined(__NVCC__) && !defined(CUDA_ON_CPU)
+    cudaEvent_t start_g, stop_g;
+#endif
 
     // Fill the stop point
     void check()
@@ -142,6 +148,31 @@ public:
     	tsstart = tsstop;
     	cstart = cstop;
     }
+
+    #if defined(__NVCC__) && !defined(CUDA_ON_CPU)
+
+    void startGPU()
+    {
+        cudaEventCreate(&start_g);
+        cudaEventRecord(start_g,0);
+    }
+
+    void stopGPU()
+    {
+       cudaEventCreate(&stop_g);
+       cudaEventRecord(stop_g,0);
+       cudaEventSynchronize(stop_g);
+    }
+
+    double getwctGPU()
+    {
+        float elapsedTime;
+        cudaEventElapsedTime(&elapsedTime, start_g,stop_g);
+
+        return elapsedTime;
+    }
+
+    #endif
 };
 
 #endif
