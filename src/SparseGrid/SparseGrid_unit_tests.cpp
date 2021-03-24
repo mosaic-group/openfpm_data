@@ -1378,7 +1378,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified)
 
 	for (int i = 0 ; i < 1 ; i++)
 	{
-		grid.conv_cross<0,1,1>(start,stop,[]( Vc::double_v & cmd, cross_stencil_v & s,
+		grid.conv_cross<0,1,1>(start,stop,[]( Vc::double_v & cmd, cross_stencil_v<double> & s,
 				                              unsigned char * mask_sum){
 
 																	Vc::double_v Lap = s.xm + s.xp +
@@ -1391,6 +1391,108 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified)
 																	{surround[i] = (mask_sum[i] == 6);}
 
 																	Lap = Vc::iif(surround,Lap,Vc::double_v(1.0));
+
+																	return Lap;
+		                                                         });
+	}
+
+	int tot_six = 0;
+	int tot_one = 0;
+
+	bool check = true;
+	auto it2 = grid.getIterator(start,stop);
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		check &= (grid.template get<1>(p) == 6 || grid.template get<1>(p) == 1);
+
+		// Check the six should be a six
+		auto xp = p.move(0,1);
+		auto xm = p.move(0,-1);
+
+		auto yp = p.move(1,1);
+		auto ym = p.move(1,-1);
+
+		auto zp = p.move(2,1);
+		auto zm = p.move(2,-1);
+
+		bool is_six;
+		if (grid.existPoint(xp) && grid.existPoint(xm) &&
+			grid.existPoint(yp) && grid.existPoint(ym) &&
+			grid.existPoint(zp) && grid.existPoint(zm))
+		{
+			is_six = true;
+		}
+		else
+		{
+			is_six = false;
+		}
+
+		if (is_six == true && grid.template get<1>(p) != 6.0)
+		{
+			check = false;
+			break;
+		}
+
+		if (grid.template get<1>(p) == 1)
+		{
+			tot_one++;
+		}
+
+		if (grid.template get<1>(p) == 6)
+		{
+			tot_six++;
+		}
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+	BOOST_REQUIRE_EQUAL(tot_six,15857813);
+	BOOST_REQUIRE_EQUAL(tot_one,2977262);
+	// Check correct-ness
+
+//	print_grid("debug_out",grid);
+}
+
+BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified_float)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_soa<3,aggregate<float,float,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere_quad(grid,cdsm);
+
+	//grid.reorder();
+
+	grid_key_dx<3> start({1,1,1});
+	grid_key_dx<3> stop({499,499,499});
+
+	for (int i = 0 ; i < 1 ; i++)
+	{
+		grid.conv_cross<0,1,1>(start,stop,[]( Vc::float_v & cmd, cross_stencil_v<float> & s,
+				                              unsigned char * mask_sum){
+
+																	Vc::float_v Lap = s.xm + s.xp +
+																					   s.ym + s.yp +
+																					   s.zm + s.zp - 6.0f*cmd;
+
+																	Vc::Mask<float> surround;
+
+																	for (int i = 0 ; i < Vc::float_v::Size ; i++)
+																	{surround[i] = (mask_sum[i] == 6);}
+
+																	Lap = Vc::iif(surround,Lap,Vc::float_v(1.0f));
 
 																	return Lap;
 		                                                         });
