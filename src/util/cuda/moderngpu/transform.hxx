@@ -1,10 +1,11 @@
 // moderngpu copyright (c) 2016, Sean Baxter http://www.moderngpu.com
 #pragma once
 
+
 #include <random>
 #include <algorithm>
-#ifndef __HIP__
-#include <cuda.h>
+#ifndef __HIP__ 
+	#include <cuda.h>
 #endif
 #include "launch_box.hxx"
 
@@ -21,8 +22,10 @@ void cta_launch(func_t f, int num_ctas, context_t& context, args_t... args) {
     grid_dim = dim3(256, div_up(num_ctas, 256));
   
   if(num_ctas)
+  {
     launch_box_cta_k<launch_box, func_t>
-      <<<grid_dim, cta.nt, 0, context.stream()>>>(f, num_ctas, args...);
+      <<<grid_dim, cta.nt,0,context.stream()>>>(f, num_ctas, args...);
+  }
 }
 
 template<int nt, int vt = 1, typename func_t, typename... args_t>

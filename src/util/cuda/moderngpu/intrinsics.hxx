@@ -2,7 +2,7 @@
 
 #include "operators.hxx"
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIP__)
 #error "You must compile this file with nvcc. You must."
 #endif
 
