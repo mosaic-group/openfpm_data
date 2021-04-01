@@ -15,7 +15,7 @@
 
 BOOST_AUTO_TEST_SUITE( modern_gpu_tests )
 
-BOOST_AUTO_TEST_CASE( modern_gpu_transform_lbs )
+BOOST_AUTO_TEST_CASE( modern_gpu_loadbalance_lbs )
 {
 	std::cout << "Test modern gpu test tansform_lbs" << "\n";
 

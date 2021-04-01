@@ -730,7 +730,7 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim,long int> & key1, grid_key_dx<dim,long int> & key2, size_t n_thr = 1024) const
+	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim,long int> & key1, grid_key_dx<dim,long int> & key2, size_t n_thr = default_kernel_wg_threads_) const
 	{
 		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}

@@ -3,7 +3,9 @@
 
 #include <random>
 #include <algorithm>
+#ifndef __HIP__
 #include <cuda.h>
+#endif
 #include "launch_box.hxx"
 
 BEGIN_MGPU_NAMESPACE

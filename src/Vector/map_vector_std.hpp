@@ -676,7 +676,21 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
+	__device__ vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
+	{
+		printf("Error openfpm::vector operator= cannot be used on device");
+
+		return *this;
+	}
+
+	/*! \brief Operator= copy the vector into another
+	 *
+	 * \param v vector to copy
+	 *
+	 * \return itself
+	 *
+	 */
+	__host__ vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
 	{
 		base = v.base;
 

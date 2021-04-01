@@ -1363,6 +1363,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
 	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
+
 	auto & s_t_ns = cl2.getSortToNonSort();
 
 	pl.template hostToDevice<0>();
@@ -1371,6 +1372,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	// Domain particles
 
+	
 	auto & gdsi = cl2.getDomainSortIds();
 	gdsi.template deviceToHost<0>();
 	s_t_ns.template deviceToHost<0>();
@@ -1497,6 +1499,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 	}
 
 	BOOST_REQUIRE_EQUAL(check,true);
+
 	}
 }
 

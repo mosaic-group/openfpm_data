@@ -1076,7 +1076,7 @@ namespace SparseGridGpuKernels
 #ifdef SE_CLASS1
 
         if (numCnt > blockDim.x)
-        {printf("Error calc_exist_points_with_boxes assertion failed numCnt >= blockDim.x  %d %d \n",numCnt,blockDim.x);}
+        {printf("Error calc_exist_points_with_boxes assertion failed numCnt >= blockDim.x  %d %d \n",numCnt,(int)blockDim.x);}
 
 #endif
 
@@ -1164,7 +1164,7 @@ namespace SparseGridGpuKernels
 #ifdef SE_CLASS1
 
         if (numCnt > blockDim.x)
-        {printf("Error get_exist_points_with_boxes assertion failed numCnt >= blockDim.x  %d %d \n",numCnt,blockDim.x);}
+        {printf("Error get_exist_points_with_boxes assertion failed numCnt >= blockDim.x  %d %d \n",numCnt,(int)blockDim.x);}
 
 #endif
 

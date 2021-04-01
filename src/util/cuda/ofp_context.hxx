@@ -151,7 +151,7 @@ namespace mgpu
 					void init(int dev_num, gpu_context_opt opt)
 					{
 						cudaFuncAttributes attr;
-						cudaError_t result = cudaFuncGetAttributes(&attr, dummy_k<0>);
+						cudaError_t result = cudaFuncGetAttributes(&attr, (void *)dummy_k<0>);
 						if(cudaSuccess != result) throw cuda_exception_t(result);
 						_ptx_version = attr.ptxVersion;
 
