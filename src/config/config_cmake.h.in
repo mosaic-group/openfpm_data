@@ -1,3 +1,9 @@
+/* HIP GPU support */
+${DEFINE_HIP_GPU}
+
+/* HIP Cudify GPU support */
+${DEFINE_CUDIFY_USE_HIP}
+
 /* Coverty scan */
 ${DEFINE_COVERTY_SCAN}
 
