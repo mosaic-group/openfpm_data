@@ -29,6 +29,7 @@
 	#include "cub_old/cub.cuh"
 	#include "util/cuda/moderngpu/kernel_scan.hxx"
 #endif
+
 #include "util/cuda/ofp_context.hxx"
 
 namespace openfpm
@@ -53,6 +54,8 @@ namespace openfpm
 	#ifdef SCAN_WITH_CUB
 
 			#ifdef __HIP__
+
+				if (count == 0)	{return;}
 
 				void *d_temp_storage = NULL;
 				size_t temp_storage_bytes = 0;

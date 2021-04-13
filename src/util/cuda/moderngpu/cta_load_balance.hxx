@@ -148,7 +148,7 @@ struct cta_load_balance_t {
     int merge_flags = 0;
 
     // Fill shared memory with the segment IDs of the in-range values.
-/*    iterate<vt + 1>([&](int i) {
+    iterate<vt + 1>([&](int i) {
       // Compare the output index to the starting position of the next segment.
       bool p = cur_item < b_shared[cur_segment + 1];
       if(p && i < vt) // Advance A (the needle). 
@@ -161,9 +161,9 @@ struct cta_load_balance_t {
 
     // Load the segment indices in strided order. Use the segment ID to compute
     // rank of each element. These strided-order (index, seg, rank) tuples
-    // will be passed to the lbs functor.*/
+    // will be passed to the lbs functor.
     array_t<int, vt> indices, seg, ranks;
-/*    iterate<vt>([&](int i) {
+    iterate<vt>([&](int i) {
       int j = nt * i + tid;
       indices[i] = range.a_begin + j;
       if(j < range.a_count()) {
@@ -174,7 +174,7 @@ struct cta_load_balance_t {
         ranks[i] = -1;
       }
     });
-    __syncthreads();*/
+    __syncthreads();
 
     return result_t { 
       placement, range, merge_flags,

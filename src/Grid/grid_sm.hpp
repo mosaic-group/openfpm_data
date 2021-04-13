@@ -121,6 +121,28 @@ struct ite_gpu
 #endif
 };
 
+template<unsigned int dim>
+bool has_work_gpu(ite_gpu<dim> & ite)
+{
+	size_t tot_work = 1;
+
+	if (dim == 1)
+	{tot_work *= ite.wthr.x * ite.thr.x;}
+	else if(dim == 2)
+	{
+		tot_work *= ite.wthr.x * ite.thr.x;
+		tot_work *= ite.wthr.y * ite.thr.y;
+	}
+	else
+	{
+		tot_work *= ite.wthr.x * ite.thr.x;
+		tot_work *= ite.wthr.y * ite.thr.y;
+		tot_work *= ite.wthr.z * ite.thr.z;
+	}
+
+	return tot_work != 0;
+}
+
 //! Declaration grid_sm
 template<unsigned int N, typename T> class grid_sm;
 

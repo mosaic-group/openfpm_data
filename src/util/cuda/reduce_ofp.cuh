@@ -15,7 +15,11 @@
 #if CUDART_VERSION >= 11000
 	#ifndef CUDA_ON_CPU 
 	// Here we have for sure CUDA >= 11
-	#include "cub/cub.cuh"
+	#ifdef __HIP__
+		#include "hipcub/hipcub.hpp"
+	#else
+		#include "cub/cub.cuh"
+	#endif
 	#ifndef REDUCE_WITH_CUB
 		#define REDUCE_WITH_CUB
 	#endif
@@ -44,9 +48,11 @@ namespace openfpm
 #else
 	#ifdef REDUCE_WITH_CUB
 
+		#ifdef __HIP__
+
 			void *d_temp_storage = NULL;
 			size_t temp_storage_bytes = 0;
-			cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes,input,
+			hipcub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes,input,
 																		output,
 																		count,
 																		op,
@@ -56,11 +62,32 @@ namespace openfpm
 			temporal.resize(temp_storage_bytes);
 
 			// Run
-			cub::DeviceReduce::Reduce(temporal.template getDeviceBuffer<0>(), temp_storage_bytes,input,
+			hipcub::DeviceReduce::Reduce(temporal.template getDeviceBuffer<0>(), temp_storage_bytes,input,
 					output,
 					count,
 					op,
 					false);
+		#else
+
+			void *d_temp_storage = NULL;
+			size_t temp_storage_bytes = 0;
+			cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes,input,
+																	output,
+																	count,
+																	op,
+																	false);
+
+			auto & temporal = context.getTemporalCUB();
+			temporal.resize(temp_storage_bytes);
+
+			// Run
+			cub::DeviceReduce::Reduce(temporal.template getDeviceBuffer<0>(), temp_storage_bytes,input,
+				output,
+				count,
+				op,
+				false);
+
+		#endif
 
 	#else
 			mgpu::reduce(input,count,output,op,context);

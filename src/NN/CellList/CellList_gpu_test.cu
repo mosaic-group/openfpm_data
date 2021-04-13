@@ -16,7 +16,6 @@
 #include "CellList.hpp"
 #include "util/boost/boost_array_openfpm.hpp"
 #include  "Point_test.hpp"
-#include "util/cuda/scan_cuda.cuh"
 #include "util/cuda_util.hpp"
 
 BOOST_AUTO_TEST_SUITE( CellList_gpu_test )

@@ -478,18 +478,6 @@ namespace openfpm
 		 * \param object to copy
 		 *
 		 */
-		 __device__ vector_gpu_ker<T,layout_base> & operator=(const vector_gpu_ker<T,layout_base> & v)
-		 {
-			 printf("Error vector_gpu_ker the operator= is not defined in device code\n");
- 
-			 return *this;
-		 }
-
-		/*! \brief operator= this operator absorb the pointers, consider that this object wrap device pointers
-		 *
-		 * \param object to copy
-		 *
-		 */
 		__host__ vector_gpu_ker<T,layout_base> & operator=(const vector_gpu_ker<T,layout_base> & v)
 		{
 			v_size = v.v_size;
