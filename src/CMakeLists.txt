@@ -430,12 +430,13 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
 	COMPONENT OpenFPM)
 
 
-install(FILES util/cuda/scan_cuda.cuh
-        util/cuda/ofp_context.hxx
+install(FILES util/cuda/ofp_context.hxx
         util/cuda/kernels.cuh
         util/cuda/scan_ofp.cuh
 	util/cuda/sort_ofp.cuh
 	util/cuda/reduce_ofp.cuh
+	util/cuda/segreduce_ofp.cuh
+	util/cuda/merge_ofp.cuh
         DESTINATION openfpm_data/include/util/cuda
 	COMPONENT OpenFPM)
 
