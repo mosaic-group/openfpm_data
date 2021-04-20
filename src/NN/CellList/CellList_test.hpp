@@ -395,7 +395,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_NN_iterator_rad
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			vrp.template get<0>(j)[i] = ((float)rand() / RAND_MAX)*(box.getHigh(i) - box.getLow(i)) + box.getLow(i);
+			vrp.template get<0>(j)[i] = ((float)rand() / (float)RAND_MAX)*(box.getHigh(i) - box.getLow(i)) + box.getLow(i);
 		}
 	}
 

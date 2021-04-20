@@ -32,6 +32,18 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 
 	auto gcf = c3.getGPUIterator(k1,k2);
 
+#ifdef __HIP__
+
+	BOOST_REQUIRE_EQUAL(gcf.thr.x,8ul);
+	BOOST_REQUIRE_EQUAL(gcf.thr.y,8ul);
+	BOOST_REQUIRE_EQUAL(gcf.thr.z,4ul);
+
+	BOOST_REQUIRE_EQUAL(gcf.wthr.x,8ul);
+	BOOST_REQUIRE_EQUAL(gcf.wthr.y,8ul);
+	BOOST_REQUIRE_EQUAL(gcf.wthr.z,16ul);
+
+#else
+
 	BOOST_REQUIRE_EQUAL(gcf.thr.x,16ul);
 	BOOST_REQUIRE_EQUAL(gcf.thr.y,8ul);
 	BOOST_REQUIRE_EQUAL(gcf.thr.z,8ul);
@@ -40,11 +52,25 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 	BOOST_REQUIRE_EQUAL(gcf.wthr.y,8ul);
 	BOOST_REQUIRE_EQUAL(gcf.wthr.z,8ul);
 
+#endif
+
 	grid_key_dx<3> k3({50,50,50});
 	grid_key_dx<3> k4({62,62,62});
 	grid_key_dx<3> k5({60,61,62});
 
 	auto gcf2 = c3.getGPUIterator(k3,k4);
+
+#ifdef __HIP__
+
+	BOOST_REQUIRE_EQUAL(gcf2.thr.x,8ul);
+	BOOST_REQUIRE_EQUAL(gcf2.thr.y,8ul);
+	BOOST_REQUIRE_EQUAL(gcf2.thr.z,4ul);
+
+	BOOST_REQUIRE_EQUAL(gcf2.wthr.x,2ul);
+	BOOST_REQUIRE_EQUAL(gcf2.wthr.y,2ul);
+	BOOST_REQUIRE_EQUAL(gcf2.wthr.z,4ul);
+
+#else
 
 	BOOST_REQUIRE_EQUAL(gcf2.thr.x,13ul);
 	BOOST_REQUIRE_EQUAL(gcf2.thr.y,8ul);
@@ -53,6 +79,8 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 	BOOST_REQUIRE_EQUAL(gcf2.wthr.x,1ul);
 	BOOST_REQUIRE_EQUAL(gcf2.wthr.y,2ul);
 	BOOST_REQUIRE_EQUAL(gcf2.wthr.z,2ul);
+
+#endif
 
 	gcf2 = c3.getGPUIterator(k3,k4,511);
 

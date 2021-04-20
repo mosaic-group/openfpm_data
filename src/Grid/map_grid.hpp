@@ -190,7 +190,19 @@ public:
 	 * \param g grid to copy
 	 *
 	 */
-	grid_base<dim,T,S> & operator=(const grid_base<dim,T,S> & g)
+	__device__ grid_base<dim,T,S> & operator=(const grid_base<dim,T,S> & g)
+	{
+		printf("Error grid_base operator= is not defined in device code\n");
+
+		return *this;
+	}
+
+	/*! \brief It copy a grid
+	 *
+	 * \param g grid to copy
+	 *
+	 */
+	__host__ grid_base<dim,T,S> & operator=(const grid_base<dim,T,S> & g)
 	{
 		(static_cast<grid_base_impl<dim,T,S, memory_traits_lin> *>(this))->swap(g.duplicate());
 

@@ -14,7 +14,7 @@
   #define MGPU_HOST_DEVICE __forceinline__ __device__ __host__
 #endif
 
-#ifndef MGPU_DEVICE 
+#ifndef MGPU_DEVICE
   #define MGPU_DEVICE __device__
 #endif
 

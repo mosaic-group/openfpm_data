@@ -42,14 +42,22 @@ class timer
     clock_t cstop;
 
 #if defined(__NVCC__) && !defined(CUDA_ON_CPU)
-    cudaEvent_t start_g, stop_g;
+    #ifdef __HIP__
+        hipEvent_t start_g, stop_g;
+    #else
+        cudaEvent_t start_g, stop_g;
+    #endif
 #endif
 
     // Fill the stop point
     void check()
     {
-#if defined(SYNC_BEFORE_TAKE_TIME) && defined(__NVCC__) 
+#if defined(SYNC_BEFORE_TAKE_TIME) && defined(__NVCC__)
+        #ifdef __HIP__
+        hipDeviceSynchronize();
+        #else
         cudaDeviceSynchronize();
+        #endif
 #endif
 
 #ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
@@ -153,21 +161,37 @@ public:
 
     void startGPU()
     {
+        #ifdef __HIP__
+        hipEventCreate(&start_g);
+        hipEventRecord(start_g,0);
+        #else
         cudaEventCreate(&start_g);
         cudaEventRecord(start_g,0);
+        #endif
     }
 
     void stopGPU()
     {
-       cudaEventCreate(&stop_g);
-       cudaEventRecord(stop_g,0);
-       cudaEventSynchronize(stop_g);
+        #ifdef __HIP__
+        hipEventCreate(&stop_g);
+        hipEventRecord(stop_g,0);
+        hipEventSynchronize(stop_g);
+        #else
+        cudaEventCreate(&stop_g);
+        cudaEventRecord(stop_g,0);
+        cudaEventSynchronize(stop_g);
+        #endif
     }
 
     double getwctGPU()
     {
         float elapsedTime;
+
+        #ifdef __HIP__
+        hipEventElapsedTime(&elapsedTime, start_g,stop_g);
+        #else
         cudaEventElapsedTime(&elapsedTime, start_g,stop_g);
+        #endif
 
         return elapsedTime;
     }

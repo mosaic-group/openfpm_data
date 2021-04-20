@@ -7,12 +7,12 @@
 
 #include "util/cuda_util.hpp"
 #include "Vector/map_vector.hpp"
-#include "scan_cuda.cuh"
 
 #define SORT_WITH_CUB
 
 #include "sort_ofp.cuh"
 #include "scan_ofp.cuh"
+#include "segreduce_ofp.cuh"
 
 BOOST_AUTO_TEST_SUITE( scan_tests )
 
@@ -105,6 +105,83 @@ BOOST_AUTO_TEST_CASE( test_sort_cub_wrapper )
     }
 
 	std::cout << "End sort CUB" << "\n";
+
+	// Test the cell list
+}
+
+BOOST_AUTO_TEST_CASE( test_seg_reduce_wrapper )
+{
+	std::cout << "Test gpu segmented reduce" << "\n";
+
+	mgpu::ofp_context_t context;
+
+	int count = 130;
+
+	openfpm::vector_gpu<aggregate<int>> vgpu;
+	openfpm::vector_gpu<aggregate<int>> segment_offset;
+	openfpm::vector_gpu<aggregate<int>> output;
+	int init = 0;
+
+	vgpu.resize(count);
+
+	for (size_t i = 0 ; i < count ; i++)
+	{
+		vgpu.template get<0>(i) = ((float)rand() / (float)RAND_MAX) * 17;
+	}
+
+	segment_offset.add();
+	segment_offset.template get<0>(0) = 0;
+	size_t base = 0;
+	while (1)
+	{
+		int c = ((float)rand() / (float)RAND_MAX) * 17;
+
+		if (c + base >= count)
+		{break;}
+
+		segment_offset.add();
+		segment_offset.template get<0>(segment_offset.size() - 1) = c + segment_offset.template get<0>(segment_offset.size() - 2);
+
+		base += c;
+	}
+
+	vgpu.hostToDevice<0>();
+
+	segment_offset.hostToDevice<0>();
+	output.resize(segment_offset.size());
+
+	openfpm::segreduce((int *)vgpu.template getDeviceBuffer<0>(), vgpu.size(),
+					(int *)segment_offset.template getDeviceBuffer<0>(), segment_offset.size(),
+					(int *)output.template getDeviceBuffer<0>(),
+					mgpu::plus_t<int>(), init, context);
+
+
+	output.template deviceToHost<0>();
+
+	bool match = true;
+	size_t i = 0;
+	for ( ; i < segment_offset.size()-1 ; i++)
+	{
+		size_t red = 0;
+		for (size_t j = 0 ; j < segment_offset.template get<0>(i+1) - segment_offset.template get<0>(i)  ; j++)
+		{
+			red += vgpu.template get<0>(segment_offset.template get<0>(i) + j);
+		}
+		match &= red == output.template get<0>(i);
+	}
+
+	BOOST_REQUIRE_EQUAL(match,true);
+
+	size_t red2 = 0;
+	for (size_t j = 0 ; j < vgpu.size() - segment_offset.template get<0>(i)  ; j++)
+	{
+		red2 += vgpu.template get<0>(segment_offset.template get<0>(i) + j);
+	}
+	match &= red2 == output.template get<0>(i);
+
+	BOOST_REQUIRE_EQUAL(match,true);
+
+	std::cout << "End test modern gpu test reduce" << "\n";
 
 	// Test the cell list
 }

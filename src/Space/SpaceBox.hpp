@@ -211,7 +211,7 @@ class SpaceBox : public Box<dim,T>
 		Point<dim,T> p;
 
 		for (size_t i = 0 ; i < dim ; i++)
-			p.get(i) = ((T)rand())/RAND_MAX * (this->getHigh(i) - this->getLow(i)) + this->getLow(i);
+			p.get(i) = ((T)rand())/(T)RAND_MAX * (this->getHigh(i) - this->getLow(i)) + this->getLow(i);
 
 		return p;
 	}
