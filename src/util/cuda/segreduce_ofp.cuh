@@ -138,7 +138,7 @@ __global__ void realign_output(output_it out, out_tmp_type out_tmp, segs_type se
 
         #else
 
-            mgpu::segreduce(input,count,output,context);
+            mgpu::segreduce(input,count,segments,num_segments,output,op,init,context);
 
         #endif
 

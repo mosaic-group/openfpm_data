@@ -3,11 +3,7 @@
 #include <Vector/map_vector.hpp>
 #include <Vector/cuda/map_vector_sparse_cuda_kernels.cuh>
 #include "util/cuda/scan_ofp.cuh"
-#if !defined(CUDA_ON_CPU) && !defined(__HIP__)
-#include "util/cuda/moderngpu/kernel_merge.hxx"
-#else
 #include "util/cuda/merge_ofp.cuh"
-#endif
 
 BOOST_AUTO_TEST_SUITE( vector_sparse_cuda_kernels )
 

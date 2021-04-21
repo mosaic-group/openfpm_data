@@ -7,7 +7,6 @@ hostname=$(hostname)
 type_compile=$3
 branch=$4
 
-
 echo "Build on: $hostname with $type_compile branch: $branch"
 
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then

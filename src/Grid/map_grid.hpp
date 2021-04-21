@@ -185,6 +185,8 @@ public:
 				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
 	{}
 
+#if defined(__HIP__)
+
 	/*! \brief It copy a grid
 	 *
 	 * \param g grid to copy
@@ -196,6 +198,8 @@ public:
 
 		return *this;
 	}
+
+#endif
 
 	/*! \brief It copy a grid
 	 *
