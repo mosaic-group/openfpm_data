@@ -83,8 +83,7 @@ __global__ void realign_output(output_it out, out_tmp_type out_tmp, segs_type se
         for ( ; i < num_segments - 1; i++)
         {
             int j = segments[i];
-            output[i] = input[j];
-            ++j;
+            output[i] = init;
             for ( ; j < segments[i+1] ; j++)
             {
                 output[i] = op(output[i],input[j]);
@@ -93,8 +92,7 @@ __global__ void realign_output(output_it out, out_tmp_type out_tmp, segs_type se
 
         // Last segment
         int j = segments[i];
-        output[i] = input[j];
-        ++j;
+        output[i] = init;
         for ( ; j < count ; j++)
         {
             output[i] = op(output[i],input[j]);
