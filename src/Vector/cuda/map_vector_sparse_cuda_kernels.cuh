@@ -16,7 +16,7 @@
 #include "util/cuda/cub_old/util_type.cuh"
 #include "util/cuda/cub_old/block/block_scan.cuh"
 #include "util/cuda/moderngpu/operators.hxx"
-#include "util/cuda/cuda_launch.hpp"
+#include "util/cuda_launch.hpp"
 #else
 	#if !defined(CUDA_ON_CPU)	
 	#include "util/cuda/moderngpu/operators.hxx"
