@@ -50,7 +50,7 @@ find_package(HIP)
 if(HIP_FOUND)
         set(DEFINE_HIP_GPU "#define HIP_GPU")
         set(DEFINE_CUDIFY_USE_HIP "#define CUDIFY_USE_HIP")
-else
+else()
 	#if not HIP we set the MPI wrappers
 	set(CMAKE_C_COMPILER mpicc)
 	set(CMAKE_CXX_COMPILER mpic++)	
