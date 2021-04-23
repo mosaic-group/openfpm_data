@@ -289,6 +289,16 @@ namespace openfpm
 			return v_size;
 		}
 
+        /*! \brief Return the size of the vector
+        *
+        * \return the size
+        *
+        */
+        size_t size_local() const
+        {
+            return v_size;
+        }
+
 		/*! \brief return the maximum capacity of the vector before reallocation
 		 *
 		 * \return the capacity of the vector
