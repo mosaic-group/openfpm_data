@@ -100,7 +100,7 @@ endif()
 # will also build with -std=c++11
 target_compile_features(io PUBLIC cxx_std_11)
 target_link_libraries(io ${MPI_C_LIBRARIES})
-
+target_link_libraries(io ${MPI_CXX_LIBRARIES})
 if (TEST_COVERAGE)
     target_link_libraries(io -lgcov)
 endif()
