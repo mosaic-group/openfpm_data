@@ -6,11 +6,40 @@ if (CUDA_ON_CPU)
 	add_definitions(-DCUDA_ON_CPU)
 endif()
 
+if (CUDA_FOUND OR CUDA_ON_CPU OR HIP_FOUND)
 
-add_executable(io main.cpp 
+	set(CUDA_SOURCES HDF5_wr/HDF5_writer_cuda.cu)
+
+endif()
+
+if ( HIP_ENABLE AND HIP_FOUND )
+
+        list(APPEND HIP_HIPCC_FLAGS ${CMAKE_CXX_FLAGS_DEBUG})
+
+        if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+                list(APPEND HIP_HIPCC_FLAGS -O0)
+        endif()
+
+        set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
+
+	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0)
+
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
+
+        hip_add_executable(io main.cpp
+                                  MetaParser/MetaParser_unit_test.cpp
+				  ${CUDA_SOURCES}
+                                  ObjReader/ObjReader_unit_test.cpp)
+
+
+else()
+
+	add_executable(io main.cpp 
 				  MetaParser/MetaParser_unit_test.cpp 
-				  HDF5_wr/HDF5_writer_cuda.cu 
+				  ${CUDA_SOURCES}
 				  ObjReader/ObjReader_unit_test.cpp)
+
+endif()
 
 add_dependencies(io ofpmmemory)
 add_dependencies(io vcluster)
@@ -71,7 +100,7 @@ endif()
 # will also build with -std=c++11
 target_compile_features(io PUBLIC cxx_std_11)
 target_link_libraries(io ${MPI_C_LIBRARIES})
-
+target_link_libraries(io ${MPI_CXX_LIBRARIES})
 if (TEST_COVERAGE)
     target_link_libraries(io -lgcov)
 endif()

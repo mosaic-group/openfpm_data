@@ -1,6 +1,5 @@
 #! /bin/bash
 
-
 workspace=$1
 hostname=$(hostname)
 branch=$3
