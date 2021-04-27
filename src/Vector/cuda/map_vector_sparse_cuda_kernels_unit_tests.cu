@@ -3,9 +3,7 @@
 #include <Vector/map_vector.hpp>
 #include <Vector/cuda/map_vector_sparse_cuda_kernels.cuh>
 #include "util/cuda/scan_ofp.cuh"
-#ifndef CUDA_ON_CPU
-#include "util/cuda/moderngpu/kernel_merge.hxx"
-#endif
+#include "util/cuda/merge_ofp.cuh"
 
 BOOST_AUTO_TEST_SUITE( vector_sparse_cuda_kernels )
 
@@ -176,7 +174,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 	vct_index_old.template hostToDevice<0,1>();
 	vct_add_index.template hostToDevice<0,1>();
 
-	mgpu::merge((int *)vct_index_old.template getDeviceBuffer<0>(),(int *)vct_index_old.template getDeviceBuffer<1>(),vct_index_old.size(),
+	openfpm::merge((int *)vct_index_old.template getDeviceBuffer<0>(),(int *)vct_index_old.template getDeviceBuffer<1>(),vct_index_old.size(),
 			    (int *)vct_add_index.template getDeviceBuffer<0>(),(int *)vct_add_index.template getDeviceBuffer<1>(),vct_add_index.size(),
 			    (int *)vct_index.template getDeviceBuffer<0>(),(int *)vct_index.template getDeviceBuffer<1>(),mgpu::less_t<int>(),ctx);
 
@@ -272,7 +270,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 	vct_data_old.template hostToDevice<0,1,2>();
 	vct_add_data.template hostToDevice<0,1,2>();
 
-	mgpu::merge((int *)vct_index_old.template getDeviceBuffer<0>(),(int *)vct_index_old.template getDeviceBuffer<1>(),vct_index_old.size(),
+	openfpm::merge((int *)vct_index_old.template getDeviceBuffer<0>(),(int *)vct_index_old.template getDeviceBuffer<1>(),vct_index_old.size(),
 			    (int *)vct_add_index.template getDeviceBuffer<0>(),(int *)vct_add_index.template getDeviceBuffer<1>(),vct_add_index.size(),
 			    (int *)vct_index.template getDeviceBuffer<0>(),(int *)merge_indexes.template getDeviceBuffer<0>(),mgpu::less_t<int>(),ctx);
 

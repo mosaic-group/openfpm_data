@@ -110,7 +110,7 @@ struct conv_impl
 	}
 };
 
-#if !defined(__NVCC__) || defined(CUDA_ON_CPU)
+#if !defined(__NVCC__) || defined(CUDA_ON_CPU) || defined(__HIP__)
 
 
 template<unsigned int dir,int p, unsigned int prop_src1,typename chunk_type, typename vect_type, typename ids_type>
@@ -199,14 +199,16 @@ void load_crs_v(vect_type & cs1, chunk_type & chunk,  ids_type & ids)
 	}
 }
 
+
+template<typename prop_type>
 struct cross_stencil_v
 {
-	Vc::double_v xm;
-	Vc::double_v xp;
-	Vc::double_v ym;
-	Vc::double_v yp;
-	Vc::double_v zm;
-	Vc::double_v zp;
+	Vc::Vector<prop_type> xm;
+	Vc::Vector<prop_type> xp;
+	Vc::Vector<prop_type> ym;
+	Vc::Vector<prop_type> yp;
+	Vc::Vector<prop_type> zm;
+	Vc::Vector<prop_type> zp;
 };
 
 template<>
@@ -421,7 +423,7 @@ struct conv_impl<3>
 					for (int k = 0 ; k < sx::value ; k += Vc::Vector<prop_type>::Size)
 					{
 						// we do only id exist the point
-						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::Vector<prop_type>::Size; continue;}
+						if (*(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[s2] == 0) {s2 += Vc::Vector<prop_type>::Size; continue;}
 
 						data_il<Vc::Vector<prop_type>::Size> mxm;
 						data_il<Vc::Vector<prop_type>::Size> mxp;
@@ -430,7 +432,7 @@ struct conv_impl<3>
 						data_il<Vc::Vector<prop_type>::Size> mzm;
 						data_il<Vc::Vector<prop_type>::Size> mzp;
 
-						cross_stencil_v cs;
+						cross_stencil_v<prop_type> cs;
 
 						Vc::Vector<prop_type> cmd(&chunk.template get<prop_src>()[s2]);
 
@@ -451,37 +453,21 @@ struct conv_impl<3>
 						long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
 						sumzp += s2;
 
-						if (Vc::Vector<prop_type>::Size == 2)
+						if (Vc::Vector<prop_type>::Size == 2 || Vc::Vector<prop_type>::Size == 4 || Vc::Vector<prop_type>::Size == 8)
 						{
-							mxm.i = *(short int *)&mask.mask[s2];
+							mxm.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[s2];
 							mxm.i = mxm.i << 8;
-							mxm.i |= (short int)mask.mask[sumxm];
+							mxm.i |= (typename data_il<Vc::Vector<prop_type>::Size>::type)mask.mask[sumxm];
 
-							mxp.i = *(short int *)&mask.mask[s2];
+							mxp.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[s2];
 							mxp.i = mxp.i >> 8;
-							mxp.i |= ((short int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
+							mxp.i |= ((typename data_il<Vc::Vector<prop_type>::Size>::type)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
 
-							mym.i = *(short int *)&mask.mask[sumym];
-							myp.i = *(short int *)&mask.mask[sumyp];
+							mym.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[sumym];
+							myp.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[sumyp];
 
-							mzm.i = *(short int *)&mask.mask[sumzm];
-							mzp.i = *(short int *)&mask.mask[sumzp];
-						}
-						else if (Vc::Vector<prop_type>::Size == 4)
-						{
-							mxm.i = *(int *)&mask.mask[s2];
-							mxm.i = mxm.i << 8;
-							mxm.i |= (int)mask.mask[sumxm];
-
-							mxp.i = *(int *)&mask.mask[s2];
-							mxp.i = mxp.i >> 8;
-							mxp.i |= ((int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
-
-							mym.i = *(int *)&mask.mask[sumym];
-							myp.i = *(int *)&mask.mask[sumyp];
-
-							mzm.i = *(int *)&mask.mask[sumzm];
-							mzp.i = *(int *)&mask.mask[sumzp];
+							mzm.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[sumzm];
+							mzp.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[sumzp];
 						}
 						else
 						{
@@ -737,7 +723,7 @@ struct conv_impl<3>
 					for (int k = 0 ; k < sx::value ; k += Vc::Vector<prop_type>::Size)
 					{
 						// we do only id exist the point
-						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::Vector<prop_type>::Size; continue;}
+						if (*(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[s2] == 0) {s2 += Vc::Vector<prop_type>::Size; continue;}
 
 						data_il<4> mxm;
 						data_il<4> mxp;
@@ -746,8 +732,8 @@ struct conv_impl<3>
 						data_il<4> mzm;
 						data_il<4> mzp;
 
-						cross_stencil_v cs1;
-						cross_stencil_v cs2;
+						cross_stencil_v<prop_type> cs1;
+						cross_stencil_v<prop_type> cs2;
 
 						Vc::Vector<prop_type> cmd1(&chunk.template get<prop_src1>()[s2]);
 						Vc::Vector<prop_type> cmd2(&chunk.template get<prop_src2>()[s2]);
@@ -769,37 +755,21 @@ struct conv_impl<3>
 						long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
 						sumzp += s2;
 
-						if (Vc::Vector<prop_type>::Size == 2)
+						if (Vc::Vector<prop_type>::Size == 2 || Vc::Vector<prop_type>::Size == 4 || Vc::Vector<prop_type>::Size == 8)
 						{
-							mxm.i = *(short int *)&mask.mask[s2];
+							mxm.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[s2];
 							mxm.i = mxm.i << 8;
-							mxm.i |= (short int)mask.mask[sumxm];
+							mxm.i |= (typename data_il<Vc::Vector<prop_type>::Size>::type)mask.mask[sumxm];
 
-							mxp.i = *(short int *)&mask.mask[s2];
+							mxp.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[s2];
 							mxp.i = mxp.i >> 8;
-							mxp.i |= ((short int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
+							mxp.i |= ((typename data_il<Vc::Vector<prop_type>::Size>::type)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
 
-							mym.i = *(short int *)&mask.mask[sumym];
-							myp.i = *(short int *)&mask.mask[sumyp];
+							mym.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[sumym];
+							myp.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[sumyp];
 
-							mzm.i = *(short int *)&mask.mask[sumzm];
-							mzp.i = *(short int *)&mask.mask[sumzp];
-						}
-						else if (Vc::Vector<prop_type>::Size == 4)
-						{
-							mxm.i = *(int *)&mask.mask[s2];
-							mxm.i = mxm.i << 8;
-							mxm.i |= (int)mask.mask[sumxm];
-
-							mxp.i = *(int *)&mask.mask[s2];
-							mxp.i = mxp.i >> 8;
-							mxp.i |= ((int)mask.mask[sumxp]) << (Vc::Vector<prop_type>::Size - 1)*8;
-
-							mym.i = *(int *)&mask.mask[sumym];
-							myp.i = *(int *)&mask.mask[sumyp];
-
-							mzm.i = *(int *)&mask.mask[sumzm];
-							mzp.i = *(int *)&mask.mask[sumzp];
+							mzm.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[sumzm];
+							mzp.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[sumzp];
 						}
 						else
 						{

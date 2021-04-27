@@ -177,27 +177,6 @@ struct grid_p<1,ids_type>
 
 #endif
 
-template<unsigned int dim>
-bool has_work_gpu(ite_gpu<dim> & ite)
-{
-	size_t tot_work = 1;
-
-	if (dim == 1)
-	{tot_work *= ite.wthr.x * ite.thr.x;}
-	else if(dim == 2)
-	{
-		tot_work *= ite.wthr.x * ite.thr.x;
-		tot_work *= ite.wthr.y * ite.thr.y;
-	}
-	else
-	{
-		tot_work *= ite.wthr.x * ite.thr.x;
-		tot_work *= ite.wthr.y * ite.thr.y;
-		tot_work *= ite.wthr.z * ite.thr.z;
-	}
-
-	return tot_work != 0;
-}
 
 template<unsigned int dim>
 void move_work_to_blocks(ite_gpu<dim> & ite)
@@ -458,6 +437,9 @@ private:
 	void resize_impl_device(const size_t (& sz)[dim],grid_base_impl<dim,T,S,layout_base,ord_type> & grid_new, unsigned int blockSize = 1)
 	{
 #if defined(CUDA_GPU) && defined(__NVCC__)
+
+			// Compile time-cheking that make sense to call a GPU kernel to copy.
+			
 
 			grid_key_dx<dim> start;
 			grid_key_dx<dim> stop;
@@ -730,7 +712,7 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim,long int> & key1, grid_key_dx<dim,long int> & key2, size_t n_thr = 1024) const
+	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim,long int> & key1, grid_key_dx<dim,long int> & key2, size_t n_thr = default_kernel_wg_threads_) const
 	{
 		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}

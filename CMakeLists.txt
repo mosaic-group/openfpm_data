@@ -5,7 +5,7 @@ if (POLICY CMP0074)
         cmake_policy(SET CMP0074 OLD)
 endif ()
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules/)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules/ /opt/rocm/hip/cmake)
 
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIR} CACHE PATH "Include directory for BOOST")
 set(LIBHILBERT_ROOT CACHE PATH "LibHilbert root path")
@@ -15,11 +15,15 @@ set(ENABLE_GPU CACHE BOOL "Disable the GPU code independently that a cuda compil
 set(TEST_PERFORMANCE CACHE BOOL "Enable test performance")
 set(ALPAKA_ROOT CACHE PATH "Alpaka root path")
 set(CUDA_ON_CPU CACHE BOOL "Make Cuda work on heap")
+set(HIP_ENABLE CACHE BOOL "Enable HIP compiler")
+set(AMD_ARCH_COMPILE "gfx900" CACHE STRING "AMD gpu architecture used to compile kernels")
 
 if (ENABLE_GPU)
-    set(CUDA_ON_CPU OFF)
-    enable_language(CUDA)
-    find_package(CUDA)
+	set(CUDA_ON_CPU OFF)
+	if (NOT HIP_ENABLE)
+		enable_language(CUDA)
+		find_package(CUDA)
+	endif()
 endif()
 
 set (CMAKE_CXX_STANDARD 14)
@@ -31,7 +35,7 @@ message("Searching Vc in ${Vc_DIR}")
 find_package(Boost 1.72.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem OPTIONAL_COMPONENTS fiber context)
 find_package(LibHilbert REQUIRED)
 find_package(Vc REQUIRED)
-
+find_package(HIP)
 
 ###### CONFIG.h FILE ######
 
@@ -45,6 +49,11 @@ endif()
 
 if(TEST_PERFORMANCE)
         set(DEFINE_PERFORMANCE_TEST "#define PERFORMANCE_TEST")
+endif()
+
+if(HIP_FOUND)
+        set(DEFINE_HIP_GPU "#define HIP_GPU")
+        set(DEFINE_CUDIFY_USE_HIP "#define CUDIFY_USE_HIP")
 endif()
 
 if (Boost_FOUND)
@@ -71,6 +80,10 @@ endif()
 
 if(CUDA_ON_CPU)
         set(DEFINE_CUDA_GPU "#define CUDA_GPU")
+endif()
+
+if(HIP_FOUND)
+	set(DEFINE_CUDA_GPU "#define CUDA_GPU")
 endif()
 
 if(LIBHILBERT_FOUND)

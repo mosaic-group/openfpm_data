@@ -7,6 +7,7 @@
 
 #ifndef CUDA_ON_CPU
 
+#ifndef __HIP__
 #include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "util/cuda/moderngpu/kernel_mergesort.hxx"
 #include "util/cuda/moderngpu/kernel_reduce.hxx"
@@ -15,7 +16,7 @@
 
 BOOST_AUTO_TEST_SUITE( modern_gpu_tests )
 
-BOOST_AUTO_TEST_CASE( modern_gpu_transform_lbs )
+BOOST_AUTO_TEST_CASE( modern_gpu_loadbalance_lbs )
 {
 	std::cout << "Test modern gpu test tansform_lbs" << "\n";
 
@@ -214,6 +215,8 @@ BOOST_AUTO_TEST_CASE( modern_gpu_seg_reduce )
 
 
 BOOST_AUTO_TEST_SUITE_END()
+
+#endif
 
 #endif
 

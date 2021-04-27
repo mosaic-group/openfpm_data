@@ -8,7 +8,7 @@
 
 #define BOOST_GPU_ENABLED __host__ __device__
 
-#include "util/cudify/cudify.hpp"
+#include "util/cuda_launch.hpp"
 
 #include "config.h"
 #define BOOST_TEST_DYN_LINK

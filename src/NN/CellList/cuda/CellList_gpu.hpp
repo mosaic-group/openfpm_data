@@ -356,15 +356,12 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	{
 #ifdef __NVCC__
 
-		CUDA_SAFE()
-
 		// Than we construct the ids
 
 		auto ite_gpu = pl.getGPUIteratorTo(stop-start-1);
 
 		cl_n.resize(this->gr_cell.size()+1);
 		cl_n.template fill<0>(0);
-//		CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
 		part_ids.resize(stop - start);
 

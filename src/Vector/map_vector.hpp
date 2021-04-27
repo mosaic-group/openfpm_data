@@ -1510,7 +1510,6 @@ namespace openfpm
 #endif
 			}
 
-
 			return *this;
 		}
 
@@ -1742,7 +1741,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		ite_gpu<1> getGPUIteratorTo(long int stop, size_t n_thr = 1024) const
+		ite_gpu<1> getGPUIteratorTo(long int stop, size_t n_thr = default_kernel_wg_threads_) const
 		{
 			grid_key_dx<1,long int> start(0);
 			grid_key_dx<1,long int> stop_(stop);
@@ -1800,7 +1799,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		ite_gpu<1> getGPUIterator(size_t n_thr = 1024) const
+		ite_gpu<1> getGPUIterator(size_t n_thr = default_kernel_wg_threads_) const
 		{
 			grid_key_dx<1> start(0);
 			grid_key_dx<1> stop(size()-1);
