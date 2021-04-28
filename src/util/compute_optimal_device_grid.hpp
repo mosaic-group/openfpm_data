@@ -48,7 +48,7 @@ void calculate_optimal_device_grid(device_grid<dim> & dg,
 	// factors by 2 for the blocks
 
 	// Get the factors for x
-	std::vector<unsigned long int> x;
+	std::vector<size_t> x;
 	openfpm::math::getFactorization(sz[0],x);
 
 	dg.threads.x = 1;
@@ -90,7 +90,7 @@ void calculate_optimal_device_grid(device_grid<dim> & dg,
 
 
 	// Get the factors for y
-	std::vector<unsigned long int> y;
+	std::vector<size_t> y;
 	size_t jy = 0;
 	dg.threads.y = 1;
 
@@ -131,7 +131,7 @@ void calculate_optimal_device_grid(device_grid<dim> & dg,
 	}
 
 	// Get the factors for z
-	std::vector<unsigned long int> z;
+	std::vector<size_t> z;
 
 	size_t jz = 0;
 	dg.threads.z = 1;
@@ -191,7 +191,7 @@ void calculate_optimal_device_grid(device_grid<dim> & dg,
 	for (size_t k = jz ; k < z.size() ; k++)
 	{dg.grids.z *= z[k];}
 
-	std::vector<unsigned long int> * ptr_xyz[3];
+	std::vector<size_t> * ptr_xyz[3];
 	ptr_xyz[0] = &x;
 	ptr_xyz[1] = &y;
 	ptr_xyz[2] = &z;

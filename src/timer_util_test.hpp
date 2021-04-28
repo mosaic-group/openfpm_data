@@ -14,6 +14,7 @@ BOOST_AUTO_TEST_SUITE( timer_test )
 
 BOOST_AUTO_TEST_CASE( timer_use )
 {
+#ifndef WIN64
 	//! [timer usage and behavior]
 	timer t;
 
@@ -50,6 +51,7 @@ BOOST_AUTO_TEST_CASE( timer_use )
 	BOOST_REQUIRE_SMALL(t.getcputime(),10.0);
 
 	//! [timer usage and behavior]
+#endif
 }
 
 BOOST_AUTO_TEST_SUITE_END()

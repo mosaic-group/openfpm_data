@@ -10,7 +10,11 @@
 
 #include "SpaceBox.hpp"
 
+#ifdef WIN64
+#define INVALID_GHOST 9223372036854775807LL
+#else
 #define INVALID_GHOST 9223372036854775807
+#endif
 
 /*! Ghost
  *

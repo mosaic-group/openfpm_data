@@ -194,7 +194,7 @@ public:
 	 * \param sts pack-stat info
 	 *
 	 */
-	template<typename tp, long unsigned int dim, typename vmpl>
+	template<typename tp, size_t dim, typename vmpl>
 	inline static void pack(ExtPreAlloc<Mem> & ext,
 		                  	const openfpm::detail::multi_array::sub_array_openfpm<tp,dim,vmpl> & obj,
 		                  	Pack_stat & sts)
@@ -225,7 +225,7 @@ public:
 	 * \param req requests vector
 	 *
 	 */
-	template<typename tp, long unsigned int dim, typename vmpl>
+	template<typename tp, size_t dim, typename vmpl>
 	static void packRequest(const openfpm::detail::multi_array::sub_array_openfpm<tp,dim,vmpl> & obj,
 			                size_t & req)
 	{

@@ -169,7 +169,7 @@ endif ()
 target_compile_features(mem_map PUBLIC cxx_std_11)
 target_link_libraries(mem_map ${MPI_C_LIBRARIES})
 target_link_libraries(mem_map m)
-if (NOT APPLE)
+if (NOT APPLE AND NOT (${CMAKE_SYSTEM_NAME} MATCHES "Windows") )
     target_link_libraries(mem_map rt)
 endif ()
 
