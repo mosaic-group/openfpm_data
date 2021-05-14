@@ -120,17 +120,27 @@ struct prop_out_v
     	typedef typename boost::mpl::at<typename ele_v::value_type::value_type::type,boost::mpl::int_<T::value>>::type ptype;
     	typedef typename std::remove_all_extents<ptype>::type base_ptype;
 
-    	meta_prop<boost::mpl::int_<T::value> ,ele_v,St, ptype, is_vtk_writable<base_ptype>::value > m(vv,v_out,prop_names,ft);
+    	meta_prop_new<boost::mpl::int_<T::value> ,ele_v,St, ptype, is_vtk_writable<base_ptype>::value > m(vv,v_out,prop_names,ft);
     }
 
     void lastProp()
 	{
-		// Create point data properties
-		v_out += "SCALARS domain float\n";
-
+        std::string v_outToEncode,v_Encoded;
+        // Create point data properties
+		//v_out += "SCALARS domain float\n";
 		// Default lookup table
-		v_out += "LOOKUP_TABLE default\n";
+		//v_out += "LOOKUP_TABLE default\n";
+        v_out += "        <DataArray type=\"Float32\" Name=\"domain\"";
+        if (ft == file_type::ASCII) {
+            v_out += " format=\"ascii\">\n";
+        }
+        else {
+            v_out += " format=\"binary\">\n";
+        }
 
+        if (ft == file_type::BINARY) {
+            v_outToEncode.append(8,0);
+        }
 		// Produce point data
 		for (size_t k = 0 ; k < vv.size() ; k++)
 		{
@@ -143,23 +153,23 @@ struct prop_out_v
 				if (ft == file_type::ASCII)
 				{
 					if (it.get() < vv.get(k).mark)
-						v_out += "1.0\n";
+                        v_outToEncode += "1.0\n";
 					else
-						v_out += "0.0\n";
+                        v_outToEncode += "0.0\n";
 				}
 				else
 				{
 					if (it.get() < vv.get(k).mark)
 					{
 						float one = 1;
-						one = swap_endian_lt(one);
-						v_out.append((const char *)&one,sizeof(int));
+						//one = swap_endian_lt(one);
+                        v_outToEncode.append((const char *)&one,sizeof(int));
 					}
 					else
 					{
 						float zero = 0;
-						zero = swap_endian_lt(zero);
-						v_out.append((const char *)&zero,sizeof(int));
+						//zero = swap_endian_lt(zero);
+                        v_outToEncode.append((const char *)&zero,sizeof(int));
 					}
 				}
 
@@ -167,7 +177,20 @@ struct prop_out_v
 				++it;
 			}
 		}
-	}
+        if (ft == file_type::BINARY)
+        {
+            *(size_t *) &v_outToEncode[0] = v_outToEncode.size()-sizeof(size_t);
+            v_Encoded.resize(v_outToEncode.size()/3*4+4);
+            size_t sz=EncodeToBase64((const unsigned char*)&v_outToEncode[0],v_outToEncode.size(),(unsigned char *)&v_Encoded[0],0);
+            v_Encoded.resize(sz);
+            v_out += v_Encoded + "\n";
+        }
+        else{
+            v_out += v_outToEncode;
+        };
+		v_out+="        </DataArray>\n";
+    }
+
 };
 
 /*!
@@ -212,14 +235,24 @@ class VTKWriter<pair,VECTOR_POINTS>
 	 * \return a string that define the vertex properties in graphML format
 	 *
 	 */
-	std::string get_vertex_properties_list()
+	std::string get_vertex_properties_list(file_type & opt)
 	{
 		//! vertex property output string
 		std::string v_out;
 
-		// write the number of vertex
-		v_out += "VERTICES " + std::to_string(get_total()) + " " + std::to_string(get_total() * 2) + "\n";
+		v_out += "      <Verts>\n";
+        if (opt == file_type::ASCII)
 
+        {
+            v_out+="        <DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">\n";
+        }
+        else
+        {
+            v_out+="        <DataArray type=\"Int64\" Name=\"connectivity\" format=\"binary\">\n";
+        }
+
+        // write the number of vertex
+		//v_out += "VERTICES " + std::to_string(get_total()) + " " + std::to_string(get_total() * 2) + "\n";
 		// return the vertex properties string
 		return v_out;
 	}
@@ -239,7 +272,7 @@ class VTKWriter<pair,VECTOR_POINTS>
 
 		// write the number of vertex
 
-		v_out += "POINTS " + std::to_string(get_total()) + " " + getType<typename pair::first::value_type::coord_type>() + "\n";
+		v_out += "    <Piece NumberOfPoints=\"" + std::to_string(get_total()) + "\" " +"NumberOfVerts=\"" + std::to_string(get_total()) + "\">\n";// + getType<typename pair::first::value_type::coord_type>() + "\n";
 
 		// return the vertex properties string
 		return v_out;
@@ -252,14 +285,31 @@ class VTKWriter<pair,VECTOR_POINTS>
 	 * \return the list of points
 	 *
 	 */
-	std::string get_point_list(file_type ft)
+	std::string get_point_list(file_type & opt)
 	{
 		//! vertex node output string
 		std::stringstream v_out;
 
-		//! For each defined grid
+		v_out<<"      <Points>\n";
 
-		for (size_t i = 0 ; i < vps.size() ; i++)
+        if (opt == file_type::ASCII)
+        {
+            v_out<<"        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n";
+        }
+        else
+        {
+            v_out<<"        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"binary\">\n";
+        }
+
+        std::stringstream binaryToEncode;
+		//! For each defined grid
+        if (opt == file_type::BINARY)
+        {
+            size_t tmp=0;
+            binaryToEncode.write((const char *)&tmp,sizeof(tmp));
+        }
+
+        for (size_t i = 0 ; i < vps.size() ; i++)
 		{
 			//! write the particle position
 			auto it = vps.get(i).g.getIterator();
@@ -270,17 +320,28 @@ class VTKWriter<pair,VECTOR_POINTS>
 				Point<pair::first::value_type::dims,typename pair::first::value_type::coord_type> p;
 				p = vps.get(i).g.get(it.get());
 
-				output_point<pair::first::value_type::dims,typename pair::first::value_type::coord_type>(p,v_out,ft);
+				output_point_new<pair::first::value_type::dims,typename pair::first::value_type::coord_type>(p,binaryToEncode,opt);
 
 				// increment the iterator and counter
 				++it;
 			}
 		}
-
 		//! In case of binary we have to add a new line at the end of the list
-		if (ft == file_type::BINARY)
-			v_out << std::endl;
-
+		if (opt == file_type::BINARY){
+		    std::string buffer_out,buffer_bin;
+            buffer_bin=binaryToEncode.str();
+            *(size_t *)&buffer_bin[0]=buffer_bin.size()-8;
+		    buffer_out.resize(buffer_bin.size()/3*4+4);
+			unsigned long sz = EncodeToBase64((const unsigned char*)&buffer_bin[0],buffer_bin.size(),(unsigned char*)&buffer_out[0],0);
+			buffer_out.resize(sz);
+		    v_out << buffer_out<<std::endl;
+        }
+		else
+		{
+		    v_out<<binaryToEncode.str();
+		}
+        v_out<<"        </DataArray>\n";
+        v_out<<"      </Points>\n";
 		// return the vertex list
 		return v_out.str();
 	}
@@ -295,10 +356,12 @@ class VTKWriter<pair,VECTOR_POINTS>
 	std::string get_vertex_list(file_type ft)
 	{
 		// vertex node output string
-		std::string v_out;
+		std::string v_out,v_outToEncode,v_Encoded;
 
-		size_t k = 0;
-
+        size_t k = 0;
+        if (ft == file_type::BINARY) {
+            v_outToEncode.append(8,0);
+        }
 		for (size_t i = 0 ; i < vps.size() ; i++)
 		{
 			//! For each grid point create a vertex
@@ -306,17 +369,66 @@ class VTKWriter<pair,VECTOR_POINTS>
 
 			while (it.isNext())
 			{
-				output_vertex(k,v_out,ft);
+				output_vertex_new(k,v_outToEncode,ft);
 
 				++k;
 				++it;
 			}
 		}
-
 		//! In case of binary we have to add a new line at the end of the list
 		if (ft == file_type::BINARY)
-		{v_out += "\n";}
+		{
+            *(size_t *) &v_outToEncode[0] = v_outToEncode.size()-sizeof(size_t);
+		    v_Encoded.resize(v_outToEncode.size()/3*4+4);
+		    size_t sz=EncodeToBase64((const unsigned char*)&v_outToEncode[0],v_outToEncode.size(),(unsigned char *)&v_Encoded[0],0);
+		    v_Encoded.resize(sz);
+		    v_out += v_Encoded + "\n";
+		}
+		else{
+            v_out += v_outToEncode;
+		};
+        v_out += "        </DataArray>\n";
+        v_out += "                <DataArray type=\"Int64\" Name=\"offsets\" ";
 
+        if (ft == file_type::ASCII)
+        {
+            v_out += "format=\"ascii\">\n";
+        }
+        else{
+            v_out += "format=\"binary\">\n";
+        }
+
+        k=0;
+        v_outToEncode.clear();
+        if (ft == file_type::BINARY) {
+            v_outToEncode.append(8,0);
+        }
+
+        for (size_t i = 0 ; i < vps.size() ; i++)
+        {
+            //! For each grid point create a vertex
+            auto it = vps.get(i).g.getIterator();
+            while (it.isNext())
+            {
+                output_vertex_new(k+1,v_outToEncode,ft);
+
+                ++k;
+                ++it;
+            }
+        }
+        if (ft == file_type::BINARY)
+        {
+            *(size_t *) &v_outToEncode[0] = v_outToEncode.size()-sizeof(size_t);
+            v_Encoded.resize(v_outToEncode.size()/3*4+4);
+            size_t sz=EncodeToBase64((const unsigned char*)&v_outToEncode[0],v_outToEncode.size(),(unsigned char *)&v_Encoded[0],0);
+            v_Encoded.resize(sz);
+            v_out += v_Encoded + "\n";
+        }
+        else{
+            v_out += v_outToEncode;
+        };
+        v_out += "        </DataArray>\n";
+        v_out += "      </Verts>\n";
 		// return the vertex list
 		return v_out;
 	}
@@ -330,11 +442,14 @@ class VTKWriter<pair,VECTOR_POINTS>
 	{
 		std::string v_out;
 
-		v_out += "POINT_DATA " + std::to_string(get_total()) + "\n";
+		v_out += "      <PointData>\n";
 
 		return v_out;
 	}
-
+    struct doubleint{
+	    long int i;
+	    double d;
+	};
 	/*! \brief return the meta data string
 	 *
 	 * \param meta_data string with the meta-data to add
@@ -357,17 +472,34 @@ class VTKWriter<pair,VECTOR_POINTS>
 
 		if (exist == true)
 		{
-			meta_string += "FIELD FieldData 1\n";
-			meta_string += "TIME 1 1 double\n";
-			if (opt == file_type::ASCII)
-			{meta_string += std::to_string(time);}
+            //<DataArray type="Float64" Name="TimeValue" NumberOfTuples="1" format="ascii" RangeMin="2" RangeMax="2">
+			//meta_string += "";
+            meta_string += "    <FieldData>\n";
+
+            if (opt == file_type::ASCII)
+			{   meta_string += "        <DataArray type=\"Float64\" Name=\"TimeValue\" NumberOfTuples=\"1\" format=\"ascii\">\n";
+			    meta_string += std::to_string(time);
+			}
 			else
 			{
-				time = swap_endian_lt(time);
-				meta_string.append((const char *)&time,sizeof(double));
+                meta_string += "        <DataArray type=\"Float64\" Name=\"TimeValue\" NumberOfTuples=\"1\" format=\"binary\">\n";
+
+				//time = swap_endian_lt(time);
+                unsigned char time_string[24];//= base64_encode((const unsigned char*)&time,6);
+                //const unsigned char Time=(const unsigned char)time;
+                doubleint timeInit;
+                timeInit.i=8;
+                timeInit.d=time;
+                size_t sz=EncodeToBase64((const unsigned char*)&timeInit,16,time_string,0);
+                //meta_string.append((const char *)&time,sizeof(double));
+				//meta_string += time_string;
+				meta_string.append((const char *)time_string,sz);
 			}
 			meta_string += "\n";
+            meta_string += "      </DataArray>\n";
+            meta_string += "    </FieldData>\n";
 		}
+
 
 		return meta_string;
 	}
@@ -437,17 +569,18 @@ public:
 		std::string point_data;
 
 		// VTK header
-		vtk_header = "# vtk DataFile Version 3.0\n"
-				     + f_name + "\n";
+		vtk_header = "<VTKFile type=\"PolyData\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">\n";
 
-		// Choose if binary or ASCII
-		if (ft == file_type::ASCII)
+        vtk_header +="  <PolyData>\n";
+
+        // Choose if binary or ASCII
+/*		if (ft == file_type::ASCII)
 		{vtk_header += "ASCII\n";}
 		else
-		{vtk_header += "BINARY\n";}
+		{vtk_header += "BINARY\n";}*/
 
 		// Data type for graph is DATASET POLYDATA
-		vtk_header += "DATASET POLYDATA\n";
+		//vtk_header += "DATASET POLYDATA\n";
 
 		vtk_header += add_meta_data(meta_data,ft);
 
@@ -458,7 +591,7 @@ public:
 		point_list = get_point_list(ft);
 
 		// vertex properties header
-		vertex_prop_header = get_vertex_properties_list();
+		vertex_prop_header = get_vertex_properties_list(ft);
 
 		// Get vertex list
 		vertex_list = get_vertex_list(ft);
@@ -478,8 +611,9 @@ public:
 		// Add the last property
 		pp.lastProp();
 
+        std::string closingFile="      </PointData>\n    </Piece>\n  </PolyData>\n</VTKFile>";
 
-		// write the file
+        // write the file
 		std::ofstream ofs(file);
 
 		// Check if the file is open
@@ -487,7 +621,7 @@ public:
 		{std::cerr << "Error cannot create the VTK file: " + file + "\n";}
 
 		ofs << vtk_header << point_prop_header << point_list <<
-				vertex_prop_header << vertex_list << point_data_header << point_data;
+				vertex_prop_header << vertex_list << point_data_header << point_data << closingFile;
 
 		// Close the file
 

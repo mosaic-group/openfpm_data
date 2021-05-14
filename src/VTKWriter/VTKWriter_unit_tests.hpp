@@ -1017,14 +1017,14 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	vtk_v.add(v3ps,v3pp,90);
 
 	openfpm::vector<std::string> prp_names;
-	vtk_v.write("vtk_points.vtk",prp_names);
+	vtk_v.write("vtk_points.vtp",prp_names);
 
 #ifndef SE_CLASS3
 
 	bool test = true;
 
 	// Check that match
-	test = compare("vtk_points.vtk","test_data/vtk_points_test.vtk");
+	test = compare("vtk_points.vtp","test_data/vtk_points_test.vtp");
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1033,12 +1033,12 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,Point<3,float>>>>,VECTOR_POINTS> vtk_v2;
 	vtk_v2.add(v1ps,v4pp,75);
 
-	vtk_v2.write("vtk_points_pp.vtk",prp_names);
+	vtk_v2.write("vtk_points_pp.vtp",prp_names);
 
 #ifndef SE_CLASS3
 
 	// Check that match
-	test = compare("vtk_points_pp.vtk","test_data/vtk_points_pp_test.vtk");
+	test = compare("vtk_points_pp.vtp","test_data/vtk_points_pp_test.vtp");
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1047,15 +1047,18 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,Point<3,float>>>>,VECTOR_POINTS> vtk_v3;
 	vtk_v3.add(v1ps,v4pp,75);
 
-	vtk_v3.write("vtk_points_pp_header.vtk",prp_names,"points","time=5.123");
+	vtk_v3.write("vtk_points_pp_header.vtp",prp_names,"points","time=5.123");
 
 	// We try binary
-	vtk_v3.write("vtk_points_pp_header_bin.vtk",prp_names,"points","time=5.123",file_type::BINARY);
+	vtk_v3.write("vtk_points_pp_header_bin.vtp",prp_names,"points","time=5.123",file_type::BINARY);
 
 #ifndef SE_CLASS3
 
 	// Check that match
-	test = compare("vtk_points_pp_header.vtk","test_data/vtk_points_pp_header_test.vtk");
+	test = compare("vtk_points_pp_header.vtp","test_data/vtk_points_pp_header_test.vtp");
+	BOOST_REQUIRE_EQUAL(test,true);
+
+	test = compare("vtk_points_pp_header_bin.vtp","test_data/vtk_points_pp_header_bin_test.vtp");
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1102,12 +1105,12 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_properties )
 	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,float[3]>>>,VECTOR_POINTS> vtk_v;
 	vtk_v.add(v1ps,v1pp,75);
 	openfpm::vector<std::string> prp_names({"scalar","vector"});
-	vtk_v.write("vtk_points_with_prp_names.vtk",prp_names);
+	vtk_v.write("vtk_points_with_prp_names.vtp",prp_names);
 
 #ifndef SE_CLASS3
 
 	// Check that match
-	bool test = compare("vtk_points_with_prp_names.vtk","test_data/vtk_points_with_prp_names_test.vtk");
+	bool test = compare("vtk_points_with_prp_names.vtp","test_data/vtk_points_with_prp_names_test.vtp");
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1188,17 +1191,17 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		vtk_v.add(v3ps,v3pp,90);
 
 		openfpm::vector<std::string> prp_names;
-		vtk_v.write("vtk_points_bin.vtk",prp_names,"vtk output","",file_type::BINARY);
-		vtk_v.write("vtk_points_bin2.vtk",prp_names,"vtk output","",file_type::BINARY);
+		vtk_v.write("vtk_points_bin.vtp",prp_names,"vtk output","",file_type::BINARY);
+		vtk_v.write("vtk_points_bin2.vtp",prp_names,"vtk output","",file_type::BINARY);
 
 #ifndef SE_CLASS3
 
 		bool test = true;
 
 		// Check that match
-		test = compare("vtk_points_bin.vtk","test_data/vtk_points_bin_test.vtk");
+		test = compare("vtk_points_bin.vtp","test_data/vtk_points_bin_test.vtp");
 		BOOST_REQUIRE_EQUAL(test,true);
-		test = compare("vtk_points_bin2.vtk","test_data/vtk_points_bin_test.vtk");
+		test = compare("vtk_points_bin2.vtp","test_data/vtk_points_bin_test.vtp");
 		BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1207,12 +1210,12 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,Point<3,float>>>>,VECTOR_POINTS> vtk_v2;
 		vtk_v2.add(v1ps,v4pp,75);
 
-		vtk_v2.write("vtk_points_pp_bin.vtk",prp_names,"vtk output","",file_type::BINARY);
+		vtk_v2.write("vtk_points_pp_bin.vtp",prp_names,"vtk output","",file_type::BINARY);
 
 #ifndef SE_CLASS3
 
 		// Check that match
-		test = compare("vtk_points_pp_bin.vtk","test_data/vtk_points_pp_bin_test.vtk");
+		test = compare("vtk_points_pp_bin.vtp","test_data/vtk_points_pp_bin_test.vtp");
 		BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1303,14 +1306,14 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 
 		openfpm::vector<std::string> stub;
 
-		vtk_v.write("vtk_points_2d_bin.vtk",stub,"vtk output","",file_type::BINARY);
+		vtk_v.write("vtk_points_2d_bin.vtp",stub,"vtk output","",file_type::BINARY);
 
 #ifndef SE_CLASS3
 
 		bool test = true;
 
 		// Check that match
-		test = compare("vtk_points_2d_bin.vtk","test_data/vtk_points_2d_bin_test.vtk");
+		test = compare("vtk_points_2d_bin.vtp","test_data/vtk_points_2d_bin_test.vtp");
 		BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1319,12 +1322,12 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		VTKWriter<boost::mpl::pair<openfpm::vector<Point<2,double>>,openfpm::vector<aggregate<float[3],double[2]>>>,VECTOR_POINTS> vtk_v2;
 		vtk_v2.add(v1ps,v4pp,75);
 
-		vtk_v2.write("vtk_points_2d_pp_bin.vtk",stub,"vtk output","",file_type::BINARY);
+		vtk_v2.write("vtk_points_2d_pp_bin.vtp",stub,"vtk output","",file_type::BINARY);
 
 #ifndef SE_CLASS3
 
 		// Check that match
-		test = compare("vtk_points_2d_pp_bin.vtk","test_data/vtk_points_2d_pp_bin_test.vtk");
+		test = compare("vtk_points_2d_pp_bin.vtp","test_data/vtk_points_2d_pp_bin_test.vtp");
 		BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
