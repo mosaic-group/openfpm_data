@@ -16,6 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include <boost/filesystem.hpp>
+#include "VCluster/VCluster.hpp"
 /**@brief Gets the current working directory and returns path as string.
  *
  * @return Std::string of path to current working directory.

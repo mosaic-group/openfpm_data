@@ -257,14 +257,13 @@ class VTKWriter<pair,VECTOR_POINTS>
 		return v_out;
 	}
 
-	/*! \brief It get the vertex properties list
+	/*! \brief It get the point position header string
 	 *
-	 * It get the vertex properties list of the vertex defined as a VTK header
+	 * It get the vertex position header of the vertex defined as a VTK header
 	 *
-	 * \return a string that define the vertex properties in graphML format
+	 * \return a string that define the vertex position format
 	 *
 	 */
-
 	std::string get_point_properties_list(file_type ft)
 	{
 		//! vertex property output string
@@ -272,7 +271,7 @@ class VTKWriter<pair,VECTOR_POINTS>
 
 		// write the number of vertex
 
-		v_out += "    <Piece NumberOfPoints=\"" + std::to_string(get_total()) + "\" " +"NumberOfVerts=\"" + std::to_string(get_total()) + "\">\n";// + getType<typename pair::first::value_type::coord_type>() + "\n";
+		v_out += "    <Piece NumberOfPoints=\"" + std::to_string(get_total()) + "\" " +"NumberOfVerts=\"" + std::to_string(get_total()) + "\">\n";
 
 		// return the vertex properties string
 		return v_out;

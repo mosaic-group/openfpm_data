@@ -611,6 +611,7 @@ public:
 template<typename Graph, unsigned int i>
 class prop_output<false, Graph, i>
 {
+public:
 	/*! \brief Return the point data section for a graph g
 	 *
 	 * \param g graph
@@ -774,7 +775,7 @@ class prop_output<false, Graph, i>
 	 */
 	static std::string get_attributes_vertex()
 	{
-		return Graph::V_type::attributes::name[i];
+		return std::string("attr" + std::to_string(i));
 	}
 
 	/*! \brief Get the attributes name for edge
@@ -784,7 +785,7 @@ class prop_output<false, Graph, i>
 	 */
 	static std::string get_attributes_edge()
 	{
-		return Graph::E_type::attributes::name[i];
+		return std::string("attr" + std::to_string(i));
 	}
 };
 
