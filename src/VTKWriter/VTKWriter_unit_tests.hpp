@@ -1153,12 +1153,12 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_check_out_precision )
 	VTKWriter<boost::mpl::pair<openfpm::vector<Point<3,double>>,openfpm::vector<aggregate<float,double[3]>>>,VECTOR_POINTS> vtk_v;
 	vtk_v.add(v1ps,v1pp,75);
 	openfpm::vector<std::string> prp_names({"scalar","vector"});
-	vtk_v.write("vtk_points_with_prp_names_prec_check.vtk",prp_names);
+	vtk_v.write("vtk_points_with_prp_names_prec_check.vtp",prp_names);
 
 #ifndef SE_CLASS3
 
 	// Check that match
-	bool test = compare("vtk_points_with_prp_names_prec_check.vtk","test_data/vtk_points_with_prp_names_prec_check_test.vtk");
+	bool test = compare("vtk_points_with_prp_names_prec_check.vtp","test_data/vtk_points_with_prp_names_prec_check_test.vtp");
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
