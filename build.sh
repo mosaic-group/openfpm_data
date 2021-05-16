@@ -53,6 +53,7 @@ fi
 if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
         ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="/opt/bin:$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
+	rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/BOOST
 	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_HDF5.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
         ./install_LIBHILBERT.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
