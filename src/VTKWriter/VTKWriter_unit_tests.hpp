@@ -3,6 +3,8 @@
  *
  *  Created on: May 6, 2015
  *      Author: Pietro Incardona
+ *
+ *      Modified by Abhinav Singh May 17, 2021
  */
 
 #ifndef VTKWRITER_UNIT_TESTS_HPP_
@@ -1018,6 +1020,10 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 
 	openfpm::vector<std::string> prp_names;
 	vtk_v.write("vtk_points.vtp",prp_names);
+	//auto &v_cl=create_vcluster();
+	//size_t n=v_cl.size();
+	vtk_v.write_pvtp("vtk_points.pvtp",prp_names,2);
+
 
 #ifndef SE_CLASS3
 
@@ -1025,6 +1031,10 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 
 	// Check that match
 	test = compare("vtk_points.vtp","test_data/vtk_points_test.vtp");
+	BOOST_REQUIRE_EQUAL(test,true);
+
+	//It just checks generation of the format and not actual data (File names)
+	test = compare("vtk_points.pvtp","test_data/pvtp_points_test.pvtp");
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif

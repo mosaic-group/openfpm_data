@@ -295,7 +295,7 @@ inline static unsigned char vtkBase64UtilitiesEncodeChar(unsigned char c)
 }
 
 //----------------------------------------------------------------------------
-void EncodeTriplet(unsigned char i0,
+static void EncodeTriplet(unsigned char i0,
                                        unsigned char i1,
                                        unsigned char i2,
                                        unsigned char *o0,
@@ -310,7 +310,7 @@ void EncodeTriplet(unsigned char i0,
 }
 
 //----------------------------------------------------------------------------
-void EncodePair(unsigned char i0,
+static void EncodePair(unsigned char i0,
                                     unsigned char i1,
                                     unsigned char *o0,
                                     unsigned char *o1,
@@ -324,7 +324,7 @@ void EncodePair(unsigned char i0,
 }
 
 //----------------------------------------------------------------------------
-void EncodeSingle(unsigned char i0,
+static void EncodeSingle(unsigned char i0,
                                       unsigned char *o0,
                                       unsigned char *o1,
                                       unsigned char *o2,
@@ -337,7 +337,7 @@ void EncodeSingle(unsigned char i0,
 }
 
 //----------------------------------------------------------------------------
-unsigned long EncodeToBase64(const unsigned char *input,
+static unsigned long EncodeToBase64(const unsigned char *input,
                                          unsigned long length,
                                          unsigned char *output,
                                          int mark_end)

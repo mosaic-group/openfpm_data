@@ -193,6 +193,63 @@ struct prop_out_v
 
 };
 
+
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to produce an output for each property
+ *
+ * \tparam ele_v It is the class ele_v that store the couple vector of position and property
+ *
+ *
+ */
+template<typename ele_v, typename St>
+struct prop_out_v_pvtp
+{
+    //! property output string
+    std::string & v_out;
+
+    //! properties names
+    const openfpm::vector<std::string> & prop_names;
+
+    /*! \brief constructor
+     *
+     * \param v_out string to fill with the vertex properties
+     * \param vv vector we are processing
+     * \param ft ASCII or BINARY format
+     *
+     */
+    prop_out_v_pvtp(std::string & v_out,
+               const openfpm::vector<std::string> & prop_names)
+            :v_out(v_out),prop_names(prop_names)
+    {
+        //meta_prop_new<boost::mpl::int_<T::value> ,ele_v,St, ptype, is_vtk_writable<base_ptype>::value > m(vv,v_out,prop_names,ft);
+    };
+
+    /*! \brief It produce an output for each property
+     *
+     * \param t property id
+     *
+     */
+    template<typename T>
+    void operator()(T& t) const
+    {
+        typedef typename boost::mpl::at<typename ele_v::value_type::value_type::type,boost::mpl::int_<T::value>>::type ptype;
+        typedef typename std::remove_all_extents<ptype>::type base_ptype;
+
+        //std::string type = getTypeNew<base_ptype>();
+        meta_prop_new<boost::mpl::int_<T::value> ,ele_v,St, ptype, is_vtk_writable<base_ptype>::value >::get_pvtp_out(v_out,prop_names);
+        //v_out += "    <PDataArray type=\""+type+"\" Name=\""+getAttrName<ele_g,has_attributes>::get(i,prop_names,oprp)+"\""+" NumberOfComponents=\"3\"";
+    }
+
+
+    void lastProp()
+    {
+        v_out += "      <PDataArray type=\"Float32\" Name=\"domain\"/>\n    </PPointData>\n";
+    }
+};
+
 /*!
  *
  * It write a VTK format file for a list of grids defined on a space
@@ -531,6 +588,57 @@ public:
 		this->vps.add(t1);
 		this->vpp.add(t2);
 	}
+
+/*! \brief It write a Merged VTP type file from a vector of points
+	 *
+	 * \tparam prp_out which properties to output [default = -1 (all)]
+	 *
+	 * \return true if the write complete successfully
+	 *
+	 */
+    bool write_pvtp(std::string file,const openfpm::vector<std::string> & prop_names,size_t n,size_t timestamp=-1)
+    {
+        //openfpm::vector< ele_vpp<typename pair::second>> vpp;
+        // Header for the vtk
+        std::string vtk_header;
+        std::string Name_data;
+        std::string PpointEnd;
+        std::string Piece;
+
+        vtk_header = "<VTKFile type=\"PPolyData\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">\n  <PPolyData>\n    <PPointData>\n";
+        prop_out_v_pvtp< ele_vpp<typename pair::second>, typename pair::first::value_type::coord_type> pp(Name_data,prop_names);
+        boost::mpl::for_each< boost::mpl::range_c<int,0, pair::second::value_type::max_prop> >(pp);
+        pp.lastProp();
+        PpointEnd += "    <PPoints>\n      <PDataArray type=\""+getTypeNew<typename decltype(vps)::value_type::value_type::value_type::coord_type>()+"\" Name=\"Points\" NumberOfComponents=\"3\"/>\n    </PPoints>\n";
+
+
+        if (timestamp==-1) {
+            for (int i = 0; i < n; i++)
+            { Piece += "    <Piece Source=\"" + file.substr(0, file.size()) + "_" +std::to_string(i) + ".vtp\"/>\n";}
+            file +=  ".pvtp";
+        }
+        else{
+            for (int i = 0; i < n; i++)
+            { Piece += "    <Piece Source=\"" + file.substr(0, file.size()) + "_" +std::to_string(i) + "_" + std::to_string(timestamp) + ".vtp\"/>\n";}
+            file += "_" + std::to_string(timestamp) + ".pvtp";
+        }
+        std::string closingFile="  </PPolyData>\n</VTKFile>";
+
+        // write the file
+        std::ofstream ofs(file);
+
+        // Check if the file is open
+        if (ofs.is_open() == false)
+        {std::cerr << "Error cannot create the PVTP file: " + file + "\n";}
+
+        ofs << vtk_header << Name_data <<PpointEnd<< Piece << closingFile;
+
+        // Close the file
+
+        ofs.close();
+
+        return true;
+    }
 
 	/*! \brief It write a VTK file from a vector of points
 	 *
