@@ -9,7 +9,7 @@
  *
  * @details Can be run in parallel.
  *
- * @author Justina Stark
+ * @author Justina Stark & Pietro Incardona
  * @date November 2019 - August 2020
  */
 #ifndef IMAGE_BASED_RECONSTRUCTION_GETINITIALGRID_HPP
@@ -18,6 +18,7 @@
 #include <iostream>
 #include <typeinfo>
 #include <cmath>
+#include <sys/stat.h>
 
 #include "Vector/vector_dist.hpp"
 #include "Grid/grid_dist_id.hpp"
@@ -26,6 +27,14 @@
 
 #include "level_set/redistancing_Sussman/HelpFunctionsForGrid.hpp"
 typedef signed char BYTE;
+
+inline bool exists_test (const std::string& name) {
+	struct stat buffer;
+	return (stat (name.c_str(), &buffer) == 0);
+}
+
+
+
 /**@brief Read the number of pixels per dimension from a csv-file in order to create a grid with the same size.
  *
  * @param path_to_file Std::string containing the path to the csv file that holds the image/volume size in
@@ -35,13 +44,15 @@ typedef signed char BYTE;
 std::vector<size_t> get_size(const std::string & path_to_file)
 {
 	std::vector<size_t> stack_dimst_1d;
-	//	stream input csv file and error check
-	std::ifstream file(path_to_file);
-	if (!file)
-	{
-		std::cout << "Error opening file" << std::endl;
-		exit (EXIT_FAILURE);
+	//	check if file exists and stream input csv file
+	if(!exists_test(path_to_file)){
+		std::cout << "------------------------------------------------------------------------" << std::endl;
+		std::cout << "Error: file " << path_to_file << " does not exist. Aborting..." << std::endl;
+		std::cout << "------------------------------------------------------------------------" << std::endl;
+		abort();
 	}
+	std::ifstream file(path_to_file);
+
 
 	// get its size
 	std::streampos fileSize;
@@ -83,7 +94,14 @@ void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <
 	constexpr size_t x = 0;
 	constexpr size_t y = 1;
 	constexpr size_t z = 2;
-
+	
+	// check if file exists and stream input file
+	if(!exists_test(file_name)){
+		std::cout << "------------------------------------------------------------------------" << std::endl;
+		std::cout << "Error: file " << file_name << " does not exist. Aborting..." << std::endl;
+		std::cout << "------------------------------------------------------------------------" << std::endl;
+		abort();
+	}
 	std::ifstream file_stream (file_name, std::ifstream::binary);
 	
 	auto & v_cl = create_vcluster();
@@ -121,17 +139,24 @@ void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <
 		auto key = dom.get();
 		auto gkey = grid.getGKey(key);
 		
+		// In case a patch starts within a group of nodes to which same pixel-value should be assigned, get the
+		// respective rest-offset
+		size_t rest_offset = (size_t) (fmod(gkey.get(0), refinement[x])); // get the remainder
+		
+		
 		// get l as the length of one x-line of the original image stack for the specific patch on the processor
-		auto & gbox = grid.getLocalGridsInfo();
-		auto & DomBox = gbox.get(key.getSub()).Dbox;
-		int l = (size_t) std::round((DomBox.getHigh(0) - DomBox.getLow(0) + 1) / refinement[x]);
+		auto & gbox       = grid.getLocalGridsInfo();
+		auto & DomBox     = gbox.get(key.getSub()).Dbox;
+		size_t patch_size = DomBox.getHigh(0) - DomBox.getLow(0) + 1;
+	
+		size_t l          = (size_t) ceil( (patch_size + rest_offset) / refinement[x]);
 		
 		// in case that the grid has a different resolution than the underlying image stack:
 		// create a key which is used to get the offset for the file reading
 		// the indices in this key are corrected by the refinement factor
 		for (size_t d = 0; d < grid_type::dims; d++)
 		{
-			gkey.set_d(d, std::round(gkey.get(d) / refinement[d]));
+			gkey.set_d(d, floor(gkey.get(d) / refinement[d]));
 		}
 		
 		// the offset matches the pixel from the image stack to the corresponding current position of the iterator
@@ -147,10 +172,13 @@ void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <
 		// run over a whole grid-line in x and assign pixel values from pixel_line to grid nodes
 		// if the grid is finer in x as the image stack, the same pixel value from pixel_line is
 		// assigned refinement[x] times
-		for (size_t i = 0; i < l * refinement[x]; i++)
+		for (size_t k = 0; k < patch_size; ++k)
 		{
 			auto key = dom.get();
-			grid.template get<Phi_0>(key) = (double) pixel_line[(size_t)floor(i / refinement[x])];
+			// get the correct index of the pixel to be read from pixel_line by considering a potential rest-offset,
+			// when the patch divides group of nodes that belong to the same pixel
+			size_t i = (size_t) floor((k + rest_offset) / refinement[x]);
+			grid.template get<Phi_0>(key) = (double) pixel_line[i];
 			++dom;
 		}
 		// now one grid line in x is finished and the iterator dom has advanced accordingly s.t. next loop continues
