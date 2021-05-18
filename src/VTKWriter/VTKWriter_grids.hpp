@@ -214,14 +214,16 @@ class VTKWriter<pair,VECTOR_GRIDS>
 	 * \return a string that define the vertex properties in graphML format
 	 *
 	 */
-
 	std::string get_point_properties_list()
 	{
 		//! vertex property output string
 		std::string v_out;
 
 		// write the number of vertex
-		v_out += "POINTS " + std::to_string(get_total()) + " float" + "\n";
+        if (std::is_same<typename pair::second,float>::value == true)
+        {v_out += "POINTS " + std::to_string(get_total()) + " float" + "\n";}
+        else
+        {v_out += "POINTS " + std::to_string(get_total()) + " double" + "\n";}
 
 		// return the vertex properties string
 		return v_out;
@@ -238,6 +240,11 @@ class VTKWriter<pair,VECTOR_GRIDS>
 	{
 		//! vertex node output string
 		std::stringstream v_out;
+
+        if (std::is_same<typename pair::second,float>::value == true)
+        {v_out << std::setprecision(7);}
+        else
+        {v_out << std::setprecision(16);}
 
 		//! For each defined grid
 
