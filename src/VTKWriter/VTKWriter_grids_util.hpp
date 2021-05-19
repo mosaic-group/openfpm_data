@@ -917,8 +917,9 @@ template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & 
 {
 	if (ft == file_type::ASCII)
 	{
-        for (int i = 0 ; i < dims ; i++)
-		{v_out << p[i];}
+        v_out << p[0];
+        for (int i = 1 ; i < dims ; i++)
+		{v_out << " " << p[i];}
 		size_t i = dims;
 		for ( ; i < 3 ; i++)
 		{v_out << " 0.0";}
