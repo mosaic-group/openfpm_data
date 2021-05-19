@@ -141,7 +141,7 @@ template<unsigned int i, typename ele_g, bool has_attributes> std::string get_po
  * \param oprp prefix
  *
  */
-/*template<unsigned int i, typename ele_g, bool has_attributes> std::string get_point_property_header_impl_new(const std::string & oprp, const openfpm::vector<std::string> & prop_names,file_type ft)
+template<unsigned int i, typename ele_g, bool has_attributes> std::string get_point_property_header_impl_new(const std::string & oprp, const openfpm::vector<std::string> & prop_names,file_type ft)
 {
 	//! vertex node output string
 	std::string v_out;
@@ -233,7 +233,7 @@ template<unsigned int i, typename ele_g, bool has_attributes> std::string get_po
 
 	// return the vertex list
 	return v_out;
-}*/
+}
 
 /*! \brief Write the vectror property
  *
@@ -648,7 +648,6 @@ struct meta_prop<I,ele_g,St,T,false>
  * \tparam is_writable flag that indicate if a property is writable
  *
  */
-#if 0
 template<typename I, typename ele_g, typename St, typename T, bool is_writable>
 struct meta_prop_new
 {
@@ -910,8 +909,6 @@ struct meta_prop_new<I,ele_g,St,T,false>
 	{
 	}
 };
-
-#endif
 
 template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & p,std::stringstream & v_out, file_type ft)
 {
