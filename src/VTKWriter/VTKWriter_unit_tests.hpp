@@ -659,41 +659,43 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	{
 
 		// Create box grids
-		Point<1,float> offset1({0.0});
-		Point<1,float> spacing1({0.1});
+		Point<1,double> offset1({0.0});
+		Point<1,double> spacing1({0.1});
 		Box<1,size_t> d1({1},{14});
 
 		// Create box grids
-		Point<1,float> offset2({5.0});
+		Point<1,double> offset2({5.0});
 		Point<1,float> spacing2({0.2});
 		Box<1,size_t> d2({2},{13});
 
 		// Create box grids
-		Point<1,float> offset3({0.0});
-		Point<1,float> spacing3({0.05});
+		Point<1,double> offset3({0.0});
+		Point<1,double> spacing3({0.05});
 		Box<1,size_t> d3({3},{11});
 
 		// Create box grids
-		Point<1,float> offset4({5.0});
-		Point<1,float> spacing4({0.1});
+		Point<1,double> offset4({5.0});
+		Point<1,double> spacing4({0.1});
 		Box<1,size_t> d4({1},{7});
 
 		size_t sz[] = {16};
-		grid_cpu<1,Point_test<float>> g1(sz);
+		grid_cpu<1,Point_test<double>> g1(sz);
 		g1.setMemory();
 		fill_grid_some_data(g1);
-		grid_cpu<1,Point_test<float>> g2(sz);
+		grid_cpu<1,Point_test<double>> g2(sz);
 		g2.setMemory();
 		fill_grid_some_data(g2);
-		grid_cpu<1,Point_test<float>> g3(sz);
+		grid_cpu<1,Point_test<double>> g3(sz);
 		g3.setMemory();
 		fill_grid_some_data(g3);
-		grid_cpu<1,Point_test<float>> g4(sz);
+		grid_cpu<1,Point_test<double>> g4(sz);
 		g4.setMemory();
 		fill_grid_some_data(g4);
 
+		g4.template get<Point_test<double>::s>(0) = 1.0/3.0;
+
 		// Create a writer and write
-		VTKWriter<boost::mpl::pair<grid_cpu<1,Point_test<float>>,float>,VECTOR_GRIDS> vtk_g;
+		VTKWriter<boost::mpl::pair<grid_cpu<1,Point_test<double>>,double>,VECTOR_GRIDS> vtk_g;
 		vtk_g.add(g1,offset1,spacing1,d1);
 		vtk_g.add(g2,offset2,spacing2,d2);
 		vtk_g.add(g3,offset3,spacing3,d3);
