@@ -987,7 +987,7 @@ template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & 
 		{
 			// we use float so we have to convert to float
 			auto tmp = p.get(i);
-			//tmp = swap_endian_lt(tmp);
+			tmp = swap_endian_lt(tmp);
 			v_out.write((const char *)&tmp,sizeof(tmp));
 		}
 		for ( ; i < 3 ; i++)
@@ -996,7 +996,7 @@ template<unsigned int dims,typename T> inline void output_point(Point<dims,T> & 
 
 			/* coverity[dead_error_begin] */
 			T tmp = 0.0;
-			//tmp = swap_endian_lt(tmp);
+			tmp = swap_endian_lt(tmp);
 			v_out.write((const char *)&tmp,sizeof(tmp));
 		}
 	}
