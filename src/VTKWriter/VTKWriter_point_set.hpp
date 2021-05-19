@@ -346,18 +346,41 @@ class VTKWriter<pair,VECTOR_POINTS>
         //! vertex node output string
         std::stringstream v_out;
 
-        v_out<<"      <Points>\n";
+       v_out<<"      <Points>\n";
 
-        if (opt == file_type::ASCII)
+        if (std::is_same<float,typename pair::first::value_type::coord_type>::value == true)
         {
-            v_out<<"        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n";
+            if (opt == file_type::ASCII)
+            {
+                v_out<<"        <DataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n";
+            }
+            else
+            {
+                v_out<<"        <DataArray type=\"Float32\" Name=\"Points\" NumberOfComponents=\"3\" format=\"binary\">\n";
+            }
         }
         else
         {
-            v_out<<"        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"binary\">\n";
+            if (opt == file_type::ASCII)
+            {
+                v_out<<"        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">\n";
+            }
+            else
+            {
+                v_out<<"        <DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"binary\">\n";
+            }
         }
 
         std::stringstream binaryToEncode;
+        if (std::is_same<float,typename pair::first::value_type::coord_type>::value == true)
+        {
+            binaryToEncode << std::setprecision(7);
+        }
+        else
+        {
+            binaryToEncode << std::setprecision(16);
+        }
+
         //! For each defined grid
         if (opt == file_type::BINARY)
         {

@@ -1024,7 +1024,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	vtk_v.write("vtk_points.vtp",prp_names);
 	//auto &v_cl=create_vcluster();
 	//size_t n=v_cl.size();
-	vtk_v.write_pvtp("vtk_points.pvtp",prp_names,2);
+	vtk_v.write_pvtp("vtk_points",prp_names,2);
 
 
 #ifndef SE_CLASS3

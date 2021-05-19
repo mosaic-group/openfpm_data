@@ -585,8 +585,9 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
                     if (ft == file_type::ASCII)
                     {
                         // Print the properties
-                        for (size_t i1 = 0 ; i1 < N1 ; i1++)
-                        {stream_out << vg.get(k).g.template get<I::value>(it.get())[i1] << " ";}
+                        stream_out << vg.get(k).g.template get<I::value>(it.get())[0];
+                        for (size_t i1 = 1 ; i1 < N1 ; i1++)
+                        {stream_out << " " << vg.get(k).g.template get<I::value>(it.get())[i1];}
 
                         if (N1 == 2)
                         {stream_out << (decltype(vg.get(k).g.template get<I::value>(it.get())[0])) 0;}
@@ -846,8 +847,9 @@ struct meta_prop_new<I, ele_g,St,T[N1],is_writable>
 					if (ft == file_type::ASCII)
 					{
 						// Print the properties
-						for (size_t i1 = 0 ; i1 < N1 ; i1++)
-						{v_outToEncode_ << vg.get(k).g.template get<I::value>(it.get())[i1] << " ";}
+                        v_outToEncode_ << vg.get(k).g.template get<I::value>(it.get())[0];
+						for (size_t i1 = 1 ; i1 < N1 ; i1++)
+						{v_outToEncode_ << " " << vg.get(k).g.template get<I::value>(it.get())[i1];}
 
 						if (N1 == 2)
 						{v_outToEncode_ << (decltype(vg.get(k).g.template get<I::value>(it.get())[0])) 0;}
@@ -980,10 +982,15 @@ struct meta_prop_new<I, ele_g,St, T[N1][N2],is_writable>
 		}
 	}
 
-    static inline void get_pvtp_out(std::string & v_out, const openfpm::vector<std::string> & prop_names){
-
-        v_out += get_point_property_header_impl_new_pvtp<I::value,ele_g,has_attributes<typename ele_g::value_type::value_type>::value>("",prop_names);
-
+    static inline void get_pvtp_out(std::string & v_out, const openfpm::vector<std::string> & prop_names)
+    {
+        for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			for (size_t i2 = 0 ; i2 < N2 ; i2++)
+			{
+                v_out += get_point_property_header_impl_new_pvtp<I::value,ele_g,has_attributes<typename ele_g::value_type::value_type>::value>("_" + std::to_string(i1) + "_" + std::to_string(i2),prop_names);
+            }
+        }
     }
 };
 
@@ -1045,11 +1052,13 @@ template<unsigned int dims,typename T> inline void output_point_new(Point<dims,T
 {
     if (ft == file_type::ASCII)
     {
-        v_out << p.toString();
-        size_t i = dims;
-        for ( ; i < 3 ; i++)
-        {v_out << " 0.0";}
-        v_out << "\n";
+        v_out << p[0];
+        for (int i = 1 ; i < dims ; i++)
+		{v_out << " " << p[i];}
+		size_t i = dims;
+		for ( ; i < 3 ; i++)
+		{v_out << " 0.0";}
+		v_out << "\n";
     }
     else
     {

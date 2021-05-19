@@ -6,9 +6,9 @@
       <PDataArray type="Float32" Name="domain"/>
     </PPointData>
     <PPoints>
-      <PDataArray type=Float64 Name="Points" NumberOfComponents="3"/>
+      <PDataArray type="Float64" Name="Points" NumberOfComponents="3"/>
     </PPoints>
-    <Piece Source="vtk_points.pvtp_0.vtp"/>
-    <Piece Source="vtk_points.pvtp_1.vtp"/>
+    <Piece Source="vtk_points_0.vtp"/>
+    <Piece Source="vtk_points_1.vtp"/>
   </PPolyData>
 </VTKFile>
