@@ -129,7 +129,7 @@ struct key_val_it
 	key_t * key;
 	val_t * val;
 
-	bool operator==(const key_val_it & tmp)
+	bool operator==(const key_val_it & tmp) const
 	{
 		return (key == tmp.key && val == tmp.val);
 	}
@@ -188,6 +188,16 @@ struct key_val_it
 	bool operator<(const key_val_it & tmp) const
 	{
 		return key < tmp.key;
+	}
+
+	bool operator>=(const key_val_it & tmp) const
+	{
+		return key >= tmp.key;
+	}
+
+	bool operator>(const key_val_it & tmp) const
+	{
+		return key > tmp.key;
 	}
 
 	key_val_it<key_t,val_t> & operator=(key_val_it<key_t,val_t> & tmp)
