@@ -256,7 +256,14 @@ namespace openfpm
 
 	key_val_it<key_t,val_t> kv(keys_input,vals_input);
 
-	std::sort(kv,kv+count,comp);
+	if (std::is_same<mgpu::template less_t<key_t>,comp_t>::value == true)
+	{
+		std::sort(kv,kv+count);
+	}
+	else if (std::is_same<mgpu::template greater_t<key_t>,comp_t>::value == true)
+	{
+		std::sort(kv,kv+count,std::greater<key_val<key_t,val_t>>());
+	}
 
 #else
 
