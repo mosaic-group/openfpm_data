@@ -151,6 +151,13 @@ struct key_val_it
 		return tmp;
 	}
 
+	key_val_it & operator+=(size_t count) const
+	{
+		key += count;
+		val += count;
+
+		return *this;
+	}
 
 	size_t operator-(key_val_it & tmp) const
 	{
