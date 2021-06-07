@@ -857,6 +857,24 @@ public:
 		return layout_base<T>::template get<p>(data_,g1,v1);
 	}
 
+	/*! \brief No blocks here, it return 1
+     * 
+	 * \return 1
+	 */
+	int getBlockEdgeSize()
+	{
+		return 1;
+	}
+
+	/*! \brief No blocks here, it does nothing
+     *
+	 *  \param nb unused
+	 *  \param nt unused
+	 * 
+	 */
+	void setGPUInsertBuffer(unsigned int nb, unsigned int nt)
+	{}
+
 	/*! \brief Get the const reference of the selected element
 	 *
 	 * \param v1 grid_key that identify the element in the grid

@@ -59,6 +59,15 @@
 typedef HeapMemory CudaMemory;
 #endif
 
+/*! \brief get the type of the SetBlock
+ *
+ *
+ */
+template<typename SGridGpu>
+struct GetSetBlockType
+{
+	typedef typename SGridGpu::device_grid_type::container type;
+};
 
 /*! Stub grid class
  *
