@@ -366,7 +366,7 @@ public:
  *
  */
 template<typename T>
-class prop_write_out<1,T>
+class prop_write_out<0,T>
 {
 public:
 
@@ -449,7 +449,7 @@ public:
  *
  */
 template<typename T>
-class prop_write_out_new<1,T>
+class prop_write_out_new<0,T>
 {
 public:
 
