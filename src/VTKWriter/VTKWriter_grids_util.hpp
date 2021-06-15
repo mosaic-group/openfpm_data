@@ -114,7 +114,10 @@ template<unsigned int i, typename ele_g, bool has_attributes> std::string get_po
 
                 // We check if it is a vector or scalar like type
                 if (vtk_dims<ctype>::value == 1)
+                {
                     v_out += "SCALARS " + getAttrName<ele_g,has_attributes>::get(i,prop_names,oprp) + " " + type + "\n";
+                    v_out += "LOOKUP_TABLE default\n";
+                }
                 else
                     v_out += "VECTORS " + getAttrName<ele_g,has_attributes>::get(i,prop_names,oprp) + " " + type + "\n";
             }
