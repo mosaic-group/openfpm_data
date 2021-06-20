@@ -12,7 +12,7 @@
 
 #include "hdf5.h"
 
-BOOST_AUTO_TEST_SUITE( vd_hdf5_chckpnt_rstrt_test )
+BOOST_AUTO_TEST_SUITE( vd_hdf5_chckpnt_rstrt_test_io )
 
 // Dimensionality
 const size_t dim = 3;
@@ -76,6 +76,16 @@ BOOST_AUTO_TEST_CASE( vector_dist_hdf5_load_test )
 {
 	Vcluster<> & v_cl = create_vcluster();
 
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/vector_dist_24.h5");
+
+#else
+
+	std::string c2 = std::string("test_data/vector_dist_24.h5");
+
+#endif
+
 	openfpm::vector<Point<3,float>> vpos;
 	openfpm::vector<aggregate<float[dim]>> vprp;
 
@@ -84,7 +94,7 @@ BOOST_AUTO_TEST_CASE( vector_dist_hdf5_load_test )
 	size_t g_m = 0;
 
 	// Load the vector
-    h5.load("test_data/vector_dist_24.h5",vpos,vprp,g_m);
+    h5.load(c2,vpos,vprp,g_m);
 
 	/////////////////// Checking data ///////////////////////
 

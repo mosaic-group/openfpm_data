@@ -221,12 +221,23 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D )
 
 	// Write the VTK file
 
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/vtk_graph_v2_test.vtk");
+
+#else
+
+	std::string c2 = std::string("test_data/vtk_graph_v2_test.vtk");
+
+#endif
+
 	VTKWriter<Graph_CSR<vertex2,edge>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph_v2.vtk");
 
 	// check that match
 
-	bool test = compare("vtk_graph_v2.vtk","test_data/vtk_graph_v2_test.vtk");
+	bool test = compare("vtk_graph_v2.vtk",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -304,12 +315,23 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph3D_edge )
 
 	// Write the VTK file
 
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/vtk_graph_v4_test.vtk");
+
+#else
+
+	std::string c2 = std::string("test_data/vtk_graph_v4_test.vtk");
+
+#endif
+
 	VTKWriter<Graph_CSR<vertex2,vertex2>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph_v4.vtk");
 
 	// check that match
 
-	bool test = compare("vtk_graph_v4.vtk","test_data/vtk_graph_v4_test.vtk");
+	bool test = compare("vtk_graph_v4.vtk",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -396,12 +418,23 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph2D )
 
 	// Write the VTK file
 
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/vtk_graph_v3_test.vtk");
+
+#else
+
+	std::string c2 = std::string("test_data/vtk_graph_v3_test.vtk");
+
+#endif
+
 	VTKWriter<Graph_CSR<vertex3,edge>,VTK_GRAPH> vtk(gr);
 	vtk.write("vtk_graph_v3.vtk");
 
 	// check that match
 
-	bool test = compare("vtk_graph_v3.vtk","test_data/vtk_graph_v3_test.vtk");
+	bool test = compare("vtk_graph_v3.vtk",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -479,6 +512,17 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph)
 	gr.addEdge(7,3);
 	gr.addEdge(3,1);
 
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/vtk_graph_test.vtk");
+
+#else
+
+	std::string c2 = std::string("test_data/vtk_graph_test.vtk");
+
+#endif
+
 	// Write the VTK file
 
 	VTKWriter<Graph_CSR<vertex,edge>,VTK_GRAPH> vtk(gr);
@@ -486,7 +530,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_graph)
 
 	// check that match
 
-	bool test = compare("vtk_graph.vtk","test_data/vtk_graph_test.vtk");
+	bool test = compare("vtk_graph.vtk",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -496,6 +540,21 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/vtk_box_test.vtk");
+	std::string c3 = std::string("openfpm_io/test_data/vtk_box_3D_test.vtk");
+	std::string c4 = std::string("openfpm_io/test_data/vtk_box_3D_2_test.vtk");
+
+#else
+
+	std::string c2 = std::string("test_data/vtk_box_test.vtk");
+	std::string c3 = std::string("test_data/vtk_box_3D_test.vtk");
+	std::string c4 = std::string("test_data/vtk_box_3D_2_test.vtk");
+
+#endif
 
 	// Create a vector of boxes
 	openfpm::vector<Box<2,float>> vb;
@@ -513,7 +572,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 	vtk_box.write("vtk_box.vtk");
 
 	// Check that match
-	bool test = compare("vtk_box.vtk","test_data/vtk_box_test.vtk");
+	bool test = compare("vtk_box.vtk",c2);
 	BOOST_REQUIRE_EQUAL(test,true);
 
 	// Create a vector of boxes
@@ -532,7 +591,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 	vtk_box2.write("vtk_box_3D.vtk");
 
 	// Check that match
-	test = compare("vtk_box_3D.vtk","test_data/vtk_box_3D_test.vtk");
+	test = compare("vtk_box_3D.vtk",c3);
 	BOOST_REQUIRE_EQUAL(test,true);
 
 	// Create a vector of boxes
@@ -551,7 +610,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_vector_box)
 	vtk_box3.write("vtk_box_3D_2.vtk");
 
 	// Check that match
-	test = compare("vtk_box_3D_2.vtk","test_data/vtk_box_3D_2_test.vtk");
+	test = compare("vtk_box_3D_2.vtk",c4);
 	BOOST_REQUIRE_EQUAL(test,true);
 }
 
@@ -656,6 +715,25 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	if (v_cl.getProcessUnitID() != 0)
 	{return;}
 
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/vtk_grids_test_1d.vtk");
+	std::string c3 = std::string("openfpm_io/test_data/vtk_grids_test.vtk");
+	std::string c4 = std::string("openfpm_io/test_data/vtk_grids_st_test.vtk");
+	std::string c5 = std::string("openfpm_io/test_data/vtk_grids_prp_test.vtk");
+	std::string c6 = std::string("openfpm_io/test_data/vtk_grids_test.vtk");
+
+#else
+
+	std::string c2 = std::string("test_data/vtk_grids_test_1d.vtk");
+	std::string c3 = std::string("test_data/vtk_grids_test.vtk");
+	std::string c4 = std::string("test_data/vtk_grids_st_test.vtk");
+	std::string c5 = std::string("test_data/vtk_grids_prp_test.vtk");
+	std::string c6 = std::string("test_data/vtk_grids_test.vtk");
+
+#endif
+
 	{
 
 		// Create box grids
@@ -705,7 +783,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	#ifndef SE_CLASS3
 
 		// Check that match
-		bool test = compare("vtk_grids_1d.vtk","test_data/vtk_grids_test_1d.vtk");
+		bool test = compare("vtk_grids_1d.vtk",c2);
 		BOOST_REQUIRE_EQUAL(test,true);
 
 	#endif
@@ -760,7 +838,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	#ifndef SE_CLASS3
 
 		// Check that match
-		bool test = compare("vtk_grids.vtk","test_data/vtk_grids_test.vtk");
+		bool test = compare("vtk_grids.vtk",c3);
 		BOOST_REQUIRE_EQUAL(test,true);
 
 	#endif
@@ -817,7 +895,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	vtk_g.write("vtk_grids_st.vtk");
 
 	// Check that match
-	bool test = compare("vtk_grids_st.vtk","test_data/vtk_grids_st_test.vtk");
+	bool test = compare("vtk_grids_st.vtk",c4);
 	BOOST_REQUIRE_EQUAL(test,true);
 	}
 
@@ -867,7 +945,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 	vtk_g.write("vtk_grids_prp.vtk",prp_names);
 
 	// Check that match
-	bool test = compare("vtk_grids_prp.vtk","test_data/vtk_grids_prp_test.vtk");
+	bool test = compare("vtk_grids_prp.vtk",c5);
 	BOOST_REQUIRE_EQUAL(test,true);
 	}
 
@@ -919,7 +997,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_grids)
 #ifndef SE_CLASS3
 
 	// Check that match
-	bool test = compare("vtk_grids_unk.vtk","test_data/vtk_grids_test.vtk");
+	bool test = compare("vtk_grids_unk.vtk",c6);
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -950,6 +1028,21 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/vtk_points_test.vtk");
+	std::string c3 = std::string("openfpm_io/test_data/vtk_points_pp_test.vtk");
+	std::string c4 = std::string("openfpm_io/test_data/vtk_points_pp_header_test.vtk");
+
+#else
+
+	std::string c2 = std::string("test_data/vtk_points_test.vtk");
+	std::string c3 = std::string("test_data/vtk_points_pp_test.vtk");
+	std::string c4 = std::string("test_data/vtk_points_pp_header_test.vtk");
+
+#endif
 
 	{
 	// Create 3 vectors with random particles
@@ -1024,7 +1117,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 	bool test = true;
 
 	// Check that match
-	test = compare("vtk_points.vtk","test_data/vtk_points_test.vtk");
+	test = compare("vtk_points.vtk",c2);
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1038,7 +1131,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 #ifndef SE_CLASS3
 
 	// Check that match
-	test = compare("vtk_points_pp.vtk","test_data/vtk_points_pp_test.vtk");
+	test = compare("vtk_points_pp.vtk",c3);
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1055,7 +1148,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set )
 #ifndef SE_CLASS3
 
 	// Check that match
-	test = compare("vtk_points_pp_header.vtk","test_data/vtk_points_pp_header_test.vtk");
+	test = compare("vtk_points_pp_header.vtk",c4);
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1069,6 +1162,17 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_properties )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/vtk_points_with_prp_names_test.vtk");
+
+#else
+
+	std::string c2 = std::string("test_data/vtk_points_with_prp_names_test.vtk");
+
+#endif
 
 	{
 	// Create 3 vectors with random particles
@@ -1107,7 +1211,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_properties )
 #ifndef SE_CLASS3
 
 	// Check that match
-	bool test = compare("vtk_points_with_prp_names.vtk","test_data/vtk_points_with_prp_names_test.vtk");
+	bool test = compare("vtk_points_with_prp_names.vtk",c2);
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1121,6 +1225,17 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_check_out_precision )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/vtk_points_with_prp_names_prec_check_test.vtk");
+
+#else
+
+	std::string c2 = std::string("test_data/test_data/vtk_points_with_prp_names_prec_check_test.vtk");
+
+#endif
 
 	{
 	// Create 3 vectors with random particles
@@ -1155,7 +1270,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_check_out_precision )
 #ifndef SE_CLASS3
 
 	// Check that match
-	bool test = compare("vtk_points_with_prp_names_prec_check.vtk","test_data/vtk_points_with_prp_names_prec_check_test.vtk");
+	bool test = compare("vtk_points_with_prp_names_prec_check.vtk",c2);
 	BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1169,6 +1284,23 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/vtk_points_bin_test.vtk");
+	std::string c3 = std::string("openfpm_io/test_data/vtk_points_pp_bin_test.vtk");
+	std::string c4 = std::string("openfpm_io/test_data/vtk_points_2d_bin_test.vtk");
+	std::string c5 = std::string("openfpm_io/test_data/vtk_points_2d_pp_bin_test.vtk");
+
+#else
+
+	std::string c2 = std::string("test_data/vtk_points_bin_test.vtk");
+	std::string c3 = std::string("test_data/vtk_points_pp_bin_test.vtk");
+	std::string c4 = std::string("test_data/vtk_points_2d_bin_test.vtk");
+	std::string c5 = std::string("test_data/vtk_points_2d_pp_bin_test.vtk");
+
+#endif
 
 	{
 		// Create 3 vectors with random particles
@@ -1244,9 +1376,9 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		bool test = true;
 
 		// Check that match
-		test = compare("vtk_points_bin.vtk","test_data/vtk_points_bin_test.vtk");
+		test = compare("vtk_points_bin.vtk",c2);
 		BOOST_REQUIRE_EQUAL(test,true);
-		test = compare("vtk_points_bin2.vtk","test_data/vtk_points_bin_test.vtk");
+		test = compare("vtk_points_bin2.vtk",c2);
 		BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1260,7 +1392,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 #ifndef SE_CLASS3
 
 		// Check that match
-		test = compare("vtk_points_pp_bin.vtk","test_data/vtk_points_pp_bin_test.vtk");
+		test = compare("vtk_points_pp_bin.vtk",c3);
 		BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1358,7 +1490,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 		bool test = true;
 
 		// Check that match
-		test = compare("vtk_points_2d_bin.vtk","test_data/vtk_points_2d_bin_test.vtk");
+		test = compare("vtk_points_2d_bin.vtk",c4);
 		BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
@@ -1372,7 +1504,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_binary )
 #ifndef SE_CLASS3
 
 		// Check that match
-		test = compare("vtk_points_2d_pp_bin.vtk","test_data/vtk_points_2d_pp_bin_test.vtk");
+		test = compare("vtk_points_2d_pp_bin.vtk",c5);
 		BOOST_REQUIRE_EQUAL(test,true);
 
 #endif
