@@ -27,7 +27,7 @@ typedef Point_test<float> P;
 
 #include "timer.hpp"
 
-std::vector<Point_orig<float>> allocate_stl()
+static std::vector<Point_orig<float>> allocate_stl()
 {
 	std::vector<Point_orig<float>> v_stl_test;
 
@@ -76,7 +76,7 @@ openfpm::vector<T> allocate_openfpm_primitive(size_t n, size_t fill)
 	return v;
 }
 
-openfpm::vector<Point_test<float>> allocate_openfpm_fill(size_t n, size_t fill)
+static openfpm::vector<Point_test<float>> allocate_openfpm_fill(size_t n, size_t fill)
 {
 	Point_test<float> pt;
 	openfpm::vector<Point_test<float>> v_send;
@@ -175,7 +175,7 @@ template<typename vector> vector allocate_openfpm(size_t n_ele)
 	return v_ofp_test;
 }
 
-openfpm::vector<Point_test_prp<float>> allocate_openfpm_prp(size_t n_ele)
+static openfpm::vector<Point_test_prp<float>> allocate_openfpm_prp(size_t n_ele)
 {
 	openfpm::vector<Point_test_prp<float>> v_ofp_test;
 
@@ -242,7 +242,7 @@ openfpm::vector<Point_test_prp<float>> allocate_openfpm_prp(size_t n_ele)
 }
 
 
-openfpm::vector< aggregate<float,float,float,float,float[3],float[3][3],openfpm::vector<int>> > allocate_openfpm_aggregate_with_complex(size_t n_ele)
+static openfpm::vector< aggregate<float,float,float,float,float[3],float[3][3],openfpm::vector<int>> > allocate_openfpm_aggregate_with_complex(size_t n_ele)
 {
 	//! [Create add and access]
 	openfpm::vector< aggregate<float,float,float,float,float[3],float[3][3],openfpm::vector<int>> > v_ofp_test;

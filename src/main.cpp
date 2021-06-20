@@ -8,6 +8,8 @@
 
 #define DISABLE_MPI_WRITTERS
 
+#ifndef NO_INIT_AND_MAIN
+
 // initialization function:
 bool init_unit_test()
 {
@@ -22,6 +24,10 @@ int main(int argc, char* argv[])
 	openfpm::math::init_getFactorization();
 	return boost::unit_test::unit_test_main( &init_unit_test, argc, argv );
 }
+
+#include "unit_test_init_cleanup.hpp"
+
+#endif
 
 #include <boost/fusion/include/mpl.hpp>
 
@@ -58,4 +64,4 @@ int main(int argc, char* argv[])
 #ifdef PERFORMANCE_TEST
 #include "performance.hpp"
 #endif
-#include "unit_test_init_cleanup.hpp"
+
