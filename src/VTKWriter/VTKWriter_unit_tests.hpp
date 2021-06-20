@@ -1233,7 +1233,7 @@ BOOST_AUTO_TEST_CASE( vtk_writer_use_point_set_check_out_precision )
 
 #else
 
-	std::string c2 = std::string("test_data/test_data/vtk_points_with_prp_names_prec_check_test.vtk");
+	std::string c2 = std::string("test_data/vtk_points_with_prp_names_prec_check_test.vtk");
 
 #endif
 
