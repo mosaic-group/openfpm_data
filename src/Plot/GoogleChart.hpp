@@ -366,7 +366,7 @@ class GoogleChart
 			   X & y,
 			   Xs& ... xy)
 	{
-		if (low == x.get(counters[0]))
+		if (counters[0] < x.size() && low == x.get(counters[0]))
 		{
 			point[0] = y.get(counters[0]);
 			counters[0]++;
