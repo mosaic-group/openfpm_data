@@ -270,7 +270,7 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 
 		auto & chunk = data.template get<prop>(chunk_id);
 
-		copy_xyz<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,false>::template copy<N1>(arr,mask,h,chunk);
+		copy_xyz<is_layout_inte<typename SparseGridType::memory_traits >::type::value && (Vc::float_v::Size *sizeof(float) >= sizeof(T))  ,prop,stencil_size,typename vector_blocks_exts::type,false>::template copy<N1>(arr,mask,h,chunk);
 	}
 
 
@@ -285,7 +285,7 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 
 		auto & chunk = data.template get<prop>(chunk_id);
 
-		copy_xyz<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,false>::template store<N1>(arr,chunk);
+		copy_xyz<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(chunk[0])) ,prop,stencil_size,typename vector_blocks_exts::type,false>::template store<N1>(arr,chunk);
 
 	}
 
@@ -340,11 +340,11 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		if (exist == true)
 		{
 			auto & h = header_mask.get(r);
-			copy_xy_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<0,stencil_size+sz2::value,N1>(arr,mask,h,data.get(r));
+			copy_xy_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<0,stencil_size+sz2::value,N1>(arr,mask,h,data.get(r));
 		}
 		else
 		{
-			copy_xy_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<stencil_size+sz2::value,N1>(mask);
+			copy_xy_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<stencil_size+sz2::value,N1>(mask);
 		}
 		if (findNN == false)
 		{
@@ -360,11 +360,11 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		if (exist == true)
 		{
 			auto & h = header_mask.get(r);
-			copy_xy_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<sz2::value - stencil_size,0,N1>(arr,mask,h,data.get(r));
+			copy_xy_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<sz2::value - stencil_size,0,N1>(arr,mask,h,data.get(r));
 		}
 		else
 		{
-			copy_xy_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<0,N1>(mask);
+			copy_xy_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<0,N1>(mask);
 		}
 
 		if (findNN == false)
@@ -381,11 +381,11 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		if (exist == true)
 		{
 			auto & h = header_mask.get(r);
-			copy_xz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<0,stencil_size+sz1::value,N1>(arr,mask,h,data.get(r));
+			copy_xz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<0,stencil_size+sz1::value,N1>(arr,mask,h,data.get(r));
 		}
 		else
 		{
-			copy_xz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<stencil_size+sz1::value,N1>(mask);
+			copy_xz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<stencil_size+sz1::value,N1>(mask);
 		}
 		if (findNN == false)
 		{
@@ -401,11 +401,11 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		if (exist == true)
 		{
 			auto & h = header_mask.get(r);
-			copy_xz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<sz1::value-stencil_size,0,N1>(arr,mask,h,data.get(r));
+			copy_xz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<sz1::value-stencil_size,0,N1>(arr,mask,h,data.get(r));
 		}
 		else
 		{
-			copy_xz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<0,N1>(mask);
+			copy_xz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<0,N1>(mask);
 		}
 
 		if (findNN == false)
@@ -422,11 +422,11 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		if (exist == true)
 		{
 			auto & h = header_mask.get(r);
-			copy_yz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<0,sz0::value+stencil_size,N1>(arr,mask,h,data.get(r));
+			copy_yz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<0,sz0::value+stencil_size,N1>(arr,mask,h,data.get(r));
 		}
 		else
 		{
-			copy_yz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<sz0::value+stencil_size,N1>(mask);
+			copy_yz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<sz0::value+stencil_size,N1>(mask);
 		}
 		if (findNN == false)
 		{
@@ -442,11 +442,11 @@ struct loadBlock_impl<prop,stencil_size,3,vector_blocks_exts,vector_ext>
 		if (exist == true)
 		{
 			auto & h = header_mask.get(r);
-			copy_yz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<sz0::value-stencil_size,0,N1>(arr,mask,h,data.get(r));
+			copy_yz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template copy<sz0::value-stencil_size,0,N1>(arr,mask,h,data.get(r));
 		}
 		else
 		{
-			copy_yz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<0,N1>(mask);
+			copy_yz_3<is_layout_inte<typename SparseGridType::memory_traits >::type::value  && (Vc::float_v::Size *sizeof(float) >= sizeof(T)) ,prop,stencil_size,typename vector_blocks_exts::type,NNType::is_cross>::template mask_null<0,N1>(mask);
 		}
 	}
 };
