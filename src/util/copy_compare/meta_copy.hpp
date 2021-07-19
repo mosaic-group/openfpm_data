@@ -5,6 +5,28 @@
 #include "util/cuda_util.hpp"
 #include "util/multi_array_openfpm/multi_array_ref_openfpm.hpp"
 
+
+template<typename ArrTypeView>
+struct std_array_vector_view
+{
+	int pos;
+	ArrTypeView arr;
+
+	std_array_vector_view(int pos,ArrTypeView arr)
+	:pos(pos),arr(arr)
+	{}
+
+	decltype(arr[0][0]) operator[](int comp)
+	{
+		return arr[comp][pos];
+	}
+
+	decltype(std::declval<const ArrTypeView>()[0][0]) operator[](int comp) const
+	{
+		return arr[comp][pos];
+	}
+};
+
 /*! \brief This class copy general objects
  *
  * * primitives
@@ -95,6 +117,21 @@ struct meta_copy<T[N1]>
 	 *
 	 */
 	__device__ __host__ static inline void meta_copy_(const T src[N1], T dst[N1])
+	{
+		for (size_t i1 = 0 ; i1 < N1 ; i1++)
+		{
+			copy_general<T>(src[i1],dst[i1]);
+		}
+	}
+
+	/*! \brief copy and object from src to dst
+	 *
+	 * \param src source object to copy
+	 * \param dst destination object
+	 *
+	 */
+	template<typename T2>
+	__device__ __host__ static inline void meta_copy_(const T src[N1], std_array_vector_view<T2> dst)
 	{
 		for (size_t i1 = 0 ; i1 < N1 ; i1++)
 		{
