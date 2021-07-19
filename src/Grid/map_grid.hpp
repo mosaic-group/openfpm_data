@@ -993,6 +993,9 @@ public:
 template <unsigned int dim, typename T, typename linearizer = grid_sm<dim,void> > using grid_gpu = grid_base<dim,T,CudaMemory,typename memory_traits_inte<T>::type>;
 
 //! short formula for a grid on gpu
+template <unsigned int dim, typename T, typename linearizer = grid_sm<dim,void> > using grid_soa = grid_base<dim,T,HeapMemory,typename memory_traits_inte<T>::type>;
+
+//! short formula for a grid on gpu
 template <unsigned int dim, typename T, typename linearizer = grid_sm<dim,void> > using grid_cpu = grid_base<dim,T,HeapMemory,typename memory_traits_lin<T>::type,linearizer>;
 
 
