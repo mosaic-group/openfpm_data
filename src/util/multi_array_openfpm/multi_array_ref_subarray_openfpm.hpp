@@ -258,7 +258,7 @@ public:
     return super_type::operator()(indices);
   }
 
-  const_reference operator[](index idx) const {
+  __device__ __host__ const_reference operator[](index idx) const {
     return super_type::operator[](idx);
   }
 
