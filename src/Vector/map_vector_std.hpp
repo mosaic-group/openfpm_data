@@ -643,6 +643,16 @@ public:
 		base.swap(v.base);
 	}
 
+	//! Constructor from iterators
+	template< class InputIt >
+	vector(InputIt first, InputIt last)
+	{
+		while(first != last) {
+			add(*first);
+			++first;
+		}
+	}
+
 	//! destructor
 	~vector() noexcept
 	{
