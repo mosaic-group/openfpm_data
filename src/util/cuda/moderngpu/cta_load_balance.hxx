@@ -135,7 +135,7 @@ struct cta_load_balance_t {
     int* a_shared = storage.indices - range.a_begin;
     int* b_shared = storage.indices + range.a_count();
 
-    lbs_placement_t placement = cta_load_balance_place<nt, vt>(tid, range, 
+    lbs_placement_t placement  = cta_load_balance_place<nt, vt>(tid, range, 
       count, segments, num_segments, b_shared);
 
     // Adjust the b pointer by the loaded b_begin. This lets us dereference it

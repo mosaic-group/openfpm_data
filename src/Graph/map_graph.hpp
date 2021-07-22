@@ -75,8 +75,6 @@ public:
 
 template<typename V, typename E,
 		 typename Memory,
-		 typename layout_v,
-		 typename layout_e,
 		 template <typename> class layout_v_base,
 		 template <typename> class layout_e_base,
 		 typename grow_p>
@@ -300,8 +298,6 @@ public:
  */
 template<typename V, typename E = no_edge,
 		  typename Memory = HeapMemory,
-		  typename layout_v = typename memory_traits_lin<V>::type,
-		  typename layout_e = typename memory_traits_lin<E>::type,
 		  template<typename> class layout_v_base = memory_traits_lin,
 		  template<typename> class layout_e_base = memory_traits_lin,
 		  typename grow_p = openfpm::grow_policy_double>
@@ -311,19 +307,19 @@ class Graph_CSR
 	size_t v_slot;
 
 	//! Structure that store the vertex properties
-	openfpm::vector<V, Memory, layout_v, layout_v_base,grow_p, openfpm::vect_isel<V>::value> v;
+	openfpm::vector<V, Memory, layout_v_base,grow_p, openfpm::vect_isel<V>::value> v;
 
 	//! Structure that store the number of adjacent vertex in e_l for each vertex
-	openfpm::vector<size_t, Memory, typename layout_v_base<size_t>::type, layout_v_base,grow_p, openfpm::vect_isel<size_t>::value> v_l;
+	openfpm::vector<size_t, Memory, layout_v_base,grow_p, openfpm::vect_isel<size_t>::value> v_l;
 
 	//! Structure that store the edge properties
-	openfpm::vector<E, Memory, layout_e, layout_e_base, grow_p, openfpm::vect_isel<E>::value> e;
+	openfpm::vector<E, Memory, layout_e_base, grow_p, openfpm::vect_isel<E>::value> e;
 
 	//! Structure that store for each vertex the adjacent the vertex id and edge id (for property into e)
-	openfpm::vector<e_map, Memory, typename layout_e_base<e_map>::type, layout_e_base , grow_p, openfpm::vect_isel<e_map>::value> e_l;
+	openfpm::vector<e_map, Memory, layout_e_base , grow_p, openfpm::vect_isel<e_map>::value> e_l;
 
 	//! invalid edge element, when a function try to create an in valid edge this object is returned
-	openfpm::vector<E, Memory, layout_e, layout_e_base, grow_p, openfpm::vect_isel<E>::value> e_invalid;
+	openfpm::vector<E, Memory, layout_e_base, grow_p, openfpm::vect_isel<E>::value> e_invalid;
 
 	/*! \brief add edge on the graph
 	 *
@@ -425,10 +421,10 @@ public:
 	typedef E E_type;
 
 	//! Object container for the vertex, for example can be encap<...> (map_grid or openfpm::vector)
-	typedef typename openfpm::vector<V, Memory, layout_v, layout_v_base, grow_p, openfpm::vect_isel<V>::value>::container V_container;
+	typedef typename openfpm::vector<V, Memory, layout_v_base, grow_p, openfpm::vect_isel<V>::value>::container V_container;
 
 	//! Object container for the edge, for example can be encap<...> (map_grid or openfpm::vector)
-	typedef typename openfpm::vector<E, Memory, layout_e, layout_e_base, grow_p, openfpm::vect_isel<E>::value>::container E_container;
+	typedef typename openfpm::vector<E, Memory, layout_e_base, grow_p, openfpm::vect_isel<E>::value>::container E_container;
 
 	/*! \brief Check if two graph exactly match
 	 *
@@ -439,7 +435,7 @@ public:
 	 * \return true if they match
 	 *
 	 */
-	bool operator==(const Graph_CSR<V, E, Memory, layout_v,layout_e,layout_v_base, layout_e_base, grow_p> & g) const
+	bool operator==(const Graph_CSR<V, E, Memory,layout_v_base, layout_e_base, grow_p> & g) const
 	{
 		bool ret = true;
 
@@ -460,9 +456,9 @@ public:
 	 * \return a graph duplicate of the first
 	 *
 	 */
-	Graph_CSR<V, E, Memory, layout_v, layout_e,layout_v_base,layout_e_base, grow_p> duplicate() const
+	Graph_CSR<V, E, Memory,layout_v_base,layout_e_base, grow_p> duplicate() const
 	{
-		Graph_CSR<V, E, Memory, layout_v, layout_e,layout_v_base,layout_e_base, grow_p> dup;
+		Graph_CSR<V, E, Memory,layout_v_base,layout_e_base, grow_p> dup;
 
 		dup.v_slot = v_slot;
 
@@ -783,7 +779,7 @@ public:
 	 * \return the number of childs
 	 *
 	 */
-	inline size_t getNChilds(typename openfpm::vector<V, Memory, layout_v, layout_v_base, grow_p, openfpm::vect_isel<V>::value>::iterator_key & c)
+	inline size_t getNChilds(typename openfpm::vector<V, Memory, layout_v_base, grow_p, openfpm::vect_isel<V>::value>::iterator_key & c)
 	{
 		// Get the number of childs
 
@@ -838,7 +834,7 @@ public:
 	 * \return the target i connected by an edge node, for the node v
 	 *
 	 */
-	inline size_t getChild(typename openfpm::vector<V, Memory, layout_v, layout_v_base, grow_p>::iterator_key & v, size_t i)
+	inline size_t getChild(typename openfpm::vector<V, Memory, layout_v_base, grow_p>::iterator_key & v, size_t i)
 	{
 #ifdef SE_CLASS1
 		if (i >= v_l.template get<0>(v.get()))

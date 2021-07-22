@@ -12,7 +12,8 @@
 #include "util/cuda_util.hpp"
 #include "cuda/cuda_grid_gpu_funcs.cuh"
 #include "util/create_vmpl_sequence.hpp"
-#include "util/cuda/cuda_launch.hpp"
+#include "util/cuda_launch.hpp"
+#include "util/object_si_di.hpp"
 
 constexpr int DATA_ON_HOST = 32;
 constexpr int DATA_ON_DEVICE = 64;
@@ -176,27 +177,6 @@ struct grid_p<1,ids_type>
 
 #endif
 
-template<unsigned int dim>
-bool has_work_gpu(ite_gpu<dim> & ite)
-{
-	size_t tot_work = 1;
-
-	if (dim == 1)
-	{tot_work *= ite.wthr.x * ite.thr.x;}
-	else if(dim == 2)
-	{
-		tot_work *= ite.wthr.x * ite.thr.x;
-		tot_work *= ite.wthr.y * ite.thr.y;
-	}
-	else
-	{
-		tot_work *= ite.wthr.x * ite.thr.x;
-		tot_work *= ite.wthr.y * ite.thr.y;
-		tot_work *= ite.wthr.z * ite.thr.z;
-	}
-
-	return tot_work != 0;
-}
 
 template<unsigned int dim>
 void move_work_to_blocks(ite_gpu<dim> & ite)
@@ -271,25 +251,23 @@ struct copy_grid_fast_caller<index_tuple_sq<prp ...>>
  * \tparam dim dimansionality of the grid
  * \tparam T type store by the grid
  * \tparam S Memory pool from where to take the memory
- * \tparam layout_ memory layout
  * \tparam layout_base layout memory meta-function (the meta-function used to construct layout_)
  *
  */
 template<unsigned int dim,
          typename T,
          typename S,
-         typename layout_,
          template<typename> class layout_base,
          typename ord_type = grid_sm<dim,void> >
 class grid_base_impl
 {
 	//! memory layout
-	typedef layout_ layout;
+	typedef typename layout_base<T>::type layout;
 
 public:
 
 	//! memory layout
-	typedef layout_ layout_type;
+	typedef layout layout_type;
 
 	//! expose the dimansionality as a static const
 	static constexpr unsigned int dims = dim;
@@ -304,6 +282,8 @@ public:
 	typedef layout_base<T> layout_base_;
 
 	typedef ord_type linearizer_type;
+
+	typedef T background_type;
 
 protected:
 
@@ -386,7 +366,7 @@ private:
 	 * \param key2
 	 *
 	 */
-	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const grid_key_dx<dim> & key2) const
+	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout_base, ord_type> & g,const grid_key_dx<dim> & key2) const
 	{
 #ifndef __CUDA_ARCH__
 		for (size_t i = 0 ; i < dim ; i++)
@@ -413,8 +393,8 @@ private:
 	 * \param key2
 	 *
 	 */
-	template<typename Mem, typename layout2, template <typename>
-	class layout_base2> inline void check_bound(const grid_base_impl<dim,T,Mem,layout2,layout_base2> & g,const grid_key_dx<dim> & key2) const
+	template<typename Mem, template <typename> class layout_base2> 
+	inline void check_bound(const grid_base_impl<dim,T,Mem,layout_base2,ord_type> & g,const grid_key_dx<dim> & key2) const
 	{
 #ifndef __CUDA_ARCH__
 		for (size_t i = 0 ; i < dim ; i++)
@@ -441,7 +421,7 @@ private:
 	 * \param key2
 	 *
 	 */
-	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout,layout_base> & g,const size_t & key2) const
+	template<typename Mem> inline void check_bound(const grid_base_impl<dim,T,Mem,layout_base> & g,const size_t & key2) const
 	{
 #ifndef __CUDA_ARCH__
 		if (key2 >= g.getGrid().size())
@@ -454,9 +434,12 @@ private:
 
 #endif
 
-	void resize_impl_device(const size_t (& sz)[dim],grid_base_impl<dim,T,S,layout,layout_base> & grid_new, unsigned int blockSize = 1)
+	void resize_impl_device(const size_t (& sz)[dim],grid_base_impl<dim,T,S,layout_base,ord_type> & grid_new, unsigned int blockSize = 1)
 	{
 #if defined(CUDA_GPU) && defined(__NVCC__)
+
+			// Compile time-cheking that make sense to call a GPU kernel to copy.
+			
 
 			grid_key_dx<dim> start;
 			grid_key_dx<dim> stop;
@@ -523,7 +506,7 @@ private:
 #endif
 	}
 
-	void resize_impl_host(const size_t (& sz)[dim], grid_base_impl<dim,T,S,layout,layout_base> & grid_new)
+	void resize_impl_host(const size_t (& sz)[dim], grid_base_impl<dim,T,S,layout_base,ord_type> & grid_new)
 	{
 		size_t sz_c[dim];
 		for (size_t i = 0 ; i < dim ; i++)
@@ -547,7 +530,7 @@ private:
 		}
 	}
 
-	void resize_impl_memset(grid_base_impl<dim,T,S,layout,layout_base> & grid_new)
+	void resize_impl_memset(grid_base_impl<dim,T,S,layout_base,ord_type> & grid_new)
 	{
 		//! Set the allocator and allocate the memory
 		if (isExternal == true)
@@ -632,7 +615,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	grid_base_impl<dim,T,S,layout,layout_base> & operator=(const grid_base_impl<dim,T,S,layout,layout_base> & g)
+	grid_base_impl<dim,T,S,layout_base> & operator=(const grid_base_impl<dim,T,S,layout_base> & g)
 	{
 		swap(g.duplicate());
 
@@ -646,7 +629,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	grid_base_impl<dim,T,S,layout,layout_base> & operator=(grid_base_impl<dim,T,S,layout,layout_base> && g)
+	grid_base_impl<dim,T,S,layout_base> & operator=(grid_base_impl<dim,T,S,layout_base> && g)
 	{
 		swap(g);
 
@@ -660,7 +643,7 @@ public:
 	 * \return true if they match
 	 *
 	 */
-	bool operator==(const grid_base_impl<dim,T,S,layout,layout_base> & g)
+	bool operator==(const grid_base_impl<dim,T,S,layout_base> & g)
 	{
 		// check if the have the same size
 		if (g1 != g.g1)
@@ -686,11 +669,11 @@ public:
 	 * \return a duplicated version of the grid
 	 *
 	 */
-	grid_base_impl<dim,T,S,layout,layout_base> duplicate() const THROW
+	grid_base_impl<dim,T,S,layout_base> duplicate() const THROW
 	{
 		//! Create a completely new grid with sz
 
-		grid_base_impl<dim,T,S,layout,layout_base> grid_new(g1.getSize());
+		grid_base_impl<dim,T,S,layout_base> grid_new(g1.getSize());
 
 		//! Set the allocator and allocate the memory
 		grid_new.setMemory();
@@ -729,7 +712,7 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim,long int> & key1, grid_key_dx<dim,long int> & key2, size_t n_thr = 1024) const
+	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim,long int> & key1, grid_key_dx<dim,long int> & key2, size_t n_thr = default_kernel_wg_threads_) const
 	{
 		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}
@@ -743,7 +726,7 @@ public:
 	 *
 	 */
 
-	const grid_sm<dim,void> & getGrid() const
+	const ord_type & getGrid() const
 	{
 		return g1;
 	}
@@ -847,7 +830,7 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	template <unsigned int p, typename r_type=decltype(layout_base<T>::template get<p>(data_,g1,grid_key_dx<dim>()))>
 	inline r_type insert(const grid_key_dx<dim> & v1)
 	{
 #ifdef SE_CLASS1
@@ -865,13 +848,13 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	template <unsigned int p, typename r_type=decltype(layout_base<T>::template get<p>(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline r_type get_usafe(const grid_key_dx<dim> & v1)
 	{
 #ifdef SE_CLASS1
 		check_init();
 #endif
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
+		return layout_base<T>::template get<p>(data_,g1,v1);
 	}
 
 	/*! \brief Get the const reference of the selected element
@@ -881,13 +864,13 @@ public:
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
+	template <unsigned int p, typename r_type=decltype(layout_base<T>::template get_c<p>(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline r_type get_unsafe(const grid_key_dx<dim> & v1) const
 	{
 #ifdef SE_CLASS1
 		check_init();
 #endif
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
+		return layout_base<T>::template get_c<p>(data_,g1,v1);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -897,14 +880,14 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get(data_,g1,grid_key_dx<dim>()))>
+	template <unsigned int p, typename r_type=decltype(layout_base<T>::template get<p>(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline r_type get(const grid_key_dx<dim> & v1)
 	{
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
 #endif
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get(data_,g1,v1);
+		return layout_base<T>::template get<p>(data_,g1,v1);
 	}
 
 	/*! \brief Get the point flag (in this case just return 0)
@@ -926,14 +909,14 @@ public:
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_c(data_,g1,grid_key_dx<dim>()))>
+	template <unsigned int p, typename r_type=decltype(layout_base<T>::template get_c<p>(data_,g1,grid_key_dx<dim>()))>
 	__device__ __host__ inline r_type get(const grid_key_dx<dim> & v1) const
 	{
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(v1);
 #endif
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),decltype(v1)>::get_c(data_,g1,v1);
+		return layout_base<T>::template get_c<p>(data_,g1,v1);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -943,14 +926,14 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))>
+	template <unsigned int p, typename r_type=decltype(layout_base<T>::template get_lin<p>(data_,g1,0))>
 	__device__ __host__ inline r_type get(const size_t lin_id)
 	{
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(lin_id);
 #endif
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin(data_,g1,lin_id);
+		return layout_base<T>::template get_lin<p>(data_,g1,lin_id);
 	}
 
 	/*! \brief Get the const reference of the selected element
@@ -960,14 +943,14 @@ public:
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(mem_get<p,layout_base<T>,layout,grid_sm<dim,T>,grid_key_dx<dim>>::get_lin(data_,g1,0))>
+	template <unsigned int p, typename r_type=decltype(layout_base<T>::template get_lin<p>(data_,g1,0))>
 	__device__ __host__ inline const r_type get(size_t lin_id) const
 	{
 #ifdef SE_CLASS1
 		check_init();
 		check_bound(lin_id);
 #endif
-		return mem_get<p,layout_base<T>,decltype(this->data_),decltype(this->g1),grid_key_dx<dim>>::get_lin_const(data_,g1,lin_id);
+		return layout_base<T>::template get_lin_const(data_,g1,lin_id);
 	}
 
 
@@ -1134,7 +1117,7 @@ public:
 	 * \param box_dst destination box
 	 *
 	 */
-	void copy_to(const grid_base_impl<dim,T,S,layout_,layout_base> & grid_src,
+	void copy_to(const grid_base_impl<dim,T,S,layout_base> & grid_src,
 			     const Box<dim,long int> & box_src,
 				 const Box<dim,long int> & box_dst)
 	{
@@ -1197,7 +1180,7 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp>
-	void copy_to_prp(const grid_base_impl<dim,T,S,layout_,layout_base> & grid_src,
+	void copy_to_prp(const grid_base_impl<dim,T,S,layout_base> & grid_src,
 			     const Box<dim,size_t> & box_src,
 				 const Box<dim,size_t> & box_dst)
 	{
@@ -1236,7 +1219,7 @@ public:
 	 *
 	 */
 	template<template<typename,typename> class op, unsigned int ... prp>
-	void copy_to_op(const grid_base_impl<dim,T,S,layout_,layout_base> & gs,
+	void copy_to_op(const grid_base_impl<dim,T,S,layout_base> & gs,
 			     const Box<dim,size_t> & bx_src,
 				 const Box<dim,size_t> & bx_dst)
 	{
@@ -1246,12 +1229,20 @@ public:
 		while (sub_src.isNext())
 		{
 			// write the object in the last element
-			object_s_di_op<op,decltype(gs.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(gs.get_o(sub_src.get()),this->get_o(sub_dst.get()));
+			object_si_di_op<op,decltype(gs.get_o(sub_src.get())),decltype(this->get_o(sub_dst.get())),OBJ_ENCAP,prp...>(gs.get_o(sub_src.get()),this->get_o(sub_dst.get()));
 
 			++sub_src;
 			++sub_dst;
 		}
 	}
+
+	/*! \brief Indicate that unpacking the header is supported
+     *
+	 * \return false
+	 * 
+	 */
+	static bool is_unpack_header_supported()
+	{return false;}
 
 	/*! \brief Resize the grid
 	 *
@@ -1271,7 +1262,7 @@ public:
 	{
 		//! Create a completely new grid with sz
 
-		grid_base_impl<dim,T,S,layout,layout_base> grid_new(sz);
+		grid_base_impl<dim,T,S,layout_base,ord_type> grid_new(sz);
 
 		resize_impl_memset(grid_new);
 
@@ -1316,7 +1307,7 @@ public:
 	{
 		//! Create a completely new grid with sz
 
-		grid_base_impl<dim,T,S,layout,layout_base> grid_new(sz);
+		grid_base_impl<dim,T,S,layout_base> grid_new(sz);
 
 		resize_impl_memset(grid_new);
 		resize_impl_host(sz,grid_new);
@@ -1379,7 +1370,7 @@ public:
 	 *
 	 */
 
-	void swap_nomode(grid_base_impl<dim,T,S,layout,layout_base> & grid)
+	void swap_nomode(grid_base_impl<dim,T,S,layout_base> & grid)
 	{
 		mem_swap<T,layout_base<T>,decltype(data_),decltype(grid)>::template swap_nomode<S>(data_,grid.data_);
 
@@ -1398,7 +1389,7 @@ public:
 	 *
 	 */
 
-	void swap(grid_base_impl<dim,T,S,layout,layout_base> & grid)
+	void swap(grid_base_impl<dim,T,S,layout_base,ord_type> & grid)
 	{
 		mem_swap<T,layout_base<T>,decltype(data_),decltype(grid)>::swap(data_,grid.data_);
 
@@ -1425,7 +1416,7 @@ public:
 	 *
 	 */
 
-	void swap(grid_base_impl<dim,T,S,layout,layout_base> && grid)
+	void swap(grid_base_impl<dim,T,S,layout_base> && grid)
 	{
 		swap(grid);
 	}
@@ -1463,7 +1454,7 @@ public:
 #endif
 
 		// create the object to copy the properties
-		copy_cpu_encap<dim,grid_base_impl<dim,T,S,layout,layout_base>,layout> cp(dx,*this,obj);
+		copy_cpu_encap<dim,grid_base_impl<dim,T,S,layout_base>,layout> cp(dx,*this,obj);
 
 		// copy each property
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -1498,7 +1489,7 @@ public:
 	 */
 
 	inline void set(const grid_key_dx<dim> & key1,
-			        const grid_base_impl<dim,T,S,layout,layout_base> & g,
+			        const grid_base_impl<dim,T,S,layout_base> & g,
 					const grid_key_dx<dim> & key2)
 	{
 #ifdef SE_CLASS1
@@ -1519,7 +1510,7 @@ public:
 	 */
 
 	inline void set(const size_t key1,
-			        const grid_base_impl<dim,T,S,layout,layout_base> & g,
+			        const grid_base_impl<dim,T,S,layout_base> & g,
 					const size_t key2)
 	{
 #ifdef SE_CLASS1
@@ -1539,7 +1530,7 @@ public:
 	 *
 	 */
 
-	template<typename Mem> inline void set(const grid_key_dx<dim> & key1,const grid_base_impl<dim,T,Mem,layout,layout_base> & g, const grid_key_dx<dim> & key2)
+	template<typename Mem> inline void set(const grid_key_dx<dim> & key1,const grid_base_impl<dim,T,Mem,layout_base> & g, const grid_key_dx<dim> & key2)
 	{
 #ifdef SE_CLASS1
 		check_init();
@@ -1558,8 +1549,8 @@ public:
 	 *
 	 */
 
-	template<typename Mem,typename layout2, template <typename> class layout_base2> inline void set_general(const grid_key_dx<dim> & key1,
-												   const grid_base_impl<dim,T,Mem,layout2,layout_base2> & g,
+	template<typename Mem, template <typename> class layout_base2> inline void set_general(const grid_key_dx<dim> & key1,
+												   const grid_base_impl<dim,T,Mem,layout_base2> & g,
 												   const grid_key_dx<dim> & key2)
 	{
 #ifdef SE_CLASS1
@@ -1619,7 +1610,14 @@ public:
 	 */
 	inline grid_key_dx_iterator<dim> getIterator() const
 	{
-		return grid_key_dx_iterator<dim>(g1);
+		size_t sz[dim];
+
+		for (int i = 0 ; i < dim ; i++)
+		{sz[i] = g1.size(i);}
+
+		grid_sm<dim,void> gvoid(sz);
+
+		return grid_key_dx_iterator<dim>(gvoid);
 	}
 
 #ifdef CUDA_GPU
@@ -1667,15 +1665,22 @@ public:
 	 *
 	 * \param start point
 	 * \param stop point
+	 * \param to_init unused bool
 	 *
 	 * \return a sub-grid iterator
 	 *
 	 */
-	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop) const
+	inline grid_key_dx_iterator_sub<dim> getIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop, bool to_init = false) const
 	{
-		// get the starting point and the end point of the real domain
+		size_t sz[dim];
 
-		return grid_key_dx_iterator_sub<dim>(g1,start,stop);
+		for (int i = 0 ; i < dim ; i++)
+		{sz[i] = g1.size(i);}
+
+		grid_sm<dim,void> gvoid(sz);
+
+		// get the starting point and the end point of the real domain
+		return grid_key_dx_iterator_sub<dim>(gvoid,start,stop);
 	}
 
 	/*! \brief return the internal data_

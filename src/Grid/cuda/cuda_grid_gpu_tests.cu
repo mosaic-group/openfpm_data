@@ -12,7 +12,7 @@
 #include "Point_test.hpp"
 #include "Grid/grid_util_test.hpp"
 #include "cuda_grid_unit_tests_func.cuh"
-#include "util/cuda/cuda_launch.hpp"
+#include "util/cuda_launch.hpp"
 #include "Grid/grid_test_utils.hpp"
 
 BOOST_AUTO_TEST_SUITE( grid_gpu_func_test )
@@ -32,6 +32,18 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 
 	auto gcf = c3.getGPUIterator(k1,k2);
 
+#ifdef __HIP__
+
+	BOOST_REQUIRE_EQUAL(gcf.thr.x,8ul);
+	BOOST_REQUIRE_EQUAL(gcf.thr.y,8ul);
+	BOOST_REQUIRE_EQUAL(gcf.thr.z,4ul);
+
+	BOOST_REQUIRE_EQUAL(gcf.wthr.x,8ul);
+	BOOST_REQUIRE_EQUAL(gcf.wthr.y,8ul);
+	BOOST_REQUIRE_EQUAL(gcf.wthr.z,16ul);
+
+#else
+
 	BOOST_REQUIRE_EQUAL(gcf.thr.x,16ul);
 	BOOST_REQUIRE_EQUAL(gcf.thr.y,8ul);
 	BOOST_REQUIRE_EQUAL(gcf.thr.z,8ul);
@@ -40,11 +52,25 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 	BOOST_REQUIRE_EQUAL(gcf.wthr.y,8ul);
 	BOOST_REQUIRE_EQUAL(gcf.wthr.z,8ul);
 
+#endif
+
 	grid_key_dx<3> k3({50,50,50});
 	grid_key_dx<3> k4({62,62,62});
 	grid_key_dx<3> k5({60,61,62});
 
 	auto gcf2 = c3.getGPUIterator(k3,k4);
+
+#ifdef __HIP__
+
+	BOOST_REQUIRE_EQUAL(gcf2.thr.x,8ul);
+	BOOST_REQUIRE_EQUAL(gcf2.thr.y,8ul);
+	BOOST_REQUIRE_EQUAL(gcf2.thr.z,4ul);
+
+	BOOST_REQUIRE_EQUAL(gcf2.wthr.x,2ul);
+	BOOST_REQUIRE_EQUAL(gcf2.wthr.y,2ul);
+	BOOST_REQUIRE_EQUAL(gcf2.wthr.z,4ul);
+
+#else
 
 	BOOST_REQUIRE_EQUAL(gcf2.thr.x,13ul);
 	BOOST_REQUIRE_EQUAL(gcf2.thr.y,8ul);
@@ -53,6 +79,8 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 	BOOST_REQUIRE_EQUAL(gcf2.wthr.x,1ul);
 	BOOST_REQUIRE_EQUAL(gcf2.wthr.y,2ul);
 	BOOST_REQUIRE_EQUAL(gcf2.wthr.z,2ul);
+
+#endif
 
 	gcf2 = c3.getGPUIterator(k3,k4,511);
 
@@ -618,7 +646,7 @@ __global__ void test_se1_crash_gt3(grid_type gt1, grid_type gt2)
 
 BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 {
-#ifdef SE_CLASS1
+#if defined(SE_CLASS1) && !defined(__clang__)
 
 	size_t sz[2] = {5,5};
 
@@ -630,7 +658,16 @@ BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 
 	int dev_mem[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-	test_se1_crash_gt2<<<{32,1,1},{16,1,1}>>>(c3.toKernel(),c2.toKernel());
+	dim3 wthr;
+	wthr.x = 32;
+	wthr.y = 1;
+	wthr.z = 1;
+	dim3 thr;
+	thr.x = 16;
+	thr.y = 1;
+	thr.z = 1;
+
+	CUDA_LAUNCH_DIM3(test_se1_crash_gt2,wthr,thr,c3.toKernel(),c2.toKernel());
 	cudaDeviceSynchronize();
 
 	cudaMemcpyFromSymbol(dev_mem,global_cuda_error_array,sizeof(dev_mem));
@@ -656,9 +693,19 @@ BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 
 	int dev_mem2[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-	test_se1_crash_gt3<<<{32,1,1},{16,1,1}>>>(c2.toKernel(),c3.toKernel());
-	cudaDeviceSynchronize();
+	{
+	dim3 wthr;
+	wthr.x = 32;
+	wthr.y = 1;
+	wthr.z = 1;
+	dim3 thr;
+	thr.x = 16;
+	thr.y = 1;
+	thr.z = 1;
 
+	CUDA_LAUNCH_DIM3(test_se1_crash_gt3,wthr,thr,c2.toKernel(),c3.toKernel());
+	cudaDeviceSynchronize();
+	}
 
 	cudaMemcpyFromSymbol(dev_mem2,global_cuda_error_array,sizeof(dev_mem2));
 

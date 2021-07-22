@@ -9,6 +9,16 @@ branch=$4
 
 echo "Build on: $hostname with $type_compile branch: $branch"
 
+if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
+        echo "CentOS node"
+        source /opt/rh/devtoolset-7/enable
+fi
+
+if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
+        echo "Ubuntu node"
+        export PATH="/opt/bin:$PATH"
+fi
+
 # Check if libHilbert is installed
 
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/LIBHILBERT ]; then
@@ -45,7 +55,7 @@ cd "$workspace/openfpm_data"
 pre_command=""
 sh ./autogen.sh
 options="$options --disable-gpu "
-options="$options --with-vcdevel=$HOME/openfpm_dependencies/openfpm_data/VCDEVEL --with-boost=$HOME/openfpm_dependencies/openfpm_data/BOOST  --with-libhilbert=$HOME/openfpm_dependencies/openfpm_data/LIBHILBERT"
+options="$options --with-vcdevel=$HOME/openfpm_dependencies/openfpm_data/VCDEVEL --with-boost=$HOME/openfpm_dependencies/openfpm_data/BOOST  --with-libhilbert=$HOME/openfpm_dependencies/openfpm_data/LIBHILBERT --enable-cuda_on_cpu"
 
 if [ x"$3" == x"SE"  ]; then
   options="$options --enable-se-class1 --enable-se-class2 --enable-se-class3 --with-action-on-error=throw --enable-test-coverage"
@@ -63,7 +73,7 @@ if [ $? -ne 0 ]; then
     curl -X POST --data "payload={\"icon_emoji\": \":jenkins:\", \"username\": \"jenkins\"  , \"attachments\":[{ \"title\":\"Error:\", \"color\": \"#FF0000\", \"text\":\"$hostname failed to comfigure openfpm_data test $opt_comp \" }] }" https://hooks.slack.com/services/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
     exit 1
 fi
-make
+make VERBOSE=1
 
 if [ $? -ne 0 ]; then
     curl -X POST --data "payload={\"icon_emoji\": \":jenkins:\", \"username\": \"jenkins\"  , \"attachments\":[{ \"title\":\"Error:\", \"color\": \"#FF0000\", \"text\":\"$hostname failed to compile the openfpm_data test $opt_comp \" }] }" https://hooks.slack.com/services/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

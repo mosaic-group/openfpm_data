@@ -17,6 +17,7 @@
 #include "util/copy_compare/compare_fusion_vector.hpp"
 #include "memory_ly/memory_conf.hpp"
 
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -79,6 +80,7 @@ struct copy_cpu_encap_encap_prp
 		meta_copy<copy_rtype>::meta_copy_(src.template get<prp_cp::value>(),dst.template get<prp_cp::value>());
 	}
 };
+
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -203,7 +205,6 @@ struct copy_cpu_encap_encap_general
 		meta_copy_d<copy_stype,copy_dtype>::meta_copy_d_(src.template get<T::value>(),dst.template get<T::value>());
 	}
 };
-
 
 
 /*! \brief this class is a functor for "for_each" algorithm
@@ -443,6 +444,10 @@ public:
 
 private:
 
+#ifdef SE_CLASS1
+	bool init = false;
+#endif
+
 	//! reference to the encapsulated object
 	type & data_c;
 
@@ -452,7 +457,26 @@ private:
 	//! layout of the encapsulated object
 	typedef typename memory_traits_inte<T>::type Mem2;
 
+#ifdef SE_CLASS1
+	__device__ __host__ void check_init() const
+	{
+		if (init == false)
+		{
+			#ifdef CUDA_ON_CPU
+			std::cout << __FILE__ << ":" << __LINE__ << " Error using unallocated pointer" << std::endl;
+			#else
+			assert(init == true);
+			#endif
+		}
+	}
+#endif
+
 public:
+
+#ifdef SE_CLASS1
+	__device__ __host__ ~encapc()
+	{init = false;}
+#endif
 
 	//! indicate the it is an encapsulated object
 	typedef int yes_i_am_encap;
@@ -464,9 +488,14 @@ public:
 	static const int max_prop = T::max_prop;
 
 	//! constructor from a reference object
-	inline encapc(type & data_c)
+	__device__ __host__ inline encapc(type & data_c)
 	:data_c(data_c)
-	{}
+	{
+#ifdef SE_CLASS1
+		init = true;
+#endif
+	}
+
 
 	/*! \brief Return the address of the base
 	 *
@@ -475,6 +504,9 @@ public:
 	 */
 	inline type * operator&()
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return &data_c;
 	}
 
@@ -486,6 +518,9 @@ public:
 	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))>
 	__device__ __host__ inline r_type get()
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return boost::fusion::at_c<p>(data_c);
 	}
 
@@ -497,6 +532,9 @@ public:
 	template <unsigned int p, typename r_type=decltype(boost::fusion::at_c<p>(data_c))>
 	__device__ __host__ inline const r_type get() const
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return boost::fusion::at_c<p>(data_c);
 	}
 
@@ -510,6 +548,9 @@ public:
 	template <unsigned int p> inline
 	__device__ __host__ void set(decltype(boost::fusion::at_c<p>(data_c)) & ele)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 			return boost::fusion::at_c<p>(data_c) = ele;
 	}
 
@@ -526,6 +567,9 @@ public:
 	template<unsigned int dim2>
 	__device__ __host__ inline encapc<dim,T,Mem> & set(const encapc<dim2,T,Mem> & ec)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_cpu_encap_encap<encapc<dim2,T,Mem>,encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -542,6 +586,9 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_cpu_encap_single<encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -558,6 +605,9 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem2> & ec)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_cpu_encap_encap_general<encapc<dim,T,Mem2>,encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -574,6 +624,9 @@ public:
 	 */
 	__device__  __host__ inline encapc<dim,T,Mem> & operator=(const T & obj)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_fusion_vector<typename T::type> cp(obj.data,data_c);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -590,6 +643,9 @@ public:
 	 */
 	inline bool operator==(const encapc<dim,T,Mem> & ec) const
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		compare_fusion_vector<typename T::type> cp(ec.data_c,data_c);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -606,6 +662,9 @@ public:
 	 */
 	inline bool operator!=(const encapc<dim,T,Mem> & ec) const
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return ! this->operator==(ec);
 	}
 };
@@ -664,6 +723,24 @@ class encapc<dim,T,typename memory_traits_inte<T>::type>
 	//! element id
 	size_t k;
 
+#ifdef SE_CLASS1
+	bool init = false;
+#endif
+
+#ifdef SE_CLASS1
+	__device__ __host__ void check_init() const
+	{
+		if (init == false)
+		{
+			#ifdef CUDA_ON_CPU
+			std::cout << __FILE__ << ":" << __LINE__ << " Error using unallocated pointer" << std::endl;
+			#else
+			assert(init == true);
+			#endif
+		}
+	}
+#endif
+
 public:
 
 	//! Original list if types
@@ -678,10 +755,19 @@ public:
 	//! number of properties
 	static const int max_prop = T::max_prop;
 
+#ifdef SE_CLASS1
+	__device__ __host__ ~encapc()
+	{init = false;}
+#endif
+
 	//! constructor require a key and a memory data
 	__device__ __host__ encapc(typename memory_traits_inte<T>::type & data, size_t k)
 	:data(data),k(k)
-	{}
+	{
+#ifdef SE_CLASS1
+		init = true;
+#endif
+	}
 
 	/*! \brief Access the data
 	 *
@@ -693,6 +779,9 @@ public:
 	template <unsigned int p>
 	__device__ __host__ auto get() -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
 
@@ -705,13 +794,18 @@ public:
 	 */
 	template <unsigned int p> __device__ __host__ auto get() const -> decltype(boost::fusion::at_c<p>(data).mem_r.operator[](k))
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return boost::fusion::at_c<p>(data).mem_r.operator[](k);
 	}
 
 //    __device__ __host__ encapc(const encapc<dim,T,Mem> & ec) = delete;
     __device__ __host__ encapc(const encapc<dim,T,Mem> & ec) : data(ec.data), k(ec.k)
     {
-//        printf("ciao\n");
+#ifdef SE_CLASS1
+		init = true;
+#endif
     }
 //    __device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec) = delete; //DEBUG
 
@@ -724,6 +818,9 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem> & ec)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_cpu_encap_single<encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -740,6 +837,9 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const encapc<dim,T,Mem2> & ec)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_cpu_encap_encap_general<encapc<dim,T,Mem2>,encapc<dim,T,Mem>> cp(ec,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -756,6 +856,9 @@ public:
 	 */
 	__device__ __host__ inline encapc<dim,T,Mem> & operator=(const T & obj)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		copy_fusion_vector_encap<typename T::type,decltype(*this)> cp(obj.data,*this);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(cp);
@@ -765,22 +868,34 @@ public:
 
 	__device__ __host__ inline void private_set_data_k(Mem & data_c, size_t k)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		this->data = data;
 		this->k = k;
 	}
 
 	__device__ __host__ inline Mem & private_get_data()
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return data;
 	}
 
 	__device__ __host__ inline size_t private_get_k()
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return k;
 	}
 
 	__device__ __host__ inline size_t private_set_k(unsigned int k)
 	{
+#ifdef SE_CLASS1
+		check_init();
+#endif
 		return this->k = k;
 	}
 };
@@ -803,5 +918,36 @@ struct is_encap: std::false_type {};
 template<typename T>
 struct is_encap<T, typename Void< typename T::yes_i_am_encap>::type> : std::true_type
 {};
+
+
+//! Case memory_traits_lin
+template<unsigned int dim , typename T, typename layout, typename data_type, typename g1_type, typename key_type, unsigned int sel = 2*is_layout_mlin<layout>::value + is_layout_inte<layout>::value >
+struct mem_geto
+{
+	__device__ __host__ static inline encapc<dim,T,typename layout::type> get(data_type & data_, const g1_type & g1, const key_type & v1)
+	{
+		return encapc<dim,T,typename layout::type>(data_.mem_r.operator[](g1.LinId(v1)));
+	}
+
+	static inline encapc<dim,T,typename layout::type> get_lin(data_type & data_, const size_t & v1)
+	{
+		return encapc<dim,T,typename layout::type>(data_.mem_r.operator[](v1));
+	}
+};
+
+//! Case memory_traits_inte
+template<unsigned int dim, typename T,typename layout, typename data_type, typename g1_type, typename key_type>
+struct mem_geto<dim,T,layout,data_type,g1_type,key_type,1>
+{
+	__device__ __host__ static inline encapc<dim,T,typename layout::type> get(data_type & data_, const g1_type & g1, const key_type & v1)
+	{
+		return encapc<dim,T,typename layout::type>(data_,g1.LinId(v1));
+	}
+
+	static inline encapc<dim,T,typename layout::type> get_lin(data_type & data_, const size_t & v1)
+	{
+		return encapc<dim,T,typename layout::type>(data_,v1);
+	}
+};
 
 #endif /* ENCAP_HPP_ */

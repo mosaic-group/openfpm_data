@@ -17,9 +17,6 @@ enum cl_construct_opt
 	Only_reorder
 };
 
-#if defined(CUDA_GPU) && defined(__NVCC__)
-#include "util/cuda/moderngpu/kernel_mergesort.hxx"
-#endif
 #include "util/cuda/ofp_context.hxx"
 
 
@@ -46,10 +43,10 @@ template<bool is_gpu>
 struct populate_cell_list_no_sym_impl
 {
 	template<unsigned int dim, typename T, typename prop, typename Memory, template <typename> class layout_base , typename CellList,unsigned int ... prp>
-	static void populate(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
-						   openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & v_pos_out,
-						   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
-						   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
+	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
+						   openfpm::vector<Point<dim,T>,Memory,layout_base > & v_pos_out,
+						   openfpm::vector<prop,Memory,layout_base > & v_prp,
+						   openfpm::vector<prop,Memory,layout_base > & v_prp_out,
 			   	   	   	   CellList & cli,
 			   	   	   	   mgpu::ofp_context_t & context,
 			   	   	   	   size_t g_m,
@@ -68,10 +65,10 @@ template<>
 struct populate_cell_list_no_sym_impl<true>
 {
 	template<unsigned int dim, typename T, typename prop, typename Memory, template <typename> class layout_base , typename CellList, unsigned int ... prp>
-	static void populate(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
-						 openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & v_pos_out,
-						 openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
-						 openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
+	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
+						 openfpm::vector<Point<dim,T>,Memory,layout_base > & v_pos_out,
+						 openfpm::vector<prop,Memory,layout_base > & v_prp,
+						 openfpm::vector<prop,Memory,layout_base > & v_prp_out,
 			   	   	   	   CellList & cli,
 			   	   	   	   mgpu::ofp_context_t & context,
 			   	   	   	   size_t g_m,
@@ -88,7 +85,7 @@ template<bool is_gpu>
 struct populate_cell_list_sym_impl
 {
 	template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base , typename CellList>
-	static void populate(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
+	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
 			   	   	   	   CellList & cli,
 			   	   	   	   size_t g_m)
 	{
@@ -110,7 +107,7 @@ template<>
 struct populate_cell_list_sym_impl<true>
 {
 	template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base , typename CellList>
-	static void populate(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
+	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
 			   	   	   	   CellList & cli,
 			   	   	   	   size_t g_m)
 	{
@@ -136,10 +133,10 @@ template<unsigned int dim,
 		 template <typename> class layout_base ,
 		 typename CellList,
 		 unsigned int ... prp>
-void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
-		 	 	 	 	 	   openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & v_pos_out,
-		 	 	 	 	 	   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
-		 	 	 	 	 	   openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
+void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
+		 	 	 	 	 	   openfpm::vector<Point<dim,T>,Memory,layout_base > & v_pos_out,
+		 	 	 	 	 	   openfpm::vector<prop,Memory,layout_base > & v_prp,
+		 	 	 	 	 	   openfpm::vector<prop,Memory,layout_base > & v_prp_out,
 							   CellList & cli,
 							   mgpu::ofp_context_t & mgpu,
 							   size_t g_m,
@@ -161,7 +158,7 @@ void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,typename layo
  *
  */
 template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base ,typename CellList>
-void populate_cell_list_sym(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & pos,
+void populate_cell_list_sym(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
 		      	  	  	    CellList & cli,
 		      	  	  	    size_t g_m)
 {
@@ -187,10 +184,10 @@ template<unsigned int dim,
 		 template <typename> class layout_base,
 		 typename CellList,
 		 unsigned int ... prp>
-void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base> & pos,
- 	 	   	   	   	    openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base > & v_pos_out,
- 	 	   	   	   	    openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp,
- 	 	   	   	   	    openfpm::vector<prop,Memory,typename layout_base<prop>::type,layout_base > & v_prp_out,
+void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & pos,
+ 	 	   	   	   	    openfpm::vector<Point<dim,T>,Memory,layout_base > & v_pos_out,
+ 	 	   	   	   	    openfpm::vector<prop,Memory,layout_base > & v_prp,
+ 	 	   	   	   	    openfpm::vector<prop,Memory,layout_base > & v_prp_out,
 						CellList & cli,
 						mgpu::ofp_context_t & context,
 						size_t g_m,
@@ -223,19 +220,19 @@ template<unsigned int dim,
 		 template <typename> class layout_base,
 		 typename CellList,
 		 unsigned int ... prp>
-void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base> & pos,
+void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & pos,
 						CellList & cli,
 						mgpu::ofp_context_t & context,
 						size_t g_m,
 						size_t opt,
 						cl_construct_opt optc)
 {
-	typedef openfpm::vector<aggregate<int>,Memory,typename layout_base<aggregate<int>>::type,layout_base> stub_prop_type;
+	typedef openfpm::vector<aggregate<int>,Memory,layout_base> stub_prop_type;
 
 	stub_prop_type stub1;
 	stub_prop_type stub2;
 
-	openfpm::vector<Point<dim,T>,Memory,typename layout_base<Point<dim,T>>::type,layout_base> stub3;
+	openfpm::vector<Point<dim,T>,Memory,layout_base> stub3;
 
 	populate_cell_list<dim,T,aggregate<int>,Memory,layout_base,CellList,prp...>(pos,stub3,stub1,stub2,cli,context,g_m,opt,optc);
 }

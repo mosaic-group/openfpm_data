@@ -30,18 +30,31 @@ struct cta_segscan_t {
     int warp_mask = 0xffffffff>> (31 - lane);   // inclusive search.
     int cta_mask = 0x7fffffff>> (31 - lane);    // exclusive search.
 
+    #ifdef __HIP__
+    // Build a head flag bitfield and store it into shared memory.
+    long int warp_bits = ballot(has_head_flag);
+    storage.delta[warp] = (int)warp_bits;
+    #else
     // Build a head flag bitfield and store it into shared memory.
     int warp_bits = ballot(has_head_flag);
     storage.delta[warp] = warp_bits;
+    #endif
+
+
     __syncthreads();
 
     if(tid < num_warps) {
+      #ifdef __HIP__
+      int cta_bits = (int)ballot(0 != storage.delta[tid]);
+      #else
       unsigned mask = __activemask();
       int cta_bits = ballot(0 != storage.delta[tid], mask);
+      #endif
       int warp_segment = 31 - clz(cta_mask & cta_bits);
       int start = (-1 != warp_segment) ?
         (31 - clz(storage.delta[warp_segment]) + 32 * warp_segment) : 0;
       storage.delta[num_warps + tid] = start;
+
     }
     __syncthreads();
 

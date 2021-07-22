@@ -283,7 +283,7 @@ public:
   iterator end()
   {return iterator(this->size(),origin(),this->size(),this->strides());}
 
-  __inline__ const_reference operator[](index idx) const
+  __inline__ __device__ __host__ const_reference operator[](index idx) const
   {
 	  return super_type::access(boost::type<const_reference>(),
                               idx,

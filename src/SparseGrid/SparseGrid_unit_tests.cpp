@@ -104,6 +104,53 @@ size_t fill_sphere_quad(grid_type & grid, cell_decomposer & cdsm)
 	return tot_count;
 }
 
+template <typename grid_type, typename cell_decomposer>
+size_t fill_sphere_quad_v(grid_type & grid, cell_decomposer & cdsm)
+{
+	size_t tot_count = 0;
+	double r = 0.3;
+	double omega = 0.0;
+	double phi = 0.0;
+
+	// 3D sphere
+
+	for (r = 0.3 ; r < 0.4 ;r += 0.001)
+	{
+		for (omega = 0.0; omega < M_PI ; omega += 0.006)
+		{
+			for (phi = 0.0; phi < 2.0*M_PI ; phi += 0.006)
+			{
+				Point<3,float> p;
+
+				p.get(0) = r*sin(omega)*sin(phi) + 0.5;
+				p.get(1) = r*sin(omega)*cos(phi) + 0.5;
+				p.get(2) = r*cos(omega) + 0.5;
+
+				// convert point into grid point
+
+				grid_key_dx<3> kd = cdsm.getCellGrid(p);
+
+				grid.template insert<0>(kd) = kd.get(0)*kd.get(0) + kd.get(1)*kd.get(1) + kd.get(2)*kd.get(2);
+				grid.template insert<1>(kd) = 0;
+				grid.template insert<3>(kd)[0] = kd.get(0)*kd.get(0) + kd.get(1)*kd.get(1) + kd.get(2)*kd.get(2) + 10000;
+				grid.template insert<3>(kd)[1] = kd.get(0)*kd.get(0) + kd.get(1)*kd.get(1) + kd.get(2)*kd.get(2) + 60000;
+				grid.template insert<3>(kd)[2] = kd.get(0)*kd.get(0) + kd.get(1)*kd.get(1) + kd.get(2)*kd.get(2) + 80000;
+			}
+		}
+	}
+
+	auto it = grid.getIterator();
+
+	while (it.isNext())
+	{
+		tot_count++;
+
+		++it;
+	}
+
+	return tot_count;
+}
+
 BOOST_AUTO_TEST_CASE( sparse_grid_use_test)
 {
 	size_t sz[3] = {10000,10000,10000};
@@ -1331,7 +1378,7 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified)
 
 	for (int i = 0 ; i < 1 ; i++)
 	{
-		grid.conv_cross<0,1,1>(start,stop,[]( Vc::double_v & cmd, cross_stencil_v & s,
+		grid.conv_cross<0,1,1>(start,stop,[]( Vc::double_v & cmd, cross_stencil_v<double> & s,
 				                              unsigned char * mask_sum){
 
 																	Vc::double_v Lap = s.xm + s.xp +
@@ -1383,6 +1430,413 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified)
 		}
 
 		if (is_six == true && grid.template get<1>(p) != 6.0)
+		{
+			check = false;
+			break;
+		}
+
+		if (grid.template get<1>(p) == 1)
+		{
+			tot_one++;
+		}
+
+		if (grid.template get<1>(p) == 6)
+		{
+			tot_six++;
+		}
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+	BOOST_REQUIRE_EQUAL(tot_six,15857813);
+	BOOST_REQUIRE_EQUAL(tot_one,2977262);
+	// Check correct-ness
+
+//	print_grid("debug_out",grid);
+}
+
+BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified_float)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_soa<3,aggregate<float,float,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere_quad(grid,cdsm);
+
+	//grid.reorder();
+
+	grid_key_dx<3> start({1,1,1});
+	grid_key_dx<3> stop({499,499,499});
+
+	for (int i = 0 ; i < 1 ; i++)
+	{
+		grid.conv_cross<0,1,1>(start,stop,[]( Vc::float_v & cmd, cross_stencil_v<float> & s,
+				                              unsigned char * mask_sum){
+
+																	Vc::float_v Lap = s.xm + s.xp +
+																					   s.ym + s.yp +
+																					   s.zm + s.zp - 6.0f*cmd;
+
+																	Vc::Mask<float> surround;
+
+																	for (int i = 0 ; i < Vc::float_v::Size ; i++)
+																	{surround[i] = (mask_sum[i] == 6);}
+
+																	Lap = Vc::iif(surround,Lap,Vc::float_v(1.0f));
+
+																	return Lap;
+		                                                         });
+	}
+
+	int tot_six = 0;
+	int tot_one = 0;
+
+	bool check = true;
+	auto it2 = grid.getIterator(start,stop);
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		check &= (grid.template get<1>(p) == 6 || grid.template get<1>(p) == 1);
+
+		// Check the six should be a six
+		auto xp = p.move(0,1);
+		auto xm = p.move(0,-1);
+
+		auto yp = p.move(1,1);
+		auto ym = p.move(1,-1);
+
+		auto zp = p.move(2,1);
+		auto zm = p.move(2,-1);
+
+		bool is_six;
+		if (grid.existPoint(xp) && grid.existPoint(xm) &&
+			grid.existPoint(yp) && grid.existPoint(ym) &&
+			grid.existPoint(zp) && grid.existPoint(zm))
+		{
+			is_six = true;
+		}
+		else
+		{
+			is_six = false;
+		}
+
+		if (is_six == true && grid.template get<1>(p) != 6.0)
+		{
+			check = false;
+			break;
+		}
+
+		if (grid.template get<1>(p) == 1)
+		{
+			tot_one++;
+		}
+
+		if (grid.template get<1>(p) == 6)
+		{
+			tot_six++;
+		}
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+	BOOST_REQUIRE_EQUAL(tot_six,15857813);
+	BOOST_REQUIRE_EQUAL(tot_one,2977262);
+	// Check correct-ness
+
+//	print_grid("debug_out",grid);
+}
+
+constexpr int x = 0;
+constexpr int y = 1;
+constexpr int z = 2;
+
+BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified_ids)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_soa<3,aggregate<double,double,int>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere_quad(grid,cdsm);
+
+	//grid.reorder();
+
+	grid_key_dx<3> start({1,1,1});
+	grid_key_dx<3> stop({499,499,499});
+
+	for (int i = 0 ; i < 1 ; i++)
+	{
+		grid.conv_cross_ids<1,double>(start,stop,[](auto & grid, auto & ids,
+				                           unsigned char * mask_sum){
+																	Vc::double_v cmd;
+
+																	Vc::double_v xm;
+																	Vc::double_v xp;
+																	Vc::double_v ym;
+																	Vc::double_v yp;
+																	Vc::double_v zm;
+																	Vc::double_v zp;
+
+																	load_crs<x,-1,0>(xm,grid,ids);
+																	load_crs<x,1,0>(xp,grid,ids);
+																	load_crs<y,-1,0>(ym,grid,ids);
+																	load_crs<y,1,0>(yp,grid,ids);
+																	load_crs<z,-1,0>(zm,grid,ids);
+																	load_crs<z,1,0>(zp,grid,ids);
+																	load_crs<x,0,0>(cmd,grid,ids);
+
+																	Vc::double_v Lap = xm + xp +
+																					   ym + yp +
+																					   zm + zp - 6.0*cmd;
+
+																	Vc::Mask<double> surround;
+
+																	for (int i = 0 ; i < Vc::double_v::Size ; i++)
+																	{surround[i] = (mask_sum[i] == 6);}
+
+																	Lap = Vc::iif(surround,Lap,Vc::double_v(1.0));
+
+																	store_crs<1>(grid,Lap,ids);
+		                                                         });
+	}
+
+	int tot_six = 0;
+	int tot_one = 0;
+
+	bool check = true;
+	auto it2 = grid.getIterator(start,stop);
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		check &= (grid.template get<1>(p) == 6 || grid.template get<1>(p) == 1);
+
+		// Check the six should be a six
+		auto xp = p.move(0,1);
+		auto xm = p.move(0,-1);
+
+		auto yp = p.move(1,1);
+		auto ym = p.move(1,-1);
+
+		auto zp = p.move(2,1);
+		auto zm = p.move(2,-1);
+
+		bool is_six;
+		if (grid.existPoint(xp) && grid.existPoint(xm) &&
+			grid.existPoint(yp) && grid.existPoint(ym) &&
+			grid.existPoint(zp) && grid.existPoint(zm))
+		{
+			is_six = true;
+		}
+		else
+		{
+			is_six = false;
+		}
+
+		if (is_six == true && grid.template get<1>(p) != 6.0)
+		{
+			check = false;
+			break;
+		}
+
+		if (grid.template get<1>(p) == 1)
+		{
+			tot_one++;
+		}
+
+		if (grid.template get<1>(p) == 6)
+		{
+			tot_six++;
+		}
+
+		++it2;
+	}
+
+	BOOST_REQUIRE_EQUAL(check,true);
+	BOOST_REQUIRE_EQUAL(tot_six,15857813);
+	BOOST_REQUIRE_EQUAL(tot_one,2977262);
+	// Check correct-ness
+
+//	print_grid("debug_out",grid);
+}
+
+BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_cross_simplified_ids_vector)
+{
+	size_t sz[3] = {501,501,501};
+	size_t sz_cell[3] = {500,500,500};
+
+	sgrid_soa<3,aggregate<double,double,int,double[3],double[3]>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 0.0;
+
+	CellDecomposer_sm<3, float, shift<3,float>> cdsm;
+
+	Box<3,float> domain({0.0,0.0,0.0},{1.0,1.0,1.0});
+
+	cdsm.setDimensions(domain, sz_cell, 0);
+
+	fill_sphere_quad_v(grid,cdsm);
+
+	//grid.reorder();
+
+	grid_key_dx<3> start({1,1,1});
+	grid_key_dx<3> stop({499,499,499});
+
+	for (int i = 0 ; i < 1 ; i++)
+	{
+		grid.conv_cross_ids<1,double>(start,stop,[](auto & grid, auto & ids,
+				                           unsigned char * mask_sum){
+																	Vc::double_v cmd;
+
+																	Vc::double_v xm;
+																	Vc::double_v xp;
+																	Vc::double_v ym;
+																	Vc::double_v yp;
+																	Vc::double_v zm;
+																	Vc::double_v zp;
+
+																	load_crs<x,-1,0>(xm,grid,ids);
+																	load_crs<x,1,0>(xp,grid,ids);
+																	load_crs<y,-1,0>(ym,grid,ids);
+																	load_crs<y,1,0>(yp,grid,ids);
+																	load_crs<z,-1,0>(zm,grid,ids);
+																	load_crs<z,1,0>(zp,grid,ids);
+																	load_crs<x,0,0>(cmd,grid,ids);
+
+																	Vc::double_v Lap = xm + xp +
+																					   ym + yp +
+																					   zm + zp - 6.0*cmd;
+
+																	// Lap for the vector
+
+																	load_crs_v<x,-1,x,3>(xm,grid,ids);
+																	load_crs_v<x,1,x,3>(xp,grid,ids);
+																	load_crs_v<y,-1,x,3>(ym,grid,ids);
+																	load_crs_v<y,1,x,3>(yp,grid,ids);
+																	load_crs_v<z,-1,x,3>(zm,grid,ids);
+																	load_crs_v<z,1,x,3>(zp,grid,ids);
+																	load_crs_v<x,0,x,3>(cmd,grid,ids);
+
+																	Vc::double_v Lap_x = xm + xp +
+																					   ym + yp +
+																					   zm + zp - 6.0*cmd;
+
+																	load_crs_v<x,-1,y,3>(xm,grid,ids);
+																	load_crs_v<x,1,y,3>(xp,grid,ids);
+																	load_crs_v<y,-1,y,3>(ym,grid,ids);
+																	load_crs_v<y,1,y,3>(yp,grid,ids);
+																	load_crs_v<z,-1,y,3>(zm,grid,ids);
+																	load_crs_v<z,1,y,3>(zp,grid,ids);
+																	load_crs_v<x,0,y,3>(cmd,grid,ids);
+
+																	Vc::double_v Lap_y = xm + xp +
+																					   ym + yp +
+																					   zm + zp - 6.0*cmd;
+
+																	load_crs_v<x,-1,z,3>(xm,grid,ids);
+																	load_crs_v<x,1,z,3>(xp,grid,ids);
+																	load_crs_v<y,-1,z,3>(ym,grid,ids);
+																	load_crs_v<y,1,z,3>(yp,grid,ids);
+																	load_crs_v<z,-1,z,3>(zm,grid,ids);
+																	load_crs_v<z,1,z,3>(zp,grid,ids);
+																	load_crs_v<x,0,z,3>(cmd,grid,ids);
+
+																	Vc::double_v Lap_z = xm + xp +
+																					   ym + yp +
+																					   zm + zp - 6.0*cmd;
+
+																	Vc::Mask<double> surround;
+
+																	for (int i = 0 ; i < Vc::double_v::Size ; i++)
+																	{surround[i] = (mask_sum[i] == 6);}
+
+																	Lap = Vc::iif(surround,Lap,Vc::double_v(1.0));
+																	Lap_x = Vc::iif(surround,Lap_x,Vc::double_v(1.0));
+																	Lap_y = Vc::iif(surround,Lap_y,Vc::double_v(1.0));
+																	Lap_z = Vc::iif(surround,Lap_z,Vc::double_v(1.0));
+
+																	store_crs<1>(grid,Lap,ids);
+																	store_crs_v<4,x>(grid,Lap_x,ids);
+																	store_crs_v<4,y>(grid,Lap_y,ids);
+																	store_crs_v<4,z>(grid,Lap_z,ids);
+		                                                         });
+	}
+
+	int tot_six = 0;
+	int tot_one = 0;
+
+	bool check = true;
+	auto it2 = grid.getIterator(start,stop);
+	while (it2.isNext())
+	{
+		auto p = it2.get();
+
+		check &= (grid.template get<1>(p) == 6 || grid.template get<1>(p) == 1);
+		check &= (grid.template get<4>(p)[0] == 6 || grid.template get<4>(p)[0] == 1);
+		check &= (grid.template get<4>(p)[1] == 6 || grid.template get<4>(p)[1] == 1);
+		check &= (grid.template get<4>(p)[2] == 6 || grid.template get<4>(p)[2] == 1);
+
+		// Check the six should be a six
+		auto xp = p.move(0,1);
+		auto xm = p.move(0,-1);
+
+		auto yp = p.move(1,1);
+		auto ym = p.move(1,-1);
+
+		auto zp = p.move(2,1);
+		auto zm = p.move(2,-1);
+
+		bool is_six;
+		if (grid.existPoint(xp) && grid.existPoint(xm) &&
+			grid.existPoint(yp) && grid.existPoint(ym) &&
+			grid.existPoint(zp) && grid.existPoint(zm))
+		{
+			is_six = true;
+		}
+		else
+		{
+			is_six = false;
+		}
+
+		if (is_six == true && grid.template get<1>(p) != 6.0)
+		{
+			check = false;
+			break;
+		}
+
+		if (is_six == true && grid.template get<4>(p)[0] != 6.0)
+		{
+			check = false;
+			break;
+		}
+
+		if (is_six == true && grid.template get<4>(p)[1] != 6.0)
+		{
+			check = false;
+			break;
+		}
+
+		if (is_six == true && grid.template get<4>(p)[2] != 6.0)
 		{
 			check = false;
 			break;
@@ -1588,6 +2042,9 @@ template<typename sgrid> void Test_unpack_and_check_full_noprp(sgrid & grid)
 	pmem3.allocate(req3);
 	ExtPreAlloc<HeapMemory> & mem3 = *(new ExtPreAlloc<HeapMemory>(req3,pmem3));
 	mem3.incRef();
+
+	mem2.fill(0);
+	mem3.fill(0);
 
 	grid.template pack(mem2,sts2);
 	grid.template pack<0,1>(mem3,sub_it,sts3);
@@ -1939,6 +2396,39 @@ BOOST_AUTO_TEST_CASE( sparse_operator_equal )
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);
+}
+
+BOOST_AUTO_TEST_CASE( sparse_testing_clear )
+{
+	size_t sz[3] = {10000,10000,10000};
+
+	sgrid_cpu<3,aggregate<float>,HeapMemory> grid(sz);
+
+	grid.getBackgroundValue().template get<0>() = 555.0;
+
+	grid_key_dx<3> key1({5000,5000,5000});
+	grid_key_dx<3> key2({5001,5001,5001});
+	grid_key_dx<3> key3({5002,5003,5003});
+
+	grid.template insert<0>(key1) = 1.0;
+	grid.template insert<0>(key2) = 2.0;
+	grid.template insert<0>(key3) = 3.0;
+
+
+	grid.clear();
+
+	grid_key_dx<3> keyzero({0,0,0});
+	BOOST_REQUIRE_EQUAL(grid.template get<0>(keyzero),555.0);
+
+	grid.template insert<0>(key1) = 1.0;
+	grid.template insert<0>(key2) = 2.0;
+	grid.template insert<0>(key3) = 3.0;
+
+	BOOST_REQUIRE_EQUAL(grid.template get<0>(key1),1.0);
+	BOOST_REQUIRE_EQUAL(grid.template get<0>(key2),2.0);
+	BOOST_REQUIRE_EQUAL(grid.template get<0>(key3),3.0);
+
+	BOOST_REQUIRE_EQUAL(grid.template get<0>(keyzero),555.0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

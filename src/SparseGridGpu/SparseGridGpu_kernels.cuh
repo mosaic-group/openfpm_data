@@ -29,6 +29,42 @@ enum mask_sparse
 // Kernels for SparseGridGpu
 namespace SparseGridGpuKernels
 {
+	template<typename SparseGridGpuType, typename pointers_type, typename headers_type>
+	__global__ void unpack_headers(pointers_type pointers, headers_type headers, int * result, unsigned int sz_pack, int n_slot)
+	{
+		int t = threadIdx.x;
+
+		if (t > pointers.size()) {return;}
+
+		unsigned char * data_pack = (unsigned char *)pointers.template get<0>(t);
+
+		while (data_pack < pointers.template get<1>(t) )
+		{
+			int ih = pointers.template get<2>(t);
+			if (n_slot > ih)
+			{
+                if (sizeof(typename SparseGridGpuType::indexT_) == 8)
+                {headers.template get<0>(t*n_slot + ih) = *(size_t *)data_pack;}
+                else
+                {
+                    unsigned int dp1 = *(unsigned int *)data_pack;
+                    unsigned int dp2 = *(unsigned int *)&(data_pack[4]);
+                    headers.template get<0>(t*n_slot + ih) = (size_t)dp1 + (((size_t)dp2) << 32);
+                }
+				data_pack += sizeof(size_t);
+				data_pack += SparseGridGpuType::unpack_headers(headers,data_pack,t*n_slot + ih,sz_pack);
+				pointers.template get<2>(t) += 1;
+			}
+			else
+			{
+				// report error
+				result[0] = 1;
+				return;
+			}			
+		}
+	}
+
+
 	template<unsigned int dim>
 	struct stencil_cross_func_impl
 	{
@@ -810,8 +846,8 @@ namespace SparseGridGpuKernels
         {
             // Read local mask to register
             curMask = dataBlockLoad.template get<pMask>()[offset];
-            if (bx.isInsideKey(pointCoord) == false)
-            {curMask = 0;}
+			for (int i = 0 ; i < dim ; i++)
+			{curMask &= (pointCoord.get(i) < bx.getLow(i) || pointCoord.get(i) > bx.getHigh(i))?0:0xFF;}
         }
 
         openfpm::sparse_index<unsigned int> sdataBlockPos;
@@ -1040,7 +1076,7 @@ namespace SparseGridGpuKernels
 #ifdef SE_CLASS1
 
         if (numCnt > blockDim.x)
-        {printf("Error calc_exist_points_with_boxes assertion failed numCnt >= blockDim.x  %d %d \n",numCnt,blockDim.x);}
+        {printf("Error calc_exist_points_with_boxes assertion failed numCnt >= blockDim.x  %d %d \n",numCnt,(int)blockDim.x);}
 
 #endif
 
@@ -1128,7 +1164,7 @@ namespace SparseGridGpuKernels
 #ifdef SE_CLASS1
 
         if (numCnt > blockDim.x)
-        {printf("Error get_exist_points_with_boxes assertion failed numCnt >= blockDim.x  %d %d \n",numCnt,blockDim.x);}
+        {printf("Error get_exist_points_with_boxes assertion failed numCnt >= blockDim.x  %d %d \n",numCnt,(int)blockDim.x);}
 
 #endif
 

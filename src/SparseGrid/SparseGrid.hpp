@@ -28,6 +28,84 @@
 #include "VTKWriter/VTKWriter.hpp"
 #endif
 
+template<typename chunk_def>
+struct sparse_grid_bck_value
+{
+	chunk_def bck;
+
+	sparse_grid_bck_value(chunk_def bck)
+	:bck(bck)
+	{}
+
+	template<unsigned int p>
+	auto get() -> decltype(bck.template get<p>()[0])
+	{
+		return bck.template get<p>()[0];
+	}
+
+	template<unsigned int p>
+	auto get() const -> decltype(bck.template get<p>()[0])
+	{
+		return bck.template get<p>()[0];
+	}
+};
+
+template<typename ArrTypeView>
+struct std_array_vector_view
+{
+	int pos;
+	ArrTypeView arr;
+
+	std_array_vector_view(int pos,ArrTypeView arr)
+	:pos(pos),arr(arr)
+	{}
+
+	decltype(arr[0][0]) operator[](int comp)
+	{
+		return arr[comp][pos];
+	}
+
+	decltype(std::declval<const ArrTypeView>()[0][0]) operator[](int comp) const
+	{
+		return arr[comp][pos];
+	}
+};
+
+
+
+template<typename T>
+struct get_selector
+{
+	template<unsigned int p, typename chunks_vector_type>
+	static T & get(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
+	{
+		return chunks.template get<p>(active_cnk)[ele_id];
+	}
+
+	template<unsigned int p, typename chunks_vector_type>
+	static const T & get_const(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
+	{
+		return chunks.template get<p>(active_cnk)[ele_id];
+	}
+};
+
+template<typename T, unsigned int N1>
+struct get_selector<T[N1]>
+{
+	template<unsigned int p, typename chunks_vector_type>
+	static std_array_vector_view<decltype(std::declval<chunks_vector_type>().template get<p>(0))> get(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
+	{
+		return std_array_vector_view<decltype(chunks.template get<p>(active_cnk))>(ele_id,chunks.template get<p>(active_cnk));
+	}
+
+	template<unsigned int p, typename chunks_vector_type>
+	static const std_array_vector_view<decltype(std::declval<chunks_vector_type>().template get<p>(0))> get_const(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
+	{
+		return std_array_vector_view<decltype(chunks.template get<p>(active_cnk))>(ele_id,chunks.template get<p>(active_cnk));
+	}
+};
+
+
 template<typename Tsrc,typename Tdst>
 class copy_bck
 {
@@ -49,9 +127,9 @@ public:
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		typedef typename std::remove_reference<decltype(dst.template get<T::value>()[pos])>::type copy_rtype;
+		typedef typename std::remove_reference<decltype(src.template get<T::value>())>::type copy_rtype;
 
-		meta_copy<copy_rtype>::meta_copy_(dst.template get<T::value>()[pos],src.template get<T::value>());
+		std_array_copy_chunks<T::value,copy_rtype>::copy(src,dst,pos);
 	}
 
 };
@@ -83,7 +161,6 @@ public:
 	}
 
 };
-
 
 template<unsigned int dim, typename Tsrc,typename Tdst>
 class copy_sparse_to_sparse
@@ -117,7 +194,52 @@ public:
 
 };
 
-template<unsigned int dim, typename Tsrc,typename Tdst>
+template<typename T>
+struct copy_sparse_to_sparse_bb_impl
+{
+	template<unsigned int prop, typename Tsrc, typename Tdst>
+	static void copy(const Tsrc & src, Tdst & dst,short int pos_id_src, short int pos_id_dst)
+	{
+		typedef typename std::remove_reference<decltype(dst.template get<prop>()[pos_id_dst])>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get<prop>()[pos_id_src],dst.template get<prop>()[pos_id_dst]);
+	}
+};
+
+template<typename T, unsigned int N1>
+struct copy_sparse_to_sparse_bb_impl<T[N1]>
+{
+	template<unsigned int prop, typename Tsrc, typename Tdst>
+	static void copy(const Tsrc & src, Tdst & dst,short int pos_id_src, short int pos_id_dst)
+	{
+		typedef typename std::remove_reference<decltype(dst.template get<prop>()[0][pos_id_dst])>::type copy_rtype;
+
+		for (int i = 0 ; i < N1 ; i++)
+		{
+			meta_copy<copy_rtype>::meta_copy_(src.template get<prop>()[i][pos_id_src],dst.template get<prop>()[i][pos_id_dst]);
+		}
+	}
+};
+
+template<typename T, unsigned int N1, unsigned int N2>
+struct copy_sparse_to_sparse_bb_impl<T[N1][N2]>
+{
+	template<unsigned int prop, typename Tsrc, typename Tdst>
+	static void copy(const Tsrc & src, Tdst & dst,short int pos_id_src, short int pos_id_dst)
+	{
+		typedef typename std::remove_reference<decltype(dst.template get<prop>()[0][0][pos_id_dst])>::type copy_rtype;
+
+		for (int i = 0 ; i < N1 ; i++)
+		{
+			for (int j = 0 ; j < N2 ; j++)
+			{
+				meta_copy<copy_rtype>::meta_copy_(src.template get<prop>()[i][j][pos_id_src],dst.template get<prop>()[i][j][pos_id_dst]);
+			}
+		}
+	}
+};
+
+template<unsigned int dim, typename Tsrc,typename Tdst, typename aggrType>
 class copy_sparse_to_sparse_bb
 {
 	//! source
@@ -142,9 +264,13 @@ public:
 	template<typename T>
 	inline void operator()(T& t) const
 	{
-		typedef typename std::remove_reference<decltype(dst.template get<T::value>()[pos_id_dst])>::type copy_rtype;
+/*		typedef typename std::remove_reference<decltype(dst.template get<T::value>())>::type copy_rtype;
 
-		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>()[pos_id_src],dst.template get<T::value>()[pos_id_dst]);
+		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>()[pos_id_src],dst.template get<T::value>()[pos_id_dst]);*/
+
+		typedef typename boost::mpl::at<typename aggrType::type, T>::type copy_rtype;
+
+		copy_sparse_to_sparse_bb_impl<copy_rtype>::template copy<T::value>(src,dst,pos_id_src,pos_id_dst);
 	}
 
 };
@@ -332,9 +458,6 @@ class sgrid_cpu
 	//! cache pointer
 	mutable size_t cache_pnt;
 
-	//! background values
-	T background;
-
 	//! cache
 	mutable long int cache[SGRID_CACHE];
 
@@ -350,12 +473,15 @@ class sgrid_cpu
 	openfpm::vector<mheader<chunking::size::value>,S> header_mask;
 
 	//Definition of the chunks
-	typedef typename v_transform_two<Ft_chunk,boost::mpl::int_<chunking::size::value>,typename T::type>::type chunk_def;
+	typedef typename v_transform_two_v2<Ft_chunk,boost::mpl::int_<chunking::size::value>,typename T::type>::type chunk_def;
+
+	//! background values
+	//aggregate_bfv<chunk_def> background;
 
 	typedef sgrid_cpu<dim,T,S,grid_lin,layout,layout_base,chunking> self;
 
 	//! vector of chunks
-	openfpm::vector<aggregate_bfv<chunk_def>,S,typename layout_base<aggregate_bfv<chunk_def>>::type,layout_base > chunks;
+	openfpm::vector<aggregate_bfv<chunk_def>,S,layout_base > chunks;
 
 	//! grid size information
 	grid_lin g_sm;
@@ -580,9 +706,9 @@ class sgrid_cpu
 		{
 			auto c = chunks.get(0);
 
-			copy_bck<decltype(background),decltype(c)> cb(background,c,i);
+			//copy_bck<decltype(background),decltype(c)> cb(background,c,i);
 
-			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cb);
+			//boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cb);
 		}
 	}
 
@@ -784,7 +910,7 @@ public:
 	typedef grid_key_sparse_dx_iterator_sub<dim, chunking::size::value> sub_grid_iterator_type;
 
 	//! Background type
-	typedef T background_type;
+	typedef aggregate_bfv<chunk_def> background_type;
 
 	typedef layout_base<T> memory_traits;
 
@@ -847,7 +973,8 @@ public:
 	template<unsigned int p>
 	void setBackgroundValue(const typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type & val)
 	{
-		meta_copy<typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type>::meta_copy_(val,background.template get<p>());
+		for (int i = 0 ; i < chunking::size::value ; i++)
+		{meta_copy<typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type>::meta_copy_(val,chunks.get(0).template get<p>()[i]);}
 	}
 
 	/*! \brief Get the background value
@@ -855,9 +982,39 @@ public:
 	 * \return background value
 	 *
 	 */
-	T & getBackgroundValue()
+	sparse_grid_bck_value<typename std::remove_reference<decltype(chunks.get(0))>::type> getBackgroundValue()
 	{
-		return background;
+		return sparse_grid_bck_value<typename std::remove_reference<decltype(chunks.get(0))>::type>(chunks.get(0));
+	}
+
+	/*! \brief Stub does not do anything
+	*
+	*/
+	template<typename pointers_type, 
+			 typename headers_type, 
+			 typename result_type, 
+			 unsigned int ... prp >
+	static void unpack_headers(pointers_type & pointers, headers_type & headers, result_type & result, int n_slot)
+	{}
+
+	template<unsigned int ... prp, typename S2, typename header_type, typename ite_type, typename context_type>
+	void unpack_with_headers(ExtPreAlloc<S2> & mem,
+				ite_type & sub_it,
+				header_type & headers,
+				int ih,
+				Unpack_stat & ps,
+				context_type &context,
+				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
+	{}
+
+	/*! \brief Get the background value
+	 *
+	 * \return background value
+	 *
+	 */
+	auto getBackgroundValueAggr() -> decltype(chunks.get(0))
+	{
+		return chunks.get(0);
 	}
 
 	/*! \brief This is a multiresolution sparse grid so is a compressed format
@@ -891,7 +1048,7 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(chunks.template get<p>(0)[0])>
+	template <unsigned int p, typename r_type=decltype(get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get<p>(chunks,0,0))>
 	inline r_type insert(const grid_key_dx<dim> & v1)
 	{
 		size_t active_cnk = 0;
@@ -899,7 +1056,7 @@ public:
 
 		pre_insert(v1,active_cnk,ele_id);
 
-		return chunks.template get<p>(active_cnk)[ele_id];
+		return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get<p>(chunks,active_cnk,ele_id);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -909,7 +1066,7 @@ public:
 	 * \return the reference of the element
 	 *
 	 */
-	template <unsigned int p, typename r_type=decltype(chunks.template get<p>(0)[0])>
+	template <unsigned int p, typename r_type=decltype(get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get<p>(chunks,0,0))>
 	inline r_type insert(const grid_key_sparse_lin_dx & v1)
 	{
 		size_t active_cnk = v1.getChunk();
@@ -925,7 +1082,7 @@ public:
 		hc.nele = (hm.mask[sub_id] & 1)?hc.nele:hc.nele + 1;
 		hm.mask[sub_id] |= 1;
 
-		return chunks.template get<p>(active_cnk)[sub_id];
+		return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get<p>(chunks,active_cnk,sub_id);
 	}
 
 	/*! \brief Get the reference of the selected element
@@ -936,7 +1093,7 @@ public:
 	 *
 	 */
 	template <unsigned int p>
-	inline auto get(const grid_key_dx<dim> & v1) const -> decltype(openfpm::as_const(chunks.template get<p>(0))[0])
+	inline auto get(const grid_key_dx<dim> & v1) const -> decltype(get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,0,0))
 	{
 		bool exist;
 		size_t active_cnk;
@@ -945,16 +1102,24 @@ public:
 		pre_get(v1,active_cnk,sub_id,exist);
 
 		if (exist == false)
-		{return background.template get<p>();}
+		{return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,0,sub_id);}
 
 		// we check the mask
 		auto & hm = header_mask.get(active_cnk);
 
 		if ((hm.mask[sub_id] & 1) == 0)
-		{return background.template get<p>();}
+		{return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,0,sub_id);}
 
-		return chunks.template get<p>(active_cnk)[sub_id];
+		return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,active_cnk,sub_id);
 	}
+
+	/*! \brief Indicate that unpacking the header is supported
+     *
+	 * \return false
+	 * 
+	 */
+	static bool is_unpack_header_supported()
+	{return false;}
 
 	/*! \brief Get the reference of the selected element
 	 *
@@ -964,7 +1129,7 @@ public:
 	 *
 	 */
 	template <unsigned int p>
-	inline auto get(const grid_key_dx<dim> & v1) -> decltype(openfpm::as_const(chunks.template get<p>(0))[0])
+	inline auto get(const grid_key_dx<dim> & v1) -> decltype(get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,0,0))
 	{
 		bool exist;
 		size_t active_cnk;
@@ -973,16 +1138,16 @@ public:
 		pre_get(v1,active_cnk,sub_id,exist);
 
 		if (exist == false)
-		{return background.template get<p>();}
+		{return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,active_cnk,sub_id);}
 
 		// we check the mask
 		auto & hc = header_inf.get(active_cnk);
 		auto & hm = header_mask.get(active_cnk);
 
 		if ((hm.mask[sub_id] & 1) == 0)
-		{return background.template get<p>();}
+		{return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,0,sub_id);}
 
-		return chunks.template get<p>(active_cnk)[sub_id];
+		return get_selector< typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type >::template get_const<p>(chunks,active_cnk,sub_id);
 	}
 
 	/*! \brief Check if the point exist
@@ -1084,7 +1249,7 @@ public:
 	grid_key_sparse_dx_iterator_block_sub<dim,stencil_size,self,chunking>
 	getBlockIterator(const grid_key_dx<dim> & start, const grid_key_dx<dim> & stop)
 	{
-		return grid_key_sparse_dx_iterator_block_sub<dim,stencil_size,self,chunking>(*this,start,stop,background);
+		return grid_key_sparse_dx_iterator_block_sub<dim,stencil_size,self,chunking>(*this,start,stop);
 	}
 
 	/*! \brief Return the internal grid information
@@ -1856,7 +2021,7 @@ public:
 			auto block_src = grid_src.getBlock(key_src_s);
 			auto block_dst = this->insert_o(key_dst,pos_dst_id);
 
-			copy_sparse_to_sparse_bb<dim,decltype(block_src),decltype(block_dst)> caps(block_src,block_dst,pos_src_id,pos_dst_id);
+			copy_sparse_to_sparse_bb<dim,decltype(block_src),decltype(block_dst),T> caps(block_src,block_dst,pos_src_id,pos_dst_id);
 			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(caps);
 
 			++it;
@@ -1940,8 +2105,12 @@ public:
 		findNN = true;
 	}
 
-	/*! \brief apply a convolution using the stencil N
+	/*! \brief apply a convolution from start to stop point using the function func and arguments args
 	 *
+	 * \param start point
+	 * \param stop point
+	 * \param func lambda function
+	 * \param args arguments to pass
 	 *
 	 */
 	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
@@ -1953,6 +2122,32 @@ public:
 		{conv_impl<dim>::template conv_cross<false,prop_src,prop_dst,stencil_size>(start,stop,*this,func);}
 		else
 		{conv_impl<dim>::template conv_cross<true,prop_src,prop_dst,stencil_size>(start,stop,*this,func);}
+
+		findNN = true;
+	}
+
+	/*! \brief apply a convolution from start to stop point using the function func and arguments args
+	 *
+	 * \param start point
+	 * \param stop point
+	 * \param func lambda function
+	 * \param args arguments to pass
+	 *
+	 */
+	template<unsigned int stencil_size, typename prop_type, typename lambda_f, typename ... ArgsT >
+	void conv_cross_ids(grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	{
+		if (layout_base<aggregate<int>>::type_value::value != SOA_layout_IA)
+		{
+			std::cout << __FILE__ << ":" << __LINE__ << " Error this function can be only used with the SOA version of the data-structure" << std::endl;
+		}
+
+		NNlist.resize(2*dim * chunks.size());
+
+		if (findNN == false)
+		{conv_impl<dim>::template conv_cross_ids<false,stencil_size,prop_type>(start,stop,*this,func);}
+		else
+		{conv_impl<dim>::template conv_cross_ids<true,stencil_size,prop_type>(start,stop,*this,func);}
 
 		findNN = true;
 	}
@@ -2021,7 +2216,7 @@ public:
 
 		openfpm::vector<cheader<dim>> header_inf_tmp;
 		openfpm::vector<mheader<chunking::size::value>> header_mask_tmp;
-		openfpm::vector<aggregate_bfv<chunk_def>,S,typename layout_base<aggregate_bfv<chunk_def>>::type,layout_base > chunks_tmp;
+		openfpm::vector<aggregate_bfv<chunk_def>,S,layout_base > chunks_tmp;
 
 		header_inf_tmp.resize(n_chunks);
 		header_mask_tmp.resize(n_chunks);
@@ -2167,15 +2362,15 @@ public:
 
 				if (exist == false)
 				{
-					Unpacker<decltype(chunks. get_o(mask_it[k])),
+					Unpacker<decltype(chunks.get_o(mask_it[k])),
 								S2,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<replace_,prp...>(mem,chunks. get_o(active_cnk),ele_id,ps);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<replace_,prp...>(mem,chunks.get_o(active_cnk),ele_id,ps);
 				}
 				else
 				{
-					Unpacker<decltype(chunks. get_o(mask_it[k])),
+					Unpacker<decltype(chunks.get_o(mask_it[k])),
 								S2,
-								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks. get_o(active_cnk),ele_id,ps);
+								PACKER_ENCAP_OBJECTS_CHUNKING>::template unpack_op<op,prp...>(mem,chunks.get_o(active_cnk),ele_id,ps);
 				}
 
 			}
@@ -2230,7 +2425,6 @@ public:
 	sgrid_cpu & operator=(const sgrid_cpu & sg)
 	{
 		cache_pnt = sg.cache_pnt;
-		meta_copy<T>::meta_copy_(sg.background,background);
 
 		for (size_t i = 0 ; i < SGRID_CACHE ; i++)
 		{
@@ -2268,7 +2462,7 @@ public:
 	{
 		openfpm::vector<cheader<dim>,S> header_inf_tmp;
 		openfpm::vector<mheader<chunking::size::value>,S> header_mask_tmp;
-		openfpm::vector<aggregate_bfv<chunk_def>,S,typename layout_base<aggregate_bfv<chunk_def>>::type,layout_base > chunks_tmp;
+		openfpm::vector<aggregate_bfv<chunk_def>,S,layout_base > chunks_tmp;
 
 		header_inf_tmp.resize(header_inf.size());
 		header_mask_tmp.resize(header_mask.size());
@@ -2333,7 +2527,6 @@ public:
 	sgrid_cpu & operator=(sgrid_cpu && sg)
 	{
 		cache_pnt = sg.cache_pnt;
-		meta_copy<T>::meta_copy_(sg.background,background);
 
 		for (size_t i = 0 ; i < SGRID_CACHE ; i++)
 		{
@@ -2379,9 +2572,9 @@ public:
 	 */
 	void clear()
 	{
-		header_inf.clear();
-		header_mask.clear();
-		chunks.clear();
+		header_inf.resize(1);
+		header_mask.resize(1);
+		chunks.resize(1);
 
 		clear_cache();
 		reconstruct_map();
@@ -2499,7 +2692,7 @@ public:
 	 * \return the data of the blocks
 	 *
 	 */
-	openfpm::vector<aggregate_bfv<chunk_def>,S,typename layout_base<aggregate_bfv<chunk_def>>::type,layout_base > & private_get_data()
+	openfpm::vector<aggregate_bfv<chunk_def>,S,layout_base > & private_get_data()
 	{
 		return chunks;
 	}

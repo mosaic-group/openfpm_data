@@ -9,7 +9,7 @@
 #include <boost/fusion/include/vector_fwd.hpp>
 #include "boost/multi_array.hpp"
 #include "Point_orig.hpp"
-#include "Grid/Encap.hpp"
+#include "memory_ly/Encap.hpp"
 #include "data_type/aggregate.hpp"
 
 
@@ -335,7 +335,7 @@ public:
 	 * \return this
 	 *
 	 */
-	inline Point_test<T> operator= (const Point_test<T> & p)
+	__device__ __host__ inline Point_test<T> & operator= (const Point_test<T> & p)
 	{
 		boost::fusion::at_c<0>(data) = boost::fusion::at_c<0>(p.data);
 		boost::fusion::at_c<1>(data) = boost::fusion::at_c<1>(p.data);

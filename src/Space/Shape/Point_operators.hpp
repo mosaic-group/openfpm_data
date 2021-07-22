@@ -1890,6 +1890,22 @@ public:
 		return *this;
 	}
 
+	/*! \brief Array operator
+	 *
+	 */
+	T operator[](int n)
+	{
+		return d[n];
+	}
+
+	/*! \brief Array operator
+	 *
+	 */
+	T operator[](int n) const
+	{
+		return d[n];
+	}
+
 	/*! \brief This function must be called before value
 	 *
 	 * it calculate the scalar product before return the values
@@ -1958,6 +1974,14 @@ public:
 	 */
 	__device__ __host__ inline void init() const
 	{
+	}
+
+	/*! \brief Array operator
+	 *
+	 */
+	T operator[](int n) const
+	{
+		return d[n];
 	}
 
 	/*! \brief Evaluate the expression at coordinate k

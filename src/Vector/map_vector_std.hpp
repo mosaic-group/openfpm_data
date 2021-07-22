@@ -33,7 +33,8 @@ struct add_prp_impl
 	 * \param v_dst destination vector
 	 *
 	 */
-	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
+	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> 
+	inline static void add(const vector<S,M,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
 	{
 		//! Add the element of v
 		for (size_t i = 0 ; i < v_src.size() ; i++)
@@ -66,7 +67,7 @@ struct add_prp_impl<OBJECT_ADD,vect_dst>
 	 * \param v_dst vector to merge and result of the merge
 	 *
 	 */
-	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,typename memory_traits_lin<S>::type,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
+	template <typename S, typename M, typename gp, unsigned int impl, unsigned int ...args> inline static void add(const vector<S,M,memory_traits_lin,gp,impl> & v_src, vect_dst & v_dst)
 	{
 			// Add a new element
 			v_dst.add();
@@ -89,7 +90,7 @@ struct add_prp_impl<OBJECT_ADD,vect_dst>
  *
  */
 template<typename T, typename grow_p>
-class vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,grow_p,STD_VECTOR>
+class vector<T,HeapMemory,memory_traits_lin,grow_p,STD_VECTOR>
 {
 	// Memory layout
 	typedef typename memory_traits_lin<T>::type layout;
@@ -214,7 +215,7 @@ public:
 	 * \param eles elements to add
 	 *
 	 */
-	template<typename Mem,typename l,template<typename> class lb,typename gp> inline void add(const openfpm::vector<T,Mem,l,lb,gp> & eles)
+	template<typename Mem,template<typename> class lb,typename gp> inline void add(const openfpm::vector<T,Mem,lb,gp> & eles)
 	{
 		if (std::is_same<grow_p,openfpm::grow_policy_identity>::value == true)
 		{
@@ -283,7 +284,7 @@ public:
 			  unsigned int impl,
 			  template <typename> class layout_base,
 			  unsigned int ...args>
-	void add_prp(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
+	void add_prp(const vector<S,M,layout_base,gp,impl> & v)
 	{
 		add_prp_impl<std::is_same<S,T>::value,typename std::remove_pointer<decltype(*this)>::type>::template add<S,M,gp,impl,args...>(v,*this);
 	}
@@ -308,7 +309,7 @@ public:
 			  unsigned int impl,
 			  template <typename> class layout_base,
 			  unsigned int ...args>
-	void add_prp_device(const vector<S,M,typename layout_base<S>::type,layout_base,gp,impl> & v)
+	void add_prp_device(const vector<S,M,layout_base,gp,impl> & v)
 	{
 		add_prp_impl<std::is_same<S,T>::value,typename std::remove_pointer<decltype(*this)>::type>::template add<S,M,gp,impl,args...>(v,*this);
 	}
@@ -620,7 +621,7 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(const vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v) noexcept
+	vector(const vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & v) noexcept
 	:err_code(0)
 	{
 		base = v.base;
@@ -637,7 +638,7 @@ public:
 	}
 
 	//! Constructor from another vector
-	vector(vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v) noexcept
+	vector(vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> && v) noexcept
 	:err_code(0)
 	{
 		base.swap(v.base);
@@ -663,7 +664,7 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
+	void swap(openfpm::vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
 	{
 		base.swap(v.base);
 	}
@@ -673,7 +674,7 @@ public:
 	 * \param v vector to be swapped with
 	 *
 	 */
-	void swap(openfpm::vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v)
+	void swap(openfpm::vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> && v)
 	{
 		base.swap(v.base);
 	}
@@ -685,7 +686,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
+	vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & v)
 	{
 		base = v.base;
 
@@ -697,11 +698,11 @@ public:
 	 * \return itself
 	 *
 	 */
-	template<typename Mem, typename gp> vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR> & v)
+	template<typename Mem, typename gp> vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(const vector<T,Mem,memory_traits_lin,gp,STD_VECTOR> & v)
 	{
-		base_copy<has_base_to_copy<vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR>>::value,
+		base_copy<has_base_to_copy<vector<T,Mem,memory_traits_lin,gp,STD_VECTOR>>::value,
 		          decltype(*this),
-				  vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR> >::copy(*this,v);
+				  vector<T,Mem,memory_traits_lin,gp,STD_VECTOR> >::copy(*this,v);
 
 		return *this;
 	}
@@ -713,7 +714,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> && v)
+	vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> && v)
 	{
 		base.swap(v.base);
 
@@ -727,7 +728,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	template<typename Mem, typename gp>  vector<T,HeapMemory,layout,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(vector<T,Mem,layout,memory_traits_lin,gp,STD_VECTOR> && v)
+	template<typename Mem, typename gp>  vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> & operator=(vector<T,Mem,memory_traits_lin,gp,STD_VECTOR> && v)
 	{
 		base.swap(v.base);
 
@@ -741,7 +742,7 @@ public:
 	 * \return true if they differs
 	 *
 	 */
-	bool operator!=(const vector<T, HeapMemory, layout, memory_traits_lin,grow_policy_double,STD_VECTOR> & v) const
+	bool operator!=(const vector<T, HeapMemory, memory_traits_lin,grow_policy_double,STD_VECTOR> & v) const
 	{
 		return base != v.base;
 	}
@@ -753,7 +754,7 @@ public:
 	 * \return true if the vector match
 	 *
 	 */
-	bool operator==(const vector<T, HeapMemory, layout, memory_traits_lin,grow_policy_double,STD_VECTOR> & v) const
+	bool operator==(const vector<T, HeapMemory, memory_traits_lin,grow_policy_double,STD_VECTOR> & v) const
 	{
 		return base == v.base;
 	}
@@ -796,7 +797,7 @@ public:
 			return 0;
 		else
 		{
-			packMem_cond<has_packMem<T>::type::value, openfpm::vector<T, HeapMemory, layout, memory_traits_lin, grow_policy_double>, prp...> cm;
+			packMem_cond<has_packMem<T>::type::value, openfpm::vector<T, HeapMemory, memory_traits_lin, grow_policy_double>, prp...> cm;
 			return cm.packMemory(*this,n,0);
 		}
 	}
@@ -927,9 +928,9 @@ public:
  */
 template<typename T>
 class vector_fr
-:private vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,grow_policy_double,STD_VECTOR>
+:private vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR>
 {
-	typedef vector<T,HeapMemory,typename memory_traits_lin<T>::type,memory_traits_lin,grow_policy_double,STD_VECTOR> base_type;
+	typedef vector<T,HeapMemory,memory_traits_lin,grow_policy_double,STD_VECTOR> base_type;
 
 	//! size of the vector
 	size_t v_size = 0;
@@ -972,6 +973,24 @@ public:
 		base_type::resize(sz);
 
 		v_size = sz;
+	}
+
+	/*! \brief Eliminate all elements
+	 *
+	 *
+	 */
+	void clear()
+	{
+		resize(0);
+	}
+
+	/*! \brief Add another element
+	 *
+	 *
+	 */
+	void add()
+	{
+		resize(v_size+1);
 	}
 
 	/*! \brief resize the base vector (this kill the objects)

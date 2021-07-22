@@ -5,7 +5,7 @@
 #include "Shape/Point.hpp"
 #include "Shape/Box.hpp"
 #include <boost/fusion/include/vector.hpp>
-#include "Grid/Encap.hpp"
+#include "memory_ly/Encap.hpp"
 #include "Ghost.hpp"
 #include <stdlib.h>     /* srand, rand */
 
@@ -211,7 +211,7 @@ class SpaceBox : public Box<dim,T>
 		Point<dim,T> p;
 
 		for (size_t i = 0 ; i < dim ; i++)
-			p.get(i) = ((T)rand())/RAND_MAX * (this->getHigh(i) - this->getLow(i)) + this->getLow(i);
+			p.get(i) = ((T)rand())/(T)RAND_MAX * (this->getHigh(i) - this->getLow(i)) + this->getLow(i);
 
 		return p;
 	}
@@ -231,8 +231,6 @@ struct is_typedef_and_data_same<true,SpaceBox<dim,St>>
 		value = 1
 	};
 };
-
-#include "Grid/Encap.hpp"
 
 
 #endif

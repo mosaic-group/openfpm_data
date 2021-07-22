@@ -107,6 +107,27 @@ struct call_pack_enc_functor
 	}
 };
 
+template<typename Timp>
+struct call_pack_enc_functor_chunking_impl_arr
+{
+	template<typename T, typename Mem, typename encap>
+	static inline void call(ExtPreAlloc<Mem> & mem,const encap & obj, size_t sub_id, Pack_stat & sts)
+	{
+		Packer<typename Timp::value_type,Mem>::pack(mem,obj.template get<T::value>()[sub_id],sts);
+	}
+};
+
+template<unsigned int N1, typename Timp>
+struct call_pack_enc_functor_chunking_impl_arr<Timp[N1]>
+{
+	template<typename T, typename Mem, typename encap>
+	static inline void call(ExtPreAlloc<Mem> & mem,const encap & obj, size_t sub_id, Pack_stat & sts)
+	{
+		for (int i = 0 ; i < N1 ; i++)
+		{Packer<typename Timp::value_type,Mem>::pack(mem,obj.template get<T::value>()[i][sub_id],sts);}
+	}
+};
+
 //A functor for call_aggregatePack
 template<typename encap, typename Mem>
 struct call_pack_enc_functor_chunking
@@ -132,9 +153,11 @@ struct call_pack_enc_functor_chunking
 	template<typename T>
 	inline void operator()(T& t)
 	{
-		typedef typename boost::mpl::at<typename encap::type,T>::type::value_type obj_type;
+//		typedef typename boost::mpl::at<typename encap::type,T>::type::value_type obj_type;
 
-		Packer<obj_type,Mem>::pack(mem,obj.template get<T::value>()[sub_id],sts);
+		call_pack_enc_functor_chunking_impl_arr<typename boost::mpl::at<typename encap::type,T>::type>::template call<T>(mem,obj,sub_id,sts);
+
+//		Packer<obj_type,Mem>::pack(mem,obj.template get<T::value>()[sub_id],sts);
 	}
 };
 

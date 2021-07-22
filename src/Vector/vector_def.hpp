@@ -11,7 +11,7 @@
 
 namespace openfpm
 {
-	template<typename T, typename Memory=HeapMemory, typename layout=typename memory_traits_lin<T>::type, template<typename> class layout_base=memory_traits_lin , typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value> class vector;
+	template<typename T, typename Memory=HeapMemory, template<typename> class layout_base=memory_traits_lin , typename grow_p=grow_policy_double, unsigned int impl=vect_isel<T>::value> class vector;
 }
 
 

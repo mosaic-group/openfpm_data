@@ -59,9 +59,8 @@ public:
 	 */
 
 	inline grid_zm(const size_t & sz)
-	{
-		this->Initialize(sz);
-	}
+	:grid_sm<N,T>(sz)
+	{}
 
 	/*! \brief Construct a grid of a specified size
 	 *
@@ -151,6 +150,18 @@ public:
 	inline size_t size(unsigned int i) const
 	{
 		return ((grid_sm<N,T> *)this)->size(i);
+	}
+
+	/**
+	 *
+	 * Get the total size of the grid
+	 *
+	 * \return the total size on the grid
+	 *
+	 */
+	inline size_t size() const
+	{
+		return ((grid_sm<N,T> *)this)->size();
 	}
 
 	//!  It simply mean that all the classes grid are friend of all its specialization

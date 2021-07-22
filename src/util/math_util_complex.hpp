@@ -5,8 +5,8 @@
  *      Author: i-bird
  */
 
-#ifndef OPENFPM_DATA_SRC_UTIL_MATH_UTIL_COMPLEX_DIOCANE_HPP_
-#define OPENFPM_DATA_SRC_UTIL_MATH_UTIL_COMPLEX_DIOCANE_HPP_
+#ifndef OPENFPM_DATA_SRC_UTIL_MATH_UTIL_COMPLEX_HPP_
+#define OPENFPM_DATA_SRC_UTIL_MATH_UTIL_COMPLEX_HPP_
 
 //! extern vector for getFactorization
 extern std::vector<int> sieve_spf;
@@ -78,4 +78,4 @@ namespace openfpm
 }
 
 
-#endif /* OPENFPM_DATA_SRC_UTIL_MATH_UTIL_COMPLEX_DIOCANE_HPP_ */
+#endif /* OPENFPM_DATA_SRC_UTIL_MATH_UTIL_COMPLEX_HPP_ */

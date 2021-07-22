@@ -47,7 +47,6 @@
 #include <boost/swap.hpp>
 
 // Handles broken standard libraries better than <iterator>
-#include <boost/detail/iterator.hpp>
 #include <boost/throw_exception.hpp>
 #include <algorithm>
 

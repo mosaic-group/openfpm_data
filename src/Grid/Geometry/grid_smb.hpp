@@ -15,17 +15,17 @@
  * This can be seen as a lightweight version of grid_sm, with just LinId and InvLinId methods, but
  * tuned for blocked data.
  */
-template<unsigned int dim, unsigned int blockEdgeSize>
+template<unsigned int dim, unsigned int blockEdgeSize, typename indexT = long int>
 class grid_smb
 {
 private:
 
-    size_t blockSz[dim];
-    size_t sz[dim];
+    indexT blockSz[dim];
+    indexT sz[dim];
 
 protected:
 
-    constexpr static size_t blockSize = IntPow<blockEdgeSize, dim>::value;
+    constexpr static indexT blockSize = IntPow<blockEdgeSize, dim>::value;
 
 public:
 
@@ -40,13 +40,21 @@ public:
         }
     }
 
+    __host__ __device__ grid_smb(const indexT (& sz)[dim])
+    {
+        for (int d=0; d<dim; ++d)
+        {
+            this->sz[d] = sz[d];
+            blockSz[d] = sz[d] / blockEdgeSize + ((sz[d] % blockEdgeSize) != 0);
+        }
+    }
 
     __host__ __device__ grid_smb(const size_t domainBlockEdgeSize)
     {
         for (int i = 0; i < dim; ++i)
         {
-            blockSz[i] = domainBlockEdgeSize;
-            sz[i] = domainBlockEdgeSize * blockEdgeSize;
+            blockSz[i] = (indexT)domainBlockEdgeSize;
+            sz[i] = (indexT)domainBlockEdgeSize * blockEdgeSize;
         }
     }
 
@@ -87,7 +95,7 @@ public:
 
     __host__ __device__ grid_smb(const grid_smb<dim, blockEdgeSize> &other)
     {
-    	for (size_t i = 0 ; i < dim ; i++)
+    	for (indexT i = 0 ; i < dim ; i++)
     	{
             blockSz[i] = other.blockSz[i];
             sz[i] = other.sz[i];
@@ -96,7 +104,7 @@ public:
 
     __host__ __device__ grid_smb &operator=(const grid_smb<dim, blockEdgeSize> &other)
     {
-    	for (size_t i = 0 ; i < dim ; i++)
+    	for (indexT i = 0 ; i < dim ; i++)
     	{
             blockSz[i] = other.blockSz[i];
             sz[i] = other.sz[i];
@@ -104,9 +112,14 @@ public:
         return *this;
     }
 
-    __host__ __device__ const size_t (& getSize() const)[dim]
+    __host__ __device__ const indexT (& getSize() const)[dim]
 	{
     	return sz;
+	}
+
+    __host__ __device__ const indexT & size(int i) const
+	{
+    	return sz[i];
 	}
 
     /*! \brief Linearize the coordinate index
@@ -121,12 +134,12 @@ public:
      * \return linearized index
      *
      */
-    template<typename indexT>
-    inline __host__ __device__ mem_id LinId(const grid_key_dx<dim, indexT> coord) const
+    template<typename indexT_>
+    inline __host__ __device__ indexT LinId(const grid_key_dx<dim, indexT_> coord) const
     {
         //todo: Check (in debug mode only) that the coordinates passed here are valid and not overflowing dimensions (???)
-        mem_id blockLinId = coord.get(dim - 1) / blockEdgeSize;
-        mem_id localLinId = coord.get(dim - 1) % blockEdgeSize;
+        indexT blockLinId = coord.get(dim - 1) / blockEdgeSize;
+        indexT localLinId = coord.get(dim - 1) % blockEdgeSize;
         for (int d = dim - 2; d >= 0; --d)
         {
             blockLinId *= blockSz[d];
@@ -137,10 +150,10 @@ public:
         return blockLinId * blockSize + localLinId;
     }
 
-    inline __host__ __device__ grid_key_dx<dim, int> InvLinId(const mem_id linId) const
+    inline __host__ __device__ grid_key_dx<dim, int> InvLinId(const indexT linId) const
     {
-        mem_id blockLinId = linId / blockSize;
-        mem_id localLinId = linId % blockSize;
+        indexT blockLinId = linId / blockSize;
+        indexT localLinId = linId % blockSize;
         return InvLinId(blockLinId, localLinId);
     }
 
@@ -182,7 +195,7 @@ public:
      * \return the spatial coordinates of the point
      *
      */
-    inline __host__ __device__ grid_key_dx<dim, int> InvLinId(mem_id blockLinId, mem_id localLinId) const
+    inline __host__ __device__ grid_key_dx<dim, int> InvLinId(indexT blockLinId, indexT localLinId) const
     {
         grid_key_dx<dim, int> coord;
         for (int d = 0; d < dim; ++d)
@@ -198,17 +211,17 @@ public:
     }
 
     // Now methods to handle blockGrid coordinates (e.g. to load neighbouring blocks)
-    template<typename indexT>
-    inline __host__ __device__ mem_id BlockLinId(const grid_key_dx<dim, indexT> & blockCoord) const
+    template<typename indexT_>
+    inline __host__ __device__ indexT BlockLinId(const grid_key_dx<dim, indexT_> & blockCoord) const
     {
-        mem_id blockLinId = blockCoord.get(dim - 1);
+        indexT blockLinId = blockCoord.get(dim - 1);
         if (blockLinId >= blockSz[dim-1])
         {return -1;}
 
         for (int d = dim - 2; d >= 0; --d)
         {
             blockLinId *= blockSz[d];
-            mem_id cur = blockCoord.get(d);
+            indexT cur = blockCoord.get(d);
             if (cur >= blockSz[d])
             {
                 return -1;
@@ -219,8 +232,8 @@ public:
     }
 
     // Now methods to handle blockGrid coordinates (e.g. to load neighbouring blocks)
-    template<typename indexT>
-    inline __host__ __device__ grid_key_dx<dim,indexT> getGlobalCoord(const grid_key_dx<dim, indexT> & blockCoord, unsigned int offset) const
+    template<typename indexT_>
+    inline __host__ __device__ grid_key_dx<dim,indexT> getGlobalCoord(const grid_key_dx<dim, indexT_> & blockCoord, unsigned int offset) const
     {
     	grid_key_dx<dim,indexT> k;
 
@@ -232,7 +245,7 @@ public:
     	return k;
     }
 
-    inline __host__ __device__ grid_key_dx<dim, int> BlockInvLinId(mem_id blockLinId) const
+    inline __host__ __device__ grid_key_dx<dim, int> BlockInvLinId(indexT blockLinId) const
     {
         grid_key_dx<dim, int> blockCoord;
         for (int d = 0; d < dim; ++d)
@@ -244,19 +257,46 @@ public:
         return blockCoord;
     }
 
-    inline size_t size() const
+    inline indexT size_blocks() const
     {
-    	size_t sz = 1;
+    	indexT sz = 1;
 
-    	for (size_t i = 0 ; i < dim ; i++)
+    	for (indexT i = 0 ; i < dim ; i++)
     	{sz *= blockSz[i];}
 
     	return sz;
     }
 
-    __host__ __device__ inline size_t getBlockSize() const
+    inline indexT size() const
+    {
+    	indexT sz = 1;
+
+    	for (indexT i = 0 ; i < dim ; i++)
+    	{sz *= this->sz[i];}
+
+    	return sz;
+    }
+
+    __host__ __device__ inline indexT getBlockSize() const
     {
     	return blockSize;
+    }
+
+    __host__ __device__ inline void swap(grid_smb<dim, blockEdgeSize, indexT> &other)
+    {
+        indexT blockSz_tmp[dim];
+        indexT sz_tmp[dim];
+
+    	for (indexT i = 0 ; i < dim ; i++)
+    	{
+            blockSz_tmp[i] = blockSz[i];
+            blockSz[i] = other.blockSz[i];
+            other.blockSz[i] = blockSz_tmp[i];
+
+            sz_tmp[i] = sz[i];
+            sz[i] = other.sz[i];
+            other.sz[i] = sz_tmp[i];
+    	}
     }
 };
 

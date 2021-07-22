@@ -10,9 +10,18 @@
 
 #ifdef __NVCC__
 
-#include "util/cuda/cub/util_type.cuh"
-#include "util/cuda/cub/block/block_scan.cuh"
+#include "config.h"
+
+#if CUDART_VERSION < 11000
+#include "util/cuda/cub_old/util_type.cuh"
+#include "util/cuda/cub_old/block/block_scan.cuh"
 #include "util/cuda/moderngpu/operators.hxx"
+#include "util/cuda_launch.hpp"
+#else
+	#if !defined(CUDA_ON_CPU)	
+	#include "util/cuda/moderngpu/operators.hxx"
+	#endif
+#endif
 
 #endif
 
@@ -540,17 +549,21 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 
 	int p = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (p >= vct_index.size())	return;
+	int scan = 0;
+	int predicate = 0;
 
-	index_type id_check = (p == vct_index.size() - 1)?(index_type)-1:vct_index.template get<0>(p+1);
-	int predicate = vct_index.template get<0>(p) != id_check;
+	if (p < vct_index.size())
+	{
+		index_type id_check = (p == vct_index.size() - 1)?(index_type)-1:vct_index.template get<0>(p+1);
+		predicate = vct_index.template get<0>(p) != id_check;
 
-	int scan = predicate;
+		scan = predicate;
+	}
 
 	// in shared memory scan
 	BlockScan(temp_storage).ExclusiveSum(scan, scan);
 
-	if (predicate == 1)
+	if (predicate == 1 && p < vct_index.size())
 	{
 		vct_index_out.template get<0>(blockIdx.x*block_dim + scan) = vct_index.template get<0>(p);
 
@@ -572,7 +585,7 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 
 	__syncthreads();
 
-	if (predicate == 0)
+	if (predicate == 0 && p < vct_index.size())
 	{
 		//! at the border of the block the index must be copied
 		if (threadIdx.x == blockDim.x-1)
@@ -593,7 +606,7 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(dm);
 	}
 
-	if (threadIdx.x == blockDim.x - 1 || p == vct_index.size() - 1)
+	if ((threadIdx.x == blockDim.x - 1 || p == vct_index.size() - 1) && p < vct_index.size())
 	{
 		vct_tot_out.template get<0>(blockIdx.x) = scan + predicate;
 		vct_tot_out.template get<2>(blockIdx.x) = predicate;
@@ -618,22 +631,24 @@ __global__ void solve_conflicts_remove(vector_index_type vct_index,
 
 	int p = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (p >= vct_index.size())	return;
+	int scan = 0;
+	int predicate = 0;
+	if (p < vct_index.size())
+	{
+		index_type id_check_n = (p == vct_index.size() - 1)?(index_type)-1:vct_index.template get<0>(p+1);
+		index_type id_check_p = (p == 0)?(index_type)-1:vct_index.template get<0>(p-1);
+		index_type id_check = vct_index.template get<0>(p);
+		predicate = id_check != id_check_p;
+		predicate &= id_check != id_check_n;
+		int mi = merge_index.template get<0>(p);
+		predicate &= (mi < base);
 
-	index_type id_check_n = (p == vct_index.size() - 1)?(index_type)-1:vct_index.template get<0>(p+1);
-	index_type id_check_p = (p == 0)?(index_type)-1:vct_index.template get<0>(p-1);
-	index_type id_check = vct_index.template get<0>(p);
-	int predicate = id_check != id_check_p;
-	predicate &= id_check != id_check_n;
-	int mi = merge_index.template get<0>(p);
-	predicate &= (mi < base);
-
-	int scan = predicate;
-
+		scan = predicate;
+	}
 	// in shared memory scan
 	BlockScan(temp_storage).ExclusiveSum(scan, scan);
 
-	if (predicate == 1)
+	if (predicate == 1 && p < vct_index.size())
 	{
 		vct_index_out.template get<0>(blockIdx.x*block_dim + scan) = vct_index.template get<0>(p);
 		vct_index_out_ps.template get<0>(blockIdx.x*block_dim + scan) = merge_index.template get<0>(p);
@@ -641,7 +656,7 @@ __global__ void solve_conflicts_remove(vector_index_type vct_index,
 
 	__syncthreads();
 
-	if (threadIdx.x == blockDim.x - 1 || p == vct_index.size() - 1)
+	if ((threadIdx.x == blockDim.x - 1 || p == vct_index.size() - 1) && p < vct_index.size())
 	{
 		vct_tot_out.template get<0>(blockIdx.x) = scan + predicate;
 	}
@@ -676,18 +691,24 @@ __global__ void realign(vector_index_type vct_index, vector_data_type vct_data,
 
 	int tot = vct_tot_out_scan.template get<0>(blockIdx.x);
 
-	if (threadIdx.x > tot)
+	//! It is xorrect > not >=, The last thread in the block of solveConflict always copy the data 
+	//! This mean that threadIdx.x == tot have always data to copy independently that the indexes are equal
+	//! or different
+	if (threadIdx.x > tot) // NOTE COMMENT UP !!!!!!!!!
 	{return;}
 
-	if (threadIdx.x == tot && vct_tot_out_scan.template get<2>(blockIdx.x) == 1)
+    if (threadIdx.x == tot && vct_tot_out_scan.template get<2>(blockIdx.x) == 1)
 	{return;}
-
+	
 	// this branch exist if the previous block (last thread) had a predicate == 0 in resolve_conflict in that case
 	// the thread 0 of the next block does not have to produce any data
 	if (threadIdx.x == 0 && blockIdx.x != 0 && vct_tot_out_scan.template get<2>(blockIdx.x - 1) == 0)
 	{return;}
 
 	int ds = vct_tot_out_scan.template get<1>(blockIdx.x);
+
+	if (ds + threadIdx.x >= vct_index_out.size())
+	{return;}
 
 	vct_index_out.template get<0>(ds+threadIdx.x) = vct_index.template get<0>(p);
 

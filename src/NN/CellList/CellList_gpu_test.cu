@@ -6,7 +6,7 @@
  */
 
 #define BOOST_GPU_ENABLED __host__ __device__
-
+#include "util/cuda_launch.hpp"
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
@@ -16,8 +16,6 @@
 #include "CellList.hpp"
 #include "util/boost/boost_array_openfpm.hpp"
 #include  "Point_test.hpp"
-#include "util/cuda/moderngpu/kernel_load_balance.hxx"
-#include "util/cuda/scan_cuda.cuh"
 #include "util/cuda_util.hpp"
 
 BOOST_AUTO_TEST_SUITE( CellList_gpu_test )
@@ -25,12 +23,12 @@ BOOST_AUTO_TEST_SUITE( CellList_gpu_test )
 template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
 void test_sub_index()
 {
-	openfpm::vector<aggregate<cnt_type,cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type,cnt_type>>::type,memory_traits_inte> cl_n;
-	openfpm::vector<aggregate<cnt_type[2]>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type[2]>>::type,memory_traits_inte> part_ids;
+	openfpm::vector<aggregate<cnt_type,cnt_type>,CudaMemory,memory_traits_inte> cl_n;
+	openfpm::vector<aggregate<cnt_type[2]>,CudaMemory,memory_traits_inte> part_ids;
 
 	// fill with some particles
 
-	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> pl;
 
 	// create 3 particles
 
@@ -68,7 +66,8 @@ void test_sub_index()
 	}
 
 	cl_n.resize(17*17*17);
-	CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
+	cl_n.template fill<0>(0);
+	//CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
 	part_ids.resize(pl.size());
 
@@ -84,7 +83,7 @@ void test_sub_index()
 
 	no_transform_only<dim,T> t(mt,pt);
 
-	subindex<false,dim,T,cnt_type,ids_type,no_transform_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
+	CUDA_LAUNCH_DIM3((subindex<false,dim,T,cnt_type,ids_type,no_transform_only<dim,T>>),ite.wthr,ite.thr,div,
 																	spacing,
 																	off,
 																	t,
@@ -127,12 +126,12 @@ void test_sub_index()
 template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
 void test_sub_index2()
 {
-	openfpm::vector<aggregate<cnt_type,cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type,cnt_type>>::type,memory_traits_inte> cl_n;
-	openfpm::vector<aggregate<cnt_type[2]>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type[2]>>::type,memory_traits_inte> part_ids;
+	openfpm::vector<aggregate<cnt_type,cnt_type>,CudaMemory,memory_traits_inte> cl_n;
+	openfpm::vector<aggregate<cnt_type[2]>,CudaMemory,memory_traits_inte> part_ids;
 
 	// fill with some particles
 
-	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> pl;
 
 	// Make the test more complicated the test to pass because make different capacity of pl and part_ids
 	pl.resize(256);
@@ -188,7 +187,8 @@ void test_sub_index2()
 	}
 
 	cl_n.resize(17*17*17);
-	CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
+	cl_n.template fill<0>(0);
+//	CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
 	part_ids.resize(pl.size());
 
@@ -203,7 +203,7 @@ void test_sub_index2()
 
 	shift_only<dim,T> t(mt,pt);
 
-	subindex<false,dim,T,cnt_type,ids_type,shift_only<dim,T>><<<ite.wthr,ite.thr>>>(div,
+	CUDA_LAUNCH_DIM3((subindex<false,dim,T,cnt_type,ids_type,shift_only<dim,T>>),ite.wthr,ite.thr,div,
 																	spacing,
 																	off,
 																	t,
@@ -244,7 +244,7 @@ void test_sub_index2()
 
 template<unsigned int dim, typename T>
 void create_n_part(int n_part,
-		           openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> & pl,
+		           openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> & pl,
 		           CellList<dim,T, Mem_fast<>> & cl)
 {
 	pl.resize(n_part);
@@ -276,9 +276,9 @@ void create_starts_and_parts_ids(CellList<dim,T, Mem_fast<>> & cl,
 								 grid_sm<dim,void> & gr,
 								 size_t n_part,
 								 size_t n_cell,
-								 openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & starts,
-								 openfpm::vector<aggregate<ids_type[2]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[2]>>::type,memory_traits_inte> & part_ids,
-								 openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> & cells)
+								 openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> & starts,
+								 openfpm::vector<aggregate<ids_type[2]>,CudaMemory,memory_traits_inte> & part_ids,
+								 openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> & cells)
 {
 	// Construct starts and part_ids
 
@@ -318,10 +318,10 @@ void test_fill_cell()
 {
 #ifndef MAKE_CELLLIST_DETERMINISTIC
 
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells;
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells_out;
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> starts;
-	openfpm::vector<aggregate<cnt_type[2]>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type[2]>>::type,memory_traits_inte> part_ids;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> cells;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> cells_out;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> starts;
+	openfpm::vector<aggregate<cnt_type[2]>,CudaMemory,memory_traits_inte> part_ids;
 
 
 	// CellList to check the result
@@ -347,7 +347,7 @@ void test_fill_cell()
 	}
 
 	CellList<dim,T, Mem_fast<>> cl(domain,div_host,0);
-	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> pl;
 
 	create_n_part(5000,pl,cl);
 
@@ -383,7 +383,7 @@ void test_fill_cell()
 	part_ids.template hostToDevice<0>();
 
 	// Here we test fill cell
-	fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>><<<itgg.wthr,itgg.thr>>>(0,
+	CUDA_LAUNCH_DIM3((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg.wthr,itgg.thr,0,
 																				   div_c,
 																				   off,
 																				   part_ids.size(),
@@ -465,7 +465,7 @@ void test_cell_count_n()
 	size_t sz[] = {17,17,17};
 	grid_sm<3,void> gs(sz);
 
-	construct_cells<<<1,1>>>(vs.toKernel(),gs);
+	CUDA_LAUNCH_DIM3(construct_cells,1,1,vs.toKernel(),gs);
 
 	mgpu::ofp_context_t ctx;
 
@@ -584,15 +584,15 @@ template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
 void test_reorder_parts(size_t n_part)
 {
 	// Create n_part
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells;
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> cells_out;
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> starts;
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> sort_to_not_sort;
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> non_sort_to_sort;
-	openfpm::vector<aggregate<ids_type[2]>,CudaMemory,typename memory_traits_inte<aggregate<ids_type[2]>>::type,memory_traits_inte> part_ids;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> cells;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> cells_out;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> starts;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> sort_to_not_sort;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> non_sort_to_sort;
+	openfpm::vector<aggregate<ids_type[2]>,CudaMemory,memory_traits_inte> part_ids;
 
-	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float,float[3],float[3][3]>>::type,memory_traits_inte> parts_prp;
-	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float,float[3],float[3][3]>>::type,memory_traits_inte> parts_prp_out;
+	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> parts_prp;
+	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> parts_prp_out;
 
 	// CellList to check the result
 
@@ -615,8 +615,8 @@ void test_reorder_parts(size_t n_part)
 	}
 
 	CellList<dim,T, Mem_fast<>> cl(domain,div_host,0);
-	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
-	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl_out;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> pl;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> pl_out;
 
 	create_n_part(n_part,pl,cl);
 	parts_prp.resize(n_part);
@@ -664,11 +664,11 @@ void test_reorder_parts(size_t n_part)
 	parts_prp.template hostToDevice<0,1,2,3>();
 
 	// Here we test fill cell
-	reorder_parts<decltype(parts_prp.toKernel()),
+	CUDA_LAUNCH_DIM3((reorder_parts<decltype(parts_prp.toKernel()),
 			      decltype(pl.toKernel()),
 			      decltype(sort_to_not_sort.toKernel()),
 			      cnt_type,
-			      shift_ph<0,cnt_type>><<<ite.wthr,ite.thr>>>(pl.size(),
+			      shift_ph<0,cnt_type>>),ite.wthr,ite.thr,pl.size(),
 			                                                  parts_prp.toKernel(),
 			                                                  parts_prp_out.toKernel(),
 			                                                  pl.toKernel(),
@@ -728,11 +728,11 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 
 	// vector of particles
 
-	openfpm::vector<Point<dim,double>,CudaMemory,typename memory_traits_inte<Point<dim,double>>::type,memory_traits_inte> pl;
-	openfpm::vector<Point<dim,double>,CudaMemory,typename memory_traits_inte<Point<dim,double>>::type,memory_traits_inte> pl_out;
+	openfpm::vector<Point<dim,double>,CudaMemory,memory_traits_inte> pl;
+	openfpm::vector<Point<dim,double>,CudaMemory,memory_traits_inte> pl_out;
 
-	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float[3],float[3][3]>>::type,memory_traits_inte> pl_prp;
-	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float[3],float[3][3]>>::type,memory_traits_inte> pl_prp_out;
+	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> pl_prp;
+	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> pl_prp_out;
 
 
 	// create 3 particles
@@ -800,7 +800,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 
 	////// Correct order ////////////
 
-	openfpm::vector<Point<dim,double>,CudaMemory,typename memory_traits_inte<Point<dim,double>>::type,memory_traits_inte> pl_correct;
+	openfpm::vector<Point<dim,double>,CudaMemory,memory_traits_inte> pl_correct;
 
 	pl_correct.add(p9);
 	pl_correct.add(p1);
@@ -1318,13 +1318,13 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	// vector of particles
 
-	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
-	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl_out;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> pl;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> pl_out;
 
-	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> pl_prp;
-	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> pl_prp_out;
+	openfpm::vector<aggregate<T,T[3]>,CudaMemory,memory_traits_inte> pl_prp;
+	openfpm::vector<aggregate<T,T[3]>,CudaMemory,memory_traits_inte> pl_prp_out;
 
-	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out;
+	openfpm::vector<aggregate<unsigned int>,CudaMemory,memory_traits_inte> n_out;
 
 	// create random particles
 
@@ -1362,6 +1362,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
 	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
+
 	auto & s_t_ns = cl2.getSortToNonSort();
 
 	pl.template hostToDevice<0>();
@@ -1370,6 +1371,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	// Domain particles
 
+	
 	auto & gdsi = cl2.getDomainSortIds();
 	gdsi.template deviceToHost<0>();
 	s_t_ns.template deviceToHost<0>();
@@ -1427,8 +1429,8 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	// now we scan the buffer
 
-	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out_scan;
-	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> nn_list;
+	openfpm::vector<aggregate<unsigned int>,CudaMemory,memory_traits_inte> n_out_scan;
+	openfpm::vector<aggregate<unsigned int>,CudaMemory,memory_traits_inte> nn_list;
 
 	n_out_scan.resize(pl.size()+1);
 
@@ -1496,6 +1498,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 	}
 
 	BOOST_REQUIRE_EQUAL(check,true);
+
 	}
 }
 
@@ -1520,14 +1523,14 @@ void Test_cell_gpu_force_split(SpaceBox<dim,T> & box, size_t npart, const size_t
 
 	// vector of particles
 
-	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl;
-	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> pl_out;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> pl;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> pl_out;
 
-	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> pl_prp;
-	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> pl_prp_out;
+	openfpm::vector<aggregate<T,T[3]>,CudaMemory,memory_traits_inte> pl_prp;
+	openfpm::vector<aggregate<T,T[3]>,CudaMemory,memory_traits_inte> pl_prp_out;
 
-	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out;
-	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out_partial;
+	openfpm::vector<aggregate<unsigned int>,CudaMemory,memory_traits_inte> n_out;
+	openfpm::vector<aggregate<unsigned int>,CudaMemory,memory_traits_inte> n_out_partial;
 
 	// create random particles
 
@@ -1632,8 +1635,8 @@ void Test_cell_gpu_force_split(SpaceBox<dim,T> & box, size_t npart, const size_t
 
 	// now we scan the buffer
 
-	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out_scan;
-	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> nn_list;
+	openfpm::vector<aggregate<unsigned int>,CudaMemory,memory_traits_inte> n_out_scan;
+	openfpm::vector<aggregate<unsigned int>,CudaMemory,memory_traits_inte> nn_list;
 
 	n_out_scan.resize(n_out.size());
 
@@ -1983,7 +1986,7 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	cl1.hostToDevice();
 	v.hostToDevice<0>();
 
-	cl_offload_gpu<decltype(cl1.toKernel()),decltype(v.toKernel()),decltype(os.toKernel())><<<ite.wthr,ite.thr>>>(cl1.toKernel(),v.toKernel(),os.toKernel());
+	CUDA_LAUNCH_DIM3((cl_offload_gpu<decltype(cl1.toKernel()),decltype(v.toKernel()),decltype(os.toKernel())>),ite.wthr,ite.thr,cl1.toKernel(),v.toKernel(),os.toKernel());
 
 	os.deviceToHost<0>();
 
@@ -2012,9 +2015,9 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	openfpm::vector_gpu<aggregate<int>> os_list;
 	os_list.resize(size_list);
 
-	cl_offload_gpu_list<decltype(cl1.toKernel()),decltype(v.toKernel()),
-			            decltype(os_scan.toKernel()),decltype(os_list.toKernel())><<<ite.wthr,ite.thr>>>
-			            (cl1.toKernel(),v.toKernel(),os_scan.toKernel(),os_list.toKernel());
+	CUDA_LAUNCH_DIM3((cl_offload_gpu_list<decltype(cl1.toKernel()),decltype(v.toKernel()),
+			            decltype(os_scan.toKernel()),decltype(os_list.toKernel())>),ite.wthr,ite.thr,
+			            cl1.toKernel(),v.toKernel(),os_scan.toKernel(),os_list.toKernel());
 
 	os_list.deviceToHost<0>();
 
@@ -2055,11 +2058,11 @@ BOOST_AUTO_TEST_CASE( CellList_swap_test )
 
 	// vector of particles
 
-	openfpm::vector<Point<3,float>,CudaMemory,typename memory_traits_inte<Point<3,float>>::type,memory_traits_inte> pl;
-	openfpm::vector<Point<3,float>,CudaMemory,typename memory_traits_inte<Point<3,float>>::type,memory_traits_inte> pl_out;
+	openfpm::vector<Point<3,float>,CudaMemory,memory_traits_inte> pl;
+	openfpm::vector<Point<3,float>,CudaMemory,memory_traits_inte> pl_out;
 
-	openfpm::vector<aggregate<float,float[3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float[3]>>::type,memory_traits_inte> pl_prp;
-	openfpm::vector<aggregate<float,float[3]>,CudaMemory,typename memory_traits_inte<aggregate<float,float[3]>>::type,memory_traits_inte> pl_prp_out;
+	openfpm::vector<aggregate<float,float[3]>,CudaMemory,memory_traits_inte> pl_prp;
+	openfpm::vector<aggregate<float,float[3]>,CudaMemory,memory_traits_inte> pl_prp_out;
 
 	// create random particles
 

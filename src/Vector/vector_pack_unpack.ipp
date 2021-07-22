@@ -99,16 +99,16 @@ template<bool sel, int ... prp>
 struct pack_simple_cond
 {
 	//! serialize the vector
-	template<typename Memory2> static inline void pack(const openfpm::vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory2> & mem, Pack_stat & sts)
+	template<typename Memory2> static inline void pack(const openfpm::vector<T,Memory,layout_base,grow_p,OPENFPM_NATIVE> & obj, ExtPreAlloc<Memory2> & mem, Pack_stat & sts)
 	{
 		//Pack the size of a vector
 		Packer<size_t, Memory2>::pack(mem,obj.size(),sts);
 		
 		// Sending property object
-		typedef openfpm::vector<T,Memory,layout,layout_base,grow_p> vctr;
+		typedef openfpm::vector<T,Memory,layout_base,grow_p> vctr;
 		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
 	
-		typedef openfpm::vector<prp_object,ExtPreAlloc<Memory2>,typename layout_base<prp_object>::type, layout_base ,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<prp_object,ExtPreAlloc<Memory2>, layout_base ,openfpm::grow_policy_identity> dtype;
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -142,13 +142,13 @@ struct pack_simple_cond<true, prp ...>
 {
 	//! serialize the vector
 	template<typename Memory2>
-	static inline void pack(const openfpm::vector<T,Memory,layout,layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory2> & mem, Pack_stat & sts)
+	static inline void pack(const openfpm::vector<T,Memory,layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory2> & mem, Pack_stat & sts)
 	{
 		//Pack the size of a vector
 		Packer<size_t, Memory2>::pack(mem,obj.size(),sts);
 		
 		// Sending property object
-		typedef openfpm::vector<T,ExtPreAlloc<Memory2>,typename memory_traits_lin<T>::type,memory_traits_lin,openfpm::grow_policy_identity> dtype;
+		typedef openfpm::vector<T,ExtPreAlloc<Memory2>,memory_traits_lin,openfpm::grow_policy_identity> dtype;
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		dtype dest;
@@ -177,7 +177,7 @@ struct unpack_simple_cond
 {
 	//! De-serialize an object
 	template<typename Memory2>
-	static inline void unpack(openfpm::vector<T,Memory,layout, layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory2> & mem, Unpack_stat & ps)
+	static inline void unpack(openfpm::vector<T,Memory, layout_base,grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory2> & mem, Unpack_stat & ps)
 	{
 		//Unpack a size of a source vector
 		size_t u2 = 0;
@@ -191,7 +191,7 @@ struct unpack_simple_cond
 		// Sending property object
 		typedef openfpm::vector<T> vctr;
 		typedef object<typename object_creator<typename vctr::value_type::type,prp...>::type> prp_object;
-		typedef openfpm::vector<prp_object,PtrMemory,typename memory_traits_lin<prp_object>::type, memory_traits_lin,openfpm::grow_policy_identity> stype;
+		typedef openfpm::vector<prp_object,PtrMemory, memory_traits_lin,openfpm::grow_policy_identity> stype;
 
 
 		// Calculate the size to pack the object
@@ -236,7 +236,7 @@ struct unpack_simple_cond<true, prp ...>
 	 *
 	 */
 	template<typename Memory2>
-	static inline void unpack(openfpm::vector<T,Memory,layout,layout_base, grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory2> & mem, Unpack_stat & ps)
+	static inline void unpack(openfpm::vector<T,Memory,layout_base, grow_p,OPENFPM_NATIVE> & obj , ExtPreAlloc<Memory2> & mem, Unpack_stat & ps)
 	{
 		//Unpack a size of a source vector
 		size_t u2 = 0;
@@ -248,7 +248,7 @@ struct unpack_simple_cond<true, prp ...>
 		size_t id = 0;
 		
 		// Sending property object
-		typedef openfpm::vector<T,PtrMemory,typename memory_traits_lin<T>::type,memory_traits_lin,openfpm::grow_policy_identity> stype;
+		typedef openfpm::vector<T,PtrMemory,memory_traits_lin,openfpm::grow_policy_identity> stype;
 
 		// Calculate the size to pack the object
 		size_t size = obj.packMem<prp...>(obj.size(),0);

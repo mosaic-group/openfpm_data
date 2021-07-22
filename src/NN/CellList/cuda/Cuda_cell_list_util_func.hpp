@@ -275,11 +275,13 @@ __global__ void fill_cells_sparse(vector_sparse vs, vector_cell vc)
 
 	int p = blockIdx.x*blockDim.x + threadIdx.x;
 
-	if (p >= vc.size())	{return;}
+	int c = 0;
+	if (p < vc.size())	
+	{
+		c = vc.template get<0>(p);
+		vs.template insert<0>(c) = p;
+	}
 
-	int c = vc.template get<0>(p);
-
-	vs.template insert<0>(c) = p;
 	vs.flush_block_insert();
 }
 
@@ -403,6 +405,7 @@ __global__ void reorder_parts(int n,
     if (i >= n) return;
 
     cnt_type code = cells[i];
+
     reorder(input, output, code,i);
     reorder(input_pos,output_pos,code,i);
 
@@ -521,30 +524,6 @@ __global__ void fill_nn_cells(cl_sparse_type cl_sparse, vector_type starts, vect
 	}
 };
 
-template<typename T>
-struct to_type4
-{
-	typedef void type;
-};
-
-template<>
-struct to_type4<unsigned int>
-{
-	typedef uint4 type;
-};
-
-
-template<>
-struct to_type4<int>
-{
-	typedef int4 type;
-};
-
-template<>
-struct to_type4<float>
-{
-	typedef float4 type;
-};
 
 /////////////////////////// THIS ONLY WORK IF NVCC IS COMPILING THIS //////////////////////////////////////////////////////
 

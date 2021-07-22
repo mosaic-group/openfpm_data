@@ -39,7 +39,7 @@ struct CellList_gpu_ker_selector
 																			 cl_sparse_type & cl_sparse,
 																			 vector_cnt_type & sorted_to_not_sorted,
 																			 vector_cnt_type & sorted_domain_particles_ids,
-																			 openfpm::vector<aggregate<int>,Memory,typename memory_traits_inte<aggregate<int>>::type,memory_traits_inte> & nnc_rad,
+																			 openfpm::vector<aggregate<int>,Memory,memory_traits_inte> & nnc_rad,
 																			 openfpm::array<T,dim,cnt_type> & spacing_c,
 																			 openfpm::array<ids_type,dim,cnt_type> & div_c,
 																			 openfpm::array<ids_type,dim,cnt_type> & off,
@@ -71,7 +71,7 @@ struct CellList_gpu_ker_selector<dim,T,cnt_type,ids_type,Memory,transform,vector
 			 cl_sparse_type & cl_sparse,
 			 vector_cnt_type & srt,
 			 vector_cnt_type & dprt,
-			 openfpm::vector<aggregate<int>,Memory,typename memory_traits_inte<aggregate<int>>::type,memory_traits_inte> & nnc_rad,
+			 openfpm::vector<aggregate<int>,Memory,memory_traits_inte> & nnc_rad,
 			 openfpm::array<T,dim,cnt_type> & spacing_c,
 	         openfpm::array<ids_type,dim,cnt_type> & div_c,
 	         openfpm::array<ids_type,dim,cnt_type> & off,
@@ -99,7 +99,7 @@ template<unsigned int dim,
 		 bool is_sparse = false>
 class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 {
-	typedef openfpm::vector<aggregate<cnt_type>,Memory,typename memory_traits_inte<aggregate<cnt_type>>::type,memory_traits_inte> vector_cnt_type;
+	typedef openfpm::vector<aggregate<cnt_type>,Memory,memory_traits_inte> vector_cnt_type;
 
 	//! \brief Number of particles in each cell
 	vector_cnt_type cl_n;
@@ -119,8 +119,8 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	//! \brief For each cell the list of the neighborhood cells
 	openfpm::vector_gpu<aggregate<cnt_type,cnt_type>> cells_nn_list;
 
-        //! \brief particle ids information the first "dim" componets is the cell-id in grid coordinates, the last is the local-id inside the cell
-        openfpm::vector<aggregate<cnt_type[2]>,Memory,typename memory_traits_inte<aggregate<cnt_type[2]>>::type,memory_traits_inte> part_ids;
+    //! \brief particle ids information the first "dim" componets is the cell-id in grid coordinates, the last is the local-id inside the cell
+    openfpm::vector<aggregate<cnt_type[2]>,Memory,memory_traits_inte> part_ids;
 
 	//! \breif Size of the Neighborhood cells
 	int cells_nn_test_size;
@@ -150,7 +150,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	openfpm::array<ids_type,dim,cnt_type> off;
 
 	//! Radius neighborhood
-	openfpm::vector<aggregate<int>,Memory,typename memory_traits_inte<aggregate<int>>::type,memory_traits_inte> nnc_rad;
+	openfpm::vector<aggregate<int>,Memory,memory_traits_inte> nnc_rad;
 
 	//! Additional information in general (used to understand if the cell-list)
 	//! has been constructed from an old decomposition
@@ -356,14 +356,12 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	{
 #ifdef __NVCC__
 
-		CUDA_SAFE()
-
 		// Than we construct the ids
 
 		auto ite_gpu = pl.getGPUIteratorTo(stop-start-1);
 
 		cl_n.resize(this->gr_cell.size()+1);
-		CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
+		cl_n.template fill<0>(0);
 
 		part_ids.resize(stop - start);
 
@@ -598,7 +596,7 @@ public:
 
 		NNcalc_rad(radius,nnc_rad_,this->getCellBox(),this->getGrid());
 
-		nnc_rad.resize(nnc_rad_.size());
+		nnc_rad.resize(nnc_rad_.size(),0);
 
 		// copy to nnc_rad
 

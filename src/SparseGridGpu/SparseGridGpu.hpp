@@ -7,25 +7,22 @@
 
 constexpr int BLOCK_SIZE_STENCIL = 128;
 
+#include "config.h"
+#include "util/cuda_launch.hpp"
 #include <cstdlib>
 #include <SparseGridGpu/BlockMapGpu.hpp>
 #include <Grid/iterators/grid_skin_iterator.hpp>
-#include <SparseGridGpu/Geometry/grid_smb.hpp>
+#include <Grid/Geometry/grid_smb.hpp>
 #include "SparseGridGpu_ker.cuh"
 #include "SparseGridGpu_kernels.cuh"
 #include "Iterators/SparseGridGpu_iterator_sub.hpp"
-#include "Geometry/grid_zmb.hpp"
+#include "Grid/Geometry/grid_zmb.hpp"
 #include "util/stat/common_statistics.hpp"
 #include "Iterators/SparseGridGpu_iterator.hpp"
-#include "util/cuda/moderngpu/kernel_load_balance.hxx"
 #include "Space/SpaceBox.hpp"
 
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
 #include "VTKWriter/VTKWriter.hpp"
-#endif
-
-#ifdef OPENFPM_PDATA
-#include "VCluster/VCluster.hpp"
 #endif
 
 constexpr int NO_ITERATOR_INIT = 0;
@@ -48,19 +45,22 @@ struct default_edge
 template<>
 struct default_edge<1>
 {
-	typedef boost::mpl::int_<64> type;
+	typedef boost::mpl::int_<256> type;
+	typedef boost::mpl::int_<256> tb;
 };
 
 template<>
 struct default_edge<2>
 {
-	typedef boost::mpl::int_<8> type;
+	typedef boost::mpl::int_<16> type;
+	typedef boost::mpl::int_<256> tb;
 };
 
 template<>
 struct default_edge<3>
 {
-	typedef boost::mpl::int_<4> type;
+	typedef boost::mpl::int_<8> type;
+	typedef boost::mpl::int_<512> tb;
 };
 
 template<typename T>
@@ -447,10 +447,10 @@ struct sparse_grid_section
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
-		 unsigned int threadBlockSize = 128,
+		 unsigned int threadBlockSize = default_edge<dim>::tb::value,
 		 typename indexT=long int,
 		 template<typename> class layout_base=memory_traits_inte,
-		 typename linearizer = grid_smb<dim, blockEdgeSize>>
+		 typename linearizer = grid_smb<dim, blockEdgeSize, indexT>>
 class SparseGridGpu : public BlockMapGpu<
         typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type,
         threadBlockSize, indexT, layout_base>
@@ -601,6 +601,9 @@ private:
 
     //! Memory to remove copy finalize
     ExtPreAlloc<CudaMemory> * prAlloc_prp;
+
+	//! shifts for chunk conversion
+	openfpm::vector_gpu<aggregate<int[dim]>> shifts;
 
     bool findNN = false;
 
@@ -905,6 +908,7 @@ private:
             extBlockDims[d] = blockEdgeSize + 2*stencilSupportRadius;
         }
         extendedBlockGeometry.setDimensions(extBlockDims);
+
         gridSize.setDimensions(res);
     }
 
@@ -1098,7 +1102,7 @@ private:
 			auto & o_map = this->getSegmentToOutMap();
 			auto & segments_data = this->getSegmentToMergeIndexMap();
 
-			new_map.resize(a_map.size());
+			new_map.resize(a_map.size(),0);
 
 			// construct new to old map
 
@@ -1385,7 +1389,7 @@ private:
 
 		if (n_cnk != 0)
 		{
-			openfpm::vector_gpu<aggregate<int[dim]>> shifts;
+			shifts.clear();
 
 			int n_shift = 1;
 			shifts.add();
@@ -1595,7 +1599,12 @@ public:
             : gridGeometry(gridGeometry),
               stencilSupportRadius(stencilSupportRadius)
     {
-    	initialize(gridGeometry.getSize());
+        // convert to size_t
+        size_t sz_st[dim];
+
+        for (int i = 0 ; i < dim ; i++)	{sz_st[i] = gridGeometry.getSize()[i];}
+
+    	initialize(sz_st);
     };
 
     SparseGridGpu_ker
@@ -2796,7 +2805,7 @@ public:
     		n_pnt = tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1);
     		n_cnk = tmp.template get<1>((i+1)*(indexBuffer.size() + 1)-1);
 
-    		req += sizeof(indexT) +               // byte required to pack the number of chunk packed
+    		req += sizeof(size_t) +               // byte required to pack the number of chunk packed
     				2*dim*sizeof(int) +           // starting point + size of the indexing packing
     				  sizeof(indexT)*n_cnk +    				   // byte required to pack the chunk indexes
     				  align_number(sizeof(indexT),(n_cnk+1)*sizeof(unsigned int)) +            // byte required to pack the scan of the chunk point
@@ -2952,18 +2961,22 @@ public:
 
     	RestorePackVariableIfKeepGeometry(opt,is_pack_remote);
 
-    	if (pack_subs.size() <= 32)
-    	{
-    		pack_sg_implement<32,prp...>(mem,sts,opt,is_pack_remote);
-    	}
-    	else if (pack_subs.size() <= 64)
-    	{
-    		pack_sg_implement<64, prp...>(mem,sts,opt,is_pack_remote);
-    	}
-    	else
-    	{
-    		std::cout << __FILE__ << ":" << __LINE__ << " error no implementation available of packCalculate, create a new case for " << pack_subs.size() << std::endl;
-    	}
+        if (pack_subs.size() <= 32)
+        {
+                pack_sg_implement<32,prp...>(mem,sts,opt,is_pack_remote);
+        }
+        else if (pack_subs.size() <= 64)
+        {
+                pack_sg_implement<64, prp...>(mem,sts,opt,is_pack_remote);
+        }
+        else if (pack_subs.size() <= 80)
+        {
+                pack_sg_implement<80, prp...>(mem,sts,opt,is_pack_remote);
+        }
+        else
+        {
+                std::cout << __FILE__ << ":" << __LINE__ << " error no implementation available of packCalculate, create a new case for " << pack_subs.size() << std::endl;
+        }
 
     	savePackVariableIfNotKeepGeometry(opt,is_pack_remote);
 	}
@@ -3079,7 +3092,8 @@ public:
 	template<unsigned int ... prp>
 	void removeAddUnpackFinalize(mgpu::ofp_context_t& context, int opt)
 	{
-    	removePoints(context);
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+		{removePoints(context);}
 
 		removeCopyToFinalize_phase3<prp ...>(context,opt,true);
 	}
@@ -3145,6 +3159,99 @@ public:
 		grid_src.copySect.add(sgs);
 	}
 
+	/*! \brief Stub does not do anything
+	*
+	*/
+	template<typename pointers_type, 
+			 typename headers_type, 
+			 typename result_type, 
+			 unsigned int ... prp >
+	static void unpack_headers(pointers_type & pointers, headers_type & headers, result_type & result, int n_slot)
+	{
+		// we have to increment ps by the right amount
+	    sparsegridgpu_pack_request<AggregateT,prp ...> spq;
+	    boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(spq);
+
+		result.allocate(sizeof(int));
+
+		CUDA_LAUNCH_DIM3((SparseGridGpuKernels::unpack_headers<decltype(std::declval<self>().toKernel())>),1,pointers.size(),
+																											 pointers.toKernel(),
+																											 headers.toKernel(),
+																											 (int *)result.getDevicePointer(),
+																											 spq.point_size,
+																											 n_slot)
+	}
+
+	/*! \brief unpack the sub-grid object
+	 *
+	 * \tparam prp properties to unpack
+	 *
+	 * \param mem preallocated memory from where to unpack the object
+	 * \param sub sub-grid iterator
+	 * \param obj object where to unpack
+	 *
+	 */
+	template<unsigned int ... prp, typename S2, typename header_type>
+	void unpack_with_headers(ExtPreAlloc<S2> & mem,
+				SparseGridGpu_iterator_sub<dim,self> & sub_it,
+				header_type & headers,
+				int ih,
+				Unpack_stat & ps,
+				mgpu::ofp_context_t &context,
+				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
+	{
+		////////////////////////////////////////////////////////////
+
+		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
+		{
+			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,context);
+
+			// readjust mem
+		}
+		else
+		{
+			// we have to increment ps by the right amount
+	    	sparsegridgpu_pack_request<AggregateT,prp ...> spq;
+	    	boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(spq);
+
+			// First get the number of chunks
+
+			size_t n_cnk = headers.template get<1>(ih);
+			ps.addOffset(sizeof(size_t));
+			ps.addOffset(2*dim*sizeof(unsigned int));
+
+			size_t actual_offset = n_cnk*sizeof(indexT);
+			unsigned int * scan = (unsigned int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + n_cnk*sizeof(indexT));
+
+			// Unpack number of points
+			// calculate the number of total points
+			size_t n_pnt = headers.template get<2>(ih);
+			actual_offset += align_number(sizeof(indexT),(n_cnk+1)*sizeof(unsigned int));
+
+			void * data_base_ptr = (void *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset );
+
+			actual_offset += align_number(sizeof(indexT),n_pnt*(spq.point_size));
+			short int * offsets = (short int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + actual_offset);
+
+			actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(short));
+			actual_offset += align_number(sizeof(indexT),n_pnt*sizeof(unsigned char));
+
+			scan_ptrs_cp.add(scan);
+			offset_ptrs_cp.add(offsets);
+			data_base_ptr_cp.add(data_base_ptr);
+
+			ps.addOffset(actual_offset);
+		}
+	}
+
+	/*! \brief Indicate that unpacking the header is supported
+     *
+	 * \return true
+	 * 
+	 */
+	static bool is_unpack_header_supported()
+	{return true;}
+
 	/*! \brief unpack the sub-grid object
 	 *
 	 * \tparam prp properties to unpack
@@ -3184,7 +3291,7 @@ public:
 			Unpacker<size_t,S2>::unpack(mem,n_cnk,ps);
 
 			// Unpack origin of the chunk indexing
-			for (int i = 0 ; i < dim ; i++)
+/*			for (int i = 0 ; i < dim ; i++)
 			{
 				int tmp;
 				Unpacker<int,S2>::unpack(mem,tmp,ps);
@@ -3194,7 +3301,9 @@ public:
 			{
 				int tmp;
 				Unpacker<int,S2>::unpack(mem,tmp,ps);
-			}
+			}*/
+
+			ps.addOffset(2*dim*sizeof(unsigned int));
 
 			size_t actual_offset = n_cnk*sizeof(indexT);
 			unsigned int * scan = (unsigned int *)((unsigned char *)mem.getDevicePointer() + ps.getOffset() + n_cnk*sizeof(indexT));
@@ -3221,6 +3330,15 @@ public:
 
 			ps.addOffset(actual_offset);
 		}
+	}
+
+	/*! \brief Eliminate many internal temporary buffer you can use this between flushes if you get some out of memory
+	 *
+	 *
+	 */
+	void removeUnusedBuffers()
+	{
+		BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::removeUnusedBuffers();
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3449,10 +3567,28 @@ public:
 template<unsigned int dim,
 		 typename AggregateT,
 		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
-		 unsigned int threadBlockSize = 128,
+		 unsigned int threadBlockSize = default_edge<dim>::tb::value,
 		 typename indexT=long int,
 		 template<typename> class layout_base=memory_traits_inte,
-		 typename linearizer = grid_zmb<dim, blockEdgeSize>>
+		 typename linearizer = grid_zmb<dim, blockEdgeSize,indexT>>
 using SparseGridGpu_z = SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer>;
+
+template<unsigned int dim,
+		 typename AggregateT,
+		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
+		 unsigned int threadBlockSize = default_edge<dim>::tb::value,
+		 typename indexT=int,
+		 template<typename> class layout_base=memory_traits_inte,
+		 typename linearizer = grid_zmb<dim, blockEdgeSize,indexT>>
+using SparseGridGpu_zi = SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer>;
+
+template<unsigned int dim,
+		 typename AggregateT,
+		 unsigned int blockEdgeSize = default_edge<dim>::type::value,
+		 unsigned int threadBlockSize = default_edge<dim>::tb::value,
+		 typename indexT=int,
+		 template<typename> class layout_base=memory_traits_inte,
+		 typename linearizer = grid_smb<dim, blockEdgeSize,indexT>>
+using SparseGridGpu_i = SparseGridGpu<dim,AggregateT,blockEdgeSize,threadBlockSize,indexT,layout_base,linearizer>;
 
 #endif //OPENFPM_PDATA_SPARSEGRIDGPU_HPP

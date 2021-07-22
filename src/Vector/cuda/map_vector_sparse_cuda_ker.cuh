@@ -35,8 +35,10 @@ namespace openfpm
 		index_type id;
 	};
 
+#if defined(__NVCC__) && !defined(CUDA_ON_CPU)
 	static __shared__ int vct_atomic_add;
 	static __shared__ int vct_atomic_rem;
+#endif
 
 	template<typename T,
 			 typename Ti,
@@ -315,7 +317,9 @@ namespace openfpm
 			vct_add_index.template get<0>(slot_base*nslot_add+pos) = ele;
 			return vct_add_data.template get<p>(slot_base*nslot_add+pos);
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
+
+			printf("vector_sparse_gpu_ker.insert[1]: Error, this function in order to work is supposed to be compiled with nvcc\n");
+
 #endif
 		}
 
@@ -337,7 +341,7 @@ namespace openfpm
 			vct_rem_index.template get<0>(slot_base*nslot_rem+pos) = ele;
 
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
+			printf("vector_sparse_gpu_ker.remove: Error, this function in order to work is supposed to be compiled with nvcc\n");
 #endif
 		}
 
@@ -360,7 +364,7 @@ namespace openfpm
 
 			return vct_add_data.get(slot_base*nslot_add+pos);
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
+			printf("vector_sparse_gpu_ker.insert[2]: Error, this function in order to work is supposed to be compiled with nvcc\n");
 #endif
 		}
 
@@ -376,7 +380,7 @@ namespace openfpm
 			vct_rem_index.template get<0>(slot_base*nslot_rem+pos) = ele;
 
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
+			printf("vector_sparse_gpu_ker.remove_b: Error, this function in order to work is supposed to be compiled with nvcc\n");
 #endif
 		}
 
@@ -393,7 +397,7 @@ namespace openfpm
 			vct_add_index.template get<0>(slot_base*nslot_add+pos) = ele;
 			return vct_add_data.template get<p>(slot_base*nslot_add+pos);
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
+			printf("vector_sparse_gpu_ker.insert_b: Error, this function in order to work is supposed to be compiled with nvcc\n");
 #endif
 		}
 
@@ -409,7 +413,7 @@ namespace openfpm
 			vct_add_index.template get<0>(slot_base*nslot_add+pos) = ele;
 			return vct_add_data.get(slot_base*nslot_add+pos);
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
+			printf("vector_sparse_gpu_ker.insert_b: Error, this function in order to work is supposed to be compiled with nvcc\n");
 #endif
 		}
 
@@ -430,7 +434,7 @@ namespace openfpm
 			}
 
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
+			printf("vector_sparse_gpu_ker.flush_block_insert: Error, this function in order to work is supposed to be compiled with nvcc\n");
 #endif
 		}
 
@@ -451,7 +455,7 @@ namespace openfpm
 			}
 
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
+			printf("vector_sparse_gpu_ker.flush_block_remove: Error, this function in order to work is supposed to be compiled with nvcc\n");
 #endif
 		}
 
@@ -470,7 +474,7 @@ namespace openfpm
 
 
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
+			printf("vector_sparse_gpu_ker.flush_block_insert: Error, this function in order to work is supposed to be compiled with nvcc\n");
 #endif
 		}
 
@@ -493,7 +497,7 @@ namespace openfpm
 			{vct_nrem_index.template get<0>(b) = vct_atomic_rem;}
 
 #else
-			std::cout << __FILE__ << ":" << __LINE__ << " Error, this function in order to work is supposed to be compiled with nvcc" << std::endl;
+			printf("vector_sparse_gpu_ker.flush_block_remove: Error, this function in order to work is supposed to be compiled with nvcc\n");
 #endif
 		}
 

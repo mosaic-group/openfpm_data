@@ -1,7 +1,9 @@
 #ifndef GRID_HPP
 #define GRID_HPP
 
+
 #include "config.h"
+#include "util/cuda_launch.hpp"
 #include <boost/shared_array.hpp>
 #include <vector>
 #include <initializer_list>
@@ -12,6 +14,7 @@
 #include <iostream>
 #include "util/mathutil.hpp"
 #include "iterators/stencil_type.hpp"
+
 
 // Box need the definition of grid_key_dx_r
 #define HARDWARE 1
@@ -118,11 +121,33 @@ struct ite_gpu
 #endif
 };
 
+template<unsigned int dim>
+bool has_work_gpu(ite_gpu<dim> & ite)
+{
+	size_t tot_work = 1;
+
+	if (dim == 1)
+	{tot_work *= ite.wthr.x * ite.thr.x;}
+	else if(dim == 2)
+	{
+		tot_work *= ite.wthr.x * ite.thr.x;
+		tot_work *= ite.wthr.y * ite.thr.y;
+	}
+	else
+	{
+		tot_work *= ite.wthr.x * ite.thr.x;
+		tot_work *= ite.wthr.y * ite.thr.y;
+		tot_work *= ite.wthr.z * ite.thr.z;
+	}
+
+	return tot_work != 0;
+}
+
 //! Declaration grid_sm
 template<unsigned int N, typename T> class grid_sm;
 
 template<unsigned int dim, typename T2, typename T>
-ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, size_t n_thr = 1024);
+ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, size_t n_thr = default_kernel_wg_threads_);
 
 //! Declaration print_warning_on_adjustment
 template <unsigned int dim, typename linearizer> class print_warning_on_adjustment;
@@ -241,7 +266,25 @@ class grid_sm
 		}
 	}
 
+	/*! \brief linearize an arbitrary set of index
+	 *
+	 * linearize an arbitrary set of index
+	 *
+	 */
+	template<typename a, typename ...lT>
+	__device__ __host__ inline mem_id Lin_impl(a v,lT...t) const
+	{
+		return v*sz_s[sizeof...(t)-1] + Lin_impl(t...);
+	}
+
+	//! Linearize a set of index
+	template<typename a> __device__ __host__ inline mem_id Lin_impl(a v) const
+	{
+		return v;
+	}
+
 public:
+
 
 	/*! \brief Return the box enclosing the grid
 	 *
@@ -529,23 +572,10 @@ public:
 	 * linearize an arbitrary set of index
 	 *
 	 */
-	template<typename a, typename ...lT>
+	template<typename a, typename ...lT, typename enabler = typename std::enable_if<sizeof...(lT) == N-1>::type >
 	__device__ __host__ inline mem_id Lin(a v,lT...t) const
 	{
-#ifdef SE_CLASS1
-		if (sizeof...(t)+1 > N)
-		{
-			std::cerr << "Error incorrect grid cannot linearize more index than its dimensionality" << "\n";
-		}
-#endif
-
-		return v*sz_s[sizeof...(t)-1] + Lin(t...);
-	}
-
-	//! Linearize a set of index
-	template<typename a> __device__ __host__ inline mem_id Lin(a v) const
-	{
-		return v;
+		return v*sz_s[sizeof...(t)-1] + Lin_impl(t...);
 	}
 
 	//! Construct
@@ -571,27 +601,6 @@ public:
 		return gk;
 	}
 
-	/*! \brief Linearization of the grid_key_d
-	 *
-	 * Linearization of the grid_key_d given a key, it spit out a number that is just the 1D linearization
-	 * of the key. In this case is the linearization of N index
-	 *
-	 * \param gk grid key to access the element on a key
-	 * \return index of the memory
-	 *
-	 */
-
-	//#pragma openfpm layout(get)
-	template<unsigned int dim, unsigned int p> inline mem_id LinId(const grid_key_d<dim,p> & gk) const
-	{
-		mem_id lid = gk.k[0];
-		for (mem_id i = 1 ; i < dim ; i++)
-		{
-			lid += gk.k[i] * sz_s[i-1];
-		}
-
-		return lid;
-	}
 
 	/*! \brief Linearization of an array of mem_id (long int)
 	 *
@@ -746,7 +755,7 @@ public:
 		return grid_key_dx_iterator_sub<N>(*this,start,stop);
 	}
 
-#ifdef CUDA_GPU
+#if defined(CUDA_GPU)
 
 	/*! \brief Get an iterator for the GPU
 	 *
@@ -755,7 +764,7 @@ public:
 	 *
 	 */
 	template<typename T2>
-	struct ite_gpu<N> getGPUIterator(const grid_key_dx<N,T2> & key1, const grid_key_dx<N,T2> & key2, size_t n_thr = 1024) const
+	struct ite_gpu<N> getGPUIterator(const grid_key_dx<N,T2> & key1, const grid_key_dx<N,T2> & key2, size_t n_thr = default_kernel_wg_threads_) const
 	{
 		return getGPUIterator_impl<N>(*this,key1,key2,n_thr);
 	}
@@ -766,7 +775,7 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	struct ite_gpu<N> getGPUIterator(size_t n_thr = 1024) const
+	struct ite_gpu<N> getGPUIterator(size_t n_thr = default_kernel_wg_threads_) const
 	{
 		grid_key_dx<N> k1;
 		grid_key_dx<N> k2;
