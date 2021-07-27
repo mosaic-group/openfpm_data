@@ -1947,8 +1947,12 @@ public:
 
 			size_t pos_src_id = key_src_s.getPos();
 			size_t pos_dst_id;
-			auto block_src = grid_src.getBlock(key_src_s);
+
+			///////// WARNING insert_o MUST be done before getBlock, otherwise if grid_src == *this, and insert_o produce a reallocation 
+			///////// block_src will be invalidated  //////
 			auto block_dst = this->insert_o(key_dst,pos_dst_id);
+
+			auto block_src = grid_src.getBlock(key_src_s);
 
 			copy_sparse_to_sparse_bb<dim,decltype(block_src),decltype(block_dst),T> caps(block_src,block_dst,pos_src_id,pos_dst_id);
 			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(caps);
