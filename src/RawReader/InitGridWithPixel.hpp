@@ -41,9 +41,9 @@ inline bool exists_test (const std::string& name) {
  *                     #pixels per dimension.
  * @return Std::vector containing the count of pixels for each dimension as it was read from the csv file.
  */
-std::vector<size_t> get_size(const std::string & path_to_file)
+std::vector<int> get_size(const std::string & path_to_file)
 {
-	std::vector<size_t> stack_dimst_1d;
+	std::vector<int> stack_dimst_1d;
 	//	check if file exists and stream input csv file
 	if(!exists_test(path_to_file)){
 		std::cout << "------------------------------------------------------------------------" << std::endl;
@@ -67,7 +67,7 @@ std::vector<size_t> get_size(const std::string & path_to_file)
 	while ( getline(file, field) )         // 1 field per axis
 	{
 		std::istringstream iss(field);
-		size_t val;
+		int val;
 		iss >> val;
 		stack_dimst_1d.push_back(val);       // add the #pixels for current axis to the array
 	}
@@ -89,7 +89,7 @@ std::vector<size_t> get_size(const std::string & path_to_file)
  *                   manually or loaded from a csv file before (see: #get_size())
  */
 template <size_t Phi_0, typename grid_type>
-void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <size_t> & stack_dims)
+void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <int> & stack_dims)
 {
 	constexpr size_t x = 0;
 	constexpr size_t y = 1;
@@ -107,7 +107,7 @@ void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <
 	auto & v_cl = create_vcluster();
 	if (v_cl.rank() == 0)
 	{
-		for (size_t d = 0; d < grid_type::dims; d++)
+		for (int d = 0; d < grid_type::dims; d++)
 		{
 			std::cout << "# grid points in dimension " << d << " = "  << grid.size(d) << std::endl;
 		}
@@ -121,14 +121,14 @@ void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <
 	std::vector<BYTE> pixel_line; // one x-line of the image stack which will be read
 	
 	size_t sz_img[grid_type::dims];
-	for (size_t d = 0; d < grid_type::dims; d++)
+	for (int d = 0; d < grid_type::dims; d++)
 	{
 		sz_img[d] = stack_dims[d];
 	}
 	grid_sm<grid_type::dims,void> ginfo_image(sz_img); // in order to get the image related key later on
 	
 	double refinement[grid_type::dims];
-	for (size_t d = 0; d < grid_type::dims; d++)
+	for (int d = 0; d < grid_type::dims; d++)
 	{
 		refinement[d] = (double) grid.size(d) / (double)stack_dims[d]; // get the factor, by which the grid resolution differs from the image stack resolution
 		if (v_cl.rank() == 0) std::cout << "effective refinement in dimension " << d << " = " << refinement[d] << std::endl;
@@ -141,7 +141,7 @@ void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <
 		
 		// In case a patch starts within a group of nodes to which same pixel-value should be assigned, get the
 		// respective rest-offset
-		size_t rest_offset = (size_t) (fmod(gkey.get(0), refinement[x])); // get the remainder
+		int rest_offset = (int) (fmod(gkey.get(0), refinement[x])); // get the remainder
 		
 		
 		// get l as the length of one x-line of the original image stack for the specific patch on the processor
@@ -154,7 +154,7 @@ void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <
 		// in case that the grid has a different resolution than the underlying image stack:
 		// create a key which is used to get the offset for the file reading
 		// the indices in this key are corrected by the refinement factor
-		for (size_t d = 0; d < grid_type::dims; d++)
+		for (int d = 0; d < grid_type::dims; d++)
 		{
 			gkey.set_d(d, floor(gkey.get(d) / refinement[d]));
 		}
@@ -172,7 +172,7 @@ void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <
 		// run over a whole grid-line in x and assign pixel values from pixel_line to grid nodes
 		// if the grid is finer in x as the image stack, the same pixel value from pixel_line is
 		// assigned refinement[x] times
-		for (size_t k = 0; k < patch_size; ++k)
+		for (int k = 0; k < patch_size; ++k)
 		{
 			auto key = dom.get();
 			// get the correct index of the pixel to be read from pixel_line by considering a potential rest-offset,
