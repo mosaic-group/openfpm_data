@@ -59,6 +59,29 @@ struct object_si_d_e
     }
 };
 
+template<typename T>
+struct object_si_d_e_cnk_meta_copy_selector
+{
+	template<unsigned int T_value, typename v_prp, typename ctype, typename Tsrc, typename Tdst>
+	static inline void copy(const Tsrc & src, Tdst & dst, int sub_id)
+	{
+		meta_copy<ctype>::meta_copy_(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T_value>>::type::value>()[sub_id],dst.template get<T_value>());
+	}
+};
+
+template<unsigned int N1, typename T>
+struct object_si_d_e_cnk_meta_copy_selector<T[N1]>
+{
+	template<unsigned int T_value, typename v_prp, typename ctype, typename Tsrc, typename Tdst>
+	static inline void copy(const Tsrc & src, Tdst & dst, int sub_id)
+	{
+		for (int i = 0 ; i < N1 ; i++)
+		{
+			meta_copy<T>::meta_copy_(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T_value>>::type::value>()[i][sub_id],dst.template get<T_value>()[i]);
+		}
+	}
+};
+
 /*! \brief this class is a functor for "for_each" algorithm
  *
  * This class is a functor for "for_each" algorithm. For each
@@ -102,7 +125,7 @@ struct object_si_d_e_cnk
     {
     	typedef typename boost::mpl::at<typename v_dst::type,typename boost::mpl::int_<T::value>>::type ctype;
 
-    	meta_copy<ctype>::meta_copy_(src.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>()[sub_id],dst.template get<T::value>());
+		object_si_d_e_cnk_meta_copy_selector<ctype>::template copy<T::value,v_prp,ctype>(src,dst,sub_id);
     }
 };
 
