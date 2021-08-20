@@ -313,10 +313,10 @@ struct get_base_type_for_object_creator_chunking
 };
 
 
-template <>
-struct get_base_type_for_object_creator_chunking< std::array<long int, 4096>[4] >
+template <unsigned int N1, std::size_t N2, typename T>
+struct get_base_type_for_object_creator_chunking< std::array<T, N2>[N1] >
 {
-	typedef object_creator_chunking_encapsulator<long int[4]> ele;
+	typedef object_creator_chunking_encapsulator<T[N1]> ele;
 };
 
 
