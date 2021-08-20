@@ -855,7 +855,7 @@ struct meta_prop_new<I, ele_g,St,T[N1],is_writable>
 						{v_outToEncode_ << " " << vg.get(k).g.template get<I::value>(it.get())[i1];}
 
 						if (N1 == 2)
-						{v_outToEncode_ << (decltype(vg.get(k).g.template get<I::value>(it.get())[0])) 0;}
+						{v_outToEncode_ << " "<< (decltype(vg.get(k).g.template get<I::value>(it.get())[0])) 0;}
 
 						v_outToEncode_ << "\n";
 					}
