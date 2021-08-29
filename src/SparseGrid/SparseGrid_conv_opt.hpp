@@ -755,7 +755,7 @@ struct conv_impl<3>
 						long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
 						sumzp += s2;
 
-						if (Vc::Vector<prop_type>::Size == 2 || Vc::Vector<prop_type>::Size == 4 || Vc::Vector<prop_type>::Size == 8)
+						if (Vc::Vector<prop_type>::Size == 1 || Vc::Vector<prop_type>::Size == 2 || Vc::Vector<prop_type>::Size == 4 || Vc::Vector<prop_type>::Size == 8)
 						{
 							mxm.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[s2];
 							mxm.i = mxm.i << 8;
@@ -770,10 +770,6 @@ struct conv_impl<3>
 
 							mzm.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[sumzm];
 							mzp.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[sumzp];
-						}
-						else
-						{
-							std::cout << __FILE__ << ":" << __LINE__ << " UNSUPPORTED" << std::endl;
 						}
 
 						cs1.xm = cmd1;

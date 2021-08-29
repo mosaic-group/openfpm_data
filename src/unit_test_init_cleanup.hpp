@@ -8,6 +8,8 @@
 #ifndef UNIT_TEST_INIT_CLEANUP_HPP_
 #define UNIT_TEST_INIT_CLEANUP_HPP_
 
+#include "util/cudify/cudify.hpp"
+
 //! boost unit test fixation (start procedure to call before testing)
 struct ut_start
 {

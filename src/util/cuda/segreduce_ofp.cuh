@@ -83,6 +83,7 @@ __global__ void realign_output(output_it out, out_tmp_type out_tmp, segs_type se
         for ( ; i < num_segments - 1; i++)
         {
             int j = segments[i];
+            output[i] = init;
             if (j == segments[i+1]) {continue;}
             output[i] = input[j];
             ++j;
