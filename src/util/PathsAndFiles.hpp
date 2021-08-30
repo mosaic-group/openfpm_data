@@ -21,7 +21,7 @@
  *
  * @return Std::string of path to current working directory.
  */
-std::string get_cwd()
+static std::string get_cwd()
 {
 	char *cwd = nullptr;
 	size_t size;
@@ -39,7 +39,7 @@ std::string get_cwd()
  * @param path Std::string with path of file for which existence should be checked.
  * @return True, if file exists, false if not.
  */
-bool check_if_file_exists(std::string path)
+static bool check_if_file_exists(std::string path)
 {
 	try
 	{
@@ -63,7 +63,7 @@ bool check_if_file_exists(std::string path)
  *
  * @param path Std::string that contains path including filename of the file that should be created.
  */
-void create_file_if_not_exist(std::string path)
+static void create_file_if_not_exist(std::string path)
 {
 	auto & v_cl = create_vcluster();
 	if (v_cl.rank() == 0)
@@ -82,7 +82,7 @@ void create_file_if_not_exist(std::string path)
  * @param path Std::string with path of directory for which existence should be checked.
  * @return True, if directory exists, false if not.
  */
-bool check_if_directory_exists(std::string path)
+static bool check_if_directory_exists(std::string path)
 {
 	try
 	{
@@ -100,7 +100,7 @@ bool check_if_directory_exists(std::string path)
  *
  * @param path Std::string that contains path including name of the folder that should be created.
  */
-void create_directory_if_not_exist(std::string path)
+static void create_directory_if_not_exist(std::string path)
 {
 	auto & v_cl = create_vcluster();
 	if (v_cl.rank() == 0)

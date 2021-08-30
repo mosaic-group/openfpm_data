@@ -54,7 +54,7 @@ struct vtk_dims
 	//! dimensionality of the vtk property (scalar)
 	enum
 	{
-		value = 1
+		value = 0
 	};
 };
 
