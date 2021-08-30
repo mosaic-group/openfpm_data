@@ -619,7 +619,7 @@ public:
 	 * \return true if the write complete successfully
 	 *
 	 */
-    bool write_pvtp(std::string file,const openfpm::vector<std::string> & prop_names,size_t n,size_t timestamp=-1)
+    bool write_pvtp(std::string file,const openfpm::vector<std::string> & prop_names,size_t n,long int timestamp=-1)
     {
         //openfpm::vector< ele_vpp<typename pair::second>> vpp;
         // Header for the vtk
