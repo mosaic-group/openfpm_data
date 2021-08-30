@@ -531,7 +531,7 @@ struct meta_prop
                 // if there is the next element
                 while (it.isNext())
                 {
-                    prop_write_out<vtk_dims<T>::value,T>::template write<decltype(vg),decltype(it),I>(stream_out,vg,k,it,ft);
+                    prop_write_out<vtk_dims<T>::value != 1,T>::template write<decltype(vg),decltype(it),I>(stream_out,vg,k,it,ft);
 
                     // increment the iterator and counter
                     ++it;
@@ -773,7 +773,7 @@ struct meta_prop_new
 				// if there is the next element
 				while (it.isNext())
 				{
-					prop_write_out_new<vtk_dims<T>::value,T>::template write<decltype(vg),decltype(it),I>(v_outToEncode_,vg,k,it,ft);
+					prop_write_out_new<vtk_dims<T>::value != 1,T>::template write<decltype(vg),decltype(it),I>(v_outToEncode_,vg,k,it,ft);
 
 					// increment the iterator and counter
 					++it;
