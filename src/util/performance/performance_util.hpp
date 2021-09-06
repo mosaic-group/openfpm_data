@@ -29,7 +29,7 @@ static void addUpdtateTime(GoogleChart & cg, int np)
 	cg.addHTML(str.str());
 }
 
-static void createCommitFile()
+static void createCommitFile(std::string & tmp)
 {
     time_t t = time(0);   // get time now
     struct tm * now = localtime( & t );
@@ -39,7 +39,7 @@ static void createCommitFile()
     std::string commit;
     commit = exec("git rev-parse HEAD");
 
-	ofstream f("comit_f");
+	ofstream f("comit_f_" + tmp);
 	f << commit << std::endl;
 
 	f.close();
