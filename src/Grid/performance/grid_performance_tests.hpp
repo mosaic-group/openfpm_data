@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(grid_performance_write_report)
 	StandardXMLPerformanceGraph("grid_performance_funcs.xml",file_xml_ref,cg);
 
 	addUpdtateTime(cg,1);
-	createCommitFile();
+	createCommitFile("data");
 
 	cg.write("grid_performance_funcs.html");
 }

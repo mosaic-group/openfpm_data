@@ -39,7 +39,7 @@ static void createCommitFile(std::string & tmp)
     std::string commit;
     commit = exec("git rev-parse HEAD");
 
-	ofstream f("comit_f_" + tmp);
+	std::ofstream f("comit_f_" + tmp);
 	f << commit << std::endl;
 
 	f.close();
