@@ -29,6 +29,22 @@ static void addUpdtateTime(GoogleChart & cg, int np)
 	cg.addHTML(str.str());
 }
 
+static void createCommitFile()
+{
+    time_t t = time(0);   // get time now
+    struct tm * now = localtime( & t );
+
+    std::stringstream str;
+
+    std::string commit;
+    commit = exec("git rev-parse HEAD");
+
+	ofstream f("comit_f");
+	f << commit << std::endl;
+
+	f.close();
+}
+
 static inline void warning_set(int & warning_level, double mean, double mean_ref, double sigma)
 {
 	int warning_level_candidate;

@@ -1105,6 +1105,48 @@ namespace openfpm
 			v_size -= keys.size() - start;
 		}
 
+		/*! \brief Remove several entries from the vector
+		 *
+		 * \warning the keys in the vector MUST be sorted
+		 *
+		 * \param keys objects id to remove
+		 * \param start key starting point
+		 *
+		 */
+		void remove(openfpm::vector<aggregate<int>> & keys, size_t start = 0)
+		{
+			// Nothing to remove return
+			if (keys.size() <= start )
+				return;
+
+			size_t a_key = start;
+			size_t d_k = keys.template get<0>(a_key);
+			size_t s_k = keys.template get<0>(a_key) + 1;
+
+			// keys
+			while (s_k < size())
+			{
+				// s_k should always point to a key that is not going to be deleted
+				while (a_key+1 < keys.size() && s_k == keys.template get<0>(a_key+1))
+				{
+					a_key++;
+					s_k = keys.template get<0>(a_key) + 1;
+				}
+
+				// In case of overflow
+				if (s_k >= size())
+					break;
+
+				set(d_k,get(s_k));
+				d_k++;
+				s_k++;
+			}
+
+			// re-calculate the vector size
+
+			v_size -= keys.size() - start;
+		}
+
 		/*! \brief Get an element of the vector
 		 *
 		 * Get an element of the vector
