@@ -32,7 +32,7 @@ static void addUpdtateTime(GoogleChart & cg, int np, const std::string & base, c
 	cg.addHTML(str.str());
 }
 
-static void createCommitFile(std::string & tmp)
+static void createCommitFile(const std::string & tmp)
 {
     time_t t = time(0);   // get time now
     struct tm * now = localtime( & t );
