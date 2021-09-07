@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(vector_performance_write_report)
 
 	StandardXMLPerformanceGraph("vector_performance_funcs.xml",file_xml_ref,cg);
 
-	addUpdtateTime(cg,1);
+	addUpdtateTime(cg,1,"pdata","vector_performance_funcs");
 	createCommitFile("pdata");
 
 	cg.write("vector_performance_funcs.html");
