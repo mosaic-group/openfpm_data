@@ -27,7 +27,7 @@ static void addUpdtateTime(GoogleChart & cg, int np, const std::string & base, c
 	std::string prev_commit = exec(std::string("cat commit_f_" + base + "_300").c_str());
 
     str << "<h3>Updated: " << now->tm_mday << "/" << now->tm_mon + 1 << "/" << now->tm_year+1900 << "     " << now->tm_hour << ":" << now->tm_min << ":"
-    		               << now->tm_sec << "  commit: " << commit << "   run with: " << np << " processes<br>previous: <a href=\"" << filename << "_" << prev_commit << ".html\" /a>" << "</h3>" << std::endl;
+    		               << now->tm_sec << "  commit: " << commit << "   run with: " << np << " processes<br>previous: <a href=\"" << filename << "_" << prev_commit << ".html\">here</a>" << "</h3>" << std::endl;
 
 	cg.addHTML(str.str());
 }
