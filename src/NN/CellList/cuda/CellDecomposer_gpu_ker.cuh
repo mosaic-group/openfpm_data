@@ -68,7 +68,7 @@ public:
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			sz[i] = div_c[i] + 2*off[i];
+			sz[i] = div_c[i];
 		}
 
 		return grid_sm<dim,void> (sz);
