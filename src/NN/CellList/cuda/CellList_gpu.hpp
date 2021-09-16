@@ -44,7 +44,10 @@ struct CellList_gpu_ker_selector
 																			 openfpm::array<ids_type,dim,cnt_type> & div_c,
 																			 openfpm::array<ids_type,dim,cnt_type> & off,
 																			 const transform & t,
-																			 unsigned int g_m)
+																			 unsigned int g_m,
+																			 const SpaceBox<dim,T>& box_unit,
+																			 const grid_sm<dim,void>& gr_cell,
+																			 const Point<dim,long int>& cell_shift)
 	{
 		return CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse>(starts.toKernel(),
 																			sorted_to_not_sorted.toKernel(),
@@ -54,7 +57,10 @@ struct CellList_gpu_ker_selector
 																			div_c,
 																			off,
 																			t,
-																			g_m);
+																			g_m,
+																			box_unit,
+																			gr_cell,
+																			cell_shift);
 	}
 };
 
@@ -73,10 +79,14 @@ struct CellList_gpu_ker_selector<dim,T,cnt_type,ids_type,Memory,transform,vector
 			 vector_cnt_type & dprt,
 			 openfpm::vector<aggregate<int>,Memory,memory_traits_inte> & nnc_rad,
 			 openfpm::array<T,dim,cnt_type> & spacing_c,
-	         openfpm::array<ids_type,dim,cnt_type> & div_c,
-	         openfpm::array<ids_type,dim,cnt_type> & off,
-	         const transform & t,
-	         unsigned int g_m)
+			 openfpm::array<ids_type,dim,cnt_type> & div_c,
+			 openfpm::array<ids_type,dim,cnt_type> & off,
+			 const transform & t,
+			 unsigned int g_m,
+			 const SpaceBox<dim,T>& box_unit,
+			 const grid_sm<dim,void>& gr_cell,
+			 const Point<dim,long int>& cell_shift)
+
 	{
 		return CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,true>(cell_nn.toKernel(),
 																		cell_nn_list.toKernel(),
@@ -86,7 +96,11 @@ struct CellList_gpu_ker_selector<dim,T,cnt_type,ids_type,Memory,transform,vector
 																		spacing_c,
 																		div_c,
 																		off,
-																		t,g_m);
+																		t,
+																		g_m,
+																		box_unit,
+																		gr_cell,
+																		cell_shift);
 	}
 };
 
@@ -648,14 +662,17 @@ public:
 				cells_nn,
 				cells_nn_list,
 				cl_sparse,
-		    	sorted_to_not_sorted,
-		    	sorted_domain_particles_ids,
-		    	nnc_rad,
-		        spacing_c,
-		        div_c,
-		        off,
-		        this->getTransform(),
-		        g_m);
+				sorted_to_not_sorted,
+				sorted_domain_particles_ids,
+				nnc_rad,
+				spacing_c,
+				div_c,
+				off,
+				this->getTransform(),
+				g_m,
+				this->box_unit,
+				this->gr_cell,
+				this->cell_shift);
 	}
 
 	/*! \brief Clear the structure

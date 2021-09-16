@@ -131,7 +131,7 @@ public:
 	 * \return the pointer to the chunk of memory
 	 *
 	 */
-	__device__ void * getPointer()
+	__device__ __host__ void * getPointer()
 	{
 		return &base.template get<0>(0);
 	}
@@ -141,7 +141,7 @@ public:
 	 * \return the pointer to the chunk of memory
 	 *
 	 */
-	__device__ const void * getPointer() const
+	__device__ __host__ const void * getPointer() const
 	{
 		return &base.template get<0>(0);
 	}
