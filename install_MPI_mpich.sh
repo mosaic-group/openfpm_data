@@ -6,11 +6,11 @@ if [ -d "$1/MPI" ]; then
   echo "MPI already installed"
   exit 0
 fi
-rm -rf mpich-3.3
-rm mpich-3.3.tar.gz
-wget http://ppmcore.mpi-cbg.de/upload/mpich-3.3.tar.gz
-tar -xvf mpich-3.3.tar.gz
-cd mpich-3.3
+rm -rf mpich-3.4.2
+rm mpich-3.4.2.tar.gz
+wget http://ppmcore.mpi-cbg.de/upload/mpich-3.4.2.tar.gz
+tar -xvf mpich-3.4.2.tar.gz
+cd mpich-3.4.2
 
 #
 #                  --disable-mca-dso \
