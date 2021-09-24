@@ -39,9 +39,11 @@ cd "$1/openfpm_io"
 #rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/HDF5
 #rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/BOOST
 
+rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/
+
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
 	source /opt/rh/devtoolset-7/enable
-        ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
+        ./install_MPI.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
         ./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_HDF5.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
@@ -50,7 +52,7 @@ if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
 fi
 
 if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
-        ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
+        ./install_MPI.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="/opt/bin:$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
 	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_HDF5.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
@@ -60,7 +62,7 @@ fi
 
 if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
         export PATH="/usr/local/bin:$PATH"
-        ./install_MPI_mpich.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
+        ./install_MPI.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
 	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_HDF5.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
