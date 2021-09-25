@@ -22,14 +22,19 @@ static void addUpdtateTime(GoogleChart & cg, int np, const std::string & base, c
     std::stringstream str;
 
     std::string commit;
-    commit = exec("git rev-parse HEAD");
 
-	std::string prev_commit = exec(std::string("cat commit_f_" + base + "_300").c_str());
+    std::system("git rev-parse HEAD >test.txt"); // execute the UNIX command "ls -l >test.txt"
+    std::ifstream("test.txt") >> commit;
+
+    std::string prev_commit;
+
+    std::system(std::string("cat commit_f_" + base + "_300 > test.txt").c_str()); // execute the UNIX command "ls -l >test.txt"
+    std::ifstream("test.txt") >> prev_commit;
 
     str << "<h3>Updated: " << now->tm_mday << "/" << now->tm_mon + 1 << "/" << now->tm_year+1900 << "     " << now->tm_hour << ":" << now->tm_min << ":"
-    		               << now->tm_sec << "  commit: " << commit << "   run with: " << np << " processes<br>previous: <a href=\"" << filename << "_" << prev_commit << ".html\">here</a>" << "</h3>" << std::endl;
+                               << now->tm_sec << "  commit: " << commit << "   run with: " << np << " processes<br>previous: <a href=\"" << filename << "_" << prev_commit << ".html\">here</a>" << "</h3>" << std::endl;
 
-	cg.addHTML(str.str());
+    cg.addHTML(str.str());
 }
 
 static void createCommitFile(const std::string & tmp)
