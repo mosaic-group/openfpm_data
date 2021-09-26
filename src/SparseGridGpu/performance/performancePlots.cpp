@@ -59,7 +59,7 @@ void write_test_report(report_sparse_grid_tests &report_sparsegrid_funcs, std::s
 
     StandardXMLPerformanceGraph(file_xml_results, file_xml_ref, cg, 1);
 
-    addUpdtateTime(cg,1,"data","SparseGridGpu_performance");
+    addUpdateTime(cg,1,"data","SparseGridGpu_performance");
     cg.write("SparseGridGpu_performance.html");
 }
 

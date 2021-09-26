@@ -14,7 +14,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <fstream>
 
-static void addUpdtateTime(GoogleChart & cg, int np, const std::string & base, const std::string & filename)
+static void addUpdateTime(GoogleChart & cg, int np, const std::string & base, const std::string & filename)
 {
     time_t t = time(0);   // get time now
     struct tm * now = localtime( & t );
@@ -28,7 +28,7 @@ static void addUpdtateTime(GoogleChart & cg, int np, const std::string & base, c
 
     std::string prev_commit;
 
-    std::system(std::string("cat commit_f_" + base + "_300 > test.txt").c_str()); // execute the UNIX command "ls -l >test.txt"
+    std::system(std::string("cat commit_f_" + base + " > test.txt").c_str()); // execute the UNIX command "ls -l >test.txt"
     std::ifstream("test.txt") >> prev_commit;
 
     str << "<h3>Updated: " << now->tm_mday << "/" << now->tm_mon + 1 << "/" << now->tm_year+1900 << "     " << now->tm_hour << ":" << now->tm_min << ":"
