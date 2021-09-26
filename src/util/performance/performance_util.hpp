@@ -14,7 +14,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <fstream>
 
-static void addUpdtateTime(GoogleChart & cg, int np, const std::string & base, const std::string & filename)
+static void addUpdateTime(GoogleChart & cg, int np, const std::string & base, const std::string & filename)
 {
     time_t t = time(0);   // get time now
     struct tm * now = localtime( & t );
