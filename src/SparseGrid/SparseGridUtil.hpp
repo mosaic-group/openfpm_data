@@ -608,4 +608,59 @@ struct sublin<8,chunk>
 };
 
 
+template<typename chunk_def>
+struct sparse_grid_bck_value
+{
+	chunk_def bck;
+
+	sparse_grid_bck_value(chunk_def bck)
+	:bck(bck)
+	{}
+
+	template<unsigned int p>
+	auto get() -> decltype(bck.template get<p>()[0])
+	{
+		return bck.template get<p>()[0];
+	}
+
+	template<unsigned int p>
+	auto get() const -> decltype(bck.template get<p>()[0])
+	{
+		return bck.template get<p>()[0];
+	}
+};
+
+
+template<typename T>
+struct get_selector
+{
+	template<unsigned int p, typename chunks_vector_type>
+	static T & get(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
+	{
+		return chunks.template get<p>(active_cnk)[ele_id];
+	}
+
+	template<unsigned int p, typename chunks_vector_type>
+	static const T & get_const(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
+	{
+		return chunks.template get<p>(active_cnk)[ele_id];
+	}
+};
+
+template<typename T, unsigned int N1>
+struct get_selector<T[N1]>
+{
+	template<unsigned int p, typename chunks_vector_type>
+	static std_array_vector_view<decltype(std::declval<chunks_vector_type>().template get<p>(0))> get(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
+	{
+		return std_array_vector_view<decltype(chunks.template get<p>(active_cnk))>(ele_id,chunks.template get<p>(active_cnk));
+	}
+
+	template<unsigned int p, typename chunks_vector_type>
+	static const std_array_vector_view<decltype(std::declval<chunks_vector_type>().template get<p>(0))> get_const(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
+	{
+		return std_array_vector_view<decltype(chunks.template get<p>(active_cnk))>(ele_id,chunks.template get<p>(active_cnk));
+	}
+};
+
 #endif /* OPENFPM_DATA_SRC_SPARSEGRID_SPARSEGRIDUTIL_HPP_ */

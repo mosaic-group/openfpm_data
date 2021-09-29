@@ -257,7 +257,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline __device__ __host__ auto get_o(unsigned int id) const -> decltype(base.get_o(id))
+		inline __device__ __host__ auto get_o(unsigned int id) const -> decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)
@@ -281,7 +281,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline __device__ __host__ auto get_o(unsigned int id) -> decltype(base.get_o(id))
+		inline __device__ __host__ auto get_o(unsigned int id) -> decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)
@@ -298,7 +298,7 @@ namespace openfpm
 		 * \return the last element (encapsulated)
 		 *
 		 */
-		inline auto last() const -> decltype(base.get_o(0))
+		inline auto last() const -> decltype(base.get_o(grid_key_dx<1>(0)))
 		{
 			grid_key_dx<1> key(size()-1);
 
@@ -333,7 +333,7 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
-		inline auto last() -> decltype(base.get_o(0))
+		inline auto last() -> decltype(base.get_o(grid_key_dx<1>(0)))
 		{
 			grid_key_dx<1> key(size()-1);
 

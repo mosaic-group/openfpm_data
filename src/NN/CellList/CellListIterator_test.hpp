@@ -12,6 +12,11 @@
 #include "NN/CellList/ParticleIt_Cells.hpp"
 #include "NN/CellList/ParticleItCRS_Cells.hpp"
 
+#ifdef OPENFPM_PDATA
+#include "VCluster/VCluster.hpp"
+#endif
+
+
 /*! \brief Fill the cell-list with particles in the box 0.0,1.0
  *
  * \param k Number of particles
@@ -96,6 +101,18 @@ BOOST_AUTO_TEST_CASE( celllist_lin_and_iterator_test )
 
 BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 {
+#ifdef OPENFPM_PDATA
+
+	auto & v_cl = create_vcluster();
+
+	std::string c2 = std::string("openfpm_data/test_data/NN_hilb_keys");
+
+#else
+
+	std::string c2 = std::string("test_data/NN_hilb_keys");
+
+#endif
+
 	///////// INPUT DATA //////////
 
 	const size_t dim = 3;
@@ -145,7 +162,7 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 
 	openfpm::vector<size_t> keys_old;
 
-	keys_old.load("test_data/NN_hilb_keys");
+	keys_old.load(c2);
 
 	for (size_t i = 0; i < keys_old.size(); i++)
 	{

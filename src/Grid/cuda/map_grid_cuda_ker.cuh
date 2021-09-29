@@ -300,7 +300,8 @@ public:
 	 * \return an encap_c that is the representation of the object (careful is not the object)
 	 *
 	 */
-	__device__ inline encapc<dim,T_,layout> get_o(const grid_key_dx<dim> & v1)
+	template<typename Tk>
+	__device__ inline encapc<dim,T_,layout> get_o(const grid_key_dx<dim,Tk> & v1)
 	{
 #ifdef SE_CLASS1
 		if (check_bound(v1) == false)
@@ -320,7 +321,8 @@ public:
 	 * \return an encap_c that is the representation of the object (careful is not the object)
 	 *
 	 */
-	__device__ inline const encapc<dim,T_,layout> get_o(const grid_key_dx<dim> & v1) const
+	template<typename Tk>
+	__device__ inline const encapc<dim,T_,layout> get_o(const grid_key_dx<dim,Tk> & v1) const
 	{
 #ifdef SE_CLASS1
 		if (check_bound(v1) == false)

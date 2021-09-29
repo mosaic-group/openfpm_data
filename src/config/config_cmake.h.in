@@ -189,4 +189,4 @@ ${DEFINE_TEST_COVERAGE_MODE}
 /* Version number of package */
 #define VERSION "1.0.0"
 
-#define OPENFPM_PDATA
+#define OPENFPM_DATA

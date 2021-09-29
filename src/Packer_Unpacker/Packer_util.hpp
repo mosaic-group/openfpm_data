@@ -216,6 +216,33 @@ struct call_unpack_encap_functor
 	}
 };
 
+template<typename T>
+struct call_unpack_encap_functor_chunking_array_selector
+{
+	template<typename T_value, typename Mem, typename encap>
+	static inline void unpack(ExtPreAlloc<Mem> & mem, const encap & obj, unsigned int sub_id, Unpack_stat & ps)
+	{
+		typedef typename boost::mpl::at<typename encap::type,T_value>::type::value_type obj_type;
+
+		Unpacker<obj_type,Mem>::unpack(mem,obj.template get<T_value::value>()[sub_id],ps);
+	}
+};
+
+template<typename T, unsigned int N1>
+struct call_unpack_encap_functor_chunking_array_selector<T[N1]>
+{
+	template<typename T_value, typename Mem, typename encap>
+	static inline void unpack(ExtPreAlloc<Mem> & mem, const encap & obj, unsigned int sub_id, Unpack_stat & ps)
+	{
+		for (int i = 0 ; i < N1 ; i++)
+		{
+			typedef typename std::remove_all_extents< typename boost::mpl::at<typename encap::type,T_value>::type >::type::value_type obj_type;
+
+			Unpacker<obj_type,Mem>::unpack(mem,obj.template get<T_value::value>()[i][sub_id],ps);
+		}
+	}
+};
+
 //A functor for call_aggregateUnpack
 template<typename encap, typename Mem, int ... prp>
 struct call_unpack_encap_functor_chunking
@@ -235,9 +262,11 @@ struct call_unpack_encap_functor_chunking
 	template<typename T>
 	inline void operator()(T& t)
 	{
-		typedef typename boost::mpl::at<typename encap::type,T>::type::value_type obj_type;
+		typedef typename boost::mpl::at<typename encap::type,T>::type obj_type;
 
-		Unpacker<obj_type,Mem>::unpack(mem,obj.template get<T::value>()[sub_id],ps);
+//		Unpacker<obj_type,Mem>::unpack(mem,obj.template get<T::value>()[sub_id],ps);
+
+		call_unpack_encap_functor_chunking_array_selector<obj_type>::template unpack<T>(mem,obj,sub_id,ps);
 	}
 };
 

@@ -156,6 +156,80 @@ template <typename vector> void test_vector_remove()
 	}
 }
 
+
+template <typename vector> void test_vector_remove_aggregate()
+{
+	typedef Point_test<float> p;
+
+	//! [Create push and multiple remove]
+
+	vector v1;
+
+	for (size_t i = 0 ; i < V_REM_PUSH ; i++)
+	{
+		// Point
+		Point_test<float> p;
+		p.setx(i);
+
+		v1.add(p);
+	}
+
+	{
+	openfpm::vector<aggregate<int>> rem;
+	rem.add();
+	rem.last().get<0>() = 0;
+	rem.add();
+	rem.last().get<0>() = 1;
+	rem.add();
+	rem.last().get<0>() = 2;
+	rem.add();
+	rem.last().get<0>() = 3;
+
+	v1.remove(rem);
+	}
+
+	//! [Create push and multiple remove]
+
+	BOOST_REQUIRE_EQUAL(v1.size(),1020ul);
+	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(0),4);
+
+	{
+	openfpm::vector<aggregate<int>> rem;
+	rem.add();
+	rem.last().get<0>() = v1.size()-3;
+	rem.add();
+	rem.last().get<0>() = v1.size()-2;
+	rem.add();
+	rem.last().get<0>() = v1.size()-1;
+	rem.add();
+	rem.last().get<0>() = v1.size();
+
+	v1.remove(rem);
+	}
+
+	BOOST_REQUIRE_EQUAL(v1.size(),1016ul);
+	BOOST_REQUIRE_EQUAL(v1.template get<p::x>(v1.size()-1),1019);
+
+	{
+	openfpm::vector<aggregate<int>> rem;
+	for (size_t i = 0 ; i < (V_REM_PUSH - 8) / 2 ; i++)
+	{
+		rem.add();
+		rem.last().get<0>() = i * 2;
+	}
+	// remove all the even number
+	v1.remove(rem);
+	}
+
+	BOOST_REQUIRE_EQUAL(v1.size(),508ul);
+
+	// Check only odd
+	for (size_t i = 0 ; i < v1.size() ; i++)
+	{
+		BOOST_REQUIRE_EQUAL((size_t)v1.template get<p::x>(v1.size()-1) % 2, 1ul);
+	}
+}
+
 template <typename vector> void test_vector_insert()
 {
 	typedef Point_test<float> p;
@@ -444,6 +518,12 @@ BOOST_AUTO_TEST_CASE(vector_remove )
 {
 	test_vector_remove<openfpm::vector<Point_test<float>>>();
 	test_vector_remove< openfpm::vector<Point_test<float>,HeapMemory, memory_traits_inte> >();
+}
+
+BOOST_AUTO_TEST_CASE(vector_remove_aggregate )
+{
+	test_vector_remove_aggregate<openfpm::vector<Point_test<float>>>();
+	test_vector_remove_aggregate< openfpm::vector<Point_test<float>,HeapMemory, memory_traits_inte> >();
 }
 
 BOOST_AUTO_TEST_CASE(vector_insert )
