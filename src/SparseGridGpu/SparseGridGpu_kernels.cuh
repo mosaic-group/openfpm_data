@@ -117,6 +117,17 @@ namespace SparseGridGpuKernels
 	template<>
 	struct stencil_conv_func_impl<3>
 	{
+		template<typename ScalarT, typename coordType, typename CpBlockType, typename DataBlockWrapperT, typename lambda_func, typename ... ArgsT>
+		__device__ static inline void stencil_block(ScalarT & res, coordType & coord ,
+				            CpBlockType & cpb,
+							DataBlockWrapperT & DataBlockLoad,
+							int offset,
+				            lambda_func f,
+				            ArgsT ... args)
+		{
+			res = f(cpb,DataBlockLoad,offset,coord[0],coord[1],coord[2]);
+		}
+
 		template<typename ScalarT, typename coordType, typename CpBlockType, typename lambda_func, typename ... ArgsT>
 		__device__ static inline void stencil(ScalarT & res, coordType & coord ,
 				            CpBlockType & cpb,
@@ -140,6 +151,17 @@ namespace SparseGridGpuKernels
 	template<>
 	struct stencil_conv_func_impl<2>
 	{
+		template<typename ScalarT, typename coordType, typename CpBlockType, typename DataBlockWrapperT, typename lambda_func, typename ... ArgsT>
+		__device__ static inline void stencil_block(ScalarT & res, coordType & coord,
+				            CpBlockType & cpb,
+							DataBlockWrapperT & DataBlockLoad,
+							int offset,
+				            lambda_func f,
+				            ArgsT ... args)
+		{
+			res = f(cpb,DataBlockLoad,offset,coord[0],coord[1]);
+		}
+
 		template<typename ScalarT, typename coordType, typename CpBlockType, typename lambda_func, typename ... ArgsT>
 		__device__ static inline void stencil(ScalarT & res, coordType & coord ,
 				            CpBlockType & cpb,
@@ -221,6 +243,80 @@ namespace SparseGridGpuKernels
 				}
 
 	            stencil_conv_func_impl<dim>::stencil(res,coord,cpb,f,args...);
+
+	            dataBlockStore.template get<p_dst>()[offset] = res;
+	        }
+		}
+
+	    template <typename SparseGridT, typename CtxT>
+	    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+	    {
+	        // No flush
+	    }
+	};
+
+
+	template<unsigned int dim, unsigned int n_loop, unsigned int p_src, unsigned int p_dst, unsigned int stencil_size>
+	struct stencil_cross_func_conv_block_read
+	{
+		typedef NNStar<dim> stencil_type;
+
+		static constexpr unsigned int supportRadius = stencil_size;
+
+		template<typename SparseGridT, typename DataBlockWrapperT, typename lambda_func, typename ... ArgT>
+		static inline __device__ void stencil(
+				SparseGridT & sparseGrid,
+				const unsigned int dataBlockId,
+				openfpm::sparse_index<unsigned int> dataBlockIdPos,
+				unsigned int offset,
+				grid_key_dx<dim, int> & pointCoord,
+				DataBlockWrapperT & dataBlockLoad,
+				DataBlockWrapperT & dataBlockStore,
+				unsigned char curMask,
+				lambda_func f,
+				ArgT ... args)
+		{
+	        typedef typename SparseGridT::AggregateBlockType AggregateT;
+	        typedef ScalarTypeOf<AggregateT, p_src> ScalarT;
+
+	        constexpr unsigned int enlargedBlockSize = IntPow<
+	                SparseGridT::getBlockEdgeSize() + 2 * supportRadius, dim>::value;
+
+	        __shared__ ScalarT enlargedBlock[enlargedBlockSize];
+
+	        for (int i = 0; i < n_loop ; i++)
+	        {
+	        	if (i*IntPow<SparseGridT::getBlockEdgeSize(), dim>::value + threadIdx.x < enlargedBlockSize)
+	        	{
+	        		enlargedBlock[i*IntPow<SparseGridT::getBlockEdgeSize(), dim>::value + threadIdx.x] = sparseGrid.getblockMap().template getBackground<p_src>()[0];
+	        	}
+	        }
+
+	        __syncthreads();
+
+	        typedef typename vmpl_create_constant<dim,SparseGridT::blockEdgeSize_>::type block_sizes;
+	        typedef typename vmpl_sum_constant<2*stencil_size,block_sizes>::type vmpl_sizes;
+
+	        cp_block<ScalarT,stencil_size,vmpl_sizes,dim> cpb(enlargedBlock);
+
+	        sparseGrid.template loadGhostBlock<p_src>(dataBlockLoad, dataBlockIdPos, enlargedBlock);
+
+	        __syncthreads();
+
+	        ScalarT res = 0;
+
+	        if ((curMask & mask_sparse::EXIST) && !(curMask & mask_sparse::PADDING))
+	        {
+	        	int coord[dim];
+
+				unsigned int linIdTmp = offset;
+				for (unsigned int d = 0; d < dim; ++d)
+				{
+					coord[d] = linIdTmp % SparseGridT::blockEdgeSize_;
+					linIdTmp /= SparseGridT::blockEdgeSize_;
+				}
+
+	            stencil_conv_func_impl<dim>::stencil_block(res,coord,cpb,dataBlockLoad,offset,f,args...);
 
 	            dataBlockStore.template get<p_dst>()[offset] = res;
 	        }
