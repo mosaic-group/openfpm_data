@@ -225,18 +225,17 @@ __device__ __host__ cnt_type encode_phase_id(cnt_type ph_id,cnt_type pid)
 #ifdef __NVCC__
 
 template<bool is_sparse,unsigned int dim, typename pos_type,
-         typename cnt_type, typename ids_type, typename transform>
+         typename cnt_type, typename ids_type, typename transform,
+		 typename vector_pos_type, typename vector_cnt_type, typename vector_pids_type>
 __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
 						 openfpm::array<pos_type,dim,cnt_type> spacing,
 						 openfpm::array<ids_type,dim,cnt_type> off,
 						 transform t,
-						 int n_cap,
 						 int n_part,
-						 int n_cap2,
 						 cnt_type start,
-						 pos_type * p_pos,
-						 cnt_type *counts,
-						 cnt_type * p_ids)
+						 vector_pos_type p_pos,
+						 vector_cnt_type counts,
+						 vector_pids_type p_ids)
 {
     cnt_type i, cid, ins;
     ids_type e[dim+1];
@@ -248,23 +247,23 @@ __global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
     pos_type p[dim];
 
     for (size_t k = 0 ; k < dim ; k++)
-    {p[k] = p_pos[i+k*n_cap];}
+    {p[k] = p_pos.template get<0>(i)[k];}
 
     cid = cid_<dim,cnt_type,ids_type,transform>::get_cid(div,spacing,off,t,p,e);
 
     if (is_sparse == false)
     {
-    	e[dim] = atomicAdd(counts + cid, 1);
+    	e[dim] = atomicAdd(&counts.template get<0>(cid), 1);
 
-    	p_ids[ins] = cid;
-        {p_ids[ins+1*(n_cap2)] = e[dim];}
+    	p_ids.template get<0>(ins)[0] = cid;
+        {p_ids.template get<0>(ins)[1] = e[dim];}
     }
     else
     {
-        p_ids[ins] = cid;
-        {p_ids[ins+1*(n_cap2)] = e[dim];}
+        p_ids.template get<0>(ins)[0] = cid;
+        {p_ids.template get<0>(ins)[1] = e[dim];}
 
-        counts[ins] = cid;
+        counts.template get<0>(ins) = cid;
     }
 }
 
@@ -320,43 +319,42 @@ __global__ void subindex_without_count(openfpm::array<ids_type,dim,cnt_type> div
 
 #ifdef MAKE_CELLLIST_DETERMINISTIC
 
-template<unsigned int dim, typename cnt_type, typename ids_type, typename ph>
+template<unsigned int dim, typename cnt_type, typename ids_type, typename ph, typename vector_cells_type>
 __global__ void fill_cells(cnt_type phase_id ,
 						   cnt_type n,
-		                   cnt_type *cells)
+		                   vector_cells_type cells)
 {
     cnt_type i;
 
     i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= n) return;
 
-    cells[i] = encode_phase_id<cnt_type,ph>(phase_id,i);
+    cells.template get<0>(i) = encode_phase_id<cnt_type,ph>(phase_id,i);
 }
 
 #else
 
-template<unsigned int dim, typename cnt_type, typename ids_type, typename ph>
+template<unsigned int dim, typename cnt_type, typename ids_type, typename ph,typename vector_starts_type, typename vector_pids_type, typename vector_cells_type>
 __global__ void fill_cells(cnt_type phase_id ,
 		                   openfpm::array<ids_type,dim,cnt_type> div_c,
 		                   openfpm::array<ids_type,dim,cnt_type> off,
 		                   cnt_type n,
-		                   cnt_type n_cap,
 		                   cnt_type start_p,
-		                   const cnt_type *starts,
-		                   const cnt_type * p_ids,
-		                   cnt_type *cells)
+		                   vector_starts_type starts,
+		                   vector_pids_type p_ids,
+		                   vector_cells_type cells)
 {
     cnt_type i, cid, id, start;
 
     i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= n) return;
 
-    cid = p_ids[i];
+    cid = p_ids.template get<0>(i)[0];
 
-    start = starts[cid];
-    id = start + p_ids[1*n_cap+i];
+    start = starts.template get<0>(cid);
+    id = start + p_ids.template get<0>(i)[1];
 
-    cells[id] = encode_phase_id<cnt_type,ph>(phase_id,i + start_p);
+    cells.template get<0>(id) = encode_phase_id<cnt_type,ph>(phase_id,i + start_p);
 }
 
 #endif
@@ -391,7 +389,7 @@ __device__ inline void reorder_wprp(const vector_prp & input,
 	output.template set<prp ...>(dst_id,input,src_id);
 }
 
-template <typename vector_prp, typename vector_pos, typename vector_ns, typename cnt_type, typename sh>
+template <typename vector_prp, typename vector_pos, typename vector_ns, typename vector_cells_type, typename cnt_type, typename sh>
 __global__ void reorder_parts(int n,
 		                      const vector_prp input,
 		                      vector_prp output,
@@ -399,12 +397,12 @@ __global__ void reorder_parts(int n,
 		                      vector_pos output_pos,
 		                      vector_ns sorted_non_sorted,
 		                      vector_ns non_sorted_to_sorted,
-		                      const cnt_type * cells)
+		                      const vector_cells_type cells)
 {
     cnt_type i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= n) return;
 
-    cnt_type code = cells[i];
+    cnt_type code = cells.template get<0>(i);
 
     reorder(input, output, code,i);
     reorder(input_pos,output_pos,code,i);
@@ -413,7 +411,7 @@ __global__ void reorder_parts(int n,
     non_sorted_to_sorted.template get<0>(code) = i;
 }
 
-template <typename vector_prp, typename vector_pos, typename vector_ns, typename cnt_type, typename sh, unsigned int ... prp>
+template <typename vector_prp, typename vector_pos, typename vector_ns, typename vector_cells_type, typename cnt_type, typename sh, unsigned int ... prp>
 __global__ void reorder_parts_wprp(int n,
 		                      const vector_prp input,
 		                      vector_prp output,
@@ -421,12 +419,12 @@ __global__ void reorder_parts_wprp(int n,
 		                      vector_pos output_pos,
 		                      vector_ns sorted_non_sorted,
 		                      vector_ns non_sorted_to_sorted,
-		                      const cnt_type * cells)
+		                      const vector_cells_type cells)
 {
     cnt_type i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= n) return;
 
-    cnt_type code = cells[i];
+    cnt_type code = cells.template get<0>(i);
     reorder_wprp<vector_prp,cnt_type,prp...>(input, output, code,i);
     reorder(input_pos,output_pos,code,i);
 
