@@ -2520,7 +2520,33 @@ public:
     {
         return gridGeometry.BlockLinId(blockCoord);
     }
+	
+	/*! \brief Insert the point on host side and flush directly
+ *
+ * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
+ *
+ * \param grid point where to insert
+ *
+ * \return a reference to the data to fill
+ *
+ *
+ */
+	template<unsigned int p>
+	auto insertFlush(const sparse_grid_gpu_index<self> &coord) -> ScalarTypeOf<AggregateBlockT, p> &
+	{
+		auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
 
+		indexT block_id = indexBuffer.template get<0>(coord.get_cnk_pos_id());
+		indexT local_id = coord.get_data_id();
+
+		typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
+
+		auto block_data = this->insertBlockFlush(block_id);
+		block_data.template get<BMG::pMask>()[local_id] = 1;
+
+		return block_data.template get<p>()[local_id];
+	}
+    
     /*! \brief Insert the point on host side and flush directly
      *
      * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
