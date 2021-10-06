@@ -202,7 +202,7 @@ namespace SparseGridGpuKernels
 				            lambda_func f,
 				            ArgsT ... args)
 		{
-			f(res1,res2,cpb1,cpb2,DataBlockLoad,coord[0],coord[1]);
+			f(res1,res2,cpb1,cpb2,DataBlockLoad,offset,coord[0],coord[1]);
 		}
 	};
 
