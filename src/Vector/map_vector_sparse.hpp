@@ -1674,8 +1674,9 @@ namespace openfpm
 		 *
 		 */
 		template <unsigned int p>
-		auto insertFlush(Ti ele) -> decltype(vct_data.template get<p>(0))
+		auto insertFlush(Ti ele, bool & is_new) -> decltype(vct_data.template get<p>(0))
 		{
+			is_new = false;
 			size_t di;
 
 			// first we have to search if the block exist
@@ -1686,7 +1687,8 @@ namespace openfpm
 				// block exist
 				return vct_data.template get<p>(di);
 			}
-
+			is_new = true;
+			
 			// It does not exist, we create it di contain the index where we have to create the new block
 			vct_index.insert(di);
 			vct_data.isert(di);
@@ -1699,8 +1701,9 @@ namespace openfpm
 		 * \param ele element id
 		 *
 		 */
-		auto insertFlush(Ti ele) -> decltype(vct_data.get(0))
+		auto insertFlush(Ti ele, bool & is_new) -> decltype(vct_data.get(0))
 		{
+			is_new = false;
 			Ti di;
 
 			// first we have to search if the block exist
@@ -1715,6 +1718,7 @@ namespace openfpm
 			// It does not exist, we create it di contain the index where we have to create the new block
 			vct_index.insert(di);
 			vct_data.insert(di);
+			is_new = true;
 
 			vct_index.template get<0>(di) = ele;
 
