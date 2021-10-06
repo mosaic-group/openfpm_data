@@ -18,6 +18,8 @@ class BlockMapGpu
 {
 private:
     typedef BlockTypeOf<AggregateBlockT, 0> BlockT0;
+    
+    bool is_new;
 
 #ifdef SE_CLASS1
 
@@ -108,13 +110,19 @@ public:
      *
      */
     template<unsigned int p>
-    auto insertBlockFlush(size_t blockId) -> decltype(blockMap.insertFlush(blockId).template get<p>())
+    auto insertBlockFlush(size_t blockId) -> decltype(blockMap.insertFlush(blockId,is_new).template get<p>())
     {
         typedef BlockTypeOf<AggregateBlockT, p> BlockT;
 
-        auto aggregate = blockMap.insertFlush(blockId);
-        auto &block = aggregate.template get<p>();
-
+        auto aggregate = blockMap.insertFlush(blockId,is_new);
+		auto &block = aggregate.template get<p>();
+     
+	    if (is_new == true)
+	    {
+		    for (int i = 0 ; i < BlockT::size ; i++)
+		    {aggregate.template get<pMask>()[i] = 0;}
+	    }
+        
         return block;
     }
 
@@ -125,9 +133,18 @@ public:
      * \return a reference to the block data
      *
      */
-    auto insertBlockFlush(size_t blockId) -> decltype(blockMap.insertFlush(blockId))
+    auto insertBlockFlush(size_t blockId) -> decltype(blockMap.insertFlush(blockId,is_new))
     {
-        return blockMap.insertFlush(blockId);
+	    typedef BlockTypeOf<AggregateBlockT, 0> BlockT;
+    	auto b = blockMap.insertFlush(blockId,is_new);
+    	
+    	if (is_new == true)
+	    {
+    		for (int i = 0 ; i < BlockT::size ; i++)
+		    {b.template get<pMask>()[i] = 0;}
+	    }
+    	
+        return b;
     }
 
     BlockMapGpu_ker<AggregateInternalT, indexT, layout_base> toKernel()
