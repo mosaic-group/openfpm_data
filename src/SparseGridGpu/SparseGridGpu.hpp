@@ -2420,6 +2420,46 @@ public:
      *
      *
      */
+	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv_cross_b(grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	{
+		Box<dim,int> box;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			box.setLow(i,start.get(i));
+			box.setHigh(i,stop.get(i));
+		}
+
+		constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value), (blockSize)>::value;
+
+		applyStencils< SparseGridGpuKernels::stencil_cross_func_conv_block_read<dim,nLoop,prop_src,prop_dst,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+	}
+
+    /*! \brief Apply a free type convolution using blocks
+     *
+     *
+     */
+	template<unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1 , unsigned int prop_dst2, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv2_b(grid_key_dx<dim> start, grid_key_dx<dim> stop , lambda_f func, ArgsT ... args)
+	{
+		Box<dim,int> box;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			box.setLow(i,start.get(i));
+			box.setHigh(i,stop.get(i));
+		}
+
+        constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value), (blockSize)>::value;
+
+		applyStencils< SparseGridGpuKernels::stencil_func_conv2_b<dim,nLoop,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+	}
+
+    /*! \brief Apply a free type convolution using blocks
+     *
+     *
+     */
 	template<unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1 , unsigned int prop_dst2, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
 	void conv2(grid_key_dx<dim> start, grid_key_dx<dim> stop , lambda_f func, ArgsT ... args)
 	{
@@ -2520,7 +2560,33 @@ public:
     {
         return gridGeometry.BlockLinId(blockCoord);
     }
+	
+	/*! \brief Insert the point on host side and flush directly
+ *
+ * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
+ *
+ * \param grid point where to insert
+ *
+ * \return a reference to the data to fill
+ *
+ *
+ */
+	template<unsigned int p>
+	auto insertFlush(const sparse_grid_gpu_index<self> &coord) -> ScalarTypeOf<AggregateBlockT, p> &
+	{
+		auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
 
+		indexT block_id = indexBuffer.template get<0>(coord.get_cnk_pos_id());
+		indexT local_id = coord.get_data_id();
+
+		typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
+
+		auto block_data = this->insertBlockFlush(block_id);
+		block_data.template get<BMG::pMask>()[local_id] = 1;
+
+		return block_data.template get<p>()[local_id];
+	}
+    
     /*! \brief Insert the point on host side and flush directly
      *
      * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
