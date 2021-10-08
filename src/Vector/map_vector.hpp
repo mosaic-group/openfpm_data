@@ -44,6 +44,50 @@
 namespace openfpm
 {
 
+	template<bool active>
+	struct copy_two_vectors_activate_impl
+	{
+		template<typename vector_type1, typename vector_type2>
+		static void copy(vector_type1 & v1, vector_type2 & v2)
+		{
+
+		}
+
+		template<typename vector_type1, typename vector_type2>
+		static void copy2(vector_type1 & v1, vector_type2 & v2)
+		{
+
+		}
+	};
+
+	template<>
+	struct copy_two_vectors_activate_impl<true>
+	{
+		template<typename vector_type1, typename vector_type2>
+		static void copy(vector_type1 & v1, vector_type2 & v2)
+		{
+#ifdef __NVCC__
+			if (v1.size() != 0)
+			{
+				auto it = v1.getGPUIterator();
+				CUDA_LAUNCH(copy_two_vectors,it,v1.toKernel(),v2.toKernel());
+			}
+#endif
+		}
+
+		template<typename vector_type1, typename vector_type2>
+		static void copy2(vector_type1 & v1, vector_type2 & v2)
+		{
+#ifdef __NVCC__
+			if (v2.size() != 0)
+			{
+				auto it = v1.getGPUIterator();
+				CUDA_LAUNCH(copy_two_vectors,it,v1.toKernel(),v2.toKernel());
+			}
+#endif
+		}
+	};
+
 	template<bool is_ok_cuda,typename T, typename Memory,
 			 template<typename> class layout_base,
 			 typename grow_p>
@@ -1376,18 +1420,7 @@ namespace openfpm
 			dup.v_size = v_size;
 			dup.base.swap(base.duplicate());
 
-			// copy the device part
-			// and device
-			if (Memory::isDeviceHostSame() == false)
-			{
-#ifdef __NVCC__
-				if (dup.size() != 0)
-				{
-					auto it = dup.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,dup.toKernel(),toKernel());
-				}
-#endif
-			}
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false>::copy(dup,*this);
 
 			return dup;
 		}
@@ -1540,17 +1573,7 @@ namespace openfpm
 				base.set(key,mv.base,key);
 			}
 
-			// and device
-			if (Memory::isDeviceHostSame() == false)
-			{
-#ifdef __NVCC__
-				if (mv.size() != 0)
-				{
-					auto it = mv.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
-				}
-#endif
-			}
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false>::copy2(*this,mv);
 
 			return *this;
 		}
@@ -1594,17 +1617,7 @@ namespace openfpm
 				base.set(key,mv.getInternal_base(),key);
 			}
 
-			// and device
-			if (Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false)
-			{
-#ifdef __NVCC__
-				if (mv.size() != 0)
-				{
-					auto it = mv.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
-				}
-#endif
-			}
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false>::copy2(*this,mv);
 
 			return *this;
 		}
@@ -1653,17 +1666,7 @@ namespace openfpm
 				base.set_general(key,mv.getInternal_base(),key);
 			}
 
-			// and device
-			if (Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false)
-			{
-#ifdef __NVCC__
-				if (mv.size() != 0)
-				{
-					auto it = mv.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
-				}
-#endif
-			}
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false>::copy2(*this,mv);
 
 			return *this;
 		}
