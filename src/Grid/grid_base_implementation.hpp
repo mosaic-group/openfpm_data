@@ -70,6 +70,37 @@ struct skip_init<true,T>
 
 #ifdef __NVCC__
 
+template<bool active>
+struct copy_ndim_grid_device_active_impl
+	{
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+
+	}
+
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy_block(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+	}
+};
+
+template<>
+struct copy_ndim_grid_device_active_impl<true>
+{
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+		CUDA_LAUNCH((copy_ndim_grid_device<grid_type1::dims,decltype(g1.toKernel())>),ite,g2.toKernel(),g1.toKernel());
+	}
+
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy_block(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+		CUDA_LAUNCH((copy_ndim_grid_block_device<grid_type1::dims,decltype(g1.toKernel())>),ite,g2.toKernel(),g1.toKernel());
+	}
+};
+
 template<unsigned int dim, typename ids_type = int>
 struct grid_p
 {
@@ -470,7 +501,7 @@ private:
 				{
 					if (blockSize == 1)
 					{
-						CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+						copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy(grid_new,*this,ite);
 					}
 					else
 					{
@@ -478,7 +509,7 @@ private:
 
 						ite.thr.x = blockSize;
 
-						CUDA_LAUNCH((copy_ndim_grid_block_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+						copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy_block(grid_new,*this,ite);
 					}
 				}
 			}
@@ -496,7 +527,7 @@ private:
 
 				auto ite = getGPUIterator_impl<1>(g_sm_copy,start,stop);
 
-				CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+				copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy(grid_new,*this,ite);
 			}
 #else
 
