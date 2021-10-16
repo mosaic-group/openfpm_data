@@ -1999,7 +1999,7 @@ public:
 	}
 };
 
-/*! \brief Specialization for a const array of dimension dim
+/*! \brief Specialization for views
  *
  * \tparam T type of the array
  * \tparam dim dimensionality of the array
@@ -2009,7 +2009,7 @@ template<typename T, typename vmpl>
 class point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>
 {
 	//! array view of dimension dim
-	const openfpm::detail::multi_array::const_sub_array_openfpm<T,1,vmpl,const T *> d;
+	openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> d;
 
 public:
 
@@ -2025,13 +2025,37 @@ public:
     //! The type of the internal vector
     typedef T coord_type;
 
+	/*! \brief Operator= for point expression
+	 *
+	 * \tparam orig origin type
+	 * \tparam exp1 expression 1
+	 * \tparam exp2 expression 2
+	 * \tparam op operation
+	 *
+	 * \param point expression
+	 *
+	 * \return a point expression
+	 *
+	 */
+	template<typename orig, typename exp1, typename exp2, unsigned int op>
+	__device__ __host__  point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & 
+	operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
+	{
+		p_exp.init();
+
+		for (size_t i = 0; i < nvals ; i++)
+		{d[i] = p_exp.value(i);}
+
+		return *this;
+	}
+
 	/*! \brief construct from an array of dimension dim
 	 *
 	 * \param d array
 	 *
 	 */
 	__device__ __host__ inline point_expression(const openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> & d)
-	:d(d.origin(),d.strides())
+	:d(d.origin_mutable(),d.strides())
 	{
 	}
 

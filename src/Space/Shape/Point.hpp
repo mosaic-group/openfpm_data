@@ -487,7 +487,8 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	__device__ __host__ Point<dim,T> & operator=(const point_expression<T[dim]> & p_exp)
+	template<typename any>
+	__device__ __host__ Point<dim,T> & operator=(const point_expression<any> & p_exp)
 	{
 		p_exp.init();
 
