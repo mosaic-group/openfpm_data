@@ -181,10 +181,10 @@ struct arr_arr_ptr
 template<typename copy_type, unsigned int nprp, unsigned int prp_val, unsigned int prp_id>
 struct meta_copy_block
 {
-	template<typename dataBuffer_type>
-	__device__ __host__ static void copy(void * (& data_ptr)[nprp], dataBuffer_type & dataBuff, unsigned int ppos, unsigned int dataBlockPos, unsigned int offset, unsigned int n_pnt)
+	template<typename SparseGrid_type>
+	__device__ __host__ static void copy(void * (& data_ptr)[nprp], SparseGrid_type & sparseGrid, unsigned int ppos, unsigned int dataBlockPos, unsigned int offset, unsigned int n_pnt)
 	{
-		((copy_type *)data_ptr[prp_id])[ppos] = dataBuff.template get<prp_val>(dataBlockPos)[offset];
+		((copy_type *)data_ptr[prp_id])[ppos] = sparseGrid.template getData<prp_val>(dataBlockPos)[offset];
 	}
 
 	template<typename dataBuffer_type>
@@ -197,12 +197,12 @@ struct meta_copy_block
 template<typename copy_type, unsigned int nprp, unsigned int prp_val, unsigned int prp_id, unsigned int N1>
 struct meta_copy_block<copy_type[N1],nprp,prp_val,prp_id>
 {
-	template<typename dataBuffer_type>
-	__device__ __host__ static void copy(void * (& data_ptr)[nprp], dataBuffer_type & dataBuff, unsigned int ppos, unsigned int dataBlockPos, unsigned int offset, unsigned int n_pnt)
+	template<typename SparseGrid_type>
+	__device__ __host__ static void copy(void * (& data_ptr)[nprp], SparseGrid_type & sparseGrid, unsigned int ppos, unsigned int dataBlockPos, unsigned int offset, unsigned int n_pnt)
 	{
 		for (int i = 0 ; i < N1 ; i++)
 		{
-			((copy_type *)data_ptr[prp_id])[ppos+i*n_pnt] = dataBuff.template get<prp_val>(dataBlockPos)[i][offset];
+			((copy_type *)data_ptr[prp_id])[ppos+i*n_pnt] = sparseGrid.template getData<prp_val>(dataBlockPos)[i][offset];
 		}
 	}
 
@@ -219,14 +219,14 @@ struct meta_copy_block<copy_type[N1],nprp,prp_val,prp_id>
 template<typename copy_type, unsigned int nprp, unsigned int prp_val, unsigned int prp_id, unsigned int N1, unsigned int N2>
 struct meta_copy_block<copy_type[N1][N2],nprp,prp_val,prp_id>
 {
-	template<typename dataBuffer_type>
-	__device__ __host__ static void copy(void * (& data_ptr)[nprp], dataBuffer_type & dataBuff, unsigned int ppos, unsigned int dataBlockPos, unsigned int offset, unsigned int n_pnt)
+	template<typename SparseGrid_type>
+	__device__ __host__ static void copy(void * (& data_ptr)[nprp], SparseGrid_type & sparseGrid, unsigned int ppos, unsigned int dataBlockPos, unsigned int offset, unsigned int n_pnt)
 	{
 		for (int i = 0 ; i < N1 ; i++)
 		{
 			for (int j = 0 ; j < N2 ; j++)
 			{
-				((copy_type *)data_ptr[prp_id])[ppos + (i*N2 + j)*n_pnt] = dataBuff.template get<prp_val>(dataBlockPos)[i][j][offset];
+				((copy_type *)data_ptr[prp_id])[ppos + (i*N2 + j)*n_pnt] = sparseGrid.template getData<prp_val>(dataBlockPos)[i][j][offset];
 			}
 		}
 	}

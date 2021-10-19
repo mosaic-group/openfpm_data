@@ -451,6 +451,28 @@ public:
     {
         return blockMap.getIndex(id);
     }
+
+    /*! \brief Get the data for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    template<unsigned int prp>
+    __device__ auto getData(indexT block_pos) const -> decltype(blockMap.template getData<prp>(0))
+    {
+        return blockMap.template getData<prp>(block_pos);
+    }
+
+    /*! \brief Get the data for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    template<unsigned int prp>
+    __device__ auto getData(indexT block_pos) -> decltype(blockMap.template getData<prp>(0))
+    {
+        return blockMap.template getData<prp>(block_pos);
+    }
 };
 
 

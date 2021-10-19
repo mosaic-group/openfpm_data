@@ -643,7 +643,7 @@ private:
 		tmp_swp.swap(tmp);
 
 		pack_subs_swp.swap(pack_subs);
-		index_size_swp = private_get_index_array().size();
+		index_size_swp = numBlocks();
     }
 
     inline void swap_remote_pack()
@@ -660,7 +660,7 @@ private:
 
 		pack_subs_swp_r.swap(pack_subs);
 		//req_index_swp_r = req_index;
-		index_size_swp_r = private_get_index_array().size();
+		index_size_swp_r = numBlocks();
     }
 
 protected:
@@ -795,9 +795,6 @@ public:
     {
 		if (!(opt & KEEP_GEOMETRY))
 		{
-/*	    	auto & indexBuffer = private_get_index_array();
-	    	auto & dataBuffer = private_get_data_array();*/
-
 			e_points.resize(tot_pnt);
 			pack_output.resize(tot_pnt);
 
@@ -1089,7 +1086,7 @@ private:
 			ite = nadd_buff.getGPUIterator();
 			CUDA_LAUNCH(SparseGridGpuKernels::set_one,ite,nadd_buff.toKernel());
 
-			int sz_b =  this->private_get_index_array().size();
+			int sz_b =  this->numBlocks();
 
 			this->template flush<sLeft_<prp>...>(ctx,flush_type::FLUSH_ON_DEVICE);
 
@@ -1194,9 +1191,6 @@ private:
     	arr_ptr<n_it> mask_ptr;
     	static_array<n_it,unsigned int> sar;
 
-    	auto & indexBuffer = private_get_index_array();
-    	auto & dataBuffer = private_get_data_array();
-
 		if (req_index != pack_subs.size())
 		{std::cerr << __FILE__ << ":" << __LINE__ << " error the packing request number differ from the number of packed objects " << req_index << "  " << pack_subs.size() << std::endl;}
 
@@ -1269,15 +1263,13 @@ private:
 								   indexT,
 								   decltype(e_points.toKernel()),
 								   decltype(pack_output.toKernel()),
-								   decltype(indexBuffer.toKernel()),
-								   decltype(dataBuffer.toKernel()),
+								   decltype(this->toKernel_reduced()),
 								   decltype(tmp.toKernel()),
 								   self::blockSize,
 								   prp ...>),
 								   ite,
 								   e_points.toKernel(),
-								   dataBuffer.toKernel(),
-								   indexBuffer.toKernel(),
+								   this->toKernel_reduced(),
 								   tmp.toKernel(),
 								   pack_output.toKernel(),
 								   index_ptr,
@@ -1820,7 +1812,7 @@ public:
      */
     bool isSkipLabellingPossible()
     {
-    	return (index_size_swp_r == private_get_index_array().size()) && (index_size_swp == private_get_index_array().size());
+    	return (index_size_swp_r == numBlocks()) && (index_size_swp == numBlocks());
     }
 
     /*! \brief Get an element using sparse_grid_gpu_index (using this index it guarantee that the point exist)

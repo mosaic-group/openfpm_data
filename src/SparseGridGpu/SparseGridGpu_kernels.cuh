@@ -1541,14 +1541,12 @@ namespace SparseGridGpuKernels
     		 typename indexT,
     		 typename pntBuff_type,
     		 typename pointOffset_type,
-    		 typename indexBuffer_type,
-    		 typename dataBuffer_type,
+    		 typename SparseGridT,
     		 typename scan_type,
     		 unsigned int blockSize,
     		 unsigned int ... prp>
     __global__ void pack_data(pntBuff_type pntBuff,
-    						  dataBuffer_type dataBuff,
-    						  indexBuffer_type indexBuff,
+    						  SparseGridT sparseGrid,
     						  scan_type scan,
     						  pointOffset_type point_offsets,
     						  arr_ptr<n_it> index_ptr,
@@ -1572,19 +1570,19 @@ namespace SparseGridGpuKernels
         const unsigned int dataBlockPos = id / blockSize;
         const unsigned int offset = id % blockSize;
 
-		unsigned int ppos = scan.template get<0>(dataBlockPos + k*(indexBuff.size() + 1));
-		const unsigned int dataBlockPosPack = scan.template get<1>(dataBlockPos + k*(indexBuff.size() + 1));
+		unsigned int ppos = scan.template get<0>(dataBlockPos + k*(sparseGrid.numBlocks() + 1));
+		const unsigned int dataBlockPosPack = scan.template get<1>(dataBlockPos + k*(sparseGrid.numBlocks() + 1));
 
-		sparsegridgpu_pack_impl<AggregateT, dataBuffer_type ,prp ...>
-														spi(dataBlockPos,offset,dataBuff,p_offset,data_ptr->ptr[k],sar.sa[k]);
+		sparsegridgpu_pack_impl<AggregateT, SparseGridT ,prp ...>
+														spi(dataBlockPos,offset,sparseGrid,p_offset,data_ptr->ptr[k],sar.sa[k]);
 
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
 
 		((unsigned int *)scan_ptr.ptr[k])[dataBlockPosPack] = ppos;
 
-		((indexT *)index_ptr.ptr[k])[dataBlockPosPack] = indexBuff.template get<0>(dataBlockPos);
+		((indexT *)index_ptr.ptr[k])[dataBlockPosPack] = sparseGrid.getIndex(dataBlockPos);
 		((short int *)offset_ptr.ptr[k])[p_offset] = offset;
-		((unsigned char *)mask_ptr.ptr[k])[p_offset] = dataBuff.template get<pMask>(dataBlockPos)[offset];
+		((unsigned char *)mask_ptr.ptr[k])[p_offset] = sparseGrid.getMask(dataBlockPos,offset);
     }
 }
 

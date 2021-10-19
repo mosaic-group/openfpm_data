@@ -995,6 +995,28 @@ class SparseGridGpu_ker_reduced : public BlockMapGpu_ker_reduced<AggregateBlockT
         {
             return BMG::getMask(block_pos)[offset];
         }
+
+        /*! \brief Get the data for the block at position block_pos
+        *
+        * \param block_pos position of the block
+        * 
+        */
+       template<unsigned int prp>
+        __device__ auto getData(indexT block_pos) const -> decltype(BMG::template getData<prp>(0))
+        {
+            return BMG::template getData<prp>(block_pos);
+        }
+
+        /*! \brief Get the data for the block at position block_pos
+        *
+        * \param block_pos position of the block
+        * 
+        */
+       template<unsigned int prp>
+        __device__ auto getData(indexT block_pos) -> decltype(BMG::template getData<prp>(0))
+        {
+            return BMG::template getData<prp>(block_pos);
+        }
 };
 
 #endif //OPENFPM_PDATA_SPARSEGRIDGPU_KER_CUH
