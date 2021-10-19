@@ -153,6 +153,12 @@ public:
         return toKer;
     }
 
+    BlockMapGpu_ker_reduced<AggregateInternalT, indexT, layout_base> toKernel_reduced()
+    {
+        BlockMapGpu_ker_reduced<AggregateInternalT, indexT, layout_base> toKer(blockMap.toKernel_reduced());
+        return toKer;
+    }
+
     template<unsigned int ... prp>
     void deviceToHost()
     {
@@ -181,6 +187,16 @@ public:
 #ifdef SE_CLASS1
         is_setGPUInsertBuffer = true;
 #endif
+    }
+
+    /*! \brief Return the number of blocks in the map
+     *
+     * \return number of blocks
+     * 
+     */
+    size_t size() const
+    {
+        return blockMap.size();
     }
 
 	/*! \brief In case we manually set the added index buffer and the add data buffer we have to call this

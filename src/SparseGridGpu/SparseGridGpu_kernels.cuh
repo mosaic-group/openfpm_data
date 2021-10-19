@@ -1321,26 +1321,22 @@ namespace SparseGridGpuKernels
     		 unsigned int pMask,
     		 unsigned int numCnt,
              typename indexT,
-    		 typename dataBufferType,
+    		 typename sparseGridType,
     		 typename packBufferType,
     		 typename scanType,
     		 typename scanItType,
     		 typename outputType,
     		 typename boxesVector_type,
-    		 typename grid_smb_type,
-    		 typename indexBuffer_type>
-    __global__ void get_exist_points_with_boxes(indexBuffer_type indexBuffer,
+    		 typename grid_smb_type>
+    __global__ void get_exist_points_with_boxes(sparseGridType sparseGrid,
     											 boxesVector_type boxes,
     											 grid_smb_type grd,
-    											 dataBufferType dataBuf,
     											 packBufferType pack_output,
     											 scanType scan,
     											 scanItType scan_it,
     											 outputType output)
     {
-    	typedef typename dataBufferType::value_type AggregateT;
-    	typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
-    	constexpr unsigned int blockSize = MaskBlockT::size;
+    	constexpr unsigned int blockSize = sparseGrid.getBlockSize();
 
         const unsigned int dataBlockPos = blockIdx.x;
         const unsigned int offset = threadIdx.x % blockSize;
@@ -1359,9 +1355,9 @@ namespace SparseGridGpuKernels
 
 #endif
 
-        int predicate = dataBuf.template get<pMask>(dataBlockPos)[offset] & 0x1;
+        int predicate = sparseGrid.getMask(dataBlockPos,offset) & 0x1;
         // calculate point coord;
-        indexT id = indexBuffer.template get<0>(dataBlockPos);
+        indexT id = sparseGrid.getIndex(dataBlockPos);
         grid_key_dx<dim,int> pnt = grd.InvLinId(id*grd.getBlockSize() + offset);
         Point<dim,int> p_;
 
@@ -1382,9 +1378,9 @@ namespace SparseGridGpuKernels
 					int p = atomicAdd(&ato_cnt[k] , 1);
 
 					// we have a scan for every box
-					const unsigned int dataBlockPosPack = scan.template get<1>(dataBlockPos + k*(indexBuffer.size() + 1));
-					unsigned int sit = scan.template get<0>(dataBlockPos + k*(indexBuffer.size() + 1));
-					int scan_id = scan.template get<0>(dataBlockPos + k*(indexBuffer.size() + 1)) + scan_it.template get<0>(k);
+					const unsigned int dataBlockPosPack = scan.template get<1>(dataBlockPos + k*(sparseGrid.numBlocks() + 1));
+					unsigned int sit = scan.template get<0>(dataBlockPos + k*(sparseGrid.numBlocks() + 1));
+					int scan_id = scan.template get<0>(dataBlockPos + k*(sparseGrid.numBlocks() + 1)) + scan_it.template get<0>(k);
 					output.template get<0>(scan_id + p) = (offset + dataBlockPos * blockSize) * numCnt + k;
 					pack_output.template get<0>(scan_id + p) = p + sit;
 				}

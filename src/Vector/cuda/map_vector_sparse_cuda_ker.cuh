@@ -619,6 +619,80 @@ namespace openfpm
 #endif
 
 	};
+
+	template<typename T,
+			 typename Ti,
+			 template<typename> class layout_base>
+	class vector_sparse_gpu_ker_reduced
+	{
+			vector_gpu_ker<aggregate<Ti>,layout_base> vct_index;
+
+			vector_gpu_ker<T,layout_base> vct_data;
+
+		public:
+
+			vector_sparse_gpu_ker_reduced(const vector_gpu_ker<aggregate<Ti>,layout_base> & vct_index,
+										  const vector_gpu_ker<T,layout_base> & vct_data)
+			:vct_index(vct_index),vct_data(vct_data)
+			{}
+
+			/*! \brief Return the number of elements
+			*
+			* \return number of elements
+			* 
+			*/
+			__device__ Ti size()
+			{
+				return vct_index.size();
+			}
+
+			/*! \brief Get the data at element id
+			*
+			*
+			* \return the data element
+			*
+			*/
+			template<unsigned int p>
+			__device__ inline auto getData(Ti id) const -> decltype(vct_data.template get<p>(id))
+			{
+				return vct_data.template get<p>(id);
+			}
+
+			/*! \brief Get the data at element id
+			*
+			*
+			* \return the data element
+			*
+			*/
+			template<unsigned int p>
+			__device__ inline auto getData(Ti id) -> decltype(vct_data.template get<p>(id))
+			{
+				return vct_data.template get<p>(id);
+			}
+
+
+			/*! \brief Get the index at element id
+			*
+			*
+			* \return the index element
+			*
+			*/
+			__device__ inline auto getIndex(Ti id) const -> decltype(vct_index.template get<0>(id))
+			{
+				return vct_index.template get<0>(id);
+			}
+
+			/*! \brief Get the index at element id
+			*
+			*
+			* \return the index element
+			*
+			*/
+			__device__ inline auto getIndex(Ti id) -> decltype(vct_index.template get<0>(id))
+			{
+				return vct_index.template get<0>(id);
+			}
+	};
 }
 
 #endif /* MAP_VECTOR_SPARSE_CUDA_KER_CUH_ */

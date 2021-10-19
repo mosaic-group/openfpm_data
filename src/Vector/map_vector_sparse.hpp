@@ -455,26 +455,6 @@ namespace openfpm
     			for (size_t i = 0 ; i < reorder_add_index_cpu.size() ; )
     			{
     				sparse_vector_reduction_cpu_impl<reduction_type,vector_reduction,T,impl,red_type>::red(i,vector_data_red,vector_data,vector_index,reorder_add_index_cpu);
-
-/*    				size_t start = reorder_add_index_cpu.get(i).id;
-    				red_type red = vector_data.template get<reduction_type::prop::value>(i);
-
-    				size_t j = 1;
-    				for ( ; i+j < reorder_add_index_cpu.size() && reorder_add_index_cpu.get(i+j).id == start ; j++)
-    				{
-    					cpu_block_process<reduction_type,impl>::process(vector_data.template get<reduction_type::prop::value>(i+j),red);
-    					//reduction_type::red(red,vector_data.template get<reduction_type::prop::value>(i+j));
-    				}
-    				vector_data_red.add();
-    				vector_data_red.template get<reduction_type::prop::value>(vector_data_red.size()-1) = red;
-
-    				if (T::value == 0)
-    				{
-    					vector_index.add();
-    					vector_index.template get<0>(vector_index.size() - 1) = reorder_add_index_cpu.get(i).id;
-    				}
-
-    				i += j;*/
     			}
 			}
 		}
@@ -1827,7 +1807,7 @@ namespace openfpm
 		 *
 		 * \return the number of elements
 		 */
-		size_t size()
+		size_t size() const
 		{
 			return vct_index.size();
 		}
@@ -1880,6 +1860,18 @@ namespace openfpm
 														  vct_nrem_index.toKernel(),
 														  n_gpu_add_block_slot,
 														  n_gpu_rem_block_slot);
+
+			return mvsck;
+		}
+
+		/*! \brief toKernel function transform this structure into one that can be used on GPU
+		 *
+		 * \return structure that can be used on GPU
+		 *
+		 */
+		vector_sparse_gpu_ker_reduced<T,Ti,layout_base> toKernel_reduced()
+		{
+			vector_sparse_gpu_ker_reduced<T,Ti,layout_base> mvsck(vct_index.toKernel(),vct_data.toKernel());
 
 			return mvsck;
 		}

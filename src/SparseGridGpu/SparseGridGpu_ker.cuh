@@ -16,21 +16,18 @@ struct block_offset
 	indexT off;
 };
 
-//todo Remove template param GridSmT and just use BlockGeometry
 template<unsigned int dim,
         unsigned int blockEdgeSize,
         typename AggregateBlockT,
         typename ct_params,
         typename indexT,
         template<typename> class layout_base,
-        typename GridSmT,
         typename linearizer,
         typename BcT>
 class SparseGridGpu_ker : public BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>
 {
 private:
     linearizer grid;
-    GridSmT blockWithGhostGrid;
 
 	//! background values
 	BcT background;
@@ -63,7 +60,6 @@ public:
 	 */
     SparseGridGpu_ker(const openfpm::vector_sparse_gpu_ker<AggregateBlockT, indexT, layout_base> &blockMap,
                       linearizer & grid,
-                      GridSmT extendedBlockGeometry,
                       unsigned int stencilSupportRadius,
                       openfpm::vector_gpu_ker<aggregate<short int,short int>,memory_traits_inte> ghostLayerToThreadsMapping,
                       openfpm::vector_gpu_ker<aggregate<indexT>,memory_traits_inte> nn_blocks,
@@ -72,7 +68,6 @@ public:
                       BcT & bck)
             : BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>(blockMap),
               grid(grid),
-              blockWithGhostGrid(extendedBlockGeometry),
               stencilSupportRadius(stencilSupportRadius),
               ghostLayerSize(ghostLayerSize),
               ghostLayerToThreadsMapping(ghostLayerToThreadsMapping),
@@ -911,5 +906,95 @@ private:
     }
 };
 
+
+//todo Remove template param GridSmT and just use BlockGeometry
+template<unsigned int dim,
+        unsigned int blockEdgeSize,
+        typename AggregateBlockT,
+        typename indexT,
+        template<typename> class layout_base,
+        typename linearizer>
+class SparseGridGpu_ker_reduced_with_linearizer : public BlockMapGpu_ker_reduced<AggregateBlockT, indexT, layout_base>
+{
+    linearizer geometry;
+
+    public:
+
+        SparseGridGpu_ker_reduced_with_linearizer(BlockMapGpu_ker_reduced<AggregateBlockT, indexT, layout_base> & bmap,
+                                  const linearizer & geometry)
+        :BlockMapGpu_ker_reduced<AggregateBlockT, indexT, layout_base>(bmap),
+         geometry(geometry)
+        {}
+
+};
+
+//todo Remove template param GridSmT and just use BlockGeometry
+template<unsigned int dim,
+        unsigned int blockEdgeSize,
+        typename AggregateBlockT,
+        typename indexT,
+        template<typename> class layout_base>
+class SparseGridGpu_ker_reduced : public BlockMapGpu_ker_reduced<AggregateBlockT, indexT, layout_base>
+{
+        static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
+
+        typedef BlockMapGpu_ker_reduced<AggregateBlockT, indexT, layout_base> BMG;
+
+    public:
+
+        SparseGridGpu_ker_reduced(const BlockMapGpu_ker_reduced<AggregateBlockT, indexT, layout_base> & bmap)
+        :BlockMapGpu_ker_reduced<AggregateBlockT, indexT, layout_base>(bmap)
+        {}
+
+        /*! \brief Return the number of blocks
+        *
+        * \return number of blocks
+        * 
+        */
+        __device__ indexT numBlocks()
+        {
+            return BMG::size();
+        }
+
+        /*! \brief Return the size of the block
+        *
+        * \return the block size
+        *
+        */
+        constexpr __device__ unsigned int getBlockSize() const
+        {
+            return blockSize;
+        }
+
+        /*! \brief Return the flag of the point
+        *
+        * It indicate for example is if the point is a padding point (internaly it return the pMask flag)
+        *
+        * \param chunk_pos chunk position
+        * \param offset of the point
+        * 
+        * \return the flag
+        *
+        */
+        inline __device__ const unsigned char & getMask(indexT block_pos, int offset) const
+        {
+            return BMG::getMask(block_pos)[offset];
+        }
+
+        /*! \brief Return the flag of the point
+        *
+        * It indicate for example is if the point is a padding point (internaly it return the pMask flag)
+        *
+        * \param chunk_pos chunk position
+        * \param offset of the point
+        * 
+        * \return the flag
+        *
+        */
+        inline __device__ unsigned char & getMask(indexT block_pos, int offset)
+        {
+            return BMG::getMask(block_pos)[offset];
+        }
+};
 
 #endif //OPENFPM_PDATA_SPARSEGRIDGPU_KER_CUH

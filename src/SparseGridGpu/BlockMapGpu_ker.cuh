@@ -377,7 +377,81 @@ public:
 
 };
 
+/*! \brief BlockMapGpu on kernel reduced version
+ *
+ * Mainly is compoded by the following set of methods:
+ * 
+ * getData: Return the data block given the block position
+ * getIndex: return the data index given the block position
+ * get: Return the data block given the block index
+ * get_sparse: return the position of the block given the block index
+ * 
+ */
+template<typename AggregateBlockT=aggregate<DataBlock<float, 64>>, typename indexT=int, template<typename> class layout_base=memory_traits_inte>
+class BlockMapGpu_ker_reduced
+{
+    openfpm::vector_sparse_gpu_ker_reduced<AggregateBlockT,indexT,layout_base> blockMap;
 
+    static const unsigned int pMask = AggregateBlockT::max_prop_real - 1;
+
+public:
+
+    BlockMapGpu_ker_reduced(const openfpm::vector_sparse_gpu_ker_reduced<AggregateBlockT,indexT,layout_base> & blockMap)
+    :blockMap(blockMap)
+    {}
+
+    /*! \brief Return the number of blocks
+     *
+     * \return number of blocks
+     * 
+     */
+    __device__ indexT size()
+    {
+        return blockMap.size();
+    }
+
+    /*! \brief Get the mask for the block at position block_pos
+     *
+     * \param block_pos position of the block
+     * 
+     */
+    __device__ auto getMask(indexT block_pos) const -> decltype(blockMap.template getData<pMask>(0))
+    {
+        return blockMap.template getData<pMask>(block_pos);
+    }
+
+    /*! \brief Get the mask for the block at position pos
+     *
+     * \param block_pos position of the block
+     * 
+     */
+    __device__ auto getMask(indexT block_pos) -> decltype(blockMap.template getData<pMask>(0))
+    {
+        return blockMap.template getData<pMask>(block_pos);
+    }
+
+    /*! \brief Get the index at element id
+    *
+    *
+    * \return the index element
+    *
+    */
+    __device__ inline auto getIndex(indexT id) const -> decltype(blockMap.getIndex(0))
+    {
+        return blockMap.getIndex(id);
+    }
+
+    /*! \brief Get the index at element id
+    *
+    *
+    * \return the index element
+    *
+    */
+    __device__ inline auto getIndex(indexT id) -> decltype(blockMap.getIndex(0))
+    {
+        return blockMap.getIndex(id);
+    }
+};
 
 
 #endif /* BLOCK_MAP_GPU_KER_CUH_ */

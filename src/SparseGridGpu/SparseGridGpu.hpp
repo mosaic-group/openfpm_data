@@ -734,8 +734,7 @@ public:
     template<typename ... v_reduce>
     void flush(mgpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST)
     {
-        BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
-                ::template flush<v_reduce ...>(context, opt);
+        BMG::template flush<v_reduce ...>(context, opt);
 
         findNN = false;
     }
@@ -796,15 +795,15 @@ public:
     {
 		if (!(opt & KEEP_GEOMETRY))
 		{
-	    	auto & indexBuffer = private_get_index_array();
-	    	auto & dataBuffer = private_get_data_array();
+/*	    	auto & indexBuffer = private_get_index_array();
+	    	auto & dataBuffer = private_get_data_array();*/
 
 			e_points.resize(tot_pnt);
 			pack_output.resize(tot_pnt);
 
 			ite_gpu<1> ite;
 
-			ite.wthr.x = indexBuffer.size();
+			ite.wthr.x = numBlocks();
 			ite.wthr.y = 1;
 			ite.wthr.z = 1;
 			ite.thr.x = getBlockSize();
@@ -813,14 +812,13 @@ public:
 
 			// Launch a kernel that count the number of element on each chunks
 			CUDA_LAUNCH((SparseGridGpuKernels::get_exist_points_with_boxes<dim,
-																		BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																		BMG::pMask,
 																		n_it,
 																		indexT>),
 					 ite,
-					 indexBuffer.toKernel(),
+					 this->toKernel_reduced(),
 					 pack_subs.toKernel(),
 					 gridGeometry,
-					 dataBuffer.toKernel(),
 					 pack_output.toKernel(),
 					 tmp.toKernel(),
 					 scan_it.toKernel(),
@@ -917,11 +915,11 @@ private:
     void applyStencilInPlace(const Box<dim,int> & box, StencilMode & mode,Args... args)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();
 
         const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
-        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
+        unsigned int numScalars = numBlocks() * dataChunkSize;
 
         if (numScalars == 0) return;
 
@@ -936,7 +934,7 @@ private:
 
         CUDA_LAUNCH_DIM3((SparseGridGpuKernels::applyStencilInPlace
                 <dim,
-                BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+                BMG::pMask,
                 stencil>),
                 threadGridSize, localThreadBlockSize,
                         box,
@@ -950,11 +948,11 @@ private:
     void applyStencilInPlaceNoShared(const Box<dim,int> & box, StencilMode & mode,Args... args)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();
 
         const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
-        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
+        unsigned int numScalars = numBlocks() * dataChunkSize;
 
         if (numScalars == 0) return;
 
@@ -962,7 +960,7 @@ private:
 
         CUDA_LAUNCH((SparseGridGpuKernels::applyStencilInPlaceNoShared
                 <dim,
-                BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+                BMG::pMask,
                 stencil>),
                 ite,
                         box,
@@ -1160,7 +1158,7 @@ private:
 			{
 				auto & chunks = private_get_data_array();
 
-				CUDA_LAUNCH((SparseGridGpuKernels::copy_packed_data_to_chunks<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+				CUDA_LAUNCH((SparseGridGpuKernels::copy_packed_data_to_chunks<BMG::pMask,
 						 	 	 	 	 	 	 	 	 	 	 	 	 	  AggregateT,decltype(convert_blk.toKernel()),decltype(new_map.toKernel()),
 						                                                      decltype(data),decltype(chunks.toKernel()),prp... >),ite,
 																				 (unsigned int *)scan_ptrs_cp.get(i),
@@ -1212,7 +1210,7 @@ private:
 
     	for (size_t i = 0 ; i < pack_subs.size() ; i++)
     	{
-    		size_t n_pnt = tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1);
+    		size_t n_pnt = tmp.template get<0>((i+1)*(numBlocks() + 1)-1);
     		sar.sa[i] = n_pnt;
     		tot_pnt += n_pnt;
     	}
@@ -1221,7 +1219,7 @@ private:
     	// the cycle
     	for (size_t i = 0 ; i < pack_subs.size() ; i++)
     	{
-    		size_t n_cnk = tmp.template get<1>((i+1)*(indexBuffer.size() + 1)-1);
+    		size_t n_cnk = tmp.template get<1>((i+1)*(numBlocks() + 1)-1);
 
     		// fill index_ptr data_ptr scan_ptr
     		index_ptr.ptr[i] = index_ptrs.get(i);
@@ -1229,7 +1227,7 @@ private:
 
     		// for all properties fill the data pointer
 
-    		data_ptr_fill<AggregateT,n_it,prp...> dpf(data_ptrs.get(i),i,data_ptr,tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1));
+    		data_ptr_fill<AggregateT,n_it,prp...> dpf(data_ptrs.get(i),i,data_ptr,tmp.template get<0>((i+1)*(numBlocks() + 1)-1));
     		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(dpf);
 
     		offset_ptr.ptr[i] = offset_ptrs.get(i);
@@ -1264,7 +1262,7 @@ private:
 
 			mem.hostToDevice();
 
-			CUDA_LAUNCH((SparseGridGpuKernels::pack_data<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+			CUDA_LAUNCH((SparseGridGpuKernels::pack_data<BMG::pMask,
 					               AggregateT,
 								   n_it,
 								   sizeof...(prp),
@@ -1298,7 +1296,7 @@ private:
     	ite.thr.z = 1;
 
     	if (pack_subs.size() != 0)
-		{CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),indexBuffer.size()+1,pack_subs.size());}
+		{CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),numBlocks()+1,pack_subs.size());}
     }
 
 
@@ -1571,6 +1569,16 @@ public:
 	:stencilSupportRadius(1)
     {};
 
+	/*! \brief Return the number of blocks
+	 *
+	 * \return number of blocks
+	 * 
+	 */
+	size_t numBlocks() const
+	{
+		return BMG::size();
+	}
+
     /*! \brief resize the SparseGrid
      *
      * \param res indicate the resolution in each dimension
@@ -1607,15 +1615,35 @@ public:
     	initialize(sz_st);
     };
 
+    SparseGridGpu_ker_reduced
+            <
+                    dim,
+                    blockEdgeSize,
+                    typename BMG::AggregateInternalT,
+                    indexT,
+                    layout_base
+            > toKernel_reduced()
+    {
+        SparseGridGpu_ker_reduced
+                <
+                        dim,
+                        blockEdgeSize,
+                        typename BMG::AggregateInternalT,
+                        indexT,
+                        layout_base
+                > toKer(
+                BMG::toKernel_reduced());
+        return toKer;
+    }
+
     SparseGridGpu_ker
             <
                     dim,
                     blockEdgeSize,
-                    typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
+                    typename BMG::AggregateInternalT,
                     ct_par<0,1>,
                     indexT,
                     layout_base,
-                    decltype(extendedBlockGeometry),
                     linearizer,
                     AggregateT
             > toKernel()
@@ -1624,17 +1652,15 @@ public:
                 <
                         dim,
                         blockEdgeSize,
-                        typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
+                        typename BMG::AggregateInternalT,
                         ct_par<0,1>,
                         indexT,
                         layout_base,
-                        decltype(extendedBlockGeometry),
                         linearizer,
                         AggregateT
                 > toKer(
-                BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.toKernel(),
+                BMG::blockMap.toKernel(),
                 gridGeometry,
-                extendedBlockGeometry,
                 stencilSupportRadius,
                 ghostLayerToThreadsMapping.toKernel(),
                 nn_blocks.toKernel(),
@@ -1649,11 +1675,10 @@ public:
             <
                     dim,
                     blockEdgeSize,
-                    typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
+                    typename BMG::AggregateInternalT,
                     ct_par<nNN,nLoop>,
                     indexT,
                     layout_base,
-                    decltype(extendedBlockGeometry),
                     linearizer,
                     AggregateT
             > toKernelNN()
@@ -1662,17 +1687,15 @@ public:
                 <
                         dim,
                         blockEdgeSize,
-                        typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT,
+                        typename BMG::AggregateInternalT,
                         ct_par<nNN,nLoop>,
                         indexT,
                         layout_base,
-                        decltype(extendedBlockGeometry),
                         linearizer,
                         AggregateT
                 > toKer(
-                BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.toKernel(),
+                BMG::blockMap.toKernel(),
                 gridGeometry,
-                extendedBlockGeometry,
                 stencilSupportRadius,
                 ghostLayerToThreadsMapping.toKernel(),
                 nn_blocks.toKernel(),
@@ -1772,7 +1795,7 @@ public:
     template<unsigned int p, typename CoordT>
     auto get(const grid_key_dx<dim,CoordT> & coord) const -> const ScalarTypeOf<AggregateBlockT, p> &
     {
-        return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::template get<p>(gridGeometry.LinId(coord));
+        return BMG::template get<p>(gridGeometry.LinId(coord));
     }
 
     /*! \brief Get an element using sparse_grid_gpu_index (using this index it guarantee that the point exist)
@@ -1824,13 +1847,13 @@ public:
      */
     unsigned char getFlag(const sparse_grid_gpu_index<self> & coord) const
     {
-    	return private_get_data_array().template get<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>(coord.get_cnk_pos_id())[coord.get_data_id()];
+    	return private_get_data_array().template get<BMG::pMask>(coord.get_cnk_pos_id())[coord.get_data_id()];
     }
 
     template<unsigned int p, typename CoordT>
     auto insert(const CoordT &coord) -> ScalarTypeOf<AggregateBlockT, p> &
     {
-        return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::template insert<p>(gridGeometry.LinId(coord));
+        return BMG::template insert<p>(gridGeometry.LinId(coord));
     }
 
 	/*! \brief construct link between levels
@@ -1842,12 +1865,12 @@ public:
     void construct_link(self & grid_up, self & grid_dw, mgpu::ofp_context_t &context)
     {
 /*        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();
 
     	ite_gpu<1> ite;
 
-    	ite.wthr.x = indexBuffer.size();
+    	ite.wthr.x = numBlocks();
     	ite.wthr.y = 1;
     	ite.wthr.z = 1;
 
@@ -1856,10 +1879,10 @@ public:
     	ite.thr.z = 1;
 
     	openfpm::vector_gpu<aggregate<unsigned int>> output;
-    	output.resize(indexBuffer.size() + 1);
+    	output.resize(numBlocks() + 1);
 
     	CUDA_LAUNCH((SparseGridGpuKernels::link_construct<dim,
-    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								BMG::pMask,
     								blockSize>),ite,grid_up.toKernel(),this->toKernel(),output.toKernel());
 
 
@@ -1872,7 +1895,7 @@ public:
     	links_up.resize(np_lup);
 
     	CUDA_LAUNCH((SparseGridGpuKernels::link_construct_insert<dim,
-    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								BMG::pMask,
     								blockSize>),ite,grid_up.toKernel(),this->toKernel(),output.toKernel(),links_up.toKernel());
 
 */
@@ -1931,15 +1954,15 @@ public:
     	Box<dim,int> db = db_;
 
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();
 
         // Count padding points
 
         // First we count the padding points
     	ite_gpu<1> ite;
 
-    	ite.wthr.x = indexBuffer.size();
+    	ite.wthr.x = numBlocks();
     	ite.wthr.y = 1;
     	ite.wthr.z = 1;
 
@@ -1948,12 +1971,12 @@ public:
     	ite.thr.z = 1;
 
     	openfpm::vector_gpu<aggregate<unsigned int>> output;
-    	output.resize(indexBuffer.size()+1);
+    	output.resize(numBlocks()+1);
 
     	output.fill<0>(0);
 
     	CUDA_LAUNCH((SparseGridGpuKernels::count_paddings<dim,
-    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								BMG::pMask,
     								blockSize>),ite,this->toKernel(),output.toKernel(),db);
 
 
@@ -1968,7 +1991,7 @@ public:
         openfpm::vector_gpu<aggregate<unsigned int,short int>> pd_points;
         pd_points.resize(padding_points);
 
-        CUDA_LAUNCH((SparseGridGpuKernels::collect_paddings<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,this->toKernel(),output.toKernel(),pd_points.toKernel(),db);
+        CUDA_LAUNCH((SparseGridGpuKernels::collect_paddings<BMG::pMask>),ite,this->toKernel(),output.toKernel(),pd_points.toKernel(),db);
 
         // Count number of link down for padding points
 
@@ -1980,7 +2003,7 @@ public:
     	ite = link_dw_scan.getGPUIterator();
 
     	CUDA_LAUNCH((SparseGridGpuKernels::link_construct_dw_count<dim,
-    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								BMG::pMask,
     								blockSize>),
     								ite,pd_points.toKernel(),grid_dw.toKernel(),this->toKernel(),link_dw_scan.toKernel(),p_dw);
 
@@ -1993,7 +2016,7 @@ public:
     	link_dw.resize(np_ldw);
 
     	CUDA_LAUNCH((SparseGridGpuKernels::link_construct_insert_dw<dim,
-    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								BMG::pMask,
     								blockSize>),ite,pd_points.toKernel(),grid_dw.toKernel(),this->toKernel(),link_dw_scan.toKernel(),link_dw.toKernel(),p_dw);
 
     	link_dw_scan.resize(link_dw_scan.size()-1);
@@ -2009,15 +2032,15 @@ public:
     	Box<dim,int> db = db_;
 
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();
 
         // Count padding points
 
         // First we count the padding points
     	ite_gpu<1> ite;
 
-    	ite.wthr.x = indexBuffer.size();
+    	ite.wthr.x = numBlocks();
     	ite.wthr.y = 1;
     	ite.wthr.z = 1;
 
@@ -2026,12 +2049,12 @@ public:
     	ite.thr.z = 1;
 
     	openfpm::vector_gpu<aggregate<unsigned int>> output;
-    	output.resize(indexBuffer.size()+1);
+    	output.resize(numBlocks()+1);
 
     	output.fill<0>(0);
 
     	CUDA_LAUNCH((SparseGridGpuKernels::count_paddings<dim,
-    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								BMG::pMask,
     								blockSize>),ite,this->toKernel(),output.toKernel(),db);
 
 
@@ -2046,7 +2069,7 @@ public:
         openfpm::vector_gpu<aggregate<unsigned int,short int>> pd_points;
         pd_points.resize(padding_points);
 
-        CUDA_LAUNCH((SparseGridGpuKernels::collect_paddings<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,this->toKernel(),output.toKernel(),pd_points.toKernel(),db);
+        CUDA_LAUNCH((SparseGridGpuKernels::collect_paddings<BMG::pMask>),ite,this->toKernel(),output.toKernel(),pd_points.toKernel(),db);
 
         // Count number of link down for padding points
 
@@ -2058,7 +2081,7 @@ public:
     	ite = link_up_scan.getGPUIterator();
 
     	CUDA_LAUNCH((SparseGridGpuKernels::link_construct_up_count<dim,
-    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								BMG::pMask,
     								blockSize>),
     								ite,pd_points.toKernel(),grid_up.toKernel(),this->toKernel(),link_up_scan.toKernel(),p_up);
 
@@ -2071,7 +2094,7 @@ public:
     	link_up.resize(np_lup);
 
     	CUDA_LAUNCH((SparseGridGpuKernels::link_construct_insert_up<dim,
-    								BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+    								BMG::pMask,
     								blockSize>),ite,pd_points.toKernel(),grid_up.toKernel(),this->toKernel(),link_up_scan.toKernel(),link_up.toKernel(),p_up);
 
     	link_up_scan.resize(link_up_scan.size()-1);
@@ -2086,7 +2109,7 @@ public:
     template<typename dim3T>
     void setGPUInsertBuffer(dim3T nBlock, dim3T nSlot)
     {
-        BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
+        BMG
         ::setGPUInsertBuffer(
                 dim3SizeToInt(nBlock),
                 dim3SizeToInt(nSlot)
@@ -2100,18 +2123,18 @@ public:
 	 */
 	void preFlush()
 	{
-		BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::preFlush();
+		BMG::preFlush();
 	}
 
     template<typename stencil_type = NNStar<dim>, typename checker_type = No_check>
     void tagBoundaries(mgpu::ofp_context_t &context, checker_type chk = checker_type(), tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();
 
         const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
-        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
+        unsigned int numScalars = numBlocks() * dataChunkSize;
 
         if (numScalars == 0) return;
         if (findNN == false)
@@ -2135,7 +2158,7 @@ public:
             CUDA_LAUNCH_DIM3((SparseGridGpuKernels::tagBoundaries<
                     dim,
                     1,
-                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+                    BMG::pMask,
                     stencil_type,
                     checker_type>),
                     threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
@@ -2145,7 +2168,7 @@ public:
         	CUDA_LAUNCH_DIM3((SparseGridGpuKernels::tagBoundaries<
                     dim,
                     2,
-                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+                    BMG::pMask,
                     stencil_type,
                     checker_type>),
                     threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
@@ -2155,7 +2178,7 @@ public:
         	CUDA_LAUNCH_DIM3((SparseGridGpuKernels::tagBoundaries<
                     dim,
                     0,
-                    BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+                    BMG::pMask,
                     stencil_type,
                     checker_type>),
                     threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
@@ -2172,20 +2195,20 @@ public:
         	// first we calculate the existing points
         	openfpm::vector_gpu<aggregate<indexT>> block_points;
 
-        	block_points.resize(indexBuffer.size() + 1);
+        	block_points.resize(numBlocks() + 1);
         	block_points.template get<0>(block_points.size()-1) = 0;
         	block_points.template hostToDevice<0>(block_points.size()-1,block_points.size()-1);
 
         	ite_gpu<1> ite;
 
-        	ite.wthr.x = indexBuffer.size();
+        	ite.wthr.x = numBlocks();
         	ite.wthr.y = 1;
         	ite.wthr.z = 1;
         	ite.thr.x = getBlockSize();
         	ite.thr.y = 1;
         	ite.thr.z = 1;
 
-        	CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+        	CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points<BMG::pMask>),
         				 ite,
         				 dataBuffer.toKernel(),
         				 block_points.toKernel());
@@ -2199,7 +2222,7 @@ public:
         	e_points.resize(tot);
 
         	// we fill e_points
-        	CUDA_LAUNCH((SparseGridGpuKernels::fill_e_points<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,
+        	CUDA_LAUNCH((SparseGridGpuKernels::fill_e_points<BMG::pMask>),ite,
         				 dataBuffer.toKernel(),
         				 block_points.toKernel(),
         				 e_points.toKernel())
@@ -2213,10 +2236,9 @@ public:
     void findNeighbours()
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
 
-        const unsigned int numBlocks = indexBuffer.size();
-        const unsigned int numScalars = numBlocks * NNtype::nNN;
+        const unsigned int numScalars = numBlocks() * NNtype::nNN;
         nn_blocks.resize(numScalars);
 
         if (numScalars == 0) return;
@@ -2238,14 +2260,14 @@ public:
     size_t countExistingElements() const
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();
 
-        constexpr unsigned int pMask = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask;
-        typedef typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT BAggregateT;
+        constexpr unsigned int pMask = BMG::pMask;
+        typedef typename BMG::AggregateInternalT BAggregateT;
         typedef BlockTypeOf<BAggregateT, pMask> MaskBlockT;
         constexpr unsigned int blockSize = MaskBlockT::size;
-        const auto bufferSize = indexBuffer.size();
+        const auto bufferSize = numBlocks();
 
         size_t numExistingElements = 0;
 
@@ -2269,14 +2291,14 @@ public:
     size_t countBoundaryElements()
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();
 
-        constexpr unsigned int pMask = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask;
-        typedef typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT BAggregateT;
+        constexpr unsigned int pMask = BMG::pMask;
+        typedef typename BMG::AggregateInternalT BAggregateT;
         typedef BlockTypeOf<BAggregateT, pMask> MaskBlockT;
         constexpr unsigned int blockSize = MaskBlockT::size;
-        const auto bufferSize = indexBuffer.size();
+        const auto bufferSize = numBlocks();
 
         size_t numBoundaryElements = 0;
 
@@ -2301,14 +2323,14 @@ public:
     void measureBlockOccupancyMemory(double &mean, double &deviation)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();
 
-        constexpr unsigned int pMask = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask;
-        typedef typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT BAggregateT;
+        constexpr unsigned int pMask = BMG::pMask;
+        typedef typename BMG::AggregateInternalT BAggregateT;
         typedef BlockTypeOf<BAggregateT, pMask> MaskBlockT;
         constexpr unsigned int blockSize = MaskBlockT::size;
-        const auto bufferSize = indexBuffer.size();
+        const auto bufferSize = numBlocks();
 
         openfpm::vector<double> measures;
 
@@ -2336,14 +2358,14 @@ public:
     void measureBlockOccupancy(double &mean, double &deviation)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();
 
-        constexpr unsigned int pMask = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask;
-        typedef typename BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::AggregateInternalT BAggregateT;
+        constexpr unsigned int pMask = BMG::pMask;
+        typedef typename BMG::AggregateInternalT BAggregateT;
         typedef BlockTypeOf<BAggregateT, pMask> MaskBlockT;
         constexpr unsigned int blockSize = MaskBlockT::size;
-        const auto bufferSize = indexBuffer.size();
+        const auto bufferSize = numBlocks();
 
         openfpm::vector<double> measures;
 
@@ -2530,21 +2552,21 @@ public:
     template<typename BitMaskT>
     inline static bool isPadding(BitMaskT &bitMask)
     {
-        return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
+        return BMG
         ::getBit(bitMask, PADDING_BIT);
     }
 
     template<typename BitMaskT>
     inline static void setPadding(BitMaskT &bitMask)
     {
-        BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
+        BMG
         ::setBit(bitMask, PADDING_BIT);
     }
 
     template<typename BitMaskT>
     inline static void unsetPadding(BitMaskT &bitMask)
     {
-        BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
+        BMG
         ::unsetBit(bitMask, PADDING_BIT);
     }
 
@@ -2574,12 +2596,12 @@ public:
 	template<unsigned int p>
 	auto insertFlush(const sparse_grid_gpu_index<self> &coord) -> ScalarTypeOf<AggregateBlockT, p> &
 	{
-		auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+		auto & indexBuffer = BMG::blockMap.getIndexBuffer();
 
 		indexT block_id = indexBuffer.template get<0>(coord.get_cnk_pos_id());
 		indexT local_id = coord.get_data_id();
 
-		typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
+		typedef BMG BMG;
 
 		auto block_data = this->insertBlockFlush(block_id);
 		block_data.template get<BMG::pMask>()[local_id] = 1;
@@ -2605,7 +2627,7 @@ public:
     	indexT block_id = lin / blockSize;
     	indexT local_id = lin % blockSize;
 
-    	typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
+    	typedef BMG BMG;
 
     	auto block_data = this->insertBlockFlush(block_id);
     	block_data.template get<BMG::pMask>()[local_id] = 1;
@@ -2667,17 +2689,17 @@ public:
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
 
-    	ite.wthr.x = indexBuffer.size();
+    	ite.wthr.x = numBlocks();
     	ite.wthr.y = 1;
     	ite.wthr.z = 1;
     	ite.thr.x = getBlockSize();
     	ite.thr.y = 1;
     	ite.thr.z = 1;
 
-    	tmp.resize(indexBuffer.size() + 1);
+    	tmp.resize(numBlocks() + 1);
 
 		// Launch a kernel that count the number of element on each chunks
-    	CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+    	CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points<BMG::pMask>),
     				 ite,
     				 dataBuffer.toKernel(),
     				 tmp.toKernel());
@@ -2697,7 +2719,7 @@ public:
 		                        // 4 byte each chunks        data                      // we use short to pack the offset
 		                        // for each counter
 		req = sizeof(indexT) +               // byte required to pack the number
-			  sizeof(indexT)*indexBuffer.size() +    // byte required to pack the chunk indexes
+			  sizeof(indexT)*numBlocks() +    // byte required to pack the chunk indexes
 			  sizeof(indexT)*tmp.size() +            // byte required to pack the scan of the chunks points
 			  n_pnt*(spq.point_size + sizeof(short int) + sizeof(unsigned char));    // byte required to pack data + offset position
     }
@@ -2761,22 +2783,22 @@ public:
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
 
-    	ite.wthr.x = indexBuffer.size();
+    	ite.wthr.x = numBlocks();
     	ite.wthr.y = 1;
     	ite.wthr.z = 1;
     	ite.thr.x = getBlockSize();
     	ite.thr.y = 1;
     	ite.thr.z = 1;
 
-    	tmp.resize((indexBuffer.size() + 1)*pack_subs.size());
+    	tmp.resize((numBlocks() + 1)*pack_subs.size());
 
-    	if (indexBuffer.size() != 0)
+    	if (numBlocks() != 0)
     	{
 			if (pack_subs.size() <= 32)
 			{
 				// Launch a kernel that count the number of element on each chunks
 				CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
-																			BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																			BMG::pMask,
 																			32,
 																			indexT>),
 						 ite,
@@ -2785,13 +2807,13 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 numBlocks() + 1);
 			}
 			else if (pack_subs.size() <= 64)
 			{
 				// Launch a kernel that count the number of element on each chunks
 				CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
-																			BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																			BMG::pMask,
 																			64,
 																			indexT>),
 						 ite,
@@ -2800,13 +2822,13 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 numBlocks() + 1);
 			}
 			else if (pack_subs.size() <= 96)
 			{
 				// Launch a kernel that count the number of element on each chunks
 				CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
-																			BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																			BMG::pMask,
 																			96,
 																			indexT>),
 						 ite,
@@ -2815,13 +2837,13 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 numBlocks() + 1);
 			}
 			else if (pack_subs.size() <= 128)
 			{
 				// Launch a kernel that count the number of element on each chunks
 				CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points_with_boxes<dim,
-																			BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+																			BMG::pMask,
 																			128,
 																			indexT>),
 						 ite,
@@ -2830,7 +2852,7 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 numBlocks() + 1);
 			}
 			else
 			{
@@ -2850,26 +2872,26 @@ public:
         	size_t n_pnt = 0;
         	size_t n_cnk = 0;
 
-    		tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1) = 0;
-    		tmp.template get<1>((i+1)*(indexBuffer.size() + 1)-1) = 0;
+    		tmp.template get<0>((i+1)*(numBlocks() + 1)-1) = 0;
+    		tmp.template get<1>((i+1)*(numBlocks() + 1)-1) = 0;
 
     		// put a zero at the end
-    		tmp.template hostToDevice<0>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
-    		tmp.template hostToDevice<1>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
+    		tmp.template hostToDevice<0>((i+1)*(numBlocks() + 1)-1,(i+1)*(numBlocks() + 1)-1);
+    		tmp.template hostToDevice<1>((i+1)*(numBlocks() + 1)-1,(i+1)*(numBlocks() + 1)-1);
 
-    		openfpm::scan(((indexT *)tmp. template getDeviceBuffer<0>()) + i*(indexBuffer.size() + 1),
-    						indexBuffer.size() + 1, (indexT *)tmp. template getDeviceBuffer<0>() + i*(indexBuffer.size() + 1), context);
+    		openfpm::scan(((indexT *)tmp. template getDeviceBuffer<0>()) + i*(numBlocks() + 1),
+    						numBlocks() + 1, (indexT *)tmp. template getDeviceBuffer<0>() + i*(numBlocks() + 1), context);
 
-    		openfpm::scan(((unsigned int *)tmp. template getDeviceBuffer<1>()) + i*(indexBuffer.size() + 1),
-    						indexBuffer.size() + 1, (unsigned int *)tmp. template getDeviceBuffer<1>() + i*(indexBuffer.size() + 1), context);
+    		openfpm::scan(((unsigned int *)tmp. template getDeviceBuffer<1>()) + i*(numBlocks() + 1),
+    						numBlocks() + 1, (unsigned int *)tmp. template getDeviceBuffer<1>() + i*(numBlocks() + 1), context);
 
-    		tmp.template deviceToHost<0>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
-    		tmp.template deviceToHost<1>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
+    		tmp.template deviceToHost<0>((i+1)*(numBlocks() + 1)-1,(i+1)*(numBlocks() + 1)-1);
+    		tmp.template deviceToHost<1>((i+1)*(numBlocks() + 1)-1,(i+1)*(numBlocks() + 1)-1);
 
-    		scan_it.template get<0>(i) = tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1);
+    		scan_it.template get<0>(i) = tmp.template get<0>((i+1)*(numBlocks() + 1)-1);
 
-    		n_pnt = tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1);
-    		n_cnk = tmp.template get<1>((i+1)*(indexBuffer.size() + 1)-1);
+    		n_pnt = tmp.template get<0>((i+1)*(numBlocks() + 1)-1);
+    		n_cnk = tmp.template get<1>((i+1)*(numBlocks() + 1)-1);
 
     		req += sizeof(size_t) +               // byte required to pack the number of chunk packed
     				2*dim*sizeof(int) +           // starting point + size of the indexing packing
@@ -2932,8 +2954,8 @@ public:
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
 
-		size_t n_pnt = tmp.template get<0>((i+1)*(indexBuffer.size() + 1)-1);
-		size_t n_cnk = tmp.template get<1>((i+1)*(indexBuffer.size() + 1)-1);
+		size_t n_pnt = tmp.template get<0>((i+1)*(numBlocks() + 1)-1);
+		size_t n_cnk = tmp.template get<1>((i+1)*(numBlocks() + 1)-1);
 
 		Packer<size_t,CudaMemory>::pack(mem,n_cnk,sts);
 		mem.hostToDevice(mem.getOffset(),mem.getOffset()+sizeof(size_t));
@@ -3091,7 +3113,7 @@ public:
 		{
 			rem_sects.template hostToDevice<0,1>();
 
-			tmp.resize(indexBuffer.size() + 1);
+			tmp.resize(numBlocks() + 1);
 
 			tmp.template get<1>(tmp.size()-1) = 0;
 			tmp.template hostToDevice<1>(tmp.size()-1,tmp.size()-1);
@@ -3102,7 +3124,7 @@ public:
 			{
 				// mark all the chunks that must remove points
 				CUDA_LAUNCH((SparseGridGpuKernels::calc_remove_points_chunks_boxes<dim,
-															 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
+															 BMG::pMask,
 															 blockEdgeSize>),ite,indexBuffer.toKernel(),rem_sects.toKernel(),
 																  gridGeometry,dataBuffer.toKernel(),
 																  tmp.toKernel());
@@ -3138,7 +3160,7 @@ public:
 				if (has_work_gpu(ite) == false)	{return;}
 
 				CUDA_LAUNCH((SparseGridGpuKernels::remove_points<dim,
-																BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),
+																BMG::pMask>),
 																ite,indexBuffer.toKernel(),
 																gridGeometry,
 																dataBuffer.toKernel(),
@@ -3404,7 +3426,7 @@ public:
 	 */
 	void removeUnusedBuffers()
 	{
-		BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::removeUnusedBuffers();
+		BMG::removeUnusedBuffers();
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3434,9 +3456,9 @@ public:
      * \return the index arrays of the blocks
      *
      */
-    auto private_get_add_index_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.private_get_vct_add_index()) &
+    auto private_get_add_index_array() -> decltype(BMG::blockMap.private_get_vct_add_index()) &
     {
-    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.private_get_vct_add_index();
+    	return BMG::blockMap.private_get_vct_add_index();
     }
 
     /*! \brief Return the index array of the blocks
@@ -3444,9 +3466,9 @@ public:
      * \return the index arrays of the blocks
      *
      */
-    auto private_get_add_index_array() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.private_get_vct_add_index()) &
+    auto private_get_add_index_array() const -> decltype(BMG::blockMap.private_get_vct_add_index()) &
     {
-    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.private_get_vct_add_index();
+    	return BMG::blockMap.private_get_vct_add_index();
     }
 
     /*! \brief Return the index array of the blocks
@@ -3454,29 +3476,29 @@ public:
      * \return the index arrays of the blocks
      *
      */
-    auto private_get_index_array() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer()) &
+    auto private_get_index_array() const -> decltype(BMG::blockMap.getIndexBuffer()) &
     {
-    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+    	return BMG::blockMap.getIndexBuffer();
     }
 
-	auto getSegmentToOutMap() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToOutMap())
+	auto getSegmentToOutMap() -> decltype(BMG::blockMap.getSegmentToOutMap())
 	{
-		return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToOutMap();
+		return BMG::blockMap.getSegmentToOutMap();
 	}
 
-	auto getSegmentToOutMap() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToOutMap())
+	auto getSegmentToOutMap() const -> decltype(BMG::blockMap.getSegmentToOutMap())
 	{
-		return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToOutMap();
+		return BMG::blockMap.getSegmentToOutMap();
 	}
 
-	auto getSegmentToMergeIndexMap() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToMergeIndexMap())
+	auto getSegmentToMergeIndexMap() -> decltype(BMG::blockMap.getSegmentToMergeIndexMap())
 	{
-		return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToMergeIndexMap();
+		return BMG::blockMap.getSegmentToMergeIndexMap();
 	}
 
-	auto getSegmentToMergeIndexMap() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToMergeIndexMap())
+	auto getSegmentToMergeIndexMap() const -> decltype(BMG::blockMap.getSegmentToMergeIndexMap())
 	{
-		return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getSegmentToMergeIndexMap();
+		return BMG::blockMap.getSegmentToMergeIndexMap();
 	}
 
     /*! \brief Return the index array of the blocks
@@ -3484,9 +3506,9 @@ public:
      * \return the index arrays of the blocks
      *
      */
-    auto private_get_data_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer()) &
+    auto private_get_data_array() -> decltype(BMG::blockMap.getDataBuffer()) &
     {
-    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+    	return BMG::blockMap.getDataBuffer();
     }
 
     /*! \brief Return the index array of the blocks
@@ -3494,9 +3516,9 @@ public:
      * \return the index arrays of the blocks
      *
      */
-    auto private_get_index_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer()) &
+    auto private_get_index_array() -> decltype(BMG::blockMap.getIndexBuffer()) &
     {
-    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+    	return BMG::blockMap.getIndexBuffer();
     }
 
     /*! \brief Return the index array of the blocks
@@ -3504,9 +3526,9 @@ public:
      * \return the index arrays of the blocks
      *
      */
-    auto private_get_data_array() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer()) &
+    auto private_get_data_array() const -> decltype(BMG::blockMap.getDataBuffer()) &
     {
-    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+    	return BMG::blockMap.getDataBuffer();
     }
 
     /*! \brief Return the index array of the blocks
@@ -3568,7 +3590,7 @@ public:
 
 			for (size_t i = 0 ; i < gridGeometry.getBlockSize() ; i++)
 			{
-				if (data.template get<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>(key)[i] != 0)
+				if (data.template get<BMG::pMask>(key)[i] != 0)
 				{
 					// Get the block index
 					grid_key_dx<dim,int> keyg = gridGeometry.InvLinId(index.template get<0>(key),i);
@@ -3584,7 +3606,7 @@ public:
 
 					boost::mpl::for_each_ref< boost::mpl::range_c<int,0,AggregateT::max_prop> >(cp);
 
-					tmp_prp.last().template get<AggregateT::max_prop>() = data.template get<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>(key)[i];
+					tmp_prp.last().template get<AggregateT::max_prop>() = data.template get<BMG::pMask>(key)[i];
 				}
 			}
 
