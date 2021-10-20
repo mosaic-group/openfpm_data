@@ -2108,6 +2108,16 @@ public:
         );
     }
 
+    /*! \brief Get an iterator over the blocks
+     *
+     * \return an iterator over the blocks of the grid
+     * 
+     */
+	ite_gpu<1> getGPUIterator()
+	{
+		return BMG::getGPUIterator();
+	}
+
 	/*! \brief In case we manually set the added index buffer and the add data buffer we have to call this
 	 *         function before flush
 	 *
@@ -3097,8 +3107,8 @@ public:
 	 */
 	void removePoints(mgpu::ofp_context_t& context)
 	{
-    	auto & indexBuffer = private_get_index_array();
-    	auto & dataBuffer = private_get_data_array();
+/*    	auto & indexBuffer = private_get_index_array();
+    	auto & dataBuffer = private_get_data_array();*/
 
 		// first we remove
 		if (rem_sects.size() != 0)
@@ -3110,15 +3120,15 @@ public:
 			tmp.template get<1>(tmp.size()-1) = 0;
 			tmp.template hostToDevice<1>(tmp.size()-1,tmp.size()-1);
 
-			auto ite = indexBuffer.getGPUIterator();
+			auto ite = this->getGPUIterator();
 
 			if (has_work_gpu(ite) == true)
 			{
 				// mark all the chunks that must remove points
 				CUDA_LAUNCH((SparseGridGpuKernels::calc_remove_points_chunks_boxes<dim,
 															 BMG::pMask,
-															 blockEdgeSize>),ite,indexBuffer.toKernel(),rem_sects.toKernel(),
-																  gridGeometry,dataBuffer.toKernel(),
+															 blockEdgeSize>),ite,this->toKernel_reduced(),rem_sects.toKernel(),
+																  gridGeometry,
 																  tmp.toKernel());
 
 				// scan
@@ -3132,7 +3142,7 @@ public:
 				tmp3.resize(nr_cnk);
 
 				// collect the chunks involved in the remove
-				ite = indexBuffer.getGPUIterator();
+				ite = this->getGPUIterator();
 
 				if (has_work_gpu(ite) == false)	{return;}
 
@@ -3153,9 +3163,8 @@ public:
 
 				CUDA_LAUNCH((SparseGridGpuKernels::remove_points<dim,
 																BMG::pMask>),
-																ite,indexBuffer.toKernel(),
+																ite,this->toKernel_reduced(),
 																gridGeometry,
-																dataBuffer.toKernel(),
 																tmp3.toKernel(),
 																rem_sects.toKernel());
 

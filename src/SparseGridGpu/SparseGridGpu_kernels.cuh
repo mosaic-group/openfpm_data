@@ -1122,26 +1122,21 @@ namespace SparseGridGpuKernels
     template<unsigned int dim,
     		 unsigned int pMask,
     		 unsigned int blockEdgeSize,
-    		 typename dataBufferType,
     		 typename outType,
     		 typename boxesVector_type,
     		 typename grid_smb_type,
-    		 typename indexBuffer_type>
-    __global__ void calc_remove_points_chunks_boxes(indexBuffer_type indexBuffer,
+    		 typename SparseGrid_type>
+    __global__ void calc_remove_points_chunks_boxes(SparseGrid_type sparseGrid,
     											 boxesVector_type boxes,
     											 grid_smb_type grd,
-    											 dataBufferType dataBuf,
     											 outType output)
     {
-    	typedef typename dataBufferType::value_type AggregateT;
-    	typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
-
         const unsigned int dataBlockPos = blockIdx.x * blockDim.x + threadIdx.x;
 
-        if (dataBlockPos >= indexBuffer.size())
+        if (dataBlockPos >= sparseGrid.numBlocks())
         {return;}
 
-        auto id = indexBuffer.template get<0>(dataBlockPos);
+        auto id = sparseGrid.getIndex(dataBlockPos);
         grid_key_dx<dim,int> pnt = grd.InvLinId(id*grd.getBlockSize());
 
         Box<dim,unsigned int> b;
@@ -1188,30 +1183,26 @@ namespace SparseGridGpuKernels
     }
 
     template<unsigned int dim, unsigned int pMask,
-    							typename dataBufferType,
-    						    typename indexBufferType,
+    						    typename SparseGridType,
     						    typename grid_smb_type,
     						    typename activeCntType,
     						    typename boxesType>
-    __global__ void remove_points(indexBufferType indexBuffer,
+    __global__ void remove_points(SparseGridType sparseGrid,
     							  grid_smb_type grd,
-    							  dataBufferType dataBuffer,
     							  activeCntType active_blocks,
     							  boxesType boxes)
     {
-    	typedef typename dataBufferType::value_type AggregateT;
-    	typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
-    	constexpr unsigned int blockSize = MaskBlockT::size;
+    	constexpr unsigned int blockSize = sparseGrid.getBlockSize();
 
         const unsigned int dataBlockPos = active_blocks.template get<0>(blockIdx.x);
         const unsigned int offset = threadIdx.x % blockSize;
 
-        if (dataBlockPos >= dataBuffer.size()-1)
+        if (dataBlockPos >= sparseGrid.numBlocks())
         {return;}
 
-        int predicate = dataBuffer.template get<pMask>(dataBlockPos)[offset] & 0x1;
+        int predicate = sparseGrid.getMask(dataBlockPos,offset) & 0x1;
         // calculate point coord;
-        auto id = indexBuffer.template get<0>(dataBlockPos);
+        auto id = sparseGrid.getIndex(dataBlockPos);
         grid_key_dx<dim,int> pnt = grd.InvLinId(id*grd.getBlockSize() + offset);
         Point<dim,unsigned int> p;
 
@@ -1228,7 +1219,7 @@ namespace SparseGridGpuKernels
 
 				if (box.isInside(p) == true)
 				{
-					dataBuffer.template get<pMask>(dataBlockPos)[offset] = 0;
+					sparseGrid.getMask(dataBlockPos,offset) = 0;
 				}
 			}
         }

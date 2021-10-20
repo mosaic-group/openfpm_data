@@ -189,6 +189,16 @@ public:
 #endif
     }
 
+    /*! \brief insert a block + flush, host version
+     *
+     * \return an iterator over the blocks of the grid
+     * 
+     */
+	ite_gpu<1> getGPUIterator()
+	{
+		return blockMap.getGPUIterator();
+	}
+
     /*! \brief Return the number of blocks in the map
      *
      * \return number of blocks
