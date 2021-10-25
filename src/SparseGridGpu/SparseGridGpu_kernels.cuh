@@ -563,22 +563,11 @@ namespace SparseGridGpuKernels
             unsigned int pMask,
             typename NN_type,
             typename checker_type,
-            typename IndexBufT,
-            typename DataBufT,
             typename SparseGridT,
             typename nn_blocksT>
-    __global__ void tagBoundaries(IndexBufT indexBuffer, DataBufT dataBuffer, SparseGridT sparseGrid,nn_blocksT nbT, checker_type chk)
+    __global__ void tagBoundaries(SparseGridT sparseGrid,nn_blocksT nbT, checker_type chk)
     {
-        //todo: #ifdef __NVCC__
-        constexpr unsigned int pIndex = 0;
-
-        typedef typename IndexBufT::value_type IndexAggregateT;
-        typedef BlockTypeOf<IndexAggregateT, pIndex> IndexT;
-
-        typedef typename DataBufT::value_type AggregateT;
-        typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
-        typedef ScalarTypeOf<AggregateT, pMask> MaskT;
-        constexpr unsigned int blockSize = MaskBlockT::size;
+        constexpr unsigned int blockSize = sparseGrid.getBlockSize();
 
         // NOTE: here we do 1 chunk per block! (we want to be sure to fit local memory constraints
         // since we will be loading also neighbouring elements!) (beware curse of dimensionality...)
@@ -587,15 +576,15 @@ namespace SparseGridGpuKernels
 
         constexpr unsigned int enlargedBlockSize = IntPow<
                 sparseGrid.getBlockEdgeSize() + 2 * stencilSupportRadius, dim>::value;
-        __shared__ MaskT enlargedBlock[enlargedBlockSize];
+        __shared__ unsigned char enlargedBlock[enlargedBlockSize];
 
-        if (dataBlockPos >= indexBuffer.size())
+        if (dataBlockPos >= sparseGrid.numBlocks())
         {
             return;
         }
 
-        const long long dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
-        auto dataBlock = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
+        const long long dataBlockId = sparseGrid.getIndex(dataBlockPos);
+        auto dataBlock = sparseGrid.getData(dataBlockPos); // Avoid binary searches as much as possible
 
         openfpm::sparse_index<unsigned int> sdataBlockPos;
         sdataBlockPos.id = dataBlockPos;
@@ -611,7 +600,7 @@ namespace SparseGridGpuKernels
             const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
             const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
 
-            MaskT cur = enlargedBlock[linId];
+            unsigned char cur = enlargedBlock[linId];
             if (sparseGrid.exist(cur))
             {
                 bool isPadding = NN_type::isPadding(sparseGrid,coord,enlargedBlock);
@@ -1050,14 +1039,12 @@ namespace SparseGridGpuKernels
     }
 
     template<unsigned int pMask,
-    		 typename dataBuffType,
+    		 typename SparseGridType,
     		 typename scanType,
     		 typename outType>
-    __global__ void fill_e_points(dataBuffType dataBuf, scanType scanBuf, outType output)
+    __global__ void fill_e_points(SparseGridType sparseGrid, scanType scanBuf, outType output)
     {
-        typedef typename dataBuffType::value_type AggregateT;
-        typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
-        constexpr unsigned int blockSize = MaskBlockT::size;
+        constexpr unsigned int blockSize = sparseGrid.getBlockSize();
 
         const unsigned int dataBlockPos = blockIdx.x;
         const unsigned int offset = threadIdx.x % blockSize;
@@ -1074,7 +1061,7 @@ namespace SparseGridGpuKernels
             return;
         }
 
-        int predicate = dataBuf.template get<pMask>(dataBlockPos)[offset] & 0x1;
+        int predicate = sparseGrid.getMask(dataBlockPos,offset) & 0x1;
 
         int id = atomicAdd(&ato_cnt,predicate);
 
@@ -1087,13 +1074,11 @@ namespace SparseGridGpuKernels
     }
 
     template<unsigned int pMask,
-    		 typename dataBufferType,
+    		 typename SparseGridType,
     		 typename outType>
-    __global__ void calc_exist_points(dataBufferType dataBuf, outType output)
+    __global__ void calc_exist_points(SparseGridType sparseGrid, outType output)
     {
-    	typedef typename dataBufferType::value_type AggregateT;
-    	typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
-    	constexpr unsigned int blockSize = MaskBlockT::size;
+    	constexpr unsigned int blockSize = sparseGrid.getBlockSize();
 
         const unsigned int dataBlockPos = blockIdx.x;
         const unsigned int offset = threadIdx.x % blockSize;
@@ -1110,7 +1095,7 @@ namespace SparseGridGpuKernels
             return;
         }
 
-        int predicate = dataBuf.template get<pMask>(dataBlockPos)[offset] & 0x1;
+        int predicate = sparseGrid.getMask(dataBlockPos,offset) & 0x1;
 
         atomicAdd(&ato_cnt,predicate);
 
@@ -1229,21 +1214,17 @@ namespace SparseGridGpuKernels
     		 unsigned int pMask,
     		 unsigned int numCnt,
              typename indexT,
-    		 typename dataBufferType,
+    		 typename sparseGridType,
     		 typename outType,
     		 typename boxesVector_type,
-    		 typename grid_smb_type,
-    		 typename indexBuffer_type>
-    __global__ void calc_exist_points_with_boxes(indexBuffer_type indexBuffer,
+    		 typename grid_smb_type>
+    __global__ void calc_exist_points_with_boxes(sparseGridType sparseGrid,
     											 boxesVector_type boxes,
     											 grid_smb_type grd,
-    											 dataBufferType dataBuf,
     											 outType output,
     											 unsigned int stride_size)
     {
-    	typedef typename dataBufferType::value_type AggregateT;
-    	typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
-    	constexpr unsigned int blockSize = MaskBlockT::size;
+    	constexpr unsigned int blockSize = sparseGrid.getBlockSize();
 
         const unsigned int dataBlockPos = blockIdx.x;
         const unsigned int offset = threadIdx.x % blockSize;
@@ -1265,9 +1246,9 @@ namespace SparseGridGpuKernels
         if (dataBlockPos >= output.size())
         {return;}
 
-        int predicate = dataBuf.template get<pMask>(dataBlockPos)[offset] & 0x1;
+        int predicate = sparseGrid.getMask(dataBlockPos,offset) & 0x1;
         // calculate point coord;
-        indexT id = indexBuffer.template get<0>(dataBlockPos);
+        indexT id = sparseGrid.getIndex(dataBlockPos);
         grid_key_dx<dim,int> pnt = grd.InvLinId(id*grd.getBlockSize() + offset);
         Point<dim,int> p;
 

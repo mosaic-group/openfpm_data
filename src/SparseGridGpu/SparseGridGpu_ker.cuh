@@ -32,6 +32,8 @@ private:
 	//! background values
 	BcT background;
 
+    typedef BlockMapGpu_ker<AggregateBlockT, indexT, layout_base> BMG;
+
 protected:
     const static unsigned char PADDING_BIT = 1;
     static constexpr unsigned int blockSize = BlockTypeOf<AggregateBlockT, 0>::size;
@@ -66,7 +68,7 @@ public:
                       openfpm::vector_gpu_ker<aggregate<indexT>,memory_traits_inte> buffPnt,
                       unsigned int ghostLayerSize,
                       BcT & bck)
-            : BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>(blockMap),
+            : BMG(blockMap),
               grid(grid),
               stencilSupportRadius(stencilSupportRadius),
               ghostLayerSize(ghostLayerSize),
@@ -397,7 +399,7 @@ public:
     inline __device__ auto
     get(const grid_key_dx<dim, CoordT> & coord) const -> ScalarTypeOf<AggregateBlockT, p>
     {
-    	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template get<p>(grid.LinId(coord));
+    	return BMG::template get<p>(grid.LinId(coord));
     }
 
     // Data management methods
@@ -406,7 +408,7 @@ public:
     inline __device__ void
     get_sparse(const grid_key_dx<dim, CoordT> & coord, unsigned int & dataBlockPos, unsigned int & offset) const
     {
-    	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::get_sparse(grid.LinId(coord),dataBlockPos,offset);
+    	return BMG::get_sparse(grid.LinId(coord),dataBlockPos,offset);
     }
 
     /*! \brief Access the grid point
@@ -418,9 +420,9 @@ public:
      */
     template<unsigned int p, typename CoordT>
     inline __device__ auto
-    get(const block_offset<CoordT> & coord) const -> decltype(std::declval<BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>>().getblockMap().template get_ele<p>(coord.pos)[coord.off])
+    get(const block_offset<CoordT> & coord) const -> decltype(std::declval<BMG>().getblockMap().template get_ele<p>(coord.pos)[coord.off])
     {
-    	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::blockMap.template get_ele<p>(coord.pos)[coord.off];
+    	return BMG::blockMap.template get_ele<p>(coord.pos)[coord.off];
     }
 
     /*! \brief Access the grid point
@@ -432,56 +434,56 @@ public:
      */
     template<unsigned int p, typename CoordT>
     inline __device__ auto
-    get(const block_offset<CoordT> & coord) -> decltype(std::declval<BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>>().getblockMap().template get_ele<p>(coord.pos)[coord.off])
+    get(const block_offset<CoordT> & coord) -> decltype(std::declval<BMG>().getblockMap().template get_ele<p>(coord.pos)[coord.off])
     {
-    	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::blockMap.template get_ele<p>(coord.pos)[coord.off];
+    	return BMG::blockMap.template get_ele<p>(coord.pos)[coord.off];
     }
 
     template<unsigned int p, typename CoordT>
     inline __device__ auto
-    insert(const grid_key_dx<dim, CoordT> & coord) -> ScalarTypeOf<AggregateBlockT, p>& // should be decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template insert<p>(0)) but LLVM complain
+    insert(const grid_key_dx<dim, CoordT> & coord) -> ScalarTypeOf<AggregateBlockT, p>& // should be decltype(BMG::template insert<p>(0)) but LLVM complain
     {
-    	return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template insert<p>(grid.LinId(coord));
+    	return BMG::template insert<p>(grid.LinId(coord));
     }
 
     template<typename CoordT>
     inline __device__ unsigned int getBlockId(const grid_key_dx<dim, CoordT> & coord)
     {
         // todo: check this because it's bugged! maybe?
-        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBlockId(grid.LinId(coord));
+        return BMG::getBlockId(grid.LinId(coord));
     }
 
     template<typename CoordT>
     inline __device__ unsigned int getOffset(const grid_key_dx<dim, CoordT> & coord)
     {
-        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getOffset(grid.LinId(coord));
+        return BMG::getOffset(grid.LinId(coord));
     }
 
     template<typename CoordT>
     inline __device__ auto
-    getBlock(const grid_key_dx<dim, CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBlock(0))
+    getBlock(const grid_key_dx<dim, CoordT> & coord) -> decltype(BMG::getBlock(0))
     {
-        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBlock(getBlockId(coord));
+        return BMG::getBlock(getBlockId(coord));
     }
 
     inline __device__ auto
-    getBlock(const unsigned int blockLinId) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBlock(0))
+    getBlock(const unsigned int blockLinId) -> decltype(BMG::getBlock(0))
     {
-        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBlock(blockLinId);
+        return BMG::getBlock(blockLinId);
     }
 
     template<unsigned int chunksPerBlocks = 1,typename CoordT>
     inline __device__ auto
-    insertBlock(const grid_key_dx<dim, CoordT> & coord) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(0))
+    insertBlock(const grid_key_dx<dim, CoordT> & coord) -> decltype(BMG::insertBlock(0))
     {
-        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(getBlockId(coord));
+        return BMG::insertBlock(getBlockId(coord));
     }
 
     template<unsigned int chunksPerBlocks = 1>
     inline __device__ auto
-    insertBlock(const indexT blockLinId, const unsigned int stride = 8192) -> decltype(BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::insertBlock(0))
+    insertBlock(const indexT blockLinId, const unsigned int stride = 8192) -> decltype(BMG::insertBlock(0))
     {
-        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::template insertBlock<chunksPerBlocks>(blockLinId,stride);
+        return BMG::template insertBlock<chunksPerBlocks>(blockLinId,stride);
     }
 
     /*! \brief Return the buffer of points
@@ -659,32 +661,32 @@ public:
     template<typename CoordT>
     inline __device__ void remove(const grid_key_dx<dim, CoordT> & coord)
     {
-    	BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::remove(grid.LinId(coord));
+    	BMG::remove(grid.LinId(coord));
     }
 
     template<typename BitMaskT>
     inline static __device__ bool isPadding(const BitMaskT &bitMask)
     {
-        return BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getBit(bitMask, PADDING_BIT);
+        return BMG::getBit(bitMask, PADDING_BIT);
     }
 
     template <typename keyIndexT>
     inline __device__ bool isPadding(grid_key_dx<dim, keyIndexT> coord) const
     {
-        auto mask = BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::getMask(grid.LinId(coord));
+        auto mask = BMG::getMask(grid.LinId(coord));
         return isPadding(mask);
     }
 
     template<typename BitMaskT>
     inline static __device__ void setPadding(BitMaskT &bitMask)
     {
-    	BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::setBit(bitMask, PADDING_BIT);
+    	BMG::setBit(bitMask, PADDING_BIT);
     }
 
     template<typename BitMaskT>
     inline static __device__ void unsetPadding(BitMaskT &bitMask)
     {
-    	BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::unsetBit(bitMask, PADDING_BIT);
+    	BMG::unsetBit(bitMask, PADDING_BIT);
     }
 
     template<typename NNtype>
@@ -694,6 +696,80 @@ public:
         auto blockCoord = getBlockCoord(blockId);
 
         return NNtype::template getNNpos<indexT>(blockCoord,this->blockMap,*this,offset);
+    }
+
+    // REDUCED interface
+
+    /*! \brief Return the number of blocks
+    *
+    * \return number of blocks
+    * 
+    */
+    __device__ indexT numBlocks()
+    {
+        return BMG::size();
+    }
+
+    /*! \brief Get the data for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    template<unsigned int prp>
+    __device__ auto getData(indexT block_pos) const -> decltype(BMG::template getData<prp>(0))
+    {
+        return BMG::template getData<prp>(block_pos);
+    }
+
+    /*! \brief Get the data for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    template<unsigned int prp>
+    __device__ auto getData(indexT block_pos) -> decltype(BMG::template getData<prp>(0))
+    {
+        return BMG::template getData<prp>(block_pos);
+    }
+
+    /*! \brief Get the data for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    __device__ auto getData(indexT block_pos) const -> decltype(BMG::template getData(0))
+    {
+        return BMG::template getData(block_pos);
+    }
+
+    /*! \brief Get the data for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    __device__ auto getData(indexT block_pos) -> decltype(BMG::template getData(0))
+    {
+        return BMG::template getData(block_pos);
+    }
+
+    /*! \brief Get the index for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    __device__ auto getIndex(indexT block_pos) const -> decltype(BMG::getIndex(0))
+    {
+        return BMG::getIndex(block_pos);
+    }
+
+    /*! \brief Get the index for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    __device__ auto getIndex(indexT block_pos) -> decltype(BMG::getIndex(0))
+    {
+        return BMG::getIndex(block_pos);
     }
 
 #ifdef SE_CLASS1
@@ -723,7 +799,7 @@ public:
 				return pc;
 			}
 
-			pc = ((BlockMapGpu_ker<AggregateBlockT, indexT, layout_base> *)this)->check_device_pointer(ptr);
+			pc = ((BMG *)this)->check_device_pointer(ptr);
 
 			return pc;
 		}
@@ -814,7 +890,7 @@ private:
     inline __device__ void
     __loadGhostBlock(const AggrWrapperT &block, const openfpm::sparse_index<unsigned int> blockId, SharedPtrT * sharedRegionPtr)
     {
-    	constexpr int pM = BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::pMask;
+    	constexpr int pM = BMG::pMask;
 
     	loadGhostBlock_impl<ct_params::nLoop,dim,AggrWrapperT,pM,p,ct_params,blockEdgeSize>::load(block,
     															   sharedRegionPtr,
@@ -838,7 +914,7 @@ private:
     inline __device__ void
     __loadGhostBlock(const AggrWrapperT &block, const openfpm::sparse_index<unsigned int> blockId, SharedPtrT * sharedRegionPtr, unsigned char * maskPtr)
     {
-    	constexpr int pM = BlockMapGpu_ker<AggregateBlockT, indexT, layout_base>::pMask;
+    	constexpr int pM = BMG::pMask;
 
     	loadGhostBlock_impl<ct_params::nLoop,dim,AggrWrapperT,pM,p,ct_params,blockEdgeSize>::load(block,
     															   sharedRegionPtr,

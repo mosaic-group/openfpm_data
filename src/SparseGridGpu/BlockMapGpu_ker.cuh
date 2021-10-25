@@ -351,6 +351,80 @@ public:
     	return blockMap.getDataBuffer();
     }
 
+    /*! \brief Return the number of blocks
+     *
+     * \return number of blocks
+     * 
+     */
+    __device__ indexT size()
+    {
+        return blockMap.size();
+    }
+
+    /*! \brief Get the data for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    template<unsigned int prp>
+    __device__ auto getData(indexT block_pos) const -> decltype(blockMap.template getData<prp>(0))
+    {
+        return blockMap.template getData<prp>(block_pos);
+    }
+
+    /*! \brief Get the data for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    template<unsigned int prp>
+    __device__ auto getData(indexT block_pos) -> decltype(blockMap.template getData<prp>(0))
+    {
+        return blockMap.template getData<prp>(block_pos);
+    }    
+
+    /*! \brief Get the data for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    __device__ auto getData(indexT block_pos) const -> decltype(blockMap.getData(0))
+    {
+        return blockMap.getData(block_pos);
+    }
+
+    /*! \brief Get the data for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    __device__ auto getData(indexT block_pos) -> decltype(blockMap.getData(0))
+    {
+        return blockMap.getData(block_pos);
+    }   
+
+    /*! \brief Get the index at element id
+    *
+    *
+    * \return the index element
+    *
+    */
+    __device__ inline auto getIndex(indexT id) const -> decltype(blockMap.getIndex(0))
+    {
+        return blockMap.getIndex(id);
+    }
+
+    /*! \brief Get the index at element id
+    *
+    *
+    * \return the index element
+    *
+    */
+    __device__ inline auto getIndex(indexT id) -> decltype(blockMap.getIndex(0))
+    {
+        return blockMap.getIndex(id);
+    }
+
 #ifdef SE_CLASS1
 
 		/*! \brief Check if the device pointer is owned by this structure

@@ -1628,6 +1628,27 @@ public:
         return toKer;
     }
 
+    SparseGridGpu_ker_reduced
+            <
+                    dim,
+                    blockEdgeSize,
+                    typename BMG::AggregateInternalT,
+                    indexT,
+                    layout_base
+            > toKernel_reduced() const
+    {
+        SparseGridGpu_ker_reduced
+                <
+                        dim,
+                        blockEdgeSize,
+                        typename BMG::AggregateInternalT,
+                        indexT,
+                        layout_base
+                > toKer(
+                BMG::toKernel_reduced());
+        return toKer;
+    }
+
     SparseGridGpu_ker
             <
                     dim,
@@ -2132,8 +2153,8 @@ public:
     void tagBoundaries(mgpu::ofp_context_t &context, checker_type chk = checker_type(), tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
-        auto & dataBuffer = BMG::blockMap.getDataBuffer();
+/*        auto & indexBuffer = BMG::blockMap.getIndexBuffer();
+        auto & dataBuffer = BMG::blockMap.getDataBuffer();*/
 
         const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
         unsigned int numScalars = numBlocks() * dataChunkSize;
@@ -2163,7 +2184,7 @@ public:
                     BMG::pMask,
                     stencil_type,
                     checker_type>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
+                    threadGridSize, localThreadBlockSize, this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
         }
         else if (stencilSupportRadius == 2)
         {
@@ -2173,7 +2194,7 @@ public:
                     BMG::pMask,
                     stencil_type,
                     checker_type>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
+                    threadGridSize, localThreadBlockSize, this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
         }
         else if (stencilSupportRadius == 0)
         {
@@ -2183,7 +2204,7 @@ public:
                     BMG::pMask,
                     stencil_type,
                     checker_type>),
-                    threadGridSize, localThreadBlockSize,indexBuffer.toKernel(), dataBuffer.toKernel(), this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
+                    threadGridSize, localThreadBlockSize, this->template toKernelNN<stencil_type::nNN, nLoop>(), nn_blocks.toKernel(),chk);
         }
         else
         {
@@ -2212,7 +2233,7 @@ public:
 
         	CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points<BMG::pMask>),
         				 ite,
-        				 dataBuffer.toKernel(),
+        				 this->toKernel_reduced(),
         				 block_points.toKernel());
 
         	// than we scan
@@ -2225,7 +2246,7 @@ public:
 
         	// we fill e_points
         	CUDA_LAUNCH((SparseGridGpuKernels::fill_e_points<BMG::pMask>),ite,
-        				 dataBuffer.toKernel(),
+        				 this->toKernel_reduced(),
         				 block_points.toKernel(),
         				 e_points.toKernel())
 
@@ -2640,23 +2661,16 @@ public:
     template<unsigned int p>
     void print_vct_add_data()
     {
-    	typedef BlockMapGpu<
-    	        typename aggregate_convert<dim,blockEdgeSize,AggregateT>::type,
-    	        threadBlockSize, indexT, layout_base> BMG;
-
-    	auto & bM = BMG::blockMap.private_get_vct_add_data();
-    	auto & vI = BMG::blockMap.private_get_vct_add_index();
-    	bM.template deviceToHost<p>();
-    	vI.template deviceToHost<0>();
+		this->template deviceToHost<p>();
 
     	std::cout << "vct_add_data: " << std::endl;
 
-    	for (size_t i = 0 ; i < bM.size() ; i++)
+    	for (size_t i = 0 ; i < numBlocks() ; i++)
     	{
-    		std::cout << i << "  index: " << vI.template get<0>(i) << "  BlockData: " << std::endl;
+    		std::cout << i << "  index: " << this->getIndex(i) << "  BlockData: " << std::endl;
     		for (size_t j = 0 ; j < blockSize ; j++)
     		{
-    			std::cout << (int)bM.template get<p>(i)[j] << "  ";
+    			std::cout << (int)this->template getData<p>(i)[j] << "  ";
     		}
 
     		std::cout << std::endl;
@@ -2688,9 +2702,6 @@ public:
     {
     	ite_gpu<1> ite;
 
-    	auto & indexBuffer = private_get_index_array();
-    	auto & dataBuffer = private_get_data_array();
-
     	ite.wthr.x = numBlocks();
     	ite.wthr.y = 1;
     	ite.wthr.z = 1;
@@ -2703,7 +2714,7 @@ public:
 		// Launch a kernel that count the number of element on each chunks
     	CUDA_LAUNCH((SparseGridGpuKernels::calc_exist_points<BMG::pMask>),
     				 ite,
-    				 dataBuffer.toKernel(),
+    				 this->toKernel_reduced(),
     				 tmp.toKernel());
 
     	openfpm::scan((indexT *)tmp. template getDeviceBuffer<0>(),
@@ -2782,9 +2793,6 @@ public:
     	ite_gpu<1> ite;
 		pack_subs.template hostToDevice<0,1>();
 
-    	auto & indexBuffer = private_get_index_array();
-    	auto & dataBuffer = private_get_data_array();
-
     	ite.wthr.x = numBlocks();
     	ite.wthr.y = 1;
     	ite.wthr.z = 1;
@@ -2804,10 +2812,9 @@ public:
 																			32,
 																			indexT>),
 						 ite,
-						 indexBuffer.toKernel(),
+						 this->toKernel_reduced(),
 						 pack_subs.toKernel(),
 						 gridGeometry,
-						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
 						 numBlocks() + 1);
 			}
@@ -2819,10 +2826,9 @@ public:
 																			64,
 																			indexT>),
 						 ite,
-						 indexBuffer.toKernel(),
+						 this->toKernel_reduced(),
 						 pack_subs.toKernel(),
 						 gridGeometry,
-						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
 						 numBlocks() + 1);
 			}
@@ -2834,10 +2840,9 @@ public:
 																			96,
 																			indexT>),
 						 ite,
-						 indexBuffer.toKernel(),
+						 this->toKernel_reduced(),
 						 pack_subs.toKernel(),
 						 gridGeometry,
-						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
 						 numBlocks() + 1);
 			}
@@ -2849,10 +2854,9 @@ public:
 																			128,
 																			indexT>),
 						 ite,
-						 indexBuffer.toKernel(),
+						 this->toKernel_reduced(),
 						 pack_subs.toKernel(),
 						 gridGeometry,
-						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
 						 numBlocks() + 1);
 			}
@@ -2952,9 +2956,6 @@ public:
 
     	sparsegridgpu_pack_request<AggregateT,prp ...> spq;
     	boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(spq);
-
-    	auto & indexBuffer = private_get_index_array();
-    	auto & dataBuffer = private_get_data_array();
 
 		size_t n_pnt = tmp.template get<0>((i+1)*(numBlocks() + 1)-1);
 		size_t n_cnk = tmp.template get<1>((i+1)*(numBlocks() + 1)-1);
@@ -3079,12 +3080,7 @@ public:
 	void removeAddUnpackReset()
 	{
 		rem_sects.clear();
-
-    	auto & vad = BMG::blockMap.private_get_vct_add_data();
-    	auto & vai = BMG::blockMap.private_get_vct_add_index();
-
-    	vad.clear();
-    	vai.clear();
+		BMG::clearAdd();
 
 		// Clear variables
 		offset_ptrs_cp.clear();
@@ -3107,9 +3103,6 @@ public:
 	 */
 	void removePoints(mgpu::ofp_context_t& context)
 	{
-/*    	auto & indexBuffer = private_get_index_array();
-    	auto & dataBuffer = private_get_data_array();*/
-
 		// first we remove
 		if (rem_sects.size() != 0)
 		{

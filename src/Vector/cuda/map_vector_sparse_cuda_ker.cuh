@@ -546,6 +546,75 @@ namespace openfpm
             return vct_data;
         }
 
+		/*! \brief Get the data at element id
+		*
+		*
+		* \return the data element
+		*
+		*/
+		template<unsigned int p>
+		__device__ inline auto getData(Ti id) const -> decltype(vct_data.template get<p>(id))
+		{
+			return vct_data.template get<p>(id);
+		}
+
+		/*! \brief Get the data at element id
+		*
+		*
+		* \return the data element
+		*
+		*/
+		template<unsigned int p>
+		__device__ inline auto getData(Ti id) -> decltype(vct_data.template get<p>(id))
+		{
+			return vct_data.template get<p>(id);
+		}
+
+		/*! \brief Get the data at element id
+		*
+		*
+		* \return the data element
+		*
+		*/
+		__device__ inline auto getData(Ti id) const -> decltype(vct_data.get(id))
+		{
+			return vct_data.get(id);
+		}
+
+		/*! \brief Get the data at element id
+		*
+		*
+		* \return the data element
+		*
+		*/
+		__device__ inline auto getData(Ti id) -> decltype(vct_data.get(id))
+		{
+			return vct_data.get(id);
+		}
+
+		/*! \brief Get the index at element id
+		*
+		*
+		* \return the index element
+		*
+		*/
+		__device__ inline auto getIndex(Ti id) const -> decltype(vct_index.template get<0>(id))
+		{
+			return vct_index.template get<0>(id);
+		}
+
+		/*! \brief Get the index at element id
+		*
+		*
+		* \return the index element
+		*
+		*/
+		__device__ inline auto getIndex(Ti id) -> decltype(vct_index.template get<0>(id))
+		{
+			return vct_index.template get<0>(id);
+		}
+
+
 #ifdef SE_CLASS1
 
 		/*! \brief Check if the device pointer is owned by this structure

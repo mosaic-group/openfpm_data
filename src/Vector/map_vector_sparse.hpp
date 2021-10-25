@@ -1876,6 +1876,18 @@ namespace openfpm
 			return mvsck;
 		}
 
+		/*! \brief toKernel function transform this structure into one that can be used on GPU
+		 *
+		 * \return structure that can be used on GPU
+		 *
+		 */
+		vector_sparse_gpu_ker_reduced<T,Ti,layout_base> toKernel_reduced() const
+		{
+			vector_sparse_gpu_ker_reduced<T,Ti,layout_base> mvsck(vct_index.toKernel(),vct_data.toKernel());
+
+			return mvsck;
+		}
+
 		/*! \brief set the gpu insert buffer for every block
 		 *
 		 * \param nblock number of blocks

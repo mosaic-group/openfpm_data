@@ -159,6 +159,25 @@ public:
         return toKer;
     }
 
+    BlockMapGpu_ker_reduced<AggregateInternalT, indexT, layout_base> toKernel_reduced() const
+    {
+        BlockMapGpu_ker_reduced<AggregateInternalT, indexT, layout_base> toKer(blockMap.toKernel_reduced());
+        return toKer;
+    }
+
+    /*! \brief Clear the add buffers
+     *
+     * 
+     */
+    void clearAdd()
+    {
+    	auto & vad = blockMap.private_get_vct_add_data();
+    	auto & vai = blockMap.private_get_vct_add_index();
+
+    	vad.clear();
+    	vai.clear();
+    }
+
     template<unsigned int ... prp>
     void deviceToHost()
     {
