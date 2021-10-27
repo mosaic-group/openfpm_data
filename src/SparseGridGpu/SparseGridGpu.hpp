@@ -1813,7 +1813,7 @@ public:
     template<unsigned int p>
     auto get(const sparse_grid_gpu_index<self> & coord) const -> const ScalarTypeOf<AggregateBlockT, p> &
     {
-        return private_get_data_array().template get<p>(coord.get_cnk_pos_id())[coord.get_data_id()];
+        return BMG::template getData<p>(coord.get_cnk_pos_id())[coord.get_data_id()];
     }
 
     /*! \brief This function check if keep geometry is possible for this grid
@@ -1838,7 +1838,7 @@ public:
     template<unsigned int p>
     auto get(const sparse_grid_gpu_index<self> & coord) -> ScalarTypeOf<AggregateBlockT, p> &
     {
-        return private_get_data_array().template get<p>(coord.get_cnk_pos_id())[coord.get_data_id()];
+        return BMG::template getData<p>(coord.get_cnk_pos_id())[coord.get_data_id()];
     }
 
     /*! \brief Return the flag of the point
@@ -1850,7 +1850,7 @@ public:
      */
     unsigned char getFlag(const sparse_grid_gpu_index<self> & coord) const
     {
-    	return private_get_data_array().template get<BMG::pMask>(coord.get_cnk_pos_id())[coord.get_data_id()];
+    	return BMG::getMask((indexT)coord.get_cnk_pos_id())[coord.get_data_id()];
     }
 
     template<unsigned int p, typename CoordT>
@@ -3502,26 +3502,6 @@ public:
 	{
 		return BMG::blockMap.getSegmentToMergeIndexMap();
 	}
-
-    /*! \brief Return the index array of the blocks
-     *
-     * \return the index arrays of the blocks
-     *
-     */
-    auto private_get_data_array() -> decltype(BMG::blockMap.getDataBuffer()) &
-    {
-    	return BMG::blockMap.getDataBuffer();
-    }
-
-    /*! \brief Return the index array of the blocks
-     *
-     * \return the index arrays of the blocks
-     *
-     */
-    auto private_get_data_array() const -> decltype(BMG::blockMap.getDataBuffer()) &
-    {
-    	return BMG::blockMap.getDataBuffer();
-    }
 
     /*! \brief Return the index array of the blocks
      *
