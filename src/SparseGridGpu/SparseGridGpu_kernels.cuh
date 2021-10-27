@@ -1450,13 +1450,13 @@ namespace SparseGridGpuKernels
         }
     }
 
-    template<unsigned int pMask, typename AggregateT, typename blockConvertType, typename newMapType, typename dataType_ptrs, typename dataType, unsigned int ... prp>
+    template<unsigned int pMask, typename AggregateT, typename blockConvertType, typename newMapType, typename dataType_ptrs, typename SparseGridType, unsigned int ... prp>
     __global__ void copy_packed_data_to_chunks(unsigned int * scan,
     										   unsigned short int * offsets,
     										   blockConvertType blc,
     										   newMapType new_map,
     										   dataType_ptrs data_ptrs,
-    										   dataType data_buff,
+    										   SparseGridType sparseGrid,
     										   unsigned int n_cnk,
     										   unsigned int n_shf,
     										   unsigned int n_pnt,
@@ -1483,12 +1483,12 @@ namespace SparseGridGpuKernels
 
         	unsigned int pos_c = new_map.template get<0>(n_shf*p + shf_c + n_accu_cnk);
 
-    		sparsegridgpu_unpack_impl<AggregateT, dataType ,prp ...>
-    														spi(pos_c,off_c,data_buff,scan_pp + threadIdx.x,data_ptrs,n_pnt);
+    		sparsegridgpu_unpack_impl<AggregateT, SparseGridType ,prp ...>
+    														spi(pos_c,off_c,sparseGrid,scan_pp + threadIdx.x,data_ptrs,n_pnt);
 
     		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(spi);
 
-    		data_buff.template get<pMask>(pos_c)[off_c] |= 0x1;
+    		sparseGrid.getMask(pos_c,off_c) |= 0x1;
         }
     }
 

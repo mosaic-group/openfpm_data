@@ -1153,17 +1153,15 @@ private:
 			// copy to new (1 block for each packed chunk)
 			if (ite.nblocks() != 0 && ite.thr.x != 0)
 			{
-				auto & chunks = private_get_data_array();
-
 				CUDA_LAUNCH((SparseGridGpuKernels::copy_packed_data_to_chunks<BMG::pMask,
 						 	 	 	 	 	 	 	 	 	 	 	 	 	  AggregateT,decltype(convert_blk.toKernel()),decltype(new_map.toKernel()),
-						                                                      decltype(data),decltype(chunks.toKernel()),prp... >),ite,
+						                                                      decltype(data),decltype(this->toKernel_reduced()),prp... >),ite,
 																				 (unsigned int *)scan_ptrs_cp.get(i),
 																				 (unsigned short int *)offset_ptrs_cp.get(i),
 																				 convert_blk.toKernel(),
 																				 new_map.toKernel(),
 																				 data,
-																				 chunks.toKernel(),
+																				 this->toKernel_reduced(),
 																				 n_cnk_cp.get(i),
 																				 n_shifts_cp.get(i),
 																				 n_pnt_cp.get(i),
@@ -3404,19 +3402,6 @@ public:
 			mem.deviceToHost(ps.getOffset(),ps.getOffset() + sizeof(size_t) + 2*dim*sizeof(int));
 			Unpacker<size_t,S2>::unpack(mem,n_cnk,ps);
 
-			// Unpack origin of the chunk indexing
-/*			for (int i = 0 ; i < dim ; i++)
-			{
-				int tmp;
-				Unpacker<int,S2>::unpack(mem,tmp,ps);
-			}
-
-			for (int i = 0 ; i < dim ; i++)
-			{
-				int tmp;
-				Unpacker<int,S2>::unpack(mem,tmp,ps);
-			}*/
-
 			ps.addOffset(2*dim*sizeof(unsigned int));
 
 			size_t actual_offset = n_cnk*sizeof(indexT);
@@ -3497,15 +3482,6 @@ public:
     	return BMG::blockMap.private_get_vct_add_index();
     }
 
-    /*! \brief Return the index array of the blocks
-     *
-     * \return the index arrays of the blocks
-     *
-     */
-    auto private_get_index_array() const -> decltype(BMG::blockMap.getIndexBuffer()) &
-    {
-    	return BMG::blockMap.getIndexBuffer();
-    }
 
 	auto getSegmentToOutMap() -> decltype(BMG::blockMap.getSegmentToOutMap())
 	{
@@ -3535,16 +3511,6 @@ public:
     auto private_get_data_array() -> decltype(BMG::blockMap.getDataBuffer()) &
     {
     	return BMG::blockMap.getDataBuffer();
-    }
-
-    /*! \brief Return the index array of the blocks
-     *
-     * \return the index arrays of the blocks
-     *
-     */
-    auto private_get_index_array() -> decltype(BMG::blockMap.getIndexBuffer()) &
-    {
-    	return BMG::blockMap.getIndexBuffer();
     }
 
     /*! \brief Return the index array of the blocks
