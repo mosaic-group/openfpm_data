@@ -1779,7 +1779,7 @@ public:
     template<typename CoordT>
     base_key get_sparse(const grid_key_dx<dim,CoordT> & coord) const
     {
-    	base_key k(*this,0,0);
+/*    	base_key k(*this,0,0);
 
     	const auto & blockMap = this->private_get_blockMap();
 
@@ -1792,6 +1792,15 @@ public:
 
     	k.set_cnk_pos_id(key.id);
     	k.set_data_id(lid);
+
+        return k;*/
+    	base_key k(*this,0,0);
+
+//    	const auto & blockMap = this->private_get_blockMap();
+
+    	auto glid = gridGeometry.LinId(coord);
+
+    	BMG::get_sparse(glid,k.get_cnk_pos_id_ref(),k.get_data_id_ref());
 
         return k;
     }
@@ -3564,17 +3573,12 @@ public:
 	{
 		file_type ft = file_type::BINARY;
 
-		auto & bm = this->private_get_blockMap();
-
-		auto & index = bm.getIndexBuffer();
-		auto & data = bm.getDataBuffer();
-
 		openfpm::vector<Point<dim,Tw>> tmp_pos;
 		openfpm::vector<typename aggregate_add<AggregateT>::type> tmp_prp;
 
 		// copy position and properties
 
-		auto it = index.getIterator();
+		auto it = this->getIterator();
 
 		while(it.isNext())
 		{
@@ -3584,10 +3588,10 @@ public:
 
 			for (size_t i = 0 ; i < gridGeometry.getBlockSize() ; i++)
 			{
-				if (data.template get<BMG::pMask>(key)[i] != 0)
+				if (this->getMask(key,i) != 0)
 				{
 					// Get the block index
-					grid_key_dx<dim,int> keyg = gridGeometry.InvLinId(index.template get<0>(key),i);
+					grid_key_dx<dim,int> keyg = gridGeometry.InvLinId(this->getIndex(key),i);
 
 					for (size_t k = 0 ; k < dim ; k++)
 					{p.get(k) = keyg.get(k)*spacing[k] + offset[k]*spacing[k];}
@@ -3595,12 +3599,12 @@ public:
 					tmp_pos.add(p);
 
 					tmp_prp.add();
-					copy_prop_to_vector_block<decltype(data.get_o(key)),decltype(tmp_prp.last())>
-					cp(data.get_o(key),tmp_prp.last(),key,i);
+					copy_prop_to_vector_block<decltype(this->getData(key)),decltype(tmp_prp.last())>
+					cp(this->getData(key),tmp_prp.last(),key,i);
 
 					boost::mpl::for_each_ref< boost::mpl::range_c<int,0,AggregateT::max_prop> >(cp);
 
-					tmp_prp.last().template get<AggregateT::max_prop>() = data.template get<BMG::pMask>(key)[i];
+					tmp_prp.last().template get<AggregateT::max_prop>() = this->getMask(key,i);
 				}
 			}
 

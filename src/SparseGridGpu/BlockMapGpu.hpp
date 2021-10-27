@@ -165,6 +165,7 @@ public:
         return toKer;
     }
 
+
     /*! \brief Clear the add buffers
      *
      * 
@@ -190,6 +191,18 @@ public:
     void hostToDevice();
 
     void hostToDevice();
+
+    inline void get_sparse(unsigned int linId, unsigned int & dataBlockPos , unsigned int & offset) const
+    {
+        typedef BlockTypeOf<AggregateBlockT, 0> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        offset = linId % BlockT::size;
+
+        const auto sid = blockMap.get_sparse(blockId);
+
+        dataBlockPos = sid.id;
+    }
+
 
     /*! \Brief Before inser any element you have to call this function to initialize the insert buffer
      *

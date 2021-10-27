@@ -17,10 +17,10 @@ template<typename SparseGridGpu_type>
 class sparse_grid_gpu_index
 {
 	//! chunk position id
-	int cnk_pos_id;
+	unsigned int cnk_pos_id;
 
 	//! data id
-	int data_id;
+	unsigned int data_id;
 
 	//! SparseGridGpu used to add functionalities
 	const SparseGridGpu_type & sparseGrid;
@@ -76,6 +76,28 @@ public:
 	 *
 	 */
 	int get_data_id() const
+	{
+		return data_id;
+	}
+
+	/*! \brief Get chunk position id
+	 *
+	 * Return the position of the chunk in the chunks array \see SparseGridGpu \see private_get_data_array
+	 *
+	 * \return Get chunk position id
+	 *
+	 */
+	unsigned int & get_cnk_pos_id_ref()
+	{
+		return cnk_pos_id;
+	}
+
+	/*! \brief Get chunk local index (the returned index < getblockSize())
+	 *
+	 * \return Get chunk position id
+	 *
+	 */
+	unsigned int & get_data_id_ref()
 	{
 		return data_id;
 	}
