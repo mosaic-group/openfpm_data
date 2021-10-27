@@ -1315,7 +1315,7 @@ BOOST_AUTO_TEST_CASE(test_pack_request)
     sparseGrid.packRequest<0>(req,ctx);
 
     size_t tot = 8 +                // how many chunks
-    		     sparseGrid.private_get_index_array().size()*16 + 8 +// store the scan + chunk indexes
+    		     sparseGrid.numBlocks()*16 + 8 +// store the scan + chunk indexes
     		     cnt*(sizeof(float) + 2 + 1); // how much data
 
     BOOST_REQUIRE_EQUAL(req,tot);
@@ -1346,7 +1346,7 @@ BOOST_AUTO_TEST_CASE(test_MergeIndexMap)
             gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
             sparseGrid.toKernel(), start,64, 56, 1);
 
-    size_t sz_b =  sparseGrid.private_get_index_array().size();
+    size_t sz_b =  sparseGrid.numBlocks();
 
     sparseGrid.flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
@@ -1358,8 +1358,7 @@ BOOST_AUTO_TEST_CASE(test_MergeIndexMap)
 
     bool match = true;
 
-    auto & indexes = sparseGrid.private_get_index_array();
-    indexes.template deviceToHost<0>();
+	sparseGrid.template deviceToHost<0>();
     auto & a_indexes = sparseGrid.private_get_add_index_array();
     a_indexes.template deviceToHost<0>();
     auto & m_out = sparseGrid.getSegmentToOutMap();
@@ -1372,7 +1371,7 @@ BOOST_AUTO_TEST_CASE(test_MergeIndexMap)
     		int c = a_map.template get<0>(m_map.template get<0>(i) - sz_b);
     		int ci = m_out.template get<0>(i);
 
-    		match &= (a_indexes.template get<0>(c) == indexes.template get<0>(ci));
+    		match &= (a_indexes.template get<0>(c) == sparseGrid.getIndex(ci));
     	}
     }
 
@@ -1463,8 +1462,8 @@ BOOST_AUTO_TEST_CASE(test_pack_request_with_iterator)
 
     tot = 2*8 +                // 2 numbers of chunks
     		     2*2*dim*4 +          // 2 * 2 * dimension * integer
-    		     2*align_number(8,sparseGrid.private_get_index_array().size()*8) + //
-    		     2*align_number(8,(sparseGrid.private_get_index_array().size()+1)*4) + // store the scan
+    		     2*align_number(8,sparseGrid.numBlocks()*8) + //
+    		     2*align_number(8,(sparseGrid.numBlocks()+1)*4) + // store the scan
     		     2*align_number(8,cnt*4) +        // store the points
     		     2*align_number(8,cnt*2) +        // store offsets
     		     2*align_number(8,cnt*1);          // store masks
