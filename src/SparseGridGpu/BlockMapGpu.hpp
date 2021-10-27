@@ -221,6 +221,48 @@ public:
 #endif
     }
 
+    /*! \brief Get the mask for the block at position block_pos
+     *
+     * \param block_pos position of the block
+     * 
+     */
+    auto getMask(indexT block_pos) const -> decltype(blockMap.template getData<pMask>(0))
+    {
+        return blockMap.template getData<pMask>(block_pos);
+    }
+
+    /*! \brief Get the mask for the block at position pos
+     *
+     * \param block_pos position of the block
+     * 
+     */
+    auto getMask(indexT block_pos) -> decltype(blockMap.template getData<pMask>(0))
+    {
+        return blockMap.template getData<pMask>(block_pos);
+    }
+
+    /*! \brief Get the index at element id
+    *
+    *
+    * \return the index element
+    *
+    */
+    inline auto getIndex(indexT id) const -> decltype(blockMap.getIndex(0))
+    {
+        return blockMap.getIndex(id);
+    }
+
+    /*! \brief Get the index at element id
+    *
+    *
+    * \return the index element
+    *
+    */
+    inline auto getIndex(indexT id) -> decltype(blockMap.getIndex(0))
+    {
+        return blockMap.getIndex(id);
+    }
+
     /*! \brief insert a block + flush, host version
      *
      * \return an iterator over the blocks of the grid

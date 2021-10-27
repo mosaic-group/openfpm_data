@@ -968,13 +968,13 @@ private:
     }
 
     template<typename ids_type>
-    void fill_chunks_boxes(openfpm::vector<SpaceBox<dim,double>> & chunks_box, ids_type & chunk_ids, Point<dim,double> & spacing, Point<dim,double> & offset)
+    void fill_chunks_boxes(openfpm::vector<SpaceBox<dim,double>> & chunks_box, Point<dim,double> & spacing, Point<dim,double> & offset)
     {
-    	for (int i = 0 ; i < chunk_ids.size() ; i++)
+    	for (int i = 0 ; i < numBlocks() ; i++)
     	{
     		SpaceBox<dim,double> box;
 
-    		auto c_pos = gridGeometry.InvLinId(chunk_ids.template get<0>(i)*blockSize);
+    		auto c_pos = gridGeometry.InvLinId(this->getIndex(i)*blockSize);
 
     		for (int j = 0 ; j < dim ; j++)
     		{
@@ -1779,24 +1779,7 @@ public:
     template<typename CoordT>
     base_key get_sparse(const grid_key_dx<dim,CoordT> & coord) const
     {
-/*    	base_key k(*this,0,0);
-
-    	const auto & blockMap = this->private_get_blockMap();
-
-    	auto glid = gridGeometry.LinId(coord);
-
-    	auto bid = glid / blockSize;
-    	auto lid = glid % blockSize;
-
-    	auto key = blockMap.get_sparse(bid);
-
-    	k.set_cnk_pos_id(key.id);
-    	k.set_data_id(lid);
-
-        return k;*/
     	base_key k(*this,0,0);
-
-//    	const auto & blockMap = this->private_get_blockMap();
 
     	auto glid = gridGeometry.LinId(coord);
 
@@ -2136,6 +2119,46 @@ public:
                 dim3SizeToInt(nBlock),
                 dim3SizeToInt(nSlot)
         );
+    }
+
+	/*! \brief Return the flag of the point
+	*
+	* It indicate for example is if the point is a padding point (internaly it return the pMask flag)
+	*
+	* \param chunk_pos chunk position
+	* \param offset of the point
+	* 
+	* \return the flag
+	*
+	*/
+	inline const unsigned char & getMask(indexT block_pos, int offset) const
+	{
+		return BMG::getMask(block_pos)[offset];
+	}
+
+	/*! \brief Return the flag of the point
+	*
+	* It indicate for example is if the point is a padding point (internaly it return the pMask flag)
+	*
+	* \param chunk_pos chunk position
+	* \param offset of the point
+	* 
+	* \return the flag
+	*
+	*/
+	inline unsigned char & getMask(indexT block_pos, int offset)
+	{
+		return BMG::getMask(block_pos)[offset];
+	}
+
+    /*! \brief Get the index for the block at position block_pos
+    *
+    * \param block_pos position of the block
+    * 
+    */
+    auto getIndex(indexT block_pos) const -> decltype(BMG::getIndex(0))
+    {
+        return BMG::getIndex(block_pos);
     }
 
     /*! \brief Get an iterator over the blocks
@@ -3633,9 +3656,7 @@ public:
 
 		openfpm::vector<SpaceBox<dim,double>> chunks_box;
 
-		auto & ids = private_get_index_array();
-
-		fill_chunks_boxes(chunks_box,ids,spacing,offset);
+		fill_chunks_boxes(chunks_box,spacing,offset);
 
 		vtk_box1.add(chunks_box);
 		vtk_box1.write(std::string("chunks_") + output + std::string(".vtk"));

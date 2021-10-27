@@ -1903,6 +1903,52 @@ namespace openfpm
 			vct_nadd_index.template fill<0>(0);
 		}
 
+		/*! \brief Get the data at element id
+		*
+		*
+		* \return the data element
+		*
+		*/
+		inline auto getData(Ti id) -> decltype(vct_data.get(id))
+		{
+			return vct_data.get(id);
+		}
+
+		/*! \brief Get the data at element id
+		*
+		*
+		* \return the data element
+		*
+		*/
+		template<unsigned int p>
+		inline auto getData(Ti id) const -> decltype(vct_data.template get<p>(id))
+		{
+			return vct_data.template get<p>(id);
+		}
+
+		/*! \brief Get the data at element id
+		*
+		*
+		* \return the data element
+		*
+		*/
+		template<unsigned int p>
+		inline auto getData(Ti id) -> decltype(vct_data.template get<p>(id))
+		{
+			return vct_data.template get<p>(id);
+		}
+
+		/*! \brief Get the index at element id
+		*
+		*
+		* \return the index element
+		*
+		*/
+		inline auto getIndex(Ti id) const -> decltype(vct_index.template get<0>(id))
+		{
+			return vct_index.template get<0>(id);
+		}
+
 		/*! \brief In case we manually set the added index buffer and the add data buffer we have to call this
 		 *         function before flush
 		 *

@@ -22,24 +22,6 @@ class SparseGridGpu_iterator_sub
 	//! chunk coordinates
 	grid_key_dx<dim,int> chunk_coord;
 
-	//! array type for the indexes
-	typedef typename std::remove_reference<decltype(sparseGrid->private_get_index_array())>::type index_array_type;
-
-	//! array type for the data
-	typedef typename std::remove_reference<decltype(sparseGrid->private_get_data_array())>::type data_array_type;
-
-	//! vector of the chunk indexes
-	const typename std::remove_reference<decltype(sparseGrid->private_get_index_array())>::type * ids;
-
-	//! vector containing each chunks datas
-	const typename std::remove_reference<decltype(sparseGrid->private_get_data_array())>::type * data;
-
-	//Get the chunk type
-	typedef typename boost::mpl::at<typename data_array_type::value_type::type,boost::mpl::int_<0>>::type chunk_type;
-
-	//Get the chunk type
-	typedef boost::mpl::int_<boost::mpl::size<typename data_array_type::value_type::type>::type::value-1> pMask;
-
 	// subset in grid coordinates
 	Box<dim,int> sub_set;
 
@@ -58,11 +40,11 @@ class SparseGridGpu_iterator_sub
 	 */
 	void initialize_chunk_it()
 	{
-		if (chunk >= ids->size())
+		if (chunk >= sparseGrid->numBlocks())
 		{return;}
 
 		// compute if the chunk intersect the start - stop box
-		chunk_coord = sparseGrid->getCoord(ids->template get<0>(chunk)*sparseGrid->getBlockSize());
+		chunk_coord = sparseGrid->getCoord(sparseGrid->getIndex(chunk)*sparseGrid->getBlockSize());
 
 		Box<dim,int> box;
 
@@ -84,7 +66,7 @@ class SparseGridGpu_iterator_sub
 
 			in_chunk_it.reinitialize(grid_key_dx_iterator_sub<dim>(chunk_sz,res.getKP1(),res.getKP2()));
 
-			while (in_chunk_it.isNext() == true && (data->template get<pMask::value>(chunk)[chunk_sz.LinId(in_chunk_it.get())]&1ul) == 0)
+			while (in_chunk_it.isNext() == true && (sparseGrid->getMask(chunk,chunk_sz.LinId(in_chunk_it.get())) &1ul) == 0)
 			{
 				++in_chunk_it;
 			}
@@ -94,12 +76,12 @@ class SparseGridGpu_iterator_sub
 	//! Select the first valid point chunk
 	void SelectValid()
 	{
-		while (in_chunk_it.isNext() == true && (data->template get<pMask::value>(chunk)[chunk_sz.LinId(in_chunk_it.get())]&1ul) == 0)
+		while (in_chunk_it.isNext() == true && (sparseGrid->getMask(chunk,chunk_sz.LinId(in_chunk_it.get()))  &1ul) == 0)
 		{
 			++in_chunk_it;
 		}
 
-		while (in_chunk_it.isNext() == false && chunk < ids->size())
+		while (in_chunk_it.isNext() == false && chunk < sparseGrid->numBlocks() )
 		{
 			chunk++;
 
@@ -128,9 +110,7 @@ public:
 	 */
 	inline SparseGridGpu_iterator_sub()
 	:chunk(0),
-	 sparseGrid(NULL),
-	 ids(NULL),
-	 data(NULL)
+	 sparseGrid(NULL)
 	{
 		initialize_chunk_sz();
 	}
@@ -144,9 +124,7 @@ public:
 	 */
 	inline SparseGridGpu_iterator_sub(const SparseGridType & sparseGrid,const grid_key_dx<dim> & start,const  grid_key_dx<dim> & stop, int is_to_init)
 	:chunk(0),
-	 sparseGrid(&sparseGrid),
-	 ids(&sparseGrid.private_get_index_array()),
-	 data(&sparseGrid.private_get_data_array())
+	 sparseGrid(&sparseGrid)
 	{
 		for (int i = 0; i < dim ; i++)
 		{
@@ -203,7 +181,7 @@ public:
 	 */
 	bool isNext() const
 	{
-		return chunk < ids->size();
+		return chunk < sparseGrid->numBlocks();
 	}
 
 	/*! \brief Get the next element
@@ -239,8 +217,6 @@ public:
 		chunk = it_sub.chunk;
 		sparseGrid = it_sub.sparseGrid;
 		chunk_coord = it_sub.chunk_coord;
-		ids = it_sub.ids;
-		data = it_sub.data;
 		sub_set = it_sub.sub_set;
 		res = it_sub.res;
 		in_chunk_it = it_sub.in_chunk_it;
