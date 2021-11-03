@@ -298,7 +298,19 @@ public:
 	 * \return It just return the velue set in the constructor
 	 *
 	 */
-	__device__ __host__  inline T value(const size_t k) const
+	__device__ __host__  inline const T & value(const int k) const
+	{
+		return d;
+	}
+
+	/*! \brief Evaluate the expression
+	 *
+	 * \param k coordinate to evaluate
+	 *
+	 * \return It just return the velue set in the constructor
+	 *
+	 */
+	__device__ __host__  inline T & value(const int k)
 	{
 		return d;
 	}
@@ -1893,7 +1905,7 @@ public:
 	/*! \brief Array operator
 	 *
 	 */
-	T operator[](int n)
+	__device__ __host__ T & operator[](int n)
 	{
 		return d[n];
 	}
@@ -1901,7 +1913,7 @@ public:
 	/*! \brief Array operator
 	 *
 	 */
-	T operator[](int n) const
+	__device__ __host__ const T & operator[](int n) const
 	{
 		return d[n];
 	}
@@ -2009,7 +2021,7 @@ template<typename T, typename vmpl>
 class point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>
 {
 	//! array view of dimension dim
-	openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> d;
+	mutable openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> d;
 
 public:
 
@@ -2068,6 +2080,26 @@ public:
 	{
 	}
 
+	/*! \brief Same as value()
+	 *
+	 * \param k coordinate
+	 * 
+	 */
+	__device__ __host__ inline T & operator[](int k)
+	{
+		return value(k);
+	}
+
+	/*! \brief Same as value()
+	 *
+	 * \param k coordinate
+	 * 
+	 */
+	__device__ __host__ inline T & operator[](int k) const
+	{
+		return value(k);
+	}
+
 	/*! \brief Evaluate the expression at coordinate k
 	 *
 	 * It just return the value set in the constructor
@@ -2077,7 +2109,21 @@ public:
 	 * \return the value
 	 *
 	 */
-	__device__ __host__ inline T value(const size_t k) const
+	__device__ __host__ inline T & value(const int k)
+	{
+		return d[k];
+	}
+
+	/*! \brief Evaluate the expression at coordinate k
+	 *
+	 * It just return the value set in the constructor
+	 *
+	 * \param k coordinate
+	 *
+	 * \return the value
+	 *
+	 */
+	__device__ __host__ inline T & value(const int k) const
 	{
 		return d[k];
 	}

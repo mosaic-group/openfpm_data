@@ -2123,6 +2123,7 @@ namespace openfpm
 
 	template <typename T> using vector_std = vector<T, HeapMemory, memory_traits_lin, openfpm::grow_policy_double, STD_VECTOR>;
 	template<typename T> using vector_gpu = openfpm::vector<T,CudaMemory,memory_traits_inte>;
+	template<typename T> using vector_gpu_lin = openfpm::vector<T,CudaMemory,memory_traits_lin>;
 	template<typename T> using vector_gpu_single = openfpm::vector<T,CudaMemory,memory_traits_inte,openfpm::grow_policy_identity>;
 	template<typename T> using vector_custd = vector<T, CudaMemory, memory_traits_inte, openfpm::grow_policy_double, STD_VECTOR>;
 }
