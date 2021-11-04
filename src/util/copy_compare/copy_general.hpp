@@ -80,7 +80,8 @@ struct add_
 	}
 };
 
-#ifdef __clang__
+#if defined(__clang__) && !defined(CUDA_ON_CPU)
+
 template<typename Tsrc>
 __host__ Tsrc atomicAdd(Tsrc * ptr, Tsrc value)
 {
