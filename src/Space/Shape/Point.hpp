@@ -11,6 +11,11 @@
 #include "memory_ly/Encap.hpp"
 #include "Point_operators.hpp"
 
+template<typename T>
+struct native_encapsulated_type
+{
+	typedef T type;
+};
 
 /*! \brief This class implement the point shape in an N-dimensional space
  *
@@ -41,6 +46,7 @@ template<unsigned int dim ,typename T> class Point
 	//! Property id of the point
 	static const unsigned int x = 0;
 
+	typedef typename native_encapsulated_type<T[dim]>::type type_native;
 
 	/*! \brief Evaluate the expression and save the result on the point
 	 *
@@ -199,7 +205,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	__device__ __host__ inline T& operator[](size_t i)
+	__device__ __host__ inline T& operator[](unsigned int i)
 	{
 		return get(i);
 	}
@@ -212,7 +218,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	__device__ __host__ inline const T& operator[](size_t i) const
+	__device__ __host__ inline const T& operator[](unsigned int i) const
 	{
 		return get(i);
 	}
