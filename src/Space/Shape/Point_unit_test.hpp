@@ -554,7 +554,7 @@ BOOST_AUTO_TEST_CASE( Point_expression_usage_with_conversion )
 	double tmp = 5 + (p1 * p2);
 	double check = 5 + p1.get(0)*p2.get(0) + p1.get(1)*p2.get(1) + p1.get(2)*p2.get(2);
 	BOOST_REQUIRE_EQUAL(tmp,check);
-	p3 = 5 + (p1 * p2);
+	p3 = 5.0 + (p1 * p2);
 	for (size_t i = 0 ; i < 3 ; i++)	{BOOST_REQUIRE_EQUAL(p3.get(i),check) ;}
 	tmp = 5 - (p1 * p2);
 	check = 5 - p1.get(0)*p2.get(0) - p1.get(1)*p2.get(1) - p1.get(2)*p2.get(2);

@@ -89,58 +89,63 @@ struct has_coordtype<T, typename Void<typename T::coord_type>::type> : std::true
 {};
 
 template<typename source1, typename source2>
+struct best_conv_impl
+{
+	typedef source1 type;
+};
+
+template<typename source2>
+struct best_conv_impl<int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source2>
+struct best_conv_impl<long int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source2>
+struct best_conv_impl<unsigned int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source2>
+struct best_conv_impl<unsigned long int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source1>
+struct best_conv_impl<source1,int>
+{
+	typedef source1 type;
+};
+
+template<typename source1>
+struct best_conv_impl<source1,long int>
+{
+	typedef source1 type;
+};
+
+template<typename source1>
+struct best_conv_impl<source1,unsigned int>
+{
+	typedef source1 type;
+};
+
+template<typename source1>
+struct best_conv_impl<source1,unsigned long int>
+{
+	typedef source1 type;
+};
+
+template<typename source1, typename source2>
 struct best_conv
 {
-	typedef source1 type;
-};
-
-
-template<typename source2>
-struct best_conv<int,source2>
-{
-	typedef source2 type;
-};
-
-template<typename source2>
-struct best_conv<long int,source2>
-{
-	typedef source2 type;
-};
-
-template<typename source2>
-struct best_conv<unsigned int,source2>
-{
-	typedef source2 type;
-};
-
-template<typename source2>
-struct best_conv<unsigned long int,source2>
-{
-	typedef source2 type;
-};
-
-template<typename source1>
-struct best_conv<source1,int>
-{
-	typedef source1 type;
-};
-
-template<typename source1>
-struct best_conv<source1,long int>
-{
-	typedef source1 type;
-};
-
-template<typename source1>
-struct best_conv<source1,unsigned int>
-{
-	typedef source1 type;
-};
-
-template<typename source1>
-struct best_conv<source1,unsigned long int>
-{
-	typedef source1 type;
+	typedef typename best_conv_impl<typename std::remove_const<source1>::type,typename std::remove_const<source2>::type>::type type;
 };
 
 ///////////////////////////////////////////////////////////////
