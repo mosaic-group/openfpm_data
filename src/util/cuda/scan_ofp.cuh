@@ -36,14 +36,15 @@ namespace openfpm
 
 	if (count == 0)	{return;}
 
-	auto prec = input[0];
-	output[0] = 0;
-	for (int i = 1 ; i < count ; i++)
+    typename std::remove_reference<decltype(input[0])>::type scan_a = 0;
+	// No particular speed-up from omp amd simd
+//    #pragma omp parallel for simd reduction(inscan, +:scan_a)
+    for(int i = 0; i < count; i++)
 	{
-		auto next = prec + output[i-1];
-		prec = input[i];
-		output[i] = next;
-	}
+        output[i] = scan_a;
+//        #pragma omp scan exclusive(scan_a)
+        scan_a += input[i];
+    }
 
 #else
 	#ifdef SCAN_WITH_CUB

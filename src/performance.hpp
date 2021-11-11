@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_SUITE( performance )
 //// Include tests ////////
 
 #include "Grid/performance/grid_performance_tests.hpp"
-#include "Vector/performance/vector_performance_test.hpp"
+//#include "Vector/performance/vector_performance_test.hpp"
 
 BOOST_AUTO_TEST_SUITE_END()
 

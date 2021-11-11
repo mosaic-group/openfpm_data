@@ -63,13 +63,13 @@ BOOST_AUTO_TEST_CASE( test_sort_cub_wrapper )
 
 	openfpm::vector_gpu<aggregate<unsigned char>> temporal;
 
-	input.resize(10000);
-	input_id.resize(10000);
+	input.resize(100000);
+	input_id.resize(100000);
 
 
 	// fill input
 
-	for (size_t i = 0 ; i < 10000; i++)
+	for (size_t i = 0 ; i < 100000; i++)
 	{
 		input.template get<0>(i) = 10000.0*(float)rand() / RAND_MAX;
 		input_id.template get<0>(i) = i;

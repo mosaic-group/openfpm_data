@@ -14,7 +14,7 @@ set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
 set(ENABLE_GPU CACHE BOOL "Disable the GPU code independently that a cuda compiler is found")
 set(TEST_PERFORMANCE CACHE BOOL "Enable test performance")
 set(ALPAKA_ROOT CACHE PATH "Alpaka root path")
-set(CUDA_ON_CPU CACHE BOOL "Make Cuda work on heap")
+set(CUDA_ON_CPU CACHE STRING "Make Cuda work on heap")
 
 if (ENABLE_GPU)
     set(CUDA_ON_CPU OFF)

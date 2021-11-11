@@ -457,6 +457,11 @@ namespace openfpm
 #endif
 		}
 
+		auto & private_get_vct_nadd_index()
+		{
+			return vct_nadd_index;
+		}
+
 		/*! \brief It insert an element in the sparse vector
 		 *
 		 *

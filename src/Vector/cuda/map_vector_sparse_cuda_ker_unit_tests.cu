@@ -270,8 +270,17 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 
 	vs.setGPUInsertBuffer(10,1024);
 
+	auto aaa = vs.toKernel();
+//	auto nindex = aaa.private_get_vct_nadd_index();
+
 	// we launch a kernel to insert data
-	CUDA_LAUNCH_DIM3(test_insert_sparse,10,100,vs.toKernel());
+	CUDA_LAUNCH_DIM3(test_insert_sparse,10,100,aaa);
+
+/*	for (int i = 0 ; i < nindex.size() ; i++)
+	{
+		std::cout << aaa.template get<0>(i) << std::endl;
+	}*/
+
 	CUDA_LAUNCH_DIM3(test_insert_sparse2_inc,10,100,vs.toKernel());
 	CUDA_LAUNCH_DIM3(test_insert_sparse2_inc,10,100,vs.toKernel());
 	CUDA_LAUNCH_DIM3(test_insert_sparse2_inc,10,100,vs.toKernel());

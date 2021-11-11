@@ -168,6 +168,13 @@ struct key_val_it
 		return *this;
 	}
 
+	key_val_it operator++(int)
+	{
+		key_val_it temp = *this;
+		++*this;
+		return temp;
+	}
+
 	key_val_it & operator--()
 	{
 		--key;
@@ -186,7 +193,7 @@ struct key_val_it
 		return key < tmp.key;
 	}
 
-	key_val_it<key_t,val_t> & operator=(key_val_it<key_t,val_t> & tmp)
+	key_val_it<key_t,val_t> & operator=(const key_val_it<key_t,val_t> & tmp)
 	{
 		key = tmp.key;
 		val = tmp.val;

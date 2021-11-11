@@ -356,15 +356,12 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	{
 #ifdef __NVCC__
 
-		CUDA_SAFE()
-
 		// Than we construct the ids
 
 		auto ite_gpu = pl.getGPUIteratorTo(stop-start-1);
 
 		cl_n.resize(this->gr_cell.size()+1);
 		cl_n.template fill<0>(0);
-//		CUDA_SAFE(cudaMemset(cl_n.template getDeviceBuffer<0>(),0,cl_n.size()*sizeof(cnt_type)));
 
 		part_ids.resize(stop - start);
 
@@ -637,12 +634,12 @@ public:
 
 	CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse> toKernel()
 	{
-		if (nnc_rad.size() == 0)
+/*		if (nnc_rad.size() == 0) <----- Cannot call this anymore with openMP
 		{
 			// set the radius equal the cell spacing on direction X
 			// (must be initialized to something to avoid warnings)
 			setRadius(this->getCellBox().getHigh(0));
-		}
+		}*/
 
 		return CellList_gpu_ker_selector<dim,T,cnt_type,ids_type,Memory,transform,
 								  vector_cnt_type,openfpm::vector_gpu<aggregate<cnt_type,cnt_type>>,

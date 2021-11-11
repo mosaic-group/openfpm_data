@@ -14,6 +14,7 @@
 #ifdef CUDA_GPU
 #include "memory/CudaMemory.cuh"
 #endif
+#include <omp.h>
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -52,9 +53,10 @@ struct copy_switch_memory_c_no_cpy
 	template<typename T>
 	inline void operator()(T& t)
 	{
+		boost::fusion::at_c<T::value>(dst).disable_manage_memory();
+
 		boost::fusion::at_c<T::value>(dst).mem = boost::fusion::at_c<T::value>(src).mem;
-		// Increment the reference of mem
-		boost::fusion::at_c<T::value>(dst).mem->incRef();
+
 		boost::fusion::at_c<T::value>(dst).mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
 		boost::fusion::at_c<T::value>(dst).switchToDevicePtr();
 	}
@@ -76,9 +78,9 @@ struct grid_gpu_ker_constructor_impl<false,T>
 {
 	template<typename ggk_type> static inline void construct(const ggk_type & cpy,ggk_type & this_)
 	{
+		this_.get_data_().disable_manage_memory();
 		this_.get_data_().mem = cpy.get_data_().mem;
-		// Increment the reference of mem
-		this_.get_data_().mem->incRef();
+
 		this_.get_data_().mem_r.bind_ref(cpy.get_data_().mem_r);
 		this_.get_data_().switchToDevicePtr();
 	}
@@ -205,6 +207,7 @@ public:
 	__device__ __host__ grid_gpu_ker(const grid_gpu_ker & cpy)
 	:g1(cpy.g1)
 	{
+//		std::cout << "Constructing " << &cpy << std::endl;
 		grid_gpu_ker_constructor_impl<is_layout_inte<layout_base<T_>>::value,T_>::construct(cpy,*this);
 	}
 

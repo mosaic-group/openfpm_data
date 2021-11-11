@@ -1844,6 +1844,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_split)
 	// Test the cell list
 }*/
 
+#if 0
+
 BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_sparse)
 {
 	std::cout << "Test cell list GPU" << "\n";
@@ -1862,6 +1864,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_sparse)
 	// Test the cell list
 }
 
+#endif
+
 BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_radius)
 {
 	std::cout << "Test cell list GPU" << "\n";
@@ -1879,6 +1883,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_radius)
 
 	// Test the cell list
 }
+
+#if 0
 
 BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force)
 {
@@ -1916,6 +1922,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_sparse)
 	// Test the cell list
 }
 
+#endif
+
 template<typename CellList_type, typename Vector_type, typename Vector_out>
 __global__ void cl_offload_gpu(CellList_type cl, Vector_type parts, Vector_out output)
 {
@@ -1947,6 +1955,8 @@ __global__ void cl_offload_gpu_list(CellList_type cl, Vector_type parts, Vector_
     }
 
 }
+
+#if 0
 
 BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 {
@@ -2036,6 +2046,8 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 
 	// Test the cell list
 }
+
+#endif
 
 BOOST_AUTO_TEST_CASE( CellList_swap_test )
 {

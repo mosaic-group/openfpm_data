@@ -99,6 +99,7 @@ struct grid_toKernelImpl
 	{
 		grid_gpu_ker<dim,T,memory_traits_lin> g(gc.getGrid());
 
+		g.get_data_().disable_manage_memory();
 		g.get_data_().mem = gc.get_internal_data_().mem;
 		// Increment the reference of mem
 		g.get_data_().mem->incRef();

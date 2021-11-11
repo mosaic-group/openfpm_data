@@ -75,8 +75,6 @@ public:
 
 template<typename V, typename E,
 		 typename Memory,
-		 typename layout_v,
-		 typename layout_e,
 		 template <typename> class layout_v_base,
 		 template <typename> class layout_e_base,
 		 typename grow_p>
@@ -300,8 +298,6 @@ public:
  */
 template<typename V, typename E = no_edge,
 		  typename Memory = HeapMemory,
-		  typename layout_v = typename memory_traits_lin<V>::type,
-		  typename layout_e = typename memory_traits_lin<E>::type,
 		  template<typename> class layout_v_base = memory_traits_lin,
 		  template<typename> class layout_e_base = memory_traits_lin,
 		  typename grow_p = openfpm::grow_policy_double>
@@ -439,7 +435,7 @@ public:
 	 * \return true if they match
 	 *
 	 */
-	bool operator==(const Graph_CSR<V, E, Memory, layout_v,layout_e,layout_v_base, layout_e_base, grow_p> & g) const
+	bool operator==(const Graph_CSR<V, E, Memory,layout_v_base, layout_e_base, grow_p> & g) const
 	{
 		bool ret = true;
 
@@ -460,9 +456,9 @@ public:
 	 * \return a graph duplicate of the first
 	 *
 	 */
-	Graph_CSR<V, E, Memory, layout_v, layout_e,layout_v_base,layout_e_base, grow_p> duplicate() const
+	Graph_CSR<V, E, Memory,layout_v_base,layout_e_base, grow_p> duplicate() const
 	{
-		Graph_CSR<V, E, Memory, layout_v, layout_e,layout_v_base,layout_e_base, grow_p> dup;
+		Graph_CSR<V, E, Memory,layout_v_base,layout_e_base, grow_p> dup;
 
 		dup.v_slot = v_slot;
 

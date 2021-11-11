@@ -16,8 +16,9 @@ if (TEST_PERFORMANCE)
 			 SparseGridGpu/performance/SparseGridGpu_performance_insert_single.cu
 			 SparseGridGpu/performance/SparseGridGpu_performance_tests.cu
 			 SparseGridGpu/performance/SparseGridGpu_performance_insert_block.cu
-			 SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_3d.cu
-			 SparseGridGpu/performance/performancePlots.cpp)
+                         SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_3d.cu
+                         SparseGridGpu/performance/performancePlots.cpp
+                         Vector/performance/vector_performance_test.cu)
 endif ()
 
 if (CUDA_FOUND OR CUDA_ON_CPU)
@@ -26,17 +27,18 @@ if (CUDA_FOUND OR CUDA_ON_CPU)
             Vector/vector_gpu_unit_tests.cu
             Grid/cuda/cuda_grid_gpu_tests.cu
             Vector/cuda/map_vector_cuda_funcs_tests.cu
-            NN/CellList/CellList_gpu_test.cu util/cuda/scan_sort_cuda_unit_tests.cu
+            NN/CellList/CellList_gpu_test.cu 
+	    util/cuda/scan_sort_cuda_unit_tests.cu
             Grid/cuda/cuda_grid_unit_tests_func.cu
             util/cuda/modern_gpu_tests.cu
             Vector/cuda/map_vector_sparse_cuda_ker_unit_tests.cu
-            Vector/cuda/map_vector_sparse_cuda_kernels_unit_tests.cu
             NN/CellList/tests/CellDecomposer_gpu_ker_unit_test.cu
-            SparseGridGpu/tests/BlockMapGpu_tests.cu
+	    SparseGridGpu/tests/BlockMapGpu_tests.cu
 	    util/test/zmorton_unit_tests.cpp
 	    util/cuda/test/segreduce_block_cuda_tests.cu 
 	    SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu 
-	    SparseGridGpu/tests/SparseGridGpu_tests.cu)
+	    SparseGridGpu/tests/SparseGridGpu_tests.cu
+	    )
 endif ()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
@@ -44,11 +46,15 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 endif()
 
 if (CUDA_ON_CPU)
-	add_definitions(-DCUDA_ON_CPU -D__NVCC__ -DCUDART_VERSION=11000)
+        add_definitions(-DCUDA_ON_CPU -D__NVCC__ -DCUDART_VERSION=11000 )
+	#        add_definitions(-D_GLIBCXX_PARALLEL)
         set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
 	set_source_files_properties(isolation.cu PROPERTIES LANGUAGE CXX)
        	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
         	add_definitions("-x c++")
+        endif()
+        if (CUDA_ON_CPU STREQUAL "OpenMP")
+                add_definitions(-DCUDIFY_USE_OPENMP)
         endif()
 endif()
 
