@@ -35,6 +35,10 @@ find_package(Vc REQUIRED)
 
 ###### CONFIG.h FILE ######
 
+if (OPENMP_FOUND)
+        set(DEFINE_HAVE_OPENMP "#define HAVE_OPENMP")
+endif()
+
 if(SE_CLASS1)
 	set(DEFINE_SE_CLASS1 "#define SE_CLASS1")
 endif()
