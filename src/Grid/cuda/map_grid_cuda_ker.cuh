@@ -14,7 +14,6 @@
 #ifdef CUDA_GPU
 #include "memory/CudaMemory.cuh"
 #endif
-#include <omp.h>
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
