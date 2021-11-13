@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
-if (CUDA_ON_CPU)
-	add_definitions(-DCUDA_ON_CPU)
-endif()
-
 
 add_executable(io main.cpp 
 				  MetaParser/MetaParser_unit_test.cpp 
@@ -32,12 +28,12 @@ if (CUDA_FOUND)
 	target_include_directories (io PUBLIC ${MPI_C_INCLUDE_DIRS})
 
    	if( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0 )
-        	add_compile_options( "-fabi-version=6" )
-    	endif()
+    	add_compile_options( "-fabi-version=6" )
+    endif()
 
-        if (TEST_COVERAGE)
-                target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
-        endif()
+    if (TEST_COVERAGE)
+    	target_compile_options(io PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: -Xcompiler "-fprofile-arcs -ftest-coverage" >)
+	endif()
 endif()
 
 target_include_directories (io PUBLIC ${CUDA_INCLUDE_DIRS})
@@ -62,6 +58,7 @@ target_link_libraries(io ${HDF5_LIBRARIES})
 target_link_libraries(io ${TINYOBJLOADER_LIBRARIES} )
 target_link_libraries(io vcluster)
 target_link_libraries(io ofpmmemory)
+target_link_libraries(io OpenMP::OpenMP_CXX)
 if (PETSC_FOUND)
 	target_link_libraries(io ${PETSC_LIBRARIES})
 endif()
