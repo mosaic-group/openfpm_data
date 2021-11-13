@@ -19,6 +19,8 @@ set(ENV{HDF5_ROOT} ${HDF5_ROOT})
 set(OPENFPM_PDATA_DIR CACHE PATH "OpenFPM_pdata dirs")
 set(PETSC_ROOT CACHE PATH "If compiling with linear algebra indicate the PETSC root directory")
 set(ENV{PETSC_DIR} ${PETSC_ROOT})
+set(HIP_ENABLE CACHE BOOL "Enable HIP compiler")
+set(AMD_ARCH_COMPILE "gfx900" CACHE STRING "AMD gpu architecture used to compile kernels")
 
 add_subdirectory (../openfpm_vcluster openfpm_vcluster)
 
@@ -43,6 +45,16 @@ find_package(HDF5 REQUIRED)
 find_package(TinyObjLoader)
 find_package(PETSc)
 find_package(OpenMP)
+find_package(HIP)
+
+if(HIP_FOUND)
+        set(DEFINE_HIP_GPU "#define HIP_GPU")
+        set(DEFINE_CUDIFY_USE_HIP "#define CUDIFY_USE_HIP")
+endif()
+
+if(HIP_FOUND)
+        set(DEFINE_CUDA_GPU "#define CUDA_GPU")
+endif()
 
 if(CUDA_FOUND)
 	set(OPENFPM_INIT_FILE "initialize/initialize_wrapper_cuda.cu")

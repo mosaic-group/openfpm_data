@@ -6,11 +6,11 @@ if [ -d "$1/MPI" ]; then
   echo "MPI already installed"
   exit 0
 fi
-rm -rf mpich-3.3
-rm mpich-3.3.tar.gz
-wget http://ppmcore.mpi-cbg.de/upload/mpich-3.3.tar.gz
-tar -xvf mpich-3.3.tar.gz
-cd mpich-3.3
+rm -rf mpich-3.4.2
+rm mpich-3.4.2.tar.gz
+wget http://ppmcore.mpi-cbg.de/upload/mpich-3.4.2.tar.gz
+tar -xvf mpich-3.4.2.tar.gz
+cd mpich-3.4.2
 
 #
 #                  --disable-mca-dso \
@@ -28,10 +28,10 @@ cd mpich-3.3
 
 if [ x"$6" == x"1" ]; then
    echo "Installing MPI with GPU support"
-  ./configure --prefix=$1/MPI --enable-fortran CC=$3 CXX=$4 F77=$5 FC=$5
+  ./configure --prefix=$1/MPI --enable-fortran CC=$3 CXX=$4 F77=$5 FC=$5 FFLAGS=-fallow-argument-mismatch
 else
   echo "Installing MPI without GPU support"
-  ./configure --prefix=$1/MPI --enable-fortran CC=$3 CXX=$4 F77=$5 FC=$5
+  ./configure --prefix=$1/MPI --enable-fortran CC=$3 CXX=$4 F77=$5 FC=$5 FFLAGS=-fallow-argument-mismatch
 fi
 make -j $2
 make install

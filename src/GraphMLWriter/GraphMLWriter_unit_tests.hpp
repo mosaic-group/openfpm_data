@@ -87,6 +87,19 @@ BOOST_AUTO_TEST_CASE( graphml_writer_use)
 	if (v_cl.getProcessUnitID() != 0)
 		return;
 
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/test_graph2_test.graphml");
+	std::string c3 = std::string("openfpm_io/test_data/test_graph_test.graphml");
+
+#else
+
+	std::string c2 = std::string("test_data/test_graph2_test.graphml");
+	std::string c3 = std::string("test_data/test_graph_test.graphml");
+
+#endif
+
 	Graph_CSR<ne_cp,ne_cp> g_csr2;
 
 	// Add 4 vertex and connect
@@ -124,7 +137,7 @@ BOOST_AUTO_TEST_CASE( graphml_writer_use)
 
 	// check that match
 
-	bool test = compare("test_graph2.graphml","test_data/test_graph2_test.graphml");
+	bool test = compare("test_graph2.graphml",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 
 	//! Create a graph
@@ -148,7 +161,7 @@ BOOST_AUTO_TEST_CASE( graphml_writer_use)
 
 
 	// check that match
-	test = compare("test_graph.graphml","test_data/test_graph_test.graphml");
+	test = compare("test_graph.graphml",c3);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 

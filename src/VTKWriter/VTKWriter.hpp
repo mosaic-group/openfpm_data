@@ -15,7 +15,7 @@
 #include <fstream>
 #include "util/common.hpp"
 
-/*! \brief Get the type
+/*! \brief Get the type Old
  *
  * It convert T to a string identify the corrispondent type in VTK format
  *
@@ -23,29 +23,66 @@
 
 template <typename T> std::string getType()
 {
+    // Create a property string based on the type of the property
+    if (std::is_same<T,float>::value)
+        return "float";
+    else if (std::is_same<T,double>::value)
+        return "double";
+    else if (std::is_same<T,char>::value)
+        return "char";
+    else if (std::is_same<T,unsigned char>::value)
+        return "unsigned_char";
+    else if (std::is_same<T,short>::value)
+        return "short";
+    else if (std::is_same<T,unsigned short>::value)
+        return "unsigned_short";
+    else if (std::is_same<T,int>::value)
+        return "int";
+    else if (std::is_same<T,unsigned int>::value)
+        return "unsigned_int";
+    else if (std::is_same<T,long int>::value)
+        return "int";
+    else if (std::is_same<T,unsigned long int>::value )
+        return "unsigned_int";
+    else if (std::is_same<T,bool>::value )
+        return "bit";
+
+    return "";
+}
+
+
+
+/*! \brief Get the type
+ *
+ * It convert T to a string identify the corrispondent type in VTK format
+ *
+ */
+
+template <typename T> std::string getTypeNew()
+{
 	// Create a property string based on the type of the property
 	if (std::is_same<T,float>::value)
-		return "float";
+		return "Float32";
 	else if (std::is_same<T,double>::value)
-		return "double";
+		return "Float64";
 	else if (std::is_same<T,char>::value)
-		return "char";
+		return "Int8";
 	else if (std::is_same<T,unsigned char>::value)
-		return "unsigned_char";
+		return "Uint8";
 	else if (std::is_same<T,short>::value)
-		return "short";
+		return "Int16";
 	else if (std::is_same<T,unsigned short>::value)
-		return "unsigned_short";
+		return "Uint16";
 	else if (std::is_same<T,int>::value)
-		return "int";
+		return "Int32";
 	else if (std::is_same<T,unsigned int>::value)
-		return "unsigned_int";
+		return "Uint32";
 	else if (std::is_same<T,long int>::value)
-		return "int";
+		return "Int64";
 	else if (std::is_same<T,unsigned long int>::value )
-		return "unsigned_int";
+		return "Uint64";
 	else if (std::is_same<T,bool>::value )
-		return "bit";
+		return "Int8";
 
 	return "";
 }

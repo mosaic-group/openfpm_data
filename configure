@@ -122,6 +122,8 @@ with_suitesparse
 with_petsc
 with_eigen
 with_vcdevel
+enable_gpu
+enable_hip
 enable_asan
 enable_garbageinj
 enable_garbageinjv
@@ -247,6 +249,25 @@ do
     test_performance)
        conf_options="$conf_options -DTEST_PERFORMANCE=ON"
        ;;
+<<<<<<< HEAD
+=======
+    gpu)
+        if [ x"$CXX" == x"" ]; then
+                conf_options="$conf_options"
+        else
+		conf_options="$conf_options -DCMAKE_CUDA_HOST_COMPILER=$(which $CXX)"
+        fi
+        if [ x"$CXXCUDA" == x"" ]; then
+                conf_options="$conf_options"
+        else
+                conf_options="$conf_options -DCMAKE_CUDA_COMPILER=$(which $CXXCUDA)"
+        fi
+       conf_options="$conf_options -DENABLE_GPU=ON"
+       ;;
+    hip)
+       conf_options="$conf_options -DHIP_ENABLE=ON"
+       ;;
+>>>>>>> 49900f22654dff41bd2698a2a1f37ba6b2d05c49
     asan)
        conf_options="$conf_options -DENABLE_ASAN=ON"
        ;;

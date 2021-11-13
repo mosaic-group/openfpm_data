@@ -14,6 +14,20 @@ BOOST_AUTO_TEST_CASE( csv_writer_particles )
 	if (v_cl.getProcessUnitID() != 0)
 		return;
 
+#ifdef OPENFPM_PDATA
+
+	if (v_cl.rank() != 0) {return;}
+	std::string c2 = std::string("openfpm_io/test_data/csv_out_test.csv");
+	std::string c3 = std::string("openfpm_io/test_data/csv_out_unk_test.csv");
+
+
+#else
+
+	std::string c2 = std::string("test_data/csv_out_test.csv");
+	std::string c3 = std::string("test_data/csv_out_unk_test.csv");
+
+#endif
+
 	{
 	// Allocate a property vector
 	auto v_prp = allocate_openfpm_prp(16);
@@ -34,7 +48,7 @@ BOOST_AUTO_TEST_CASE( csv_writer_particles )
 	// Write the CSV
 	csv_writer.write("csv_out.csv",v_pos,v_prp);
 
-	bool test = compare("csv_out.csv","test_data/csv_out_test.csv");
+	bool test = compare("csv_out.csv",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 	}
 
@@ -61,7 +75,7 @@ BOOST_AUTO_TEST_CASE( csv_writer_particles )
 	// In case of SE_CLASS3 enabled the number of properties change
 
 #ifndef SE_CLASS3
-	bool test = compare("csv_out_unk.csv","test_data/csv_out_unk_test.csv");
+	bool test = compare("csv_out_unk.csv",c3);
 	BOOST_REQUIRE_EQUAL(true,test);
 #endif
 	}
