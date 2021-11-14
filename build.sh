@@ -20,8 +20,8 @@ if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
         export PATH="/opt/bin:$PATH"
 fi
 
-if [ x"$hostname" == x"cifarm-centos-node"  ]; then
-        echo "Centos node"
+if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
+        echo "Mac node"
         export PATH="$HOME/openfpm_dependencies/openfpm_data/CMAKE/bin:$PATH"
 fi
 
@@ -64,7 +64,7 @@ sh ./autogen.sh
 options="$options --disable-gpu "
 options="$options --with-vcdevel=$HOME/openfpm_dependencies/openfpm_data/VCDEVEL --with-boost=$HOME/openfpm_dependencies/openfpm_data/BOOST  --with-libhilbert=$HOME/openfpm_dependencies/openfpm_data/LIBHILBERT"
 
-if [ x"$hostname" == x"cifarm-mac-node" ]; then
+if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de" ]; then
 	options="$options --enable-cuda-on-cpu"
 else
 	options="$options --with-cuda-on-backend=OpenMP"
