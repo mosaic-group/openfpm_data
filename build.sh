@@ -12,11 +12,17 @@ echo "Build on: $hostname with $type_compile branch: $branch"
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
         echo "CentOS node"
         source /opt/rh/devtoolset-7/enable
+	export PATH="$HOME/openfpm_dependencies/openfpm_data/CMAKE/bin:$PATH"
 fi
 
 if [ x"$hostname" == x"cifarm-ubuntu-node"  ]; then
         echo "Ubuntu node"
         export PATH="/opt/bin:$PATH"
+fi
+
+if [ x"$hostname" == x"cifarm-centos-node"  ]; then
+        echo "Centos node"
+        export PATH="$HOME/openfpm_dependencies/openfpm_data/CMAKE/bin:$PATH"
 fi
 
 # Check if libHilbert is installed
@@ -29,7 +35,6 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/VCDEVEL ]; then
         ./install_VCDEVEL.sh $HOME/openfpm_dependencies/openfpm_data/ 4
 fi
 
-rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
 
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 	if [ x"$hostname" == x"cifarm-mac-node" ]; then
@@ -40,8 +45,6 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 		./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data 4 gcc
 	fi
 fi
-
-./install_CMAKE_on_CI.sh $HOME/openfpm_dependencies/openfpm_data 4
 
 mkdir /tmp/openfpm_data_$type_compile
 mv * .[^.]* /tmp/openfpm_data_$type_compile
