@@ -7,7 +7,6 @@ hostname=$(hostname)
 type_compile=$3
 branch=$4
 
-
 echo "Build on: $hostname with $type_compile branch: $branch"
 
 if [ x"$hostname" == x"cifarm-centos-node.mpi-cbg.de"  ]; then
@@ -30,6 +29,8 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/VCDEVEL ]; then
         ./install_VCDEVEL.sh $HOME/openfpm_dependencies/openfpm_data/ 4
 fi
 
+rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
+
 if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 	if [ x"$hostname" == x"cifarm-mac-node" ]; then
 		echo "Compiling for OSX"
@@ -39,6 +40,8 @@ if [ ! -d $HOME/openfpm_dependencies/openfpm_data/BOOST ]; then
 		./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_data 4 gcc
 	fi
 fi
+
+./install_CMAKE_on_CI.sh $HOME/openfpm_dependencies/openfpm_data 4
 
 mkdir /tmp/openfpm_data_$type_compile
 mv * .[^.]* /tmp/openfpm_data_$type_compile
@@ -56,7 +59,13 @@ cd "$workspace/openfpm_data"
 pre_command=""
 sh ./autogen.sh
 options="$options --disable-gpu "
-options="$options --with-vcdevel=$HOME/openfpm_dependencies/openfpm_data/VCDEVEL --with-boost=$HOME/openfpm_dependencies/openfpm_data/BOOST  --with-libhilbert=$HOME/openfpm_dependencies/openfpm_data/LIBHILBERT --enable-cuda_on_cpu"
+options="$options --with-vcdevel=$HOME/openfpm_dependencies/openfpm_data/VCDEVEL --with-boost=$HOME/openfpm_dependencies/openfpm_data/BOOST  --with-libhilbert=$HOME/openfpm_dependencies/openfpm_data/LIBHILBERT"
+
+if [ x"$hostname" == x"cifarm-mac-node" ]; then
+	options="$options --enable-cuda-on-cpu"
+else
+	options="$options --with-cuda-on-backend=OpenMP"
+fi
 
 if [ x"$3" == x"SE"  ]; then
   options="$options --enable-se-class1 --enable-se-class2 --enable-se-class3 --with-action-on-error=throw --enable-test-coverage"

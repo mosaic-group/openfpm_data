@@ -11,6 +11,97 @@
 namespace openfpm
 {
 	/*! \brief Vector iterator
+ *
+ */
+	template<unsigned int p, typename vector_type>
+	class vector_key_iterator_ele
+	{
+		//! Linearized end element
+		const vector_type & vect;
+
+		size_t end;
+
+	protected:
+
+		//! Actual key
+		size_t gk;
+
+	public:
+
+		/*! \brief Constructor require the size of the vector
+		 *
+		 * \param end point
+		 * \param start starting point
+		 *
+		 */
+		vector_key_iterator_ele(const vector_type & vect, size_t end, size_t start = 0)
+				: vect(vect),end(end),gk(start)
+		{}
+
+
+		/*! \brief Get the next element
+		 *
+		 * Get the next element
+		 *
+		 * \return the next grid_key
+		 *
+		 */
+		vector_key_iterator_ele & operator++()
+		{
+			//! increment the first index
+
+			gk++;
+
+			return *this;
+		}
+
+		/*! \brief Set the dimension
+		 *
+		 * \param d is the dimension (IGNORED is by default 0)
+		 * \param sz set the counter to sz
+		 *
+		 */
+		void set(int d, size_t sz)
+		{
+			// set the counter dim to sz
+
+			gk = sz;
+		}
+
+		/*! \brief Check if there is the next element
+		 *
+		 * Check if there is the next element
+		 *
+		 * \return true if there is the next, false otherwise
+		 *
+		 */
+		bool isNext() const
+		{
+			if (gk < end)
+			{
+				//! we did not reach the end of the grid
+
+				return true;
+			}
+
+			//! we reach the end of the grid
+			return false;
+		}
+
+		/*! \brief Get the actual key
+		 *
+		 * Get the actual key
+		 *
+		 * \return the actual key
+		 *
+		 */
+		auto get() const -> decltype(vect.template get<p>(gk))
+		{
+			return vect.template get<p>(gk);
+		}
+	};
+
+	/*! \brief Vector iterator
 	 *
 	 */
 

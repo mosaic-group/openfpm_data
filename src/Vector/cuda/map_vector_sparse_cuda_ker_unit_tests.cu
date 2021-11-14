@@ -299,6 +299,12 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 		match &= vs.template get<0>(9000 - 2*i) == 3*(2*i + 3000);
 		match &= vs.template get<1>(9000 - 2*i) == 2*i + 13000;
 		match &= vs.template get<2>(9000 - 2*i) == 2*i + 23000;
+
+		if (match == false)
+		{
+			std::cout << i << "     " <<  vs.template get<0>(9000 - 2*i) << "!=" << 3*(2*i + 3000) << "     " << vs.template get<1>(9000 - 2*i) << "!=" << 2*i + 13000 << "    " << vs.template get<2>(9000 - 2*i) << "!=" << 2*i + 23000 << std::endl;
+			break;
+		}
 	}
 
 	for (size_t i = 0 ; i < 500 ; i++)
@@ -306,6 +312,12 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 		match &= vs.template get<0>(9000 - 2*i) == 3*(2*i + 3000) + 2*i + 1100;
 		match &= vs.template get<1>(9000 - 2*i) == 2*i + 11100;
 		match &= vs.template get<2>(9000 - 2*i) == 2*i + 23000;
+
+		if (match == false)
+		{
+			std::cout << i << "     " <<  vs.template get<0>(9000 - 2*i) << "!=" << 3*(2*i + 3000) << "     " << vs.template get<1>(9000 - 2*i) << "!=" << 2*i + 13000 << "    " << vs.template get<2>(9000 - 2*i) << "!=" << 2*i + 23000 << std::endl;
+			break;
+		}
 	}
 
 	for (size_t i = 0 ; i < 500 ; i++)
@@ -313,6 +325,12 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 		match &= vs.template get<0>(10000 - 2*i) == 2*i + 100;
 		match &= vs.template get<1>(10000 - 2*i) == 2*i + 10100;
 		match &= vs.template get<2>(10000 - 2*i) == 2*i + 20100;
+
+		if (match == false)
+		{
+			std::cout << i << "     " <<  vs.template get<0>(9000 - 2*i) << "!=" << 3*(2*i + 3000) << "     " << vs.template get<1>(9000 - 2*i) << "!=" << 2*i + 13000 << "    " << vs.template get<2>(9000 - 2*i) << "!=" << 2*i + 23000 << std::endl;
+			break;
+		}
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);

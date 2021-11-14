@@ -15,7 +15,28 @@
 #include <boost/mpl/range_c.hpp>
 #include <boost/fusion/include/size.hpp>
 
-template <typename> struct Debug;
+template<typename T>
+struct object_s_di_e_cnk_meta_copy_selector
+{
+	template<unsigned int T_value, typename v_prp, typename copy_rtype, typename Tsrc, typename Tdst>
+	static inline void copy(const Tsrc & src, Tdst & dst, int sub_id)
+	{
+		meta_copy<typename copy_rtype::value_type>::meta_copy_(src.template get<T_value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T_value>>::type::value>()[sub_id]);
+	}
+};
+
+template<unsigned int N1, typename T>
+struct object_s_di_e_cnk_meta_copy_selector<T[N1]>
+{
+	template<unsigned int T_value, typename v_prp, typename copy_rtype, typename Tsrc, typename Tdst>
+	static inline void copy(const Tsrc & src, Tdst & dst, int sub_id)
+	{
+		for (int i = 0 ; i < N1 ; i++)
+		{
+			meta_copy<typename T::value_type>::meta_copy_(src.template get<T_value>()[i],dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T_value>>::type::value>()[i][sub_id]);
+		}
+	}
+};
 
 /*! \brief this class is a functor for "for_each" algorithm
  *
@@ -60,9 +81,11 @@ struct object_s_di_e_cnk
     void operator()(T& t)
     {
 		// Remove the reference from the type to copy
-		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type::value_type copy_rtype;
+		typedef typename boost::remove_reference<decltype(dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>())>::type copy_rtype;
 
-    	meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>()[sub_id]);
+    	//meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>()[sub_id]);
+
+		object_s_di_e_cnk_meta_copy_selector<copy_rtype>::template copy<T::value,v_prp,copy_rtype>(src,dst,sub_id);
     }
 };
 

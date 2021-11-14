@@ -119,7 +119,7 @@ public:
   inline __host__ __device__ size_type size() const { return boost::mpl::at<vector,boost::mpl::int_<0>>::type::value; }
   size_type max_size() const { return num_elements(); }
   bool empty() const { return size() == 0; }
-  size_type num_dimensions() const { return NumDims; }
+  inline __device__ __host__ size_type num_dimensions() const { return NumDims; }
   inline __host__ __device__ const index* strides() const { return strides_; }
 
   size_type num_elements() const
@@ -214,6 +214,7 @@ public:
     return *this;
   }
 
+  __device__ __host__ T* origin_mutable() const { return const_cast<T*>(this->base_); }
   __device__ __host__ T* origin() { return this->base_; }
   __device__ __host__ const T* origin() const { return this->base_; }
 

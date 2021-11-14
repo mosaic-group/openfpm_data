@@ -70,6 +70,37 @@ struct skip_init<true,T>
 
 #ifdef __NVCC__
 
+template<bool active>
+struct copy_ndim_grid_device_active_impl
+	{
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+
+	}
+
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy_block(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+	}
+};
+
+template<>
+struct copy_ndim_grid_device_active_impl<true>
+{
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+		CUDA_LAUNCH((copy_ndim_grid_device<grid_type1::dims,decltype(g1.toKernel())>),ite,g2.toKernel(),g1.toKernel());
+	}
+
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy_block(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+		CUDA_LAUNCH((copy_ndim_grid_block_device<grid_type1::dims,decltype(g1.toKernel())>),ite,g2.toKernel(),g1.toKernel());
+	}
+};
+
 template<unsigned int dim, typename ids_type = int>
 struct grid_p
 {
@@ -177,27 +208,6 @@ struct grid_p<1,ids_type>
 
 #endif
 
-template<unsigned int dim>
-bool has_work_gpu(ite_gpu<dim> & ite)
-{
-	size_t tot_work = 1;
-
-	if (dim == 1)
-	{tot_work *= ite.wthr.x * ite.thr.x;}
-	else if(dim == 2)
-	{
-		tot_work *= ite.wthr.x * ite.thr.x;
-		tot_work *= ite.wthr.y * ite.thr.y;
-	}
-	else
-	{
-		tot_work *= ite.wthr.x * ite.thr.x;
-		tot_work *= ite.wthr.y * ite.thr.y;
-		tot_work *= ite.wthr.z * ite.thr.z;
-	}
-
-	return tot_work != 0;
-}
 
 template<unsigned int dim>
 void move_work_to_blocks(ite_gpu<dim> & ite)
@@ -459,6 +469,9 @@ private:
 	{
 #if defined(CUDA_GPU) && defined(__NVCC__)
 
+			// Compile time-cheking that make sense to call a GPU kernel to copy.
+			
+
 			grid_key_dx<dim> start;
 			grid_key_dx<dim> stop;
 
@@ -488,7 +501,7 @@ private:
 				{
 					if (blockSize == 1)
 					{
-						CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+						copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy(grid_new,*this,ite);
 					}
 					else
 					{
@@ -496,7 +509,7 @@ private:
 
 						ite.thr.x = blockSize;
 
-						CUDA_LAUNCH((copy_ndim_grid_block_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+						copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy_block(grid_new,*this,ite);
 					}
 				}
 			}
@@ -514,7 +527,7 @@ private:
 
 				auto ite = getGPUIterator_impl<1>(g_sm_copy,start,stop);
 
-				CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
+				copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy(grid_new,*this,ite);
 			}
 #else
 
@@ -730,7 +743,7 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim,long int> & key1, grid_key_dx<dim,long int> & key2, size_t n_thr = 1024) const
+	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim,long int> & key1, grid_key_dx<dim,long int> & key2, size_t n_thr = default_kernel_wg_threads_) const
 	{
 		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}
@@ -874,6 +887,24 @@ public:
 #endif
 		return layout_base<T>::template get<p>(data_,g1,v1);
 	}
+
+	/*! \brief No blocks here, it return 1
+     * 
+	 * \return 1
+	 */
+	int getBlockEdgeSize()
+	{
+		return 1;
+	}
+
+	/*! \brief No blocks here, it does nothing
+     *
+	 *  \param nb unused
+	 *  \param nt unused
+	 * 
+	 */
+	void setGPUInsertBuffer(unsigned int nb, unsigned int nt)
+	{}
 
 	/*! \brief Get the const reference of the selected element
 	 *

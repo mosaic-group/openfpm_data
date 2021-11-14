@@ -13,6 +13,7 @@ constexpr int RUN_ON_DEVICE = 1024;
                                + __GNUC_MINOR__ * 100 \
                                + __GNUC_PATCHLEVEL__)
 
+
 template<unsigned int N,typename T>
 struct static_array
 {
@@ -330,17 +331,16 @@ struct is_openfpm_native<T,true> : std::true_type
 template<typename T, typename Sfinae = void>
 struct has_value_type_ofp: std::false_type {};
 
-/*! \brief has_value_type check if a type has defined a member value_type
+/*! \brief has_value_type_ofp check if a type has defined a member value_type
  *
  * ### Example
  *
- * \snippet util_test.hpp Check has_value_type
+ * \snippet util_test.hpp Check has_value_type_ofp
  *
  * return true if T::value_type is a valid type
  *
  */
 template<typename T>
-//struct has_value_type<T, typename Void<decltype( typename T::value_type )>::type> : std::true_type
 struct has_value_type_ofp<T, typename Void< typename T::value_type>::type> : std::true_type
 {};
 

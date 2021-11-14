@@ -441,7 +441,7 @@ public:
 	 * \return a string
 	 *
 	 */
-	std::string to_string()
+	std::string to_string() const
 	{
 		return this->toPointS().toString();
 	}

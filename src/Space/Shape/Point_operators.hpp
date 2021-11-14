@@ -55,62 +55,97 @@ template<unsigned int dim ,typename T> class Point;
 #define POINT_NEARBYINT 39
 #define POINT_RINT 40
 #define POINT_SUB_UNI 41
+#define POINT_NORM_INF 42
+
 
 /////////////////// Best cast rules ////////////////////////
+
+template<bool cond, typename exp1, typename exp2>
+struct first_or_second_pt
+{
+    typedef typename exp2::coord_type coord_type;
+};
+
+template<typename exp1, typename exp2>
+struct first_or_second_pt<true,exp1,exp2>
+{
+    typedef typename exp1::coord_type coord_type;
+};
+
+template<typename T, typename Sfinae = void>
+struct has_coordtype: std::false_type {};
+
+/*! \brief has_data check if a type has defined a member data
+ *
+ * ### Example
+ *
+ * \snippet util_test.hpp Check has_data
+ *
+ * return true if T::type is a valid type
+ *
+ */
+template<typename T>
+struct has_coordtype<T, typename Void<typename T::coord_type>::type> : std::true_type
+{};
+
+template<typename source1, typename source2>
+struct best_conv_impl
+{
+	typedef source1 type;
+};
+
+template<typename source2>
+struct best_conv_impl<int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source2>
+struct best_conv_impl<long int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source2>
+struct best_conv_impl<unsigned int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source2>
+struct best_conv_impl<unsigned long int,source2>
+{
+	typedef source2 type;
+};
+
+template<typename source1>
+struct best_conv_impl<source1,int>
+{
+	typedef source1 type;
+};
+
+template<typename source1>
+struct best_conv_impl<source1,long int>
+{
+	typedef source1 type;
+};
+
+template<typename source1>
+struct best_conv_impl<source1,unsigned int>
+{
+	typedef source1 type;
+};
+
+template<typename source1>
+struct best_conv_impl<source1,unsigned long int>
+{
+	typedef source1 type;
+};
 
 template<typename source1, typename source2>
 struct best_conv
 {
-	typedef source1 type;
-};
-
-
-template<typename source2>
-struct best_conv<int,source2>
-{
-	typedef source2 type;
-};
-
-template<typename source2>
-struct best_conv<long int,source2>
-{
-	typedef source2 type;
-};
-
-template<typename source2>
-struct best_conv<unsigned int,source2>
-{
-	typedef source2 type;
-};
-
-template<typename source2>
-struct best_conv<unsigned long int,source2>
-{
-	typedef source2 type;
-};
-
-template<typename source1>
-struct best_conv<source1,int>
-{
-	typedef source1 type;
-};
-
-template<typename source1>
-struct best_conv<source1,long int>
-{
-	typedef source1 type;
-};
-
-template<typename source1>
-struct best_conv<source1,unsigned int>
-{
-	typedef source1 type;
-};
-
-template<typename source1>
-struct best_conv<source1,unsigned long int>
-{
-	typedef source1 type;
+	typedef typename best_conv_impl<typename std::remove_const<source1>::type,typename std::remove_const<source2>::type>::type type;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -241,6 +276,8 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = 1;
 
+	typedef T coord_type;
+
 	/*! \brief constructor from a value
 	 *
 	 * \param d value
@@ -266,7 +303,19 @@ public:
 	 * \return It just return the velue set in the constructor
 	 *
 	 */
-	__device__ __host__  inline T value(const size_t k) const
+	__device__ __host__  inline const T & value(const int k) const
+	{
+		return d;
+	}
+
+	/*! \brief Evaluate the expression
+	 *
+	 * \param k coordinate to evaluate
+	 *
+	 * \return It just return the velue set in the constructor
+	 *
+	 */
+	__device__ __host__  inline T & value(const int k)
 	{
 		return d;
 	}
@@ -304,6 +353,9 @@ class point_expression_op<orig,exp1,exp2,POINT_SUM>
 	const exp2 o2;
 
 public:
+
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
 
 	//! original type of the point expression
 	typedef orig orig_type;
@@ -365,6 +417,20 @@ public:
 		init();
 		return o1.value(0) + o2.value(0);
 	}
+
+    /*! \brief Get the component i
+     *
+     * \param i component
+     *
+     * \return the i-component
+     *
+     */
+    template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+            typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+    __device__ __host__  inline r_type operator[](size_t i)
+    {
+        return o1.value(i) + o2.value(i);
+    }
 };
 
 /*! \brief Subtraction operation
@@ -382,6 +448,9 @@ class point_expression_op<orig, exp1,exp2,POINT_SUB>
 	const exp2 o2;
 
 public:
+
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
 
 	//! Original type
 	typedef orig orig_type;
@@ -443,6 +512,8 @@ public:
 		init();
 		return o1.value(0) - o2.value(0);
 	}
+
+
 };
 
 /*! \brief expression that subtract two points
@@ -477,6 +548,9 @@ public:
 
 	//! result dimensionality of this expression
 	static const unsigned int nvals = exp1::nvals;
+
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
 
 	/*! constructor from expression
 	 *
@@ -536,6 +610,9 @@ class point_expression_op<orig,exp1,exp2,POINT_MUL_POINT>
 	mutable typename std::remove_const<typename orig::coord_type>::type scal;
 
 public:
+
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
 
 	//! base type of the expression
 	typedef orig orig_type;
@@ -617,6 +694,9 @@ class point_expression_op<orig,exp1,exp2,POINT_MUL>
 
 public:
 
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
+
 	//! origin type
 	typedef orig orig_type;
 
@@ -693,6 +773,10 @@ class point_expression_op<orig,exp1,exp2,POINT_DIV>
 	const exp2 o2;
 
 public:
+
+
+    //! The type of the internal vector
+    typedef typename first_or_second_pt<has_coordtype<exp1>::value,exp1,exp2>::coord_type coord_type;
 
 	//! original type
 	typedef orig orig_type;
@@ -1769,6 +1853,9 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = dim;
 
+    //! The type of the internal vector
+    typedef T coord_type;
+
 	/*! \brief constructor from an array
 	 *
 	 * \param d array of dimension dim
@@ -1820,6 +1907,22 @@ public:
 		return *this;
 	}
 
+	/*! \brief Array operator
+	 *
+	 */
+	__device__ __host__ T & operator[](int n)
+	{
+		return d[n];
+	}
+
+	/*! \brief Array operator
+	 *
+	 */
+	__device__ __host__ const T & operator[](int n) const
+	{
+		return d[n];
+	}
+
 	/*! \brief This function must be called before value
 	 *
 	 * it calculate the scalar product before return the values
@@ -1868,6 +1971,9 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = dim;
 
+    //! The type of the internal vector
+    typedef T coord_type;
+
 	/*! \brief construct from an array of dimension dim
 	 *
 	 * \param d array
@@ -1887,6 +1993,14 @@ public:
 	{
 	}
 
+	/*! \brief Array operator
+	 *
+	 */
+	T operator[](int n) const
+	{
+		return d[n];
+	}
+
 	/*! \brief Evaluate the expression at coordinate k
 	 *
 	 * It just return the value set in the constructor
@@ -1902,7 +2016,7 @@ public:
 	}
 };
 
-/*! \brief Specialization for a const array of dimension dim
+/*! \brief Specialization for views
  *
  * \tparam T type of the array
  * \tparam dim dimensionality of the array
@@ -1912,7 +2026,7 @@ template<typename T, typename vmpl>
 class point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>>
 {
 	//! array view of dimension dim
-	const openfpm::detail::multi_array::const_sub_array_openfpm<T,1,vmpl,const T *> d;
+	mutable openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> d;
 
 public:
 
@@ -1925,13 +2039,40 @@ public:
 	//! this operation produce a vector as result of size dims
 	static const unsigned int nvals = subar_dim<vmpl>::type::value;
 
+    //! The type of the internal vector
+    typedef T coord_type;
+
+	/*! \brief Operator= for point expression
+	 *
+	 * \tparam orig origin type
+	 * \tparam exp1 expression 1
+	 * \tparam exp2 expression 2
+	 * \tparam op operation
+	 *
+	 * \param point expression
+	 *
+	 * \return a point expression
+	 *
+	 */
+	template<typename orig, typename exp1, typename exp2, unsigned int op>
+	__device__ __host__  point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & 
+	operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
+	{
+		p_exp.init();
+
+		for (size_t i = 0; i < nvals ; i++)
+		{d[i] = p_exp.value(i);}
+
+		return *this;
+	}
+
 	/*! \brief construct from an array of dimension dim
 	 *
 	 * \param d array
 	 *
 	 */
 	__device__ __host__ inline point_expression(const openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl> & d)
-	:d(d.origin(),d.strides())
+	:d(d.origin_mutable(),d.strides())
 	{
 	}
 
@@ -1944,6 +2085,26 @@ public:
 	{
 	}
 
+	/*! \brief Same as value()
+	 *
+	 * \param k coordinate
+	 * 
+	 */
+	__device__ __host__ inline T & operator[](int k)
+	{
+		return value(k);
+	}
+
+	/*! \brief Same as value()
+	 *
+	 * \param k coordinate
+	 * 
+	 */
+	__device__ __host__ inline T & operator[](int k) const
+	{
+		return value(k);
+	}
+
 	/*! \brief Evaluate the expression at coordinate k
 	 *
 	 * It just return the value set in the constructor
@@ -1953,7 +2114,21 @@ public:
 	 * \return the value
 	 *
 	 */
-	__device__ __host__ inline T value(const size_t k) const
+	__device__ __host__ inline T & value(const int k)
+	{
+		return d[k];
+	}
+
+	/*! \brief Evaluate the expression at coordinate k
+	 *
+	 * It just return the value set in the constructor
+	 *
+	 * \param k coordinate
+	 *
+	 * \return the value
+	 *
+	 */
+	__device__ __host__ inline T & value(const int k) const
 	{
 		return d[k];
 	}

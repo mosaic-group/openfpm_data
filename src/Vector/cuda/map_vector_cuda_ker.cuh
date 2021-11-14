@@ -257,7 +257,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline __device__ __host__ auto get_o(unsigned int id) const -> decltype(base.get_o(id))
+		inline __device__ __host__ auto get_o(unsigned int id) const -> decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)
@@ -281,7 +281,7 @@ namespace openfpm
 		 *
 		 */
 
-		inline __device__ __host__ auto get_o(unsigned int id) -> decltype(base.get_o(id))
+		inline __device__ __host__ auto get_o(unsigned int id) -> decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 #ifdef SE_CLASS1
 			if (check_bound(id) == false)
@@ -298,7 +298,7 @@ namespace openfpm
 		 * \return the last element (encapsulated)
 		 *
 		 */
-		inline auto last() const -> decltype(base.get_o(0))
+		inline auto last() const -> decltype(base.get_o(grid_key_dx<1>(0)))
 		{
 			grid_key_dx<1> key(size()-1);
 
@@ -333,7 +333,7 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
-		inline auto last() -> decltype(base.get_o(0))
+		inline auto last() -> decltype(base.get_o(grid_key_dx<1>(0)))
 		{
 			grid_key_dx<1> key(size()-1);
 
@@ -453,7 +453,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		__host__ ite_gpu<1> getGPUIterator(size_t n_thr = 1024) const
+		__host__ ite_gpu<1> getGPUIterator(size_t n_thr = default_kernel_wg_threads_) const
 		{
 			grid_key_dx<1> start(0);
 			grid_key_dx<1> stop(size()-1);
@@ -465,7 +465,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		ite_gpu<1> getGPUIteratorTo(size_t stop, size_t n_thr = 1024) const
+		ite_gpu<1> getGPUIteratorTo(size_t stop, size_t n_thr = default_kernel_wg_threads_) const
 		{
 			grid_key_dx<1> start(0);
 			grid_key_dx<1> stop_(stop);
@@ -478,7 +478,7 @@ namespace openfpm
 		 * \param object to copy
 		 *
 		 */
-		vector_gpu_ker<T,layout_base> & operator=(const vector_gpu_ker<T,layout_base> & v)
+		__host__ vector_gpu_ker<T,layout_base> & operator=(const vector_gpu_ker<T,layout_base> & v)
 		{
 			v_size = v.v_size;
 			base = v.base;

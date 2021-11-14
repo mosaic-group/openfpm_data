@@ -1,5 +1,8 @@
 #!/bin/bash 
 
+source discover_os
+discover_os
+
 # check if the directory $1/BOOST exist
 
 if [ -d "$1/BOOST" ]; then
@@ -7,9 +10,10 @@ if [ -d "$1/BOOST" ]; then
   exit 0
 fi
 
-wget http://ppmcore.mpi-cbg.de/upload/boost_1_72_0.tar.bz2
-tar -xvf boost_1_72_0.tar.bz2
-cd boost_1_72_0
+rm boost_1_75_0.tar.bz2
+wget http://ppmcore.mpi-cbg.de/upload/boost_1_75_0.tar.bz2
+tar -xvf boost_1_75_0.tar.bz2
+cd boost_1_75_0
 if [ x"$4" != x"" ]; then
 	if [ -f $HOME/user-config.jam ]; then
 		mv $HOME/user-config.jam $HOME/user-config.jam_bck
@@ -22,11 +26,25 @@ if [ x"$4" != x"" ]; then
 fi
 ./bootstrap.sh --with-toolset=$3
 mkdir $1/BOOST
-./b2 -j $2 install --prefix=$1/BOOST
-rm -rf boost_1_72_0
+# Several flavours
+if [ x"$platform" == x"osx" ]; then
+    if [ x"$arch" == x"arm64" ]; then
+        if [ x"$3" == x"" ]; then
+            ./b2 -j $2 install --prefix=$1/BOOST address-model=64 architecture=arm abi=aapcs binary-format=mach-o toolset=clang
+        else
+            ./b2 -j $2 install --prefix=$1/BOOST address-model=64 architecture=arm abi=aapcs binary-format=mach-o toolset=$3
+        fi
+    else
+        ./b2 -j $2 install --prefix=$1/BOOST address-model=64 architecture=x86 abi=sysv binary-format=mach-o toolset=clang
+    fi
+else
+    ./b2 -j $2 install --prefix=$1/BOOST
+fi
+
+rm -rf boost_1_75_0
 
 if [ -f $HOME/user-config.jam_bck ]; then
 	mv $HOME/user-config.jam_bck $HOME/user-config.jam
 fi
-rm -rf boost_1_72_0.tar.bz2
+rm -rf boost_1_75_0.tar.bz2
 

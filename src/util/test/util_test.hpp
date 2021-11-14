@@ -586,9 +586,9 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 		}
 
 		{
-		//! [Check has_value_type]
+		//! [Check has_value_type_ofp]
 
-		struct test_has_value_type
+		struct test_has_value_type_ofp
 		{
 			typedef int value_type;
 		};
@@ -598,12 +598,12 @@ BOOST_AUTO_TEST_CASE( check_templates_util_function )
 
 		};
 
-		int val = has_value_type_ofp<test_has_value_type>::value;
+		int val = has_value_type_ofp<test_has_value_type_ofp>::value;
 		BOOST_REQUIRE_EQUAL(val, true);
 		val = has_value_type_ofp<test_has_no_value_type>::value;
 		BOOST_REQUIRE_EQUAL(val, false);
 
-		//! [Check has_value_type]
+		//! [Check has_value_type_ofp]
 		}
 
 

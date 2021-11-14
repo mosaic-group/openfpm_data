@@ -8,7 +8,10 @@
 #ifndef CUDA_GRID_GPU_FUNCS_CUH_
 #define CUDA_GRID_GPU_FUNCS_CUH_
 
+#include "config.h"
+#include "util/cuda_launch.hpp"
 #include "map_grid_cuda_ker.cuh"
+
 
 #if defined(CUDA_GPU) && defined(__NVCC__)
 
@@ -102,7 +105,7 @@ struct grid_toKernelImpl
 		g.get_data_().disable_manage_memory();
 		g.get_data_().mem = gc.get_internal_data_().mem;
 		// Increment the reference of mem
-		g.get_data_().mem->incRef();
+		//g.get_data_().mem->incRef();
 		g.get_data_().mem_r.bind_ref(gc.get_internal_data_().mem_r);
 		g.get_data_().switchToDevicePtr();
 

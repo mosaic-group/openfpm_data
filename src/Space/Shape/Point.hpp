@@ -11,6 +11,11 @@
 #include "memory_ly/Encap.hpp"
 #include "Point_operators.hpp"
 
+template<typename T>
+struct native_encapsulated_type
+{
+	typedef T type;
+};
 
 /*! \brief This class implement the point shape in an N-dimensional space
  *
@@ -41,6 +46,7 @@ template<unsigned int dim ,typename T> class Point
 	//! Property id of the point
 	static const unsigned int x = 0;
 
+	typedef typename native_encapsulated_type<T[dim]>::type type_native;
 
 	/*! \brief Evaluate the expression and save the result on the point
 	 *
@@ -199,7 +205,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	__device__ __host__ inline T& operator[](size_t i)
+	__device__ __host__ inline T& operator[](unsigned int i)
 	{
 		return get(i);
 	}
@@ -212,7 +218,7 @@ template<unsigned int dim ,typename T> class Point
 	 *
 	 */
 
-	__device__ __host__ inline const T& operator[](size_t i) const
+	__device__ __host__ inline const T& operator[](unsigned int i) const
 	{
 		return get(i);
 	}
@@ -487,7 +493,8 @@ template<unsigned int dim ,typename T> class Point
 	 * \return itself
 	 *
 	 */
-	__device__ __host__ Point<dim,T> & operator=(const point_expression<T[dim]> & p_exp)
+	template<typename any>
+	__device__ __host__ Point<dim,T> & operator=(const point_expression<any> & p_exp)
 	{
 		p_exp.init();
 
@@ -701,5 +708,22 @@ struct is_Point: std::false_type {};
 template<typename T>
 struct is_Point<T, typename Void< typename T::yes_is_point>::type> : std::true_type
 {};
+
+/*! \brief like std::rank but it also work for openfpm structures like Point where it return 1
+ *
+ * \tparam T structure to check
+ *
+ */
+template<typename T, bool is_point = is_Point<T>::value>
+struct rank_gen
+{
+	typedef boost::mpl::int_<std::rank<T>::value> type;
+};
+
+template<typename T>
+struct rank_gen<T,true>
+{
+	typedef boost::mpl::int_<1> type;
+};
 
 #endif

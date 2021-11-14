@@ -121,11 +121,33 @@ struct ite_gpu
 #endif
 };
 
+template<unsigned int dim>
+bool has_work_gpu(ite_gpu<dim> & ite)
+{
+	size_t tot_work = 1;
+
+	if (dim == 1)
+	{tot_work *= ite.wthr.x * ite.thr.x;}
+	else if(dim == 2)
+	{
+		tot_work *= ite.wthr.x * ite.thr.x;
+		tot_work *= ite.wthr.y * ite.thr.y;
+	}
+	else
+	{
+		tot_work *= ite.wthr.x * ite.thr.x;
+		tot_work *= ite.wthr.y * ite.thr.y;
+		tot_work *= ite.wthr.z * ite.thr.z;
+	}
+
+	return tot_work != 0;
+}
+
 //! Declaration grid_sm
 template<unsigned int N, typename T> class grid_sm;
 
-template<unsigned int dim, typename T2, typename T>
-ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, size_t n_thr = 1024);
+template<unsigned int dim, typename grid_sm_type, typename T>
+ite_gpu<dim> getGPUIterator_impl(const grid_sm_type & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, size_t n_thr = default_kernel_wg_threads_);
 
 //! Declaration print_warning_on_adjustment
 template <unsigned int dim, typename linearizer> class print_warning_on_adjustment;
@@ -733,7 +755,7 @@ public:
 		return grid_key_dx_iterator_sub<N>(*this,start,stop);
 	}
 
-#ifdef CUDA_GPU
+#if defined(CUDA_GPU)
 
 	/*! \brief Get an iterator for the GPU
 	 *
@@ -742,7 +764,7 @@ public:
 	 *
 	 */
 	template<typename T2>
-	struct ite_gpu<N> getGPUIterator(const grid_key_dx<N,T2> & key1, const grid_key_dx<N,T2> & key2, size_t n_thr = 1024) const
+	struct ite_gpu<N> getGPUIterator(const grid_key_dx<N,T2> & key1, const grid_key_dx<N,T2> & key2, size_t n_thr = default_kernel_wg_threads_) const
 	{
 		return getGPUIterator_impl<N>(*this,key1,key2,n_thr);
 	}
@@ -753,7 +775,7 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	struct ite_gpu<N> getGPUIterator(size_t n_thr = 1024) const
+	struct ite_gpu<N> getGPUIterator(size_t n_thr = default_kernel_wg_threads_) const
 	{
 		grid_key_dx<N> k1;
 		grid_key_dx<N> k2;
@@ -812,8 +834,8 @@ public:
 };
 
 
-template<unsigned int dim, typename T2, typename T>
-ite_gpu<dim> getGPUIterator_impl(const grid_sm<dim,T2> & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, const size_t n_thr)
+template<unsigned int dim, typename grid_sm_type, typename T>
+ite_gpu<dim> getGPUIterator_impl(const grid_sm_type & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, const size_t n_thr)
 {
 	size_t tot_work = 1;
 	for (size_t i = 0 ; i < dim ; i++)

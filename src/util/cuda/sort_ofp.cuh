@@ -16,7 +16,11 @@
 #if CUDART_VERSION >= 11000
 	#ifndef CUDA_ON_CPU 
 	// Here we have for sure CUDA >= 11
-	#include "cub/cub.cuh"
+	#ifdef __HIP__
+		#include "hipcub/hipcub.hpp"
+	#else
+		#include "cub/cub.cuh"
+	#endif
 	#ifndef SORT_WITH_CUB
 		#define SORT_WITH_CUB
 	#endif
@@ -125,6 +129,14 @@ struct key_val_it
 	key_t * key;
 	val_t * val;
 
+
+	key_val_it & operator+=(int delta)
+	{
+		key += delta;
+		val += delta;
+		return *this;
+	}
+
 	bool operator==(const key_val_it & tmp)
 	{
 		return (key == tmp.key && val == tmp.val);
@@ -193,7 +205,17 @@ struct key_val_it
 		return key < tmp.key;
 	}
 
-	key_val_it<key_t,val_t> & operator=(const key_val_it<key_t,val_t> & tmp)
+	bool operator>(const key_val_it & tmp) const
+	{
+		return key > tmp.key;
+	}
+
+	bool operator>=(const key_val_it & tmp) const
+	{
+		return key >= tmp.key;
+	}
+
+	key_val_it<key_t,val_t> & operator=(key_val_it<key_t,val_t> & tmp)
 	{
 		key = tmp.key;
 		val = tmp.val;
@@ -255,66 +277,134 @@ namespace openfpm
 
 	#ifdef SORT_WITH_CUB
 
-			void *d_temp_storage = NULL;
-			size_t temp_storage_bytes = 0;
+			#ifdef __HIP__
 
-			auto & temporal2 = context.getTemporalCUB2();
-			temporal2.resize(sizeof(key_t)*count);
+				void *d_temp_storage = NULL;
+				size_t temp_storage_bytes = 0;
 
-			auto & temporal3 = context.getTemporalCUB3();
-			temporal3.resize(sizeof(val_t)*count);
+				auto & temporal2 = context.getTemporalCUB2();
+				temporal2.resize(sizeof(key_t)*count);
 
-			if (std::is_same<mgpu::template less_t<key_t>,comp_t>::value == true)
-			{
-				cub::DeviceRadixSort::SortPairs(d_temp_storage, 
-												temp_storage_bytes,
-												keys_input,
-												(key_t *)temporal2.template getDeviceBuffer<0>(),
-												vals_input,
-												(val_t *)temporal3.template getDeviceBuffer<0>(),
-												count);
+				auto & temporal3 = context.getTemporalCUB3();
+				temporal3.resize(sizeof(val_t)*count);
 
-				auto & temporal = context.getTemporalCUB();
-				temporal.resize(temp_storage_bytes);
+				if (std::is_same<mgpu::template less_t<key_t>,comp_t>::value == true)
+				{
+					hipcub::DeviceRadixSort::SortPairs(d_temp_storage, 
+													temp_storage_bytes,
+													keys_input,
+													(key_t *)temporal2.template getDeviceBuffer<0>(),
+													vals_input,
+													(val_t *)temporal3.template getDeviceBuffer<0>(),
+													count);
 
-				d_temp_storage = temporal.template getDeviceBuffer<0>();
+					auto & temporal = context.getTemporalCUB();
+					temporal.resize(temp_storage_bytes);
 
-				// Run
-				cub::DeviceRadixSort::SortPairs(d_temp_storage, 
-												temp_storage_bytes,
-												keys_input,
-												(key_t *)temporal2.template getDeviceBuffer<0>(),
-												vals_input,
-												(val_t *)temporal3.template getDeviceBuffer<0>(),
-												count);
-			}
-			else if (std::is_same<mgpu::template greater_t<key_t>,comp_t>::value == true)
-			{
-				cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, 
-												temp_storage_bytes,
-												keys_input,
-												(key_t *)temporal2.template getDeviceBuffer<0>(),
-												vals_input,
-												(val_t *)temporal3.template getDeviceBuffer<0>(),
-												count);
+					d_temp_storage = temporal.template getDeviceBuffer<0>();
 
-				auto & temporal = context.getTemporalCUB();
-				temporal.resize(temp_storage_bytes);
+					// Run
+					hipcub::DeviceRadixSort::SortPairs(d_temp_storage, 
+													temp_storage_bytes,
+													keys_input,
+													(key_t *)temporal2.template getDeviceBuffer<0>(),
+													vals_input,
+													(val_t *)temporal3.template getDeviceBuffer<0>(),
+													count);
+				}
+				else if (std::is_same<mgpu::template greater_t<key_t>,comp_t>::value == true)
+				{
+					hipcub::DeviceRadixSort::SortPairsDescending(d_temp_storage, 
+													temp_storage_bytes,
+													keys_input,
+													(key_t *)temporal2.template getDeviceBuffer<0>(),
+													vals_input,
+													(val_t *)temporal3.template getDeviceBuffer<0>(),
+													count);
 
-				d_temp_storage = temporal.template getDeviceBuffer<0>();
+					auto & temporal = context.getTemporalCUB();
+					temporal.resize(temp_storage_bytes);
 
-				// Run
-				cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, 
-												temp_storage_bytes,
-												keys_input,
-												(key_t *)temporal2.template getDeviceBuffer<0>(),
-												vals_input,
-												(val_t *)temporal3.template getDeviceBuffer<0>(),
-												count);
-			}
+					d_temp_storage = temporal.template getDeviceBuffer<0>();
 
-			cudaMemcpy(keys_input,temporal2.getDeviceBuffer<0>(),sizeof(key_t)*count,cudaMemcpyDeviceToDevice);
-			cudaMemcpy(vals_input,temporal3.getDeviceBuffer<0>(),sizeof(val_t)*count,cudaMemcpyDeviceToDevice);
+					// Run
+					hipcub::DeviceRadixSort::SortPairsDescending(d_temp_storage, 
+													temp_storage_bytes,
+													keys_input,
+													(key_t *)temporal2.template getDeviceBuffer<0>(),
+													vals_input,
+													(val_t *)temporal3.template getDeviceBuffer<0>(),
+													count);
+				}
+
+				cudaMemcpy(keys_input,temporal2.getDeviceBuffer<0>(),sizeof(key_t)*count,cudaMemcpyDeviceToDevice);
+				cudaMemcpy(vals_input,temporal3.getDeviceBuffer<0>(),sizeof(val_t)*count,cudaMemcpyDeviceToDevice);
+			
+
+			#else
+
+				void *d_temp_storage = NULL;
+				size_t temp_storage_bytes = 0;
+
+				auto & temporal2 = context.getTemporalCUB2();
+				temporal2.resize(sizeof(key_t)*count);
+
+				auto & temporal3 = context.getTemporalCUB3();
+				temporal3.resize(sizeof(val_t)*count);
+
+				if (std::is_same<mgpu::template less_t<key_t>,comp_t>::value == true)
+				{
+					cub::DeviceRadixSort::SortPairs(d_temp_storage, 
+													temp_storage_bytes,
+													keys_input,
+													(key_t *)temporal2.template getDeviceBuffer<0>(),
+													vals_input,
+													(val_t *)temporal3.template getDeviceBuffer<0>(),
+													count);
+
+					auto & temporal = context.getTemporalCUB();
+					temporal.resize(temp_storage_bytes);
+
+					d_temp_storage = temporal.template getDeviceBuffer<0>();
+
+					// Run
+					cub::DeviceRadixSort::SortPairs(d_temp_storage, 
+													temp_storage_bytes,
+													keys_input,
+													(key_t *)temporal2.template getDeviceBuffer<0>(),
+													vals_input,
+													(val_t *)temporal3.template getDeviceBuffer<0>(),
+													count);
+				}
+				else if (std::is_same<mgpu::template greater_t<key_t>,comp_t>::value == true)
+				{
+					cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, 
+													temp_storage_bytes,
+													keys_input,
+													(key_t *)temporal2.template getDeviceBuffer<0>(),
+													vals_input,
+													(val_t *)temporal3.template getDeviceBuffer<0>(),
+													count);
+
+					auto & temporal = context.getTemporalCUB();
+					temporal.resize(temp_storage_bytes);
+
+					d_temp_storage = temporal.template getDeviceBuffer<0>();
+
+					// Run
+					cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, 
+													temp_storage_bytes,
+													keys_input,
+													(key_t *)temporal2.template getDeviceBuffer<0>(),
+													vals_input,
+													(val_t *)temporal3.template getDeviceBuffer<0>(),
+													count);
+				}
+
+				cudaMemcpy(keys_input,temporal2.getDeviceBuffer<0>(),sizeof(key_t)*count,cudaMemcpyDeviceToDevice);
+				cudaMemcpy(vals_input,temporal3.getDeviceBuffer<0>(),sizeof(val_t)*count,cudaMemcpyDeviceToDevice);
+				
+			#endif
 
 	#else
 			mgpu::mergesort(keys_input,vals_input,count,comp,context);

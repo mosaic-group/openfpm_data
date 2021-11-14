@@ -300,6 +300,26 @@ struct object_creator_chunking_impl<v,vc,p1,prp...>
 	typedef typename boost::mpl::push_front<vc_step, ele >::type type;
 };
 
+template <typename T>
+struct object_creator_chunking_encapsulator
+{
+	typedef T type;
+};
+
+template <typename type>
+struct get_base_type_for_object_creator_chunking
+{
+	typedef object_creator_chunking_encapsulator<typename type::value_type> ele;
+};
+
+
+template <unsigned int N1, std::size_t N2, typename T>
+struct get_base_type_for_object_creator_chunking< std::array<T, N2>[N1] >
+{
+	typedef object_creator_chunking_encapsulator<T[N1]> ele;
+};
+
+
 /*! \brief Implementation of object creator
  *
  * \tparam v original boost::fusion::vector
@@ -312,10 +332,10 @@ struct object_creator_chunking_impl<v,vc,prp>
 	typedef typename boost::remove_reference< typename boost::mpl::at< v,boost::mpl::int_<prp> >::type>::type ele_array;
 
 	// Element without array
-	typedef typename ele_array::value_type ele;
+	typedef typename get_base_type_for_object_creator_chunking<ele_array>::ele ele;
 
 	// push on the vector the element p1
-	typedef typename boost::mpl::push_front<vc, ele >::type type;
+	typedef typename boost::mpl::push_front<vc, typename ele::type >::type type;
 };
 
 

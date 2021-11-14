@@ -28,82 +28,7 @@
 #include "VTKWriter/VTKWriter.hpp"
 #endif
 
-template<typename chunk_def>
-struct sparse_grid_bck_value
-{
-	chunk_def bck;
 
-	sparse_grid_bck_value(chunk_def bck)
-	:bck(bck)
-	{}
-
-	template<unsigned int p>
-	auto get() -> decltype(bck.template get<p>()[0])
-	{
-		return bck.template get<p>()[0];
-	}
-
-	template<unsigned int p>
-	auto get() const -> decltype(bck.template get<p>()[0])
-	{
-		return bck.template get<p>()[0];
-	}
-};
-
-template<typename ArrTypeView>
-struct std_array_vector_view
-{
-	int pos;
-	ArrTypeView arr;
-
-	std_array_vector_view(int pos,ArrTypeView arr)
-	:pos(pos),arr(arr)
-	{}
-
-	decltype(arr[0][0]) operator[](int comp)
-	{
-		return arr[comp][pos];
-	}
-
-	decltype(std::declval<const ArrTypeView>()[0][0]) operator[](int comp) const
-	{
-		return arr[comp][pos];
-	}
-};
-
-
-
-template<typename T>
-struct get_selector
-{
-	template<unsigned int p, typename chunks_vector_type>
-	static T & get(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
-	{
-		return chunks.template get<p>(active_cnk)[ele_id];
-	}
-
-	template<unsigned int p, typename chunks_vector_type>
-	static const T & get_const(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
-	{
-		return chunks.template get<p>(active_cnk)[ele_id];
-	}
-};
-
-template<typename T, unsigned int N1>
-struct get_selector<T[N1]>
-{
-	template<unsigned int p, typename chunks_vector_type>
-	static std_array_vector_view<decltype(std::declval<chunks_vector_type>().template get<p>(0))> get(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
-	{
-		return std_array_vector_view<decltype(chunks.template get<p>(active_cnk))>(ele_id,chunks.template get<p>(active_cnk));
-	}
-
-	template<unsigned int p, typename chunks_vector_type>
-	static const std_array_vector_view<decltype(std::declval<chunks_vector_type>().template get<p>(0))> get_const(chunks_vector_type & chunks, size_t active_cnk, int ele_id)
-	{
-		return std_array_vector_view<decltype(chunks.template get<p>(active_cnk))>(ele_id,chunks.template get<p>(active_cnk));
-	}
-};
 
 
 template<typename Tsrc,typename Tdst>
@@ -974,7 +899,11 @@ public:
 	void setBackgroundValue(const typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type & val)
 	{
 		for (int i = 0 ; i < chunking::size::value ; i++)
-		{meta_copy<typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type>::meta_copy_(val,chunks.get(0).template get<p>()[i]);}
+		{
+			meta_copy<typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type>::
+			          meta_copy_(val,
+			                     get_selector<typename boost::mpl::at<typename T::type,boost::mpl::int_<p>>::type>::template get<p>(chunks,0,i));
+		}
 	}
 
 	/*! \brief Get the background value
@@ -2018,8 +1947,12 @@ public:
 
 			size_t pos_src_id = key_src_s.getPos();
 			size_t pos_dst_id;
-			auto block_src = grid_src.getBlock(key_src_s);
+
+			///////// WARNING insert_o MUST be done before getBlock, otherwise if grid_src == *this, and insert_o produce a reallocation 
+			///////// block_src will be invalidated  //////
 			auto block_dst = this->insert_o(key_dst,pos_dst_id);
+
+			auto block_src = grid_src.getBlock(key_src_s);
 
 			copy_sparse_to_sparse_bb<dim,decltype(block_src),decltype(block_dst),T> caps(block_src,block_dst,pos_src_id,pos_dst_id);
 			boost::mpl::for_each_ref< boost::mpl::range_c<int,0,T::max_prop> >(caps);

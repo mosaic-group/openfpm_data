@@ -303,7 +303,8 @@ public:
 	 * \return an encap_c that is the representation of the object (careful is not the object)
 	 *
 	 */
-	__device__ inline encapc<dim,T_,layout> get_o(const grid_key_dx<dim> & v1)
+	template<typename Tk>
+	__device__ inline encapc<dim,T_,layout> get_o(const grid_key_dx<dim,Tk> & v1)
 	{
 #ifdef SE_CLASS1
 		if (check_bound(v1) == false)
@@ -323,7 +324,8 @@ public:
 	 * \return an encap_c that is the representation of the object (careful is not the object)
 	 *
 	 */
-	__device__ inline const encapc<dim,T_,layout> get_o(const grid_key_dx<dim> & v1) const
+	template<typename Tk>
+	__device__ inline const encapc<dim,T_,layout> get_o(const grid_key_dx<dim,Tk> & v1) const
 	{
 #ifdef SE_CLASS1
 		if (check_bound(v1) == false)
@@ -424,7 +426,7 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = 1024) const
+	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = default_kernel_wg_threads_) const
 	{
 		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}

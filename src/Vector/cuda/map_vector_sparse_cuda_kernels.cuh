@@ -10,14 +10,15 @@
 
 #ifdef __NVCC__
 
+#include "config.h"
+
 #if CUDART_VERSION < 11000
 #include "util/cuda/cub_old/util_type.cuh"
 #include "util/cuda/cub_old/block/block_scan.cuh"
 #include "util/cuda/moderngpu/operators.hxx"
+#include "util/cuda_launch.hpp"
 #else
-	#if !defined(CUDA_ON_CPU)
-	#include "cub/util_type.cuh"
-	#include "cub/block/block_scan.cuh"
+	#if !defined(CUDA_ON_CPU)	
 	#include "util/cuda/moderngpu/operators.hxx"
 	#endif
 #endif

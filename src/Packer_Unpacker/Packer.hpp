@@ -8,18 +8,20 @@
 #ifndef SRC_PACKER_HPP_
 #define SRC_PACKER_HPP_
 
+#include "util/cudify/cudify.hpp"
+
 #include "util/object_util.hpp"
 //#include "Grid/util.hpp"
 #include "Vector/util.hpp"
 #include "memory/ExtPreAlloc.hpp"
 #include "util/util_debug.hpp"
 
-
 #include "Grid/grid_sm.hpp"
 #include "util/Pack_stat.hpp"
 #include "Pack_selector.hpp"
 #include "has_pack_encap.hpp"
 #include "Packer_util.hpp"
+
 
 template <typename> struct Debug;
 
@@ -458,6 +460,33 @@ public:
 
 ///////////////////////////////////
 
+template<typename Timpl>
+struct copy_packer_chunk_arr_impl
+{
+	template<typename T, typename e_src, typename e_dst>
+	static inline void call(const e_src & src, size_t sub_id, e_dst & dst)
+	{
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(dst.template get< T::value >())>::type copy_rtype;
+
+		meta_copy<copy_rtype>::meta_copy_(src.template get< T::value >()[sub_id],dst.template get< T::value >());
+	}
+};
+
+template<unsigned int N1, typename Timpl>
+struct copy_packer_chunk_arr_impl<Timpl[N1]>
+{
+	template<typename T, typename e_src, typename e_dst>
+	static inline void call(const e_src & src, size_t sub_id, e_dst & dst)
+	{
+		// Remove the reference from the type to copy
+		typedef typename boost::remove_reference<decltype(dst.template get< T::value >()[0])>::type copy_rtype;
+
+		for (int i = 0 ; i < N1 ; i++)
+		{meta_copy<copy_rtype>::meta_copy_(src.template get< T::value >()[i][sub_id],dst.template get< T::value >()[i]);}
+	}
+};
+
 //! It copy one element of the chunk for each property
 template<typename e_src, typename e_dst>
 struct copy_packer_chunk
@@ -479,8 +508,7 @@ struct copy_packer_chunk
 	 */
 	inline copy_packer_chunk(const e_src & src, size_t sub_id, e_dst & dst)
 	:src(src),dst(dst),sub_id(sub_id)
-	{
-	};
+	{};
 
 
 
@@ -491,7 +519,9 @@ struct copy_packer_chunk
 		// Remove the reference from the type to copy
 		typedef typename boost::remove_reference<decltype(dst.template get< T::value >())>::type copy_rtype;
 
-		meta_copy<copy_rtype>::meta_copy_(src.template get< T::value >()[sub_id],dst.template get< T::value >());
+		// meta_copy<copy_rtype>::meta_copy_(src.template get< T::value >()[sub_id],dst.template get< T::value >());
+
+		copy_packer_chunk_arr_impl<copy_rtype>::template call<T>(src,sub_id,dst);
 	}
 };
 

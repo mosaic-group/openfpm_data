@@ -44,6 +44,50 @@
 namespace openfpm
 {
 
+	template<bool active>
+	struct copy_two_vectors_activate_impl
+	{
+		template<typename vector_type1, typename vector_type2>
+		static void copy(vector_type1 & v1, vector_type2 & v2)
+		{
+
+		}
+
+		template<typename vector_type1, typename vector_type2>
+		static void copy2(vector_type1 & v1, vector_type2 & v2)
+		{
+
+		}
+	};
+
+	template<>
+	struct copy_two_vectors_activate_impl<true>
+	{
+		template<typename vector_type1, typename vector_type2>
+		static void copy(vector_type1 & v1, vector_type2 & v2)
+		{
+#ifdef __NVCC__
+			if (v1.size() != 0)
+			{
+				auto it = v1.getGPUIterator();
+				CUDA_LAUNCH(copy_two_vectors,it,v1.toKernel(),v2.toKernel());
+			}
+#endif
+		}
+
+		template<typename vector_type1, typename vector_type2>
+		static void copy2(vector_type1 & v1, vector_type2 & v2)
+		{
+#ifdef __NVCC__
+			if (v2.size() != 0)
+			{
+				auto it = v1.getGPUIterator();
+				CUDA_LAUNCH(copy_two_vectors,it,v1.toKernel(),v2.toKernel());
+			}
+#endif
+		}
+	};
+
 	template<bool is_ok_cuda,typename T, typename Memory,
 			 template<typename> class layout_base,
 			 typename grow_p>
@@ -287,6 +331,16 @@ namespace openfpm
 		{
 			return v_size;
 		}
+
+        /*! \brief Return the size of the vector
+        *
+        * \return the size
+        *
+        */
+        size_t size_local() const
+        {
+            return v_size;
+        }
 
 		/*! \brief return the maximum capacity of the vector before reallocation
 		 *
@@ -1095,6 +1149,48 @@ namespace openfpm
 			v_size -= keys.size() - start;
 		}
 
+		/*! \brief Remove several entries from the vector
+		 *
+		 * \warning the keys in the vector MUST be sorted
+		 *
+		 * \param keys objects id to remove
+		 * \param start key starting point
+		 *
+		 */
+		void remove(openfpm::vector<aggregate<int>> & keys, size_t start = 0)
+		{
+			// Nothing to remove return
+			if (keys.size() <= start )
+				return;
+
+			size_t a_key = start;
+			size_t d_k = keys.template get<0>(a_key);
+			size_t s_k = keys.template get<0>(a_key) + 1;
+
+			// keys
+			while (s_k < size())
+			{
+				// s_k should always point to a key that is not going to be deleted
+				while (a_key+1 < keys.size() && s_k == keys.template get<0>(a_key+1))
+				{
+					a_key++;
+					s_k = keys.template get<0>(a_key) + 1;
+				}
+
+				// In case of overflow
+				if (s_k >= size())
+					break;
+
+				set(d_k,get(s_k));
+				d_k++;
+				s_k++;
+			}
+
+			// re-calculate the vector size
+
+			v_size -= keys.size() - start;
+		}
+
 		/*! \brief Get an element of the vector
 		 *
 		 * Get an element of the vector
@@ -1118,23 +1214,14 @@ namespace openfpm
 			return base.template get<p>(key);
 		}
 
-		/*! \brief Get an element of the vector
+		/*! \brief Indicate that this class is not a subset
 		 *
-		 * Get an element of the vector
-		 *
-		 * \param id Element to get
-		 *
-		 * \return the element (encapsulated)
+		 * \return false
 		 *
 		 */
-		inline auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>(id)))
+		bool isSubset() const
 		{
-#if defined(SE_CLASS1) && !defined(__NVCC__)
-			check_overflow(id);
-#endif
-			grid_key_dx<1> key(id);
-
-			return base.get_o(key);
+			return false;
 		}
 
 		/*! \brief Get an element of the vector
@@ -1146,7 +1233,7 @@ namespace openfpm
 		 * \return the element (encapsulated)
 		 *
 		 */
-		inline auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
+		inline auto get(size_t id) -> decltype(base.get_o(grid_key_dx<1>(id)))
 		{
 #if defined(SE_CLASS1) && !defined(__NVCC__)
 			check_overflow(id);
@@ -1236,6 +1323,39 @@ namespace openfpm
 		 *
 		 */
 
+		template <unsigned int p,typename KeyType>
+		inline auto getProp(const KeyType & id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+		{
+			return this->template get<p>(id.getKey());
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \tparam p Property to get
+		 * \param id Element to get
+		 *
+		 * \return the element value requested
+		 *
+		 */
+		template <unsigned int p, typename keyType>
+		inline auto getProp(const keyType & id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+		{
+			return this->template get<p>(id.getKey());
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \tparam p Property to get
+		 * \param id Element to get
+		 *
+		 * \return the element value requested
+		 *
+		 */
+
 		template <unsigned int p>
 		inline auto get(size_t id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
@@ -1245,6 +1365,28 @@ namespace openfpm
 			grid_key_dx<1> key(id);
 
 			return base.template get<p>(key);
+		}
+
+		/*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \param id Element to get
+		 *
+		 * \return the element (encapsulated)
+		 *
+		 */
+		inline auto get(size_t id) const -> const decltype(base.get_o(grid_key_dx<1>(id)))
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+#if defined(SE_CLASS1) && !defined(__NVCC__)
+			check_overflow(id);
+#endif
+			grid_key_dx<1> key(id);
+
+			return base.get_o(key);
 		}
 
 		/*! \brief Get the last element of the vector
@@ -1278,18 +1420,7 @@ namespace openfpm
 			dup.v_size = v_size;
 			dup.base.swap(base.duplicate());
 
-			// copy the device part
-			// and device
-			if (Memory::isDeviceHostSame() == false)
-			{
-#ifdef __NVCC__
-				if (dup.size() != 0)
-				{
-					auto it = dup.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,dup.toKernel(),toKernel());
-				}
-#endif
-			}
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false>::copy(dup,*this);
 
 			return dup;
 		}
@@ -1396,6 +1527,12 @@ namespace openfpm
 			base.set(id,v.base,src);
 		}
 
+		template<typename key_type>
+		key_type getOriginKey(key_type vec_key)
+		{
+			return vec_key;
+		}
+
 
 		/*! \brief Assignment operator
 		 *
@@ -1436,18 +1573,7 @@ namespace openfpm
 				base.set(key,mv.base,key);
 			}
 
-			// and device
-			if (Memory::isDeviceHostSame() == false)
-			{
-#ifdef __NVCC__
-				if (mv.size() != 0)
-				{
-					auto it = mv.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
-				}
-#endif
-			}
-
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false>::copy2(*this,mv);
 
 			return *this;
 		}
@@ -1491,17 +1617,7 @@ namespace openfpm
 				base.set(key,mv.getInternal_base(),key);
 			}
 
-			// and device
-			if (Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false)
-			{
-#ifdef __NVCC__
-				if (mv.size() != 0)
-				{
-					auto it = mv.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
-				}
-#endif
-			}
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false>::copy2(*this,mv);
 
 			return *this;
 		}
@@ -1550,17 +1666,7 @@ namespace openfpm
 				base.set_general(key,mv.getInternal_base(),key);
 			}
 
-			// and device
-			if (Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false)
-			{
-#ifdef __NVCC__
-				if (mv.size() != 0)
-				{
-					auto it = mv.getGPUIterator();
-					CUDA_LAUNCH(copy_two_vectors,it,toKernel(),mv.toKernel());
-				}
-#endif
-			}
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false>::copy2(*this,mv);
 
 			return *this;
 		}
@@ -1680,7 +1786,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		ite_gpu<1> getGPUIteratorTo(long int stop, size_t n_thr = 1024) const
+		ite_gpu<1> getGPUIteratorTo(long int stop, size_t n_thr = default_kernel_wg_threads_) const
 		{
 			grid_key_dx<1,long int> start(0);
 			grid_key_dx<1,long int> stop_(stop);
@@ -1697,10 +1803,40 @@ namespace openfpm
 		 *
 		 */
 
+		vector_key_iterator getDomainIterator() const
+		{
+#ifdef SE_CLASS2
+			check_valid(this,8);
+#endif
+			return getIterator();
+		}
+
+		/*! \brief Get the vector elements iterator
+		 *
+		 *
+		 * \return an iterator to iterate through all the elements of the vector
+		 *
+		 */
+
 		vector_key_iterator getIterator() const
 		{
 			return vector_key_iterator(v_size);
 		}
+
+        /*! \brief Get the vector elements iterator
+ *
+ *
+ * \return an iterator to iterate through all the elements of the vector
+ *
+ */
+        template<unsigned int p>
+        vector_key_iterator_ele<p,self_type> getIteratorElements() const
+        {
+#ifdef SE_CLASS2
+            check_valid(this,8);
+#endif
+            return vector_key_iterator_ele<p,self_type>(*this,size());
+        }
 
 #ifdef CUDA_GPU
 
@@ -1708,7 +1844,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		ite_gpu<1> getGPUIterator(size_t n_thr = 1024) const
+		ite_gpu<1> getGPUIterator(size_t n_thr = default_kernel_wg_threads_) const
 		{
 			grid_key_dx<1> start(0);
 			grid_key_dx<1> stop(size()-1);
@@ -1987,6 +2123,7 @@ namespace openfpm
 
 	template <typename T> using vector_std = vector<T, HeapMemory, memory_traits_lin, openfpm::grow_policy_double, STD_VECTOR>;
 	template<typename T> using vector_gpu = openfpm::vector<T,CudaMemory,memory_traits_inte>;
+	template<typename T> using vector_gpu_lin = openfpm::vector<T,CudaMemory,memory_traits_lin>;
 	template<typename T> using vector_gpu_single = openfpm::vector<T,CudaMemory,memory_traits_inte,openfpm::grow_policy_identity>;
 	template<typename T> using vector_custd = vector<T, CudaMemory, memory_traits_inte, openfpm::grow_policy_double, STD_VECTOR>;
 }

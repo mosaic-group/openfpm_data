@@ -12,8 +12,32 @@
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <fstream>
 
-static void addUpdtateTime(GoogleChart & cg, int np)
+static void addUpdateTime(GoogleChart & cg, int np, const std::string & base, const std::string & filename)
+{
+    time_t t = time(0);   // get time now
+    struct tm * now = localtime( & t );
+
+    std::stringstream str;
+
+    std::string commit;
+
+    std::system("git rev-parse HEAD >test.txt"); // execute the UNIX command "ls -l >test.txt"
+    std::ifstream("test.txt") >> commit;
+
+    std::string prev_commit;
+
+    std::system(std::string("cat commit_f_" + base + " > test.txt").c_str()); // execute the UNIX command "ls -l >test.txt"
+    std::ifstream("test.txt") >> prev_commit;
+
+    str << "<h3>Updated: " << now->tm_mday << "/" << now->tm_mon + 1 << "/" << now->tm_year+1900 << "     " << now->tm_hour << ":" << now->tm_min << ":"
+                               << now->tm_sec << "  commit: " << commit << "   run with: " << np << " processes<br>previous: <a href=\"" << filename << "_" << prev_commit << ".html\">here</a>" << "</h3>" << std::endl;
+
+    cg.addHTML(str.str());
+}
+
+static void createCommitFile(const std::string & tmp)
 {
     time_t t = time(0);   // get time now
     struct tm * now = localtime( & t );
@@ -22,11 +46,12 @@ static void addUpdtateTime(GoogleChart & cg, int np)
 
     std::string commit;
     commit = exec("git rev-parse HEAD");
+	std::cout << tmp << " " << commit << std::endl;
 
-    str << "<h3>Updated: " << now->tm_mday << "/" << now->tm_mon + 1 << "/" << now->tm_year+1900 << "     " << now->tm_hour << ":" << now->tm_min << ":"
-    		               << now->tm_sec << "  commit: " << commit << "   run with: " << np << " processes" << std::endl;
+	std::ofstream f("commit_f_" + tmp);
+	f << commit << std::endl;
 
-	cg.addHTML(str.str());
+	f.close();
 }
 
 static inline void warning_set(int & warning_level, double mean, double mean_ref, double sigma)

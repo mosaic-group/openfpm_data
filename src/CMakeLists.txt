@@ -21,7 +21,7 @@ if (TEST_PERFORMANCE)
                          Vector/performance/vector_performance_test.cu)
 endif ()
 
-if (CUDA_FOUND OR CUDA_ON_CPU)
+if (NOT CUDA_ON_BACKEND STREQUAL "None")
 	set(CUDA_SOURCES ${CUDA_SOURCES}
 	    Vector/map_vector_sparse_unit_tests.cu
             Vector/vector_gpu_unit_tests.cu
@@ -45,30 +45,54 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 	add_definitions("-DBOOST_MPL_CFG_HAS_TYPEOF")
 endif()
 
-if (CUDA_ON_CPU)
-        add_definitions(-DCUDA_ON_CPU -D__NVCC__ -DCUDART_VERSION=11000 )
-	#        add_definitions(-D_GLIBCXX_PARALLEL)
+if (CUDA_ON_BACKEND STREQUAL "OpenMP" OR CUDA_ON_BACKEND STREQUAL "SEQUENTIAL")
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES COMPILE_FLAGS "-D__NVCC__ -DCUDART_VERSION=11000")
         set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
-	set_source_files_properties(isolation.cu PROPERTIES LANGUAGE CXX)
-       	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-        	add_definitions("-x c++")
-        endif()
-        if (CUDA_ON_CPU STREQUAL "OpenMP")
-                add_definitions(-DCUDIFY_USE_OPENMP)
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+                add_definitions("-x c++")
         endif()
 endif()
 
-add_executable(mem_map ${CUDA_SOURCES}
-        main.cpp
-        data_type/aggregate_unit_tests.cpp
-        util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
-        memory_ly/memory_conf_unit_tests.cpp
-        Space/tests/SpaceBox_unit_tests.cpp
-        Space/Shape/Sphere_unit_test.cpp
+if ( HIP_ENABLE AND HIP_FOUND )
+
+	list(APPEND HIP_HIPCC_FLAGS ${CMAKE_CXX_FLAGS_DEBUG})
+
+	if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+		list(APPEND HIP_HIPCC_FLAGS -O0)
+	endif()
+
+	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0)
+	set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
+
+	set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
+
+        hip_add_executable(mem_map ${CUDA_SOURCES}
+                main.cpp
+                data_type/aggregate_unit_tests.cpp
+                util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
+                memory_ly/memory_conf_unit_tests.cpp
+                Space/tests/SpaceBox_unit_tests.cpp
+                Space/Shape/Sphere_unit_test.cpp
+                SparseGrid/SparseGrid_unit_tests.cpp
+                SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
+                Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
+                Grid/Geometry/tests/grid_smb_tests.cpp)
+
+else()
+
+	add_executable(mem_map ${CUDA_SOURCES}
+        	main.cpp
+        	data_type/aggregate_unit_tests.cpp
+        	util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
+        	memory_ly/memory_conf_unit_tests.cpp
+        	Space/tests/SpaceBox_unit_tests.cpp
+        	Space/Shape/Sphere_unit_test.cpp
 		SparseGrid/SparseGrid_unit_tests.cpp
 		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
-        Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
+        	Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
 		Grid/Geometry/tests/grid_smb_tests.cpp)
+
+endif()
 
 set_property(TARGET mem_map PROPERTY CUDA_ARCHITECTURES 60 75)
 
@@ -83,6 +107,11 @@ if (CUDA_FOUND)
 endif()
 
 add_dependencies(mem_map ofpmmemory)
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(mem_map PRIVATE "-Wno-undefined-var-template")
+	target_compile_options(mem_map PRIVATE "-Wno-macro-redefined")
+endif()
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
@@ -157,6 +186,7 @@ target_link_libraries(mem_map ${Boost_LIBRARIES})
 target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 target_link_libraries(mem_map ofpmmemory)
 target_link_libraries(mem_map ${Vc_LIBRARIES})
+target_link_libraries(mem_map OpenMP::OpenMP_CXX)
 
 if (CUDA_FOUND)
 	target_link_libraries(isolation ${Boost_LIBRARIES})
@@ -405,12 +435,13 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
 	COMPONENT OpenFPM)
 
 
-install(FILES util/cuda/scan_cuda.cuh
-        util/cuda/ofp_context.hxx
+install(FILES util/cuda/ofp_context.hxx
         util/cuda/kernels.cuh
         util/cuda/scan_ofp.cuh
 	util/cuda/sort_ofp.cuh
 	util/cuda/reduce_ofp.cuh
+	util/cuda/segreduce_ofp.cuh
+	util/cuda/merge_ofp.cuh
         DESTINATION openfpm_data/include/util/cuda
 	COMPONENT OpenFPM)
 
