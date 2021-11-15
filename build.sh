@@ -74,7 +74,11 @@ fi
 echo "Compiling on $2"
 
 sh ./autogen.sh
-sh ./configure CXX=mpic++ --with-vcdevel=$HOME/openfpm_dependencies/openfpm_io/$branch/VCDEVEL --with-libhilbert=$HOME/openfpm_dependencies/openfpm_io/$branch/LIBHILBERT --with-hdf5=$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5 --with-boost=$HOME/openfpm_dependencies/openfpm_io/$branch/BOOST --with-pdata=../../openfpm_pdata/ --enable-cuda-on-cpu
+if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
+	sh ./configure CXX=mpic++ --with-vcdevel=$HOME/openfpm_dependencies/openfpm_io/$branch/VCDEVEL --with-libhilbert=$HOME/openfpm_dependencies/openfpm_io/$branch/LIBHILBERT --with-hdf5=$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5 --with-boost=$HOME/openfpm_dependencies/openfpm_io/$branch/BOOST --with-pdata=../../openfpm_pdata/ --enable-cuda-on-cpu
+else
+	sh ./configure CXX=mpic++ --with-vcdevel=$HOME/openfpm_dependencies/openfpm_io/$branch/VCDEVEL --with-libhilbert=$HOME/openfpm_dependencies/openfpm_io/$branch/LIBHILBERT --with-hdf5=$HOME/openfpm_dependencies/openfpm_io/$branch/HDF5 --with-boost=$HOME/openfpm_dependencies/openfpm_io/$branch/BOOST --with-pdata=../../openfpm_pdata/ --with-cuda-on-cackend=OpenMP
+fi
 
 make VERBOSE=1 -j 4
 
