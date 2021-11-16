@@ -63,7 +63,6 @@ if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
         export PATH="/usr/local/bin:$PATH"
         ./install_MPI.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	export PATH="$HOME/openfpm_dependencies/openfpm_io/$branch/MPI/bin/:$PATH"
-	rm -rf $HOME/openfpm_dependencies/openfpm_io/$branch/BOOST
 	./install_BOOST.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
 	./install_HDF5.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
         ./install_LIBHILBERT.sh $HOME/openfpm_dependencies/openfpm_io/$branch/ 4
