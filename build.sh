@@ -23,7 +23,6 @@ fi
 if [ x"$hostname" == x"cifarm-mac-node.mpi-cbg.de"  ]; then
         echo "Mac node"
         export PATH="$HOME/openfpm_dependencies/openfpm_data/CMAKE/bin:$PATH"
-	rm -rf $HOME/openfpm_dependencies/openfpm_data/BOOST
 fi
 
 # Check if libHilbert is installed
