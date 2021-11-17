@@ -8,6 +8,7 @@
 #ifndef SRC_PACKER_UNIT_TESTS_HPP_
 #define SRC_PACKER_UNIT_TESTS_HPP_
 
+#include "util/cudify/cudify.hpp"
 #include "Pack_selector.hpp"
 #include "Packer.hpp"
 #include "Unpacker.hpp"
