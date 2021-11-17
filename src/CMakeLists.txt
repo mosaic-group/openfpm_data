@@ -98,6 +98,8 @@ set_property(TARGET mem_map PROPERTY CUDA_ARCHITECTURES 60 75)
 
 if (CUDA_FOUND)
 
+	target_include_directories(mem_map PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
 	add_executable(isolation
 		isolation.cu
         	)

@@ -11,6 +11,8 @@
 #include <cstdarg>
 #include <string>
 
+#include <cuda_runtime.h>
+
 namespace mgpu {
 
 enum memory_space_t {

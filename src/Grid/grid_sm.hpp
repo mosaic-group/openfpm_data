@@ -100,7 +100,7 @@ public:
 template<unsigned int dim>
 struct ite_gpu
 {
-#ifdef CUDA_GPU
+#if defined(CUDIFY_USE_CUDA)
 
 	dim3 thr;
 	dim3 wthr;
