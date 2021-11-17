@@ -33,6 +33,8 @@ else()
 				  ${CUDA_SOURCES}
 				  ObjReader/ObjReader_unit_test.cpp)
 
+	set_property(TARGET io PROPERTY CUDA_ARCHITECTURES OFF)
+
 endif()
 
 add_dependencies(io ofpmmemory)
