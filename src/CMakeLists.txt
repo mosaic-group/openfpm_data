@@ -104,6 +104,8 @@ if (CUDA_FOUND)
 
 	add_dependencies(isolation ofpmmemory)
 
+	set_property(TARGET isolation PROPERTY CUDA_ARCHITECTURES OFF)
+
 endif()
 
 add_dependencies(mem_map ofpmmemory)
