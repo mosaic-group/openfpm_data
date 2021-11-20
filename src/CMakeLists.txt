@@ -21,6 +21,7 @@ if (TEST_PERFORMANCE)
                          Vector/performance/vector_performance_test.cu)
 endif ()
 
+
 if (NOT CUDA_ON_BACKEND STREQUAL "None")
 	set(CUDA_SOURCES ${CUDA_SOURCES}
 	    Vector/map_vector_sparse_unit_tests.cu
@@ -53,7 +54,7 @@ if (CUDA_ON_BACKEND STREQUAL "OpenMP" OR CUDA_ON_BACKEND STREQUAL "SEQUENTIAL")
         endif()
 endif()
 
-if ( HIP_ENABLE AND HIP_FOUND )
+if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 
 	list(APPEND HIP_HIPCC_FLAGS ${CMAKE_CXX_FLAGS_DEBUG})
 
@@ -61,10 +62,9 @@ if ( HIP_ENABLE AND HIP_FOUND )
 		list(APPEND HIP_HIPCC_FLAGS -O0)
 	endif()
 
-	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0)
+	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0 --std=c++14)
 	set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
 
-	set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
 
         hip_add_executable(mem_map ${CUDA_SOURCES}
                 main.cpp
@@ -77,6 +77,7 @@ if ( HIP_ENABLE AND HIP_FOUND )
                 SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
                 Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
                 Grid/Geometry/tests/grid_smb_tests.cpp)
+
 
 else()
 
@@ -186,6 +187,9 @@ endif()
 
 target_include_directories(mem_map PUBLIC ${Vc_INCLUDE_DIR})
 
+if (HIP_FOUND)
+	target_link_libraries(mem_map hip::host)
+endif()
 target_link_libraries(mem_map ${Boost_LIBRARIES})
 target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 target_link_libraries(mem_map ofpmmemory)

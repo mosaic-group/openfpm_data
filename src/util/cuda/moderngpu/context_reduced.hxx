@@ -11,7 +11,6 @@
 #include <cstdarg>
 #include <string>
 
-#include <cuda_runtime.h>
 
 namespace mgpu {
 
