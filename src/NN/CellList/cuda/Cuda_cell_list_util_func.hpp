@@ -66,10 +66,43 @@ struct cid_<1,cnt_type,ids_type, transform>
 
 	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c,
 			                                                       const openfpm::array<T,1,cnt_type> & spacing,
+																   const openfpm::array<ids_type,1,cnt_type> & off,
 			                                                       const transform & t,
 			                                                       const Point<1,T> & p)
 	{
-		return t.transform(p.get(0),0) / spacing[0];
+		return t.transform(p.get(0),0) / spacing[0] + off[0];
+	}
+
+	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c,
+			                                                       const openfpm::array<T,1,cnt_type> & spacing,
+			                                                       const openfpm::array<ids_type,1,cnt_type> & off,
+			                                                       const transform & t,
+			                                                       const T * p,
+			                                                       ids_type * e)
+	{
+		e[0] = openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0];
+
+		return e[0];
+	}
+
+	template<typename T>
+	static inline __device__ __host__ grid_key_dx<2,ids_type> get_cid_key(const openfpm::array<T,1,cnt_type> & spacing,
+			                                                       const openfpm::array<ids_type,1,cnt_type> & off,
+			                                                       const transform & t,
+			                                                       const Point<2,T> & p)
+	{
+		grid_key_dx<1,ids_type> e;
+
+		e.set_d(0,openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0]);
+
+		return e;
+	}
+
+	template <typename U = cnt_type, typename sfinae=typename std::enable_if<std::is_same<ids_type,U>::value >::type >
+	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c,
+			                                  const grid_key_dx<1,cnt_type> & e)
+	{
+		return e.get(0);
 	}
 };
 

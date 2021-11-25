@@ -487,6 +487,19 @@ public:
 	 * \return the index value
 	 *
 	 */
+	__device__ __host__  index_type operator[](index_type i) const
+	{
+		return get(i);
+	}
+
+	/*! \brief Get the i index
+	 *
+	 *
+	 * \param i index to get
+	 *
+	 * \return the index value
+	 *
+	 */
 	__device__ __host__  index_type get(index_type i) const
 	{
 		return k[i];
