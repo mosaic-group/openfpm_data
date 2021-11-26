@@ -593,7 +593,7 @@ struct meta_prop<I, ele_g,St,T[N1],is_writable>
                         {stream_out << " " << vg.get(k).g.template get<I::value>(it.get())[i1];}
 
                         if (N1 == 2)
-                        {stream_out << (decltype(vg.get(k).g.template get<I::value>(it.get())[0])) 0;}
+                        {stream_out << " " << (decltype(vg.get(k).g.template get<I::value>(it.get())[0])) 0;}
 
                         stream_out << "\n";
                     }

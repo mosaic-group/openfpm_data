@@ -26,7 +26,6 @@ add_subdirectory (../openfpm_vcluster openfpm_vcluster)
 
 if (CUDA_ON_BACKEND STREQUAL "CUDA")
         enable_language(CUDA)
-        find_package(CUDA)
 endif()
 
 set (CMAKE_CXX_STANDARD 14)
