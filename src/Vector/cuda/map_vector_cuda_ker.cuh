@@ -127,7 +127,7 @@ namespace openfpm
 		unsigned int v_size;
 
 		//! 1-D static grid
-		grid_gpu_ker<1,T_,layout_base> base;
+		grid_gpu_ker<1,T_,layout_base,grid_sm<1,void>> base;
 
 		/*! \brief Check that the key is inside the grid
 		 *
@@ -179,7 +179,6 @@ namespace openfpm
 		{
 			return base.size();
 		}
-
 
 		/*! \brief Get an element of the vector
 		 *
@@ -344,10 +343,20 @@ namespace openfpm
 		:v_size(0)
 		{}
 
-		vector_gpu_ker(int v_size, const grid_gpu_ker<1,T_,layout_base> & cpy)
+		vector_gpu_ker(int v_size, const grid_gpu_ker<1,T_,layout_base,grid_sm<1,void>> & cpy)
 		:v_size(v_size),base(cpy)
 		{}
 
+		/*! \brief implementation of the constructor
+		 *
+		 * \param v_size number of elements
+		 *
+		 */
+		inline void constructor_impl(int v_size, const grid_gpu_ker<1,T_,layout_base,grid_sm<1,void>> & cpy)
+		{
+			this->v_size = v_size;
+			base.constructor_impl(cpy);
+		}
 
 		/*! \brief Set the object id to obj
 		 *
@@ -491,7 +500,7 @@ namespace openfpm
 		 * \return the base
 		 *
 		 */
-		__device__ grid_gpu_ker<1,T_,layout_base> & getBase()
+		__device__ grid_gpu_ker<1,T_,layout_base, grid_sm<1,void>> & getBase()
 		{
 			return base;
 		}

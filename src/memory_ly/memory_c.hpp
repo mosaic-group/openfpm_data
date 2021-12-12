@@ -119,12 +119,13 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 		return *this->mem;
 	}
 
-	/*! \brief Switch the pointer to device pointer
+	/*! \brief Switch the pointer to device pointer (if the memory has been already set)
 	 *
 	 */
 	void switchToDevicePtr()
 	{
-		mem_r.set_pointer(mem->getDevicePointer());
+		if (mem != 0)
+		{mem_r.set_pointer(mem->getDevicePointer());}
 	}
 
 	/*! \brief This function get the object that allocate memory
@@ -410,7 +411,8 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	 */
 	void switchToDevicePtr()
 	{
-		mem_r.set_pointer(mem->getDevicePointer());
+		if (mem != NULL)
+		{mem_r.set_pointer(mem->getDevicePointer());}
 	}
 
 

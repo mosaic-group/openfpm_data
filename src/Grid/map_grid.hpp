@@ -315,7 +315,7 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	grid_gpu_ker<dim,T_,memory_traits_lin> toKernel()
+	grid_gpu_ker<dim,T_,memory_traits_lin,linearizer_type> toKernel()
 	{
 		return grid_toKernelImpl<is_layout_inte<memory_traits_lin<T_>>::value,dim,T_>::toKernel(*this);
 	}
@@ -325,7 +325,7 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	const grid_gpu_ker<dim,T_,memory_traits_lin> toKernel() const
+	const grid_gpu_ker<dim,T_,memory_traits_lin,linearizer_type> toKernel() const
 	{
 		return grid_toKernelImpl<is_layout_inte<memory_traits_lin<T_>>::value,dim,T_>::toKernel(*this);
 	}
@@ -874,7 +874,7 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	grid_gpu_ker<dim,T_,memory_traits_inte> toKernel()
+	grid_gpu_ker<dim,T_,memory_traits_inte,linearizer_type> toKernel()
 	{
 		return grid_toKernelImpl<is_layout_inte<memory_traits_inte<T_>>::value,dim,T_>::toKernel(*this);
 	}
@@ -884,7 +884,7 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	const grid_gpu_ker<dim,T_,memory_traits_inte> toKernel() const
+	const grid_gpu_ker<dim,T_,memory_traits_inte,linearizer_type> toKernel() const
 	{
 		return grid_toKernelImpl<is_layout_inte<memory_traits_inte<T>>::value,dim,T_>::toKernel(*this);
 	}

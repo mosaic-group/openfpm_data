@@ -570,6 +570,12 @@ private:
 		}
 		else
 			grid_new.setMemory();
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+
+#endif
 	}
 
 public:
@@ -650,6 +656,12 @@ public:
 	{
 		swap(g.duplicate());
 
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+
+#endif
+
 		return *this;
 	}
 
@@ -663,6 +675,12 @@ public:
 	grid_base_impl<dim,T,S,layout_base> & operator=(grid_base_impl<dim,T,S,layout_base> && g)
 	{
 		swap(g);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+
+#endif
 
 		return *this;
 	}
@@ -773,6 +791,13 @@ public:
 	void setMemory()
 	{
 		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::setMemory(data_,g1,is_mem_init);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+
+#endif
+
 	}
 
 	/*! \brief Set the object that provide memory from outside
@@ -791,17 +816,17 @@ public:
 		//! Is external
 		isExternal = true;
 
-		//! Create and set the memory allocator
-//		data_.setMemory(m);
-
-		//! Allocate the memory and create the reppresentation
-//		if (g1.size() != 0) data_.allocate(g1.size());
-
 		bool skip_ini = skip_init<has_noPointers<T>::value,T>::skip_();
 
 		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemory<p>(data_,m,g1.size(),skip_ini);
 
 		is_mem_init = true;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+
+#endif
 	}
 
 	/*! \brief Set the object that provide memory from outside
@@ -825,6 +850,12 @@ public:
 		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemoryArray(*this,m,g1.size(),skip_ini);
 
 		is_mem_init = true;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+
+#endif
 	}
 
 	/*! \brief Return a plain pointer to the internal data
@@ -1315,18 +1346,7 @@ public:
 
 		resize_impl_memset(grid_new);
 
-
-		// We know that, if it is 1D we can safely copy the memory
-//		if (dim == 1)
-//		{
-//			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
-//			grid_new.data_.mem->copy(*data_.mem);
-//		}
-//		else
-//		{
-		// It should be better to separate between fast and slow cases
-
-			//! N-D copy
+		//! N-D copy
 
 		if (opt & DATA_ON_HOST)
 		{resize_impl_host(sz,grid_new);}
@@ -1388,30 +1408,27 @@ public:
 	 *
 	 * This is a different from the standard swap and require long explanation.
 	 *
-	 * This object by default when it construct after we call setMemory() it create an internal memory object
-	 * and use it allocate memory internally.
+	 * This object (grid) by default when it constructs and after we call setMemory() it create an internal memory object
+	 * and use it allocate memory internally. (Mode 1)
 	 *
 	 * If instead we use setMemory(external_mem) this object does not create an internal memory object but use
-	 * the passed object to allocate memory. Because the external memory can already have a pool of memory preallocated
-	 * we can re-use the memory.
+	 * the passed object to allocate memory. (Mode 2)
 	 *
-	 * Despite this setMemory can be used to do memory retaining/re-use  and/or garbage collection.
-	 * It can be seen from a different prospective of making the data structures act like a representation of external
-	 *  memory. De facto we are giving meaning to the external memory so we are shaping or re-shaping pre-existing
-	 *   external memory.
+	 * External memory can be used to do memory retaining/re-use  and/or garbage collection and making the data structures 
+	 * act like a representation of external memory
 	 *
-	 * In the following I will call these two mode Mode1 and Mode2
-	 *
-	 * Using the structure in this way has consequences, because now in Mode2 the memory (and so its life-span) is disentangled
+	 * Using the structure in this way has consequences, because in Mode2 the memory (and so its life-span) is disentangled
 	 *  by its structure.
 	 *
 	 *
-	 * The main difference comes when we swap object in which one of both are in Mode2
+	 * The problem comes when we swap object in which one the structure is in Mode2
 	 *
 	 * Let's suppose object A is in Mode1 and object B is is Mode2. The normal swap, fully swap the objects
 	 *
 	 * A.swap(B) A become B (in mode 2) and B become A (in mode 1)
 	 *
+	 * swap nomode require that A and B have the same size.
+	 * 
 	 * A.swap_nomode(B) In this case the mode is not swapped  A become B (in mode 1) and B become A (in mode 2).
 	 *                  So the mode is not swapped and remain the original
 	 *
@@ -1669,7 +1686,32 @@ public:
 		return grid_key_dx_iterator<dim>(gvoid);
 	}
 
-#ifdef CUDA_GPU
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+	mutable grid_gpu_ker<dim,T,layout_base,linearizer_type> base_gpu;
+
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	grid_gpu_ker<dim,T,layout_base,linearizer_type> & toKernel()
+	{
+		return base_gpu;
+	}
+
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	const grid_gpu_ker<dim,T,layout_base,linearizer_type> & toKernel() const
+	{
+		return base_gpu;
+	}
+
+#else 
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 	 *

@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include "cuda_grid_unit_tests_func.cuh"
 
-__global__ void grid_gradient_vector(grid_gpu_ker<3,Point_aggr_test,memory_traits_inte> g1, grid_gpu_ker<3,Point_aggr_test,memory_traits_inte> g2, ite_gpu<3> ite_gpu)
+template<typename grid_type1, typename grid_type2>
+__global__ void grid_gradient_vector(grid_type1 g1, grid_type2 g2, ite_gpu<3> ite_gpu)
 {
 	GRID_ID_3(ite_gpu);
 
@@ -13,7 +14,8 @@ __global__ void grid_gradient_vector(grid_gpu_ker<3,Point_aggr_test,memory_trait
 	g2.template get<4>(key)[2] = (g1.template get<0>(key.move(2,1)) - g1.template get<0>(key.move(2,-1))) / 2.0;
 }
 
-__global__ void grid_fill_vector(grid_gpu_ker<3,Point_aggr_test,memory_traits_inte> g1,  ite_gpu<3> ite_gpu)
+template<typename grid_type>
+__global__ void grid_fill_vector(grid_type g1,  ite_gpu<3> ite_gpu)
 {
 	GRID_ID_3(ite_gpu);
 
@@ -22,7 +24,8 @@ __global__ void grid_fill_vector(grid_gpu_ker<3,Point_aggr_test,memory_traits_in
 	g1.template get<4>(key)[2] = 3.0;
 }
 
-__global__ void grid_fill_vector2(grid_gpu_ker<3,Point_aggr_test,memory_traits_inte> g1,  ite_gpu<3> ite_gpu)
+template<typename grid_type>
+__global__ void grid_fill_vector2(grid_type g1,  ite_gpu<3> ite_gpu)
 {
 	GRID_ID_3(ite_gpu);
 
@@ -31,8 +34,8 @@ __global__ void grid_fill_vector2(grid_gpu_ker<3,Point_aggr_test,memory_traits_i
 	g1.template get<4>(key)[2] = 1003.0;
 }
 
-
-__global__ void compute_stencil_grid(grid_gpu_ker<3,Point_aggr_test,memory_traits_inte> g1, grid_gpu_ker<3,Point_aggr_test,memory_traits_inte> g2, ite_gpu<3> ite_gpu)
+template<typename grid_type>
+__global__ void compute_stencil_grid(grid_type g1, grid_type g2, ite_gpu<3> ite_gpu)
 {
 	GRID_ID_3(ite_gpu);
 

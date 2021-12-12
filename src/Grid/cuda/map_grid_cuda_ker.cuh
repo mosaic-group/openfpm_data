@@ -142,14 +142,14 @@ __device__ void fill_grid_error_array(size_t lin_id)
  * \tparam n_buf number of template buffers
  *
  */
-template<unsigned int dim, typename T, template <typename> class layout_base>
+template<unsigned int dim, typename T, template <typename> class layout_base, typename linearizer>
 class grid_gpu_ker
 {
 	//! Type T
 	typedef typename apply_transform<layout_base,T>::type T_;
 
 	//! grid information
-	grid_sm<dim,void> g1;
+	linearizer g1;
 
 	//! type of layout of the structure
 	typedef typename layout_base<T_>::type layout;
@@ -201,7 +201,7 @@ public:
 	__device__ __host__ grid_gpu_ker()
 	{}
 
-	__device__ __host__ grid_gpu_ker(const grid_sm<dim,void> & g1)
+	__device__ __host__ grid_gpu_ker(const linearizer & g1)
 	:g1(g1)
 	{
 	}
@@ -209,7 +209,12 @@ public:
 	__device__ __host__ grid_gpu_ker(const grid_gpu_ker & cpy)
 	:g1(cpy.g1)
 	{
-//		std::cout << "Constructing " << &cpy << std::endl;
+		grid_gpu_ker_constructor_impl<is_layout_inte<layout_base<T_>>::value,T_>::construct(cpy,*this);
+	}
+
+	__device__ __host__ void constructor_impl(const grid_gpu_ker & cpy)
+	{
+		g1 = cpy.g1;
 		grid_gpu_ker_constructor_impl<is_layout_inte<layout_base<T_>>::value,T_>::construct(cpy,*this);
 	}
 
@@ -337,7 +342,7 @@ public:
 	}
 
 
-	__device__ inline void set(const grid_key_dx<dim> & key1,const grid_gpu_ker<dim,T_,layout_base> & g, const grid_key_dx<dim> & key2)
+	__device__ inline void set(const grid_key_dx<dim> & key1,const grid_gpu_ker<dim,T_,layout_base, linearizer> & g, const grid_key_dx<dim> & key2)
 	{
 #ifdef SE_CLASS1
 		if (check_bound(key1) == false)
@@ -351,7 +356,7 @@ public:
 		this->get_o(key1) = g.get_o(key2);
 	}
 
-	template<unsigned int ... prp> __device__ inline void set(const grid_key_dx<dim> & key1,const grid_gpu_ker<dim,T_,layout_base> & g, const grid_key_dx<dim> & key2)
+	template<unsigned int ... prp> __device__ inline void set(const grid_key_dx<dim> & key1,const grid_gpu_ker<dim,T_,layout_base, linearizer> & g, const grid_key_dx<dim> & key2)
 	{
 #ifdef SE_CLASS1
 		if (check_bound(key1) == false)
@@ -413,7 +418,7 @@ public:
 	 * \param object to copy
 	 *
 	 */
-	grid_gpu_ker<dim,T,layout_base> & operator=(const grid_gpu_ker<dim,T,layout_base> & g)
+	grid_gpu_ker<dim,T,layout_base,linearizer> & operator=(const grid_gpu_ker<dim,T,layout_base,linearizer> & g)
 	{
 		g1 = g.g1;
 

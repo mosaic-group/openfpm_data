@@ -369,6 +369,12 @@ namespace openfpm
 				size_t sz[1] = {sp};
 				base.resize(sz);
 			}
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief Clear the vector
@@ -390,6 +396,12 @@ namespace openfpm
 		{
 			size_t sz[1] = {size()};
 			base.resize(sz);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief Resize the vector
@@ -426,6 +438,12 @@ namespace openfpm
 
 			// update the vector size
 			v_size = slot;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 
@@ -452,6 +470,12 @@ namespace openfpm
 
 			// update the vector size
 			v_size = slot;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		//! Access key for the vector
@@ -477,6 +501,12 @@ namespace openfpm
 
 			//! increase the vector size
 			v_size++;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief It insert a new emtpy object on the vector, eventually it reallocate the grid
@@ -499,6 +529,12 @@ namespace openfpm
 
 			//! increase the vector size
 			v_size++;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief It insert a new object on the vector, eventually it reallocate the grid
@@ -526,6 +562,12 @@ namespace openfpm
 
 			//! increase the vector size
 			v_size++;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief It insert a new object on the vector, eventually it reallocate the vector
@@ -554,6 +596,12 @@ namespace openfpm
 
 			//! increase the vector size
 			v_size++;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief It add the element of another vector to this vector
@@ -1434,6 +1482,12 @@ namespace openfpm
 		:v_size(0)
 		{
 			swap(v);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief Constructor from another constant vector
@@ -1445,6 +1499,12 @@ namespace openfpm
 		:v_size(0)
 		{
 			swap(v.duplicate());
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		//! Constructor, vector of size 0
@@ -1452,6 +1512,12 @@ namespace openfpm
 		:v_size(0),base(0)
 		{
 			base.setMemory();
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		//! Constructor, vector of size sz
@@ -1459,6 +1525,12 @@ namespace openfpm
 		:v_size(sz),base(sz)
 		{
 			base.setMemory();
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief Set the object id to obj
@@ -1548,6 +1620,12 @@ namespace openfpm
 			v_size = mv.v_size;
 			base.swap(mv.base);
 
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
+
 			return *this;
 		}
 
@@ -1575,6 +1653,12 @@ namespace openfpm
 
 			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false>::copy2(*this,mv);
 
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
+
 			return *this;
 		}
 
@@ -1591,6 +1675,12 @@ namespace openfpm
 		{
 			v_size = mv.v_size;
 			base.swap(mv.base);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 
 			return *this;
 		}
@@ -1619,6 +1709,12 @@ namespace openfpm
 
 			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false>::copy2(*this,mv);
 
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
+
 			return *this;
 		}
 
@@ -1636,6 +1732,12 @@ namespace openfpm
 		{
 			v_size = mv.v_size;
 			base.swap(mv.base);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 
 			return *this;
 		}
@@ -1667,6 +1769,13 @@ namespace openfpm
 			}
 
 			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false>::copy2(*this,mv);
+
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 
 			return *this;
 		}
@@ -1719,6 +1828,13 @@ namespace openfpm
 			v_size = v.v_size;
 
 			base.swap_nomode(v.base);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
+
 			v.v_size = sz_sp;
 		}
 
@@ -1736,6 +1852,13 @@ namespace openfpm
 
 			base.swap(v.base);
 			v.v_size = sz_sp;
+
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief Swap the memory with another vector
@@ -1752,6 +1875,12 @@ namespace openfpm
 
 			base.swap(v.base);
 			v.v_size = sz_sp;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief Get iterator over the particles from a particular index
@@ -1943,6 +2072,12 @@ namespace openfpm
 		template<unsigned int p = 0> void setMemory(Memory & mem)
 		{
 			base.template setMemory<p>(mem);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief Set the memory of the base structure using an object
@@ -1953,6 +2088,12 @@ namespace openfpm
 		void setMemoryArray(Memory * mem)
 		{
 			base.setMemoryArray(mem);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			base_gpu = this->toKernel();
+
+#endif
 		}
 
 		/*! \brief Return the pointer that store the data
@@ -2044,6 +2185,39 @@ namespace openfpm
 			base.template hostToDevice<prp ...>(start,stop);
 		}
 
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		mutable vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> base_gpu;
+
+		/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+		 *
+		 *  The object created can be considered like a reference of the original
+		 *
+		 * \return an usable vector in the kernel
+		 *
+		 */
+		vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> & toKernel()
+		{
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
+
+			return base_gpu;
+		}
+
+		/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+		 *
+		 *  The object created can be considered like a reference of the original
+		 *
+		 * \return an usable vector in the kernel
+		 *
+		 */
+		const vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> & toKernel() const
+		{
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
+
+			return base_gpu;
+		}
+
+#else
 
 		/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 		 *
@@ -2075,6 +2249,8 @@ namespace openfpm
 
 			return v;
 		}
+
+#endif
 
 		/*! Convert this vector into a string
 		 *
