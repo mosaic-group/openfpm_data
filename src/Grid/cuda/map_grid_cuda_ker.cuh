@@ -521,7 +521,7 @@ public:
 	}
 
 	template <unsigned int p>
-	__device__ __host__ inline const auto get(size_t lin_id) const -> decltype(ggk.template get<p>(lin_id))
+	__device__ __host__ inline auto get(size_t lin_id) const -> decltype(ggk.template get<p>(lin_id))
 	{
 		return ggk.template get<p>(lin_id);
 	}
