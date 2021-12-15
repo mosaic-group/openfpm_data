@@ -509,7 +509,7 @@ public:
 	}
 
 	template <unsigned int p, typename ids_type>
-	__device__ __host__ inline const auto get(const grid_key_dx<dim,ids_type> & v1) const -> decltype(ggk.template get<p>(v1))
+	__device__ __host__ inline auto get(const grid_key_dx<dim,ids_type> & v1) const -> decltype(ggk.template get<p>(v1))
 	{
 		return ggk.template get<p>(v1);
 	}
