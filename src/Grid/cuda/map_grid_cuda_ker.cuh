@@ -533,7 +533,7 @@ public:
 	}
 
 	template<typename Tk>
-	__device__ inline const auto get_o(const grid_key_dx<dim,Tk> & v1) const  -> decltype(ggk.get_o(v1))
+	__device__ inline auto get_o(const grid_key_dx<dim,Tk> & v1) const  -> decltype(ggk.get_o(v1))
 	{
 		return ggk.get_o(v1);
 	}
