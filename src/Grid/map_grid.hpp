@@ -308,30 +308,6 @@ public:
 		this->data_.mem->deviceToHost(start*sizeof(T),(stop+1)*sizeof(T));
 	}
 
-#ifdef CUDA_GPU
-
-	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
-	 *
-	 *  The object created can be considered like a reference of the original
-	 *
-	 */
-	grid_gpu_ker<dim,T_,memory_traits_lin,linearizer_type> toKernel()
-	{
-		return grid_toKernelImpl<is_layout_inte<memory_traits_lin<T_>>::value,dim,T_>::toKernel(*this);
-	}
-
-	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
-	 *
-	 *  The object created can be considered like a reference of the original
-	 *
-	 */
-	const grid_gpu_ker<dim,T_,memory_traits_lin,linearizer_type> toKernel() const
-	{
-		return grid_toKernelImpl<is_layout_inte<memory_traits_lin<T_>>::value,dim,T_>::toKernel(*this);
-	}
-
-#endif
-
 	/*! \brief This is a meta-function return which type of sub iterator a grid produce
 	 *
 	 * \return the type of the sub-grid iterator
@@ -867,29 +843,6 @@ public:
 		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(dth);
 	}
 
-#ifdef CUDA_GPU
-
-	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
-	 *
-	 *  The object created can be considered like a reference of the original
-	 *
-	 */
-	grid_gpu_ker<dim,T_,memory_traits_inte,linearizer_type> toKernel()
-	{
-		return grid_toKernelImpl<is_layout_inte<memory_traits_inte<T_>>::value,dim,T_>::toKernel(*this);
-	}
-
-	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
-	 *
-	 *  The object created can be considered like a reference of the original
-	 *
-	 */
-	const grid_gpu_ker<dim,T_,memory_traits_inte,linearizer_type> toKernel() const
-	{
-		return grid_toKernelImpl<is_layout_inte<memory_traits_inte<T>>::value,dim,T_>::toKernel(*this);
-	}
-
-#endif
 	/*! \brief This is a meta-function return which type of sub iterator a grid produce
 	 *
 	 * \return the type of the sub-grid iterator

@@ -108,6 +108,9 @@ __device__ void fill_vector_error_array_overflow(const void * sptr,int key)
 namespace openfpm
 {
 
+	template<typename T, template <typename> class layout_base>
+	struct vector_gpu_ker_ref;
+
 	/*! \brief grid interface available when on gpu
 	 *
 	 * \tparam n_buf number of template buffers
@@ -347,12 +350,28 @@ namespace openfpm
 		:v_size(v_size),base(cpy)
 		{}
 
+		vector_gpu_ker(const vector_gpu_ker_ref<T,layout_base> & vref)
+		{
+			this->operator=(vref.vref);
+		}
+
 		/*! \brief implementation of the constructor
 		 *
 		 * \param v_size number of elements
 		 *
 		 */
 		inline void constructor_impl(int v_size, const grid_gpu_ker<1,T_,layout_base,grid_sm<1,void>> & cpy)
+		{
+			this->v_size = v_size;
+			base.constructor_impl(cpy);
+		}
+
+		/*! \brief implementation of the constructor
+		 *
+		 * \param v_size number of elements
+		 *
+		 */
+		inline void constructor_impl(int v_size, const grid_gpu_ker_ref<1,T_,layout_base,grid_sm<1,void>> & cpy)
 		{
 			this->v_size = v_size;
 			base.constructor_impl(cpy);
@@ -542,6 +561,154 @@ namespace openfpm
 		}
 
 #endif
+	};
+
+	/*! \brief grid interface available when on gpu
+	 *
+	 * \tparam n_buf number of template buffers
+	 *
+	 */
+
+	template<typename T, template <typename> class layout_base>
+	struct vector_gpu_ker_ref
+	{
+		typedef vector_gpu_ker<T,layout_base> self_type;
+
+		typedef typename apply_transform<layout_base,T>::type T_;
+
+		//! vector reference
+		vector_gpu_ker<T,layout_base> & vref;
+
+	public:
+
+		typedef int yes_i_am_vector;
+
+		typedef typename layout_base<T_>::type layout_type;
+
+		typedef typename grid_base<1,T_,CudaMemory,typename layout_base<T_>::type>::container container;
+
+		typedef T_ value_type;
+
+		typedef int yes_has_check_device_pointer;
+
+		__device__ __host__ unsigned int size() const
+		{
+			return vref.size();
+		}
+
+		__device__ __host__ unsigned int capacity() const
+		{
+			return vref.capacity;
+		}
+
+		template <unsigned int p>
+		__device__ __host__ inline auto get(unsigned int id) const -> decltype(vref.template get<p>(id))
+		{
+			return vref.template get<p>(id);
+		}
+
+		__device__ __host__ inline auto get(unsigned int id) -> decltype(vref.get(id))
+		{
+			return vref.get(id);
+		}
+
+		inline __device__ __host__ auto get(unsigned int id) const -> decltype(vref.get(id))
+		{
+			return vref.get(id);
+		}
+
+		inline __device__ __host__ auto get_o(unsigned int id) const -> decltype(vref.get_o(id))
+		{
+			return vref.get_o(id);
+		}
+
+		inline __device__ __host__ auto get_o(unsigned int id) -> decltype(vref.get_o(id))
+		{
+			return vref.get_o(id);
+		}
+
+		inline auto last() const -> decltype(vref.last())
+		{
+			return vref.last();
+		}
+
+		template <unsigned int p>
+		__device__ __host__ inline auto get(unsigned int id) -> decltype(vref.template get<p>(id))
+		{
+			return vref.template get<p>(id);
+		}
+
+		inline auto last() -> decltype(vref.last())
+		{
+			return vref.last();
+		}
+
+		vector_gpu_ker_ref(vector_gpu_ker<T,layout_base> & vref)
+		:vref(vref)
+		{}
+
+		__device__ void set(int id, const container & obj)
+		{
+			vref.set(id,obj);
+		}
+
+		template<unsigned int p> __device__ __host__ void * getPointer()
+		{
+			return vref.template getPointer<p>();
+		}
+
+		template<unsigned int p> __device__ __host__ const void * getPointer() const
+		{
+			return vref.template getPointer<p>();
+		}
+
+		template <typename encap_S, unsigned int ...args> void set_o(unsigned int i, const encap_S & obj)
+		{
+			vref.set(i,obj);
+		}
+
+		__device__ void set(unsigned int id, const vector_gpu_ker<T_,layout_base> & v, unsigned int src)
+		{
+			vref.set(id,v,src);
+		}
+
+		template<unsigned int ... prp>
+		__device__ void set(unsigned int id, const vector_gpu_ker<T_,layout_base> & v, unsigned int src)
+		{
+			vref.template set<prp ...>(id,v,src);
+		}
+
+		__host__ ite_gpu<1> getGPUIterator(size_t n_thr = default_kernel_wg_threads_) const
+		{
+			return vref.getGPUIterator(n_thr);
+		}
+
+		/*! \brief Get an iterator for the GPU
+		 *
+		 *
+		 */
+		ite_gpu<1> getGPUIteratorTo(size_t stop, size_t n_thr = default_kernel_wg_threads_) const
+		{
+			return vref.getGPUItertatorTo(stop,n_thr);
+		}
+
+		__host__ vector_gpu_ker_ref<T,layout_base> & operator=(const vector_gpu_ker<T,layout_base> & v)
+		{
+			vref.operator=(v);
+			return this;
+		}
+
+		__device__ grid_gpu_ker<1,T_,layout_base, grid_sm<1,void>> & getBase()
+		{
+			return vref.getBase();
+		}
+
+		void * internal_get_size_pointer()	{return &vref.internal_get_size_pointer();}
+
+		void print_size()
+		{
+			return vref.print_size();
+		}
 	};
 
 }

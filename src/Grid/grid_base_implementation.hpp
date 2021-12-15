@@ -295,6 +295,8 @@ class grid_base_impl
 	//! memory layout
 	typedef typename layout_base<T>::type layout;
 
+	typedef typename apply_transform<layout_base,T>::type T_;
+
 public:
 
 	//! memory layout
@@ -573,7 +575,7 @@ private:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
 
 #endif
 	}
@@ -658,7 +660,8 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
+		g.base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(g);
 
 #endif
 
@@ -678,7 +681,7 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
 
 #endif
 
@@ -794,7 +797,7 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
 
 #endif
 
@@ -824,7 +827,7 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
 
 #endif
 	}
@@ -853,7 +856,7 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
 
 #endif
 	}
@@ -1447,6 +1450,12 @@ public:
 		bool exg = is_mem_init;
 		is_mem_init = grid.is_mem_init;
 		grid.is_mem_init = exg;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
+
+#endif
 	}
 
 	/*! \brief It swap the objects A become B and B become A using A.swap(B);
@@ -1471,6 +1480,13 @@ public:
 		exg = isExternal;
 		isExternal = grid.isExternal;
 		grid.isExternal = exg;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
+		grid.base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(grid);
+
+#endif
 	}
 
 	/*! \brief It move the allocated object from one grid to another
@@ -1689,16 +1705,16 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-	mutable grid_gpu_ker<dim,T,layout_base,linearizer_type> base_gpu;
+	mutable grid_gpu_ker<dim,T_,layout_base,linearizer_type> base_gpu;
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 	 *
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	grid_gpu_ker<dim,T,layout_base,linearizer_type> & toKernel()
+	grid_gpu_ker_ref<dim,T_,layout_base,linearizer_type> toKernel()
 	{
-		return base_gpu;
+		return grid_gpu_ker_ref<dim,T_,layout_base,linearizer_type>(base_gpu);
 	}
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
@@ -1706,9 +1722,9 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	const grid_gpu_ker<dim,T,layout_base,linearizer_type> & toKernel() const
+	const grid_gpu_ker_ref<dim,T_,layout_base,linearizer_type> toKernel() const
 	{
-		return base_gpu;
+		return grid_gpu_ker_ref<dim,T_,layout_base,linearizer_type>(base_gpu);
 	}
 
 #else 
@@ -1718,9 +1734,9 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	grid_gpu_ker<dim,T,layout_base,linearizer_type> toKernel()
+	grid_gpu_ker<dim,T_,layout_base,linearizer_type> toKernel()
 	{
-		return grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
 	}
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
@@ -1728,9 +1744,9 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	const grid_gpu_ker<dim,T,layout_base,linearizer_type> toKernel() const
+	const grid_gpu_ker<dim,T_,layout_base,linearizer_type> toKernel() const
 	{
-		return grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
 	}
 
 #endif

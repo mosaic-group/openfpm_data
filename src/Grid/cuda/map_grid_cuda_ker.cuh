@@ -137,6 +137,9 @@ __device__ void fill_grid_error_array(size_t lin_id)
 #endif
 }
 
+template<unsigned int dim, typename T, template <typename> class layout_base, typename linearizer>
+class grid_gpu_ker_ref;
+
 /*! \brief grid interface available when on gpu
  *
  * \tparam n_buf number of template buffers
@@ -216,6 +219,12 @@ public:
 	{
 		g1 = cpy.g1;
 		grid_gpu_ker_constructor_impl<is_layout_inte<layout_base<T_>>::value,T_>::construct(cpy,*this);
+	}
+
+	__device__ __host__ void constructor_impl(const grid_gpu_ker_ref<dim,T,layout_base,linearizer> & cpy)
+	{
+		g1 = cpy.ggk.g1;
+		grid_gpu_ker_constructor_impl<is_layout_inte<layout_base<T_>>::value,T_>::construct(cpy.ggk,*this);
 	}
 
 	/*! \brief Return the internal grid information
@@ -418,7 +427,7 @@ public:
 	 * \param object to copy
 	 *
 	 */
-	grid_gpu_ker<dim,T,layout_base,linearizer> & operator=(const grid_gpu_ker<dim,T,layout_base,linearizer> & g)
+	grid_gpu_ker<dim,T_,layout_base,linearizer> & operator=(const grid_gpu_ker<dim,T_,layout_base,linearizer> & g)
 	{
 		g1 = g.g1;
 
@@ -457,6 +466,127 @@ public:
 	{
 		return data_;
 	}
+};
+
+// This is an abstraction for reference type. It exist because the compiler by C++ starndard even if we return a reference deduce
+// as value. To force as reference we have to create an object grid_gpu_ker_ref that emulate the reference concept 
+
+template<unsigned int dim, typename T, template <typename> class layout_base, typename linearizer>
+class grid_gpu_ker_ref
+{
+	grid_gpu_ker<dim,T,layout_base,linearizer> & ggk;
+
+	typedef typename apply_transform<layout_base,T>::type T_;
+
+	typedef typename layout_base<T_>::type layout;
+
+public:
+
+	//! it define that it is a grid
+	typedef int yes_i_am_grid;
+
+	//! Type of the value the vector is storing
+	typedef T value_type;
+
+	__device__ __host__ grid_gpu_ker_ref()
+	{}
+
+	__device__ __host__ grid_gpu_ker_ref(grid_gpu_ker<dim,T,layout_base,linearizer> & ggk)
+	:ggk(ggk)
+	{}
+
+
+	__device__ __host__ const grid_sm<dim,void> & getGrid() const
+	{
+		return ggk.getGrid();
+	}
+
+
+	template <unsigned int p, typename ids_type>
+	__device__ __host__ inline auto get(const grid_key_dx<dim,ids_type> & v1) -> decltype(ggk.template get<p>(v1))
+	{
+		return ggk.template get<p>(v1);
+	}
+
+	template <unsigned int p, typename ids_type>
+	__device__ __host__ inline const auto get(const grid_key_dx<dim,ids_type> & v1) const -> decltype(ggk.template get<p>(v1))
+	{
+		return ggk.template get<p>(v1);
+	}
+
+	template <unsigned int p>
+	__device__ __host__ inline auto get(const size_t lin_id) -> decltype(ggk.template get<p>(lin_id))
+	{
+		return ggk.template get<p>(lin_id);
+	}
+
+	template <unsigned int p>
+	__device__ __host__ inline const auto get(size_t lin_id) const -> decltype(ggk.template get<p>(lin_id))
+	{
+		return ggk.template get<p>(lin_id);
+	}
+
+	template<typename Tk>
+	__device__ inline auto get_o(const grid_key_dx<dim,Tk> & v1) -> decltype(ggk.get_o(v1))
+	{
+		return ggk.get_o(v1);
+	}
+
+	template<typename Tk>
+	__device__ inline const auto get_o(const grid_key_dx<dim,Tk> & v1) const  -> decltype(ggk.get_o(v1))
+	{
+		return ggk.get_o(v1);
+	}
+
+
+	__device__ inline void set(const grid_key_dx<dim> & key1,const grid_gpu_ker<dim,T_,layout_base, linearizer> & g, const grid_key_dx<dim> & key2)
+	{
+		ggk.set(key1,g,key2);
+	}
+
+	template<unsigned int ... prp> __device__ inline void set(const grid_key_dx<dim> & key1,const grid_gpu_ker<dim,T_,layout_base, linearizer> & g, const grid_key_dx<dim> & key2)
+	{
+		ggk.template set<prp ...>(key1,g,key2);
+	}
+
+	template<typename Memory> __device__ inline void set(grid_key_dx<dim> key1, const encapc<1,T,Memory> & obj)
+	{
+		ggk.set(key1,obj);
+	}
+
+	template<unsigned int p> __device__ __host__ void * getPointer()
+	{
+		return ggk.template getPointer<p>();
+	}
+
+	template<unsigned int p> __device__ __host__ const void * getPointer() const
+	{
+		return ggk.template getPointer<p>();
+	}
+
+	grid_gpu_ker<dim,T,layout_base,linearizer> & operator=(const grid_gpu_ker<dim,T,layout_base,linearizer> & g)
+	{
+		ggk.operator=(g);
+
+		return *this;
+	}
+
+	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim> & key1, grid_key_dx<dim> & key2, size_t n_thr = default_kernel_wg_threads_) const
+	{
+		return ggk.getGPUIterator(key1,key2,n_thr);
+	}
+
+	__device__ __host__ inline layout & get_data_()
+	{
+		return ggk.get_data_();
+	}
+
+	__device__ __host__ inline const layout & get_data_() const
+	{
+		return ggk.get_data_();
+	}
+
+	friend class grid_gpu_ker<dim,T,layout_base,linearizer>;
 };
 
 #endif /* MAP_GRID_CUDA_KER_HPP_ */

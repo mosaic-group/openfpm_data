@@ -372,7 +372,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -399,7 +399,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -441,7 +441,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -473,7 +473,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -504,7 +504,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -532,7 +532,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -565,7 +565,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -599,7 +599,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -1468,6 +1468,12 @@ namespace openfpm
 			dup.v_size = v_size;
 			dup.base.swap(base.duplicate());
 
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+			dup.base_gpu.constructor_impl(v_size,dup.base.toKernel());
+
+#endif
+
 			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false>::copy(dup,*this);
 
 			return dup;
@@ -1485,7 +1491,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -1502,7 +1508,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -1515,7 +1521,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -1528,7 +1534,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -1622,7 +1628,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 
@@ -1651,13 +1657,13 @@ namespace openfpm
 				base.set(key,mv.base,key);
 			}
 
-			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false>::copy2(*this,mv);
-
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
+
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false>::copy2(*this,mv);
 
 			return *this;
 		}
@@ -1678,7 +1684,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 
@@ -1707,13 +1713,13 @@ namespace openfpm
 				base.set(key,mv.getInternal_base(),key);
 			}
 
-			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false>::copy2(*this,mv);
-
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
+
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false>::copy2(*this,mv);
 
 			return *this;
 		}
@@ -1735,7 +1741,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 
@@ -1768,14 +1774,13 @@ namespace openfpm
 				base.set_general(key,mv.getInternal_base(),key);
 			}
 
-			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false>::copy2(*this,mv);
-
-
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
+
+			copy_two_vectors_activate_impl<Memory::isDeviceHostSame() == false && Mem::isDeviceHostSame() == false>::copy2(*this,mv);
 
 			return *this;
 		}
@@ -1831,7 +1836,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 
@@ -1856,7 +1861,8 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
+			v.base_gpu.constructor_impl(v.v_size,v.base.toKernel());
 
 #endif
 		}
@@ -1878,7 +1884,8 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
+			v.base_gpu.constructor_impl(v.v_size,v.base.toKernel());
 
 #endif
 		}
@@ -2075,7 +2082,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -2091,7 +2098,7 @@ namespace openfpm
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-			base_gpu = this->toKernel();
+			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
 #endif
 		}
@@ -2196,11 +2203,11 @@ namespace openfpm
 		 * \return an usable vector in the kernel
 		 *
 		 */
-		vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> & toKernel()
+		inline vector_gpu_ker_ref<typename apply_transform<layout_base,T>::type,layout_base> toKernel()
 		{
-			base_gpu.constructor_impl(v_size,this->base.toKernel());
+//			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
-			return base_gpu;
+			return vector_gpu_ker_ref<typename apply_transform<layout_base,T>::type,layout_base>(base_gpu);
 		}
 
 		/*! \brief Convert the grid into a data-structure compatible for computing into GPU
@@ -2210,11 +2217,11 @@ namespace openfpm
 		 * \return an usable vector in the kernel
 		 *
 		 */
-		const vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> & toKernel() const
+		inline const vector_gpu_ker_ref<typename apply_transform<layout_base,T>::type,layout_base> toKernel() const
 		{
-			base_gpu.constructor_impl(v_size,this->base.toKernel());
+//			base_gpu.constructor_impl(v_size,this->base.toKernel());
 
-			return base_gpu;
+			return vector_gpu_ker_ref<typename apply_transform<layout_base,T>::type,layout_base>(base_gpu);
 		}
 
 #else
