@@ -130,7 +130,7 @@ namespace openfpm
 		unsigned int v_size;
 
 		//! 1-D static grid
-		grid_gpu_ker<1,T_,layout_base,grid_sm<1,void>> base;
+		mutable grid_gpu_ker<1,T_,layout_base,grid_sm<1,void>> base;
 
 		/*! \brief Check that the key is inside the grid
 		 *

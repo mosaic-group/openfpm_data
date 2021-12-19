@@ -150,6 +150,33 @@ public:
         return blockLinId * blockSize + localLinId;
     }
 
+    /*! \brief Linearize the coordinate index
+     *
+     * The linearization is given by getting the block indexes and the local coordinate indexes
+     *
+     * Linearize the block index (blockLinId), linearize the local index (localLinId) and return
+     * blockLinId and offset
+     *
+     * \param coord coordinates
+     *
+     * \return linearized index
+     *
+     */
+    template<typename indexT_>
+    inline __host__ __device__ void LinId(const grid_key_dx<dim, indexT_> coord, indexT & blockLinId, int & localLinId) const
+    {
+        //todo: Check (in debug mode only) that the coordinates passed here are valid and not overflowing dimensions (???)
+        blockLinId = coord.get(dim - 1) / blockEdgeSize;
+        localLinId = coord.get(dim - 1) % blockEdgeSize;
+        for (int d = dim - 2; d >= 0; --d)
+        {
+            blockLinId *= blockSz[d];
+            localLinId *= blockEdgeSize;
+            blockLinId += coord.get(d) / blockEdgeSize;
+            localLinId += coord.get(d) % blockEdgeSize;
+        }
+    }
+
     inline __host__ __device__ grid_key_dx<dim, int> InvLinId(const indexT linId) const
     {
         indexT blockLinId = linId / blockSize;

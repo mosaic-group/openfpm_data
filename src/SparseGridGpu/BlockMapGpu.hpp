@@ -78,6 +78,15 @@ public:
     	}
     }
 
+    auto get(unsigned int linId) const -> const decltype(blockMap.get(0)) &
+    {
+        typedef BlockTypeOf<AggregateBlockT, 0> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        unsigned int offset = linId % BlockT::size;
+        auto & aggregate = blockMap.get(blockId);
+        return aggregate;
+    }
+
     /*! \brief insert data, host version
      *
      * \tparam property id
@@ -98,6 +107,24 @@ public:
         auto &mask = aggregate.template get<pMask>();
         setExist(mask[offset]);
         return block[offset];
+    }
+
+    /*! \brief insert data, host version
+     *
+     * \tparam property id
+     *
+     * \param linId linearized id block + local linearization
+     *
+     * \return a reference to the data
+     *
+     */
+    auto insert_o(unsigned int linId) -> decltype(blockMap.insert(0))
+    {
+        typedef BlockTypeOf<AggregateBlockT, 0> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        unsigned int offset = linId % BlockT::size;
+        auto & aggregate = blockMap.insert(blockId);
+        return aggregate;
     }
 
     /*! \brief insert a block + flush, host version

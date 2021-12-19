@@ -111,6 +111,30 @@ struct aggregate_add<aggregate<types ...>>
 
 /////////////
 
+template<typename enc_type>
+class encap_data_block
+{
+	int offset;
+	enc_type enc;
+
+	public:
+
+	encap_data_block(int offset,const enc_type & enc)
+	:offset(offset),enc(enc)
+	{}
+
+	encap_data_block operator=(const encap_data_block<enc_type> & enc)
+	{
+		copy_cpu_encap_single<encap_data_block<enc_type>> cp(enc,*this);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,enc_type::T_type::max_prop> >(cp);
+
+		return *this;
+	}
+};
+
+/////////////
+
 enum StencilMode
 {
     STENCIL_MODE_INPLACE = 1,
@@ -1790,6 +1814,55 @@ public:
         return private_get_data_array().template get<p>(coord.get_cnk_pos_id())[coord.get_data_id()];
     }
 
+    /*! \brief Return the index array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_data_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer()) &
+    {
+    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+    }
+
+    /*! \brief Return the data array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_data_array() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer())
+    {
+    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+    }
+
+    /*! \brief Get an element using the point coordinates
+     *
+     * \param coord point coordinates
+     *
+     * \return the element
+     *
+     */
+    template<typename CoordT>
+    auto get_o(const grid_key_dx<dim,CoordT> & coord) const -> encap_data_block<typename std::remove_const<decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::get(0))>::type >
+    {
+		int offset;
+		indexT lin;
+		gridGeometry.LinId(coord,lin,offset);
+
+        return encap_data_block<typename std::remove_const<decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::get(0))>::type >(offset,BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::get(lin));
+    }
+
+    /*! \brief Get an element using sparse_grid_gpu_index (using this index it guarantee that the point exist)
+     *
+     * \param element
+     *
+     * \return the element
+     *
+     */
+    auto get_o(const sparse_grid_gpu_index<self> & coord) const -> encap_data_block<typename std::remove_const<decltype(private_get_data_array().get(0))>::type >
+    {
+        return encap_data_block<typename std::remove_const<decltype(private_get_data_array().get(0))>::type >(coord.get_data_id(),private_get_data_array().get(coord.get_cnk_pos_id()));
+    }
+
     /*! \brief This function check if keep geometry is possible for this grid
      *
      * \return true if skip labelling is possible
@@ -1831,6 +1904,16 @@ public:
     auto insert(const CoordT &coord) -> ScalarTypeOf<AggregateBlockT, p> &
     {
         return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::template insert<p>(gridGeometry.LinId(coord));
+    }
+
+    template<typename CoordT>
+    auto insert_o(const CoordT &coord) -> encap_data_block<typename std::remove_const<decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insert_o(0))>::type >
+    {
+		indexT ind;
+		int offset;
+		gridGeometry.LinId(coord,ind,offset);
+
+        return encap_data_block<typename std::remove_const<decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insert_o(0))>::type >(offset, BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insert_o(ind));
     }
 
 	/*! \brief construct link between levels
@@ -3484,29 +3567,9 @@ public:
      * \return the index arrays of the blocks
      *
      */
-    auto private_get_data_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer()) &
-    {
-    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
-    }
-
-    /*! \brief Return the index array of the blocks
-     *
-     * \return the index arrays of the blocks
-     *
-     */
-    auto private_get_index_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer()) &
+    auto private_get_index_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer())
     {
     	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-    }
-
-    /*! \brief Return the index array of the blocks
-     *
-     * \return the index arrays of the blocks
-     *
-     */
-    auto private_get_data_array() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer()) &
-    {
-    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
     }
 
     /*! \brief Return the index array of the blocks
