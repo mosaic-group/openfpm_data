@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_SUITE( grid_expression_test )
 BOOST_AUTO_TEST_CASE( grid_expression_use)
 {
 	const grid_key_dx<3> key1(1,2,3);
-	const comb<3> c({1,0,-1});
+	const comb<3> c({(char)1,0,(char)-1});
 	const grid_key_dx<3> key2(4,5,6);
 	const grid_key_dx<3> key3(12,11,10);
 

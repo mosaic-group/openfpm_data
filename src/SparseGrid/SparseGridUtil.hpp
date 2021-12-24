@@ -12,6 +12,8 @@ const static int cnk_pos = 0;
 const static int cnk_nele = 1;
 const static int cnk_mask = 2;
 
+#include "util/sparsegrid_util_common.hpp"
+
 //! sizeof the cache
 #define SGRID_CACHE 2
 
@@ -607,28 +609,6 @@ struct sublin<8,chunk>
 	}
 };
 
-
-template<typename chunk_def>
-struct sparse_grid_bck_value
-{
-	chunk_def bck;
-
-	sparse_grid_bck_value(chunk_def bck)
-	:bck(bck)
-	{}
-
-	template<unsigned int p>
-	auto get() -> decltype(bck.template get<p>()[0])
-	{
-		return bck.template get<p>()[0];
-	}
-
-	template<unsigned int p>
-	auto get() const -> decltype(bck.template get<p>()[0])
-	{
-		return bck.template get<p>()[0];
-	}
-};
 
 
 template<typename T>

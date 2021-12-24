@@ -120,7 +120,10 @@ endif()
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
-    target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -mavx>)
+
+    if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -mavx>)
+    endif()
 
    if( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0 )
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fabi-version=6>)

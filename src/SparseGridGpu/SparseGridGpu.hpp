@@ -131,6 +131,18 @@ class encap_data_block
 
 		return *this;
 	}
+
+	template<unsigned int p>
+	auto get() -> decltype(enc.template get<p>()[offset])
+	{
+		return enc.template get<p>()[offset];
+	}
+
+	template<unsigned int p>
+	auto get() const -> decltype(enc.template get<p>()[offset])
+	{
+		return enc.template get<p>()[offset];
+	}
 };
 
 /////////////
@@ -1706,6 +1718,20 @@ public:
         return toKer;
     }
 
+	/*! Reset the structure
+	 * 
+	 */
+	void clear()
+	{
+		BMG::clear();
+	}
+
+	/* \brief Does nothing
+	 *
+	 */
+	void setMemory()
+	{}
+
     /*! \brief Return the grid information object
      *
      * \return grid information object
@@ -3155,6 +3181,16 @@ public:
 		n_shifts_cp.clear();
 		convert_blk.clear();
 		tmp2.clear();
+	}
+
+	/*! Swap the content of two sarse grid 
+     *
+	 * \param gr sparse grid from which to swap
+	 * 
+	 */
+	void swap(self & gr)
+	{
+		BMG::swap(gr);
 	}
 
 	/*! \brief Remove the points we queues to remove

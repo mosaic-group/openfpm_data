@@ -91,7 +91,8 @@ struct meta_copy_d
 	 */
 	__device__ __host__ static inline void meta_copy_d_(const Tsrc & src, Tdst & dst)
 	{
-		copy_general<Tsrc>(src,dst);
+		//copy_general<Tsrc>(src,dst);
+		dst = src;
 	}
 
 	/*! \brief copy and object from src to dst
@@ -102,7 +103,8 @@ struct meta_copy_d
 	 */
 	__device__ __host__ static inline void meta_copy_d_(const Tsrc & src, Tdst && dst)
 	{
-		copy_general<Tsrc>(src,dst);
+		//copy_general<Tsrc>(src,dst);
+		dst = src;
 	}
 };
 

@@ -6,6 +6,7 @@
 #include "BlockMapGpu_kernels.cuh"
 #include "DataBlock.cuh"
 #include <set>
+#include "util/sparsegrid_util_common.hpp"
 
 template<typename AggregateT, unsigned int p>
 using BlockTypeOf = typename std::remove_reference<typename boost::fusion::result_of::at_c<typename AggregateT::type, p>::type>::type;
@@ -17,6 +18,9 @@ template<typename AggregateBlockT, unsigned int threadBlockSize=128, typename in
 class BlockMapGpu
 {
 private:
+
+    typedef BlockMapGpu<AggregateBlockT,threadBlockSize,indexT,layout_base> self;
+
     typedef BlockTypeOf<AggregateBlockT, 0> BlockT0;
     
     bool is_new;
@@ -46,14 +50,34 @@ public:
 
     BlockMapGpu() = default;
 
+    void clear()
+    {
+        blockMap.clear();
+    }
+
+    void swap(self & bm)
+    {
+        blockMap.swap(bm.blockMap);
+    }
+
 	/*! \brief Get the background value
 	 *
 	 * \return background value
 	 *
 	 */
-	auto getBackgroundValue() -> decltype(blockMap.getBackground())
+//	auto getBackgroundValue() -> decltype(blockMap.getBackground())
+//	{
+//		return blockMap.getBackground();
+//	}
+
+	/*! \brief Get the background value
+	 *
+	 * \return background value
+	 *
+	 */
+	sparse_grid_bck_value<typename std::remove_reference<decltype(blockMap.getBackground())>::type> getBackgroundValue()
 	{
-		return blockMap.getBackground();
+		return sparse_grid_bck_value<typename std::remove_reference<decltype(blockMap.getBackground())>::type>(blockMap.getBackground());
 	}
 
 //    auto get(unsigned int linId) const -> decltype(blockMap.get(0));
@@ -123,7 +147,7 @@ public:
         typedef BlockTypeOf<AggregateBlockT, 0> BlockT;
         unsigned int blockId = linId / BlockT::size;
         unsigned int offset = linId % BlockT::size;
-        auto & aggregate = blockMap.insert(blockId);
+        auto aggregate = blockMap.insert(blockId);
         return aggregate;
     }
 

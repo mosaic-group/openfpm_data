@@ -17,6 +17,8 @@ struct DataBlock
 {
     typedef ScalarT scalarType;
 
+    typedef ScalarT value_type;
+
     static const unsigned int EXISTBIT = 0;
 
     static const unsigned int size = DataBlockSize;
