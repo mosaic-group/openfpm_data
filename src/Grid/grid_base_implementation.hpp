@@ -119,6 +119,7 @@ void copy_grid_to_grid(grid_dst_type & gdst, const grid_src_type & gsrc,
 template<typename dest_type, typename src_type, unsigned int ... prp>
 void copy_with_openmp_prp(const dest_type & dst, const src_type & src, ite_gpu<dest_type::dims> ite)
 {
+	#ifdef __NVCC__
 	auto lamb = [&dst,&src,&ite] __device__ (dim3 & blockIdx, dim3 & threadIdx) 
 	{
 		grid_key_dx<dest_type::dims> i;
@@ -146,6 +147,9 @@ void copy_with_openmp_prp(const dest_type & dst, const src_type & src, ite_gpu<d
 	};
 
 	CUDA_LAUNCH_LAMBDA(ite,lamb);
+	#else
+	std::cout << __FILE__ << ":" __LINE__ << " error CUDA on back end is disabled" << std::endl;
+	#endif
 }
 
 
