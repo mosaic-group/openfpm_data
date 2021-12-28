@@ -148,7 +148,7 @@ void copy_with_openmp_prp(const dest_type & dst, const src_type & src, ite_gpu<d
 
 	CUDA_LAUNCH_LAMBDA(ite,lamb);
 	#else
-	std::cout << __FILE__ << ":" __LINE__ << " error CUDA on back end is disabled" << std::endl;
+	std::cout << __FILE__ << ":" << __LINE__ << " error CUDA on back end is disabled" << std::endl;
 	#endif
 }
 
