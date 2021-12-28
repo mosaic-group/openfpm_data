@@ -488,6 +488,9 @@ public:
 	//! Type of the value the vector is storing
 	typedef T value_type;
 
+	//! expose the dimansionality as a static const
+	static constexpr unsigned int dims = dim;
+
 	__device__ __host__ grid_gpu_ker_ref()
 	{}
 
@@ -501,6 +504,10 @@ public:
 		return ggk.getGrid();
 	}
 
+	__device__ __host__ size_t size() const
+	{
+		return ggk.getGrid().size();
+	}
 
 	template <unsigned int p, typename ids_type>
 	__device__ __host__ inline auto get(const grid_key_dx<dim,ids_type> & v1) -> decltype(ggk.template get<p>(v1))
@@ -584,6 +591,11 @@ public:
 	__device__ __host__ inline const layout & get_data_() const
 	{
 		return ggk.get_data_();
+	}
+
+	const grid_gpu_ker_ref & toKernel() const
+	{
+		return *this;
 	}
 
 	friend class grid_gpu_ker<dim,T,layout_base,linearizer>;

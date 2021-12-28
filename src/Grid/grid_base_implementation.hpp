@@ -37,6 +37,118 @@ struct skip_init<true,T>
 	}
 };
 
+#ifdef __NVCC__
+
+template<bool active>
+struct copy_ndim_grid_device_active_impl
+	{
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+
+	}
+
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy_block(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+	}
+};
+
+template<>
+struct copy_ndim_grid_device_active_impl<true>
+{
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+		CUDA_LAUNCH((copy_ndim_grid_device<grid_type1::dims,decltype(g1.toKernel())>),ite,g2.toKernel(),g1.toKernel());
+	}
+
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy_block(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+		CUDA_LAUNCH((copy_ndim_grid_block_device<grid_type1::dims,decltype(g1.toKernel())>),ite,g2.toKernel(),g1.toKernel());
+	}
+};
+
+template<typename S,typename grid_dst_type, typename grid_src_type>
+void copy_grid_to_grid(grid_dst_type & gdst, const grid_src_type & gsrc, 
+					   grid_key_dx<grid_dst_type::dims> & start, grid_key_dx<grid_dst_type::dims> & stop,
+					   int blockSize)
+{
+	if (grid_dst_type::dims <= 3)
+	{
+		auto ite = gsrc.getGPUIterator(start,stop);
+		bool has_work = has_work_gpu(ite);
+
+		if (has_work == true)
+		{
+			if (blockSize == 1)
+			{
+				copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy(gdst,gsrc,ite);
+			}
+			else
+			{
+				move_work_to_blocks(ite);
+
+				ite.thr.x = blockSize;
+
+				copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy_block(gdst,gsrc,ite);
+			}
+		}
+	}
+	else
+	{
+		grid_key_dx<1> start;
+		start.set_d(0,0);
+		grid_key_dx<1> stop({});
+		stop.set_d(0,gsrc.getGrid().size());
+
+		size_t sz[1];
+		sz[0]= gsrc.getGrid().size();
+
+		grid_sm<1,void> g_sm_copy(sz);
+
+		auto ite = getGPUIterator_impl<1>(g_sm_copy,start,stop);
+
+		copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy(gdst,gsrc,ite);
+	}
+}
+
+#endif
+
+template<typename dest_type, typename src_type, unsigned int ... prp>
+void copy_with_openmp_prp(const dest_type & dst, const src_type & src, ite_gpu<dest_type::dims> ite)
+{
+	auto lamb = [&dst,&src,&ite] __device__ (dim3 & blockIdx, dim3 & threadIdx) 
+	{
+		grid_key_dx<dest_type::dims> i;
+
+		if (dest_type::dims == 1)
+		{
+			i.set_d(0,blockIdx.x*blockDim.x + threadIdx.x + ite.start.get(0));
+			if (i.get(0) >= src.size(0))	{return;}
+		}
+		else if (dest_type::dims == 2)
+		{
+			i.set_d(0,blockIdx.x*blockDim.x + threadIdx.x + ite.start.get(0));
+			i.set_d(1,blockIdx.y*blockDim.y + threadIdx.y + ite.start.get(1));
+			if (i.get(0) >= src.size(0) || i.get(1) >= src.size(1))	{return;}
+		}
+		else if (dest_type::dims == 3)
+		{
+			i.set_d(0,blockIdx.x*blockDim.x + threadIdx.x + ite.start.get(0));
+			i.set_d(1,blockIdx.y*blockDim.y + threadIdx.y + ite.start.get(1));
+			i.set_d(2,blockIdx.z*blockDim.z + threadIdx.z + ite.start.get(2));
+			if (i.get(0) >= src.size(0) || i.get(1) >= src.size(1) || i.get(2) >= src.size(2))	{return;}
+		}
+
+		object_si_di<decltype(src.get_o(i)),decltype(dst.get_o(i)),OBJ_ENCAP,prp ...>(src.get_o(i),dst.get_o(i));
+	};
+
+	CUDA_LAUNCH_LAMBDA(ite,lamb);
+}
+
+
 #ifdef CUDA_GPU
 
 #define GRID_ID_3_RAW(start,stop) int x[3] = {threadIdx.x + blockIdx.x * blockDim.x + start.get(0),\
@@ -70,36 +182,6 @@ struct skip_init<true,T>
 
 #ifdef __NVCC__
 
-template<bool active>
-struct copy_ndim_grid_device_active_impl
-	{
-	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
-	static inline void copy(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
-	{
-
-	}
-
-	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
-	static inline void copy_block(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
-	{
-	}
-};
-
-template<>
-struct copy_ndim_grid_device_active_impl<true>
-{
-	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
-	static inline void copy(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
-	{
-		CUDA_LAUNCH((copy_ndim_grid_device<grid_type1::dims,decltype(g1.toKernel())>),ite,g2.toKernel(),g1.toKernel());
-	}
-
-	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
-	static inline void copy_block(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
-	{
-		CUDA_LAUNCH((copy_ndim_grid_block_device<grid_type1::dims,decltype(g1.toKernel())>),ite,g2.toKernel(),g1.toKernel());
-	}
-};
 
 template<unsigned int dim, typename ids_type = int>
 struct grid_p
@@ -488,49 +570,8 @@ private:
 				{stop.set_d(i,sz[i]-1);}
 			}
 
-//			if (dim == 1)
-//			{
-//				copy_fast_1d_device_memory<is_layout_mlin<layout_base<T>>::value,decltype(grid_new.data_),S> cf1dm(data_,grid_new.data_);
+			copy_grid_to_grid<S>(grid_new,*this,start,stop,blockSize);
 
-//				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cf1dm);
-//			}
-			if (dim <= 3)
-			{
-				auto ite = this->getGPUIterator(start,stop);
-				bool has_work = has_work_gpu(ite);
-
-				if (has_work == true)
-				{
-					if (blockSize == 1)
-					{
-						copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy(grid_new,*this,ite);
-					}
-					else
-					{
-						move_work_to_blocks(ite);
-
-						ite.thr.x = blockSize;
-
-						copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy_block(grid_new,*this,ite);
-					}
-				}
-			}
-			else
-			{
-				grid_key_dx<1> start;
-				start.set_d(0,0);
-				grid_key_dx<1> stop({});
-				stop.set_d(0,this->g1.size());
-
-				size_t sz[1];
-				sz[0]= this->g1.size();
-
-				grid_sm<1,void> g_sm_copy(sz);
-
-				auto ite = getGPUIterator_impl<1>(g_sm_copy,start,stop);
-
-				copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy(grid_new,*this,ite);
-			}
 #else
 
 			std::cout << __FILE__ << ":" << __LINE__ << " error: the function resize require the launch of a kernel, but it seem that this" <<
@@ -769,6 +810,14 @@ public:
 		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}
 #endif
+
+	/*! \brief Get the size if the grid in the direction i
+	 *
+	 */
+	int size(int i) const
+	{
+		return g1.size(i);
+	}
 
 	/*! \brief Return the internal grid information
 	 *
@@ -1702,6 +1751,93 @@ public:
 		return grid_key_dx_iterator<dim>(gvoid);
 	}
 
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+		*
+		*
+		*/
+	template<unsigned int ... prp> void deviceToHost()
+	{
+		layout_base<T>::template deviceToHost<decltype(data_), prp ...>(data_,0,this->getGrid().size() - 1);
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+		*
+		*
+		*/
+	template<unsigned int ... prp> void deviceToHost(size_t start, size_t stop)
+	{
+		layout_base<T>::template deviceToHost<decltype(data_), prp ...>(data_,start,stop);
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host (respecting the NUMA domains)
+		*
+		*
+		*/
+	template<unsigned int ... prp> void hostToDeviceNUMA(size_t start, size_t stop)
+	{
+		#ifdef CUDIFY_USE_OPENMP
+		grid_key_dx<dim> start_;
+		grid_key_dx<dim> stop_;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			start_.set_d(i,start);
+			stop_.set_d(i,stop);
+		}
+		
+		auto ite = this->getGPUIterator(start_,stop_);
+
+		// We have to carefull with openmp, numtiple thread can end up in numa
+		copy_with_openmp_prp<decltype(this->toKernel()),typename std::remove_reference<decltype(*this)>::type,prp ...>(this->toKernel(),*this,ite);
+		#else
+		this->template hostToDevice<prp ...>(start,stop);
+		#endif
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host (respecting the NUMA domains)
+		*
+		*
+		*/
+	template<unsigned int ... prp> void hostToDeviceNUMA()
+	{
+		#ifdef CUDIFY_USE_OPENMP
+
+		grid_key_dx<dim> start_;
+		grid_key_dx<dim> stop_;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			start_.set_d(i,0);
+			stop_.set_d(i,this->g1.size() - 1);
+		}
+		
+		auto ite = this->getGPUIterator(start_,stop_);
+
+		// We have to carefull with openmp, numtiple thread can end up in numa
+		copy_with_openmp_prp<decltype(this->toKernel()),typename std::remove_reference<decltype(*this)>::type,prp ...>(this->toKernel(),*this,ite);
+		#else
+		this->template hostToDevice<prp ...>()
+		#endif
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+		*
+		*
+		*/
+	template<unsigned int ... prp> void hostToDevice(size_t start, size_t stop)
+	{
+		layout_base<T>::template hostToDevice<S, decltype(data_),prp ...>(data_,start,stop);
+	}
+
+
+	/*! \brief Copy the memory from host to device
+		*
+		*
+		*/
+	template<unsigned int ... prp> void hostToDevice()
+	{
+		layout_base<T>::template hostToDevice<S,decltype(data_),prp ...>(data_,0,this->getGrid().size() - 1);
+	}
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 

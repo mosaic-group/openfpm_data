@@ -375,5 +375,30 @@ struct isDynStruct<ObjType, typename Void<decltype( ObjType::isCompressed() )>::
 	}
 };
 
+template<typename T, typename Sfinae = void>
+struct is_Box: std::false_type {};
+
+
+/*! \brief Check if a type T is an aggregate
+ *
+ * return true if T is an aggregate
+ *
+ */
+template<typename T>
+struct is_Box<T, typename Void< typename T::yes_is_box>::type> : std::true_type
+{};
+
+template<typename T, typename Sfinae = void>
+struct is_Point: std::false_type {};
+
+
+/*! \brief Check if a type T is an aggregate
+ *
+ * return true if T is an aggregate
+ *
+ */
+template<typename T>
+struct is_Point<T, typename Void< typename T::yes_is_point>::type> : std::true_type
+{};
 
 #endif

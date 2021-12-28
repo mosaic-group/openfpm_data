@@ -696,19 +696,6 @@ template <unsigned int N, typename T, typename Mem> std::string toPointString(co
 
 template<unsigned int dim, typename T>  using VectorS = Point<dim,T>;
 
-template<typename T, typename Sfinae = void>
-struct is_Point: std::false_type {};
-
-
-/*! \brief Check if a type T is an aggregate
- *
- * return true if T is an aggregate
- *
- */
-template<typename T>
-struct is_Point<T, typename Void< typename T::yes_is_point>::type> : std::true_type
-{};
-
 /*! \brief like std::rank but it also work for openfpm structures like Point where it return 1
  *
  * \tparam T structure to check

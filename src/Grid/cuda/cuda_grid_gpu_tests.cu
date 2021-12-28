@@ -667,7 +667,7 @@ BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 	thr.y = 1;
 	thr.z = 1;
 
-	CUDA_LAUNCH_DIM3(test_se1_crash_gt2,wthr,thr,c3.toKernel(),c2.toKernel());
+	CUDA_LAUNCH_DIM3_DEBUG_SE1(test_se1_crash_gt2,wthr,thr,c3.toKernel(),c2.toKernel());
 	cudaDeviceSynchronize();
 
 	cudaMemcpyFromSymbol(dev_mem,global_cuda_error_array,sizeof(dev_mem));
@@ -703,7 +703,7 @@ BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
 	thr.y = 1;
 	thr.z = 1;
 
-	CUDA_LAUNCH_DIM3(test_se1_crash_gt3,wthr,thr,c2.toKernel(),c3.toKernel());
+	CUDA_LAUNCH_DIM3_DEBUG_SE1(test_se1_crash_gt3,wthr,thr,c2.toKernel(),c3.toKernel());
 	cudaDeviceSynchronize();
 	}
 

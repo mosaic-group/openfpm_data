@@ -12,7 +12,6 @@
 #include "util/cuda_launch.hpp"
 #include "map_grid_cuda_ker.cuh"
 
-
 #if defined(CUDA_GPU) && defined(__NVCC__)
 
 template<unsigned int dim, typename grid_type>

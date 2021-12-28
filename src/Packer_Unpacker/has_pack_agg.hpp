@@ -10,6 +10,7 @@
 
 #include "prp_all_zero.hpp"
 #include "Vector/vect_isel.hpp"
+#include "Vector/util.hpp"
 
 /*! \brief These set of classes generate an array definition at compile-time
  *
@@ -23,7 +24,28 @@
 
 ///////////////////////////////////////////////////
 
+//! Generate the array specializing ArrayHolder
+template<class T, size_t N , typename result_p ,class vprp>
+struct is_complex_agg_impl
+{
+	typedef typename boost::mpl::at<vprp,typename boost::mpl::int_<N-1>>::type vprp_N;
+	typedef typename boost::mpl::at<typename T::type,vprp_N>::type stype;
 
+	typedef boost::mpl::int_<(is_vector<stype>::value ||
+								  is_vector_dist<stype>::value ||
+								  is_gpu_celllist<stype>::value)> crh_cond;
+
+	typedef typename boost::mpl::bool_< crh_cond::value | result_p::value> result_n;
+    typedef typename is_complex_agg_impl<T,N-1,result_n,vprp>::result result;
+};
+
+//! terminator of the variadic template
+template<class T, typename result_p, class vprp>
+struct is_complex_agg_impl<T,0,result_p,vprp>
+{
+    typedef boost::mpl::bool_<result_p::value> result;
+//    typedef std::vector<result_p::value> fail;
+};
 
 /////////////// Classes to generate at compile time arrays from a boost::mpl::vector
 
@@ -72,6 +94,16 @@ struct has_pack_agg
 
 	//! typedef typename to_boost_vmpl<prp...>::type vprp;
     typedef typename has_pack_agg_impl<T,number_prop<T,sizeof ... (prp)>::value, boost::mpl::bool_<false> , vprp>::result result;
+};
+
+//! return if true the aggregate type T has a property that has a complex packing(serialization) method
+template<class T, int ... prp>
+struct is_complex_agg
+{
+	typedef typename prp_all_zero<T,sizeof...(prp) == 0,prp...>::type vprp;
+
+	//! typedef typename to_boost_vmpl<prp...>::type vprp;
+    typedef typename is_complex_agg_impl<T,number_prop<T,sizeof ... (prp)>::value, boost::mpl::bool_<false> , vprp>::result result;
 };
 
 //! It return true if the object T require complex serialization

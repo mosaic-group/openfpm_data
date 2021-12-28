@@ -257,6 +257,41 @@ BOOST_AUTO_TEST_CASE( vector_cuda_host_to_device_check )
 	}
 }
 
+BOOST_AUTO_TEST_CASE( vector_cuda_host_to_device_check_NUMA )
+{
+	openfpm::vector_gpu<aggregate<int,int,double>> v1;
+
+	v1.resize(3);
+
+	for (size_t i = 0 ; i < v1.size() ; i++)
+	{
+		v1.template get<0>(i) = i;
+		v1.template get<1>(i) = i+300;
+		v1.template get<2>(i) = i+6123.0;
+	}
+
+	v1.hostToDeviceNUMA<0,1,2>();
+
+	// Now we reset the element 0, 1
+
+	for (size_t i = 0 ; i < v1.size()-1 ; i++)
+	{
+		v1.template get<0>(i) = 0;
+		v1.template get<1>(i) = 0;
+		v1.template get<2>(i) = 0;
+	}
+
+	v1.hostToDeviceNUMA<0,1,2>(v1.size()-1,v1.size()-1);
+
+	v1.deviceToHost<0,1,2>();
+
+	for (size_t i = 0 ; i < v1.size() ; i++)
+	{
+		BOOST_REQUIRE_EQUAL(v1.template get<0>(i),i);
+		BOOST_REQUIRE_EQUAL(v1.template get<1>(i),i+300);
+		BOOST_REQUIRE_EQUAL(v1.template get<2>(i),i+6123.0);
+	}
+}
 
 BOOST_AUTO_TEST_CASE( vector_cuda_host_to_device_vector_and_point_tensor )
 {

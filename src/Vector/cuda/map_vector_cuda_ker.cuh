@@ -703,6 +703,11 @@ namespace openfpm
 			return vref.getBase();
 		}
 
+		pointer_check check_device_pointer(void * ptr)
+		{
+			return vref.check_device_pointer(ptr);
+		}
+
 		void * internal_get_size_pointer()	{return &vref.internal_get_size_pointer();}
 
 		void print_size()

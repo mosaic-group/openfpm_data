@@ -2192,6 +2192,24 @@ namespace openfpm
 			base.template hostToDevice<prp ...>(start,stop);
 		}
 
+		/*! \brief Synchronize the memory buffer in the device with the memory in the host respecting NUMA domains
+		 *
+		 *
+		 */
+		template<unsigned int ... prp> void hostToDeviceNUMA(size_t start, size_t stop)
+		{
+			base.template hostToDeviceNUMA<prp ...>(start,stop);
+		}
+
+		/*! \brief Synchronize the memory buffer in the device with the memory in the host respecing NUMA domains
+		 *
+		 *
+		 */
+		template<unsigned int ... prp> void hostToDeviceNUMA()
+		{
+			base.template hostToDeviceNUMA<prp ...>();
+		}
+
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
 		mutable vector_gpu_ker<typename apply_transform<layout_base,T>::type,layout_base> base_gpu;
