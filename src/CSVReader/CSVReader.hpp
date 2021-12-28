@@ -9,6 +9,8 @@
 #include <sstream>
 #include <string>
 
+#include "Vector/map_vector.hpp"
+
 /**@brief Converts string into template type T.
  *
  * @tparam T Destination type.
