@@ -115,6 +115,10 @@ install(FILES CSVWriter/csv_multiarray.hpp
 	      CSVWriter/is_csv_writable.hpp
 	      DESTINATION openfpm_io/include/CSVWriter/ 
 	      COMPONENT OpenFPM)
+
+install(FILES CSVReader/CSVReader.hpp
+		DESTINATION openfpm_io/include/CSVReader/
+		COMPONENT OpenFPM)
       
 install(FILES GraphMLWriter/GraphMLWriter.hpp 
 	DESTINATION openfpm_io/include/GraphMLWriter 
