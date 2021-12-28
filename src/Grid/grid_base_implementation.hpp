@@ -1816,7 +1816,7 @@ public:
 		// We have to carefull with openmp, numtiple thread can end up in numa
 		copy_with_openmp_prp<decltype(this->toKernel()),typename std::remove_reference<decltype(*this)>::type,prp ...>(this->toKernel(),*this,ite);
 		#else
-		this->template hostToDevice<prp ...>()
+		this->template hostToDevice<prp ...>();
 		#endif
 	}
 
