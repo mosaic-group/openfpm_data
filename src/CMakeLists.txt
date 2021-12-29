@@ -23,7 +23,8 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
         hip_add_executable(io main.cpp
                                   MetaParser/MetaParser_unit_test.cpp
 				  ${CUDA_SOURCES}
-                                  ObjReader/ObjReader_unit_test.cpp)
+                                  ObjReader/ObjReader_unit_test.cpp
+		          CSVReader/tests/CSVReader_unit_test.cpp)
 
 
 else()
@@ -31,7 +32,8 @@ else()
 	add_executable(io main.cpp 
 				  MetaParser/MetaParser_unit_test.cpp 
 				  ${CUDA_SOURCES}
-				  ObjReader/ObjReader_unit_test.cpp)
+				  ObjReader/ObjReader_unit_test.cpp
+			      CSVReader/tests/CSVReader_unit_test.cpp)
 
 	set_property(TARGET io PROPERTY CUDA_ARCHITECTURES OFF)
 

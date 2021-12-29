@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(csv_reader_char)
 		{
 				// Read csv file into vector while linearizing
 				const std::string csv_file = "char.csv"; // csv file to be read
-				openfpm::vector<char> v_lin; // Vector to which csv file will be read to
+				openfpm::vector<std::string> v_lin; // Vector to which csv file will be read to
 				size_t m, n; // Number of rows m and columns n
 				
 				read_csv_to_vector(csv_file, v_lin, m, n);
@@ -42,14 +42,13 @@ BOOST_AUTO_TEST_CASE(csv_reader_char)
 				BOOST_CHECK(n == 2);
 				BOOST_CHECK(m * n == v_lin.size());
 				
-				
 				openfpm::vector<std::string> col1 = {"a", "b", "c", "d", "e"};
 				openfpm::vector<std::string> col2 = {"antilope", "ballena", "camel", "dackel", "elefant"};
 				
 				for(int i = 0; i < v_lin.size() / n; ++i)
 				{
-					BOOST_CHECK(col1.get(i).compare(v_lin.get(i * n)));
-					BOOST_CHECK(col2.get(i).compare(v_lin.get(i * n + 1)));
+					BOOST_CHECK(v_lin.get(i * n) == col1.get(i) );
+					BOOST_CHECK(v_lin.get(i * n + 1) == col2.get(i));
 				}
 			
 		}
