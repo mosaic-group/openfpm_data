@@ -47,8 +47,8 @@ BOOST_AUTO_TEST_CASE(csv_reader_char)
 				
 				for(int i = 0; i < v_lin.size() / n; ++i)
 				{
-					BOOST_CHECK(v_lin.get(i * n) == col1.get(i) );
-					BOOST_CHECK(v_lin.get(i * n + 1) == col2.get(i));
+					BOOST_CHECK(col1.get(i).compare(v_lin.get(i * n)) == 0);
+					BOOST_CHECK(col2.get(i).compare(v_lin.get(i * n + 1)) == 0);
 				}
 			
 		}
