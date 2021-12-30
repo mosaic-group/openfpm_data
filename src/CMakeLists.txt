@@ -21,18 +21,18 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
         set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
 
         hip_add_executable(io main.cpp
-                                  MetaParser/MetaParser_unit_test.cpp
+#                                  MetaParser/MetaParser_unit_test.cpp
 				  ${CUDA_SOURCES}
-                                  ObjReader/ObjReader_unit_test.cpp
+#                                  ObjReader/ObjReader_unit_test.cpp
 		          CSVReader/tests/CSVReader_unit_test.cpp)
 
 
 else()
 
 	add_executable(io main.cpp 
-				  MetaParser/MetaParser_unit_test.cpp 
+#				  MetaParser/MetaParser_unit_test.cpp
 				  ${CUDA_SOURCES}
-				  ObjReader/ObjReader_unit_test.cpp
+#				  ObjReader/ObjReader_unit_test.cpp
 			      CSVReader/tests/CSVReader_unit_test.cpp)
 
 	set_property(TARGET io PROPERTY CUDA_ARCHITECTURES OFF)
