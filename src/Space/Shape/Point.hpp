@@ -169,7 +169,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the i-coordinate of the point
 	 *
 	 */
-	__device__ __host__ inline const T & get(int i) const
+	__device__ __host__ inline const T & get(unsigned int i) const
 	{
 		return boost::fusion::at_c<x>(data)[i];
 	}
@@ -192,7 +192,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the i-coordinate of the point
 	 *
 	 */
-	__device__ __host__ inline T& get(int i)
+	__device__ __host__ inline T& get(unsigned int i)
 	{
 		return boost::fusion::at_c<x>(data)[i];
 	}

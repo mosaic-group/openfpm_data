@@ -953,11 +953,11 @@ private:
     void applyStencilInPlace(const Box<dim,int> & box, StencilMode & mode,Args... args)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer_ = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer_ = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
 
         const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
-        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
+        unsigned int numScalars = indexBuffer_.size() * dataChunkSize;
 
         if (numScalars == 0) return;
 
@@ -970,16 +970,79 @@ private:
 
         constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value - IntPow<blockEdgeSize, dim>::value), (blockSize * chunksPerBlock)>::value; // todo: This works only for stencilSupportSize==1
 
+#ifdef CUDIFY_USE_CUDA
+
+
         CUDA_LAUNCH_DIM3((SparseGridGpuKernels::applyStencilInPlace
                 <dim,
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
                 stencil>),
                 threadGridSize, localThreadBlockSize,
                         box,
-                        indexBuffer.toKernel(),
-                        dataBuffer.toKernel(),
+                        indexBuffer_.toKernel(),
+                        dataBuffer_.toKernel(),
                         this->template toKernelNN<stencil::stencil_type::nNN, nLoop>(),
                         args...);
+
+#else
+
+		auto bx = box;
+		auto indexBuffer = indexBuffer_.toKernel();
+		auto dataBuffer = dataBuffer_.toKernel();
+		auto sparseGrid = this->template toKernelNN<stencil::stencil_type::nNN, nLoop>();
+
+		constexpr int pMask = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask;
+
+		auto lamb = [=] __device__ () mutable
+		{
+			constexpr unsigned int pIndex = 0;
+
+			typedef typename decltype(indexBuffer)::value_type IndexAggregateT;
+			typedef BlockTypeOf<IndexAggregateT , pIndex> IndexT;
+
+			typedef typename decltype(dataBuffer)::value_type AggregateT_;
+			typedef BlockTypeOf<AggregateT_, pMask> MaskBlockT;
+			typedef ScalarTypeOf<AggregateT_, pMask> MaskT;
+			constexpr unsigned int blockSize = MaskBlockT::size;
+
+			// NOTE: here we do 1 chunk per block! (we want to be sure to fit local memory constraints
+			// since we will be loading also neighbouring elements!) (beware curse of dimensionality...)
+			const unsigned int dataBlockPos = blockIdx.x;
+			const unsigned int offset = threadIdx.x;
+
+			if (dataBlockPos >= indexBuffer.size())
+			{
+				return;
+			}
+
+			auto dataBlockLoad = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
+
+			// todo: Add management of RED-BLACK stencil application! :)
+			const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+			grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
+
+			unsigned char curMask;
+
+			if (offset < blockSize)
+			{
+				// Read local mask to register
+				curMask = dataBlockLoad.template get<pMask>()[offset];
+				for (int i = 0 ; i < dim ; i++)
+				{curMask &= (pointCoord.get(i) < bx.getLow(i) || pointCoord.get(i) > bx.getHigh(i))?0:0xFF;}
+			}
+
+			openfpm::sparse_index<unsigned int> sdataBlockPos;
+			sdataBlockPos.id = dataBlockPos;
+
+			stencil::stencil(
+					sparseGrid, dataBlockId, sdataBlockPos , offset, pointCoord, dataBlockLoad, dataBlockLoad,
+					curMask, args...);
+		};
+
+		CUDA_LAUNCH_LAMBDA_DIM3_TLS(threadGridSize, localThreadBlockSize,lamb);
+
+#endif
+
     }
 
     template <typename stencil, typename... Args>

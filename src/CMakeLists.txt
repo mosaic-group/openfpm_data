@@ -366,6 +366,7 @@ install(FILES util/check_no_pointers.hpp
         util/math_util_complex.hpp
         util/mul_array_extents.hpp
 	util/hostDevice_util_funcs.hpp
+	util/sparsegrid_util_common.hpp
         DESTINATION openfpm_data/include/util
 	COMPONENT OpenFPM)
 
