@@ -30,7 +30,7 @@ namespace openfpm {
 
 
 
-template <typename T, std::size_t NumDims, typename vector, typename TPtr>
+template <typename T, std::size_t NumDims, typename vector, typename TPtr, typename StorageOrder>
 class const_multi_array_ref_openfpm : public detail::multi_array::multi_array_impl_base_openfpm<T,NumDims,vector>
 {
 	typedef detail::multi_array::multi_array_impl_base_openfpm<T,NumDims,vector> super_type;
@@ -50,11 +50,10 @@ public:
 /*    typedef typename super_type::difference_type difference_type;*/
     typedef typename super_type::index index;
 /*    typedef typename super_type::extent_range extent_range;*/
-    typedef general_storage_order<NumDims> storage_order_type;
 
     template <typename ExtentType>
-    explicit const_multi_array_ref_openfpm(TPtr base, const ExtentType& extents, const general_storage_order<NumDims>& so)
-    :base_(base),storage_(so)
+    explicit const_multi_array_ref_openfpm(TPtr base, const ExtentType& extents)
+    :base_(base)
     {
     	init_multi_array_ref(extents);
     }
@@ -107,7 +106,6 @@ public:
 
 
     TPtr base_;
-    storage_order_type storage_;
     size_type extent_sz;
     size_type num_elements_;
     index_list stride_list_;
@@ -119,20 +117,20 @@ private:
 
     void init_multi_array_ref(const index sz)
     {
-    	// calculate the extents
-    	extent_sz = sz;
+      // calculate the extents
+      extent_sz = sz;
 
-    	this->compute_strides(stride_list_,extent_sz,storage_);
+      this->template compute_strides<StorageOrder>(stride_list_,extent_sz);
 
-    	num_elements_ = sz * size_ct::value;
+      num_elements_ = sz * size_ct::value;
     }
 };
 
 
-template <typename T, int NumDims, typename vector>
-class multi_array_ref_openfpm : public const_multi_array_ref_openfpm<T,NumDims,vector,T *>
+template <typename T, int NumDims, typename vector, typename StorageOrder>
+class multi_array_ref_openfpm : public const_multi_array_ref_openfpm<T,NumDims,vector,T *,StorageOrder>
 {
-	typedef const_multi_array_ref_openfpm<T,NumDims,vector,T *> super_type;
+	typedef const_multi_array_ref_openfpm<T,NumDims,vector,T *,StorageOrder> super_type;
 public:
 /*  typedef typename super_type::value_type value_type;*/
   typedef typename super_type::reference reference;
@@ -147,7 +145,6 @@ public:
   typedef typename super_type::index index;
 /*  typedef typename super_type::extent_range extent_range;*/
 
-  typedef typename super_type::storage_order_type storage_order_type;
   typedef typename super_type::index_list index_list;
 
   //! indicate that this class is a multi dimensional array
@@ -156,8 +153,8 @@ public:
 /*  typedef typename super_type::size_list size_list;*/
 
   template <class ExtentType>
-  explicit multi_array_ref_openfpm(T* base, const ExtentType r_sz, const general_storage_order<NumDims>& so)
-  :super_type(base,r_sz,so)
+  explicit multi_array_ref_openfpm(T* base, const ExtentType r_sz)
+  :super_type(base,r_sz)
   {
   }
 
@@ -197,7 +194,6 @@ public:
     if (&other != this) {
 
         this->base_ = other.base_;
-        this->storage_ = other.storage_;
         this->extent_sz = other.extent_sz;
         this->stride_list_ = other.stride_list_;
         this->num_elements_ = other.num_elements_;
@@ -244,13 +240,9 @@ public:
 
   void swap(multi_array_ref_openfpm & other)
   {
-	T* base_tmp = this->base_;
-	this->base_ = other.base_;
-	other.base_ = base_tmp;
-
-    storage_order_type storage_tmp = this->storage_;
-    this->storage_ = other.storage_;
-    other.storage_ = storage_tmp;
+    T* base_tmp = this->base_;
+    this->base_ = other.base_;
+    other.base_ = base_tmp;
 
     size_type extent_tmp = this->extent_sz;
     this->extent_sz = other.extent_sz;
