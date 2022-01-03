@@ -259,64 +259,6 @@ struct mult<T,1>
 	enum { value = boost::mpl::at<T,boost::mpl::int_<1>>::type::value };
 };
 
-template<typename size_type, unsigned int dim>
-static inline std::array<size_type ,dim> zero_dims()
-{
-	std::array<size_type ,dim> dimensions;
-
-    // fill runtime, and the other dimensions
-    for (size_t i = 0 ; i < dim ; i++)
-    {dimensions[i] = 0;}
-
-	return dimensions;
-}
-
-template<unsigned int dim, typename size_type>
-struct array_ord
-{
-};
-
-template<typename size_type>
-struct array_ord<4,size_type>
-{
-	static constexpr size_type data[4] = {0,3,2,1};
-};
-
-template<typename size_type>
-struct array_ord<3,size_type>
-{
-	static constexpr size_type data[3] = {0,2,1};
-};
-
-template<typename size_type>
-struct array_ord<2,size_type>
-{
-	static constexpr size_type data[2] = {0,1};
-};
-
-template<unsigned int dim>
-struct array_asc
-{
-};
-
-template<>
-struct array_asc<4>
-{
-	static constexpr bool data[4] = {true,true,true,true};
-};
-
-template<>
-struct array_asc<3>
-{
-	static constexpr bool data[3] = {true,true,true};
-};
-
-template<>
-struct array_asc<2>
-{
-	static constexpr bool data[2] = {true,true};
-};
-
 
 /*! \brief Specialization of memory_c for multi_array
  *
@@ -445,11 +387,9 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 		memory * mem = this->mem;
 
 		//! We create a chunk of memory
-	    mem->resize( sz*mult<T,size_p::value-1>::value*sizeof(base) );
+		mem->resize( sz*mult<T,size_p::value-1>::value*sizeof(base) );
 
-	    openfpm::multi_array_ref_openfpm<base,size_p::value,Tv> tmp(static_cast<base *>(mem->getPointer()),
-	    		                                                                        sz,
-	    		                                                                        openfpm::general_storage_order<size_p::value>(openfpm::ofp_storage_order()));
+		openfpm::multi_array_ref_openfpm<base,size_p::value,Tv,storage_order> tmp(static_cast<base *>(mem->getPointer()), sz);
 
 	    //! we create the representation for the memory buffer
 	    mem_r.swap(tmp);
@@ -461,16 +401,19 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	//! basically we remove the index 0 of the multi_array
 	typedef boost::multi_array<base,size_p::value> type;
 
+	//! define the storage order used to reference multidimensional arrays
+	typedef typename openfpm::ofp_storage_order<size_p::value>::value storage_order;
+
 	//! Reference to an object to allocate memory
 	D * mem;
 
 	//! object that represent the memory as a multi-dimensional array of objects T
-	openfpm::multi_array_ref_openfpm<base,boost::mpl::size<T>::value,Tv> mem_r;
+	openfpm::multi_array_ref_openfpm<base,boost::mpl::size<T>::value,Tv,storage_order> mem_r;
 
 	//! constructor
 	memory_c(bool manage_memory = true)
 	:manage_memory(manage_memory),mem(NULL),
-	 mem_r(static_cast<base *>(NULL),0,openfpm::ofp_storage_order())
+	 mem_r(static_cast<base *>(NULL),0)
 	{}
 
 	//! destructor

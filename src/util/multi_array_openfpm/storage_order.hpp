@@ -11,6 +11,9 @@
 #include "types.hpp"
 #include "array_openfpm.hpp"
 #include "boost/multi_array/algorithm.hpp"
+#include <boost/mpl/push_back.hpp>
+#include <boost/mpl/vector.hpp>
+#include <boost/mpl/at.hpp>
 #include <algorithm>
 #include <cstddef>
 #include <functional>
@@ -20,114 +23,44 @@
 namespace openfpm
 {
 
-class c_storage_order;
-class fortran_storage_order;
-class ofp_storage_order;
+template<unsigned int NumDims, unsigned int n, typename T> struct c_storage_order;
+template<unsigned int NumDims, unsigned int n, typename T> struct ofp_storage_order;
+template<unsigned int NumDims, unsigned int n, typename T> struct fortran_storage_order;
 
-template <std::size_t NumDims>
-class general_storage_order
+template<unsigned int NumDims, unsigned int n=NumDims-1, typename T=boost::mpl::vector<>>
+struct c_storage_order
 {
-public:
-  typedef detail::multi_array::size_type size_type;
-  template <typename OrderingIter, typename AscendingIter>
-  general_storage_order(OrderingIter ordering,
-                        AscendingIter ascending) {
-    boost::detail::multi_array::copy_n(ordering,NumDims,ordering_.begin());
-  }
-
-  // RG - ideally these would not be necessary, but some compilers
-  // don't like template conversion operators.  I suspect that not
-  // too many folk will feel the need to use customized
-  // storage_order objects, I sacrifice that feature for compiler support.
-  general_storage_order(const c_storage_order&) {
-    for (size_type i=0; i != NumDims; ++i) {
-      ordering_[i] = NumDims - 1 - i;
-    }
-  }
-
-  general_storage_order(const fortran_storage_order&) {
-    for (size_type i=0; i != NumDims; ++i) {
-      ordering_[i] = i;
-    }
-  }
-
-  general_storage_order(const ofp_storage_order&)
-  {
-	    ordering_[0] = 0;
-	    for (size_type i=1; i != NumDims; ++i)
-	    {ordering_[i] = NumDims - i;}
-  }
-
-  size_type ordering(size_type dim) const { return ordering_[dim]; }
-
-
-  bool operator==(general_storage_order const& rhs) const
-  {
-    return (ordering_ == rhs.ordering_);
-  }
-
-protected:
-  openfpm::array<size_type,NumDims> ordering_;
+  typedef typename boost::mpl::push_back<typename c_storage_order<NumDims,n-1,T>::value, boost::mpl::int_<NumDims-1-n>>::type value;
 };
 
-class ofp_storage_order
+template <unsigned int NumDims, typename T>
+struct c_storage_order<NumDims, 0, T>
 {
-  typedef detail::multi_array::size_type size_type;
-public:
-  // This is the idiom for creating your own custom storage orders.
-  // Not supported by all compilers though!
-#ifndef __MWERKS__ // Metrowerks screams "ambiguity!"
-  template <std::size_t NumDims>
-  operator general_storage_order<NumDims>() const
-  {
-    openfpm::array<size_type,NumDims> ordering;
-
-    ordering[0] = 0;
-    for (size_type i=1; i != NumDims; ++i)
-    {ordering[i] = NumDims - i;}
-    return general_storage_order<NumDims>(ordering.begin());
-  }
-#endif
+  typedef typename boost::mpl::push_back<T,boost::mpl::int_<NumDims-1>>::type value;
 };
 
-class c_storage_order
+template<unsigned int NumDims, unsigned int n=NumDims-1, typename T=boost::mpl::vector<>>
+struct fortran_storage_order
 {
-  typedef detail::multi_array::size_type size_type;
-public:
-  // This is the idiom for creating your own custom storage orders.
-  // Not supported by all compilers though!
-#ifndef __MWERKS__ // Metrowerks screams "ambiguity!"
-  template <std::size_t NumDims>
-  operator general_storage_order<NumDims>() const {
-    openfpm::array<size_type,NumDims> ordering;
-    openfpm::array<bool,NumDims> ascending;
-
-    for (size_type i=0; i != NumDims; ++i) {
-      ordering[i] = NumDims - 1 - i;
-    }
-    return general_storage_order<NumDims>(ordering.begin());
-  }
-#endif
+  typedef typename boost::mpl::push_back<typename fortran_storage_order<NumDims,n-1,T>::value, boost::mpl::int_<n>>::type value;
 };
 
-class fortran_storage_order
+template <unsigned int NumDims, typename T>
+struct fortran_storage_order<NumDims, 0, T>
 {
-  typedef detail::multi_array::size_type size_type;
-public:
-  // This is the idiom for creating your own custom storage orders.
-  // Not supported by all compilers though!
-#ifndef __MWERKS__ // Metrowerks screams "ambiguity!"
-  template <std::size_t NumDims>
-  operator general_storage_order<NumDims>() const
-  {
-    openfpm::array<size_type,NumDims> ordering;
+  typedef typename boost::mpl::push_back<T,boost::mpl::int_<0>>::type value;
+};
 
-    for (size_type i=0; i != NumDims; ++i) {
-      ordering[i] = i;
-    }
-    return general_storage_order<NumDims>(ordering.begin());
-  }
-#endif
+template<unsigned int NumDims, unsigned int n=NumDims-1, typename T=boost::mpl::vector<>>
+struct ofp_storage_order
+{
+  typedef typename boost::mpl::push_back<typename ofp_storage_order<NumDims,n-1,T>::value, boost::mpl::int_<NumDims-n>>::type value;
+};
+
+template <unsigned int NumDims, typename T>
+struct ofp_storage_order<NumDims, 0, T>
+{
+  typedef typename boost::mpl::push_back<T,boost::mpl::int_<0>>::type value;
 };
 
 } // namespace openfpm
