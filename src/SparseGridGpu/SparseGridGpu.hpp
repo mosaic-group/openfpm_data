@@ -111,6 +111,42 @@ struct aggregate_add<aggregate<types ...>>
 
 /////////////
 
+template<typename enc_type>
+class encap_data_block
+{
+	int offset;
+	enc_type enc;
+
+	public:
+
+	encap_data_block(int offset,const enc_type & enc)
+	:offset(offset),enc(enc)
+	{}
+
+	encap_data_block operator=(const encap_data_block<enc_type> & enc)
+	{
+		copy_cpu_encap_single<encap_data_block<enc_type>> cp(enc,*this);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,enc_type::T_type::max_prop> >(cp);
+
+		return *this;
+	}
+
+	template<unsigned int p>
+	auto get() -> decltype(enc.template get<p>()[offset])
+	{
+		return enc.template get<p>()[offset];
+	}
+
+	template<unsigned int p>
+	auto get() const -> decltype(enc.template get<p>()[offset])
+	{
+		return enc.template get<p>()[offset];
+	}
+};
+
+/////////////
+
 enum StencilMode
 {
     STENCIL_MODE_INPLACE = 1,
@@ -917,11 +953,11 @@ private:
     void applyStencilInPlace(const Box<dim,int> & box, StencilMode & mode,Args... args)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
-        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+        auto & indexBuffer_ = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer_ = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
 
         const unsigned int dataChunkSize = BlockTypeOf<AggregateBlockT, 0>::size;
-        unsigned int numScalars = indexBuffer.size() * dataChunkSize;
+        unsigned int numScalars = indexBuffer_.size() * dataChunkSize;
 
         if (numScalars == 0) return;
 
@@ -934,16 +970,79 @@ private:
 
         constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value - IntPow<blockEdgeSize, dim>::value), (blockSize * chunksPerBlock)>::value; // todo: This works only for stencilSupportSize==1
 
+#ifdef CUDIFY_USE_CUDA
+
+
         CUDA_LAUNCH_DIM3((SparseGridGpuKernels::applyStencilInPlace
                 <dim,
                 BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask,
                 stencil>),
                 threadGridSize, localThreadBlockSize,
                         box,
-                        indexBuffer.toKernel(),
-                        dataBuffer.toKernel(),
+                        indexBuffer_.toKernel(),
+                        dataBuffer_.toKernel(),
                         this->template toKernelNN<stencil::stencil_type::nNN, nLoop>(),
                         args...);
+
+#else
+
+		auto bx = box;
+		auto indexBuffer = indexBuffer_.toKernel();
+		auto dataBuffer = dataBuffer_.toKernel();
+		auto sparseGrid = this->template toKernelNN<stencil::stencil_type::nNN, nLoop>();
+
+		constexpr int pMask = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask;
+
+		auto lamb = [=] __device__ () mutable
+		{
+			constexpr unsigned int pIndex = 0;
+
+			typedef typename decltype(indexBuffer)::value_type IndexAggregateT;
+			typedef BlockTypeOf<IndexAggregateT , pIndex> IndexT;
+
+			typedef typename decltype(dataBuffer)::value_type AggregateT_;
+			typedef BlockTypeOf<AggregateT_, pMask> MaskBlockT;
+			typedef ScalarTypeOf<AggregateT_, pMask> MaskT;
+			constexpr unsigned int blockSize = MaskBlockT::size;
+
+			// NOTE: here we do 1 chunk per block! (we want to be sure to fit local memory constraints
+			// since we will be loading also neighbouring elements!) (beware curse of dimensionality...)
+			const unsigned int dataBlockPos = blockIdx.x;
+			const unsigned int offset = threadIdx.x;
+
+			if (dataBlockPos >= indexBuffer.size())
+			{
+				return;
+			}
+
+			auto dataBlockLoad = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
+
+			// todo: Add management of RED-BLACK stencil application! :)
+			const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+			grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
+
+			unsigned char curMask;
+
+			if (offset < blockSize)
+			{
+				// Read local mask to register
+				curMask = dataBlockLoad.template get<pMask>()[offset];
+				for (int i = 0 ; i < dim ; i++)
+				{curMask &= (pointCoord.get(i) < bx.getLow(i) || pointCoord.get(i) > bx.getHigh(i))?0:0xFF;}
+			}
+
+			openfpm::sparse_index<unsigned int> sdataBlockPos;
+			sdataBlockPos.id = dataBlockPos;
+
+			stencil::stencil(
+					sparseGrid, dataBlockId, sdataBlockPos , offset, pointCoord, dataBlockLoad, dataBlockLoad,
+					curMask, args...);
+		};
+
+		CUDA_LAUNCH_LAMBDA_DIM3_TLS(threadGridSize, localThreadBlockSize,lamb);
+
+#endif
+
     }
 
     template <typename stencil, typename... Args>
@@ -1682,6 +1781,20 @@ public:
         return toKer;
     }
 
+	/*! Reset the structure
+	 * 
+	 */
+	void clear()
+	{
+		BMG::clear();
+	}
+
+	/* \brief Does nothing
+	 *
+	 */
+	void setMemory()
+	{}
+
     /*! \brief Return the grid information object
      *
      * \return grid information object
@@ -1790,6 +1903,55 @@ public:
         return private_get_data_array().template get<p>(coord.get_cnk_pos_id())[coord.get_data_id()];
     }
 
+    /*! \brief Return the index array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_data_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer()) &
+    {
+    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+    }
+
+    /*! \brief Return the data array of the blocks
+     *
+     * \return the index arrays of the blocks
+     *
+     */
+    auto private_get_data_array() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer())
+    {
+    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+    }
+
+    /*! \brief Get an element using the point coordinates
+     *
+     * \param coord point coordinates
+     *
+     * \return the element
+     *
+     */
+    template<typename CoordT>
+    auto get_o(const grid_key_dx<dim,CoordT> & coord) const -> encap_data_block<typename std::remove_const<decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::get(0))>::type >
+    {
+		int offset;
+		indexT lin;
+		gridGeometry.LinId(coord,lin,offset);
+
+        return encap_data_block<typename std::remove_const<decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::get(0))>::type >(offset,BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::get(lin));
+    }
+
+    /*! \brief Get an element using sparse_grid_gpu_index (using this index it guarantee that the point exist)
+     *
+     * \param element
+     *
+     * \return the element
+     *
+     */
+    auto get_o(const sparse_grid_gpu_index<self> & coord) const -> encap_data_block<typename std::remove_const<decltype(private_get_data_array().get(0))>::type >
+    {
+        return encap_data_block<typename std::remove_const<decltype(private_get_data_array().get(0))>::type >(coord.get_data_id(),private_get_data_array().get(coord.get_cnk_pos_id()));
+    }
+
     /*! \brief This function check if keep geometry is possible for this grid
      *
      * \return true if skip labelling is possible
@@ -1831,6 +1993,16 @@ public:
     auto insert(const CoordT &coord) -> ScalarTypeOf<AggregateBlockT, p> &
     {
         return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::template insert<p>(gridGeometry.LinId(coord));
+    }
+
+    template<typename CoordT>
+    auto insert_o(const CoordT &coord) -> encap_data_block<typename std::remove_const<decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insert_o(0))>::type >
+    {
+		indexT ind;
+		int offset;
+		gridGeometry.LinId(coord,ind,offset);
+
+        return encap_data_block<typename std::remove_const<decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insert_o(0))>::type >(offset, BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insert_o(ind));
     }
 
 	/*! \brief construct link between levels
@@ -2420,6 +2592,46 @@ public:
      *
      *
      */
+	template<unsigned int prop_src, unsigned int prop_dst, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv_cross_b(grid_key_dx<3> start, grid_key_dx<3> stop , lambda_f func, ArgsT ... args)
+	{
+		Box<dim,int> box;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			box.setLow(i,start.get(i));
+			box.setHigh(i,stop.get(i));
+		}
+
+		constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value), (blockSize)>::value;
+
+		applyStencils< SparseGridGpuKernels::stencil_cross_func_conv_block_read<dim,nLoop,prop_src,prop_dst,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+	}
+
+    /*! \brief Apply a free type convolution using blocks
+     *
+     *
+     */
+	template<unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1 , unsigned int prop_dst2, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv2_b(grid_key_dx<dim> start, grid_key_dx<dim> stop , lambda_f func, ArgsT ... args)
+	{
+		Box<dim,int> box;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			box.setLow(i,start.get(i));
+			box.setHigh(i,stop.get(i));
+		}
+
+        constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value), (blockSize)>::value;
+
+		applyStencils< SparseGridGpuKernels::stencil_func_conv2_b<dim,nLoop,prop_src1,prop_src2,prop_dst1,prop_dst2,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+	}
+
+    /*! \brief Apply a free type convolution using blocks
+     *
+     *
+     */
 	template<unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1 , unsigned int prop_dst2, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
 	void conv2(grid_key_dx<dim> start, grid_key_dx<dim> stop , lambda_f func, ArgsT ... args)
 	{
@@ -2520,7 +2732,33 @@ public:
     {
         return gridGeometry.BlockLinId(blockCoord);
     }
+	
+	/*! \brief Insert the point on host side and flush directly
+ *
+ * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
+ *
+ * \param grid point where to insert
+ *
+ * \return a reference to the data to fill
+ *
+ *
+ */
+	template<unsigned int p>
+	auto insertFlush(const sparse_grid_gpu_index<self> &coord) -> ScalarTypeOf<AggregateBlockT, p> &
+	{
+		auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
 
+		indexT block_id = indexBuffer.template get<0>(coord.get_cnk_pos_id());
+		indexT local_id = coord.get_data_id();
+
+		typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
+
+		auto block_data = this->insertBlockFlush(block_id);
+		block_data.template get<BMG::pMask>()[local_id] = 1;
+
+		return block_data.template get<p>()[local_id];
+	}
+    
     /*! \brief Insert the point on host side and flush directly
      *
      * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
@@ -3008,6 +3246,16 @@ public:
 		tmp2.clear();
 	}
 
+	/*! Swap the content of two sarse grid 
+     *
+	 * \param gr sparse grid from which to swap
+	 * 
+	 */
+	void swap(self & gr)
+	{
+		BMG::swap(gr);
+	}
+
 	/*! \brief Remove the points we queues to remove
 	 *
 	 * \see
@@ -3418,29 +3666,9 @@ public:
      * \return the index arrays of the blocks
      *
      */
-    auto private_get_data_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer()) &
-    {
-    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
-    }
-
-    /*! \brief Return the index array of the blocks
-     *
-     * \return the index arrays of the blocks
-     *
-     */
-    auto private_get_index_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer()) &
+    auto private_get_index_array() -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer())
     {
     	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
-    }
-
-    /*! \brief Return the index array of the blocks
-     *
-     * \return the index arrays of the blocks
-     *
-     */
-    auto private_get_data_array() const -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer()) &
-    {
-    	return BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
     }
 
     /*! \brief Return the index array of the blocks

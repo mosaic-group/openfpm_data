@@ -44,6 +44,13 @@ class memory_c
 template<typename T, typename D>
 class memory_c<T,MEMORY_C_STANDARD,D>
 {
+	//! indicate this object manage the memory.
+	//! Call to functions like toKernels create views of the main data-structure. Views use memory_c create different ways to access the same sata. 
+	//! We have mainly have two options. Either views manage memory, either they do not. When a view manage the memory if the main-data structure
+	//! get destroyed the view is still valid, the memory retained and the last view destroy the memory.
+	//! When a view does not manage the memory, if the main-data structure get destroyed the view become invalid.
+	bool manage_memory = true;
+
 	public:
 
 	//! define T
@@ -68,15 +75,17 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 	 */
 	void setMemory(memory & mem)
 	{
-		if (this->mem != NULL)
+		if (manage_memory)
 		{
-			this->mem->decRef();
+			if (this->mem != NULL)
+			{
+				this->mem->decRef();
 
-			if (this->mem->ref() == 0 && &mem != this->mem)
-				delete(this->mem);
+				if (this->mem->ref() == 0 && &mem != this->mem)
+					delete(this->mem);
+			}
+			mem.incRef();
 		}
-//			this->mem->decRef();
-		mem.incRef();
 		this->mem = &mem;
 	}
 
@@ -89,7 +98,9 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 	bool bind_ref(const memory_c<T,MEMORY_C_STANDARD,D> & ref)
 	{
 	    mem = ref.mem;
-	    mem->incRef();
+
+		if (manage_memory)
+	    {mem->incRef();}
 
 	    //! we create the representation for the memory buffer
 	    mem_r = ref.mem_r;
@@ -108,12 +119,13 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 		return *this->mem;
 	}
 
-	/*! \brief Switch the pointer to device pointer
+	/*! \brief Switch the pointer to device pointer (if the memory has been already set)
 	 *
 	 */
 	void switchToDevicePtr()
 	{
-		mem_r.set_pointer(mem->getDevicePointer());
+		if (mem != 0)
+		{mem_r.set_pointer(mem->getDevicePointer());}
 	}
 
 	/*! \brief This function get the object that allocate memory
@@ -144,20 +156,32 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 	}
 
 	//! constructor
-	memory_c():mem(NULL){}
+	memory_c(bool manage_memory = true)
+	:manage_memory(manage_memory),mem(NULL){}
 
 	//! destructor
 	~memory_c()
 	{
 		// deinitialixe mem_r
-		mem_r.deinit();
-		if (mem != NULL)
+		if (manage_memory)
 		{
-			mem->decRef();
+			mem_r.deinit();
+			if (mem != NULL)
+			{
+				mem->decRef();
 
-			if (mem->ref() == 0)
-				delete(mem);
+				if (mem->ref() == 0)
+					delete(mem);
+			}
 		}
+	}
+
+	/*! \brief Disable the management of memory (it is used for toKernel views)
+	 * 
+	 */
+	void disable_manage_memory()
+	{
+		manage_memory = false;
 	}
 
 	/*! \brief swap the memory
@@ -311,6 +335,13 @@ struct array_asc<2>
 template<typename T, typename D>
 class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 {
+	//! indicate this object manage the memory.
+	//! Call to functions like toKernels create views of the main data-structure. Views use memory_c create different ways to access the same sata. 
+	//! We have mainly have two options. Either views manage memory, either they do not. When a view manage the memory if the main-data structure
+	//! get destroyed the view is still valid, the memory retained and the last view destroy the memory.
+	//! When a view does not manage the memory, if the main-data structure get destroyed the view become invalid.
+	bool manage_memory = true;
+
 	/*! \brief In combination with generate_array is used to produce array at compile-time
 	 *
 	 * In combination with generate_array is used to produce at compile-time
@@ -350,14 +381,17 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 
 	void setMemory(memory & mem)
 	{
-		if (this->mem != NULL)
+		if (manage_memory)
 		{
-			this->mem->decRef();
+			if (this->mem != NULL)
+			{
+				this->mem->decRef();
 
-			if (this->mem->ref() == 0 && &mem != this->mem)
-				delete(this->mem);
+				if (this->mem->ref() == 0 && &mem != this->mem)
+					delete(this->mem);
+			}
+			mem.incRef();
 		}
-		mem.incRef();
 		this->mem = &mem;
 	}
 
@@ -377,7 +411,8 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	 */
 	void switchToDevicePtr()
 	{
-		mem_r.set_pointer(mem->getDevicePointer());
+		if (mem != NULL)
+		{mem_r.set_pointer(mem->getDevicePointer());}
 	}
 
 
@@ -390,7 +425,8 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	bool bind_ref(const memory_c<multi_array<T>, MEMORY_C_STANDARD, D> & ref)
 	{
 	    mem = ref.mem;
-	    mem->incRef();
+		if (manage_memory)
+	    {mem->incRef();}
 
 	    //! we create the representation for the memory buffer
 	    mem_r = ref.mem_r;
@@ -432,20 +468,32 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	openfpm::multi_array_ref_openfpm<base,boost::mpl::size<T>::value,Tv> mem_r;
 
 	//! constructor
-	memory_c()
-	:mem(NULL),
+	memory_c(bool manage_memory = true)
+	:manage_memory(manage_memory),mem(NULL),
 	 mem_r(static_cast<base *>(NULL),0,openfpm::ofp_storage_order())
 	{}
 
 	//! destructor
 	~memory_c()
 	{
-		if (mem != NULL)
+		// Indicate that this memory_c does not manage the memory
+		if (manage_memory)
 		{
-			mem->decRef();
-			if (mem->ref() == 0)
-				delete(mem);
+			if (mem != NULL)
+			{
+				mem->decRef();
+				if (mem->ref() == 0)
+					delete(mem);
+			}
 		}
+	}
+
+	/*! \brief Disable the management of memory (it is used for toKernel views)
+	 * 
+	 */
+	void disable_manage_memory()
+	{
+		manage_memory = false;
 	}
 
 	//! set the device memory interface, the object that allocate memory

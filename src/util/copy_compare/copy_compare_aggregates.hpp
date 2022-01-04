@@ -15,6 +15,7 @@
 template<typename T> struct meta_copy;
 template<template<typename,typename> class op, typename T> struct meta_copy_op;
 template<typename T> struct meta_compare;
+template<typename Tsrc,typename Tdst> struct meta_copy_d;
 
 /*! \brief Structure to copy aggregates
  *
@@ -44,7 +45,7 @@ struct copy_aggregate_dual
 		// Remove the reference from the type to copy
 		typedef typename boost::remove_reference<copy_type>::type copy_rtype;
 
-		meta_copy<copy_rtype>::meta_copy_(src.template get<T::value>(),dst.template get<T::value>());
+		meta_copy_d<decltype(src.template get<T::value>()), copy_rtype>::meta_copy_d_(src.template get<T::value>(),dst.template get<T::value>());
 	}
 };
 

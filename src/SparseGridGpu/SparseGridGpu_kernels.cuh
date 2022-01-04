@@ -117,6 +117,17 @@ namespace SparseGridGpuKernels
 	template<>
 	struct stencil_conv_func_impl<3>
 	{
+		template<typename ScalarT, typename coordType, typename CpBlockType, typename DataBlockWrapperT, typename lambda_func, typename ... ArgsT>
+		__device__ static inline void stencil_block(ScalarT & res, coordType & coord ,
+				            CpBlockType & cpb,
+							DataBlockWrapperT & DataBlockLoad,
+							int offset,
+				            lambda_func f,
+				            ArgsT ... args)
+		{
+			res = f(cpb,DataBlockLoad,offset,coord[0],coord[1],coord[2]);
+		}
+
 		template<typename ScalarT, typename coordType, typename CpBlockType, typename lambda_func, typename ... ArgsT>
 		__device__ static inline void stencil(ScalarT & res, coordType & coord ,
 				            CpBlockType & cpb,
@@ -135,11 +146,34 @@ namespace SparseGridGpuKernels
 		{
 			f(res1,res2,cpb1,cpb2,coord[0],coord[1],coord[2]);
 		}
+
+		template<typename ScalarT, typename coordType, typename CpBlockType, typename DataBlockWrapperT, typename lambda_func, typename ... ArgsT>
+		__device__ static inline void stencil2_block(ScalarT & res1, ScalarT & res2, coordType & coord ,
+				            CpBlockType & cpb1,
+				            CpBlockType & cpb2,
+							DataBlockWrapperT & DataBlockLoad,
+							int offset,
+				            lambda_func f,
+				            ArgsT ... args)
+		{
+			f(res1,res2,cpb1,cpb2,DataBlockLoad,offset,coord[0],coord[1],coord[2]);
+		}
 	};
 
 	template<>
 	struct stencil_conv_func_impl<2>
 	{
+		template<typename ScalarT, typename coordType, typename CpBlockType, typename DataBlockWrapperT, typename lambda_func, typename ... ArgsT>
+		__device__ static inline void stencil_block(ScalarT & res, coordType & coord,
+				            CpBlockType & cpb,
+							DataBlockWrapperT & DataBlockLoad,
+							int offset,
+				            lambda_func f,
+				            ArgsT ... args)
+		{
+			res = f(cpb,DataBlockLoad,offset,coord[0],coord[1]);
+		}
+
 		template<typename ScalarT, typename coordType, typename CpBlockType, typename lambda_func, typename ... ArgsT>
 		__device__ static inline void stencil(ScalarT & res, coordType & coord ,
 				            CpBlockType & cpb,
@@ -157,6 +191,18 @@ namespace SparseGridGpuKernels
 				            ArgsT ... args)
 		{
 			f(res1,res2,cpb1,cpb2,coord[0],coord[1]);
+		}
+
+		template<typename ScalarT, typename coordType, typename CpBlockType, typename DataBlockWrapperT, typename lambda_func, typename ... ArgsT>
+		__device__ static inline void stencil2_block(ScalarT & res1, ScalarT & res2, coordType & coord ,
+				            CpBlockType & cpb1,
+				            CpBlockType & cpb2,
+							DataBlockWrapperT & DataBlockLoad,
+							int offset,
+				            lambda_func f,
+				            ArgsT ... args)
+		{
+			f(res1,res2,cpb1,cpb2,DataBlockLoad,offset,coord[0],coord[1]);
 		}
 	};
 
@@ -223,6 +269,151 @@ namespace SparseGridGpuKernels
 	            stencil_conv_func_impl<dim>::stencil(res,coord,cpb,f,args...);
 
 	            dataBlockStore.template get<p_dst>()[offset] = res;
+	        }
+		}
+
+	    template <typename SparseGridT, typename CtxT>
+	    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+	    {
+	        // No flush
+	    }
+	};
+
+
+	template<unsigned int dim, unsigned int n_loop, unsigned int p_src, unsigned int p_dst, unsigned int stencil_size>
+	struct stencil_cross_func_conv_block_read
+	{
+		typedef NNStar<dim> stencil_type;
+
+		static constexpr unsigned int supportRadius = stencil_size;
+
+		template<typename SparseGridT, typename DataBlockWrapperT, typename lambda_func, typename ... ArgT>
+		static inline __device__ void stencil(
+				SparseGridT & sparseGrid,
+				const unsigned int dataBlockId,
+				openfpm::sparse_index<unsigned int> dataBlockIdPos,
+				unsigned int offset,
+				grid_key_dx<dim, int> & pointCoord,
+				DataBlockWrapperT & dataBlockLoad,
+				DataBlockWrapperT & dataBlockStore,
+				unsigned char curMask,
+				lambda_func f,
+				ArgT ... args)
+		{
+	        typedef typename SparseGridT::AggregateBlockType AggregateT;
+	        typedef ScalarTypeOf<AggregateT, p_src> ScalarT;
+
+	        constexpr unsigned int enlargedBlockSize = IntPow<
+	                SparseGridT::getBlockEdgeSize() + 2 * supportRadius, dim>::value;
+
+	        __shared__ ScalarT enlargedBlock[enlargedBlockSize];
+
+	        for (int i = 0; i < n_loop ; i++)
+	        {
+	        	if (i*IntPow<SparseGridT::getBlockEdgeSize(), dim>::value + threadIdx.x < enlargedBlockSize)
+	        	{
+	        		enlargedBlock[i*IntPow<SparseGridT::getBlockEdgeSize(), dim>::value + threadIdx.x] = sparseGrid.getblockMap().template getBackground<p_src>()[0];
+	        	}
+	        }
+
+	        __syncthreads();
+
+	        typedef typename vmpl_create_constant<dim,SparseGridT::blockEdgeSize_>::type block_sizes;
+	        typedef typename vmpl_sum_constant<2*stencil_size,block_sizes>::type vmpl_sizes;
+
+	        cp_block<ScalarT,stencil_size,vmpl_sizes,dim> cpb(enlargedBlock);
+
+	        sparseGrid.template loadGhostBlock<p_src>(dataBlockLoad, dataBlockIdPos, enlargedBlock);
+
+	        __syncthreads();
+
+	        ScalarT res = 0;
+
+	        if ((curMask & mask_sparse::EXIST) && !(curMask & mask_sparse::PADDING))
+	        {
+	        	int coord[dim];
+
+				unsigned int linIdTmp = offset;
+				for (unsigned int d = 0; d < dim; ++d)
+				{
+					coord[d] = linIdTmp % SparseGridT::blockEdgeSize_;
+					linIdTmp /= SparseGridT::blockEdgeSize_;
+				}
+
+	            stencil_conv_func_impl<dim>::stencil_block(res,coord,cpb,dataBlockLoad,offset,f,args...);
+
+	            dataBlockStore.template get<p_dst>()[offset] = res;
+	        }
+		}
+
+	    template <typename SparseGridT, typename CtxT>
+	    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+	    {
+	        // No flush
+	    }
+	};
+
+	template<unsigned int dim, unsigned int n_loop, unsigned int p_src1, unsigned int p_src2, unsigned int p_dst1, unsigned int p_dst2, unsigned int stencil_size>
+	struct stencil_func_conv2_b
+	{
+		typedef NNStar<dim> stencil_type;
+
+		static constexpr unsigned int supportRadius = stencil_size;
+
+		template<typename SparseGridT, typename DataBlockWrapperT, typename lambda_func, typename ... ArgT>
+		static inline __device__ void stencil(
+				SparseGridT & sparseGrid,
+				const unsigned int dataBlockId,
+				openfpm::sparse_index<unsigned int> dataBlockIdPos,
+				unsigned int offset,
+				grid_key_dx<dim, int> & pointCoord,
+				DataBlockWrapperT & dataBlockLoad,
+				DataBlockWrapperT & dataBlockStore,
+				unsigned char curMask,
+				lambda_func f,
+				ArgT ... args)
+		{
+	        typedef typename SparseGridT::AggregateBlockType AggregateT;
+	        typedef ScalarTypeOf<AggregateT, p_src1> ScalarT1;
+	        typedef ScalarTypeOf<AggregateT, p_src1> ScalarT2;
+
+	        constexpr unsigned int enlargedBlockSize = IntPow<
+	                SparseGridT::getBlockEdgeSize() + 2 * supportRadius, dim>::value;
+
+	        __shared__ ScalarT1 enlargedBlock1[enlargedBlockSize];
+	        __shared__ ScalarT2 enlargedBlock2[enlargedBlockSize];
+
+	        // fill with background
+
+	        typedef typename vmpl_create_constant<dim,SparseGridT::blockEdgeSize_>::type block_sizes;
+	        typedef typename vmpl_sum_constant<2*stencil_size,block_sizes>::type vmpl_sizes;
+
+	        cp_block<ScalarT1,stencil_size,vmpl_sizes,dim> cpb1(enlargedBlock1);
+	        cp_block<ScalarT2,stencil_size,vmpl_sizes,dim> cpb2(enlargedBlock2);
+
+	        sparseGrid.template loadGhostBlock<p_src1>(dataBlockLoad, dataBlockIdPos, enlargedBlock1);
+	        sparseGrid.template loadGhostBlock<p_src2>(dataBlockLoad, dataBlockIdPos, enlargedBlock2);
+
+	        __syncthreads();
+
+	        ScalarT1 res1 = 0;
+	        ScalarT2 res2 = 0;
+
+	        if ((curMask & mask_sparse::EXIST) && !(curMask & mask_sparse::PADDING))
+	        {
+	        	int coord[dim];
+
+				unsigned int linIdTmp = offset;
+				for (unsigned int d = 0; d < dim; ++d)
+				{
+					coord[d] = linIdTmp % SparseGridT::blockEdgeSize_;
+					linIdTmp /= SparseGridT::blockEdgeSize_;
+				}
+
+	            stencil_conv_func_impl<dim>::stencil2_block(res1,res2,coord,cpb1,cpb2,dataBlockLoad,offset,f,args...);
+
+	            dataBlockStore.template get<p_dst1>()[offset] = res1;
+	            dataBlockStore.template get<p_dst2>()[offset] = res2;
 	        }
 		}
 
@@ -737,6 +928,64 @@ namespace SparseGridGpuKernels
         nn_blocks.template get<0>(dataBlockPos*nNN_type::nNN + offset) = neighbourPos;
     }
 
+    template <unsigned int dim,
+            unsigned int pMask,
+            typename stencil,
+            typename IndexBufT,
+            typename DataBufT,
+            typename SparseGridT,
+            typename... Args>
+    __global__ void
+    applyStencilInPlace(
+    		Box<dim,int> bx,
+            IndexBufT indexBuffer,
+            DataBufT dataBuffer,
+            SparseGridT sparseGrid,
+            Args... args)
+    {
+        constexpr unsigned int pIndex = 0;
+
+        typedef typename IndexBufT::value_type IndexAggregateT;
+        typedef BlockTypeOf<IndexAggregateT , pIndex> IndexT;
+
+        typedef typename DataBufT::value_type AggregateT;
+        typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
+        typedef ScalarTypeOf<AggregateT, pMask> MaskT;
+        constexpr unsigned int blockSize = MaskBlockT::size;
+
+        // NOTE: here we do 1 chunk per block! (we want to be sure to fit local memory constraints
+        // since we will be loading also neighbouring elements!) (beware curse of dimensionality...)
+        const unsigned int dataBlockPos = blockIdx.x;
+        const unsigned int offset = threadIdx.x;
+
+        if (dataBlockPos >= indexBuffer.size())
+        {
+            return;
+        }
+
+        auto dataBlockLoad = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
+
+        // todo: Add management of RED-BLACK stencil application! :)
+        const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+        grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
+
+        unsigned char curMask;
+
+        if (offset < blockSize)
+        {
+            // Read local mask to register
+            curMask = dataBlockLoad.template get<pMask>()[offset];
+			for (int i = 0 ; i < dim ; i++)
+			{curMask &= (pointCoord.get(i) < bx.getLow(i) || pointCoord.get(i) > bx.getHigh(i))?0:0xFF;}
+        }
+
+        openfpm::sparse_index<unsigned int> sdataBlockPos;
+        sdataBlockPos.id = dataBlockPos;
+
+        stencil::stencil(
+                sparseGrid, dataBlockId, sdataBlockPos , offset, pointCoord, dataBlockLoad, dataBlockLoad,
+                curMask, args...);
+    }
 
     template <unsigned int dim,
             unsigned int pMask,
@@ -789,65 +1038,6 @@ namespace SparseGridGpuKernels
             // Read local mask to register
             curMask = dataBlockLoad.template get<pMask>()[offset];
             if (bx.isInsideKey(pointCoord) == false)	{curMask = 0;}
-        }
-
-        openfpm::sparse_index<unsigned int> sdataBlockPos;
-        sdataBlockPos.id = dataBlockPos;
-
-        stencil::stencil(
-                sparseGrid, dataBlockId, sdataBlockPos , offset, pointCoord, dataBlockLoad, dataBlockLoad,
-                curMask, args...);
-    }
-
-    template <unsigned int dim,
-            unsigned int pMask,
-            typename stencil,
-            typename IndexBufT,
-            typename DataBufT,
-            typename SparseGridT,
-            typename... Args>
-    __global__ void
-    applyStencilInPlace(
-    		Box<dim,int> bx,
-            IndexBufT indexBuffer,
-            DataBufT dataBuffer,
-            SparseGridT sparseGrid,
-            Args... args)
-    {
-        constexpr unsigned int pIndex = 0;
-
-        typedef typename IndexBufT::value_type IndexAggregateT;
-        typedef BlockTypeOf<IndexAggregateT , pIndex> IndexT;
-
-        typedef typename DataBufT::value_type AggregateT;
-        typedef BlockTypeOf<AggregateT, pMask> MaskBlockT;
-        typedef ScalarTypeOf<AggregateT, pMask> MaskT;
-        constexpr unsigned int blockSize = MaskBlockT::size;
-
-        // NOTE: here we do 1 chunk per block! (we want to be sure to fit local memory constraints
-        // since we will be loading also neighbouring elements!) (beware curse of dimensionality...)
-        const unsigned int dataBlockPos = blockIdx.x;
-        const unsigned int offset = threadIdx.x;
-
-        if (dataBlockPos >= indexBuffer.size())
-        {
-            return;
-        }
-
-        auto dataBlockLoad = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
-
-        // todo: Add management of RED-BLACK stencil application! :)
-        const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
-        grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
-
-        unsigned char curMask;
-
-        if (offset < blockSize)
-        {
-            // Read local mask to register
-            curMask = dataBlockLoad.template get<pMask>()[offset];
-			for (int i = 0 ; i < dim ; i++)
-			{curMask &= (pointCoord.get(i) < bx.getLow(i) || pointCoord.get(i) > bx.getHigh(i))?0:0xFF;}
         }
 
         openfpm::sparse_index<unsigned int> sdataBlockPos;

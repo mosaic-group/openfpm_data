@@ -129,6 +129,14 @@ struct key_val_it
 	key_t * key;
 	val_t * val;
 
+
+	key_val_it & operator+=(int delta)
+	{
+		key += delta;
+		val += delta;
+		return *this;
+	}
+
 	bool operator==(const key_val_it & tmp)
 	{
 		return (key == tmp.key && val == tmp.val);
@@ -172,6 +180,13 @@ struct key_val_it
 		return *this;
 	}
 
+	key_val_it operator++(int)
+	{
+		key_val_it temp = *this;
+		++*this;
+		return temp;
+	}
+
 	key_val_it & operator--()
 	{
 		--key;
@@ -188,6 +203,16 @@ struct key_val_it
 	bool operator<(const key_val_it & tmp) const
 	{
 		return key < tmp.key;
+	}
+
+	bool operator>(const key_val_it & tmp) const
+	{
+		return key > tmp.key;
+	}
+
+	bool operator>=(const key_val_it & tmp) const
+	{
+		return key >= tmp.key;
 	}
 
 	key_val_it<key_t,val_t> & operator=(key_val_it<key_t,val_t> & tmp)

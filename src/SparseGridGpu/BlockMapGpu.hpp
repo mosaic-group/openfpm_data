@@ -6,6 +6,7 @@
 #include "BlockMapGpu_kernels.cuh"
 #include "DataBlock.cuh"
 #include <set>
+#include "util/sparsegrid_util_common.hpp"
 
 template<typename AggregateT, unsigned int p>
 using BlockTypeOf = typename std::remove_reference<typename boost::fusion::result_of::at_c<typename AggregateT::type, p>::type>::type;
@@ -17,7 +18,12 @@ template<typename AggregateBlockT, unsigned int threadBlockSize=128, typename in
 class BlockMapGpu
 {
 private:
+
+    typedef BlockMapGpu<AggregateBlockT,threadBlockSize,indexT,layout_base> self;
+
     typedef BlockTypeOf<AggregateBlockT, 0> BlockT0;
+    
+    bool is_new;
 
 #ifdef SE_CLASS1
 
@@ -44,14 +50,34 @@ public:
 
     BlockMapGpu() = default;
 
+    void clear()
+    {
+        blockMap.clear();
+    }
+
+    void swap(self & bm)
+    {
+        blockMap.swap(bm.blockMap);
+    }
+
 	/*! \brief Get the background value
 	 *
 	 * \return background value
 	 *
 	 */
-	auto getBackgroundValue() -> decltype(blockMap.getBackground())
+//	auto getBackgroundValue() -> decltype(blockMap.getBackground())
+//	{
+//		return blockMap.getBackground();
+//	}
+
+	/*! \brief Get the background value
+	 *
+	 * \return background value
+	 *
+	 */
+	sparse_grid_bck_value<typename std::remove_reference<decltype(blockMap.getBackground())>::type> getBackgroundValue()
 	{
-		return blockMap.getBackground();
+		return sparse_grid_bck_value<typename std::remove_reference<decltype(blockMap.getBackground())>::type>(blockMap.getBackground());
 	}
 
 //    auto get(unsigned int linId) const -> decltype(blockMap.get(0));
@@ -76,6 +102,15 @@ public:
     	}
     }
 
+    auto get(unsigned int linId) const -> const decltype(blockMap.get(0)) &
+    {
+        typedef BlockTypeOf<AggregateBlockT, 0> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        unsigned int offset = linId % BlockT::size;
+        auto & aggregate = blockMap.get(blockId);
+        return aggregate;
+    }
+
     /*! \brief insert data, host version
      *
      * \tparam property id
@@ -98,6 +133,24 @@ public:
         return block[offset];
     }
 
+    /*! \brief insert data, host version
+     *
+     * \tparam property id
+     *
+     * \param linId linearized id block + local linearization
+     *
+     * \return a reference to the data
+     *
+     */
+    auto insert_o(unsigned int linId) -> decltype(blockMap.insert(0))
+    {
+        typedef BlockTypeOf<AggregateBlockT, 0> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        unsigned int offset = linId % BlockT::size;
+        auto aggregate = blockMap.insert(blockId);
+        return aggregate;
+    }
+
     /*! \brief insert a block + flush, host version
      *
      * \tparam property id
@@ -108,13 +161,19 @@ public:
      *
      */
     template<unsigned int p>
-    auto insertBlockFlush(size_t blockId) -> decltype(blockMap.insertFlush(blockId).template get<p>())
+    auto insertBlockFlush(size_t blockId) -> decltype(blockMap.insertFlush(blockId,is_new).template get<p>())
     {
         typedef BlockTypeOf<AggregateBlockT, p> BlockT;
 
-        auto aggregate = blockMap.insertFlush(blockId);
-        auto &block = aggregate.template get<p>();
-
+        auto aggregate = blockMap.insertFlush(blockId,is_new);
+		auto &block = aggregate.template get<p>();
+     
+	    if (is_new == true)
+	    {
+		    for (int i = 0 ; i < BlockT::size ; i++)
+		    {aggregate.template get<pMask>()[i] = 0;}
+	    }
+        
         return block;
     }
 
@@ -125,9 +184,18 @@ public:
      * \return a reference to the block data
      *
      */
-    auto insertBlockFlush(size_t blockId) -> decltype(blockMap.insertFlush(blockId))
+    auto insertBlockFlush(size_t blockId) -> decltype(blockMap.insertFlush(blockId,is_new))
     {
-        return blockMap.insertFlush(blockId);
+	    typedef BlockTypeOf<AggregateBlockT, 0> BlockT;
+    	auto b = blockMap.insertFlush(blockId,is_new);
+    	
+    	if (is_new == true)
+	    {
+    		for (int i = 0 ; i < BlockT::size ; i++)
+		    {b.template get<pMask>()[i] = 0;}
+	    }
+    	
+        return b;
     }
 
     BlockMapGpu_ker<AggregateInternalT, indexT, layout_base> toKernel()

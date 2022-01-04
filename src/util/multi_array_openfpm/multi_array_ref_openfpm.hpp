@@ -1,6 +1,8 @@
 /*
  * multi_array_ref_openfpm.hpp
  *
+ *  This is an heavily modified boost::multi_array version
+ * 
  *  Created on: Jun 29, 2018
  *      Author: i-bird
  */

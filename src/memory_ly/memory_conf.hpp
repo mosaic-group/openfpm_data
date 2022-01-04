@@ -12,6 +12,8 @@
 #include "t_to_memory_c.hpp"
 #include "Vector/vect_isel.hpp"
 #include "Vector/util.hpp"
+#include "util/tokernel_transformation.hpp"
+#include "util/hostDevice_util_funcs.hpp"
 
 constexpr int SOA_layout_IA = 2;
 constexpr int SOA_layout = 1;
@@ -62,6 +64,7 @@ struct inter_memc_red
 {
 	typedef typename v_transform<t_to_memory_c_red,Seq>::type type;
 };
+
 
 /*! \brief Transform the boost::fusion::vector into memory specification (memory_traits)
  *
@@ -146,6 +149,38 @@ struct memory_traits_inte
 	{
 		return boost::fusion::at_c<p>(data_).mem_r.operator[](lin_id);
 	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+	 *
+	 * \param start starting element to transfer
+	 * \param stop stop element to transfer
+	 *
+	 * \tparam properties to transfer
+	 *
+	 */
+	template<typename S, typename data_type, unsigned int ... prp> 
+        static void hostToDevice(data_type & data_, size_t start, size_t stop)
+	{
+		host_to_device_impl<T,memory_traits_inte,S, prp ...> dth(data_,start,stop);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(dth);
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+	 *
+	 * \param start starting element to transfer
+	 * \param stop stop element to transfer
+	 *
+	 * \tparam properties to transfer
+	 *
+	 */
+	template<typename data_type, unsigned int ... prp> 
+        static void deviceToHost(data_type & data_, size_t start, size_t stop)
+	{
+		device_to_host_start_stop_impl<T, memory_traits_inte, prp ...> dth(data_,start,stop);
+
+		boost::mpl::for_each_ref< boost::mpl::range_c<int,0,sizeof...(prp)> >(dth);
+	}
 };
 
 /*! \brief Transform the boost::fusion::vector into memory specification (memory_traits)
@@ -213,7 +248,7 @@ struct memory_traits_lin
 
 	typedef boost::mpl::int_<AOS_layout> type_value;
 
-    /*! \brief Return a reference to the selected element
+        /*! \brief Return a reference to the selected element
     	 *
          * \param data object from where to take the element
          * \param g1 grid information
@@ -271,6 +306,34 @@ struct memory_traits_lin
 	__host__ __device__ static inline auto get_lin_c(const data_type & data_, const g1_type & g1, const size_t lin_id) -> decltype(boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id))) &
 	{
 		return boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id));
+	}
+
+	/*! \brief Copy the memory from host to device
+	 *
+	 * \tparam (all properties are copied to prp is useless in this case)
+	 *
+	 * \param start start point
+	 * \param stop stop point
+	 *
+	 */
+	template<typename S, typename data_type, unsigned int ... prp> 
+        static void hostToDevice(data_type & data_, size_t start, size_t stop)
+	{
+		data_.mem->hostToDevice(start*sizeof(T),(stop+1)*sizeof(T));
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+	 *
+	 * \param start starting element to transfer
+	 * \param stop stop element to transfer
+	 *
+	 * \tparam properties to transfer (ignored all properties are trasfert)
+	 *
+	 */
+	template<typename data_type, unsigned int ... prp> 
+        static void deviceToHost(data_type & data_, size_t start, size_t stop)
+	{
+		data_.mem->deviceToHost(start*sizeof(T),(stop+1)*sizeof(T));
 	}
 };
 

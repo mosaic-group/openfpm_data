@@ -10,6 +10,135 @@
 
 #include "data_type/aggregate.hpp"
 
+/*! \brief this class is a functor for "for_each" algorithm
+ *
+ * This class is a functor for "for_each" algorithm. For each
+ * element of the boost::vector the operator() is called.
+ * Is mainly used to call hostToDevice for each properties
+ *
+ */
+template<typename Tv>
+struct host_to_dev_all_prp
+{
+	Tv & p;
+
+	inline host_to_dev_all_prp(Tv & p)
+	:p(p)
+	{};
+
+	//! It call the copy function for each property
+	template<typename T>
+	inline void operator()(T& t) const
+	{
+		p.template hostToDevice<T::value>();
+	}
+};
+
+template<typename T, typename T_ker, typename type_prp, template<typename> class layout_base , int is_vector>
+struct call_recursive_host_device_if_vector
+{
+	template<typename mem_type, typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
+	{
+		start /= sizeof(type_prp);
+		stop /= sizeof(type_prp);
+
+		// The type of device and the type on host does not match (in general)
+		// So we have to convert before transfer
+
+		T * ptr = static_cast<T *>(obj.get_pointer());
+
+		mem_type tmp;
+
+		tmp.allocate(mem->size());
+
+		T_ker * ptr_tt = static_cast<T_ker *>(tmp.getPointer());
+
+		for(size_t i = start ; i < stop ; i++)
+		{
+			new (&ptr_tt[i]) T_ker();
+			ptr_tt[i] = ptr[i].toKernel();
+		}
+
+		mem->hostToDevice(tmp);
+	}
+
+	//! It is a vector recursively call deviceToHost
+	template<typename obj_type>
+	static void call(obj_type & obj, size_t start, size_t stop)
+	{
+		T * ptr = static_cast<T *>(obj.get_pointer());
+
+		for(size_t i = start ; i < stop ; i++)
+		{
+			host_to_dev_all_prp<T> hdap(ptr[i]);
+
+			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::value_type::max_prop>>(hdap);
+		}
+	}
+};
+
+template<typename T, typename T_ker, typename type_prp ,template<typename> class layout_base>
+struct call_recursive_host_device_if_vector<T,T_ker,type_prp,layout_base,0>
+{
+	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
+	{
+		mem->hostToDevice(start,stop);
+	}
+
+	//! It is not a vector nothing to do
+	template<typename obj_type>
+	static void call(obj_type & obj, size_t start, size_t stop) {}
+};
+
+template<typename T, typename T_ker, typename type_prp ,template<typename> class layout_base>
+struct call_recursive_host_device_if_vector<T,T_ker,type_prp,layout_base,3>
+{
+	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
+	{
+		// calculate the start and stop elements
+		start /= std::extent<type_prp,0>::value;
+		stop /= std::extent<type_prp,0>::value;
+		size_t sz = mem->size() / std::extent<type_prp,0>::value;
+
+		size_t offset = 0;
+		for (size_t i = 0 ; i < std::extent<type_prp,0>::value ; i++)
+		{
+			mem->hostToDevice(offset+start,offset+stop);
+			offset += sz;
+		}
+	}
+
+	//! It is not a vector nothing to do
+	template<typename obj_type>
+	static void call(obj_type & obj, size_t start, size_t stop) {}
+};
+
+template<typename T, typename T_ker, typename type_prp ,template<typename> class layout_base>
+struct call_recursive_host_device_if_vector<T,T_ker,type_prp,layout_base,4>
+{
+	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
+	{
+		// calculate the start and stop elements
+		start = start / std::extent<type_prp,0>::value / std::extent<type_prp,1>::value;
+		stop = stop / std::extent<type_prp,0>::value / std::extent<type_prp,1>::value;
+		size_t sz = mem->size() / std::extent<type_prp,0>::value / std::extent<type_prp,1>::value;
+
+		size_t offset = 0;
+		for (size_t i = 0 ; i < std::extent<type_prp,0>::value ; i++)
+		{
+			for (size_t j = 0 ; j < std::extent<type_prp,1>::value ; j++)
+			{
+				mem->hostToDevice(offset+start,offset+stop);
+				offset += sz;
+			}
+		}
+	}
+
+	//! It is not a vector nothing to do
+	template<typename obj_type>
+	static void call(obj_type & obj, size_t start, size_t stop) {}
+};
+
 /*! \brief this set of meta-functions traverse at compile time the tree-structure of types in Depth-first search.
  *         and transform any root node of type vector into vector_gpu_ker
  *
@@ -118,6 +247,8 @@ struct toKernel_transform<layout_base,T,1>
 };
 
 /////////////////////////////////////////////////// KNOWN TYPE SPECIALIZATION TERMINATORS //////////////////////
+
+template<unsigned int dim ,typename T> class Point;
 
 template<template <typename> class layout_base,typename T, typename ... args>
 struct aggregate_or_known_type<layout_base,T,2,args ...>

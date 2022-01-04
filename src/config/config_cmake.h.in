@@ -4,6 +4,12 @@ ${DEFINE_COVERTY_SCAN}
 /* GPU support */
 ${DEFINE_CUDA_GPU}
 
+/* Define CUDIFY backend */
+${DEFINE_CUDIFY_BACKEND}
+
+/* OpenMP support */
+${DEFINE_HAVE_OPENMP}
+
 /* HIP GPU support */
 ${DEFINE_HIP_GPU}
 
@@ -180,6 +186,9 @@ ${DEFINE_STDC_HEADERS}
 /* If an error occur stop the program */
 ${DEFINE_STOP_ON_ERROR}
 
+/* Garbage injector*/
+${DEFINE_GARBAGE_INJECTOR}
+
 /* Test coverage mode */
 ${DEFINE_TEST_COVERAGE_MODE}
 
@@ -189,4 +198,3 @@ ${DEFINE_TEST_COVERAGE_MODE}
 /* Version number of package */
 #define VERSION "1.0.0"
 
-#define OPENFPM_DATA

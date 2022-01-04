@@ -43,7 +43,7 @@ struct is_vector_native: std::false_type {};
  *
  */
 template<typename T>
-struct is_vector_native<T, typename Void< typename T::yes_i_am_vector_native>::type > : std::true_type
+struct is_vector_native<T, typename Void< typename std::remove_reference<T>::type::yes_i_am_vector_native>::type > : std::true_type
 {};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
