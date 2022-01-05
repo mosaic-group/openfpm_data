@@ -6,13 +6,13 @@
 #include "CSVReader/CSVReader.hpp"
 
 BOOST_AUTO_TEST_SUITE(CSVReaderTestSuite)
-BOOST_AUTO_TEST_CASE(csv_reader_float)
+BOOST_AUTO_TEST_CASE(csv_reader_int)
 		{
+				std::cout << "CWD = " << get_cwd() << std::endl;
+				std::string csv_file = std::string("../../../openfpm_io/test_data/integer.csv");
 				// Read csv file into vector while linearizing
-				const std::string csv_file = "float.csv"; // csv file to be read
-				openfpm::vector<float> v_lin; // Vector to which csv file will be read to
+				openfpm::vector<int> v_lin; // Vector to which csv file will be read to
 				size_t m, n; // Number of rows m and columns n
-				
 				read_csv_to_vector(csv_file, v_lin, m, n);
 				
 				BOOST_CHECK(m == 4);
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(csv_reader_float)
 BOOST_AUTO_TEST_CASE(csv_reader_char)
 		{
 				// Read csv file into vector while linearizing
-				const std::string csv_file = "char.csv"; // csv file to be read
+				const std::string csv_file = "../../../openfpm_io/test_data/char.csv"; // csv file to be read
 				openfpm::vector<std::string> v_lin; // Vector to which csv file will be read to
 				size_t m, n; // Number of rows m and columns n
 				
@@ -47,8 +47,8 @@ BOOST_AUTO_TEST_CASE(csv_reader_char)
 				
 				for(int i = 0; i < v_lin.size() / n; ++i)
 				{
-					BOOST_CHECK(col1.get(i).compare(v_lin.get(i * n)) == 0);
-					BOOST_CHECK(col2.get(i).compare(v_lin.get(i * n + 1)) == 0);
+					BOOST_CHECK(col1.get(i) == v_lin.get(i * n));
+					BOOST_CHECK(col2.get(i) == v_lin.get(i * n + 1));
 				}
 			
 		}

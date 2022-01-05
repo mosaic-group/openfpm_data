@@ -10,6 +10,8 @@
 #include <string>
 
 #include "Vector/map_vector.hpp"
+#include "util/PathsAndFiles.hpp"
+#include "VCluster/VCluster.hpp"
 
 /**@brief Converts string into template type T.
  *
@@ -27,7 +29,8 @@ T string_to_type(const std::string & string_to_convert)
 }
 
 
-/**@brief Reads csv file and saves elements as linearized vector.
+/**@brief Csv file is read by process rank 0 and the elements are saved into a linearized vector. The vector is
+ * broadcasted to the other processes.
  *
  * @tparam T Type that elements from csv file shall be converted to.
  * @param input_file std::string containing the path to the input csv file.
@@ -38,24 +41,36 @@ T string_to_type(const std::string & string_to_convert)
 template <typename T>
 void read_csv_to_vector(const std::string & input_file, openfpm::vector<T> & output_vector, size_t & m, size_t & n)
 {
-	std::ifstream file(input_file); // Create file pointer and open file
-	std::string line, element;
-	m = 0;
-	n = 0;
-	
-	while (getline(file, line)) // Read entire row and store as one string in line
+	auto & v_cl = create_vcluster();
+	if (v_cl.rank() == 0)
 	{
-		std::stringstream stream_line(line); // Needed to break line into elements later one
-		
-		while (getline(stream_line, element, ',')) // Read every column of line and store content as string in element
+		if(!check_if_file_exists(input_file))
 		{
-			output_vector.add(string_to_type<T>(element)); // Convert element from string to type T and append to
-			// output_vector
-			n += 1; // Increase n by one for each element read
+			std::cout << "Cannot find < " <<  input_file << " >. Please check path specification. Aborting..."
+					<< std::endl;
+			abort();
 		}
-		m += 1; // Increase m by one for each row read
+		std::ifstream file(input_file); // Create file pointer and open file
+		std::string line, element;
+		m = 0;
+		n = 0;
+		size_t elems = 0;
+		while (getline(file, line)) // Read entire row and store as one string in line
+		{
+			std::stringstream stream_line(line); // Needed to break line into elements later one
+			while (getline(stream_line, element, ',')) // Read every column of line and store content as string in element
+			{
+				output_vector.add(string_to_type<T>(element)); // Convert element from string to type T and append to
+				// output_vector
+				elems += 1; // Increase n by one for each element read
+			}
+			m += 1; // Increase m by one for each row read
+		}
+		if(m >= 1) n = elems / m; // If at least one row present, divide number of elements read by number of rows to get
+		// the number of columns
 	}
-	n /= m; // Divide number of elements read by number of rows to get number of columns
+	v_cl.Bcast(output_vector, 0);
+	v_cl.execute();
 }
 
 #endif //OPENFPM_IO_CSVREADER_HPP
