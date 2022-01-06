@@ -41,7 +41,9 @@ T string_to_type(const std::string & string_to_convert)
 template <typename T>
 void read_csv_to_vector(const std::string & input_file, openfpm::vector<T> & output_vector, size_t & m, size_t & n)
 {
+	int total_size = 0;
 	auto & v_cl = create_vcluster();
+	// File is accessed and read only by one process
 	if (v_cl.rank() == 0)
 	{
 		if(!check_if_file_exists(input_file))
@@ -62,13 +64,22 @@ void read_csv_to_vector(const std::string & input_file, openfpm::vector<T> & out
 			{
 				output_vector.add(string_to_type<T>(element)); // Convert element from string to type T and append to
 				// output_vector
-				elems += 1; // Increase n by one for each element read
+				total_size += 1; // Increase n by one for each element read
 			}
 			m += 1; // Increase m by one for each row read
 		}
-		if(m >= 1) n = elems / m; // If at least one row present, divide number of elements read by number of rows to get
+		if(m >= 1) n = total_size / m; // If at least one row present, divide number of elements read by number of rows to get
 		// the number of columns
 	}
+	// Distribute size of the lin. vector to all other processes s.t. their output_vector can be resized accordingly.
+	MPI_Bcast(&total_size,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&m,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
+	if (v_cl.rank() != 0)
+	{
+		output_vector.resize(total_size);
+	}
+	// After the output_vector has been resized to correct size, it can receive the content from process 0.
 	v_cl.Bcast(output_vector, 0);
 	v_cl.execute();
 }
