@@ -13,23 +13,11 @@ BOOST_AUTO_TEST_CASE(csv_reader_int_test)
 #else
 			std::string csv_file = std::string("test_data/integer.csv");
 #endif
-			std::cout << "CWD = " << get_cwd() << std::endl;
 			// Read csv file into vector while linearizing
 			openfpm::vector<int> v_lin; // Vector to which csv file will be read to
 			size_t m, n; // Number of rows m and columns n
-			read_csv_to_vector(csv_file, v_lin, m, n);
-		
-			auto & v_cl = create_vcluster();
 			
-			std::cout << "My rank is " << v_cl.rank() << std::endl;
-			auto v_iter = v_lin.getIterator();
-			while(v_iter.isNext())
-			{
-				auto key = v_iter.get();
-				std::cout << "Element number " << key << " of rank " <<  v_cl.rank() << " is " << v_lin.get(key) <<
-				std::endl;
-				++v_iter;
-			}
+			read_csv_to_vector(csv_file, v_lin, m, n);
 			
 			BOOST_CHECK(m == 4);
 			BOOST_CHECK(n == 3);
@@ -41,8 +29,6 @@ BOOST_AUTO_TEST_CASE(csv_reader_int_test)
 				BOOST_CHECK( v_lin.get(i * n + 1) == (i + 1) * 2);
 				BOOST_CHECK( v_lin.get(i * n + 2) == v_lin.get(i * n) * v_lin.get(i * n + 1));
 			}
-		
-			std::cout << "Rank " << v_cl.rank() << " reaches end of unit test." << std::endl;
 		}
 
 
