@@ -113,9 +113,6 @@ void load_pixel_onto_grid(grid_type & grid, std::string file_name, std::vector <
 		}
 	}
 	
-	// initialize complete grid including ghost layer with -1
-	init_grid_and_ghost<Phi_0>(grid, -1.0);
-	
 	// assign pixel values to domain. For each pixel get factor_refinement number of grid points with corresponding value
 	auto dom = grid.getDomainIterator();
 	std::vector<BYTE> pixel_line; // one x-line of the image stack which will be read
