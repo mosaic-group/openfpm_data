@@ -40,7 +40,7 @@ set(HDF5_PREFER_PARALLEL TRUE)
 
 set (ENV{BOOST_ROOT} ${BOOST_ROOT})
 set (Boost_NO_BOOST_CMAKE OFF)
-find_package(Boost 1.72.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system
+find_package(Boost 1.72.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem
 		OPTIONAL_COMPONENTS fiber context)
 find_package(MPI REQUIRED)
 find_package(HDF5 REQUIRED)
