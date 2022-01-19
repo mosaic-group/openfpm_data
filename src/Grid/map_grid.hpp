@@ -257,7 +257,7 @@ public:
 	 */
 	template<unsigned int id> void * getDeviceBuffer()
 	{
-		return this->data_.mem->getDevicePointer();
+		return ((S*)this->data_.mem)->getDevicePointer();
 	}
 
 	/*! \brief This is a meta-function return which type of sub iterator a grid produce
@@ -582,7 +582,7 @@ public:
 	 */
 	template<unsigned int id> void * getDeviceBuffer()
 	{
-		return boost::fusion::at_c<id>(this->data_).mem->getDevicePointer();
+		return ((S*)boost::fusion::at_c<id>(this->data_).mem)->getDevicePointer();
 	}
 
 	/*! \brief This is a meta-function return which type of sub iterator a grid produce
