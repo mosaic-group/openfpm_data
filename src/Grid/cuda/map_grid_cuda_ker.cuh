@@ -60,7 +60,7 @@ struct copy_switch_memory_c_no_cpy
 		boost::fusion::at_c<T::value>(dst).mem = boost::fusion::at_c<T::value>(src).mem;
 
 		boost::fusion::at_c<T::value>(dst).mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
-		boost::fusion::at_c<T::value>(dst).switchToDevicePtr();
+		boost::fusion::at_c<T::value>(dst).template switchToDevicePtr<CudaMemory>();
 	}
 };
 
@@ -84,7 +84,7 @@ struct grid_gpu_ker_constructor_impl<false,T>
 		this_.get_data_().mem = cpy.get_data_().mem;
 
 		this_.get_data_().mem_r.bind_ref(cpy.get_data_().mem_r);
-		this_.get_data_().switchToDevicePtr();
+		this_.get_data_().template switchToDevicePtr<CudaMemory>();
 	}
 };
 

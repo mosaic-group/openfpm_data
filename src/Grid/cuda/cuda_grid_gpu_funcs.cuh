@@ -94,7 +94,7 @@ __global__ void copy_ndim_grid_device(grid_type src, grid_type dst)
 #endif
 
 
-template<bool inte_or_lin,unsigned int dim, typename T>
+template<bool inte_or_lin,unsigned int dim, typename T, typename S>
 struct grid_toKernelImpl
 {
 	template<typename grid_type> static grid_gpu_ker<dim,T,memory_traits_lin,typename grid_type::linearizer_type> toKernel(grid_type & gc)
@@ -106,14 +106,14 @@ struct grid_toKernelImpl
 		// Increment the reference of mem
 		//g.get_data_().mem->incRef();
 		g.get_data_().mem_r.bind_ref(gc.get_internal_data_().mem_r);
-		g.get_data_().switchToDevicePtr();
+		g.get_data_().template switchToDevicePtr<S>();
 
 		return g;
 	}
 };
 
-template<unsigned int dim, typename T>
-struct grid_toKernelImpl<true,dim,T>
+template<unsigned int dim, typename T, typename S>
+struct grid_toKernelImpl<true,dim,T,S>
 {
 	template<typename grid_type> static grid_gpu_ker<dim,T,memory_traits_inte, typename grid_type::linearizer_type> toKernel(grid_type & gc)
 	{
