@@ -809,7 +809,7 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim,long int> & key1, grid_key_dx<dim,long int> & key2, size_t n_thr = default_kernel_wg_threads_) const
+	struct ite_gpu<dim> getGPUIterator(const grid_key_dx<dim,long int> & key1, const grid_key_dx<dim,long int> & key2, size_t n_thr = default_kernel_wg_threads_) const
 	{
 		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}
@@ -854,6 +854,19 @@ public:
 
 #endif
 
+	}
+
+	/*! \brief Return the memory object
+	 *
+	 * Return the memory object
+	 *
+	 * \tparam p array to retrieve
+	 *
+	 */
+	template<unsigned int p>
+	auto getMemory() -> decltype(boost::fusion::at_c<p>(data_).getMemory())
+	{
+		return boost::fusion::at_c<p>(data_).getMemory();
 	}
 
 	/*! \brief Set the object that provide memory from outside

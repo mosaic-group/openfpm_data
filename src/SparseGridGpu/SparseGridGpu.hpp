@@ -2817,14 +2817,98 @@ public:
      *
      */
     template<unsigned int p>
-    void setBackgroundValue(ScalarTypeOf<AggregateBlockT, p> backgroundValue)
+    void setBackgroundValue(typename boost::mpl::at<typename AggregateT::type,boost::mpl::int_<p>>::type backgroundValue)
     {
-        bck.template get<p>() = backgroundValue;
+		meta_copy<typename boost::mpl::at<typename AggregateT::type,boost::mpl::int_<p>>::type>::meta_copy_(backgroundValue,bck.template get<p>());
 
-        BMG::template setBackgroundValue<p>(backgroundValue);
+        BMG::template setBackgroundValue<p,typename boost::mpl::at<typename AggregateT::type,boost::mpl::int_<p>>::type>(backgroundValue);
     }
 
     /////////////////////////////////// DISTRIBUTED INTERFACE ///////////////////////
+
+	//Functions to check if the packing object is complex
+	static bool pack()
+	{
+		return false;
+	}
+
+	/*! \brief Asking to pack a SparseGrid GPU without GPU context pack the grid on CPU and host memory
+	 *
+	 * 
+	 */
+	template<int ... prp> inline
+	void packRequest(size_t & req) const
+    {
+		// To fill
+        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+
+		indexBuffer.template packRequest<prp ...>(req);
+		dataBuffer.template packRequest<prp ...>(req);
+
+		Packer<decltype(gridGeometry),HeapMemory>::packRequest(req);
+	}
+
+	/*! \brief Pack the object into the memory
+	 *
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 *
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void pack(ExtPreAlloc<HeapMemory> & mem,
+									Pack_stat & sts) const
+	{
+        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+
+		// To fill
+		indexBuffer.template pack<prp ...>(mem,sts);
+		dataBuffer.template pack<prp ...>(mem,sts);
+
+		Packer<decltype(gridGeometry),HeapMemory>::pack(mem,gridGeometry,sts);
+	}
+
+	/*! \brief Unpack the object into the memory
+	 *
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 *
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void unpack(ExtPreAlloc<HeapMemory> & mem,
+									Unpack_stat & ps)
+	{
+        auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
+        auto & dataBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getDataBuffer();
+
+		// To fill
+		indexBuffer.template unpack<prp ...>(mem,ps);
+		dataBuffer.template unpack<prp ...>(mem,ps);
+
+		Unpacker<decltype(gridGeometry),HeapMemory>::unpack(mem,gridGeometry,ps);
+	}
+
+
+	/*! \brief Unpack the object into the memory
+	 *
+	 * \tparam prp properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the objects
+	 *
+	 * \param sts pack statistic
+	 *
+	 */
+	template<int ... prp> void unpack(ExtPreAlloc<CudaMemory> & mem,
+									Unpack_stat & ps)
+	{
+		if (mem.size() != 0)
+		{std::cout << __FILE__ << ":" << __LINE__ << " not implemented: " << std::endl;}
+	}
 
     /*! \brief memory requested to pack this object
      *
@@ -3253,6 +3337,8 @@ public:
 	 */
 	void swap(self & gr)
 	{
+		gridGeometry.swap(gr.gridGeometry);
+
 		BMG::swap(gr);
 	}
 
