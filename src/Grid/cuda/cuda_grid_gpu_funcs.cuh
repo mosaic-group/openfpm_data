@@ -100,13 +100,15 @@ struct grid_toKernelImpl
 	template<typename grid_type> static base_grid toKernel(grid_type & gc)
 	{
 		/*grid_gpu_ker<dim,T,memory_traits_lin,typename grid_type::linearizer_type>*/base_grid g(gc.getGrid());
+		auto &grid_layout = g.get_data_();
 
-		g.get_data_().disable_manage_memory();
-		g.get_data_().mem = gc.get_internal_data_().mem;
+		grid_layout.disable_manage_memory();
+		grid_layout.mem = gc.get_internal_data_().mem;
 		// Increment the reference of mem
-		//g.get_data_().mem->incRef();
-		g.get_data_().mem_r.bind_ref(gc.get_internal_data_().mem_r);
-		g.get_data_().template switchToDevicePtr<S>();
+		//grid_layout.mem->incRef();
+		grid_layout.mem_r.bind_ref(gc.get_internal_data_().mem_r);
+		if (grid_layout.mem)
+		{grid_layout.mem_r.set_pointer(((S*)grid_layout.mem)->getDevicePointer());}
 
 		return g;
 	}
