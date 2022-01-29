@@ -119,16 +119,6 @@ class memory_c<T,MEMORY_C_STANDARD,D>
 		return *this->mem;
 	}
 
-	/*! \brief Switch the pointer to device pointer (if the memory has been already set)
-	 *
-	 */
-	template <typename S>
-	void switchToDevicePtr()
-	{
-		if (mem != 0)
-		{mem_r.set_pointer(((S*)mem)->getDevicePointer());}
-	}
-
 	/*! \brief This function get the object that allocate memory
 	 *
 	 * \return memory object to allocate memory
@@ -347,16 +337,6 @@ class memory_c<multi_array<T>, MEMORY_C_STANDARD, D>
 	memory& getMemory()
 	{
 		return *this->mem;
-	}
-
-	/*! \brief Switch the pointer to device pointer
-	 *
-	 */
-	template <typename S>
-	void switchToDevicePtr()
-	{
-		if (mem != NULL)
-		{mem_r.set_pointer(((S*)mem)->getDevicePointer());}
 	}
 
 
