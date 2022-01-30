@@ -93,6 +93,8 @@ public:
         }
     }
 
+    static bool noPointers() {return true;}
+
 #ifdef __NVCC__
     //Constructors from dim3 and uint3 objects
     __host__ __device__ grid_smb(const dim3 blockDimensions)

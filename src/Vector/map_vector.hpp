@@ -2071,6 +2071,19 @@ namespace openfpm
 			return 1;
 		}
 
+		/*! \brief Return the memory object
+		*
+		* Return the memory object
+		*
+		* \tparam p array to retrieve
+		*
+		*/
+		template<unsigned int p>
+		auto getMemory() -> decltype(base.template getMemory<p>())
+		{
+			return base.template getMemory<p>();
+		}
+
 		/*! \brief Set the memory of the base structure using an object
 		 *
 		 * \param mem Memory object to use for allocation
