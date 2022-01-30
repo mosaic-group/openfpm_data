@@ -62,6 +62,7 @@ struct NN_gpu_int_base_hr_impl
 	grid_key_dx<dim,ids_type> cell_stop;
 
 	cnt_type c_id;
+	bool isNext;
 
 	__device__ __host__ inline void init_impl(const grid_key_dx<dim,ids_type> & cell_pos, const openfpm::array<ids_type,dim,cnt_type> & div_c)
 	{
@@ -73,6 +74,7 @@ struct NN_gpu_int_base_hr_impl
 		}
 
 		c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_start);
+		isNext = cell_act.get(dim-1) <= cell_stop.get(dim-1);
 	}
 
 	__device__ __host__ inline void SelectValid_impl(const openfpm::array<ids_type,dim,cnt_type> & div_c)
@@ -100,12 +102,14 @@ struct NN_gpu_int_base_hr_impl
 			}
 		}
 
+
 		c_id = cid_<dim,cnt_type,ids_type,int>::get_cid(div_c,cell_act);
+		isNext = cell_act.get(dim-1) <= cell_stop.get(dim-1);
 	}
 
 	__device__ __host__ inline bool isNext_impl()
 	{
-		return cell_act.get(dim-1) <= cell_stop.get(dim-1);
+		return isNext;
 	}
 };
 
@@ -147,15 +151,12 @@ class NN_gpu_it: public NN_gpu_int_base<dim,r_int,openfpm::math::pow(2*r_int+1,d
 
 	inline __device__ __host__ void SelectValid()
 	{
-		while (p_id >= p_id_end && isNext())
-		{
-			this->SelectValid_impl(div_c);
-
-			if (isNext() == false) {break;}
-
+		if (p_id >= p_id_end && isNext()) do {
 			p_id = starts.template get<0>(this->c_id);
 			p_id_end = starts.template get<0>(this->c_id+1);
-		}
+
+			this->SelectValid_impl(div_c);
+		} while (p_id >= p_id_end && isNext());
 	}
 
 
