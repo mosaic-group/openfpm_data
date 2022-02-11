@@ -36,7 +36,10 @@ find_package(Vc REQUIRED)
 if (CUDA_ON_BACKEND STREQUAL "HIP" AND NOT HIP_FOUND)
         find_package(HIP)
 endif()
-find_package(OpenMP)
+if (NOT CUDA_ON_BACKEND STREQUAL "HIP")
+	find_package(OpenMP)
+
+endif()
 
 ###### CONFIG.h FILE ######
 
