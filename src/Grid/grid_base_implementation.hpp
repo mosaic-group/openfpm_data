@@ -1889,7 +1889,7 @@ public:
 	 */
 	grid_gpu_ker<dim,T_,layout_base,linearizer_type> toKernel()
 	{
-		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
+		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
 	}
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
@@ -1899,7 +1899,7 @@ public:
 	 */
 	const grid_gpu_ker<dim,T_,layout_base,linearizer_type> toKernel() const
 	{
-		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
+		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
 	}
 
 #endif
