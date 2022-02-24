@@ -966,7 +966,7 @@ namespace SparseGridGpuKernels
         auto dataBlockLoad = dataBuffer.get(dataBlockPos); // Avoid binary searches as much as possible
 
         // todo: Add management of RED-BLACK stencil application! :)
-        const unsigned int dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
+        const auto dataBlockId = indexBuffer.template get<pIndex>(dataBlockPos);
         grid_key_dx<dim, int> pointCoord = sparseGrid.getCoord(dataBlockId * blockSize + offset);
 
         unsigned char curMask;
