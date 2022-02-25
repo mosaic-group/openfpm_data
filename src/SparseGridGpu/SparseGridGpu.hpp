@@ -2829,7 +2829,13 @@ public:
 	//Functions to check if the packing object is complex
 	static bool pack()
 	{
-		return false;
+		return true;
+	}
+
+	//Functions to check if the packing object is complex
+	static bool packRequest()
+	{
+		return true;
 	}
 
 	/*! \brief Asking to pack a SparseGrid GPU without GPU context pack the grid on CPU and host memory

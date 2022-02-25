@@ -1013,6 +1013,18 @@ public:
 	 * \return the element reference
 	 *
 	 */
+	inline T & operator[](size_t id)
+	{
+		return base_type::get(id);
+	}
+
+	/*! \brief Get an element of the vector
+	 *
+	 * \param id element to get
+	 *
+	 * \return the element reference
+	 *
+	 */
 	inline T & last()
 	{
 		return base_type::get(size()-1);
