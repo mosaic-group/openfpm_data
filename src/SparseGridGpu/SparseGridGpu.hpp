@@ -2832,6 +2832,12 @@ public:
 		return false;
 	}
 
+	//! Indicate that the vector has the function packRequest
+	static bool packRequest()
+	{
+		return true;
+	}
+
 	/*! \brief Asking to pack a SparseGrid GPU without GPU context pack the grid on CPU and host memory
 	 *
 	 * 

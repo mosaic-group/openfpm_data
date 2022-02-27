@@ -94,12 +94,12 @@ __global__ void copy_ndim_grid_device(grid_type src, grid_type dst)
 #endif
 
 
-template<bool inte_or_lin,unsigned int dim, typename T>
+template<bool inte_or_lin, typename base_grid, unsigned int dim, typename T>
 struct grid_toKernelImpl
 {
-	template<typename grid_type> static grid_gpu_ker<dim,T,memory_traits_lin,typename grid_type::linearizer_type> toKernel(grid_type & gc)
+	template<typename grid_type> static base_grid toKernel(grid_type & gc)
 	{
-		grid_gpu_ker<dim,T,memory_traits_lin,typename grid_type::linearizer_type> g(gc.getGrid());
+		/*grid_gpu_ker<dim,T,memory_traits_lin,typename grid_type::linearizer_type>*/base_grid g(gc.getGrid());
 
 		g.get_data_().disable_manage_memory();
 		g.get_data_().mem = gc.get_internal_data_().mem;
@@ -112,12 +112,12 @@ struct grid_toKernelImpl
 	}
 };
 
-template<unsigned int dim, typename T>
-struct grid_toKernelImpl<true,dim,T>
+template<typename base_grid, unsigned int dim, typename T>
+struct grid_toKernelImpl<true,base_grid,dim,T>
 {
-	template<typename grid_type> static grid_gpu_ker<dim,T,memory_traits_inte, typename grid_type::linearizer_type> toKernel(grid_type & gc)
+	template<typename grid_type> static base_grid toKernel(grid_type & gc)
 	{
-		grid_gpu_ker<dim,T,memory_traits_inte, typename grid_type::linearizer_type> g(gc.getGrid());
+		/*grid_gpu_ker<dim,T,memory_traits_inte, typename grid_type::linearizer_type>*/ base_grid g(gc.getGrid());
 		copy_switch_memory_c_no_cpy<typename std::remove_reference<decltype(gc.get_internal_data_())>::type,
 				                    typename std::remove_reference<decltype(g.get_data_())>::type> cp_mc(gc.get_internal_data_(),g.get_data_());
 
