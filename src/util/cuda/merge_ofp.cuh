@@ -24,11 +24,14 @@
         #define __CUDACC__
         #define __CUDA__
      #else
-        #include "util/cuda/moderngpu/kernel_merge.hxx"
+        #include <thrust/merge.h>
+        #include <thrust/execution_policy.h>
      #endif
      #endif
  #else
-    #include "util/cuda/moderngpu/kernel_merge.hxx"
+    #include <thrust/merge.h>
+    #include <thrust/execution_policy.h>
+//    #include "util/cuda/moderngpu/kernel_merge.hxx"
  #endif
  #include "util/cuda/ofp_context.hxx"
  
@@ -98,7 +101,14 @@
 
         #else
 
-            mgpu::merge(a_keys,a_vals,a_count,b_keys,b_vals,b_count,c_keys,c_vals,comp,context);
+//            It seems broken on some CUDA on some hardware. Anyway is not anymore supported 
+//            on some hardware ... we move to thrust
+//            mgpu::merge(a_keys,a_vals,a_count,b_keys,b_vals,b_count,c_keys,c_vals,comp,context);
+
+            thrust::merge_by_key(thrust::device, a_keys,a_keys + a_count, 
+                                                 b_keys,b_keys + b_count, 
+                                                 a_vals,b_vals,
+                                                 c_keys,c_vals,comp);
 
         #endif
 
