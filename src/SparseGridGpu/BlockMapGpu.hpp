@@ -6,6 +6,7 @@
 #include "BlockMapGpu_kernels.cuh"
 #include "DataBlock.cuh"
 #include <set>
+#include "util/sparsegrid_util_common.hpp"
 
 template<typename AggregateT, unsigned int p>
 using BlockTypeOf = typename std::remove_reference<typename boost::fusion::result_of::at_c<typename AggregateT::type, p>::type>::type;
@@ -13,10 +14,36 @@ using BlockTypeOf = typename std::remove_reference<typename boost::fusion::resul
 template<typename AggregateT, unsigned int p>
 using ScalarTypeOf = typename std::remove_reference<typename boost::fusion::result_of::at_c<typename AggregateT::type, p>::type>::type::scalarType;
 
+template<typename T>
+struct meta_copy_set_bck
+{
+    template<typename destType>
+    inline static void set(destType & bP ,T & backgroundValue, int j)
+    {
+        bP[j] = backgroundValue;
+    }
+};
+
+template<unsigned int N, typename T>
+struct meta_copy_set_bck<T[N]>
+{
+    template<typename destType>
+    inline static void set(destType & bP ,T * backgroundValue, int j)
+    {
+        for (int i = 0 ; i < N ; i++)
+        {
+            bP[i][j] = backgroundValue[i];
+        }
+    }
+};
+
 template<typename AggregateBlockT, unsigned int threadBlockSize=128, typename indexT=long int, template<typename> class layout_base=memory_traits_inte>
 class BlockMapGpu
 {
 private:
+
+    typedef BlockMapGpu<AggregateBlockT,threadBlockSize,indexT,layout_base> self;
+
     typedef BlockTypeOf<AggregateBlockT, 0> BlockT0;
     
     bool is_new;
@@ -46,14 +73,34 @@ public:
 
     BlockMapGpu() = default;
 
+    void clear()
+    {
+        blockMap.clear();
+    }
+
+    void swap(self & bm)
+    {
+        blockMap.swap(bm.blockMap);
+    }
+
 	/*! \brief Get the background value
 	 *
 	 * \return background value
 	 *
 	 */
-	auto getBackgroundValue() -> decltype(blockMap.getBackground())
+//	auto getBackgroundValue() -> decltype(blockMap.getBackground())
+//	{
+//		return blockMap.getBackground();
+//	}
+
+	/*! \brief Get the background value
+	 *
+	 * \return background value
+	 *
+	 */
+	sparse_grid_bck_value<typename std::remove_reference<decltype(blockMap.getBackground())>::type> getBackgroundValue()
 	{
-		return blockMap.getBackground();
+		return sparse_grid_bck_value<typename std::remove_reference<decltype(blockMap.getBackground())>::type>(blockMap.getBackground());
 	}
 
 //    auto get(unsigned int linId) const -> decltype(blockMap.get(0));
@@ -78,6 +125,15 @@ public:
     	}
     }
 
+    auto get(unsigned int linId) const -> const decltype(blockMap.get(0)) &
+    {
+        typedef BlockTypeOf<AggregateBlockT, 0> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        unsigned int offset = linId % BlockT::size;
+        auto & aggregate = blockMap.get(blockId);
+        return aggregate;
+    }
+
     /*! \brief insert data, host version
      *
      * \tparam property id
@@ -98,6 +154,24 @@ public:
         auto &mask = aggregate.template get<pMask>();
         setExist(mask[offset]);
         return block[offset];
+    }
+
+    /*! \brief insert data, host version
+     *
+     * \tparam property id
+     *
+     * \param linId linearized id block + local linearization
+     *
+     * \return a reference to the data
+     *
+     */
+    auto insert_o(unsigned int linId) -> decltype(blockMap.insert(0))
+    {
+        typedef BlockTypeOf<AggregateBlockT, 0> BlockT;
+        unsigned int blockId = linId / BlockT::size;
+        unsigned int offset = linId % BlockT::size;
+        auto aggregate = blockMap.insert(blockId);
+        return aggregate;
     }
 
     /*! \brief insert a block + flush, host version
@@ -229,19 +303,21 @@ public:
      * \tparam p property p
      *
      */
-    template<unsigned int p>
-    void setBackgroundValue(ScalarTypeOf<AggregateBlockT, p> backgroundValue)
+    template<unsigned int p, typename TypeBck>
+    void setBackgroundValue(TypeBck backgroundValue)
     {
         // NOTE: Here we assume user only passes Blocks and not scalars in the templated aggregate type
         typedef BlockTypeOf<AggregateInternalT, p> BlockT;
+        typedef typename std::remove_all_extents<BlockTypeOf<AggregateInternalT, p>>::type BlockT_noarr;
         typedef BlockTypeOf<AggregateInternalT, pMask> BlockM;
 
         BlockT bP;
         BlockM bM;
 
-        for (unsigned int i = 0; i < BlockT::size; ++i)
+        for (unsigned int i = 0; i < BlockT_noarr::size; ++i)
         {
-            bP[i] = backgroundValue;
+            meta_copy_set_bck<TypeBck>::set(bP,backgroundValue,i);
+            //meta_copy<TypeBck>::meta_copy_(backgroundValue,bP[][i]);
             bM[i] = 0;
         }
 

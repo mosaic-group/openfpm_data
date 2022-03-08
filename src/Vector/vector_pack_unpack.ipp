@@ -339,7 +339,7 @@ template<int ... prp> inline void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat 
  * \param mem preallocated memory from where to unpack the vector
  * \param ps unpack-stat info
  */
-template<int ... prp> inline void unpack(ExtPreAlloc<HeapMemory> & mem, Unpack_stat & ps)
+template<int ... prp, typename MemType> inline void unpack(ExtPreAlloc<MemType> & mem, Unpack_stat & ps)
 {
 	//if all of the aggregate properties are simple (don't have "pack()" member)
 	if (has_pack_agg<T,prp...>::result::value == false)
@@ -353,7 +353,7 @@ template<int ... prp> inline void unpack(ExtPreAlloc<HeapMemory> & mem, Unpack_s
 	{
 		//Unpack a size of a source vector
 		size_t u2 = 0;
-		Unpacker<size_t, HeapMemory>::unpack(mem,u2,ps);
+		Unpacker<size_t, MemType>::unpack(mem,u2,ps);
 		
 		//Resize a destination vector
 		this->resize(u2);
@@ -361,7 +361,7 @@ template<int ... prp> inline void unpack(ExtPreAlloc<HeapMemory> & mem, Unpack_s
 		for (size_t i = 0 ; i < this->size() ; i++)
 		{
 			//Call an unpacker in nested way
-			call_aggregateUnpack<decltype(this->get(i)),HeapMemory,prp ... >::call_unpack(this->get(i),mem,ps);
+			call_aggregateUnpack<decltype(this->get(i)),MemType,prp ... >::call_unpack(this->get(i),mem,ps);
 		}
 	}
 }

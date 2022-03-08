@@ -21,40 +21,40 @@ if (TEST_PERFORMANCE)
                          Vector/performance/vector_performance_test.cu)
 endif ()
 
-if (CUDA_FOUND OR CUDA_ON_CPU OR HIP_FOUND)
+
+if (NOT CUDA_ON_BACKEND STREQUAL "None")
 	set(CUDA_SOURCES ${CUDA_SOURCES}
 	    Vector/map_vector_sparse_unit_tests.cu
             Vector/vector_gpu_unit_tests.cu
             Grid/cuda/cuda_grid_gpu_tests.cu
             Vector/cuda/map_vector_cuda_funcs_tests.cu
-            NN/CellList/CellList_gpu_test.cu util/cuda/scan_sort_cuda_unit_tests.cu
+            NN/CellList/CellList_gpu_test.cu 
+	    util/cuda/scan_sort_cuda_unit_tests.cu
             Grid/cuda/cuda_grid_unit_tests_func.cu
             util/cuda/modern_gpu_tests.cu
             Vector/cuda/map_vector_sparse_cuda_ker_unit_tests.cu
-            Vector/cuda/map_vector_sparse_cuda_kernels_unit_tests.cu
             NN/CellList/tests/CellDecomposer_gpu_ker_unit_test.cu
-            SparseGridGpu/tests/BlockMapGpu_tests.cu
+	    SparseGridGpu/tests/BlockMapGpu_tests.cu
 	    util/test/zmorton_unit_tests.cpp
 	    util/cuda/test/segreduce_block_cuda_tests.cu 
 	    SparseGridGpu/tests/BlockMapGpu_kernels_tests.cu 
-	    SparseGridGpu/tests/SparseGridGpu_tests.cu)
+	    SparseGridGpu/tests/SparseGridGpu_tests.cu
+	    )
 endif ()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 	add_definitions("-DBOOST_MPL_CFG_HAS_TYPEOF")
 endif()
 
-if (CUDA_ON_CPU)
-
-	add_definitions(-DCUDA_ON_CPU -D__NVCC__ -DCUDART_VERSION=11000 )
+if (CUDA_ON_BACKEND STREQUAL "OpenMP" OR CUDA_ON_BACKEND STREQUAL "SEQUENTIAL")
+        set_source_files_properties(${CUDA_SOURCES} PROPERTIES COMPILE_FLAGS "-D__NVCC__ -DCUDART_VERSION=11000")
         set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
-	set_source_files_properties(isolation.cu PROPERTIES LANGUAGE CXX)
-       	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-        	add_definitions("-x c++")
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+                add_definitions("-x c++")
         endif()
 endif()
 
-if ( HIP_ENABLE AND HIP_FOUND )
+if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 
 	list(APPEND HIP_HIPCC_FLAGS ${CMAKE_CXX_FLAGS_DEBUG})
 
@@ -62,10 +62,9 @@ if ( HIP_ENABLE AND HIP_FOUND )
 		list(APPEND HIP_HIPCC_FLAGS -O0)
 	endif()
 
-	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0)
+	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0 --std=c++14)
 	set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
 
-	set(CMAKE_CXX_COMPILER ${HIP_HIPCC_EXECUTABLE})
 
         hip_add_executable(mem_map ${CUDA_SOURCES}
                 main.cpp
@@ -78,6 +77,7 @@ if ( HIP_ENABLE AND HIP_FOUND )
                 SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
                 Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
                 Grid/Geometry/tests/grid_smb_tests.cpp)
+
 
 else()
 
@@ -99,11 +99,15 @@ set_property(TARGET mem_map PROPERTY CUDA_ARCHITECTURES 60 75)
 
 if (CUDA_FOUND)
 
+	target_include_directories(mem_map PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
 	add_executable(isolation
 		isolation.cu
         	)
 
 	add_dependencies(isolation ofpmmemory)
+
+	set_property(TARGET isolation PROPERTY CUDA_ARCHITECTURES OFF)
 
 endif()
 
@@ -116,7 +120,10 @@ endif()
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(mem_map PRIVATE "-Wno-deprecated-declarations")
-    target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -mavx>)
+
+    if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -mavx>)
+    endif()
 
    if( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0 )
         target_compile_options(mem_map PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -fabi-version=6>)
@@ -163,7 +170,6 @@ if (CUDA_FOUND)
     endif ()
 endif ()
 
-target_include_directories(mem_map PUBLIC ${CUDA_INCLUDE_DIRS})
 target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
 target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
@@ -172,7 +178,6 @@ target_include_directories(mem_map PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(mem_map PUBLIC ${ALPAKA_ROOT}/include)
 
 if (CUDA_FOUND)
-	target_include_directories(isolation PUBLIC ${CUDA_INCLUDE_DIRS})
 	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
 	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
@@ -183,10 +188,16 @@ endif()
 
 target_include_directories(mem_map PUBLIC ${Vc_INCLUDE_DIR})
 
+if (HIP_FOUND)
+	target_link_libraries(mem_map hip::host)
+endif()
 target_link_libraries(mem_map ${Boost_LIBRARIES})
 target_link_libraries(mem_map -L${LIBHILBERT_LIBRARY_DIRS} ${LIBHILBERT_LIBRARIES})
 target_link_libraries(mem_map ofpmmemory)
 target_link_libraries(mem_map ${Vc_LIBRARIES})
+if (OPENMP_FOUND)
+	target_link_libraries(mem_map OpenMP::OpenMP_CXX)
+endif()
 
 if (CUDA_FOUND)
 	target_link_libraries(isolation ${Boost_LIBRARIES})
@@ -354,6 +365,8 @@ install(FILES util/check_no_pointers.hpp
         util/SimpleRNG.hpp
         util/math_util_complex.hpp
         util/mul_array_extents.hpp
+	util/hostDevice_util_funcs.hpp
+	util/sparsegrid_util_common.hpp
         DESTINATION openfpm_data/include/util
 	COMPONENT OpenFPM)
 

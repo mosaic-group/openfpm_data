@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_comb_use )
 	}
 
 	{
-	comb<3> c1({-1,1,0});
+	comb<3> c1({(char)-1,(char)1,(char)0});
 
 	comb<3> c_ret = c1.flip();
 
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 
 	// Fill the expected vector
 
-	comb<1> c[] = {{1},{-1}};
+	comb<1> c[] = {{(char)1},{(char)-1}};
 
 	// Check the linearization
 	check_lin(v_c1_0);
@@ -205,8 +205,8 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 
 	// Check combination
 
-	comb<2> c2_0[] = {{1,1},{-1,1},{1,-1},{-1,-1}};
-	comb<2> c2_1[] = {{0,1},{0,-1},{1,0},{-1,0}};
+	comb<2> c2_0[] = {{(char)1,(char)1},{(char)-1,(char)1},{(char)1,(char)-1},{(char)-1,(char)-1}};
+	comb<2> c2_1[] = {{(char)0,(char)1},{(char)0,(char)-1},{(char)1,(char)0},{(char)-1,(char)0}};
 	check_lin(v_c2_0);
 	check_lin(v_c2_1);
 
@@ -244,9 +244,9 @@ BOOST_AUTO_TEST_CASE( Hyper_cube_use)
 
 	// Check combination
 
-	comb<3> c3_0[] = {{1,1,1},{-1,1,1},{1,-1,1},{-1,-1,1},{1,1,-1},{-1,1,-1},{1,-1,-1},{-1,-1,-1}};
-	comb<3> c3_1[] = {{0,1,1},{0,-1,1},{0,1,-1},{0,-1,-1},{1,0,1},{-1,0,1},{1,0,-1},{-1,0,-1},{1,1,0},{-1,1,0},{1,-1,0},{-1,-1,0}};
-	comb<3> c3_2[] = {{{0,0,1}},{{0,0,-1}},{{0,1,0}},{{0,-1,0}},{{1,0,0}},{{-1,0,0}}};
+	comb<3> c3_0[] = {{(char)1,(char)1,(char)1},{(char)-1,(char)1,(char)1},{(char)1,(char)-1,(char)1},{(char)-1,(char)-1,(char)1},{(char)1,(char)1,(char)-1},{(char)-1,(char)1,(char)-1},{(char)1,(char)-1,(char)-1},{(char)-1,(char)-1,(char)-1}};
+	comb<3> c3_1[] = {{(char)0,(char)1,(char)1},{(char)0,(char)-1,(char)1},{(char)0,(char)1,(char)-1},{(char)0,(char)-1,(char)-1},{(char)1,(char)0,(char)1},{(char)-1,(char)0,(char)1},{(char)1,(char)0,(char)-1},{(char)-1,(char)0,(char)-1},{(char)1,(char)1,(char)0},{(char)-1,(char)1,(char)0},{(char)1,(char)-1,(char)0},{(char)-1,(char)-1,(char)0}};
+	comb<3> c3_2[] = {{{(char)0,(char)0,(char)1}},{{(char)0,(char)0,(char)-1}},{{(char)0,(char)1,(char)0}},{{(char)0,(char)-1,(char)0}},{{(char)1,(char)0,(char)0}},{{(char)-1,(char)0,(char)0}}};
 	check_lin(v_c3_0);
 	check_lin(v_c3_1);
 	check_lin(v_c3_2);

@@ -20,6 +20,9 @@ class grid_smb
 {
 private:
 
+	//! Box enclosing the grid
+	Box<dim,size_t> box;
+
     indexT blockSz[dim];
     indexT sz[dim];
 
@@ -31,12 +34,25 @@ public:
 
     grid_smb()	{}
 
+	/*! \brief Return the box enclosing the grid
+	 *
+	 * \return the box
+	 *
+	 */
+	inline Box<dim,size_t> getBox() const
+	{
+		return box;
+	}
+
     __host__ __device__ grid_smb(const size_t (& sz)[dim])
     {
         for (int d=0; d<dim; ++d)
         {
             this->sz[d] = sz[d];
             blockSz[d] = sz[d] / blockEdgeSize + ((sz[d] % blockEdgeSize) != 0);
+
+            box.setHigh(d,sz[d]);
+			box.setLow(d,0);
         }
     }
 
@@ -46,6 +62,9 @@ public:
         {
             this->sz[d] = sz[d];
             blockSz[d] = sz[d] / blockEdgeSize + ((sz[d] % blockEdgeSize) != 0);
+
+			box.setHigh(d,sz[d]);
+			box.setLow(d,0);
         }
     }
 
@@ -55,6 +74,9 @@ public:
         {
             blockSz[i] = (indexT)domainBlockEdgeSize;
             sz[i] = (indexT)domainBlockEdgeSize * blockEdgeSize;
+
+			box.setHigh(i,domainBlockEdgeSize);
+			box.setLow(i,0);
         }
     }
 
@@ -65,8 +87,13 @@ public:
         {
             blockSz[i] = blockGrid.size(i);
             sz[i] = blockGrid.size(i) * blockEdgeSize;
+
+			box.setHigh(i,sz[i]);
+			box.setLow(i,0);
         }
     }
+
+    static bool noPointers() {return true;}
 
 #ifdef __NVCC__
     //Constructors from dim3 and uint3 objects
@@ -76,16 +103,27 @@ public:
         assert(dim <= 3);
         blockSz[i] = blockDimensions.x;
         sz[i] = blockSz[i] * blockEdgeSize;
+
+		box.setHigh(i,sz[i]);
+		box.setLow(i,0);
+
         if (dim > 1)
         {
         	++i;
             blockSz[i] = blockDimensions.y;
             sz[i] = blockSz[i] * blockEdgeSize;
+
+			box.setHigh(i,sz[i]);
+			box.setLow(i,0);
+
             if (dim > 2)
             {
             	++i;
                 blockSz[i] = blockDimensions.z;
                 sz[i] = blockSz[i] * blockEdgeSize;
+
+    			box.setHigh(i,sz[i]);
+	    		box.setLow(i,0);
             }
         }
     }
@@ -148,6 +186,33 @@ public:
             localLinId += coord.get(d) % blockEdgeSize;
         }
         return blockLinId * blockSize + localLinId;
+    }
+
+    /*! \brief Linearize the coordinate index
+     *
+     * The linearization is given by getting the block indexes and the local coordinate indexes
+     *
+     * Linearize the block index (blockLinId), linearize the local index (localLinId) and return
+     * blockLinId and offset
+     *
+     * \param coord coordinates
+     *
+     * \return linearized index
+     *
+     */
+    template<typename indexT_>
+    inline __host__ __device__ void LinId(const grid_key_dx<dim, indexT_> coord, indexT & blockLinId, int & localLinId) const
+    {
+        //todo: Check (in debug mode only) that the coordinates passed here are valid and not overflowing dimensions (???)
+        blockLinId = coord.get(dim - 1) / blockEdgeSize;
+        localLinId = coord.get(dim - 1) % blockEdgeSize;
+        for (int d = dim - 2; d >= 0; --d)
+        {
+            blockLinId *= blockSz[d];
+            localLinId *= blockEdgeSize;
+            blockLinId += coord.get(d) / blockEdgeSize;
+            localLinId += coord.get(d) % blockEdgeSize;
+        }
     }
 
     inline __host__ __device__ grid_key_dx<dim, int> InvLinId(const indexT linId) const

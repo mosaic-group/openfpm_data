@@ -11,6 +11,7 @@
 #include <cstdarg>
 #include <string>
 
+
 namespace mgpu {
 
 enum memory_space_t {

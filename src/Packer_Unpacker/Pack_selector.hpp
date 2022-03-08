@@ -43,7 +43,7 @@
  *
  *
  */
-template <typename T, bool has_noPointers>
+template <typename T, int has_noPointers>
 struct Pack_selector_unknown_type_impl
 {
 	enum
@@ -53,11 +53,33 @@ struct Pack_selector_unknown_type_impl
 };
 
 template <typename T>
-struct Pack_selector_unknown_type_impl<T,false>
+struct Pack_selector_unknown_type_impl<T,0>
 {
 	enum
 	{
 		value = PACKER_OBJECTS_WITH_WARNING_POINTERS
+	};
+};
+
+/*! \brief Pack selector for unknown type
+ *
+ *
+ */
+template <typename T>
+struct Pack_selector_unknown_type_impl<T,2>
+{
+	enum
+	{
+		value = PACKER_ARRAY_CP_PRIMITIVE
+	};
+};
+
+template <typename T>
+struct Pack_selector_unknown_type_impl<T,3>
+{
+	enum
+	{
+		value = PACKER_ARRAY_CP_PRIMITIVE
 	};
 };
 
@@ -70,7 +92,7 @@ struct Pack_selector_known_type_impl
 {
 	enum
 	{
-		value = Pack_selector_unknown_type_impl<T, has_noPointers<T>::value >::value
+		value = Pack_selector_unknown_type_impl<T, has_noPointers<T>::value + 2*std::is_array<T>::value >::value
 	};
 };
 

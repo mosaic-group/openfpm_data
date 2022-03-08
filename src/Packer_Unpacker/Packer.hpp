@@ -8,18 +8,21 @@
 #ifndef SRC_PACKER_HPP_
 #define SRC_PACKER_HPP_
 
+
+#include "util/cudify/cudify.hpp"
+
 #include "util/object_util.hpp"
 //#include "Grid/util.hpp"
 #include "Vector/util.hpp"
 #include "memory/ExtPreAlloc.hpp"
 #include "util/util_debug.hpp"
 
-
 #include "Grid/grid_sm.hpp"
 #include "util/Pack_stat.hpp"
 #include "Pack_selector.hpp"
 #include "has_pack_encap.hpp"
 #include "Packer_util.hpp"
+
 
 template <typename> struct Debug;
 

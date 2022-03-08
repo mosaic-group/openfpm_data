@@ -214,6 +214,7 @@ public:
     return *this;
   }
 
+  __device__ __host__ T* origin_mutable() const { return const_cast<T*>(this->base_); }
   __device__ __host__ T* origin() { return this->base_; }
   __device__ __host__ const T* origin() const { return this->base_; }
 

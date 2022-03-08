@@ -1978,7 +1978,7 @@ namespace openfpm
 			n_gpu_rem_block_slot = 0;
 		}
 
-		void swap(vector_sparse<T,Ti,Memory,layout,layout_base,grow_p,impl> & sp)
+		void swap(vector_sparse<T,Ti,Memory,layout,layout_base,grow_p,impl,impl2,block_functor> & sp)
 		{
 			vct_data.swap(sp.vct_data);
 			vct_index.swap(sp.vct_index);

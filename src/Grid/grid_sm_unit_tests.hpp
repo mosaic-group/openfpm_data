@@ -19,7 +19,8 @@ BOOST_AUTO_TEST_CASE( grid_sm_linearization )
 	const grid_key_dx<3> key1(1,2,3);
 	const grid_key_dx<3> zero(0,0,0);
 	const grid_key_dx<3> seven(7,7,7);
-	const comb<3> c({1,0,-1});
+
+	const comb<3> c({(char)1,(char)0,(char)-1});
 	size_t sz[3] = {8,8,8};
 
 	grid_sm<3,int> gs(sz);

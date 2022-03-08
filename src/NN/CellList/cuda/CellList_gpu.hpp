@@ -648,12 +648,12 @@ public:
 
 	CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse> toKernel()
 	{
-		if (nnc_rad.size() == 0)
+/*		if (nnc_rad.size() == 0) <----- Cannot call this anymore with openMP
 		{
 			// set the radius equal the cell spacing on direction X
 			// (must be initialized to something to avoid warnings)
 			setRadius(this->getCellBox().getHigh(0));
-		}
+		}*/
 
 		return CellList_gpu_ker_selector<dim,T,cnt_type,ids_type,Memory,transform,
 								  vector_cnt_type,openfpm::vector_gpu<aggregate<cnt_type,cnt_type>>,

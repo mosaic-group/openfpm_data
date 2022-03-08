@@ -2,6 +2,7 @@
 #define FUSION_MAX_VECTOR_SIZE 20
 
 #include "config.h"
+
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 #include "util/math_util_complex.hpp"

@@ -37,6 +37,122 @@ struct skip_init<true,T>
 	}
 };
 
+#ifdef __NVCC__
+
+template<bool active>
+struct copy_ndim_grid_device_active_impl
+	{
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+
+	}
+
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy_block(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+	}
+};
+
+template<>
+struct copy_ndim_grid_device_active_impl<true>
+{
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+		CUDA_LAUNCH((copy_ndim_grid_device<grid_type1::dims,decltype(g1.toKernel())>),ite,g2.toKernel(),g1.toKernel());
+	}
+
+	template<typename grid_type1, typename grid_type2, typename ite_gpu_type>
+	static inline void copy_block(grid_type1 & g1, grid_type2 & g2, ite_gpu_type & ite)
+	{
+		CUDA_LAUNCH((copy_ndim_grid_block_device<grid_type1::dims,decltype(g1.toKernel())>),ite,g2.toKernel(),g1.toKernel());
+	}
+};
+
+template<typename S,typename grid_dst_type, typename grid_src_type>
+void copy_grid_to_grid(grid_dst_type & gdst, const grid_src_type & gsrc, 
+					   grid_key_dx<grid_dst_type::dims> & start, grid_key_dx<grid_dst_type::dims> & stop,
+					   int blockSize)
+{
+	if (grid_dst_type::dims <= 3)
+	{
+		auto ite = gsrc.getGPUIterator(start,stop);
+		bool has_work = has_work_gpu(ite);
+
+		if (has_work == true)
+		{
+			if (blockSize == 1)
+			{
+				copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy(gdst,gsrc,ite);
+			}
+			else
+			{
+				move_work_to_blocks(ite);
+
+				ite.thr.x = blockSize;
+
+				copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy_block(gdst,gsrc,ite);
+			}
+		}
+	}
+	else
+	{
+		grid_key_dx<1> start;
+		start.set_d(0,0);
+		grid_key_dx<1> stop({});
+		stop.set_d(0,gsrc.getGrid().size());
+
+		size_t sz[1];
+		sz[0]= gsrc.getGrid().size();
+
+		grid_sm<1,void> g_sm_copy(sz);
+
+		auto ite = getGPUIterator_impl<1>(g_sm_copy,start,stop);
+
+		copy_ndim_grid_device_active_impl<S::isDeviceHostSame() == false>::copy(gdst,gsrc,ite);
+	}
+}
+
+#endif
+
+template<typename dest_type, typename src_type, unsigned int ... prp>
+void copy_with_openmp_prp(const dest_type & dst, const src_type & src, ite_gpu<dest_type::dims> ite)
+{
+	#ifdef CUDIFY_USE_OPENMP
+	auto lamb = [&dst,&src,&ite] __device__ (dim3 & blockIdx, dim3 & threadIdx) 
+	{
+		grid_key_dx<dest_type::dims> i;
+
+		if (dest_type::dims == 1)
+		{
+			i.set_d(0,blockIdx.x*blockDim.x + threadIdx.x + ite.start.get(0));
+			if (i.get(0) >= src.size(0))	{return;}
+		}
+		else if (dest_type::dims == 2)
+		{
+			i.set_d(0,blockIdx.x*blockDim.x + threadIdx.x + ite.start.get(0));
+			i.set_d(1,blockIdx.y*blockDim.y + threadIdx.y + ite.start.get(1));
+			if (i.get(0) >= src.size(0) || i.get(1) >= src.size(1))	{return;}
+		}
+		else if (dest_type::dims == 3)
+		{
+			i.set_d(0,blockIdx.x*blockDim.x + threadIdx.x + ite.start.get(0));
+			i.set_d(1,blockIdx.y*blockDim.y + threadIdx.y + ite.start.get(1));
+			i.set_d(2,blockIdx.z*blockDim.z + threadIdx.z + ite.start.get(2));
+			if (i.get(0) >= src.size(0) || i.get(1) >= src.size(1) || i.get(2) >= src.size(2))	{return;}
+		}
+
+		object_si_di<decltype(src.get_o(i)),decltype(dst.get_o(i)),OBJ_ENCAP,prp ...>(src.get_o(i),dst.get_o(i));
+	};
+
+	CUDA_LAUNCH_LAMBDA(ite,lamb);
+	#else
+	std::cout << __FILE__ << ":" << __LINE__ << " error CUDA on back end is disabled" << std::endl;
+	#endif
+}
+
+
 #ifdef CUDA_GPU
 
 #define GRID_ID_3_RAW(start,stop) int x[3] = {threadIdx.x + blockIdx.x * blockDim.x + start.get(0),\
@@ -69,6 +185,7 @@ struct skip_init<true,T>
     									 {return;}
 
 #ifdef __NVCC__
+
 
 template<unsigned int dim, typename ids_type = int>
 struct grid_p
@@ -264,6 +381,8 @@ class grid_base_impl
 	//! memory layout
 	typedef typename layout_base<T>::type layout;
 
+	typedef typename apply_transform<layout_base,T>::type T_;
+
 public:
 
 	//! memory layout
@@ -455,49 +574,8 @@ private:
 				{stop.set_d(i,sz[i]-1);}
 			}
 
-//			if (dim == 1)
-//			{
-//				copy_fast_1d_device_memory<is_layout_mlin<layout_base<T>>::value,decltype(grid_new.data_),S> cf1dm(data_,grid_new.data_);
+			copy_grid_to_grid<S>(grid_new,*this,start,stop,blockSize);
 
-//				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,T::max_prop>>(cf1dm);
-//			}
-			if (dim <= 3)
-			{
-				auto ite = this->getGPUIterator(start,stop);
-				bool has_work = has_work_gpu(ite);
-
-				if (has_work == true)
-				{
-					if (blockSize == 1)
-					{
-						CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
-					}
-					else
-					{
-						move_work_to_blocks(ite);
-
-						ite.thr.x = blockSize;
-
-						CUDA_LAUNCH((copy_ndim_grid_block_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
-					}
-				}
-			}
-			else
-			{
-				grid_key_dx<1> start;
-				start.set_d(0,0);
-				grid_key_dx<1> stop({});
-				stop.set_d(0,this->g1.size());
-
-				size_t sz[1];
-				sz[0]= this->g1.size();
-
-				grid_sm<1,void> g_sm_copy(sz);
-
-				auto ite = getGPUIterator_impl<1>(g_sm_copy,start,stop);
-
-				CUDA_LAUNCH((copy_ndim_grid_device<dim,decltype(grid_new.toKernel())>),ite,this->toKernel(),grid_new.toKernel());
-			}
 #else
 
 			std::cout << __FILE__ << ":" << __LINE__ << " error: the function resize require the launch of a kernel, but it seem that this" <<
@@ -539,6 +617,12 @@ private:
 		}
 		else
 			grid_new.setMemory();
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+
+#endif
 	}
 
 public:
@@ -619,6 +703,13 @@ public:
 	{
 		swap(g.duplicate());
 
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+		g.base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(g);
+
+#endif
+
 		return *this;
 	}
 
@@ -632,6 +723,12 @@ public:
 	grid_base_impl<dim,T,S,layout_base> & operator=(grid_base_impl<dim,T,S,layout_base> && g)
 	{
 		swap(g);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+
+#endif
 
 		return *this;
 	}
@@ -712,11 +809,19 @@ public:
 	 * \param stop end point
 	 *
 	 */
-	struct ite_gpu<dim> getGPUIterator(grid_key_dx<dim,long int> & key1, grid_key_dx<dim,long int> & key2, size_t n_thr = default_kernel_wg_threads_) const
+	struct ite_gpu<dim> getGPUIterator(const grid_key_dx<dim,long int> & key1, const grid_key_dx<dim,long int> & key2, size_t n_thr = default_kernel_wg_threads_) const
 	{
 		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}
 #endif
+
+	/*! \brief Get the size if the grid in the direction i
+	 *
+	 */
+	int size(int i) const
+	{
+		return g1.size(i);
+	}
 
 	/*! \brief Return the internal grid information
 	 *
@@ -742,6 +847,26 @@ public:
 	void setMemory()
 	{
 		mem_setm<S,layout_base<T>,decltype(this->data_),decltype(this->g1)>::setMemory(data_,g1,is_mem_init);
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+
+#endif
+
+	}
+
+	/*! \brief Return the memory object
+	 *
+	 * Return the memory object
+	 *
+	 * \tparam p array to retrieve
+	 *
+	 */
+	template<unsigned int p>
+	auto getMemory() -> decltype(boost::fusion::at_c<p>(data_).getMemory())
+	{
+		return boost::fusion::at_c<p>(data_).getMemory();
 	}
 
 	/*! \brief Set the object that provide memory from outside
@@ -760,17 +885,17 @@ public:
 		//! Is external
 		isExternal = true;
 
-		//! Create and set the memory allocator
-//		data_.setMemory(m);
-
-		//! Allocate the memory and create the reppresentation
-//		if (g1.size() != 0) data_.allocate(g1.size());
-
 		bool skip_ini = skip_init<has_noPointers<T>::value,T>::skip_();
 
 		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemory<p>(data_,m,g1.size(),skip_ini);
 
 		is_mem_init = true;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+
+#endif
 	}
 
 	/*! \brief Set the object that provide memory from outside
@@ -794,6 +919,12 @@ public:
 		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemoryArray(*this,m,g1.size(),skip_ini);
 
 		is_mem_init = true;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+
+#endif
 	}
 
 	/*! \brief Return a plain pointer to the internal data
@@ -1284,18 +1415,7 @@ public:
 
 		resize_impl_memset(grid_new);
 
-
-		// We know that, if it is 1D we can safely copy the memory
-//		if (dim == 1)
-//		{
-//			//! 1-D copy (This case is simple we use raw memory copy because is the fastest option)
-//			grid_new.data_.mem->copy(*data_.mem);
-//		}
-//		else
-//		{
-		// It should be better to separate between fast and slow cases
-
-			//! N-D copy
+		//! N-D copy
 
 		if (opt & DATA_ON_HOST)
 		{resize_impl_host(sz,grid_new);}
@@ -1357,30 +1477,27 @@ public:
 	 *
 	 * This is a different from the standard swap and require long explanation.
 	 *
-	 * This object by default when it construct after we call setMemory() it create an internal memory object
-	 * and use it allocate memory internally.
+	 * This object (grid) by default when it constructs and after we call setMemory() it create an internal memory object
+	 * and use it allocate memory internally. (Mode 1)
 	 *
 	 * If instead we use setMemory(external_mem) this object does not create an internal memory object but use
-	 * the passed object to allocate memory. Because the external memory can already have a pool of memory preallocated
-	 * we can re-use the memory.
+	 * the passed object to allocate memory. (Mode 2)
 	 *
-	 * Despite this setMemory can be used to do memory retaining/re-use  and/or garbage collection.
-	 * It can be seen from a different prospective of making the data structures act like a representation of external
-	 *  memory. De facto we are giving meaning to the external memory so we are shaping or re-shaping pre-existing
-	 *   external memory.
+	 * External memory can be used to do memory retaining/re-use  and/or garbage collection and making the data structures 
+	 * act like a representation of external memory
 	 *
-	 * In the following I will call these two mode Mode1 and Mode2
-	 *
-	 * Using the structure in this way has consequences, because now in Mode2 the memory (and so its life-span) is disentangled
+	 * Using the structure in this way has consequences, because in Mode2 the memory (and so its life-span) is disentangled
 	 *  by its structure.
 	 *
 	 *
-	 * The main difference comes when we swap object in which one of both are in Mode2
+	 * The problem comes when we swap object in which one the structure is in Mode2
 	 *
 	 * Let's suppose object A is in Mode1 and object B is is Mode2. The normal swap, fully swap the objects
 	 *
 	 * A.swap(B) A become B (in mode 2) and B become A (in mode 1)
 	 *
+	 * swap nomode require that A and B have the same size.
+	 * 
 	 * A.swap_nomode(B) In this case the mode is not swapped  A become B (in mode 1) and B become A (in mode 2).
 	 *                  So the mode is not swapped and remain the original
 	 *
@@ -1399,6 +1516,12 @@ public:
 		bool exg = is_mem_init;
 		is_mem_init = grid.is_mem_init;
 		grid.is_mem_init = exg;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+
+#endif
 	}
 
 	/*! \brief It swap the objects A become B and B become A using A.swap(B);
@@ -1423,6 +1546,13 @@ public:
 		exg = isExternal;
 		isExternal = grid.isExternal;
 		grid.isExternal = exg;
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+		grid.base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(grid);
+
+#endif
 	}
 
 	/*! \brief It move the allocated object from one grid to another
@@ -1638,16 +1768,106 @@ public:
 		return grid_key_dx_iterator<dim>(gvoid);
 	}
 
-#ifdef CUDA_GPU
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+		*
+		*
+		*/
+	template<unsigned int ... prp> void deviceToHost()
+	{
+		layout_base<T>::template deviceToHost<decltype(data_), prp ...>(data_,0,this->getGrid().size() - 1);
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+		*
+		*
+		*/
+	template<unsigned int ... prp> void deviceToHost(size_t start, size_t stop)
+	{
+		layout_base<T>::template deviceToHost<decltype(data_), prp ...>(data_,start,stop);
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host (respecting the NUMA domains)
+		*
+		*
+		*/
+	template<unsigned int ... prp> void hostToDeviceNUMA(size_t start, size_t stop)
+	{
+		#ifdef CUDIFY_USE_OPENMP
+		grid_key_dx<dim> start_;
+		grid_key_dx<dim> stop_;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			start_.set_d(i,start);
+			stop_.set_d(i,stop);
+		}
+		
+		auto ite = this->getGPUIterator(start_,stop_);
+
+		// We have to carefull with openmp, numtiple thread can end up in numa
+		copy_with_openmp_prp<decltype(this->toKernel()),typename std::remove_reference<decltype(*this)>::type,prp ...>(this->toKernel(),*this,ite);
+		#else
+		this->template hostToDevice<prp ...>(start,stop);
+		#endif
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host (respecting the NUMA domains)
+		*
+		*
+		*/
+	template<unsigned int ... prp> void hostToDeviceNUMA()
+	{
+		#ifdef CUDIFY_USE_OPENMP
+
+		grid_key_dx<dim> start_;
+		grid_key_dx<dim> stop_;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			start_.set_d(i,0);
+			stop_.set_d(i,this->g1.size() - 1);
+		}
+		
+		auto ite = this->getGPUIterator(start_,stop_);
+
+		// We have to carefull with openmp, numtiple thread can end up in numa
+		copy_with_openmp_prp<decltype(this->toKernel()),typename std::remove_reference<decltype(*this)>::type,prp ...>(this->toKernel(),*this,ite);
+		#else
+		this->template hostToDevice<prp ...>();
+		#endif
+	}
+
+	/*! \brief Synchronize the memory buffer in the device with the memory in the host
+		*
+		*
+		*/
+	template<unsigned int ... prp> void hostToDevice(size_t start, size_t stop)
+	{
+		layout_base<T>::template hostToDevice<S, decltype(data_),prp ...>(data_,start,stop);
+	}
+
+
+	/*! \brief Copy the memory from host to device
+		*
+		*
+		*/
+	template<unsigned int ... prp> void hostToDevice()
+	{
+		layout_base<T>::template hostToDevice<S,decltype(data_),prp ...>(data_,0,this->getGrid().size() - 1);
+	}
+
+#if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
+
+	mutable grid_gpu_ker<dim,T_,layout_base,linearizer_type> base_gpu;
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
 	 *
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	grid_gpu_ker<dim,T,layout_base> toKernel()
+	grid_gpu_ker_ref<dim,T_,layout_base,linearizer_type> toKernel()
 	{
-		return grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+		return grid_gpu_ker_ref<dim,T_,layout_base,linearizer_type>(base_gpu);
 	}
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
@@ -1655,9 +1875,31 @@ public:
 	 *  The object created can be considered like a reference of the original
 	 *
 	 */
-	const grid_gpu_ker<dim,T,layout_base> toKernel() const
+	const grid_gpu_ker_ref<dim,T_,layout_base,linearizer_type> toKernel() const
 	{
-		return grid_toKernelImpl<is_layout_inte<layout_base<T>>::value,dim,T>::toKernel(*this);
+		return grid_gpu_ker_ref<dim,T_,layout_base,linearizer_type>(base_gpu);
+	}
+
+#else 
+
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	grid_gpu_ker<dim,T_,layout_base,linearizer_type> toKernel()
+	{
+		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+	}
+
+	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
+	 *
+	 *  The object created can be considered like a reference of the original
+	 *
+	 */
+	const grid_gpu_ker<dim,T_,layout_base,linearizer_type> toKernel() const
+	{
+		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
 	}
 
 #endif
