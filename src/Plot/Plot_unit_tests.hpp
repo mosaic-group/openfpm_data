@@ -21,6 +21,16 @@ BOOST_AUTO_TEST_CASE( google_chart_bar_string )
 	if (v_cl.getProcessUnitID() != 0)
 		return;
 
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_out_sc_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_out_sc_test.html");
+
+#endif
+
 	//! [Producing an Histogram graph]
 
 	openfpm::vector<std::string> x;
@@ -67,7 +77,7 @@ BOOST_AUTO_TEST_CASE( google_chart_bar_string )
 
 	//! [Producing an Histogram graph]
 
-	bool test = compare("gc_out_sc.html","test_data/gc_out_sc_test.html");
+	bool test = compare("gc_out_sc.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -78,6 +88,16 @@ BOOST_AUTO_TEST_CASE( google_chart )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_out_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_out_test.html");
+
+#endif
 
 	//! [Producing an Histogram graph]
 
@@ -124,7 +144,7 @@ BOOST_AUTO_TEST_CASE( google_chart )
 
 	//! [Producing an Histogram graph]
 
-	bool test = compare("gc_out.html","test_data/gc_out_test.html");
+	bool test = compare("gc_out.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -134,6 +154,16 @@ BOOST_AUTO_TEST_CASE( google_chart2 )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_out2_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_out2_test.html");
+
+#endif
 
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<float>> y;
@@ -173,7 +203,7 @@ BOOST_AUTO_TEST_CASE( google_chart2 )
 	cg.AddHistGraph(x,y,yn,options);
 	cg.write("gc_out2.html");
 
-	bool test = compare("gc_out2.html","test_data/gc_out2_test.html");
+	bool test = compare("gc_out2.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -183,6 +213,16 @@ BOOST_AUTO_TEST_CASE( google_chart3 )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_out3_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_out3_test.html");
+
+#endif
 
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<float>> y;
@@ -221,7 +261,7 @@ BOOST_AUTO_TEST_CASE( google_chart3 )
 	cg.AddHistGraph(x,y,yn,options);
 	cg.write("gc_out3.html");
 
-	bool test = compare("gc_out3.html","test_data/gc_out3_test.html");
+	bool test = compare("gc_out3.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -231,6 +271,16 @@ BOOST_AUTO_TEST_CASE( google_chart4 )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_out4_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_out4_test.html");
+
+#endif
 
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<float>> y;
@@ -262,7 +312,7 @@ BOOST_AUTO_TEST_CASE( google_chart4 )
 	cg.AddHistGraph(x,y,yn);
 	cg.write("gc_out4.html");
 
-	bool test = compare("gc_out4.html","test_data/gc_out4_test.html");
+	bool test = compare("gc_out4.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -272,6 +322,16 @@ BOOST_AUTO_TEST_CASE( google_chart5 )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_out5_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_out5_test.html");
+
+#endif
 
 	openfpm::vector<std::string> x;
 	openfpm::vector<openfpm::vector<float>> y;
@@ -295,7 +355,7 @@ BOOST_AUTO_TEST_CASE( google_chart5 )
 	cg.AddHistGraph(x,y);
 	cg.write("gc_out5.html");
 
-	bool test = compare("gc_out5.html","test_data/gc_out5_test.html");
+	bool test = compare("gc_out5.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -305,6 +365,16 @@ BOOST_AUTO_TEST_CASE( google_chart6 )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_out6_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_out6_test.html");
+
+#endif
 
 	openfpm::vector<openfpm::vector<float>> y;
 
@@ -320,7 +390,7 @@ BOOST_AUTO_TEST_CASE( google_chart6 )
 	cg.AddHistGraph(y);
 	cg.write("gc_out6.html");
 
-	bool test = compare("gc_out6.html","test_data/gc_out6_test.html");
+	bool test = compare("gc_out6.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -330,6 +400,16 @@ BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_out7_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_out7_test.html");
+
+#endif
 
 	//! [Producing a set of histograms graphs]
 
@@ -383,7 +463,7 @@ BOOST_AUTO_TEST_CASE( google_chart_with_inject_HTML )
 
 	//! [Producing a set of histograms graphs]
 
-	bool test = compare("gc_out7.html","test_data/gc_out7_test.html");
+	bool test = compare("gc_out7.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -393,6 +473,16 @@ BOOST_AUTO_TEST_CASE( google_chart_number )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_num_plot_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_num_plot_test.html");
+
+#endif
 
 	//! [Producing a set of histograms graphs]
 
@@ -437,7 +527,7 @@ BOOST_AUTO_TEST_CASE( google_chart_number )
 
 	//! [Producing a set of histograms graphs]
 
-	bool test = compare("gc_num_plot.html","test_data/gc_num_plot_test.html");
+	bool test = compare("gc_num_plot.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -447,6 +537,16 @@ BOOST_AUTO_TEST_CASE( google_chart_number_lines_different_x )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_num_ydif_plot_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_num_ydif_plot_test.html");
+
+#endif
 
 	//! [Producing a set of histograms graphs]
 
@@ -503,7 +603,7 @@ BOOST_AUTO_TEST_CASE( google_chart_number_lines_different_x )
 
 	//! [Producing a set of histograms graphs]
 
-	bool test = compare("gc_num_ydif_plot.html","test_data/gc_num_ydif_plot_test.html");
+	bool test = compare("gc_num_ydif_plot.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -513,6 +613,16 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_plot_out_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_plot_out_test.html");
+
+#endif
 
 	//! [Producing lines graph with style]
 
@@ -570,7 +680,7 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot )
 
 	//! [Producing lines graph with style]
 
-	bool test = compare("gc_plot_out.html","test_data/gc_plot_out_test.html");
+	bool test = compare("gc_plot_out.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
@@ -580,6 +690,16 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot2 )
 
 	if (v_cl.getProcessUnitID() != 0)
 		return;
+
+#ifdef OPENFPM_PDATA
+
+	std::string c2 = std::string("openfpm_io/test_data/gc_plot2_out_test.html");
+
+#else
+
+	std::string c2 = std::string("test_data/gc_plot2_out_test.html");
+
+#endif
 
 	//! [Producing lines]
 
@@ -619,7 +739,7 @@ BOOST_AUTO_TEST_CASE( google_chart_linear_plot2 )
 
 	//! [Producing lines]
 
-	bool test = compare("gc_plot2_out.html","test_data/gc_plot2_out_test.html");
+	bool test = compare("gc_plot2_out.html",c2);
 	BOOST_REQUIRE_EQUAL(true,test);
 }
 
