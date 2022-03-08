@@ -752,7 +752,7 @@ public:
 		{
 			auto key = it.get();
 
-			if (this->get_o(key) != this->get_o(key))
+			if (this->get_o(key) != g.get_o(key))
 				return false;
 
 			++it;
