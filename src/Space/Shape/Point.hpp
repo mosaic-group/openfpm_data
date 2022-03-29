@@ -228,7 +228,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the norm of the vector
 	 *
 	 */
-	__device__ __host__ T norm()
+	__device__ __host__ T norm() const
 	{
 		T n = 0.0;
 

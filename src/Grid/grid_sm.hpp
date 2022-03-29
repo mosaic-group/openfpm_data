@@ -108,12 +108,12 @@ struct ite_gpu
 	grid_key_dx<dim,int> start;
 	grid_key_dx<dim,int> stop;
 
-	size_t nblocks()
+	size_t nblocks() const
 	{
 		return wthr.x * wthr.y * wthr.z;
 	}
 
-	size_t nthrs()
+	size_t nthrs() const
 	{
 		return thr.x * thr.y * thr.z;
 	}
