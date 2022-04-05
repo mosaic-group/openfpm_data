@@ -619,7 +619,7 @@ public:
 	 * \return true if the write complete successfully
 	 *
 	 */
-    bool write_pvtp(std::string file,const openfpm::vector<std::string> & prop_names,size_t n,long int timestamp=-1,double time=0)
+    bool write_pvtp(std::string file,const openfpm::vector<std::string> & prop_names,size_t n,long int timestamp=-1,double time=-1)
     {
         //openfpm::vector< ele_vpp<typename pair::second>> vpp;
         // Header for the vtk
@@ -627,7 +627,7 @@ public:
         std::string Name_data;
         std::string PpointEnd;
         std::string Piece;
-        if(time==0){
+        if(time==-1){
             vtk_header = "<VTKFile type=\"PPolyData\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">\n  <PPolyData>\n    <PPointData>\n";
         }
         else{
