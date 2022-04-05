@@ -246,7 +246,7 @@ struct prop_out_v_pvtp
 
     void lastProp()
     {
-        v_out += "      <PDataArray type=\"Float32\" Name=\"domain\"/>\n    </PPointData>\n";
+v_out += "      <PDataArray type=\"Float32\" Name=\"domain\"/>\n    </PPointData>\n";
     }
 };
 
@@ -619,7 +619,7 @@ public:
 	 * \return true if the write complete successfully
 	 *
 	 */
-    bool write_pvtp(std::string file,const openfpm::vector<std::string> & prop_names,size_t n,long int timestamp=-1)
+    bool write_pvtp(std::string file,const openfpm::vector<std::string> & prop_names,size_t n,long int timestamp=-1,double time=0)
     {
         //openfpm::vector< ele_vpp<typename pair::second>> vpp;
         // Header for the vtk
@@ -627,8 +627,12 @@ public:
         std::string Name_data;
         std::string PpointEnd;
         std::string Piece;
-
-        vtk_header = "<VTKFile type=\"PPolyData\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">\n  <PPolyData>\n    <PPointData>\n";
+        if(time==0){
+            vtk_header = "<VTKFile type=\"PPolyData\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">\n  <PPolyData>\n    <PPointData>\n";
+        }
+        else{
+            vtk_header = "<VTKFile type=\"PPolyData\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">\n  <PPolyData>\n   <FieldData> \n   <DataArray type=\"Float64\" Name=\"TimeValue\" NumberOfTuples=\"1\" format=\"ASCII\">\n        "+std::to_string(time)+"\n      </DataArray>\n   </FieldData>\n   <PPointData>\n";
+        }
         prop_out_v_pvtp< ele_vpp<typename pair::second>, typename pair::first::value_type::coord_type> pp(Name_data,prop_names);
         boost::mpl::for_each< boost::mpl::range_c<int,0, pair::second::value_type::max_prop> >(pp);
         pp.lastProp();
