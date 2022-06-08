@@ -431,7 +431,7 @@ public:
 	 */
 
 	template<typename check=NoCheck, typename ids_type>
-	inline mem_id LinId(const grid_key_dx<N,ids_type> & gk, const char sum_id[N]) const
+	inline mem_id LinId(const grid_key_dx<N,ids_type> & gk, const signed char sum_id[N]) const
 	{
 		mem_id lid;
 
@@ -467,7 +467,7 @@ public:
 	 */
 
 	template<typename check=NoCheck,typename ids_type>
-	inline mem_id LinId(const grid_key_dx<N,ids_type> & gk, const char sum_id[N], const size_t (&bc)[N]) const
+	inline mem_id LinId(const grid_key_dx<N,ids_type> & gk, const signed char sum_id[N], const size_t (&bc)[N]) const
 	{
 		mem_id lid;
 

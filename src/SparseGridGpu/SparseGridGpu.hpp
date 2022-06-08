@@ -2632,6 +2632,28 @@ public:
      *
      *
      */
+	template<unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_src3,
+	         unsigned int prop_dst1 , unsigned int prop_dst2, unsigned int prop_dst3,
+			 unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv3_b(grid_key_dx<dim> start, grid_key_dx<dim> stop , lambda_f func, ArgsT ... args)
+	{
+		Box<dim,int> box;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			box.setLow(i,start.get(i));
+			box.setHigh(i,stop.get(i));
+		}
+
+        constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value), (blockSize)>::value;
+
+		applyStencils< SparseGridGpuKernels::stencil_func_conv3_b<dim,nLoop,prop_src1,prop_src2,prop_src3,prop_dst1,prop_dst2,prop_dst3,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+	}
+	
+    /*! \brief Apply a free type convolution using blocks
+     *
+     *
+     */
 	template<unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1 , unsigned int prop_dst2, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
 	void conv2(grid_key_dx<dim> start, grid_key_dx<dim> stop , lambda_f func, ArgsT ... args)
 	{
