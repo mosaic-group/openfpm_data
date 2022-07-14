@@ -315,4 +315,15 @@ struct AggregateAppend<BlockT, aggregate<list ...>>
     typedef aggregate<list..., BlockT> type;
 };
 
+template<typename BlockT, typename T>
+struct AggregatePreAppend
+{
+};
+
+template<typename BlockT, typename ... list>
+struct AggregatePreAppend<BlockT, aggregate<list ...>>
+{
+    typedef aggregate<BlockT, list...> type;
+};
+
 #endif /* OPENFPM_DATA_SRC_UTIL_AGGREGATE_HPP_ */

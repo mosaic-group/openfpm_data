@@ -2407,6 +2407,10 @@ public:
         findNN = true;
     }
 
+	/*! \brief Count the number or points in this sparse grid
+     *
+	 * 
+	 */
     size_t countExistingElements() const
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!

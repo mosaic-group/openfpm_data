@@ -871,6 +871,26 @@ public:
 		e_l.resize(e_l.size() + v_slot);
 	}
 
+	/*! \brief add vertex generic
+	 *
+	 * \param vrt Vertex properties
+	 *
+	 */
+	template<typename Vtype>
+	inline void addVertex(const Vtype & vrt)
+	{
+
+		v.add(vrt);
+
+		// Set the number of adjacent vertex for this vertex to 0
+
+		v_l.add(0ul);
+
+		// Add a slot for the vertex adjacency list
+
+		e_l.resize(e_l.size() + v_slot);
+	}
+
 	/*! \brief add an empty vertex
 	 *
 	 */
@@ -898,6 +918,29 @@ public:
 	 *
 	 */
 	template<typename CheckPolicy = NoCheck> inline auto addEdge(size_t v1, size_t v2, const E & ed) -> decltype(e.get(0))
+	{
+		long int id_x_end = addEdge_<CheckPolicy>(v1, v2);
+
+		// If there is not edge return an invalid edge, is a kind of stub object
+		if (id_x_end == NO_EDGE)
+			return e_invalid.get(0);
+
+		// add in e_l the edge properties
+		e.set(id_x_end, ed);
+
+		return e.get(id_x_end);
+	}
+
+	/*! \brief add edge on the graph
+	 *
+	 * \param v1 source edge
+	 * \param v2 destination edge
+	 * \param ed edge object to add
+	 *
+	 * \return edge object
+	 *
+	 */
+	template<typename Etype, typename CheckPolicy = NoCheck>inline auto addEdge(size_t v1, size_t v2, const Etype & ed) -> decltype(e.get(0))
 	{
 		long int id_x_end = addEdge_<CheckPolicy>(v1, v2);
 

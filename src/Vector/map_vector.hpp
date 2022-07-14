@@ -44,6 +44,26 @@
 namespace openfpm
 {
 
+	template<bool is_key>
+	struct get_id
+	{
+		template<typename KeyType>
+		static auto get(KeyType & key) -> decltype(key.getKey())
+		{
+			return key.getKey();
+		}
+	};
+
+	template<>
+	struct get_id<true>
+	{
+		template<typename KeyType>
+		static auto get(KeyType & key) -> KeyType
+		{
+			return key;
+		}
+	};
+
 	template<bool active>
 	struct copy_two_vectors_activate_impl
 	{
@@ -1374,7 +1394,7 @@ namespace openfpm
 		template <unsigned int p,typename KeyType>
 		inline auto getProp(const KeyType & id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
-			return this->template get<p>(id.getKey());
+			return this->template get<p>(get_id<std::is_fundamental<KeyType>::value>::get(id));
 		}
 
 		/*! \brief Get an element of the vector
@@ -1387,10 +1407,10 @@ namespace openfpm
 		 * \return the element value requested
 		 *
 		 */
-		template <unsigned int p, typename keyType>
-		inline auto getProp(const keyType & id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+		template <unsigned int p, typename KeyType>
+		inline auto getProp(const KeyType & id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
-			return this->template get<p>(id.getKey());
+			return this->template get<p>(get_id<std::is_fundamental<KeyType>::value>::get(id));
 		}
 
 		/*! \brief Get an element of the vector

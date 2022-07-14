@@ -76,7 +76,8 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
                 SparseGrid/SparseGrid_unit_tests.cpp
                 SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
                 Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
-                Grid/Geometry/tests/grid_smb_tests.cpp)
+                Grid/Geometry/tests/grid_smb_tests.cpp
+                Space/Shape/Plane_unit_test.cpp)
 
 
 else()
@@ -91,7 +92,8 @@ else()
 		SparseGrid/SparseGrid_unit_tests.cpp
 		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
         	Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
-		Grid/Geometry/tests/grid_smb_tests.cpp)
+                Grid/Geometry/tests/grid_smb_tests.cpp
+                Space/Shape/Plane_unit_test.cpp)
 
 endif()
 
