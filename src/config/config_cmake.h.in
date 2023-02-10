@@ -1,15 +1,6 @@
 /* Coverty scan */
 ${DEFINE_COVERTY_SCAN}
 
-<<<<<<< HEAD
-=======
-/* HIP GPU support */
-${DEFINE_HIP_GPU}
-
-/* HIP Cudify GPU support */
-${DEFINE_CUDIFY_USE_HIP}
-
->>>>>>> origin/master
 /* GPU support */
 ${DEFINE_CUDA_GPU}
 
@@ -207,7 +198,3 @@ ${DEFINE_TEST_COVERAGE_MODE}
 /* Version number of package */
 #define VERSION "1.0.0"
 
-<<<<<<< HEAD
-=======
-#define OPENFPM_IO
->>>>>>> origin/master

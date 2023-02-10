@@ -5,7 +5,6 @@ if (POLICY CMP0074)
         cmake_policy(SET CMP0074 OLD)
 endif ()
 
-<<<<<<< HEAD
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules/ /opt/rocm/hip/cmake)
 
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIR} CACHE PATH "Include directory for BOOST")
@@ -18,26 +17,6 @@ set(HIP_ENABLE CACHE BOOL "Enable HIP compiler")
 set(AMD_ARCH_COMPILE "gfx900" CACHE STRING "AMD gpu architecture used to compile kernels")
 
 add_subdirectory (../openfpm_devices/ openfpm_devices)
-=======
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules/)
-
-if (POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
-
-set(BOOST_INCLUDE ${Boost_INCLUDE_DIR} CACHE PATH "Include directory for BOOST")
-set(HDF5_ROOT CACHE PATH "HDF5 root path")
-set(SE_CLASS1 CACHE BOOL "Activate compilation with SE_CLASS1")
-set(SE_CLASS3 CACHE BOOL "Activate compilation with SE_CLASS3")
-set(ENV{HDF5_ROOT} ${HDF5_ROOT})
-set(OPENFPM_PDATA_DIR CACHE PATH "OpenFPM_pdata dirs")
-set(PETSC_ROOT CACHE PATH "If compiling with linear algebra indicate the PETSC root directory")
-set(ENV{PETSC_DIR} ${PETSC_ROOT})
-set(HIP_ENABLE CACHE BOOL "Enable HIP compiler")
-set(AMD_ARCH_COMPILE "gfx900" CACHE STRING "AMD gpu architecture used to compile kernels")
-
-add_subdirectory (../openfpm_vcluster openfpm_vcluster)
->>>>>>> origin/master
 
 if (CUDA_ON_BACKEND STREQUAL "CUDA")
         enable_language(CUDA)
@@ -46,7 +25,6 @@ endif()
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CUDA_STANDARD 14)
 
-<<<<<<< HEAD
 set(Vc_DIR "${Vc_ROOT}/lib/cmake/Vc/")
 message("Searching Vc in ${Vc_DIR}")
 
@@ -61,43 +39,6 @@ endif()
 if (NOT CUDA_ON_BACKEND STREQUAL "HIP")
 	find_package(OpenMP)
 
-=======
-if(NOT TINYOBJLOADER_FOUND)
-	set(TINYOBJLOADER_ROOT CACHE PATH "TinyObjLoader library path")
-endif()
-
-set(ENV{PATH} "$ENV{PATH}:${HDF5_ROOT}/bin")
-set(HDF5_PREFER_PARALLEL TRUE)
-
-set (ENV{BOOST_ROOT} ${BOOST_ROOT})
-set (Boost_NO_BOOST_CMAKE OFF)
-find_package(Boost 1.72.0 REQUIRED COMPONENTS unit_test_framework iostreams program_options system filesystem
-		OPTIONAL_COMPONENTS fiber context)
-find_package(MPI REQUIRED)
-find_package(HDF5 REQUIRED)
-find_package(TinyObjLoader)
-find_package(PETSc)
-if (NOT CUDA_ON_BACKEND STREQUAL "HIP")
-	find_package(OpenMP)
-endif()
-if (CUDA_ON_BACKEND STREQUAL "HIP" AND NOT HIP_FOUND)
-        find_package(HIP)
-endif()
-
-if(HIP_FOUND)
-        set(DEFINE_HIP_GPU "#define HIP_GPU")
-        set(DEFINE_CUDIFY_USE_HIP "#define CUDIFY_USE_HIP")
-endif()
-
-if(HIP_FOUND)
-        set(DEFINE_CUDA_GPU "#define CUDA_GPU")
-endif()
-
-if(CUDA_FOUND)
-	set(OPENFPM_INIT_FILE "initialize/initialize_wrapper_cuda.cu")
-else()
-	set(OPENFPM_INIT_FILE "initialize/initialize_wrapper_cuda.cpp")
->>>>>>> origin/master
 endif()
 
 ###### CONFIG.h FILE ######
@@ -110,7 +51,6 @@ if(SE_CLASS3)
 	set(DEFINE_SE_CLASS3 "#define SE_CLASS3")
 endif()
 
-<<<<<<< HEAD
 if(TEST_PERFORMANCE)
         set(DEFINE_PERFORMANCE_TEST "#define PERFORMANCE_TEST")
 endif()
@@ -154,44 +94,10 @@ if(LIBHILBERT_FOUND)
         set(DEFINE_HAVE_LIBHILBERT "#define HAVE_LIBHILBERT 1")
 else()
         message( FATAL_ERROR "LibHilbert is required in order to install OpenFPM")
-=======
-if(CUDA_FOUND)
-	set(DEFINE_CUDA_GPU "#define CUDA_GPU")
-endif()
-
-if(MPI_FOUND)
-	set(DEFINE_HAVE_MPI "#define HAVE_MPI")
-else()
-	message( FATAL_ERROR "MPI is required in order to install OpenFPM" )
-endif()
-
-if(PETSC_FOUND)
-        set(DEFINE_HAVE_PETSC "#define HAVE_PETSC")
-endif()
-
-if(HDF5_FOUND)
-	if (HDF5_IS_PARALLEL)
-		set(DEFINE_HAVE_HDF5 "#define HAVE_HDF5")
-	else()
-		message( STATUS "HDF5 found ${HDF5_INCLUDE_DIRS} does not have parallel support, OpenFPM require it" )
-	endif()
-else()
-	message( FATAL_ERROR "HDF5 with parallel support is required in order to install OpenFPM" )
-endif()
-
-if(TINYOBJLOADER_FOUND)
-        set(DEFINE_HAVE_TINYOBJLOADER "#define HAVE_TINYOBJLOADER 1")
->>>>>>> origin/master
 endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_cmake.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.h)
 
-<<<<<<< HEAD
-=======
-include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-
-
->>>>>>> origin/master
 add_subdirectory (src)
 
 get_directory_property(hasParent PARENT_DIRECTORY)
