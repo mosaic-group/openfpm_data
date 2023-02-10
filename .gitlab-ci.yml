@@ -4,7 +4,12 @@ centos_build:
     - centos
   artifacts:
     paths:
+<<<<<<< HEAD
       - ./openfpm_data/build/src/mem_map
+=======
+      - ./openfpm_io/build/src/io
+      - ./openfpm_io/test_data
+>>>>>>> origin/master
   script:
     - ./build.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
 
@@ -15,7 +20,11 @@ centos_run:
   dependencies:
     - centos_build
   script:
+<<<<<<< HEAD
     - ./openfpm_data/build/src/mem_map
+=======
+    - ./run.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
+>>>>>>> origin/master
 
 mac_build:
   stage: build
@@ -23,7 +32,12 @@ mac_build:
     - mac
   artifacts:
     paths:
+<<<<<<< HEAD
       - ./openfpm_data/build/src/mem_map
+=======
+      - ./openfpm_io/build/src/io
+      - ./openfpm_io/test_data
+>>>>>>> origin/master
   script:
     - ./build.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
 
@@ -34,7 +48,11 @@ mac_run:
   dependencies:
     - mac_build
   script:
+<<<<<<< HEAD
     - ./openfpm_data/build/src/mem_map 
+=======
+    - ./run.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
+>>>>>>> origin/master
 
 ubuntu_build:
   stage: build
@@ -42,7 +60,12 @@ ubuntu_build:
     - ubuntu
   artifacts:
     paths:
+<<<<<<< HEAD
       - ./openfpm_data/build/src/mem_map
+=======
+      - ./openfpm_io/build/src/io
+      - ./openfpm_io/test_data
+>>>>>>> origin/master
   script:
     - ./build.sh $CI_PROJECT_DIR $CI_RUNNER_EXECUTABLE_TAGS NO $CI_COMMIT_REF_NAME
 
@@ -53,5 +76,9 @@ ubuntu_run:
   dependencies:
     - ubuntu_build
   script:
+<<<<<<< HEAD
     - ./openfpm_data/build/src/mem_map
 
+=======
+    - ./run.sh $CI_PROJECT_DIR $CI_RUNNER_TAGS NO $CI_COMMIT_REF_NAME
+>>>>>>> origin/master

@@ -718,6 +718,8 @@ public:
 
     typedef sparse_grid_gpu_index<self> base_key;
 
+	typedef indexT indexT_;
+
     typedef decltype(std::declval<BMG>().toKernel().insertBlock(0)) insert_encap;
 
     /*! \brief return the size of the grid
@@ -2775,12 +2777,37 @@ public:
 
 		typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
 
-		auto block_data = this->insertBlockFlush(block_id);
+		auto block_data = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insertBlockFlush(block_id);
 		block_data.template get<BMG::pMask>()[local_id] = 1;
 
 		return block_data.template get<p>()[local_id];
 	}
     
+	/*! \brief Insert the point on host side and flush directly
+ *
+ * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
+ *
+ * \param grid point where to insert
+ *
+ * \return a reference to the data to fill
+ *
+ *
+ */
+	template<typename CoordT>
+	auto insertBlockFlush(const grid_key_dx<dim,CoordT> &coord, indexT & local_id) -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insertBlockFlush(0))
+	{
+    	auto lin = gridGeometry.LinId(coord);
+    	indexT block_id = lin / blockSize;
+    	local_id = lin % blockSize;
+
+		typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
+
+		auto block_data = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insertBlockFlush(block_id);
+		block_data.template get<BMG::pMask>()[local_id] = 1;
+
+		return block_data;
+	}
+
     /*! \brief Insert the point on host side and flush directly
      *
      * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
@@ -2801,7 +2828,7 @@ public:
 
     	typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
 
-    	auto block_data = this->insertBlockFlush(block_id);
+    	auto block_data = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insertBlockFlush(block_id);
     	block_data.template get<BMG::pMask>()[local_id] = 1;
 
     	return block_data.template get<p>()[local_id];

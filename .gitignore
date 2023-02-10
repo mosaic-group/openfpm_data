@@ -38,9 +38,6 @@ Thumbs.db
 
 ###### Other
 
-*.vtk
-*.swp
-install-sh
 AUTHORS
 COPYING
 ChangeLog
@@ -50,21 +47,15 @@ README
 Makefile
 Makefile.in
 config.status
-config.guess
-config.sub
 configure
 numerics
 **/.deps
 **/src/config
 aclocal.m4
 **/autom4te.cache
-compile
-depcomp
-missing
-src/mem_map
-#**/performance/
-previous_measure
-previous_measureg
-previous_measurev
+src/io
+csv_out.csv
+test_graph.graphml
+test_graph2.graphml
 *.html
-test_save
+

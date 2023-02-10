@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawVisualization);
+
+function exportToSVG(i)
+{
+var e = document.getElementById('chart_div'+i);
+var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;
+var pos = svg.lastIndexOf("</svg>");
+pos += 6;
+svg = svg.substring(0,4)  + " xmlns='http://www.w3.org/2000/svg' xmlns:xlink= 'http://www.w3.org/1999/xlink' " + svg.substring(4,pos);
+svgData = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+$(this).attr({'href': svgData,'target': '_blank'});
+}
+
+      function drawVisualization() {
+var data0 = new google.visualization.DataTable();
+data0.addColumn('number','X Axis');
+data0.addColumn('number','dataset1');
+data0.addColumn('number','dataset2');
+data0.addColumn('number','dataset3');
+data0.addColumn('number','dataset4');
+data0.addRows([
+[0.1,2,3,5,6],
+[0.2,5,6,1,6],
+[0.3,2,1,6,9],
+[0.4,1,6,3,2],
+[0.5,3,3,0,6],
+[0.6,2,1,4,6],
+]);
+var options0= {
+title : 'Example',
+vAxis: {title: 'Y Axis'},
+hAxis: {title: 'X Axis'},
+curveType: 'function',
+lineWidth: 4,
+intervals: { 'style':'area' }};
+$("#export_svg0").on("click", function (event) {exportToSVG.apply(this,[0]);});
+var chart = new google.visualization.ComboChart(document.getElementById('chart_div0'));
+chart.draw(data0, options0);
+}</script>
+</head>
+<body>
+<a href="#" download="graph1.svg" id="export_svg0"><button>Export data into svg</button></a><div id="chart_div0" style="width: 900px; height: 500px;"></div>
+</body>
+</html>

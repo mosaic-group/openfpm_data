@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawVisualization);
+
+function exportToSVG(i)
+{
+var e = document.getElementById('chart_div'+i);
+var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;
+var pos = svg.lastIndexOf("</svg>");
+pos += 6;
+svg = svg.substring(0,4)  + " xmlns='http://www.w3.org/2000/svg' xmlns:xlink= 'http://www.w3.org/1999/xlink' " + svg.substring(4,pos);
+svgData = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+$(this).attr({'href': svgData,'target': '_blank'});
+}
+
+      function drawVisualization() {
+var data0 = new google.visualization.DataTable();
+data0.addColumn('string','');
+data0.addColumn('number','');
+data0.addColumn('number','');
+data0.addColumn('number','');
+data0.addColumn('number','');
+data0.addRows([
+['colum1',2.2,1.3,4.5,0.6],
+['colum2',5,6.1,1.3,2.6],
+['colum3',2.1,1,6.1,9.3],
+['colum4',1.1,6.1,3,2],
+['colum5',3.3,0.3,0,6.2],
+['colum6',2,1.1,4,6.1],
+]);
+var options0= {
+title : '',
+vAxis: {title: ''},
+hAxis: {title: ''},
+seriesType: ''};
+$("#export_svg0").on("click", function (event) {exportToSVG.apply(this,[0]);});
+var chart = new google.visualization.ComboChart(document.getElementById('chart_div0'));
+chart.draw(data0, options0);
+}</script>
+</head>
+<body>
+<a href="#" download="graph1.svg" id="export_svg0"><button>Export data into svg</button></a><div id="chart_div0" style="width: 900px; height: 500px;"></div>
+</body>
+</html>
