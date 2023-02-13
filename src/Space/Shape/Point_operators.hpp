@@ -497,6 +497,19 @@ public:
 	}
 
 
+    /*! \brief Get the component i
+     *
+     * \param i component
+     *
+     * \return the i-component
+     *
+     */
+    template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+            typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+    __device__ __host__  inline r_type operator[](size_t i)
+    {
+        return o1.value(i) - o2.value(i);
+    }
 };
 
 /*! \brief expression that subtract two points
@@ -570,6 +583,21 @@ public:
 		init();
 		return -(o1.value(0));
 	}
+
+
+    /*! \brief Get the component i
+     *
+     * \param i component
+     *
+     * \return the i-component
+     *
+     */
+    template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+            typename std::remove_reference<decltype(o1.value(0))>::type>::type >
+    __device__ __host__  inline r_type operator[](size_t i)
+    {
+        return -(o1.value(i));
+    }
 };
 
 
@@ -657,6 +685,20 @@ public:
 		init();
 		return scal;
 	}
+
+        /*! \brief Get the component i
+     *
+     * \param i component
+     *
+     * \return the i-component
+     *
+     */
+    template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+            typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+    __device__ __host__  inline r_type operator[](size_t i)
+    {
+        return scal;
+    }
 };
 
 
@@ -739,6 +781,20 @@ public:
 		return o1.value(0) * o2.value(0);
 	}
 
+
+    /*! \brief Get the component i
+     *
+     * \param i component
+     *
+     * \return the i-component
+     *
+     */
+    template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+            typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+    __device__ __host__  inline r_type operator[](size_t i)
+    {
+        return o1.value(i) * o2.value(i);
+    }
 };
 
 /*! \brief Division operation
@@ -821,6 +877,20 @@ public:
 		init();
 		return o1.value(0) / o2.value(0);
 	}
+
+    /*! \brief Get the component i
+ *
+ * \param i component
+ *
+ * \return the i-component
+ *
+ */
+    template<typename r_type=typename best_conv<typename std::remove_reference<decltype(o1.value(0))>::type,
+            typename std::remove_reference<decltype(o2.value(0))>::type>::type >
+    __device__ __host__  inline r_type operator[](size_t i)
+    {
+        return o1.value(i) / o2.value(i);
+    }
 };
 
 /*! \brief Transform an array into a point expression

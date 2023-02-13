@@ -50,7 +50,7 @@ public:\
 	{\
 		init();\
 		return fun_base(o1.value(0));\
-	}\
+	}                                                     \
 };
 
 /*! A macro to define single value function specialization that apply the function component-wise
@@ -231,6 +231,11 @@ public:
 		init();
 		return scal;
 	}
+
+    template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type operator[](size_t i)
+    {
+        return scal;
+    }
 };
 
 /*! \brief Point square norm operation
@@ -304,6 +309,11 @@ public:
 		init();
 		return scal;
 	}
+
+    template<typename r_type=typename std::remove_reference<decltype(o1.value(0))>::type > __device__ __host__  inline r_type operator[](size_t i)
+    {
+        return scal;
+    }
 };
 
 
