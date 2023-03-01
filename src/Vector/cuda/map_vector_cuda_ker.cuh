@@ -172,6 +172,11 @@ namespace openfpm
 			return v_size;
 		}
 
+        __host__ __device__ size_t size_local() const
+        {
+            return size();
+        }
+
 		/*! \brief return the maximum capacity of the vector before reallocation
 		 *
 		 * \return the capacity of the vector
@@ -204,6 +209,38 @@ namespace openfpm
 
 			return base.template get<p>(key);
 		}
+        /*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \tparam p Property to get
+		 * \param id Element to get
+		 *
+		 * \return the element value requested
+		 *
+		 */
+        template <unsigned int p>
+        __device__ __host__ inline auto getProp(unsigned int id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+        {
+            return this->get<p>(id);
+        }
+
+
+        /*! \brief Get an element of the vector
+		 *
+		 * Get an element of the vector
+		 *
+		 * \tparam p Property to get
+		 * \param id Element to get
+		 *
+		 * \return the element value requested
+		 *
+		 */
+        template <unsigned int p, typename key_type>
+        __device__ __host__ inline auto getProp(key_type id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+        {
+            return this->get<p>(id.getKey());
+        }
 
 		/*! \brief Get an element of the vector
 		 *
@@ -488,6 +525,14 @@ namespace openfpm
 
 			return base.getGPUIterator(start,stop,n_thr);
 		}
+        /*! \brief Get a domain iterator for the GPU
+         *
+         *
+         */
+        ite_gpu<1> getDomainIteratorGPU(size_t n_thr = default_kernel_wg_threads_) const
+        {
+            return getGPUIterator(n_thr);
+        }
 
 		/*! \brief Get an iterator for the GPU
 		 *
@@ -595,6 +640,11 @@ namespace openfpm
 		{
 			return vref.size();
 		}
+
+        __host__ __device__ size_t size_local() const
+        {
+            return size();
+        }
 
 		__device__ __host__ unsigned int capacity() const
 		{

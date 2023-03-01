@@ -336,7 +336,7 @@ namespace openfpm
         *
         * \return the size
         *
-        */
+        */ //remove host device
         size_t size_local() const
         {
             return v_size;
@@ -1359,7 +1359,21 @@ namespace openfpm
 
 			return base.get_o(key);
 		}
-
+        /*! \brief Get an element of the vector
+         *
+         * Get an element of the vector
+         *
+         * \tparam p Property to get
+         * \param id Element to get
+         *
+         * \return the element value requested
+         *
+         */ //remove device host
+        template <unsigned int p>
+        inline auto getProp(const unsigned int & id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+        {   //uncomment this
+            return this->template get<p>(id);
+        }
 		/*! \brief Get an element of the vector
 		 *
 		 * Get an element of the vector
@@ -1369,12 +1383,12 @@ namespace openfpm
 		 *
 		 * \return the element value requested
 		 *
-		 */
-
-		template <unsigned int p,typename KeyType>
-		inline auto getProp(const KeyType & id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+		 *///remove host device
+        template <unsigned int p,typename KeyType>
+        inline auto getProp(const KeyType & id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
-			return this->template get<p>(id.getKey());
+            //uncomment this
+            return this->template get<p>(id.getKey());
 		}
 
 		/*! \brief Get an element of the vector
@@ -1386,10 +1400,10 @@ namespace openfpm
 		 *
 		 * \return the element value requested
 		 *
-		 */
+		 */ //remove device host
 		template <unsigned int p, typename keyType>
-		inline auto getProp(const keyType & id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
-		{
+         inline auto getProp(const keyType & id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+		{   //uncomment this
 			return this->template get<p>(id.getKey());
 		}
 
@@ -1930,6 +1944,7 @@ namespace openfpm
 			return base.getGPUIterator(start,stop_,n_thr);
 		}
 
+
 #endif
 
 		/*! \brief Get the vector elements iterator
@@ -1987,6 +2002,14 @@ namespace openfpm
 
 			return base.getGPUIterator(start,stop,n_thr);
 		}
+        /*! \brief Get a domain iterator for the GPU
+         *
+         *
+         */
+        ite_gpu<1> getDomainIteratorGPU(size_t n_thr = default_kernel_wg_threads_) const
+        {
+            return getGPUIterator(n_thr);
+        }
 
 #endif
 		/*! \brief Return the size of the message needed to pack this object
