@@ -534,6 +534,13 @@ namespace openfpm
             return getGPUIterator(n_thr);
         }
 
+        //Stub for some expression
+        void init() const {}
+
+        __host__ __device__ auto value(unsigned int p) -> decltype(base.template get<0>(grid_key_dx<1>(0)))
+        {
+            return get<0>(p);
+        }
 		/*! \brief Get an iterator for the GPU
 		 *
 		 *
@@ -545,6 +552,7 @@ namespace openfpm
 
 			return base.getGPUIterator(start,stop_,n_thr);
 		}
+
 
 		/*! \brief operator= this operator absorb the pointers, consider that this object wrap device pointers
 		 *
@@ -558,6 +566,16 @@ namespace openfpm
 
 			return *this;
 		}
+
+        __device__ __host__ vector_gpu_ker<T,layout_base> & getVector()
+        {
+            return *this;
+        }
+
+        __device__ __host__ const vector_gpu_ker<T,layout_base> & getVector() const
+        {
+            return *this;
+        }
 
 		/*! \brief Return the base
 		 *
@@ -741,6 +759,16 @@ namespace openfpm
 		{
 			return vref.getGPUItertatorTo(stop,n_thr);
 		}
+
+        vector_gpu_ker<T,layout_base> & getVector()
+        {
+         return *this;
+        }
+
+        const vector_gpu_ker<T,layout_base> & getVector() const
+        {
+            return *this;
+        }
 
 		__host__ vector_gpu_ker_ref<T,layout_base> & operator=(const vector_gpu_ker<T,layout_base> & v)
 		{
