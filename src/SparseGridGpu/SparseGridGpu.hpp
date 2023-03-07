@@ -1047,6 +1047,7 @@ private:
 
     }
 
+
     template <typename stencil, typename... Args>
     void applyStencilInPlaceNoShared(const Box<dim,int> & box, StencilMode & mode,Args... args)
     {
@@ -1796,6 +1797,11 @@ public:
 	 */
 	void setMemory()
 	{}
+
+    auto insertBlockFlush(size_t block) -> decltype(BMG::insertBlockFlush(block))
+    {
+        return BMG::insertBlockFlush(block);
+    }
 
     /*! \brief Return the grid information object
      *
