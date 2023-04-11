@@ -449,14 +449,11 @@ public:
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt,
 					 openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> rad_cells,
 					 openfpm::array<T,dim,cnt_type> & spacing_c,
-					 openfpm::array<ids_type,dim,cnt_type> & div_c,
-					 openfpm::array<ids_type,dim,cnt_type> & off,
-					 const transform & t,
-					 unsigned int g_m,
-					 SpaceBox<dim,T> box_unit,
-					 grid_sm<dim,void> gr_cell,
-					 Point<dim,long int> cell_shift)
-	:CellDecomposer_gpu_ker<dim,T,cnt_type,ids_type,transform>(spacing_c,div_c,off,t,box_unit,gr_cell,cell_shift),
+			         openfpm::array<ids_type,dim,cnt_type> & div_c,
+			         openfpm::array<ids_type,dim,cnt_type> & off,
+			         const transform & t,
+			         unsigned int g_m)
+	:CellDecomposer_gpu_ker<dim,T,cnt_type,ids_type,transform>(spacing_c,div_c,off,t),
 	 starts(starts),srt(srt),dprt(dprt),rad_cells(rad_cells),g_m(g_m)
 	{
 	}
@@ -619,16 +616,12 @@ public:
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> srt,
 					 openfpm::vector_gpu_ker<aggregate<cnt_type>,memory_traits_inte> dprt,
 					 openfpm::array<T,dim,cnt_type> & spacing_c,
-					 openfpm::array<ids_type,dim,cnt_type> & div_c,
-					 openfpm::array<ids_type,dim,cnt_type> & off,
-					 const transform & t,
-					 unsigned int g_m,
-					 SpaceBox<dim,T> box_unit,
-					 grid_sm<dim,void> gr_cell,
-					 Point<dim,long int> cell_shift)
-
-	:CellDecomposer_gpu_ker<dim,T,cnt_type,ids_type,transform>(spacing_c,div_c,off,t,box_unit,gr_cell,cell_shift),
-	cell_nn(cell_nn),cell_nn_list(cell_nn_list),srt(srt),dprt(dprt),cl_sparse(cl_sparse),g_m(g_m)
+			         openfpm::array<ids_type,dim,cnt_type> & div_c,
+			         openfpm::array<ids_type,dim,cnt_type> & off,
+			         const transform & t,
+			         unsigned int g_m)
+	:CellDecomposer_gpu_ker<dim,T,cnt_type,ids_type,transform>(spacing_c,div_c,off,t),cell_nn(cell_nn),cell_nn_list(cell_nn_list),srt(srt),dprt(dprt),
+	 cl_sparse(cl_sparse),g_m(g_m)
 	{
 	}
 

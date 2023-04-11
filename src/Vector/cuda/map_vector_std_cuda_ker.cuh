@@ -126,27 +126,6 @@ public:
 		return base.template get<0>(id);
 	}
 
-	/*! \brief Return the pointer to the chunk of memory
-	 *
-	 * \return the pointer to the chunk of memory
-	 *
-	 */
-	__device__ __host__ void * getPointer()
-	{
-		return &base.template get<0>(0);
-	}
-
-	/*! \brief Return the pointer to the chunk of memory
-	 *
-	 * \return the pointer to the chunk of memory
-	 *
-	 */
-	__device__ __host__ const void * getPointer() const
-	{
-		return &base.template get<0>(0);
-	}
-
-
 	vector_custd_ker()
 	{}
 

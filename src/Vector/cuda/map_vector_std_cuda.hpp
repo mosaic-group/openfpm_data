@@ -277,11 +277,8 @@ public:
 	 *
 	 */
 	vector(const std::initializer_list<T> & v)
-	// :base(v)
+	:base(v)
 	{
-		// causes error if simply passed to base
-		for (T t: v)
-			add(t);
 	}
 
 	//! Constructor from another vector
@@ -289,16 +286,6 @@ public:
 	:err_code(0)
 	{
 		base.swap(v.base);
-	}
-
-	//! Constructor from iterators
-	template< class InputIt >
-	vector(InputIt first, InputIt last)
-	{
-		while(first != last) {
-			add(*first);
-			++first;
-		}
 	}
 
 	//! destructor

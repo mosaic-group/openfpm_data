@@ -19,7 +19,7 @@ namespace openfpm
 		 *
 		 */
 		template <typename T>
-		__host__ __device__ int sgn(T val)
+		int sgn(T val)
 		{
 			return (T(0) < val) - (val < T(0));
 		}
@@ -35,8 +35,7 @@ namespace openfpm
 		 * \return the factorial
 		 *
 		 */
-		__host__ __device__ static inline
-		size_t factorial(size_t f)
+		static inline size_t factorial(size_t f)
 		{
 			size_t fc = 1;
 
@@ -61,8 +60,7 @@ namespace openfpm
 		 * \param k
 		 *
 		 */
-		__host__ __device__ static inline
-		size_t C(size_t n, size_t k)
+		static inline size_t C(size_t n, size_t k)
 		{
 			return factorial(n)/(factorial(k)*factorial(n-k));
 		}
@@ -77,8 +75,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		__host__ __device__ static inline
-		size_t round_big_2(size_t n)
+		static inline size_t round_big_2(size_t n)
 		{
 			n--;
 			n |= n >> 1;   // Divide by 2^k for consecutive doublings of k up to 32,
@@ -105,15 +102,14 @@ namespace openfpm
 		 */
 
 		template<class T>
-		__host__ __device__ inline constexpr
-		size_t pow(const T base, unsigned const exponent)
+		inline constexpr size_t pow(const T base, unsigned const exponent)
 		{
 			// (parentheses not required in next line)
 			return (exponent == 0) ? 1 : (base * pow(base, exponent-1));
 		}
 
         template<class T>
-        __host__ __device__ double intpowlog(const T x, unsigned const e)
+        double intpowlog(const T x, unsigned const e)
         {
             if (e == 0) return 1.0;
             if (e % 2 == 0)
@@ -139,8 +135,7 @@ namespace openfpm
 		 * \param n modulo
 		 *
 		 */
-		__host__ __device__ static inline
-		long int positive_modulo(long int i, long int n)
+		static inline long int positive_modulo(long int i, long int n)
 		{
 		    return (i % n + n) % n;
 		}
@@ -160,9 +155,7 @@ namespace openfpm
 		 * \return the bound number
 		 *
 		 */
-		template<typename T>
-		__host__ __device__ static inline
-		T periodic(const T & pos, const T & p2, const T & p1)
+		template<typename T> static inline T periodic(const T & pos, const T & p2, const T & p1)
 		{
 			T pos_tmp;
 
@@ -189,9 +182,7 @@ namespace openfpm
 		 * \return the bound number
 		 *
 		 */
-		template<typename T>
-		__device__ __host__ static inline
-		T periodic_l(const T & pos, const T & p2, const T & p1)
+		template<typename T> __device__ __host__ static inline T periodic_l(const T & pos, const T & p2, const T & p1)
 		{
 			T pos_tmp = pos;
 
@@ -216,7 +207,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		__host__ __device__ inline long int size_t_floor(double x)
+		inline long int size_t_floor(double x)
 		{
 		  size_t i = (long int)x; /* truncate */
 		  return i - ( i > x ); /* convert trunc to floor */
@@ -226,7 +217,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		__host__ __device__ inline long int size_t_floor(float x)
+		inline long int size_t_floor(float x)
 		{
 		  size_t i = (long int)x; /* truncate */
 		  return i - ( i > x ); /* convert trunc to floor */
@@ -267,7 +258,7 @@ namespace openfpm
 		 * \param value
 		 *
 		 */
-		__host__ __device__ inline int log2_64 (uint64_t value)
+		inline int log2_64 (uint64_t value)
 		{
 		    value |= value >> 1;
 		    value |= value >> 2;
@@ -285,7 +276,7 @@ namespace openfpm
 		 *
 		 *
 		 */
-		__host__ __device__ inline long int size_t_floor(boost::multiprecision::float128 x)
+		inline long int size_t_floor(boost::multiprecision::float128 x)
 		{
 		  size_t i = (long int)x; /* truncate */
 		  return i - ( i > x ); /* convert trunc to floor */

@@ -186,7 +186,7 @@ class grid_sm
 	 *
 	 */
 
-	__device__ __host__ inline void Initialize(const size_t sz)
+	inline void Initialize(const size_t sz)
 	{
 		//! Initialize the basic structure for each dimension
 		sz_s[0] = sz;
@@ -217,7 +217,7 @@ class grid_sm
 	 *
 	 */
 
-	__device__ __host__ inline void Initialize(const size_t (& sz)[N])
+	inline void Initialize(const size_t (& sz)[N])
 	{
 		//! Initialize the basic structure for each dimension
 		sz_s[0] = sz[0];
@@ -353,8 +353,7 @@ public:
 	 *
 	 */
 
-	template<typename S>
-	__device__ __host__ inline grid_sm(const grid_sm<N,S> & g)
+	template<typename S> inline grid_sm(const grid_sm<N,S> & g)
 	{
 		size_tot = g.size_tot;
 
@@ -381,7 +380,7 @@ public:
 
 	// Static element to calculate total size
 
-	__device__ __host__ inline size_t totalSize(const size_t (& sz)[N])
+	inline size_t totalSize(const size_t (& sz)[N])
 	{
 		size_t tSz = 1;
 
@@ -416,7 +415,7 @@ public:
 	 *
 	 */
 
-	__device__ __host__ inline grid_sm(const size_t (& sz)[N])
+	inline grid_sm(const size_t (& sz)[N])
 	: size_tot(totalSize(sz))
 	{
 		Initialize(sz);
@@ -626,7 +625,7 @@ public:
 	}
 
 	//! Destructor
-	__device__ __host__ ~grid_sm() {};
+	~grid_sm() {};
 
 	/*! \brief Return the size of the grid
 	 *
@@ -714,7 +713,7 @@ public:
 	 *
 	 */
 
-	__device__ __host__ inline size_t size_s(unsigned int i) const
+	inline size_t size_s(unsigned int i) const
 	{
 		return sz_s[i];
 	}
@@ -738,19 +737,9 @@ public:
 	 * \return get the size of the grid as an array
 	 *
 	 */
-	__device__ __host__ inline const size_t (& getSize() const)[N]
+	inline const size_t (& getSize() const)[N]
 	{
 		return sz;
-	}
-
-	/*! \brief Returns the size of the grid in the passed array
-	 *
-	 * \return the size of the grid in the passed array
-	 *
-	 */
-	__device__ __host__ inline void getSize(size_t (&size) [N]) const
-	{
-		for (size_t i = 0; i < N; ++i) size[i] = sz[i];
 	}
 
 	/*! \brief Return a sub-grid iterator

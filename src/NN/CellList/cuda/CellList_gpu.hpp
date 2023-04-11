@@ -44,10 +44,7 @@ struct CellList_gpu_ker_selector
 																			 openfpm::array<ids_type,dim,cnt_type> & div_c,
 																			 openfpm::array<ids_type,dim,cnt_type> & off,
 																			 const transform & t,
-																			 unsigned int g_m,
-																			 const SpaceBox<dim,T>& box_unit,
-																			 const grid_sm<dim,void>& gr_cell,
-																			 const Point<dim,long int>& cell_shift)
+																			 unsigned int g_m)
 	{
 		return CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse>(starts.toKernel(),
 																			sorted_to_not_sorted.toKernel(),
@@ -57,10 +54,7 @@ struct CellList_gpu_ker_selector
 																			div_c,
 																			off,
 																			t,
-																			g_m,
-																			box_unit,
-																			gr_cell,
-																			cell_shift);
+																			g_m);
 	}
 };
 
@@ -79,14 +73,10 @@ struct CellList_gpu_ker_selector<dim,T,cnt_type,ids_type,Memory,transform,vector
 			 vector_cnt_type & dprt,
 			 openfpm::vector<aggregate<int>,Memory,memory_traits_inte> & nnc_rad,
 			 openfpm::array<T,dim,cnt_type> & spacing_c,
-			 openfpm::array<ids_type,dim,cnt_type> & div_c,
-			 openfpm::array<ids_type,dim,cnt_type> & off,
-			 const transform & t,
-			 unsigned int g_m,
-			 const SpaceBox<dim,T>& box_unit,
-			 const grid_sm<dim,void>& gr_cell,
-			 const Point<dim,long int>& cell_shift)
-
+	         openfpm::array<ids_type,dim,cnt_type> & div_c,
+	         openfpm::array<ids_type,dim,cnt_type> & off,
+	         const transform & t,
+	         unsigned int g_m)
 	{
 		return CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,true>(cell_nn.toKernel(),
 																		cell_nn_list.toKernel(),
@@ -96,11 +86,7 @@ struct CellList_gpu_ker_selector<dim,T,cnt_type,ids_type,Memory,transform,vector
 																		spacing_c,
 																		div_c,
 																		off,
-																		t,
-																		g_m,
-																		box_unit,
-																		gr_cell,
-																		cell_shift);
+																		t,g_m);
 	}
 };
 
@@ -261,11 +247,13 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																		spacing_c,
 																		off,
 																		this->getTransform(),
+																		pl.capacity(),
 																		pl.size(),
+																		part_ids.capacity(),
 																		start,
-																		pl.toKernel(),
-																		starts.toKernel(),
-																		part_ids.toKernel());
+																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
+																		static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
+																		static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()));
 
 		// now we construct the cells
 
@@ -304,7 +292,6 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
 				      decltype(pl.toKernel()),
 				      decltype(sorted_to_not_sorted.toKernel()),
-					  decltype(cells.toKernel()),
 				      cnt_type,shift_ph<0,cnt_type>>),ite,sorted_to_not_sorted.size(),
 				                                                           pl_prp.toKernel(),
 				                                                           pl_prp_out.toKernel(),
@@ -312,7 +299,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 				                                                           pl_out.toKernel(),
 				                                                           sorted_to_not_sorted.toKernel(),
 				                                                           non_sorted_to_sorted.toKernel(),
-				                                                           cells.toKernel());
+				                                                           static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
 
 		if (opt == cl_construct_opt::Full)
 		{
@@ -390,11 +377,13 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																		spacing_c,
 																		off,
 																		this->getTransform(),
+																		pl.capacity(),
 																		stop,
+																		part_ids.capacity(),
 																		start,
-																		pl.toKernel(),
-																		cl_n.toKernel(),
-																		part_ids.toKernel());
+																		static_cast<T *>(pl.template getDeviceBuffer<0>()),
+																		static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
+																		static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()));
 
 		// now we scan
 		starts.resize(cl_n.size());
@@ -410,7 +399,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
                 CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg,0,
                                                                                             part_ids.size(),
-                                                                                            cells.toKernel()) );
+                                                                                            static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
 
                 // sort
 
@@ -419,13 +408,14 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 #else
 
                 CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg,0,
-                                                                                    div_c,
-                                                                                    off,
-																					part_ids.size(),
-																					start,
-                                                                                    starts.toKernel(),
-																					part_ids.toKernel(),
-																					cells.toKernel() );
+                                                                                                                                                                           div_c,
+                                                                                                                                                                           off,
+                                                                                                                                                                           part_ids.size(),
+                                                                                                                                                                           part_ids.capacity(),
+																					   start,
+                                                                                                                                                                           static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
+                                                                                                                                                                           static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),
+                                                                                                                                                                           static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
 
 #endif
 
@@ -441,7 +431,6 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 			CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
 						  decltype(pl.toKernel()),
 						  decltype(sorted_to_not_sorted.toKernel()),
-						  decltype(cells.toKernel()),
 						  cnt_type,shift_ph<0,cnt_type>>),ite,sorted_to_not_sorted.size(),
 																			   pl_prp.toKernel(),
 																			   pl_prp_out.toKernel(),
@@ -449,7 +438,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																			   pl_out.toKernel(),
 																			   sorted_to_not_sorted.toKernel(),
 																			   non_sorted_to_sorted.toKernel(),
-																			   cells.toKernel());
+																			   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
 		}
 		else
 		{
@@ -457,7 +446,6 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 			CUDA_LAUNCH((reorder_parts_wprp<decltype(pl_prp.toKernel()),
 						  decltype(pl.toKernel()),
 						  decltype(sorted_to_not_sorted.toKernel()),
-						  decltype(cells.toKernel()),
 						  cnt_type,shift_ph<0,cnt_type>,prp...>),ite,sorted_to_not_sorted.size(),
 																			   pl_prp.toKernel(),
 																			   pl_prp_out.toKernel(),
@@ -465,7 +453,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																			   pl_out.toKernel(),
 																			   sorted_to_not_sorted.toKernel(),
 																			   non_sorted_to_sorted.toKernel(),
-																			   cells.toKernel());
+																			   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()));
 		}
 
 		if (opt == cl_construct_opt::Full)
@@ -660,17 +648,14 @@ public:
 				cells_nn,
 				cells_nn_list,
 				cl_sparse,
-				sorted_to_not_sorted,
-				sorted_domain_particles_ids,
-				nnc_rad,
-				spacing_c,
-				div_c,
-				off,
-				this->getTransform(),
-				g_m,
-				this->box_unit,
-				this->gr_cell,
-				this->cell_shift);
+		    	sorted_to_not_sorted,
+		    	sorted_domain_particles_ids,
+		    	nnc_rad,
+		        spacing_c,
+		        div_c,
+		        off,
+		        this->getTransform(),
+		        g_m);
 	}
 
 	/*! \brief Clear the structure
