@@ -416,7 +416,7 @@ template<unsigned int dim ,typename T> class Point
 	 * \return the reference
 	 *
 	 */
-	T & value(size_t i)
+	__device__ __host__ T & value(size_t i)
 	{
 		return get(i);
 	}

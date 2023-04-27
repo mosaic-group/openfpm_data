@@ -45,6 +45,8 @@ void write_test_report(report_sparse_grid_tests &report_sparsegrid_funcs, std::s
     plotGetSingle2D(report_sparsegrid_funcs, testSet, plotCounter);
     plotGetNeighbourhood2D(report_sparsegrid_funcs, testSet, plotCounter);
 
+
+
     std::string file_xml_results(test_dir);
     file_xml_results += std::string("/") + std::string(perfResultsXmlFile);
 
@@ -310,7 +312,7 @@ void plotDense3D(report_sparse_grid_tests &report_sparsegrid_funcs, std::set<std
                                            base + ".gridScaling(#).GFlops.mean");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
                                            base + ".gridScaling(#).gridSize.x");
-   report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x", true);
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x", true);
         int bes = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
                 base + ".gridScaling(0).blockSize"));
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",
@@ -330,7 +332,7 @@ void plotDense3D(report_sparse_grid_tests &report_sparsegrid_funcs, std::set<std
                                            base + ".blockScaling(#).GFlops.mean");
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").x.data(0).source",
                                            base + ".blockScaling(#).blockSize");
-   report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x",true);
+        report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").options.log_x",true);
         int ges = static_cast<int>( report_sparsegrid_funcs.graphs.template get<double>(
                 base + ".blockScaling(0).gridSize.x"));
         report_sparsegrid_funcs.graphs.add("graphs.graph(" + std::to_string(plotCounter) + ").y.data(0).title",

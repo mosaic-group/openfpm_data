@@ -83,17 +83,16 @@ void test_sub_index()
 
 	no_transform_only<dim,T> t(mt,pt);
 
+
 	CUDA_LAUNCH_DIM3((subindex<false,dim,T,cnt_type,ids_type,no_transform_only<dim,T>>),ite.wthr,ite.thr,div,
 																	spacing,
 																	off,
 																	t,
-																	pl.capacity(),
 																	pl.size(),
-																	part_ids.capacity(),
 																	0,
-																	static_cast<T *>(pl.template getDeviceBuffer<0>()),
-																	static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
-																	static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()));
+																	pl.toKernel(),
+																	cl_n.toKernel(),
+																	part_ids.toKernel());
 
 	cl_n.template deviceToHost<0>();
 	part_ids.template deviceToHost<0>();
@@ -203,17 +202,16 @@ void test_sub_index2()
 
 	shift_only<dim,T> t(mt,pt);
 
+
 	CUDA_LAUNCH_DIM3((subindex<false,dim,T,cnt_type,ids_type,shift_only<dim,T>>),ite.wthr,ite.thr,div,
 																	spacing,
 																	off,
 																	t,
-																	pl.capacity(),
 																	pl.size(),
-																	part_ids.capacity(),
 																	0,
-																	static_cast<T *>(pl.template getDeviceBuffer<0>()),
-																	static_cast<cnt_type *>(cl_n.template getDeviceBuffer<0>()),
-																	static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()));
+																	pl.toKernel(),
+																	cl_n.toKernel(),
+																	part_ids.toKernel());
 
 	cl_n.template deviceToHost<0>();
 	part_ids.template deviceToHost<0>();
@@ -387,11 +385,10 @@ void test_fill_cell()
 																				   div_c,
 																				   off,
 																				   part_ids.size(),
-																				   part_ids.capacity(),
 																				   0,
-																				   static_cast<cnt_type *>(starts.template getDeviceBuffer<0>()),
-																				   static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),
-																				   static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()) );
+																				   starts.toKernel(),
+																				   part_ids.toKernel(),
+																				   cells.toKernel() );
 
 	cells.template deviceToHost<0>();
 
@@ -666,7 +663,8 @@ void test_reorder_parts(size_t n_part)
 	// Here we test fill cell
 	CUDA_LAUNCH_DIM3((reorder_parts<decltype(parts_prp.toKernel()),
 			      decltype(pl.toKernel()),
-			      decltype(sort_to_not_sort.toKernel()),
+				  decltype(sort_to_not_sort.toKernel()),
+				  decltype(cells_out.toKernel()),
 			      cnt_type,
 			      shift_ph<0,cnt_type>>),ite.wthr,ite.thr,pl.size(),
 			                                                  parts_prp.toKernel(),
@@ -675,7 +673,7 @@ void test_reorder_parts(size_t n_part)
 			                                                  pl_out.toKernel(),
 			                                                  sort_to_not_sort.toKernel(),
 			                                                  non_sort_to_sort.toKernel(),
-			                                                  static_cast<cnt_type *>(cells_out.template getDeviceBuffer<0>()));
+			                                                  cells_out.toKernel());
 
 	bool check = true;
 	parts_prp_out.template deviceToHost<0>();
