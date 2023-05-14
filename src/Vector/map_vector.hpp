@@ -1662,8 +1662,9 @@ namespace openfpm
 		{
 			v_size = mv.v_size;
 			size_t rsz[1] = {v_size};
-			base.resize(rsz);
-
+			if(rsz[0]>base.size()) {
+                base.resize(rsz);
+            }
 			// copy the object on cpu
 			for (size_t i = 0 ; i < v_size ; i++ )
 			{
