@@ -28,7 +28,8 @@
 #else
 	// Here we have old CUDA
 	#include "cub_old/cub.cuh"
-	#include "util/cuda/moderngpu/kernel_mergesort.hxx"
+	//#include "util/cuda/moderngpu/kernel_mergesort.hxx"
+	#define SORT_WITH_CUB
 #endif
 
 #include "util/cuda/ofp_context.hxx"

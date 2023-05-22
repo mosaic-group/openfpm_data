@@ -27,7 +27,8 @@
 #else
 	// Here we have old CUDA
 	#include "cub_old/cub.cuh"
-	#include "util/cuda/moderngpu/kernel_scan.hxx"
+	//#include "util/cuda/moderngpu/kernel_scan.hxx"
+	#define SCAN_WITH_CUB
 #endif
 
 #include "util/cuda/ofp_context.hxx"

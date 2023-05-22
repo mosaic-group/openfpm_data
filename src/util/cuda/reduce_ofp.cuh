@@ -27,7 +27,8 @@
 #else
 	// Here we have old CUDA
 	#include "cub_old/cub.cuh"
-	#include "util/cuda/moderngpu/kernel_reduce.hxx"
+	//#include "util/cuda/moderngpu/kernel_reduce.hxx"
+	#define REDUCE_WITH_CUB
 #endif
 
 #include "util/cuda/ofp_context.hxx"
