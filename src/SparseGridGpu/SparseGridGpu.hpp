@@ -3569,6 +3569,7 @@ public:
 
 		result.allocate(sizeof(int));
 
+		if (pointers.size())
 		CUDA_LAUNCH_DIM3((SparseGridGpuKernels::unpack_headers<decltype(std::declval<self>().toKernel())>),1,pointers.size(),
 																											 pointers.toKernel(),
 																											 headers.toKernel(),
