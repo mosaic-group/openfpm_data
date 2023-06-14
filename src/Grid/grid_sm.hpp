@@ -365,6 +365,25 @@ public:
 		}
 	}
 
+	/*! \brief copy constructor
+	 *
+	 * \param g grid info
+	 *
+	 * construct a grid from another grid. As a copy constructor can't be template,
+	 * the one above won't work for const grid_sm<N,S> & g, where S=T
+	 *
+	 */
+	__device__ __host__ inline grid_sm(const grid_sm<N,T> & g)
+	{
+		size_tot = g.size_tot;
+
+		for (size_t i = 0 ; i < N ; i++)
+		{
+			sz[i] = g.sz[i];
+			sz_s[i] = g.sz_s[i];
+		}
+	}
+
 	// Static element to calculate total size
 
 	inline size_t totalSize(const size_t sz)
