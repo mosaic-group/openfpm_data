@@ -1193,6 +1193,9 @@ public:
 																			  spacing_c,
 																			  div_c,
 																			  off,
+																			  this->gr_cell,
+																			  this->cell_shift,
+																			  this->box_unit,
 				                      	  	  	  	  	  	  	  	  	  	  CellDecomposer_sm<dim,T,transform>::getTransform());
 
 		return cl;
