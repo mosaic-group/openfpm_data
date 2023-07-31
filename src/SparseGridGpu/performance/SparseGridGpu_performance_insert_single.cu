@@ -43,7 +43,7 @@ void testInsertSingle(std::string testURI, unsigned int i)
 	dim3 blockSize(blockEdgeSize, blockEdgeSize);
 	grid_smb<dim, blockEdgeSize> blockGeometry(gridSize);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, chunkSize> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	if (prePopulateGrid)

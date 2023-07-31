@@ -13,8 +13,7 @@
  #include "Vector/map_vector.hpp"
  #include "util/cuda_launch.hpp"
  
- #if CUDART_VERSION >= 11000
-     #ifndef CUDA_ON_CPU 
+ #ifndef CUDA_ON_CPU
      // Here we have for sure CUDA >= 11
      #ifdef __HIP__
         #undef __CUDACC__
@@ -27,13 +26,7 @@
         #include <thrust/merge.h>
         #include <thrust/execution_policy.h>
      #endif
-     #endif
- #else
-    #include <thrust/merge.h>
-    #include <thrust/execution_policy.h>
-//    #include "util/cuda/moderngpu/kernel_merge.hxx"
  #endif
- #include "util/cuda/ofp_context.hxx"
  
 
  namespace openfpm
@@ -100,10 +93,6 @@
                                                  c_keys,c_vals,comp);
 
         #else
-
-//            It seems broken on some CUDA on some hardware. Anyway is not anymore supported 
-//            on some hardware ... we move to thrust
-//            mgpu::merge(a_keys,a_vals,a_count,b_keys,b_vals,b_count,c_keys,c_vals,comp,context);
 
             thrust::merge_by_key(thrust::device, a_keys,a_keys + a_count, 
                                                  b_keys,b_keys + b_count, 

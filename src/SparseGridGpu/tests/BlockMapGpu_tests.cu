@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	CUDA_LAUNCH_DIM3((insertValues<0>), gridSize, blockSizeInsert ,blockMap.toKernel());
 
 	// Flush inserts
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	blockMap.flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
 
 	// Get output
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(testInsert_halfBlock)
 	CUDA_LAUNCH_DIM3((insertValuesHalfBlock<0>), gridSize, blockSizeInsert, blockMap.toKernel());
 
 	// Flush inserts
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	blockMap.flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
 
 	// Get output
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(testInsert_blocked)
 	CUDA_LAUNCH_DIM3((insertValuesBlocked<0, 2>), gridSize, blockSizeInsert,sparseGrid.toKernel());
 
 	// Flush inserts
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.flush<smax_<0>>(ctx, flush_type::FLUSH_ON_DEVICE);
 
 	// Get output

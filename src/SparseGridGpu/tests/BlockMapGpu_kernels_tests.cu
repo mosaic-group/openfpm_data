@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(testSegreduce_total)
 		openfpm::vector_gpu<aggregate<MaskBlockT, BlockT>> outputData;
 		outputData.resize(100);
 
-		CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<BLOCK, 0, BITMASK, 2, mgpu::plus_t<ScalarT>>),segments.size()-1, 2*BlockT::size,
+		CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<BLOCK, 0, BITMASK, 2, gpu::plus_t<ScalarT>>),segments.size()-1, 2*BlockT::size,
 		data_new.toKernel(),
 		data_old.toKernel(),
 		segments.toKernel(),
@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(testSegreduce_total)
 		outputData.toKernel());
 
 		// Segreduce on mask
-		CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<BITMASK, 0, BITMASK, 2, mgpu::maximum_t<unsigned char>>),segments.size()-1, 2*BlockT::size,
+		CUDA_LAUNCH_DIM3((BlockMapGpuKernels::segreduce_total<BITMASK, 0, BITMASK, 2, gpu::maximum_t<unsigned char>>),segments.size()-1, 2*BlockT::size,
 		data_new.toKernel(),
 		data_old.toKernel(),
 		segments.toKernel(),
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(test_maps_create)
 
 	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,merge_keys.toKernel(),merge_indexes.toKernel(),9,p_ids.toKernel());
 
-	mgpu::ofp_context_t context;
+	gpu::ofp_context_t context;
 	openfpm::scan((int *)p_ids.template getDeviceBuffer<0>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<0>(),
@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 	openfpm::vector_gpu<aggregate<unsigned int>> keys, mergeIndices, tmpIndices, keysOut, trivial_map;
 	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> segments_new;
 	openfpm::vector_gpu<aggregate<BlockT, MaskBlockT>> dataOld, dataNew, tmpData, dataOut;
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 
 	// Keys
 	keys.resize(14);

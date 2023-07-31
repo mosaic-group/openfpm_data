@@ -287,7 +287,7 @@ public:
     }
 
     template<typename ... v_reduce>
-    void flush(mgpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST)
+    void flush(gpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST)
     {
 #ifdef SE_CLASS1
 

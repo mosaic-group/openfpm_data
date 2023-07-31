@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ########################### Executables
 
-add_definitions(-DSCAN_WITH_CUB)
-
 
 if (TEST_PERFORMANCE)
 	set(CUDA_SOURCES SparseGridGpu/performance/SparseGridGpu_performance_heat_stencil_sparse.cu
@@ -31,7 +29,6 @@ if (NOT CUDA_ON_BACKEND STREQUAL "None")
             NN/CellList/CellList_gpu_test.cu 
 	    util/cuda/scan_sort_cuda_unit_tests.cu
             Grid/cuda/cuda_grid_unit_tests_func.cu
-            util/cuda/modern_gpu_tests.cu
             Vector/cuda/map_vector_sparse_cuda_ker_unit_tests.cu
             NN/CellList/tests/CellDecomposer_gpu_ker_unit_test.cu
 	    SparseGridGpu/tests/BlockMapGpu_tests.cu
@@ -448,8 +445,7 @@ install(FILES util/multi_array_openfpm/array_openfpm.hpp
 	COMPONENT OpenFPM)
 
 
-install(FILES util/cuda/ofp_context.hxx
-        util/cuda/kernels.cuh
+install(FILES util/cuda/kernels.cuh
         util/cuda/scan_ofp.cuh
 	util/cuda/sort_ofp.cuh
 	util/cuda/reduce_ofp.cuh
@@ -489,46 +485,6 @@ install (FILES  SparseGridGpu/TemplateUtils/mathUtils.hpp
 	        SparseGridGpu/TemplateUtils/encap_shmem.hpp
 		DESTINATION openfpm_data/include/SparseGridGpu/TemplateUtils/ 
 		COMPONENT OpenFPM)
-
-install(FILES util/cuda/moderngpu/context.hxx
-        util/cuda/moderngpu/context_reduced.hxx
-        util/cuda/moderngpu/cpp11.hxx
-        util/cuda/moderngpu/cta_load_balance.hxx
-        util/cuda/moderngpu/cta_merge.hxx
-        util/cuda/moderngpu/cta_mergesort.hxx
-        util/cuda/moderngpu/cta_reduce.hxx
-        util/cuda/moderngpu/cta_scan.hxx
-        util/cuda/moderngpu/cta_search.hxx
-        util/cuda/moderngpu/cta_segscan.hxx
-        util/cuda/moderngpu/intrinsics.hxx
-        util/cuda/moderngpu/kernel_bulkinsert.hxx
-        util/cuda/moderngpu/kernel_bulkremove.hxx
-        util/cuda/moderngpu/kernel_compact.hxx
-        util/cuda/moderngpu/kernel_intervalmove.hxx
-        util/cuda/moderngpu/kernel_join.hxx
-        util/cuda/moderngpu/kernel_load_balance.hxx
-        util/cuda/moderngpu/kernel_merge.hxx
-        util/cuda/moderngpu/kernel_mergesort.hxx
-        util/cuda/moderngpu/kernel_reduce.hxx
-        util/cuda/moderngpu/kernel_scan.hxx
-        util/cuda/moderngpu/kernel_segreduce.hxx
-        util/cuda/moderngpu/kernel_segsort.hxx
-        util/cuda/moderngpu/kernel_sortedsearch.hxx
-        util/cuda/moderngpu/kernel_workcreate.hxx
-        util/cuda/moderngpu/launch_box.hxx
-        util/cuda/moderngpu/launch_params.hxx
-        util/cuda/moderngpu/loadstore.hxx
-        util/cuda/moderngpu/memory.hxx
-        util/cuda/moderngpu/meta.hxx
-        util/cuda/moderngpu/operators.hxx
-        util/cuda/moderngpu/search.hxx
-        util/cuda/moderngpu/sort_networks.hxx
-        util/cuda/moderngpu/transform.hxx
-        util/cuda/moderngpu/tuple.hxx
-        util/cuda/moderngpu/types.hxx
-        util/cuda/moderngpu/util.hxx
-        DESTINATION openfpm_data/include/util/cuda/moderngpu/
-	COMPONENT OpenFPM)
 
 #if(BUILD_TESTING)
 

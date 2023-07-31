@@ -237,7 +237,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
   	   	   	 	 	 	  vector & pl_out,
   	   	   	 	 	 	  vector_prp & pl_prp,
   	   	   	 	 	 	  vector_prp & pl_prp_out,
-  	   	   	 	 	 	  mgpu::ofp_context_t & mgpuContext,
+						  gpu::ofp_context_t & gpuContext,
   	   	   	 	 	 	  size_t g_m,
  			   	   	   	  size_t start,
  			   	   	   	  size_t stop,
@@ -276,7 +276,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		cl_sparse.template setBackground<0>((cnt_type)-1);
 		cl_sparse.setGPUInsertBuffer(ite_gpu.wthr.x,ite_gpu.thr.x);
 		CUDA_LAUNCH((fill_cells_sparse),ite_gpu,cl_sparse.toKernel(),starts.toKernel());
-		cl_sparse.template flush_vd<sstart_<0>>(cells,mgpuContext,FLUSH_ON_DEVICE);
+		cl_sparse.template flush_vd<sstart_<0>>(cells,gpuContext,FLUSH_ON_DEVICE);
 
 		cells_nn.resize(cl_sparse.size()+1);
 		cells_nn.template fill<0>(0);
@@ -286,7 +286,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		CUDA_LAUNCH((count_nn_cells),itgg,cl_sparse.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel());
 
 		// now we scan
-		openfpm::scan((cnt_type *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (cnt_type *)cells_nn.template getDeviceBuffer<0>() , mgpuContext);
+		openfpm::scan((cnt_type *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (cnt_type *)cells_nn.template getDeviceBuffer<0>() , gpuContext);
 
 		cells_nn.template deviceToHost<0>(cells_nn.size() - 1, cells_nn.size() - 1);
 		size_t n_nn_cells = cells_nn.template get<0>(cells_nn.size() - 1);
@@ -316,7 +316,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		if (opt == cl_construct_opt::Full)
 		{
-			construct_domain_ids(mgpuContext,start,stop,g_m);
+			construct_domain_ids(gpuContext,start,stop,g_m);
 		}
 
 	#else
@@ -328,10 +328,10 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 	/*! \brief Construct the ids of the particles domain in the sorted array
 	 *
-	 * \param mgpuContext mgpu context
+	 * \param gpuContext gpu context
 	 *
 	 */
-	void construct_domain_ids(mgpu::ofp_context_t & mgpuContext, size_t start, size_t stop, size_t g_m)
+	void construct_domain_ids(gpu::ofp_context_t & gpuContext, size_t start, size_t stop, size_t g_m)
 	{
 #ifdef __NVCC__
 		sorted_domain_particles_dg.resize(stop-start+1);
@@ -341,7 +341,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		CUDA_LAUNCH((mark_domain_particles),ite,sorted_to_not_sorted.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
 
 		// lets scan
-		openfpm::scan((unsigned int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),sorted_domain_particles_dg.size(),(unsigned int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),mgpuContext);
+		openfpm::scan((unsigned int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),sorted_domain_particles_dg.size(),(unsigned int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),gpuContext);
 
 		sorted_domain_particles_dg.template deviceToHost<0>(sorted_domain_particles_dg.size()-1,sorted_domain_particles_dg.size()-1);
 		auto sz = sorted_domain_particles_dg.template get<0>(sorted_domain_particles_dg.size()-1);
@@ -361,7 +361,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 			   	   	   	 vector & pl_out,
 			   	   	   	 vector_prp & pl_prp,
 			   	   	   	 vector_prp & pl_prp_out,
-			   	   	   	 mgpu::ofp_context_t & mgpuContext,
+						 gpu::ofp_context_t & gpuContext,
 			   	   	   	 size_t g_m,
 			   	   	   	 size_t start,
 			   	   	   	 size_t stop,
@@ -398,7 +398,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		// now we scan
 		starts.resize(cl_n.size());
-		openfpm::scan((cnt_type *)cl_n.template getDeviceBuffer<0>(), cl_n.size(), (cnt_type *)starts.template getDeviceBuffer<0>() , mgpuContext);
+		openfpm::scan((cnt_type *)cl_n.template getDeviceBuffer<0>(), cl_n.size(), (cnt_type *)starts.template getDeviceBuffer<0>() , gpuContext);
 
 		// now we construct the cells
 
@@ -414,7 +414,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
                 // sort
 
-                mgpu::mergesort(static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()),pl.size(),mgpu::less_t<cnt_type>(),mgpuContext);
+                gpu::mergesort(static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()),pl.size(),gpu::less_t<cnt_type>(),gpuContext);
 
 #else
 
@@ -470,7 +470,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		if (opt == cl_construct_opt::Full)
 		{
-			construct_domain_ids(mgpuContext,start,stop,g_m);
+			construct_domain_ids(gpuContext,start,stop,g_m);
 		}
 
 	#else
@@ -630,7 +630,7 @@ public:
 				   vector & pl_out,
 				   vector_prp & pl_prp,
 				   vector_prp & pl_prp_out,
-				   mgpu::ofp_context_t & mgpuContext,
+				   gpu::ofp_context_t & gpuContext,
 				   size_t g_m = 0,
 				   size_t start = 0,
 				   size_t stop = (size_t)-1,
@@ -640,8 +640,8 @@ public:
 		if (stop == (size_t)-1)
 		{stop = pl.size();}
 
-		if (is_sparse == false) {construct_dense<vector,vector_prp,prp...>(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,start,stop,opt);}
-		else {construct_sparse<vector,vector_prp,prp...>(pl,pl_out,pl_prp,pl_prp_out,mgpuContext,g_m,start,stop,opt);}
+		if (is_sparse == false) {construct_dense<vector,vector_prp,prp...>(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,start,stop,opt);}
+		else {construct_sparse<vector,vector_prp,prp...>(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,start,stop,opt);}
 	}
 
 	CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse> toKernel()

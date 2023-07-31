@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE ( test_sparse_vector_use )
 	vs.template insert<0>(35) = 35;
 	vs.template insert<0>(28) = 28;
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	vs.template flush<sadd_<0>>(ctx);
 
 	BOOST_REQUIRE_EQUAL(vs.get<0>(5),5);

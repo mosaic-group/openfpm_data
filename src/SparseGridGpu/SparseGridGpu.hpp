@@ -770,7 +770,7 @@ public:
     }
 
     template<typename ... v_reduce>
-    void flush(mgpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST)
+    void flush(gpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST)
     {
         BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
                 ::template flush<v_reduce ...>(context, opt);
@@ -1094,7 +1094,7 @@ private:
     }
 
     template<typename MemType, unsigned int ... prp>
-    void preUnpack(ExtPreAlloc<MemType> * prAlloc_prp, mgpu::ofp_context_t & ctx, int opt)
+    void preUnpack(ExtPreAlloc<MemType> * prAlloc_prp, gpu::ofp_context_t & ctx, int opt)
     {
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{
@@ -1114,14 +1114,14 @@ private:
 
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase1(mgpu::ofp_context_t & ctx, int opt)
+	void removeCopyToFinalize_phase1(gpu::ofp_context_t & ctx, int opt)
 	{
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{removePoints(ctx);}
 	}
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase2(mgpu::ofp_context_t & ctx, int opt)
+	void removeCopyToFinalize_phase2(gpu::ofp_context_t & ctx, int opt)
 	{
 		// Pack information
 		Pack_stat sts;
@@ -1173,7 +1173,7 @@ private:
 	}
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase3(mgpu::ofp_context_t & ctx, int opt, bool is_unpack_remote)
+	void removeCopyToFinalize_phase3(gpu::ofp_context_t & ctx, int opt, bool is_unpack_remote)
 	{
 		ite_gpu<1> ite;
 
@@ -1417,7 +1417,7 @@ private:
 	void addAndConvertPackedChunkToTmp(ExtPreAlloc<S2> & mem,
 				SparseGridGpu_iterator_sub<dim,self> & sub_it,
 				Unpack_stat & ps,
-				mgpu::ofp_context_t &context)
+				gpu::ofp_context_t &context)
 	{
     	sparsegridgpu_pack_request<AggregateT,prp ...> spq;
     	boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(spq);
@@ -2019,7 +2019,7 @@ public:
 	 * \param grid_dw grid level down
 	 *
 	 */
-    void construct_link(self & grid_up, self & grid_dw, mgpu::ofp_context_t &context)
+    void construct_link(self & grid_up, self & grid_dw, gpu::ofp_context_t &context)
     {
 /*        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -2106,7 +2106,7 @@ public:
 	 * \param gpu context
 	 *
 	 */
-    void construct_link_dw(self & grid_dw, const Box<dim,int> & db_, Point<dim,int> p_dw, mgpu::ofp_context_t &context)
+    void construct_link_dw(self & grid_dw, const Box<dim,int> & db_, Point<dim,int> p_dw, gpu::ofp_context_t &context)
     {
     	Box<dim,int> db = db_;
 
@@ -2184,7 +2184,7 @@ public:
 	 * \praram grid_up grid level up
 	 *
 	 */
-    void construct_link_up(self & grid_up,  const Box<dim,int> & db_, Point<dim,int> p_up, mgpu::ofp_context_t &context)
+    void construct_link_up(self & grid_up,  const Box<dim,int> & db_, Point<dim,int> p_up, gpu::ofp_context_t &context)
     {
     	Box<dim,int> db = db_;
 
@@ -2284,7 +2284,7 @@ public:
 	}
 
     template<typename stencil_type = NNStar<dim>, typename checker_type = No_check>
-    void tagBoundaries(mgpu::ofp_context_t &context, checker_type chk = checker_type(), tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
+    void tagBoundaries(gpu::ofp_context_t &context, checker_type chk = checker_type(), tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -2977,7 +2977,7 @@ public:
      *
      */
 	template<int ... prp> inline
-	void packRequest(size_t & req, mgpu::ofp_context_t &context) const
+	void packRequest(size_t & req, gpu::ofp_context_t &context) const
     {
     	ite_gpu<1> ite;
 
@@ -3070,7 +3070,7 @@ public:
 	 *
 	 */
 	template<int ... prp> inline
-	void packCalculate(size_t & req, mgpu::ofp_context_t &context)
+	void packCalculate(size_t & req, gpu::ofp_context_t &context)
 	{
     	ite_gpu<1> ite;
 		pack_subs.template hostToDevice<0,1>();
@@ -3308,7 +3308,7 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp>
-	void removeCopyToFinalize(mgpu::ofp_context_t & ctx, int opt)
+	void removeCopyToFinalize(gpu::ofp_context_t & ctx, int opt)
 	{
 		if ((opt & 0x3) == rem_copy_opt::PHASE1)
 		{
@@ -3410,7 +3410,7 @@ public:
 	 * \param context modern gpu context
 	 *
 	 */
-	void removePoints(mgpu::ofp_context_t& context)
+	void removePoints(gpu::ofp_context_t& context)
 	{
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
@@ -3485,7 +3485,7 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp>
-	void removeAddUnpackFinalize(mgpu::ofp_context_t& context, int opt)
+	void removeAddUnpackFinalize(gpu::ofp_context_t& context, int opt)
 	{
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{removePoints(context);}
@@ -3593,7 +3593,7 @@ public:
 				header_type & headers,
 				int ih,
 				Unpack_stat & ps,
-				mgpu::ofp_context_t &context,
+				gpu::ofp_context_t &context,
 				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
 	{
 		////////////////////////////////////////////////////////////
@@ -3661,7 +3661,7 @@ public:
 	void unpack(ExtPreAlloc<S2> & mem,
 				SparseGridGpu_iterator_sub<dim,self> & sub_it,
 				Unpack_stat & ps,
-				mgpu::ofp_context_t &context,
+				gpu::ofp_context_t &context,
 				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
 	{
 		////////////////////////////////////////////////////////////

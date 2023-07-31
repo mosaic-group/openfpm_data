@@ -17,7 +17,7 @@ enum cl_construct_opt
 	Only_reorder
 };
 
-#include "util/cuda/ofp_context.hxx"
+#include "util/ofp_context.hpp"
 
 
 /*! \brief populate the Cell-list with particles non symmetric case on GPU
@@ -48,7 +48,7 @@ struct populate_cell_list_no_sym_impl
 						   openfpm::vector<prop,Memory,layout_base > & v_prp,
 						   openfpm::vector<prop,Memory,layout_base > & v_prp_out,
 			   	   	   	   CellList & cli,
-			   	   	   	   mgpu::ofp_context_t & context,
+						   gpu::ofp_context_t & context,
 			   	   	   	   size_t g_m,
 			   	   	   	   cl_construct_opt optc)
 	{
@@ -70,7 +70,7 @@ struct populate_cell_list_no_sym_impl<true>
 						 openfpm::vector<prop,Memory,layout_base > & v_prp,
 						 openfpm::vector<prop,Memory,layout_base > & v_prp_out,
 			   	   	   	   CellList & cli,
-			   	   	   	   mgpu::ofp_context_t & context,
+						   gpu::ofp_context_t & context,
 			   	   	   	   size_t g_m,
 			   	   	   	   cl_construct_opt optc)
 	{
@@ -138,12 +138,12 @@ void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,layout_base >
 		 	 	 	 	 	   openfpm::vector<prop,Memory,layout_base > & v_prp,
 		 	 	 	 	 	   openfpm::vector<prop,Memory,layout_base > & v_prp_out,
 							   CellList & cli,
-							   mgpu::ofp_context_t & mgpu,
+							   gpu::ofp_context_t & gpu,
 							   size_t g_m,
 							   cl_construct_opt optc)
 {
 	populate_cell_list_no_sym_impl<is_gpu_celllist<CellList>::value>
-								  ::template populate<dim,T,prop,Memory,layout_base,CellList, prp ...>(pos,v_pos_out,v_prp,v_prp_out,cli,mgpu,g_m,optc);
+								  ::template populate<dim,T,prop,Memory,layout_base,CellList, prp ...>(pos,v_pos_out,v_prp,v_prp_out,cli,gpu,g_m,optc);
 }
 
 /*! \brief populate the Cell-list with particles symmetric case
@@ -189,7 +189,7 @@ void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & pos,
  	 	   	   	   	    openfpm::vector<prop,Memory,layout_base > & v_prp,
  	 	   	   	   	    openfpm::vector<prop,Memory,layout_base > & v_prp_out,
 						CellList & cli,
-						mgpu::ofp_context_t & context,
+						gpu::ofp_context_t & context,
 						size_t g_m,
 						size_t opt,
 						cl_construct_opt optc)
@@ -222,7 +222,7 @@ template<unsigned int dim,
 		 unsigned int ... prp>
 void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & pos,
 						CellList & cli,
-						mgpu::ofp_context_t & context,
+						gpu::ofp_context_t & context,
 						size_t g_m,
 						size_t opt,
 						cl_construct_opt optc)

@@ -12,18 +12,33 @@
 
 #include "config.h"
 
+#include <limits>
+
 #if CUDART_VERSION < 11000
 #include "util/cuda/cub_old/util_type.cuh"
 #include "util/cuda/cub_old/block/block_scan.cuh"
-#include "util/cuda/moderngpu/operators.hxx"
 #include "util/cuda_launch.hpp"
-#else
-	#if !defined(CUDA_ON_CPU)	
-	#include "util/cuda/moderngpu/operators.hxx"
-	#endif
+#endif
+
+#if !defined(CUDA_ON_CPU)
+#include "util/cudify/cuda/operators.hpp"
 #endif
 
 #endif
+
+template<typename type_t>
+struct zero_t {
+  __device__ __host__ type_t operator()() const {
+    return 0;
+  }
+};
+
+template<typename type_t>
+struct limit_max_t {
+  __device__ __host__ type_t operator()() const {
+    return std::numeric_limits<type_t>::max();
+  }
+};
 
 template<typename type_t>
 struct rightOperand_t  : public std::binary_function<type_t, type_t, type_t> {
@@ -93,7 +108,8 @@ struct sadd_
 	typedef boost::mpl::int_<prp> prop;
 
 #ifdef __NVCC__
-	template<typename red_type> using op_red = mgpu::plus_t<red_type>;
+	template<typename red_type> using op_red = gpu::plus_t<red_type>;
+	template<typename red_type> using op_initial_value = zero_t<red_type>;
 #endif
 
 	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
@@ -147,6 +163,7 @@ struct sadd_block_
 
 #ifdef __NVCC__
 	template<typename red_type> using op_red = plus_block_t<red_type, blockLength>;
+	template<typename red_type> using op_initial_value = zero_t<red_type>;
 #endif
 
 	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
@@ -176,7 +193,8 @@ struct smax_
 	typedef boost::mpl::int_<prp> prop;
 
 #ifdef __NVCC__
-	template<typename red_type> using op_red = mgpu::maximum_t<red_type>;
+	template<typename red_type> using op_red = gpu::maximum_t<red_type>;
+	template<typename red_type> using op_initial_value = zero_t<red_type>;
 #endif
 
 	template<typename red_type>
@@ -200,7 +218,7 @@ struct smax_
 
 template<typename type_t, unsigned int blockLength>
 struct maximum_block_t  : public std::binary_function<type_t, type_t, type_t> {
-  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
@@ -219,6 +237,7 @@ struct smax_block_
 
 #ifdef __NVCC__
 	template<typename red_type> using op_red = maximum_block_t<red_type, blockLength>;
+	template<typename red_type> using op_initial_value = zero_t<red_type>;
 #endif
 
 	template<typename red_type>
@@ -251,7 +270,8 @@ struct smin_
 	typedef boost::mpl::int_<prp> prop;
 
 #ifdef __NVCC__
-	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+	template<typename red_type> using op_red = gpu::minimum_t<red_type>;
+	template<typename red_type> using op_initial_value = limit_max_t<red_type>;
 #endif
 
 	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
@@ -274,7 +294,7 @@ struct smin_
 
 template<typename type_t, unsigned int blockLength>
 struct minimum_block_t  : public std::binary_function<type_t, type_t, type_t> {
-  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
@@ -293,6 +313,7 @@ struct smin_block_
 
 #ifdef __NVCC__
 	template<typename red_type> using op_red = minimum_block_t<red_type, blockLength>;
+	template<typename red_type> using op_initial_value = limit_max_t<red_type>;
 #endif
 
 	template<typename red_type>
@@ -322,7 +343,7 @@ struct smin_block_
 
 template<typename type_t>
 struct bitwiseOr_t  : public std::binary_function<type_t, type_t, type_t> {
-  MGPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
     return a|b;
   }
 };
@@ -357,7 +378,8 @@ struct sstart_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+	template<typename red_type> using op_red = gpu::minimum_t<red_type>;
+	template<typename red_type> using op_initial_value = zero_t<red_type>;
 
 	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
 	{
@@ -382,7 +404,7 @@ struct sstop_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+	template<typename red_type> using op_red = gpu::minimum_t<red_type>;
 
 	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
 	{
@@ -407,7 +429,7 @@ struct snum_
 {
 	typedef boost::mpl::int_<prp> prop;
 
-	template<typename red_type> using op_red = mgpu::minimum_t<red_type>;
+	template<typename red_type> using op_red = gpu::minimum_t<red_type>;
 
 	template<typename red_type> __device__ __host__ static red_type red(red_type & r1, red_type & r2)
 	{

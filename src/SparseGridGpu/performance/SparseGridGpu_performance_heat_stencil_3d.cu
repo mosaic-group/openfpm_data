@@ -42,7 +42,7 @@ void testStencilHeat3D_perf(unsigned int i, std::string base)
 
     typename SparseGridZ::grid_info blockGeometry(gridSize);
     SparseGridZ sparseGrid(blockGeometry);
-    mgpu::ofp_context_t ctx;
+    gpu::ofp_context_t ctx;
     sparseGrid.template setBackgroundValue<0>(0);
 
     unsigned long long numElements = gridEdgeSize*SparseGridZ::blockEdgeSize_
@@ -166,7 +166,7 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMu
     size_t sz[3] = {spatialEdgeSize, spatialEdgeSize, spatialEdgeSize};
     typename SparseGridZ::grid_info blockGeometry(sz);
     SparseGridZ sparseGrid(blockGeometry);
-    mgpu::ofp_context_t ctx;
+    gpu::ofp_context_t ctx;
     sparseGrid.template setBackgroundValue<0>(0);
 
     ///// Insert sparse content, a set of concentric spheres /////

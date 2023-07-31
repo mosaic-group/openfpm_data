@@ -584,7 +584,7 @@ struct sparse_vector_reduction_solve_conflict
 	vector_segolddata_type & segments_oldData;
 
 	//! gpu context
-	mgpu::ofp_context_t & context;
+	gpu::ofp_context_t & context;
 
 	/*! \brief constructor
 	 *
@@ -600,7 +600,7 @@ struct sparse_vector_reduction_solve_conflict
 								   vector_segoffset_type & segment_offset,
 								   vector_outmap_type & out_map,
 								   vector_segolddata_type & segments_oldData,
-								   mgpu::ofp_context_t & context)
+								   gpu::ofp_context_t & context)
 	:vector_data_red(vector_data_red),
 	 vector_data(vector_data),
 	 vector_data_unsorted(vector_data_unsorted),
@@ -701,7 +701,7 @@ namespace BlockMapGpuFunctors
         bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices, vector_index_type2 &segments_new, vector_index_type &data_map,
                                     vector_data_type &dataOld, vector_data_type &dataNew,
                                     vector_index_type &keysOut, vector_data_type &dataOut,
-                                    mgpu::ofp_context_t & context)
+                                    gpu::ofp_context_t & context)
         {
 #ifdef __NVCC__
             typedef ValueTypeOf<vector_data_type> AggregateT;

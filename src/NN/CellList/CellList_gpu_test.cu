@@ -464,7 +464,7 @@ void test_cell_count_n()
 
 	CUDA_LAUNCH_DIM3(construct_cells,1,1,vs.toKernel(),gs);
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 
 	vs.flush<sadd_<0>>(ctx,flush_type::FLUSH_ON_DEVICE);
 
@@ -786,8 +786,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 	pl.template hostToDevice<0>();
 	pl_prp.template hostToDevice<0,1,2>();
 
-	// create an mgpu context
-	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
+	// create an gpu context
+	gpu::ofp_context_t context(gpu::gpu_context_opt::no_print_props);
 	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context);
 
 	// Check
@@ -1358,7 +1358,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	size_t g_m = pl.size() / 2;
 
-	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
+	gpu::ofp_context_t context(gpu::gpu_context_opt::no_print_props);
 	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
 
 	auto & s_t_ns = cl2.getSortToNonSort();
@@ -1564,7 +1564,7 @@ void Test_cell_gpu_force_split(SpaceBox<dim,T> & box, size_t npart, const size_t
 
 	size_t g_m = pl.size() / 2;
 
-	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
+	gpu::ofp_context_t context(gpu::gpu_context_opt::no_print_props);
 	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,0,pl.size()/2);
 	cl2_split2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,pl.size()/2,pl.size());
 	auto & s_t_ns_s1 = cl2_split1.getSortToNonSort();
@@ -1809,7 +1809,7 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_split)
 
 	size_t g_m = pl.size() / 2;
 
-	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
+	gpu::ofp_context_t context(gpu::gpu_context_opt::no_print_props);
 
 	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,0,pl.size()/2);
 	cl2_split2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,pl.size()/2,pl.size());
@@ -2013,7 +2013,7 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	openfpm::vector_gpu<aggregate<int>> os_scan;
 	os_scan.resize(v.size());
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	openfpm::scan((int *)os.template getDeviceBuffer<0>(),os.size(),(int *)os_scan.template getDeviceBuffer<0>(),ctx);
 
 	os_scan.deviceToHost<0>();
@@ -2089,7 +2089,7 @@ BOOST_AUTO_TEST_CASE( CellList_swap_test )
 
 	size_t g_m = pl.size() / 2;
 
-	mgpu::ofp_context_t context(mgpu::gpu_context_opt::no_print_props);
+	gpu::ofp_context_t context(gpu::gpu_context_opt::no_print_props);
 	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
 	cl4.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
 

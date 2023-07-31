@@ -12,15 +12,11 @@
 #include "Vector/map_vector.hpp"
 #include "Vector/cuda/map_vector_sparse_cuda_ker.cuh"
 #include "Vector/cuda/map_vector_sparse_cuda_kernels.cuh"
-#include "util/cuda/ofp_context.hxx"
+#include "util/ofp_context.hpp"
 #include <iostream>
 #include <limits>
 
 #if defined(__NVCC__)
-  #if !defined(CUDA_ON_CPU) && !defined(__HIP__)
-	#include "util/cuda/moderngpu/kernel_segreduce.hxx"
-	#include "util/cuda/moderngpu/kernel_merge.hxx"
-  #endif
  #include "util/cuda/kernels.cuh"
 #endif
 
@@ -128,7 +124,10 @@ namespace openfpm
         static void extendSegments(vector_index_type & segments, size_t dataSize)
         {
 #ifdef __NVCC__
-            // Pass as there is nothing to append for mgpu
+            // Append trailing element to segment (marks end of last segment)
+            segments.resize(segments.size()+1);
+            segments.template get<p>(segments.size() - 1) = dataSize;
+            segments.template hostToDevice<p>(segments.size() - 1, segments.size() - 1);
 #else // __NVCC__
             std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
 #endif // __NVCC__
@@ -141,23 +140,22 @@ namespace openfpm
                 vector_index_type2 & segment_offset,
                 vector_data_type & vector_data_red,
                 block_functor & blf,
-                mgpu::ofp_context_t & context)
+                gpu::ofp_context_t & context)
         {
 #ifdef __NVCC__
             typedef typename boost::mpl::at<vector_reduction, T>::type reduction_type;
             typedef typename boost::mpl::at<typename vector_data_type::value_type::type,typename reduction_type::prop>::type red_type;
             typedef typename reduction_type::template op_red<red_type> red_op;
             typedef typename boost::mpl::at<typename vector_index_type::value_type::type,boost::mpl::int_<0>>::type seg_type;
-            red_type init;
-            init = 0;
+            typename reduction_type::template op_initial_value<red_type> initial_value_functor;
 
             assert((std::is_same<seg_type,int>::value == true));
 
             openfpm::segreduce(
                     (red_type *)vector_data.template getDeviceBuffer<reduction_type::prop::value>(), vector_data.size(),
-                    (int *)segment_offset.template getDeviceBuffer<1>(), segment_offset.size(),
+                    (int *)segment_offset.template getDeviceBuffer<1>(), segment_offset.size()-1,
                     (red_type *)vector_data_red.template getDeviceBuffer<reduction_type::prop::value>(),
-                    red_op(), init, context);
+                    red_op(), initial_value_functor(), context);
 #else // __NVCC__
     std::cout << __FILE__ << ":" << __LINE__ << " error: this file is supposed to be compiled with nvcc" << std::endl;
 #endif // __NVCC__
@@ -200,7 +198,7 @@ namespace openfpm
                 vector_data_type & vct_data_out,
                 ite_gpu<1> & itew,
                 block_functor & blf,
-                mgpu::ofp_context_t & context
+                gpu::ofp_context_t & context
                 )
         {
 #ifdef __NVCC__
@@ -268,7 +266,7 @@ namespace openfpm
         					  vector_index_type2 & segment_offset,
         					  vector_data_type & vector_data_red,
         					  block_functor & blf,
-        					  mgpu::ofp_context_t & context)
+						  gpu::ofp_context_t & context)
         {
 
         }
@@ -294,7 +292,7 @@ namespace openfpm
                 vector_data_type & vct_data_out,
                 ite_gpu<1> & itew,
                 block_functor & blf,
-                mgpu::ofp_context_t & context
+                gpu::ofp_context_t & context
         )
         {
 #ifdef __NVCC__
@@ -634,7 +632,7 @@ namespace openfpm
 		block_functor & blf;
 
 		//! gpu context
-		mgpu::ofp_context_t & context;
+		gpu::ofp_context_t & context;
 
 		/*! \brief constructor
 		 *
@@ -648,7 +646,7 @@ namespace openfpm
 									   vector_index_type & vector_data_map,
 									   vector_index_type2 & segment_offset,
 									   block_functor & blf,
-									   mgpu::ofp_context_t & context)
+									   gpu::ofp_context_t & context)
 		:vector_data_red(vector_data_red),
 		 vector_data(vector_data),
 		 vector_data_unsorted(vector_data_unsorted),
@@ -697,7 +695,7 @@ namespace openfpm
                                     vector_data_type &data1, vector_data_type &data2,
                                     vector_index_type &indices_tmp, vector_data_type &data_tmp,
                                     vector_index_type &keysOut, vector_data_type &dataOut,
-                                    mgpu::ofp_context_t & context)
+                                    gpu::ofp_context_t & context)
 		{
 			return true;
 		}
@@ -738,7 +736,7 @@ namespace openfpm
 		vector_index_type & segment_offset;
 
 		//! gpu context
-		mgpu::ofp_context_t & context;
+		gpu::ofp_context_t & context;
 
 		/*! \brief constructor
 		 *
@@ -749,7 +747,7 @@ namespace openfpm
 		inline sparse_vector_special(vector_data_type & vector_data_red,
 									   vector_data_type & vector_data,
 									   vector_index_type & segment_offset,
-									   mgpu::ofp_context_t & context)
+									   gpu::ofp_context_t & context)
 		:vector_data_red(vector_data_red),vector_data(vector_data),segment_offset(segment_offset),context(context)
 		{};
 
@@ -881,7 +879,7 @@ namespace openfpm
 		 * \param vct_add_cont_index output continuos array of inserted indexes
 		 * \param vct_add_data array of added data
 		 * \param vct_add_data_cont continuos array of inserted data
-		 * \param contect mgpu context
+		 * \param contect gpu context
 		 *
 		 */
 		size_t make_continuos(vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_nadd_index,
@@ -890,7 +888,7 @@ namespace openfpm
 							  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_cont_index_map,
 							  vector<T,Memory,layout_base,grow_p> & vct_add_data,
 							  vector<T,Memory,layout_base,grow_p> & vct_add_data_cont,
-							  mgpu::ofp_context_t & context)
+							  gpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
 
@@ -970,7 +968,7 @@ namespace openfpm
 							 vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_cont_index_map,
 							 vector<T,Memory,layout_base,grow_p> & vct_add_data_reord,
 							 vector<T,Memory,layout_base,grow_p> & vct_add_data_cont,
-							 mgpu::ofp_context_t & context)
+							 gpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
 			ite_gpu<1> itew;
@@ -990,7 +988,7 @@ namespace openfpm
 			        (Ti *)vct_add_cont_index.template getDeviceBuffer<0>(),
                     (Ti *)vct_add_cont_index_map.template getDeviceBuffer<0>(),
 					vct_add_cont_index.size(),
-					mgpu::template less_t<Ti>(),
+					gpu::template less_t<Ti>(),
                     context);
 
 			auto ite = vct_add_cont_index.getGPUIterator();
@@ -1017,7 +1015,7 @@ namespace openfpm
 						   vector<aggregate<Ti,Ti>,Memory,layout_base,grow_p> & vct_add_index_unique,
 				  	  	   vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_merge_index,
 				  	  	   vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_merge_index_map,
-				  	  	   mgpu::ofp_context_t & context)
+						   gpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
 
@@ -1112,7 +1110,7 @@ namespace openfpm
 
 			openfpm::merge((Ti *)vct_index.template getDeviceBuffer<0>(),(Ti *)vct_m_index.template getDeviceBuffer<0>(),vct_index.size(),
 						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp4.template getDeviceBuffer<0>(),vct_add_index_unique.size(),
-						(Ti *)vct_merge_index.template getDeviceBuffer<0>(),(Ti *)vct_merge_index_map.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
+						(Ti *)vct_merge_index.template getDeviceBuffer<0>(),(Ti *)vct_merge_index_map.template getDeviceBuffer<0>(),gpu::less_t<Ti>(),context);
 
 
 #endif
@@ -1125,7 +1123,7 @@ namespace openfpm
 						 vector<aggregate<Ti,Ti>,Memory,layout_base,grow_p> & segments_new,
 						 vector<T,Memory,layout_base,grow_p> & vct_add_data,
 						 vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_data_reord_map,
-				  	  	   mgpu::ofp_context_t & context)
+						 gpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
 			ite_gpu<1> itew;
@@ -1159,6 +1157,7 @@ namespace openfpm
 			                context);
 
 				boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
+				vct_add_index_unique.remove(vct_add_index_unique.size()-1);
 			}
 
 			sparse_vector_special<typename std::remove_reference<decltype(vct_add_data)>::type,
@@ -1204,7 +1203,7 @@ namespace openfpm
 		void flush_on_gpu_insert(vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_cont_0,
 				  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_cont_1,
 				  vector<T,Memory,layout_base,grow_p> & vct_add_data_reord,
-				  mgpu::ofp_context_t & context)
+				  gpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
 
@@ -1237,7 +1236,7 @@ namespace openfpm
 
 
 		void flush_on_gpu_remove(
-				  mgpu::ofp_context_t & context)
+				  gpu::ofp_context_t & context)
 		{
 #ifdef __NVCC__
 
@@ -1275,7 +1274,7 @@ namespace openfpm
 
 			// now we sort
 			openfpm::sort((Ti *)vct_add_index_cont_0.template getDeviceBuffer<0>(),(Ti *)vct_add_index_cont_1.template getDeviceBuffer<0>(),
-					vct_add_index_cont_0.size(), mgpu::template less_t<Ti>(), context);
+					vct_add_index_cont_0.size(), gpu::template less_t<Ti>(), context);
 
 			auto ite = vct_add_index_cont_0.getGPUIterator();
 
@@ -1297,7 +1296,7 @@ namespace openfpm
 			vct_add_index_unique.resize(n_ele_unique);
 
 			openfpm::sort((Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),
-							vct_add_index_unique.size(),mgpu::template less_t<Ti>(),context);
+							vct_add_index_unique.size(),gpu::template less_t<Ti>(),context);
 
 			// Then we merge the two list vct_index and vct_add_index_unique
 
@@ -1329,7 +1328,7 @@ namespace openfpm
 			//
 			openfpm::merge((Ti *)vct_index.template getDeviceBuffer<0>(),(Ti *)vct_m_index.template getDeviceBuffer<0>(),vct_index.size(),
 						(Ti *)vct_add_index_unique.template getDeviceBuffer<0>(),(Ti *)vct_add_index_unique.template getDeviceBuffer<1>(),vct_add_index_unique.size(),
-						(Ti *)vct_index_tmp.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp2.template getDeviceBuffer<0>(),mgpu::less_t<Ti>(),context);
+						(Ti *)vct_index_tmp.template getDeviceBuffer<0>(),(Ti *)vct_index_tmp2.template getDeviceBuffer<0>(),gpu::less_t<Ti>(),context);
 
 			vct_index_tmp3.resize(128*itew.wthr.x);
 
@@ -1377,7 +1376,7 @@ namespace openfpm
 		void flush_on_gpu(vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_cont_0,
 						  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_cont_1,
 						  vector<T,Memory,layout_base,grow_p> & vct_add_data_reord,
-						  mgpu::ofp_context_t & context)
+						  gpu::ofp_context_t & context)
 		{
 			flush_on_gpu_insert<v_reduce ... >(vct_add_index_cont_0,vct_add_index_cont_1,vct_add_data_reord,context);
 		}
@@ -1747,7 +1746,7 @@ namespace openfpm
 		 */
 		template<typename ... v_reduce>
 		void flush_v(vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index_cont_0,
-				     mgpu::ofp_context_t & context,
+				     gpu::ofp_context_t & context,
 				     flush_type opt = FLUSH_ON_HOST,
 				     int i = 0)
 		{
@@ -1771,7 +1770,7 @@ namespace openfpm
 		 */
 		template<typename ... v_reduce>
 		void flush_vd(vector<T,Memory,layout_base,grow_p> & vct_add_data_reord,
-				     mgpu::ofp_context_t & context,
+				     gpu::ofp_context_t & context,
 				     flush_type opt = FLUSH_ON_HOST)
 		{
 			// Eliminate background
@@ -1791,7 +1790,7 @@ namespace openfpm
 		 *
 		 */
 		template<typename ... v_reduce>
-		void flush(mgpu::ofp_context_t & context, flush_type opt = FLUSH_ON_HOST)
+		void flush(gpu::ofp_context_t & context, flush_type opt = FLUSH_ON_HOST)
 		{
 			// Eliminate background
 			vct_data.resize(vct_index.size());
@@ -1809,7 +1808,7 @@ namespace openfpm
 		 * \param opt options
 		 *
 		 */
-		void flush_remove(mgpu::ofp_context_t & context, flush_type opt = FLUSH_ON_HOST)
+		void flush_remove(gpu::ofp_context_t & context, flush_type opt = FLUSH_ON_HOST)
 		{
 			vct_data.resize(vct_data.size()-1);
 

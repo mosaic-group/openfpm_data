@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 	// we launch a kernel to insert data
 	CUDA_LAUNCH_DIM3(test_insert_sparse,10,100,vs.toKernel());
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(10,1024);
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 	CUDA_LAUNCH_DIM3(test_insert_sparse2_inc,10,100,vs.toKernel());
 	CUDA_LAUNCH_DIM3(test_insert_sparse2_inc,10,100,vs.toKernel());
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 	CUDA_LAUNCH_DIM3(test_insert_sparse,10,100,vs.toKernel());
 
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.template deviceToHost<0,1,2>();
@@ -475,7 +475,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_special_function )
 	CUDA_LAUNCH_DIM3(test_insert_sparse2_inc,10,100,vs.toKernel());
 	CUDA_LAUNCH_DIM3(test_insert_sparse2_inc,10,100,vs.toKernel());
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 
 	vs.flush<sstart_<0>>(ctx,flush_type::FLUSH_ON_DEVICE);
 
@@ -604,7 +604,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 	// we launch a kernel to insert data
 	CUDA_LAUNCH_DIM3(test_insert_sparse,10,100,vs.toKernel());
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(ctx,flush_type::FLUSH_ON_DEVICE);
 
 	vs.setGPUInsertBuffer(10,1024);
@@ -686,7 +686,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 	CUDA_LAUNCH_DIM3(test_insert_sparse2_inc,10,100,vs.toKernel());
 	CUDA_LAUNCH_DIM3(test_insert_sparse2_inc,10,100,vs.toKernel());
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 
 	vs.flush<sadd_<0>,sadd_<1>,sadd_<2>>(ctx,flush_type::FLUSH_ON_DEVICE);
 

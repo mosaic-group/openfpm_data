@@ -41,7 +41,7 @@ void testStencilHeat_perf(unsigned int i, std::string base)
 	dim3 blockSize(SparseGridZ::blockEdgeSize_,SparseGridZ::blockEdgeSize_);
 	typename SparseGridZ::grid_info blockGeometry(gridSize);
 	SparseGridZ sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
     unsigned long long numElements = gridEdgeSize*SparseGridZ::blockEdgeSize_*gridEdgeSize*SparseGridZ::blockEdgeSize_;

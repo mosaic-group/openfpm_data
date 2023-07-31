@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE (gpu_p2m)
 
 	size_t g_m = pos.size();
 
-	mgpu::ofp_context_t context(false);
+	gpu::ofp_context_t context(false);
 
 	const size_t (& sz)[3] = grid.getGrid().getSize();
 

@@ -498,7 +498,7 @@ void testConv3x3x3_perf(std::string testName)
 	size_t sz[] = {1000,1000,1000};
 
 	SparseGridZ sparseGrid(sz);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// now create 3 3D sphere
@@ -592,7 +592,7 @@ static void testConv3x3x3_no_shared_perf(std::string testName)
 	size_t sz[] = {1000,1000,1000};
 
 	SparseGridZ sparseGrid(sz);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// now create 3 3D sphere

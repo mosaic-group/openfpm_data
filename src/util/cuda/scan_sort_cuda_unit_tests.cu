@@ -8,8 +8,6 @@
 #include "util/cuda_util.hpp"
 #include "Vector/map_vector.hpp"
 
-#define SORT_WITH_CUB
-
 #include "sort_ofp.cuh"
 #include "scan_ofp.cuh"
 #include "segreduce_ofp.cuh"
@@ -37,7 +35,7 @@ BOOST_AUTO_TEST_CASE( test_scan_cub_wrapper )
 
 	input.template hostToDevice<0>();
 
-	mgpu::ofp_context_t context;
+	gpu::ofp_context_t context;
 	openfpm::scan((unsigned int *)input.template getDeviceBuffer<0>(),input.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
 
     output.template deviceToHost<0>();
@@ -78,11 +76,11 @@ BOOST_AUTO_TEST_CASE( test_sort_cub_wrapper )
 	input.template hostToDevice<0>();
 	input_id.template hostToDevice<0>();
 
-	mgpu::ofp_context_t context;
+	gpu::ofp_context_t context;
 
 	openfpm::sort((unsigned int *)input.template getDeviceBuffer<0>(),
 				  (unsigned int *)input_id.template getDeviceBuffer<0>(),
-			      input.size(),mgpu::template less_t<unsigned int>(),context);
+			      input.size(),gpu::template less_t<unsigned int>(),context);
 
 	input.template deviceToHost<0>();
 	input_id.template deviceToHost<0>();
@@ -94,7 +92,7 @@ BOOST_AUTO_TEST_CASE( test_sort_cub_wrapper )
 
 	openfpm::sort((unsigned int *)input.template getDeviceBuffer<0>(),
 				  (unsigned int *)input_id.template getDeviceBuffer<0>(),
-			      input.size(),mgpu::template greater_t<unsigned int>(),context);
+			      input.size(),gpu::template greater_t<unsigned int>(),context);
 
 	input.template deviceToHost<0>();
 	input_id.template deviceToHost<0>();
@@ -113,7 +111,7 @@ BOOST_AUTO_TEST_CASE( test_seg_reduce_wrapper )
 {
 	std::cout << "Test gpu segmented reduce" << "\n";
 
-	mgpu::ofp_context_t context;
+	gpu::ofp_context_t context;
 
 	int count = 130;
 
@@ -144,23 +142,25 @@ BOOST_AUTO_TEST_CASE( test_seg_reduce_wrapper )
 
 		base += c;
 	}
+	segment_offset.add();
+	segment_offset.template get<0>(segment_offset.size() - 1) = vgpu.size();
 
 	vgpu.hostToDevice<0>();
 
 	segment_offset.hostToDevice<0>();
-	output.resize(segment_offset.size());
+	output.resize(segment_offset.size()-1);
 
 	openfpm::segreduce((int *)vgpu.template getDeviceBuffer<0>(), vgpu.size(),
-					(int *)segment_offset.template getDeviceBuffer<0>(), segment_offset.size(),
+					(int *)segment_offset.template getDeviceBuffer<0>(), segment_offset.size()-1,
 					(int *)output.template getDeviceBuffer<0>(),
-					mgpu::plus_t<int>(), init, context);
+					gpu::plus_t<int>(), init, context);
 
 
 	output.template deviceToHost<0>();
 
 	bool match = true;
 	size_t i = 0;
-	for ( ; i < segment_offset.size()-1 ; i++)
+	for ( ; i < segment_offset.size()-2 ; i++)
 	{
 		size_t red = 0;
 		for (size_t j = 0 ; j < segment_offset.template get<0>(i+1) - segment_offset.template get<0>(i)  ; j++)
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE( test_seg_reduce_wrapper )
 	BOOST_REQUIRE_EQUAL(match,true);
 
 	size_t red2 = 0;
-	for (size_t j = 0 ; j < vgpu.size() - segment_offset.template get<0>(i)  ; j++)
+	for (size_t j = 0 ; j < segment_offset.template get<0>(i+1) - segment_offset.template get<0>(i)  ; j++)
 	{
 		red2 += vgpu.template get<0>(segment_offset.template get<0>(i) + j);
 	}

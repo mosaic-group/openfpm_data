@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(testInsert)
 
 	CUDA_LAUNCH_DIM3((insertValues<0>),gridSize, blockSizeInsert,sparseGrid.toKernel());
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.template deviceToHost<0>();
@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE(testInsert3D)
 
 	CUDA_LAUNCH_DIM3((insertValues<0>),gridSize, blockSizeInsert,sparseGrid.toKernel());
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
 
 	sparseGrid.template deviceToHost<0>();
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(testTagBoundaries)
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
 
 	sparseGrid.template setBackgroundValue<0>(666);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 
 	sparseGrid.setGPUInsertBuffer(gridSize, blockSizeInsert);
 	dim3 pt1(0, 0, 0);
@@ -382,7 +382,7 @@ BOOST_AUTO_TEST_CASE(testTagBoundaries2)
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
 
 	sparseGrid.template setBackgroundValue<0>(666);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 
 	///////
 	{
@@ -480,7 +480,7 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 
 	grid_smb<dim, blockEdgeSize> blockGeometry(gridSize);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// Insert values on the grid
@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_simplified)
 
 	grid_smb<dim, blockEdgeSize> blockGeometry(gridSize);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// Insert values on the grid
@@ -586,7 +586,7 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified)
 
 	grid_smb<dim, blockEdgeSize> blockGeometry(gridSize);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// Insert values on the grid
@@ -662,7 +662,7 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified2)
 
 	grid_smb<dim, blockEdgeSize> blockGeometry(gridSize);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// Insert values on the grid
@@ -751,7 +751,7 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified_subset)
 
 	grid_smb<dim, blockEdgeSize> blockGeometry(gridSize);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// Insert values on the grid
@@ -809,7 +809,7 @@ BOOST_AUTO_TEST_CASE(testFlushInsert)
 	size_t sz[] = {137,100,57};
 
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64> sparseGrid(sz);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	sparseGrid.insertFlush<0>(grid_key_dx<3>({3,6,7})) = 2.0;
@@ -1015,7 +1015,7 @@ void test_convolution_3x3x3()
 	size_t sz[] = {1000,1000,1000};
 
 	SparseGridZ sparseGrid(sz);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// now create 3 3D sphere
@@ -1082,7 +1082,7 @@ void test_convolution_3x3x3_no_shared()
 	size_t sz[] = {1000,1000,1000};
 
 	SparseGridZ sparseGrid(sz);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// now create 3 3D sphere
@@ -1187,7 +1187,7 @@ BOOST_AUTO_TEST_CASE(test_sparse_grid_iterator_sub_host)
 
 	grid_smb<dim, blockEdgeSize> blockGeometry(sz);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64, long int> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	///// Insert sparse content, a set of 3 hollow spheres /////
@@ -1242,7 +1242,7 @@ BOOST_AUTO_TEST_CASE(test_sparse_grid_iterator_host)
 
 	grid_smb<dim, blockEdgeSize> blockGeometry(sz);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64, long int> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	///// Insert sparse content, a set of 3 hollow spheres /////
@@ -1291,7 +1291,7 @@ BOOST_AUTO_TEST_CASE(test_pack_request)
 	typedef SparseGridGpu<dim, aggregate<float>, blockEdgeSize, 64, long int> SparseGridZ;
 
 	SparseGridZ sparseGrid(sz);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// now create a 3D sphere
@@ -1331,7 +1331,7 @@ BOOST_AUTO_TEST_CASE(test_MergeIndexMap)
 	typedef SparseGridGpu<dim, aggregate<float>, blockEdgeSize, 64, long int> SparseGridZ;
 
 	SparseGridZ sparseGrid(sz);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// now create a 3D sphere
@@ -1389,7 +1389,7 @@ BOOST_AUTO_TEST_CASE(test_pack_request_with_iterator)
 	typedef SparseGridGpu<dim, aggregate<float>, blockEdgeSize, 64, long int> SparseGridZ;
 
 	SparseGridZ sparseGrid(sz);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// now create a 3D sphere
@@ -1482,7 +1482,7 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_remove_test)
 	typedef SparseGridGpu<dim, aggregate<float>, blockEdgeSize, 64, long int> SparseGridZ;
 
 	SparseGridZ sparseGrid(sz);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// now create a 3D sphere
@@ -1555,7 +1555,7 @@ void pack_unpack_test(SG_type & sparseGridDst, SG_type & sparseGridSrc,
 		Box<3,size_t> & box2_dst,
 		Box<3,size_t> & box3_dst,
 		Box<3,size_t> & box4_dst,
-		mgpu::ofp_context_t & ctx,
+		gpu::ofp_context_t & ctx,
 		bool test_pack)
 {
     Box<3,size_t> box1_src({256,256,256},{273,390,390});
@@ -1704,7 +1704,7 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
 
 	SparseGridZ sparseGridSrc(sz);
 	SparseGridZ sparseGridDst(sz);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGridSrc.template setBackgroundValue<0>(0);
 	sparseGridDst.template setBackgroundValue<0>(0);
 
@@ -1947,7 +1947,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 
 	grid_smb<dim, blockEdgeSize> blockGeometry(sz);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64, long int> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	///// Insert sparse content, a set of 3 hollow spheres /////
@@ -2021,7 +2021,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput)
 
 	grid_smb<dim, blockEdgeSize> blockGeometry(sz);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64, long int> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	grid_key_dx<2,int> start({500000,500000});
@@ -2051,7 +2051,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3D)
 
 	grid_smb<dim, blockEdgeSize> blockGeometry(sz);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, 64, long int> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	grid_key_dx<3,int> start({256,256,256});

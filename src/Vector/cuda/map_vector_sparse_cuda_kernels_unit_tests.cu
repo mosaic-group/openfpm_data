@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use )
 	block_insert.template hostToDevice<0>();
 	block_n.template hostToDevice<0>();
 
-	mgpu::ofp_context_t context;
+	gpu::ofp_context_t context;
 	openfpm::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
 
 	block_n_scan.template deviceToHost<0>(block_n_scan.size()-1,block_n_scan.size()-1);
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_use_small_pool )
 	block_insert.template hostToDevice<0>();
 	block_n.template hostToDevice<0>();
 
-	mgpu::ofp_context_t context;
+	gpu::ofp_context_t context;
 	openfpm::scan((int *)block_n.template getDeviceBuffer<0>(), block_n.size(), (int *)block_n_scan.template getDeviceBuffer<0>() , context);
 
 	block_n_scan.template deviceToHost<0>(block_n_scan.size()-1,block_n_scan.size()-1);
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	vct_index.resize(vct_add_index.size() + vct_index_old.size());
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 
 	// host to device
 	vct_index_old.template hostToDevice<0,1>();
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_merge_use )
 
 	openfpm::merge((int *)vct_index_old.template getDeviceBuffer<0>(),(int *)vct_index_old.template getDeviceBuffer<1>(),vct_index_old.size(),
 			    (int *)vct_add_index.template getDeviceBuffer<0>(),(int *)vct_add_index.template getDeviceBuffer<1>(),vct_add_index.size(),
-			    (int *)vct_index.template getDeviceBuffer<0>(),(int *)vct_index.template getDeviceBuffer<1>(),mgpu::less_t<int>(),ctx);
+			    (int *)vct_index.template getDeviceBuffer<0>(),(int *)vct_index.template getDeviceBuffer<1>(),gpu::less_t<int>(),ctx);
 
 	vct_index.template deviceToHost<0,1>();
 
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 	vct_index.resize(vct_add_index.size() + vct_index_old.size());
 	merge_indexes.resize(vct_index.size());
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 
 	// host to device
 	vct_index_old.template hostToDevice<0,1>();
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_solve_conflicts_use )
 
 	openfpm::merge((int *)vct_index_old.template getDeviceBuffer<0>(),(int *)vct_index_old.template getDeviceBuffer<1>(),vct_index_old.size(),
 			    (int *)vct_add_index.template getDeviceBuffer<0>(),(int *)vct_add_index.template getDeviceBuffer<1>(),vct_add_index.size(),
-			    (int *)vct_index.template getDeviceBuffer<0>(),(int *)merge_indexes.template getDeviceBuffer<0>(),mgpu::less_t<int>(),ctx);
+			    (int *)vct_index.template getDeviceBuffer<0>(),(int *)merge_indexes.template getDeviceBuffer<0>(),gpu::less_t<int>(),ctx);
 
 	constexpr int bdim = 128;
 
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_kernels_realign_use )
 	vct_data.template hostToDevice<0,1,2>();
 	vct_tot_out.template hostToDevice<0,2>();
 
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t ctx;
 	openfpm::scan((int *)vct_tot_out.getDeviceBuffer<0>(),vct_tot_out.size(),(int *)vct_tot_out.getDeviceBuffer<1>(),ctx);
 
 	vct_tot_out.deviceToHost<0,1>();
