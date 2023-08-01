@@ -218,7 +218,7 @@ struct smax_
 
 template<typename type_t, unsigned int blockLength>
 struct maximum_block_t  : public std::binary_function<type_t, type_t, type_t> {
-  __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
+  GPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
@@ -294,7 +294,7 @@ struct smin_
 
 template<typename type_t, unsigned int blockLength>
 struct minimum_block_t  : public std::binary_function<type_t, type_t, type_t> {
-  __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
+  GPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
@@ -343,7 +343,7 @@ struct smin_block_
 
 template<typename type_t>
 struct bitwiseOr_t  : public std::binary_function<type_t, type_t, type_t> {
-  __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
+  GPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
     return a|b;
   }
 };
