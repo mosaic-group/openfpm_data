@@ -140,7 +140,9 @@ endif()
 
 if (TEST_PERFORMANCE)
     target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
-    target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
+    if (CUDA_FOUND)
+	    target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src/)
+    endif()
 endif ()
 
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
