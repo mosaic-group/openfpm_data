@@ -249,6 +249,7 @@ struct memory_traits_lin
 	typedef boost::mpl::int_<AOS_layout> type_value;
 
         /*! \brief Return a reference to the selected element
+         * SFINAE is used to hande CSR graphs, where boost::fusion::at_c<p>(boost::fusion::vector<>) breaks in boost 1.8* onwards
     	 *
          * \param data object from where to take the element
          * \param g1 grid information
@@ -286,11 +287,24 @@ struct memory_traits_lin
          * \return a reference to the object selected
          *
          */
-	template<unsigned int p, typename data_type, typename g1_type>
+    template<unsigned int p, typename data_type, typename g1_type, typename std::enable_if<!std::is_same<data_type, memory_c<boost::fusion::vector<>, 1, memory>>::value,int>::type = 0>
 	__host__ __device__ static inline auto get_lin(data_type & data_, const g1_type & g1, const size_t lin_id) -> decltype(boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id))) &
 	{
 		return boost::fusion::at_c<p>(data_.mem_r.operator[](lin_id));
 	}
+
+        /*! \brief Return a reference to the selected element
+         * SFINAE is used to hande CSR graphs, where boost::fusion::at_c<p>(boost::fusion::vector<>) breaks in boost 1.8* onwards
+         *
+         * \param data object from where to take the element
+         * \param g1 grid information
+         * \param v1 element id
+         *
+         * \return a reference to the object selected
+         *
+         */
+    template<unsigned int p, typename data_type, typename g1_type, typename std::enable_if<std::is_same<data_type, memory_c<boost::fusion::vector<>, 1, memory>>::value,int>::type = 0>
+    __host__ __device__ static inline auto get_lin(data_type & data_, const g1_type & g1, const size_t lin_id) {}
 
         /*! \brief Return a reference to the selected element
          *
@@ -301,7 +315,7 @@ struct memory_traits_lin
          * \return a reference to the object selected
          *
          */
-	template<unsigned int p, typename data_type, typename g1_type, typename key_type>
+	template<unsigned int p, typename data_type, typename g1_type, typename key_type, typename std::enable_if<!std::is_same<data_type, memory_c<boost::fusion::vector<>, 1, memory>>::value,int>::type = 0>
 	__host__ __device__ static inline auto get_c(const data_type & data_, const g1_type & g1, const key_type & v1) -> decltype(boost::fusion::at_c<p>(data_.mem_r.operator[](g1.LinId(v1)))) &
 	{
 		return boost::fusion::at_c<p>(data_.mem_r.operator[](g1.LinId(v1)));
