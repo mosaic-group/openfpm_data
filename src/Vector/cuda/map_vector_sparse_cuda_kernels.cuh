@@ -569,6 +569,7 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
     // Allocate shared memory for BlockScan
     __shared__ typename BlockScan::TempStorage temp_storage;
 
+
 	int p = blockIdx.x * blockDim.x + threadIdx.x;
 
 	int scan = 0;
@@ -585,33 +586,35 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 	// in shared memory scan
 	BlockScan(temp_storage).ExclusiveSum(scan, scan);
 
-	if (predicate == 1 && p < vct_index.size())
+	size_t vct_index_out_index = blockIdx.x*block_dim + scan;
+
+	if (predicate == 1 && p < vct_index.size() && vct_index_out_index < vct_index_out.size())
 	{
-		vct_index_out.template get<0>(blockIdx.x*block_dim + scan) = vct_index.template get<0>(p);
+		vct_index_out.template get<0>(vct_index_out_index) = vct_index.template get<0>(p);
 
 		int index1 = merge_index.template get<0>(p);
 
-		auto e = vct_data_out.get(blockIdx.x*block_dim + scan);
+		auto e = vct_data_out.get(vct_index_out_index);
 
 		if (index1 < base)
 		{
 			e = vct_data.get(index1);
-			vct_data_out.get(blockIdx.x*block_dim + scan) = e;
+			vct_data_out.get(vct_index_out_index) = e;
 		}
 		else
 		{
 			e = vct_add_data.get(index1 - base);
-			vct_data_out.get(blockIdx.x*block_dim + scan) = e;
+			vct_data_out.get(vct_index_out_index) = e;
 		}
 	}
 
 	__syncthreads();
 
-	if (predicate == 0 && p < vct_index.size())
+	if (predicate == 0 && p < vct_index.size() && vct_index_out_index < vct_index_out.size())
 	{
 		//! at the border of the block the index must be copied
 		if (threadIdx.x == blockDim.x-1)
-		{vct_index_out.template get<0>(blockIdx.x*block_dim + scan) = vct_index.template get<0>(p);}
+		{vct_index_out.template get<0>(vct_index_out_index) = vct_index.template get<0>(p);}
 
 		// we have to merge the data
 
@@ -622,7 +625,7 @@ __global__ void solve_conflicts(vector_index_type vct_index, vector_data_type vc
 
 		data_merger<decltype(vct_data.get(p)),v_reduce_> dm(vct_data.get(index1),
 															vct_add_data.get(index2),
-															vct_data_out.get(blockIdx.x*block_dim + scan));
+															vct_data_out.get(vct_index_out_index));
 
 		// data_merge
 		boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(dm);

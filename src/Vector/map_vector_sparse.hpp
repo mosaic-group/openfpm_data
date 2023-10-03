@@ -877,7 +877,6 @@ namespace openfpm
 		 * \param vct_nadd_index number of insertions of each pool
 		 * \param vct_add_index pool of inserts
 		 * \param vct_add_cont_index output continuos array of inserted indexes
-		 * \param vct_add_data array of added data
 		 * \param vct_add_data_cont continuos array of inserted data
 		 * \param contect gpu context
 		 *
@@ -886,7 +885,6 @@ namespace openfpm
 							  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_index,
 							  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_cont_index,
 							  vector<aggregate<Ti>,Memory,layout_base,grow_p> & vct_add_cont_index_map,
-							  vector<T,Memory,layout_base,grow_p> & vct_add_data,
 							  vector<T,Memory,layout_base,grow_p> & vct_add_data_cont,
 							  gpu::ofp_context_t & context)
 		{
@@ -1213,8 +1211,9 @@ namespace openfpm
 				return;
 			}
 
-			size_t n_ele = make_continuos(vct_nadd_index,vct_add_index,vct_add_index_cont_0,vct_add_index_cont_1,
-										  vct_add_data,vct_add_data_cont,context);
+			size_t n_ele = make_continuos(vct_nadd_index,vct_add_index,vct_add_index_cont_0,
+				vct_add_index_cont_1,vct_add_data_cont,context);
+
 
             // At this point we can check whether we have not inserted anything actually,
             // in this case, return without further ado...
@@ -1964,6 +1963,7 @@ namespace openfpm
 			vct_index.clear();
 			vct_add_index.clear();
 			vct_add_data.clear();
+			vct_add_index_cont_0.clear();
 
 			// re-add background
 			vct_data.resize(vct_data.size()+1);
