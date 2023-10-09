@@ -60,10 +60,10 @@ struct copy_switch_memory_c_no_cpy
 		grid_layout.disable_manage_memory();
 		grid_layout.mem = boost::fusion::at_c<T::value>(src).mem;
 		grid_layout.mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
-
+#ifdef CUDA_GPU
 		if (grid_layout.mem)
 		{grid_layout.mem_r.set_pointer(((CudaMemory*)grid_layout.mem)->getDevicePointer());}
-
+#endif
 	}
 };
 
@@ -89,8 +89,10 @@ struct grid_gpu_ker_constructor_impl<false,T>
 		grid_layout.mem = cpy.get_data_().mem;
 		grid_layout.mem_r.bind_ref(cpy.get_data_().mem_r);
 
+#ifdef CUDA_GPU
 		if (grid_layout.mem)
 		{grid_layout.mem_r.set_pointer(((CudaMemory*)grid_layout.mem)->getDevicePointer());}
+#endif
 	}
 };
 
