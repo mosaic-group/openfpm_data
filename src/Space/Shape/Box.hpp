@@ -770,7 +770,7 @@ public:
 	 * \return the translated box
 	 *
 	 */
-	inline Box<dim,T> operator+(const Point<dim,T> & p)
+	inline Box<dim,T> operator+(const Point<dim,T> & p) const
 	{
 		Box<dim,T> b;
 
@@ -924,6 +924,19 @@ public:
 		for (size_t j = 0 ; j < dim ; j++)
 		{
 			this->setHigh(j,this->getHigh(j) - sh);
+		}
+	}
+
+    /*! \brief Shrink moving p2 of sh quantity (on each direction)
+	 *
+	 * \param sh
+	 *
+	 */
+	inline void enlargeP2(T sh)
+	{
+		for (size_t j = 0 ; j < dim ; j++)
+		{
+			this->setHigh(j,this->getHigh(j) + sh);
 		}
 	}
 
