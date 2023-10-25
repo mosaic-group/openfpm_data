@@ -37,7 +37,7 @@ struct host_to_dev_all_prp
 template<typename T, typename T_ker, typename type_prp, template<typename> class layout_base , int is_vector>
 struct call_recursive_host_device_if_vector
 {
-	template<typename mem_type, typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
+	template<typename mem_type, typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop, size_t vSize)
 	{
 		start /= sizeof(type_prp);
 		stop /= sizeof(type_prp);
@@ -80,7 +80,7 @@ struct call_recursive_host_device_if_vector
 template<typename T, typename T_ker, typename type_prp ,template<typename> class layout_base>
 struct call_recursive_host_device_if_vector<T,T_ker,type_prp,layout_base,0>
 {
-	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
+	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop, size_t vSize)
 	{
 		mem->hostToDevice(start,stop);
 	}
@@ -93,12 +93,12 @@ struct call_recursive_host_device_if_vector<T,T_ker,type_prp,layout_base,0>
 template<typename T, typename T_ker, typename type_prp ,template<typename> class layout_base>
 struct call_recursive_host_device_if_vector<T,T_ker,type_prp,layout_base,3>
 {
-	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
+	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop, size_t vSize)
 	{
 		// calculate the start and stop elements
 		start /= std::extent<type_prp,0>::value;
 		stop /= std::extent<type_prp,0>::value;
-		size_t sz = mem->size() / std::extent<type_prp,0>::value;
+		size_t sz = vSize / std::extent<type_prp,0>::value;
 
 		size_t offset = 0;
 		for (size_t i = 0 ; i < std::extent<type_prp,0>::value ; i++)
@@ -116,12 +116,12 @@ struct call_recursive_host_device_if_vector<T,T_ker,type_prp,layout_base,3>
 template<typename T, typename T_ker, typename type_prp ,template<typename> class layout_base>
 struct call_recursive_host_device_if_vector<T,T_ker,type_prp,layout_base,4>
 {
-	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop)
+	template<typename mem_type,typename obj_type> static void transform(mem_type * mem, obj_type & obj, size_t start, size_t stop, size_t vSize)
 	{
 		// calculate the start and stop elements
 		start = start / std::extent<type_prp,0>::value / std::extent<type_prp,1>::value;
 		stop = stop / std::extent<type_prp,0>::value / std::extent<type_prp,1>::value;
-		size_t sz = mem->size() / std::extent<type_prp,0>::value / std::extent<type_prp,1>::value;
+		size_t sz = vSize / std::extent<type_prp,0>::value / std::extent<type_prp,1>::value;
 
 		size_t offset = 0;
 		for (size_t i = 0 ; i < std::extent<type_prp,0>::value ; i++)

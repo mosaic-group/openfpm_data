@@ -149,7 +149,8 @@ struct host_to_device_impl
 		::template transform<Memory,mem_r_type>(static_cast<Memory *>(boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem),
 									 boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r,
 				                       start*sizeof(type_prp),
-				                       (stop+1)*sizeof(type_prp));
+				                       (stop+1)*sizeof(type_prp),
+				                       boost::fusion::at_c<boost::mpl::at<v_prp,boost::mpl::int_<T::value>>::type::value>(dst).mem_r.size()*sizeof(type_prp));
 
 		// here we have to recursively call hostToDevice for each nested vector
 		call_recursive_host_device_if_vector<typename mem_r_type::value_type,
