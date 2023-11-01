@@ -770,10 +770,10 @@ public:
     }
 
     template<typename ... v_reduce>
-    void flush(gpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST)
+    void flush(gpu::ofp_context_t& gpuContext, flush_type opt = FLUSH_ON_HOST)
     {
         BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
-                ::template flush<v_reduce ...>(context, opt);
+                ::template flush<v_reduce ...>(gpuContext, opt);
 
         findNN = false;
     }
@@ -1094,7 +1094,7 @@ private:
     }
 
     template<typename MemType, unsigned int ... prp>
-    void preUnpack(ExtPreAlloc<MemType> * prAlloc_prp, gpu::ofp_context_t & ctx, int opt)
+    void preUnpack(ExtPreAlloc<MemType> * prAlloc_prp, gpu::ofp_context_t& gpuContext, int opt)
     {
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{
@@ -1107,21 +1107,21 @@ private:
 			{
 				auto sub_it = this->getIterator(copySect.get(i).dst.getKP1(),copySect.get(i).dst.getKP2(),NO_ITERATOR_INIT);
 
-				copySect.get(i).grd->template addAndConvertPackedChunkToTmp<prp ...>(*prAlloc_prp,sub_it,ups,ctx);
+				copySect.get(i).grd->template addAndConvertPackedChunkToTmp<prp ...>(*prAlloc_prp,sub_it,ups,gpuContext);
 			}
 		}
     }
 
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase1(gpu::ofp_context_t & ctx, int opt)
+	void removeCopyToFinalize_phase1(gpu::ofp_context_t& gpuContext, int opt)
 	{
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-		{removePoints(ctx);}
+		{removePoints(gpuContext);}
 	}
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase2(gpu::ofp_context_t & ctx, int opt)
+	void removeCopyToFinalize_phase2(gpu::ofp_context_t& gpuContext, int opt)
 	{
 		// Pack information
 		Pack_stat sts;
@@ -1140,7 +1140,7 @@ private:
 				this->packRequest(sub_it,req);
 			}
 
-			this->template packCalculate<prp...>(req,ctx);
+			this->template packCalculate<prp...>(req,gpuContext);
 
 			mem.resize(req);
 
@@ -1166,14 +1166,14 @@ private:
 
 		this->template packFinalize<prp ...>(*prAlloc_prp,sts,opt,false);
 
-		preUnpack<CudaMemory,prp ...>(prAlloc_prp,ctx,opt);
+		preUnpack<CudaMemory,prp ...>(prAlloc_prp,gpuContext,opt);
 
 		prAlloc_prp->decRef();
 		delete prAlloc_prp;
 	}
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase3(gpu::ofp_context_t & ctx, int opt, bool is_unpack_remote)
+	void removeCopyToFinalize_phase3(gpu::ofp_context_t& gpuContext, int opt, bool is_unpack_remote)
 	{
 		ite_gpu<1> ite;
 
@@ -1195,7 +1195,7 @@ private:
 
 			int sz_b =  this->private_get_index_array().size();
 
-			this->template flush<sLeft_<prp>...>(ctx,flush_type::FLUSH_ON_DEVICE);
+			this->template flush<sLeft_<prp>...>(gpuContext,flush_type::FLUSH_ON_DEVICE);
 
 			// get the map of the new inserted elements
 
@@ -1417,7 +1417,7 @@ private:
 	void addAndConvertPackedChunkToTmp(ExtPreAlloc<S2> & mem,
 				SparseGridGpu_iterator_sub<dim,self> & sub_it,
 				Unpack_stat & ps,
-				gpu::ofp_context_t &context)
+				gpu::ofp_context_t& gpuContext)
 	{
     	sparsegridgpu_pack_request<AggregateT,prp ...> spq;
     	boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(spq);
@@ -2019,7 +2019,7 @@ public:
 	 * \param grid_dw grid level down
 	 *
 	 */
-    void construct_link(self & grid_up, self & grid_dw, gpu::ofp_context_t &context)
+    void construct_link(self & grid_up, self & grid_dw, gpu::ofp_context_t& gpuContext)
     {
 /*        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -2043,7 +2043,7 @@ public:
     								blockSize>),ite,grid_up.toKernel(),this->toKernel(),output.toKernel());
 
 
-    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
+    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),gpuContext);
 
     	output.template deviceToHost<0>(output.size()-1,output.size()-1);
 
@@ -2103,10 +2103,10 @@ public:
 	 * \param grid_dw grid level down
 	 * \param db domain box
 	 * \param p_dw point offset when you go down
-	 * \param gpu context
+	 * \param gpuContext gpu context
 	 *
 	 */
-    void construct_link_dw(self & grid_dw, const Box<dim,int> & db_, Point<dim,int> p_dw, gpu::ofp_context_t &context)
+    void construct_link_dw(self & grid_dw, const Box<dim,int> & db_, Point<dim,int> p_dw, gpu::ofp_context_t& gpuContext)
     {
     	Box<dim,int> db = db_;
 
@@ -2138,7 +2138,7 @@ public:
 
 
 
-    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
+    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),gpuContext);
 
     	output.template deviceToHost<0>(output.size()-1,output.size()-1);
         unsigned int padding_points = output.template get<0>(output.size()-1);
@@ -2164,7 +2164,7 @@ public:
     								blockSize>),
     								ite,pd_points.toKernel(),grid_dw.toKernel(),this->toKernel(),link_dw_scan.toKernel(),p_dw);
 
-    	openfpm::scan((unsigned int *)link_dw_scan.template getDeviceBuffer<0>(),link_dw_scan.size(),(unsigned int *)link_dw_scan.template getDeviceBuffer<0>(),context);
+    	openfpm::scan((unsigned int *)link_dw_scan.template getDeviceBuffer<0>(),link_dw_scan.size(),(unsigned int *)link_dw_scan.template getDeviceBuffer<0>(),gpuContext);
 
     	link_dw_scan.template deviceToHost<0>(link_dw_scan.size()-1,link_dw_scan.size()-1);
 
@@ -2184,7 +2184,7 @@ public:
 	 * \praram grid_up grid level up
 	 *
 	 */
-    void construct_link_up(self & grid_up,  const Box<dim,int> & db_, Point<dim,int> p_up, gpu::ofp_context_t &context)
+    void construct_link_up(self & grid_up,  const Box<dim,int> & db_, Point<dim,int> p_up, gpu::ofp_context_t& gpuContext)
     {
     	Box<dim,int> db = db_;
 
@@ -2216,7 +2216,7 @@ public:
 
 
 
-    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
+    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),gpuContext);
 
     	output.template deviceToHost<0>(output.size()-1,output.size()-1);
         unsigned int padding_points = output.template get<0>(output.size()-1);
@@ -2242,7 +2242,7 @@ public:
     								blockSize>),
     								ite,pd_points.toKernel(),grid_up.toKernel(),this->toKernel(),link_up_scan.toKernel(),p_up);
 
-    	openfpm::scan((unsigned int *)link_up_scan.template getDeviceBuffer<0>(),link_up_scan.size(),(unsigned int *)link_up_scan.template getDeviceBuffer<0>(),context);
+    	openfpm::scan((unsigned int *)link_up_scan.template getDeviceBuffer<0>(),link_up_scan.size(),(unsigned int *)link_up_scan.template getDeviceBuffer<0>(),gpuContext);
 
     	link_up_scan.template deviceToHost<0>(link_up_scan.size()-1,link_up_scan.size()-1);
 
@@ -2284,7 +2284,7 @@ public:
 	}
 
     template<typename stencil_type = NNStar<dim>, typename checker_type = No_check>
-    void tagBoundaries(gpu::ofp_context_t &context, checker_type chk = checker_type(), tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
+    void tagBoundaries(gpu::ofp_context_t& gpuContext, checker_type chk = checker_type(), tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -2371,7 +2371,7 @@ public:
         				 block_points.toKernel());
 
         	// than we scan
-        	openfpm::scan((indexT *)block_points.template getDeviceBuffer<0>(),block_points.size(),(indexT *)block_points.template getDeviceBuffer<0>(),context);
+        	openfpm::scan((indexT *)block_points.template getDeviceBuffer<0>(),block_points.size(),(indexT *)block_points.template getDeviceBuffer<0>(),gpuContext);
 
         	// Get the total number of points
         	block_points.template deviceToHost<0>(block_points.size()-1,block_points.size()-1);
@@ -2977,7 +2977,7 @@ public:
      *
      */
 	template<int ... prp> inline
-	void packRequest(size_t & req, gpu::ofp_context_t &context) const
+	void packRequest(size_t & req, gpu::ofp_context_t& gpuContext) const
     {
     	ite_gpu<1> ite;
 
@@ -3000,7 +3000,7 @@ public:
     				 tmp.toKernel());
 
     	openfpm::scan((indexT *)tmp. template getDeviceBuffer<0>(),
-    						tmp.size(), (indexT *)tmp. template getDeviceBuffer<0>(), context);
+    						tmp.size(), (indexT *)tmp. template getDeviceBuffer<0>(), gpuContext);
 
     	tmp.template deviceToHost<0>(tmp.size()-1,tmp.size()-1);
 
@@ -3066,11 +3066,11 @@ public:
 	/*! \brief Calculate the size of the information to pack
 	 *
 	 * \param req output size (it does not reset the counter it accumulate)
-	 * \param context gpu contect
+	 * \param gpuContext gpu context
 	 *
 	 */
 	template<int ... prp> inline
-	void packCalculate(size_t & req, gpu::ofp_context_t &context)
+	void packCalculate(size_t & req, gpu::ofp_context_t& gpuContext)
 	{
     	ite_gpu<1> ite;
 		pack_subs.template hostToDevice<0,1>();
@@ -3175,10 +3175,10 @@ public:
     		tmp.template hostToDevice<1>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
 
     		openfpm::scan(((indexT *)tmp. template getDeviceBuffer<0>()) + i*(indexBuffer.size() + 1),
-    						indexBuffer.size() + 1, (indexT *)tmp. template getDeviceBuffer<0>() + i*(indexBuffer.size() + 1), context);
+    						indexBuffer.size() + 1, (indexT *)tmp. template getDeviceBuffer<0>() + i*(indexBuffer.size() + 1), gpuContext);
 
     		openfpm::scan(((unsigned int *)tmp. template getDeviceBuffer<1>()) + i*(indexBuffer.size() + 1),
-    						indexBuffer.size() + 1, (unsigned int *)tmp. template getDeviceBuffer<1>() + i*(indexBuffer.size() + 1), context);
+    						indexBuffer.size() + 1, (unsigned int *)tmp. template getDeviceBuffer<1>() + i*(indexBuffer.size() + 1), gpuContext);
 
     		tmp.template deviceToHost<0>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
     		tmp.template deviceToHost<1>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
@@ -3200,7 +3200,7 @@ public:
     	scan_it.template hostToDevice<0>();
 
 		openfpm::scan((indexT *)scan_it. template getDeviceBuffer<0>(),
-								scan_it.size(), (indexT *)scan_it. template getDeviceBuffer<0>(), context);
+								scan_it.size(), (indexT *)scan_it. template getDeviceBuffer<0>(), gpuContext);
 	}
 
 	/*! \brief Return the mapping vector used to know where the data has been added
@@ -3303,24 +3303,24 @@ public:
 	 * In case we can guarantee that the chunks structure has not changed we can pass the option KEEP_GEOMETRY to make
 	 * this function faster
 	 *
-	 * \param ctx context
+	 * \param gpuContext gpu context
 	 * \param options
 	 *
 	 */
 	template<unsigned int ... prp>
-	void removeCopyToFinalize(gpu::ofp_context_t & ctx, int opt)
+	void removeCopyToFinalize(gpu::ofp_context_t& gpuContext, int opt)
 	{
 		if ((opt & 0x3) == rem_copy_opt::PHASE1)
 		{
-			this->template removeCopyToFinalize_phase1<prp ...>(ctx,opt);
+			this->template removeCopyToFinalize_phase1<prp ...>(gpuContext,opt);
 		}
 		else if ((opt & 0x3) == rem_copy_opt::PHASE2)
 		{
-			this->template removeCopyToFinalize_phase2<prp ...>(ctx,opt);
+			this->template removeCopyToFinalize_phase2<prp ...>(gpuContext,opt);
 		}
 		else
 		{
-			this->template removeCopyToFinalize_phase3<prp ...>(ctx,opt,false);
+			this->template removeCopyToFinalize_phase3<prp ...>(gpuContext,opt,false);
 		}
 	}
 
@@ -3407,10 +3407,10 @@ public:
 	 *
 	 * \see
 	 *
-	 * \param context modern gpu context
+	 * \param gpuContext gpu context
 	 *
 	 */
-	void removePoints(gpu::ofp_context_t& context)
+	void removePoints(gpu::ofp_context_t& gpuContext)
 	{
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
@@ -3437,7 +3437,7 @@ public:
 																  tmp.toKernel());
 
 				// scan
-				openfpm::scan((unsigned int *)tmp.template getDeviceBuffer<1>(),tmp.size(),(unsigned int *)tmp.template getDeviceBuffer<1>(),context);
+				openfpm::scan((unsigned int *)tmp.template getDeviceBuffer<1>(),tmp.size(),(unsigned int *)tmp.template getDeviceBuffer<1>(),gpuContext);
 
 				tmp.template deviceToHost<1>(tmp.size()-1,tmp.size()-1);
 
@@ -3485,12 +3485,12 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp>
-	void removeAddUnpackFinalize(gpu::ofp_context_t& context, int opt)
+	void removeAddUnpackFinalize(gpu::ofp_context_t& gpuContext, int opt)
 	{
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-		{removePoints(context);}
+		{removePoints(gpuContext);}
 
-		removeCopyToFinalize_phase3<prp ...>(context,opt,true);
+		removeCopyToFinalize_phase3<prp ...>(gpuContext,opt,true);
 	}
 
 	/*! \brief Reset the queue to remove and copy section of grids
@@ -3593,14 +3593,14 @@ public:
 				header_type & headers,
 				int ih,
 				Unpack_stat & ps,
-				gpu::ofp_context_t &context,
+				gpu::ofp_context_t& gpuContext,
 				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
 	{
 		////////////////////////////////////////////////////////////
 
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{
-			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,context);
+			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,gpuContext);
 
 			// readjust mem
 		}
@@ -3661,14 +3661,14 @@ public:
 	void unpack(ExtPreAlloc<S2> & mem,
 				SparseGridGpu_iterator_sub<dim,self> & sub_it,
 				Unpack_stat & ps,
-				gpu::ofp_context_t &context,
+				gpu::ofp_context_t& gpuContext,
 				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
 	{
 		////////////////////////////////////////////////////////////
 
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{
-			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,context);
+			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,gpuContext);
 
 			// readjust mem
 		}

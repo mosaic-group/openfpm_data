@@ -25,7 +25,7 @@ void packReset()
  *
  */
  template<unsigned int ... prp, typename context_type>
-void packCalculate(size_t & req, const context_type & ctx)
+void packCalculate(size_t & req, const context_type& gpuContext)
 {}
 
 static bool packRequest()
@@ -442,7 +442,7 @@ struct unpack_simple_cond<true, prp ...>
 	 *
 	 */
 	template<unsigned int ... prp,typename S2, typename context_type> 
-	void unpack(ExtPreAlloc<S2> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Unpack_stat & ps,context_type & context, rem_copy_opt opt)
+	void unpack(ExtPreAlloc<S2> & mem, grid_key_dx_iterator_sub<dims> & sub_it, Unpack_stat & ps, context_type& gpuContext, rem_copy_opt opt)
 	{
 		// object that store the information in mem
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout_base,ord_type>::value_type::type,prp...>::type> prp_object;

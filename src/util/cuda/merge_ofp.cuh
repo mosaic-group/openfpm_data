@@ -37,7 +37,7 @@
              typename comp_t, typename context_t>
     void merge(a_keys_it a_keys, a_vals_it a_vals, int a_count,
                b_keys_it b_keys, b_vals_it b_vals, int b_count,
-            c_keys_it c_keys, c_vals_it c_vals, comp_t comp, context_t& context) 
+            c_keys_it c_keys, c_vals_it c_vals, comp_t comp, context_t& gpuContext)
     {
  #ifdef CUDA_ON_CPU
  

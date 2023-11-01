@@ -172,13 +172,13 @@ BOOST_AUTO_TEST_CASE (gpu_p2m)
 
 	size_t g_m = pos.size();
 
-	gpu::ofp_context_t context(false);
+	gpu::ofp_context_t gpuContext(false);
 
 	const size_t (& sz)[3] = grid.getGrid().getSize();
 
 	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cl(domain,sz,2);
 
-	cl.template construct(pos,pos_sort,prop,prop_sort,context,g_m);
+	cl.template construct(pos,pos_sort,prop,prop_sort,gpuContext,g_m);
 
 	grid_key_dx<3> start_c({2,2,2});
 	grid_key_dx<3> stop_c({11,11,11});

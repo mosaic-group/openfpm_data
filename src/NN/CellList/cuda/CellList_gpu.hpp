@@ -237,7 +237,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
   	   	   	 	 	 	  vector & pl_out,
   	   	   	 	 	 	  vector_prp & pl_prp,
   	   	   	 	 	 	  vector_prp & pl_prp_out,
-						  gpu::ofp_context_t & gpuContext,
+						  gpu::ofp_context_t& gpuContext,
   	   	   	 	 	 	  size_t g_m,
  			   	   	   	  size_t start,
  			   	   	   	  size_t stop,
@@ -331,7 +331,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	 * \param gpuContext gpu context
 	 *
 	 */
-	void construct_domain_ids(gpu::ofp_context_t & gpuContext, size_t start, size_t stop, size_t g_m)
+	void construct_domain_ids(gpu::ofp_context_t& gpuContext, size_t start, size_t stop, size_t g_m)
 	{
 #ifdef __NVCC__
 		sorted_domain_particles_dg.resize(stop-start+1);
@@ -361,7 +361,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 			   	   	   	 vector & pl_out,
 			   	   	   	 vector_prp & pl_prp,
 			   	   	   	 vector_prp & pl_prp_out,
-						 gpu::ofp_context_t & gpuContext,
+						 gpu::ofp_context_t& gpuContext,
 			   	   	   	 size_t g_m,
 			   	   	   	 size_t start,
 			   	   	   	 size_t stop,
@@ -630,7 +630,7 @@ public:
 				   vector & pl_out,
 				   vector_prp & pl_prp,
 				   vector_prp & pl_prp_out,
-				   gpu::ofp_context_t & gpuContext,
+				   gpu::ofp_context_t& gpuContext,
 				   size_t g_m = 0,
 				   size_t start = 0,
 				   size_t stop = (size_t)-1,

@@ -258,31 +258,31 @@ BOOST_AUTO_TEST_CASE(test_maps_create)
 
 	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,merge_keys.toKernel(),merge_indexes.toKernel(),9,p_ids.toKernel());
 
-	gpu::ofp_context_t context;
+	gpu::ofp_context_t gpuContext;
 	openfpm::scan((int *)p_ids.template getDeviceBuffer<0>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<0>(),
-                context);
+                gpuContext);
 
 	openfpm::scan((int *)p_ids.template getDeviceBuffer<1>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<1>(),
-                context);
+                gpuContext);
 
 	openfpm::scan((int *)p_ids.template getDeviceBuffer<2>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<2>(),
-                context);
+                gpuContext);
 
 	openfpm::scan((int *)p_ids.template getDeviceBuffer<3>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<3>(),
-                context);
+                gpuContext);
 
 	openfpm::scan((int *)p_ids.template getDeviceBuffer<4>(),
 				s_ids.size(),
 	            (int *)s_ids.template getDeviceBuffer<4>(),
-                context);
+                gpuContext);
 
 	s_ids.template deviceToHost<0,1,2,3,4>();
 	p_ids.template deviceToHost<0,1,2,3,4>();
@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 	openfpm::vector_gpu<aggregate<unsigned int>> keys, mergeIndices, tmpIndices, keysOut, trivial_map;
 	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> segments_new;
 	openfpm::vector_gpu<aggregate<BlockT, MaskBlockT>> dataOld, dataNew, tmpData, dataOut;
-	gpu::ofp_context_t ctx;
+	gpu::ofp_context_t gpuContext;
 
 	// Keys
 	keys.resize(14);
@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE (testSolve_conflicts)
 					keys, mergeIndices, segments_new, trivial_map,
 					dataOld, dataNew,
 					keysOut, dataOut,
-					ctx
+					gpuContext
 					);
 
 	// Now retrieve the dataDst vector
