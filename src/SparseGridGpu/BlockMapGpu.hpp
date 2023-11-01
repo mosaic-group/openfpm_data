@@ -287,7 +287,7 @@ public:
     }
 
     template<typename ... v_reduce>
-    void flush(gpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST)
+    void flush(gpu::ofp_context_t& gpuContext, flush_type opt = FLUSH_ON_HOST)
     {
 #ifdef SE_CLASS1
 
@@ -295,7 +295,7 @@ public:
     	{std::cout << __FILE__ << ":" << __LINE__ << " error setGPUInsertBuffer you must call before doing any insertion " << std::endl;}
 #endif
 
-        blockMap.template flush<v_reduce ... >(context, opt);
+        blockMap.template flush<v_reduce ... >(gpuContext, opt);
     }
 
     /*! \brief set the background for property p

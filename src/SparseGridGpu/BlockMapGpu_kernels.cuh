@@ -584,7 +584,7 @@ struct sparse_vector_reduction_solve_conflict
 	vector_segolddata_type & segments_oldData;
 
 	//! gpu context
-	gpu::ofp_context_t & context;
+	gpu::ofp_context_t& gpuContext;
 
 	/*! \brief constructor
 	 *
@@ -600,7 +600,7 @@ struct sparse_vector_reduction_solve_conflict
 								   vector_segoffset_type & segment_offset,
 								   vector_outmap_type & out_map,
 								   vector_segolddata_type & segments_oldData,
-								   gpu::ofp_context_t & context)
+								   gpu::ofp_context_t& gpuContext)
 	:vector_data_red(vector_data_red),
 	 vector_data(vector_data),
 	 vector_data_unsorted(vector_data_unsorted),
@@ -609,7 +609,7 @@ struct sparse_vector_reduction_solve_conflict
 	 vector_data_map(vector_data_map),
 	 out_map(out_map),
 	 segments_oldData(segments_oldData),
-	 context(context)
+	 gpuContext(gpuContext)
 	{};
 
 	//! It call the copy function for each property
@@ -701,7 +701,7 @@ namespace BlockMapGpuFunctors
         bool solve_conflicts(vector_index_type &keys, vector_index_type &mergeIndices, vector_index_type2 &segments_new, vector_index_type &data_map,
                                     vector_data_type &dataOld, vector_data_type &dataNew,
                                     vector_index_type &keysOut, vector_data_type &dataOut,
-                                    gpu::ofp_context_t & context)
+                                    gpu::ofp_context_t& gpuContext)
         {
 #ifdef __NVCC__
             typedef ValueTypeOf<vector_data_type> AggregateT;
@@ -731,27 +731,27 @@ namespace BlockMapGpuFunctors
         	openfpm::scan((int *)p_ids.template getDeviceBuffer<0>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<0>(),
-                        context);
+                        gpuContext);
 
         	openfpm::scan((int *)p_ids.template getDeviceBuffer<1>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<1>(),
-                        context);
+                        gpuContext);
 
         	openfpm::scan((int *)p_ids.template getDeviceBuffer<2>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<2>(),
-                        context);
+                        gpuContext);
 
         	openfpm::scan((int *)p_ids.template getDeviceBuffer<3>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<3>(),
-                        context);
+                        gpuContext);
 
         	openfpm::scan((int *)p_ids.template getDeviceBuffer<4>(),
         				s_ids.size(),
         	            (int *)s_ids.template getDeviceBuffer<4>(),
-                        context);
+                        gpuContext);
 
         	s_ids.template deviceToHost<0,1,2,3>(s_ids.size()-1,s_ids.size()-1);
         	p_ids.template deviceToHost<0,1,2,3>(p_ids.size()-1,p_ids.size()-1);
@@ -789,7 +789,7 @@ namespace BlockMapGpuFunctors
 															 decltype(outputMap),
 															 decltype(segments_oldData),
 															 vv_reduce,BlockFunctor,2, pSegment>
-					svr(dataOut,dataNew,dataNew,dataOld,data_map,segments_new,outputMap,segments_oldData,context);
+					svr(dataOut,dataNew,dataNew,dataOld,data_map,segments_new,outputMap,segments_oldData,gpuContext);
 
             boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(v_reduce)>>(svr);
 

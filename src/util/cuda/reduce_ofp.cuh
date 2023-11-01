@@ -30,7 +30,7 @@
 namespace openfpm
 {
 	template<typename input_it, typename output_it, typename reduce_op>
-			void reduce(input_it input, int count, output_it output, reduce_op op, gpu::ofp_context_t& context)
+			void reduce(input_it input, int count, output_it output, reduce_op op, gpu::ofp_context_t& gpuContext)
 	{
 #ifdef CUDA_ON_CPU
 
@@ -48,7 +48,7 @@ namespace openfpm
 		hipcub::DeviceReduce::Reduce(NULL,
 			temp_storage_bytes,input, output, count, op, false);
 
-		auto & temporal = context.getTemporalCUB();
+		auto & temporal = gpuContext.getTemporalCUB();
 		temporal.resize(temp_storage_bytes);
 
 		hipcub::DeviceReduce::Reduce(temporal.template getDeviceBuffer<0>(),
@@ -59,7 +59,7 @@ namespace openfpm
 		cub::DeviceReduce::Reduce(NULL,
 			temp_storage_bytes, input, output, count, op, false);
 
-		auto & temporal = context.getTemporalCUB();
+		auto & temporal = gpuContext.getTemporalCUB();
 		temporal.resize(temp_storage_bytes);
 
 		cub::DeviceReduce::Reduce(temporal.template getDeviceBuffer<0>(),

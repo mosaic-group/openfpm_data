@@ -343,10 +343,10 @@ struct HeatStencil
         }
     }
 
-    template <typename SparseGridT, typename CtxT>
-    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+    template <typename SparseGridT>
+    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::ofp_context_t& gpuContext)
     {
-        sparseGrid.template flush <smax_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
+        sparseGrid.template flush <smax_<0>> (gpuContext, flush_type::FLUSH_ON_DEVICE);
     }
 };
 
@@ -419,10 +419,10 @@ struct Conv3x3x3
         }
     }
 
-    template <typename SparseGridT, typename CtxT>
-    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+    template <typename SparseGridT>
+    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::ofp_context_t& gpuContext)
     {
-        sparseGrid.template flush <smax_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
+        sparseGrid.template flush <smax_<0>> (gpuContext, flush_type::FLUSH_ON_DEVICE);
     }
 };
 
@@ -479,10 +479,10 @@ struct Conv3x3x3_noshared
         }
     }
 
-    template <typename SparseGridT, typename CtxT>
-    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+    template <typename SparseGridT>
+    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::ofp_context_t& gpuContext)
     {
-        sparseGrid.template flush <smax_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
+        sparseGrid.template flush <smax_<0>> (gpuContext, flush_type::FLUSH_ON_DEVICE);
     }
 };
 
@@ -498,7 +498,7 @@ void testConv3x3x3_perf(std::string testName)
 	size_t sz[] = {1000,1000,1000};
 
 	SparseGridZ sparseGrid(sz);
-	gpu::ofp_context_t ctx;
+	gpu::ofp_context_t gpuContext;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// now create 3 3D sphere
@@ -513,7 +513,7 @@ void testConv3x3x3_perf(std::string testName)
 	            gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
 	            sparseGrid.toKernel(), start,128, 56, 1);
 
-	sparseGrid.template flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+	sparseGrid.template flush < smax_< 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
     sparseGrid.template deviceToHost<0>(); // NECESSARY as count takes place on Host!
     auto existingElements = sparseGrid.countExistingElements();
@@ -523,7 +523,7 @@ void testConv3x3x3_perf(std::string testName)
 	sparseGrid.template findNeighbours<NNFull<3>>(); // Pre-compute the neighbours pos for each block!
 
 	sparseGrid.template setNNType<NNFull<dim>>();
-	sparseGrid.template tagBoundaries<NNFull<3>>(ctx);
+	sparseGrid.template tagBoundaries<NNFull<3>>(gpuContext);
 
     openfpm::vector<double> measures_gf;
     openfpm::vector<double> measures_tm;
@@ -592,7 +592,7 @@ static void testConv3x3x3_no_shared_perf(std::string testName)
 	size_t sz[] = {1000,1000,1000};
 
 	SparseGridZ sparseGrid(sz);
-	gpu::ofp_context_t ctx;
+	gpu::ofp_context_t gpuContext;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	// now create 3 3D sphere
@@ -607,7 +607,7 @@ static void testConv3x3x3_no_shared_perf(std::string testName)
 	            gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
 	            sparseGrid.toKernel(), start,128, 56, 1);
 
-	sparseGrid.template flush < smax_< 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+	sparseGrid.template flush < smax_< 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
     sparseGrid.template deviceToHost<0>(); // NECESSARY as count takes place on Host!
     auto existingElements = sparseGrid.countExistingElements();
@@ -617,7 +617,7 @@ static void testConv3x3x3_no_shared_perf(std::string testName)
 	sparseGrid.template findNeighbours<NNFull<3>>(); // Pre-compute the neighbours pos for each block!
 
 	sparseGrid.template setNNType<NNFull<SparseGridZ::dims>>();
-	sparseGrid.template tagBoundaries<NNFull<3>>(ctx,No_check(),tag_boundaries::CALCULATE_EXISTING_POINTS);
+	sparseGrid.template tagBoundaries<NNFull<3>>(gpuContext,No_check(),tag_boundaries::CALCULATE_EXISTING_POINTS);
 
 
     openfpm::vector<double> measures_gf;
@@ -811,10 +811,10 @@ struct HeatStencilGet
         }
     }
 
-    template <typename SparseGridT, typename CtxT>
-    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+    template <typename SparseGridT>
+    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::ofp_context_t& gpuContext)
     {
-        sparseGrid.template flush <sRight_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
+        sparseGrid.template flush <sRight_<0>> (gpuContext, flush_type::FLUSH_ON_DEVICE);
     }
 };
 
@@ -949,10 +949,10 @@ struct SkeletonStencil
         }
     }
 
-    template <typename SparseGridT, typename CtxT>
-    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+    template <typename SparseGridT>
+    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::ofp_context_t& gpuContext)
     {
-        sparseGrid.template flush <sRight_<0>> (ctx, flush_type::FLUSH_ON_DEVICE);
+        sparseGrid.template flush <sRight_<0>> (gpuContext, flush_type::FLUSH_ON_DEVICE);
     }
 };
 

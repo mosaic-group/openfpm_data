@@ -1975,22 +1975,22 @@ public:
 	 *
 	 * \note this function exist to respect the interface to work as distributed
 	 *
-	 * \param ctx context
+	 * \param gpuContext gpu context
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeAddUnpackFinalize(const context_type & ctx, int opt)
+	void removeAddUnpackFinalize(const context_type& gpuContext, int opt)
 	{}
 
 	/*! \brief In this case it does nothing
 	 *
 	 * \note this function exist to respect the interface to work as distributed
 	 *
-	 * \param ctx context
+	 * \param gpuContext gpu context
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeCopyToFinalize(const context_type & ctx, int opt)
+	void removeCopyToFinalize(const context_type& gpuContext, int opt)
 	{}
 
 	/*! \brief It does nothing

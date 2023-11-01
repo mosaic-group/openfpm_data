@@ -464,9 +464,9 @@ void test_cell_count_n()
 
 	CUDA_LAUNCH_DIM3(construct_cells,1,1,vs.toKernel(),gs);
 
-	gpu::ofp_context_t ctx;
+	gpu::ofp_context_t gpuContext;
 
-	vs.flush<sadd_<0>>(ctx,flush_type::FLUSH_ON_DEVICE);
+	vs.flush<sadd_<0>>(gpuContext,flush_type::FLUSH_ON_DEVICE);
 
 	cells_nn.resize(11);
 	cells_nn.fill<0>(0);
@@ -508,7 +508,7 @@ void test_cell_count_n()
 	BOOST_REQUIRE_EQUAL(cells_nn.template get<0>(9),1);
 
 	// now we scan
-	openfpm::scan((unsigned int *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (unsigned int *)cells_nn.template getDeviceBuffer<0>() , ctx);
+	openfpm::scan((unsigned int *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (unsigned int *)cells_nn.template getDeviceBuffer<0>() , gpuContext);
 
 	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> cell_nn_list;
 	cell_nn_list.resize(7*8 + 9 + 2 + 1);
@@ -787,8 +787,8 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceB
 	pl_prp.template hostToDevice<0,1,2>();
 
 	// create an gpu context
-	gpu::ofp_context_t context(gpu::gpu_context_opt::no_print_props);
-	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context);
+	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
+	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext);
 
 	// Check
 
@@ -1358,8 +1358,8 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	size_t g_m = pl.size() / 2;
 
-	gpu::ofp_context_t context(gpu::gpu_context_opt::no_print_props);
-	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
+	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
+	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m);
 
 	auto & s_t_ns = cl2.getSortToNonSort();
 
@@ -1432,7 +1432,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 
 	n_out_scan.resize(pl.size()+1);
 
-	openfpm::scan((unsigned int *)n_out.template getDeviceBuffer<0>(),n_out.size(),(unsigned int *)n_out_scan.template getDeviceBuffer<0>(),context);
+	openfpm::scan((unsigned int *)n_out.template getDeviceBuffer<0>(),n_out.size(),(unsigned int *)n_out_scan.template getDeviceBuffer<0>(),gpuContext);
 	n_out_scan.template deviceToHost<0>();
 
 	if (n_out_scan.template get<0>(pl.size()) == 0)
@@ -1564,9 +1564,9 @@ void Test_cell_gpu_force_split(SpaceBox<dim,T> & box, size_t npart, const size_t
 
 	size_t g_m = pl.size() / 2;
 
-	gpu::ofp_context_t context(gpu::gpu_context_opt::no_print_props);
-	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,0,pl.size()/2);
-	cl2_split2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,pl.size()/2,pl.size());
+	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
+	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,0,pl.size()/2);
+	cl2_split2.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,pl.size()/2,pl.size());
 	auto & s_t_ns_s1 = cl2_split1.getSortToNonSort();
 	auto & s_t_ns_s2 = cl2_split2.getSortToNonSort();
 
@@ -1638,7 +1638,7 @@ void Test_cell_gpu_force_split(SpaceBox<dim,T> & box, size_t npart, const size_t
 
 	n_out_scan.resize(n_out.size());
 
-	openfpm::scan((unsigned int *)n_out.template getDeviceBuffer<0>(),n_out.size(),(unsigned int *)n_out_scan.template getDeviceBuffer<0>(),context);
+	openfpm::scan((unsigned int *)n_out.template getDeviceBuffer<0>(),n_out.size(),(unsigned int *)n_out_scan.template getDeviceBuffer<0>(),gpuContext);
 
 	n_out_scan.template deviceToHost<0>();
 
@@ -1809,32 +1809,32 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_split)
 
 	size_t g_m = pl.size() / 2;
 
-	gpu::ofp_context_t context(gpu::gpu_context_opt::no_print_props);
+	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
 
-	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,0,pl.size()/2);
-	cl2_split2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,pl.size()/2,pl.size());
+	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,0,pl.size()/2);
+	cl2_split2.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,pl.size()/2,pl.size());
 
 	cudaDeviceSynchronize();
 
 	timer t;
 	t.start();
 
-	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,0,pl.size()/2);
-	cl2_split2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,pl.size()/2,pl.size());
+	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,0,pl.size()/2);
+	cl2_split2.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,pl.size()/2,pl.size());
 
 	t.stop();
 	std::cout << "Time: " << t.getwct() << std::endl;
 
 	cudaDeviceSynchronize();
 
-	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,0,pl.size());
+	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,0,pl.size());
 
 	cudaDeviceSynchronize();
 
 	timer t2;
 	t2.start();
 
-	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m,0,pl.size());
+	cl2_split1.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,0,pl.size());
 
 	t2.stop();
 	std::cout << "Time: " << t2.getwct() << std::endl;
@@ -2013,8 +2013,8 @@ BOOST_AUTO_TEST_CASE( CellList_use_cpu_offload_test )
 	openfpm::vector_gpu<aggregate<int>> os_scan;
 	os_scan.resize(v.size());
 
-	gpu::ofp_context_t ctx;
-	openfpm::scan((int *)os.template getDeviceBuffer<0>(),os.size(),(int *)os_scan.template getDeviceBuffer<0>(),ctx);
+	gpu::ofp_context_t gpuContext;
+	openfpm::scan((int *)os.template getDeviceBuffer<0>(),os.size(),(int *)os_scan.template getDeviceBuffer<0>(),gpuContext);
 
 	os_scan.deviceToHost<0>();
 	os.deviceToHost<0>(os.size()-1,os.size()-1);
@@ -2089,9 +2089,9 @@ BOOST_AUTO_TEST_CASE( CellList_swap_test )
 
 	size_t g_m = pl.size() / 2;
 
-	gpu::ofp_context_t context(gpu::gpu_context_opt::no_print_props);
-	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
-	cl4.construct(pl,pl_out,pl_prp,pl_prp_out,context,g_m);
+	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
+	cl2.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m);
+	cl4.construct(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m);
 
 	cl3.swap(cl2);
 

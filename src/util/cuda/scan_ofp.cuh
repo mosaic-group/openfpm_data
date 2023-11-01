@@ -30,7 +30,7 @@
 namespace openfpm
 {
 	template<typename input_it, typename output_it>
-			 void scan(input_it input, int count, output_it output, gpu::ofp_context_t& context)
+			 void scan(input_it input, int count, output_it output, gpu::ofp_context_t& gpuContext)
 	{
 #ifdef CUDA_ON_CPU
 
@@ -54,7 +54,7 @@ namespace openfpm
 		hipcub::DeviceScan::ExclusiveSum(NULL,
 			temp_storage_bytes,input, output, count);
 
-		auto & temporal = context.getTemporalCUB();
+		auto & temporal = gpuContext.getTemporalCUB();
 		temporal.resize(temp_storage_bytes);
 
 		hipcub::DeviceScan::ExclusiveSum(temporal.template getDeviceBuffer<0>(),
@@ -66,7 +66,7 @@ namespace openfpm
 		cub::DeviceScan::ExclusiveSum(NULL,
 			temp_storage_bytes, input, output, count);
 
-		auto & temporal = context.getTemporalCUB();
+		auto & temporal = gpuContext.getTemporalCUB();
 		temporal.resize(temp_storage_bytes);
 
 		cub::DeviceScan::ExclusiveSum(temporal.template getDeviceBuffer<0>(),

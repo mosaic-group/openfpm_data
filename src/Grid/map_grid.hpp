@@ -190,7 +190,7 @@ public:
 				header_type & headers,
 				int ih,
 				Unpack_stat & ps,
-				context_type &context,
+				context_type &gpuContext,
 				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
 	{}
 
