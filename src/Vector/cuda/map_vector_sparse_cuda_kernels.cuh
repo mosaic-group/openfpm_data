@@ -41,7 +41,7 @@ struct limit_max_t {
 };
 
 template<typename type_t>
-struct rightOperand_t  : public std::binary_function<type_t, type_t, type_t> {
+struct rightOperand_t {
   __device__ __host__ type_t operator()(type_t a, type_t b) const {
     return b;
   }
@@ -72,7 +72,7 @@ struct sRight_
 };
 
 template<typename type_t>
-struct leftOperand_t  : public std::binary_function<type_t, type_t, type_t> {
+struct leftOperand_t   {
 	__device__ __host__ type_t operator()(type_t a, type_t b) const {
     return a;
   }
@@ -143,7 +143,7 @@ __global__ void set_one_insert_buffer(vect_type vadd)
 }
 
 template<typename type_t, unsigned int blockLength>
-struct plus_block_t  : public std::binary_function<type_t, type_t, type_t> {
+struct plus_block_t   {
 	__device__ __host__ type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
@@ -217,7 +217,7 @@ struct smax_
 #ifdef __NVCC__
 
 template<typename type_t, unsigned int blockLength>
-struct maximum_block_t  : public std::binary_function<type_t, type_t, type_t> {
+struct maximum_block_t   {
   GPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
@@ -293,7 +293,7 @@ struct smin_
 #ifdef __NVCC__
 
 template<typename type_t, unsigned int blockLength>
-struct minimum_block_t  : public std::binary_function<type_t, type_t, type_t> {
+struct minimum_block_t   {
   GPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
@@ -342,7 +342,7 @@ struct smin_block_
 #ifdef __NVCC__
 
 template<typename type_t>
-struct bitwiseOr_t  : public std::binary_function<type_t, type_t, type_t> {
+struct bitwiseOr_t   {
   GPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
     return a|b;
   }
