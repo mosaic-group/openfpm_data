@@ -143,8 +143,8 @@ BOOST_AUTO_TEST_CASE(testInsert)
 	CUDA_LAUNCH_DIM3((insertValues<0>), gridSize, blockSizeInsert ,blockMap.toKernel());
 
 	// Flush inserts
-	gpu::ofp_context_t gpuContext;
-	blockMap.flush<smax_<0>>(gpuContext, flush_type::FLUSH_ON_DEVICE);
+	gpu::ofp_context_t q;
+	blockMap.flush<smax_<0>>(q, flush_type::FLUSH_ON_DEVICE);
 
 	// Get output
 	openfpm::vector_gpu<AggregateOutT> output;
@@ -188,8 +188,8 @@ BOOST_AUTO_TEST_CASE(testInsert_halfBlock)
 	CUDA_LAUNCH_DIM3((insertValuesHalfBlock<0>), gridSize, blockSizeInsert, blockMap.toKernel());
 
 	// Flush inserts
-	gpu::ofp_context_t gpuContext;
-	blockMap.flush<smax_<0>>(gpuContext, flush_type::FLUSH_ON_DEVICE);
+	gpu::ofp_context_t q;
+	blockMap.flush<smax_<0>>(q, flush_type::FLUSH_ON_DEVICE);
 
 	// Get output
 	openfpm::vector_gpu<AggregateOutT> output;
@@ -239,8 +239,8 @@ BOOST_AUTO_TEST_CASE(testInsert_blocked)
 	CUDA_LAUNCH_DIM3((insertValuesBlocked<0, 2>), gridSize, blockSizeInsert,sparseGrid.toKernel());
 
 	// Flush inserts
-	gpu::ofp_context_t gpuContext;
-	sparseGrid.flush<smax_<0>>(gpuContext, flush_type::FLUSH_ON_DEVICE);
+	gpu::ofp_context_t q;
+	sparseGrid.flush<smax_<0>>(q, flush_type::FLUSH_ON_DEVICE);
 
 	// Get output
 	openfpm::vector_gpu<AggregateOutT> output;

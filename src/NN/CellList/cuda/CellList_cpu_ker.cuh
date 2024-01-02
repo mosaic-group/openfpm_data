@@ -10,50 +10,55 @@
 
 #include "Cuda_cell_list_util_func.hpp"
 
-template<unsigned int dim, typename T, typename Mem_type, typename transform>
+template<unsigned int dim, typename T, typename Mem_type, typename transform_type>
 class CellList_cpu_ker: Mem_type
 {
-	typedef typename Mem_type::local_index_type cnt_type;
-
 	typedef typename Mem_type::local_index_type ids_type;
 
 	//! Spacing
-	openfpm::array<T,dim,cnt_type> spacing_c;
+	openfpm::array<T,dim> spacing_c;
 
 	//! \brief number of sub-divisions in each direction
-	openfpm::array<ids_type,dim,cnt_type> div_c;
+	openfpm::array<ids_type,dim> div_c;
 
 	//! \brief cell padding
-	openfpm::array<ids_type,dim,cnt_type> off;
+	openfpm::array<ids_type,dim> off;
 
 	//! transformation
-	transform t;
+	transform_type pointTransform;
 
 	//! Grid structure of the Cell list
-	grid_sm<dim,void> gr_cell;
+	grid_sm<dim,void> cellListGrid;
 
-	//! cell_shift
-	Point<dim,long int> cell_shift;
+	//! cellShift
+	Point<dim,long int> cellShift;
 
 	//! Unit box of the Cell list
-	Box<dim,T> box_unit;
+	Box<dim,T> cellListSpaceBox;
 
 public:
 
 	CellList_cpu_ker(const Mem_type & mt,
-			 	 	 openfpm::array<T,dim,cnt_type> & spacing_c,
-			 	 	 openfpm::array<ids_type,dim,cnt_type> & div_c,
-			 	 	 openfpm::array<ids_type,dim,cnt_type> & off,
-					 grid_sm<dim,void> & gr_cell,
-					 Point<dim,long int> & cell_shift,
-					 Box<dim,T> & box_unit,
-			 	 	 const transform & t)
-	:Mem_type(mt),spacing_c(spacing_c),div_c(div_c),off(off),t(t),gr_cell(gr_cell),cell_shift(cell_shift),box_unit(box_unit)
+					openfpm::array<T,dim> & spacing_c,
+					openfpm::array<ids_type,dim> & div_c,
+					openfpm::array<ids_type,dim> & off,
+					grid_sm<dim,void> & cellListGrid,
+					Point<dim,long int> & cellShift,
+					Box<dim,T> & cellListSpaceBox,
+					const transform_type & pointTransform)
+	: Mem_type(mt),
+	spacing_c(spacing_c),
+	div_c(div_c),
+	off(off),
+	pointTransform(pointTransform),
+	cellListGrid(cellListGrid),
+	cellShift(cellShift),
+	cellListSpaceBox(cellListSpaceBox)
 	{}
 
 	inline __device__ unsigned int getCell(const Point<dim,T> & xp) const
 	{
-		return cid_<dim,cnt_type,ids_type,transform>::get_cid(div_c,spacing_c,off,t,xp);
+		return cid_<dim,ids_type,transform_type>::get_cid(div_c,spacing_c,off,pointTransform,xp);
 	}
 
 	/*! \brief Return the underlying grid information of the cell list
@@ -63,7 +68,7 @@ public:
 	 */
 	const __device__ grid_sm<dim,void> & getGrid() const
 	{
-		return gr_cell;
+		return cellListGrid;
 	}
 
 		/*! \brief Get the cell-ids
@@ -118,8 +123,8 @@ public:
 	 */
 	inline __device__ size_t ConvertToID(const T (&x)[dim], size_t s) const
 	{
-		size_t id = openfpm::math::size_t_floor(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
-		id = (id >= gr_cell.size(s))?(gr_cell.size(s)-1-cell_shift.get(s)):id-cell_shift.get(s);
+		size_t id = openfpm::math::size_t_floor(pointTransform.transform(x,s) / cellListSpaceBox.getHigh(s)) + off[s];
+		id = (id >= cellListGrid.size(s))?(cellListGrid.size(s)-1-cellShift.get(s)):id-cellShift.get(s);
 		return id;
 	}
 
@@ -131,8 +136,8 @@ public:
 	 */
 	inline __device__ size_t ConvertToID(const Point<dim,T> & x, size_t s, size_t sc = 0) const
 	{
-		size_t id = openfpm::math::size_t_floor(t.transform(x,s) / box_unit.getHigh(s)) + off[s];
-		id = (id >= gr_cell.size(s))?(gr_cell.size(s)-1-cell_shift.get(s)):id-cell_shift.get(s);
+		size_t id = openfpm::math::size_t_floor(pointTransform.transform(x,s) / cellListSpaceBox.getHigh(s)) + off[s];
+		id = (id >= cellListGrid.size(s))?(cellListGrid.size(s)-1-cellShift.get(s)):id-cellShift.get(s);
 		return id;
 	}
 

@@ -1681,7 +1681,7 @@ namespace openfpm
 			
 			// It does not exist, we create it di contain the index where we have to create the new block
 			vct_index.insert(di);
-			vct_data.isert(di);
+			vct_data.insert(di);
 
 			return vct_data.template get<p>(di);
 		}
@@ -1752,9 +1752,9 @@ namespace openfpm
 			resetBck();
 		}
 
-		/*! \brief merge the added element to the main data array but save the insert buffer in v
+		/*! \brief merge the added element to the main data array but save the insert buffer in vct_add_data_reord
 		 *
-		 * \param v insert buffer
+		 * \param vct_add_data_reord insert buffer
 		 *
 		 * \param opt options
 		 *
