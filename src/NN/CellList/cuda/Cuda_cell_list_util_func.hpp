@@ -11,545 +11,534 @@
 #include <boost/integer/integer_mask.hpp>
 #include <Vector/map_vector_sparse.hpp>
 
-template<unsigned int dim, typename cnt_type, typename ids_type, typename transform>
+template<unsigned int dim, typename ids_type, typename transform_type>
 struct cid_
 {
-	static inline __device__ __host__ cnt_type get_cid(openfpm::array<ids_type,1,cnt_type> & div_c , ids_type * e)
+	static inline __device__ __host__ unsigned int get_cid(
+		openfpm::array<ids_type,1> & numCellDiv,
+		ids_type * e)
 	{
-		cnt_type id = e[dim-1];
+		unsigned int id = e[dim-1];
 
 #pragma unroll
 		for (int i = 1; i >= 0 ; i-- )
-		{id = e[i] + div_c[i]*id;}
+		{id = e[i] + numCellDiv[i]*id;}
 
 		return id;
 	}
 
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,dim,cnt_type> & div_c , const grid_key_dx<1,cnt_type> & e)
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,dim> & numCellDiv,
+		const grid_key_dx<1,unsigned int> & e)
 	{
-		cnt_type id = e.get(dim-1);
+		unsigned int id = e.get(dim-1);
 
 #pragma unroll
 		for (int i = 1; i >= 0 ; i-- )
-		{id = e.get(i) + div_c[i]*id;}
+		{id = e.get(i) + numCellDiv[i]*id;}
 
 		return id;
 	}
 
-	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,dim,cnt_type> & div_c,
-			                                                       const openfpm::array<T,dim,cnt_type> & spacing,
-			                                                       const transform & t,
-			                                                       const Point<dim,T> & p)
+	template<typename T>
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,dim> & numCellDiv,
+		const openfpm::array<T,dim> & unitCellP2,
+		const transform_type & pointTransform,
+		const Point<dim,T> & p)
 	{
-		cnt_type id = p.get(dim-1) / spacing[dim-1];
+		unsigned int id = p.get(dim-1) / unitCellP2[dim-1];
 
 #pragma unroll
 		for (int i = 1; i >= 0 ; i-- )
-		{id = t.transform(p.get(i),i) / spacing[i] + div_c[i]*id;}
+		{id = pointTransform.transform(p.get(i),i) / unitCellP2[i] + numCellDiv[i]*id;}
 
 		return id;
 	}
 };
 
-template<typename cnt_type, typename ids_type, typename transform>
-struct cid_<1,cnt_type,ids_type, transform>
+template<typename ids_type, typename transform_type>
+struct cid_<1,ids_type, transform_type>
 {
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c, ids_type * e)
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,1> & numCellDiv,
+		ids_type * e)
 	{
 		return e[0];
 	}
 
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c, const grid_key_dx<1,ids_type> & e)
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,1> & numCellDiv,
+		const grid_key_dx<1,ids_type> & e)
 	{
 		return e.get(0);
 	}
 
-	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c,
-			                                                       const openfpm::array<T,1,cnt_type> & spacing,
-																   const openfpm::array<ids_type,1,cnt_type> & off,
-			                                                       const transform & t,
-			                                                       const Point<1,T> & p)
+	template<typename T>
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,1> & numCellDiv,
+		const openfpm::array<T,1> & unitCellP2,
+		const openfpm::array<ids_type,1> & cellPadDim,
+		const transform_type & pointTransform,
+		const Point<1,T> & p)
 	{
-		return t.transform(p.get(0),0) / spacing[0] + off[0];
+		return pointTransform.transform(p.get(0),0) / unitCellP2[0] + cellPadDim[0];
 	}
 
-	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c,
-			                                                       const openfpm::array<T,1,cnt_type> & spacing,
-			                                                       const openfpm::array<ids_type,1,cnt_type> & off,
-			                                                       const transform & t,
-			                                                       const T * p,
-			                                                       ids_type * e)
+	template<typename T>
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,1> & numCellDiv,
+		const openfpm::array<T,1> & unitCellP2,
+		const openfpm::array<ids_type,1> & cellPadDim,
+		const transform_type & pointTransform,
+		const T * p,
+		ids_type * e)
 	{
-		e[0] = openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0];
+		e[0] = openfpm::math::uint_floor(pointTransform.transform(p,0)/unitCellP2[0]) + cellPadDim[0];
 
 		return e[0];
 	}
 
 	template<typename T>
-	static inline __device__ __host__ grid_key_dx<2,ids_type> get_cid_key(const openfpm::array<T,1,cnt_type> & spacing,
-			                                                       const openfpm::array<ids_type,1,cnt_type> & off,
-			                                                       const transform & t,
-			                                                       const Point<2,T> & p)
+	static inline __device__ __host__ grid_key_dx<2,ids_type> get_cid_key(
+		const openfpm::array<T,1> & unitCellP2,
+		const openfpm::array<ids_type,1> & cellPadDim,
+		const transform_type & pointTransform,
+		const Point<2,T> & p)
 	{
 		grid_key_dx<1,ids_type> e;
 
-		e.set_d(0,openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0]);
+		e.set_d(0,openfpm::math::uint_floor(pointTransform.transform(p,0)/unitCellP2[0]) + cellPadDim[0]);
 
 		return e;
 	}
 
-	template <typename U = cnt_type, typename sfinae=typename std::enable_if<std::is_same<ids_type,U>::value >::type >
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,1,cnt_type> & div_c,
-			                                  const grid_key_dx<1,cnt_type> & e)
+	template <typename U = unsigned int, typename sfinae=typename std::enable_if<std::is_same<ids_type,U>::value >::type >
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,1> & numCellDiv,
+		const grid_key_dx<1,unsigned int> & e)
 	{
 		return e.get(0);
 	}
 };
 
-template<typename cnt_type, typename ids_type, typename transform>
-struct cid_<2,cnt_type,ids_type,transform>
+template<typename ids_type, typename transform_type>
+struct cid_<2,ids_type,transform_type>
 {
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c, ids_type * e)
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,2> & numCellDiv,
+		ids_type * e)
 	{
-		return e[0] + div_c[0] * e[1];
+		return e[0] + numCellDiv[0] * e[1];
 	}
 
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c, const grid_key_dx<2,ids_type> & e)
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,2> & numCellDiv,
+		const grid_key_dx<2,ids_type> & e)
 	{
-		return e.get(0) + div_c[0] * e.get(1);
-	}
-
-	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c,
-			                                                       const openfpm::array<T,2,cnt_type> & spacing,
-			                                                       const openfpm::array<ids_type,2,cnt_type> & off,
-			                                                       const transform & t,
-			                                                       const Point<2,T> & p)
-	{
-
-		return openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0] +
-				  (openfpm::math::uint_floor(t.transform(p,1)/spacing[1]) + off[1])*div_c[0];
-	}
-
-	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c,
-			                                                       const openfpm::array<T,2,cnt_type> & spacing,
-			                                                       const openfpm::array<ids_type,2,cnt_type> & off,
-			                                                       const transform & t,
-			                                                       const T * p,
-			                                                       ids_type * e)
-	{
-		e[0] = openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0];
-		e[1] = openfpm::math::uint_floor(t.transform(p,1)/spacing[1]) + off[1];
-
-		return e[0] + e[1]*div_c[0];
+		return e.get(0) + numCellDiv[0] * e.get(1);
 	}
 
 	template<typename T>
-	static inline __device__ __host__ grid_key_dx<2,ids_type> get_cid_key(const openfpm::array<T,2,cnt_type> & spacing,
-			                                                       const openfpm::array<ids_type,2,cnt_type> & off,
-			                                                       const transform & t,
-			                                                       const Point<2,T> & p)
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,2> & numCellDiv,
+		const openfpm::array<T,2> & unitCellP2,
+		const openfpm::array<ids_type,2> & cellPadDim,
+		const transform_type & pointTransform,
+		const Point<2,T> & p)
+	{
+
+		return openfpm::math::uint_floor(pointTransform.transform(p,0)/unitCellP2[0]) + cellPadDim[0] +
+				  (openfpm::math::uint_floor(pointTransform.transform(p,1)/unitCellP2[1]) + cellPadDim[1])*numCellDiv[0];
+	}
+
+	template<typename T>
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,2> & numCellDiv,
+		const openfpm::array<T,2> & unitCellP2,
+		const openfpm::array<ids_type,2> & cellPadDim,
+		const transform_type & pointTransform,
+		const T * p,
+		ids_type * e)
+	{
+		e[0] = openfpm::math::uint_floor(pointTransform.transform(p,0)/unitCellP2[0]) + cellPadDim[0];
+		e[1] = openfpm::math::uint_floor(pointTransform.transform(p,1)/unitCellP2[1]) + cellPadDim[1];
+
+		return e[0] + e[1]*numCellDiv[0];
+	}
+
+	template<typename T>
+	static inline __device__ __host__ grid_key_dx<2,ids_type> get_cid_key(
+		const openfpm::array<T,2> & unitCellP2,
+		const openfpm::array<ids_type,2> & cellPadDim,
+		const transform_type & pointTransform,
+		const Point<2,T> & p)
 	{
 		grid_key_dx<2,ids_type> e;
 
-		e.set_d(0,openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0]);
-		e.set_d(1,openfpm::math::uint_floor(t.transform(p,1)/spacing[1]) + off[1]);
+		e.set_d(0,openfpm::math::uint_floor(pointTransform.transform(p,0)/unitCellP2[0]) + cellPadDim[0]);
+		e.set_d(1,openfpm::math::uint_floor(pointTransform.transform(p,1)/unitCellP2[1]) + cellPadDim[1]);
 
 		return e;
 	}
 
-	template <typename U = cnt_type, typename sfinae=typename std::enable_if<std::is_same<ids_type,U>::value >::type >
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,2,cnt_type> & div_c,
-			                                  const grid_key_dx<2,cnt_type> & e)
+	template <typename U = unsigned int, typename sfinae=typename std::enable_if<std::is_same<ids_type,U>::value >::type >
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,2> & numCellDiv,
+		const grid_key_dx<2,unsigned int> & e)
 	{
-		return e.get(0) + e.get(1)*div_c[0];
+		return e.get(0) + e.get(1)*numCellDiv[0];
 	}
 };
 
 
-template<typename cnt_type, typename ids_type,typename transform>
-struct cid_<3,cnt_type,ids_type,transform>
+template<typename ids_type,typename transform_type>
+struct cid_<3,ids_type,transform_type>
 {
 
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,3,cnt_type> & div_c,
-			                                  const ids_type * e)
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,3> & numCellDiv,
+		const ids_type * e)
 	{
-		return e[0] + (e[1] + e[2]*div_c[1])*div_c[0];
+		return e[0] + (e[1] + e[2]*numCellDiv[1])*numCellDiv[0];
 	}
 
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,3,cnt_type> & div_c,
-			                                  const grid_key_dx<3,ids_type> & e)
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,3> & numCellDiv,
+		const grid_key_dx<3,ids_type> & e)
 	{
-		return e.get(0) + (e.get(1) + e.get(2)*div_c[1])*div_c[0];
+		return e.get(0) + (e.get(1) + e.get(2)*numCellDiv[1])*numCellDiv[0];
 	}
 
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,3,cnt_type> & div_c,
-													   const openfpm::array<ids_type,3,cnt_type> & off,
-			                                  const grid_key_dx<3,ids_type> & e)
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,3> & numCellDiv,
+		const openfpm::array<ids_type,3> & cellPadDim,
+		const grid_key_dx<3,ids_type> & e)
 	{
-		return (e.get(0) + off[0]) + ((e.get(1) + off[1]) + (e.get(2) + off[2])*div_c[1])*div_c[0];
+		return (e.get(0) + cellPadDim[0]) + ((e.get(1) + cellPadDim[1]) + (e.get(2) + cellPadDim[2])*numCellDiv[1])*numCellDiv[0];
 	}
 
-	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,3,cnt_type> & div_c,
-			                                                       const openfpm::array<T,3,cnt_type> & spacing,
-			                                                       const openfpm::array<ids_type,3,cnt_type> & off,
-			                                                       const transform & t,
-			                                                       const Point<3,T> & p)
+	template<typename T> static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,3> & numCellDiv,
+		const openfpm::array<T,3> & unitCellP2,
+		const openfpm::array<ids_type,3> & cellPadDim,
+		const transform_type & pointTransform,
+		const Point<3,T> & p)
 	{
-
-		return openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0] +
-				  (openfpm::math::uint_floor(t.transform(p,1)/spacing[1]) + off[1] +
-				  (openfpm::math::uint_floor(t.transform(p,2)/spacing[2]) + off[2])*div_c[1])*div_c[0];
-	}
-
-	template<typename T> static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,3,cnt_type> & div_c,
-			                                                       const openfpm::array<T,3,cnt_type> & spacing,
-			                                                       const openfpm::array<ids_type,3,cnt_type> & off,
-			                                                       const transform & t,
-			                                                       const T * p,
-			                                                       ids_type * e)
-	{
-		e[0] = openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0];
-		e[1] = openfpm::math::uint_floor(t.transform(p,1)/spacing[1]) + off[1];
-		e[2] = openfpm::math::uint_floor(t.transform(p,2)/spacing[2]) + off[2];
-
-		return e[0] + (e[1] + e[2]*div_c[1])*div_c[0];
+		return openfpm::math::uint_floor(pointTransform.transform(p,0)/unitCellP2[0]) + cellPadDim[0] +
+			(openfpm::math::uint_floor(pointTransform.transform(p,1)/unitCellP2[1]) + cellPadDim[1] +
+			(openfpm::math::uint_floor(pointTransform.transform(p,2)/unitCellP2[2]) + cellPadDim[2])*numCellDiv[1])*numCellDiv[0];
 	}
 
 	template<typename T>
-	static inline __device__ __host__ grid_key_dx<3,ids_type> get_cid_key(const openfpm::array<T,3,cnt_type> & spacing,
-			                                                       const openfpm::array<ids_type,3,cnt_type> & off,
-			                                                       const transform & t,
-			                                                       const Point<3,T> & p)
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,3> & numCellDiv,
+		const openfpm::array<T,3> & unitCellP2,
+		const openfpm::array<ids_type,3> & cellPadDim,
+		const transform_type & pointTransform,
+		const T * p,
+		ids_type * e)
+	{
+		e[0] = openfpm::math::uint_floor(pointTransform.transform(p,0)/unitCellP2[0]) + cellPadDim[0];
+		e[1] = openfpm::math::uint_floor(pointTransform.transform(p,1)/unitCellP2[1]) + cellPadDim[1];
+		e[2] = openfpm::math::uint_floor(pointTransform.transform(p,2)/unitCellP2[2]) + cellPadDim[2];
+
+		return e[0] + (e[1] + e[2]*numCellDiv[1])*numCellDiv[0];
+	}
+
+	template<typename T>
+	static inline __device__ __host__ grid_key_dx<3,ids_type> get_cid_key(
+		const openfpm::array<T,3> & unitCellP2,
+		const openfpm::array<ids_type,3> & cellPadDim,
+		const transform_type & pointTransform,
+		const Point<3,T> & p)
 	{
 		grid_key_dx<3,ids_type> e;
 
-		e.set_d(0,openfpm::math::uint_floor(t.transform(p,0)/spacing[0]) + off[0]);
-		e.set_d(1,openfpm::math::uint_floor(t.transform(p,1)/spacing[1]) + off[1]);
-		e.set_d(2,openfpm::math::uint_floor(t.transform(p,2)/spacing[2]) + off[2]);
+		e.set_d(0,openfpm::math::uint_floor(pointTransform.transform(p,0)/unitCellP2[0]) + cellPadDim[0]);
+		e.set_d(1,openfpm::math::uint_floor(pointTransform.transform(p,1)/unitCellP2[1]) + cellPadDim[1]);
+		e.set_d(2,openfpm::math::uint_floor(pointTransform.transform(p,2)/unitCellP2[2]) + cellPadDim[2]);
 
 		return e;
 	}
 
-	template <typename U = cnt_type, typename sfinae=typename std::enable_if<std::is_same<ids_type,U>::value >::type >
-	static inline __device__ __host__ cnt_type get_cid(const openfpm::array<ids_type,3,cnt_type> & div_c,
-			                                  const grid_key_dx<3,cnt_type> & e)
+	template <typename U = unsigned int, typename sfinae=typename std::enable_if<std::is_same<ids_type,U>::value >::type >
+	static inline __device__ __host__ unsigned int get_cid(
+		const openfpm::array<ids_type,3> & numCellDiv,
+		const grid_key_dx<3,unsigned int> & e)
 	{
-		return e.get(0) + (e.get(1) + e.get(2)*div_c[1])*div_c[0];
+		return e.get(0) + (e.get(1) + e.get(2)*numCellDiv[1])*numCellDiv[0];
 	}
 };
-
-template<unsigned int bit_phases, typename cnt_type>
-struct shift_ph
-{
-	typedef boost::mpl::int_<sizeof(cnt_type) - bit_phases> type;
-	typedef boost::low_bits_mask_t<sizeof(size_t)*8-bit_phases>  mask_low;
-};
-
-
-template<typename cnt_type, typename ph>
-__device__ __host__ cnt_type encode_phase_id(cnt_type ph_id,cnt_type pid)
-{
-    return pid + (ph_id << ph::type::value);
-}
-
 
 /////////////////////////// THIS ONLY WORK IF NVCC IS COMPILING THIS //////////////////////////////////////////////////////
 
 #ifdef __NVCC__
 
-template<bool is_sparse,unsigned int dim, typename pos_type,
-         typename cnt_type, typename ids_type, typename transform,
-		 typename vector_pos_type, typename vector_cnt_type, typename vector_pids_type>
-__global__ void subindex(openfpm::array<ids_type,dim,cnt_type> div,
-						 openfpm::array<pos_type,dim,cnt_type> spacing,
-						 openfpm::array<ids_type,dim,cnt_type> off,
-						 transform t,
-						 int n_part,
-						 cnt_type start,
-						 vector_pos_type p_pos,
-						 vector_cnt_type counts,
-						 vector_pids_type p_ids)
+template<unsigned int dim, typename pos_type, typename ids_type, typename transform_type,
+typename vector_pos_type, typename vector_cnt_type, typename vector_pids_type>
+__global__ void fill_cellIndex_LocalIndex(
+	openfpm::array<ids_type,dim> numCellDiv,
+	openfpm::array<pos_type,dim> unitCellP2,
+	openfpm::array<ids_type,dim> cellPadDim,
+	transform_type pointTransform,
+	size_t n_part,
+	size_t start,
+	vector_pos_type vPos,
+	vector_cnt_type numPartInCell,
+	vector_pids_type cellIndex_LocalIndex)
 {
-    cnt_type i, cid, ins;
-    ids_type e[dim+1];
+	unsigned int i, cid, ins;
+	ids_type e[dim+1];
 
-    i = threadIdx.x + blockIdx.x * blockDim.x + start;
-    ins = threadIdx.x + blockIdx.x * blockDim.x;
-    if (i >= n_part) return;
+	i = threadIdx.x + blockIdx.x * blockDim.x + start;
+	ins = threadIdx.x + blockIdx.x * blockDim.x;
+	if (i >= n_part) return;
 
-    pos_type p[dim];
+	pos_type p[dim];
 
-    for (size_t k = 0 ; k < dim ; k++)
-    {p[k] = p_pos.template get<0>(i)[k];}
+	for (size_t k = 0 ; k < dim ; k++)
+		p[k] = vPos.template get<0>(i)[k];
 
-    cid = cid_<dim,cnt_type,ids_type,transform>::get_cid(div,spacing,off,t,p,e);
+	cid = cid_<dim,ids_type,transform_type>::get_cid(numCellDiv,unitCellP2,cellPadDim,pointTransform,p,e);
 
-    if (is_sparse == false)
-    {
-    	e[dim] = atomicAdd(&counts.template get<0>(cid), 1);
+	e[dim] = atomicAdd(&numPartInCell.template get<0>(cid), 1);
+	cellIndex_LocalIndex.template get<0>(ins)[0] = cid;
+	cellIndex_LocalIndex.template get<0>(ins)[1] = e[dim];
+}
 
-    	p_ids.template get<0>(ins)[0] = cid;
-        {p_ids.template get<0>(ins)[1] = e[dim];}
-    }
-    else
-    {
-        p_ids.template get<0>(ins)[0] = cid;
-        {p_ids.template get<0>(ins)[1] = e[dim];}
+template<unsigned int dim, typename pos_type, typename ids_type, typename transform_type,
+typename vector_pos_type, typename vector_cnt_type>
+__global__ void fill_cellIndex(
+	openfpm::array<ids_type,dim> numCellDiv,
+	openfpm::array<pos_type,dim> unitCellP2,
+	openfpm::array<ids_type,dim> cellPadDim,
+	transform_type pointTransform,
+	size_t n_part,
+	size_t start,
+	vector_pos_type vPos,
+	vector_cnt_type cellIndex)
+{
+	int i = threadIdx.x + blockIdx.x * blockDim.x + start;
+	int ins = threadIdx.x + blockIdx.x * blockDim.x;
+	if (i >= n_part) return;
 
-        counts.template get<0>(ins) = cid;
-    }
+	Point<dim,pos_type> p;
+
+	for (size_t k = 0 ; k < dim ; k++)
+		p[k] = vPos.template get<0>(i)[k];
+
+	cellIndex.template get<0>(ins) = cid_<dim,ids_type,transform_type>::get_cid(numCellDiv,unitCellP2,cellPadDim,pointTransform,p);
 }
 
 template<typename vector_sparse, typename vector_cell>
-__global__ void fill_cells_sparse(vector_sparse vs, vector_cell vc)
+__global__ void fill_vsCellIndex_PartIndex(
+	vector_sparse vecSparseCellIndex_PartIndex,
+	vector_cell cellIndex)
 {
-	vs.init();
+	vecSparseCellIndex_PartIndex.init();
 
 	int p = blockIdx.x*blockDim.x + threadIdx.x;
 
-	int c = 0;
-	if (p < vc.size())	
+	if (p < cellIndex.size())
 	{
-		c = vc.template get<0>(p);
-		vs.template insert<0>(c) = p;
+		int c = cellIndex.template get<0>(p);
+		vecSparseCellIndex_PartIndex.template insert<0>(c) = p;
 	}
 
-	vs.flush_block_insert();
+	vecSparseCellIndex_PartIndex.flush_block_insert();
 }
-
-
-template<unsigned int dim, typename pos_type, typename cnt_type, typename ids_type, typename transform>
-__global__ void subindex_without_count(openfpm::array<ids_type,dim,cnt_type> div,
-						 openfpm::array<pos_type,dim,cnt_type> spacing,
-						 openfpm::array<ids_type,dim,cnt_type> off,
-						 transform t,
-						 int n_cap,
-						 int n_part,
-						 int n_cap2,
-						 pos_type * p_pos,
-						 cnt_type *counts,
-						 cnt_type * p_ids)
-{
-    cnt_type i, cid;
-    ids_type e[dim+1];
-
-    i = threadIdx.x + blockIdx.x * blockDim.x;
-    if (i >= n_part) return;
-
-    pos_type p[dim];
-
-    for (size_t k = 0 ; k < dim ; k++)
-    {p[k] = p_pos[i+k*n_cap];}
-
-    cid = cid_<dim,cnt_type,ids_type,transform>::get_cid(div,spacing,off,t,p,e);
-
-    e[dim] = atomicAdd(counts + cid, 1);
-
-    p_ids[i] = cid;
-    p_ids[i+1*(n_cap2)] = e[dim];
-}
-
 
 #ifdef MAKE_CELLLIST_DETERMINISTIC
 
-template<unsigned int dim, typename cnt_type, typename ids_type, typename ph, typename vector_cells_type>
-__global__ void fill_cells(cnt_type phase_id ,
-						   cnt_type n,
-		                   vector_cells_type cells)
+template<typename vector_cells_type>
+__global__ void fill_cells(
+	unsigned int n,
+	vector_cells_type cellIndexLocalIndexToPart)
 {
-    cnt_type i;
+	int i = threadIdx.x + blockIdx.x * blockDim.x;
+	if (i >= n) return;
 
-    i = threadIdx.x + blockIdx.x * blockDim.x;
-    if (i >= n) return;
-
-    cells.template get<0>(i) = encode_phase_id<cnt_type,ph>(phase_id,i);
+	cellIndexLocalIndexToPart.template get<0>(i) = i;
 }
 
 #else
 
-template<unsigned int dim, typename cnt_type, typename ids_type, typename ph,typename vector_starts_type, typename vector_pids_type, typename vector_cells_type>
-__global__ void fill_cells(cnt_type phase_id ,
-		                   openfpm::array<ids_type,dim,cnt_type> div_c,
-		                   openfpm::array<ids_type,dim,cnt_type> off,
-		                   cnt_type n,
-		                   cnt_type start_p,
-		                   vector_starts_type starts,
-		                   vector_pids_type p_ids,
-		                   vector_cells_type cells)
+template<typename vector_starts_type, typename vector_pids_type, typename vector_cells_type>
+__global__ void fill_cells(
+	vector_starts_type numPartInCellPrefixSum,
+	vector_pids_type cellIndex_LocalIndex,
+	vector_cells_type cellIndexLocalIndexToPart,
+	size_t startParticle=0)
 {
-    cnt_type i, cid, id, start;
+	unsigned int cid, id, start;
 
-    i = threadIdx.x + blockIdx.x * blockDim.x;
-    if (i >= n) return;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
+	if (tid >= cellIndex_LocalIndex.size()) return;
 
-    cid = p_ids.template get<0>(i)[0];
+	cid = cellIndex_LocalIndex.template get<0>(tid)[0];
 
-    start = starts.template get<0>(cid);
-    id = start + p_ids.template get<0>(i)[1];
+	start = numPartInCellPrefixSum.template get<0>(cid);
+	id = start + cellIndex_LocalIndex.template get<0>(tid)[1];
 
-    cells.template get<0>(id) = encode_phase_id<cnt_type,ph>(phase_id,i + start_p);
+	cellIndexLocalIndexToPart.template get<0>(id) = tid + startParticle;
 }
 
 #endif
 
-
-
-
-
-template<typename cnt_type, typename ph>
-__device__ inline void phase_and_id(cnt_type c, cnt_type *ph_id, cnt_type *pid)
-{
-    *pid = c & ph::mask_low::value;
-    *ph_id   = c << ph::type::value;
-}
-
-
-template <typename vector_prp , typename cnt_type>
-__device__ inline void reorder(const vector_prp & input,
-		                       vector_prp & output,
-		                       cnt_type src_id,
-		                       cnt_type dst_id)
+template <typename vector_prp>
+__device__ inline void reorder(
+	const vector_prp & input,
+	vector_prp & output,
+	size_t src_id,
+	size_t dst_id)
 {
 	output.set(dst_id,input,src_id);
 }
 
-template <typename vector_prp , typename cnt_type, unsigned int ... prp>
-__device__ inline void reorder_wprp(const vector_prp & input,
-		                       vector_prp & output,
-		                       cnt_type src_id,
-		                       cnt_type dst_id)
+template <typename vector_prp, unsigned int ... prp>
+__device__ inline void reorder_wprp(
+	const vector_prp & input,
+	vector_prp & output,
+	size_t src_id,
+	size_t dst_id)
 {
 	output.template set<prp ...>(dst_id,input,src_id);
 }
 
-template <typename vector_prp, typename vector_pos, typename vector_ns, typename vector_cells_type, typename cnt_type, typename sh>
-__global__ void reorder_parts(int n,
-		                      const vector_prp input,
-		                      vector_prp output,
-		                      const vector_pos input_pos,
-		                      vector_pos output_pos,
-		                      vector_ns sorted_non_sorted,
-		                      vector_ns non_sorted_to_sorted,
-		                      const vector_cells_type cells)
+template <typename vector_prp, typename vector_pos, typename vector_ns, typename vector_cells_type>
+__global__ void reorderParticles(
+	const vector_prp vPrp,
+	vector_prp vPrpOut,
+	const vector_pos vPos,
+	vector_pos vPosOut,
+	vector_ns sortedToUnsortedIndex,
+	vector_ns unsortedToSortedIndex,
+	const vector_cells_type cellIndexLocalIndexToPart)
 {
-    cnt_type i = threadIdx.x + blockIdx.x * blockDim.x;
-    if (i >= n) return;
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
+	if (tid >= sortedToUnsortedIndex.size())	{return;}
 
-    cnt_type code = cells.template get<0>(i);
+	unsigned int pid = cellIndexLocalIndexToPart.template get<0>(tid);
 
-    reorder(input, output, code,i);
-    reorder(input_pos,output_pos,code,i);
+	reorder(vPrp, vPrpOut, pid, tid);
+	reorder(vPos, vPosOut, pid, tid);
 
-    sorted_non_sorted.template get<0>(i) = code;
-    non_sorted_to_sorted.template get<0>(code) = i;
+	sortedToUnsortedIndex.template get<0>(tid) = pid;
+	unsortedToSortedIndex.template get<0>(pid) = tid;
 }
 
-template <typename vector_prp, typename vector_pos, typename vector_ns, typename vector_cells_type, typename cnt_type, typename sh, unsigned int ... prp>
-__global__ void reorder_parts_wprp(int n,
-		                      const vector_prp input,
-		                      vector_prp output,
-		                      const vector_pos input_pos,
-		                      vector_pos output_pos,
-		                      vector_ns sorted_non_sorted,
-		                      vector_ns non_sorted_to_sorted,
-		                      const vector_cells_type cells)
+template <typename vector_prp, typename vector_pos, typename vector_ns, typename vector_cells_type, unsigned int ... prp>
+__global__ void reorderParticlesPrp(
+	int n,
+	const vector_prp input,
+	vector_prp output,
+	const vector_pos input_pos,
+	vector_pos output_pos,
+	vector_ns sortedToUnsortedIndex,
+	vector_ns unsortedToSortedIndex,
+	const vector_cells_type cellIndexLocalIndexToPart)
 {
-    cnt_type i = threadIdx.x + blockIdx.x * blockDim.x;
-    if (i >= n) return;
+	unsigned int i = threadIdx.x + blockIdx.x * blockDim.x;
+	if (i >= n) return;
 
-    cnt_type code = cells.template get<0>(i);
-    reorder_wprp<vector_prp,cnt_type,prp...>(input, output, code,i);
-    reorder(input_pos,output_pos,code,i);
+	unsigned int pid = cellIndexLocalIndexToPart.template get<0>(i);
+	reorder_wprp<vector_prp,prp...>(input, output, pid,i);
+	reorder(input_pos,output_pos,pid,i);
 
-    sorted_non_sorted.template get<0>(i) = code;
-    non_sorted_to_sorted.template get<0>(code) = i;
+	sortedToUnsortedIndex.template get<0>(i) = pid;
+	unsortedToSortedIndex.template get<0>(pid) = i;
 }
 
 template<typename vector_sort_index, typename vector_out_type>
-__global__ void mark_domain_particles(vector_sort_index vsi, vector_out_type vout_dg, int g_m)
+__global__ void mark_domain_particles(
+	vector_sort_index sortedToUnsortedIndex,
+	vector_out_type isSortedIndexOrGhost,
+	int ghostMarker)
 {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 
-	if (i >= vsi.size()) return;
+	if (i >= sortedToUnsortedIndex.size()) return;
 
-	vout_dg.template get<0>(i) = (vsi.template get<0>(i) < g_m)?1:0;
+	isSortedIndexOrGhost.template get<0>(i) = (sortedToUnsortedIndex.template get<0>(i) < ghostMarker)?1:0;
 }
 
 template<typename scan_type, typename vector_out_type>
-__global__ void collect_domain_ghost_ids(scan_type scan, vector_out_type vout_ids)
+__global__ void collect_domain_ghost_ids(
+	scan_type isSortedIndexOrGhostPrefixSum,
+	vector_out_type indexSorted)
 {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 
-	if (i >= scan.size()-1) return;
+	if (i >= isSortedIndexOrGhostPrefixSum.size()-1) return;
 
-	auto pp = scan.template get<0>(i+1);
-	auto p = scan.template get<0>(i);
+	auto pp = isSortedIndexOrGhostPrefixSum.template get<0>(i+1);
+	auto p = isSortedIndexOrGhostPrefixSum.template get<0>(i);
 
 	if (pp != p)
-	{vout_ids.template get<0>(scan.template get<0>(i)) = i;}
+		indexSorted.template get<0>(isSortedIndexOrGhostPrefixSum.template get<0>(i)) = i;
 }
 
 template<typename cl_sparse_type, typename vector_type, typename vector_type2>
-__global__ void count_nn_cells(cl_sparse_type cl_sparse, vector_type output, vector_type2 nn_to_test)
+__global__ void countNeighborCells(
+	cl_sparse_type vecSparseCellIndex_PartIndex,
+	vector_type neighborCellCount,
+	vector_type2 neighborCellOffset)
 {
 	typedef typename cl_sparse_type::index_type index_type;
 
 	int tid = threadIdx.x + blockIdx.x * blockDim.x;
+	if (tid >= vecSparseCellIndex_PartIndex.size()) {return;}
+
 	openfpm::sparse_index<index_type> id;
 	id.id = tid;
 
-	if (tid >= cl_sparse.size()) {return;}
+	index_type cell = vecSparseCellIndex_PartIndex.get_index(id);
 
-	index_type cell = cl_sparse.get_index(id);
-
-	for (int i = 0 ; i < nn_to_test.size() ; i++)
+	for (int i = 0 ; i < neighborCellOffset.size() ; i++)
 	{
-		index_type cell_n = cell + nn_to_test.template get<0>(i);
+		index_type cell_n = cell + neighborCellOffset.template get<0>(i);
+		auto sid = vecSparseCellIndex_PartIndex.get_sparse(cell_n);
 
-		index_type start = cl_sparse.template get<0>(cell_n);
+		index_type start = vecSparseCellIndex_PartIndex.template get<0>(cell_n);
 
 		if (start != (index_type)-1)
 		{
 			// Cell exist
-			output.template get<0>(tid) += 1;
+			neighborCellCount.template get<0>(tid) += 1;
 		}
 	}
 };
 
 template<typename cl_sparse_type, typename vector_type, typename vector_type2, typename vector_type3>
-__global__ void fill_nn_cells(cl_sparse_type cl_sparse, vector_type starts, vector_type2 nn_to_test, vector_type3 output, typename cl_sparse_type::index_type max_stop)
+__global__ void fillNeighborCellList(
+	cl_sparse_type vecSparseCellIndex_PartIndex,
+	vector_type neighborCellCountPrefixSum,
+	vector_type2 neighborCellOffset,
+	vector_type3 neighborPartIndexFrom_To,
+	typename cl_sparse_type::index_type stop)
 {
 	typedef typename cl_sparse_type::index_type index_type;
 
 	int tid = threadIdx.x + blockIdx.x * blockDim.x;
-	openfpm::sparse_index<index_type> id;
-	id.id = tid;
+	if (tid >= vecSparseCellIndex_PartIndex.size())	{return;}
 
-	if (tid >= cl_sparse.size())	{return;}
+	openfpm::sparse_index<index_type> id; id.id = tid;
+	index_type cell = vecSparseCellIndex_PartIndex.get_index(id);
 
-	index_type cell = cl_sparse.get_index(id);
-
-	int cnt = 0;
-	for (int i = 0 ; i < nn_to_test.size() ; i++)
+	for (int i = 0, cnt = 0; i < neighborCellOffset.size(); i++)
 	{
-		index_type cell_n = cell + nn_to_test.template get<0>(i);
+		auto sid = vecSparseCellIndex_PartIndex.get_sparse(cell + neighborCellOffset.template get<0>(i));
 
-		auto sid = cl_sparse.get_sparse(cell_n);
-
-		if (sid.id != (index_type)cl_sparse.size())
+		if (sid.id != vecSparseCellIndex_PartIndex.size())
 		{
-			index_type start = cl_sparse.template get<0>(sid);
-			// Cell exist
-			output.template get<0>(starts.template get<0>(tid) + cnt) = start;
+			neighborPartIndexFrom_To.template get<0>(neighborCellCountPrefixSum.template get<0>(tid) + cnt) = vecSparseCellIndex_PartIndex.template get<0>(sid);
 
-			if (sid.id == cl_sparse.size() - 1)
-			{output.template get<1>(starts.template get<0>(tid) + cnt) = max_stop;}
+			if (++sid.id != vecSparseCellIndex_PartIndex.size())
+				neighborPartIndexFrom_To.template get<1>(neighborCellCountPrefixSum.template get<0>(tid) + cnt) = vecSparseCellIndex_PartIndex.template get<0>(sid);
 			else
-			{
-				decltype(sid) sid_t;
-				sid_t.id = sid.id+1;
-				output.template get<1>(starts.template get<0>(tid) + cnt) = cl_sparse.template get<0>(sid_t);
-			}
+				neighborPartIndexFrom_To.template get<1>(neighborCellCountPrefixSum.template get<0>(tid) + cnt) = stop;
+
 			++cnt;
 		}
 	}

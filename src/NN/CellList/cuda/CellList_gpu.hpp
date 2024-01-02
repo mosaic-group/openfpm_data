@@ -22,308 +22,73 @@
 #include "NN/CellList/CellList.hpp"
 #include "util/cuda/scan_ofp.cuh"
 
-constexpr int count = 0;
-constexpr int start = 1;
-
-template<unsigned int dim, typename T,
-         typename cnt_type, typename ids_type,
-         typename Memory,typename transform,
-         typename vector_cnt_type, typename vector_cnt_type2,
-         typename cl_sparse_type,
-         bool is_sparse>
-struct CellList_gpu_ker_selector
-{
-	static inline CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse> get(vector_cnt_type & starts,
-																			 vector_cnt_type & cell_nn,
-																			 vector_cnt_type2 & cell_nn_list,
-																			 cl_sparse_type & cl_sparse,
-																			 vector_cnt_type & sorted_to_not_sorted,
-																			 vector_cnt_type & sorted_domain_particles_ids,
-																			 openfpm::vector<aggregate<int>,Memory,memory_traits_inte> & nnc_rad,
-																			 openfpm::array<T,dim,cnt_type> & spacing_c,
-																			 openfpm::array<ids_type,dim,cnt_type> & div_c,
-																			 openfpm::array<ids_type,dim,cnt_type> & off,
-																			 const transform & t,
-																			 unsigned int g_m,
-																			 const SpaceBox<dim,T>& box_unit,
-																			 const grid_sm<dim,void>& gr_cell,
-																			 const Point<dim,long int>& cell_shift)
-	{
-		return CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse>(starts.toKernel(),
-																			sorted_to_not_sorted.toKernel(),
-																			sorted_domain_particles_ids.toKernel(),
-																			nnc_rad.toKernel(),
-																			spacing_c,
-																			div_c,
-																			off,
-																			t,
-																			g_m,
-																			box_unit,
-																			gr_cell,
-																			cell_shift);
-	}
-};
-
-template<unsigned int dim, typename T,
-         typename cnt_type, typename ids_type,
-         typename Memory,typename transform,
-         typename vector_cnt_type, typename vector_cnt_type2,
-         typename cl_sparse_type>
-struct CellList_gpu_ker_selector<dim,T,cnt_type,ids_type,Memory,transform,vector_cnt_type,vector_cnt_type2,cl_sparse_type,true>
-{
-	static CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,true> get(vector_cnt_type & starts,
-			 vector_cnt_type & cell_nn,
-			 vector_cnt_type2 & cell_nn_list,
-			 cl_sparse_type & cl_sparse,
-			 vector_cnt_type & srt,
-			 vector_cnt_type & dprt,
-			 openfpm::vector<aggregate<int>,Memory,memory_traits_inte> & nnc_rad,
-			 openfpm::array<T,dim,cnt_type> & spacing_c,
-			 openfpm::array<ids_type,dim,cnt_type> & div_c,
-			 openfpm::array<ids_type,dim,cnt_type> & off,
-			 const transform & t,
-			 unsigned int g_m,
-			 const SpaceBox<dim,T>& box_unit,
-			 const grid_sm<dim,void>& gr_cell,
-			 const Point<dim,long int>& cell_shift)
-
-	{
-		return CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,true>(cell_nn.toKernel(),
-																		cell_nn_list.toKernel(),
-																		cl_sparse.toKernel(),
-																		srt.toKernel(),
-																		dprt.toKernel(),
-																		spacing_c,
-																		div_c,
-																		off,
-																		t,
-																		g_m,
-																		box_unit,
-																		gr_cell,
-																		cell_shift);
-	}
-};
 
 template<unsigned int dim,
-		 typename T,
-		 typename Memory,
-		 typename transform = no_transform_only<dim,T>,
-		 typename cnt_type = unsigned int,
-		 typename ids_type = int,
-		 bool is_sparse = false>
-class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
+	typename T,
+	typename Memory = CudaMemory,
+	typename transform_type = no_transform_only<dim,T>,
+	bool is_sparse = false>
+class CellList_gpu;
+
+template<unsigned int dim, typename T, typename Memory, typename transform_type>
+class CellList_gpu<dim,T,Memory,transform_type,false> : public CellDecomposer_sm<dim,T,transform_type>
 {
-	typedef openfpm::vector<aggregate<cnt_type>,Memory,memory_traits_inte> vector_cnt_type;
+public:
+	typedef int ids_type;
 
+private:
 	//! \brief Number of particles in each cell
-	vector_cnt_type cl_n;
+	openfpm::vector_gpu<aggregate<unsigned int>> numPartInCell;
 
-	//! \brief for each cell the particles id in it
-	vector_cnt_type cells;
+	//! \brief Used to convert cellIndex_LocalIndex to particle id
+	openfpm::vector_gpu<aggregate<unsigned int>> cellIndexLocalIndexToPart;
 
-	//! \brief Cell scan with + operation of cl_n (in case of sparse it contain the cell index of the particles)
-	vector_cnt_type starts;
+	//! \brief Cell scan with + operation of numPartInCell
+	openfpm::vector_gpu<aggregate<unsigned int>> numPartInCellPrefixSum;
 
-	//! \brief sparse vector in case of sparse Cell-list
-	openfpm::vector_sparse_gpu<aggregate<cnt_type>> cl_sparse;
-
-	//! \brief number of neighborhood each cell cell has + offset
-	openfpm::vector_gpu<aggregate<cnt_type>> cells_nn;
-
-	//! \brief For each cell the list of the neighborhood cells
-	openfpm::vector_gpu<aggregate<cnt_type,cnt_type>> cells_nn_list;
-
-    //! \brief particle ids information the first "dim" componets is the cell-id in grid coordinates, the last is the local-id inside the cell
-    openfpm::vector<aggregate<cnt_type[2]>,Memory,memory_traits_inte> part_ids;
-
-	//! \breif Size of the Neighborhood cells
-	int cells_nn_test_size;
-
-	//! \brief Neighborhood of a cell to test
-	openfpm::vector_gpu<aggregate<int>> cells_nn_test;
+	//! \brief particle ids information the first "dim" componets is the cell-id in grid coordinates, the last is the local-id inside the cell
+	openfpm::vector_gpu<aggregate<unsigned int[2]>> cellIndex_LocalIndex;
 
 	//! \brief for each sorted index it show the index in the unordered
-	vector_cnt_type sorted_to_not_sorted;
-
-	//! Sorted domain particles domain or ghost
-	vector_cnt_type sorted_domain_particles_dg;
+	openfpm::vector_gpu<aggregate<unsigned int>> sortedToUnsortedIndex;
 
 	//! \brief the index of all the domain particles in the sorted vector
-	vector_cnt_type sorted_domain_particles_ids;
+	openfpm::vector_gpu<aggregate<unsigned int>> indexSorted;
 
 	//! \brief for each non sorted index it show the index in the ordered vector
-	vector_cnt_type non_sorted_to_sorted;
+	openfpm::vector_gpu<aggregate<unsigned int>> unsortedToSortedIndex;
 
-	//! Spacing
-	openfpm::array<T,dim,cnt_type> spacing_c;
+	//! /brief unit cell dimensions, given P1 = (0,0...)
+	openfpm::array<T,dim> unitCellP2;
 
 	//! \brief number of sub-divisions in each direction
-	openfpm::array<ids_type,dim,cnt_type> div_c;
+	openfpm::array<ids_type,dim> numCellDiv;
 
 	//! \brief cell padding
-	openfpm::array<ids_type,dim,cnt_type> off;
+	openfpm::array<ids_type,dim> cellPadDim;
 
-	//! Radius neighborhood
-	openfpm::vector<aggregate<int>,Memory,memory_traits_inte> nnc_rad;
+	//! \brief Neighboor cell id minus the id of the center cell
+	openfpm::vector_gpu<aggregate<int>> radNeighborCellIndex;
 
 	//! Additional information in general (used to understand if the cell-list)
 	//! has been constructed from an old decomposition
-	size_t n_dec;
+	//! indicate how many times decompose/refine/re-decompose has been called
+	size_t nDecRefRedec;
 
 	//! Initialize the structures of the data structure
-	void InitializeStructures(const size_t (& div)[dim], size_t tot_n_cell, size_t pad)
+	void InitializeStructures(
+		const size_t (& div)[dim],
+		size_t tot_n_cell,
+		size_t pad)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			div_c[i] = div[i];
-			spacing_c[i] = this->getCellBox().getP2().get(i);
-			off[i] = pad;
+			numCellDiv[i] = div[i];
+			unitCellP2[i] = this->getCellBox().getP2().get(i);
+			cellPadDim[i] = pad;
 		}
 
-		cl_n.resize(tot_n_cell);
-
-		cells_nn_test_size = 1;
-		construct_cell_nn_test(cells_nn_test_size);
-	}
-
-	void construct_cell_nn_test(unsigned int box_nn = 1)
-	{
-		auto & gs = this->getGrid();
-
-		grid_key_dx<dim> start;
-		grid_key_dx<dim> stop;
-		grid_key_dx<dim> middle;
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			start.set_d(i,0);
-			stop.set_d(i,2*box_nn);
-			middle.set_d(i,box_nn);
-		}
-
-		cells_nn_test.resize(openfpm::math::pow(2*box_nn+1,dim));
-
-		int mid = gs.LinId(middle);
-
-		grid_key_dx_iterator_sub<dim> it(gs,start,stop);
-
-		size_t i = 0;
-		while (it.isNext())
-		{
-			auto p = it.get();
-
-			cells_nn_test.template get<0>(i) = (int)gs.LinId(p) - mid;
-
-			++i;
-			++it;
-		}
-
-		cells_nn_test.template hostToDevice<0>();
-
-#if defined(__NVCC__) && defined(USE_LOW_REGISTER_ITERATOR)
-
-		// copy to the constant memory
-		cudaMemcpyToSymbol(cells_striding,cells_nn_test.template getPointer<0>(),cells_nn_test.size()*sizeof(int));
-
-#endif
-	}
-
-	/*! \brief This function construct a sparse cell-list
-	 *
-	 *
-	 */
-	template<typename vector, typename vector_prp, unsigned int ... prp>
-	void construct_sparse(vector & v_pos,
-  	   	   	 	 	 	  vector & v_pos_out,
-  	   	   	 	 	 	  vector_prp & v_prp,
-  	   	   	 	 	 	  vector_prp & v_prp_out,
-						  gpu::ofp_context_t& gpuContext,
-  	   	   	 	 	 	  size_t g_m,
- 			   	   	   	  size_t start,
- 			   	   	   	  size_t stop,
-  	   	   	 	 	 	  cl_construct_opt opt = cl_construct_opt::Full)
-	{
-#ifdef __NVCC__
-
-		part_ids.resize(stop - start);
-		starts.resize(stop - start);
-
-		// Than we construct the ids
-
-		auto ite_gpu = v_pos.getGPUIteratorTo(stop-start);
-
-		if (ite_gpu.wthr.x == 0)
-		{
-			return;
-		}
-
-		CUDA_LAUNCH((subindex<true,dim,T,cnt_type,ids_type>),ite_gpu,div_c,
-																		spacing_c,
-																		off,
-																		this->getTransform(),
-																		v_pos.size(),
-																		start,
-																		v_pos.toKernel(),
-																		starts.toKernel(),
-																		part_ids.toKernel());
-
-		// now we construct the cells
-
-		cells.resize(stop-start);
-
-		// Here we fill the sparse vector
-		cl_sparse.clear();
-		cl_sparse.template setBackground<0>((cnt_type)-1);
-		cl_sparse.setGPUInsertBuffer(ite_gpu.wthr.x,ite_gpu.thr.x);
-		CUDA_LAUNCH((fill_cells_sparse),ite_gpu,cl_sparse.toKernel(),starts.toKernel());
-		cl_sparse.template flush_vd<sstart_<0>>(cells,gpuContext,FLUSH_ON_DEVICE);
-
-		cells_nn.resize(cl_sparse.size()+1);
-		cells_nn.template fill<0>(0);
-
-		// Here we construct the neighborhood cells for each cell
-		auto itgg = cl_sparse.getGPUIterator();
-		CUDA_LAUNCH((count_nn_cells),itgg,cl_sparse.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel());
-
-		// now we scan
-		openfpm::scan((cnt_type *)cells_nn.template getDeviceBuffer<0>(), cells_nn.size(), (cnt_type *)cells_nn.template getDeviceBuffer<0>() , gpuContext);
-
-		cells_nn.template deviceToHost<0>(cells_nn.size() - 1, cells_nn.size() - 1);
-		size_t n_nn_cells = cells_nn.template get<0>(cells_nn.size() - 1);
-
-		cells_nn_list.resize(n_nn_cells);
-
-		CUDA_LAUNCH((fill_nn_cells),itgg,cl_sparse.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel(),cells_nn_list.toKernel(),cells.size());
-
-		sorted_to_not_sorted.resize(stop-start);
-		non_sorted_to_sorted.resize(v_pos.size());
-
-		auto ite = v_pos.getGPUIteratorTo(stop-start,64);
-
-		// Here we reorder the particles to improve coalescing access
-		CUDA_LAUNCH((reorder_parts<decltype(v_prp.toKernel()),
-				      decltype(v_pos.toKernel()),
-				      decltype(sorted_to_not_sorted.toKernel()),
-					  decltype(cells.toKernel()),
-				      cnt_type,shift_ph<0,cnt_type>>),ite,sorted_to_not_sorted.size(),
-				                                                           v_prp.toKernel(),
-				                                                           v_prp_out.toKernel(),
-				                                                           v_pos.toKernel(),
-				                                                           v_pos_out.toKernel(),
-				                                                           sorted_to_not_sorted.toKernel(),
-				                                                           non_sorted_to_sorted.toKernel(),
-				                                                           cells.toKernel());
-
-		if (opt == cl_construct_opt::Full)
-		{
-			construct_domain_ids(gpuContext,start,stop,g_m);
-		}
-
-	#else
-
-			std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
-
-	#endif
+		numPartInCell.resize(tot_n_cell);
 	}
 
 	/*! \brief Construct the ids of the particles domain in the sorted array
@@ -331,24 +96,42 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	 * \param gpuContext gpu context
 	 *
 	 */
-	void construct_domain_ids(gpu::ofp_context_t& gpuContext, size_t start, size_t stop, size_t g_m)
+	void construct_domain_ids(
+		gpu::ofp_context_t& gpuContext,
+		size_t start,
+		size_t stop,
+		size_t ghostMarker)
 	{
 #ifdef __NVCC__
-		sorted_domain_particles_dg.resize(stop-start+1);
+		//! Sorted domain particles domain or ghost
+		openfpm::vector_gpu<aggregate<unsigned int>> isSortedIndexOrGhost;
 
-		auto ite = sorted_domain_particles_dg.getGPUIterator();
+		isSortedIndexOrGhost.resize(stop-start+1);
 
-		CUDA_LAUNCH((mark_domain_particles),ite,sorted_to_not_sorted.toKernel(),sorted_domain_particles_dg.toKernel(),g_m);
+		auto ite = isSortedIndexOrGhost.getGPUIterator();
 
-		// lets scan
-		openfpm::scan((unsigned int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),sorted_domain_particles_dg.size(),(unsigned int *)sorted_domain_particles_dg.template getDeviceBuffer<0>(),gpuContext);
+		CUDA_LAUNCH((mark_domain_particles),ite,
+			sortedToUnsortedIndex.toKernel(),
+			isSortedIndexOrGhost.toKernel(),
+			ghostMarker
+		);
 
-		sorted_domain_particles_dg.template deviceToHost<0>(sorted_domain_particles_dg.size()-1,sorted_domain_particles_dg.size()-1);
-		auto sz = sorted_domain_particles_dg.template get<0>(sorted_domain_particles_dg.size()-1);
+		openfpm::scan(
+			(unsigned int *)isSortedIndexOrGhost.template getDeviceBuffer<0>(),
+			isSortedIndexOrGhost.size(),
+			(unsigned int *)isSortedIndexOrGhost.template getDeviceBuffer<0>(),
+			gpuContext
+		);
 
-		sorted_domain_particles_ids.resize(sz);
+		isSortedIndexOrGhost.template deviceToHost<0>(isSortedIndexOrGhost.size()-1,isSortedIndexOrGhost.size()-1);
+		auto sz = isSortedIndexOrGhost.template get<0>(isSortedIndexOrGhost.size()-1);
 
-		CUDA_LAUNCH((collect_domain_ghost_ids),ite,sorted_domain_particles_dg.toKernel(),sorted_domain_particles_ids.toKernel());
+		indexSorted.resize(sz);
+
+		CUDA_LAUNCH((collect_domain_ghost_ids),ite,
+			isSortedIndexOrGhost.toKernel(),
+			indexSorted.toKernel()
+		);
 #endif
 	}
 
@@ -357,121 +140,127 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	 *
 	 */
 	template<typename vector, typename vector_prp, unsigned int ... prp>
-	void construct_dense(vector & v_pos,
-			   	   	   	 vector & v_pos_out,
-			   	   	   	 vector_prp & v_prp,
-			   	   	   	 vector_prp & v_prp_out,
-						 gpu::ofp_context_t& gpuContext,
-			   	   	   	 size_t g_m,
-			   	   	   	 size_t start,
-			   	   	   	 size_t stop,
-			   	   	   	 cl_construct_opt opt = cl_construct_opt::Full)
+	void construct_dense(
+		vector & vPos,
+		vector & vPosOut,
+		vector_prp & vPrp,
+		vector_prp & vPrpOut,
+		gpu::ofp_context_t& gpuContext,
+		size_t ghostMarker,
+		size_t start,
+		size_t stop,
+		cl_construct_opt opt = cl_construct_opt::Full)
 	{
 #ifdef __NVCC__
+		// if stop if the default set to the number of particles
+		if (stop == (size_t)-1) stop = vPos.size();
 
-		// Than we construct the ids
+		auto ite_gpu = vPos.getGPUIteratorTo(stop-start-1);
 
-		auto ite_gpu = v_pos.getGPUIteratorTo(stop-start-1);
+		// cellListGrid.size() returns total size of the grid
+		numPartInCell.resize(this->cellListGrid.size()+1);
+		numPartInCell.template fill<0>(0);
 
-		cl_n.resize(this->gr_cell.size()+1);
-		cl_n.template fill<0>(0);
+		cellIndex_LocalIndex.resize(stop - start);
 
-		part_ids.resize(stop - start);
-
-		if (ite_gpu.wthr.x == 0 || v_pos.size() == 0 || stop == 0)
+		if (ite_gpu.wthr.x == 0 || vPos.size() == 0 || stop == 0)
 		{
 			// no particles
-			starts.resize(cl_n.size());
-			starts.template fill<0>(0);
+			numPartInCellPrefixSum.resize(numPartInCell.size());
+			numPartInCellPrefixSum.template fill<0>(0);
 			return;
 		}
 
-		CUDA_LAUNCH((subindex<false,dim,T,cnt_type,ids_type>),ite_gpu,div_c,
-																		spacing_c,
-																		off,
-																		this->getTransform(),
-																		stop,
-																		start,
-																		v_pos.toKernel(),
-																		cl_n.toKernel(),
-																		part_ids.toKernel());
+		CUDA_LAUNCH((fill_cellIndex_LocalIndex<dim,T,ids_type>),ite_gpu,
+			numCellDiv,
+			unitCellP2,
+			cellPadDim,
+			this->getTransform(),
+			stop,
+			start,
+			vPos.toKernel(),
+			numPartInCell.toKernel(),
+			cellIndex_LocalIndex.toKernel()
+		);
 
 		// now we scan
-		starts.resize(cl_n.size());
-		openfpm::scan((cnt_type *)cl_n.template getDeviceBuffer<0>(), cl_n.size(), (cnt_type *)starts.template getDeviceBuffer<0>() , gpuContext);
+		numPartInCellPrefixSum.resize(numPartInCell.size());
+		openfpm::scan(
+			(unsigned int *)numPartInCell.template getDeviceBuffer<0>(),
+			numPartInCell.size(),
+			(unsigned int *)numPartInCellPrefixSum.template getDeviceBuffer<0>(),
+			gpuContext
+		);
 
-		// now we construct the cells
+		// now we construct the cellIndexLocalIndexToPart
 
-		cells.resize(stop-start);
-		auto itgg = part_ids.getGPUIterator();
+		cellIndexLocalIndexToPart.resize(stop-start);
+		auto itgg = cellIndex_LocalIndex.getGPUIterator();
 
 
 #ifdef MAKE_CELLLIST_DETERMINISTIC
 
-                CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg,0,
-                                                                                            part_ids.size(),
-                                                                                            cells.toKernel()) );
+        CUDA_LAUNCH((fill_cells),itgg,
+		cellIndex_LocalIndex.size(),
+		cellIndexLocalIndexToPart.toKernel()
+        );
 
-                // sort
-
-                gpu::mergesort(static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()),v_pos.size(),gpu::less_t<cnt_type>(),gpuContext);
-
+        // sort
+        // gpu::mergesort(
+        // 	static_cast<unsigned int *>(cellIndex_LocalIndex.template getDeviceBuffer<0>()),
+        // 	static_cast<unsigned int *>(cellIndexLocalIndexToPart.template getDeviceBuffer<0>()),
+        // 	vPos.size(),
+        // 	gpu::less_t<unsigned int>(),
+        // 	gpuContext
+        // );
 #else
 
-                CUDA_LAUNCH((fill_cells<dim,cnt_type,ids_type,shift_ph<0,cnt_type>>),itgg,0,
-                                                                                    div_c,
-                                                                                    off,
-																					part_ids.size(),
-																					start,
-                                                                                    starts.toKernel(),
-																					part_ids.toKernel(),
-																					cells.toKernel() );
+        CUDA_LAUNCH((fill_cells),itgg,
+			numPartInCellPrefixSum.toKernel(),
+			cellIndex_LocalIndex.toKernel(),
+			cellIndexLocalIndexToPart.toKernel(),
+			start
+		);
 
 #endif
+		sortedToUnsortedIndex.resize(stop-start);
+		unsortedToSortedIndex.resize(vPos.size());
 
-
-		sorted_to_not_sorted.resize(stop-start);
-		non_sorted_to_sorted.resize(v_pos.size());
-
-		auto ite = v_pos.getGPUIteratorTo(stop-start,64);
+		auto ite = vPos.getGPUIteratorTo(stop-start,64);
 
 		if (sizeof...(prp) == 0)
 		{
 			// Here we reorder the particles to improve coalescing access
-			CUDA_LAUNCH((reorder_parts<decltype(v_prp.toKernel()),
-						  decltype(v_pos.toKernel()),
-						  decltype(sorted_to_not_sorted.toKernel()),
-						  decltype(cells.toKernel()),
-						  cnt_type,shift_ph<0,cnt_type>>),ite,sorted_to_not_sorted.size(),
-																			   v_prp.toKernel(),
-																			   v_prp_out.toKernel(),
-																			   v_pos.toKernel(),
-																			   v_pos_out.toKernel(),
-																			   sorted_to_not_sorted.toKernel(),
-																			   non_sorted_to_sorted.toKernel(),
-																			   cells.toKernel());
+			CUDA_LAUNCH((reorderParticles),ite,
+			   vPrp.toKernel(),
+			   vPrpOut.toKernel(),
+			   vPos.toKernel(),
+			   vPosOut.toKernel(),
+			   sortedToUnsortedIndex.toKernel(),
+			   unsortedToSortedIndex.toKernel(),
+			   cellIndexLocalIndexToPart.toKernel()
+			);
 		}
 		else
 		{
 			// Here we reorder the particles to improve coalescing access
-			CUDA_LAUNCH((reorder_parts_wprp<decltype(v_prp.toKernel()),
-						  decltype(v_pos.toKernel()),
-						  decltype(sorted_to_not_sorted.toKernel()),
-						  decltype(cells.toKernel()),
-						  cnt_type,shift_ph<0,cnt_type>,prp...>),ite,sorted_to_not_sorted.size(),
-																			   v_prp.toKernel(),
-																			   v_prp_out.toKernel(),
-																			   v_pos.toKernel(),
-																			   v_pos_out.toKernel(),
-																			   sorted_to_not_sorted.toKernel(),
-																			   non_sorted_to_sorted.toKernel(),
-																			   cells.toKernel());
-		}
+			CUDA_LAUNCH((reorderParticlesPrp<decltype(vPrp.toKernel()),
+					decltype(vPos.toKernel()),
+					decltype(sortedToUnsortedIndex.toKernel()),
+					decltype(cellIndexLocalIndexToPart.toKernel()),prp...>),ite,
+				sortedToUnsortedIndex.size(),
+				vPrp.toKernel(),
+				vPrpOut.toKernel(),
+				vPos.toKernel(),
+				vPosOut.toKernel(),
+				sortedToUnsortedIndex.toKernel(),
+				unsortedToSortedIndex.toKernel(),
+				cellIndexLocalIndexToPart.toKernel()
+			);
+	}
 
-		if (opt == cl_construct_opt::Full)
-		{
-			construct_domain_ids(gpuContext,start,stop,g_m);
-		}
+	if (opt == cl_construct_opt::Full)
+		construct_domain_ids(gpuContext,start,stop,ghostMarker);
 
 	#else
 
@@ -485,30 +274,22 @@ public:
 	//! Indicate that this cell list is a gpu type cell-list
 	typedef int yes_is_gpu_celllist;
 
-	//! the type of the space
-	typedef T stype;
+	// typedefs needed for toKernel_transform
 
-	//! dimensions of space
-	static const unsigned int dims = dim;
-
-	//! count type
-	typedef cnt_type cnt_type_;
-
-	//! id type
+	static const unsigned int dim_ = dim;
+	typedef T stype_;
 	typedef ids_type ids_type_;
+	typedef transform_type transform_type_;
+	typedef boost::mpl::bool_<false> is_sparse_;
 
-	//! transform type
-	typedef transform transform_;
-
-	//! is sparse
-	typedef boost::mpl::bool_<is_sparse> is_sparse_;
+	// end of typedefs needed for toKernel_transform
 
 	/*! \brief Copy constructor
 	 *
 	 * \param clg Cell list to copy
 	 *
 	 */
-	CellList_gpu(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> & clg)
+	CellList_gpu(const CellList_gpu<dim,T,Memory,transform_type> & clg)
 	{
 		this->operator=(clg);
 	}
@@ -518,7 +299,7 @@ public:
 	 *
 	 *
 	 */
-	CellList_gpu(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> && clg)
+	CellList_gpu(CellList_gpu<dim,T,Memory,transform_type> && clg)
 	{
 		this->operator=(clg);
 	}
@@ -530,7 +311,636 @@ public:
 	CellList_gpu()
 	{}
 
-	CellList_gpu(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1)
+	CellList_gpu(
+		const Box<dim,T> & box,
+		const size_t (&div)[dim],
+		const size_t pad = 1)
+	{
+		Initialize(box,div,pad);
+	}
+
+	/*! \brief Not used for dense cell list
+	 *
+	 *
+	 */
+	void setBoxNN(unsigned int n_NN) {}
+
+	/*! \brief Not used for dense cell list
+	 *
+	 *
+	 */
+	void resetBoxNN() {}
+
+	/*! Initialize the cell list
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param div grid size on each dimension
+	 * \param pad padding cell
+	 * \param slot maximum number of slot
+	 *
+	 */
+	void Initialize(
+		const Box<dim,T> & box,
+		const size_t (&div)[dim],
+		const size_t pad = 1)
+	{
+		SpaceBox<dim,T> sbox(box);
+
+		// Initialize point transformation
+
+		Initialize(sbox,div,pad);
+	}
+
+	/*! Initialize the cell list constructor
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param div grid size on each dimension
+	 * \param pad padding cell
+	 * \param slot maximum number of slot
+	 *
+	 */
+	void Initialize(
+		const SpaceBox<dim,T> & box,
+		const size_t (&div)[dim],
+		const size_t pad = 1)
+	{
+		Matrix<dim,T> mat;
+		CellDecomposer_sm<dim,T,transform_type>::setDimensions(box,div, mat, pad);
+
+		// create the array that store the number of particle on each cell and se it to 0
+		InitializeStructures(this->cellListGrid.getSize(),this->cellListGrid.size(),pad);
+	}
+
+	inline openfpm::vector_gpu<aggregate<unsigned int>> &
+	getSortToNonSort() {
+		return sortedToUnsortedIndex;
+	}
+
+	inline openfpm::vector_gpu<aggregate<unsigned int>> &
+	getNonSortToSort() {
+		return unsortedToSortedIndex;
+	}
+
+	inline openfpm::vector_gpu<aggregate<unsigned int>> &
+	getDomainSortIds() {
+		return indexSorted;
+	}
+
+
+	/*! \brief Set the radius for the getNNIteratorRadius
+	 *
+	 * \param radius
+	 *
+	 */
+	void setRadius(T radius)
+	{
+		// need a temporal copy as NNcalc_rad accepts vector<long int>, not vector<aggregate<long int>> 
+		openfpm::vector<long int> nnc_rad_;
+
+		NNcalc_rad(radius,nnc_rad_,this->getCellBox(),this->getGrid());
+
+		radNeighborCellIndex.resize(nnc_rad_.size(),0);
+
+
+		for (unsigned int i = 0 ; i < nnc_rad_.size() ; i++)
+			radNeighborCellIndex.template get<0>(i) = nnc_rad_.template get<0>(i);
+
+		radNeighborCellIndex.template hostToDevice<0>();
+	}
+
+	/*! \brief construct from a list of particles
+	 *
+	 * \warning vPos is assumed to be already be in device memory
+	 *
+	 * \param vPos Particles list
+	 *
+	 */
+	template<typename vector, typename vector_prp, unsigned int ... prp>
+	void construct(
+		vector & vPos,
+		vector & vPosOut,
+		vector_prp & vPrp,
+		vector_prp & vPrpOut,
+		gpu::ofp_context_t& gpuContext,
+		size_t ghostMarker = 0,
+		size_t start = 0,
+		size_t stop = (size_t)-1,
+		cl_construct_opt opt = cl_construct_opt::Full)
+	{
+		construct_dense<vector,vector_prp,prp...>(vPos,vPosOut,vPrp,vPrpOut,gpuContext,ghostMarker,start,stop,opt);
+	}
+
+	CellList_gpu_ker<dim,T,ids_type,transform_type,false> toKernel()
+	{
+		return CellList_gpu_ker<dim,T,ids_type,transform_type,false>(
+			numPartInCellPrefixSum.toKernel(),
+			sortedToUnsortedIndex.toKernel(),
+			indexSorted.toKernel(),
+			radNeighborCellIndex.toKernel(),
+			unitCellP2,
+			numCellDiv,
+			cellPadDim,
+			this->getTransform(),
+			ghostMarker,
+			this->cellListSpaceBox,
+			this->cellListGrid,
+			this->cellShift
+		);
+};
+
+	/*! \brief Clear the structure
+	 *
+	 *
+	 */
+	void clear()
+	{
+		numPartInCell.clear();
+		cellIndexLocalIndexToPart.clear();
+		numPartInCellPrefixSum.clear();
+		cellIndex_LocalIndex.clear();
+		sortedToUnsortedIndex.clear();
+	}
+
+	/////////////////////////////////////
+
+	//! Ghost marker
+	size_t ghostMarker = 0;
+
+	/*! \brief return the ghost marker
+	 *
+	 * \return ghost marker
+	 *
+	 */
+	inline size_t get_gm()
+	{
+		return ghostMarker;
+	}
+
+	/*! \brief Set the ghost marker
+	 *
+	 * \param ghostMarker marker
+	 *
+	 */
+	inline void set_gm(size_t ghostMarker)
+	{
+		this->ghostMarker = ghostMarker;
+	}
+
+	/////////////////////////////////////
+
+	/*! \brief Set the nDecRefRedec number
+	 *
+	 * \param nDecRefRedec
+	 *
+	 */
+	void set_ndec(size_t nDecRefRedec)
+	{
+		this->nDecRefRedec = nDecRefRedec;
+	}
+
+	/*! \brief Set the nDecRefRedec number
+	 *
+	 * \return nDecRefRedec
+	 *
+	 */
+	size_t get_ndec() const
+	{
+		return nDecRefRedec;
+	}
+
+	/////////////////////////////////////
+
+	/*! \brief Transfer the information computed on gpu to construct the cell-list on gpu
+	 *
+	 */
+	void debug_deviceToHost()
+	{
+		numPartInCell.template deviceToHost<0>();
+		cellIndexLocalIndexToPart.template deviceToHost<0>();
+		numPartInCellPrefixSum.template deviceToHost<0>();
+	}
+
+	/*! \brief Return the numbers of cells contained in this cell-list
+	 *
+	 * \return the number of cells
+	 *
+	 */
+	size_t getNCells()
+	{
+		return numPartInCell.size();
+	}
+
+	/*! \brief Return the numbers of elements in the cell
+	 *
+	 * \return the number of elements in the cell
+	 *
+	 */
+	size_t getNelements(size_t i)
+	{
+		return numPartInCell.template get<0>(i);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	inline auto get(size_t cell, size_t ele) -> decltype(cellIndexLocalIndexToPart.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele))
+	{
+		return cellIndexLocalIndexToPart.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele);
+	}
+
+	/*! \brief Get an element in the cell
+	 *
+	 * \tparam i property to get
+	 *
+	 * \param cell cell id
+	 * \param ele element id
+	 *
+	 * \return The element value
+	 *
+	 */
+	inline auto get(size_t cell, size_t ele) const -> decltype(cellIndexLocalIndexToPart.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele))
+	{
+		return cellIndexLocalIndexToPart.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele);
+	}
+
+	/*! \brief swap the information of the two cell-lists
+	 *
+	 *
+	 *
+	 */
+	void swap(CellList_gpu<dim,T,Memory,transform_type,false> & clg)
+	{
+		((CellDecomposer_sm<dim,T,transform_type> *)this)->swap(clg);
+		numPartInCell.swap(clg.numPartInCell);
+		cellIndexLocalIndexToPart.swap(clg.cellIndexLocalIndexToPart);
+		numPartInCellPrefixSum.swap(clg.numPartInCellPrefixSum);
+		cellIndex_LocalIndex.swap(clg.cellIndex_LocalIndex);
+		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
+		indexSorted.swap(clg.indexSorted);
+		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
+
+		unitCellP2.swap(clg.unitCellP2);
+		numCellDiv.swap(clg.numCellDiv);
+		cellPadDim.swap(clg.cellPadDim);
+
+		size_t g_m_tmp = ghostMarker;
+		ghostMarker = clg.ghostMarker;
+		clg.ghostMarker = g_m_tmp;
+
+		size_t n_dec_tmp = nDecRefRedec;
+		nDecRefRedec = clg.nDecRefRedec;
+		clg.nDecRefRedec = n_dec_tmp;
+	}
+
+	CellList_gpu<dim,T,Memory,transform_type,false> &
+	operator=(const CellList_gpu<dim,T,Memory,transform_type,false> & clg)
+	{
+		*static_cast<CellDecomposer_sm<dim,T,transform_type> *>(this) = *static_cast<const CellDecomposer_sm<dim,T,transform_type> *>(&clg);
+		numPartInCell = clg.numPartInCell;
+		cellIndexLocalIndexToPart = clg.cellIndexLocalIndexToPart;
+		numPartInCellPrefixSum = clg.numPartInCellPrefixSum;
+		cellIndex_LocalIndex = clg.cellIndex_LocalIndex;
+		sortedToUnsortedIndex = clg.sortedToUnsortedIndex;
+		indexSorted = clg.indexSorted;
+		unsortedToSortedIndex = clg.unsortedToSortedIndex;
+
+		unitCellP2 = clg.unitCellP2;
+		numCellDiv = clg.numCellDiv;
+		cellPadDim = clg.cellPadDim;
+		ghostMarker = clg.ghostMarker;
+		nDecRefRedec = clg.nDecRefRedec;
+
+		return *this;
+	}
+
+	CellList_gpu<dim,T,Memory,transform_type> &
+	operator=(CellList_gpu<dim,T,Memory,transform_type> && clg)
+	{
+		static_cast<CellDecomposer_sm<dim,T,transform_type> *>(this)->swap(*static_cast<CellDecomposer_sm<dim,T,transform_type> *>(&clg));
+		numPartInCell.swap(clg.numPartInCell);
+		cellIndexLocalIndexToPart.swap(clg.cellIndexLocalIndexToPart);
+		numPartInCellPrefixSum.swap(clg.numPartInCellPrefixSum);
+		cellIndex_LocalIndex.swap(clg.cellIndex_LocalIndex);
+		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
+		indexSorted.swap(clg.indexSorted);
+		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
+
+		unitCellP2 = clg.unitCellP2;
+		numCellDiv = clg.numCellDiv;
+		cellPadDim = clg.cellPadDim;
+		ghostMarker = clg.ghostMarker;
+		nDecRefRedec = clg.nDecRefRedec;
+
+		return *this;
+	}
+};
+
+
+template<unsigned int dim, typename T, typename Memory, typename transform_type>
+class CellList_gpu<dim,T,Memory,transform_type,true> : public CellDecomposer_sm<dim,T,transform_type>
+{
+public:
+	typedef int ids_type;
+
+private:
+	//! \brief for each cell the particles id in it
+	openfpm::vector_gpu<aggregate<unsigned int>> cellIndexLocalIndexToPart;
+
+	//! \brief contains particle cell indexes
+	openfpm::vector_gpu<aggregate<unsigned int>> cellIndex;
+
+	//! \brief sparse vector to segreduce the
+	openfpm::vector_sparse_gpu<aggregate<unsigned int>> vecSparseCellIndex_PartIndex;
+
+	//! \brief number of neighborhood each cell cell has + offset
+	openfpm::vector_gpu<aggregate<unsigned int>> neighborCellCount;
+
+	//! \brief For each cell the list of the neighborhood cells
+	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> neighborPartIndexFrom_To;
+
+	//! \breif Number of neighbors in every direction
+	int dimNeighbRadius;
+
+	//! \brief Neighborhood cell linear ids (minus middle cell id) for in total (2*dimNeighbRadius+1)**dim cells
+	openfpm::vector_gpu<aggregate<int>> neighborCellOffset;
+
+	//! \brief for each sorted index it show the index in the unordered
+	openfpm::vector_gpu<aggregate<unsigned int>> sortedToUnsortedIndex;
+
+	//! \brief the index of all the domain particles in the sorted vector
+	openfpm::vector_gpu<aggregate<unsigned int>> indexSorted;
+
+	//! \brief for each non sorted index it show the index in the ordered vector
+	openfpm::vector_gpu<aggregate<unsigned int>> unsortedToSortedIndex;
+
+	//! /brief unit cell dimensions
+	openfpm::array<T,dim> unitCellP2;
+
+	//! \brief number of sub-divisions in each direction
+	openfpm::array<ids_type,dim> numCellDiv;
+
+	//! \brief cell padding
+	openfpm::array<ids_type,dim> cellPadDim;
+
+	//! Additional information in general (used to understand if the cell-list)
+	//! has been constructed from an old decomposition
+	size_t nDecRefRedec;
+
+	//! Initialize the structures of the data structure
+	void InitializeStructures(
+		const size_t (& div)[dim],
+		size_t tot_n_cell,
+		size_t pad)
+	{
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			numCellDiv[i] = div[i];
+			unitCellP2[i] = this->getCellBox().getP2().get(i);
+			cellPadDim[i] = pad;
+		}
+
+		dimNeighbRadius = 2;
+		constructNeighborCellOffset(dimNeighbRadius);
+	}
+
+	void constructNeighborCellOffset(unsigned int dimNeighbRadius = 1)
+	{
+		auto & cellListGrid = this->getGrid();
+
+		grid_key_dx<dim> cellPosStart;
+		grid_key_dx<dim> cellPosStop;
+		grid_key_dx<dim> cellPosMiddle;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			cellPosStart.set_d(i,0);
+			cellPosStop.set_d(i,2*dimNeighbRadius);
+			cellPosMiddle.set_d(i,dimNeighbRadius);
+		}
+
+		neighborCellOffset.resize(openfpm::math::pow(2*dimNeighbRadius+1,dim));
+
+		int cellIndexMiddle = cellListGrid.LinId(cellPosMiddle);
+		grid_key_dx_iterator_sub<dim> it(cellListGrid, cellPosStart, cellPosStop);
+		size_t i = 0;
+		while (it.isNext())
+		{
+			neighborCellOffset.template get<0>(i) = (int)cellListGrid.LinId(it.get()) - cellIndexMiddle;
+			++i; ++it;
+		}
+
+		neighborCellOffset.template hostToDevice<0>();
+#if defined(__NVCC__) && defined(USE_LOW_REGISTER_ITERATOR)
+
+		// copy to the constant memory
+		cudaMemcpyToSymbol(cells_striding,neighborCellOffset.template getPointer<0>(),neighborCellOffset.size()*sizeof(int));
+
+#endif
+	}
+
+	/*! \brief This function construct a sparse cell-list
+	 *
+	 *
+	 */
+	template<typename vector, typename vector_prp, unsigned int ... prp>
+	void construct_sparse(
+		vector & vPos,
+		vector & vPosOut,
+		vector_prp & vPrp,
+		vector_prp & vPrpOut,
+		gpu::ofp_context_t& gpuContext,
+		size_t ghostMarker,
+		size_t start,
+		size_t stop,
+		cl_construct_opt opt = cl_construct_opt::Full)
+	{
+#ifdef __NVCC__
+		// if stop if the default set to the number of particles
+		if (stop == (size_t)-1) stop = vPos.size();
+
+		cellIndex.resize(stop - start);
+		cellIndex.template fill<0>(0);
+
+		auto ite_gpu = vPos.getGPUIteratorTo(stop-start);
+
+		if (ite_gpu.wthr.x == 0 || vPos.size() == 0 || stop == 0)
+			return;
+
+		CUDA_LAUNCH((fill_cellIndex<dim,T,ids_type>),ite_gpu,
+			numCellDiv,
+			unitCellP2,
+			cellPadDim,
+			this->getTransform(),
+			vPos.size(),
+			start,
+			vPos.toKernel(),
+			cellIndex.toKernel()
+		);
+
+		cellIndexLocalIndexToPart.resize(stop-start);
+
+		// Here we fill the sparse vector
+		vecSparseCellIndex_PartIndex.clear();
+		vecSparseCellIndex_PartIndex.template setBackground<0>((unsigned int)-1);
+		vecSparseCellIndex_PartIndex.setGPUInsertBuffer(ite_gpu.wthr.x,ite_gpu.thr.x);
+
+		CUDA_LAUNCH((fill_vsCellIndex_PartIndex),ite_gpu,
+			vecSparseCellIndex_PartIndex.toKernel(),
+			cellIndex.toKernel()
+		);
+
+		// flush_vd<sstart_<0>> returns the comulative prefix for cell indexes
+		vecSparseCellIndex_PartIndex.template flush_vd<sstart_<0>>(cellIndexLocalIndexToPart,gpuContext,FLUSH_ON_DEVICE);
+
+		neighborCellCount.resize(vecSparseCellIndex_PartIndex.size()+1);
+		neighborCellCount.template fill<0>(0);
+
+		// for every particle increase the counter for every non-zero neighbor cell
+		auto itgg = vecSparseCellIndex_PartIndex.getGPUIterator();
+		CUDA_LAUNCH((countNeighborCells),itgg,
+			vecSparseCellIndex_PartIndex.toKernel(),
+			neighborCellCount.toKernel(),
+			neighborCellOffset.toKernel()
+		);
+
+		// get total number of non-empty neighboring cells
+		openfpm::scan(
+			(unsigned int *)neighborCellCount.template getDeviceBuffer<0>(),
+			neighborCellCount.size(),
+			(unsigned int *)neighborCellCount.template getDeviceBuffer<0>(),
+			gpuContext
+		);
+
+		neighborCellCount.template deviceToHost<0>(neighborCellCount.size() - 1, neighborCellCount.size() - 1);
+		size_t totalNeighborCellCount = neighborCellCount.template get<0>(neighborCellCount.size()-1);
+
+		neighborPartIndexFrom_To.resize(totalNeighborCellCount);
+		CUDA_LAUNCH((fillNeighborCellList),itgg,
+			vecSparseCellIndex_PartIndex.toKernel(),
+			neighborCellCount.toKernel(),
+			neighborCellOffset.toKernel(),
+			neighborPartIndexFrom_To.toKernel(),
+			cellIndexLocalIndexToPart.size()
+		);
+
+		sortedToUnsortedIndex.resize(stop-start);
+		unsortedToSortedIndex.resize(vPos.size());
+
+		auto ite = vPos.getGPUIteratorTo(stop-start,64);
+
+		// Here we reorder the particles to improve coalescing access
+		CUDA_LAUNCH((reorderParticles),ite,
+			vPrp.toKernel(),
+			vPrpOut.toKernel(),
+			vPos.toKernel(),
+			vPosOut.toKernel(),
+			sortedToUnsortedIndex.toKernel(),
+			unsortedToSortedIndex.toKernel(),
+			cellIndexLocalIndexToPart.toKernel()
+		);
+
+		if (opt == cl_construct_opt::Full)
+			construct_domain_ids(gpuContext,start,stop,ghostMarker);
+	#else
+			std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
+	#endif
+	}
+
+	/*! \brief Construct the ids of the particles domain in the sorted array
+	 *
+	 * \param gpuContext gpu context
+	 *
+	 */
+	void construct_domain_ids(
+		gpu::ofp_context_t& gpuContext,
+		size_t start,
+		size_t stop,
+		size_t ghostMarker)
+	{
+#ifdef __NVCC__
+		//! Sorted domain particles domain or ghost
+		openfpm::vector_gpu<aggregate<unsigned int>> isSortedIndexOrGhost(stop-start+1);
+
+		auto ite = isSortedIndexOrGhost.getGPUIterator();
+
+		CUDA_LAUNCH((mark_domain_particles),ite,
+			sortedToUnsortedIndex.toKernel(),
+			isSortedIndexOrGhost.toKernel(),
+			ghostMarker
+		);
+
+		openfpm::scan(
+			(unsigned int *)isSortedIndexOrGhost.template getDeviceBuffer<0>(),
+			isSortedIndexOrGhost.size(),
+			(unsigned int *)isSortedIndexOrGhost.template getDeviceBuffer<0>(),
+			gpuContext
+		);
+
+		isSortedIndexOrGhost.template deviceToHost<0>(isSortedIndexOrGhost.size()-1,isSortedIndexOrGhost.size()-1);
+		auto totalParticleNoGhostCount = isSortedIndexOrGhost.template get<0>(isSortedIndexOrGhost.size()-1);
+
+		indexSorted.resize(totalParticleNoGhostCount);
+
+		CUDA_LAUNCH((collect_domain_ghost_ids),ite,
+			isSortedIndexOrGhost.toKernel(),
+			indexSorted.toKernel()
+		);
+#endif
+	}
+
+public:
+
+	//! Indicate that this cell list is a gpu type cell-list
+	typedef int yes_is_gpu_celllist;
+
+	// typedefs needed for toKernel_transform
+
+	static const unsigned int dim_ = dim;
+	typedef T stype_;
+	typedef ids_type ids_type_;
+	typedef transform_type transform_type_;
+	typedef boost::mpl::bool_<true> is_sparse_;
+
+	// end of typedefs needed for toKernel_transform
+
+	/*! \brief Copy constructor
+	 *
+	 * \param clg Cell list to copy
+	 *
+	 */
+	CellList_gpu(const CellList_gpu<dim,T,Memory,transform_type> & clg)
+	{
+		this->operator=(clg);
+	}
+
+	/*! \brief Copy constructor from temporal
+	 *
+	 *
+	 *
+	 */
+	CellList_gpu(CellList_gpu<dim,T,Memory,transform_type> && clg)
+	{
+		this->operator=(clg);
+	}
+
+	/*! \brief default constructor
+	 *
+	 *
+	 */
+	CellList_gpu()
+	{}
+
+	CellList_gpu(
+		const Box<dim,T> & box,
+		const size_t (&div)[dim],
+		const size_t pad = 1)
 	{
 		Initialize(box,div,pad);
 	}
@@ -544,7 +954,10 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1)
+	void Initialize(
+		const Box<dim,T> & box,
+		const size_t (&div)[dim],
+		const size_t pad = 1)
 	{
 		SpaceBox<dim,T> sbox(box);
 
@@ -555,13 +968,13 @@ public:
 
 	void setBoxNN(unsigned int n_NN)
 	{
-		cells_nn_test_size = n_NN;
-		construct_cell_nn_test(n_NN);
+		dimNeighbRadius = n_NN;
+		constructNeighborCellOffset(n_NN);
 	}
 
-	void re_setBoxNN()
+	void resetBoxNN()
 	{
-		construct_cell_nn_test(cells_nn_test_size);
+		constructNeighborCellOffset(dimNeighbRadius);
 	}
 
 	/*! Initialize the cell list constructor
@@ -572,105 +985,81 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1)
+	void Initialize(
+		const SpaceBox<dim,T> & box,
+		const size_t (&div)[dim],
+		const size_t pad = 1)
 	{
 		Matrix<dim,T> mat;
-		CellDecomposer_sm<dim,T,transform>::setDimensions(box,div, mat, pad);
+		CellDecomposer_sm<dim,T,transform_type>::setDimensions(box, div, mat, pad);
 
 		// create the array that store the number of particle on each cell and se it to 0
-		InitializeStructures(this->gr_cell.getSize(),this->gr_cell.size(),pad);
+		InitializeStructures(this->cellListGrid.getSize(),this->cellListGrid.size(),pad);
 	}
 
-	vector_cnt_type & getSortToNonSort()
-	{
-		return sorted_to_not_sorted;
+	inline openfpm::vector_gpu<aggregate<unsigned int>> &
+	getSortToNonSort() {
+		return sortedToUnsortedIndex;
 	}
 
-	vector_cnt_type & getNonSortToSort()
-	{
-		return non_sorted_to_sorted;
+	inline openfpm::vector_gpu<aggregate<unsigned int>> &
+	getNonSortToSort() {
+		return unsortedToSortedIndex;
 	}
 
-	vector_cnt_type & getDomainSortIds()
-	{
-		return sorted_domain_particles_ids;
+	inline openfpm::vector_gpu<aggregate<unsigned int>> &
+	getDomainSortIds() {
+		return indexSorted;
 	}
 
 
-	/*! \brief Set the radius for the getNNIteratorRadius
+	/*! \brief getNNIteratorRadius in CellList_gpu_ker.cuh implemented only for dense cell list
 	 *
 	 * \param radius
 	 *
 	 */
 	void setRadius(T radius)
-	{
-		openfpm::vector<long int> nnc_rad_;
-
-		NNcalc_rad(radius,nnc_rad_,this->getCellBox(),this->getGrid());
-
-		nnc_rad.resize(nnc_rad_.size(),0);
-
-		// copy to nnc_rad
-
-		for (unsigned int i = 0 ; i < nnc_rad_.size() ; i++)
-		{nnc_rad.template get<0>(i) = nnc_rad_.template get<0>(i);}
-
-		nnc_rad.template hostToDevice<0>();
-	}
+	{}
 
 	/*! \brief construct from a list of particles
 	 *
-	 * \warning v_pos is assumed to be already be in device memory
+	 * \warning vPos is assumed to be already be in device memory
 	 *
-	 * \param v_pos Particles list
+	 * \param vPos Particles list
 	 *
 	 */
 	template<typename vector, typename vector_prp, unsigned int ... prp>
-	void construct(vector & v_pos,
-				   vector & v_pos_out,
-				   vector_prp & v_prp,
-				   vector_prp & v_prp_out,
-				   gpu::ofp_context_t& gpuContext,
-				   size_t g_m = 0,
-				   size_t start = 0,
-				   size_t stop = (size_t)-1,
-				   cl_construct_opt opt = cl_construct_opt::Full)
+	void construct(
+		vector & vPos,
+		vector & vPosOut,
+		vector_prp & vPrp,
+		vector_prp & vPrpOut,
+		gpu::ofp_context_t& gpuContext,
+		size_t ghostMarker = 0,
+		size_t start = 0,
+		size_t stop = (size_t)-1,
+		cl_construct_opt opt = cl_construct_opt::Full)
 	{
-		// if stop if the default set to the number of particles
-		if (stop == (size_t)-1)
-		{stop = v_pos.size();}
-
-		if (is_sparse == false) {construct_dense<vector,vector_prp,prp...>(v_pos,v_pos_out,v_prp,v_prp_out,gpuContext,g_m,start,stop,opt);}
-		else {construct_sparse<vector,vector_prp,prp...>(v_pos,v_pos_out,v_prp,v_prp_out,gpuContext,g_m,start,stop,opt);}
+		construct_sparse<vector,vector_prp,prp...>(vPos,vPosOut,vPrp,vPrpOut,gpuContext,ghostMarker,start,stop,opt);
 	}
 
-	CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse> toKernel()
+	CellList_gpu_ker<dim,T,ids_type,transform_type,true> toKernel()
 	{
-/*		if (nnc_rad.size() == 0) <----- Cannot call this anymore with openMP
-		{
-			// set the radius equal the cell spacing on direction X
-			// (must be initialized to something to avoid warnings)
-			setRadius(this->getCellBox().getHigh(0));
-		}*/
-
-		return CellList_gpu_ker_selector<dim,T,cnt_type,ids_type,Memory,transform,
-								  vector_cnt_type,openfpm::vector_gpu<aggregate<cnt_type,cnt_type>>,
-								  decltype(cl_sparse),is_sparse>
-		::get(starts,
-				cells_nn,
-				cells_nn_list,
-				cl_sparse,
-				sorted_to_not_sorted,
-				sorted_domain_particles_ids,
-				nnc_rad,
-				spacing_c,
-				div_c,
-				off,
-				this->getTransform(),
-				g_m,
-				this->box_unit,
-				this->gr_cell,
-				this->cell_shift);
+		return CellList_gpu_ker<dim,T,ids_type,transform_type,true>(
+			neighborCellCount.toKernel(),
+			neighborPartIndexFrom_To.toKernel(),
+			vecSparseCellIndex_PartIndex.toKernel(),
+			sortedToUnsortedIndex.toKernel(),
+			indexSorted.toKernel(),
+			unitCellP2,
+			numCellDiv,
+			cellPadDim,
+			this->getTransform(),
+			ghostMarker,
+			this->cellListSpaceBox,
+			this->cellListGrid,
+			this->cellShift
+		);
 	}
 
 	/*! \brief Clear the structure
@@ -679,17 +1068,15 @@ public:
 	 */
 	void clear()
 	{
-		cl_n.clear();
-		cells.clear();
-		starts.clear();
-		part_ids.clear();
-		sorted_to_not_sorted.clear();
+		cellIndexLocalIndexToPart.clear();
+		cellIndex.clear();
+		sortedToUnsortedIndex.clear();
 	}
 
 	/////////////////////////////////////
 
 	//! Ghost marker
-	size_t g_m = 0;
+	size_t ghostMarker = 0;
 
 	/*! \brief return the ghost marker
 	 *
@@ -698,39 +1085,39 @@ public:
 	 */
 	inline size_t get_gm()
 	{
-		return g_m;
+		return ghostMarker;
 	}
 
 	/*! \brief Set the ghost marker
 	 *
-	 * \param g_m marker
+	 * \param ghostMarker marker
 	 *
 	 */
-	inline void set_gm(size_t g_m)
+	inline void set_gm(size_t ghostMarker)
 	{
-		this->g_m = g_m;
+		this->ghostMarker = ghostMarker;
 	}
 
 	/////////////////////////////////////
 
-	/*! \brief Set the n_dec number
+	/*! \brief Set the nDecRefRedec number
 	 *
-	 * \param n_dec
+	 * \param nDecRefRedec
 	 *
 	 */
-	void set_ndec(size_t n_dec)
+	void set_ndec(size_t nDecRefRedec)
 	{
-		this->n_dec = n_dec;
+		this->nDecRefRedec = nDecRefRedec;
 	}
 
-	/*! \brief Set the n_dec number
+	/*! \brief Set the nDecRefRedec number
 	 *
-	 * \return n_dec
+	 * \return nDecRefRedec
 	 *
 	 */
 	size_t get_ndec() const
 	{
-		return n_dec;
+		return nDecRefRedec;
 	}
 
 	/////////////////////////////////////
@@ -740,29 +1127,8 @@ public:
 	 */
 	void debug_deviceToHost()
 	{
-		cl_n.template deviceToHost<0>();
-		cells.template deviceToHost<0>();
-		starts.template deviceToHost<0>();
-	}
-
-	/*! \brief Return the numbers of cells contained in this cell-list
-	 *
-	 * \return the number of cells
-	 *
-	 */
-	size_t getNCells()
-	{
-		return cl_n.size();
-	}
-
-	/*! \brief Return the numbers of elements in the cell
-	 *
-	 * \return the number of elements in the cell
-	 *
-	 */
-	size_t getNelements(size_t i)
-	{
-		return cl_n.template get<0>(i);
+		cellIndexLocalIndexToPart.template deviceToHost<0>();
+		cellIndex.template deviceToHost<0>();
 	}
 
 	/*! \brief Get an element in the cell
@@ -775,9 +1141,9 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) -> decltype(cells.template get<0>(starts.template get<0>(cell)+ele))
+	inline auto get(size_t cell, size_t ele) -> decltype(cellIndexLocalIndexToPart.template get<0>(cellIndex.template get<0>(cell)+ele))
 	{
-		return cells.template get<0>(starts.template get<0>(cell)+ele);
+		return cellIndexLocalIndexToPart.template get<0>(cellIndex.template get<0>(cell)+ele);
 	}
 
 	/*! \brief Get an element in the cell
@@ -790,9 +1156,9 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) const -> decltype(cells.template get<0>(starts.template get<0>(cell)+ele))
+	inline auto get(size_t cell, size_t ele) const -> decltype(cellIndexLocalIndexToPart.template get<0>(cellIndex.template get<0>(cell)+ele))
 	{
-		return cells.template get<0>(starts.template get<0>(cell)+ele);
+		return cellIndexLocalIndexToPart.template get<0>(cellIndex.template get<0>(cell)+ele);
 	}
 
 	/*! \brief swap the information of the two cell-lists
@@ -800,91 +1166,82 @@ public:
 	 *
 	 *
 	 */
-	void swap(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type,is_sparse> & clg)
+	void swap(CellList_gpu<dim,T,Memory,transform_type,true> & clg)
 	{
-		((CellDecomposer_sm<dim,T,transform> *)this)->swap(clg);
-		cl_n.swap(clg.cl_n);
-		cells.swap(clg.cells);
-		starts.swap(clg.starts);
-		part_ids.swap(clg.part_ids);
-		cl_sparse.swap(clg.cl_sparse);
-		cells_nn.swap(clg.cells_nn);
-		cells_nn_list.swap(clg.cells_nn_list);
-		cells_nn_test.swap(clg.cells_nn_test);
-		sorted_to_not_sorted.swap(clg.sorted_to_not_sorted);
-		sorted_domain_particles_dg.swap(clg.sorted_domain_particles_dg);
-		sorted_domain_particles_ids.swap(clg.sorted_domain_particles_ids);
-		non_sorted_to_sorted.swap(clg.non_sorted_to_sorted);
+		((CellDecomposer_sm<dim,T,transform_type> *)this)->swap(clg);
+		cellIndexLocalIndexToPart.swap(clg.cellIndexLocalIndexToPart);
+		cellIndex.swap(clg.cellIndex);
+		vecSparseCellIndex_PartIndex.swap(clg.vecSparseCellIndex_PartIndex);
+		neighborCellCount.swap(clg.neighborCellCount);
+		neighborPartIndexFrom_To.swap(clg.neighborPartIndexFrom_To);
+		neighborCellOffset.swap(clg.neighborCellOffset);
+		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
+		indexSorted.swap(clg.indexSorted);
+		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 
-		spacing_c.swap(clg.spacing_c);
-		div_c.swap(clg.div_c);
-		off.swap(clg.off);
+		unitCellP2.swap(clg.unitCellP2);
+		numCellDiv.swap(clg.numCellDiv);
+		cellPadDim.swap(clg.cellPadDim);
 
-		size_t g_m_tmp = g_m;
-		g_m = clg.g_m;
-		clg.g_m = g_m_tmp;
+		size_t g_m_tmp = ghostMarker;
+		ghostMarker = clg.ghostMarker;
+		clg.ghostMarker = g_m_tmp;
 
-		size_t n_dec_tmp = n_dec;
-		n_dec = clg.n_dec;
-		clg.n_dec = n_dec_tmp;
+		size_t n_dec_tmp = nDecRefRedec;
+		nDecRefRedec = clg.nDecRefRedec;
+		clg.nDecRefRedec = n_dec_tmp;
 
-		int cells_nn_test_size_tmp = cells_nn_test_size;
-		cells_nn_test_size = clg.cells_nn_test_size;
-		clg.cells_nn_test_size = cells_nn_test_size_tmp;
+		int boxNN_tmp = dimNeighbRadius;
+		dimNeighbRadius = clg.dimNeighbRadius;
+		clg.dimNeighbRadius = boxNN_tmp;
 	}
 
-	CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type,is_sparse> &
-	operator=(const CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type,is_sparse> & clg)
+	CellList_gpu<dim,T,Memory,transform_type,true> &
+	operator=(const CellList_gpu<dim,T,Memory,transform_type,true> & clg)
 	{
-		*static_cast<CellDecomposer_sm<dim,T,transform> *>(this) = *static_cast<const CellDecomposer_sm<dim,T,transform> *>(&clg);
-		cl_n = clg.cl_n;
-		cells = clg.cells;
-		starts = clg.starts;
-		part_ids = clg.part_ids;
-		cl_sparse = clg.cl_sparse;
-		cells_nn = clg.cells_nn;
-		cells_nn_list = clg.cells_nn_list;
-		cells_nn_test = clg.cells_nn_test;
-		sorted_to_not_sorted = clg.sorted_to_not_sorted;
-		sorted_domain_particles_dg = clg.sorted_domain_particles_dg;
-		sorted_domain_particles_ids = clg.sorted_domain_particles_ids;
-		non_sorted_to_sorted = clg.non_sorted_to_sorted;
+		*static_cast<CellDecomposer_sm<dim,T,transform_type> *>(this) = *static_cast<const CellDecomposer_sm<dim,T,transform_type> *>(&clg);
+		cellIndexLocalIndexToPart = clg.cellIndexLocalIndexToPart;
+		cellIndex = clg.cellIndex;
+		vecSparseCellIndex_PartIndex = clg.vecSparseCellIndex_PartIndex;
+		neighborCellCount = clg.neighborCellCount;
+		neighborPartIndexFrom_To = clg.neighborPartIndexFrom_To;
+		neighborCellOffset = clg.neighborCellOffset;
+		sortedToUnsortedIndex = clg.sortedToUnsortedIndex;
+		indexSorted = clg.indexSorted;
+		unsortedToSortedIndex = clg.unsortedToSortedIndex;
 
-		spacing_c = clg.spacing_c;
-		div_c = clg.div_c;
-		off = clg.off;
-		g_m = clg.g_m;
-		n_dec = clg.n_dec;
+		unitCellP2 = clg.unitCellP2;
+		numCellDiv = clg.numCellDiv;
+		cellPadDim = clg.cellPadDim;
+		ghostMarker = clg.ghostMarker;
+		nDecRefRedec = clg.nDecRefRedec;
 
-		cells_nn_test_size = clg.cells_nn_test_size;
+		dimNeighbRadius = clg.dimNeighbRadius;
 
 		return *this;
 	}
 
-	CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> &
-	operator=(CellList_gpu<dim,T,Memory,transform,cnt_type,ids_type> && clg)
+	CellList_gpu<dim,T,Memory,transform_type> &
+	operator=(CellList_gpu<dim,T,Memory,transform_type> && clg)
 	{
-		static_cast<CellDecomposer_sm<dim,T,transform> *>(this)->swap(*static_cast<CellDecomposer_sm<dim,T,transform> *>(&clg));
-		cl_n.swap(clg.cl_n);
-		cells.swap(clg.cells);
-		starts.swap(clg.starts);
-		part_ids.swap(clg.part_ids);
-		cl_sparse.swap(clg.cl_sparse);
-		cells_nn.swap(clg.cells_nn);
-		cells_nn_list.swap(clg.cells_nn_list);
-		cells_nn_test.swap(clg.cells_nn_test);
-		sorted_to_not_sorted.swap(clg.sorted_to_not_sorted);
-		sorted_domain_particles_dg.swap(clg.sorted_domain_particles_dg);
-		sorted_domain_particles_ids.swap(clg.sorted_domain_particles_ids);
-		non_sorted_to_sorted.swap(clg.non_sorted_to_sorted);
+		static_cast<CellDecomposer_sm<dim,T,transform_type> *>(this)->swap(*static_cast<CellDecomposer_sm<dim,T,transform_type> *>(&clg));
+		cellIndexLocalIndexToPart.swap(clg.cellIndexLocalIndexToPart);
+		cellIndex.swap(clg.cellIndex);
+		vecSparseCellIndex_PartIndex.swap(clg.vecSparseCellIndex_PartIndex);
+		neighborCellCount.swap(clg.neighborCellCount);
+		neighborPartIndexFrom_To.swap(clg.neighborPartIndexFrom_To);
+		neighborCellOffset.swap(clg.neighborCellOffset);
+		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
+		indexSorted.swap(clg.indexSorted);
+		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 
-		spacing_c = clg.spacing_c;
-		div_c = clg.div_c;
-		off = clg.off;
-		g_m = clg.g_m;
-		n_dec = clg.n_dec;
+		unitCellP2 = clg.unitCellP2;
+		numCellDiv = clg.numCellDiv;
+		cellPadDim = clg.cellPadDim;
+		ghostMarker = clg.ghostMarker;
+		nDecRefRedec = clg.nDecRefRedec;
 
-		cells_nn_test_size = clg.cells_nn_test_size;
+		dimNeighbRadius = clg.dimNeighbRadius;
 
 		return *this;
 	}
@@ -894,12 +1251,11 @@ public:
 template<template <typename> class layout_base, typename T>
 struct toKernel_transform<layout_base,T,4>
 {
-	typedef CellList_gpu_ker<T::dims,
-							 typename T::stype,
-							 typename T::cnt_type_,
-							 typename T::ids_type_,
-							 typename T::transform_,
-							 T::is_sparse_::value> type;
+	typedef CellList_gpu_ker<T::dim_,
+		typename T::stype_,
+		typename T::ids_type_,
+		typename T::transform_type_,
+		T::is_sparse_::value> type;
 };
 
 #endif

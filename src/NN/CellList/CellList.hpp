@@ -243,58 +243,65 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
  * 13,14,15,21,22,23,29,30,31
  *
  * \param r_cut Cutoff-radius
- * \param NNcell vector containing the neighborhood cells ids
+ * \param radNeighborCellIndex vector containing the neighborhood cells ids
  *
  */
 template<unsigned int dim, typename T>
-void NNcalc_rad(T r_cut, openfpm::vector<long int> & NNcell, const Box<dim,T> & cell_box, const grid_sm<dim,void> & gs)
+void NNcalc_rad(
+	T r_cut,
+	openfpm::vector<long int> & radNeighborCellIndex,
+	const Box<dim,T> & unitCellSpaceBox,
+	const grid_sm<dim,void> & cellListGrid)
 {
-	size_t n_cell[dim];
-	size_t n_cell_mid[dim];
+	// 2*(r_cut / unitCellP2_{dim})+1
+	size_t nRadCellDim[dim];
+	size_t middleCellIndex[dim];
 
-	Point<dim,T> spacing = cell_box.getP2();
+	Point<dim,T> unitCellP2 = unitCellSpaceBox.getP2();
 
 	for (size_t i = 0 ; i < dim ; i++)
 	{
-		n_cell[i] = 2*(std::ceil(r_cut / spacing.get(i)))+1;
-		n_cell_mid[i] = n_cell[i] / 2;
+		nRadCellDim[i] = 2*(std::ceil(r_cut / unitCellP2.get(i)))+1;
+		middleCellIndex[i] = nRadCellDim[i] / 2;
 	}
 
-	grid_sm<dim,void> gsc(n_cell);
-	grid_key_dx_iterator<dim> gkdi(gsc);
+	grid_sm<dim,void> radCellGrid(nRadCellDim);
+	grid_key_dx_iterator<dim> radCellGridIt(radCellGrid);
 
-	Box<dim,T> cell_zero;
+	Box<dim,T> middleCell;
 
 	for (unsigned int i = 0 ; i < dim ; i++)
 	{
-		cell_zero.setLow(i,n_cell_mid[i]*spacing.get(i));
-		cell_zero.setHigh(i,(n_cell_mid[i]+1)*spacing.get(i));
+		middleCell.setLow(i,middleCellIndex[i]*unitCellP2.get(i));
+		middleCell.setHigh(i,(middleCellIndex[i]+1)*unitCellP2.get(i));
 	}
 
-	NNcell.clear();
-	while (gkdi.isNext())
+	radNeighborCellIndex.clear();
+	while (radCellGridIt.isNext())
 	{
-		auto key = gkdi.get();
+		auto key = radCellGridIt.get();
 
 		Box<dim,T> cell;
 
 		for (unsigned int i = 0 ; i < dim ; i++)
 		{
-			cell.setLow(i,key.get(i)*spacing.get(i));
-			cell.setHigh(i,(key.get(i)+1)*spacing.get(i));
+			cell.setLow(i,key.get(i)*unitCellP2.get(i));
+			cell.setHigh(i,(key.get(i)+1)*unitCellP2.get(i));
 		}
 
 		// here we check if the cell is in the radius.
-		T min_distance = cell.min_distance(cell_zero);
-		if (min_distance > r_cut)
-		{++gkdi;continue;}
+		if (cell.min_distance(middleCell) > r_cut) {
+			++radCellGridIt; continue;
+		}
 
 		for (size_t i = 0 ; i < dim ; i++)
-		{key.set_d(i,key.get(i) - n_cell_mid[i]);}
+		{
+			key.set_d(i,key.get(i) - middleCellIndex[i]);
+		}
 
-		NNcell.add(gs.LinId(key));
+		radNeighborCellIndex.add(cellListGrid.LinId(key));
 
-		++gkdi;
+		++radCellGridIt;
 	}
 }
 
@@ -521,7 +528,7 @@ public:
 		Mem_type::set_slot(slot);
 
 		// create the array that store the number of particle on each cell and se it to 0
-		InitializeStructures(this->gr_cell.getSize(),this->gr_cell.size());
+		InitializeStructures(this->cellListGrid.getSize(),this->cellListGrid.size());
 
 		from_cd = false;
 	}
@@ -1176,11 +1183,10 @@ public:
 	CellList_cpu_ker<dim,T,typename Mem_type::toKernel_type,transform> toKernel()
 	{
 		typedef typename Mem_type::local_index_type ids_type;
-		typedef typename Mem_type::local_index_type cnt_type;
 
-		openfpm::array<T,dim,cnt_type> spacing_c;
-		openfpm::array<ids_type,dim,cnt_type> div_c;
-		openfpm::array<ids_type,dim,cnt_type> off;
+		openfpm::array<T,dim> spacing_c;
+		openfpm::array<ids_type,dim> div_c;
+		openfpm::array<ids_type,dim> off;
 
 		for (size_t i = 0 ; i < dim ; i++)
 		{
@@ -1193,9 +1199,9 @@ public:
 																			  spacing_c,
 																			  div_c,
 																			  off,
-																			  this->gr_cell,
-																			  this->cell_shift,
-																			  this->box_unit,
+																			  this->cellListGrid,
+																			  this->cellShift,
+																			  this->unitCellSpaceBox,
 				                      	  	  	  	  	  	  	  	  	  	  CellDecomposer_sm<dim,T,transform>::getTransform());
 
 		return cl;
@@ -1226,7 +1232,7 @@ public:
 
 /////////////////////////////////////
 
-	void re_setBoxNN()
+	void resetBoxNN()
 	{}
 
 /////////////////////////////////////
