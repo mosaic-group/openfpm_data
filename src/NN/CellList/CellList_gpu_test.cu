@@ -1294,7 +1294,7 @@ struct execute_cl_test<2>
 };
 
 template<unsigned int dim, typename T, typename CellS, int impl>
-void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& div)[dim],int box_nn = 1)
+void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& div)[dim],int box_nn = 2)
 {
 	// Origin
 	Point<dim,T> org({0.0,0.0,0.0});
@@ -1495,7 +1495,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 }
 
 template<unsigned int dim, typename T, typename CellS, int impl>
-void Test_cell_gpu_force_split(SpaceBox<dim,T> & box, size_t npart, const size_t (& div)[dim],int box_nn = 1)
+void Test_cell_gpu_force_split(SpaceBox<dim,T> & box, size_t npart, const size_t (& div)[dim],int box_nn = 2)
 {
 	// Origin
 	Point<dim,T> org({0.0,0.0,0.0});

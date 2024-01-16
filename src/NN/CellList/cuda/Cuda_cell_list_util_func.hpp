@@ -11,6 +11,7 @@
 #include <boost/integer/integer_mask.hpp>
 #include <Vector/map_vector_sparse.hpp>
 
+
 template<unsigned int dim, typename ids_type, typename transform_type>
 struct cid_
 {
@@ -497,10 +498,10 @@ __global__ void countNeighborCells(
 
 	for (int i = 0 ; i < neighborCellOffset.size() ; i++)
 	{
-		index_type cell_n = cell + neighborCellOffset.template get<0>(i);
-		auto sid = vecSparseCellIndex_PartIndex.get_sparse(cell_n);
+		index_type neighborCellIndex = cell + neighborCellOffset.template get<0>(i);
 
-		index_type start = vecSparseCellIndex_PartIndex.template get<0>(cell_n);
+		auto sid = vecSparseCellIndex_PartIndex.get_sparse(neighborCellIndex);
+		index_type start = vecSparseCellIndex_PartIndex.template get<0>(neighborCellIndex);
 
 		if (start != (index_type)-1)
 		{
@@ -528,7 +529,8 @@ __global__ void fillNeighborCellList(
 
 	for (int i = 0, cnt = 0; i < neighborCellOffset.size(); i++)
 	{
-		auto sid = vecSparseCellIndex_PartIndex.get_sparse(cell + neighborCellOffset.template get<0>(i));
+		index_type neighborCellIndex = cell + neighborCellOffset.template get<0>(i);
+		auto sid = vecSparseCellIndex_PartIndex.get_sparse(neighborCellIndex);
 
 		if (sid.id != vecSparseCellIndex_PartIndex.size())
 		{

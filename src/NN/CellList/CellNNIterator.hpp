@@ -27,10 +27,9 @@
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
  * \tparam NNc_size neighborhood size
- * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,int NNc_size, unsigned int impl>
+template<unsigned int dim, typename Cell,int NNc_size>
 class CellNNIterator
 {
 protected:
@@ -158,11 +157,10 @@ public:
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
  * \tparam NNc_size neighborhood size
- * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell, typename vector_pos_type,int NNc_size, unsigned int impl>
-class CellNNIteratorSym : public CellNNIterator<dim,Cell,NNc_size,impl>
+template<unsigned int dim, typename Cell, typename vector_pos_type,int NNc_size>
+class CellNNIteratorSym : public CellNNIterator<dim,Cell,NNc_size>
 {
 	//! index of the particle p
 	size_t p;
@@ -192,11 +190,11 @@ next:
 				this->start_id++;
 			}
 
-			CellNNIterator<dim,Cell,NNc_size,impl>::selectValid();
+			CellNNIterator<dim,Cell,NNc_size>::selectValid();
 		}
 		else
 		{
-			CellNNIterator<dim,Cell,NNc_size,impl>::selectValid();
+			CellNNIterator<dim,Cell,NNc_size>::selectValid();
 		}
 	}
 
@@ -213,7 +211,7 @@ public:
 	 *
 	 */
 	__attribute__((always_inline)) inline CellNNIteratorSym(size_t cell, size_t p, const NNc_array<dim,NNc_size> &NNc, Cell & cl, const vector_pos_type & v)
-	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),p(p),v(v)
+	:CellNNIterator<dim,Cell,NNc_size>(cell,NNc,cl),p(p),v(v)
 	{
 		selectValid();
 	}
@@ -224,7 +222,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	__attribute__((always_inline)) inline CellNNIteratorSym<dim,Cell,vector_pos_type,NNc_size,impl> & operator++()
+	__attribute__((always_inline)) inline CellNNIteratorSym<dim,Cell,vector_pos_type,NNc_size> & operator++()
 	{
 		this->start_id++;
 
@@ -247,11 +245,10 @@ public:
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
  * \tparam NNc_size neighborhood size
- * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell, typename vector_pos_type , int NNc_size, unsigned int impl>
-class CellNNIteratorSymMP : public CellNNIterator<dim,Cell,NNc_size,impl>
+template<unsigned int dim, typename Cell, typename vector_pos_type , int NNc_size>
+class CellNNIteratorSymMP : public CellNNIterator<dim,Cell,NNc_size>
 {
 	//! index of the particle p
 	size_t p;
@@ -284,11 +281,11 @@ next:
 				this->start_id++;
 			}
 
-			CellNNIterator<dim,Cell,NNc_size,impl>::selectValid();
+			CellNNIterator<dim,Cell,NNc_size>::selectValid();
 		}
 		else
 		{
-			CellNNIterator<dim,Cell,NNc_size,impl>::selectValid();
+			CellNNIterator<dim,Cell,NNc_size>::selectValid();
 		}
 	}
 
@@ -310,7 +307,7 @@ public:
 							   Cell & cl,
 							   const vector_pos_type & v_p1,
 							   const vector_pos_type & v_p2)
-	:CellNNIterator<dim,Cell,NNc_size,impl>(cell,NNc,cl),p(p),v_p1(v_p1),v_p2(v_p2)
+	:CellNNIterator<dim,Cell,NNc_size>(cell,NNc,cl),p(p),v_p1(v_p1),v_p2(v_p2)
 	{
 		selectValid();
 	}
@@ -321,7 +318,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	__attribute__((always_inline)) inline CellNNIteratorSymMP<dim,Cell,vector_pos_type,NNc_size,impl> & operator++()
+	__attribute__((always_inline)) inline CellNNIteratorSymMP<dim,Cell,vector_pos_type,NNc_size> & operator++()
 	{
 		this->start_id++;
 

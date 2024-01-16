@@ -8,7 +8,6 @@
 #ifndef CELLLIST_HPP_
 #define CELLLIST_HPP_
 
-#include "CellList_def.hpp"
 #include "Vector/map_vector.hpp"
 #include "CellDecomposer.hpp"
 #include "Space/SpaceBox.hpp"
@@ -435,7 +434,7 @@ public:
 	//! Type of internal memory structure
 	typedef Mem_type Mem_type_type;
 
-	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,RUNTIME,NO_CHECK> SymNNIterator;
+	typedef CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,RUNTIME> SymNNIterator;
 
 	//! Object type that the structure store
 	typedef typename Mem_type::local_index_type value_type;
@@ -941,9 +940,9 @@ public:
 	 * \return An iterator across the neighhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>,impl> getNNIteratorRadius(size_t cell)
+	inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>> getNNIteratorRadius(size_t cell)
 	{
-		CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>,impl> cln(cell,nnc_rad,*this);
+		CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform>> cln(cell,nnc_rad,*this);
 		return cln;
 	}
 
@@ -967,10 +966,9 @@ public:
 	 * \return An iterator across the neighhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK>
-	__attribute__((always_inline)) inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL,impl> getNNIterator(size_t cell)
+	__attribute__((always_inline)) inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL> getNNIterator(size_t cell)
 	{
-		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL,impl> cln(cell,NNc_full,*this);
+		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL> cln(cell,NNc_full,*this);
 		return cln;
 
 	}
@@ -985,15 +983,14 @@ public:
 	 * \return An iterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK>
-	__attribute__((always_inline)) inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,impl> getNNIteratorRadius(size_t cell, T r_cut)
+	__attribute__((always_inline)) inline CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>> getNNIteratorRadius(size_t cell, T r_cut)
 	{
 		openfpm::vector<long int> & NNc = rcache[r_cut];
 
 		if (NNc.size() == 0)
 		{NNcalc_rad(r_cut,NNc,this->getCellBox(),this->getGrid());}
 
-		CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,impl> cln(cell,NNc,*this);
+		CellNNIteratorRadius<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>> cln(cell,NNc,*this);
 
 		return cln;
 	}
@@ -1020,8 +1017,7 @@ public:
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl>
-	__attribute__((always_inline)) inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)SYM,impl>
+	__attribute__((always_inline)) inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)SYM>
 	getNNIteratorSym(size_t cell, size_t p, const vector_pos_type & v)
 	{
 #ifdef SE_CLASS1
@@ -1029,7 +1025,7 @@ public:
 		{std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;}
 #endif
 
-		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,SYM,impl> cln(cell,p,NNc_sym,*this,v);
+		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,SYM> cln(cell,p,NNc_sym,*this,v);
 		return cln;
 	}
 
@@ -1055,8 +1051,8 @@ public:
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl, typename vector_pos_type2>
-	__attribute__((always_inline)) inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,(unsigned int)SYM,impl>
+	template<typename vector_pos_type2>
+	__attribute__((always_inline)) inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,(unsigned int)SYM>
 	getNNIteratorSymMP(size_t cell, size_t p, const vector_pos_type2 & v_p1, const vector_pos_type2 & v_p2)
 	{
 #ifdef SE_CLASS1
@@ -1064,7 +1060,7 @@ public:
 			std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;
 #endif
 
-		CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,SYM,impl> cln(cell,p,NNc_sym,*this,v_p1,v_p2);
+		CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,SYM> cln(cell,p,NNc_sym,*this,v_p1,v_p2);
 		return cln;
 	}
 
