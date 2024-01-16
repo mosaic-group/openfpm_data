@@ -298,8 +298,8 @@ namespace SparseGridGpuKernels
 	        }
 		}
 
-	    template <typename SparseGridT, typename CtxT>
-	    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+	    template <typename SparseGridT>
+	    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::context_t& gpuContext)
 	    {
 	        // No flush
 	    }
@@ -372,8 +372,8 @@ namespace SparseGridGpuKernels
 	        }
 		}
 
-	    template <typename SparseGridT, typename CtxT>
-	    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+	    template <typename SparseGridT>
+	    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::context_t& gpuContext)
 	    {
 	        // No flush
 	    }
@@ -443,8 +443,8 @@ namespace SparseGridGpuKernels
 	        }
 		}
 
-	    template <typename SparseGridT, typename CtxT>
-	    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+	    template <typename SparseGridT>
+	    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::context_t& gpuContext)
 	    {
 	        // No flush
 	    }
@@ -523,8 +523,8 @@ namespace SparseGridGpuKernels
 	        }
 		}
 
-	    template <typename SparseGridT, typename CtxT>
-	    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+	    template <typename SparseGridT>
+	    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::context_t& gpuContext)
 	    {
 	        // No flush
 	    }
@@ -594,8 +594,8 @@ namespace SparseGridGpuKernels
 	        }
 		}
 
-	    template <typename SparseGridT, typename CtxT>
-	    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+	    template <typename SparseGridT>
+	    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::context_t& gpuContext)
 	    {
 	        // No flush
 	    }
@@ -656,8 +656,8 @@ namespace SparseGridGpuKernels
 	        sparseGrid.template storeBlock<p_dst>(dataBlockStore, enlargedBlock);
 		}
 
-	    template <typename SparseGridT, typename CtxT>
-	    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+	    template <typename SparseGridT>
+	    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::context_t& gpuContext)
 	    {
 	        // No flush
 	    }

@@ -25,8 +25,7 @@ BOOST_AUTO_TEST_CASE( multi_array_ref_openfpm_use )
 		}
 	}
 
-	openfpm::general_storage_order<2> go = openfpm::ofp_storage_order();
-	openfpm::multi_array_ref_openfpm<float,2,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>>> ar((float *)test_mem,10,go);
+	openfpm::multi_array_ref_openfpm<float,2,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>>> ar((float *)test_mem,10);
 
 	BOOST_REQUIRE_EQUAL(ar[0][0],0);
 	BOOST_REQUIRE_EQUAL(ar[0][1],1);
@@ -53,8 +52,7 @@ BOOST_AUTO_TEST_CASE( multi_array_ref_openfpm_use )
 		}
 	}
 
-	openfpm::general_storage_order<3> go = openfpm::ofp_storage_order();
-	openfpm::multi_array_ref_openfpm<float,3,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>>> ar2((float *)test_mem,10,go);
+	openfpm::multi_array_ref_openfpm<float,3,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>>> ar2((float *)test_mem,10);
 
 	BOOST_REQUIRE_EQUAL(ar2[0][0][0],0);
 	BOOST_REQUIRE_EQUAL(ar2[0][0][1],1);
@@ -89,8 +87,7 @@ BOOST_AUTO_TEST_CASE( multi_array_ref_openfpm_use )
 		}
 	}
 
-	openfpm::general_storage_order<4> go = openfpm::ofp_storage_order();
-	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar2((float *)test_mem,10,go);
+	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar2((float *)test_mem,10);
 
 	BOOST_REQUIRE_EQUAL(ar2[0][0][0][0],0);
 	BOOST_REQUIRE_EQUAL(ar2[0][0][0][1],1);
@@ -138,11 +135,10 @@ BOOST_AUTO_TEST_CASE( multi_array_ref_openfpm_copy )
 		}
 	}
 
-	openfpm::general_storage_order<4> go = openfpm::ofp_storage_order();
-	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar2((float *)test_mem,10,go);
+	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar2((float *)test_mem,10);
 
 	float test_mem2[10][3][7][2];
-	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar3((float *)test_mem2,10,go);
+	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar3((float *)test_mem2,10);
 
 	// Copy and check
 
@@ -193,10 +189,9 @@ BOOST_AUTO_TEST_CASE( multi_array_ref_openfpm_bind_ref )
 		}
 	}
 
-	openfpm::general_storage_order<4> go = openfpm::ofp_storage_order();
-	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar2((float *)test_mem,10,go);
+	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar2((float *)test_mem,10);
 
-	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar3((float *)NULL,10,go);
+	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar3((float *)NULL,10);
 	ar3.bind_ref(ar2);
 
 	// Copy and check
@@ -246,8 +241,7 @@ BOOST_AUTO_TEST_CASE( multi_array_ref_openfpm_swap )
 		}
 	}
 
-	openfpm::general_storage_order<4> go = openfpm::ofp_storage_order();
-	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar2((float *)test_mem,10,go);
+	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar2((float *)test_mem,10);
 
 	float test_mem2[10][3][7][2];
 	float * p_test2 = &test_mem2[0][0][0][0];
@@ -266,7 +260,7 @@ BOOST_AUTO_TEST_CASE( multi_array_ref_openfpm_swap )
 		}
 	}
 
-	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar3((float *)test_mem2,10,go);
+	openfpm::multi_array_ref_openfpm<float,4,boost::mpl::vector<boost::mpl::int_<-1>,boost::mpl::int_<3>,boost::mpl::int_<7>,boost::mpl::int_<2>>> ar3((float *)test_mem2,10);
 	ar3.swap(ar2);
 
 	// Copy and check

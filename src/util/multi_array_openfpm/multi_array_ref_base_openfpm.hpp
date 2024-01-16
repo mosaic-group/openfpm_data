@@ -15,6 +15,8 @@
 #include <boost/mpl/at.hpp>
 #include <boost/mpl/size.hpp>
 #include <boost/mpl/pop_front.hpp>
+#include <boost/mpl/for_each.hpp>
+#include <boost/mpl/range_c.hpp>
 #include <boost/type.hpp>
 
 namespace openfpm
@@ -27,7 +29,7 @@ namespace openfpm
 //template<typename T, std::size_t NumDims, typename Allocator = std::allocator<T> >
 //class multi_array_openfpm;
 
-template <typename T, int NumDims, typename vector>
+template <typename T, int NumDims, typename vector, typename StorageOrder=typename ofp_storage_order<NumDims>::value>
 class multi_array_ref_openfpm;
 
 // This is a public interface for use by end users!
@@ -267,74 +269,26 @@ protected:
 	__device__ __host__ multi_array_impl_base_openfpm() { }
 	__device__ __host__ ~multi_array_impl_base_openfpm() { }
 
+  template <typename StorageOrder, typename Stride_list, typename Extent_type>
+  void compute_strides(Stride_list& stride_list, Extent_type& extent)
+  {
+	  // invariant: stride = the stride for dimension n
+	  index stride = 1;
 
-	  template <typename Stride_list, typename Extent_type>
-	  void compute_strides(Stride_list& stride_list, Extent_type& extent,
-			               const general_storage_order<NumDims>& storage)
-	  {
-		  // invariant: stride = the stride for dimension n
-		  index stride = 1;
-		  for (size_type n = 0; n != NumDims; ++n)
-		  {
-			  // The stride for this dimension is the product of the
-			  // lengths of the ranks minor to it.
-			  stride_list[storage.ordering(n)] = stride;
+	  boost::mpl::for_each<boost::mpl::range_c<int,0,NumDims>>([&](auto i) {
+			constexpr int ordering = boost::mpl::at<StorageOrder,boost::mpl::int_<i> >::type::value;
+			constexpr int extent_i = boost::mpl::int_<boost::mpl::at<vector,boost::mpl::int_<ordering>>::type::value>::value;
 
-			  if (storage.ordering(n) == 0)
-			  {stride *= extent;}
-			  else
-			  {
-				  switch(storage.ordering(n))
-				  {
-				  case 1:
-					  stride *= at_impl<vector,1>::type::value;
-					  break;
-				  case 2:
-					  stride *= at_impl<vector,2>::type::value;
-					  break;
-				  case 3:
-					  stride *= at_impl<vector,3>::type::value;
-					  break;
-				  case 4:
-					  stride *= at_impl<vector,4>::type::value;
-					  break;
-				  case 5:
-					  stride *= at_impl<vector,5>::type::value;
-					  break;
-				  case 6:
-					  stride *= at_impl<vector,6>::type::value;
-					  break;
-				  case 7:
-					  stride *= at_impl<vector,7>::type::value;
-					  break;
-				  case 8:
-					  stride *= at_impl<vector,8>::type::value;
-					  break;
-				  case 9:
-					  stride *= at_impl<vector,9>::type::value;
-					  break;
-				  case 10:
-					  stride *= at_impl<vector,10>::type::value;
-					  break;
-				  case 11:
-					  stride *= at_impl<vector,11>::type::value;
-					  break;
-				  case 12:
-					  stride *= at_impl<vector,12>::type::value;
-					  break;
-				  case 13:
-					  stride *= at_impl<vector,13>::type::value;
-					  break;
-				  case 14:
-					  stride *= at_impl<vector,14>::type::value;
-					  break;
-				  case 15:
-					  stride *= at_impl<vector,15>::type::value;
-					  break;
-				  }
-			  }
-		  }
-	  }
+		  // The stride for this dimension is the product of the
+		  // lengths of the ranks minor to it.
+		  stride_list[ordering] = stride;
+
+		  if (ordering == 0)
+			  stride *= extent;
+		  else
+			  stride *= extent_i;
+    });
+  }
 
 	// Used by operator() in our array classes
 	template <typename Reference, typename IndexList, typename TPtr>

@@ -262,9 +262,9 @@ public:
 
 	template<typename grid_sub_it_type,
 			 typename context_type,
-			 unsigned int ... prp> static void unpack(ExtPreAlloc<Mem> & mem, grid_sub_it_type & sub_it, T & obj, Unpack_stat & ps, context_type & context, rem_copy_opt opt)
+			 unsigned int ... prp> static void unpack(ExtPreAlloc<Mem> & mem, grid_sub_it_type & sub_it, T & obj, Unpack_stat & ps, context_type& gpuContext, rem_copy_opt opt)
 	{
-		obj.template unpack<prp...>(mem, sub_it, ps, context, opt);
+		obj.template unpack<prp...>(mem, sub_it, ps, gpuContext, opt);
 	}
 
 	template<typename grid_sub_it_type,
@@ -276,10 +276,10 @@ public:
 																  header_type & header, 
 																  int ih, 
 																  Unpack_stat & ps, 
-																  context_type & context, 
+																  context_type& gpuContext,
 																  rem_copy_opt opt)
 	{
-		obj.template unpack_with_headers<prp...>(mem, sub_it, header, ih, ps, context, opt);
+		obj.template unpack_with_headers<prp...>(mem, sub_it, header, ih, ps, gpuContext, opt);
 	}
 };
 

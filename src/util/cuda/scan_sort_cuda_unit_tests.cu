@@ -35,8 +35,8 @@ BOOST_AUTO_TEST_CASE( test_scan_cub_wrapper )
 
 	input.template hostToDevice<0>();
 
-	gpu::ofp_context_t context;
-	openfpm::scan((unsigned int *)input.template getDeviceBuffer<0>(),input.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
+	gpu::ofp_context_t gpuContext;
+	openfpm::scan((unsigned int *)input.template getDeviceBuffer<0>(),input.size(),(unsigned int *)output.template getDeviceBuffer<0>(),gpuContext);
 
     output.template deviceToHost<0>();
 
@@ -76,11 +76,11 @@ BOOST_AUTO_TEST_CASE( test_sort_cub_wrapper )
 	input.template hostToDevice<0>();
 	input_id.template hostToDevice<0>();
 
-	gpu::ofp_context_t context;
+	gpu::ofp_context_t gpuContext;
 
 	openfpm::sort((unsigned int *)input.template getDeviceBuffer<0>(),
 				  (unsigned int *)input_id.template getDeviceBuffer<0>(),
-			      input.size(),gpu::template less_t<unsigned int>(),context);
+			      input.size(),gpu::template less_t<unsigned int>(),gpuContext);
 
 	input.template deviceToHost<0>();
 	input_id.template deviceToHost<0>();
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE( test_sort_cub_wrapper )
 
 	openfpm::sort((unsigned int *)input.template getDeviceBuffer<0>(),
 				  (unsigned int *)input_id.template getDeviceBuffer<0>(),
-			      input.size(),gpu::template greater_t<unsigned int>(),context);
+			      input.size(),gpu::template greater_t<unsigned int>(),gpuContext);
 
 	input.template deviceToHost<0>();
 	input_id.template deviceToHost<0>();
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE( test_seg_reduce_wrapper )
 {
 	std::cout << "Test gpu segmented reduce" << "\n";
 
-	gpu::ofp_context_t context;
+	gpu::ofp_context_t gpuContext;
 
 	int count = 130;
 
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE( test_seg_reduce_wrapper )
 	openfpm::segreduce((int *)vgpu.template getDeviceBuffer<0>(), vgpu.size(),
 					(int *)segment_offset.template getDeviceBuffer<0>(), segment_offset.size()-1,
 					(int *)output.template getDeviceBuffer<0>(),
-					gpu::plus_t<int>(), init, context);
+					gpu::plus_t<int>(), init, gpuContext);
 
 
 	output.template deviceToHost<0>();
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE( test_seg_reduce_wrapper )
 
 	BOOST_REQUIRE_EQUAL(match,true);
 
-	std::cout << "End test modern gpu test reduce" << "\n";
+	std::cout << "End test gpu seg reduce test" << "\n";
 
 	// Test the cell list
 }

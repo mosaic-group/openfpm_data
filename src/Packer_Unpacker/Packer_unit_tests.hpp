@@ -268,8 +268,11 @@ BOOST_AUTO_TEST_CASE ( packer_unpacker_test )
 
 	grid_key_dx_iterator_sub<3> sub2(g_test.getGrid(),{1,2,3},{5,6,7});
 
-	int ctx = 0;
-	Unpacker<grid_cpu<3,Point_test<float>>,HeapMemory>::unpack<decltype(sub2),int,pt::x,pt::v>(mem,sub2,g_test,ps,ctx,rem_copy_opt::NONE_OPT);
+
+	// the context in not used in SparseGrid
+	// kept for interface compatibility with SparseGridGpu
+	int gpuContext;
+	Unpacker<grid_cpu<3,Point_test<float>>,HeapMemory>::unpack<decltype(sub2),int,pt::x,pt::v>(mem,sub2,g_test,ps,gpuContext,rem_copy_opt::NONE_OPT);
 
 	// Check the unpacked grid
 	sub2.reset();

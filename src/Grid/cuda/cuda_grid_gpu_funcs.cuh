@@ -94,26 +94,28 @@ __global__ void copy_ndim_grid_device(grid_type src, grid_type dst)
 #endif
 
 
-template<bool inte_or_lin, typename base_grid, unsigned int dim, typename T>
+template<bool inte_or_lin, typename base_grid, unsigned int dim, typename T, typename S>
 struct grid_toKernelImpl
 {
 	template<typename grid_type> static base_grid toKernel(grid_type & gc)
 	{
 		/*grid_gpu_ker<dim,T,memory_traits_lin,typename grid_type::linearizer_type>*/base_grid g(gc.getGrid());
+		auto &grid_layout = g.get_data_();
 
-		g.get_data_().disable_manage_memory();
-		g.get_data_().mem = gc.get_internal_data_().mem;
+		grid_layout.disable_manage_memory();
+		grid_layout.mem = gc.get_internal_data_().mem;
 		// Increment the reference of mem
-		//g.get_data_().mem->incRef();
-		g.get_data_().mem_r.bind_ref(gc.get_internal_data_().mem_r);
-		g.get_data_().switchToDevicePtr();
+		//grid_layout.mem->incRef();
+		grid_layout.mem_r.bind_ref(gc.get_internal_data_().mem_r);
+		if (grid_layout.mem)
+		{grid_layout.mem_r.set_pointer(((S*)grid_layout.mem)->getDevicePointer());}
 
 		return g;
 	}
 };
 
-template<typename base_grid, unsigned int dim, typename T>
-struct grid_toKernelImpl<true,base_grid,dim,T>
+template<typename base_grid, unsigned int dim, typename T, typename S>
+struct grid_toKernelImpl<true,base_grid,dim,T,S>
 {
 	template<typename grid_type> static base_grid toKernel(grid_type & gc)
 	{

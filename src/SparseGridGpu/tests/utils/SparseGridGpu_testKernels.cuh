@@ -72,8 +72,8 @@ struct BoundaryStencilSetXRescaled
         }
     }
 
-    template <typename SparseGridT, typename CtxT>
-    static inline void __host__ flush(SparseGridT & sparseGrid, CtxT & ctx)
+    template <typename SparseGridT>
+    static inline void __host__ flush(SparseGridT & sparseGrid, gpu::context_t& gpuContext)
     {
         // No flush
     }

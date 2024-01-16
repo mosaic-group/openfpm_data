@@ -322,11 +322,11 @@ private:
 	 */
 	void initCl(CellListImpl & cli, vector_pos_type & pos, size_t g_m, size_t opt)
 	{
-		gpu::ofp_context_t context(gpu::gpu_context_opt::dummy);
+		gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::dummy);
 		if (opt & VL_SYMMETRIC || opt & VL_CRS_SYMMETRIC)
-		{populate_cell_list(pos,cli,context,g_m,CL_SYMMETRIC,cl_construct_opt::Full);}
+		{populate_cell_list(pos,cli,gpuContext,g_m,CL_SYMMETRIC,cl_construct_opt::Full);}
 		else
-		{populate_cell_list(pos,cli,context,g_m,CL_NON_SYMMETRIC,cl_construct_opt::Full);}
+		{populate_cell_list(pos,cli,gpuContext,g_m,CL_NON_SYMMETRIC,cl_construct_opt::Full);}
 	}
 
 	/*! \brief Create the Verlet list from a given cell-list

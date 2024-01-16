@@ -33,7 +33,7 @@
              typename segments_it, typename output_it, typename op_t, typename type_t>
     void segreduce(input_it input, int count, segments_it segments,
                     int num_segments, output_it output, op_t op, type_t init,
-                    gpu::ofp_context_t & context)
+                    gpu::ofp_context_t& gpuContext)
      {
  #ifdef CUDA_ON_CPU
  
@@ -71,7 +71,7 @@
             hipcub::DeviceSegmentedReduce::Reduce(NULL, temp_storage_bytes, input, output,
                 num_segments, segments, segments + 1, op, init);
 
-            auto & temporal = context.getTemporalCUB();
+            auto & temporal = gpuContext.getTemporalCUB();
             temporal.resize(temp_storage_bytes);
 
             hipcub::DeviceSegmentedReduce::Reduce(temporal.getDeviceBuffer<0>(), temp_storage_bytes, input, output,
@@ -84,7 +84,7 @@
             cub::DeviceSegmentedReduce::Reduce(NULL, temp_storage_bytes, input, output,
                 num_segments, segments, segments + 1, op, init);
 
-            auto & temporal = context.getTemporalCUB();
+            auto & temporal = gpuContext.getTemporalCUB();
             temporal.resize(temp_storage_bytes);
 
             cub::DeviceSegmentedReduce::Reduce(temporal.template getDeviceBuffer<0>(), temp_storage_bytes, input, output,

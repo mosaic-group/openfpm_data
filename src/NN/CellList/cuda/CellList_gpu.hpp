@@ -233,11 +233,11 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	 *
 	 */
 	template<typename vector, typename vector_prp, unsigned int ... prp>
-	void construct_sparse(vector & pl,
-  	   	   	 	 	 	  vector & pl_out,
-  	   	   	 	 	 	  vector_prp & pl_prp,
-  	   	   	 	 	 	  vector_prp & pl_prp_out,
-						  gpu::ofp_context_t & gpuContext,
+	void construct_sparse(vector & v_pos,
+  	   	   	 	 	 	  vector & v_pos_out,
+  	   	   	 	 	 	  vector_prp & v_prp,
+  	   	   	 	 	 	  vector_prp & v_prp_out,
+						  gpu::ofp_context_t& gpuContext,
   	   	   	 	 	 	  size_t g_m,
  			   	   	   	  size_t start,
  			   	   	   	  size_t stop,
@@ -250,7 +250,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		// Than we construct the ids
 
-		auto ite_gpu = pl.getGPUIteratorTo(stop-start);
+		auto ite_gpu = v_pos.getGPUIteratorTo(stop-start);
 
 		if (ite_gpu.wthr.x == 0)
 		{
@@ -261,9 +261,9 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																		spacing_c,
 																		off,
 																		this->getTransform(),
-																		pl.size(),
+																		v_pos.size(),
 																		start,
-																		pl.toKernel(),
+																		v_pos.toKernel(),
 																		starts.toKernel(),
 																		part_ids.toKernel());
 
@@ -296,20 +296,20 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		CUDA_LAUNCH((fill_nn_cells),itgg,cl_sparse.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel(),cells_nn_list.toKernel(),cells.size());
 
 		sorted_to_not_sorted.resize(stop-start);
-		non_sorted_to_sorted.resize(pl.size());
+		non_sorted_to_sorted.resize(v_pos.size());
 
-		auto ite = pl.getGPUIteratorTo(stop-start,64);
+		auto ite = v_pos.getGPUIteratorTo(stop-start,64);
 
 		// Here we reorder the particles to improve coalescing access
-		CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
-				      decltype(pl.toKernel()),
+		CUDA_LAUNCH((reorder_parts<decltype(v_prp.toKernel()),
+				      decltype(v_pos.toKernel()),
 				      decltype(sorted_to_not_sorted.toKernel()),
 					  decltype(cells.toKernel()),
 				      cnt_type,shift_ph<0,cnt_type>>),ite,sorted_to_not_sorted.size(),
-				                                                           pl_prp.toKernel(),
-				                                                           pl_prp_out.toKernel(),
-				                                                           pl.toKernel(),
-				                                                           pl_out.toKernel(),
+				                                                           v_prp.toKernel(),
+				                                                           v_prp_out.toKernel(),
+				                                                           v_pos.toKernel(),
+				                                                           v_pos_out.toKernel(),
 				                                                           sorted_to_not_sorted.toKernel(),
 				                                                           non_sorted_to_sorted.toKernel(),
 				                                                           cells.toKernel());
@@ -331,7 +331,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	 * \param gpuContext gpu context
 	 *
 	 */
-	void construct_domain_ids(gpu::ofp_context_t & gpuContext, size_t start, size_t stop, size_t g_m)
+	void construct_domain_ids(gpu::ofp_context_t& gpuContext, size_t start, size_t stop, size_t g_m)
 	{
 #ifdef __NVCC__
 		sorted_domain_particles_dg.resize(stop-start+1);
@@ -357,11 +357,11 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 	 *
 	 */
 	template<typename vector, typename vector_prp, unsigned int ... prp>
-	void construct_dense(vector & pl,
-			   	   	   	 vector & pl_out,
-			   	   	   	 vector_prp & pl_prp,
-			   	   	   	 vector_prp & pl_prp_out,
-						 gpu::ofp_context_t & gpuContext,
+	void construct_dense(vector & v_pos,
+			   	   	   	 vector & v_pos_out,
+			   	   	   	 vector_prp & v_prp,
+			   	   	   	 vector_prp & v_prp_out,
+						 gpu::ofp_context_t& gpuContext,
 			   	   	   	 size_t g_m,
 			   	   	   	 size_t start,
 			   	   	   	 size_t stop,
@@ -371,14 +371,14 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 		// Than we construct the ids
 
-		auto ite_gpu = pl.getGPUIteratorTo(stop-start-1);
+		auto ite_gpu = v_pos.getGPUIteratorTo(stop-start-1);
 
 		cl_n.resize(this->gr_cell.size()+1);
 		cl_n.template fill<0>(0);
 
 		part_ids.resize(stop - start);
 
-		if (ite_gpu.wthr.x == 0 || pl.size() == 0 || stop == 0)
+		if (ite_gpu.wthr.x == 0 || v_pos.size() == 0 || stop == 0)
 		{
 			// no particles
 			starts.resize(cl_n.size());
@@ -392,7 +392,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 																		this->getTransform(),
 																		stop,
 																		start,
-																		pl.toKernel(),
+																		v_pos.toKernel(),
 																		cl_n.toKernel(),
 																		part_ids.toKernel());
 
@@ -414,7 +414,7 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
                 // sort
 
-                gpu::mergesort(static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()),pl.size(),gpu::less_t<cnt_type>(),gpuContext);
+                gpu::mergesort(static_cast<cnt_type *>(part_ids.template getDeviceBuffer<0>()),static_cast<cnt_type *>(cells.template getDeviceBuffer<0>()),v_pos.size(),gpu::less_t<cnt_type>(),gpuContext);
 
 #else
 
@@ -431,22 +431,22 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 
 
 		sorted_to_not_sorted.resize(stop-start);
-		non_sorted_to_sorted.resize(pl.size());
+		non_sorted_to_sorted.resize(v_pos.size());
 
-		auto ite = pl.getGPUIteratorTo(stop-start,64);
+		auto ite = v_pos.getGPUIteratorTo(stop-start,64);
 
 		if (sizeof...(prp) == 0)
 		{
 			// Here we reorder the particles to improve coalescing access
-			CUDA_LAUNCH((reorder_parts<decltype(pl_prp.toKernel()),
-						  decltype(pl.toKernel()),
+			CUDA_LAUNCH((reorder_parts<decltype(v_prp.toKernel()),
+						  decltype(v_pos.toKernel()),
 						  decltype(sorted_to_not_sorted.toKernel()),
 						  decltype(cells.toKernel()),
 						  cnt_type,shift_ph<0,cnt_type>>),ite,sorted_to_not_sorted.size(),
-																			   pl_prp.toKernel(),
-																			   pl_prp_out.toKernel(),
-																			   pl.toKernel(),
-																			   pl_out.toKernel(),
+																			   v_prp.toKernel(),
+																			   v_prp_out.toKernel(),
+																			   v_pos.toKernel(),
+																			   v_pos_out.toKernel(),
 																			   sorted_to_not_sorted.toKernel(),
 																			   non_sorted_to_sorted.toKernel(),
 																			   cells.toKernel());
@@ -454,15 +454,15 @@ class CellList_gpu : public CellDecomposer_sm<dim,T,transform>
 		else
 		{
 			// Here we reorder the particles to improve coalescing access
-			CUDA_LAUNCH((reorder_parts_wprp<decltype(pl_prp.toKernel()),
-						  decltype(pl.toKernel()),
+			CUDA_LAUNCH((reorder_parts_wprp<decltype(v_prp.toKernel()),
+						  decltype(v_pos.toKernel()),
 						  decltype(sorted_to_not_sorted.toKernel()),
 						  decltype(cells.toKernel()),
 						  cnt_type,shift_ph<0,cnt_type>,prp...>),ite,sorted_to_not_sorted.size(),
-																			   pl_prp.toKernel(),
-																			   pl_prp_out.toKernel(),
-																			   pl.toKernel(),
-																			   pl_out.toKernel(),
+																			   v_prp.toKernel(),
+																			   v_prp_out.toKernel(),
+																			   v_pos.toKernel(),
+																			   v_pos_out.toKernel(),
 																			   sorted_to_not_sorted.toKernel(),
 																			   non_sorted_to_sorted.toKernel(),
 																			   cells.toKernel());
@@ -620,17 +620,17 @@ public:
 
 	/*! \brief construct from a list of particles
 	 *
-	 * \warning pl is assumed to be already be in device memory
+	 * \warning v_pos is assumed to be already be in device memory
 	 *
-	 * \param pl Particles list
+	 * \param v_pos Particles list
 	 *
 	 */
 	template<typename vector, typename vector_prp, unsigned int ... prp>
-	void construct(vector & pl,
-				   vector & pl_out,
-				   vector_prp & pl_prp,
-				   vector_prp & pl_prp_out,
-				   gpu::ofp_context_t & gpuContext,
+	void construct(vector & v_pos,
+				   vector & v_pos_out,
+				   vector_prp & v_prp,
+				   vector_prp & v_prp_out,
+				   gpu::ofp_context_t& gpuContext,
 				   size_t g_m = 0,
 				   size_t start = 0,
 				   size_t stop = (size_t)-1,
@@ -638,10 +638,10 @@ public:
 	{
 		// if stop if the default set to the number of particles
 		if (stop == (size_t)-1)
-		{stop = pl.size();}
+		{stop = v_pos.size();}
 
-		if (is_sparse == false) {construct_dense<vector,vector_prp,prp...>(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,start,stop,opt);}
-		else {construct_sparse<vector,vector_prp,prp...>(pl,pl_out,pl_prp,pl_prp_out,gpuContext,g_m,start,stop,opt);}
+		if (is_sparse == false) {construct_dense<vector,vector_prp,prp...>(v_pos,v_pos_out,v_prp,v_prp_out,gpuContext,g_m,start,stop,opt);}
+		else {construct_sparse<vector,vector_prp,prp...>(v_pos,v_pos_out,v_prp,v_prp_out,gpuContext,g_m,start,stop,opt);}
 	}
 
 	CellList_gpu_ker<dim,T,cnt_type,ids_type,transform,is_sparse> toKernel()

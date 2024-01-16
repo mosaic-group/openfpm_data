@@ -55,12 +55,15 @@ struct copy_switch_memory_c_no_cpy
 	template<typename T>
 	inline void operator()(T& t)
 	{
-		boost::fusion::at_c<T::value>(dst).disable_manage_memory();
+		auto &grid_layout = boost::fusion::at_c<T::value>(dst);
 
-		boost::fusion::at_c<T::value>(dst).mem = boost::fusion::at_c<T::value>(src).mem;
-
-		boost::fusion::at_c<T::value>(dst).mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
-		boost::fusion::at_c<T::value>(dst).switchToDevicePtr();
+		grid_layout.disable_manage_memory();
+		grid_layout.mem = boost::fusion::at_c<T::value>(src).mem;
+		grid_layout.mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
+#ifdef CUDA_GPU
+		if (grid_layout.mem)
+		{grid_layout.mem_r.set_pointer(((CudaMemory*)grid_layout.mem)->getDevicePointer());}
+#endif
 	}
 };
 
@@ -80,11 +83,16 @@ struct grid_gpu_ker_constructor_impl<false,T>
 {
 	template<typename ggk_type> static inline void construct(const ggk_type & cpy,ggk_type & this_)
 	{
-		this_.get_data_().disable_manage_memory();
-		this_.get_data_().mem = cpy.get_data_().mem;
+		auto &grid_layout = this_.get_data_();
 
-		this_.get_data_().mem_r.bind_ref(cpy.get_data_().mem_r);
-		this_.get_data_().switchToDevicePtr();
+		grid_layout.disable_manage_memory();
+		grid_layout.mem = cpy.get_data_().mem;
+		grid_layout.mem_r.bind_ref(cpy.get_data_().mem_r);
+
+#ifdef CUDA_GPU
+		if (grid_layout.mem)
+		{grid_layout.mem_r.set_pointer(((CudaMemory*)grid_layout.mem)->getDevicePointer());}
+#endif
 	}
 };
 

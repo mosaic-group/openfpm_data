@@ -968,7 +968,7 @@ public:
 				header_type & headers,
 				int ih,
 				Unpack_stat & ps,
-				context_type &context,
+				context_type& gpuContext,
 				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
 	{}
 
@@ -1429,11 +1429,11 @@ public:
 	 * \in this case it does nothing
 	 *
 	 * \param req output size
-	 * \param context gpu contect
+	 * \param gpuContext gpu context
 	 *
 	 */
 	template<int ... prp, typename context_type> inline
-	void packCalculate(size_t & req, const context_type & context)
+	void packCalculate(size_t & req, const context_type& gpuContext)
 	{}
 
 	/*! \brief Insert an allocation request
@@ -1758,11 +1758,11 @@ public:
 	 *
 	 * \note this function exist to respect the interface to work as distributed
 	 *
-	 * \param ctx context
+	 * \param gpuContext gpu context
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeAddUnpackFinalize(const context_type & ctx, int opt)
+	void removeAddUnpackFinalize(const context_type& gpuContext, int opt)
 	{}
 
 
@@ -1770,11 +1770,11 @@ public:
 	 *
 	 * \note this function exist to respect the interface to work as distributed
 	 *
-	 * \param ctx context
+	 * \param gpuContext gpu context
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeCopyToFinalize(const context_type & ctx, int opt)
+	void removeCopyToFinalize(const context_type& gpuContext, int opt)
 	{}
 
     /*! \brief This function check if keep geometry is possible for this grid
@@ -2164,11 +2164,11 @@ public:
 	 * \param obj object where to unpack
 	 *
 	 */
-	template<unsigned int ... prp, typename S2,typename context_type>
+	template<unsigned int ... prp, typename S2, typename context_type>
 	void unpack(ExtPreAlloc<S2> & mem,
 				grid_key_sparse_dx_iterator_sub<dims,chunking::size::value> & sub_it,
 				Unpack_stat & ps,
-				context_type & context,
+				context_type& gpuContext,
 				rem_copy_opt opt)
 	{
 		short unsigned int mask_it[chunking::size::value];
@@ -2264,8 +2264,11 @@ public:
 
 		auto sub_it = this->getIterator(start,stop);
 
-		int ctx;
-		unpack<prp...>(mem,sub_it,ps,ctx,rem_copy_opt::NONE_OPT);
+		// the context in not used in SparseGrid
+		// kept for interface compatibility with SparseGridGpu
+		int gpuContext;
+
+		unpack<prp...>(mem,sub_it,ps,gpuContext,rem_copy_opt::NONE_OPT);
 	}
 
 	/*! \brief unpack the sub-grid object applying an operation

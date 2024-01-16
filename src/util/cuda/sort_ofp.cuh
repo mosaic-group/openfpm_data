@@ -261,7 +261,7 @@ namespace openfpm
 	template<typename key_t, typename val_t,
 	  typename comp_t>
 	void sort(key_t* keys_input, val_t* vals_input, int count,
-	  comp_t comp, gpu::ofp_context_t& context)
+	  comp_t comp, gpu::ofp_context_t& gpuContext)
 	{
 #ifdef CUDA_ON_CPU
 
@@ -275,10 +275,10 @@ namespace openfpm
 		void *d_temp_storage = NULL;
 		size_t temp_storage_bytes = 0;
 
-		auto & temporal2 = context.getTemporalCUB2();
+		auto & temporal2 = gpuContext.getTemporalCUB2();
 		temporal2.resize(sizeof(key_t)*count);
 
-		auto & temporal3 = context.getTemporalCUB3();
+		auto & temporal3 = gpuContext.getTemporalCUB3();
 		temporal3.resize(sizeof(val_t)*count);
 
 		if (std::is_same<gpu::template less_t<key_t>,comp_t>::value == true)
@@ -291,7 +291,7 @@ namespace openfpm
 											(val_t *)temporal3.template getDeviceBuffer<0>(),
 											count);
 
-			auto & temporal = context.getTemporalCUB();
+			auto & temporal = gpuContext.getTemporalCUB();
 			temporal.resize(temp_storage_bytes);
 
 			d_temp_storage = temporal.template getDeviceBuffer<0>();
@@ -315,7 +315,7 @@ namespace openfpm
 											(val_t *)temporal3.template getDeviceBuffer<0>(),
 											count);
 
-			auto & temporal = context.getTemporalCUB();
+			auto & temporal = gpuContext.getTemporalCUB();
 			temporal.resize(temp_storage_bytes);
 
 			d_temp_storage = temporal.template getDeviceBuffer<0>();
@@ -338,10 +338,10 @@ namespace openfpm
 		void *d_temp_storage = NULL;
 		size_t temp_storage_bytes = 0;
 
-		auto & temporal2 = context.getTemporalCUB2();
+		auto & temporal2 = gpuContext.getTemporalCUB2();
 		temporal2.resize(sizeof(key_t)*count);
 
-		auto & temporal3 = context.getTemporalCUB3();
+		auto & temporal3 = gpuContext.getTemporalCUB3();
 		temporal3.resize(sizeof(val_t)*count);
 
 		if (std::is_same<gpu::template less_t<key_t>,comp_t>::value == true)
@@ -354,7 +354,7 @@ namespace openfpm
 											(val_t *)temporal3.template getDeviceBuffer<0>(),
 											count);
 
-			auto & temporal = context.getTemporalCUB();
+			auto & temporal = gpuContext.getTemporalCUB();
 			temporal.resize(temp_storage_bytes);
 
 			d_temp_storage = temporal.template getDeviceBuffer<0>();
@@ -378,7 +378,7 @@ namespace openfpm
 											(val_t *)temporal3.template getDeviceBuffer<0>(),
 											count);
 
-			auto & temporal = context.getTemporalCUB();
+			auto & temporal = gpuContext.getTemporalCUB();
 			temporal.resize(temp_storage_bytes);
 
 			d_temp_storage = temporal.template getDeviceBuffer<0>();
