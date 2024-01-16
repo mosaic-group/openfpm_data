@@ -48,9 +48,9 @@ struct NNType
 						   Point<dim,T> & xp,
 						   size_t p,
 						   CellListImpl & cl,
-						   T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
+						   T r_cut) -> decltype(cl.template getNNIterator(0))
 	{
-		return cl.template getNNIterator<NO_CHECK>(cl.getCell(xp));
+		return cl.template getNNIterator(cl.getCell(xp));
 	}
 
 	/*! \brief Add particle in the list of the domain particles
@@ -95,9 +95,9 @@ struct NNType<dim,T,CellListImpl,PartIt,WITH_RADIUS,local_index>
 						   Point<dim,T> & xp,
 						   size_t p,
 						   CellListImpl & cl,
-						   T r_cut) -> decltype(cl.template getNNIteratorRadius<NO_CHECK>(0,0.0))
+						   T r_cut) -> decltype(cl.template getNNIteratorRadius(0,0.0))
 	{
-		return cl.template getNNIteratorRadius<NO_CHECK>(cl.getCell(xp),r_cut);
+		return cl.template getNNIteratorRadius(cl.getCell(xp),r_cut);
 	}
 
 	/*! \brief Add particle in the list of the domain particles
@@ -142,9 +142,9 @@ struct NNType<dim,T,CellListImpl,PartIt,VL_SYMMETRIC,local_index>
 						   Point<dim,T> & xp,
 						   size_t p,
 						   CellListImpl & cl,
-						   T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,vector_pos_type()))
+						   T r_cut) -> decltype(cl.template getNNIteratorSym(0,0,vector_pos_type()))
 	{
-		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),p,v);
+		return cl.template getNNIteratorSym(cl.getCell(xp),p,v);
 	}
 
 	/*! \brief Add particle in the list of the domain particles
@@ -345,15 +345,15 @@ private:
 	{
 		if (opt == VL_CRS_SYMMETRIC)
 		{
-			create_<CellNNIteratorSym<dim,CellListImpl,vector_pos_type,RUNTIME,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<CellNNIteratorSym<dim,CellListImpl,vector_pos_type,RUNTIME>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
 		}
 		else if (opt == VL_SYMMETRIC)
 		{
-			create_<decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,pos)),VL_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<decltype(cl.template getNNIteratorSym(0,0,pos)),VL_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
 		}
 		else
 		{
-			create_<decltype(cl.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<decltype(cl.template getNNIterator(0)),VL_NON_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
 		}
 	}
 
@@ -435,7 +435,7 @@ private:
 			Point<dim,T> p = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			auto NN = cl.template getNNIteratorRadius<NO_CHECK>(cl.getCell(p),r_cut);
+			auto NN = cl.template getNNIteratorRadius(cl.getCell(p),r_cut);
 			while (NN.isNext())
 			{
 				auto nnp = NN.get();
@@ -673,7 +673,7 @@ public:
 			openfpm::vector<subsub_lin<dim>> anom_c;
 			openfpm::vector<size_t> dom_c;
 
-			create_<decltype(cli.template getNNIteratorRadius<NO_CHECK>(0,0.0)),WITH_RADIUS>(pos,pos2,dom_c,anom_c,r_cut,g_m,cli,VL_NON_SYMMETRIC);
+			create_<decltype(cli.template getNNIteratorRadius(0,0.0)),WITH_RADIUS>(pos,pos2,dom_c,anom_c,r_cut,g_m,cli,VL_NON_SYMMETRIC);
 		}
 	}
 
@@ -857,7 +857,6 @@ public:
 	 * \return an interator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK>
 	inline VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl>>
 	getNNIterator(size_t part_id)
 	{

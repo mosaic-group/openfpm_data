@@ -1,188 +1,81 @@
-/*
- * CellList_gpu_ker.cuh
- *
- *  Created on: Jul 30, 2018
- *      Author: i-bird
- */
-
 #ifndef CELLLIST_GPU_KER_CUH_
 #define CELLLIST_GPU_KER_CUH_
 
-#include "NN/CellList/CellList_def.hpp"
 #include "NN/CellList/cuda/CellDecomposer_gpu_ker.cuh"
 
-// #ifdef USE_LOW_REGISTER_ITERATOR
 
-// #ifdef __NVCC__
-// __constant__ int cells_striding[126];
-// #endif
-
-// pr_int=openfpm::math::pow(2*radius_int+1,dim)
-// template<unsigned int dim, int radius_int, unsigned int pr_int, typename ids_type>
-// struct NN_gpu_int_base_lr_impl
-// {
-// 	unsigned int ca_pnt;
-// 	unsigned int ca_lin;
-// 	unsigned int c_id;
-
-// 	__device__ inline void init(const grid_key_dx<dim,ids_type> & cellPosition, const openfpm::array<ids_type,dim> & numCellDim)
-// 	{
-// #ifdef __NVCC__
-// 		ca_pnt = 0;
-
-// 		ca_lin = cid_<dim,ids_type,int>::get_cid(numCellDim,cellPosition);
-// 		c_id = ca_lin + cells_striding[ca_pnt];
-// #endif
-// 	}
-
-// 	__device__ inline void nextCell(const openfpm::array<ids_type,dim> & numCellDim)
-// 	{
-// #ifdef __NVCC__
-// 		++ca_pnt;
-
-// 		c_id = ca_lin + cells_striding[ca_pnt];
-// #endif
-// 	}
-
-// 	__device__ inline bool isNextCell()
-// 	{
-// 		return ca_pnt < pr_int;
-// 	}
-// };
-
-// #endif
-
-template<unsigned int dim, int radius_int, typename ids_type>
-struct NN_gpu_int_base_hr_impl
-{
-	grid_key_dx<dim,ids_type> cellPosAct;
-	grid_key_dx<dim,ids_type> cellPosStart;
-	grid_key_dx<dim,ids_type> cellPosStop;
-
-	unsigned int cellIndexAct;
-
-	__device__ __host__ inline void init(
-		const grid_key_dx<dim,ids_type> & cellPosition,
-		const openfpm::array<ids_type,dim> & numCellDim)
-	{
-		for (unsigned int i = 0 ; i < dim ; i++)
-		{
-			cellPosStart.set_d(i,cellPosition.get(i) - radius_int);
-			cellPosStop.set_d(i,cellPosition.get(i) + radius_int);
-			cellPosAct.set_d(i,cellPosition.get(i) - radius_int);
-		}
-
-		cellIndexAct = cid_<dim,ids_type,int>::get_cid(numCellDim,cellPosStart);
-	}
-
-	__device__ __host__ inline void nextCell(const openfpm::array<ids_type,dim> & numCellDim)
-	{
-		cellPosAct.set_d(0,cellPosAct.get(0)+1);
-
-		//! check the overflow of all the index with exception of the last dimensionality
-
-		for (int i = 0 ; i < dim-1 ; i++)
-		{
-			unsigned int id = cellPosAct.get(i);
-			if ((int)id > cellPosStop.get(i))
-			{
-				// ! overflow, increment the next index
-
-				cellPosAct.set_d(i,cellPosStart.get(i));
-				id = cellPosAct.get(i+1);
-				cellPosAct.set_d(i+1,id+1);
-			}
-			else break;
-		}
-
-		cellIndexAct = cid_<dim,ids_type,int>::get_cid(numCellDim,cellPosAct);
-	}
-
-	__device__ __host__ inline bool isNextCell()
-	{
-		return cellPosAct.get(dim-1) <= cellPosStop.get(dim-1);
-	}
-};
-
-// #ifdef USE_LOW_REGISTER_ITERATOR
-
-// template<unsigned int dim, int radius_int, unsigned int pr_int, typename ids_type>
-// struct NN_gpu_int_base: public NN_gpu_int_base_hr_impl<dim,radius_int,pr_int,ids_type>
-// {};
-
-// template<int radius_int, unsigned int pr_int, typename ids_type>
-// struct NN_gpu_int_base<2,radius_int,pr_int,ids_type>: public NN_gpu_int_base_lr_impl<2,radius_int,pr_int,ids_type>
-// {};
-
-// template<int radius_int, unsigned int pr_int, typename ids_type>
-// struct NN_gpu_int_base<3,radius_int,pr_int,ids_type>: public NN_gpu_int_base_lr_impl<3,radius_int,pr_int,ids_type>
-// {};
-
-// #else
-
-template<unsigned int dim, int radius_int, typename ids_type>
-struct NN_gpu_int_base: public NN_gpu_int_base_hr_impl<dim,radius_int,ids_type>
-{};
-
-// #endif
-
-template<unsigned int dim, typename ids_type, unsigned int radius_int, bool is_sparse>
-class NN_gpu_it: public NN_gpu_int_base<dim,radius_int,ids_type>
+template<unsigned int dim, typename ids_type>
+class NN_gpu_it_box
 {
 	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & numPartInCellPrefixSum;
 	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex;
-	const openfpm::array<ids_type,dim> & numCellDim;
-	const openfpm::array<ids_type,dim> & cellPadDim;
+	// const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & boxNeighborCellOffset;
+	const int* __restrict__ boxNeighborCellOffset;
 
+
+	unsigned int boxNeighborCellOffset_i;
+	unsigned int cellPositionIndex;
 	unsigned int neighborPartIndexStart;
 	unsigned int neighborPartIndexStop;
+	unsigned int neighborCellIndexAct;
+	unsigned int boxNeighborCellOffsetSize;
 
-	inline __device__ __host__ void SelectValid()
+	inline __device__ void SelectValid()
 	{
 		while (neighborPartIndexStart == neighborPartIndexStop && isNext())
 		{
-			this->nextCell(numCellDim);
+			this->nextCell();
 
-			if (isNext() == false) {break;}
+			if (isNext() == false) break;
 
-			neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(this->cellIndexAct);
-			neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(this->cellIndexAct+1);
+			// exclude out-of-domain cells
+			// if (cellPositionIndex+this->neighborCellIndexAct >= 0 && cellPositionIndex+this->neighborCellIndexAct+1 < numPartInCellPrefixSum.size())
+			// {
+			neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
+			neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
+			// }
+			// else this->nextCell();
 		}
 	}
 
-
 public:
-
-	inline __device__ __host__ NN_gpu_it(
+	inline __device__ NN_gpu_it_box(
 		const grid_key_dx<dim,ids_type> & cellPosition,
 		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & numPartInCellPrefixSum,
 		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex,
-		const openfpm::array<ids_type,dim> & numCellDim,
-		const openfpm::array<ids_type,dim> & cellPadDim)
+		// const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & boxNeighborCellOffset,
+		const int* __restrict__ boxNeighborCellOffset,
+		unsigned int boxNeighborCellOffsetSize,
+		const openfpm::array<ids_type,dim> & numCellDim)
 	: numPartInCellPrefixSum(numPartInCellPrefixSum),
 	sortedToUnsortedIndex(sortedToUnsortedIndex),
-	numCellDim(numCellDim),
-	cellPadDim(cellPadDim)
+	boxNeighborCellOffset(boxNeighborCellOffset),
+	boxNeighborCellOffsetSize(boxNeighborCellOffsetSize),
+	cellPositionIndex(cid_<dim,ids_type,int>::get_cid(numCellDim,cellPosition)),
+	boxNeighborCellOffset_i(0),
+#if defined(__NVCC__)
+	neighborCellIndexAct(__ldg(boxNeighborCellOffset+boxNeighborCellOffset_i))
+#else
+	neighborCellIndexAct(boxNeighborCellOffset[boxNeighborCellOffset_i])
+#endif
 	{
-		this->init(cellPosition,numCellDim);
-
-		neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(this->cellIndexAct);
-		neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(this->cellIndexAct+1);
+		neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
+		neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
 
 		SelectValid();
 	}
 
-	inline __device__ __host__ unsigned int get_sort()
+	inline __device__ unsigned int get_sort()
 	{
 		return neighborPartIndexStart;
 	}
 
-	inline __device__ __host__ unsigned int get()
+	inline __device__ unsigned int get()
 	{
 		return sortedToUnsortedIndex.template get<0>(neighborPartIndexStart);
 	}
 
-	inline __device__ __host__ NN_gpu_it<dim,ids_type,radius_int,is_sparse> & operator++()
+	inline __device__ NN_gpu_it_box<dim,ids_type> & operator++()
 	{
 		++neighborPartIndexStart; SelectValid();
 
@@ -196,175 +89,120 @@ public:
 
 	inline __device__ unsigned int get_cid()
 	{
-		return this->cellIndexAct;
+		return cellPositionIndex+this->neighborCellIndexAct;
 	}
 
-	inline __device__ __host__ bool isNext()
+	inline __device__ bool isNext()
 	{
-		return this->isNextCell();
+		return boxNeighborCellOffset_i < boxNeighborCellOffsetSize;
 	}
-};
 
-template<unsigned int dim, typename ids_type, unsigned int radius_int>
-class NN_gpu_it<dim,ids_type,radius_int,true>
-{
-	unsigned int neighborPartIndexStart;
-	unsigned int neighborPartIndexStop;
-	unsigned int neighborCellIndexStart;
-	unsigned int neighborCellIndexStop;
-
-	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex;
-	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & neighborCellCountPrefixSum;
-	const openfpm::vector_gpu_ker<aggregate<unsigned int,unsigned int>,memory_traits_inte> & neighborPartIndexStart_To;
-
-	__device__ __host__ void SelectValid()
+	__device__ inline void nextCell()
 	{
-		while ((neighborPartIndexStart == neighborPartIndexStop) && isNext())
-		{
-			++neighborCellIndexStart;
+		++boxNeighborCellOffset_i;
 
-			if (neighborCellIndexStart < neighborCellIndexStop)
-			{
-				neighborPartIndexStart = neighborPartIndexStart_To.template get<0>(neighborCellIndexStart);
-				neighborPartIndexStop = neighborPartIndexStart_To.template get<1>(neighborCellIndexStart);
-			}
-		}
+		#if defined(__NVCC__)
+			neighborCellIndexAct = __ldg(boxNeighborCellOffset+boxNeighborCellOffset_i);
+		#else
+			neighborCellIndexAct = boxNeighborCellOffset[boxNeighborCellOffset_i];
+		#endif
 	}
 
-public:
-
-	__device__ NN_gpu_it(
-		unsigned int cellIndex,
-		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & neighborCellCountPrefixSum,
-		const openfpm::vector_gpu_ker<aggregate<unsigned int,unsigned int>,memory_traits_inte> & neighborPartIndexStart_To,
-		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex)
-	: sortedToUnsortedIndex(sortedToUnsortedIndex),
-	neighborCellCountPrefixSum(neighborCellCountPrefixSum),
-	neighborPartIndexStart_To(neighborPartIndexStart_To)
-	{
-		if (cellIndex == (unsigned int)-1)
-		{
-			neighborCellIndexStop = neighborCellIndexStart;
-			return;
-		}
-
-		neighborCellIndexStart = neighborCellCountPrefixSum.template get<0>(cellIndex);
-		neighborCellIndexStop = neighborCellCountPrefixSum.template get<0>(cellIndex + 1);
-
-		neighborPartIndexStart = neighborPartIndexStart_To.template get<0>(neighborCellIndexStart);
-		neighborPartIndexStop = neighborPartIndexStart_To.template get<1>(neighborCellIndexStart);
-
-		SelectValid();
-	}
-
-	__device__ unsigned int get_sort()
-	{
-		return neighborPartIndexStart;
-	}
-
-	__device__ unsigned int get()
-	{
-		return sortedToUnsortedIndex.template get<0>(neighborPartIndexStart);
-	}
-
-	__device__ __host__ NN_gpu_it<dim,ids_type,radius_int,true> & operator++()
-	{
-		++neighborPartIndexStart; SelectValid();
-
-		return *this;
-	}
-
-	inline __device__ __host__ bool isNext()
-	{
-		return neighborCellIndexStart < neighborCellIndexStop;
-	}
 };
 
 
 template<unsigned int dim, typename ids_type>
 class NN_gpu_it_radius
 {
-	unsigned int cellIndexAct;
-	unsigned int radNeighborCellIndex_i;
-	unsigned int neighborPartIndexStart;
-	unsigned int neighborCellIndex;
-
-	const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & radNeighborCellIndex;
-	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & neighborCellCountPrefixSum;
+	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & numPartInCellPrefixSum;
 	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex;
-	const openfpm::array<ids_type,dim> & numCellDim;
-	const openfpm::array<ids_type,dim> & cellPadDim;
+	const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & rcutNeighborCellOffset;
 
-	__device__ __host__ inline void SelectValid()
+	unsigned int rcutNeighborCellOffset_i;
+	unsigned int cellPositionIndex;
+	unsigned int neighborPartIndexStart;
+	unsigned int neighborPartIndexStop;
+	unsigned int neighborCellIndexAct;
+
+	inline __device__ void SelectValid()
 	{
-		// here it's not neighborCellCountPrefixSum.template get<0>(cellIndexAct + radNeighborCellIndex.template get<0>(radNeighborCellIndex_i)+1)
-		// as we check whether all the particles in cell neighborCellIndex were iterated, until the next cell neighborCellIndex+1
-		while (isNext() && neighborPartIndexStart == neighborCellCountPrefixSum.template get<0>(neighborCellIndex+1))
+		while (neighborPartIndexStart == neighborPartIndexStop && isNext())
 		{
-			radNeighborCellIndex_i++;
+			this->nextCell();
 
-			if (radNeighborCellIndex_i >= radNeighborCellIndex.size())
-				break;
+			if (isNext() == false) {break;}
 
-			neighborCellIndex = cellIndexAct + radNeighborCellIndex.template get<0>(radNeighborCellIndex_i);
-			neighborPartIndexStart = neighborCellCountPrefixSum.template get<0>(neighborCellIndex);
+			// exclude out-of-domain cells
+			// if (cellPositionIndex+this->neighborCellIndexAct >= 0 && cellPositionIndex+this->neighborCellIndexAct+1 < numPartInCellPrefixSum.size())
+			// {
+			neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
+			neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
+			// }
+			// else this->nextCell();
 		}
 	}
 
 public:
-
-	__device__ __host__ inline NN_gpu_it_radius(
+	inline __device__ __host__ NN_gpu_it_radius(
 		const grid_key_dx<dim,ids_type> & cellPosition,
-		const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & radNeighborCellIndex,
-		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & neighborCellCountPrefixSum,
+		const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & rcutNeighborCellOffset,
+		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & numPartInCellPrefixSum,
 		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex,
-		const openfpm::array<ids_type,dim> & numCellDim,
-		const openfpm::array<ids_type,dim> & cellPadDim)
-	: radNeighborCellIndex_i(0),
-	radNeighborCellIndex(radNeighborCellIndex),
-	neighborCellCountPrefixSum(neighborCellCountPrefixSum),
+		const openfpm::array<ids_type,dim> & numCellDim)
+	: numPartInCellPrefixSum(numPartInCellPrefixSum),
 	sortedToUnsortedIndex(sortedToUnsortedIndex),
-	numCellDim(numCellDim),
-	cellPadDim(cellPadDim)
+	rcutNeighborCellOffset(rcutNeighborCellOffset),
+	cellPositionIndex(cid_<dim,ids_type,int>::get_cid(numCellDim,cellPosition)),
+	rcutNeighborCellOffset_i(0),
+	neighborCellIndexAct(rcutNeighborCellOffset.template get<0>(rcutNeighborCellOffset_i))
 	{
-		cellIndexAct = cid_<dim,ids_type,int>::get_cid(numCellDim,cellPosition);
-		neighborCellIndex = cellIndexAct + radNeighborCellIndex.template get<0>(radNeighborCellIndex_i);
-		neighborPartIndexStart = neighborCellCountPrefixSum.template get<0>(neighborCellIndex);
+		neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
+		neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
+
 		SelectValid();
 	}
 
-	__device__ unsigned int get_sort()
+	inline __device__ unsigned int get_sort()
 	{
 		return neighborPartIndexStart;
 	}
 
-	__device__ unsigned int get()
+	inline __device__ unsigned int get()
 	{
 		return sortedToUnsortedIndex.template get<0>(neighborPartIndexStart);
 	}
 
-	__device__ __host__ NN_gpu_it_radius<dim,ids_type> & operator++()
+	inline __device__ NN_gpu_it_radius<dim,ids_type> & operator++()
 	{
 		++neighborPartIndexStart; SelectValid();
 
 		return *this;
 	}
 
-	__device__ unsigned int get_start(unsigned int ce_id)
+	inline __device__ unsigned int get_start(unsigned int ce_id)
 	{
-		return neighborCellCountPrefixSum.template get<0>(ce_id);
+		return numPartInCellPrefixSum.template get<0>(ce_id);
 	}
 
-	__device__ unsigned int get_cid()
+	inline __device__ unsigned int get_cid()
 	{
-		return neighborCellIndex;
+		return cellPositionIndex+this->neighborCellIndexAct;
 	}
 
-	__device__ __host__ bool isNext()
+	inline __device__ bool isNext()
 	{
-		return radNeighborCellIndex_i < radNeighborCellIndex.size();
+		return rcutNeighborCellOffset_i < rcutNeighborCellOffset.size();
 	}
+
+	__device__ inline void nextCell()
+	{
+		++rcutNeighborCellOffset_i;
+
+		neighborCellIndexAct = rcutNeighborCellOffset.template get<0>(rcutNeighborCellOffset_i);
+	}
+
 };
+
 
 template<unsigned int dim, typename T, typename ids_type, typename transform_type, bool is_sparse>
 class CellList_gpu_ker: public CellDecomposer_gpu_ker<dim,T,ids_type,transform_type>
@@ -379,10 +217,17 @@ class CellList_gpu_ker: public CellDecomposer_gpu_ker<dim,T,ids_type,transform_t
 	openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> indexSorted;
 
 	//! radius cells
-	openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> radNeighborCellIndex;
+	openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> rcutNeighborCellOffset;
+
+	//! Box cells
+	// openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> boxNeighborCellOffset;
+
+	const int* __restrict__  boxNeighborCellOffset;
 
 	//! Ghost particle marker
 	unsigned int ghostMarker;
+
+	unsigned int boxNeighborCellOffsetSize;
 
 public:
 
@@ -399,7 +244,9 @@ public:
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> numPartInCellPrefixSum,
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndex,
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> indexSorted,
-		openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> radNeighborCellIndex,
+		openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> rcutNeighborCellOffset,
+		const int* __restrict__ boxNeighborCellOffset,
+		unsigned int boxNeighborCellOffsetSize,
 		openfpm::array<T,dim> unitCellP2,
 		openfpm::array<ids_type,dim> & numCellDim,
 		openfpm::array<ids_type,dim> & cellPadDim,
@@ -412,35 +259,32 @@ public:
 	numPartInCellPrefixSum(numPartInCellPrefixSum),
 	sortedToUnsortedIndex(sortedToUnsortedIndex),
 	indexSorted(indexSorted),
-	radNeighborCellIndex(radNeighborCellIndex),
+	rcutNeighborCellOffset(rcutNeighborCellOffset),
+	boxNeighborCellOffset(boxNeighborCellOffset),
+	boxNeighborCellOffsetSize(boxNeighborCellOffsetSize),
 	ghostMarker(ghostMarker)
 	{}
 
-
-	template<unsigned int stub = NO_CHECK>
-	inline __device__ __host__ NN_gpu_it<dim,ids_type,1,is_sparse> getNNIterator(
+	inline __device__ NN_gpu_it_radius<dim,ids_type> getNNIteratorRadius(
 		const grid_key_dx<dim,ids_type> & cellPosition)
 	{
-		NN_gpu_it<dim,ids_type,1,is_sparse> ngi(cellPosition,numPartInCellPrefixSum,sortedToUnsortedIndex,this->get_div_c(),this->get_off());
+		NN_gpu_it_radius<dim,ids_type> ngi(cellPosition,rcutNeighborCellOffset,numPartInCellPrefixSum,sortedToUnsortedIndex,this->get_div_c());
 
 		return ngi;
 	}
 
-	inline __device__ __host__ NN_gpu_it_radius<dim,ids_type> getNNIteratorRadius(
+	inline __device__ NN_gpu_it_box<dim,ids_type> getNNIteratorBox(
 		const grid_key_dx<dim,ids_type> & cellPosition)
 	{
-		NN_gpu_it_radius<dim,ids_type> ngi(cellPosition,radNeighborCellIndex,numPartInCellPrefixSum,sortedToUnsortedIndex,this->get_div_c(),this->get_off());
+		NN_gpu_it_box<dim,ids_type> ngi(cellPosition,numPartInCellPrefixSum,sortedToUnsortedIndex,boxNeighborCellOffset,boxNeighborCellOffsetSize,this->get_div_c());
 
 		return ngi;
 	}
 
-	template<unsigned int radius_int = 2> 
-	inline __device__ NN_gpu_it<dim,ids_type,radius_int,is_sparse> getNNIteratorBox(
-		const grid_key_dx<dim,ids_type> & cellPosition)
+	inline __device__ auto getNNIterator(
+		const grid_key_dx<dim,ids_type> & cellPosition) -> decltype(this->getNNIteratorBox(cellPosition))
 	{
-		NN_gpu_it<dim,ids_type,radius_int,is_sparse> ngi(cellPosition,numPartInCellPrefixSum,sortedToUnsortedIndex,this->get_div_c(),this->get_off());
-
-		return ngi;
+		return this->getNNIteratorBox(cellPosition);
 	}
 
 	inline __device__ openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & getDomainSortIds()
@@ -533,7 +377,7 @@ public:
 			return pc;
 		}
 
-		pc = radNeighborCellIndex.check_device_pointer(ptr);
+		pc = rcutNeighborCellOffset.check_device_pointer(ptr);
 
 		if (pc.match == true)
 		{
@@ -548,6 +392,81 @@ public:
 };
 
 
+template<unsigned int dim, typename ids_type>
+class NN_gpu_it_sparse
+{
+	unsigned int neighborPartIndexStart;
+	unsigned int neighborPartIndexStop;
+	unsigned int neighborCellIndexStart;
+	unsigned int neighborCellIndexStop;
+
+	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex;
+	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & neighborCellCountPrefixSum;
+	const openfpm::vector_gpu_ker<aggregate<unsigned int,unsigned int>,memory_traits_inte> & neighborPartIndexFrom_To;
+
+	__device__ void SelectValid()
+	{
+		while ((neighborPartIndexStart == neighborPartIndexStop) && isNext())
+		{
+			++neighborCellIndexStart;
+
+			if (neighborCellIndexStart < neighborCellIndexStop)
+			{
+				neighborPartIndexStart = neighborPartIndexFrom_To.template get<0>(neighborCellIndexStart);
+				neighborPartIndexStop = neighborPartIndexFrom_To.template get<1>(neighborCellIndexStart);
+			}
+		}
+	}
+
+public:
+	__device__ NN_gpu_it_sparse(
+		unsigned int cellIndex,
+		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & neighborCellCountPrefixSum,
+		const openfpm::vector_gpu_ker<aggregate<unsigned int,unsigned int>,memory_traits_inte> & neighborPartIndexFrom_To,
+		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex)
+	: sortedToUnsortedIndex(sortedToUnsortedIndex),
+	neighborCellCountPrefixSum(neighborCellCountPrefixSum),
+	neighborPartIndexFrom_To(neighborPartIndexFrom_To)
+	{
+		if (cellIndex == (unsigned int)-1)
+		{
+			neighborCellIndexStop = neighborCellIndexStart;
+			return;
+		}
+
+		neighborCellIndexStart = neighborCellCountPrefixSum.template get<0>(cellIndex);
+		neighborCellIndexStop = neighborCellCountPrefixSum.template get<0>(cellIndex + 1);
+
+		neighborPartIndexStart = neighborPartIndexFrom_To.template get<0>(neighborCellIndexStart);
+		neighborPartIndexStop = neighborPartIndexFrom_To.template get<1>(neighborCellIndexStart);
+
+		SelectValid();
+	}
+
+	__device__ unsigned int get_sort()
+	{
+		return neighborPartIndexStart;
+	}
+
+	__device__ unsigned int get()
+	{
+		return sortedToUnsortedIndex.template get<0>(neighborPartIndexStart);
+	}
+
+	__device__ NN_gpu_it_sparse<dim,ids_type> & operator++()
+	{
+		++neighborPartIndexStart; SelectValid();
+
+		return *this;
+	}
+
+	inline __device__ bool isNext()
+	{
+		return neighborCellIndexStart < neighborCellIndexStop;
+	}
+};
+
+
 template<unsigned int dim, typename T, typename ids_type, typename transform_type>
 class CellList_gpu_ker<dim,T,ids_type,transform_type,true>: public CellDecomposer_gpu_ker<dim,T,ids_type,transform_type>
 {
@@ -555,7 +474,7 @@ class CellList_gpu_ker<dim,T,ids_type,transform_type,true>: public CellDecompose
 	openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> neighborCellCountPrefixSum;
 
 	//! starting point for each cell
-	openfpm::vector_gpu_ker<aggregate<unsigned int, unsigned int>,memory_traits_inte> neighborCellVsIndexFrom_To;
+	openfpm::vector_gpu_ker<aggregate<unsigned int, unsigned int>,memory_traits_inte> neighborPartIndexFrom_To;
 
 	//! Sorted to non sorted ids conversion
 	openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndex;
@@ -576,7 +495,7 @@ public:
 
 	__host__ __device__ inline CellList_gpu_ker(
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> neighborCellCountPrefixSum,
-		openfpm::vector_gpu_ker<aggregate<unsigned int, unsigned int>,memory_traits_inte> neighborCellVsIndexFrom_To,
+		openfpm::vector_gpu_ker<aggregate<unsigned int, unsigned int>,memory_traits_inte> neighborPartIndexFrom_To,
 		openfpm::vector_sparse_gpu_ker<aggregate<unsigned int>,int,memory_traits_inte> vecSparseCellIndex_PartIndex,
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndex,
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> indexSorted,
@@ -591,7 +510,7 @@ public:
 	)
 	: CellDecomposer_gpu_ker<dim,T,ids_type,transform_type>(unitCellP2,numCellDim,cellPadDim,pointTransform,cellListSpaceBox,cellListGrid,cellShift),
 	neighborCellCountPrefixSum(neighborCellCountPrefixSum),
-	neighborCellVsIndexFrom_To(neighborCellVsIndexFrom_To),
+	neighborPartIndexFrom_To(neighborPartIndexFrom_To),
 	sortedToUnsortedIndex(sortedToUnsortedIndex),
 	indexSorted(indexSorted),
 	vecSparseCellIndex_PartIndex(vecSparseCellIndex_PartIndex),
@@ -607,21 +526,18 @@ public:
 		return vecSparseCellIndex_PartIndex.get_sparse(cell);
 	}
 
-
-	template<unsigned int stub = NO_CHECK>
-	inline __device__ NN_gpu_it<dim,ids_type,1,true> getNNIterator(
+	inline __device__ NN_gpu_it_sparse<dim,ids_type> getNNIterator(
 		decltype(vecSparseCellIndex_PartIndex.get_sparse(0)) cId)
 	{
-		NN_gpu_it<dim,ids_type,1,true> ngi(cId.id,neighborCellCountPrefixSum,neighborCellVsIndexFrom_To,sortedToUnsortedIndex);
+		NN_gpu_it_sparse<dim,ids_type> ngi(cId.id,neighborCellCountPrefixSum,neighborPartIndexFrom_To,sortedToUnsortedIndex);
 
 		return ngi;
 	}
 
-	template<unsigned int radius_int = 2>
-	inline __device__ NN_gpu_it<dim,ids_type,radius_int,true> getNNIteratorBox(
+	inline __device__ NN_gpu_it_sparse<dim,ids_type> getNNIteratorBox(
 		decltype(vecSparseCellIndex_PartIndex.get_sparse(0)) cId)
 	{
-		NN_gpu_it<dim,ids_type,radius_int,true> ngi(cId.id,neighborCellCountPrefixSum,neighborCellVsIndexFrom_To,sortedToUnsortedIndex);
+		NN_gpu_it_sparse<dim,ids_type> ngi(cId.id,neighborCellCountPrefixSum,neighborPartIndexFrom_To,sortedToUnsortedIndex);
 
 		return ngi;
 	}
@@ -662,11 +578,11 @@ public:
 			return pc;
 		}
 
-		pc = neighborCellVsIndexFrom_To.check_device_pointer(ptr);
+		pc = neighborPartIndexFrom_To.check_device_pointer(ptr);
 
 		if (pc.match == true)
 		{
-			pc.match_str = std::string("Cell particle buffer overflow (neighborCellVsIndexFrom_To): ") + "\n" + pc.match_str;
+			pc.match_str = std::string("Cell particle buffer overflow (neighborPartIndexFrom_To): ") + "\n" + pc.match_str;
 			return pc;
 		}
 

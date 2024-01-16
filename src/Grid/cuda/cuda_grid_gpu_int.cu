@@ -80,7 +80,7 @@ __global__ void test_launch_cell_list(celllist_type cell, ite_gpu<3> ite_gpu)
 	int idx = 0;
 	int NN[NN_num];
 
-	auto NN_it = cell.template getNNIteratorBox<2>(key);
+	auto NN_it = cell.template getNNIteratorBox(key);
 
 	while (NN_it.isNext())
 	{

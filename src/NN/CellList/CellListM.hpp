@@ -59,7 +59,7 @@ class CellListM : public CellBase
 public:
 
 	//! Type of the iterator for the neighborhood
-	typedef CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,RUNTIME,NO_CHECK> SymNNIterator;
+	typedef CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,RUNTIME> SymNNIterator;
 
 	//! Default Constructor
 	CellListM()
@@ -267,9 +267,9 @@ public:
 	 * \return an iterator over the particle of the selected cell
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL,impl> getNNIterator(size_t cell)
+	inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL> getNNIterator(size_t cell)
 	{
-		CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL,impl> cln(cell,CellListM<dim,T,sh_byte,CellBase>::NNc_full,*this);
+		CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL> cln(cell,CellListM<dim,T,sh_byte,CellBase>::NNc_full,*this);
 
 		return cln;
 	}
@@ -294,14 +294,14 @@ public:
 	 * \return Cell-list structure
 	 *
 	 */
-	template<unsigned int impl> inline CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl>
+	inline CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM>
 	getNNIteratorSym(size_t cell,
 					 size_t pp,
 			         size_t p,
 					 const typename CellBase::internal_vector_pos_type & pos,
 					 const openfpm::vector<pos_v<typename CellBase::internal_vector_pos_type>> & v)
 	{
-		CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM,impl> cln(cell,pp,p,CellListM<dim,T,sh_byte,CellBase>::NNc_sym,*this,pos,v);
+		CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM> cln(cell,pp,p,CellListM<dim,T,sh_byte,CellBase>::NNc_sym,*this,pos,v);
 
 		return cln;
 	}

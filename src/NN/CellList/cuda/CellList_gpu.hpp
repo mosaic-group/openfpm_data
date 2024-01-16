@@ -1,9 +1,3 @@
-/*
- * CellList_gpu.hpp
- *
- *  Created on: Jun 11, 2018
- *      Author: i-bird
- */
 
 #ifndef OPENFPM_DATA_SRC_NN_CELLLIST_CELLLIST_GPU_HPP_
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLIST_GPU_HPP_
@@ -16,7 +10,7 @@
 #include "NN/CellList/CellDecomposer.hpp"
 #include "Vector/map_vector.hpp"
 #include "Cuda_cell_list_util_func.hpp"
-#include "NN/CellList/cuda/CellList_gpu_ker.cuh"
+#include "CellList_gpu_ker.cuh"
 #include "util/cuda_util.hpp"
 #include "NN/CellList/CellList_util.hpp"
 #include "NN/CellList/CellList.hpp"
@@ -58,17 +52,23 @@ private:
 	//! \brief for each non sorted index it show the index in the ordered vector
 	openfpm::vector_gpu<aggregate<unsigned int>> unsortedToSortedIndex;
 
+	//! \breif Number of neighbors in every direction
+	int boxNeighborNumber;
+
+	//! \brief Neighborhood cell linear ids (minus middle cell id) for in total (2*boxNeighborNumber+1)**dim cells
+	openfpm::vector_gpu<aggregate<int>> boxNeighborCellOffset;
+
 	//! /brief unit cell dimensions, given P1 = (0,0...)
 	openfpm::array<T,dim> unitCellP2;
 
 	//! \brief number of sub-divisions in each direction
-	openfpm::array<ids_type,dim> numCellDiv;
+	openfpm::array<ids_type,dim> numCellDim;
 
 	//! \brief cell padding
 	openfpm::array<ids_type,dim> cellPadDim;
 
-	//! \brief Neighboor cell id minus the id of the center cell
-	openfpm::vector_gpu<aggregate<int>> radNeighborCellIndex;
+	//! \brief Neighboor cell linear ids (minus middle cell id) for \sum_{i=0}^{i=dim}dim[i]/r_cut cells 
+	openfpm::vector_gpu<aggregate<int>> rcutNeighborCellOffset;
 
 	//! Additional information in general (used to understand if the cell-list)
 	//! has been constructed from an old decomposition
@@ -83,12 +83,51 @@ private:
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			numCellDiv[i] = div[i];
+			numCellDim[i] = div[i];
 			unitCellP2[i] = this->getCellBox().getP2().get(i);
 			cellPadDim[i] = pad;
 		}
 
 		numPartInCell.resize(tot_n_cell);
+
+		boxNeighborNumber = 2;
+		constructNeighborCellOffset(boxNeighborNumber);
+	}
+
+	void constructNeighborCellOffset(unsigned int boxNeighborNumber)
+	{
+		auto & cellListGrid = this->getGrid();
+
+		grid_key_dx<dim> cellPosStart;
+		grid_key_dx<dim> cellPosStop;
+		grid_key_dx<dim> cellPosMiddle;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			cellPosStart.set_d(i,0);
+			cellPosStop.set_d(i,2*boxNeighborNumber);
+			cellPosMiddle.set_d(i,boxNeighborNumber);
+		}
+
+		boxNeighborCellOffset.resize(openfpm::math::pow(2*boxNeighborNumber+1,dim));
+		boxNeighborCellOffset.template get<0>(0) = 0;
+
+		int cellIndexMiddle = cellListGrid.LinId(cellPosMiddle);
+		grid_key_dx_iterator_sub<dim> it(cellListGrid, cellPosStart, cellPosStop);
+
+		size_t i = 1;
+		while (it.isNext())
+		{
+			// make the first element 0 such that the range doesn't have to be checked on the first iteration 
+			if (cellListGrid.LinId(it.get()) - cellIndexMiddle != 0)
+			{
+				boxNeighborCellOffset.template get<0>(i) = (int)cellListGrid.LinId(it.get()) - cellIndexMiddle;
+				++i;
+			}
+			++it;
+		}
+
+		boxNeighborCellOffset.template hostToDevice<0>();
 	}
 
 	/*! \brief Construct the ids of the particles domain in the sorted array
@@ -172,7 +211,7 @@ private:
 		}
 
 		CUDA_LAUNCH((fill_cellIndex_LocalIndex<dim,T,ids_type>),ite_gpu,
-			numCellDiv,
+			numCellDim,
 			unitCellP2,
 			cellPadDim,
 			this->getTransform(),
@@ -319,17 +358,16 @@ public:
 		Initialize(box,div,pad);
 	}
 
-	/*! \brief Not used for dense cell list
-	 *
-	 *
-	 */
-	void setBoxNN(unsigned int n_NN) {}
+	void setBoxNN(unsigned int n_NN)
+	{
+		boxNeighborNumber = n_NN;
+		constructNeighborCellOffset(n_NN);
+	}
 
-	/*! \brief Not used for dense cell list
-	 *
-	 *
-	 */
-	void resetBoxNN() {}
+	void resetBoxNN()
+	{
+		constructNeighborCellOffset(boxNeighborNumber);
+	}
 
 	/*! Initialize the cell list
 	 *
@@ -399,13 +437,12 @@ public:
 
 		NNcalc_rad(radius,nnc_rad_,this->getCellBox(),this->getGrid());
 
-		radNeighborCellIndex.resize(nnc_rad_.size(),0);
-
+		rcutNeighborCellOffset.resize(nnc_rad_.size(),0);
 
 		for (unsigned int i = 0 ; i < nnc_rad_.size() ; i++)
-			radNeighborCellIndex.template get<0>(i) = nnc_rad_.template get<0>(i);
+			rcutNeighborCellOffset.template get<0>(i) = nnc_rad_.template get<0>(i);
 
-		radNeighborCellIndex.template hostToDevice<0>();
+		rcutNeighborCellOffset.template hostToDevice<0>();
 	}
 
 	/*! \brief construct from a list of particles
@@ -432,13 +469,17 @@ public:
 
 	CellList_gpu_ker<dim,T,ids_type,transform_type,false> toKernel()
 	{
+		const int* p = (int*)boxNeighborCellOffset.toKernel().template getPointer<0>();
+
 		return CellList_gpu_ker<dim,T,ids_type,transform_type,false>(
 			numPartInCellPrefixSum.toKernel(),
 			sortedToUnsortedIndex.toKernel(),
 			indexSorted.toKernel(),
-			radNeighborCellIndex.toKernel(),
+			rcutNeighborCellOffset.toKernel(),
+			p,
+			boxNeighborCellOffset.size(),
 			unitCellP2,
-			numCellDiv,
+			numCellDim,
 			cellPadDim,
 			this->getTransform(),
 			ghostMarker,
@@ -587,7 +628,7 @@ public:
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 
 		unitCellP2.swap(clg.unitCellP2);
-		numCellDiv.swap(clg.numCellDiv);
+		numCellDim.swap(clg.numCellDim);
 		cellPadDim.swap(clg.cellPadDim);
 
 		size_t g_m_tmp = ghostMarker;
@@ -612,7 +653,7 @@ public:
 		unsortedToSortedIndex = clg.unsortedToSortedIndex;
 
 		unitCellP2 = clg.unitCellP2;
-		numCellDiv = clg.numCellDiv;
+		numCellDim = clg.numCellDim;
 		cellPadDim = clg.cellPadDim;
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
@@ -633,7 +674,7 @@ public:
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 
 		unitCellP2 = clg.unitCellP2;
-		numCellDiv = clg.numCellDiv;
+		numCellDim = clg.numCellDim;
 		cellPadDim = clg.cellPadDim;
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
@@ -666,10 +707,10 @@ private:
 	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> neighborPartIndexFrom_To;
 
 	//! \breif Number of neighbors in every direction
-	int dimNeighbRadius;
+	int boxNeighborNumber;
 
-	//! \brief Neighborhood cell linear ids (minus middle cell id) for in total (2*dimNeighbRadius+1)**dim cells
-	openfpm::vector_gpu<aggregate<int>> neighborCellOffset;
+	//! \brief Neighborhood cell linear ids (minus middle cell id) for in total (2*boxNeighborNumber+1)**dim cells
+	openfpm::vector_gpu<aggregate<int>> boxNeighborCellOffset;
 
 	//! \brief for each sorted index it show the index in the unordered
 	openfpm::vector_gpu<aggregate<unsigned int>> sortedToUnsortedIndex;
@@ -684,7 +725,7 @@ private:
 	openfpm::array<T,dim> unitCellP2;
 
 	//! \brief number of sub-divisions in each direction
-	openfpm::array<ids_type,dim> numCellDiv;
+	openfpm::array<ids_type,dim> numCellDim;
 
 	//! \brief cell padding
 	openfpm::array<ids_type,dim> cellPadDim;
@@ -701,16 +742,16 @@ private:
 	{
 		for (size_t i = 0 ; i < dim ; i++)
 		{
-			numCellDiv[i] = div[i];
+			numCellDim[i] = div[i];
 			unitCellP2[i] = this->getCellBox().getP2().get(i);
 			cellPadDim[i] = pad;
 		}
 
-		dimNeighbRadius = 2;
-		constructNeighborCellOffset(dimNeighbRadius);
+		boxNeighborNumber = 2;
+		constructNeighborCellOffset(boxNeighborNumber);
 	}
 
-	void constructNeighborCellOffset(unsigned int dimNeighbRadius = 1)
+	void constructNeighborCellOffset(unsigned int boxNeighborNumber)
 	{
 		auto & cellListGrid = this->getGrid();
 
@@ -721,28 +762,28 @@ private:
 		for (size_t i = 0 ; i < dim ; i++)
 		{
 			cellPosStart.set_d(i,0);
-			cellPosStop.set_d(i,2*dimNeighbRadius);
-			cellPosMiddle.set_d(i,dimNeighbRadius);
+			cellPosStop.set_d(i,2*boxNeighborNumber);
+			cellPosMiddle.set_d(i,boxNeighborNumber);
 		}
 
-		neighborCellOffset.resize(openfpm::math::pow(2*dimNeighbRadius+1,dim));
+		boxNeighborCellOffset.resize(openfpm::math::pow(2*boxNeighborNumber+1,dim));
+		boxNeighborCellOffset.template get<0>(0) = 0;
 
 		int cellIndexMiddle = cellListGrid.LinId(cellPosMiddle);
 		grid_key_dx_iterator_sub<dim> it(cellListGrid, cellPosStart, cellPosStop);
-		size_t i = 0;
+
+		size_t i = 1;
 		while (it.isNext())
 		{
-			neighborCellOffset.template get<0>(i) = (int)cellListGrid.LinId(it.get()) - cellIndexMiddle;
-			++i; ++it;
+			// make the first element 0 such that the range doesn't have to be checked on the first iteration 
+			if (cellListGrid.LinId(it.get()) - cellIndexMiddle != 0) {
+				boxNeighborCellOffset.template get<0>(i) = (int)cellListGrid.LinId(it.get()) - cellIndexMiddle;
+				++i;
+			}
+			++it;
 		}
 
-		neighborCellOffset.template hostToDevice<0>();
-#if defined(__NVCC__) && defined(USE_LOW_REGISTER_ITERATOR)
-
-		// copy to the constant memory
-		cudaMemcpyToSymbol(cells_striding,neighborCellOffset.template getPointer<0>(),neighborCellOffset.size()*sizeof(int));
-
-#endif
+		boxNeighborCellOffset.template hostToDevice<0>();
 	}
 
 	/*! \brief This function construct a sparse cell-list
@@ -774,7 +815,7 @@ private:
 			return;
 
 		CUDA_LAUNCH((fill_cellIndex<dim,T,ids_type>),ite_gpu,
-			numCellDiv,
+			numCellDim,
 			unitCellP2,
 			cellPadDim,
 			this->getTransform(),
@@ -807,7 +848,7 @@ private:
 		CUDA_LAUNCH((countNeighborCells),itgg,
 			vecSparseCellIndex_PartIndex.toKernel(),
 			neighborCellCount.toKernel(),
-			neighborCellOffset.toKernel()
+			boxNeighborCellOffset.toKernel()
 		);
 
 		// get total number of non-empty neighboring cells
@@ -825,7 +866,7 @@ private:
 		CUDA_LAUNCH((fillNeighborCellList),itgg,
 			vecSparseCellIndex_PartIndex.toKernel(),
 			neighborCellCount.toKernel(),
-			neighborCellOffset.toKernel(),
+			boxNeighborCellOffset.toKernel(),
 			neighborPartIndexFrom_To.toKernel(),
 			cellIndexLocalIndexToPart.size()
 		);
@@ -968,13 +1009,13 @@ public:
 
 	void setBoxNN(unsigned int n_NN)
 	{
-		dimNeighbRadius = n_NN;
+		boxNeighborNumber = n_NN;
 		constructNeighborCellOffset(n_NN);
 	}
 
 	void resetBoxNN()
 	{
-		constructNeighborCellOffset(dimNeighbRadius);
+		constructNeighborCellOffset(boxNeighborNumber);
 	}
 
 	/*! Initialize the cell list constructor
@@ -1019,7 +1060,9 @@ public:
 	 *
 	 */
 	void setRadius(T radius)
-	{}
+	{
+		std::cerr << "setRadius() is supported by dense cell list only!\n";
+	}
 
 	/*! \brief construct from a list of particles
 	 *
@@ -1052,7 +1095,7 @@ public:
 			sortedToUnsortedIndex.toKernel(),
 			indexSorted.toKernel(),
 			unitCellP2,
-			numCellDiv,
+			numCellDim,
 			cellPadDim,
 			this->getTransform(),
 			ghostMarker,
@@ -1174,13 +1217,13 @@ public:
 		vecSparseCellIndex_PartIndex.swap(clg.vecSparseCellIndex_PartIndex);
 		neighborCellCount.swap(clg.neighborCellCount);
 		neighborPartIndexFrom_To.swap(clg.neighborPartIndexFrom_To);
-		neighborCellOffset.swap(clg.neighborCellOffset);
+		boxNeighborCellOffset.swap(clg.boxNeighborCellOffset);
 		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
 		indexSorted.swap(clg.indexSorted);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 
 		unitCellP2.swap(clg.unitCellP2);
-		numCellDiv.swap(clg.numCellDiv);
+		numCellDim.swap(clg.numCellDim);
 		cellPadDim.swap(clg.cellPadDim);
 
 		size_t g_m_tmp = ghostMarker;
@@ -1191,9 +1234,9 @@ public:
 		nDecRefRedec = clg.nDecRefRedec;
 		clg.nDecRefRedec = n_dec_tmp;
 
-		int boxNN_tmp = dimNeighbRadius;
-		dimNeighbRadius = clg.dimNeighbRadius;
-		clg.dimNeighbRadius = boxNN_tmp;
+		int boxNN_tmp = boxNeighborNumber;
+		boxNeighborNumber = clg.boxNeighborNumber;
+		clg.boxNeighborNumber = boxNN_tmp;
 	}
 
 	CellList_gpu<dim,T,Memory,transform_type,true> &
@@ -1205,18 +1248,18 @@ public:
 		vecSparseCellIndex_PartIndex = clg.vecSparseCellIndex_PartIndex;
 		neighborCellCount = clg.neighborCellCount;
 		neighborPartIndexFrom_To = clg.neighborPartIndexFrom_To;
-		neighborCellOffset = clg.neighborCellOffset;
+		boxNeighborCellOffset = clg.boxNeighborCellOffset;
 		sortedToUnsortedIndex = clg.sortedToUnsortedIndex;
 		indexSorted = clg.indexSorted;
 		unsortedToSortedIndex = clg.unsortedToSortedIndex;
 
 		unitCellP2 = clg.unitCellP2;
-		numCellDiv = clg.numCellDiv;
+		numCellDim = clg.numCellDim;
 		cellPadDim = clg.cellPadDim;
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
 
-		dimNeighbRadius = clg.dimNeighbRadius;
+		boxNeighborNumber = clg.boxNeighborNumber;
 
 		return *this;
 	}
@@ -1230,18 +1273,18 @@ public:
 		vecSparseCellIndex_PartIndex.swap(clg.vecSparseCellIndex_PartIndex);
 		neighborCellCount.swap(clg.neighborCellCount);
 		neighborPartIndexFrom_To.swap(clg.neighborPartIndexFrom_To);
-		neighborCellOffset.swap(clg.neighborCellOffset);
+		boxNeighborCellOffset.swap(clg.boxNeighborCellOffset);
 		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
 		indexSorted.swap(clg.indexSorted);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 
 		unitCellP2 = clg.unitCellP2;
-		numCellDiv = clg.numCellDiv;
+		numCellDim = clg.numCellDim;
 		cellPadDim = clg.cellPadDim;
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
 
-		dimNeighbRadius = clg.dimNeighbRadius;
+		boxNeighborNumber = clg.boxNeighborNumber;
 
 		return *this;
 	}

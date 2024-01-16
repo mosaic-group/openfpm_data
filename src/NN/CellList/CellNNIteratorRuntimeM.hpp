@@ -19,11 +19,10 @@
  *
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
- * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell, unsigned int sh_byte, unsigned int impl>
-class CellNNIteratorM<dim,Cell,sh_byte,RUNTIME,impl> : public CellNNIterator<dim,Cell,RUNTIME,impl>
+template<unsigned int dim, typename Cell, unsigned int sh_byte>
+class CellNNIteratorM<dim,Cell,sh_byte,RUNTIME> : public CellNNIterator<dim,Cell,RUNTIME>
 {
 	typedef boost::low_bits_mask_t<sizeof(size_t)*8-sh_byte>  mask_low;
 
@@ -39,7 +38,7 @@ public:
 	 *
 	 */
 	CellNNIteratorM(size_t cell, const long int * NNc, size_t NNc_size, Cell & cl)
-	:CellNNIterator<dim,Cell,RUNTIME,impl>(cell,NNc,NNc_size,cl)
+	:CellNNIterator<dim,Cell,RUNTIME>(cell,NNc,NNc_size,cl)
 	{}
 
 
@@ -50,7 +49,7 @@ public:
 	 */
 	inline size_t getP()
 	{
-		return CellNNIterator<dim,Cell,RUNTIME,impl>::get() & mask_low::sig_bits_fast;
+		return CellNNIterator<dim,Cell,RUNTIME>::get() & mask_low::sig_bits_fast;
 	}
 
 	/*! \brief Get the value of the cell
@@ -60,7 +59,7 @@ public:
 	 */
 	inline size_t getV()
 	{
-		return (CellNNIterator<dim,Cell,RUNTIME,impl>::get()) >> (sizeof(size_t)*8-sh_byte);
+		return (CellNNIterator<dim,Cell,RUNTIME>::get()) >> (sizeof(size_t)*8-sh_byte);
 	}
 };
 
@@ -78,11 +77,10 @@ public:
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
  * \tparam NNc_size neighborhood size
- * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell, unsigned int sh_byte, unsigned int impl>
-class CellNNIteratorSymM<dim,Cell,sh_byte,RUNTIME,impl> : public CellNNIterator<dim,Cell,RUNTIME,impl>
+template<unsigned int dim, typename Cell, unsigned int sh_byte>
+class CellNNIteratorSymM<dim,Cell,sh_byte,RUNTIME> : public CellNNIterator<dim,Cell,RUNTIME>
 {
 	typedef boost::low_bits_mask_t<sizeof(size_t)*8-sh_byte>  mask_low;
 
@@ -120,11 +118,11 @@ next:
 				this->start_id++;
 			}
 
-			CellNNIterator<dim,Cell,RUNTIME,impl>::selectValid();
+			CellNNIterator<dim,Cell,RUNTIME>::selectValid();
 		}
 		else
 		{
-			CellNNIterator<dim,Cell,RUNTIME,impl>::selectValid();
+			CellNNIterator<dim,Cell,RUNTIME>::selectValid();
 		}
 	}
 
@@ -147,7 +145,7 @@ public:
 					   Cell & cl,
 					   const typename Cell::internal_vector_pos_type & pos,
 					   const openfpm::vector<pos_v<typename Cell::internal_vector_pos_type>> & ps)
-	:CellNNIterator<dim,Cell,RUNTIME,impl>(cell,NNc,NNc_size,cl),pp(pp),p(p),pos(pos),ps(ps)
+	:CellNNIterator<dim,Cell,RUNTIME>(cell,NNc,NNc_size,cl),pp(pp),p(p),pos(pos),ps(ps)
 	{}
 
 
@@ -158,7 +156,7 @@ public:
 	 */
 	inline size_t getP()
 	{
-		return CellNNIterator<dim,Cell,RUNTIME,impl>::get() & mask_low::sig_bits_fast;
+		return CellNNIterator<dim,Cell,RUNTIME>::get() & mask_low::sig_bits_fast;
 	}
 
 	/*! \brief Get the value of the cell
@@ -168,7 +166,7 @@ public:
 	 */
 	inline size_t getV()
 	{
-		return (CellNNIterator<dim,Cell,RUNTIME,impl>::get()) >> (sizeof(size_t)*8-sh_byte);
+		return (CellNNIterator<dim,Cell,RUNTIME>::get()) >> (sizeof(size_t)*8-sh_byte);
 	}
 
 	/*! \brief take the next element
@@ -176,7 +174,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	inline CellNNIteratorSymM<dim,Cell,sh_byte,RUNTIME,impl> & operator++()
+	inline CellNNIteratorSymM<dim,Cell,sh_byte,RUNTIME> & operator++()
 	{
 		this->start_id++;
 

@@ -42,9 +42,9 @@ struct NNTypeM
 						   size_t pp,
 						   size_t p,
 						   CellListImpl & cl,
-						   T r_cut) -> decltype(cl.template getNNIterator<NO_CHECK>(0))
+						   T r_cut) -> decltype(cl.template getNNIterator(0))
 	{
-		return cl.template getNNIterator<NO_CHECK>(cl.getCell(xp));
+		return cl.template getNNIterator(cl.getCell(xp));
 	}
 };
 
@@ -117,9 +117,9 @@ struct NNTypeM<dim,T,CellListImpl,PartIt,VL_SYMMETRIC>
 					   size_t pp,
 					   size_t p,
 					   CellListImpl & cl,
-					   T r_cut) -> decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,0,typename CellListImpl::internal_vector_pos_type(),openfpm::vector<pos_v<typename CellListImpl::internal_vector_pos_type>>()))
+					   T r_cut) -> decltype(cl.template getNNIteratorSym(0,0,0,typename CellListImpl::internal_vector_pos_type(),openfpm::vector<pos_v<typename CellListImpl::internal_vector_pos_type>>()))
 	{
-		return cl.template getNNIteratorSym<NO_CHECK>(cl.getCell(xp),pp,p,pos,v);
+		return cl.template getNNIteratorSym(cl.getCell(xp),pp,p,pos,v);
 	}
 };
 
@@ -172,15 +172,15 @@ class VerletListM : public VerletBase
 	{
 		if (opt == VL_CRS_SYMMETRIC)
 		{
-			create_<CellNNIteratorSymM<dim,CellListImpl,sh_byte,RUNTIME,NO_CHECK>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
+			create_<CellNNIteratorSymM<dim,CellListImpl,sh_byte,RUNTIME>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
 		}
 		else if (opt == VL_SYMMETRIC)
 		{
-			create_<decltype(cl.template getNNIteratorSym<NO_CHECK>(0,0,0,pos,pos2)),VL_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
+			create_<decltype(cl.template getNNIteratorSym(0,0,0,pos,pos2)),VL_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
 		}
 		else
 		{
-			create_<decltype(cl.template getNNIterator<NO_CHECK>(0)),VL_NON_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
+			create_<decltype(cl.template getNNIterator(0)),VL_NON_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
 		}
 	}
 
@@ -332,7 +332,7 @@ public:
 	 * \return an interator across the neighborhood particles
 	 *
 	 */
-	template<unsigned int impl=NO_CHECK> inline VerletNNIteratorM<dim,VerletListM<dim,T,sh_byte,CellListImpl,transform,vector_pos_type,VerletBase>,sh_byte> getNNIterator(size_t part_id)
+	inline VerletNNIteratorM<dim,VerletListM<dim,T,sh_byte,CellListImpl,transform,vector_pos_type,VerletBase>,sh_byte> getNNIterator(size_t part_id)
 	{
 		VerletNNIteratorM<dim,VerletListM<dim,T,sh_byte,CellListImpl,transform,vector_pos_type,VerletBase>,sh_byte> vln(part_id,*this);
 
