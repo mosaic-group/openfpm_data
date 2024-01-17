@@ -88,6 +88,7 @@ public:
   typedef typename facade_type::reference reference;
   typedef typename facade_type::value_type value_type;
   typedef typename facade_type::difference_type difference_type;
+  typedef typename std::random_access_iterator_tag iterator_category;
 
   __device__ __host__ array_iterator_openfpm() {}
 
