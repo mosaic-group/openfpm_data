@@ -53,7 +53,7 @@ private:
 	openfpm::vector_gpu<aggregate<unsigned int>> unsortedToSortedIndex;
 
 	//! \breif Number of neighbors in every direction
-	int boxNeighborNumber;
+	size_t boxNeighborNumber;
 
 	//! \brief Neighborhood cell linear ids (minus middle cell id) for in total (2*boxNeighborNumber+1)**dim cells
 	openfpm::vector_gpu<aggregate<int>> boxNeighborCellOffset;
@@ -90,42 +90,14 @@ private:
 
 		numPartInCell.resize(tot_n_cell);
 
-		boxNeighborNumber = 2;
+		boxNeighborNumber = 1;
 		constructNeighborCellOffset(boxNeighborNumber);
 	}
 
-	void constructNeighborCellOffset(unsigned int boxNeighborNumber)
+	void constructNeighborCellOffset(size_t boxNeighborNumber)
 	{
-		auto & cellListGrid = this->getGrid();
 
-		grid_key_dx<dim> cellPosStart;
-		grid_key_dx<dim> cellPosStop;
-		grid_key_dx<dim> cellPosMiddle;
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			cellPosStart.set_d(i,0);
-			cellPosStop.set_d(i,2*boxNeighborNumber);
-			cellPosMiddle.set_d(i,boxNeighborNumber);
-		}
-
-		boxNeighborCellOffset.resize(openfpm::math::pow(2*boxNeighborNumber+1,dim));
-		boxNeighborCellOffset.template get<0>(0) = 0;
-
-		int cellIndexMiddle = cellListGrid.LinId(cellPosMiddle);
-		grid_key_dx_iterator_sub<dim> it(cellListGrid, cellPosStart, cellPosStop);
-
-		size_t i = 1;
-		while (it.isNext())
-		{
-			// make the first element 0 such that the range doesn't have to be checked on the first iteration 
-			if (cellListGrid.LinId(it.get()) - cellIndexMiddle != 0)
-			{
-				boxNeighborCellOffset.template get<0>(i) = (int)cellListGrid.LinId(it.get()) - cellIndexMiddle;
-				++i;
-			}
-			++it;
-		}
+		NNcalc_box(boxNeighborNumber,boxNeighborCellOffset,this->getGrid());
 
 		boxNeighborCellOffset.template hostToDevice<0>();
 	}
@@ -358,7 +330,7 @@ public:
 		Initialize(box,div,pad);
 	}
 
-	void setBoxNN(unsigned int n_NN)
+	void setBoxNN(size_t n_NN)
 	{
 		boxNeighborNumber = n_NN;
 		constructNeighborCellOffset(n_NN);
@@ -432,15 +404,7 @@ public:
 	 */
 	void setRadius(T radius)
 	{
-		// need a temporal copy as NNcalc_rad accepts vector<long int>, not vector<aggregate<long int>> 
-		openfpm::vector<long int> nnc_rad_;
-
-		NNcalc_rad(radius,nnc_rad_,this->getCellBox(),this->getGrid());
-
-		rcutNeighborCellOffset.resize(nnc_rad_.size(),0);
-
-		for (unsigned int i = 0 ; i < nnc_rad_.size() ; i++)
-			rcutNeighborCellOffset.template get<0>(i) = nnc_rad_.template get<0>(i);
+		NNcalc_rad(radius,rcutNeighborCellOffset,this->getCellBox(),this->getGrid());
 
 		rcutNeighborCellOffset.template hostToDevice<0>();
 	}
@@ -707,7 +671,7 @@ private:
 	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> neighborPartIndexFrom_To;
 
 	//! \breif Number of neighbors in every direction
-	int boxNeighborNumber;
+	size_t boxNeighborNumber;
 
 	//! \brief Neighborhood cell linear ids (minus middle cell id) for in total (2*boxNeighborNumber+1)**dim cells
 	openfpm::vector_gpu<aggregate<int>> boxNeighborCellOffset;
@@ -747,41 +711,13 @@ private:
 			cellPadDim[i] = pad;
 		}
 
-		boxNeighborNumber = 2;
+		boxNeighborNumber = 1;
 		constructNeighborCellOffset(boxNeighborNumber);
 	}
 
-	void constructNeighborCellOffset(unsigned int boxNeighborNumber)
+	void constructNeighborCellOffset(size_t boxNeighborNumber)
 	{
-		auto & cellListGrid = this->getGrid();
-
-		grid_key_dx<dim> cellPosStart;
-		grid_key_dx<dim> cellPosStop;
-		grid_key_dx<dim> cellPosMiddle;
-
-		for (size_t i = 0 ; i < dim ; i++)
-		{
-			cellPosStart.set_d(i,0);
-			cellPosStop.set_d(i,2*boxNeighborNumber);
-			cellPosMiddle.set_d(i,boxNeighborNumber);
-		}
-
-		boxNeighborCellOffset.resize(openfpm::math::pow(2*boxNeighborNumber+1,dim));
-		boxNeighborCellOffset.template get<0>(0) = 0;
-
-		int cellIndexMiddle = cellListGrid.LinId(cellPosMiddle);
-		grid_key_dx_iterator_sub<dim> it(cellListGrid, cellPosStart, cellPosStop);
-
-		size_t i = 1;
-		while (it.isNext())
-		{
-			// make the first element 0 such that the range doesn't have to be checked on the first iteration 
-			if (cellListGrid.LinId(it.get()) - cellIndexMiddle != 0) {
-				boxNeighborCellOffset.template get<0>(i) = (int)cellListGrid.LinId(it.get()) - cellIndexMiddle;
-				++i;
-			}
-			++it;
-		}
+		NNcalc_box(boxNeighborNumber,boxNeighborCellOffset,this->getGrid());
 
 		boxNeighborCellOffset.template hostToDevice<0>();
 	}

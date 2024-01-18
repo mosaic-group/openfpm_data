@@ -28,13 +28,8 @@ class NN_gpu_it_box
 
 			if (isNext() == false) break;
 
-			// exclude out-of-domain cells
-			// if (cellPositionIndex+this->neighborCellIndexAct >= 0 && cellPositionIndex+this->neighborCellIndexAct+1 < numPartInCellPrefixSum.size())
-			// {
 			neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
 			neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
-			// }
-			// else this->nextCell();
 		}
 	}
 
@@ -132,13 +127,8 @@ class NN_gpu_it_radius
 
 			if (isNext() == false) {break;}
 
-			// exclude out-of-domain cells
-			// if (cellPositionIndex+this->neighborCellIndexAct >= 0 && cellPositionIndex+this->neighborCellIndexAct+1 < numPartInCellPrefixSum.size())
-			// {
 			neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
 			neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
-			// }
-			// else this->nextCell();
 		}
 	}
 
