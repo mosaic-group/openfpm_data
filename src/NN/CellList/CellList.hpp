@@ -242,13 +242,13 @@ template<unsigned int dim> void NNcalc_full(openfpm::vector<grid_key_dx<dim>> & 
  * 13,14,15,21,22,23,29,30,31
  *
  * \param r_cut Cutoff-radius
- * \param radNeighborCellIndex vector containing the neighborhood cells ids
+ * \param radNeighborCellOffset vector containing the neighborhood cells ids
  *
  */
-template<unsigned int dim, typename T>
+template<unsigned int dim, typename T, typename vector_type>
 void NNcalc_rad(
 	T r_cut,
-	openfpm::vector<long int> & radNeighborCellIndex,
+	vector_type & radNeighborCellOffset,
 	const Box<dim,T> & unitCellSpaceBox,
 	const grid_sm<dim,void> & cellListGrid)
 {
@@ -275,7 +275,10 @@ void NNcalc_rad(
 		middleCell.setHigh(i,(middleCellIndex[i]+1)*unitCellP2.get(i));
 	}
 
-	radNeighborCellIndex.clear();
+	radNeighborCellOffset.clear();
+	radNeighborCellOffset.resize(radCellGrid.size());
+
+	int index = 0;
 	while (radCellGridIt.isNext())
 	{
 		auto key = radCellGridIt.get();
@@ -298,9 +301,79 @@ void NNcalc_rad(
 			key.set_d(i,key.get(i) - middleCellIndex[i]);
 		}
 
-		radNeighborCellIndex.add(cellListGrid.LinId(key));
+		radNeighborCellOffset.template get<0>(index++) = cellListGrid.LinId(key);
 
 		++radCellGridIt;
+	}
+}
+
+/*! Calculate the neighborhood cells based on the box neighborhood.
+ *
+ * \note The function includes NNeighbor per dimension, as compared to NNCalc_rad
+ * \note where the number of adjacent layers of cells depends on grid dimensions
+ * \note and might vary for different dimentions
+ *
+ * \note To the calculated neighborhood cell you have to add the id of the central cell
+ *
+	\verbatim
+   +-----------------------+
+   |p |p |p |p |p |p |p |p |
+   +-----------------------+
+   |p |  |  |  |  |  |  |p |
+   +-----------------------+
+   |p |  |  |7 |8 |9 |  |p |
+   +-----------------------+
+   |p |  |  |-1|0 |1 |  |p |
+   +-----------------------+
+   |p |9 |  |-9|-8|-7|  |p |
+   +-----------------------+
+   |p |p |p |p |p |p |p |p |
+   +-----------------------+
+	\endverbatim
+ *
+ * The number indicate the cell id calculated
+ *
+ * -9,-8,-7,-1,0,1,7,8,9
+ *
+ * The cell 0 has id = 22 in the big cell matrix, so to calculate the
+ * neighborhood cells you have to sum the id of the center cell
+ *
+ * 13,14,15,21,22,23,29,30,31
+ *
+ * Here NNeighbor = 1
+ *
+ * \param NNeighbor number of adjacent cell layers to be included
+ * \param boxNeighborCellOffset vector containing the neighborhood cells ids
+ *
+ */
+template<unsigned int dim, typename vector_type>
+void NNcalc_box(
+	size_t NNeighbor,
+	vector_type & boxNeighborCellOffset,
+	const grid_sm<dim,void> & cellListGrid)
+{
+	grid_key_dx<dim> cellPosStart;
+	grid_key_dx<dim> cellPosStop;
+	grid_key_dx<dim> cellPosMiddle;
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{
+		cellPosStart.set_d(i,0);
+		cellPosStop.set_d(i,2*NNeighbor);
+		cellPosMiddle.set_d(i,NNeighbor);
+	}
+
+	boxNeighborCellOffset.resize(openfpm::math::pow(2*NNeighbor+1,dim));
+
+	int cellIndexMiddle = cellListGrid.LinId(cellPosMiddle);
+	grid_key_dx_iterator_sub<dim> boxCellGridIt(cellListGrid, cellPosStart, cellPosStop);
+
+	size_t index = 0;
+	while (boxCellGridIt.isNext())
+	{
+		boxNeighborCellOffset.template get<0>(index++) = (int)cellListGrid.LinId(boxCellGridIt.get()) - cellIndexMiddle;
+
+		++boxCellGridIt;
 	}
 }
 
