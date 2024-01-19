@@ -19,19 +19,19 @@ BOOST_AUTO_TEST_SUITE( CellDecomposer_gpu_test_suite )
 BOOST_AUTO_TEST_CASE( CellDecomposer_gpu_test_use )
 {
 	//! Spacing
-	openfpm::array<float,3,unsigned int> spacing_c = {0.1,0.1,0.1};
+	openfpm::array<float,3> spacing_c = {0.1,0.1,0.1};
 
 	//! \brief number of sub-divisions in each direction
-	openfpm::array<unsigned int,3,unsigned int> div_c = {10,10,10};
+	openfpm::array<unsigned int,3> div_c = {10,10,10};
 
 	//! \brief cell offset
-	openfpm::array<unsigned int,3,unsigned int> off = {2,2,2};
+	openfpm::array<unsigned int,3> off = {2,2,2};
 
 	Point<3,float> trans({0.0,0.0,0.0});
 
 	shift_only<3,float> t(Matrix<3,float>::identity(),trans);
 
-	CellDecomposer_gpu_ker<3,float,unsigned int, unsigned int,shift_only<3,float>> clk(spacing_c,div_c,off,t);
+	CellDecomposer_gpu_ker<3,float,unsigned int,shift_only<3,float>> clk(spacing_c,div_c,off,t);
 
 	openfpm::vector_gpu<aggregate<grid_key_dx<3,unsigned int>>> output(8);
 

@@ -21,7 +21,6 @@
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
  * \tparam NNc_size neighborhood size
- * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
 template<unsigned int dim, typename Ver> class VerletNNIterator

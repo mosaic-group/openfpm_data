@@ -306,7 +306,6 @@ install(FILES NN/CellList/CellListNNIteratorRadius.hpp
         NN/CellList/CellDecomposer.hpp
         NN/CellList/CellNNIteratorRuntime.hpp
         NN/CellList/CellNNIteratorRuntimeM.hpp
-	NN/CellList/CellList_def.hpp
         DESTINATION openfpm_data/include/NN/CellList
 	COMPONENT OpenFPM)
 

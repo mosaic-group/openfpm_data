@@ -31,10 +31,10 @@ enum cl_construct_opt
  * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
  *
  */
-template<unsigned int dim, typename T, typename CellList> void populate_cell_list_no_sym_gpu(openfpm::vector<Point<dim,T>> & pos, CellList & cli, size_t g_m)
+template<unsigned int dim, typename T, typename CellList> void populate_cell_list_no_sym_gpu(openfpm::vector<Point<dim,T>> & vPos, CellList & cli, size_t g_m)
 {
 	// First we have to set the counter to zero
-	cli.PopulateOnGPU(pos);
+	cli.PopulateOnGPU(vPos);
 }
 
 #include "Vector/map_vector.hpp"
@@ -43,10 +43,10 @@ template<bool is_gpu>
 struct populate_cell_list_no_sym_impl
 {
 	template<unsigned int dim, typename T, typename prop, typename Memory, template <typename> class layout_base , typename CellList,unsigned int ... prp>
-	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
-						   openfpm::vector<Point<dim,T>,Memory,layout_base > & v_pos_out,
-						   openfpm::vector<prop,Memory,layout_base > & v_prp,
-						   openfpm::vector<prop,Memory,layout_base > & v_prp_out,
+	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & vPos,
+						   openfpm::vector<Point<dim,T>,Memory,layout_base > & vPosOut,
+						   openfpm::vector<prop,Memory,layout_base > & vPrp,
+						   openfpm::vector<prop,Memory,layout_base > & vPrpOut,
 			   	   	   	   CellList & cli,
 						   gpu::ofp_context_t& gpuContext,
 			   	   	   	   size_t g_m,
@@ -54,9 +54,9 @@ struct populate_cell_list_no_sym_impl
 	{
 		cli.clear();
 
-		for (size_t i = 0; i < pos.size() ; i++)
+		for (size_t i = 0; i < vPos.size() ; i++)
 		{
-			cli.add(pos.get(i), i);
+			cli.add(vPos.get(i), i);
 		}
 	}
 };
@@ -65,19 +65,19 @@ template<>
 struct populate_cell_list_no_sym_impl<true>
 {
 	template<unsigned int dim, typename T, typename prop, typename Memory, template <typename> class layout_base , typename CellList, unsigned int ... prp>
-	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
-						 openfpm::vector<Point<dim,T>,Memory,layout_base > & v_pos_out,
-						 openfpm::vector<prop,Memory,layout_base > & v_prp,
-						 openfpm::vector<prop,Memory,layout_base > & v_prp_out,
+	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & vPos,
+						 openfpm::vector<Point<dim,T>,Memory,layout_base > & vPosOut,
+						 openfpm::vector<prop,Memory,layout_base > & vPrp,
+						 openfpm::vector<prop,Memory,layout_base > & vPrpOut,
 			   	   	   	   CellList & cli,
 						   gpu::ofp_context_t& gpuContext,
 			   	   	   	   size_t g_m,
 			   	   	   	   cl_construct_opt optc)
 	{
-		v_prp_out.resize(pos.size());
-		v_pos_out.resize(pos.size());
+		vPrpOut.resize(vPos.size());
+		vPosOut.resize(vPos.size());
 
-		cli.template construct<decltype(pos),decltype(v_prp),prp ...>(pos,v_pos_out,v_prp,v_prp_out,gpuContext,g_m,0,pos.size(),optc);
+		cli.template construct<decltype(vPos),decltype(vPrp),prp ...>(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m,0,vPos.size(),optc);
 	}
 };
 
@@ -85,7 +85,7 @@ template<bool is_gpu>
 struct populate_cell_list_sym_impl
 {
 	template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base , typename CellList>
-	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
+	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & vPos,
 			   	   	   	   CellList & cli,
 			   	   	   	   size_t g_m)
 	{
@@ -93,12 +93,12 @@ struct populate_cell_list_sym_impl
 
 		for (size_t i = 0; i < g_m ; i++)
 		{
-			cli.addDom(pos.get(i), i);
+			cli.addDom(vPos.get(i), i);
 		}
 
-		for (size_t i = g_m; i < pos.size() ; i++)
+		for (size_t i = g_m; i < vPos.size() ; i++)
 		{
-			cli.addPad(pos.get(i), i);
+			cli.addPad(vPos.get(i), i);
 		}
 	}
 };
@@ -107,7 +107,7 @@ template<>
 struct populate_cell_list_sym_impl<true>
 {
 	template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base , typename CellList>
-	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
+	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & vPos,
 			   	   	   	   CellList & cli,
 			   	   	   	   size_t g_m)
 	{
@@ -121,7 +121,7 @@ struct populate_cell_list_sym_impl<true>
  * \tparam T type of the space
  * \tparam CellList type of cell-list
  *
- * \param pos vector of positions
+ * \param vPos vector of positions
  * \param cli Cell-list
  * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
  *
@@ -133,17 +133,17 @@ template<unsigned int dim,
 		 template <typename> class layout_base ,
 		 typename CellList,
 		 unsigned int ... prp>
-void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
-		 	 	 	 	 	   openfpm::vector<Point<dim,T>,Memory,layout_base > & v_pos_out,
-		 	 	 	 	 	   openfpm::vector<prop,Memory,layout_base > & v_prp,
-		 	 	 	 	 	   openfpm::vector<prop,Memory,layout_base > & v_prp_out,
+void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,layout_base > & v_pos,
+							   openfpm::vector<Point<dim,T>,Memory,layout_base > & vPosOut,
+							   openfpm::vector<prop,Memory,layout_base > & vPrp,
+							   openfpm::vector<prop,Memory,layout_base > & vPrpOut,
 							   CellList & cli,
 							   gpu::ofp_context_t& gpuContext,
 							   size_t g_m,
 							   cl_construct_opt optc)
 {
 	populate_cell_list_no_sym_impl<is_gpu_celllist<CellList>::value>
-								  ::template populate<dim,T,prop,Memory,layout_base,CellList, prp ...>(pos,v_pos_out,v_prp,v_prp_out,cli,gpuContext,g_m,optc);
+								  ::template populate<dim,T,prop,Memory,layout_base,CellList, prp ...>(v_pos,vPosOut,vPrp,vPrpOut,cli,gpuContext,g_m,optc);
 }
 
 /*! \brief populate the Cell-list with particles symmetric case
@@ -152,17 +152,17 @@ void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,layout_base >
  * \tparam T type of the space
  * \tparam CellList type of cell-list
  *
- * \param pos vector of positions
+ * \param vPos vector of positions
  * \param cli Cell-list
  * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
  *
  */
 template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base ,typename CellList>
-void populate_cell_list_sym(openfpm::vector<Point<dim,T>,Memory,layout_base > & pos,
+void populate_cell_list_sym(openfpm::vector<Point<dim,T>,Memory,layout_base > & vPos,
 		      	  	  	    CellList & cli,
 		      	  	  	    size_t g_m)
 {
-	populate_cell_list_sym_impl<is_gpu_celllist<CellList>::value>::populate(pos,cli,g_m);
+	populate_cell_list_sym_impl<is_gpu_celllist<CellList>::value>::populate(vPos,cli,g_m);
 }
 
 /*! \brief populate the Cell-list with particles generic case
@@ -171,7 +171,7 @@ void populate_cell_list_sym(openfpm::vector<Point<dim,T>,Memory,layout_base > & 
  * \tparam T type of the space
  * \tparam CellList type of cell-list
  *
- * \param pos vector of positions
+ * \param vPos vector of positions
  * \param cli Cell-list
  * \param opt option like CL_SYMMETRIC or CL_NON_SYMMETRIC
  * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
@@ -184,10 +184,10 @@ template<unsigned int dim,
 		 template <typename> class layout_base,
 		 typename CellList,
 		 unsigned int ... prp>
-void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & pos,
- 	 	   	   	   	    openfpm::vector<Point<dim,T>,Memory,layout_base > & v_pos_out,
- 	 	   	   	   	    openfpm::vector<prop,Memory,layout_base > & v_prp,
- 	 	   	   	   	    openfpm::vector<prop,Memory,layout_base > & v_prp_out,
+void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & vPos,
+						openfpm::vector<Point<dim,T>,Memory,layout_base > & vPosOut,
+						openfpm::vector<prop,Memory,layout_base > & vPrp,
+						openfpm::vector<prop,Memory,layout_base > & vPrpOut,
 						CellList & cli,
 						gpu::ofp_context_t& gpuContext,
 						size_t g_m,
@@ -195,9 +195,9 @@ void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & pos,
 						cl_construct_opt optc)
 {
 	if (opt == CL_NON_SYMMETRIC)
-	{populate_cell_list_no_sym<dim,T,prop,Memory,layout_base,CellList,prp ...>(pos,v_pos_out,v_prp,v_prp_out,cli,gpuContext,g_m,optc);}
+	{populate_cell_list_no_sym<dim,T,prop,Memory,layout_base,CellList,prp ...>(vPos,vPosOut,vPrp,vPrpOut,cli,gpuContext,g_m,optc);}
 	else
-	{populate_cell_list_sym(pos,cli,g_m);}
+	{populate_cell_list_sym(vPos,cli,g_m);}
 }
 
 /*! \brief populate the Cell-list with particles generic case
@@ -208,7 +208,7 @@ void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & pos,
  * \tparam T type of the space
  * \tparam CellList type of cell-list
  *
- * \param pos vector of positions
+ * \param vPos vector of positions
  * \param cli Cell-list
  * \param opt option like CL_SYMMETRIC or CL_NON_SYMMETRIC
  * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
@@ -220,7 +220,7 @@ template<unsigned int dim,
 		 template <typename> class layout_base,
 		 typename CellList,
 		 unsigned int ... prp>
-void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & pos,
+void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & vPos,
 						CellList & cli,
 						gpu::ofp_context_t& gpuContext,
 						size_t g_m,
@@ -234,7 +234,7 @@ void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & pos,
 
 	openfpm::vector<Point<dim,T>,Memory,layout_base> stub3;
 
-	populate_cell_list<dim,T,aggregate<int>,Memory,layout_base,CellList,prp...>(pos,stub3,stub1,stub2,cli,gpuContext,g_m,opt,optc);
+	populate_cell_list<dim,T,aggregate<int>,Memory,layout_base,CellList,prp...>(vPos,stub3,stub1,stub2,cli,gpuContext,g_m,opt,optc);
 }
 
 /*! \brief Structure that contain a reference to a vector of particles
