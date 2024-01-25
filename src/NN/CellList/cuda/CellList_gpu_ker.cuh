@@ -49,7 +49,7 @@ public:
 	cellPositionIndex(cid_<dim,ids_type,int>::get_cid(numCellDim,cellPosition)),
 	boxNeighborCellOffset_i(0),
 #if defined(__NVCC__)
-	neighborCellIndexAct(__ldg(boxNeighborCellOffset+boxNeighborCellOffset_i))
+	neighborCellIndexAct(*(boxNeighborCellOffset+boxNeighborCellOffset_i))
 #else
 	neighborCellIndexAct(boxNeighborCellOffset[boxNeighborCellOffset_i])
 #endif
@@ -97,7 +97,7 @@ public:
 		++boxNeighborCellOffset_i;
 
 		#if defined(__NVCC__)
-			neighborCellIndexAct = __ldg(boxNeighborCellOffset+boxNeighborCellOffset_i);
+			neighborCellIndexAct = *(boxNeighborCellOffset+boxNeighborCellOffset_i);
 		#else
 			neighborCellIndexAct = boxNeighborCellOffset[boxNeighborCellOffset_i];
 		#endif
