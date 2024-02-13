@@ -255,6 +255,7 @@ void NNcalc_rad(
 	// 2*(r_cut / unitCellP2_{dim})+1
 	size_t nRadCellDim[dim];
 	size_t middleCellIndex[dim];
+	openfpm::vector<long int> radNeighborCellOffsetTemp;
 
 	Point<dim,T> unitCellP2 = unitCellSpaceBox.getP2();
 
@@ -275,10 +276,6 @@ void NNcalc_rad(
 		middleCell.setHigh(i,(middleCellIndex[i]+1)*unitCellP2.get(i));
 	}
 
-	radNeighborCellOffset.clear();
-	radNeighborCellOffset.resize(radCellGrid.size());
-
-	int index = 0;
 	while (radCellGridIt.isNext())
 	{
 		auto key = radCellGridIt.get();
@@ -301,9 +298,15 @@ void NNcalc_rad(
 			key.set_d(i,key.get(i) - middleCellIndex[i]);
 		}
 
-		radNeighborCellOffset.template get<0>(index++) = cellListGrid.LinId(key);
+		radNeighborCellOffsetTemp.add(cellListGrid.LinId(key));
 
 		++radCellGridIt;
+	}
+
+	radNeighborCellOffset.resize(radNeighborCellOffsetTemp.size());
+	for (int i = 0; i < radNeighborCellOffsetTemp.size(); ++i)
+	{
+		radNeighborCellOffset.template get<0>(i) = radNeighborCellOffsetTemp.template get<0>(i);
 	}
 }
 
