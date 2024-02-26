@@ -8,7 +8,6 @@
 #ifndef MAP_VECTOR_HPP
 #define MAP_VECTOR_HPP
 
-#include "util/cuda_launch.hpp"
 #include <iostream>
 #include <typeinfo>
 #include "util/common.hpp"

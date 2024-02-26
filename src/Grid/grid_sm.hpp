@@ -3,7 +3,7 @@
 
 
 #include "config.h"
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #include <boost/shared_array.hpp>
 #include <vector>
 #include <initializer_list>

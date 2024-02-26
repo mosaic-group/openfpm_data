@@ -5,13 +5,11 @@
  *      Author: i-bird
  */
 
-#define BOOST_GPU_ENABLED __host__ __device__
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
-#include "util/cuda_util.hpp"
 #include "cuda/CellList_gpu.hpp"
 #include "CellList.hpp"
 #include "util/boost/boost_array_openfpm.hpp"

@@ -8,7 +8,6 @@
 #ifndef MAP_VECTOR_SPARSE_HPP_
 #define MAP_VECTOR_SPARSE_HPP_
 
-#include "util/cuda_launch.hpp"
 #include "Vector/map_vector.hpp"
 #include "Vector/cuda/map_vector_sparse_cuda_ker.cuh"
 #include "Vector/cuda/map_vector_sparse_cuda_kernels.cuh"

@@ -10,7 +10,7 @@
 
 #ifdef __NVCC__
 
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #include "util/ofp_context.hpp"
 
 #if CUDART_VERSION >= 11000

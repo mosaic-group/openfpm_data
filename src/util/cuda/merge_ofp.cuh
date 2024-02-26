@@ -11,7 +11,7 @@
  #ifdef __NVCC__
  
  #include "Vector/map_vector.hpp"
- #include "util/cuda_launch.hpp"
+ #include "util/cuda_util.hpp"
  
  #ifndef CUDA_ON_CPU
      // Here we have for sure CUDA >= 11
@@ -108,4 +108,3 @@
  #endif /* __NVCC__ */
  
  #endif /* SCAN_OFP_HPP_ */
- 

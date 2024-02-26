@@ -9,7 +9,7 @@
 #define CUDA_GRID_GPU_FUNCS_CUH_
 
 #include "config.h"
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #include "map_grid_cuda_ker.cuh"
 
 #if defined(CUDA_GPU) && defined(__NVCC__)

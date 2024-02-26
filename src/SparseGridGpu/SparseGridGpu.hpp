@@ -8,7 +8,7 @@
 constexpr int BLOCK_SIZE_STENCIL = 128;
 
 #include "config.h"
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #include <cstdlib>
 #include <SparseGridGpu/BlockMapGpu.hpp>
 #include <Grid/iterators/grid_skin_iterator.hpp>

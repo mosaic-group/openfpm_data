@@ -3,7 +3,7 @@
 
 
 #include "config.h"
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #include "util/object_util.hpp"
 #include "Grid/util.hpp"
 #include "Vector/vect_isel.hpp"

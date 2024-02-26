@@ -17,7 +17,7 @@
 #if CUDART_VERSION < 11000
 #include "util/cuda/cub_old/util_type.cuh"
 #include "util/cuda/cub_old/block/block_scan.cuh"
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #endif
 
 #if !defined(CUDA_ON_CPU)
@@ -218,7 +218,7 @@ struct smax_
 
 template<typename type_t, unsigned int blockLength>
 struct maximum_block_t   {
-  GPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
@@ -294,7 +294,7 @@ struct smin_
 
 template<typename type_t, unsigned int blockLength>
 struct minimum_block_t   {
-  GPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
@@ -343,7 +343,7 @@ struct smin_block_
 
 template<typename type_t>
 struct bitwiseOr_t   {
-  GPU_HOST_DEVICE type_t operator()(type_t a, type_t b) const {
+  __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
     return a|b;
   }
 };
