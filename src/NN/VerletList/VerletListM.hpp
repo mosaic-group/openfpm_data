@@ -42,9 +42,9 @@ struct NNTypeM
 						   size_t pp,
 						   size_t p,
 						   CellListImpl & cl,
-						   T r_cut) -> decltype(cl.template getNNIterator(0))
+						   T r_cut) -> decltype(cl.getNNIterator(0))
 	{
-		return cl.template getNNIterator(cl.getCell(xp));
+		return cl.getNNIterator(cl.getCell(xp));
 	}
 };
 
@@ -117,9 +117,9 @@ struct NNTypeM<dim,T,CellListImpl,PartIt,VL_SYMMETRIC>
 					   size_t pp,
 					   size_t p,
 					   CellListImpl & cl,
-					   T r_cut) -> decltype(cl.template getNNIteratorSym(0,0,0,typename CellListImpl::internal_vector_pos_type(),openfpm::vector<pos_v<typename CellListImpl::internal_vector_pos_type>>()))
+					   T r_cut) -> decltype(cl.getNNIteratorSym(0,0,0,typename CellListImpl::internal_vector_pos_type(),openfpm::vector<pos_v<typename CellListImpl::internal_vector_pos_type>>()))
 	{
-		return cl.template getNNIteratorSym(cl.getCell(xp),pp,p,pos,v);
+		return cl.getNNIteratorSym(cl.getCell(xp),pp,p,pos,v);
 	}
 };
 
@@ -176,11 +176,11 @@ class VerletListM : public VerletBase
 		}
 		else if (opt == VL_SYMMETRIC)
 		{
-			create_<decltype(cl.template getNNIteratorSym(0,0,0,pos,pos2)),VL_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
+			create_<decltype(cl.getNNIteratorSym(0,0,0,pos,pos2)),VL_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
 		}
 		else
 		{
-			create_<decltype(cl.template getNNIterator(0)),VL_NON_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
+			create_<decltype(cl.getNNIterator(0)),VL_NON_SYMMETRIC>(pos,pos2,dom,anom,pp,r_cut,g_m,cl,opt);
 		}
 	}
 

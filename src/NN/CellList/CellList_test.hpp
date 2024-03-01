@@ -175,7 +175,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 		Point<dim,T> key = Point<dim,T>(g_it_s.get().toPoint());
 		key = pmul(key,spacing) + offset[0] + box.getP1();
 
-		auto NN = cl1.template getNNIterator(cl1.getCell(key));
+		auto NN = cl1.getNNIterator(cl1.getCell(key));
 		size_t total = 0;
 
 		while(NN.isNext())
@@ -197,7 +197,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
 #ifndef SE_CLASS1
 
 		id = cl1.get(cl1.getCell(key),0);
-		auto NNSym = cl1.template getNNIteratorSym(cl1.getCell(key),id,pos);
+		auto NNSym = cl1.getNNIteratorSym(cl1.getCell(key),id,pos);
 		total = 0;
 
 		while(NNSym.isNext())
