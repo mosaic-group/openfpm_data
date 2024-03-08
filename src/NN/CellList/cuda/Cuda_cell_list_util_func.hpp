@@ -455,7 +455,7 @@ template<typename vector_sort_index, typename vector_out_type>
 __global__ void mark_domain_particles(
 	vector_sort_index sortedToUnsortedIndex,
 	vector_out_type isSortedIndexOrGhost,
-	int ghostMarker)
+	size_t ghostMarker)
 {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 

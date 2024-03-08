@@ -2002,6 +2002,7 @@ namespace openfpm
 
 			return base.getGPUIterator(start,stop,n_thr);
 		}
+
         /*! \brief Get a domain iterator for the GPU
          *
          *

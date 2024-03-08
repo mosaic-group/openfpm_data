@@ -35,14 +35,14 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_gpu_test_use )
 
 	openfpm::vector_gpu<aggregate<grid_key_dx<3,unsigned int>>> output(8);
 
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,0,Point<3,float>({0.2,0.2,0.2}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,1,Point<3,float>({0.1,0.2,0.3}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,2,Point<3,float>({0.25,0.55,0.45}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,3,Point<3,float>({0.15,0.15,0.95}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,4,Point<3,float>({1.05,1.05,1.05}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,5,Point<3,float>({1.15,1.15,1.15}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,6,Point<3,float>({-0.05,-0.05,-0.05}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,7,Point<3,float>({-0.15,-0.15,-0.15}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)0,Point<3,float>({0.2,0.2,0.2}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)1,Point<3,float>({0.1,0.2,0.3}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)2,Point<3,float>({0.25,0.55,0.45}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)3,Point<3,float>({0.15,0.15,0.95}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)4,Point<3,float>({1.05,1.05,1.05}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)5,Point<3,float>({1.15,1.15,1.15}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)6,Point<3,float>({-0.05,-0.05,-0.05}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)7,Point<3,float>({-0.15,-0.15,-0.15}));
 
 	output.template deviceToHost<0>();
 

@@ -259,7 +259,7 @@ private:
 					decltype(vPos.toKernel()),
 					decltype(sortedToUnsortedIndex.toKernel()),
 					decltype(cellIndexLocalIndexToPart.toKernel()),prp...>),ite,
-				sortedToUnsortedIndex.size(),
+				(int)sortedToUnsortedIndex.size(),
 				vPrp.toKernel(),
 				vPrpOut.toKernel(),
 				vPos.toKernel(),
@@ -745,7 +745,7 @@ private:
 		cellIndex.resize(stop - start);
 		cellIndex.template fill<0>(0);
 
-		auto ite_gpu = vPos.getGPUIteratorTo(stop-start);
+		auto ite_gpu = vPos.getGPUIteratorTo(stop-start,1024);
 
 		if (ite_gpu.wthr.x == 0 || vPos.size() == 0 || stop == 0)
 			return;
@@ -804,7 +804,7 @@ private:
 			neighborCellCount.toKernel(),
 			boxNeighborCellOffset.toKernel(),
 			neighborPartIndexFrom_To.toKernel(),
-			cellIndexLocalIndexToPart.size()
+			(typename decltype(vecSparseCellIndex_PartIndex.toKernel())::index_type)cellIndexLocalIndexToPart.size()
 		);
 
 		sortedToUnsortedIndex.resize(stop-start);

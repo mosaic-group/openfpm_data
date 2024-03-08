@@ -1028,7 +1028,7 @@ void test_convolution_3x3x3()
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
     CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
             gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+            sparseGrid.toKernel(), start,(float)64, (float)56, 1);
 
     sparseGrid.template flush < smax_< 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
@@ -1095,7 +1095,7 @@ void test_convolution_3x3x3_no_shared()
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
     CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
             gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+            sparseGrid.toKernel(), start,(float)64, (float)56, 1);
 
     sparseGrid.template flush < smax_< 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
@@ -1196,7 +1196,7 @@ BOOST_AUTO_TEST_CASE(test_sparse_grid_iterator_sub_host)
 	sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
 	CUDA_LAUNCH_DIM3((insertSphere3D<0>),
 					 gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
-					 sparseGrid.toKernel(), start1, 32, 0, 1);
+					 sparseGrid.toKernel(), start1, (float)32, (float)0, 1);
 
 	sparseGrid.flush < smax_< 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
@@ -1251,7 +1251,7 @@ BOOST_AUTO_TEST_CASE(test_sparse_grid_iterator_host)
 	sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
 	CUDA_LAUNCH_DIM3((insertSphere3D<0>),
 					 gridSize, dim3(blockEdgeSize*blockEdgeSize*blockEdgeSize,1,1),
-					 sparseGrid.toKernel(), start1, 64, 32, 1);
+					 sparseGrid.toKernel(), start1, (float)64, (float)32, 1);
 
 	sparseGrid.flush < smax_< 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
@@ -1304,7 +1304,7 @@ BOOST_AUTO_TEST_CASE(test_pack_request)
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
     CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
             gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+            sparseGrid.toKernel(), start,(float)64, (float)56, 1);
 
     sparseGrid.flush < smax_< 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
     sparseGrid.template deviceToHost<0>();
@@ -1344,7 +1344,7 @@ BOOST_AUTO_TEST_CASE(test_MergeIndexMap)
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
     CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
             gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+            sparseGrid.toKernel(), start,(float)64, (float)56, 1);
 
     size_t sz_b =  sparseGrid.private_get_index_array().size();
 
@@ -1402,7 +1402,7 @@ BOOST_AUTO_TEST_CASE(test_pack_request_with_iterator)
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
     CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
             gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+            sparseGrid.toKernel(), start,(float)64, (float)56, 1);
 
     sparseGrid.flush < smax_< 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
@@ -1495,7 +1495,7 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_remove_test)
     sparseGrid.setGPUInsertBuffer(gridSize,dim3(1));
     CUDA_LAUNCH_DIM3((insertSphere3D_radius<0>),
             gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGrid.toKernel(), start,64, 56, 1);
+            sparseGrid.toKernel(), start,(float)64, (float)56, 1);
 
     sparseGrid.flush < smax_< 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
@@ -1718,7 +1718,7 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
     sparseGridSrc.setGPUInsertBuffer(gridSize,dim3(1));
     CUDA_LAUNCH_DIM3((insertSphere3D_radiusV<0>),
             gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGridSrc.toKernel(), start,64, 56, 1);
+            sparseGridSrc.toKernel(), start,(float)64, (float)56, 1);
 
 	    sparseGridSrc.flush < smax_< 0 >, smax_<1> > (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
@@ -1830,7 +1830,7 @@ BOOST_AUTO_TEST_CASE(sparsegridgpu_pack_unpack)
     sparseGridSrc.setGPUInsertBuffer(gridSize,dim3(1));
     CUDA_LAUNCH_DIM3((removeSphere3D_even_radiusV<0>),
             gridSize, dim3(SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_*SparseGridZ::blockEdgeSize_,1,1),
-            sparseGridSrc.toKernel(), start,64, 56, 1);
+            sparseGridSrc.toKernel(), start,(float)64, (float)56, 1);
 
     pack_unpack_test(sparseGridDst,sparseGridSrc,
 			 	 	 box1_dst,box2_dst,

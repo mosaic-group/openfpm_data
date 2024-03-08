@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(test_maps_create)
 
 	auto ite = merge_indexes.getGPUIterator();
 
-	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,merge_keys.toKernel(),merge_indexes.toKernel(),9,p_ids.toKernel());
+	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,merge_keys.toKernel(),merge_indexes.toKernel(),(unsigned int)9,p_ids.toKernel());
 
 	gpu::ofp_context_t gpuContext;
 	openfpm::scan((int *)p_ids.template getDeviceBuffer<0>(),

@@ -1242,6 +1242,8 @@ private:
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(dpf);
 
 			ite.wthr.x = n_cnk_cp.get(i);
+			ite.wthr.y = 1;
+			ite.wthr.z = 1;
 
 			// calculate best number of threads
 			Box<dim,size_t> ub = box_cp.get(i);
@@ -1256,6 +1258,8 @@ private:
 				else
 				{ite.thr.x *= l;}
 			}
+			ite.thr.y = 1;
+			ite.thr.z = 1;
 
 			// copy to new (1 block for each packed chunk)
 			if (ite.nblocks() != 0 && ite.thr.x != 0)
@@ -1271,11 +1275,11 @@ private:
 																				 new_map.toKernel(),
 																				 data,
 																				 chunks.toKernel(),
-																				 n_cnk_cp.get(i),
-																				 n_shifts_cp.get(i),
-																				 n_pnt_cp.get(i),
-																				 i,
-																				 n_accu_cnk);
+																				 (unsigned int)n_cnk_cp.get(i),
+																				 (unsigned int)n_shifts_cp.get(i),
+																				 (unsigned int)n_pnt_cp.get(i),
+																				 (unsigned int)i,
+																				 (unsigned int)n_accu_cnk);
 			}
 
 			n_accu_cnk += n_cnk_cp.get(i)*n_shifts_cp.get(i);
@@ -1400,7 +1404,7 @@ private:
     	ite.thr.z = 1;
 
     	if (pack_subs.size() != 0)
-		{CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),indexBuffer.size()+1,pack_subs.size());}
+		{CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),(unsigned int)indexBuffer.size()+1,(unsigned int)pack_subs.size());}
     }
 
 
@@ -1549,7 +1553,7 @@ private:
 			case 1:
 				// Calculate for each chunk the indexes where they should go + active points
 				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,1,indexT>),ite,ids,
-															  n_cnk,
+															  (int)n_cnk,
 															  gridGeoPack,origPack_cnk,
 															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
@@ -1560,7 +1564,7 @@ private:
 			case 2:
 				// Calculate for each chunk the indexes where they should go + active points
 				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,2,indexT>),ite,ids,
-															  n_cnk,
+															  (int)n_cnk,
 															  gridGeoPack,origPack_cnk,
 															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
@@ -1571,7 +1575,7 @@ private:
 			case 4:
 				// Calculate for each chunk the indexes where they should go + active points
 				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,4,indexT>),ite,ids,
-															  n_cnk,
+															  (int)n_cnk,
 															  gridGeoPack,origPack_cnk,
 															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
@@ -1582,7 +1586,7 @@ private:
 			case 8:
 				// Calculate for each chunk the indexes where they should go + active points
 				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,8,indexT>),ite,ids,
-															  n_cnk,
+															  (int)n_cnk,
 															  gridGeoPack,origPack_cnk,
 															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
@@ -2382,7 +2386,7 @@ public:
         	CUDA_LAUNCH((SparseGridGpuKernels::fill_e_points<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,
         				 dataBuffer.toKernel(),
         				 block_points.toKernel(),
-        				 e_points.toKernel())
+        				 e_points.toKernel());
 
         }
 
@@ -3102,7 +3106,7 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 (unsigned int)indexBuffer.size() + 1);
 			}
 			else if (pack_subs.size() <= 64)
 			{
@@ -3117,7 +3121,7 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 (unsigned int)indexBuffer.size() + 1);
 			}
 			else if (pack_subs.size() <= 96)
 			{
@@ -3132,7 +3136,7 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 (unsigned int)indexBuffer.size() + 1);
 			}
 			else if (pack_subs.size() <= 128)
 			{
@@ -3147,7 +3151,7 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 (unsigned int)indexBuffer.size() + 1);
 			}
 			else
 			{
@@ -3574,8 +3578,8 @@ public:
 																											 pointers.toKernel(),
 																											 headers.toKernel(),
 																											 (int *)result.getDevicePointer(),
-																											 spq.point_size,
-																											 n_slot)
+																											 (unsigned int)spq.point_size,
+																											 n_slot);
 	}
 
 	/*! \brief unpack the sub-grid object

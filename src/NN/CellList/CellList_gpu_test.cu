@@ -87,7 +87,7 @@ void test_sub_index()
 																	off,
 																	t,
 																	vPos.size(),
-																	0,
+																	(size_t)0,
 																	vPos.toKernel(),
 																	cl_n.toKernel(),
 																	cellIndex_LocalIndex.toKernel());
@@ -206,7 +206,7 @@ void test_sub_index2()
 																	off,
 																	t,
 																	vPos.size(),
-																	0,
+																	(size_t)0,
 																	vPos.toKernel(),
 																	cl_n.toKernel(),
 																	cellIndex_LocalIndex.toKernel());
@@ -382,7 +382,8 @@ void test_fill_cell()
 	CUDA_LAUNCH_DIM3((fill_cells),itgg.wthr,itgg.thr,
 		starts.toKernel(),
 		cellIndex_LocalIndex.toKernel(),
-		cells.toKernel()
+		cells.toKernel(),
+		(size_t)0
 	);
 
 	cells.template deviceToHost<0>();

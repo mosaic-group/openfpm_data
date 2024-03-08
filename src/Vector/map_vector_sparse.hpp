@@ -214,7 +214,7 @@ namespace openfpm
                                               vct_index_tmp2.toKernel(),vct_add_data_unique.toKernel(),
                                               vct_index_tmp3.toKernel(),vct_add_data_cont.toKernel(),
                                               vct_index_dtmp.toKernel(),
-                                              vct_index.size());
+                                              (int)vct_index.size());
 
                 // we scan tmp3
                 openfpm::scan(
@@ -766,7 +766,8 @@ namespace openfpm
 				auto ite = segment_offset.getGPUIterator();
 
 				CUDA_LAUNCH((reduce_from_offset<decltype(segment_offset.toKernel()),decltype(vector_data_red.toKernel()),reduction_type>),
-															ite,segment_offset.toKernel(),vector_data_red.toKernel(),vector_data.size());
+															ite,segment_offset.toKernel(),vector_data_red.toKernel(),
+															(typename std::remove_reference<decltype(segment_offset.template get<1>(0))>::type) vector_data.size());
 			}
 
 #else
@@ -1081,7 +1082,7 @@ namespace openfpm
 
 			ite = vct_add_index_unique.getGPUIterator();
 			vct_index_tmp4.resize(vct_add_index_unique.size());
-			CUDA_LAUNCH((set_indexes<0>),ite,vct_index_tmp4.toKernel(),vct_index.size());
+			CUDA_LAUNCH((set_indexes<0>),ite,vct_index_tmp4.toKernel(),(int)vct_index.size());
 
 			ite_gpu<1> itew;
 
@@ -1297,7 +1298,7 @@ namespace openfpm
 			CUDA_LAUNCH((set_indexes<0>),ite,vct_m_index.toKernel(),0);
 
 			ite = vct_add_index_unique.getGPUIterator();
-			CUDA_LAUNCH((set_indexes<1>),ite,vct_add_index_unique.toKernel(),vct_index.size());
+			CUDA_LAUNCH((set_indexes<1>),ite,vct_add_index_unique.toKernel(),(int)vct_index.size());
 
 			// after merge we solve the last conflicts, running across the vector again and spitting 1 when there is something to merge
 			// we reorder the data array also
@@ -1329,7 +1330,7 @@ namespace openfpm
 										 vct_index_tmp3.toKernel(),
 										 vct_m_index.toKernel(),
 										  vct_index_dtmp.toKernel(),
-										  vct_index.size());
+										  (int)vct_index.size());
 
 			// we scan tmp3
 			openfpm::scan((Ti*)vct_index_dtmp.template getDeviceBuffer<0>(),vct_index_dtmp.size(),(Ti *)vct_index_dtmp.template getDeviceBuffer<1>(),gpuContext);
