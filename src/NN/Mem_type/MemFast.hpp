@@ -323,7 +323,7 @@ public:
 		cl_base.swap(mem.cl_base);
 	}
 
-	/*! \brief Delete all the elements in the Cell-list
+	/*! \brief Delete all the elements at every position.
 	 *
 	 *
 	 *
@@ -332,6 +332,16 @@ public:
 	{
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
 		{cl_n.template get<0>(i) = 0;}
+	}
+
+    /*! \brief Delete the elements at position p
+	 *
+	 *
+	 *
+	 */
+	inline void clear(size_t p)
+	{
+		cl_n.template get<0>(p) = 0;
 	}
 
 	/*! \brief Get the first element of a cell (as reference)
@@ -445,6 +455,66 @@ public:
 	{
 		return cl_base;
 	}
+
+    /*! This Function to indicate the vector class has a packer function
+     *
+     * \return true vector has a pack function
+     *
+     */
+    static bool pack()
+    {
+        return true;
+    }
+
+    /*! This Function indicate that vector class has a packRequest function
+     *
+     * \return true vector has a packRequest function
+     *
+     */
+    static bool packRequest()
+    {
+        return true;
+    }
+
+    /*! \brief It calculate the number of byte required to serialize the object
+     *
+     * \tparam prp list of properties
+     *
+     * \param req reference to the total counter required to pack the information
+     *
+     */
+    template<int ... prp> inline void packRequest(size_t & req) const
+    {
+        Packer<local_index,HeapMemory>::packRequest(req);
+        cl_n.template packRequest<prp...>(req);
+        cl_base.template packRequest<prp...>(req);
+    }
+
+
+    /*! \brief pack a vector selecting the properties to pack
+     *
+     * \param mem preallocated memory where to pack the vector
+     * \param sts pack-stat info
+     *
+     */
+    template<int ... prp> inline void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts) const
+    {
+        Packer<local_index,HeapMemory>::pack(mem, slot, sts);
+        cl_n.template pack<prp...>(mem, sts);
+        cl_base.template pack<prp...>(mem, sts);
+    }
+
+    /*! \brief unpack a vector
+     *
+     * \param mem preallocated memory from where to unpack the vector
+     * \param ps unpack-stat info
+     */
+    template<int ... prp, typename MemType> inline void unpack(ExtPreAlloc<MemType> & mem, Unpack_stat & ps)
+    {
+        Unpacker<local_index,HeapMemory>::unpack(mem, slot, ps);
+        cl_n.template unpack<prp...>(mem, ps);
+        cl_base.template unpack<prp...>(mem, ps);
+    }
 
 };
 

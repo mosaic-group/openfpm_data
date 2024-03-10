@@ -827,6 +827,32 @@ public:
 		return Mem_type::get(i,j);
 	}
 
+    /*! \brief Replace the neighborhood particles for the particle id part_id with the given buffer
+	 *
+	 * \param part_id id of the particle
+	 * \param buffer used to update the neighborhood
+     *
+	 */
+	inline void replace_p(size_t  part_id,const openfpm::vector<size_t> &buffer)
+	{
+        Mem_type::clear(part_id);
+        for (size_t i = 0 ; i < buffer.size() ; i++)
+        {
+            Mem_type::addCell(part_id,buffer.get(i));
+        }
+	}
+
+    /*! \brief Getting the neighbor j of particle i
+	 *
+	 * \param i particle id
+	 * \param j neighbor id
+     *
+	 */
+	inline auto getNeighborId(size_t  i, size_t j) -> decltype(Mem_type::get(i,j))
+	{
+        return Mem_type::get(i,j);
+	}
+
 	/*! \brief Swap the memory
 	 *
 	 * \param vl Verlet list with witch you swap the memory
@@ -953,6 +979,60 @@ public:
 	{
 		return dp;
 	}
+    /*! This Function to indicate the vector class has a packer function
+     *
+     * \return true vector has a pack function
+     *
+     */
+    static bool pack()
+    {
+        return true;
+    }
+
+    /*! This Function indicate that vector class has a packRequest function
+     *
+     * \return true vector has a packRequest function
+     *
+     */
+    static bool packRequest()
+    {
+        return true;
+    }
+
+    /*! \brief It calculate the number of byte required to serialize the object
+     *
+     * \tparam prp list of properties
+     *
+     * \param req reference to the total counter required to pack the information
+     *
+     */
+    template<int ... prp> inline void packRequest(size_t & req) const
+    {
+        Mem_type::packRequest(req);
+    }
+
+
+    /*! \brief pack a vector selecting the properties to pack
+     *
+     * \param mem preallocated memory where to pack the vector
+     * \param sts pack-stat info
+     *
+     */
+    template<int ... prp> inline void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts) const
+    {
+        Mem_type::pack(mem,sts);
+    }
+
+    /*! \brief unpack a vector
+     *
+     * \param mem preallocated memory from where to unpack the vector
+     * \param ps unpack-stat info
+     */
+    template<int ... prp, typename MemType> inline void unpack(ExtPreAlloc<MemType> & mem, Unpack_stat & ps)
+    {
+        Mem_type::unpack(mem,ps);
+    }
+
 };
 
 
