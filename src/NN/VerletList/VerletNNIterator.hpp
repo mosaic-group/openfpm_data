@@ -23,7 +23,7 @@
  * \tparam NNc_size neighborhood size
  *
  */
-template<unsigned int dim, typename Ver> class VerletNNIterator
+    template<unsigned int dim, typename Ver> class VerletNNIterator
 {
 	//! start index for the neighborhood
 	const typename Ver::Mem_type_type::local_index_type  * start;

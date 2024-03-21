@@ -341,26 +341,26 @@ private:
 	 * \param opt options to create the verlet list like VL_SYMMETRIC or VL_NON_SYMMETRIC
 	 *
 	 */
-	inline void create(const vector_pos_type & pos, const vector_pos_type & pos2, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cl, size_t opt)
+	inline void create(const vector_pos_type & posTo, const vector_pos_type & posFrom, const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cl, size_t opt)
 	{
 		if (opt == VL_CRS_SYMMETRIC)
 		{
-			create_<CellNNIteratorSym<dim,CellListImpl,vector_pos_type,RUNTIME>,VL_CRS_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<CellNNIteratorSym<dim,CellListImpl,vector_pos_type,RUNTIME>,VL_CRS_SYMMETRIC>(posTo,posFrom,dom,anom,r_cut,g_m,cl,opt);
 		}
 		else if (opt == VL_SYMMETRIC)
 		{
-			create_<decltype(cl.getNNIteratorSym(0,0,pos)),VL_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<decltype(cl.getNNIteratorSym(0,0,posTo)),VL_SYMMETRIC>(posTo,posFrom,dom,anom,r_cut,g_m,cl,opt);
 		}
 		else
 		{
-			create_<decltype(cl.getNNIterator(0)),VL_NON_SYMMETRIC>(pos,pos2,dom,anom,r_cut,g_m,cl,opt);
+			create_<decltype(cl.getNNIterator(0)),VL_NON_SYMMETRIC>(posTo,posFrom,dom,anom,r_cut,g_m,cl,opt);
 		}
 	}
 
 	/*! \brief Create the Verlet list from a given cell-list
 	 *
-	 * \param pos vector of positions
-	 * \param pos2 vector of position for the neighborhood
+	 * \param posTo vector of positions
+	 * \param posFrom vector of position for the neighborhood
 	 * \param r_cut cut-off radius to get the neighborhood particles
 	 * \param g_m Indicate form which particles to construct the verlet list. For example
 	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
@@ -371,11 +371,11 @@ private:
 	 * \param opt options
 	 *
 	 */
-	template<typename NN_type, int type> inline void create_(const vector_pos_type & pos, const vector_pos_type & pos2 , const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
+	template<typename NN_type, int type> inline void create_(const vector_pos_type & posTo, const vector_pos_type & posFrom , const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
 	{
 		size_t end;
 
-		auto it = PartItNN<type,dim,vector_pos_type,CellListImpl>::get(pos,dom,anom,cli,g_m,end);
+		auto it = PartItNN<type,dim,vector_pos_type,CellListImpl>::get(posTo,dom,anom,cli,g_m,end);
 
 		Mem_type::init_to_zero(slot,end);
 
@@ -388,17 +388,17 @@ private:
 		while (it.isNext())
 		{
 			typename Mem_type::local_index_type i = it.get();
-			Point<dim,T> xp = pos.template get<0>(i);
+			Point<dim,T> xp = posTo.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			auto NN = NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::get(it,pos,xp,i,cli,r_cut);
+			auto NN = NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::get(it,posFrom,xp,i,cli,r_cut);
 			NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::add(i,dp);
 
 			while (NN.isNext())
 			{
 				auto nnp = NN.get();
 
-				Point<dim,T> xq = pos2.template get<0>(nnp);
+				Point<dim,T> xq = posFrom.template get<0>(nnp);
 
 				if (xp.distance2(xq) < r_cut2)
 					addPart(i,nnp);
@@ -495,7 +495,7 @@ public:
 	 * \param opt option to generate Verlet list
 	 *
 	 */
-	void Initialize(const Box<dim,T> & box, const Box<dim,T> & dom, T r_cut, vector_pos_type & pos, size_t g_m, size_t opt = VL_NON_SYMMETRIC)
+	void Initialize(const Box<dim,T> & box, const Box<dim,T> & dom, T r_cut, vector_pos_type & posTo,vector_pos_type & posFrom, size_t g_m, size_t opt = VL_NON_SYMMETRIC)
 	{
 		// Number of divisions
 		size_t div[dim];
@@ -508,14 +508,14 @@ public:
 		// Initialize a cell-list
 		cli.Initialize(bt,div);
 
-		initCl(cli,pos,g_m,opt);
+		initCl(cli,posFrom,g_m,opt);
 
 		// Unuseful empty vector
 		openfpm::vector<subsub_lin<dim>> anom_c;
 		openfpm::vector<size_t> dom_c;
 
 		// create verlet
-		create(pos, pos,dom_c,anom_c,r_cut,g_m,cli,opt);
+		create(posTo, posFrom,dom_c,anom_c,r_cut,g_m,cli,opt);
 	}
 
 	/*! \brief Initialize the symmetric Verlet-list
