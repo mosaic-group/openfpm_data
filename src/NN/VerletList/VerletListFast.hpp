@@ -401,11 +401,204 @@ private:
 				Point<dim,T> xq = posFrom.template get<0>(nnp);
 
 				if (xp.distance2(xq) < r_cut2)
-					addPart(i,nnp);
+                    {addPart(i,nnp);}
 
 				// Next particle
 				++NN;
 			}
+
+			++it;
+		}
+	}
+
+    /*! \brief Create the Verlet list from a given cell-list
+	 *
+	 * \param posTo vector of positions
+	 * \param posFrom vector of position for the neighborhood
+	 * \param r_cut cut-off radius to get the neighborhood particles
+	 * \param g_m Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 * \param cli Cell-list elements to use to construct the verlet list
+	 * \param dom list of domain cells with normal neighborhood
+	 * \param anom list of domain cells with non-normal neighborhood
+     * \param nMax Maximum number of neighbors. 0 implies ignore
+	 * \param opt options
+	 *
+	 */
+	template<typename NN_type, int type> inline void create_(const vector_pos_type & posTo, const vector_pos_type & posFrom , const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cli,size_t nMax, size_t opt)
+	{
+		size_t end;
+
+		auto it = PartItNN<type,dim,vector_pos_type,CellListImpl>::get(posTo,dom,anom,cli,g_m,end);
+
+		Mem_type::init_to_zero(slot,end);
+
+		dp.clear();
+
+		// square of the cutting radius
+		//T r_cut2 = r_cut * r_cut;
+        struct reord {
+            T dist;
+            size_t Nid;
+            bool operator<(const reord &p) const { return this->dist < p.dist; }
+        };
+		// iterate the particles
+		while (it.isNext())
+		{
+			typename Mem_type::local_index_type i = it.get();
+			Point<dim,T> xp = posTo.template get<0>(i);
+
+			// Get the neighborhood of the particle
+			auto NN = NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::get(it,posFrom,xp,i,cli,r_cut);
+			NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::add(i,dp);
+            openfpm::vector<reord> adaplist;
+			while (NN.isNext())
+			{
+				auto nnp = NN.get();
+
+				Point<dim,T> xq = posFrom.template get<0>(nnp);
+                T dist=xp.distance(xq);
+				if (dist < r_cut){
+                    reord pr;
+                    pr.dist = dist;
+                    pr.Nid = nnp;
+                    adaplist.add(pr);
+					//addPart(i,nnp);
+                }
+				// Next particle
+				++NN;
+			}
+            adaplist.sort();
+            for(size_t Ni=0; Ni< adaplist.size();++Ni){
+                if(Ni<nMax){
+                    addPart(i,adaplist.get(Ni).Nid);
+                }
+            }
+
+			++it;
+		}
+	}
+
+    /*! \brief Create the Verlet list from a given cell-list without Ref Particle
+	 *
+	 * \param posTo vector of positions
+	 * \param posFrom vector of position for the neighborhood
+	 * \param r_cut cut-off radius to get the neighborhood particles
+	 * \param g_m Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 * \param cli Cell-list elements to use to construct the verlet list
+	 * \param dom list of domain cells with normal neighborhood
+	 * \param anom list of domain cells with non-normal neighborhood
+	 * \param opt options
+	 *
+	 */
+	template<typename NN_type, int type> inline void createWithoutRefP(const vector_pos_type & posTo, const vector_pos_type & posFrom , const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cli, size_t opt)
+	{
+		size_t end;
+
+		auto it = PartItNN<type,dim,vector_pos_type,CellListImpl>::get(posTo,dom,anom,cli,g_m,end);
+
+		Mem_type::init_to_zero(slot,end);
+
+		dp.clear();
+
+		// square of the cutting radius. Why? does provide some robustness to DC-PSE.
+		T r_cut2 = r_cut * r_cut;
+
+		// iterate the particles
+		while (it.isNext())
+		{
+			typename Mem_type::local_index_type i = it.get();
+			Point<dim,T> xp = posTo.template get<0>(i);
+
+			// Get the neighborhood of the particle
+			auto NN = NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::get(it,posFrom,xp,i,cli,r_cut);
+			NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::add(i,dp);
+
+			while (NN.isNext())
+			{
+				auto nnp = NN.get();
+
+				Point<dim,T> xq = posFrom.template get<0>(nnp);
+
+				if (xp.distance2(xq) < r_cut2 && nnp!=i)
+                    {addPart(i,nnp);}
+
+				// Next particle
+				++NN;
+			}
+
+			++it;
+		}
+	}
+
+    /*! \brief Create the Verlet list from a given cell-list without Ref Particle
+	 *
+	 * \param posTo vector of positions
+	 * \param posFrom vector of position for the neighborhood
+	 * \param r_cut cut-off radius to get the neighborhood particles
+	 * \param g_m Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 * \param cli Cell-list elements to use to construct the verlet list
+	 * \param dom list of domain cells with normal neighborhood
+	 * \param anom list of domain cells with non-normal neighborhood
+     * \param nMax Maximum number of neighbors. 0 implies ignore
+	 * \param opt options
+	 *
+	 */
+	template<typename NN_type, int type> inline void createWithoutRefP(const vector_pos_type & posTo, const vector_pos_type & posFrom , const openfpm::vector<size_t> & dom, const openfpm::vector<subsub_lin<dim>> & anom, T r_cut, size_t g_m, CellListImpl & cli, size_t nMax, size_t opt)
+	{
+		size_t end;
+
+		auto it = PartItNN<type,dim,vector_pos_type,CellListImpl>::get(posTo,dom,anom,cli,g_m,end);
+
+		Mem_type::init_to_zero(slot,end);
+
+		dp.clear();
+
+		// square of the cutting radius
+		//T r_cut2 = r_cut * r_cut;
+        struct reord {
+            T dist;
+            size_t Nid;
+            bool operator<(const reord &p) const { return this->dist < p.dist; }
+        };
+		// iterate the particles
+		while (it.isNext())
+		{
+			typename Mem_type::local_index_type i = it.get();
+			Point<dim,T> xp = posTo.template get<0>(i);
+
+			// Get the neighborhood of the particle
+			auto NN = NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::get(it,posFrom,xp,i,cli,r_cut);
+			NNType<dim,T,CellListImpl,decltype(it),type,typename Mem_type::local_index_type>::add(i,dp);
+            openfpm::vector<reord> adaplist;
+			while (NN.isNext())
+			{
+				auto nnp = NN.get();
+
+				Point<dim,T> xq = posFrom.template get<0>(nnp);
+                T dist=xp.distance(xq);
+				if (dist < r_cut && nnp!=i){
+                    reord pr;
+                    pr.dist = dist;
+                    pr.Nid = nnp;
+                    adaplist.add(pr);
+					//addPart(i,nnp);
+                }
+				// Next particle
+				++NN;
+			}
+            adaplist.sort();
+            for(size_t Ni=0; Ni< adaplist.size();++Ni){
+                if(Ni<nMax){
+                    addPart(i,adaplist.get(Ni).Nid);
+                }
+            }
+
 
 			++it;
 		}
@@ -492,10 +685,11 @@ public:
 	 * \param g_m Indicate form which particles to construct the verlet list. For example
 	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
 	 * 			100 particles
+	 * \param nMax Maximum number of neighbours. 0 implies ignore.
 	 * \param opt option to generate Verlet list
 	 *
 	 */
-	void Initialize(const Box<dim,T> & box, const Box<dim,T> & dom, T r_cut, vector_pos_type & posTo,vector_pos_type & posFrom, size_t g_m, size_t opt = VL_NON_SYMMETRIC)
+	void Initialize(const Box<dim,T> & box, const Box<dim,T> & dom, T r_cut, vector_pos_type & posTo,vector_pos_type & posFrom, size_t g_m, size_t nMax,size_t opt = VL_NON_SYMMETRIC)
 	{
 		// Number of divisions
 		size_t div[dim];
@@ -515,7 +709,53 @@ public:
 		openfpm::vector<size_t> dom_c;
 
 		// create verlet
-		create(posTo, posFrom,dom_c,anom_c,r_cut,g_m,cli,opt);
+        if(nMax){
+            create_<decltype(cli.getNNIterator(0)),VL_NON_SYMMETRIC>(posTo, posFrom,dom_c,anom_c,r_cut,g_m,cli,nMax,opt);
+        }
+        else{
+		    create(posTo, posFrom,dom_c,anom_c,r_cut,g_m,cli,opt);
+        }
+	}
+
+    /*! Initialize the verlet list without the reference particle
+	 *
+	 * \param box Domain where this cell list is living
+	 * \param dom Processor domain
+	 * \param r_cut cut-off radius
+	 * \param pos vector of particle positions
+	 * \param g_m Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and g_m = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+     * \param nMax Maximum number of neighbours. 0 implies ignore.
+	 * \param opt option to generate Verlet list
+	 *
+	 */
+	void InitializeWithoutRefP(const Box<dim,T> & box, const Box<dim,T> & dom, T r_cut, vector_pos_type & posTo,vector_pos_type & posFrom, size_t g_m,size_t nmax, size_t opt = VL_NON_SYMMETRIC)
+	{
+		// Number of divisions
+		size_t div[dim];
+
+		Box<dim,T> bt = box;
+
+		// Calculate the divisions for the Cell-lists
+		cl_param_calculate(bt,div,r_cut,Ghost<dim,T>(0.0));
+
+		// Initialize a cell-list
+		cli.Initialize(bt,div);
+
+		initCl(cli,posFrom,g_m,opt);
+
+		// Unuseful empty vector
+		openfpm::vector<subsub_lin<dim>> anom_c;
+		openfpm::vector<size_t> dom_c;
+
+		// create verlet
+        if(nmax){
+            createWithoutRefP<decltype(cli.getNNIterator(0)),VL_NON_SYMMETRIC>(posTo, posFrom,dom_c,anom_c,r_cut,g_m,cli,nmax,opt);
+            }
+        else{
+            createWithoutRefP<decltype(cli.getNNIterator(0)),VL_NON_SYMMETRIC>(posTo, posFrom,dom_c,anom_c,r_cut,g_m,cli,opt);
+        }
 	}
 
 	/*! \brief Initialize the symmetric Verlet-list
@@ -842,15 +1082,16 @@ public:
         }
 	}
 
-    /*! \brief Getting the neighbor j of particle i
+    /*! \brief Remove the center particle
 	 *
-	 * \param i particle id
-	 * \param j neighbor id
      *
 	 */
-	inline auto getNeighborId(size_t  i, size_t j) -> decltype(Mem_type::get(i,j))
+	inline void remove_ref_p()
 	{
-        return Mem_type::get(i,j);
+        for (size_t i = 0 ; i < this->size() ; i++)
+            Mem_type::remove(i,i);
+        //resize
+
 	}
 
 	/*! \brief Swap the memory

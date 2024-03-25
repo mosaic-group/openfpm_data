@@ -279,6 +279,9 @@ public:
 	 */
 	inline void remove(local_index cell, local_index ele)
 	{
+        //this is buggy
+        cl_base.remove(slot * cell + ele);
+        cl_base.resize(cl_base.size()-1);
 		cl_n.template get<0>(cell)--;
 	}
 
