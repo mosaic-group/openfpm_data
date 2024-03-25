@@ -18,11 +18,11 @@
  * \tparam CellS
  *
  */
-template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox<dim,T> & box)
+template<unsigned int dim, typename T, typename CellS> void Test_cell_s(Box<dim,T> & box)
 {
 	//! [Declare a cell list]
 	//Space where is living the Cell list
-	//SpaceBox<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	//Box<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 
 	// Subdivisions
 	size_t div[dim] = {16,16,16};
@@ -224,10 +224,10 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_s(SpaceBox
  * \tparam CellS
  *
  */
-template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(SpaceBox<dim,T> & box)
+template<unsigned int dim, typename T, typename CellS> void Test_cell_sM(Box<dim,T> & box)
 {
 	//Space where is living the Cell list
-	//SpaceBox<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	//Box<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 
 	// Subdivisions
 	size_t div[dim] = {16,16,16};
@@ -356,10 +356,10 @@ template<typename CellList> void Test_CellDecomposer_consistent()
  * \tparam CellS
  *
  */
-template<unsigned int dim, typename T, typename CellS> void Test_NN_iterator_radius(SpaceBox<dim,T> & box)
+template<unsigned int dim, typename T, typename CellS> void Test_NN_iterator_radius(Box<dim,T> & box)
 {
 	//Space where is living the Cell list
-	//SpaceBox<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	//Box<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 
 	// Subdivisions
 	size_t div[dim];
@@ -492,9 +492,9 @@ BOOST_AUTO_TEST_SUITE( CellList_test )
 
 BOOST_AUTO_TEST_CASE ( NN_radius_check )
 {
-	SpaceBox<2,float> box1({0.1,0.1},{0.3,0.5});
-	SpaceBox<3,float> box2({0.0,0.1,0.2},{0.3,0.7,0.5});
-	SpaceBox<3,float> box3({0.0,0.0,0.0},{1.0,1.0,1.0});
+	Box<2,float> box1({0.1,0.1},{0.3,0.5});
+	Box<3,float> box2({0.0,0.1,0.2},{0.3,0.7,0.5});
+	Box<3,float> box3({0.0,0.0,0.0},{1.0,1.0,1.0});
 
 	std::cout << "Test cell list radius" << "\n";
 
@@ -509,8 +509,8 @@ BOOST_AUTO_TEST_CASE( CellList_use)
 {
 	std::cout << "Test cell list" << "\n";
 
-	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
 	Test_cell_s<3,double,CellList<3,double,Mem_fast<>>>(box);
 	Test_cell_s<3,double,CellList<3,double,Mem_fast<>,shift<3,double>> >(box2);
 	Test_cell_sM<3,double,CellListM<3,double,8>>(box);

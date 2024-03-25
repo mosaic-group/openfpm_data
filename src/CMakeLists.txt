@@ -63,32 +63,34 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 	set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
 
 
-        hip_add_executable(mem_map ${CUDA_SOURCES}
-                main.cpp
-                data_type/aggregate_unit_tests.cpp
-                util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
-                memory_ly/memory_conf_unit_tests.cpp
-                Space/tests/SpaceBox_unit_tests.cpp
-                Space/Shape/Sphere_unit_test.cpp
-                SparseGrid/SparseGrid_unit_tests.cpp
-                SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
-                Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
-                Grid/Geometry/tests/grid_smb_tests.cpp)
+	hip_add_executable(mem_map ${CUDA_SOURCES}
+		main.cpp
+		data_type/aggregate_unit_tests.cpp
+		util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
+		memory_ly/memory_conf_unit_tests.cpp
+		Space/tests/Box_unit_tests.cpp
+		Space/Shape/Sphere_unit_test.cpp
+		SparseGrid/SparseGrid_unit_tests.cpp
+		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
+		Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
+		Grid/Geometry/tests/grid_smb_tests.cpp
+	)
 
 
 else()
 
 	add_executable(mem_map ${CUDA_SOURCES}
-        	main.cpp
-        	data_type/aggregate_unit_tests.cpp
-        	util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
-        	memory_ly/memory_conf_unit_tests.cpp
-        	Space/tests/SpaceBox_unit_tests.cpp
-        	Space/Shape/Sphere_unit_test.cpp
+		main.cpp
+		data_type/aggregate_unit_tests.cpp
+		util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
+		memory_ly/memory_conf_unit_tests.cpp
+		Space/tests/Box_unit_tests.cpp
+		Space/Shape/Sphere_unit_test.cpp
 		SparseGrid/SparseGrid_unit_tests.cpp
 		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
-        	Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
-		Grid/Geometry/tests/grid_smb_tests.cpp)
+		Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
+		Grid/Geometry/tests/grid_smb_tests.cpp
+	)
 
 endif()
 
@@ -322,10 +324,6 @@ install(FILES NN/VerletList/VerletList.hpp
         NN/VerletList/VerletListM.hpp
         NN/VerletList/VerletNNIteratorM.hpp
         DESTINATION openfpm_data/include/NN/VerletList/
-	COMPONENT OpenFPM)
-
-install(FILES Space/Ghost.hpp Space/Matrix.hpp Space/SpaceBox.hpp
-        DESTINATION openfpm_data/include/Space/
 	COMPONENT OpenFPM)
 
 install(FILES Space/Shape/AdaptiveCylinderCone.hpp

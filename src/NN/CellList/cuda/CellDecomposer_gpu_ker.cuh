@@ -30,7 +30,7 @@ class CellDecomposer_gpu_ker
 	transform_type pointTransform;
 
 	//! Unit box of the Cell list
-	SpaceBox<dim,T> cellListSpaceBox;
+	Box<dim,T> cellListSpaceBox;
 
 	//! Grid structure of the Cell list
 	grid_sm<dim,void> cellListGrid;
@@ -58,7 +58,7 @@ public:
 		openfpm::array<ids_type,dim> & numCellDiv,
 		openfpm::array<ids_type,dim> & cellPadDim,
 		const transform_type & pointTransform,
-		SpaceBox<dim,T> cellListSpaceBox,
+		Box<dim,T> cellListSpaceBox,
 		grid_sm<dim,void> cellListGrid,
 		Point<dim,long int> cellShift)
 	: unitCellP2(unitCellP2),

@@ -19,7 +19,7 @@ constexpr int BLOCK_SIZE_STENCIL = 128;
 #include "Grid/Geometry/grid_zmb.hpp"
 #include "util/stat/common_statistics.hpp"
 #include "Iterators/SparseGridGpu_iterator.hpp"
-#include "Space/SpaceBox.hpp"
+#include "Space/Shape/Box.hpp"
 
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
 #include "VTKWriter/VTKWriter.hpp"
@@ -1075,21 +1075,21 @@ private:
     }
 
     template<typename ids_type>
-    void fill_chunks_boxes(openfpm::vector<SpaceBox<dim,double>> & chunks_box, ids_type & chunk_ids, Point<dim,double> & spacing, Point<dim,double> & offset)
+    void fill_chunks_boxes(openfpm::vector<Box<dim,double>> & chunks_box, ids_type & chunk_ids, Point<dim,double> & spacing, Point<dim,double> & offset)
     {
     	for (int i = 0 ; i < chunk_ids.size() ; i++)
     	{
-    		SpaceBox<dim,double> box;
+			Box<dim,double> box;
 
-    		auto c_pos = gridGeometry.InvLinId(chunk_ids.template get<0>(i)*blockSize);
+			auto c_pos = gridGeometry.InvLinId(chunk_ids.template get<0>(i)*blockSize);
 
-    		for (int j = 0 ; j < dim ; j++)
-    		{
-    			box.setLow(j,c_pos.get(j) * spacing[j] - 0.5*spacing[j] + offset.get(j)*spacing[j]);
-    			box.setHigh(j,(c_pos.get(j) + blockEdgeSize)*spacing[j] - 0.5*spacing[j] + offset.get(j)*spacing[j]);
-    		}
+			for (int j = 0 ; j < dim ; j++)
+			{
+				box.setLow(j,c_pos.get(j) * spacing[j] - 0.5*spacing[j] + offset.get(j)*spacing[j]);
+				box.setHigh(j,(c_pos.get(j) + blockEdgeSize)*spacing[j] - 0.5*spacing[j] + offset.get(j)*spacing[j]);
+			}
 
-    		chunks_box.add(box);
+			chunks_box.add(box);
     	}
     }
 
@@ -3919,9 +3919,9 @@ public:
 	template<typename Tw = float> bool write_debug(const std::string & output, Point<dim,double> spacing, Point<dim,double> offset)
 	{
 		//! subdomains_X.vtk domain for the local processor (X) as union of sub-domain
-		VTKWriter<openfpm::vector<SpaceBox<dim, double>>, VECTOR_BOX> vtk_box1;
+		VTKWriter<openfpm::vector<Box<dim, double>>, VECTOR_BOX> vtk_box1;
 
-		openfpm::vector<SpaceBox<dim,double>> chunks_box;
+		openfpm::vector<Box<dim,double>> chunks_box;
 
 		auto & ids = private_get_index_array();
 

@@ -341,26 +341,6 @@ public:
 		constructNeighborCellOffset(boxNeighborNumber);
 	}
 
-	/*! Initialize the cell list
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param div grid size on each dimension
-	 * \param pad padding cell
-	 * \param slot maximum number of slot
-	 *
-	 */
-	void Initialize(
-		const Box<dim,T> & box,
-		const size_t (&div)[dim],
-		const size_t pad = 1)
-	{
-		SpaceBox<dim,T> sbox(box);
-
-		// Initialize point transformation
-
-		Initialize(sbox,div,pad);
-	}
-
 	/*! Initialize the cell list constructor
 	 *
 	 * \param box Domain where this cell list is living
@@ -370,7 +350,7 @@ public:
 	 *
 	 */
 	void Initialize(
-		const SpaceBox<dim,T> & box,
+		const Box<dim,T> & box,
 		const size_t (&div)[dim],
 		const size_t pad = 1)
 	{
@@ -922,27 +902,6 @@ public:
 		Initialize(box,div,pad);
 	}
 
-
-	/*! Initialize the cell list
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param div grid size on each dimension
-	 * \param pad padding cell
-	 * \param slot maximum number of slot
-	 *
-	 */
-	void Initialize(
-		const Box<dim,T> & box,
-		const size_t (&div)[dim],
-		const size_t pad = 1)
-	{
-		SpaceBox<dim,T> sbox(box);
-
-		// Initialize point transformation
-
-		Initialize(sbox,div,pad);
-	}
-
 	void setBoxNN(unsigned int n_NN)
 	{
 		boxNeighborNumber = n_NN;
@@ -963,7 +922,7 @@ public:
 	 *
 	 */
 	void Initialize(
-		const SpaceBox<dim,T> & box,
+		const Box<dim,T> & box,
 		const size_t (&div)[dim],
 		const size_t pad = 1)
 	{

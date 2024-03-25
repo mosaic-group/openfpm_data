@@ -8,7 +8,8 @@
 #include <boost/test/unit_test.hpp>
 
 
-#include "Space/SpaceBox.hpp"
+#include "Space/Shape/Box.hpp"
+#include "Space/Ghost.hpp"
 
 #define N_RANDOM_POINT 1024
 
@@ -16,14 +17,14 @@ BOOST_AUTO_TEST_SUITE( spacebox_test )
 
 BOOST_AUTO_TEST_CASE( spacebox_use)
 {
-	std::cout << "SpaceBox unit test start" << "\n";
+	std::cout << "Box unit test start" << "\n";
 
-	//! [Definition of a spacebox and rescale]
+	//! [Definition of a box and rescale]
 
 	float spacing[2] = {0.1,0.1};
 
 	{
-	SpaceBox<2,float> sp({1.0,1.0},{2.0,2.0});
+	Box<2,float> sp({1.0,1.0},{2.0,2.0});
 	sp.rescale(spacing);
 
 	BOOST_REQUIRE_CLOSE(sp.getLow(0),1.0,0.0001);
@@ -32,10 +33,10 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 	BOOST_REQUIRE_CLOSE(sp.getHigh(1),1.1,0.0001);
 	}
 
-	//! [Definition of a spacebox and rescale]
+	//! [Definition of a box and rescale]
 
 	{
-	SpaceBox<2,float> sp({1.0,1.0},{2.0,2.0});
+	Box<2,float> sp({1.0,1.0},{2.0,2.0});
 	sp.mul(spacing);
 	sp.expand(spacing);
 
@@ -45,12 +46,12 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 	BOOST_REQUIRE_CLOSE(sp.getHigh(1),0.3,0.0001);
 	}
 
-	//! [Definition of a spacebox and intersection between them]
+	//! [Definition of a box and intersection between them]
 
 	{
-	SpaceBox<2,float> sp1({1.0,1.0},{2.0,2.0});
-	SpaceBox<2,float> sp2({0.5,0.5},{1.5,1.5});
-	SpaceBox<2,float> sp3;
+	Box<2,float> sp1({1.0,1.0},{2.0,2.0});
+	Box<2,float> sp2({0.5,0.5},{1.5,1.5});
+	Box<2,float> sp3;
 
 	bool inte = sp1.Intersect(sp2,sp3);
 
@@ -60,7 +61,7 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 	BOOST_REQUIRE_EQUAL(sp3.getHigh(0),1.5);
 	BOOST_REQUIRE_EQUAL(sp3.getHigh(1),1.5);
 
-	//! [Definition of a spacebox and intersection between them]
+	//! [Definition of a box and intersection between them]
 
 	sp1.set({0.0,0.0},{1.0,1.0});
 	sp2.set({0.2,-0.5},{0.4,1.5});
@@ -130,9 +131,9 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 	BOOST_REQUIRE_EQUAL(sp1.getHigh(1),1.5f);
 	}
 
-	//! [Create random points inside the SpaceBox]
+	//! [Create random points inside the Box]
 
-	SpaceBox<3,float> sp_box({0.0,0.0,0.0},{1.0,1.0,1.0});
+	Box<3,float> sp_box({0.0,0.0,0.0},{1.0,1.0,1.0});
 
 	for (int i = 0 ; i < N_RANDOM_POINT ; i++)
 	{
@@ -141,11 +142,11 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 		BOOST_REQUIRE_EQUAL(sp_box.isInside(p),true);
 	}
 
-	//! [Create random points inside the SpaceBox]
+	//! [Create random points inside the Box]
 
 	// Create random points outside the space box and check
 
-	SpaceBox<3,float> sp_box_out({1.1,1.1,1.1},{2.1,2.1,2.1});
+	Box<3,float> sp_box_out({1.1,1.1,1.1},{2.1,2.1,2.1});
 
 	for (int i = 0 ; i < N_RANDOM_POINT ; i++)
 	{
@@ -154,7 +155,7 @@ BOOST_AUTO_TEST_CASE( spacebox_use)
 		BOOST_REQUIRE_EQUAL(sp_box.isInside(p),false);
 	}
 
-	std::cout << "SpaceBox unit test stop" << "\n";
+	std::cout << "Box unit test stop" << "\n";
 }
 
 

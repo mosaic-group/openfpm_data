@@ -17,7 +17,7 @@
  * \param v vector of positions
  *
  */
-template<unsigned int dim, typename T> void create_particles_on_grid(grid_sm<dim,void> & g_info, SpaceBox<dim,T> & box, openfpm::vector<Point<dim,T>> & v)
+template<unsigned int dim, typename T> void create_particles_on_grid(grid_sm<dim,void> & g_info, Box<dim,T> & box, openfpm::vector<Point<dim,T>> & v)
 {
 	// Create a grid iterator
 	grid_key_dx_iterator<dim> g_it(g_info);
@@ -55,7 +55,7 @@ template<unsigned int dim, typename T> void create_particles_on_grid(grid_sm<dim
  */
 template<unsigned int dim, typename T> void create_particles_on_gridM(grid_sm<dim,void> & g_info,
 																	  T r_cut,
-																	  SpaceBox<dim,T> & box,
+																	  Box<dim,T> & box,
 																	  openfpm::vector<pos_v<openfpm::vector<Point<dim,T>>>> & v,
 																	  CellListM<dim,T,2> & cl)
 {
@@ -112,7 +112,7 @@ template<unsigned int dim, typename T> void create_particles_on_gridM(grid_sm<di
  * \tparam CellS
  *
  */
-template<unsigned int dim, typename T, typename VerS> void Verlet_list_s(SpaceBox<dim,T> & box)
+template<unsigned int dim, typename T, typename VerS> void Verlet_list_s(Box<dim,T> & box)
 {
 	T r_cut = 1.506 * (box.getHigh(0) - box.getLow(0)) / 20;
 
@@ -290,7 +290,7 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_s(SpaceBo
  * \tparam CellS
  *
  */
-template<unsigned int dim, typename T, typename VerS> void Verlet_list_sM(SpaceBox<dim,T> & box)
+template<unsigned int dim, typename T, typename VerS> void Verlet_list_sM(Box<dim,T> & box)
 {
 	T r_cut = (box.getHigh(0) - box.getLow(0)) / 20;
 
@@ -479,8 +479,8 @@ BOOST_AUTO_TEST_CASE( VerletList_use)
 {
 	std::cout << "Test verlet list" << "\n";
 
-	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
 //	Verlet_list_s<3,double,VerletList<3,double,FAST,shift<3,double>>>(box);
 //	Verlet_list_s<3,double,VerletList<3,double,FAST,shift<3,double>> >(box2);
 	Verlet_list_sM<3,double,VerletListM<3,double,2>>(box);
