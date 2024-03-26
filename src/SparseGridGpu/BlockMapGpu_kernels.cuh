@@ -726,7 +726,7 @@ namespace BlockMapGpuFunctors
             // shut-up valgrind uninitialized
 
             p_ids.template get<1>(p_ids.size()-1) = 0;
-        	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,keys.toKernel(),mergeIndices.toKernel(),dataOld.size(),p_ids.toKernel());
+        	CUDA_LAUNCH(BlockMapGpuKernels::compute_predicate,ite,keys.toKernel(),mergeIndices.toKernel(),(unsigned int)dataOld.size(),p_ids.toKernel());
 
         	openfpm::scan((int *)p_ids.template getDeviceBuffer<0>(),
         				s_ids.size(),

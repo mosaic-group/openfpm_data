@@ -140,4 +140,5 @@ BOOST_AUTO_TEST_CASE ( test_vector_of_vector_gpu )
 	}
 }
 
+
 BOOST_AUTO_TEST_SUITE_END()

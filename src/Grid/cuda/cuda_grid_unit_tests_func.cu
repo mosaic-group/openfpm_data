@@ -111,7 +111,7 @@ void gpu_grid_3D_compute_stencil(grid_gpu<3,Point_aggr_test> & g1, grid_gpu<3,Po
 
     auto gpu_it = g2.getGPUIterator(start,stop);
 
-    CUDA_LAUNCH_DIM3(compute_stencil, gpu_it.thr, gpu_it.wthr,prp_0,prp_1,64,start,stop);
+    CUDA_LAUNCH_DIM3(compute_stencil, gpu_it.wthr, gpu_it.thr,prp_0,prp_1,64,start,stop);
 }
 
 void gpu_grid_3D_compute_grid_stencil(grid_gpu<3,Point_aggr_test> & g1, grid_gpu<3,Point_aggr_test> & g2,
@@ -122,27 +122,27 @@ void gpu_grid_3D_compute_grid_stencil(grid_gpu<3,Point_aggr_test> & g1, grid_gpu
 	auto g1k = g1.toKernel();
 	auto g2k = g2.toKernel();
 
-	CUDA_LAUNCH_DIM3(compute_stencil_grid, gpu_it.thr, gpu_it.wthr,g1k,g2k,gpu_it);
+	CUDA_LAUNCH_DIM3(compute_stencil_grid, gpu_it.wthr, gpu_it.thr,g1k,g2k,gpu_it);
 }
 
 void gpu_grid_fill_vector(grid_gpu<3,Point_aggr_test> & g1, grid_key_dx<3> & start, grid_key_dx<3> & stop)
 {
 	auto gpu_it = g1.getGPUIterator(start,stop);
 
-	CUDA_LAUNCH_DIM3(grid_fill_vector, gpu_it.thr, gpu_it.wthr ,g1.toKernel(),gpu_it);
+	CUDA_LAUNCH_DIM3(grid_fill_vector, gpu_it.wthr, gpu_it.thr ,g1.toKernel(),gpu_it);
 }
 
 void gpu_grid_fill_vector2(grid_gpu<3,Point_aggr_test> & g1, grid_key_dx<3> & start, grid_key_dx<3> & stop)
 {
 	auto gpu_it = g1.getGPUIterator(start,stop);
 
-	CUDA_LAUNCH_DIM3(grid_fill_vector2, gpu_it.thr, gpu_it.wthr ,g1.toKernel(),gpu_it);
+	CUDA_LAUNCH_DIM3(grid_fill_vector2, gpu_it.wthr, gpu_it.thr ,g1.toKernel(),gpu_it);
 }
 
 void gpu_grid_gradient_vector(grid_gpu<3,Point_aggr_test> & g1, grid_gpu<3,Point_aggr_test> & g2, grid_key_dx<3> & start, grid_key_dx<3> & stop)
 {
 	auto gpu_it = g1.getGPUIterator(start,stop);
 
-	CUDA_LAUNCH_DIM3(grid_gradient_vector, gpu_it.thr, gpu_it.wthr ,g1.toKernel(),g2.toKernel(),gpu_it);
+	CUDA_LAUNCH_DIM3(grid_gradient_vector, gpu_it.wthr, gpu_it.thr ,g1.toKernel(),g2.toKernel(),gpu_it);
 }
 

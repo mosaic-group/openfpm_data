@@ -44,13 +44,15 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 
 #else
 
-	BOOST_REQUIRE_EQUAL(gcf.thr.x,16ul);
-	BOOST_REQUIRE_EQUAL(gcf.thr.y,8ul);
-	BOOST_REQUIRE_EQUAL(gcf.thr.z,8ul);
+	if (default_kernel_wg_threads_ == 1024 ) {
+		BOOST_REQUIRE_EQUAL(gcf.thr.x,16ul);
+		BOOST_REQUIRE_EQUAL(gcf.thr.y,8ul);
+		BOOST_REQUIRE_EQUAL(gcf.thr.z,8ul);
 
-	BOOST_REQUIRE_EQUAL(gcf.wthr.x,4ul);
-	BOOST_REQUIRE_EQUAL(gcf.wthr.y,8ul);
-	BOOST_REQUIRE_EQUAL(gcf.wthr.z,8ul);
+		BOOST_REQUIRE_EQUAL(gcf.wthr.x,4ul);
+		BOOST_REQUIRE_EQUAL(gcf.wthr.y,8ul);
+		BOOST_REQUIRE_EQUAL(gcf.wthr.z,8ul);
+	}
 
 #endif
 
@@ -72,13 +74,15 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 
 #else
 
-	BOOST_REQUIRE_EQUAL(gcf2.thr.x,13ul);
-	BOOST_REQUIRE_EQUAL(gcf2.thr.y,8ul);
-	BOOST_REQUIRE_EQUAL(gcf2.thr.z,8ul);
+	if (default_kernel_wg_threads_ == 1024 ) {
+		BOOST_REQUIRE_EQUAL(gcf2.thr.x,13ul);
+		BOOST_REQUIRE_EQUAL(gcf2.thr.y,8ul);
+		BOOST_REQUIRE_EQUAL(gcf2.thr.z,8ul);
 
-	BOOST_REQUIRE_EQUAL(gcf2.wthr.x,1ul);
-	BOOST_REQUIRE_EQUAL(gcf2.wthr.y,2ul);
-	BOOST_REQUIRE_EQUAL(gcf2.wthr.z,2ul);
+		BOOST_REQUIRE_EQUAL(gcf2.wthr.x,1ul);
+		BOOST_REQUIRE_EQUAL(gcf2.wthr.y,2ul);
+		BOOST_REQUIRE_EQUAL(gcf2.wthr.z,2ul);
+	}
 
 #endif
 

@@ -812,6 +812,7 @@ public:
 	{
 		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}
+
 #endif
 
 	/*! \brief Get the size if the grid in the direction i
