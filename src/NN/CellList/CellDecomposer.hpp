@@ -8,7 +8,8 @@
 #ifndef CELLDECOMPOSER_HPP_
 #define CELLDECOMPOSER_HPP_
 
-#include "Space/SpaceBox.hpp"
+#include "Space/Ghost.hpp"
+#include "Space/Shape/Box.hpp"
 #include "Space/Matrix.hpp"
 #include "util/copy_compare/meta_compare.hpp"
 #include "Grid/grid_sm.hpp"
@@ -748,10 +749,10 @@ protected:
 	size_t cellTotalCount;
 
 	//! Domain of the cell list
-	SpaceBox<dim,T> cellListSpaceBox;
+	Box<dim,T> cellListSpaceBox;
 
 	//! Unit box of the Cell list
-	SpaceBox<dim,T> unitCellSpaceBox;
+	Box<dim,T> unitCellSpaceBox;
 
 	//! Grid structure of the Cell list
 	grid_sm<dim,void> cellListGrid;
@@ -1495,7 +1496,7 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, const size_t pad)
+	CellDecomposer_sm(const Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> & mat, const size_t pad)
 	:pointTransform(Matrix<dim,T>::identity(),box.getP1()),cellListSpaceBox(box),cellListGrid()
 	{
 		Initialize(pad,div);
@@ -1530,7 +1531,7 @@ public:
 	 * is at the origin of the box is identified with 9
 	 *
 	 */
-	CellDecomposer_sm(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad)
+	CellDecomposer_sm(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad)
 	:pointTransform(Matrix<dim,T>::identity(),box.getP1()),cellListSpaceBox(box),cellListGrid(div)
 	{
 		Initialize(pad,div);

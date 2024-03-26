@@ -53,7 +53,6 @@ enum Base
  * ### Enlarge the box with fixed P1
  * \snippet Box_unit_tests.hpp Enlarge the box with fixed P1
  *
- * \see SpaceBox
  *
  */
 template<unsigned int dim , typename T>
@@ -286,11 +285,11 @@ public:
 
 	__device__ __host__ Box<dim,T> & operator=(const Box<dim,T> & box)
 	{
-	    for(size_t i = 0 ; i < dim ; i++)
-	    {setLow(i,box.getLow(i));}
-
-	    for(size_t i = 0 ; i < dim ; i++)
-	    {setHigh(i,box.getHigh(i));}
+		for(size_t i = 0 ; i < dim ; i++)
+		{
+			setLow(i,box.getLow(i));
+			setHigh(i,box.getHigh(i));
+		}
 
 		// return itself
 		return *this;
@@ -451,11 +450,11 @@ public:
 	__device__ __host__
 	inline Box(const Box<dim,S> & b)
 	{
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setLow(d,b.getLow(d));}
-
-		for (size_t d = 0 ; d < dim ; d++)
-		{this->setHigh(d,b.getHigh(d));}
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			setLow(i,b.getLow(i));
+			setHigh(i,b.getHigh(i));
+		}
 	}
 
 	/*! \brief Divide component wise each box points with a point
@@ -826,8 +825,8 @@ public:
 
 		for (size_t j = 0 ; j < dim ; j++)
 		{
-			this->setLow(j,this->template getBase<g::p1>(j) + gh.template getBase<g::p1>(j));
-			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j));
+			setLow(j,this->template getBase<g::p1>(j) + gh.template getBase<g::p1>(j));
+			setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j));
 		}
 	}
 
@@ -859,7 +858,7 @@ public:
 
 		for (size_t j = 0 ; j < dim ; j++)
 		{
-			this->setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j) - gh.template getBase<g::p1>(j));
+			setHigh(j,this->template getBase<g::p2>(j) + gh.template getBase<g::p2>(j) - gh.template getBase<g::p1>(j));
 		}
 	}
 
@@ -872,7 +871,7 @@ public:
 	{
 		for (size_t j = 0 ; j < dim ; j++)
 		{
-			this->setLow(j,this->getHigh(j)+1);
+			setLow(j,this->getHigh(j)+1);
 		}
 	}
 
@@ -892,8 +891,8 @@ public:
 
 		for (size_t j = 0 ; j < dim ; j++)
 		{
-			this->setLow(j,mg * this->template getBase<g::p1>(j));
-			this->setHigh(j,mg * this->template getBase<g::p2>(j));
+			setLow(j,mg * this->template getBase<g::p1>(j));
+			setHigh(j,mg * this->template getBase<g::p2>(j));
 		}
 	}
 
@@ -910,7 +909,7 @@ public:
 
 		for (size_t j = 0 ; j < dim ; j++)
 		{
-			this->setHigh(j,this->template getBase<g::p1>(j) + mg * (this->template getBase<g::p2>(j) - this->template getBase<g::p1>(j)));
+			setHigh(j,this->template getBase<g::p1>(j) + mg * (this->template getBase<g::p2>(j) - this->template getBase<g::p1>(j)));
 		}
 	}
 
@@ -923,7 +922,7 @@ public:
 	{
 		for (size_t j = 0 ; j < dim ; j++)
 		{
-			this->setHigh(j,this->getHigh(j) - sh);
+			setHigh(j,this->getHigh(j) - sh);
 		}
 	}
 
@@ -936,7 +935,7 @@ public:
 	{
 		for (size_t j = 0 ; j < dim ; j++)
 		{
-			this->setHigh(j,this->getHigh(j) + sh);
+			setHigh(j,this->getHigh(j) + sh);
 		}
 	}
 
@@ -950,10 +949,10 @@ public:
 		for (size_t j = 0 ; j < dim ; j++)
 		{
 			if (getLow(j) > en.getLow(j))
-				this->setLow(j,en.getLow(j));
+				setLow(j,en.getLow(j));
 
 			if (getHigh(j) < en.getHigh(j))
-				this->setHigh(j,en.getHigh(j));
+				setHigh(j,en.getHigh(j));
 		}
 	}
 
@@ -1028,7 +1027,6 @@ public:
 
 				return false;
 			}
-
 		}
 
 		// In bound
@@ -1060,7 +1058,6 @@ public:
 
 				return false;
 			}
-
 		}
 
 		// In bound
@@ -1091,7 +1088,6 @@ public:
 				// Out of bound
 				return false;
 			}
-
 		}
 
 		// In bound
@@ -1119,7 +1115,6 @@ public:
 
 				return false;
 			}
-
 		}
 
 		// In bound
@@ -1148,7 +1143,6 @@ public:
 
 				return false;
 			}
-
 		}
 
 		// In bound
@@ -1177,7 +1171,6 @@ public:
 
 				return false;
 			}
-
 		}
 
 		// In bound
@@ -1273,9 +1266,7 @@ public:
 	inline void shrinkP2(const Point<dim,T> & p)
 	{
 		for (size_t i = 0 ; i < dim ; i++)
-		{
 			setHigh(i,getHigh(i) - p.get(i));
-		}
 	}
 
 	/*! \brief exchange the data of two boxes
@@ -1320,7 +1311,6 @@ public:
 
 				return false;
 			}
-
 		}
 
 		// In bound
@@ -1336,7 +1326,7 @@ public:
 	{
 		T r_cut = 0;
 		for (size_t i = 0 ; i < dim ; i++)
-		{r_cut = std::max(r_cut,getHigh(i));}
+			r_cut = std::max(r_cut, getHigh(i));
 
 		return r_cut;
 	}
@@ -1455,7 +1445,6 @@ public:
 		return true;
 	}
 
-
 	/*! \brief Compare two boxes
 	 *
 	 * \param b
@@ -1466,6 +1455,75 @@ public:
 	bool operator!=(const Box<dim,T> & b) const
 	{
 		return ! this->operator==(b);
+	}
+
+	/*! \brief Re-scale box with the coefficient defined in sp
+	 *
+	 * \param sp
+	 *
+	 */
+
+	void rescale(T (& sp)[dim])
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+			setHigh(d,getLow(d) + (getHigh(d) -getLow(d)) * sp[d]);
+	}
+
+	/*! \brief Re-scale box with the coefficient defined in sp
+	 *
+	 * \param sp
+	 *
+	 */
+
+	template<typename S> void rescale(S (& sp)[dim])
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+			setHigh(d,getLow(d) + (getHigh(d) -getLow(d)) * sp[d]);
+	}
+
+	/*! \brief multiply box p1,p2 points with the coefficients defined in sp
+	 *
+	 * \param sp coefficents
+	 *
+	 */
+
+	void mul(T (& sp)[dim])
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{
+			setLow(d,getLow(d) * sp[d]);
+			setHigh(d,getHigh(d) * sp[d]);
+		}
+	}
+
+	/*! \brief multiply box p1,p2 points with the coefficients defined in sp
+	 *
+	 * \param sp coefficents
+	 *
+	 */
+
+	template<typename S> void mul(S (& sp)[dim])
+	{
+		for (size_t d = 0 ; d < dim ; d++)
+		{
+			setLow(d,getLow(d) * sp[d]);
+			setHigh(d,getHigh(d) * sp[d]);
+		}
+	}
+
+	/*! \brief Generates a random point inside the box
+	 *
+	 * \return random point inside the box
+	 *
+	 */
+	Point<dim,T> rnd()
+	{
+		Point<dim,T> p;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			p.get(i) = ((T)rand())/(T)RAND_MAX * (getHigh(i) - getLow(i)) + getLow(i);
+
+		return p;
 	}
 };
 

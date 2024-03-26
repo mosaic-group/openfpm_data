@@ -242,7 +242,7 @@ public:
 		openfpm::array<ids_type,dim> & cellPadDim,
 		const transform_type & pointTransform,
 		unsigned int ghostMarker,
-		SpaceBox<dim,T> cellListSpaceBox,
+		Box<dim,T> cellListSpaceBox,
 		grid_sm<dim,void> cellListGrid,
 		Point<dim,long int> cellShift)
 	: CellDecomposer_gpu_ker<dim,T,ids_type,transform_type>(unitCellP2,numCellDim,cellPadDim,pointTransform,cellListSpaceBox,cellListGrid,cellShift),
@@ -494,7 +494,7 @@ public:
 		openfpm::array<ids_type,dim> & cellPadDim,
 		const transform_type & pointTransform,
 		unsigned int ghostMarker,
-		SpaceBox<dim,T> cellListSpaceBox,
+		Box<dim,T> cellListSpaceBox,
 		grid_sm<dim,void> cellListGrid,
 		Point<dim,long int> cellShift
 	)

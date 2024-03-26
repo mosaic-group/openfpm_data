@@ -10,7 +10,8 @@
 
 #include "Vector/map_vector.hpp"
 #include "CellDecomposer.hpp"
-#include "Space/SpaceBox.hpp"
+#include "Space/Ghost.hpp"
+#include "Space/Shape/Box.hpp"
 #include "util/mathutil.hpp"
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
@@ -570,23 +571,6 @@ public:
 		from_cd = true;
 	}
 
-	/*! Initialize the cell list
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param div grid size on each dimension
-	 * \param pad padding cell
-	 * \param slot maximum number of slot
-	 *
-	 */
-	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	{
-		SpaceBox<dim,T> sbox(box);
-
-		// Initialize point transformation
-
-		Initialize(sbox,div,pad,slot);
-	}
-
 	/*! Initialize the cell list constructor
 	 *
 	 * \param box Domain where this cell list is living
@@ -595,7 +579,7 @@ public:
 	 * \param slot maximum number of slot
 	 *
 	 */
-	void Initialize(const SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	void Initialize(const Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	{
 		Matrix<dim,T> mat;
 
@@ -641,7 +625,7 @@ public:
 	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	:Mem_type(slot),CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad)
 	{
-		SpaceBox<dim,T> sbox(box);
+		Box<dim,T> sbox(box);
 		Initialize(sbox,div,pad,slot);
 	}
 
@@ -654,21 +638,6 @@ public:
 	 *
 	 */
 	CellList(Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	:Mem_type(slot),n_dec(0)
-	{
-		SpaceBox<dim,T> sbox(box);
-		Initialize(sbox,div,pad,slot);
-	}
-
-	/*! \brief Cell list constructor
-	 *
-	 * \param box Domain where this cell list is living
-	 * \param div grid size on each dimension
-	 * \param pad Cell padding
-	 * \param slot maximum number of slot
-	 *
-	 */
-	CellList(SpaceBox<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	:Mem_type(slot)
 	{
 		Initialize(box,div,pad,slot);

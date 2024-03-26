@@ -59,36 +59,38 @@ if ( CUDA_ON_BACKEND STREQUAL "HIP" AND HIP_FOUND )
 		list(APPEND HIP_HIPCC_FLAGS -O0)
 	endif()
 
-	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0 --std=c++14)
+	list(APPEND HIP_HIPCC_FLAGS -D__NVCC__ -D__HIP__  -DCUDART_VERSION=11000 -D__CUDACC__ -D__CUDACC_VER_MAJOR__=11 -D__CUDACC_VER_MINOR__=0 -D__CUDACC_VER_BUILD__=0 --std=c++17)
 	set_source_files_properties(${CUDA_SOURCES} PROPERTIES LANGUAGE CXX)
 
 
-        hip_add_executable(mem_map ${CUDA_SOURCES}
-                main.cpp
-                data_type/aggregate_unit_tests.cpp
-                util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
-                memory_ly/memory_conf_unit_tests.cpp
-                Space/tests/SpaceBox_unit_tests.cpp
-                Space/Shape/Sphere_unit_test.cpp
-                SparseGrid/SparseGrid_unit_tests.cpp
-                SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
-                Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
-                Grid/Geometry/tests/grid_smb_tests.cpp)
+	hip_add_executable(mem_map ${CUDA_SOURCES}
+		main.cpp
+		data_type/aggregate_unit_tests.cpp
+		util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
+		memory_ly/memory_conf_unit_tests.cpp
+		Space/tests/Box_unit_tests.cpp
+		Space/Shape/Sphere_unit_test.cpp
+		SparseGrid/SparseGrid_unit_tests.cpp
+		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
+		Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
+		Grid/Geometry/tests/grid_smb_tests.cpp
+	)
 
 
 else()
 
 	add_executable(mem_map ${CUDA_SOURCES}
-        	main.cpp
-        	data_type/aggregate_unit_tests.cpp
-        	util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
-        	memory_ly/memory_conf_unit_tests.cpp
-        	Space/tests/SpaceBox_unit_tests.cpp
-        	Space/Shape/Sphere_unit_test.cpp
+		main.cpp
+		data_type/aggregate_unit_tests.cpp
+		util/multi_array_openfpm/multi_array_ref_openfpm_unit_test.cpp
+		memory_ly/memory_conf_unit_tests.cpp
+		Space/tests/Box_unit_tests.cpp
+		Space/Shape/Sphere_unit_test.cpp
 		SparseGrid/SparseGrid_unit_tests.cpp
 		SparseGrid/SparseGrid_chunk_copy_unit_tests.cpp
-        	Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
-		Grid/Geometry/tests/grid_smb_tests.cpp)
+		Grid/copy_grid_unit_test.cpp NN/Mem_type/Mem_type_unit_tests.cpp
+		Grid/Geometry/tests/grid_smb_tests.cpp
+	)
 
 endif()
 
@@ -169,7 +171,7 @@ endif ()
 
 target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
-target_include_directories(mem_map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
+target_include_directories(mem_map PUBLIC ${CMAKE_BINARY_DIR}/config)
 target_include_directories(mem_map PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 target_include_directories(mem_map PUBLIC ${Boost_INCLUDE_DIRS})
 target_include_directories(mem_map PUBLIC ${ALPAKA_ROOT}/include)
@@ -177,7 +179,7 @@ target_include_directories(mem_map PUBLIC ${ALPAKA_ROOT}/include)
 if (CUDA_FOUND)
 	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src/)
-	target_include_directories(isolation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
+	target_include_directories(isolation PUBLIC ${CMAKE_BINARY_DIR}/config)
 	target_include_directories(isolation PUBLIC ${LIBHILBERT_INCLUDE_DIRS})
 	target_include_directories(isolation PUBLIC ${Boost_INCLUDE_DIRS})
 	target_include_directories(isolation PUBLIC ${ALPAKA_ROOT}/include)
@@ -206,10 +208,10 @@ if (TEST_COVERAGE)
     target_link_libraries(mem_map -lgcov)
 endif ()
 
-# Request that particles be built with -std=c++11
+# Request that particles be built with -std=c++17
 # As this is a public compile feature anything that links to particles
-# will also build with -std=c++11
-target_compile_features(mem_map PUBLIC cxx_std_11)
+# will also build with -std=c++17
+target_compile_features(mem_map PUBLIC cxx_std_17)
 target_link_libraries(mem_map ${MPI_C_LIBRARIES})
 target_link_libraries(mem_map m)
 if (NOT APPLE)
@@ -322,10 +324,6 @@ install(FILES NN/VerletList/VerletList.hpp
         NN/VerletList/VerletListM.hpp
         NN/VerletList/VerletNNIteratorM.hpp
         DESTINATION openfpm_data/include/NN/VerletList/
-	COMPONENT OpenFPM)
-
-install(FILES Space/Ghost.hpp Space/Matrix.hpp Space/SpaceBox.hpp
-        DESTINATION openfpm_data/include/Space/
 	COMPONENT OpenFPM)
 
 install(FILES Space/Shape/AdaptiveCylinderCone.hpp

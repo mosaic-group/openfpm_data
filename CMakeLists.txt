@@ -22,10 +22,6 @@ else()
 	message( FATAL_ERROR "Vc is required in roder to install OpenFPM")
 endif()
 
-add_subdirectory(../openfpm_devices/ openfpm_devices)
-
-# collect all configs and write to config.h before compiling src
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_cmake.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.h)
 add_subdirectory(src)
 
 get_directory_property(hasParent PARENT_DIRECTORY)

@@ -11,7 +11,7 @@
 #define CELLLISTBAL_HPP_
 
 #include "NN/CellList/CellList.hpp"
-#include "Space/SpaceBox.hpp"
+#include "Space/Shape/Box.hpp"
 #include "util/mathutil.hpp"
 #include "NN/CellList/CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"

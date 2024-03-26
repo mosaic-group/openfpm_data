@@ -110,12 +110,12 @@ struct ite_gpu
 
 	size_t nblocks() const
 	{
-		return wthr.x * wthr.y * wthr.z;
+		return wthr.x * ((wthr.y != 0)?wthr.y:1) * ((wthr.z != 0)?wthr.z:1);
 	}
 
 	size_t nthrs() const
 	{
-		return thr.x * thr.y * thr.z;
+		return thr.x * ((thr.y != 0)?thr.y:1) * ((thr.z != 0)?thr.z:1);
 	}
 
 #endif
@@ -819,6 +819,7 @@ public:
 		return getGPUIterator_impl<N>(*this,k1,k2,n_thr);
 	}
 
+
 #endif
 
 	/*! \brief swap the grid_sm informations
@@ -867,14 +868,48 @@ public:
 template<unsigned int dim, typename grid_sm_type, typename T>
 ite_gpu<dim> getGPUIterator_impl(const grid_sm_type & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, const size_t n_thr)
 {
+	// Work to do
+	ite_gpu<dim> ig;
+
+	if (n_thr == static_cast<size_t>(-1)) {
+		ig.thr.x = 0xFFFFFFFF;
+		ig.thr.y = 0xFFFFFFFF;
+		ig.thr.z = 0xFFFFFFFF;
+
+		if (dim >= 1)
+			ig.wthr.x = key2.get(0) - key1.get(0) + 1;
+		else
+			ig.wthr.x = 0;
+
+		if (dim >= 2)
+			ig.wthr.y = key2.get(1) - key1.get(1) + 1;
+		else
+			ig.wthr.y = 0;
+
+		if (dim >= 3)
+		{
+			ig.wthr.z = 1;
+			for (size_t i = 2 ; i < dim ; i++)
+			{ig.wthr.z *= (key2.get(i) - key1.get(i) + 1);}
+		}
+		else
+			ig.wthr.z = 0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			ig.start.set_d(i,key1.get(i));
+			ig.stop.set_d(i,key2.get(i));
+		}
+
+		return ig;
+	
+	}
+
 	size_t tot_work = 1;
 	for (size_t i = 0 ; i < dim ; i++)
 	{tot_work *= key2.get(i) - key1.get(i) + 1;}
 
 	size_t n = (tot_work <= n_thr)?openfpm::math::round_big_2(tot_work):n_thr;
-
-	// Work to do
-	ite_gpu<dim> ig;
 
 	if (tot_work == 0)
 	{
@@ -885,6 +920,12 @@ ite_gpu<dim> getGPUIterator_impl(const grid_sm_type & g1, const grid_key_dx<dim,
 		ig.wthr.x = 0;
 		ig.wthr.y = 0;
 		ig.wthr.z = 0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			ig.start.set_d(i,key1.get(i));
+			ig.stop.set_d(i,key2.get(i));
+		}
 
 		return ig;
 	}

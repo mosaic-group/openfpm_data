@@ -9,7 +9,7 @@
 #define MEMFAST_HPP_
 
 #include "config.h"
-#include "Space/SpaceBox.hpp"
+#include "Space/Shape/Box.hpp"
 #include "util/mathutil.hpp"
 #include "Space/Shape/HyperCube.hpp"
 #include "NN/CellList/CellListIterator.hpp"

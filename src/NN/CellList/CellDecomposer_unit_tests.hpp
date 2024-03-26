@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_use )
 {
 	//! [Cell decomposer use without shift]
 	//Space where is living the Cell list
-	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	Point<3,double> p({0.5,0.5,0.5});
 	double pp[3] = {0.5,0.5,0.5};
 
@@ -196,9 +196,9 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_consistent_use )
 	std::default_random_engine g;
 	std::uniform_real_distribution<double> d(0.0,1.0);
 
-	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	Point<3,double> sht({1.1,2.1,3.1});
-	SpaceBox<3,double> box2 = box;
+	Box<3,double> box2 = box;
 	box2 += sht;
 
 	CellDecomposer_sm< 3,double,shift<3,double> > cd(box2,div,1);
@@ -265,7 +265,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_swap_use )
 	// random engine
 	size_t div[3] = {16,16,16};
 
-	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 
 	CellDecomposer_sm< 3,double,shift<3,double> > cd1(box,div,1);
 
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE( CellDecomposer_swap_use )
 	// random engine
 	size_t div2[3] = {15,15,15};
 
-	SpaceBox<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
 
 	CellDecomposer_sm< 3,double,shift<3,double> > cd2(box2,div2,2);
 

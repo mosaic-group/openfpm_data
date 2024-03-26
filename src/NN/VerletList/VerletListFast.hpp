@@ -949,7 +949,7 @@ public:
 	VerletList(Box<dim,T> & box, T r_cut, Matrix<dim,T> mat, const size_t pad = 1, size_t slot=STARTING_NSLOT)
 	:slot(VERLET_STARTING_NSLOT),CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad)
 	{
-		SpaceBox<dim,T> sbox(box);
+		Box<dim,T> sbox(box);
 		Initialize(sbox,r_cut,pad,slot);
 	}
 
@@ -969,7 +969,7 @@ public:
 	VerletList(Box<dim,T> & box, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t g_m, size_t slot=VERLET_STARTING_NSLOT)
 	:slot(slot)
 	{
-		SpaceBox<dim,T> sbox(box);
+		Box<dim,T> sbox(box);
 		Initialize(sbox,r_cut,pos,g_m);
 	}
 
@@ -987,7 +987,7 @@ public:
 	 * \note the maximum number of particle per slot if just an indication for performance
 	 *
 	 */
-	VerletList(SpaceBox<dim,T> & box, Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t g_m, size_t slot=VERLET_STARTING_NSLOT)
+	VerletList(Box<dim,T> & box, Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t g_m, size_t slot=VERLET_STARTING_NSLOT)
 	:slot(slot)
 	{
 		Initialize(box,r_cut,pos);

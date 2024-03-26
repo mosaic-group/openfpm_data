@@ -87,7 +87,7 @@ void test_sub_index()
 																	off,
 																	t,
 																	vPos.size(),
-																	0,
+																	(size_t)0,
 																	vPos.toKernel(),
 																	cl_n.toKernel(),
 																	cellIndex_LocalIndex.toKernel());
@@ -206,7 +206,7 @@ void test_sub_index2()
 																	off,
 																	t,
 																	vPos.size(),
-																	0,
+																	(size_t)0,
 																	vPos.toKernel(),
 																	cl_n.toKernel(),
 																	cellIndex_LocalIndex.toKernel());
@@ -382,7 +382,8 @@ void test_fill_cell()
 	CUDA_LAUNCH_DIM3((fill_cells),itgg.wthr,itgg.thr,
 		starts.toKernel(),
 		cellIndex_LocalIndex.toKernel(),
-		cells.toKernel()
+		cells.toKernel(),
+		(size_t)0
 	);
 
 	cells.template deviceToHost<0>();
@@ -703,10 +704,10 @@ BOOST_AUTO_TEST_CASE ( test_reorder_particles )
 	std::cout << "End GPU reorder" << "\n";
 }
 
-template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(SpaceBox<dim,T> & box)
+template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<dim,T> & box)
 {
 	//Space where is living the Cell list
-	//SpaceBox<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	//Box<dim,T> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 
 	// Subdivisions
 	size_t div[dim] = {16,16,16};
@@ -861,8 +862,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use)
 {
 	std::cout << "Test cell list GPU" << "\n";
 
-	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
 
 	Test_cell_gpu<3,double,CellList_gpu<3,double,CudaMemory>>(box);
 
@@ -875,8 +876,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_sparse )
 {
 	std::cout << "Test cell list GPU sparse" << "\n";
 
-	SpaceBox<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
 
 	Test_cell_gpu<3,double,CellList_gpu<3,double,CudaMemory,no_transform_only<3,double>,true>> (box);
 
@@ -1292,7 +1293,7 @@ struct execute_cl_test<2>
 };
 
 template<unsigned int dim, typename T, typename CellS, int impl>
-void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& div)[dim],int box_nn = 2)
+void Test_cell_gpu_force(Box<dim,T> & box, size_t npart, const size_t (& div)[dim],int box_nn = 2)
 {
 	// Origin
 	Point<dim,T> org({0.0,0.0,0.0});
@@ -1493,7 +1494,7 @@ void Test_cell_gpu_force(SpaceBox<dim,T> & box, size_t npart, const size_t (& di
 }
 
 template<unsigned int dim, typename T, typename CellS, int impl>
-void Test_cell_gpu_force_split(SpaceBox<dim,T> & box, size_t npart, const size_t (& div)[dim],int box_nn = 2)
+void Test_cell_gpu_force_split(Box<dim,T> & box, size_t npart, const size_t (& div)[dim],int box_nn = 2)
 {
 	// Origin
 	Point<dim,T> org({0.0,0.0,0.0});
@@ -1718,8 +1719,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box)
 {
 	std::cout << "Test cell list GPU" << "\n";
 
-	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+	Box<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
 
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,2>(box,1000,{8,8,8});
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,2>(box,10000,{8,8,8});
@@ -1736,8 +1737,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_split)
 {
 	std::cout << "Test cell list GPU split" << "\n";
 
-	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+	Box<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
 
 	Test_cell_gpu_force_split<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,2>(box,1000,{32,32,32});
 	Test_cell_gpu_force_split<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,2>(box,10000,{32,32,32});
@@ -1758,7 +1759,7 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_split)
 
 	std::cout << "Performance" << "\n";
 
-	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	size_t div[] = {64,64,64};
 
 	// Origin
@@ -1841,8 +1842,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_sparse)
 {
 	std::cout << "Test cell list GPU" << "\n";
 
-	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+	Box<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
 
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,true>,2>(box,1000,{32,32,32},2);
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,true>,2>(box,10000,{32,32,32},2);
@@ -1859,8 +1860,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_radius)
 {
 	std::cout << "Test cell list GPU" << "\n";
 
-	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+	Box<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
 
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,1>(box,1000,{32,32,32});
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,1>(box,10000,{32,32,32});
@@ -1879,8 +1880,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force)
 {
 	std::cout << "Test cell list GPU" << "\n";
 
-	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+	Box<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
 
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box,1000,{16,16,16});
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,0>(box,10000,{16,16,16});
@@ -1897,8 +1898,8 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_sparse)
 {
 	std::cout << "Test cell list GPU force sparse" << "\n";
 
-	SpaceBox<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	SpaceBox<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+	Box<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
 
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,true>,0>(box,1000,{16,16,16});
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>,true>,0>(box,10000,{16,16,16});

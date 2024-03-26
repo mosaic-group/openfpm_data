@@ -8,7 +8,7 @@
 #ifndef GHOST_HPP_
 #define GHOST_HPP_
 
-#include "SpaceBox.hpp"
+#include "Shape/Box.hpp"
 
 #define INVALID_GHOST 9223372036854775807
 
