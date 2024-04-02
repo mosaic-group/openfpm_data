@@ -144,6 +144,181 @@ public:
 };
 
 
+/*! \brief Symmetric local iterator for the neighborhood of the cell structures
+ *
+ * In general you never create it directly but you get it from the CellList structures
+ *
+ * It iterate across all the element of the selected cell and the near cells.
+ *
+ * \note if we query the neighborhood of p and q is the neighborhood of p
+ *          when we will query the neighborhood of q p is not present. This is
+ *          useful to implement formula like \f$  \sum_{q = neighborhood(p) and p <= q} \f$
+ *
+ * \tparam dim dimensionality of the space where the cell live
+ * \tparam Cell cell type on which the iterator is working
+ * \tparam NNc_size neighborhood size
+ *
+ */
+template<unsigned int dim, typename Cell, typename vector_pos_type,int NNc_size>
+class CellNNIteratorSymLocal
+{
+	//! index of the particle p
+	size_t p;
+
+	//! Position of the particle p
+	const vector_pos_type & v;
+
+	//! actual element id
+	const typename Cell::Mem_type_type::local_index_type * start_id;
+
+	//! stop id to read the end of the cell
+	const typename Cell::Mem_type_type::local_index_type * stop_id;
+
+	//! Actual NNc_id;
+	size_t NNc_id;
+
+	//! Center cell, or cell for witch we are searching the NN-cell
+	const long int cell;
+
+	//! actual cell id = NNc[NNc_id]+cell stored for performance reason
+	size_t cell_id;
+
+	//! Cell list
+	Cell & cl;
+
+	//! NN cell id
+	const NNc_array<dim,NNc_size> & NNc;
+
+	/*! Select the next valid element
+	 *
+	 */
+	__attribute__((always_inline)) inline void IterateOwnCell()
+	{
+		while (start_id < stop_id)
+		{
+
+			size_t q = cl.get_lin(start_id);
+
+			for (long int i = dim-1 ; i >= 0 ; i--)
+			{
+				if (v.template get<0>(p)[i] < v.template get<0>(q)[i])
+					return;
+				else if (v.template get<0>(p)[i] > v.template get<0>(q)[i])
+					goto next;
+			}
+
+			if (q >= p)
+				return;
+next:
+			start_id++;
+		}
+	}
+
+
+	/*! Select the next valid element
+	 *
+	 */
+	__attribute__((always_inline)) inline void selectValid()
+	{
+		if (NNc[NNc_id] == 0)
+			IterateOwnCell();
+
+		while (start_id == stop_id)
+		{
+			// No more Cell
+			if (++NNc_id >= NNc_size) return;
+
+			cell_id = NNc[NNc_id] + cell;
+
+			if (NNc[NNc_id] == 0)
+			{
+				start_id = &(cl.getStartId(cell_id));
+				stop_id = &(cl.getStopId(cell_id));
+				IterateOwnCell();
+
+			} else if (NNc[NNc_id] < 0) {
+				start_id = &(cl.getGhostId(cell_id));
+				stop_id = &(cl.getStopId(cell_id));
+			} else {
+				start_id = &(cl.getStartId(cell_id));
+				stop_id = &(cl.getStopId(cell_id));
+			}
+		}
+	}
+
+public:
+	__attribute__((always_inline)) inline const typename Cell::Mem_type_type::local_index_type & get()
+	{
+		return cl.get_lin(start_id);
+	}
+
+	/*! \brief Get the value of the cell
+	 *
+	 * \return  the next element object
+	 *
+	 */
+	__attribute__((always_inline)) inline const typename Cell::Mem_type_type::local_index_type & get() const
+	{
+		return cl.get_lin(start_id);
+	}
+
+
+	/*! \brief
+	 *
+	 * Cell NN iterator
+	 *
+	 * \param cell Cell id
+	 * \param p index of the particle from which we are searching the neighborhood particles
+	 * \param NNc Cell neighborhood indexes (relative)
+	 * \param cl Cell structure
+	 *
+	 */
+	__attribute__((always_inline)) inline CellNNIteratorSymLocal(size_t cell, size_t p,
+		const NNc_array<dim,NNc_size> &NNc, Cell & cl,
+		const vector_pos_type & v)
+	: NNc_id(0),cell(cell),
+	cell_id(NNc[NNc_id] + cell),
+	cl(cl),NNc(NNc),
+	p(p),v(v)
+	{
+		if (NNc[NNc_id] < 0) {
+			start_id = &(cl.getGhostId(cell_id));
+			stop_id = &(cl.getStopId(cell_id));
+		} else {
+			start_id = &(cl.getStartId(cell_id));
+			stop_id = &(cl.getStopId(cell_id));
+		}
+
+		selectValid();
+	}
+
+	/*! \brief take the next element
+	 *
+	 * \return itself
+	 *
+	 */
+	__attribute__((always_inline)) inline CellNNIteratorSymLocal<dim,Cell,vector_pos_type,NNc_size> & operator++()
+	{
+		start_id++;
+
+		selectValid();
+
+		return *this;
+	}
+
+	/*! \brief Check if there is the next element
+	 *
+	 * \return true if there is the next element
+	 *
+	 */
+	__attribute__((always_inline)) inline bool isNext()
+	{
+		if (NNc_id >= NNc_size)
+			return false;
+		return true;
+	}
+};
+
 /*! \brief Symmetric iterator for the neighborhood of the cell structures
  *
  * In general you never create it directly but you get it from the CellList structures

@@ -22,7 +22,7 @@ void test_mem_type()
 
 	mem.init_to_zero(128,10);
 
-	mem.add(0,5);
+	mem.addCell(0,5);
 
 	BOOST_REQUIRE_EQUAL(mem.getNelements(0),1ul);
 

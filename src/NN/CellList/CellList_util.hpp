@@ -10,6 +10,7 @@
 
 #define CL_SYMMETRIC 1
 #define CL_NON_SYMMETRIC 2
+#define CL_LOCAL_SYMMETRIC 3
 
 enum cl_construct_opt
 {
@@ -115,6 +116,42 @@ struct populate_cell_list_sym_impl<true>
 	}
 };
 
+template<bool is_gpu>
+struct populate_cell_list_local_sym_impl
+{
+	template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base , typename CellList>
+	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & vPos,
+		CellList & cli,
+		size_t g_m)
+	{
+		cli.clear();
+
+		for (size_t i = 0; i < g_m ; i++)
+		{
+			cli.add(vPos.get(i), i);
+		}
+
+		cli.addCellGhostMarkers();
+
+		for (size_t i = g_m; i < vPos.size() ; i++)
+		{
+			cli.add(vPos.get(i), i);
+		}
+	}
+};
+
+template<>
+struct populate_cell_list_local_sym_impl<true>
+{
+	template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base , typename CellList>
+	static void populate(openfpm::vector<Point<dim,T>,Memory,layout_base > & vPos,
+		CellList & cli,
+		size_t g_m)
+	{
+		std::cout << __FILE__ << ":" << __LINE__ << " local symmetric cell list on GPU is not implemented" << std::endl;
+	}
+};
+
 /*! \brief populate the Cell-list with particles non symmetric case
  *
  * \tparam dim dimensionality of the space
@@ -158,6 +195,25 @@ void populate_cell_list_no_sym(openfpm::vector<Point<dim,T>,Memory,layout_base >
  *
  */
 template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base ,typename CellList>
+void populate_cell_list_local_sym(openfpm::vector<Point<dim,T>,Memory,layout_base > & vPos,
+	CellList & cli,
+	size_t g_m)
+{
+	populate_cell_list_local_sym_impl<is_gpu_celllist<CellList>::value>::populate(vPos,cli,g_m);
+}
+
+/*! \brief populate the Cell-list with particles local symmetric case
+ *
+ * \tparam dim dimensionality of the space
+ * \tparam T type of the space
+ * \tparam CellList type of cell-list
+ *
+ * \param vPos vector of positions
+ * \param cli Cell-list
+ * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
+ *
+ */
+template<unsigned int dim, typename T, typename Memory, template <typename> class layout_base ,typename CellList>
 void populate_cell_list_sym(openfpm::vector<Point<dim,T>,Memory,layout_base > & vPos,
 		      	  	  	    CellList & cli,
 		      	  	  	    size_t g_m)
@@ -173,7 +229,7 @@ void populate_cell_list_sym(openfpm::vector<Point<dim,T>,Memory,layout_base > & 
  *
  * \param vPos vector of positions
  * \param cli Cell-list
- * \param opt option like CL_SYMMETRIC or CL_NON_SYMMETRIC
+ * \param opt option like CL_SYMMETRIC or CL_NON_SYMMETRIC or CL_LOCAL_SYMMETRIC
  * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
  *
  */
@@ -195,9 +251,11 @@ void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & vPos,
 						cl_construct_opt optc)
 {
 	if (opt == CL_NON_SYMMETRIC)
-	{populate_cell_list_no_sym<dim,T,prop,Memory,layout_base,CellList,prp ...>(vPos,vPosOut,vPrp,vPrpOut,cli,gpuContext,g_m,optc);}
+		populate_cell_list_no_sym<dim,T,prop,Memory,layout_base,CellList,prp ...>(vPos,vPosOut,vPrp,vPrpOut,cli,gpuContext,g_m,optc);
+	else if (opt == CL_LOCAL_SYMMETRIC)
+		populate_cell_list_local_sym(vPos,cli,g_m);
 	else
-	{populate_cell_list_sym(vPos,cli,g_m);}
+		populate_cell_list_sym(vPos,cli,g_m);
 }
 
 /*! \brief populate the Cell-list with particles generic case
@@ -210,7 +268,7 @@ void populate_cell_list(openfpm::vector<Point<dim,T>,Memory,layout_base> & vPos,
  *
  * \param vPos vector of positions
  * \param cli Cell-list
- * \param opt option like CL_SYMMETRIC or CL_NON_SYMMETRIC
+ * \param opt option like CL_SYMMETRIC or CL_NON_SYMMETRIC or CL_LOCAL_SYMMETRIC
  * \param g_m marker (particle below this marker must be inside the domain, particles outside this marker must be outside the domain)
  *
  */

@@ -138,6 +138,18 @@ public:
 		}
 	}
 
+	/*! \brief Initialize the NNc array with symmetric local neighborhood cells indexes
+	 *
+	 * The neighborhood is the same as with the full iteration scheme
+	 * to account for interactions with ghost particles in bottom left
+	 * neighboring cells. In the symmetric case those are completely skipped
+	 *
+	 */
+	void init_sym_local()
+	{
+		this->init_full();
+	}
+
 	/*! \brief return the pointer to the array
 	 *
 	 * \return the pointer
@@ -244,6 +256,11 @@ public:
 	}
 
 	void init_sym()
+	{
+		full_or_sym = false;
+	}
+
+	void init_sym_local()
 	{
 		full_or_sym = false;
 	}

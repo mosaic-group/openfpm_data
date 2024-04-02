@@ -96,6 +96,9 @@ class Mem_fast
 	//! base that store the data
 	typedef typename openfpm::vector<aggregate<local_index>,Memory> base;
 
+	//! ghost marker for every cell (non-ghost particles < gm (ghost marker))
+	openfpm::vector<size_t> ghostMarkers;
+
 	//! elements that each cell store (each cell can store a number
 	//! of elements == slot )
 	base cl_base;
@@ -207,6 +210,30 @@ public:
 		cl_base = mem.private_get_cl_base();
 	}
 
+	/*! \brief Add ghost marker to the cell
+	 *
+	 * \param cell_id id of the cell
+	 * \param g_m ghost marker to add
+	 *
+	 */
+	inline void addCellGhostMarkers()
+	{
+		ghostMarkers.resize(cl_n.size());
+
+		for (int i = 0; i < cl_n.size(); ++i)
+		{
+			ghostMarkers.get(i) = cl_n.template get<0>(i);
+		}
+	}
+
+	/*! \brief Get ghost marker of the cell
+	 *
+	 */
+	inline size_t getGhostMarker(local_index cell_id) const
+	{
+		return ghostMarkers.get(cell_id);
+	}
+
 	/*! \brief Add an element to the cell
 	 *
 	 * \param cell_id id of the cell
@@ -228,19 +255,6 @@ public:
 
 		cl_base.template get<0>(slot * cell_id + cl_n.template get<0>(cell_id)) = ele;
 		cl_n.template get<0>(cell_id)++;
-	}
-
-	/*! \brief Add an element to the cell
-	 *
-	 * \param cell_id id of the cell
-	 * \param ele element to add
-	 *
-	 */
-	inline void add(local_index cell_id, local_index ele)
-	{
-		// add the element to the cell
-
-		this->addCell(cell_id,ele);
 	}
 
 	/*! \brief Get an element in the cell
@@ -344,6 +358,18 @@ public:
 	inline const local_index & getStartId(local_index cell_id) const
 	{
 		return cl_base.template get<0>(cell_id*slot);
+	}
+
+	/*! \brief Get the index of the first ghost element
+	 *
+	 * \param cell_id cell-id
+	 *
+	 * \return a reference to the first element
+	 *
+	 */
+	inline const local_index & getGhostId(local_index cell_id) const
+	{
+		return cl_base.template get<0>(cell_id*slot+ghostMarkers.get(cell_id));
 	}
 
 	/*! \brief Get the last element of a cell (as reference)

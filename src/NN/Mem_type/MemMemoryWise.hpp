@@ -43,6 +43,9 @@ class Mem_mw
 	//! In case of invalid element return this
 	typename std::remove_reference<decltype(std::declval<openfpm::vector<local_index>>().get(0))>::type invalid;
 
+	//! ghost marker for every cell (non-ghost particles < gm (ghost marker))
+	std::unordered_map<local_index,size_t> ghostMarkers;
+
 public:
 
 	typedef void toKernel_type;
@@ -89,17 +92,6 @@ public:
 		cl_base[cell_id].add(ele);
 	}
 
-	/*! \brief Add an element to the cell
-	 *
-	 * \param cell_id cell-id
-	 * \param ele element to add
-	 *
-	 */
-	inline void add(local_index cell_id, typename base::value_type ele)
-	{
-		this->addCell(cell_id,ele);
-	}
-
 	/*! \brief Remove an element from the cell
 	 *
 	 * \param cell cell-id
@@ -136,7 +128,6 @@ public:
 		return it->second.get(ele);
 	}
 
-
 	inline auto get(local_index cell, local_index ele) const -> decltype(cl_base.find(cell)->second.get(0)) &
 	{
 		auto it = cl_base.find(cell);
@@ -144,6 +135,31 @@ public:
 			return invalid;
 
 		return it->second.get(ele);
+	}
+
+	/*! \brief Add ghost marker to the cell
+	 *
+	 * \param cell_id id of the cell
+	 * \param g_m ghost marker to add
+	 *
+	 */
+	inline void addCellGhostMarkers()
+	{
+		for (auto it = cl_base.begin(); it != cl_base.end(); it++) {
+		    ghostMarkers[it->first] = it->second.size();
+		}
+	}
+
+	/*! \brief Get ghost marker of the cell
+	 *
+	 */
+	inline size_t getGhostMarker(local_index cell_id) const
+	{
+		auto it = ghostMarkers.find(cell_id);
+		if (it == ghostMarkers.end())
+			return invalid;
+
+		return it->second;
 	}
 
 	inline void swap(Mem_mw & cl)
@@ -161,27 +177,40 @@ public:
 		cl_base.clear();
 	}
 
-	inline const local_index & getStartId(size_t part_id) const
+	inline const local_index & getStartId(size_t cell_id) const
 	{
-		auto it = cl_base.find(part_id);
+		auto it = cl_base.find(cell_id);
 		if (it == cl_base.end())
-			return *(&invalid);
+			return invalid;
 
 		return it->second.get(0);
 	}
 
-	inline const local_index & getStopId(size_t part_id) const
+	inline const local_index & getGhostId(size_t cell_id) const
 	{
-		auto it = cl_base.find(part_id);
+		auto gm_it = ghostMarkers.find(cell_id);
+		if (gm_it == ghostMarkers.end())
+			return invalid;
+
+		auto cell_it = cl_base.find(cell_id);
+		if (cell_it == cl_base.end())
+			return invalid;
+
+		return cell_it->second.get(gm_it->second);
+	}
+
+	inline const local_index & getStopId(size_t cell_id) const
+	{
+		auto it = cl_base.find(cell_id);
 		if (it == cl_base.end())
-			return *(&invalid);
+			return invalid;
 
 		return *(&it->second.last() + 1);
 	}
 
-	inline const local_index & get_lin(const local_index * part_id) const
+	inline const local_index & get_lin(const local_index * cell_id) const
 	{
-		return *part_id;
+		return *cell_id;
 	}
 
 public:

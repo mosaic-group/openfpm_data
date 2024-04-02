@@ -700,7 +700,6 @@ class CellDecomposer_sm
 
 		for (size_t s = 1 ; s < dim ; s++)
 		{
-			/* coverity[dead_error_begin] */
 			check_and_print_error(pos,s);
 
 			size_t cell_idt = ConvertToID_ns(pos,s);
@@ -721,6 +720,7 @@ class CellDecomposer_sm
 		check_and_print_error(pos,0);
 
 		size_t cell_id = ConvertToID_ns(pos,0);
+
 		cell_id = (cell_id == off[0])?off[0]-1:cell_id;
 		cell_id = (cell_id == cellListGrid.size(0) - off[0] - 1)?cellListGrid.size(0) - off[0]:cell_id;
 

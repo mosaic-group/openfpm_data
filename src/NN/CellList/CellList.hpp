@@ -456,6 +456,8 @@ protected:
 //	long int NNc_sym[openfpm::math::pow(3,dim)/2+1];
 	NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)/2+1> NNc_sym;
 
+	NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)> NNc_sym_local;
+
 private:
 
 	//! Caching of r_cutoff radius
@@ -483,6 +485,9 @@ private:
 
 		NNc_sym.set_size(div);
 		NNc_sym.init_sym();
+
+		NNc_sym_local.set_size(div);
+		NNc_sym_local.init_sym_local();
 	}
 
 	void setCellDecomposer(CellDecomposer_sm<dim,T,transform> & cd, const CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & dom_box, size_t pad) const
@@ -677,6 +682,7 @@ public:
 	{
 		std::copy(&cell.NNc_full[0],&cell.NNc_full[openfpm::math::pow(3,dim)],&NNc_full[0]);
 		std::copy(&cell.NNc_sym[0],&cell.NNc_sym[openfpm::math::pow(3,dim)/2+1],&NNc_sym[0]);
+		std::copy(&cell.NNc_sym_local[0],&cell.NNc_sym_local[openfpm::math::pow(3,dim)],&NNc_sym_local[0]);
 
 		Mem_type::swap(static_cast<Mem_type &&>(cell));
 
@@ -699,6 +705,7 @@ public:
 	{
 		NNc_full = cell.NNc_full;
 		NNc_sym = cell.NNc_sym;
+		NNc_sym_local = cell.NNc_sym_local;
 
 		Mem_type::operator=(static_cast<const Mem_type &>(cell));
 
@@ -722,6 +729,7 @@ public:
 	{
 		NNc_full = cell.private_get_NNc_full();
 		NNc_sym = cell.private_get_NNc_sym();
+		NNc_sym_local = cell.private_get_NNc_sym_local();
 
 		Mem_type::copy_general(static_cast<const Mem_type2 &>(cell));
 
@@ -757,17 +765,6 @@ public:
 		return it;
 	}
 
-	/*! \brief Add to the cell
-	 *
-	 * \param cell_id Cell id where to add
-	 * \param ele element to add
-	 *
-	 */
-	inline void addCell(size_t cell_id, typename Mem_type::local_index_type ele)
-	{
-		Mem_type::addCell(cell_id,ele);
-	}
-
 	/*! \brief Add an element in the cell list
 	 *
 	 * \param pos array that contain the coordinate
@@ -779,7 +776,7 @@ public:
 		// calculate the Cell id
 		size_t cell_id = this->getCell(pos);
 
-		Mem_type::add(cell_id,ele);
+		Mem_type::addCell(cell_id,ele);
 	}
 
 	/*! \brief Add an element in the cell list
@@ -793,7 +790,7 @@ public:
 		// calculate the Cell id
 		size_t cell_id = this->getCell(pos);
 
-		Mem_type::add(cell_id,ele);
+		Mem_type::addCell(cell_id,ele);
 	}
 
 
@@ -813,7 +810,7 @@ public:
 
 		// add the element to the cell
 
-		addCell(cell_id,ele);
+		Mem_type::addCell(cell_id,ele);
 	}
 
 	/*! \brief Add an element in the cell list forcing to be in the domain cells
@@ -832,7 +829,7 @@ public:
 
 		// add the element to the cell
 
-		addCell(cell_id,ele);
+		Mem_type::addCell(cell_id,ele);
 	}
 
 	/*! \brief Add an element in the cell list forcing to be in the padding cells
@@ -851,7 +848,7 @@ public:
 
 		// add the element to the cell
 
-		addCell(cell_id,ele);
+		Mem_type::addCell(cell_id,ele);
 	}
 
 	/*! \brief Add an element in the cell list forcing to be in the padding cells
@@ -870,7 +867,16 @@ public:
 
 		// add the element to the cell
 
-		addCell(cell_id,ele);
+		Mem_type::addCell(cell_id,ele);
+	}
+
+	/*! \brief add ghost marker in each cell
+	 *
+	 *
+	 */
+	inline void addCellGhostMarkers()
+	{
+		Mem_type::addCellGhostMarkers();
 	}
 
 	/*! \brief remove an element from the cell
@@ -944,6 +950,7 @@ public:
 	{
 		NNc_full.swap(cl.NNc_full);
 		NNc_sym.swap(cl.NNc_sym);
+		NNc_sym_local.swap(cl.NNc_sym_local);
 
 		Mem_type::swap(static_cast<Mem_type &>(cl));
 
@@ -1071,6 +1078,38 @@ public:
 #endif
 
 		CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,SYM> cln(cell,p,NNc_sym,*this,v);
+		return cln;
+	}
+
+	/*! \brief Get the symmetric local Neighborhood iterator
+	 *
+	 * It iterate across all the element of the selected cell and the near cells
+	 *
+	 *  \verbatim
+
+	   * * *
+	     x *
+
+	   \endverbatim
+	 *
+	 * * x is the selected cell
+	 * * * are the near cell
+	 *
+	 * \param cell cell id
+	 * \param p particle id
+	 *
+	 * \return An aiterator across the neighborhood particles
+	 *
+	 */
+	__attribute__((always_inline)) inline CellNNIteratorSymLocal<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)FULL>
+	getNNIteratorSymLocal(size_t cell, size_t p, const vector_pos_type & v)
+	{
+#ifdef SE_CLASS1
+		// if (from_cd == false)
+		// {std::cerr << __FILE__ << ":" << __LINE__ << " Warning when you try to get a symmetric neighborhood iterator, you must construct the Cell-list in a symmetric way" << std::endl;}
+#endif
+
+		CellNNIteratorSymLocal<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,FULL> cln(cell,p,NNc_sym_local,*this,v);
 		return cln;
 	}
 
@@ -1264,6 +1303,11 @@ public:
 	const NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)/2+1> & private_get_NNc_sym () const
 	{
 		return NNc_sym;
+	}
+
+	const NNc_array<dim,(unsigned int)openfpm::math::pow(3,dim)> & private_get_NNc_sym_local () const
+	{
+		return NNc_sym_local;
 	}
 
 	bool private_get_from_cd() const

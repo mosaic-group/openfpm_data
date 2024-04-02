@@ -47,6 +47,9 @@ class Mem_bal
 	// that store the elements in the cell
 	openfpm::vector<base> cl_base;
 
+	//! ghost marker for every cell (non-ghost particles < gm (ghost marker))
+	openfpm::vector<size_t> ghostMarkers;
+
 	//! Invalid element
 	local_index invalid;
 
@@ -98,17 +101,6 @@ public:
 		cl_base.get(cell_id).add(ele);
 	}
 
-	/*! \brief Add an element to the cell
-	 *
-	 * \param cell_id id of the cell
-	 * \param ele element to add
-	 *
-	 */
-	inline void add(size_t cell_id, typename base::value_type ele)
-	{
-		this->addCell(cell_id,ele);
-	}
-
 	/*! \brief Remove an element from the cell
 	 *
 	 * \param cell id of the cell
@@ -158,6 +150,30 @@ public:
 		return cl_base.get(cell).get(ele);
 	}
 
+	/*! \brief Add ghost marker to the cell
+	 *
+	 * \param cell_id id of the cell
+	 * \param g_m ghost marker to add
+	 *
+	 */
+	inline void addCellGhostMarkers()
+	{
+		ghostMarkers.resize(cl_base.size());
+
+		for (int i = 0; i < cl_base.size(); ++i)
+		{
+			ghostMarkers.get(i) = cl_base.get(i).size();
+		}
+	}
+
+	/*! \brief Get ghost marker of the cell
+	 *
+	 */
+	inline size_t getGhostMarker(local_index cell_id) const
+	{
+		return ghostMarkers.get(cell_id);
+	}
+
 	/*! \brief Swap two Mem_bal
 	 *
 	 * \param cl element to swap with
@@ -190,42 +206,55 @@ public:
 
 	/*! \brief Get the start index of the selected element
 	 *
-	 * \param part_id element
+	 * \param cell_id element
 	 *
 	 */
-	inline const local_index & getStartId(local_index part_id) const
+	inline const local_index & getStartId(local_index cell_id) const
 	{
-		if (cl_base.get(part_id).size() == 0)
+		if (cl_base.get(cell_id).size() == 0)
 			return invalid;
 
-		return cl_base.get(part_id).get(0);
+		return cl_base.get(cell_id).get(0);
+	}
+
+	/*! \brief Get the index of the first ghost element
+	 *
+	 * \param cell_id element
+	 *
+	 */
+	inline const local_index & getGhostId(local_index cell_id) const
+	{
+		if (cl_base.get(cell_id).size() == 0)
+			return invalid;
+
+		return cl_base.get(cell_id).get(this->getGhostMarker(cell_id));
 	}
 
 	/*! \brief Get the stop index of the selected element
 	 *
-	 * \param part_id element
+	 * \param cell_id element
 	 *
 	 */
-	inline const local_index & getStopId(local_index part_id) const
+	inline const local_index & getStopId(local_index cell_id) const
 	{
-		if (cl_base.get(part_id).size() == 0)
+		if (cl_base.get(cell_id).size() == 0)
 			return invalid;
 
-		return *(&cl_base.get(part_id).last() + 1);
+		return *(&cl_base.get(cell_id).last() + 1);
 	}
 
 	/*! \brief get_lin
 	 *
-	 * It just return the element pointed by part_id
+	 * It just return the element pointed by cell_id
 	 *
-	 * \param part_id element
+	 * \param cell_id element
 	 *
 	 * \return the element pointed
 	 *
 	 */
-	inline const local_index & get_lin(const local_index * part_id) const
+	inline const local_index & get_lin(const local_index * cell_id) const
 	{
-		return *part_id;
+		return *cell_id;
 	}
 
 public:
