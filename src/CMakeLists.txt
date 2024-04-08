@@ -326,8 +326,7 @@ install(FILES NN/VerletList/VerletList.hpp
         DESTINATION openfpm_data/include/NN/VerletList/
 	COMPONENT OpenFPM)
 
-install(FILES Space/Shape/AdaptiveCylinderCone.hpp
-        Space/Shape/Box.hpp
+install(FILES Space/Shape/Box.hpp
         Space/Shape/Box_unit_tests.hpp
         Space/Shape/HyperCube.hpp
         Space/Shape/HyperCube_unit_test.hpp
