@@ -511,6 +511,61 @@ BOOST_AUTO_TEST_CASE( meta_copy_d_compare_test )
 	//! [Usage of meta_copy_d and compare for Point_test]
 
 	}
+
+	//! [Usage of meta_copy_d for 3-index objects]
+	// Added by foggia on 08.03.2024
+
+	float f_src[2][3][2] = {{{1.0,10.1},{2.9,2.9},{4.0,0.2}},{{2.3,0.0},{4.4,1.0},{9.0,8.6}}};
+	float f_dst[2][3][2];
+
+	meta_copy_d<float[2][3][2],float[2][3][2]>::meta_copy_d_(f_src,f_dst);
+
+	BOOST_REQUIRE_EQUAL(f_src[0][0][0],f_dst[0][0][0]);
+	BOOST_REQUIRE_EQUAL(f_src[0][0][1],f_dst[0][0][1]);
+	
+	BOOST_REQUIRE_EQUAL(f_src[0][1][0],f_dst[0][1][0]);
+	BOOST_REQUIRE_EQUAL(f_src[0][1][1],f_dst[0][1][1]);
+
+	BOOST_REQUIRE_EQUAL(f_src[0][2][0],f_dst[0][2][0]);
+	BOOST_REQUIRE_EQUAL(f_src[0][2][1],f_dst[0][2][1]);
+
+	BOOST_REQUIRE_EQUAL(f_src[1][0][0],f_dst[1][0][0]);
+	BOOST_REQUIRE_EQUAL(f_src[1][0][1],f_dst[1][0][1]);
+	
+	BOOST_REQUIRE_EQUAL(f_src[1][1][0],f_dst[1][1][0]);
+	BOOST_REQUIRE_EQUAL(f_src[1][1][1],f_dst[1][1][1]);
+
+	BOOST_REQUIRE_EQUAL(f_src[1][2][0],f_dst[1][2][0]);
+	BOOST_REQUIRE_EQUAL(f_src[1][2][1],f_dst[1][2][1]);
+
+	aggregate<VectorS<2,double>,int,int[3][1][2]> agg1;
+	aggregate<VectorS<2,double>,int,int[3][1][2]> agg2;
+
+	boost::fusion::at_c<0>(agg1.data)[0] = 1.0;
+	boost::fusion::at_c<0>(agg1.data)[1] = 1.0;
+	
+	boost::fusion::at_c<1>(agg1.data) = 2;
+	
+	boost::fusion::at_c<2>(agg1.data)[0][0][0] = 3;
+	boost::fusion::at_c<2>(agg1.data)[0][0][1] = -4;
+	
+	boost::fusion::at_c<2>(agg1.data)[1][0][0] = 9;
+	boost::fusion::at_c<2>(agg1.data)[1][0][1] = 0;
+
+	boost::fusion::at_c<2>(agg1.data)[2][0][0] = -1;
+	boost::fusion::at_c<2>(agg1.data)[2][0][1] = 10;
+	
+	meta_copy_d<aggregate<VectorS<2,double>,int,int[3][1][2]>,aggregate<VectorS<2,double>,int,int[3][1][2]>>::meta_copy_d_(agg1,agg2);
+
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<0>(agg1.data)[0],boost::fusion::at_c<0>(agg2.data)[0]);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<0>(agg1.data)[1],boost::fusion::at_c<0>(agg2.data)[1]);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<1>(agg1.data),boost::fusion::at_c<1>(agg2.data));
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<2>(agg1.data)[0][0][0],boost::fusion::at_c<2>(agg2.data)[0][0][0]);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<2>(agg1.data)[0][0][1],boost::fusion::at_c<2>(agg2.data)[0][0][1]);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<2>(agg1.data)[1][0][0],boost::fusion::at_c<2>(agg2.data)[1][0][0]);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<2>(agg1.data)[1][0][1],boost::fusion::at_c<2>(agg2.data)[1][0][1]);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<2>(agg1.data)[2][0][0],boost::fusion::at_c<2>(agg2.data)[2][0][0]);
+	BOOST_REQUIRE_EQUAL(boost::fusion::at_c<2>(agg1.data)[2][0][1],boost::fusion::at_c<2>(agg2.data)[2][0][1]);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

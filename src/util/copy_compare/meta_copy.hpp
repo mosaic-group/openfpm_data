@@ -390,6 +390,104 @@ struct meta_copy_d<Tsrc[N1][N2],Tdst[N1][N2]>
 	}
 };
 
+// Added by foggia on 08.03.2024
+//! Partial specialization for N=3 3D-Array
+template<typename Tsrc, typename Tdst, size_t N1, size_t N2, size_t N3>
+struct meta_copy_d<Tsrc[N1][N2][N3],Tdst>
+{
+  __device__ __host__ static inline void meta_copy_d_(const Tsrc src[N1][N2][N3], Tdst && dst)
+  {
+    /*! \brief copy and object from src to dst
+     *
+     * \param src source object to copy
+     * \param dst destination object
+     *
+     */
+    for (size_t i1 = 0 ; i1 < N1 ; i1++)
+      {
+	for (size_t i2 = 0 ; i2 < N2 ; i2++)
+	  {
+	    for (size_t i3 = 0 ; i3 < N3 ; i3++)
+	      {
+		copy_general<Tsrc>(src[i1][i2][i3],static_cast<Tsrc&>(dst[i1][i2][i3]));
+	      }
+	  }
+      }
+  }
+
+  __device__ __host__ static inline void meta_copy_d_(const Tsrc src[N1][N2][N3], Tdst & dst)
+  {
+    /*! \brief copy and object from src to dst
+     *
+     * \param src source object to copy
+     * \param dst destination object
+     *
+     */
+    for (size_t i1 = 0 ; i1 < N1 ; i1++)
+      {
+	for (size_t i2 = 0 ; i2 < N2 ; i2++)
+	  {
+	    for (size_t i3 = 0 ; i3 < N3 ; i3++)
+	      {
+		copy_general<Tsrc>(src[i1][i2][i3],static_cast<Tsrc&>(dst[i1][i2][i3]));
+	      }
+	  }
+      }
+  }
+};
+
+// Added by foggia on 08.03.2024
+//! Partial specialization for N=3 3D-Array
+template<typename Tsrc, typename Tdst, size_t N1, size_t N2, size_t N3>
+struct meta_copy_d<Tsrc,Tdst[N1][N2][N3]>
+{
+  /*! \brief copy and object from src to dst
+   *
+   * \param src source object to copy
+   * \param dst destination object
+   *
+   */
+  __device__ __host__ static inline void meta_copy_d_(const Tsrc & src, Tdst dst[N1][N2][N3])
+  {
+    for (size_t i1 = 0 ; i1 < N1 ; i1++)
+      {
+	for (size_t i2 = 0 ; i2 < N2 ; i2++)
+	  {
+	    for (size_t i3 = 0 ; i3 < N3 ; i3++)
+	      {
+		copy_general<Tdst>(static_cast<const Tdst&>(src[i1][i2][i3]),dst[i1][i2][i3]);
+	      }
+	  }
+      }
+  }
+};
+
+// Added by foggia on 08.03.2024
+//! Partial specialization for N=3 3D-Array
+template<typename Tsrc, typename Tdst, size_t N1, size_t N2, size_t N3>
+struct meta_copy_d<Tsrc[N1][N2][N3],Tdst[N1][N2][N3]>
+{
+  /*! \brief copy and object from src to dst
+   *
+   * \param src source object to copy
+   * \param dst destination object
+   *
+   */
+  __device__ __host__ static inline void meta_copy_d_(const Tsrc src[N1][N2][N3], Tdst dst[N1][N2][N3])
+  {
+    for (size_t i1 = 0 ; i1 < N1 ; i1++)
+      {
+	for (size_t i2 = 0 ; i2 < N2 ; i2++)
+	  {
+	    for (size_t i3 = 0 ; i3 < N3 ; i3++)
+	      {
+		copy_general<Tsrc>(src[i1][i2][i3],dst[i1][i2][i3]);
+	      }
+	  }
+      }
+  }
+};
+
 //! Partial specialization for N=3
 template<typename T,size_t N1,size_t N2,size_t N3>
 struct meta_copy<T[N1][N2][N3]>
