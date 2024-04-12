@@ -602,6 +602,10 @@ public:
 		size_t n_dec_tmp = nDecRefRedec;
 		nDecRefRedec = clg.nDecRefRedec;
 		clg.nDecRefRedec = n_dec_tmp;
+
+		boxNeighborNumber = clg.boxNeighborNumber;
+    	boxNeighborCellOffset.swap(clg.boxNeighborCellOffset);
+    	rcutNeighborCellOffset.swap(clg.rcutNeighborCellOffset);
 	}
 
 	CellList_gpu<dim,T,Memory,transform_type,false> &
@@ -621,6 +625,10 @@ public:
 		cellPadDim = clg.cellPadDim;
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
+
+		boxNeighborNumber = clg.boxNeighborNumber;
+    	boxNeighborCellOffset = clg.boxNeighborCellOffset;
+    	rcutNeighborCellOffset = clg.rcutNeighborCellOffset;
 
 		return *this;
 	}
@@ -642,6 +650,10 @@ public:
 		cellPadDim = clg.cellPadDim;
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
+
+		boxNeighborNumber = clg.boxNeighborNumber;
+    	boxNeighborCellOffset.swap(clg.boxNeighborCellOffset);
+    	rcutNeighborCellOffset.swap(clg.rcutNeighborCellOffset);
 
 		return *this;
 	}
