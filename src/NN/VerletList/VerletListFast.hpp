@@ -314,19 +314,22 @@ private:
 
 	/*! \brief Fill the cell-list with data
 	 *
-	 * \param cli Cell-list
-	 * \param pos vector of positions
-	 * \param g_m marker
+	 * \param cellList Cell-list
+	 * \param vPos vector of positions
+	 * \param ghostMarker marker
 	 * \param opt VL_SYMMETRIC or VL_NON_SYMMETRIC
 	 *
 	 */
-	void initCl(CellListImpl & cli, vector_pos_type & pos, size_t g_m, size_t opt)
+	void initCl(CellListImpl & cellList, vector_pos_type & vPos, size_t ghostMarker, size_t opt)
 	{
-		gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::dummy);
+		// CellList_gpu receives a property vector to potentially reorder it during cell list construction
+		// stub because of legacy naming
+		openfpm::vector<aggregate<int>> vPropStub;
+
 		if (opt & VL_SYMMETRIC || opt & VL_CRS_SYMMETRIC)
-		{populate_cell_list(pos,cli,gpuContext,g_m,CL_SYMMETRIC,cl_construct_opt::Full);}
+			cellList.fill(vPos, vPropStub, ghostMarker, CL_SYMMETRIC);
 		else
-		{populate_cell_list(pos,cli,gpuContext,g_m,CL_NON_SYMMETRIC,cl_construct_opt::Full);}
+			cellList.fill(vPos, vPropStub, ghostMarker, CL_NON_SYMMETRIC);
 	}
 
 	/*! \brief Create the Verlet list from a given cell-list

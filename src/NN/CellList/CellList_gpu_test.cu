@@ -241,7 +241,7 @@ void test_sub_index2()
 template<unsigned int dim, typename T>
 void create_n_part(int n_part,
 		           openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> & vPos,
-		           CellList<dim,T, Mem_fast<>> & cl)
+		           CellList<dim,T, Mem_fast<>> & cellList)
 {
 	vPos.resize(n_part);
 
@@ -260,15 +260,15 @@ void create_n_part(int n_part,
 		xp.get(1) = vPos.template get<0>(p)[1];
 		xp.get(2) = vPos.template get<0>(p)[2];
 
-		size_t c = cl.getCell(xp);
-		cl.addCell(c,p);
+		size_t c = cellList.getCell(xp);
+		cellList.addCell(c,p);
 
 		++it;
 	}
 }
 
 template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
-void create_starts_and_parts_ids(CellList<dim,T, Mem_fast<>> & cl,
+void create_starts_and_parts_ids(CellList<dim,T, Mem_fast<>> & cellList,
 								 grid_sm<dim,void> & gr,
 								 size_t n_part,
 								 size_t n_cell,
@@ -292,9 +292,9 @@ void create_starts_and_parts_ids(CellList<dim,T, Mem_fast<>> & cl,
 
 		size_t clin = gr.LinId(cell);
 
-		for (size_t j = 0 ; j < cl.getNelements(clin) ; j++)
+		for (size_t j = 0 ; j < cellList.getNelements(clin) ; j++)
 		{
-			size_t p_id = cl.get(clin,j);
+			size_t p_id = cellList.get(clin,j);
 
 			cellIndex_LocalIndex.template get<0>(p_id)[0] = clin;
 
@@ -303,114 +303,10 @@ void create_starts_and_parts_ids(CellList<dim,T, Mem_fast<>> & cl,
 			cells.template get<0>(start+j) = p_id;
 		}
 		starts.template get<0>(clin) = start;
-		start += cl.getNelements(clin);
+		start += cellList.getNelements(clin);
 
 		++itg;
 	}
-}
-
-template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
-void test_fill_cell()
-{
-#ifndef MAKE_CELLLIST_DETERMINISTIC
-
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> cells;
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> cells_out;
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> starts;
-	openfpm::vector<aggregate<cnt_type[2]>,CudaMemory,memory_traits_inte> cellIndex_LocalIndex;
-
-
-	// CellList to check the result
-
-	Box<dim,T> domain;
-
-	typename openfpm::array<T,dim> spacing;
-	typename openfpm::array<ids_type,dim> div_c;
-	typename openfpm::array<ids_type,dim> off;
-
-	size_t div_host[dim];
-
-	size_t tot = 1;
-	for (size_t i = 0 ; i < dim ; i++)
-	{
-		div_host[i] = 10;
-		div_c[i] = 10;
-		tot *= div_host[i];
-		spacing[i] = 0.1;
-		domain.setLow(i,0.0);
-		domain.setHigh(i,1.0);
-		off[i] = 0;
-	}
-
-	CellList<dim,T, Mem_fast<>> cl(domain,div_host,0);
-	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> vPos;
-
-	create_n_part(5000,vPos,cl);
-
-	grid_sm<dim,void> gr(div_host);
-
-	create_starts_and_parts_ids(cl,gr,vPos.size(),tot,starts,cellIndex_LocalIndex,cells_out);
-
-	bool check = true;
-	cells.resize(vPos.size());
-	for (size_t i = 0 ; i < gr.size() - 1 ; i++)
-	{
-		size_t tot_p = starts.template get<0>(i+1) - starts.template get<0>(i);
-
-		check &= (tot_p == cl.getNelements(i));
-
-		grid_key_dx<dim> key = gr.InvLinId(i);
-
-		// Now we check the ids
-
-		for (size_t j = 0 ; j < cl.getNelements(i) ; j++)
-		{
-			size_t p_id = cl.get(i,j);
-
-			check &= cellIndex_LocalIndex.template get<0>(p_id)[0] == i;
-		}
-	}
-
-	BOOST_REQUIRE(check == true);
-
-	auto itgg = cellIndex_LocalIndex.getGPUIterator();
-
-	starts.template hostToDevice<0>();
-	cellIndex_LocalIndex.template hostToDevice<0>();
-
-	// Here we test fill cell
-	CUDA_LAUNCH_DIM3((fill_cells),itgg.wthr,itgg.thr,
-		starts.toKernel(),
-		cellIndex_LocalIndex.toKernel(),
-		cells.toKernel(),
-		(size_t)0
-	);
-
-	cells.template deviceToHost<0>();
-
-	for (size_t i = 0 ; i < gr.size() - 1  ; i++)
-	{
-		size_t tot_p = starts.template get<0>(i+1) - starts.template get<0>(i);
-
-		check &= (tot_p == cl.getNelements(i));
-
-		grid_key_dx<dim> key = gr.InvLinId(i);
-
-		// Now we check the ids
-
-		for (size_t j = 0 ; j < cl.getNelements(i) ; j++)
-		{
-			size_t p_id = cl.get(i,j);
-
-			size_t p_id2 = cells.template get<0>(starts.template get<0>(i) + j);
-
-			check &= (p_id == p_id2);
-		}
-	}
-
-	BOOST_REQUIRE(check == true);
-
-#endif
 }
 
 template<typename sparse_vector_type>
@@ -488,7 +384,7 @@ void test_cell_count_n()
 	cells_nn_test.template hostToDevice<0>();
 
 	auto itgg = vs.getGPUIterator();
-	CUDA_LAUNCH((countNeighborCells),itgg,vs.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel());
+	CUDA_LAUNCH((countNonEmptyNeighborCells),itgg,vs.toKernel(),cells_nn.toKernel(),cells_nn_test.toKernel());
 
 	cells_nn.deviceToHost<0>();
 
@@ -564,15 +460,6 @@ BOOST_AUTO_TEST_CASE( test_subindex_funcs )
 	// Test the cell list
 }
 
-BOOST_AUTO_TEST_CASE ( test_cell_fill )
-{
-	std::cout << "Test GPU fill cells" << "\n";
-
-	test_fill_cell<3,float,unsigned int, unsigned char>();
-
-	std::cout << "End GPU fill cells" << "\n";
-}
-
 template<unsigned int dim, typename T, typename cnt_type, typename ids_type>
 void test_reorder_parts(size_t n_part)
 {
@@ -580,12 +467,12 @@ void test_reorder_parts(size_t n_part)
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> cells;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> cells_out;
 	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> starts;
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> sort_to_not_sort;
-	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> non_sort_to_sort;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> sortToNonSort;
+	openfpm::vector<aggregate<cnt_type>,CudaMemory,memory_traits_inte> NonSortToSort;
 	openfpm::vector<aggregate<ids_type[2]>,CudaMemory,memory_traits_inte> cellIndex_LocalIndex;
 
-	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> parts_prp;
-	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> parts_prp_out;
+	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> vPrp;
+	openfpm::vector<aggregate<float,float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> vPrpReorder;
 
 	// CellList to check the result
 
@@ -607,45 +494,43 @@ void test_reorder_parts(size_t n_part)
 		domain.setHigh(i,1.0);
 	}
 
-	CellList<dim,T, Mem_fast<>> cl(domain,div_host,0);
+	CellList<dim,T, Mem_fast<>> cellList(domain,div_host,0);
 	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> vPos;
-	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> vPosOut;
 
-	create_n_part(n_part,vPos,cl);
-	parts_prp.resize(n_part);
-	parts_prp_out.resize(n_part);
-	vPosOut.resize(n_part);
-	sort_to_not_sort.resize(n_part);
-	non_sort_to_sort.resize(n_part);
+	create_n_part(n_part,vPos,cellList);
+	vPrp.resize(n_part);
+	vPrpReorder.resize(n_part);
+	sortToNonSort.resize(n_part);
+	NonSortToSort.resize(n_part);
 
-	auto p_it = parts_prp.getIterator();
+	auto p_it = vPrp.getIterator();
 	while (p_it.isNext())
 	{
 		auto p = p_it.get();
 
-		parts_prp.template get<0>(p) = 10000 + p;
-		parts_prp.template get<1>(p) = 20000 + p;
+		vPrp.template get<0>(p) = 10000 + p;
+		vPrp.template get<1>(p) = 20000 + p;
 
-		parts_prp.template get<2>(p)[0] = 30000 + p;
-		parts_prp.template get<2>(p)[1] = 40000 + p;
-		parts_prp.template get<2>(p)[2] = 50000 + p;
+		vPrp.template get<2>(p)[0] = 30000 + p;
+		vPrp.template get<2>(p)[1] = 40000 + p;
+		vPrp.template get<2>(p)[2] = 50000 + p;
 
-		parts_prp.template get<3>(p)[0][0] = 60000 + p;
-		parts_prp.template get<3>(p)[0][1] = 70000 + p;
-		parts_prp.template get<3>(p)[0][2] = 80000 + p;
-		parts_prp.template get<3>(p)[1][0] = 90000 + p;
-		parts_prp.template get<3>(p)[1][1] = 100000 + p;
-		parts_prp.template get<3>(p)[1][2] = 110000 + p;
-		parts_prp.template get<3>(p)[2][0] = 120000 + p;
-		parts_prp.template get<3>(p)[2][1] = 130000 + p;
-		parts_prp.template get<3>(p)[0][2] = 140000 + p;
+		vPrp.template get<3>(p)[0][0] = 60000 + p;
+		vPrp.template get<3>(p)[0][1] = 70000 + p;
+		vPrp.template get<3>(p)[0][2] = 80000 + p;
+		vPrp.template get<3>(p)[1][0] = 90000 + p;
+		vPrp.template get<3>(p)[1][1] = 100000 + p;
+		vPrp.template get<3>(p)[1][2] = 110000 + p;
+		vPrp.template get<3>(p)[2][0] = 120000 + p;
+		vPrp.template get<3>(p)[2][1] = 130000 + p;
+		vPrp.template get<3>(p)[0][2] = 140000 + p;
 
 		++p_it;
 	}
 
 	grid_sm<dim,void> gr(div_host);
 
-	create_starts_and_parts_ids(cl,gr,vPos.size(),tot,starts,cellIndex_LocalIndex,cells_out);
+	create_starts_and_parts_ids(cellList,gr,vPos.size(),tot,starts,cellIndex_LocalIndex,cells_out);
 
 
 	auto itgg = vPos.getGPUIterator();
@@ -654,38 +539,40 @@ void test_reorder_parts(size_t n_part)
 
 	auto ite = vPos.getGPUIterator();
 
-	parts_prp.template hostToDevice<0,1,2,3>();
+	vPrp.template hostToDevice<0,1,2,3>();
 
-	// Here we test fill cell
-	CUDA_LAUNCH_DIM3((reorderParticles<decltype(parts_prp.toKernel()),
-			      decltype(vPos.toKernel()),
-				  decltype(sort_to_not_sort.toKernel()),
-				  decltype(cells_out.toKernel())>),ite.wthr,ite.thr,
-			                                                  parts_prp.toKernel(),
-			                                                  parts_prp_out.toKernel(),
-			                                                  vPos.toKernel(),
-			                                                  vPosOut.toKernel(),
-			                                                  sort_to_not_sort.toKernel(),
-			                                                  non_sort_to_sort.toKernel(),
-			                                                  cells_out.toKernel());
+	CUDA_LAUNCH_DIM3((constructSortUnsortBidirectMap),
+		ite.wthr,ite.thr,
+		sortToNonSort.toKernel(),
+		NonSortToSort.toKernel(),
+		cells_out.toKernel()
+	);
+
+	CUDA_LAUNCH_DIM3((reorderParticles),
+		ite.wthr,ite.thr,
+		vPrp.toKernel(),
+		vPrpReorder.toKernel(),
+		NonSortToSort.toKernel(),
+		(size_t)0
+	);
 
 	bool check = true;
-	parts_prp_out.template deviceToHost<0>();
-	sort_to_not_sort.template deviceToHost<0>();
-	non_sort_to_sort.template deviceToHost<0>();
+	vPrpReorder.template deviceToHost<0>();
+	sortToNonSort.template deviceToHost<0>();
+	NonSortToSort.template deviceToHost<0>();
 
 	size_t st = 0;
 	for (size_t i = 0 ; i < tot ; i++)
 	{
-		size_t n = cl.getNelements(i);
+		size_t n = cellList.getNelements(i);
 
 		for (size_t j = 0 ; j < n ; j++)
 		{
-			size_t p = cl.get(i,j);
+			size_t p = cellList.get(i,j);
 
-			check &= parts_prp_out.template get<0>(st) == parts_prp.template get<0>(p);
-			check &= sort_to_not_sort.template get<0>(st) == p;
-			check &= non_sort_to_sort.template get<0>(p) == st;
+			check &= vPrpReorder.template get<0>(st) == vPrp.template get<0>(p);
+			check &= sortToNonSort.template get<0>(st) == p;
+			check &= NonSortToSort.template get<0>(p) == st;
 
 			st++;
 		}
@@ -716,16 +603,12 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 	Point<dim,T> org({0.0,0.0,0.0});
 
 	// id Cell list
-	CellS cl2(box,div);
+	CellS cellList2(box,div);
 
 	// vector of particles
 
 	openfpm::vector<Point<dim,double>,CudaMemory,memory_traits_inte> vPos;
-	openfpm::vector<Point<dim,double>,CudaMemory,memory_traits_inte> vPosOut;
-
 	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> vPrp;
-	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> vPrpOut;
-
 
 	// create 3 particles
 
@@ -750,8 +633,6 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 	vPos.add(p9);
 
 	vPrp.resize(vPos.size());
-	vPrpOut.resize(vPos.size());
-	vPosOut.resize(vPos.size());
 
 	for (size_t i = 0 ; i < vPos.size() ; i++)
 	{
@@ -775,20 +656,18 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 	}
 
 	vPrp.resize(vPos.size());
-	vPrpOut.resize(vPos.size());
 
 	vPos.template hostToDevice<0>();
 	vPrp.template hostToDevice<0,1,2>();
 
 	// create an gpu context
 	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
-	cl2.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext);
+	cellList2.construct(vPos,vPrp,gpuContext,vPos.size(),0,vPos.size(),CL_GPU_REORDER_PROPERTY);
 
 	// Check
-
-	vPrpOut.deviceToHost<0>();
-	vPrpOut.deviceToHost<1>();
-	vPrpOut.deviceToHost<2>();
+	vPrp.deviceToHost<0>();
+	vPrp.deviceToHost<1>();
+	vPrp.deviceToHost<2>();
 
 	////// Correct order ////////////
 
@@ -806,24 +685,24 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 
 	for (size_t i = 0 ; i < pl_correct.size() ; i++)
 	{
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<0>(i),(float)pl_correct.template get<0>(i)[0]);
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<1>(i)[0],(float)(pl_correct.template get<0>(i)[0]+100.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<1>(i)[1],(float)(pl_correct.template get<0>(i)[1]+100.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<1>(i)[2],(float)(pl_correct.template get<0>(i)[2]+100.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<2>(i)[0][0],(float)(pl_correct.template get<0>(i)[0] + 1000.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<2>(i)[0][1],(float)(pl_correct.template get<0>(i)[1] + 1000.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<2>(i)[0][2],(float)(pl_correct.template get<0>(i)[2] + 1000.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<2>(i)[1][0],(float)(pl_correct.template get<0>(i)[0] + 2000.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<2>(i)[1][1],(float)(pl_correct.template get<0>(i)[1] + 3000.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<2>(i)[1][2],(float)(pl_correct.template get<0>(i)[2] + 4000.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<2>(i)[2][0],(float)(pl_correct.template get<0>(i)[0] + 5000.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<2>(i)[2][1],(float)(pl_correct.template get<0>(i)[1] + 6000.0));
-		BOOST_REQUIRE_EQUAL(vPrpOut.template get<2>(i)[2][2],(float)(pl_correct.template get<0>(i)[2] + 7000.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<0>(i),(float)pl_correct.template get<0>(i)[0]);
+		BOOST_REQUIRE_EQUAL(vPrp.template get<1>(i)[0],(float)(pl_correct.template get<0>(i)[0]+100.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<1>(i)[1],(float)(pl_correct.template get<0>(i)[1]+100.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<1>(i)[2],(float)(pl_correct.template get<0>(i)[2]+100.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[0][0],(float)(pl_correct.template get<0>(i)[0] + 1000.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[0][1],(float)(pl_correct.template get<0>(i)[1] + 1000.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[0][2],(float)(pl_correct.template get<0>(i)[2] + 1000.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[1][0],(float)(pl_correct.template get<0>(i)[0] + 2000.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[1][1],(float)(pl_correct.template get<0>(i)[1] + 3000.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[1][2],(float)(pl_correct.template get<0>(i)[2] + 4000.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[2][0],(float)(pl_correct.template get<0>(i)[0] + 5000.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[2][1],(float)(pl_correct.template get<0>(i)[1] + 6000.0));
+		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[2][2],(float)(pl_correct.template get<0>(i)[2] + 7000.0));
 	}
 
 	// Check the sort to non sort buffer
 
-	auto & vsrt = cl2.getSortToNonSort();
+	auto & vsrt = cellList2.getSortToNonSort();
 	vsrt.template deviceToHost<0>();
 
 	BOOST_REQUIRE_EQUAL(vsrt.size(),9);
@@ -838,7 +717,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(7),6);
 	BOOST_REQUIRE_EQUAL(vsrt.template get<0>(8),7);
 
-	auto & vnsrt = cl2.getNonSortToSort();
+	auto & vnsrt = cellList2.getNonSortToSort();
 
 	BOOST_REQUIRE_EQUAL(vnsrt.size(),9);
 
@@ -905,7 +784,7 @@ void fill_random_parts(Box<dim,float> & box, vector_ps & vd_pos, vector_pr & vd_
 
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
-__global__ void calc_force_number(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type vn)
+__global__ void calc_force_number(vector_pos pos, vector_ns sortToNonSort, CellList_type cellList, vector_n_type n_out)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -913,23 +792,23 @@ __global__ void calc_force_number(vector_pos pos, vector_ns s_t_ns, CellList_typ
 
     Point<3,float> xp = pos.template get<0>(p);
 
-    auto it = cl.getNNIterator(cl.getCell(xp));
+    auto it = cellList.getNNIterator(cellList.getCell(xp));
 
     while (it.isNext())
     {
     	auto q = it.get_sort();
     	auto q_ns = it.get();
 
-    	int s1 = s_t_ns.template get<0>(q);
+		int s1 = sortToNonSort.template get<0>(q);
 
-    	atomicAdd(&vn.template get<0>(s1), 1);
+		atomicAdd(&n_out.template get<0>(s1), 1);
 
     	++it;
     }
 }
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
-__global__ void calc_force_number_noato(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type vn)
+__global__ void calc_force_number_noato(vector_pos pos, vector_ns sortToNonSort, CellList_type cellList, vector_n_type n_out)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -937,23 +816,23 @@ __global__ void calc_force_number_noato(vector_pos pos, vector_ns s_t_ns, CellLi
 
     Point<3,float> xp = pos.template get<0>(p);
 
-    auto it = cl.getNNIterator(cl.getCell(xp));
+    auto it = cellList.getNNIterator(cellList.getCell(xp));
 
     while (it.isNext())
     {
     	auto q = it.get_sort();
     	auto q_ns = it.get();
 
-    	int s1 = s_t_ns.template get<0>(q);
+		int s1 = sortToNonSort.template get<0>(q);
 
-    	++vn.template get<0>(p);
+		++n_out.template get<0>(p);
 
     	++it;
     }
 }
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
-__global__ void calc_force_number_box(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type vn, unsigned int start)
+__global__ void calc_force_number_box(vector_pos pos, vector_ns sortToNonSort, CellList_type cellList, vector_n_type n_out, unsigned int start)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x + start;
 
@@ -961,22 +840,22 @@ __global__ void calc_force_number_box(vector_pos pos, vector_ns s_t_ns, CellList
 
     Point<3,float> xp = pos.template get<0>(p);
 
-    auto it = cl.getNNIteratorBox(cl.getCell(xp));
+    auto it = cellList.getNNIteratorBox(cellList.getCell(xp));
 
     while (it.isNext())
     {
     	auto q = it.get_sort();
 
-    	int s1 = s_t_ns.template get<0>(q);
+		int s1 = sortToNonSort.template get<0>(q);
 
-    	atomicAdd(&vn.template get<0>(s1), 1);
+		atomicAdd(&n_out.template get<0>(s1), 1);
 
     	++it;
     }
 }
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
-__global__ void calc_force_number_box_noato(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type vn, unsigned int start)
+__global__ void calc_force_number_box_noato(vector_pos pos, vector_ns sortToNonSort, CellList_type cellList, vector_n_type n_out, unsigned int start)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x + start;
 
@@ -984,20 +863,20 @@ __global__ void calc_force_number_box_noato(vector_pos pos, vector_ns s_t_ns, Ce
 
     Point<3,float> xp = pos.template get<0>(p);
 
-    auto it = cl.getNNIteratorBox(cl.getCell(xp));
+    auto it = cellList.getNNIteratorBox(cellList.getCell(xp));
 
     while (it.isNext())
     {
     	auto q = it.get_sort();
 
-    	++vn.template get<0>(p);
+		++n_out.template get<0>(p);
 
     	++it;
     }
 }
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
-__global__ void calc_force_number_rad(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type vn)
+__global__ void calc_force_number_rad(vector_pos pos, vector_ns sortToNonSort, CellList_type cellList, vector_n_type n_out)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -1005,22 +884,22 @@ __global__ void calc_force_number_rad(vector_pos pos, vector_ns s_t_ns, CellList
 
     Point<3,float> xp = pos.template get<0>(p);
 
-    auto it = cl.getNNIteratorRadius(cl.getCell(xp));
+    auto it = cellList.getNNIteratorRadius(cellList.getCell(xp));
 
     while (it.isNext())
     {
     	auto q = it.get_sort();
 
-    	int s1 = s_t_ns.template get<0>(q);
+		int s1 = sortToNonSort.template get<0>(q);
 
-    	atomicAdd(&vn.template get<0>(s1), 1);
+		atomicAdd(&n_out.template get<0>(s1), 1);
 
     	++it;
     }
 }
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
-__global__ void calc_force_list_box(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type v_nscan ,vector_n_type v_list)
+__global__ void calc_force_list_box(vector_pos pos, vector_ns sortToNonSort, CellList_type cellList, vector_n_type v_nscan ,vector_n_type v_list)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -1029,13 +908,13 @@ __global__ void calc_force_list_box(vector_pos pos, vector_ns s_t_ns, CellList_t
     Point<3,float> xp = pos.template get<0>(p);
     int start_list = v_nscan.template get<0>(p);
 
-    auto it = cl.getNNIteratorBox(cl.getCell(xp));
+    auto it = cellList.getNNIteratorBox(cellList.getCell(xp));
 
     while (it.isNext())
     {
     	auto q = it.get_sort();
 
-    	int s1 = s_t_ns.template get<0>(q);
+		int s1 = sortToNonSort.template get<0>(q);
 
     	v_list.template get<0>(start_list) = s1;
 
@@ -1045,7 +924,7 @@ __global__ void calc_force_list_box(vector_pos pos, vector_ns s_t_ns, CellList_t
 }
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
-__global__ void calc_force_list(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type v_nscan ,vector_n_type v_list)
+__global__ void calc_force_list(vector_pos pos, vector_ns sortToNonSort, CellList_type cellList, vector_n_type v_nscan ,vector_n_type v_list)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -1054,13 +933,13 @@ __global__ void calc_force_list(vector_pos pos, vector_ns s_t_ns, CellList_type 
     Point<3,float> xp = pos.template get<0>(p);
     int start_list = v_nscan.template get<0>(p);
 
-    auto it = cl.getNNIterator(cl.getCell(xp));
+    auto it = cellList.getNNIterator(cellList.getCell(xp));
 
     while (it.isNext())
     {
     	auto q = it.get_sort();
 
-    	int s1 = s_t_ns.template get<0>(q);
+		int s1 = sortToNonSort.template get<0>(q);
 
     	v_list.template get<0>(start_list) = s1;
 
@@ -1071,8 +950,8 @@ __global__ void calc_force_list(vector_pos pos, vector_ns s_t_ns, CellList_type 
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
 __global__ void calc_force_list_box_partial(vector_pos pos,
-										vector_ns s_t_ns,
-										CellList_type cl,
+										vector_ns sortToNonSort,
+										CellList_type cellList,
 										vector_n_type v_nscan,
 										vector_n_type v_nscan_part,
 										vector_n_type v_list)
@@ -1084,13 +963,13 @@ __global__ void calc_force_list_box_partial(vector_pos pos,
     Point<3,float> xp = pos.template get<0>(p);
     int start_list = v_nscan.template get<0>(p) + v_nscan_part.template get<0>(p);
 
-    auto it = cl.getNNIteratorBox(cl.getCell(xp));
+    auto it = cellList.getNNIteratorBox(cellList.getCell(xp));
 
     while (it.isNext())
     {
     	auto q = it.get_sort();
 
-    	int s1 = s_t_ns.template get<0>(q);
+		int s1 = sortToNonSort.template get<0>(q);
 
     	v_list.template get<0>(start_list) = s1;
 
@@ -1100,7 +979,7 @@ __global__ void calc_force_list_box_partial(vector_pos pos,
 }
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
-__global__ void calc_force_list_rad(vector_pos pos, vector_ns s_t_ns, CellList_type cl, vector_n_type v_nscan ,vector_n_type v_list)
+__global__ void calc_force_list_rad(vector_pos pos, vector_ns sortToNonSort, CellList_type cellList, vector_n_type v_nscan ,vector_n_type v_list)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -1109,13 +988,13 @@ __global__ void calc_force_list_rad(vector_pos pos, vector_ns s_t_ns, CellList_t
     Point<3,float> xp = pos.template get<0>(p);
     int start_list = v_nscan.template get<0>(p);
 
-    auto it = cl.getNNIteratorRadius(cl.getCell(xp));
+    auto it = cellList.getNNIteratorRadius(cellList.getCell(xp));
 
     while (it.isNext())
     {
     	auto q = it.get_sort();
 
-    	int s1 = s_t_ns.template get<0>(q);
+		int s1 = sortToNonSort.template get<0>(q);
 
     	v_list.template get<0>(start_list) = s1;
 
@@ -1128,29 +1007,33 @@ template<unsigned int impl>
 struct execute_cl_test
 {
 	template<typename CellS, typename Cells_cpu_type, typename T>
-	static void set_radius(CellS & cl2, Cells_cpu_type & cl_cpu, T & radius)
+	static void set_radius(CellS & cellList2, Cells_cpu_type & cl_cpu, T & radius)
 	{
 	}
 
-	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_type>
-	static void calc_num(pl_type & vPos, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_type & n_out, unsigned int start)
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_type>
+	static void calc_num(pl_type & vPos, sortToNonSort_type & sortToNonSort, cl2_type & cellList2, n_out_type & n_out, unsigned int start)
 	{
 		auto ite = vPos.getGPUIterator();
 
-		CUDA_LAUNCH((calc_force_number),ite,vPos.toKernel(),s_t_ns.toKernel(),
-							   	   	   	   	cl2.toKernel(),n_out.toKernel());
+		CUDA_LAUNCH((calc_force_number),ite,vPos.toKernel(),
+			sortToNonSort.toKernel(),
+			cellList2.toKernel(),
+			n_out.toKernel()
+		);
 	}
 
-	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
-	static void calc_list(pl_type & vPos, s_t_ns_type & s_t_ns, cl2_type & cl2,n_out_scan_type & n_out_scan, nn_list_type & nn_list)
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
+	static void calc_list(pl_type & vPos, sortToNonSort_type & sortToNonSort, cl2_type & cellList2,n_out_scan_type & n_out_scan, nn_list_type & nn_list)
 	{
 		auto ite = vPos.getGPUIterator();
 
 		CUDA_LAUNCH((calc_force_list),ite,vPos.toKernel(),
-							   	   	   s_t_ns.toKernel(),
-							   	   	   cl2.toKernel(),
-							   	   	   n_out_scan.toKernel(),
-							   	   	   nn_list.toKernel());
+			sortToNonSort.toKernel(),
+			cellList2.toKernel(),
+			n_out_scan.toKernel(),
+			nn_list.toKernel()
+		);
 	}
 
 	template<typename NN_type>
@@ -1164,39 +1047,39 @@ template<>
 struct execute_cl_test<1>
 {
 	template<typename CellS, typename Cells_cpu_type, typename T>
-	static void set_radius(CellS & cl2, Cells_cpu_type & cl_cpu, T & radius)
+	static void set_radius(CellS & cellList2, Cells_cpu_type & cl_cpu, T & radius)
 	{
-		cl2.setRadius(radius);
+		cellList2.setRadius(radius);
 		cl_cpu.setRadius(radius);
 	}
 
-	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_type>
-	static void calc_num(pl_type & vPos, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_type & n_out, unsigned int start)
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_type>
+	static void calc_num(pl_type & vPos, sortToNonSort_type & sortToNonSort, cl2_type & cellList2, n_out_type & n_out, unsigned int start)
 	{
 		auto ite = vPos.getGPUIterator();
 
 		CUDA_LAUNCH((calc_force_number_rad<decltype(vPos.toKernel()),
-				          decltype(s_t_ns.toKernel()),
-				          decltype(cl2.toKernel()),
+				          decltype(sortToNonSort.toKernel()),
+				          decltype(cellList2.toKernel()),
 				          decltype(n_out.toKernel())>),
 							   ite,vPos.toKernel(),
-							   s_t_ns.toKernel(),
-							   cl2.toKernel(),
+							   sortToNonSort.toKernel(),
+							   cellList2.toKernel(),
 							   n_out.toKernel());
 	}
 
-	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
-	static void calc_list(pl_type & vPos, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_scan_type & n_out_scan, nn_list_type & nn_list)
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
+	static void calc_list(pl_type & vPos, sortToNonSort_type & sortToNonSort, cl2_type & cellList2, n_out_scan_type & n_out_scan, nn_list_type & nn_list)
 	{
 		auto ite = vPos.getGPUIterator();
 
 		CUDA_LAUNCH((calc_force_list_rad<decltype(vPos.toKernel()),
-				          decltype(s_t_ns.toKernel()),
-				          decltype(cl2.toKernel()),
+				          decltype(sortToNonSort.toKernel()),
+				          decltype(cellList2.toKernel()),
 				          decltype(nn_list.toKernel())>),
 							   ite,vPos.toKernel(),
-							   s_t_ns.toKernel(),
-							   cl2.toKernel(),
+							   sortToNonSort.toKernel(),
+							   cellList2.toKernel(),
 							   n_out_scan.toKernel(),
 							   nn_list.toKernel());
 	}
@@ -1212,74 +1095,74 @@ template<>
 struct execute_cl_test<2>
 {
 	template<typename CellS, typename Cells_cpu_type, typename T>
-	static void set_radius(CellS & cl2, Cells_cpu_type & cl_cpu, T & radius)
+	static void set_radius(CellS & cellList2, Cells_cpu_type & cl_cpu, T & radius)
 	{
-		cl2.setRadius(radius);
+		cellList2.setRadius(radius);
 		cl_cpu.setRadius(radius);
 	}
 
-	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_type>
-	static void calc_num_noato(pl_type & vPos, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_type & n_out, unsigned int start)
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_type>
+	static void calc_num_noato(pl_type & vPos, sortToNonSort_type & sortToNonSort, cl2_type & cellList2, n_out_type & n_out, unsigned int start)
 	{
-		auto ite = s_t_ns.getGPUIterator();
+		auto ite = sortToNonSort.getGPUIterator();
 
 		CUDA_LAUNCH((calc_force_number_box_noato<decltype(vPos.toKernel()),
-				          decltype(s_t_ns.toKernel()),
-				          decltype(cl2.toKernel()),
+				          decltype(sortToNonSort.toKernel()),
+				          decltype(cellList2.toKernel()),
 				          decltype(n_out.toKernel())>),
 							   ite,vPos.toKernel(),
-							   s_t_ns.toKernel(),
-							   cl2.toKernel(),
+							   sortToNonSort.toKernel(),
+							   cellList2.toKernel(),
 							   n_out.toKernel(),
 							   start);
 	}
 
-	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_type>
-	static void calc_num(pl_type & vPos, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_type & n_out, unsigned int start)
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_type>
+	static void calc_num(pl_type & vPos, sortToNonSort_type & sortToNonSort, cl2_type & cellList2, n_out_type & n_out, unsigned int start)
 	{
-		auto ite = s_t_ns.getGPUIterator();
+		auto ite = sortToNonSort.getGPUIterator();
 
 		CUDA_LAUNCH((calc_force_number_box<decltype(vPos.toKernel()),
-				          decltype(s_t_ns.toKernel()),
-				          decltype(cl2.toKernel()),
+				          decltype(sortToNonSort.toKernel()),
+				          decltype(cellList2.toKernel()),
 				          decltype(n_out.toKernel())>),
 							   ite,
 							   vPos.toKernel(),
-							   s_t_ns.toKernel(),
-							   cl2.toKernel(),
+							   sortToNonSort.toKernel(),
+							   cellList2.toKernel(),
 							   n_out.toKernel(),
 							   start);
 	}
 
-	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
-	static void calc_list(pl_type & vPos, s_t_ns_type & s_t_ns, cl2_type & cl2, n_out_scan_type & n_out_scan, nn_list_type & nn_list)
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
+	static void calc_list(pl_type & vPos, sortToNonSort_type & sortToNonSort, cl2_type & cellList2, n_out_scan_type & n_out_scan, nn_list_type & nn_list)
 	{
-		auto ite = s_t_ns.getGPUIterator();
+		auto ite = sortToNonSort.getGPUIterator();
 
 		CUDA_LAUNCH((calc_force_list_box<decltype(vPos.toKernel()),
-				          decltype(s_t_ns.toKernel()),
-				          decltype(cl2.toKernel()),
+				          decltype(sortToNonSort.toKernel()),
+				          decltype(cellList2.toKernel()),
 				          decltype(nn_list.toKernel())>),
 							   ite,vPos.toKernel(),
-							   s_t_ns.toKernel(),
-							   cl2.toKernel(),
+							   sortToNonSort.toKernel(),
+							   cellList2.toKernel(),
 							   n_out_scan.toKernel(),
 							   nn_list.toKernel());
 	}
 
-	template<typename pl_type, typename s_t_ns_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
 	static void calc_list_partial(pl_type & vPos,
-								  s_t_ns_type & s_t_ns,
-								  cl2_type & cl2,
-								  n_out_scan_type & n_out_scan,
-								  n_out_scan_type & n_out_scan_partial,
-								  nn_list_type & nn_list)
+		sortToNonSort_type & sortToNonSort,
+		cl2_type & cellList2,
+		n_out_scan_type & n_out_scan,
+		n_out_scan_type & n_out_scan_partial,
+		nn_list_type & nn_list)
 	{
-		auto ite = s_t_ns.getGPUIterator();
+		auto ite = sortToNonSort.getGPUIterator();
 
 		CUDA_LAUNCH((calc_force_list_box_partial),ite,vPos.toKernel(),
-							   	   	   s_t_ns.toKernel(),
-							   	   	   cl2.toKernel(),
+							   	   	   sortToNonSort.toKernel(),
+							   	   	   cellList2.toKernel(),
 							   	   	   n_out_scan.toKernel(),
 							   	   	   n_out_scan_partial.toKernel(),
 							   	   	   nn_list.toKernel());
@@ -1299,22 +1182,19 @@ void Test_cell_gpu_force(Box<dim,T> & box, size_t npart, const size_t (& div)[di
 	Point<dim,T> org({0.0,0.0,0.0});
 
 	// id Cell list
-	CellS cl2(box,div,2);
+	CellS cellList2(box,div,2);
 
 	CellList<dim,T,Mem_fast<>,shift<dim,T>> cl_cpu(box,div,2);
 
-	cl2.setBoxNN(box_nn);
+	cellList2.setBoxNN(box_nn);
 
 	T radius = (box.getHigh(0) - box.getLow(0))/div[0] * 2.0;
-	execute_cl_test<impl>::set_radius(cl2,cl_cpu,radius);
+	execute_cl_test<impl>::set_radius(cellList2,cl_cpu,radius);
 
 	// vector of particles
 
 	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> vPos;
-	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> vPosOut;
-
 	openfpm::vector<aggregate<T,T[3]>,CudaMemory,memory_traits_inte> vPrp;
-	openfpm::vector<aggregate<T,T[3]>,CudaMemory,memory_traits_inte> vPrpOut;
 
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,memory_traits_inte> n_out;
 
@@ -1322,13 +1202,10 @@ void Test_cell_gpu_force(Box<dim,T> & box, size_t npart, const size_t (& div)[di
 
 	fill_random_parts<3>(box,vPos,vPrp,npart);
 
-	vPrpOut.resize(vPos.size());
-	vPosOut.resize(vPos.size());
 	n_out.resize(vPos.size()+1);
 	n_out.fill<0>(0);
 
 	vPrp.resize(vPos.size());
-	vPrpOut.resize(vPos.size());
 
 	vPos.template hostToDevice<0>();
 	vPrp.template hostToDevice<0,1>();
@@ -1350,29 +1227,29 @@ void Test_cell_gpu_force(Box<dim,T> & box, size_t npart, const size_t (& div)[di
 		++it2;
 	}
 
-	size_t g_m = vPos.size() / 2;
+	size_t ghostMarker = vPos.size() / 2;
 
 	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
-	cl2.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m);
+	cellList2.construct(vPos, vPrp, gpuContext, ghostMarker, 0, vPos.size());
 
-	auto & s_t_ns = cl2.getSortToNonSort();
+	auto & sortToNonSort = cellList2.getSortToNonSort();
 
 	vPos.template hostToDevice<0>();
 
-	execute_cl_test<impl>::calc_num(vPos,s_t_ns,cl2,n_out,0);
+	execute_cl_test<impl>::calc_num(vPos,sortToNonSort,cellList2,n_out,0);
 
 	// Domain particles
 
-	auto & gdsi = cl2.getDomainSortIds();
+	auto & gdsi = cellList2.getDomainSortIds();
 	gdsi.template deviceToHost<0>();
-	s_t_ns.template deviceToHost<0>();
+	sortToNonSort.template deviceToHost<0>();
 
 	bool match = true;
-	for (size_t i = 0 ; i < g_m ; i++)
+	for (size_t i = 0 ; i < ghostMarker ; i++)
 	{
 		unsigned int p = gdsi.template get<0>(i);
 
-		match &= (s_t_ns.template get<0>(p) < g_m);
+		match &= (sortToNonSort.template get<0>(p) < ghostMarker);
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);
@@ -1437,7 +1314,7 @@ void Test_cell_gpu_force(Box<dim,T> & box, size_t npart, const size_t (& div)[di
 
 	vPos.template hostToDevice<0>();
 
-	execute_cl_test<impl>::calc_list(vPos,s_t_ns,cl2,n_out_scan,nn_list);
+	execute_cl_test<impl>::calc_list(vPos,sortToNonSort,cellList2,n_out_scan,nn_list);
 
 	nn_list.template deviceToHost<0>();
 
@@ -1515,10 +1392,7 @@ void Test_cell_gpu_force_split(Box<dim,T> & box, size_t npart, const size_t (& d
 	// vector of particles
 
 	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> vPos;
-	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> vPosOut;
-
 	openfpm::vector<aggregate<T,T[3]>,CudaMemory,memory_traits_inte> vPrp;
-	openfpm::vector<aggregate<T,T[3]>,CudaMemory,memory_traits_inte> vPrpOut;
 
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,memory_traits_inte> n_out;
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,memory_traits_inte> n_out_partial;
@@ -1527,13 +1401,10 @@ void Test_cell_gpu_force_split(Box<dim,T> & box, size_t npart, const size_t (& d
 
 	fill_random_parts<3>(box,vPos,vPrp,npart);
 
-	vPrpOut.resize(vPos.size());
-	vPosOut.resize(vPos.size());
 	n_out.resize(vPos.size()+1);
 	n_out.fill<0>(0);
 
 	vPrp.resize(vPos.size());
-	vPrpOut.resize(vPos.size());
 
 	vPos.template hostToDevice<0>();
 	vPrp.template hostToDevice<0,1>();
@@ -1555,30 +1426,30 @@ void Test_cell_gpu_force_split(Box<dim,T> & box, size_t npart, const size_t (& d
 		++it2;
 	}
 
-	size_t g_m = vPos.size() / 2;
+	size_t ghostMarker = vPos.size() / 2;
 
 	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
-	cl2_split1.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m,0,vPos.size()/2);
-	cl2_split2.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m,vPos.size()/2,vPos.size());
-	auto & s_t_ns_s1 = cl2_split1.getSortToNonSort();
-	auto & s_t_ns_s2 = cl2_split2.getSortToNonSort();
+	cl2_split1.construct(vPos,vPrp,gpuContext,ghostMarker,0,vPos.size()/2);
+	cl2_split2.construct(vPos,vPrp,gpuContext,ghostMarker,vPos.size()/2,vPos.size());
+	auto & sortToNonSort_s1 = cl2_split1.getSortToNonSort();
+	auto & sortToNonSort_s2 = cl2_split2.getSortToNonSort();
 
-	execute_cl_test<impl>::calc_num_noato(vPos,s_t_ns_s1,cl2_split1,n_out,0);
+	execute_cl_test<impl>::calc_num_noato(vPos,sortToNonSort_s1,cl2_split1,n_out,0);
 	n_out_partial = n_out;
-	execute_cl_test<impl>::calc_num_noato(vPos,s_t_ns_s2,cl2_split2,n_out,0);
+	execute_cl_test<impl>::calc_num_noato(vPos,sortToNonSort_s2,cl2_split2,n_out,0);
 
 	// Domain particles
 
 	auto & gdsi_s1 = cl2_split1.getDomainSortIds();
 	gdsi_s1.template deviceToHost<0>();
-	s_t_ns_s1.template deviceToHost<0>();
+	sortToNonSort_s1.template deviceToHost<0>();
 
 	bool match = true;
-	for (size_t i = 0 ; i < g_m ; i++)
+	for (size_t i = 0 ; i < ghostMarker ; i++)
 	{
 		unsigned int p = gdsi_s1.template get<0>(i);
 
-		match &= (s_t_ns_s1.template get<0>(p) < g_m);
+		match &= (sortToNonSort_s1.template get<0>(p) < ghostMarker);
 	}
 
 	BOOST_REQUIRE_EQUAL(match,true);
@@ -1644,8 +1515,8 @@ void Test_cell_gpu_force_split(Box<dim,T> & box, size_t npart, const size_t (& d
 
 	vPos.template hostToDevice<0>();
 
-	execute_cl_test<impl>::calc_list(vPos,s_t_ns_s1,cl2_split1,n_out_scan,nn_list);
-	execute_cl_test<impl>::calc_list_partial(vPos,s_t_ns_s2,cl2_split2,n_out_scan,n_out_partial,nn_list);
+	execute_cl_test<impl>::calc_list(vPos,sortToNonSort_s1,cl2_split1,n_out_scan,nn_list);
+	execute_cl_test<impl>::calc_list_partial(vPos,sortToNonSort_s2,cl2_split2,n_out_scan,n_out_partial,nn_list);
 
 	nn_list.template deviceToHost<0>();
 
@@ -1687,12 +1558,8 @@ void Test_cell_gpu_force_split(Box<dim,T> & box, size_t npart, const size_t (& d
 
 		// sort both vector
 
-#ifndef MAKE_CELLLIST_DETERMINISTIC
-
 		cpu_list.sort();
 		gpu_list.sort();
-
-#endif
 
 		for (size_t j = 0 ; j < cpu_list.size() ; j++)
 		{check &= cpu_list.get(j) == gpu_list.get(j);}
@@ -1777,10 +1644,10 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_split)
 	// vector of particles
 
 	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> vPos;
-	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> vPosOut;
+	openfpm::vector<Point<dim,T>,CudaMemory,typename memory_traits_inte<Point<dim,T>>::type,memory_traits_inte> vPosReorder;
 
 	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> vPrp;
-	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> vPrpOut;
+	openfpm::vector<aggregate<T,T[3]>,CudaMemory,typename memory_traits_inte<aggregate<T,T[3]>>::type,memory_traits_inte> vPrpReorder;
 
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out;
 	openfpm::vector<aggregate<unsigned int>,CudaMemory,typename memory_traits_inte<aggregate<unsigned int>>::type,memory_traits_inte> n_out_partial;
@@ -1789,45 +1656,45 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_split)
 
 	fill_random_parts<3>(box,vPos,vPrp,1400000);
 
-	vPrpOut.resize(vPos.size());
-	vPosOut.resize(vPos.size());
+	vPrpReorder.resize(vPos.size());
+	vPosReorder.resize(vPos.size());
 	n_out.resize(vPos.size()+1);
 	n_out.fill<0>(0);
 
 	vPrp.resize(vPos.size());
-	vPrpOut.resize(vPos.size());
+	vPrpReorder.resize(vPos.size());
 
 	vPos.hostToDevice<0>();
 	vPrp.hostToDevice<0,1>();
 
-	size_t g_m = vPos.size() / 2;
+	size_t ghostMarker = vPos.size() / 2;
 
 	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
 
-	cl2_split1.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m,0,vPos.size()/2);
-	cl2_split2.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m,vPos.size()/2,vPos.size());
+	cl2_split1.construct(vPos,vPrp,gpuContext,ghostMarker,0,vPos.size()/2);
+	cl2_split2.construct(vPos,vPrp,gpuContext,ghostMarker,vPos.size()/2,vPos.size());
 
 	cudaDeviceSynchronize();
 
 	timer t;
 	t.start();
 
-	cl2_split1.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m,0,vPos.size()/2);
-	cl2_split2.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m,vPos.size()/2,vPos.size());
+	cl2_split1.construct(vPos,vPrp,gpuContext,ghostMarker,0,vPos.size()/2);
+	cl2_split2.construct(vPos,vPrp,gpuContext,ghostMarker,vPos.size()/2,vPos.size());
 
 	t.stop();
 	std::cout << "Time: " << t.getwct() << std::endl;
 
 	cudaDeviceSynchronize();
 
-	cl2_split1.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m,0,vPos.size());
+	cl2_split1.construct(vPos,vPrp,gpuContext,ghostMarker,0,vPos.size());
 
 	cudaDeviceSynchronize();
 
 	timer t2;
 	t2.start();
 
-	cl2_split1.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m,0,vPos.size());
+	cl2_split1.construct(vPos,vPrp,gpuContext,ghostMarker,0,vPos.size());
 
 	t2.stop();
 	std::cout << "Time: " << t2.getwct() << std::endl;
@@ -1915,7 +1782,7 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_sparse)
 #endif
 
 template<typename CellList_type, typename Vector_type, typename Vector_out>
-__global__ void cl_offload_gpu(CellList_type cl, Vector_type parts, Vector_out output)
+__global__ void cl_offload_gpu(CellList_type cellList, Vector_type parts, Vector_out output)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -1923,11 +1790,11 @@ __global__ void cl_offload_gpu(CellList_type cl, Vector_type parts, Vector_out o
 
     Point<3,float> xp = parts.template get<0>(p);
 
-    output.template get<0>(p) = cl.getNelements(cl.getCell(xp));
+    output.template get<0>(p) = cellList.getNelements(cellList.getCell(xp));
 }
 
 template<typename CellList_type, typename Vector_type, typename Vector_scan_type, typename Vector_list_type>
-__global__ void cl_offload_gpu_list(CellList_type cl, Vector_type parts, Vector_scan_type scan, Vector_list_type list)
+__global__ void cl_offload_gpu_list(CellList_type cellList, Vector_type parts, Vector_scan_type scan, Vector_list_type list)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -1935,13 +1802,13 @@ __global__ void cl_offload_gpu_list(CellList_type cl, Vector_type parts, Vector_
 
     Point<3,float> xp = parts.template get<0>(p);
 
-    int id = cl.getCell(xp);
-    int n_ele = cl.getNelements(id);
+    int id = cellList.getCell(xp);
+    int n_ele = cellList.getNelements(id);
     int start = scan.template get<0>(p);
 
     for (int j = 0 ; j < n_ele ; j++)
     {
-    	list.template get<0>(start+j) = cl.get(id,j);
+		list.template get<0>(start+j) = cellList.get(id,j);
     }
 
 }
@@ -2052,58 +1919,51 @@ BOOST_AUTO_TEST_CASE( CellList_swap_test )
 	Point<3,float> org({0.0,0.0,0.0});
 
 	// id Cell list
-	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cl2(box,div,2);
-	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cl3(box,div,2);
-	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cl4(box,div,2);
+	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cellList2(box,div,2);
+	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cellList3(box,div,2);
+	CellList_gpu<3,float,CudaMemory,shift_only<3,float>> cellList4(box,div,2);
 
 	// vector of particles
 
 	openfpm::vector<Point<3,float>,CudaMemory,memory_traits_inte> vPos;
-	openfpm::vector<Point<3,float>,CudaMemory,memory_traits_inte> vPosOut;
-
 	openfpm::vector<aggregate<float,float[3]>,CudaMemory,memory_traits_inte> vPrp;
-	openfpm::vector<aggregate<float,float[3]>,CudaMemory,memory_traits_inte> vPrpOut;
 
 	// create random particles
 
 	fill_random_parts<3>(box,vPos,vPrp,npart);
 
-	vPrpOut.resize(vPos.size());
-	vPosOut.resize(vPos.size());
-
 	vPrp.resize(vPos.size());
-	vPrpOut.resize(vPos.size());
 
 	vPos.template hostToDevice<0>();
 	vPrp.template hostToDevice<0,1>();
 
-	size_t g_m = vPos.size() / 2;
+	size_t ghostMarker = vPos.size() / 2;
 
 	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
-	cl2.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m);
-	cl4.construct(vPos,vPosOut,vPrp,vPrpOut,gpuContext,g_m);
+	cellList2.construct(vPos,vPrp,gpuContext,ghostMarker);
+	cellList4.construct(vPos,vPrp,gpuContext,ghostMarker);
 
-	cl3.swap(cl2);
+	cellList3.swap(cellList2);
 
 	// move device to host
 
-	cl3.debug_deviceToHost();
-	cl4.debug_deviceToHost();
+	cellList3.debug_deviceToHost();
+	cellList4.debug_deviceToHost();
 
-	BOOST_REQUIRE_EQUAL(cl3.getNCells(),cl4.getNCells());
+	BOOST_REQUIRE_EQUAL(cellList3.getNCells(),cellList4.getNCells());
 
 	openfpm::vector<size_t> s1;
 	openfpm::vector<size_t> s2;
 
 	bool check = true;
-	for (size_t i = 0 ; i < cl3.getNCells() ; i++)
+	for (size_t i = 0 ; i < cellList3.getNCells() ; i++)
 	{
-		check &= cl3.getNelements(i) == cl4.getNelements(i);
+		check &= cellList3.getNelements(i) == cellList4.getNelements(i);
 
-		for (size_t j = 0 ; j < cl3.getNelements(i) ; j++)
+		for (size_t j = 0 ; j < cellList3.getNelements(i) ; j++)
 		{
-			s1.add(cl3.get(i,j));
-			s2.add(cl4.get(i,j));
+			s1.add(cellList3.get(i,j));
+			s2.add(cellList4.get(i,j));
 		}
 
 		s1.sort();
@@ -2117,7 +1977,7 @@ BOOST_AUTO_TEST_CASE( CellList_swap_test )
 
 	BOOST_REQUIRE_EQUAL(check,true);
 
-	//////////////// We check now that cl3 and cl4 match
+	//////////////// We check now that cellList3 and cellList4 match
 }
 
 BOOST_AUTO_TEST_SUITE_END()

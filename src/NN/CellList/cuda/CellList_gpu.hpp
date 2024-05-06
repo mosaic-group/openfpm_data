@@ -35,7 +35,7 @@ private:
 	openfpm::vector_gpu<aggregate<unsigned int>> numPartInCell;
 
 	//! \brief Used to convert cellIndex_LocalIndex to particle id
-	openfpm::vector_gpu<aggregate<unsigned int>> cellIndexLocalIndexToPart;
+	openfpm::vector_gpu<aggregate<unsigned int>> cellIndexLocalIndexToUnsorted;
 
 	//! \brief Cell scan with + operation of numPartInCell
 	openfpm::vector_gpu<aggregate<unsigned int>> numPartInCellPrefixSum;
@@ -47,7 +47,7 @@ private:
 	openfpm::vector_gpu<aggregate<unsigned int>> sortedToUnsortedIndex;
 
 	//! \brief the index of all the domain particles in the sorted vector
-	openfpm::vector_gpu<aggregate<unsigned int>> indexSorted;
+	openfpm::vector_gpu<aggregate<unsigned int>> sortedToSortedIndexNoGhost;
 
 	//! \brief for each non sorted index it show the index in the ordered vector
 	openfpm::vector_gpu<aggregate<unsigned int>> unsortedToSortedIndex;
@@ -74,6 +74,9 @@ private:
 	//! has been constructed from an old decomposition
 	//! indicate how many times decompose/refine/re-decompose has been called
 	size_t nDecRefRedec;
+
+	//! standard context for gpu
+	gpu::ofp_context_t* gpuContext;
 
 	//! Initialize the structures of the data structure
 	void InitializeStructures(
@@ -107,7 +110,7 @@ private:
 	 * \param gpuContext gpu context
 	 *
 	 */
-	void construct_domain_ids(
+	void constructSortedToSortedIndexNoGhost(
 		gpu::ofp_context_t& gpuContext,
 		size_t start,
 		size_t stop,
@@ -115,33 +118,33 @@ private:
 	{
 #ifdef __NVCC__
 		//! Sorted domain particles domain or ghost
-		openfpm::vector_gpu<aggregate<unsigned int>> isSortedIndexOrGhost;
+		openfpm::vector_gpu<aggregate<unsigned int>> isSortedDomainOrGhost;
 
-		isSortedIndexOrGhost.resize(stop-start+1);
+		isSortedDomainOrGhost.resize(stop-start+1);
 
-		auto ite = isSortedIndexOrGhost.getGPUIterator();
+		auto ite = isSortedDomainOrGhost.getGPUIterator();
 
 		CUDA_LAUNCH((mark_domain_particles),ite,
 			sortedToUnsortedIndex.toKernel(),
-			isSortedIndexOrGhost.toKernel(),
+			isSortedDomainOrGhost.toKernel(),
 			ghostMarker
 		);
 
 		openfpm::scan(
-			(unsigned int *)isSortedIndexOrGhost.template getDeviceBuffer<0>(),
-			isSortedIndexOrGhost.size(),
-			(unsigned int *)isSortedIndexOrGhost.template getDeviceBuffer<0>(),
+			(unsigned int *)isSortedDomainOrGhost.template getDeviceBuffer<0>(),
+			isSortedDomainOrGhost.size(),
+			(unsigned int *)isSortedDomainOrGhost.template getDeviceBuffer<0>(),
 			gpuContext
 		);
 
-		isSortedIndexOrGhost.template deviceToHost<0>(isSortedIndexOrGhost.size()-1,isSortedIndexOrGhost.size()-1);
-		auto sz = isSortedIndexOrGhost.template get<0>(isSortedIndexOrGhost.size()-1);
+		isSortedDomainOrGhost.template deviceToHost<0>(isSortedDomainOrGhost.size()-1,isSortedDomainOrGhost.size()-1);
+		auto sz = isSortedDomainOrGhost.template get<0>(isSortedDomainOrGhost.size()-1);
 
-		indexSorted.resize(sz);
+		sortedToSortedIndexNoGhost.resize(sz);
 
 		CUDA_LAUNCH((collect_domain_ghost_ids),ite,
-			isSortedIndexOrGhost.toKernel(),
-			indexSorted.toKernel()
+			isSortedDomainOrGhost.toKernel(),
+			sortedToSortedIndexNoGhost.toKernel()
 		);
 #endif
 	}
@@ -153,17 +156,15 @@ private:
 	template<typename vector, typename vector_prp, unsigned int ... prp>
 	void construct_dense(
 		vector & vPos,
-		vector & vPosOut,
 		vector_prp & vPrp,
-		vector_prp & vPrpOut,
 		gpu::ofp_context_t& gpuContext,
 		size_t ghostMarker,
-		size_t start,
-		size_t stop,
-		cl_construct_opt opt = cl_construct_opt::Full)
+		size_t start = 0,
+		size_t stop = -1,
+		size_t opt = 0)
 	{
 #ifdef __NVCC__
-		// if stop if the default set to the number of particles
+		this->gpuContext = &gpuContext;
 		if (stop == (size_t)-1) stop = vPos.size();
 
 		auto ite_gpu = vPos.getGPUIteratorTo(stop-start-1);
@@ -194,7 +195,6 @@ private:
 			cellIndex_LocalIndex.toKernel()
 		);
 
-		// now we scan
 		numPartInCellPrefixSum.resize(numPartInCell.size());
 		openfpm::scan(
 			(unsigned int *)numPartInCell.template getDeviceBuffer<0>(),
@@ -203,75 +203,78 @@ private:
 			gpuContext
 		);
 
-		// now we construct the cellIndexLocalIndexToPart
-
-		cellIndexLocalIndexToPart.resize(stop-start);
+		cellIndexLocalIndexToUnsorted.resize(stop-start);
 		auto itgg = cellIndex_LocalIndex.getGPUIterator();
-
-
-#ifdef MAKE_CELLLIST_DETERMINISTIC
-
-        CUDA_LAUNCH((fill_cells),itgg,
-		cellIndex_LocalIndex.size(),
-		cellIndexLocalIndexToPart.toKernel()
-        );
-
-        // sort
-        // gpu::mergesort(
-        // 	static_cast<unsigned int *>(cellIndex_LocalIndex.template getDeviceBuffer<0>()),
-        // 	static_cast<unsigned int *>(cellIndexLocalIndexToPart.template getDeviceBuffer<0>()),
-        // 	vPos.size(),
-        // 	gpu::less_t<unsigned int>(),
-        // 	gpuContext
-        // );
-#else
 
         CUDA_LAUNCH((fill_cells),itgg,
 			numPartInCellPrefixSum.toKernel(),
 			cellIndex_LocalIndex.toKernel(),
-			cellIndexLocalIndexToPart.toKernel(),
+			cellIndexLocalIndexToUnsorted.toKernel(),
 			start
 		);
 
-#endif
 		sortedToUnsortedIndex.resize(stop-start);
-		unsortedToSortedIndex.resize(vPos.size());
+		unsortedToSortedIndex.resize(vPrp.size());
 
-		auto ite = vPos.getGPUIteratorTo(stop-start,64);
+		CUDA_LAUNCH((constructSortUnsortBidirectMap),
+			vPrp.getGPUIteratorTo(stop-start,64),
+			sortedToUnsortedIndex.toKernel(),
+			unsortedToSortedIndex.toKernel(),
+			cellIndexLocalIndexToUnsorted.toKernel()
+		);
 
-		if (sizeof...(prp) == 0)
-		{
-			// Here we reorder the particles to improve coalescing access
-			CUDA_LAUNCH((reorderParticles),ite,
-			   vPrp.toKernel(),
-			   vPrpOut.toKernel(),
-			   vPos.toKernel(),
-			   vPosOut.toKernel(),
-			   sortedToUnsortedIndex.toKernel(),
-			   unsortedToSortedIndex.toKernel(),
-			   cellIndexLocalIndexToPart.toKernel()
-			);
-		}
-		else
-		{
-			// Here we reorder the particles to improve coalescing access
-			CUDA_LAUNCH((reorderParticlesPrp<decltype(vPrp.toKernel()),
-					decltype(vPos.toKernel()),
-					decltype(sortedToUnsortedIndex.toKernel()),
-					decltype(cellIndexLocalIndexToPart.toKernel()),prp...>),ite,
-				(int)sortedToUnsortedIndex.size(),
+		// unsortedToSortedIndex.template deviceToHost<0>();
+		// sortedToUnsortedIndex.template deviceToHost<0>();
+
+		constructSortedToSortedIndexNoGhost(gpuContext,start,stop,ghostMarker);
+
+		if (opt & CL_GPU_REORDER_PROPERTY) {
+			vector_prp vPrpReorder(vPrp.size());
+
+			CUDA_LAUNCH((reorderParticles),
+				vPrp.getGPUIteratorTo(stop-start,64),
 				vPrp.toKernel(),
-				vPrpOut.toKernel(),
-				vPos.toKernel(),
-				vPosOut.toKernel(),
-				sortedToUnsortedIndex.toKernel(),
+				vPrpReorder.toKernel(),
 				unsortedToSortedIndex.toKernel(),
-				cellIndexLocalIndexToPart.toKernel()
+				start
 			);
-	}
 
-	if (opt == cl_construct_opt::Full)
-		construct_domain_ids(gpuContext,start,stop,ghostMarker);
+			vPrpReorder.template deviceToHost<0>();
+			vPrp.swap(vPrpReorder);
+		}
+
+		if (opt & CL_GPU_REORDER_POSITION) {
+			vector vPosReorder(vPos.size());
+
+			CUDA_LAUNCH((reorderParticles),
+				vPos.getGPUIteratorTo(stop-start,64),
+				vPos.toKernel(),
+				vPosReorder.toKernel(),
+				unsortedToSortedIndex.toKernel(),
+				start
+			);
+
+			vPosReorder.template deviceToHost<0>();
+			vPos.swap(vPosReorder);
+
+			// else
+			// {
+			// 	// Here we reorder the particles to improve coalescing access
+			// 	CUDA_LAUNCH((reorderParticlesPrp<decltype(vPrp.toKernel()),
+			// 			decltype(vPos.toKernel()),
+			// 			decltype(sortedToUnsortedIndex.toKernel()),
+			// 			decltype(cellIndexLocalIndexToUnsorted.toKernel()),prp...>),ite,
+			// 		(int)sortedToUnsortedIndex.size(),
+			// 		vPrp.toKernel(),
+			// 		vPrpReorder.toKernel(),
+			// 		vPos.toKernel(),
+			// 		vPosReorder.toKernel(),
+			// 		sortedToUnsortedIndex.toKernel(),
+			// 		unsortedToSortedIndex.toKernel(),
+			// 		cellIndexLocalIndexToUnsorted.toKernel()
+			// 	);
+			// }
+		}
 
 	#else
 
@@ -373,7 +376,7 @@ public:
 
 	inline openfpm::vector_gpu<aggregate<unsigned int>> &
 	getDomainSortIds() {
-		return indexSorted;
+		return sortedToSortedIndexNoGhost;
 	}
 
 
@@ -399,16 +402,14 @@ public:
 	template<typename vector, typename vector_prp, unsigned int ... prp>
 	void construct(
 		vector & vPos,
-		vector & vPosOut,
 		vector_prp & vPrp,
-		vector_prp & vPrpOut,
 		gpu::ofp_context_t& gpuContext,
 		size_t ghostMarker = 0,
 		size_t start = 0,
-		size_t stop = (size_t)-1,
-		cl_construct_opt opt = cl_construct_opt::Full)
+		size_t stop = -1,
+		size_t opt = 0)
 	{
-		construct_dense<vector,vector_prp,prp...>(vPos,vPosOut,vPrp,vPrpOut,gpuContext,ghostMarker,start,stop,opt);
+		construct_dense<vector,vector_prp,prp...>(vPos,vPrp,gpuContext,ghostMarker,start,stop,opt);
 	}
 
 	CellList_gpu_ker<dim,T,ids_type,transform_type,false> toKernel()
@@ -418,7 +419,7 @@ public:
 		return CellList_gpu_ker<dim,T,ids_type,transform_type,false>(
 			numPartInCellPrefixSum.toKernel(),
 			sortedToUnsortedIndex.toKernel(),
-			indexSorted.toKernel(),
+			sortedToSortedIndexNoGhost.toKernel(),
 			rcutNeighborCellOffset.toKernel(),
 			p,
 			boxNeighborCellOffset.size(),
@@ -440,7 +441,7 @@ public:
 	void clear()
 	{
 		numPartInCell.clear();
-		cellIndexLocalIndexToPart.clear();
+		cellIndexLocalIndexToUnsorted.clear();
 		numPartInCellPrefixSum.clear();
 		cellIndex_LocalIndex.clear();
 		sortedToUnsortedIndex.clear();
@@ -501,7 +502,7 @@ public:
 	void debug_deviceToHost()
 	{
 		numPartInCell.template deviceToHost<0>();
-		cellIndexLocalIndexToPart.template deviceToHost<0>();
+		cellIndexLocalIndexToUnsorted.template deviceToHost<0>();
 		numPartInCellPrefixSum.template deviceToHost<0>();
 	}
 
@@ -535,9 +536,9 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) -> decltype(cellIndexLocalIndexToPart.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele))
+	inline auto get(size_t cell, size_t ele) -> decltype(cellIndexLocalIndexToUnsorted.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele))
 	{
-		return cellIndexLocalIndexToPart.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele);
+		return cellIndexLocalIndexToUnsorted.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele);
 	}
 
 	/*! \brief Get an element in the cell
@@ -550,9 +551,9 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) const -> decltype(cellIndexLocalIndexToPart.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele))
+	inline auto get(size_t cell, size_t ele) const -> decltype(cellIndexLocalIndexToUnsorted.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele))
 	{
-		return cellIndexLocalIndexToPart.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele);
+		return cellIndexLocalIndexToUnsorted.template get<0>(numPartInCellPrefixSum.template get<0>(cell)+ele);
 	}
 
 	/*! \brief swap the information of the two cell-lists
@@ -564,11 +565,11 @@ public:
 	{
 		((CellDecomposer_sm<dim,T,transform_type> *)this)->swap(clg);
 		numPartInCell.swap(clg.numPartInCell);
-		cellIndexLocalIndexToPart.swap(clg.cellIndexLocalIndexToPart);
+		cellIndexLocalIndexToUnsorted.swap(clg.cellIndexLocalIndexToUnsorted);
 		numPartInCellPrefixSum.swap(clg.numPartInCellPrefixSum);
 		cellIndex_LocalIndex.swap(clg.cellIndex_LocalIndex);
 		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
-		indexSorted.swap(clg.indexSorted);
+		sortedToSortedIndexNoGhost.swap(clg.sortedToSortedIndexNoGhost);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 
 		unitCellP2.swap(clg.unitCellP2);
@@ -589,11 +590,11 @@ public:
 	{
 		*static_cast<CellDecomposer_sm<dim,T,transform_type> *>(this) = *static_cast<const CellDecomposer_sm<dim,T,transform_type> *>(&clg);
 		numPartInCell = clg.numPartInCell;
-		cellIndexLocalIndexToPart = clg.cellIndexLocalIndexToPart;
+		cellIndexLocalIndexToUnsorted = clg.cellIndexLocalIndexToUnsorted;
 		numPartInCellPrefixSum = clg.numPartInCellPrefixSum;
 		cellIndex_LocalIndex = clg.cellIndex_LocalIndex;
 		sortedToUnsortedIndex = clg.sortedToUnsortedIndex;
-		indexSorted = clg.indexSorted;
+		sortedToSortedIndexNoGhost = clg.sortedToSortedIndexNoGhost;
 		unsortedToSortedIndex = clg.unsortedToSortedIndex;
 
 		unitCellP2 = clg.unitCellP2;
@@ -610,11 +611,11 @@ public:
 	{
 		static_cast<CellDecomposer_sm<dim,T,transform_type> *>(this)->swap(*static_cast<CellDecomposer_sm<dim,T,transform_type> *>(&clg));
 		numPartInCell.swap(clg.numPartInCell);
-		cellIndexLocalIndexToPart.swap(clg.cellIndexLocalIndexToPart);
+		cellIndexLocalIndexToUnsorted.swap(clg.cellIndexLocalIndexToUnsorted);
 		numPartInCellPrefixSum.swap(clg.numPartInCellPrefixSum);
 		cellIndex_LocalIndex.swap(clg.cellIndex_LocalIndex);
 		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
-		indexSorted.swap(clg.indexSorted);
+		sortedToSortedIndexNoGhost.swap(clg.sortedToSortedIndexNoGhost);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 
 		unitCellP2 = clg.unitCellP2;
@@ -624,6 +625,77 @@ public:
 		nDecRefRedec = clg.nDecRefRedec;
 
 		return *this;
+	}
+
+	/*! \brief This function restores particle order after
+	 * particles being reordered for coalesced memory access
+	 *
+	 *
+	 */
+	template<typename vector, typename vector_prp>
+	void restoreOrder(
+		vector & vPos,
+		vector_prp & vPrp,
+		size_t start = 0,
+		size_t stop = -1)
+	{
+	#ifdef __NVCC__
+		if (stop == (size_t)-1) stop = vPos.size();
+
+		vector vPosReorder(vPos.size());
+		vector_prp vPrpReorder(vPrp.size());
+
+		CUDA_LAUNCH((reorderParticles),
+			vPos.getGPUIteratorTo(stop-start,64),
+			vPos.toKernel(),
+			vPosReorder.toKernel(),
+			sortedToUnsortedIndex.toKernel(),
+			start
+		);
+
+		CUDA_LAUNCH((reorderParticles),
+			vPrp.getGPUIteratorTo(stop-start,64),
+			vPrp.toKernel(),
+			vPrpReorder.toKernel(),
+			sortedToUnsortedIndex.toKernel(),
+			start
+		);
+
+		vPosReorder.template deviceToHost<0>();
+		vPrpReorder.template deviceToHost<0>();
+
+		vPos.swap(vPosReorder);
+		vPrp.swap(vPrpReorder);
+
+	#endif
+	}
+
+	/*! \brief Fill cell list with particles at positions vPos
+	 *
+	 * \tparam vPos list of particle positions
+	 * \tparam vPrp list of particle properties
+	 * \tparam ghostMarker ghost marker denoting domain and ghost particles in vPos
+	 * \tparam opt option flag that determines the the of cell list (e.g. symmetric, full, local symmetric, crs etc.)
+	 *
+	 */
+	template<typename vector_pos_type, typename vector_prp_type>
+	void fill(
+		vector_pos_type & vPos,
+		vector_prp_type & vPrp,
+		size_t ghostMarker,
+		size_t opt)
+	{
+		if (opt & CL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
+		}
+
+		else if (opt & CL_LOCAL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " local symmetric cell list on GPU is not implemented" << std::endl;
+		}
+
+		else if (opt & CL_NON_SYMMETRIC) {
+			construct(vPos, vPrp, *(this->gpuContext), ghostMarker, 0, vPos.size(), opt);
+		}
 	}
 };
 
@@ -636,16 +708,16 @@ public:
 
 private:
 	//! \brief for each cell the particles id in it
-	openfpm::vector_gpu<aggregate<unsigned int>> cellIndexLocalIndexToPart;
+	openfpm::vector_gpu<aggregate<unsigned int>> cellIndexLocalIndexToUnsorted;
 
-	//! \brief contains particle cell indexes
+	//! \brief contains cell list index for every particle in the domain
 	openfpm::vector_gpu<aggregate<unsigned int>> cellIndex;
 
 	//! \brief sparse vector to segreduce the
 	openfpm::vector_sparse_gpu<aggregate<unsigned int>> vecSparseCellIndex_PartIndex;
 
 	//! \brief number of neighborhood each cell cell has + offset
-	openfpm::vector_gpu<aggregate<unsigned int>> neighborCellCount;
+	openfpm::vector_gpu<aggregate<unsigned int>> nonEmptyNeighborCellCount;
 
 	//! \brief For each cell the list of the neighborhood cells
 	openfpm::vector_gpu<aggregate<unsigned int,unsigned int>> neighborPartIndexFrom_To;
@@ -660,7 +732,7 @@ private:
 	openfpm::vector_gpu<aggregate<unsigned int>> sortedToUnsortedIndex;
 
 	//! \brief the index of all the domain particles in the sorted vector
-	openfpm::vector_gpu<aggregate<unsigned int>> indexSorted;
+	openfpm::vector_gpu<aggregate<unsigned int>> sortedToSortedIndexNoGhost;
 
 	//! \brief for each non sorted index it show the index in the ordered vector
 	openfpm::vector_gpu<aggregate<unsigned int>> unsortedToSortedIndex;
@@ -677,6 +749,9 @@ private:
 	//! Additional information in general (used to understand if the cell-list)
 	//! has been constructed from an old decomposition
 	size_t nDecRefRedec;
+
+	//! standard context for gpu
+	gpu::ofp_context_t* gpuContext;
 
 	//! Initialize the structures of the data structure
 	void InitializeStructures(
@@ -709,17 +784,15 @@ private:
 	template<typename vector, typename vector_prp, unsigned int ... prp>
 	void construct_sparse(
 		vector & vPos,
-		vector & vPosOut,
 		vector_prp & vPrp,
-		vector_prp & vPrpOut,
 		gpu::ofp_context_t& gpuContext,
 		size_t ghostMarker,
-		size_t start,
-		size_t stop,
-		cl_construct_opt opt = cl_construct_opt::Full)
+		size_t start = 0,
+		size_t stop = -1,
+		size_t opt = 0)
 	{
 #ifdef __NVCC__
-		// if stop if the default set to the number of particles
+		this->gpuContext = &gpuContext;
 		if (stop == (size_t)-1) stop = vPos.size();
 
 		cellIndex.resize(stop - start);
@@ -741,9 +814,8 @@ private:
 			cellIndex.toKernel()
 		);
 
-		cellIndexLocalIndexToPart.resize(stop-start);
+		cellIndexLocalIndexToUnsorted.resize(stop-start);
 
-		// Here we fill the sparse vector
 		vecSparseCellIndex_PartIndex.clear();
 		vecSparseCellIndex_PartIndex.template setBackground<0>((unsigned int)-1);
 		vecSparseCellIndex_PartIndex.setGPUInsertBuffer(ite_gpu.wthr.x,ite_gpu.thr.x);
@@ -754,57 +826,86 @@ private:
 		);
 
 		// flush_vd<sstart_<0>> returns the comulative prefix for cell indexes
-		vecSparseCellIndex_PartIndex.template flush_vd<sstart_<0>>(cellIndexLocalIndexToPart,gpuContext,FLUSH_ON_DEVICE);
+		vecSparseCellIndex_PartIndex.template flush_vd<sstart_<0>>(cellIndexLocalIndexToUnsorted,gpuContext,FLUSH_ON_DEVICE);
 
-		neighborCellCount.resize(vecSparseCellIndex_PartIndex.size()+1);
-		neighborCellCount.template fill<0>(0);
+		nonEmptyNeighborCellCount.resize(vecSparseCellIndex_PartIndex.size()+1);
+		nonEmptyNeighborCellCount.template fill<0>(0);
 
 		// for every particle increase the counter for every non-zero neighbor cell
 		auto itgg = vecSparseCellIndex_PartIndex.getGPUIterator();
-		CUDA_LAUNCH((countNeighborCells),itgg,
+		CUDA_LAUNCH((countNonEmptyNeighborCells),itgg,
 			vecSparseCellIndex_PartIndex.toKernel(),
-			neighborCellCount.toKernel(),
+			nonEmptyNeighborCellCount.toKernel(),
 			boxNeighborCellOffset.toKernel()
 		);
 
 		// get total number of non-empty neighboring cells
 		openfpm::scan(
-			(unsigned int *)neighborCellCount.template getDeviceBuffer<0>(),
-			neighborCellCount.size(),
-			(unsigned int *)neighborCellCount.template getDeviceBuffer<0>(),
+			(unsigned int *)nonEmptyNeighborCellCount.template getDeviceBuffer<0>(),
+			nonEmptyNeighborCellCount.size(),
+			(unsigned int *)nonEmptyNeighborCellCount.template getDeviceBuffer<0>(),
 			gpuContext
 		);
 
-		neighborCellCount.template deviceToHost<0>(neighborCellCount.size() - 1, neighborCellCount.size() - 1);
-		size_t totalNeighborCellCount = neighborCellCount.template get<0>(neighborCellCount.size()-1);
+		nonEmptyNeighborCellCount.template deviceToHost<0>(nonEmptyNeighborCellCount.size()-1, nonEmptyNeighborCellCount.size()-1);
+		size_t totalNeighborCellCount = nonEmptyNeighborCellCount.template get<0>(nonEmptyNeighborCellCount.size()-1);
 
 		neighborPartIndexFrom_To.resize(totalNeighborCellCount);
 		CUDA_LAUNCH((fillNeighborCellList),itgg,
 			vecSparseCellIndex_PartIndex.toKernel(),
-			neighborCellCount.toKernel(),
+			nonEmptyNeighborCellCount.toKernel(),
 			boxNeighborCellOffset.toKernel(),
 			neighborPartIndexFrom_To.toKernel(),
-			(typename decltype(vecSparseCellIndex_PartIndex.toKernel())::index_type)cellIndexLocalIndexToPart.size()
+			(typename decltype(vecSparseCellIndex_PartIndex.toKernel())::index_type)cellIndexLocalIndexToUnsorted.size()
 		);
 
 		sortedToUnsortedIndex.resize(stop-start);
-		unsortedToSortedIndex.resize(vPos.size());
+		unsortedToSortedIndex.resize(vPrp.size());
 
 		auto ite = vPos.getGPUIteratorTo(stop-start,64);
 
-		// Here we reorder the particles to improve coalescing access
-		CUDA_LAUNCH((reorderParticles),ite,
-			vPrp.toKernel(),
-			vPrpOut.toKernel(),
-			vPos.toKernel(),
-			vPosOut.toKernel(),
+		CUDA_LAUNCH((constructSortUnsortBidirectMap),
+			vPrp.getGPUIteratorTo(stop-start,64),
 			sortedToUnsortedIndex.toKernel(),
 			unsortedToSortedIndex.toKernel(),
-			cellIndexLocalIndexToPart.toKernel()
+			cellIndexLocalIndexToUnsorted.toKernel()
 		);
 
-		if (opt == cl_construct_opt::Full)
-			construct_domain_ids(gpuContext,start,stop,ghostMarker);
+		// unsortedToSortedIndex.template deviceToHost<0>();
+		// sortedToUnsortedIndex.template deviceToHost<0>();
+
+		constructSortedToSortedIndexNoGhost(gpuContext,start,stop,ghostMarker);
+
+		if (opt & CL_GPU_REORDER_PROPERTY) {
+			vector_prp vPrpReorder(vPrp.size());
+
+			CUDA_LAUNCH((reorderParticles),
+				vPrp.getGPUIteratorTo(stop-start,64),
+				vPrp.toKernel(),
+				vPrpReorder.toKernel(),
+				unsortedToSortedIndex.toKernel(),
+				start
+			);
+
+			vPrpReorder.template deviceToHost<0>();
+			vPrp.swap(vPrpReorder);
+		}
+
+		if (opt & CL_GPU_REORDER_POSITION) {
+			vector vPosReorder(vPos.size());
+
+			CUDA_LAUNCH((reorderParticles),
+				vPos.getGPUIteratorTo(stop-start,64),
+				vPos.toKernel(),
+				vPosReorder.toKernel(),
+				unsortedToSortedIndex.toKernel(),
+				start
+			);
+
+			vPosReorder.template deviceToHost<0>();
+			vPos.swap(vPosReorder);
+		}
+
 	#else
 			std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
 	#endif
@@ -815,7 +916,7 @@ private:
 	 * \param gpuContext gpu context
 	 *
 	 */
-	void construct_domain_ids(
+	void constructSortedToSortedIndexNoGhost(
 		gpu::ofp_context_t& gpuContext,
 		size_t start,
 		size_t stop,
@@ -823,31 +924,31 @@ private:
 	{
 #ifdef __NVCC__
 		//! Sorted domain particles domain or ghost
-		openfpm::vector_gpu<aggregate<unsigned int>> isSortedIndexOrGhost(stop-start+1);
+		openfpm::vector_gpu<aggregate<unsigned int>> isSortedDomainOrGhost(stop-start+1);
 
-		auto ite = isSortedIndexOrGhost.getGPUIterator();
+		auto ite = isSortedDomainOrGhost.getGPUIterator();
 
 		CUDA_LAUNCH((mark_domain_particles),ite,
 			sortedToUnsortedIndex.toKernel(),
-			isSortedIndexOrGhost.toKernel(),
+			isSortedDomainOrGhost.toKernel(),
 			ghostMarker
 		);
 
 		openfpm::scan(
-			(unsigned int *)isSortedIndexOrGhost.template getDeviceBuffer<0>(),
-			isSortedIndexOrGhost.size(),
-			(unsigned int *)isSortedIndexOrGhost.template getDeviceBuffer<0>(),
+			(unsigned int *)isSortedDomainOrGhost.template getDeviceBuffer<0>(),
+			isSortedDomainOrGhost.size(),
+			(unsigned int *)isSortedDomainOrGhost.template getDeviceBuffer<0>(),
 			gpuContext
 		);
 
-		isSortedIndexOrGhost.template deviceToHost<0>(isSortedIndexOrGhost.size()-1,isSortedIndexOrGhost.size()-1);
-		auto totalParticleNoGhostCount = isSortedIndexOrGhost.template get<0>(isSortedIndexOrGhost.size()-1);
+		isSortedDomainOrGhost.template deviceToHost<0>(isSortedDomainOrGhost.size()-1,isSortedDomainOrGhost.size()-1);
+		auto totalParticleNoGhostCount = isSortedDomainOrGhost.template get<0>(isSortedDomainOrGhost.size()-1);
 
-		indexSorted.resize(totalParticleNoGhostCount);
+		sortedToSortedIndexNoGhost.resize(totalParticleNoGhostCount);
 
 		CUDA_LAUNCH((collect_domain_ghost_ids),ite,
-			isSortedIndexOrGhost.toKernel(),
-			indexSorted.toKernel()
+			isSortedDomainOrGhost.toKernel(),
+			sortedToSortedIndexNoGhost.toKernel()
 		);
 #endif
 	}
@@ -945,7 +1046,7 @@ public:
 
 	inline openfpm::vector_gpu<aggregate<unsigned int>> &
 	getDomainSortIds() {
-		return indexSorted;
+		return sortedToSortedIndexNoGhost;
 	}
 
 
@@ -969,26 +1070,24 @@ public:
 	template<typename vector, typename vector_prp, unsigned int ... prp>
 	void construct(
 		vector & vPos,
-		vector & vPosOut,
 		vector_prp & vPrp,
-		vector_prp & vPrpOut,
 		gpu::ofp_context_t& gpuContext,
 		size_t ghostMarker = 0,
 		size_t start = 0,
-		size_t stop = (size_t)-1,
-		cl_construct_opt opt = cl_construct_opt::Full)
+		size_t stop = -1,
+		size_t opt = 0)
 	{
-		construct_sparse<vector,vector_prp,prp...>(vPos,vPosOut,vPrp,vPrpOut,gpuContext,ghostMarker,start,stop,opt);
+		construct_sparse<vector,vector_prp,prp...>(vPos,vPrp,gpuContext,ghostMarker, start, stop, opt);
 	}
 
 	CellList_gpu_ker<dim,T,ids_type,transform_type,true> toKernel()
 	{
 		return CellList_gpu_ker<dim,T,ids_type,transform_type,true>(
-			neighborCellCount.toKernel(),
+			nonEmptyNeighborCellCount.toKernel(),
 			neighborPartIndexFrom_To.toKernel(),
 			vecSparseCellIndex_PartIndex.toKernel(),
 			sortedToUnsortedIndex.toKernel(),
-			indexSorted.toKernel(),
+			sortedToSortedIndexNoGhost.toKernel(),
 			unitCellP2,
 			numCellDim,
 			cellPadDim,
@@ -1006,7 +1105,7 @@ public:
 	 */
 	void clear()
 	{
-		cellIndexLocalIndexToPart.clear();
+		cellIndexLocalIndexToUnsorted.clear();
 		cellIndex.clear();
 		sortedToUnsortedIndex.clear();
 	}
@@ -1065,7 +1164,7 @@ public:
 	 */
 	void debug_deviceToHost()
 	{
-		cellIndexLocalIndexToPart.template deviceToHost<0>();
+		cellIndexLocalIndexToUnsorted.template deviceToHost<0>();
 		cellIndex.template deviceToHost<0>();
 	}
 
@@ -1079,9 +1178,9 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) -> decltype(cellIndexLocalIndexToPart.template get<0>(cellIndex.template get<0>(cell)+ele))
+	inline auto get(size_t cell, size_t ele) -> decltype(cellIndexLocalIndexToUnsorted.template get<0>(cellIndex.template get<0>(cell)+ele))
 	{
-		return cellIndexLocalIndexToPart.template get<0>(cellIndex.template get<0>(cell)+ele);
+		return cellIndexLocalIndexToUnsorted.template get<0>(cellIndex.template get<0>(cell)+ele);
 	}
 
 	/*! \brief Get an element in the cell
@@ -1094,9 +1193,9 @@ public:
 	 * \return The element value
 	 *
 	 */
-	inline auto get(size_t cell, size_t ele) const -> decltype(cellIndexLocalIndexToPart.template get<0>(cellIndex.template get<0>(cell)+ele))
+	inline auto get(size_t cell, size_t ele) const -> decltype(cellIndexLocalIndexToUnsorted.template get<0>(cellIndex.template get<0>(cell)+ele))
 	{
-		return cellIndexLocalIndexToPart.template get<0>(cellIndex.template get<0>(cell)+ele);
+		return cellIndexLocalIndexToUnsorted.template get<0>(cellIndex.template get<0>(cell)+ele);
 	}
 
 	/*! \brief swap the information of the two cell-lists
@@ -1107,14 +1206,14 @@ public:
 	void swap(CellList_gpu<dim,T,Memory,transform_type,true> & clg)
 	{
 		((CellDecomposer_sm<dim,T,transform_type> *)this)->swap(clg);
-		cellIndexLocalIndexToPart.swap(clg.cellIndexLocalIndexToPart);
+		cellIndexLocalIndexToUnsorted.swap(clg.cellIndexLocalIndexToUnsorted);
 		cellIndex.swap(clg.cellIndex);
 		vecSparseCellIndex_PartIndex.swap(clg.vecSparseCellIndex_PartIndex);
-		neighborCellCount.swap(clg.neighborCellCount);
+		nonEmptyNeighborCellCount.swap(clg.nonEmptyNeighborCellCount);
 		neighborPartIndexFrom_To.swap(clg.neighborPartIndexFrom_To);
 		boxNeighborCellOffset.swap(clg.boxNeighborCellOffset);
 		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
-		indexSorted.swap(clg.indexSorted);
+		sortedToSortedIndexNoGhost.swap(clg.sortedToSortedIndexNoGhost);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 
 		unitCellP2.swap(clg.unitCellP2);
@@ -1138,14 +1237,14 @@ public:
 	operator=(const CellList_gpu<dim,T,Memory,transform_type,true> & clg)
 	{
 		*static_cast<CellDecomposer_sm<dim,T,transform_type> *>(this) = *static_cast<const CellDecomposer_sm<dim,T,transform_type> *>(&clg);
-		cellIndexLocalIndexToPart = clg.cellIndexLocalIndexToPart;
+		cellIndexLocalIndexToUnsorted = clg.cellIndexLocalIndexToUnsorted;
 		cellIndex = clg.cellIndex;
 		vecSparseCellIndex_PartIndex = clg.vecSparseCellIndex_PartIndex;
-		neighborCellCount = clg.neighborCellCount;
+		nonEmptyNeighborCellCount = clg.nonEmptyNeighborCellCount;
 		neighborPartIndexFrom_To = clg.neighborPartIndexFrom_To;
 		boxNeighborCellOffset = clg.boxNeighborCellOffset;
 		sortedToUnsortedIndex = clg.sortedToUnsortedIndex;
-		indexSorted = clg.indexSorted;
+		sortedToSortedIndexNoGhost = clg.sortedToSortedIndexNoGhost;
 		unsortedToSortedIndex = clg.unsortedToSortedIndex;
 
 		unitCellP2 = clg.unitCellP2;
@@ -1163,14 +1262,14 @@ public:
 	operator=(CellList_gpu<dim,T,Memory,transform_type> && clg)
 	{
 		static_cast<CellDecomposer_sm<dim,T,transform_type> *>(this)->swap(*static_cast<CellDecomposer_sm<dim,T,transform_type> *>(&clg));
-		cellIndexLocalIndexToPart.swap(clg.cellIndexLocalIndexToPart);
+		cellIndexLocalIndexToUnsorted.swap(clg.cellIndexLocalIndexToUnsorted);
 		cellIndex.swap(clg.cellIndex);
 		vecSparseCellIndex_PartIndex.swap(clg.vecSparseCellIndex_PartIndex);
-		neighborCellCount.swap(clg.neighborCellCount);
+		nonEmptyNeighborCellCount.swap(clg.nonEmptyNeighborCellCount);
 		neighborPartIndexFrom_To.swap(clg.neighborPartIndexFrom_To);
 		boxNeighborCellOffset.swap(clg.boxNeighborCellOffset);
 		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
-		indexSorted.swap(clg.indexSorted);
+		sortedToSortedIndexNoGhost.swap(clg.sortedToSortedIndexNoGhost);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 
 		unitCellP2 = clg.unitCellP2;
@@ -1182,6 +1281,76 @@ public:
 		boxNeighborNumber = clg.boxNeighborNumber;
 
 		return *this;
+	}
+
+	/*! \brief This function restores particle order after
+	 * particles being reordered for coalesced memory access
+	 *
+	 *
+	 */
+	template<typename vector, typename vector_prp>
+	void restoreOrder(
+		vector & vPos,
+		vector_prp & vPrp,
+		size_t start = 0,
+		size_t stop = -1)
+	{
+	#ifdef __NVCC__
+		if (stop == (size_t)-1) stop = vPos.size();
+
+		vector vPosReorder(vPos.size());
+		vector_prp vPrpReorder(vPrp.size());
+
+		CUDA_LAUNCH((reorderParticles),
+			vPos.getGPUIteratorTo(stop-start,64),
+			vPos.toKernel(),
+			vPosReorder.toKernel(),
+			sortedToUnsortedIndex.toKernel(),
+			start
+		);
+
+		CUDA_LAUNCH((reorderParticles),
+			vPrp.getGPUIteratorTo(stop-start,64),
+			vPrp.toKernel(),
+			vPrpReorder.toKernel(),
+			sortedToUnsortedIndex.toKernel(),
+			start
+		);
+
+		vPosReorder.template deviceToHost<0>();
+		vPrpReorder.template deviceToHost<0>();
+
+		vPos.swap(vPosReorder);
+		vPrp.swap(vPrpReorder);
+	#endif
+	}
+
+	/*! \brief Fill cell list with particles at positions vPos
+	 *
+	 * \tparam vPos list of particle positions
+	 * \tparam vPrp list of particle properties
+	 * \tparam ghostMarker ghost marker denoting domain and ghost particles in vPos
+	 * \tparam opt option flag that determines the the of cell list (e.g. symmetric, full, local symmetric, crs etc.)
+	 *
+	 */
+	template<typename vector_pos_type, typename vector_prp_type>
+	void fill(
+		vector_pos_type & vPos,
+		vector_prp_type & vPrp,
+		size_t ghostMarker,
+		size_t opt)
+	{
+		if (opt & CL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
+		}
+
+		else if (opt & CL_LOCAL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " local symmetric cell list on GPU is not implemented" << std::endl;
+		}
+
+		else if (opt & CL_NON_SYMMETRIC) {
+			construct(vPos, vPrp, *(this->gpuContext), ghostMarker, 0, vPos.size(), opt);
+		}
 	}
 };
 

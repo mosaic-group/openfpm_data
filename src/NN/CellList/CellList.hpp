@@ -1236,7 +1236,7 @@ public:
 //////////////////////////////// POINTLESS BUT REQUIRED TO RESPECT THE INTERFACE //////////////////
 
 	//! Ghost marker
-	size_t g_m = 0;
+	size_t ghostMarker = 0;
 
 	/*! \brief return the ghost marker
 	 *
@@ -1245,17 +1245,17 @@ public:
 	 */
 	inline size_t get_gm()
 	{
-		return g_m;
+		return ghostMarker;
 	}
 
 	/*! \brief Set the ghost marker
 	 *
-	 * \param g_m marker
+	 * \param ghostMarker marker
 	 *
 	 */
-	inline void set_gm(size_t g_m)
+	inline void set_gm(size_t ghostMarker)
 	{
-		this->g_m = g_m;
+		this->ghostMarker = ghostMarker;
 	}
 
 #ifdef CUDA_GPU
@@ -1340,6 +1340,58 @@ public:
 	size_t get_ndec() const
 	{
 		return n_dec;
+	}
+
+	/*! \brief Fill cell list with particles at positions vPos
+	 *
+	 * \tparam vPos list of particle positions
+	 * \tparam vPrp list of particle properties
+	 * \tparam ghostMarker ghost marker denoting domain and ghost particles in vPos
+	 * \tparam opt option flag that determines the the of cell list (e.g. symmetric, full, local symmetric, crs etc.)
+	 *
+	 */
+	// vector_pos_type is a class level template parameter
+	template<typename vector_pos_type2, typename vector_prp_type>
+	void fill(
+		vector_pos_type2 & vPos,
+		vector_prp_type & vPrp,
+		size_t ghostMarker,
+		size_t opt)
+	{
+		this->clear();
+		this->ghostMarker = ghostMarker;
+
+		if (opt & CL_SYMMETRIC) {
+
+			for (size_t i = 0; i < ghostMarker; i++)
+				this->addDom(vPos.get(i), i);
+
+			for (size_t i = ghostMarker; i < vPos.size(); i++)
+				this->addPad(vPos.get(i), i);
+		}
+
+		else if (opt & CL_LOCAL_SYMMETRIC) {
+
+			for (size_t i = 0; i < ghostMarker ; i++)
+				this->add(vPos.get(i), i);
+
+			this->addCellGhostMarkers();
+
+			for (size_t i = ghostMarker; i < vPos.size() ; i++)
+				this->add(vPos.get(i), i);
+		}
+
+		else if (opt & CL_NON_SYMMETRIC) {
+
+			for (size_t i = 0; i < vPos.size() ; i++)
+			{
+				this->add(vPos.get(i), i);
+			}
+		}
+
+		else {
+			std::cerr << "No mode is selected to fill Cell List!\n";
+		}
 	}
 
 /////////////////////////////////////

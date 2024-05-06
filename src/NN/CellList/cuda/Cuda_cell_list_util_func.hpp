@@ -350,138 +350,110 @@ __global__ void fill_vsCellIndex_PartIndex(
 	vecSparseCellIndex_PartIndex.flush_block_insert();
 }
 
-#ifdef MAKE_CELLLIST_DETERMINISTIC
-
-template<typename vector_cells_type>
-__global__ void fill_cells(
-	unsigned int n,
-	vector_cells_type cellIndexLocalIndexToPart)
-{
-	int i = threadIdx.x + blockIdx.x * blockDim.x;
-	if (i >= n) return;
-
-	cellIndexLocalIndexToPart.template get<0>(i) = i;
-}
-
-#else
-
 template<typename vector_starts_type, typename vector_pids_type, typename vector_cells_type>
 __global__ void fill_cells(
 	vector_starts_type numPartInCellPrefixSum,
 	vector_pids_type cellIndex_LocalIndex,
-	vector_cells_type cellIndexLocalIndexToPart,
+	vector_cells_type cellIndexLocalIndexToUnsorted,
 	size_t startParticle=0)
 {
-	unsigned int cid, id, start;
+	unsigned int cid, id, cellStart;
 
 	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid >= cellIndex_LocalIndex.size()) return;
 
 	cid = cellIndex_LocalIndex.template get<0>(tid)[0];
 
-	start = numPartInCellPrefixSum.template get<0>(cid);
-	id = start + cellIndex_LocalIndex.template get<0>(tid)[1];
+	cellStart = numPartInCellPrefixSum.template get<0>(cid);
+	id = cellStart + cellIndex_LocalIndex.template get<0>(tid)[1];
 
-	cellIndexLocalIndexToPart.template get<0>(id) = tid + startParticle;
+	cellIndexLocalIndexToUnsorted.template get<0>(id) = tid + startParticle;
 }
 
-#endif
-
-template <typename vector_prp>
-__device__ inline void reorder(
-	const vector_prp & input,
-	vector_prp & output,
-	size_t src_id,
-	size_t dst_id)
+template <typename vector_map_type, typename vector_cells_type>
+__global__ void constructSortUnsortBidirectMap(
+	vector_map_type sortedToUnsortedIndex,
+	vector_map_type unsortedToSortedIndex,
+	const vector_cells_type cellIndexLocalIndexToUnsorted)
 {
-	output.set(dst_id,input,src_id);
-}
-
-template <typename vector_prp, unsigned int ... prp>
-__device__ inline void reorder_wprp(
-	const vector_prp & input,
-	vector_prp & output,
-	size_t src_id,
-	size_t dst_id)
-{
-	output.template set<prp ...>(dst_id,input,src_id);
-}
-
-template <typename vector_prp, typename vector_pos, typename vector_ns, typename vector_cells_type>
-__global__ void reorderParticles(
-	const vector_prp vPrp,
-	vector_prp vPrpOut,
-	const vector_pos vPos,
-	vector_pos vPosOut,
-	vector_ns sortedToUnsortedIndex,
-	vector_ns unsortedToSortedIndex,
-	const vector_cells_type cellIndexLocalIndexToPart)
-{
-	int tid = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	if (tid >= sortedToUnsortedIndex.size())	{return;}
 
-	unsigned int pid = cellIndexLocalIndexToPart.template get<0>(tid);
-
-	reorder(vPrp, vPrpOut, pid, tid);
-	reorder(vPos, vPosOut, pid, tid);
+	unsigned int pid = cellIndexLocalIndexToUnsorted.template get<0>(tid);
 
 	sortedToUnsortedIndex.template get<0>(tid) = pid;
 	unsortedToSortedIndex.template get<0>(pid) = tid;
 }
 
-template <typename vector_prp, typename vector_pos, typename vector_ns, typename vector_cells_type, unsigned int ... prp>
-__global__ void reorderParticlesPrp(
-	int n,
-	const vector_prp input,
-	vector_prp output,
-	const vector_pos input_pos,
-	vector_pos output_pos,
-	vector_ns sortedToUnsortedIndex,
-	vector_ns unsortedToSortedIndex,
-	const vector_cells_type cellIndexLocalIndexToPart)
+template <typename vector_type, typename vector_map_type>
+__global__ void reorderParticles(
+	const vector_type vectorIn,
+	vector_type vectorOut,
+	const vector_map_type inOutMap,
+	size_t start = 0)
 {
-	unsigned int i = threadIdx.x + blockIdx.x * blockDim.x;
-	if (i >= n) return;
+	int keyIn = start + threadIdx.x + blockIdx.x * blockDim.x;
+	if (keyIn >= inOutMap.size())	{return;}
 
-	unsigned int pid = cellIndexLocalIndexToPart.template get<0>(i);
-	reorder_wprp<vector_prp,prp...>(input, output, pid,i);
-	reorder(input_pos,output_pos,pid,i);
+	unsigned int keyOut = inOutMap.template get<0>(keyIn);
 
-	sortedToUnsortedIndex.template get<0>(i) = pid;
-	unsortedToSortedIndex.template get<0>(pid) = i;
+	vectorOut.set(keyOut,vectorIn,keyIn);
 }
+
+// template <typename vector_prp, typename vector_pos, typename vector_ns, typename vector_cells_type, unsigned int ... prp>
+// __global__ void reorderParticlesPrp(
+// 	int n,
+// 	const vector_prp input,
+// 	vector_prp output,
+// 	const vector_pos input_pos,
+// 	vector_pos output_pos,
+// 	vector_ns sortedToUnsortedIndex,
+// 	vector_ns unsortedToSortedIndex,
+// 	const vector_cells_type cellIndexLocalIndexToUnsorted)
+// {
+// 	unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
+// 	if (tid >= n) return;
+
+// 	unsigned int pid = cellIndexLocalIndexToUnsorted.template get<0>(tid);
+//  reorder_wprp<vector_prp,prp...>(input, output, pid,tid);
+//  output.template set<prp ...>(tid,input,pid);
+// 	reorder(input_pos,output_pos,pid,tid);
+//  output_pos.set(tid,input_pos,pid);
+// 	sortedToUnsortedIndex.template get<0>(tid) = pid;
+// 	unsortedToSortedIndex.template get<0>(pid) = tid;
+// }
 
 template<typename vector_sort_index, typename vector_out_type>
 __global__ void mark_domain_particles(
 	vector_sort_index sortedToUnsortedIndex,
-	vector_out_type isSortedIndexOrGhost,
+	vector_out_type isSortedDomainOrGhost,
 	size_t ghostMarker)
 {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 
 	if (i >= sortedToUnsortedIndex.size()) return;
 
-	isSortedIndexOrGhost.template get<0>(i) = (sortedToUnsortedIndex.template get<0>(i) < ghostMarker)?1:0;
+	isSortedDomainOrGhost.template get<0>(i) = (sortedToUnsortedIndex.template get<0>(i) < ghostMarker)?1:0;
 }
 
 template<typename scan_type, typename vector_out_type>
 __global__ void collect_domain_ghost_ids(
-	scan_type isSortedIndexOrGhostPrefixSum,
-	vector_out_type indexSorted)
+	scan_type isUnsortedDomainOrGhostPrefixSum,
+	vector_out_type sortedToSortedIndexNoGhost)
 {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 
-	if (i >= isSortedIndexOrGhostPrefixSum.size()-1) return;
+	if (i >= isUnsortedDomainOrGhostPrefixSum.size()-1) return;
 
-	auto pp = isSortedIndexOrGhostPrefixSum.template get<0>(i+1);
-	auto p = isSortedIndexOrGhostPrefixSum.template get<0>(i);
+	auto pp = isUnsortedDomainOrGhostPrefixSum.template get<0>(i+1);
+	auto p = isUnsortedDomainOrGhostPrefixSum.template get<0>(i);
 
 	if (pp != p)
-		indexSorted.template get<0>(isSortedIndexOrGhostPrefixSum.template get<0>(i)) = i;
+		sortedToSortedIndexNoGhost.template get<0>(isUnsortedDomainOrGhostPrefixSum.template get<0>(i)) = i;
 }
 
 template<typename cl_sparse_type, typename vector_type, typename vector_type2>
-__global__ void countNeighborCells(
+__global__ void countNonEmptyNeighborCells(
 	cl_sparse_type vecSparseCellIndex_PartIndex,
 	vector_type neighborCellCount,
 	vector_type2 neighborCellOffset)
@@ -499,8 +471,6 @@ __global__ void countNeighborCells(
 	for (int i = 0 ; i < neighborCellOffset.size() ; i++)
 	{
 		index_type neighborCellIndex = cell + neighborCellOffset.template get<0>(i);
-
-		auto sid = vecSparseCellIndex_PartIndex.get_sparse(neighborCellIndex);
 		index_type start = vecSparseCellIndex_PartIndex.template get<0>(neighborCellIndex);
 
 		if (start != (index_type)-1)
