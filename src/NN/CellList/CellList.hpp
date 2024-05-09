@@ -8,6 +8,8 @@
 #ifndef CELLLIST_HPP_
 #define CELLLIST_HPP_
 
+#include <unordered_map>
+
 #include "Vector/map_vector.hpp"
 #include "CellDecomposer.hpp"
 #include "Space/Ghost.hpp"
@@ -16,7 +18,7 @@
 #include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
 #include "CellListNNIteratorRadius.hpp"
-#include <unordered_map>
+#include "ProcKeys.hpp"
 
 #include "CellListIterator.hpp"
 #include "ParticleIt_Cells.hpp"
@@ -435,7 +437,13 @@ void NNcalc_box(
  * \snippet CellList_test.hpp Usage of the neighborhood iterator
  *
  */
-template<unsigned int dim, typename T,  typename Mem_type, typename transform = no_transform<dim,T>, typename vector_pos_type = openfpm::vector<Point<dim,T>>>
+template<
+	unsigned int dim,
+	typename T,
+	typename Mem_type = Mem_fast<>,
+	typename transform = no_transform<dim,T>,
+	typename vector_pos_type = openfpm::vector<Point<dim,T>>
+>
 class CellList : public CellDecomposer_sm<dim,T,transform>, public Mem_type
 {
 protected:
@@ -460,6 +468,9 @@ protected:
 
 private:
 
+	//! Option flags
+	size_t opt;
+
 	//! Caching of r_cutoff radius
 	wrap_unordered_map<T,openfpm::vector<long int>> rcache;
 
@@ -473,7 +484,14 @@ private:
 	//! Cells for the neighborhood radius
 	openfpm::vector<long int> nnc_rad;
 
+	//! Space filling curve cells keys have to be filled once
+	bool isInitSFC;
 
+	//! Cell particle iterator that follows space filling curve
+	typedef ParticleIt_CellP<CellList<dim,T,Mem_type,transform,vector_pos_type>> CellParticleIterator;
+
+	//! Cell keys that follow space filling curve
+	openfpm::vector<size_t> SFCKeys;
 
 	//! Initialize the structures of the data structure
 	void InitializeStructures(const size_t (& div)[dim], size_t tot_n_cell, size_t slot=STARTING_NSLOT)
@@ -509,6 +527,56 @@ private:
 		}
 
 		cd.setDimensions(cd_sm.getDomain(),div_big,div, pad, bx.getP1());
+	}
+
+	/*! \brief Initialize Space-filling-curve (SFC)
+	 *
+	 */
+	template <typename SFC_type>
+	inline void initSFC(SFC_type& SFC)
+	{
+		size_t pad = this->getPadding(0);
+		size_t sz[dim];
+		//Get grid_sm without padding (gs_small)
+		for (size_t i = 0; i < dim ; i++)
+			sz[i] = this->getGrid().size(i) - 2*pad;
+
+		grid_sm<dim,void> gs_small(sz);
+
+		size_t a = gs_small.size(0);
+
+		for (size_t i = 1 ; i < dim ; i++)
+		{
+			if (a < gs_small.size(i))
+				a = gs_small.size(i);
+		}
+
+		size_t m;
+
+		//Calculate an hilberts curve order
+		for (m = 0; ; m++)
+		{
+			if ((1ul << m) >= a)
+				break;
+		}
+
+		grid_key_dx_iterator<dim> it(gs_small);
+
+		while (it.isNext())
+		{
+			auto gk = it.get();
+
+			// Get a key of each cell and add to 'keys' vector
+			SFC.get_hkey(*this,gk,m);
+
+			++it;
+		}
+
+		// Sort and linearize keys
+		SFC.linearize_hkeys(*this,m);
+		this->SFCKeys = SFC.getKeys();
+
+		isInitSFC = true;
 	}
 
 public:
@@ -598,9 +666,7 @@ public:
 	}
 
 	//! Default Constructor
-	CellList()
-
-	:Mem_type(STARTING_NSLOT)
+	CellList(size_t opt = 0) : opt(opt), Mem_type(STARTING_NSLOT), isInitSFC(false)
 	{};
 
 	//! Copy constructor
@@ -967,7 +1033,7 @@ public:
 	 * \return the iterator to the elements inside cell
 	 *
 	 */
-	CellIterator<CellList<dim,T,Mem_type,transform>> getCellIterator(size_t cell)
+	CellIterator<CellList<dim,T,Mem_type,transform>> getParticleInCellIterator(size_t cell)
 	{
 		return CellIterator<CellList<dim,T,Mem_type,transform>>(cell,*this);
 	}
@@ -1187,6 +1253,7 @@ public:
 	void clear()
 	{
 		Mem_type::clear();
+		isInitSFC = false;
 	}
 
 	/*! \brief Litterary destroy the memory of the cell list, including the retained one
@@ -1243,7 +1310,7 @@ public:
 	 * \return ghost marker
 	 *
 	 */
-	inline size_t get_gm()
+	inline size_t getGhostMarker()
 	{
 		return ghostMarker;
 	}
@@ -1253,9 +1320,52 @@ public:
 	 * \param ghostMarker marker
 	 *
 	 */
-	inline void set_gm(size_t ghostMarker)
+	inline void setGhostMarker(size_t ghostMarker)
 	{
 		this->ghostMarker = ghostMarker;
+	}
+
+
+	/*! \brief return the celllist iterator (across cells)
+	 *
+	 * \return an iterator
+	 *
+	 */
+	inline CellParticleIterator getCellIterator()
+	{
+		if (isInitSFC == false)
+		{
+			if (opt & CL_HILBERT_CELL_KEYS) {
+				Process_keys_hilb<dim> SFC;
+				initSFC(SFC);
+			} else {
+				Process_keys_lin<dim> SFC;
+				initSFC(SFC);
+			}
+		}
+
+		return CellParticleIterator(*this);
+	}
+
+	/*! \brief Get the space filling curve object
+	 *
+	 * \return the SFC keys
+	 *
+	 */
+	inline const openfpm::vector<size_t> & getCellSFCKeys()
+	{
+		if (isInitSFC == false)
+		{
+			if (opt & CL_HILBERT_CELL_KEYS) {
+				Process_keys_hilb<dim> SFC;
+				initSFC(SFC);
+			} else {
+				Process_keys_lin<dim> SFC;
+				initSFC(SFC);
+			}
+		}
+
+		return this->SFCKeys;
 	}
 
 #ifdef CUDA_GPU
@@ -1276,13 +1386,14 @@ public:
 		}
 
 		CellList_cpu_ker<dim,T,typename Mem_type::toKernel_type,transform> cl(Mem_type::toKernel(),
-																			  spacing_c,
-																			  div_c,
-																			  off,
-																			  this->cellListGrid,
-																			  this->cellShift,
-																			  this->unitCellSpaceBox,
-				                      	  	  	  	  	  	  	  	  	  	  CellDecomposer_sm<dim,T,transform>::getTransform());
+			spacing_c,
+			div_c,
+			off,
+			this->cellListGrid,
+			this->cellShift,
+			this->unitCellSpaceBox,
+			CellDecomposer_sm<dim,T,transform>::getTransform()
+		);
 
 		return cl;
 	}

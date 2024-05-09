@@ -34,9 +34,7 @@ template<unsigned int dim, typename CellList> void FillCellList(size_t k, CellLi
 	}
 }
 
-#include "CellListFast_gen.hpp"
-
-BOOST_AUTO_TEST_SUITE( celllist_gen_and_iterator_tests )
+BOOST_AUTO_TEST_SUITE( celllist_and_iterator_tests )
 
 BOOST_AUTO_TEST_CASE( celllist_lin_and_iterator_test )
 {
@@ -60,10 +58,10 @@ BOOST_AUTO_TEST_CASE( celllist_lin_and_iterator_test )
 	}
 
 	// Initialize a cell list
-	CellList_gen<dim,float,Process_keys_lin> NN;
+	CellList<dim,float> NN;
 
 	NN.Initialize(box,div,1);
-	NN.set_gm(k*0.9);
+	NN.setGhostMarker(k*0.9);
 
 	float pos[dim];
 
@@ -78,7 +76,7 @@ BOOST_AUTO_TEST_CASE( celllist_lin_and_iterator_test )
 	}
 
 	//Test the iterator
-	auto it_cl = NN.getIterator();
+	auto it_cl = NN.getCellIterator();
 
 	size_t count = 0;
 
@@ -86,13 +84,13 @@ BOOST_AUTO_TEST_CASE( celllist_lin_and_iterator_test )
 	{
 		auto p_key = it_cl.get();
 
-		BOOST_REQUIRE(p_key < NN.get_gm());
+		BOOST_REQUIRE(p_key < NN.getGhostMarker());
 
 		count++;
 		++it_cl;
 	}
 
-	BOOST_REQUIRE_EQUAL(count,NN.get_gm());
+	BOOST_REQUIRE_EQUAL(count,NN.getGhostMarker());
 }
 
 BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
@@ -119,16 +117,16 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	}
 
 	// Initialize a cell list
-	CellList_gen<dim,float,Process_keys_hilb> NN;
+	CellList<dim,float> NN(CL_HILBERT_CELL_KEYS);
 
 	NN.Initialize(box,div,1);
-	NN.set_gm(k*0.9);
+	NN.setGhostMarker(k*0.9);
 
 	FillCellList<dim>((size_t)k*0.9,NN);
 
 
 	//Test the iterator
-	auto it_cl = NN.getIterator();
+	auto it_cl = NN.getCellIterator();
 
 	size_t count = 0;
 
@@ -136,13 +134,13 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	{
 		auto p_key = it_cl.get();
 
-		BOOST_REQUIRE(p_key < NN.get_gm());
+		BOOST_REQUIRE(p_key < NN.getGhostMarker());
 
 		count++;
 		++it_cl;
 	}
 
-	BOOST_REQUIRE_EQUAL(count,NN.get_gm());
+	BOOST_REQUIRE_EQUAL(count,NN.getGhostMarker());
 
 	// Load previous results and check equality
 
@@ -153,13 +151,13 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	for (size_t i = 0; i < keys_old.size(); i++)
 	{
 		size_t a1 = keys_old.get(i);
-		size_t a2 = NN.getCellSFC().getKeys().get(i);
+		size_t a2 = NN.getCellSFCKeys().get(i);
 
 		BOOST_REQUIRE_EQUAL(a1,a2);
 	}
 
 	size_t s1 = keys_old.size();
-	size_t s2 = NN.getCellSFC().getKeys().size();
+	size_t s2 = NN.getCellSFCKeys().size();
 
 	BOOST_REQUIRE_EQUAL(s1,s2);
 }

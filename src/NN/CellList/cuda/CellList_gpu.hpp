@@ -457,7 +457,7 @@ public:
 	 * \return ghost marker
 	 *
 	 */
-	inline size_t get_gm()
+	inline size_t getGhostMarker()
 	{
 		return ghostMarker;
 	}
@@ -467,7 +467,7 @@ public:
 	 * \param ghostMarker marker
 	 *
 	 */
-	inline void set_gm(size_t ghostMarker)
+	inline void setGhostMarker(size_t ghostMarker)
 	{
 		this->ghostMarker = ghostMarker;
 	}
@@ -1120,7 +1120,7 @@ public:
 	 * \return ghost marker
 	 *
 	 */
-	inline size_t get_gm()
+	inline size_t getGhostMarker()
 	{
 		return ghostMarker;
 	}
@@ -1130,7 +1130,7 @@ public:
 	 * \param ghostMarker marker
 	 *
 	 */
-	inline void set_gm(size_t ghostMarker)
+	inline void setGhostMarker(size_t ghostMarker)
 	{
 		this->ghostMarker = ghostMarker;
 	}
