@@ -666,8 +666,7 @@ public:
 	}
 
 	//! Default Constructor
-	CellList(size_t opt = 0) : opt(opt), Mem_type(STARTING_NSLOT), isInitSFC(false)
-	{};
+	CellList() : opt(CL_NON_SYMMETRIC | CL_LINEAR_CELL_KEYS), Mem_type(STARTING_NSLOT), isInitSFC(false) {};
 
 	//! Copy constructor
 	CellList(const CellList<dim,T,Mem_type,transform,vector_pos_type> & cell)
@@ -694,7 +693,10 @@ public:
 	 *
 	 */
 	CellList(Box<dim,T> & box, const size_t (&div)[dim], Matrix<dim,T> mat, const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	:Mem_type(slot),CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad)
+		:Mem_type(slot),
+		isInitSFC(false),
+		opt(CL_NON_SYMMETRIC | CL_LINEAR_CELL_KEYS),
+		CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad)
 	{
 		Box<dim,T> sbox(box);
 		Initialize(sbox,div,pad,slot);
@@ -709,7 +711,9 @@ public:
 	 *
 	 */
 	CellList(Box<dim,T> & box, const size_t (&div)[dim], const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	:Mem_type(slot)
+		:Mem_type(slot),
+		isInitSFC(false),
+		opt(CL_NON_SYMMETRIC | CL_LINEAR_CELL_KEYS)
 	{
 		Initialize(box,div,pad,slot);
 	}
@@ -725,7 +729,10 @@ public:
 	 *
 	 */
 	CellList(CellDecomposer_sm<dim,T,transform> & cd_sm, const Box<dim,T> & box, const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	:Mem_type(slot),n_dec(0)
+		:Mem_type(slot),
+		n_dec(0),
+		isInitSFC(false),
+		opt(CL_NON_SYMMETRIC | CL_LINEAR_CELL_KEYS)
 	{
 		Initialize(cd_sm,box,pad,slot);
 	}
@@ -756,6 +763,11 @@ public:
 
 		n_dec = cell.n_dec;
 		from_cd = cell.from_cd;
+		ghostMarker = cell.ghostMarker;
+		opt = cell.opt;
+
+		isInitSFC = cell.isInitSFC;
+		SFCKeys = cell.SFCKeys;
 
 		return *this;
 	}
@@ -779,6 +791,11 @@ public:
 
 		n_dec = cell.n_dec;
 		from_cd = cell.from_cd;
+		ghostMarker = cell.ghostMarker;
+		opt = cell.opt;
+
+		isInitSFC = cell.isInitSFC;
+		SFCKeys = cell.SFCKeys;
 
 		return *this;
 	}
@@ -803,6 +820,10 @@ public:
 
 		n_dec = cell.get_ndec();
 		from_cd = cell.private_get_from_cd();
+		ghostMarker = cell.getGhostMarker();
+		opt = cell.getOpt();
+
+		isInitSFC = false;
 
 		return *this;
 	}
@@ -1024,6 +1045,10 @@ public:
 
 		n_dec = cl.n_dec;
 		from_cd = cl.from_cd;
+
+		size_t optTmp = opt;
+		opt = cl.opt;
+		cl.opt = optTmp;
 	}
 
 	/*! \brief Get the Cell iterator
@@ -1224,6 +1249,28 @@ public:
 		return NNc_sym;
 	}
 
+	/*! \brief Returns the option flags that control the cell list
+	 *
+	 *
+	 * \return option flags
+	 *
+	 */
+	size_t getOpt() const
+	{
+		return opt;
+	}
+
+	/*! \brief Sets the option flags that control the cell list
+	 *
+	 * \param opt option flags
+	 *
+	 */
+	size_t setOpt(size_t opt)
+	{
+		this->opt = opt;
+	}
+
+
 	/*! \brief Return the number of padding cells of the Cell decomposer
 	 *
 	 * \param i dimension
@@ -1310,7 +1357,7 @@ public:
 	 * \return ghost marker
 	 *
 	 */
-	inline size_t getGhostMarker()
+	inline size_t getGhostMarker() const
 	{
 		return ghostMarker;
 	}
@@ -1366,6 +1413,15 @@ public:
 		}
 
 		return this->SFCKeys;
+	}
+
+	/*! \brief Returns a bool flag of SFC keys vector being filled
+	 *
+	 * \return SFC keys init status
+	 *
+	 */
+	inline bool isSFCInit() const {
+		return isInitSFC;
 	}
 
 #ifdef CUDA_GPU
@@ -1458,7 +1514,6 @@ public:
 	 * \tparam vPos list of particle positions
 	 * \tparam vPrp list of particle properties
 	 * \tparam ghostMarker ghost marker denoting domain and ghost particles in vPos
-	 * \tparam opt option flag that determines the the of cell list (e.g. symmetric, full, local symmetric, crs etc.)
 	 *
 	 */
 	// vector_pos_type is a class level template parameter
@@ -1466,12 +1521,10 @@ public:
 	void fill(
 		vector_pos_type2 & vPos,
 		vector_prp_type & vPrp,
-		size_t ghostMarker,
-		size_t opt)
+		size_t ghostMarker)
 	{
 		this->clear();
 		this->ghostMarker = ghostMarker;
-
 		if (opt & CL_SYMMETRIC) {
 
 			for (size_t i = 0; i < ghostMarker; i++)

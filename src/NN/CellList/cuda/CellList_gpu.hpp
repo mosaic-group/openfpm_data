@@ -78,6 +78,9 @@ private:
 	//! standard context for gpu
 	gpu::ofp_context_t* gpuContext;
 
+	//! Option flags
+	size_t opt;
+
 	//! Initialize the structures of the data structure
 	void InitializeStructures(
 		const size_t (& div)[dim],
@@ -160,8 +163,7 @@ private:
 		gpu::ofp_context_t& gpuContext,
 		size_t ghostMarker,
 		size_t start = 0,
-		size_t stop = -1,
-		size_t opt = 0)
+		size_t stop = -1)
 	{
 #ifdef __NVCC__
 		this->gpuContext = &gpuContext;
@@ -322,13 +324,13 @@ public:
 	 *
 	 *
 	 */
-	CellList_gpu()
-	{}
+	CellList_gpu() : opt(CL_NON_SYMMETRIC) {}
 
 	CellList_gpu(
 		const Box<dim,T> & box,
 		const size_t (&div)[dim],
 		const size_t pad = 1)
+	: opt(CL_NON_SYMMETRIC)
 	{
 		Initialize(box,div,pad);
 	}
@@ -406,10 +408,9 @@ public:
 		gpu::ofp_context_t& gpuContext,
 		size_t ghostMarker = 0,
 		size_t start = 0,
-		size_t stop = -1,
-		size_t opt = 0)
+		size_t stop = -1)
 	{
-		construct_dense<vector,vector_prp,prp...>(vPos,vPrp,gpuContext,ghostMarker,start,stop,opt);
+		construct_dense<vector,vector_prp,prp...>(vPos,vPrp,gpuContext,ghostMarker,start,stop);
 	}
 
 	CellList_gpu_ker<dim,T,ids_type,transform_type,false> toKernel()
@@ -583,6 +584,10 @@ public:
 		size_t n_dec_tmp = nDecRefRedec;
 		nDecRefRedec = clg.nDecRefRedec;
 		clg.nDecRefRedec = n_dec_tmp;
+
+		size_t optTmp = opt;
+		opt = clg.opt;
+		clg.opt = optTmp;
 	}
 
 	CellList_gpu<dim,T,Memory,transform_type,false> &
@@ -602,6 +607,7 @@ public:
 		cellPadDim = clg.cellPadDim;
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
+		opt = clg.opt;
 
 		return *this;
 	}
@@ -623,6 +629,7 @@ public:
 		cellPadDim = clg.cellPadDim;
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
+		opt = clg.opt;
 
 		return *this;
 	}
@@ -682,8 +689,7 @@ public:
 	void fill(
 		vector_pos_type & vPos,
 		vector_prp_type & vPrp,
-		size_t ghostMarker,
-		size_t opt)
+		size_t ghostMarker)
 	{
 		if (opt & CL_SYMMETRIC) {
 			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
@@ -696,6 +702,28 @@ public:
 		else if (opt & CL_NON_SYMMETRIC) {
 			construct(vPos, vPrp, *(this->gpuContext), ghostMarker, 0, vPos.size(), opt);
 		}
+	}
+
+
+	/*! \brief Returns the option flags that control the cell list
+	 *
+	 *
+	 * \return option flags
+	 *
+	 */
+	size_t getOpt() const
+	{
+		return opt;
+	}
+
+	/*! \brief Sets the option flags that control the cell list
+	 *
+	 * \param opt option flags
+	 *
+	 */
+	size_t setOpt(size_t opt)
+	{
+		this->opt = opt;
 	}
 };
 
@@ -753,6 +781,9 @@ private:
 	//! standard context for gpu
 	gpu::ofp_context_t* gpuContext;
 
+	//! Option flags
+	size_t opt;
+
 	//! Initialize the structures of the data structure
 	void InitializeStructures(
 		const size_t (& div)[dim],
@@ -788,8 +819,7 @@ private:
 		gpu::ofp_context_t& gpuContext,
 		size_t ghostMarker,
 		size_t start = 0,
-		size_t stop = -1,
-		size_t opt = 0)
+		size_t stop = -1)
 	{
 #ifdef __NVCC__
 		this->gpuContext = &gpuContext;
@@ -992,13 +1022,13 @@ public:
 	 *
 	 *
 	 */
-	CellList_gpu()
-	{}
+	CellList_gpu() : opt(CL_NON_SYMMETRIC) {}
 
 	CellList_gpu(
 		const Box<dim,T> & box,
 		const size_t (&div)[dim],
 		const size_t pad = 1)
+	: opt(CL_NON_SYMMETRIC)
 	{
 		Initialize(box,div,pad);
 	}
@@ -1074,10 +1104,9 @@ public:
 		gpu::ofp_context_t& gpuContext,
 		size_t ghostMarker = 0,
 		size_t start = 0,
-		size_t stop = -1,
-		size_t opt = 0)
+		size_t stop = -1)
 	{
-		construct_sparse<vector,vector_prp,prp...>(vPos,vPrp,gpuContext,ghostMarker, start, stop, opt);
+		construct_sparse<vector,vector_prp,prp...>(vPos,vPrp,gpuContext,ghostMarker, start, stop);
 	}
 
 	CellList_gpu_ker<dim,T,ids_type,transform_type,true> toKernel()
@@ -1228,6 +1257,10 @@ public:
 		nDecRefRedec = clg.nDecRefRedec;
 		clg.nDecRefRedec = n_dec_tmp;
 
+		size_t optTmp = opt;
+		opt = clg.opt;
+		clg.opt = optTmp;
+
 		int boxNN_tmp = boxNeighborNumber;
 		boxNeighborNumber = clg.boxNeighborNumber;
 		clg.boxNeighborNumber = boxNN_tmp;
@@ -1252,6 +1285,7 @@ public:
 		cellPadDim = clg.cellPadDim;
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
+		opt = clg.opt;
 
 		boxNeighborNumber = clg.boxNeighborNumber;
 
@@ -1277,6 +1311,7 @@ public:
 		cellPadDim = clg.cellPadDim;
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
+		opt = clg.opt;
 
 		boxNeighborNumber = clg.boxNeighborNumber;
 
@@ -1337,8 +1372,7 @@ public:
 	void fill(
 		vector_pos_type & vPos,
 		vector_prp_type & vPrp,
-		size_t ghostMarker,
-		size_t opt)
+		size_t ghostMarker)
 	{
 		if (opt & CL_SYMMETRIC) {
 			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
@@ -1351,6 +1385,27 @@ public:
 		else if (opt & CL_NON_SYMMETRIC) {
 			construct(vPos, vPrp, *(this->gpuContext), ghostMarker, 0, vPos.size(), opt);
 		}
+	}
+
+	/*! \brief Returns the option flags that control the cell list
+	 *
+	 *
+	 * \return option flags
+	 *
+	 */
+	size_t getOpt() const
+	{
+		return opt;
+	}
+
+	/*! \brief Sets the option flags that control the cell list
+	 *
+	 * \param opt option flags
+	 *
+	 */
+	size_t setOpt(size_t opt)
+	{
+		this->opt = opt;
 	}
 };
 

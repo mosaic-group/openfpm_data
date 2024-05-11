@@ -327,9 +327,11 @@ private:
 		openfpm::vector<aggregate<int>> vPropStub;
 
 		if (opt & VL_SYMMETRIC || opt & VL_CRS_SYMMETRIC)
-			cellList.fill(vPos, vPropStub, ghostMarker, CL_SYMMETRIC);
+			cellList.setOpt(CL_SYMMETRIC);
 		else
-			cellList.fill(vPos, vPropStub, ghostMarker, CL_NON_SYMMETRIC);
+			cellList.setOpt(CL_NON_SYMMETRIC);
+
+		cellList.fill(vPos, vPropStub, ghostMarker);
 	}
 
 	/*! \brief Create the Verlet list from a given cell-list

@@ -44,7 +44,6 @@ public:
 	ParticleIt_CellP(CellList_type & cellList)
 	:cellList(cellList) { reset(); }
 
-
 	/*! \brief Get the next element
 	 *
 	 * \return cell list iterator

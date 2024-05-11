@@ -117,8 +117,9 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 	}
 
 	// Initialize a cell list
-	CellList<dim,float> NN(CL_HILBERT_CELL_KEYS);
+	CellList<dim,float> NN;
 
+	NN.setOpt(CL_NON_SYMMETRIC | CL_HILBERT_CELL_KEYS);
 	NN.Initialize(box,div,1);
 	NN.setGhostMarker(k*0.9);
 
