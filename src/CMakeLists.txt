@@ -289,7 +289,7 @@ install(FILES NN/Mem_type/MemBalanced.hpp
         DESTINATION openfpm_data/include/NN/Mem_type
 	COMPONENT OpenFPM)
 
-install(FILES NN/CellList/CellListNNIteratorRadius.hpp
+install(FILES NN/CellList/CellNNIteratorRadius.hpp
         NN/CellList/CellListIterator.hpp
         NN/CellList/multiphase/CellListM.hpp
         NN/CellList/multiphase/CellNNIteratorM.hpp

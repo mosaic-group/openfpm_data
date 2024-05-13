@@ -25,7 +25,7 @@
 #include "NN/CellList/NNc_array.hpp"
 #include "NN/CellList/SFCKeys.hpp"
 #include "NN/CellList/CellNNIterator.hpp"
-#include "NN/CellList/CellListNNIteratorRadius.hpp"
+#include "NN/CellList/CellNNIteratorRadius.hpp"
 #include "NN/CellList/CellListIterator.hpp"
 #include "NN/CellList/ParticleIt_Cells.hpp"
 #include "NN/CellList/ParticleItCRS_Cells.hpp"
