@@ -1,5 +1,5 @@
 /*
- * ProcKeys.hpp
+ *  SFCKeys.hpp
  *
  *  Created on: Mar 14, 2017
  *      Author: i-bird
@@ -18,7 +18,7 @@ extern "C"
  * \tparam dim Dimansionality of the space
  */
 template<unsigned int dim>
-class Process_keys_lin
+class SFCKeysLinear
 {
 	//! stub object
 	openfpm::vector<size_t> keys;
@@ -65,7 +65,7 @@ public:
  * \tparam dim Dimansionality of the space
  */
 template<unsigned int dim>
-class Process_keys_hilb
+class SFCKeysHilbert
 {
 	//! vector for storing the cell keys
 	openfpm::vector<size_t> keys;
@@ -147,7 +147,7 @@ public:
  * \tparam dim Dimansionality of the space
  */
 template<unsigned int dim>
-class Process_keys_grid
+class SFCKeysGrid
 {
 	//! vector for storing the cell keys
 	openfpm::vector<size_t> keys;

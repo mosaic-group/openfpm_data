@@ -23,7 +23,7 @@
 #include "NN/Mem_type/MemMemoryWise.hpp"
 #include "NN/CellList/CellDecomposer.hpp"
 #include "NN/CellList/NNc_array.hpp"
-#include "NN/CellList/ProcKeys.hpp"
+#include "NN/CellList/SFCKeys.hpp"
 #include "NN/CellList/CellNNIterator.hpp"
 #include "NN/CellList/CellListNNIteratorRadius.hpp"
 #include "NN/CellList/CellListIterator.hpp"
@@ -1384,10 +1384,10 @@ public:
 		if (isInitSFC == false)
 		{
 			if (opt & CL_HILBERT_CELL_KEYS) {
-				Process_keys_hilb<dim> SFC;
+				SFCKeysHilbert<dim> SFC;
 				initSFC(SFC);
 			} else {
-				Process_keys_lin<dim> SFC;
+				SFCKeysLinear<dim> SFC;
 				initSFC(SFC);
 			}
 		}
@@ -1405,10 +1405,10 @@ public:
 		if (isInitSFC == false)
 		{
 			if (opt & CL_HILBERT_CELL_KEYS) {
-				Process_keys_hilb<dim> SFC;
+				SFCKeysHilbert<dim> SFC;
 				initSFC(SFC);
 			} else {
-				Process_keys_lin<dim> SFC;
+				SFCKeysLinear<dim> SFC;
 				initSFC(SFC);
 			}
 		}

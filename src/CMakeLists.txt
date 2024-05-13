@@ -297,7 +297,7 @@ install(FILES NN/CellList/CellListNNIteratorRadius.hpp
         NN/CellList/tests/CellList_test.hpp
         NN/CellList/CellList_util.hpp
         NN/CellList/CellNNIterator.hpp
-        NN/CellList/ProcKeys.hpp
+        NN/CellList/SFCKeys.hpp
         NN/CellList/CellNNIteratorRuntime.hpp
         NN/CellList/NNc_array.hpp
         NN/CellList/ParticleItCRS_Cells.hpp
