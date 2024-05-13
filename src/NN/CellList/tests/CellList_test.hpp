@@ -5,8 +5,8 @@
  *      Author: Pietro Incardona
  */
 
-#include "CellList.hpp"
-#include "CellListM.hpp"
+#include "NN/CellList/CellList.hpp"
+#include "NN/CellList/multiphase/CellListM.hpp"
 #include "Grid/grid_sm.hpp"
 
 #ifndef CELLLIST_TEST_HPP_

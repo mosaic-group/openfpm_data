@@ -11,25 +11,26 @@
 #include <unordered_map>
 
 #include "Vector/map_vector.hpp"
-#include "CellDecomposer.hpp"
 #include "Space/Ghost.hpp"
 #include "Space/Shape/Box.hpp"
 #include "util/mathutil.hpp"
-#include "CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
-#include "CellListNNIteratorRadius.hpp"
-#include "ProcKeys.hpp"
 
-#include "CellListIterator.hpp"
-#include "ParticleIt_Cells.hpp"
-#include "ParticleItCRS_Cells.hpp"
 #include "util/common.hpp"
 
 #include "NN/Mem_type/MemFast.hpp"
 #include "NN/Mem_type/MemBalanced.hpp"
 #include "NN/Mem_type/MemMemoryWise.hpp"
+#include "NN/CellList/CellDecomposer.hpp"
 #include "NN/CellList/NNc_array.hpp"
-#include "cuda/CellList_cpu_ker.cuh"
+#include "NN/CellList/ProcKeys.hpp"
+#include "NN/CellList/CellNNIterator.hpp"
+#include "NN/CellList/CellListNNIteratorRadius.hpp"
+#include "NN/CellList/CellListIterator.hpp"
+#include "NN/CellList/ParticleIt_Cells.hpp"
+#include "NN/CellList/ParticleItCRS_Cells.hpp"
+#include "NN/CellList/cuda/CellList_cpu_ker.cuh"
+
 
 //! Wrapper of the unordered map
 template<typename key,typename val>
@@ -428,13 +429,13 @@ void NNcalc_box(
  * \tparam base Base structure that store the information
  *
  * ### Declaration of a cell list
- * \snippet CellList_test.hpp Declare a cell list
+ * \snippet tests/CellList_test.hpp Declare a cell list
  * ### Usage of cell list [CellS == CellList<3,double,FAST>]
- * \snippet CellList_test.hpp Usage of cell list
+ * \snippet tests/CellList_test.hpp Usage of cell list
  * ### Remove one particle from each cell
- * \snippet CellList_test.hpp remove one particle from each cell
+ * \snippet tests/CellList_test.hpp remove one particle from each cell
  * ### Usage of the neighborhood iterator
- * \snippet CellList_test.hpp Usage of the neighborhood iterator
+ * \snippet tests/CellList_test.hpp Usage of the neighborhood iterator
  *
  */
 template<

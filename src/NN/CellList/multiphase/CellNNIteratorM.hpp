@@ -11,8 +11,8 @@
 
 #include "util/mathutil.hpp"
 #include <boost/integer/integer_mask.hpp>
-#include "CellList_util.hpp"
-#include "CellNNIterator.hpp"
+#include "NN/CellList/CellList_util.hpp"
+#include "NN/CellList/CellNNIterator.hpp"
 
 /*! \brief Iterator for the neighborhood of the cell structures
  *
@@ -230,6 +230,6 @@ public:
 	}
 };
 
-#include "CellNNIteratorRuntimeM.hpp"
+#include "NN/CellList/multiphase/CellNNIteratorRuntimeM.hpp"
 
 #endif /* OPENFPM_DATA_SRC_NN_CELLLIST_CELLNNITERATORM_HPP_ */

@@ -577,6 +577,6 @@ public:
 	}
 };
 
-#include "CellNNIteratorRuntime.hpp"
+#include "NN/CellList/CellNNIteratorRuntime.hpp"
 
 #endif /* CELLNNITERATOR_FULL_HPP_ */

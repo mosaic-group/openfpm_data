@@ -10,8 +10,8 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
-#include "cuda/CellList_gpu.hpp"
-#include "CellList.hpp"
+#include "NN/CellList/cuda/CellList_gpu.hpp"
+#include "NN/CellList/CellList.hpp"
 #include "util/boost/boost_array_openfpm.hpp"
 #include  "Point_test.hpp"
 #include "util/cuda_util.hpp"

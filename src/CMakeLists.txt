@@ -26,7 +26,7 @@ if (NOT CUDA_ON_BACKEND STREQUAL "None")
             Vector/vector_gpu_unit_tests.cu
             Grid/cuda/cuda_grid_gpu_tests.cu
             Vector/cuda/map_vector_cuda_funcs_tests.cu
-            NN/CellList/CellList_gpu_test.cu 
+            NN/CellList/tests/CellList_gpu_test.cu
 	    util/cuda/scan_sort_cuda_unit_tests.cu
             Grid/cuda/cuda_grid_unit_tests_func.cu
             Vector/cuda/map_vector_sparse_cuda_ker_unit_tests.cu
@@ -291,10 +291,10 @@ install(FILES NN/Mem_type/MemBalanced.hpp
 
 install(FILES NN/CellList/CellListNNIteratorRadius.hpp
         NN/CellList/CellListIterator.hpp
-        NN/CellList/CellListM.hpp
-        NN/CellList/CellNNIteratorM.hpp
+        NN/CellList/multiphase/CellListM.hpp
+        NN/CellList/multiphase/CellNNIteratorM.hpp
         NN/CellList/CellList.hpp
-        NN/CellList/CellList_test.hpp
+        NN/CellList/tests/CellList_test.hpp
         NN/CellList/CellList_util.hpp
         NN/CellList/CellNNIterator.hpp
         NN/CellList/ProcKeys.hpp
@@ -304,7 +304,7 @@ install(FILES NN/CellList/CellListNNIteratorRadius.hpp
         NN/CellList/ParticleIt_Cells.hpp
         NN/CellList/CellDecomposer.hpp
         NN/CellList/CellNNIteratorRuntime.hpp
-        NN/CellList/CellNNIteratorRuntimeM.hpp
+        NN/CellList/multiphase/CellNNIteratorRuntimeM.hpp
         DESTINATION openfpm_data/include/NN/CellList
 	COMPONENT OpenFPM)
 

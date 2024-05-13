@@ -8,8 +8,8 @@
 #ifndef OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTM_HPP_
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTM_HPP_
 
-#include "CellList.hpp"
-#include "CellNNIteratorM.hpp"
+#include "NN/CellList/CellList.hpp"
+#include "NN/CellList/multiphase/CellNNIteratorM.hpp"
 
 struct PV_cl
 {

@@ -538,9 +538,9 @@ public:
  * \endverbatim
  *
  * ### Cell decomposer without shift
- * \snippet CellDecomposer_unit_tests.hpp Cell decomposer use without shift
+ * \snippet tests/CellDecomposer_unit_tests.hpp Cell decomposer use without shift
  * ### Cell decomposer with padding
- * \snippet CellDecomposer_unit_tests.hpp Test Cell decomposer with padding
+ * \snippet tests/CellDecomposer_unit_tests.hpp Test Cell decomposer with padding
  * ### Cell decomposer with shift
  * \snippet CellDecompose_unit_tests.hpp Test Cell decomposer with shift
  *

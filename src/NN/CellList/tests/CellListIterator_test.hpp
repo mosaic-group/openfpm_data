@@ -9,7 +9,6 @@
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTITERATOR_TEST_HPP_
 
 #include "NN/CellList/CellListIterator.hpp"
-#include "NN/CellList/ParticleIt_Cells.hpp"
 #include "NN/CellList/ParticleItCRS_Cells.hpp"
 
 
