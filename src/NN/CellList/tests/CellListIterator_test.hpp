@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE( celllist_lin_and_iterator_test )
 	}
 
 	//Test the iterator
-	auto it_cl = NN.getCellIterator();
+	auto it_cl = NN.getCellParticleIterator();
 
 	size_t count = 0;
 
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE( celllist_hilb_and_iterator_test )
 
 
 	//Test the iterator
-	auto it_cl = NN.getCellIterator();
+	auto it_cl = NN.getCellParticleIterator();
 
 	size_t count = 0;
 

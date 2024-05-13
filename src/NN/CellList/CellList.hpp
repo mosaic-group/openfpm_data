@@ -1379,7 +1379,7 @@ public:
 	 * \return an iterator
 	 *
 	 */
-	inline CellParticleIterator getCellIterator()
+	inline CellParticleIterator getCellParticleIterator()
 	{
 		if (isInitSFC == false)
 		{
