@@ -76,6 +76,7 @@ public:
 	inline Mem_mw & operator=(const Mem_mw & cell)
 	{
 		cl_base = cell.cl_base;
+		ghostMarkers = cell.ghostMarkers;
 		return *this;
 	}
 
@@ -165,16 +166,19 @@ public:
 	inline void swap(Mem_mw & cl)
 	{
 		cl_base.swap(cl.cl_base);
+		ghostMarkers.swap(cl.ghostMarkers);
 	}
 
 	inline void swap(Mem_mw && cell)
 	{
 		cl_base.swap(cell.cl_base);
+		ghostMarkers.swap(cell.ghostMarkers);
 	}
 
 	inline void clear()
 	{
 		cl_base.clear();
+		ghostMarkers.clear();
 	}
 
 	inline const local_index & getStartId(size_t cell_id) const

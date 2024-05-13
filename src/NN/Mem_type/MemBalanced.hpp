@@ -71,6 +71,7 @@ public:
 		//resize the vector to needed number of cells
 
 		cl_base.resize(tot_n_cell);
+		ghostMarkers.resize(tot_n_cell);
 		clear();
 	}
 
@@ -84,6 +85,7 @@ public:
 	inline Mem_bal & operator=(const Mem_bal & cell)
 	{
 		cl_base = cell.cl_base;
+		ghostMarkers = cell.ghostMarkers;
 
 		return *this;
 	}
@@ -182,6 +184,7 @@ public:
 	inline void swap(Mem_bal & cl)
 	{
 		cl_base.swap(cl.cl_base);
+		ghostMarkers.swap(cl.ghostMarkers);
 	}
 
 	/*! \brief Swap two Mem_bal
@@ -192,6 +195,7 @@ public:
 	inline void swap(Mem_bal && cell)
 	{
 		cl_base.swap(cell.cl_base);
+		ghostMarkers.swap(cell.ghostMarkers);
 	}
 
 	/*! \brief Reset the object
@@ -200,8 +204,10 @@ public:
 	 */
 	inline void clear()
 	{
-		for (size_t i = 0 ; i < cl_base.size() ; i++)
+		for (size_t i = 0 ; i < cl_base.size() ; i++) {
 			cl_base.get(i).clear();
+			ghostMarkers.get(i) = 0;
+		}
 	}
 
 	/*! \brief Get the start index of the selected element

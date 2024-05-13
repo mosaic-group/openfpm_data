@@ -149,6 +149,7 @@ public:
 	 */
 	inline void destroy()
 	{
+		ghostMarkers.swap(openfpm::vector<size_t>());
 		cl_n.swap(openfpm::vector<aggregate<local_index>,Memory>());
 		cl_base.swap(base());
 	}
@@ -168,6 +169,9 @@ public:
 		cl_n.resize(tot_n_cell);
 		cl_n.template fill<0>(0);
 
+		ghostMarkers.resize(tot_n_cell);
+		ghostMarkers.fill(0);
+
 		// create the array that store the cell id
 
 		cl_base.resize(tot_n_cell * slot);
@@ -182,6 +186,7 @@ public:
 	{
 		slot = mem.slot;
 
+		ghostMarkers = mem.ghostMarkers;
 		cl_n = mem.cl_n;
 		cl_base = mem.cl_base;
 	}
@@ -206,6 +211,7 @@ public:
 	{
 		slot = mem.private_get_slot();
 
+		ghostMarkers = mem.getGhostMarkers();
 		cl_n = mem.private_get_cl_n();
 		cl_base = mem.private_get_cl_base();
 	}
@@ -316,6 +322,7 @@ public:
 	 */
 	inline void swap(Mem_fast<Memory,local_index> & mem)
 	{
+		ghostMarkers.swap(mem.ghostMarkers);
 		cl_n.swap(mem.cl_n);
 		cl_base.swap(mem.cl_base);
 
@@ -333,6 +340,7 @@ public:
 	{
 		slot = mem.slot;
 
+		ghostMarkers.swap(mem.ghostMarkers);
 		cl_n.swap(mem.cl_n);
 		cl_base.swap(mem.cl_base);
 	}
@@ -345,7 +353,10 @@ public:
 	inline void clear()
 	{
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
-		{cl_n.template get<0>(i) = 0;}
+		{
+			cl_n.template get<0>(i) = 0;
+			ghostMarkers.get(i) = 0;
+		}
 	}
 
 	/*! \brief Get the first element of a cell (as reference)
@@ -450,6 +461,16 @@ public:
 	const openfpm::vector<aggregate<local_index>,Memory> & private_get_cl_n() const
 	{
 		return cl_n;
+	}
+
+	/*! \brief Return the private data-structure ghostMarkers
+	 *
+	 * \return ghostMarkers
+	 *
+	 */
+	const openfpm::vector<size_t> & getGhostMarkers() const
+	{
+		return ghostMarkers;
 	}
 
 	/*! \brief Return the private slot
