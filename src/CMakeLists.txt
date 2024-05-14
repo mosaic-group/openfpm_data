@@ -318,7 +318,6 @@ install(FILES NN/CellList/cuda/CellList_cpu_ker.cuh
 
 
 install(FILES NN/VerletList/VerletList.hpp
-        NN/VerletList/VerletListFast.hpp
         NN/VerletList/VerletNNIterator.hpp
         NN/VerletList/VerletListM.hpp
         NN/VerletList/VerletNNIteratorM.hpp
