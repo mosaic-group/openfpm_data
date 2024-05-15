@@ -8,9 +8,9 @@
 #ifndef OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETNNITERATOR_HPP_
 #define OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETNNITERATOR_HPP_
 
-#define VL_NON_SYMMETRIC 0
-#define VL_SYMMETRIC 1
-#define VL_CRS_SYMMETRIC 2
+#define VL_NON_SYMMETRIC 1
+#define VL_SYMMETRIC 4
+#define VL_CRS_SYMMETRIC 8
 
 /*! \brief Iterator for the neighborhood of the cell structures
  *
