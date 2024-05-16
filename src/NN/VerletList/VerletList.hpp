@@ -99,77 +99,6 @@ private:
 		cellList.fill(vPos, vPropStub, ghostMarker);
 	}
 
-	/*! \brief Create the Verlet list from a given cell-list
-	 *
-	 * \param pos vector of positions
-	 * \param pos2 vector of positions of neighborhood particles
-	 * \param r_cut cut-off radius to get the neighborhood particles
-	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
-	 * 			if we have 120 particles and ghostMarker = 100, the Verlet list will be constructed only for the first
-	 * 			100 particles
-	 * \param cl Cell-list elements to use to construct the verlet list
-	 *
-	 */
-	inline void create(
-		const vector_pos_type & pos,
-		const vector_pos_type & pos2,
-		T r_cut,
-		size_t ghostMarker,
-		CellListImpl & cl)
-	{
-		if (opt & VL_CRS_SYMMETRIC)
-		{
-			openfpm::vector<subsub_lin<dim>> anom_c;
-			openfpm::vector<size_t> dom_c;
-
-			createCRSSymmetric(pos,pos2,dom_c,anom_c,r_cut,ghostMarker,cl);
-		}
-		else if (opt & VL_SYMMETRIC)
-		{
-			createSymmetric(pos,pos2,r_cut,ghostMarker,cl);
-		}
-		else
-		{
-			createNonSymmetric(pos,pos2,r_cut,ghostMarker,cl);
-		}
-	}
-
-	/*! \brief Create the Verlet list from a given cell-list
-	 *
-	 * \param pos vector of positions
-	 * \param pos2 vector of positions of neighborhood particles
-	 * \param dom list of domain cells with normal neighborhood
-	 * \param anom list of domain cells with non-normal neighborhood
-	 * \param r_cut cut-off radius to get the neighborhood particles
-	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
-	 * 			if we have 120 particles and ghostMarker = 100, the Verlet list will be constructed only for the first
-	 * 			100 particles
-	 * \param cl Cell-list elements to use to construct the verlet list
-	 *
-	 */
-	inline void create(
-		const vector_pos_type & pos,
-		const vector_pos_type & pos2,
-		const openfpm::vector<size_t> & dom,
-		const openfpm::vector<subsub_lin<dim>> & anom,
-		T r_cut,
-		size_t ghostMarker,
-		CellListImpl & cl)
-	{
-		if (opt & VL_CRS_SYMMETRIC)
-		{
-			createCRSSymmetric(pos,pos2,dom,anom,r_cut,ghostMarker,cl);
-		}
-		else if (opt & VL_SYMMETRIC)
-		{
-			createSymmetric(pos,pos2,r_cut,ghostMarker,cl);
-		}
-		else
-		{
-			createNonSymmetric(pos,pos2,r_cut,ghostMarker,cl);
-		}
-	}
-
 	/*! \brief Create the CRS Symmetric Verlet list from a given cell-list
 	 *
 	 * \param pos vector of positions
@@ -411,7 +340,7 @@ public:
 		Mem_type::addCell(part_id,ele);
 	}
 
-	/*! Initialize the verlet list
+	/*! Initialize the verlet list for Non-Symmetric case
 	 *
 	 * \param box Domain where this cell list is living
 	 * \param dom Processor domain
@@ -443,7 +372,7 @@ public:
 
 		initCl(cli,pos,ghostMarker);
 
-		create(pos,pos,r_cut,ghostMarker,cli);
+		createNonSymmetric(pos,pos,r_cut,ghostMarker,cli);
 	}
 
 	/*! \brief Initialize the symmetric Verlet-list
@@ -523,7 +452,7 @@ public:
 		openfpm::vector<size_t> & dom_c,
 		openfpm::vector<subsub_lin<dim>> & anom_c)
 	{
-		create(pos, pos,dom_c,anom_c,r_cut,ghostMarker,cli);
+		createCRSSymmetric(pos, pos,dom_c,anom_c,r_cut,ghostMarker,cli);
 	}
 
 	/*! \brief update the Verlet list
@@ -538,7 +467,11 @@ public:
 	void update(const Box<dim,T> & dom, T r_cut, vector_pos_type & pos, size_t & ghostMarker)
 	{
 		initCl(cli,pos,ghostMarker);
-		create(pos,pos,r_cut,ghostMarker,cli);
+
+		if (opt & VL_SYMMETRIC)
+			createSymmetric(pos,pos,r_cut,ghostMarker,cli);
+		else
+			createNonSymmetric(pos,pos,r_cut,ghostMarker,cli);
 	}
 
 	/*! \brief update the Verlet list
@@ -560,7 +493,7 @@ public:
 		const openfpm::vector<subsub_lin<dim>> & anom_c)
 	{
 		initCl(cli,pos,ghostMarker);
-		create(pos,pos,dom_c,anom_c,r_cut,ghostMarker,cli);
+		createCRSSymmetric(pos,pos,dom_c,anom_c,r_cut,ghostMarker,cli);
 	}
 
 	/*! Initialize the verlet list from an already filled cell-list
@@ -589,14 +522,10 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)
 			wr &= r_cut <= spacing.get(i);
 
-		if (wr == true || opt & VL_SYMMETRIC)
-		{
-			create(pos,pos2,r_cut,ghostMarker,cli);
-		}
-		else
-		{
+		if (wr == true)
 			createNonSymmetricRadius(pos,pos2,r_cut,ghostMarker,cli);
-		}
+		else
+			createNonSymmetric(pos,pos2,r_cut,ghostMarker,cli);
 	}
 
 	//! Default Constructor
