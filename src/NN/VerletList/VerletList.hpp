@@ -423,7 +423,12 @@ public:
 	 * \param opt option to generate Verlet list
 	 *
 	 */
-	void Initialize(const Box<dim,T> & box, const Box<dim,T> & dom, T r_cut, vector_pos_type & pos, size_t ghostMarker, size_t opt = VL_NON_SYMMETRIC)
+	void Initialize(
+		const Box<dim,T> & box,
+		const Box<dim,T> & dom,
+		T r_cut,
+		vector_pos_type & pos,
+		size_t ghostMarker)
 	{
 		// Number of divisions
 		size_t div[dim];
@@ -433,7 +438,6 @@ public:
 		// Calculate the divisions for the Cell-lists
 		cl_param_calculate(bt,div,r_cut,Ghost<dim,T>(0.0));
 
-		setOpt(opt);
 		// Initialize a cell-list
 		cli.Initialize(bt,div);
 
@@ -454,11 +458,10 @@ public:
 	 * 			100 particles
 	 *
 	 */
-	void InitializeSym(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t ghostMarker)
+	void InitializeSym(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, vector_pos_type & pos, size_t ghostMarker)
 	{
 		// Padding
 		size_t pad = 0;
-		setOpt(VL_SYMMETRIC);
 
 		// Cell decomposer
 		CellDecomposer_sm<dim,T,shift<dim,T>> cd_sm;
@@ -487,7 +490,7 @@ public:
 	 * 			100 particles
 	 *
 	 */
-	void InitializeCrs(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t ghostMarker)
+	void InitializeCrs(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, vector_pos_type & pos, size_t ghostMarker)
 	{
 		// Padding
 		size_t pad = 0;
@@ -513,10 +516,13 @@ public:
 	 * \param anom_c cells with anomalos neighborhood
 	 *
 	 */
-	void createVerletCrs(T r_cut, size_t ghostMarker, openfpm::vector<Point<dim,T>> & pos, openfpm::vector<size_t> & dom_c, openfpm::vector<subsub_lin<dim>> & anom_c)
+	void createVerletCrs(
+		T r_cut,
+		size_t ghostMarker,
+		vector_pos_type & pos,
+		openfpm::vector<size_t> & dom_c,
+		openfpm::vector<subsub_lin<dim>> & anom_c)
 	{
-		// create verlet
-		setOpt(VL_CRS_SYMMETRIC);
 		create(pos, pos,dom_c,anom_c,r_cut,ghostMarker,cli);
 	}
 
@@ -529,9 +535,8 @@ public:
 	 * \param opt option to create the Verlet list
 	 *
 	 */
-	void update(const Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t & ghostMarker, size_t opt)
+	void update(const Box<dim,T> & dom, T r_cut, vector_pos_type & pos, size_t & ghostMarker)
 	{
-		setOpt(opt);
 		initCl(cli,pos,ghostMarker);
 		create(pos,pos,r_cut,ghostMarker,cli);
 	}
@@ -546,9 +551,14 @@ public:
 	 * \param anom_c list of cells with anormal neighborhood
 	 *
 	 */
-	void updateCrs(const Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t & ghostMarker, const openfpm::vector<size_t> & dom_c, const openfpm::vector<subsub_lin<dim>> & anom_c)
+	void updateCrs(
+		const Box<dim,T> & dom,
+		T r_cut,
+		vector_pos_type & pos,
+		size_t & ghostMarker,
+		const openfpm::vector<size_t> & dom_c,
+		const openfpm::vector<subsub_lin<dim>> & anom_c)
 	{
-		setOpt(VL_CRS_SYMMETRIC);
 		initCl(cli,pos,ghostMarker);
 		create(pos,pos,dom_c,anom_c,r_cut,ghostMarker,cli);
 	}
@@ -569,7 +579,7 @@ public:
 		T r_cut,
 		const vector_pos_type & pos,
 		const vector_pos_type & pos2,
-		size_t ghostMarker, size_t opt = VL_NON_SYMMETRIC)
+		size_t ghostMarker)
 	{
 		Point<dim,T> spacing = cli.getCellBox().getP2();
 
@@ -590,20 +600,20 @@ public:
 	}
 
 	//! Default Constructor
-	VerletList()
-	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT),n_dec(0),opt(VL_NON_SYMMETRIC)
+	VerletList(size_t opt=VL_NON_SYMMETRIC)
+	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT),n_dec(0),opt(opt)
 	{};
 
 	//! Copy constructor
 	VerletList(const VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> & cell)
-	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT),opt(VL_NON_SYMMETRIC)
+	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
 
 	//! Copy constructor
 	VerletList(VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> && cell)
-	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT),n_dec(0),opt(VL_NON_SYMMETRIC)
+	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT),n_dec(0)
 	{
 		this->operator=(cell);
 	}
@@ -618,8 +628,8 @@ public:
 	 * \param slot maximum number of slots or maximum number of neighborhood per particle
 	 *
 	 */
-	VerletList(Box<dim,T> & box, T r_cut, Matrix<dim,T> mat, const size_t pad = 1, size_t slot=STARTING_NSLOT)
-	:slot(VERLET_STARTING_NSLOT),CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad),opt(VL_NON_SYMMETRIC)
+	VerletList(Box<dim,T> & box, T r_cut, Matrix<dim,T> mat, const size_t pad = 1, size_t opt=VL_NON_SYMMETRIC, size_t slot=STARTING_NSLOT)
+	:slot(VERLET_STARTING_NSLOT),CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad),opt(opt)
 	{
 		Box<dim,T> sbox(box);
 		Initialize(sbox,r_cut,pad,slot);
@@ -638,8 +648,8 @@ public:
 	 * \note the maximum number of particle per slot if just an indication for performance
 	 *
 	 */
-	VerletList(Box<dim,T> & box, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t ghostMarker, size_t slot=VERLET_STARTING_NSLOT)
-	:slot(slot)
+	VerletList(Box<dim,T> & box, T r_cut, vector_pos_type & pos, size_t ghostMarker, size_t opt=VL_NON_SYMMETRIC, size_t slot=VERLET_STARTING_NSLOT)
+	:slot(slot),opt(opt)
 	{
 		Box<dim,T> sbox(box);
 		Initialize(sbox,r_cut,pos,ghostMarker);
@@ -659,8 +669,8 @@ public:
 	 * \note the maximum number of particle per slot if just an indication for performance
 	 *
 	 */
-	VerletList(Box<dim,T> & box, Box<dim,T> & dom, T r_cut, openfpm::vector<Point<dim,T>> & pos, size_t ghostMarker, size_t slot=VERLET_STARTING_NSLOT)
-	:slot(slot),opt(VL_NON_SYMMETRIC)
+	VerletList(Box<dim,T> & box, Box<dim,T> & dom, T r_cut, vector_pos_type & pos, size_t ghostMarker, size_t opt=VL_NON_SYMMETRIC, size_t slot=VERLET_STARTING_NSLOT)
+	:slot(slot),opt(VL_NON_SYMMETRIC),opt(opt)
 	{
 		Initialize(box,r_cut,pos);
 	}
