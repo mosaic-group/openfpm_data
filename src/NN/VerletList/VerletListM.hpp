@@ -25,7 +25,7 @@ template<unsigned int dim,
 		 typename CellListImpl=CellListM<dim,T,sh_byte>,
 		 typename transform = shift<dim,T>,
 		 typename vector_pos_type = openfpm::vector<Point<dim,T>>,
-		 typename VerletBase=VerletList<dim,T,Mem_fast<>,transform, vector_pos_type> >
+		 typename VerletBase=VerletList<dim,T,VL_NON_SYMMETRIC,Mem_fast<>,transform, vector_pos_type> >
 class VerletListM : public VerletBase
 {
 

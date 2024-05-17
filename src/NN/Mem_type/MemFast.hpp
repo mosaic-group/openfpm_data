@@ -12,7 +12,6 @@
 #include "Space/Shape/Box.hpp"
 #include "util/mathutil.hpp"
 #include "Space/Shape/HyperCube.hpp"
-#include "NN/CellList/CellListIterator.hpp"
 #include <unordered_map>
 #include "util/common.hpp"
 #include "Vector/map_vector.hpp"
@@ -290,17 +289,21 @@ public:
 		return cl_base.template get<0>(cell * slot + ele);
 	}
 
-
 	/*! \brief Remove an element in the cell
-	 *
-	 * \param cell id of the cell
-	 * \param ele element id to remove
-	 *
-	 */
-	inline void remove(local_index cell, local_index ele)
+	*
+	* \param cell id of the cell
+	* \param ele element id to remove
+	*
+	*/
+	inline void remove(local_index cell_id, local_index ele)
 	{
-		cl_n.template get<0>(cell)--;
+		cl_n.template get<0>(cell_id)--;
+
+		// shift all remaining elements left
+		for (int i = ele+1; i < cl_n.template get<0>(cell_id); ++i)
+			cl_base.template get<0>(slot * cell_id + i-1) = cl_base.template get<0>(slot * cell_id + i);
 	}
+
 
 	/*! \brief Get the number of elements in the cell
 	 *
@@ -345,7 +348,7 @@ public:
 		cl_base.swap(mem.cl_base);
 	}
 
-	/*! \brief Delete all the elements in the Cell-list
+	/*! \brief Delete all the elements in every cell
 	 *
 	 *
 	 *
@@ -357,6 +360,16 @@ public:
 			cl_n.template get<0>(i) = 0;
 			ghostMarkers.get(i) = 0;
 		}
+	}
+
+	/*! \brief Delete cell elements in Cell p
+	 *
+	 *
+	 *
+	 */
+	inline void clear(local_index cell_id)
+	{
+		cl_n.template get<0>(cell_id) = 0;
 	}
 
 	/*! \brief Get the first element of a cell (as reference)
@@ -491,6 +504,69 @@ public:
 	const base & private_get_cl_base() const
 	{
 		return cl_base;
+	}
+
+	/*! This Function to indicate the vector class has a packer function
+	 *
+	 * \return true vector has a pack function
+	 *
+	 */
+	static bool pack()
+	{
+		return true;
+	}
+
+	/*! This Function indicate that vector class has a packRequest function
+	 *
+	 * \return true vector has a packRequest function
+	 *
+	 */
+	static bool packRequest()
+	{
+		return true;
+	}
+
+	/*! \brief It calculate the number of byte required to serialize the object
+	 *
+	 * \tparam prp list of properties
+	 *
+	 * \param req reference to the total counter required to pack the information
+	 *
+	 */
+	template<int ... prp> inline void packRequest(size_t & req) const
+	{
+		Packer<local_index,HeapMemory>::packRequest(req);
+		cl_n.template packRequest<prp...>(req);
+		cl_base.template packRequest<prp...>(req);
+		ghostMarkers.template packRequest<prp...>(req);
+	}
+
+
+	/*! \brief pack a vector selecting the properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the vector
+	 * \param sts pack-stat info
+	 *
+	 */
+	template<int ... prp> inline void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts) const
+	{
+		Packer<local_index,HeapMemory>::pack(mem, slot, sts);
+		cl_n.template pack<prp...>(mem, sts);
+		cl_base.template pack<prp...>(mem, sts);
+		ghostMarkers.template pack<prp...>(mem, sts);
+	}
+
+	/*! \brief unpack a vector
+	 *
+	 * \param mem preallocated memory from where to unpack the vector
+	 * \param ps unpack-stat info
+	 */
+	template<int ... prp, typename MemType> inline void unpack(ExtPreAlloc<MemType> & mem, Unpack_stat & ps)
+	{
+		Unpacker<local_index,HeapMemory>::unpack(mem, slot, ps);
+		cl_n.template unpack<prp...>(mem, ps);
+		cl_base.template unpack<prp...>(mem, ps);
+		ghostMarkers.template unpack<prp...>(mem, ps);
 	}
 
 };

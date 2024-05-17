@@ -9,7 +9,6 @@
 #ifndef CELLISTMEM_HPP_
 #define CELLISTMEM_HPP_
 
-#include "NN/CellList/CellList.hpp"
 
 /*! \brief Class for MEMORY-WISE cell list implementation
  *

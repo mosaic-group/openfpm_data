@@ -10,10 +10,8 @@
 #ifndef CELLLISTBAL_HPP_
 #define CELLLISTBAL_HPP_
 
-#include "NN/CellList/CellList.hpp"
 #include "Space/Shape/Box.hpp"
 #include "util/mathutil.hpp"
-#include "NN/CellList/CellNNIterator.hpp"
 #include "Space/Shape/HyperCube.hpp"
 
 /*! \brief Class for BALANCED cell list implementation

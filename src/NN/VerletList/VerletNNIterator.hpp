@@ -1,16 +1,6 @@
-/*
- * VerletNNIterator.hpp
- *
- *  Created on: Aug 16, 2016
- *      Author: i-bird
- */
-
 #ifndef OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETNNITERATOR_HPP_
 #define OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETNNITERATOR_HPP_
 
-#define VL_NON_SYMMETRIC 1
-#define VL_SYMMETRIC 4
-#define VL_CRS_SYMMETRIC 8
 
 /*! \brief Iterator for the neighborhood of the cell structures
  *
@@ -23,7 +13,7 @@
  * \tparam NNc_size neighborhood size
  *
  */
-template<unsigned int dim, typename Ver> class VerletNNIterator
+    template<unsigned int dim, typename Ver> class VerletNNIterator
 {
 	//! start index for the neighborhood
 	const typename Ver::Mem_type_type::local_index_type  * start;

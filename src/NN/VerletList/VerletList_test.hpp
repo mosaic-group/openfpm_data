@@ -481,8 +481,8 @@ BOOST_AUTO_TEST_CASE( VerletList_use)
 
 	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	Box<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
-//	Verlet_list_s<3,double,VerletList<3,double,FAST,shift<3,double>>>(box);
-//	Verlet_list_s<3,double,VerletList<3,double,FAST,shift<3,double>> >(box2);
+//	Verlet_list_s<3,double,VerletList<3,double,VL_NON_SYMMETRIC,FAST,shift<3,double>>>(box);
+//	Verlet_list_s<3,double,VerletList<3,double,VL_NON_SYMMETRIC,FAST,shift<3,double>> >(box2);
 	Verlet_list_sM<3,double,VerletListM<3,double,2>>(box);
 //	Verlet_list_sM<3,double,CellListM<3,double,8>>(box2);
 

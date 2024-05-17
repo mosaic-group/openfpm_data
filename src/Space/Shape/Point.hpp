@@ -238,6 +238,21 @@ template<unsigned int dim ,typename T> class Point
 		return sqrt(n);
 	}
 
+	/*! \brief L1 norm of the vector
+	 *
+	 * \return the L1 norm of the vector
+	 *
+	 */
+	__device__ __host__ T norm1() const
+	{
+		T n = 0.0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			n+=abs(get(i));
+
+		return n;
+	}
+
 	/*! \brief  It calculate the distance between 2 points
 	 *
 	 * The distance between itself (p) and the other point (q)

@@ -1,10 +1,3 @@
-/*
- * VerletList.hpp
- *
- *  Created on: Aug 16, 2016
- *      Author: i-bird
- */
-
 #ifndef OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETLIST_HPP_
 #define OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETLIST_HPP_
 
@@ -17,11 +10,15 @@
 #include "NN/Mem_type/MemBalanced.hpp"
 #include "NN/Mem_type/MemMemoryWise.hpp"
 
-#define VERLETLIST_FAST(dim,St) VerletList<dim,St,Mem_fast<>,shift<dim,St> >
-#define VERLETLIST_BAL(dim,St) VerletList<dim,St,Mem_bal<>,shift<dim,St> >
-#define VERLETLIST_MEM(dim,St) VerletList<dim,St,Mem_mem<>,shift<dim,St> >
 
-#define VERLET_STARTING_NSLOT 128
+// Verlet list config options
+constexpr int VL_NON_SYMMETRIC = 1;
+constexpr int VL_SYMMETRIC = 2;
+constexpr int VL_CRS_SYMMETRIC = 4;
+constexpr int VL_NMAX_NEIGHBOR = 8;
+constexpr int VL_SKIP_REF_PART = 16;
+
+constexpr int VERLET_STARTING_NSLOT = 128;
 
 #ifdef LOCAL_INDEX64
 typedef size_t local_index_;
@@ -30,10 +27,221 @@ typedef unsigned int local_index_;
 #endif
 
 
+/*! Functor class for Verlet list particle neighborhood iteration on initialization
+ * Partial template specializations implement different methods of initialization
+ *
+ * isNMax = maximum number of neighbors when VL_NMAX_NEIGHBOR is enabled
+ * skipRefPart = skip reference particle when VL_SKIP_REF_PART is enabled
+ *
+*/
+
+template<bool isNMax, bool skipRefPart>
+struct iteratePartNeighbor;
+
+/*! Functor class for Verlet list particle neighborhood iteration on initialization
+ * Partial template specializations implement different methods of initialization
+ *
+ * isNMax = maximum number of neighbors when VL_NMAX_NEIGHBOR is enabled
+ * skipRefPart = skip reference particle when VL_SKIP_REF_PART is enabled
+ *
+ * \tparam verletList Verlet List to be filled
+ * \tparam it particle neighborhood iterator
+ * \tparam pos position of reference particle p
+ * \tparam p index (id) of reference particle p
+ * \tparam xp position of reference particle p
+ * \tparam r_cut cut-off radius for particle interaction
+ *
+ *
+ */
+template<>
+struct iteratePartNeighbor<false, false> {
+
+	template<typename NeighborIter_type, typename VerletList_type, typename vPos_type, unsigned int dim, typename T>
+	inline void operator() (
+		VerletList_type& verletList,
+		NeighborIter_type & it,
+		const vPos_type & pos,
+		size_t p, Point<dim,T> xp,
+		T r_cut, size_t neighborMaxNum)
+	{
+		T r_cut2 = r_cut * r_cut;
+
+		while (it.isNext())
+		{
+			auto q = it.get();
+
+			Point<dim,T> xq = pos.template get<0>(q);
+
+			if (xp.distance2(xq) < r_cut2)
+				verletList.addPart(p,q);
+			++it;
+		}
+	}
+};
+
+/*! Functor class for Verlet list particle neighborhood iteration on initialization
+ * Partial template specializations implement different methods of initialization
+ *
+ * isNMax = maximum number of neighbors when VL_NMAX_NEIGHBOR is enabled
+ * skipRefPart = skip reference particle when VL_SKIP_REF_PART is enabled
+ *
+ * \tparam verletList Verlet List to be filled
+ * \tparam it particle neighborhood iterator
+ * \tparam pos position of reference particle p
+ * \tparam p index (id) of reference particle p
+ * \tparam xp position of reference particle p
+ * \tparam r_cut cut-off radius for particle interaction
+*
+ *
+ */
+template<>
+struct iteratePartNeighbor<false, true> {
+
+	template<typename NeighborIter_type, typename VerletList_type, typename vPos_type, unsigned int dim, typename T>
+	inline void operator() (
+		VerletList_type& verletList,
+		NeighborIter_type & it,
+		const vPos_type & pos,
+		size_t p, Point<dim,T> xp,
+		T r_cut, size_t neighborMaxNum)
+	{
+		T r_cut2 = r_cut * r_cut;
+
+		while (it.isNext())
+		{
+			auto q = it.get();
+
+			Point<dim,T> xq = pos.template get<0>(q);
+
+			if (xp.distance2(xq) < r_cut2 && p != q)
+				verletList.addPart(p,q);
+			++it;
+		}
+	}
+};
+
+/*! Functor class for Verlet list particle neighborhood iteration on initialization
+ * Partial template specializations implement different methods of initialization
+ *
+ * isNMax = maximum number of neighbors when VL_NMAX_NEIGHBOR is enabled
+ * skipRefPart = skip reference particle when VL_SKIP_REF_PART is enabled
+ *
+ * \tparam verletList Verlet List to be filled
+ * \tparam it particle neighborhood iterator
+ * \tparam pos position of reference particle p
+ * \tparam p index (id) of reference particle p
+ * \tparam xp position of reference particle p
+ * \tparam r_cut cut-off radius for particle interaction
+ * \tparam neighborMaxNum maximum numberof neighbors
+ *
+ *
+ */
+template<>
+struct iteratePartNeighbor<true, false> {
+
+	template<typename NeighborIter_type, typename VerletList_type, typename vPos_type, unsigned int dim, typename T>
+	inline void operator() (
+		VerletList_type& verletList,
+		NeighborIter_type & it,
+		const vPos_type & pos,
+		size_t p, Point<dim,T> xp,
+		T r_cut, size_t neighborMaxNum)
+	{
+		struct ReorderType {
+			T dist;
+			size_t id;
+			bool operator<(const ReorderType &other) const { return this->dist < other.dist; }
+		};
+
+		openfpm::vector<ReorderType> neighborList;
+
+		while (it.isNext())
+		{
+			auto q = it.get();
+
+			Point<dim,T> xq = pos.template get<0>(q);
+
+			if (xp.distance(xq) < r_cut) {
+				ReorderType qReorder;
+				qReorder.dist = xp.distance(xq);
+				qReorder.id = q;
+				neighborList.add(qReorder);
+			}
+
+			++it;
+		}
+
+		neighborList.sort();
+		for(size_t i = 0; i < neighborList.size(); ++i) {
+			if (i < neighborMaxNum)
+			verletList.addPart(p, neighborList.get(i).id);
+		}
+	}
+};
+
+/*! Functor class for Verlet list particle neighborhood iteration on initialization
+ * Partial template specializations implement different methods of initialization
+ *
+ * isNMax = maximum number of neighbors when VL_NMAX_NEIGHBOR is enabled
+ * skipRefPart = skip reference particle when VL_SKIP_REF_PART is enabled
+ *
+ * \tparam verletList Verlet List to be filled
+ * \tparam it particle neighborhood iterator
+ * \tparam pos position of reference particle p
+ * \tparam p index (id) of reference particle p
+ * \tparam xp position of reference particle p
+ * \tparam r_cut cut-off radius for particle interaction
+ * \tparam neighborMaxNum maximum number of neighbors
+ *
+ *
+ */
+template<>
+struct iteratePartNeighbor<true, true> {
+
+	template<typename NeighborIter_type, typename VerletList_type, typename vPos_type, unsigned int dim, typename T>
+	inline void operator() (
+		VerletList_type& verletList,
+		NeighborIter_type & it,
+		const vPos_type & pos,
+		size_t p, Point<dim,T> xp,
+		T r_cut, size_t neighborMaxNum)
+	{
+		struct ReorderType {
+			T dist;
+			size_t id;
+			bool operator<(const ReorderType &other) const { return this->dist < other.dist; }
+		};
+
+		openfpm::vector<ReorderType> neighborList;
+
+		while (it.isNext())
+		{
+			auto q = it.get();
+
+			Point<dim,T> xq = pos.template get<0>(q);
+
+			if (xp.distance(xq) < r_cut) {
+				ReorderType qReorder;
+				qReorder.dist = xp.distance(xq);
+				qReorder.id = q;
+				neighborList.add(qReorder);
+			}
+
+			++it;
+		}
+
+		neighborList.sort();
+		for(size_t i = 0; i < neighborList.size(); ++i) {
+			if (i < neighborMaxNum && p != neighborList.get(i).id)
+				verletList.addPart(p, neighborList.get(i).id);
+		}
+	}
+};
+
+
 /*! \brief Class for Verlet list implementation
  *
  * * M = number of particles
- * * N_nn_max = maximum number of neighborhood
  * * ele = element the structure is storing
  *
  * \tparam dim Dimensionality of the space
@@ -51,10 +259,11 @@ typedef unsigned int local_index_;
  */
 template<unsigned int dim,
 		 typename T,
+		 unsigned int opt = VL_NON_SYMMETRIC,
 		 typename Mem_type = Mem_fast<HeapMemory,local_index_>,
 		 typename transform = no_transform<dim,T>,
-		 typename vector_pos_type = openfpm::vector<Point<dim,T>>,
-		 typename CellListImpl = CellList<dim,T,Mem_fast<HeapMemory,typename Mem_type::local_index_type>,transform,vector_pos_type> >
+		 typename vPos_type = openfpm::vector<Point<dim,T>>,
+		 typename CellListImpl = CellList<dim,T,Mem_fast<HeapMemory,typename Mem_type::local_index_type>,transform,vPos_type> >
 class VerletList: public Mem_type
 {
 protected:
@@ -65,15 +274,15 @@ protected:
 	//! Domain particles
 	openfpm::vector<typename Mem_type::local_index_type> domainParticlesCRS;
 
-	//! Option flags
-	size_t opt;
+	//! Max number of Nieghbors. Only with opt |= VL_NMAX_NEIGHBOR
+	size_t neighborMaxNum=0;
 
 private:
 
 	//! decomposition counter
 	size_t n_dec;
 
-	//! Interlal cell-list
+	//! Internal cell-list
 	CellListImpl cli;
 
 
@@ -85,7 +294,7 @@ private:
 	 * \param opt VL_SYMMETRIC or VL_NON_SYMMETRIC
 	 *
 	 */
-	void initCl(CellListImpl & cellList, vector_pos_type & vPos, size_t ghostMarker)
+	void initCl(CellListImpl & cellList, vPos_type & vPos, size_t ghostMarker)
 	{
 		// CellList_gpu receives a property vector to potentially reorder it during cell list construction
 		// stub because of legacy naming
@@ -113,8 +322,8 @@ private:
 	 *
 	 */
 	inline void createCRSSymmetric(
-		const vector_pos_type & pos,
-		const vector_pos_type & pos2,
+		const vPos_type & pos,
+		const vPos_type & pos2,
 		const openfpm::vector<size_t> & dom,
 		const openfpm::vector<subsub_lin<dim>>& anom,
 		T r_cut,
@@ -126,33 +335,19 @@ private:
 		Mem_type::init_to_zero(slot,end);
 		domainParticlesCRS.clear();
 
-		// square of the cutting radius
-		T r_cut2 = r_cut * r_cut;
-
 		// iterate the particles
-		auto it = ParticleItCRS_Cells<dim,CellListImpl,vector_pos_type>(cli,dom,anom,cli.getNNc_sym());
+		auto it = ParticleItCRS_Cells<dim,CellListImpl,vPos_type>(cli,dom,anom,cli.getNNc_sym());
 		while (it.isNext())
 		{
-			typename Mem_type::local_index_type i = it.get();
-			Point<dim,T> xp = pos.template get<0>(i);
+			typename Mem_type::local_index_type p = it.get();
+			Point<dim,T> xp = pos.template get<0>(p);
 
-			domainParticlesCRS.add(i);
+			domainParticlesCRS.add(p);
 
 			// Get the neighborhood of the particle
 			auto NN = it.getNNIteratorCSR(pos);
-			while (NN.isNext())
-			{
-				auto nnp = NN.get();
 
-				Point<dim,T> xq = pos2.template get<0>(nnp);
-
-				if (xp.distance2(xq) < r_cut2)
-					addPart(i,nnp);
-
-				// Next particle
-				++NN;
-			}
-
+			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos2, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -169,8 +364,8 @@ private:
 	 *
 	 */
 	inline void createSymmetric(
-		const vector_pos_type & pos,
-		const vector_pos_type & pos2,
+		const vPos_type & pos,
+		const vPos_type & pos2,
 		T r_cut,
 		size_t ghostMarker,
 		CellListImpl & cli)
@@ -180,31 +375,17 @@ private:
 		Mem_type::init_to_zero(slot,end);
 		domainParticlesCRS.clear();
 
-		// square of the cutting radius
-		T r_cut2 = r_cut * r_cut;
-
 		// iterate the particles
 		auto it = pos.getIteratorTo(end);
 		while (it.isNext())
 		{
-			typename Mem_type::local_index_type i = it.get();
-			Point<dim,T> xp = pos.template get<0>(i);
+			typename Mem_type::local_index_type p = it.get();
+			Point<dim,T> xp = pos.template get<0>(p);
 
 			// Get the neighborhood of the particle
-			auto NN = cli.getNNIteratorSym(cli.getCell(xp),i,pos);
-			while (NN.isNext())
-			{
-				auto nnp = NN.get();
+			auto NN = cli.getNNIteratorSym(cli.getCell(xp),p,pos);
 
-				Point<dim,T> xq = pos2.template get<0>(nnp);
-
-				if (xp.distance2(xq) < r_cut2)
-					addPart(i,nnp);
-
-				// Next particle
-				++NN;
-			}
-
+			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos2, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -221,8 +402,8 @@ private:
 	 *
 	 */
 	inline void createNonSymmetric(
-		const vector_pos_type & pos,
-		const vector_pos_type & pos2,
+		const vPos_type & pos,
+		const vPos_type & pos2,
 		T r_cut,
 		size_t ghostMarker,
 		CellListImpl & cli)
@@ -231,31 +412,17 @@ private:
 
 		Mem_type::init_to_zero(slot,end);
 
-		// square of the cutting radius
-		T r_cut2 = r_cut * r_cut;
-
 		// iterate the particles
 		auto it = pos.getIteratorTo(end);
 		while (it.isNext())
 		{
-			typename Mem_type::local_index_type i = it.get();
-			Point<dim,T> xp = pos.template get<0>(i);
+			typename Mem_type::local_index_type p = it.get();
+			Point<dim,T> xp = pos.template get<0>(p);
 
 			// Get the neighborhood of the particle
 			auto NN = cli.getNNIterator(cli.getCell(xp));
-			while (NN.isNext())
-			{
-				auto nnp = NN.get();
 
-				Point<dim,T> xq = pos2.template get<0>(nnp);
-
-				if (xp.distance2(xq) < r_cut2)
-					addPart(i,nnp);
-
-				// Next particle
-				++NN;
-			}
-
+			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos2, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -272,8 +439,8 @@ private:
 	 *
 	 */
 	inline void createNonSymmetricRadius(
-		const vector_pos_type & pos,
-		const vector_pos_type & pos2,
+		const vPos_type & pos,
+		const vPos_type & pos2,
 		T r_cut,
 		size_t ghostMarker,
 		CellListImpl & cli)
@@ -282,31 +449,17 @@ private:
 
 		Mem_type::init_to_zero(slot,end);
 
-		// square of the cutting radius
-		T r_cut2 = r_cut * r_cut;
-
 		// iterate the particles
 		auto it = pos.getIteratorTo(end);
 		while (it.isNext())
 		{
-			typename Mem_type::local_index_type i = it.get();
-			Point<dim,T> xp = pos.template get<0>(i);
+			typename Mem_type::local_index_type p = it.get();
+			Point<dim,T> xp = pos.template get<0>(p);
 
 			// Get the neighborhood of the particle
 			auto NN = cli.getNNIteratorRadius(cli.getCell(xp),r_cut);
-			while (NN.isNext())
-			{
-				auto nnp = NN.get();
 
-				Point<dim,T> xq = pos2.template get<0>(nnp);
-
-				if (xp.distance2(xq) < r_cut2)
-					addPart(i,nnp);
-
-				// Next particle
-				++NN;
-			}
-
+			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos2, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -340,6 +493,21 @@ public:
 		Mem_type::addCell(part_id,ele);
 	}
 
+	/*! \brief Replace the neighborhood particles for the particle id part_id with the given buffer
+	 *
+	 * \param part_id id of the particle
+	 * \param buffer used to update the neighborhood
+	 *
+	 */
+	inline void replaceNeighbParts(size_t part_id, const openfpm::vector<size_t> &buffer)
+	{
+		Mem_type::clear(part_id);
+		for (size_t i = 0; i < buffer.size(); i++)
+		{
+			Mem_type::addCell(part_id,buffer.get(i));
+		}
+	}
+
 	/*! Initialize the verlet list for Non-Symmetric case
 	 *
 	 * \param box Domain where this cell list is living
@@ -349,14 +517,13 @@ public:
 	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
 	 * 			if we have 120 particles and ghostMarker = 100, the Verlet list will be constructed only for the first
 	 * 			100 particles
-	 * \param opt option to generate Verlet list
 	 *
 	 */
 	void Initialize(
 		const Box<dim,T> & box,
 		const Box<dim,T> & dom,
 		T r_cut,
-		vector_pos_type & pos,
+		vPos_type & pos,
 		size_t ghostMarker)
 	{
 		// Number of divisions
@@ -375,6 +542,38 @@ public:
 		createNonSymmetric(pos,pos,r_cut,ghostMarker,cli);
 	}
 
+	/*! Initialize the verlet list from an already filled cell-list
+	 *
+	 * \param cli external Cell-list
+	 * \param r_cut cutoff-radius
+	 * \param pos vector of particle positions
+	 * \param pos2 vector of particle position for the neighborhood
+	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and ghostMarker = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 *
+	 */
+	void Initialize(
+		CellListImpl & cli,
+		T r_cut,
+		const vPos_type & pos,
+		const vPos_type & pos2,
+		size_t ghostMarker)
+	{
+		Point<dim,T> spacing = cli.getCellBox().getP2();
+
+		// Create with radius or not
+		bool wr = true;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			wr &= r_cut <= spacing.get(i);
+
+		if (wr == true)
+			createNonSymmetricRadius(pos,pos2,r_cut,ghostMarker,cli);
+		else
+			createNonSymmetric(pos,pos2,r_cut,ghostMarker,cli);
+	}
+
 	/*! \brief Initialize the symmetric Verlet-list
 	 *
 	 * \param box Simulation domain
@@ -387,7 +586,7 @@ public:
 	 * 			100 particles
 	 *
 	 */
-	void InitializeSym(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, vector_pos_type & pos, size_t ghostMarker)
+	void InitializeSym(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, vPos_type & pos, size_t ghostMarker)
 	{
 		// Padding
 		size_t pad = 0;
@@ -419,7 +618,7 @@ public:
 	 * 			100 particles
 	 *
 	 */
-	void InitializeCrs(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, vector_pos_type & pos, size_t ghostMarker)
+	void InitializeCrs(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, vPos_type & pos, size_t ghostMarker)
 	{
 		// Padding
 		size_t pad = 0;
@@ -448,7 +647,7 @@ public:
 	void createVerletCrs(
 		T r_cut,
 		size_t ghostMarker,
-		vector_pos_type & pos,
+		vPos_type & pos,
 		openfpm::vector<size_t> & dom_c,
 		openfpm::vector<subsub_lin<dim>> & anom_c)
 	{
@@ -461,10 +660,9 @@ public:
 	 * \param dom Processor domain
 	 * \param pos vector of particle positions
 	 * \param ghostMarker ghost marker
-	 * \param opt option to create the Verlet list
 	 *
 	 */
-	void update(const Box<dim,T> & dom, T r_cut, vector_pos_type & pos, size_t & ghostMarker)
+	void update(const Box<dim,T> & dom, T r_cut, vPos_type & pos, size_t & ghostMarker)
 	{
 		initCl(cli,pos,ghostMarker);
 
@@ -487,7 +685,7 @@ public:
 	void updateCrs(
 		const Box<dim,T> & dom,
 		T r_cut,
-		vector_pos_type & pos,
+		vPos_type & pos,
 		size_t & ghostMarker,
 		const openfpm::vector<size_t> & dom_c,
 		const openfpm::vector<subsub_lin<dim>> & anom_c)
@@ -496,52 +694,20 @@ public:
 		createCRSSymmetric(pos,pos,dom_c,anom_c,r_cut,ghostMarker,cli);
 	}
 
-	/*! Initialize the verlet list from an already filled cell-list
-	 *
-	 * \param cli external Cell-list
-	 * \param r_cut cutoff-radius
-	 * \param pos vector of particle positions
-	 * \param pos2 vector of particle position for the neighborhood
-	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
-	 * 			if we have 120 particles and ghostMarker = 100, the Verlet list will be constructed only for the first
-	 * 			100 particles
-	 * 	\param opt options for the Verlet-list creation
-	 *
-	 */
-	void Initialize(CellListImpl & cli,
-		T r_cut,
-		const vector_pos_type & pos,
-		const vector_pos_type & pos2,
-		size_t ghostMarker)
-	{
-		Point<dim,T> spacing = cli.getCellBox().getP2();
-
-		// Create with radius or not
-		bool wr = true;
-
-		for (size_t i = 0 ; i < dim ; i++)
-			wr &= r_cut <= spacing.get(i);
-
-		if (wr == true)
-			createNonSymmetricRadius(pos,pos2,r_cut,ghostMarker,cli);
-		else
-			createNonSymmetric(pos,pos2,r_cut,ghostMarker,cli);
-	}
-
 	//! Default Constructor
-	VerletList(size_t opt=VL_NON_SYMMETRIC)
-	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT),n_dec(0),opt(opt)
+	VerletList()
+	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT),n_dec(0)
 	{};
 
 	//! Copy constructor
-	VerletList(const VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> & cell)
+	VerletList(const VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl> & cell)
 	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT)
 	{
 		this->operator=(cell);
 	}
 
 	//! Copy constructor
-	VerletList(VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> && cell)
+	VerletList(VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl> && cell)
 	:Mem_type(VERLET_STARTING_NSLOT),slot(VERLET_STARTING_NSLOT),n_dec(0)
 	{
 		this->operator=(cell);
@@ -557,8 +723,8 @@ public:
 	 * \param slot maximum number of slots or maximum number of neighborhood per particle
 	 *
 	 */
-	VerletList(Box<dim,T> & box, T r_cut, Matrix<dim,T> mat, const size_t pad = 1, size_t opt=VL_NON_SYMMETRIC, size_t slot=STARTING_NSLOT)
-	:slot(VERLET_STARTING_NSLOT),CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad),opt(opt)
+	VerletList(Box<dim,T> & box, T r_cut, Matrix<dim,T> mat, const size_t pad = 1, size_t slot=STARTING_NSLOT)
+	:slot(VERLET_STARTING_NSLOT),CellDecomposer_sm<dim,T,transform>(box,div,mat,box.getP1(),pad)
 	{
 		Box<dim,T> sbox(box);
 		Initialize(sbox,r_cut,pad,slot);
@@ -577,8 +743,8 @@ public:
 	 * \note the maximum number of particle per slot if just an indication for performance
 	 *
 	 */
-	VerletList(Box<dim,T> & box, T r_cut, vector_pos_type & pos, size_t ghostMarker, size_t opt=VL_NON_SYMMETRIC, size_t slot=VERLET_STARTING_NSLOT)
-	:slot(slot),opt(opt)
+	VerletList(Box<dim,T> & box, T r_cut, vPos_type & pos, size_t ghostMarker, size_t slot=VERLET_STARTING_NSLOT)
+	:slot(slot)
 	{
 		Box<dim,T> sbox(box);
 		Initialize(sbox,r_cut,pos,ghostMarker);
@@ -598,8 +764,8 @@ public:
 	 * \note the maximum number of particle per slot if just an indication for performance
 	 *
 	 */
-	VerletList(Box<dim,T> & box, Box<dim,T> & dom, T r_cut, vector_pos_type & pos, size_t ghostMarker, size_t opt=VL_NON_SYMMETRIC, size_t slot=VERLET_STARTING_NSLOT)
-	:slot(slot),opt(VL_NON_SYMMETRIC),opt(opt)
+	VerletList(Box<dim,T> & box, Box<dim,T> & dom, T r_cut, vPos_type & pos, size_t ghostMarker, size_t slot=VERLET_STARTING_NSLOT)
+	:slot(slot)
 	{
 		Initialize(box,r_cut,pos);
 	}
@@ -618,8 +784,8 @@ public:
 	 * \return itself
 	 *
 	 */
-	VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> &
-	operator=(VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> && vl)
+	VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl> &
+	operator=(VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl> && vl)
 	{
 		slot = vl.slot;
 
@@ -627,7 +793,6 @@ public:
 		domainParticlesCRS.swap(vl.domainParticlesCRS);
 
 		n_dec = vl.n_dec;
-		opt = vl.opt;
 
 		return *this;
 	}
@@ -639,11 +804,10 @@ public:
 	 * \return itself
 	 *
 	 */
-	VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> &
-	operator=(const VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> & vl)
+	VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl> &
+	operator=(const VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl> & vl)
 	{
 		slot = vl.slot;
-		opt = vl.opt;
 
 		Mem_type::operator=(vl);
 
@@ -685,7 +849,7 @@ public:
 	 * \param vl Verlet list with witch you swap the memory
 	 *
 	 */
-	inline void swap(VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl> & vl)
+	inline void swap(VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl> & vl)
 	{
 		Mem_type::swap(vl);
 		domainParticlesCRS.swap(vl.domainParticlesCRS);
@@ -699,10 +863,6 @@ public:
 		size_t n_dec_tmp = vl.n_dec;
 		vl.n_dec = n_dec;
 		n_dec = n_dec_tmp;
-
-		size_t optTmp = vl.opt;
-		vl.opt = opt;
-		opt = optTmp;
 	}
 
 	/*! \brief Get the Neighborhood iterator
@@ -714,10 +874,10 @@ public:
 	 * \return an interator across the neighborhood particles
 	 *
 	 */
-	inline VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl>>
+	inline VerletNNIterator<dim,VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl>>
 	getNNIterator(size_t part_id)
 	{
-		VerletNNIterator<dim,VerletList<dim,T,Mem_type,transform,vector_pos_type,CellListImpl>> vln(part_id,*this);
+		VerletNNIterator<dim,VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl>> vln(part_id,*this);
 
 		return vln;
 	}
@@ -801,7 +961,29 @@ public:
 		return n_dec;
 	}
 
-	/*! \brief Returns the option flags that control the Verlet list
+	/*! \brief Returns the max number of neighbors per particle. Only with opt | VL_NMAX_NEIGHBOR
+	 *
+	 *
+	 * \return max number of neighbors per particle
+	 *
+	 */
+	size_t getNeighborMaxNum() const
+	{
+		return neighborMaxNum;
+	}
+
+	/*! \brief Sets the max number of neighbors per particle. Only with opt | VL_NMAX_NEIGHBOR
+	 *
+	 *
+	 * \return max number of neighbors per particle
+	 *
+	 */
+	size_t setNeighborMaxNum(size_t neighborMaxNum)
+	{
+		this->neighborMaxNum = neighborMaxNum;
+	}
+
+	/*! \brief Returns the option flag template parameter opt that controls the Verlet list
 	 *
 	 *
 	 * \return option flags
@@ -810,16 +992,6 @@ public:
 	size_t getOpt() const
 	{
 		return opt;
-	}
-
-	/*! \brief Sets the option flags that control the Verlet list
-	 *
-	 * \param opt option flags
-	 *
-	 */
-	size_t setOpt(size_t opt)
-	{
-		this->opt = opt;
 	}
 
 	/*! \brief Return the domain particle sequence
@@ -833,6 +1005,13 @@ public:
 	}
 };
 
+template<unsigned int dim, typename St, unsigned int opt> using VERLET_MEMFAST = VerletList<dim,St,opt,Mem_fast<>,shift<dim,St>>;
+template<unsigned int dim, typename St, unsigned int opt> using VERLET_MEMBAL = VerletList<dim,St,opt,Mem_bal<>,shift<dim,St>>;
+template<unsigned int dim, typename St, unsigned int opt> using VERLET_MEMMW = VerletList<dim,St,opt,Mem_mw<>,shift<dim,St>>;
+
+template<unsigned int dim, typename St, unsigned int opt> using VERLET_MEMFAST_INT = VerletList<dim,St,opt,Mem_fast<HeapMemory,unsigned int>,shift<dim,St>>;
+template<unsigned int dim, typename St, unsigned int opt> using VERLET_MEMBAL_INT = VerletList<dim,St,opt,Mem_bal<unsigned int>,shift<dim,St>>;
+template<unsigned int dim, typename St, unsigned int opt> using VERLET_MEMMW_INT = VerletList<dim,St,opt,Mem_mw<unsigned int>,shift<dim,St>>;
 
 
 #endif /* OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETLIST_HPP_ */

@@ -56,6 +56,16 @@ class wrap_unordered_map<boost::multiprecision::float128,val>
 
 #define STARTING_NSLOT 16
 
+// Cell list config options
+constexpr int CL_SYMMETRIC = 1;
+constexpr int CL_NON_SYMMETRIC = 2;
+constexpr int CL_LOCAL_SYMMETRIC = 8;
+constexpr int CL_LINEAR_CELL_KEYS = 16;
+constexpr int CL_HILBERT_CELL_KEYS = 32;
+constexpr int CL_GPU_REORDER_POSITION = 64;
+constexpr int CL_GPU_REORDER_PROPERTY = 128;
+constexpr int CL_GPU_REORDER = CL_GPU_REORDER_POSITION | CL_GPU_REORDER_PROPERTY;
+
 /*! \brief Calculate the the Neighborhood for symmetric interactions CSR scheme
  *
  * \param cNN calculated cross neighborhood
@@ -1650,5 +1660,9 @@ static inline void cl_param_calculateSym(const Box<dim,St> & dom,
 	cd_sm.setDimensions(dom,div,pad);
 }
 
+
+template<unsigned int dim, typename St> using CELL_MEMFAST = CellList<dim, St, Mem_fast<>, shift<dim, St>>;
+template<unsigned int dim, typename St> using CELL_MEMBAL = CellList<dim, St, Mem_bal<>, shift<dim, St>>;
+template<unsigned int dim, typename St> using CELL_MEMMW = CellList<dim, St, Mem_mw<>, shift<dim, St>>;
 
 #endif /* CELLLIST_HPP_ */
