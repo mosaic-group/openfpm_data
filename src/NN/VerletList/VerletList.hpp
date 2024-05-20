@@ -668,7 +668,7 @@ public:
 	 * 			100 particles
 	 *
 	 */
-	void InitializeCrs(
+	void initializeCrs(
 		const Box<dim,T> & box,
 		const Box<dim,T> & dom,
 		const Ghost<dim,T> & ghostSize,
@@ -717,7 +717,7 @@ public:
 	 * \param anom_c cells with anomalos neighborhood
 	 *
 	 */
-	void createVerletCrs(
+	void fillCRSSymmetric(
 		T r_cut,
 		size_t ghostMarker,
 		vPos_type & pos,
