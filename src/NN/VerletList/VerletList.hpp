@@ -15,8 +15,9 @@
 constexpr int VL_NON_SYMMETRIC = 1;
 constexpr int VL_SYMMETRIC = 2;
 constexpr int VL_CRS_SYMMETRIC = 4;
-constexpr int VL_NMAX_NEIGHBOR = 8;
-constexpr int VL_SKIP_REF_PART = 16;
+constexpr int VL_ADAPTIVE_RCUT = 8;
+constexpr int VL_NMAX_NEIGHBOR = 16;
+constexpr int VL_SKIP_REF_PART = 32;
 
 constexpr int VERLET_STARTING_NSLOT = 128;
 
@@ -74,6 +75,7 @@ struct iteratePartNeighbor<false, false> {
 
 			if (xp.distance2(xq) < r_cut2)
 				verletList.addPart(p,q);
+
 			++it;
 		}
 	}
@@ -138,7 +140,6 @@ struct iteratePartNeighbor<false, true> {
  */
 template<>
 struct iteratePartNeighbor<true, false> {
-
 	template<typename NeighborIter_type, typename VerletList_type, typename vPos_type, unsigned int dim, typename T>
 	inline void operator() (
 		VerletList_type& verletList,
@@ -258,12 +259,12 @@ struct iteratePartNeighbor<true, true> {
  *
  */
 template<unsigned int dim,
-		 typename T,
-		 unsigned int opt = VL_NON_SYMMETRIC,
-		 typename Mem_type = Mem_fast<HeapMemory,local_index_>,
-		 typename transform = no_transform<dim,T>,
-		 typename vPos_type = openfpm::vector<Point<dim,T>>,
-		 typename CellListImpl = CellList<dim,T,Mem_fast<HeapMemory,typename Mem_type::local_index_type>,transform,vPos_type> >
+	typename T,
+	unsigned int opt = VL_NON_SYMMETRIC,
+	typename Mem_type = Mem_fast<HeapMemory,local_index_>,
+	typename transform = no_transform<dim,T>,
+	typename vPos_type = openfpm::vector<Point<dim,T>>,
+	typename CellListImpl = CellList<dim,T,Mem_fast<HeapMemory,typename Mem_type::local_index_type>,transform,vPos_type> >
 class VerletList: public Mem_type
 {
 protected:
@@ -308,7 +309,7 @@ private:
 		cellList.fill(vPos, vPropStub, ghostMarker);
 	}
 
-	/*! \brief Create the CRS Symmetric Verlet list from a given cell-list
+	/*! \brief Fill CRS Symmetric Verlet list from a given cell-list
 	 *
 	 * \param pos vector of positions
 	 * \param pos2 vector of position for the neighborhood
@@ -321,7 +322,7 @@ private:
 	 * \param anom list of domain cells with non-normal neighborhood
 	 *
 	 */
-	inline void createCRSSymmetric(
+	inline void fillCRSSymmetric(
 		const vPos_type & pos,
 		const vPos_type & pos2,
 		const openfpm::vector<size_t> & dom,
@@ -345,14 +346,14 @@ private:
 			domainParticlesCRS.add(p);
 
 			// Get the neighborhood of the particle
-			auto NN = it.getNNIteratorCSR(pos);
+			auto NN = it.getNNIteratorCSR(pos2);
 
 			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos2, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
 
-	/*! \brief Create the Symmetric Verlet list from a given cell-list
+	/*! \brief Fill Symmetric Verlet list from a given cell-list
 	 *
 	 * \param pos vector of positions
 	 * \param pos2 vector of position for the neighborhood
@@ -363,7 +364,7 @@ private:
 	 * \param cli Cell-list elements to use to construct the verlet list
 	 *
 	 */
-	inline void createSymmetric(
+	inline void fillSymmetric(
 		const vPos_type & pos,
 		const vPos_type & pos2,
 		T r_cut,
@@ -390,7 +391,7 @@ private:
 		}
 	}
 
-	/*! \brief Create the Non-symmetric Verlet list from a given cell-list
+	/*! \brief Fill Non-symmetric Verlet list from a given cell-list
 	 *
 	 * \param pos vector of positions
 	 * \param pos2 vector of position for the neighborhood
@@ -401,7 +402,7 @@ private:
 	 * \param cli Cell-list elements to use to construct the verlet list
 	 *
 	 */
-	inline void createNonSymmetric(
+	inline void fillNonSymmetric(
 		const vPos_type & pos,
 		const vPos_type & pos2,
 		T r_cut,
@@ -427,7 +428,52 @@ private:
 		}
 	}
 
-	/*! \brief Create the Non-symmetric Verlet list from a given cell-list (Radius)
+	/*! \brief Fill non-symmetric adaptive r-cut Verlet list from a list of cut-off radii
+	 *
+	 * \param pos vector of positions
+	 * \param pos2 vector of position for the neighborhood
+	 * \param rCuts list of cut-off radii for every particle in pos
+	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and ghostMarker = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 *
+	 */
+	inline void fillNonSymmAdaptive(
+		const vPos_type & pos,
+		const vPos_type & pos2,
+		openfpm::vector<T> &rCuts,
+		size_t ghostMarker)
+	{
+		if (rCuts.size() != ghostMarker)
+		{
+			std::cerr << __FILE__ << ":" << __LINE__
+				<< " ERROR: when constructing adaptive cut-off Verlet list, pos.size_local() != rCuts.size(), ["
+				<< rCuts.size() << "!=" << pos.size_local() << "]" << std::endl;
+			std::runtime_error("Runtime adaptive cut-off Verlet list error");
+		}
+
+		size_t end = ghostMarker;
+
+		Mem_type::init_to_zero(slot,end);
+
+		// iterate the particles
+		auto it = pos.getIteratorTo(end);
+		while (it.isNext())
+		{
+			typename Mem_type::local_index_type p = it.get();
+			Point<dim,T> xp = pos.template get<0>(p);
+
+			// iterate the whole domain instead of neighborhood iteration
+			// no auxillary cell list is needed
+			auto NN = pos2.getIteratorTo(pos2.size_local());
+			T r_cut = rCuts.get(p);
+
+			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos2, p, xp, r_cut, neighborMaxNum);
+			++it;
+		}
+	}
+
+	/*! \brief Fill Non-symmetric Verlet list from a given cell-list (Radius)
 	 *
 	 * \param pos vector of positions
 	 * \param pos2 vector of position for the neighborhood
@@ -438,7 +484,7 @@ private:
 	 * \param cli Cell-list elements to use to construct the verlet list
 	 *
 	 */
-	inline void createNonSymmetricRadius(
+	inline void fillNonSymmetricRadius(
 		const vPos_type & pos,
 		const vPos_type & pos2,
 		T r_cut,
@@ -511,7 +557,6 @@ public:
 	/*! Initialize the verlet list for Non-Symmetric case
 	 *
 	 * \param box Domain where this cell list is living
-	 * \param dom Processor domain
 	 * \param r_cut cut-off radius
 	 * \param pos vector of particle positions
 	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
@@ -521,7 +566,6 @@ public:
 	 */
 	void Initialize(
 		const Box<dim,T> & box,
-		const Box<dim,T> & dom,
 		T r_cut,
 		vPos_type & pos,
 		size_t ghostMarker)
@@ -539,10 +583,10 @@ public:
 
 		initCl(cli,pos,ghostMarker);
 
-		createNonSymmetric(pos,pos,r_cut,ghostMarker,cli);
+		fillNonSymmetric(pos,pos,r_cut,ghostMarker,cli);
 	}
 
-	/*! Initialize the verlet list from an already filled cell-list
+	/*! Initialize the verlet list for Non-Symmetric case from an already filled cell-list
 	 *
 	 * \param cli external Cell-list
 	 * \param r_cut cutoff-radius
@@ -568,17 +612,17 @@ public:
 		for (size_t i = 0 ; i < dim ; i++)
 			wr &= r_cut <= spacing.get(i);
 
-		if (wr == true)
-			createNonSymmetricRadius(pos,pos2,r_cut,ghostMarker,cli);
-		else
-			createNonSymmetric(pos,pos2,r_cut,ghostMarker,cli);
+		// if (wr == true)
+		// 	fillNonSymmetricRadius(pos,pos2,r_cut,ghostMarker,cli);
+		// else
+		fillNonSymmetric(pos,pos2,r_cut,ghostMarker,cli);
 	}
 
 	/*! \brief Initialize the symmetric Verlet-list
 	 *
 	 * \param box Simulation domain
 	 * \param dom Processor domain
-	 * \param g ghost size
+	 * \param ghostSize ghost size
 	 * \param r_cut cut-off radius
 	 * \param pos vector of particle positions
 	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
@@ -586,7 +630,13 @@ public:
 	 * 			100 particles
 	 *
 	 */
-	void InitializeSym(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, vPos_type & pos, size_t ghostMarker)
+	void InitializeSym(
+		const Box<dim,T> & box,
+		const Box<dim,T> & dom,
+		const Ghost<dim,T> & ghostSize,
+		T r_cut,
+		vPos_type & pos,
+		size_t ghostMarker)
 	{
 		// Padding
 		size_t pad = 0;
@@ -595,14 +645,14 @@ public:
 		CellDecomposer_sm<dim,T,shift<dim,T>> cd_sm;
 
 		// Calculate the divisions for the Cell-lists
-		cl_param_calculateSym<dim,T>(box,cd_sm,g,r_cut,pad);
+		cl_param_calculateSym<dim,T>(box,cd_sm,ghostSize,r_cut,pad);
 
 		// Initialize a cell-list
 		cli.Initialize(cd_sm,dom,pad);
 		initCl(cli,pos,ghostMarker);
 
 		// create verlet
-		createSymmetric(pos, pos, r_cut, ghostMarker, cli);
+		fillSymmetric(pos, pos, r_cut, ghostMarker, cli);
 	}
 
 
@@ -610,7 +660,7 @@ public:
 	 *
 	 * \param box Simulation domain
 	 * \param dom Processor domain
-	 * \param g ghost size
+	 * \param ghostSize ghost size
 	 * \param r_cut cut-off radius
 	 * \param pos vector of particle positions
 	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
@@ -618,7 +668,13 @@ public:
 	 * 			100 particles
 	 *
 	 */
-	void InitializeCrs(const Box<dim,T> & box, const Box<dim,T> & dom, const Ghost<dim,T> & g, T r_cut, vPos_type & pos, size_t ghostMarker)
+	void InitializeCrs(
+		const Box<dim,T> & box,
+		const Box<dim,T> & dom,
+		const Ghost<dim,T> & ghostSize,
+		T r_cut,
+		vPos_type & pos,
+		size_t ghostMarker)
 	{
 		// Padding
 		size_t pad = 0;
@@ -627,14 +683,31 @@ public:
 		CellDecomposer_sm<dim,T,shift<dim,T>> cd_sm;
 
 		// Calculate the divisions for the Cell-lists
-		cl_param_calculateSym<dim,T>(box,cd_sm,g,r_cut,pad);
+		cl_param_calculateSym<dim,T>(box,cd_sm,ghostSize,r_cut,pad);
 
 		// Initialize a cell-list
 		cli.Initialize(cd_sm,dom,pad);
 		initCl(cli,pos,ghostMarker);
 	}
 
-	/*! \brief Create the Verlet-list with the crossing scheme
+	/*! Initialize non-symmetric adaptive r-cut Verlet list from a list of cut-off radii
+	 *
+	 * \param rCuts list of cut-off radii for every particle in pos
+	 * \param pos vector of particle positions
+	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and ghostMarker = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 *
+	 */
+	void initializeNonSymmAdaptive(
+		openfpm::vector<T> &rCuts,
+		vPos_type & pos,
+		size_t ghostMarker)
+	{
+		fillNonSymmAdaptive(pos,pos,rCuts,ghostMarker);
+	}
+
+	/*! \brief Fill Verlet-list with the crossing scheme
 	 *
 	 * \param pos vector with the particle positions
 	 * \param ghostMarker ghost marker
@@ -651,7 +724,7 @@ public:
 		openfpm::vector<size_t> & dom_c,
 		openfpm::vector<subsub_lin<dim>> & anom_c)
 	{
-		createCRSSymmetric(pos, pos,dom_c,anom_c,r_cut,ghostMarker,cli);
+		fillCRSSymmetric(pos, pos,dom_c,anom_c,r_cut,ghostMarker,cli);
 	}
 
 	/*! \brief update the Verlet list
@@ -662,14 +735,18 @@ public:
 	 * \param ghostMarker ghost marker
 	 *
 	 */
-	void update(const Box<dim,T> & dom, T r_cut, vPos_type & pos, size_t & ghostMarker)
+	void update(
+		const Box<dim,T> & dom,
+		T r_cut,
+		vPos_type & pos,
+		size_t & ghostMarker)
 	{
 		initCl(cli,pos,ghostMarker);
 
 		if (opt & VL_SYMMETRIC)
-			createSymmetric(pos,pos,r_cut,ghostMarker,cli);
+			fillSymmetric(pos,pos,r_cut,ghostMarker,cli);
 		else
-			createNonSymmetric(pos,pos,r_cut,ghostMarker,cli);
+			fillNonSymmetric(pos,pos,r_cut,ghostMarker,cli);
 	}
 
 	/*! \brief update the Verlet list
@@ -691,7 +768,7 @@ public:
 		const openfpm::vector<subsub_lin<dim>> & anom_c)
 	{
 		initCl(cli,pos,ghostMarker);
-		createCRSSymmetric(pos,pos,dom_c,anom_c,r_cut,ghostMarker,cli);
+		fillCRSSymmetric(pos,pos,dom_c,anom_c,r_cut,ghostMarker,cli);
 	}
 
 	//! Default Constructor
