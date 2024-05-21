@@ -204,7 +204,7 @@ class CellList_gpu_ker: public CellDecomposer_gpu_ker<dim,T,ids_type,transform_t
 	openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndex;
 
 	//! Domain particles ids
-	openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndexNoGhost;
+	openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToSortedIndexNoGhost;
 
 	//! radius cells
 	openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> rcutNeighborCellOffset;
@@ -233,7 +233,7 @@ public:
 	__host__ __device__ inline CellList_gpu_ker(
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> numPartInCellPrefixSum,
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndex,
-		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndexNoGhost,
+		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToSortedIndexNoGhost,
 		openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> rcutNeighborCellOffset,
 		const int* __restrict__ boxNeighborCellOffset,
 		unsigned int boxNeighborCellOffsetSize,
@@ -248,7 +248,7 @@ public:
 	: CellDecomposer_gpu_ker<dim,T,ids_type,transform_type>(unitCellP2,numCellDim,cellPadDim,pointTransform,cellListSpaceBox,cellListGrid,cellShift),
 	numPartInCellPrefixSum(numPartInCellPrefixSum),
 	sortedToUnsortedIndex(sortedToUnsortedIndex),
-	sortedToUnsortedIndexNoGhost(sortedToUnsortedIndexNoGhost),
+	sortedToSortedIndexNoGhost(sortedToSortedIndexNoGhost),
 	rcutNeighborCellOffset(rcutNeighborCellOffset),
 	boxNeighborCellOffset(boxNeighborCellOffset),
 	boxNeighborCellOffsetSize(boxNeighborCellOffsetSize),
@@ -279,7 +279,7 @@ public:
 
 	inline __device__ openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & getDomainSortIds()
 	{
-		return sortedToUnsortedIndexNoGhost;
+		return sortedToSortedIndexNoGhost;
 	}
 
 	inline __device__ openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & getSortToNonSort()
@@ -359,11 +359,11 @@ public:
 			return pc;
 		}
 
-		pc = sortedToUnsortedIndexNoGhost.check_device_pointer(ptr);
+		pc = sortedToSortedIndexNoGhost.check_device_pointer(ptr);
 
 		if (pc.match == true)
 		{
-			pc.match_str = std::string("Particle index overflow (sortedToUnsortedIndexNoGhost): ") + "\n" + pc.match_str;
+			pc.match_str = std::string("Particle index overflow (sortedToSortedIndexNoGhost): ") + "\n" + pc.match_str;
 			return pc;
 		}
 
@@ -371,7 +371,7 @@ public:
 
 		if (pc.match == true)
 		{
-			pc.match_str = std::string("Particle index overflow (sortedToUnsortedIndexNoGhost): ") + "\n" + pc.match_str;
+			pc.match_str = std::string("Particle index overflow (sortedToSortedIndexNoGhost): ") + "\n" + pc.match_str;
 			return pc;
 		}
 
@@ -470,7 +470,7 @@ class CellList_gpu_ker<dim,T,ids_type,transform_type,true>: public CellDecompose
 	openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndex;
 
 	//! Domain particles ids
-	openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndexNoGhost;
+	openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToSortedIndexNoGhost;
 
 	//! Set of cells sparse
 	openfpm::vector_sparse_gpu_ker<aggregate<unsigned int>,int,memory_traits_inte> vecSparseCellIndex_PartIndex;
@@ -488,7 +488,7 @@ public:
 		openfpm::vector_gpu_ker<aggregate<unsigned int, unsigned int>,memory_traits_inte> neighborPartIndexFrom_To,
 		openfpm::vector_sparse_gpu_ker<aggregate<unsigned int>,int,memory_traits_inte> vecSparseCellIndex_PartIndex,
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndex,
-		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndexNoGhost,
+		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToSortedIndexNoGhost,
 		openfpm::array<T,dim> & unitCellP2,
 		openfpm::array<ids_type,dim> & numCellDim,
 		openfpm::array<ids_type,dim> & cellPadDim,
@@ -502,7 +502,7 @@ public:
 	neighborCellCountPrefixSum(neighborCellCountPrefixSum),
 	neighborPartIndexFrom_To(neighborPartIndexFrom_To),
 	sortedToUnsortedIndex(sortedToUnsortedIndex),
-	sortedToUnsortedIndexNoGhost(sortedToUnsortedIndexNoGhost),
+	sortedToSortedIndexNoGhost(sortedToSortedIndexNoGhost),
 	vecSparseCellIndex_PartIndex(vecSparseCellIndex_PartIndex),
 	ghostMarker(ghostMarker)
 	{}
@@ -535,7 +535,7 @@ public:
 
 	inline __device__ openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & getDomainSortIds()
 	{
-		return sortedToUnsortedIndexNoGhost;
+		return sortedToSortedIndexNoGhost;
 	}
 
 	inline __device__ openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & getSortToNonSort()
@@ -584,11 +584,11 @@ public:
 			return pc;
 		}
 
-		pc = sortedToUnsortedIndexNoGhost.check_device_pointer(ptr);
+		pc = sortedToSortedIndexNoGhost.check_device_pointer(ptr);
 
 		if (pc.match == true)
 		{
-			pc.match_str = std::string("Particle index overflow (sortedToUnsortedIndexNoGhost): ") + "\n" + pc.match_str;
+			pc.match_str = std::string("Particle index overflow (sortedToSortedIndexNoGhost): ") + "\n" + pc.match_str;
 			return pc;
 		}
 
