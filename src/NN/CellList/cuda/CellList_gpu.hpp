@@ -721,7 +721,7 @@ public:
 	 * \param opt option flags
 	 *
 	 */
-	size_t setOpt(size_t opt)
+	void setOpt(size_t opt)
 	{
 		this->opt = opt;
 	}
@@ -1403,7 +1403,7 @@ public:
 	 * \param opt option flags
 	 *
 	 */
-	size_t setOpt(size_t opt)
+	void setOpt(size_t opt)
 	{
 		this->opt = opt;
 	}
