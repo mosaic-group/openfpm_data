@@ -548,7 +548,11 @@ void test_reorder_parts(size_t n_part)
 		cells_out.toKernel()
 	);
 
-	CUDA_LAUNCH_DIM3((reorderParticles),
+	CUDA_LAUNCH_DIM3(
+		(reorderParticlesPrp<
+			decltype(vPrp.toKernel()),
+			decltype(NonSortToSort.toKernel()),
+			0>),
 		ite.wthr,ite.thr,
 		vPrp.toKernel(),
 		vPrpReorder.toKernel(),
@@ -661,14 +665,24 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 	vPos.template hostToDevice<0>();
 	vPrp.template hostToDevice<0,1,2>();
 
+	openfpm::vector<Point<dim,double>,CudaMemory,memory_traits_inte> vPosReorder(vPos.size());
+	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> vPrpReorder(vPrp.size());
+
 	// create an gpu context
 	gpu::ofp_context_t gpuContext(gpu::gpu_context_opt::no_print_props);
-	cellList2.construct(vPos,vPrp,gpuContext,vPos.size(),0,vPos.size());
 
-	// Check
-	vPrp.deviceToHost<0>();
-	vPrp.deviceToHost<1>();
-	vPrp.deviceToHost<2>();
+	cellList2.template construct<decltype(vPos), decltype(vPrp), 0, 1, 2>(
+		vPos,
+		vPrp,
+		vPosReorder,
+		vPrpReorder,
+		gpuContext,
+		vPos.size(),
+		0,
+		vPos.size()
+	);
+
+	vPrpReorder.template deviceToHost<0,1,2>();
 
 	////// Correct order ////////////
 
@@ -686,19 +700,19 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 
 	for (size_t i = 0 ; i < pl_correct.size() ; i++)
 	{
-		BOOST_REQUIRE_EQUAL(vPrp.template get<0>(i),(float)pl_correct.template get<0>(i)[0]);
-		BOOST_REQUIRE_EQUAL(vPrp.template get<1>(i)[0],(float)(pl_correct.template get<0>(i)[0]+100.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<1>(i)[1],(float)(pl_correct.template get<0>(i)[1]+100.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<1>(i)[2],(float)(pl_correct.template get<0>(i)[2]+100.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[0][0],(float)(pl_correct.template get<0>(i)[0] + 1000.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[0][1],(float)(pl_correct.template get<0>(i)[1] + 1000.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[0][2],(float)(pl_correct.template get<0>(i)[2] + 1000.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[1][0],(float)(pl_correct.template get<0>(i)[0] + 2000.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[1][1],(float)(pl_correct.template get<0>(i)[1] + 3000.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[1][2],(float)(pl_correct.template get<0>(i)[2] + 4000.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[2][0],(float)(pl_correct.template get<0>(i)[0] + 5000.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[2][1],(float)(pl_correct.template get<0>(i)[1] + 6000.0));
-		BOOST_REQUIRE_EQUAL(vPrp.template get<2>(i)[2][2],(float)(pl_correct.template get<0>(i)[2] + 7000.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<0>(i),(float)pl_correct.template get<0>(i)[0]);
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<1>(i)[0],(float)(pl_correct.template get<0>(i)[0]+100.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<1>(i)[1],(float)(pl_correct.template get<0>(i)[1]+100.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<1>(i)[2],(float)(pl_correct.template get<0>(i)[2]+100.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<2>(i)[0][0],(float)(pl_correct.template get<0>(i)[0] + 1000.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<2>(i)[0][1],(float)(pl_correct.template get<0>(i)[1] + 1000.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<2>(i)[0][2],(float)(pl_correct.template get<0>(i)[2] + 1000.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<2>(i)[1][0],(float)(pl_correct.template get<0>(i)[0] + 2000.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<2>(i)[1][1],(float)(pl_correct.template get<0>(i)[1] + 3000.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<2>(i)[1][2],(float)(pl_correct.template get<0>(i)[2] + 4000.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<2>(i)[2][0],(float)(pl_correct.template get<0>(i)[0] + 5000.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<2>(i)[2][1],(float)(pl_correct.template get<0>(i)[1] + 6000.0));
+		BOOST_REQUIRE_EQUAL(vPrpReorder.template get<2>(i)[2][2],(float)(pl_correct.template get<0>(i)[2] + 7000.0));
 	}
 
 	// Check the sort to non sort buffer

@@ -291,8 +291,6 @@ install(FILES NN/Mem_type/MemBalanced.hpp
 
 install(FILES NN/CellList/CellNNIteratorRadius.hpp
         NN/CellList/CellListIterator.hpp
-        NN/CellList/multiphase/CellListM.hpp
-        NN/CellList/multiphase/CellNNIteratorM.hpp
         NN/CellList/CellList.hpp
         NN/CellList/tests/CellList_test.hpp
         NN/CellList/CellList_util.hpp
@@ -304,9 +302,14 @@ install(FILES NN/CellList/CellNNIteratorRadius.hpp
         NN/CellList/ParticleIt_Cells.hpp
         NN/CellList/CellDecomposer.hpp
         NN/CellList/CellNNIteratorRuntime.hpp
-        NN/CellList/multiphase/CellNNIteratorRuntimeM.hpp
         DESTINATION openfpm_data/include/NN/CellList
 	COMPONENT OpenFPM)
+
+install(FILES NN/CellList/multiphase/CellListM.hpp
+        NN/CellList/multiphase/CellNNIteratorM.hpp
+        NN/CellList/multiphase/CellNNIteratorRuntimeM.hpp
+        DESTINATION openfpm_data/include/NN/CellList/multiphase
+        COMPONENT OpenFPM)
 
 install(FILES NN/CellList/cuda/CellList_cpu_ker.cuh
         NN/CellList/cuda/CellList_gpu_ker.cuh

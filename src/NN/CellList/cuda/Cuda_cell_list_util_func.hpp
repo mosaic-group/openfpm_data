@@ -386,42 +386,34 @@ __global__ void constructSortUnsortBidirectMap(
 }
 
 template <typename vector_type, typename vector_map_type>
-__global__ void reorderParticles(
+__global__ void reorderParticlesPos(
 	const vector_type vectorIn,
 	vector_type vectorOut,
-	const vector_map_type inOutMap,
+	const vector_map_type indexMap,
 	size_t start = 0)
 {
 	int keyIn = start + threadIdx.x + blockIdx.x * blockDim.x;
-	if (keyIn >= inOutMap.size())	{return;}
+	if (keyIn >= indexMap.size())	{return;}
 
-	unsigned int keyOut = inOutMap.template get<0>(keyIn);
+	unsigned int keyOut = indexMap.template get<0>(keyIn);
 
 	vectorOut.set(keyOut,vectorIn,keyIn);
 }
 
-// template <typename vector_prp, typename vector_pos, typename vector_ns, typename vector_cells_type, unsigned int ... prp>
-// __global__ void reorderParticlesPrp(
-// 	int n,
-// 	const vector_prp input,
-// 	vector_prp output,
-// 	const vector_pos input_pos,
-// 	vector_pos output_pos,
-// 	vector_ns sortedToUnsortedIndex,
-// 	vector_ns unsortedToSortedIndex,
-// 	const vector_cells_type cellIndexLocalIndexToUnsorted)
-// {
-// 	unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
-// 	if (tid >= n) return;
+template <typename vector_type, typename vector_map_type, unsigned int ... prp>
+__global__ void reorderParticlesPrp(
+	const vector_type vectorIn,
+	vector_type vectorOut,
+	vector_map_type indexMap,
+	size_t start = 0)
+{
+	int keyIn = start + threadIdx.x + blockIdx.x * blockDim.x;
+	if (keyIn >= indexMap.size())	{return;}
 
-// 	unsigned int pid = cellIndexLocalIndexToUnsorted.template get<0>(tid);
-//  reorder_wprp<vector_prp,prp...>(input, output, pid,tid);
-//  output.template set<prp ...>(tid,input,pid);
-// 	reorder(input_pos,output_pos,pid,tid);
-//  output_pos.set(tid,input_pos,pid);
-// 	sortedToUnsortedIndex.template get<0>(tid) = pid;
-// 	unsortedToSortedIndex.template get<0>(pid) = tid;
-// }
+	unsigned int keyOut = indexMap.template get<0>(keyIn);
+
+	vectorOut.template set<prp ...>(keyOut,vectorIn,keyIn);
+}
 
 template<typename vector_sort_index, typename vector_out_type>
 __global__ void mark_domain_particles(

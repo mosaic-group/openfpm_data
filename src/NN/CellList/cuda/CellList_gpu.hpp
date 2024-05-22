@@ -154,9 +154,19 @@ private:
 
 	/*! \brief This function construct a dense cell-list
 	 *
+	 * \tparam vector position vector type
+	 * \tparam vector_prp property vector type
+	 *
+	 * \param vPos list of particle positions
+	 * \param vPrp list of particle properties
+	 * \param gpuContext context object for GPU
+	 * \param ghostMarker ghost makrer separating domain and ghost particles in vPos/vPrp
+	 * \param start first index to process
+	 * \param stop last index to process
+
 	 *
 	 */
-	template<typename vector, typename vector_prp, unsigned int ... prp>
+	template<typename vector, typename vector_prp>
 	void construct_dense(
 		vector & vPos,
 		vector_prp & vPrp,
@@ -167,6 +177,7 @@ private:
 	{
 #ifdef __NVCC__
 		this->gpuContext = &gpuContext;
+		this->ghostMarker = ghostMarker;
 		if (stop == (size_t)-1) stop = vPos.size();
 
 		auto ite_gpu = vPos.getGPUIteratorTo(stop-start-1);
@@ -225,59 +236,7 @@ private:
 			cellIndexLocalIndexToUnsorted.toKernel()
 		);
 
-		// unsortedToSortedIndex.template deviceToHost<0>();
-		// sortedToUnsortedIndex.template deviceToHost<0>();
-
 		constructSortedToSortedIndexNoGhost(gpuContext,start,stop,ghostMarker);
-
-		if (opt & CL_GPU_REORDER_PROPERTY) {
-			vector_prp vPrpReorder(vPrp.size());
-
-			CUDA_LAUNCH((reorderParticles),
-				vPrp.getGPUIteratorTo(stop-start,64),
-				vPrp.toKernel(),
-				vPrpReorder.toKernel(),
-				unsortedToSortedIndex.toKernel(),
-				start
-			);
-
-			vPrpReorder.template deviceToHost<0>();
-			vPrp.swap(vPrpReorder);
-		}
-
-		if (opt & CL_GPU_REORDER_POSITION) {
-			vector vPosReorder(vPos.size());
-
-			CUDA_LAUNCH((reorderParticles),
-				vPos.getGPUIteratorTo(stop-start,64),
-				vPos.toKernel(),
-				vPosReorder.toKernel(),
-				unsortedToSortedIndex.toKernel(),
-				start
-			);
-
-			vPosReorder.template deviceToHost<0>();
-			vPos.swap(vPosReorder);
-
-			// else
-			// {
-			// 	// Here we reorder the particles to improve coalescing access
-			// 	CUDA_LAUNCH((reorderParticlesPrp<decltype(vPrp.toKernel()),
-			// 			decltype(vPos.toKernel()),
-			// 			decltype(sortedToUnsortedIndex.toKernel()),
-			// 			decltype(cellIndexLocalIndexToUnsorted.toKernel()),prp...>),ite,
-			// 		(int)sortedToUnsortedIndex.size(),
-			// 		vPrp.toKernel(),
-			// 		vPrpReorder.toKernel(),
-			// 		vPos.toKernel(),
-			// 		vPosReorder.toKernel(),
-			// 		sortedToUnsortedIndex.toKernel(),
-			// 		unsortedToSortedIndex.toKernel(),
-			// 		cellIndexLocalIndexToUnsorted.toKernel()
-			// 	);
-			// }
-		}
-
 	#else
 
 			std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
@@ -341,6 +300,11 @@ public:
 		constructNeighborCellOffset(n_NN);
 	}
 
+	inline size_t getBoxNN() const
+	{
+		return boxNeighborNumber;
+	}
+
 	void resetBoxNN()
 	{
 		constructNeighborCellOffset(boxNeighborNumber);
@@ -396,12 +360,20 @@ public:
 
 	/*! \brief construct from a list of particles
 	 *
-	 * \warning vPos is assumed to be already be in device memory
+	 * \warning vPos/vPrp is assumed to be in device memory already
 	 *
-	 * \param vPos Particles list
+	 * \tparam vector position vector type
+	 * \tparam vector_prp property vector type
+	 *
+	 * \param vPos list of particle positions
+	 * \param vPrp list of particle properties
+	 * \param gpuContext context object for GPU
+	 * \param ghostMarker ghost makrer separating domain and ghost particles in vPos/vPrp
+	 * \param start first index to process
+	 * \param stop last index to process
 	 *
 	 */
-	template<typename vector, typename vector_prp, unsigned int ... prp>
+	template<typename vector, typename vector_prp>
 	void construct(
 		vector & vPos,
 		vector_prp & vPrp,
@@ -410,20 +382,80 @@ public:
 		size_t start = 0,
 		size_t stop = -1)
 	{
-		construct_dense<vector,vector_prp,prp...>(vPos,vPrp,gpuContext,ghostMarker,start,stop);
+		if (opt & CL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
+		}
+
+		else if (opt & CL_LOCAL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " local symmetric cell list on GPU is not implemented" << std::endl;
+		}
+
+		else if (opt & CL_NON_SYMMETRIC) {
+			construct_dense(vPos,vPrp,gpuContext,ghostMarker,start,stop);
+		}
+	}
+
+	/*! \brief construct from a list of particles with position/property reordering
+	 * for improved coalesced memory access
+	 *
+	 * \warning vPos/vPrp is assumed to be in device memory already
+	 *
+	 * \tparam vector position vector type
+	 * \tparam vector_prp property vector type
+	 * \tparam ...prp properties to reorder
+	 *
+	 * \param vPos list of particle positions
+	 * \param vPrp list of particle properties
+	 * \param vPos list of reordered particle positions to write to
+	 * \param vPrp list of reordered particle properties to write to
+	 * \param gpuContext context object for GPU
+	 * \param ghostMarker ghost makrer separating domain and ghost particles in vPos/vPrp
+	 * \param start first index to process
+	 * \param stop last index to process
+	 *
+	 */
+	template<typename vector, typename vector_prp, unsigned int ... prp>
+	void construct(
+		vector & vPos,
+		vector_prp & vPrp,
+		vector & vPosReorder,
+		vector_prp & vPrpReorder,
+		gpu::ofp_context_t& gpuContext,
+		size_t ghostMarker = 0,
+		size_t start = 0,
+		size_t stop = -1)
+	{
+		if (opt & CL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
+		}
+
+		else if (opt & CL_LOCAL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " local symmetric cell list on GPU is not implemented" << std::endl;
+		}
+
+		else if (opt & CL_NON_SYMMETRIC) {
+			construct_dense(vPos,vPrp,gpuContext,ghostMarker,start,stop);
+
+			reorderParticles<vector,vector_prp,prp...>(
+				vPos,
+				vPrp,
+				vPosReorder,
+				vPrpReorder,
+				unsortedToSortedIndex,
+				start,
+				stop
+			);
+		}
 	}
 
 	CellList_gpu_ker<dim,T,ids_type,transform_type,false> toKernel()
 	{
-		const int* p = (int*)boxNeighborCellOffset.toKernel().template getPointer<0>();
-
 		return CellList_gpu_ker<dim,T,ids_type,transform_type,false>(
 			numPartInCellPrefixSum.toKernel(),
 			sortedToUnsortedIndex.toKernel(),
 			sortedToSortedIndexNoGhost.toKernel(),
 			rcutNeighborCellOffset.toKernel(),
-			p,
-			boxNeighborCellOffset.size(),
+			boxNeighborCellOffset.toKernel(),
 			unitCellP2,
 			numCellDim,
 			cellPadDim,
@@ -529,7 +561,6 @@ public:
 
 	/*! \brief Get an element in the cell
 	 *
-	 * \tparam i property to get
 	 *
 	 * \param cell cell id
 	 * \param ele element id
@@ -636,74 +667,96 @@ public:
 
 	/*! \brief This function restores particle order after
 	 * particles being reordered for coalesced memory access
+
+	 * \tparam vector position vector type
+	 * \tparam vector_prp property vector type
+	 * \tparam ...prp properties to reorder
 	 *
+	 * \param vPosReordered vector of particle positions to copy from previously reordered by construct()
+	 * \param vPrpReordered vector of particle properties to copy from previously reordered by construct()
+	 * \param vPos vector of particle positions to copy to
+	 * \param vPrp vector of particle properties to copy to
+	 * \param start first index to process
+	 * \param stop last index to process
 	 *
 	 */
-	template<typename vector, typename vector_prp>
+	template<typename vector, typename vector_prp, unsigned int ... prp>
 	void restoreOrder(
+		vector & vPosReordered,
+		vector_prp & vPrpReordered,
 		vector & vPos,
 		vector_prp & vPrp,
 		size_t start = 0,
 		size_t stop = -1)
 	{
 	#ifdef __NVCC__
-		if (stop == (size_t)-1) stop = vPos.size();
-
-		vector vPosReorder(vPos.size());
-		vector_prp vPrpReorder(vPrp.size());
-
-		CUDA_LAUNCH((reorderParticles),
-			vPos.getGPUIteratorTo(stop-start,64),
-			vPos.toKernel(),
-			vPosReorder.toKernel(),
-			sortedToUnsortedIndex.toKernel(),
-			start
+		reorderParticles<vector, vector_prp, prp...>(
+			vPosReordered,
+			vPrpReordered,
+			vPos,
+			vPrp,
+			sortedToUnsortedIndex,
+			start,
+			stop
 		);
-
-		CUDA_LAUNCH((reorderParticles),
-			vPrp.getGPUIteratorTo(stop-start,64),
-			vPrp.toKernel(),
-			vPrpReorder.toKernel(),
-			sortedToUnsortedIndex.toKernel(),
-			start
-		);
-
-		vPosReorder.template deviceToHost<0>();
-		vPrpReorder.template deviceToHost<0>();
-
-		vPos.swap(vPosReorder);
-		vPrp.swap(vPrpReorder);
-
 	#endif
 	}
 
-	/*! \brief Fill cell list with particles at positions vPos
+	/*! \brief This function copies particle positions or/and properties
+	 * following the particle index map
 	 *
-	 * \tparam vPos list of particle positions
-	 * \tparam vPrp list of particle properties
-	 * \tparam ghostMarker ghost marker denoting domain and ghost particles in vPos
-	 * \tparam opt option flag that determines the the of cell list (e.g. symmetric, full, local symmetric, crs etc.)
+	 * \tparam vector position vector type
+	 * \tparam vector_prp property vector type
+	 * \tparam ...prp properties to reorder
+	 *
+	 * \param vPosFrom vector of particle positions to copy from
+	 * \param vPrpFrom vector of particle properties to copy from
+	 * \param vPosTo vector of particle positions to copy to
+	 * \param vPrpTo vector of particle properties to copy to
+	 * \param indexMap map of particle indices: index i in vPosFrom/vPrpFrom -> index j in vPosTo/vPrpTo
+	 * \param start first index to process in indexMap
+	 * \param stop last index to process in indexMap
 	 *
 	 */
-	template<typename vector_pos_type, typename vector_prp_type>
-	void fill(
-		vector_pos_type & vPos,
-		vector_prp_type & vPrp,
-		size_t ghostMarker)
+	template<typename vector, typename vector_prp, unsigned int ... prp>
+	void reorderParticles(
+		vector & vPosFrom,
+		vector_prp & vPrpFrom,
+		vector & vPosTo,
+		vector_prp & vPrpTo,
+		openfpm::vector_gpu<aggregate<unsigned int>>& indexMap,
+		size_t start = 0,
+		size_t stop = -1)
 	{
-		if (opt & CL_SYMMETRIC) {
-			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
+	#ifdef __NVCC__
+		if (stop == (size_t)-1) stop = vPosFrom.size();
+
+		if (opt & CL_GPU_REORDER_POSITION) {
+			CUDA_LAUNCH((reorderParticlesPos),
+				vPosFrom.getGPUIteratorTo(stop-start,64),
+				vPosFrom.toKernel(),
+				vPosTo.toKernel(),
+				indexMap.toKernel(),
+				start
+			);
 		}
 
-		else if (opt & CL_LOCAL_SYMMETRIC) {
-			std::cout << __FILE__ << ":" << __LINE__ << " local symmetric cell list on GPU is not implemented" << std::endl;
+		if (opt & CL_GPU_REORDER_PROPERTY && sizeof...(prp)) {
+			CUDA_LAUNCH(
+				(reorderParticlesPrp<
+					decltype(vPrpFrom.toKernel()),
+					decltype(indexMap.toKernel()),
+					prp...>),
+				vPrpFrom.getGPUIteratorTo(stop-start,64),
+				vPrpFrom.toKernel(),
+				vPrpTo.toKernel(),
+				indexMap.toKernel(),
+				start
+			);
 		}
 
-		else if (opt & CL_NON_SYMMETRIC) {
-			construct(vPos, vPrp, *(this->gpuContext), ghostMarker, 0, vPos.size(), opt);
-		}
+	#endif
 	}
-
 
 	/*! \brief Returns the option flags that control the cell list
 	 *
@@ -711,7 +764,7 @@ public:
 	 * \return option flags
 	 *
 	 */
-	size_t getOpt() const
+	inline size_t getOpt() const
 	{
 		return opt;
 	}
@@ -812,7 +865,7 @@ private:
 	 *
 	 *
 	 */
-	template<typename vector, typename vector_prp, unsigned int ... prp>
+	template<typename vector, typename vector_prp>
 	void construct_sparse(
 		vector & vPos,
 		vector_prp & vPrp,
@@ -823,6 +876,7 @@ private:
 	{
 #ifdef __NVCC__
 		this->gpuContext = &gpuContext;
+		this->ghostMarker = ghostMarker;
 		if (stop == (size_t)-1) stop = vPos.size();
 
 		cellIndex.resize(stop - start);
@@ -901,41 +955,7 @@ private:
 			cellIndexLocalIndexToUnsorted.toKernel()
 		);
 
-		// unsortedToSortedIndex.template deviceToHost<0>();
-		// sortedToUnsortedIndex.template deviceToHost<0>();
-
 		constructSortedToSortedIndexNoGhost(gpuContext,start,stop,ghostMarker);
-
-		if (opt & CL_GPU_REORDER_PROPERTY) {
-			vector_prp vPrpReorder(vPrp.size());
-
-			CUDA_LAUNCH((reorderParticles),
-				vPrp.getGPUIteratorTo(stop-start,64),
-				vPrp.toKernel(),
-				vPrpReorder.toKernel(),
-				unsortedToSortedIndex.toKernel(),
-				start
-			);
-
-			vPrpReorder.template deviceToHost<0>();
-			vPrp.swap(vPrpReorder);
-		}
-
-		if (opt & CL_GPU_REORDER_POSITION) {
-			vector vPosReorder(vPos.size());
-
-			CUDA_LAUNCH((reorderParticles),
-				vPos.getGPUIteratorTo(stop-start,64),
-				vPos.toKernel(),
-				vPosReorder.toKernel(),
-				unsortedToSortedIndex.toKernel(),
-				start
-			);
-
-			vPosReorder.template deviceToHost<0>();
-			vPos.swap(vPosReorder);
-		}
-
 	#else
 			std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
 	#endif
@@ -1039,6 +1059,11 @@ public:
 		constructNeighborCellOffset(n_NN);
 	}
 
+	inline size_t getBoxNN() const
+	{
+		return boxNeighborNumber;
+	}
+
 	void resetBoxNN()
 	{
 		constructNeighborCellOffset(boxNeighborNumber);
@@ -1094,10 +1119,18 @@ public:
 	 *
 	 * \warning vPos is assumed to be already be in device memory
 	 *
-	 * \param vPos Particles list
+	 * \tparam vector position vector type
+	 * \tparam vector_prp property vector type
+	 *
+	 * \param vPos list of particle positions
+	 * \param vPrp list of particle properties
+	 * \param gpuContext context object for GPU
+	 * \param ghostMarker ghost makrer separating domain and ghost particles in vPos/vPrp
+	 * \param start first index to process
+	 * \param stop last index to process
 	 *
 	 */
-	template<typename vector, typename vector_prp, unsigned int ... prp>
+	template<typename vector, typename vector_prp>
 	void construct(
 		vector & vPos,
 		vector_prp & vPrp,
@@ -1106,7 +1139,70 @@ public:
 		size_t start = 0,
 		size_t stop = -1)
 	{
-		construct_sparse<vector,vector_prp,prp...>(vPos,vPrp,gpuContext,ghostMarker, start, stop);
+		if (opt & CL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
+		}
+
+		else if (opt & CL_LOCAL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " local symmetric cell list on GPU is not implemented" << std::endl;
+		}
+
+		else if (opt & CL_NON_SYMMETRIC) {
+			construct_sparse(vPos,vPrp,gpuContext,ghostMarker, start, stop);
+		}
+	}
+
+	/*! \brief construct from a list of particles with position/property reordering
+	 * for improved coalesced memory access
+	 *
+	 * \warning vPos/vPrp is assumed to be in device memory already
+	 *
+	 * \tparam vector position vector type
+	 * \tparam vector_prp property vector type
+	 * \tparam ...prp properties to reorder
+	 *
+	 * \param vPos list of particle positions
+	 * \param vPrp list of particle properties
+	 * \param vPos list of reordered particle positions to write to
+	 * \param vPrp list of reordered particle properties to write to
+	 * \param gpuContext context object for GPU
+	 * \param ghostMarker ghost makrer separating domain and ghost particles in vPos/vPrp
+	 * \param start first index to process
+	 * \param stop last index to process
+	 *
+	 */
+	template<typename vector, typename vector_prp, unsigned int ... prp>
+	void construct(
+		vector & vPos,
+		vector_prp & vPrp,
+		vector & vPosReorder,
+		vector_prp & vPrpReorder,
+		gpu::ofp_context_t& gpuContext,
+		size_t ghostMarker = 0,
+		size_t start = 0,
+		size_t stop = -1)
+	{
+		if (opt & CL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
+		}
+
+		else if (opt & CL_LOCAL_SYMMETRIC) {
+			std::cout << __FILE__ << ":" << __LINE__ << " local symmetric cell list on GPU is not implemented" << std::endl;
+		}
+
+		else if (opt & CL_NON_SYMMETRIC) {
+			construct_sparse(vPos,vPrp,gpuContext,ghostMarker, start, stop);
+
+			reorderParticles<vector,vector_prp,prp...>(
+				vPos,
+				vPrp,
+				vPosReorder,
+				vPrpReorder,
+				unsortedToSortedIndex,
+				start,
+				stop
+			);
+		}
 	}
 
 	CellList_gpu_ker<dim,T,ids_type,transform_type,true> toKernel()
@@ -1320,71 +1416,96 @@ public:
 
 	/*! \brief This function restores particle order after
 	 * particles being reordered for coalesced memory access
+
+	 * \tparam vector position vector type
+	 * \tparam vector_prp property vector type
+	 * \tparam ...prp properties to reorder
 	 *
+	 * \param vPosReordered vector of particle positions to copy from previously reordered by construct()
+	 * \param vPrpReordered vector of particle properties to copy from previously reordered by construct()
+	 * \param vPos vector of particle positions to copy to
+	 * \param vPrp vector of particle properties to copy to
+	 * \param start first index to process
+	 * \param stop last index to process
 	 *
 	 */
-	template<typename vector, typename vector_prp>
+	template<typename vector, typename vector_prp, unsigned int ... prp>
 	void restoreOrder(
+		vector & vPosReordered,
+		vector_prp & vPrpReordered,
 		vector & vPos,
 		vector_prp & vPrp,
 		size_t start = 0,
 		size_t stop = -1)
 	{
 	#ifdef __NVCC__
-		if (stop == (size_t)-1) stop = vPos.size();
-
-		vector vPosReorder(vPos.size());
-		vector_prp vPrpReorder(vPrp.size());
-
-		CUDA_LAUNCH((reorderParticles),
-			vPos.getGPUIteratorTo(stop-start,64),
-			vPos.toKernel(),
-			vPosReorder.toKernel(),
-			sortedToUnsortedIndex.toKernel(),
-			start
+		reorderParticles<vector, vector_prp, prp...>(
+			vPosReordered,
+			vPrpReordered,
+			vPos,
+			vPrp,
+			sortedToUnsortedIndex,
+			start,
+			stop
 		);
-
-		CUDA_LAUNCH((reorderParticles),
-			vPrp.getGPUIteratorTo(stop-start,64),
-			vPrp.toKernel(),
-			vPrpReorder.toKernel(),
-			sortedToUnsortedIndex.toKernel(),
-			start
-		);
-
-		vPosReorder.template deviceToHost<0>();
-		vPrpReorder.template deviceToHost<0>();
-
-		vPos.swap(vPosReorder);
-		vPrp.swap(vPrpReorder);
 	#endif
 	}
 
-	/*! \brief Fill cell list with particles at positions vPos
+
+	/*! \brief This function copies particle positions or/and properties
+	 * following the particle index map
 	 *
-	 * \tparam vPos list of particle positions
-	 * \tparam vPrp list of particle properties
-	 * \tparam ghostMarker ghost marker denoting domain and ghost particles in vPos
-	 * \tparam opt option flag that determines the the of cell list (e.g. symmetric, full, local symmetric, crs etc.)
+	 * \tparam vector position vector type
+	 * \tparam vector_prp property vector type
+	 * \tparam ...prp properties to reorder
+	 *
+	 * \param vPosFrom vector of particle positions to copy from
+	 * \param vPrpFrom vector of particle properties to copy from
+	 * \param vPosTo vector of particle positions to copy to
+	 * \param vPrpTo vector of particle properties to copy to
+	 * \param indexMap map of particle indices: index i in vPosFrom/vPrpFrom -> index j in vPosTo/vPrpTo
+	 * \param start first index to process in indexMap
+	 * \param stop last index to process in indexMap
 	 *
 	 */
-	template<typename vector_pos_type, typename vector_prp_type>
-	void fill(
-		vector_pos_type & vPos,
-		vector_prp_type & vPrp,
-		size_t ghostMarker)
+	template<typename vector, typename vector_prp, unsigned int ... prp>
+	void reorderParticles(
+		vector & vPosFrom,
+		vector_prp & vPrpFrom,
+		vector & vPosTo,
+		vector_prp & vPrpTo,
+		openfpm::vector_gpu<aggregate<unsigned int>>& indexMap,
+		size_t start = 0,
+		size_t stop = -1)
 	{
-		if (opt & CL_SYMMETRIC) {
-			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
+	#ifdef __NVCC__
+		if (stop == (size_t)-1) stop = vPosFrom.size();
+
+		if (opt & CL_GPU_REORDER_POSITION) {
+			CUDA_LAUNCH((reorderParticlesPos),
+				vPosFrom.getGPUIteratorTo(stop-start,64),
+				vPosFrom.toKernel(),
+				vPosTo.toKernel(),
+				indexMap.toKernel(),
+				start
+			);
 		}
 
-		else if (opt & CL_LOCAL_SYMMETRIC) {
-			std::cout << __FILE__ << ":" << __LINE__ << " local symmetric cell list on GPU is not implemented" << std::endl;
+		if (opt & CL_GPU_REORDER_PROPERTY && sizeof...(prp)) {
+			CUDA_LAUNCH(
+				(reorderParticlesPrp<
+					decltype(vPrpFrom.toKernel()),
+					decltype(indexMap.toKernel()),
+					prp...>),
+				vPrpFrom.getGPUIteratorTo(stop-start,64),
+				vPrpFrom.toKernel(),
+				vPrpTo.toKernel(),
+				indexMap.toKernel(),
+				start
+			);
 		}
 
-		else if (opt & CL_NON_SYMMETRIC) {
-			construct(vPos, vPrp, *(this->gpuContext), ghostMarker, 0, vPos.size(), opt);
-		}
+	#endif
 	}
 
 	/*! \brief Returns the option flags that control the cell list
@@ -1393,7 +1514,7 @@ public:
 	 * \return option flags
 	 *
 	 */
-	size_t getOpt() const
+	inline size_t getOpt() const
 	{
 		return opt;
 	}

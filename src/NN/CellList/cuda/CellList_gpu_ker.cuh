@@ -9,16 +9,13 @@ class NN_gpu_it_box
 {
 	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & numPartInCellPrefixSum;
 	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex;
-	// const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & boxNeighborCellOffset;
-	const int* __restrict__ boxNeighborCellOffset;
-
+	const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & boxNeighborCellOffset;
 
 	unsigned int boxNeighborCellOffset_i;
 	unsigned int cellPositionIndex;
 	unsigned int neighborPartIndexStart;
 	unsigned int neighborPartIndexStop;
 	unsigned int neighborCellIndexAct;
-	unsigned int boxNeighborCellOffsetSize;
 
 	inline __device__ void SelectValid()
 	{
@@ -38,21 +35,14 @@ public:
 		const grid_key_dx<dim,ids_type> & cellPosition,
 		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & numPartInCellPrefixSum,
 		const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex,
-		// const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & boxNeighborCellOffset,
-		const int* __restrict__ boxNeighborCellOffset,
-		unsigned int boxNeighborCellOffsetSize,
+		const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & boxNeighborCellOffset,
 		const openfpm::array<ids_type,dim> & numCellDim)
 	: numPartInCellPrefixSum(numPartInCellPrefixSum),
 	sortedToUnsortedIndex(sortedToUnsortedIndex),
 	boxNeighborCellOffset(boxNeighborCellOffset),
-	boxNeighborCellOffsetSize(boxNeighborCellOffsetSize),
 	cellPositionIndex(cid_<dim,ids_type,int>::get_cid(numCellDim,cellPosition)),
 	boxNeighborCellOffset_i(0),
-#if defined(__NVCC__)
-	neighborCellIndexAct(*(boxNeighborCellOffset+boxNeighborCellOffset_i))
-#else
-	neighborCellIndexAct(boxNeighborCellOffset[boxNeighborCellOffset_i])
-#endif
+	neighborCellIndexAct(boxNeighborCellOffset.template get<0>(boxNeighborCellOffset_i))
 	{
 		neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
 		neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
@@ -89,18 +79,14 @@ public:
 
 	inline __device__ bool isNext()
 	{
-		return boxNeighborCellOffset_i < boxNeighborCellOffsetSize;
+		return boxNeighborCellOffset_i < boxNeighborCellOffset.size();
 	}
 
 	__device__ inline void nextCell()
 	{
 		++boxNeighborCellOffset_i;
 
-		#if defined(__NVCC__)
-			neighborCellIndexAct = *(boxNeighborCellOffset+boxNeighborCellOffset_i);
-		#else
-			neighborCellIndexAct = boxNeighborCellOffset[boxNeighborCellOffset_i];
-		#endif
+		neighborCellIndexAct = boxNeighborCellOffset.template get<0>(boxNeighborCellOffset_i);
 	}
 
 };
@@ -210,14 +196,10 @@ class CellList_gpu_ker: public CellDecomposer_gpu_ker<dim,T,ids_type,transform_t
 	openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> rcutNeighborCellOffset;
 
 	//! Box cells
-	// openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> boxNeighborCellOffset;
-
-	const int* __restrict__  boxNeighborCellOffset;
+	openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> boxNeighborCellOffset;
 
 	//! Ghost particle marker
 	unsigned int ghostMarker;
-
-	unsigned int boxNeighborCellOffsetSize;
 
 public:
 
@@ -235,8 +217,7 @@ public:
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToUnsortedIndex,
 		openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> sortedToSortedIndexNoGhost,
 		openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> rcutNeighborCellOffset,
-		const int* __restrict__ boxNeighborCellOffset,
-		unsigned int boxNeighborCellOffsetSize,
+		openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> boxNeighborCellOffset,
 		openfpm::array<T,dim> unitCellP2,
 		openfpm::array<ids_type,dim> & numCellDim,
 		openfpm::array<ids_type,dim> & cellPadDim,
@@ -251,7 +232,6 @@ public:
 	sortedToSortedIndexNoGhost(sortedToSortedIndexNoGhost),
 	rcutNeighborCellOffset(rcutNeighborCellOffset),
 	boxNeighborCellOffset(boxNeighborCellOffset),
-	boxNeighborCellOffsetSize(boxNeighborCellOffsetSize),
 	ghostMarker(ghostMarker)
 	{}
 
@@ -266,7 +246,7 @@ public:
 	inline __device__ NN_gpu_it_box<dim,ids_type> getNNIteratorBox(
 		const grid_key_dx<dim,ids_type> & cellPosition)
 	{
-		NN_gpu_it_box<dim,ids_type> ngi(cellPosition,numPartInCellPrefixSum,sortedToUnsortedIndex,boxNeighborCellOffset,boxNeighborCellOffsetSize,this->get_div_c());
+		NN_gpu_it_box<dim,ids_type> ngi(cellPosition,numPartInCellPrefixSum,sortedToUnsortedIndex,boxNeighborCellOffset,this->get_div_c());
 
 		return ngi;
 	}
