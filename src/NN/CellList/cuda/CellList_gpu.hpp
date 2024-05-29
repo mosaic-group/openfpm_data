@@ -94,7 +94,7 @@ private:
 			cellPadDim[i] = pad;
 		}
 
-		numPartInCell.resize(tot_n_cell);
+		numPartInCell.resize(tot_n_cell+1);
 
 		boxNeighborNumber = 1;
 		constructNeighborCellOffset(boxNeighborNumber);

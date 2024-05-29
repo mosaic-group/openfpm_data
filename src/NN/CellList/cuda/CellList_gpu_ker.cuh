@@ -11,11 +11,11 @@ class NN_gpu_it_box
 	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex;
 	const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & boxNeighborCellOffset;
 
+	int neighborCellIndexAct;
 	unsigned int boxNeighborCellOffset_i;
 	unsigned int cellPositionIndex;
 	unsigned int neighborPartIndexStart;
 	unsigned int neighborPartIndexStop;
-	unsigned int neighborCellIndexAct;
 
 	inline __device__ void SelectValid()
 	{
@@ -41,11 +41,17 @@ public:
 	sortedToUnsortedIndex(sortedToUnsortedIndex),
 	boxNeighborCellOffset(boxNeighborCellOffset),
 	cellPositionIndex(cid_<dim,ids_type,int>::get_cid(numCellDim,cellPosition)),
-	boxNeighborCellOffset_i(0),
-	neighborCellIndexAct(boxNeighborCellOffset.template get<0>(boxNeighborCellOffset_i))
+	boxNeighborCellOffset_i(0)
 	{
-		neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
-		neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
+		while (cellPositionIndex+this->boxNeighborCellOffset.template get<0>(boxNeighborCellOffset_i) < 0
+			|| cellPositionIndex+this->boxNeighborCellOffset.template get<0>(boxNeighborCellOffset_i) >= numPartInCellPrefixSum.size())
+		{
+			++boxNeighborCellOffset_i;
+		}
+
+		neighborCellIndexAct = boxNeighborCellOffset.template get<0>(boxNeighborCellOffset_i);
+		neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+neighborCellIndexAct);
+		neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+neighborCellIndexAct+1);
 
 		SelectValid();
 	}
@@ -74,7 +80,7 @@ public:
 
 	inline __device__ unsigned int get_cid()
 	{
-		return cellPositionIndex+this->neighborCellIndexAct;
+		return cellPositionIndex + neighborCellIndexAct;
 	}
 
 	inline __device__ bool isNext()
@@ -86,7 +92,11 @@ public:
 	{
 		++boxNeighborCellOffset_i;
 
-		neighborCellIndexAct = boxNeighborCellOffset.template get<0>(boxNeighborCellOffset_i);
+		do {
+			neighborCellIndexAct = boxNeighborCellOffset.template get<0>(boxNeighborCellOffset_i);
+		} while ((cellPositionIndex + neighborCellIndexAct < 0
+			|| cellPositionIndex + neighborCellIndexAct + 1 >= (numPartInCellPrefixSum.size()))
+			&& boxNeighborCellOffset_i < boxNeighborCellOffset.size());
 	}
 
 };
@@ -99,11 +109,11 @@ class NN_gpu_it_radius
 	const openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & sortedToUnsortedIndex;
 	const openfpm::vector_gpu_ker<aggregate<int>,memory_traits_inte> & rcutNeighborCellOffset;
 
+	int neighborCellIndexAct;
 	unsigned int rcutNeighborCellOffset_i;
 	unsigned int cellPositionIndex;
 	unsigned int neighborPartIndexStart;
 	unsigned int neighborPartIndexStop;
-	unsigned int neighborCellIndexAct;
 
 	inline __device__ void SelectValid()
 	{
@@ -129,11 +139,17 @@ public:
 	sortedToUnsortedIndex(sortedToUnsortedIndex),
 	rcutNeighborCellOffset(rcutNeighborCellOffset),
 	cellPositionIndex(cid_<dim,ids_type,int>::get_cid(numCellDim,cellPosition)),
-	rcutNeighborCellOffset_i(0),
-	neighborCellIndexAct(rcutNeighborCellOffset.template get<0>(rcutNeighborCellOffset_i))
+	rcutNeighborCellOffset_i(0)
 	{
-		neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
-		neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
+		while (cellPositionIndex+rcutNeighborCellOffset.template get<0>(rcutNeighborCellOffset_i) < 0
+			|| cellPositionIndex+rcutNeighborCellOffset.template get<0>(rcutNeighborCellOffset_i) >= numPartInCellPrefixSum.size())
+		{
+			++rcutNeighborCellOffset_i;
+		}
+
+		neighborCellIndexAct = rcutNeighborCellOffset.template get<0>(rcutNeighborCellOffset_i);
+		neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+neighborCellIndexAct);
+		neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+neighborCellIndexAct+1);
 
 		SelectValid();
 	}
@@ -162,7 +178,7 @@ public:
 
 	inline __device__ unsigned int get_cid()
 	{
-		return cellPositionIndex+this->neighborCellIndexAct;
+		return cellPositionIndex+neighborCellIndexAct;
 	}
 
 	inline __device__ bool isNext()
@@ -174,7 +190,11 @@ public:
 	{
 		++rcutNeighborCellOffset_i;
 
-		neighborCellIndexAct = rcutNeighborCellOffset.template get<0>(rcutNeighborCellOffset_i);
+		do {
+			neighborCellIndexAct = rcutNeighborCellOffset.template get<0>(rcutNeighborCellOffset_i);
+		} while ((cellPositionIndex + neighborCellIndexAct < 0
+			|| cellPositionIndex + neighborCellIndexAct + 1 >= (numPartInCellPrefixSum.size()))
+			&& rcutNeighborCellOffset_i < rcutNeighborCellOffset.size());
 	}
 
 };
