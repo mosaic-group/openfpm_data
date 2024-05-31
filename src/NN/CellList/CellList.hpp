@@ -318,9 +318,15 @@ void NNcalc_rad(
 	}
 
 	radNeighborCellOffset.resize(radNeighborCellOffsetTemp.size());
+	// start iteration with own cell
+	radNeighborCellOffset.template get<0>(0) = 0;
+
 	for (int i = 0; i < radNeighborCellOffsetTemp.size(); ++i)
 	{
-		radNeighborCellOffset.template get<0>(i) = radNeighborCellOffsetTemp.template get<0>(i);
+		int cellIndex = radNeighborCellOffsetTemp.template get<0>(i);
+
+		if (cellIndex != 0)
+			radNeighborCellOffset.template get<0>(i) = cellIndex;
 	}
 }
 
@@ -386,9 +392,16 @@ void NNcalc_box(
 	grid_key_dx_iterator_sub<dim> boxCellGridIt(cellListGrid, cellPosStart, cellPosStop);
 
 	size_t index = 0;
+
+	// start iteration with own cell
+	boxNeighborCellOffset.template get<0>(index++) = 0;
+
 	while (boxCellGridIt.isNext())
 	{
-		boxNeighborCellOffset.template get<0>(index++) = (int)cellListGrid.LinId(boxCellGridIt.get()) - cellIndexMiddle;
+		int cellIndex = (int)cellListGrid.LinId(boxCellGridIt.get()) - cellIndexMiddle;
+
+		if (cellIndex != 0)
+			boxNeighborCellOffset.template get<0>(index++) = cellIndex;
 
 		++boxCellGridIt;
 	}
