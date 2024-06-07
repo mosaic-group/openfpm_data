@@ -52,6 +52,9 @@ private:
 	//! \brief for each non sorted index it show the index in the ordered vector
 	openfpm::vector_gpu<aggregate<unsigned int>> unsortedToSortedIndex;
 
+	//! Sorted domain particles domain or ghost
+	openfpm::vector_gpu<aggregate<unsigned int>> isSortedDomainOrGhost;
+
 	//! \breif Number of neighbors in every direction
 	size_t boxNeighborNumber;
 
@@ -120,9 +123,6 @@ private:
 		size_t ghostMarker)
 	{
 #ifdef __NVCC__
-		//! Sorted domain particles domain or ghost
-		openfpm::vector_gpu<aggregate<unsigned int>> isSortedDomainOrGhost;
-
 		isSortedDomainOrGhost.resize(stop-start+1);
 
 		auto ite = isSortedDomainOrGhost.getGPUIterator();
@@ -382,6 +382,7 @@ public:
 		size_t start = 0,
 		size_t stop = -1)
 	{
+#ifdef __NVCC__
 		if (opt & CL_SYMMETRIC) {
 			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
 		}
@@ -393,6 +394,9 @@ public:
 		else if (opt & CL_NON_SYMMETRIC) {
 			construct_dense(vPos,vPrp,gpuContext,ghostMarker,start,stop);
 		}
+#else
+		std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
+#endif
 	}
 
 	/*! \brief construct from a list of particles with position/property reordering
@@ -425,6 +429,7 @@ public:
 		size_t start = 0,
 		size_t stop = -1)
 	{
+#ifdef __NVCC__
 		if (opt & CL_SYMMETRIC) {
 			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
 		}
@@ -434,18 +439,38 @@ public:
 		}
 
 		else if (opt & CL_NON_SYMMETRIC) {
+
 			construct_dense(vPos,vPrp,gpuContext,ghostMarker,start,stop);
 
-			reorderParticles<vector,vector_prp,prp...>(
-				vPos,
-				vPrp,
-				vPosReorder,
-				vPrpReorder,
-				unsortedToSortedIndex,
-				start,
-				stop
-			);
+			if (stop == (size_t)-1) stop = vPos.size();
+
+			if (opt & CL_GPU_REORDER_POSITION) {
+				CUDA_LAUNCH((reorderParticlesPos),
+					vPos.getGPUIteratorTo(stop-start,64),
+					vPos.toKernel(),
+					vPosReorder.toKernel(),
+					unsortedToSortedIndex.toKernel(),
+					start
+				);
+			}
+
+			if (opt & CL_GPU_REORDER_PROPERTY && sizeof...(prp)) {
+				CUDA_LAUNCH(
+					(reorderParticlesPrp<
+						decltype(vPrp.toKernel()),
+						decltype(unsortedToSortedIndex.toKernel()),
+						prp...>),
+					vPrp.getGPUIteratorTo(stop-start,64),
+					vPrp.toKernel(),
+					vPrpReorder.toKernel(),
+					unsortedToSortedIndex.toKernel(),
+					start
+				);
+			}
 		}
+#else
+		std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
+#endif
 	}
 
 	CellList_gpu_ker<dim,T,ids_type,transform_type,false> toKernel()
@@ -690,71 +715,31 @@ public:
 		size_t stop = -1)
 	{
 	#ifdef __NVCC__
-		reorderParticles<vector, vector_prp, prp...>(
-			vPosReordered,
-			vPrpReordered,
-			vPos,
-			vPrp,
-			sortedToUnsortedIndex,
-			start,
-			stop
-		);
-	#endif
-	}
+		if (stop == (size_t)-1) stop = vPosReordered.size();
 
-	/*! \brief This function copies particle positions or/and properties
-	 * following the particle index map
-	 *
-	 * \tparam vector position vector type
-	 * \tparam vector_prp property vector type
-	 * \tparam ...prp properties to reorder
-	 *
-	 * \param vPosFrom vector of particle positions to copy from
-	 * \param vPrpFrom vector of particle properties to copy from
-	 * \param vPosTo vector of particle positions to copy to
-	 * \param vPrpTo vector of particle properties to copy to
-	 * \param indexMap map of particle indices: index i in vPosFrom/vPrpFrom -> index j in vPosTo/vPrpTo
-	 * \param start first index to process in indexMap
-	 * \param stop last index to process in indexMap
-	 *
-	 */
-	template<typename vector, typename vector_prp, unsigned int ... prp>
-	void reorderParticles(
-		vector & vPosFrom,
-		vector_prp & vPrpFrom,
-		vector & vPosTo,
-		vector_prp & vPrpTo,
-		openfpm::vector_gpu<aggregate<unsigned int>>& indexMap,
-		size_t start = 0,
-		size_t stop = -1)
-	{
-	#ifdef __NVCC__
-		if (stop == (size_t)-1) stop = vPosFrom.size();
-
-		if (opt & CL_GPU_REORDER_POSITION) {
+		if (opt & CL_GPU_RESTORE_POSITION) {
 			CUDA_LAUNCH((reorderParticlesPos),
-				vPosFrom.getGPUIteratorTo(stop-start,64),
-				vPosFrom.toKernel(),
-				vPosTo.toKernel(),
-				indexMap.toKernel(),
+				vPosReordered.getGPUIteratorTo(stop-start,64),
+				vPosReordered.toKernel(),
+				vPos.toKernel(),
+				sortedToUnsortedIndex.toKernel(),
 				start
 			);
 		}
 
-		if (opt & CL_GPU_REORDER_PROPERTY && sizeof...(prp)) {
+		if (opt & CL_GPU_RESTORE_PROPERTY && sizeof...(prp)) {
 			CUDA_LAUNCH(
 				(reorderParticlesPrp<
-					decltype(vPrpFrom.toKernel()),
-					decltype(indexMap.toKernel()),
+					decltype(vPrpReordered.toKernel()),
+					decltype(sortedToUnsortedIndex.toKernel()),
 					prp...>),
-				vPrpFrom.getGPUIteratorTo(stop-start,64),
-				vPrpFrom.toKernel(),
-				vPrpTo.toKernel(),
-				indexMap.toKernel(),
+				vPrpReordered.getGPUIteratorTo(stop-start,64),
+				vPrpReordered.toKernel(),
+				vPrp.toKernel(),
+				sortedToUnsortedIndex.toKernel(),
 				start
 			);
 		}
-
 	#endif
 	}
 
@@ -817,6 +802,9 @@ private:
 
 	//! \brief for each non sorted index it show the index in the ordered vector
 	openfpm::vector_gpu<aggregate<unsigned int>> unsortedToSortedIndex;
+
+	//! Sorted domain particles domain or ghost
+	openfpm::vector_gpu<aggregate<unsigned int>> isSortedDomainOrGhost;
 
 	//! /brief unit cell dimensions
 	openfpm::array<T,dim> unitCellP2;
@@ -956,9 +944,9 @@ private:
 		);
 
 		constructSortedToSortedIndexNoGhost(gpuContext,start,stop,ghostMarker);
-	#else
-			std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
-	#endif
+#else
+		std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
+#endif
 	}
 
 	/*! \brief Construct the ids of the particles domain in the sorted array
@@ -973,9 +961,7 @@ private:
 		size_t ghostMarker)
 	{
 #ifdef __NVCC__
-		//! Sorted domain particles domain or ghost
-		openfpm::vector_gpu<aggregate<unsigned int>> isSortedDomainOrGhost(stop-start+1);
-
+		isSortedDomainOrGhost.resize(stop-start+1);
 		auto ite = isSortedDomainOrGhost.getGPUIterator();
 
 		CUDA_LAUNCH((mark_domain_particles),ite,
@@ -1139,6 +1125,7 @@ public:
 		size_t start = 0,
 		size_t stop = -1)
 	{
+#ifdef __NVCC__
 		if (opt & CL_SYMMETRIC) {
 			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
 		}
@@ -1150,6 +1137,9 @@ public:
 		else if (opt & CL_NON_SYMMETRIC) {
 			construct_sparse(vPos,vPrp,gpuContext,ghostMarker, start, stop);
 		}
+#else
+		std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
+#endif
 	}
 
 	/*! \brief construct from a list of particles with position/property reordering
@@ -1182,6 +1172,7 @@ public:
 		size_t start = 0,
 		size_t stop = -1)
 	{
+#ifdef __NVCC__
 		if (opt & CL_SYMMETRIC) {
 			std::cout << __FILE__ << ":" << __LINE__ << " symmetric cell list on GPU is not implemented. (And will never be, race conditions make them non suitable for GPU)" << std::endl;
 		}
@@ -1193,16 +1184,35 @@ public:
 		else if (opt & CL_NON_SYMMETRIC) {
 			construct_sparse(vPos,vPrp,gpuContext,ghostMarker, start, stop);
 
-			reorderParticles<vector,vector_prp,prp...>(
-				vPos,
-				vPrp,
-				vPosReorder,
-				vPrpReorder,
-				unsortedToSortedIndex,
-				start,
-				stop
-			);
+			if (stop == (size_t)-1) stop = vPos.size();
+
+			if (opt & CL_GPU_REORDER_POSITION) {
+				CUDA_LAUNCH((reorderParticlesPos),
+					vPos.getGPUIteratorTo(stop-start,64),
+					vPos.toKernel(),
+					vPosReorder.toKernel(),
+					unsortedToSortedIndex.toKernel(),
+					start
+				);
+			}
+
+			if (opt & CL_GPU_REORDER_PROPERTY && sizeof...(prp)) {
+				CUDA_LAUNCH(
+					(reorderParticlesPrp<
+						decltype(vPrp.toKernel()),
+						decltype(unsortedToSortedIndex.toKernel()),
+						prp...>),
+					vPrp.getGPUIteratorTo(stop-start,64),
+					vPrp.toKernel(),
+					vPrpReorder.toKernel(),
+					unsortedToSortedIndex.toKernel(),
+					start
+				);
+			}
 		}
+#else
+		std::cout << "Error: " <<  __FILE__ << ":" << __LINE__ << " you are calling CellList_gpu.construct() this function is suppose must be compiled with NVCC compiler, but it look like has been compiled by the standard system compiler" << std::endl;
+#endif
 	}
 
 	CellList_gpu_ker<dim,T,ids_type,transform_type,true> toKernel()
@@ -1439,72 +1449,31 @@ public:
 		size_t stop = -1)
 	{
 	#ifdef __NVCC__
-		reorderParticles<vector, vector_prp, prp...>(
-			vPosReordered,
-			vPrpReordered,
-			vPos,
-			vPrp,
-			sortedToUnsortedIndex,
-			start,
-			stop
-		);
-	#endif
-	}
+		if (stop == (size_t)-1) stop = vPosReordered.size();
 
-
-	/*! \brief This function copies particle positions or/and properties
-	 * following the particle index map
-	 *
-	 * \tparam vector position vector type
-	 * \tparam vector_prp property vector type
-	 * \tparam ...prp properties to reorder
-	 *
-	 * \param vPosFrom vector of particle positions to copy from
-	 * \param vPrpFrom vector of particle properties to copy from
-	 * \param vPosTo vector of particle positions to copy to
-	 * \param vPrpTo vector of particle properties to copy to
-	 * \param indexMap map of particle indices: index i in vPosFrom/vPrpFrom -> index j in vPosTo/vPrpTo
-	 * \param start first index to process in indexMap
-	 * \param stop last index to process in indexMap
-	 *
-	 */
-	template<typename vector, typename vector_prp, unsigned int ... prp>
-	void reorderParticles(
-		vector & vPosFrom,
-		vector_prp & vPrpFrom,
-		vector & vPosTo,
-		vector_prp & vPrpTo,
-		openfpm::vector_gpu<aggregate<unsigned int>>& indexMap,
-		size_t start = 0,
-		size_t stop = -1)
-	{
-	#ifdef __NVCC__
-		if (stop == (size_t)-1) stop = vPosFrom.size();
-
-		if (opt & CL_GPU_REORDER_POSITION) {
+		if (opt & CL_GPU_RESTORE_POSITION) {
 			CUDA_LAUNCH((reorderParticlesPos),
-				vPosFrom.getGPUIteratorTo(stop-start,64),
-				vPosFrom.toKernel(),
-				vPosTo.toKernel(),
-				indexMap.toKernel(),
+				vPosReordered.getGPUIteratorTo(stop-start,64),
+				vPosReordered.toKernel(),
+				vPos.toKernel(),
+				sortedToUnsortedIndex.toKernel(),
 				start
 			);
 		}
 
-		if (opt & CL_GPU_REORDER_PROPERTY && sizeof...(prp)) {
+		if (opt & CL_GPU_RESTORE_PROPERTY && sizeof...(prp)) {
 			CUDA_LAUNCH(
 				(reorderParticlesPrp<
-					decltype(vPrpFrom.toKernel()),
-					decltype(indexMap.toKernel()),
+					decltype(vPrpReordered.toKernel()),
+					decltype(sortedToUnsortedIndex.toKernel()),
 					prp...>),
-				vPrpFrom.getGPUIteratorTo(stop-start,64),
-				vPrpFrom.toKernel(),
-				vPrpTo.toKernel(),
-				indexMap.toKernel(),
+				vPrpReordered.getGPUIteratorTo(stop-start,64),
+				vPrpReordered.toKernel(),
+				vPrp.toKernel(),
+				sortedToUnsortedIndex.toKernel(),
 				start
 			);
 		}
-
 	#endif
 	}
 

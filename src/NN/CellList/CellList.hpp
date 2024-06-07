@@ -64,7 +64,9 @@ constexpr int CL_LINEAR_CELL_KEYS = 16;
 constexpr int CL_HILBERT_CELL_KEYS = 32;
 constexpr int CL_GPU_REORDER_POSITION = 64;
 constexpr int CL_GPU_REORDER_PROPERTY = 128;
-constexpr int CL_GPU_REORDER = CL_GPU_REORDER_POSITION | CL_GPU_REORDER_PROPERTY;
+constexpr int CL_GPU_RESTORE_POSITION = 256;
+constexpr int CL_GPU_RESTORE_PROPERTY = 512;
+constexpr int CL_GPU_REORDER = CL_GPU_REORDER_POSITION | CL_GPU_REORDER_PROPERTY | CL_GPU_RESTORE_POSITION | CL_GPU_RESTORE_PROPERTY;
 
 /*! \brief Calculate the the Neighborhood for symmetric interactions CSR scheme
  *

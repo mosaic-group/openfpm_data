@@ -608,7 +608,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 
 	// id Cell list
 	CellS cellList2(box,div);
-	cellList2.setOpt(CL_NON_SYMMETRIC | CL_GPU_REORDER_PROPERTY);
+	cellList2.setOpt(CL_NON_SYMMETRIC | CL_GPU_REORDER_PROPERTY | CL_GPU_RESTORE_PROPERTY);
 
 	// vector of particles
 
