@@ -1055,7 +1055,7 @@ public:
 	 * \return max number of neighbors per particle
 	 *
 	 */
-	size_t setNeighborMaxNum(size_t neighborMaxNum)
+	void setNeighborMaxNum(size_t neighborMaxNum)
 	{
 		this->neighborMaxNum = neighborMaxNum;
 	}
