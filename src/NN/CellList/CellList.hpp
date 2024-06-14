@@ -1135,7 +1135,7 @@ public:
 	 * \return An iterator across the neighhood particles
 	 *
 	 */
-	__attribute__((always_inline)) inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL> getNNIterator(size_t cell)
+	__attribute__((always_inline)) inline CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL> getNNIteratorBox(size_t cell)
 	{
 		CellNNIterator<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,(int)FULL> cln(cell,NNc_full,*this);
 		return cln;
@@ -1187,7 +1187,7 @@ public:
 	 *
 	 */
 	__attribute__((always_inline)) inline CellNNIteratorSym<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)SYM>
-	getNNIteratorSym(size_t cell, size_t p, const vector_pos_type & v)
+	getNNIteratorBoxSym(size_t cell, size_t p, const vector_pos_type & v)
 	{
 #ifdef SE_CLASS1
 		if (from_cd == false)
@@ -1219,7 +1219,7 @@ public:
 	 *
 	 */
 	__attribute__((always_inline)) inline CellNNIteratorSymLocal<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)FULL>
-	getNNIteratorSymLocal(size_t cell, size_t p, const vector_pos_type & v)
+	getNNIteratorBoxSymLocal(size_t cell, size_t p, const vector_pos_type & v)
 	{
 #ifdef SE_CLASS1
 		// if (from_cd == false)
@@ -1254,7 +1254,7 @@ public:
 	 */
 	template<typename vector_pos_type2>
 	__attribute__((always_inline)) inline CellNNIteratorSymMP<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type2,(unsigned int)SYM>
-	getNNIteratorSymMP(size_t cell, size_t p, const vector_pos_type2 & v_p1, const vector_pos_type2 & v_p2)
+	getNNIteratorBoxSymMP(size_t cell, size_t p, const vector_pos_type2 & v_p1, const vector_pos_type2 & v_p2)
 	{
 #ifdef SE_CLASS1
 		if (from_cd == false)

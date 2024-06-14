@@ -384,7 +384,7 @@ private:
 			Point<dim,T> xp = pos.template get<0>(p);
 
 			// Get the neighborhood of the particle
-			auto NN = cli.getNNIteratorSym(cli.getCell(xp),p,pos);
+			auto NN = cli.getNNIteratorBoxSym(cli.getCell(xp),p,pos);
 
 			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos2, p, xp, r_cut, neighborMaxNum);
 			++it;
@@ -421,7 +421,7 @@ private:
 			Point<dim,T> xp = pos.template get<0>(p);
 
 			// Get the neighborhood of the particle
-			auto NN = cli.getNNIterator(cli.getCell(xp));
+			auto NN = cli.getNNIteratorBox(cli.getCell(xp));
 
 			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos2, p, xp, r_cut, neighborMaxNum);
 			++it;

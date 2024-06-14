@@ -807,7 +807,7 @@ __global__ void calc_force_number(vector_pos pos, vector_ns sortToNonSort, CellL
 
     Point<3,float> xp = pos.template get<0>(p);
 
-    auto it = cellList.getNNIterator(cellList.getCell(xp));
+    auto it = cellList.getNNIteratorBox(cellList.getCell(xp));
 
     while (it.isNext())
     {
@@ -831,7 +831,7 @@ __global__ void calc_force_number_noato(vector_pos pos, vector_ns sortToNonSort,
 
     Point<3,float> xp = pos.template get<0>(p);
 
-    auto it = cellList.getNNIterator(cellList.getCell(xp));
+    auto it = cellList.getNNIteratorBox(cellList.getCell(xp));
 
     while (it.isNext())
     {
@@ -948,7 +948,7 @@ __global__ void calc_force_list(vector_pos pos, vector_ns sortToNonSort, CellLis
     Point<3,float> xp = pos.template get<0>(p);
     int start_list = v_nscan.template get<0>(p);
 
-    auto it = cellList.getNNIterator(cellList.getCell(xp));
+    auto it = cellList.getNNIteratorBox(cellList.getCell(xp));
 
     while (it.isNext())
     {
@@ -1052,9 +1052,9 @@ struct execute_cl_test
 	}
 
 	template<typename NN_type>
-	static auto getNN(NN_type & nn, size_t cell) -> decltype(nn.getNNIterator(cell))
+	static auto getNN(NN_type & nn, size_t cell) -> decltype(nn.getNNIteratorBox(cell))
 	{
-		return nn.getNNIterator(cell);
+		return nn.getNNIteratorBox(cell);
 	}
 };
 
@@ -1285,7 +1285,7 @@ void Test_cell_gpu_force(Box<dim,T> & box, size_t npart, const size_t (& div)[di
 
 			// Get NN iterator
 
-			auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIterator(cl_cpu.getCell(xp))*/;
+			auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIteratorBox(cl_cpu.getCell(xp))*/;
 
 			size_t n_ele = 0;
 			while (NN_it.isNext())
@@ -1351,7 +1351,7 @@ void Test_cell_gpu_force(Box<dim,T> & box, size_t npart, const size_t (& div)[di
 
 		openfpm::vector<int> cpu_list;
 
-		auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIterator(cl_cpu.getCell(xp));*/
+		auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIteratorBox(cl_cpu.getCell(xp));*/
 
 		while (NN_it.isNext())
 		{
@@ -1485,7 +1485,7 @@ void Test_cell_gpu_force_split(Box<dim,T> & box, size_t npart, const size_t (& d
 
 			// Get NN iterator
 
-			auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIterator(cl_cpu.getCell(xp))*/;
+			auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIteratorBox(cl_cpu.getCell(xp))*/;
 
 			size_t n_ele = 0;
 			while (NN_it.isNext())
@@ -1553,7 +1553,7 @@ void Test_cell_gpu_force_split(Box<dim,T> & box, size_t npart, const size_t (& d
 
 		openfpm::vector<int> cpu_list;
 
-		auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIterator(cl_cpu.getCell(xp));*/
+		auto NN_it = execute_cl_test<impl>::getNN(cl_cpu,cl_cpu.getCell(xp)); /*cl_cpu.getNNIteratorBox(cl_cpu.getCell(xp));*/
 
 		while (NN_it.isNext())
 		{

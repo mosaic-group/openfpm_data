@@ -267,7 +267,7 @@ public:
 	 * \return an iterator over the particle of the selected cell
 	 *
 	 */
-	inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL> getNNIterator(size_t cell)
+	inline CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL> getNNIteratorBox(size_t cell)
 	{
 		CellNNIteratorM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,FULL> cln(cell,CellListM<dim,T,sh_byte,CellBase>::NNc_full,*this);
 
@@ -295,7 +295,7 @@ public:
 	 *
 	 */
 	inline CellNNIteratorSymM<dim,CellListM<dim,T,sh_byte,CellBase>,sh_byte,SYM>
-	getNNIteratorSym(size_t cell,
+	getNNIteratorBoxSym(size_t cell,
 					 size_t pp,
 			         size_t p,
 					 const typename CellBase::internal_vector_pos_type & pos,

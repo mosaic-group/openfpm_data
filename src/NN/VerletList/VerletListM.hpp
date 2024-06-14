@@ -168,7 +168,7 @@ class VerletListM : public VerletBase
 			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			auto NN = cli.getNNIteratorSym(cli.getCell(xp),pp,i,pos,pos2);
+			auto NN = cli.getNNIteratorBoxSym(cli.getCell(xp),pp,i,pos,pos2);
 
 			while (NN.isNext())
 			{
@@ -225,7 +225,7 @@ class VerletListM : public VerletBase
 			Point<dim,T> xp = pos.template get<0>(i);
 
 			// Get the neighborhood of the particle
-			auto NN = cli.getNNIterator(cli.getCell(xp));
+			auto NN = cli.getNNIteratorBox(cli.getCell(xp));
 
 			while (NN.isNext())
 			{

@@ -167,12 +167,6 @@ public:
 		return ngi;
 	}
 
-	inline __device__ auto getNNIterator(
-		const grid_key_dx<dim,ids_type> & cellPosition) -> decltype(this->getNNIteratorBox(cellPosition))
-	{
-		return this->getNNIteratorBox(cellPosition);
-	}
-
 	inline __device__ openfpm::vector_gpu_ker<aggregate<unsigned int>,memory_traits_inte> & getDomainSortIds()
 	{
 		return sortedToSortedIndexNoGhost;
@@ -410,14 +404,6 @@ public:
 		unsigned int cell = cid_<dim,ids_type,transform_type>::get_cid(this->get_div_c(),this->get_spacing_c(),this->get_off(),this->get_t(),xp);
 
 		return vecSparseCellIndex_PartIndex.get_sparse(cell);
-	}
-
-	inline __device__ NN_gpu_it_sparse<dim,ids_type> getNNIterator(
-		decltype(vecSparseCellIndex_PartIndex.get_sparse(0)) cId)
-	{
-		NN_gpu_it_sparse<dim,ids_type> ngi(cId.id,neighborCellCountPrefixSum,neighborPartIndexFrom_To,sortedToUnsortedIndex);
-
-		return ngi;
 	}
 
 	inline __device__ NN_gpu_it_sparse<dim,ids_type> getNNIteratorBox(
