@@ -25,11 +25,8 @@ class NN_gpu_it
 
 			if (isNext() == false) break;
 
-			neighborCellIndexAct = neighborCellOffset.template get<0>(boxNeighborCellOffset_i);
-
-			if (cellPositionIndex+this->neighborCellIndexAct+1 >= numPartInCellPrefixSum.size()) {
-				this->nextCell(); continue;
-			}
+			if (cellPositionIndex+this->neighborCellIndexAct+1 >= numPartInCellPrefixSum.size() || cellPositionIndex+this->neighborCellIndexAct < 0)
+				continue;
 
 			neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
 			neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
@@ -91,6 +88,8 @@ public:
 	__device__ inline void nextCell()
 	{
 		++boxNeighborCellOffset_i;
+
+		if (isNext()) neighborCellIndexAct = neighborCellOffset.template get<0>(boxNeighborCellOffset_i);
 	}
 
 };
