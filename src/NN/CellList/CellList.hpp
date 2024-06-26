@@ -320,15 +320,18 @@ void NNcalc_rad(
 	}
 
 	radNeighborCellOffset.resize(radNeighborCellOffsetTemp.size());
+
+	size_t index = 0;
+
 	// start iteration with own cell
-	radNeighborCellOffset.template get<0>(0) = 0;
+	radNeighborCellOffset.template get<0>(index++) = 0;
 
 	for (int i = 0; i < radNeighborCellOffsetTemp.size(); ++i)
 	{
 		int cellIndex = radNeighborCellOffsetTemp.template get<0>(i);
 
 		if (cellIndex != 0)
-			radNeighborCellOffset.template get<0>(i) = cellIndex;
+			radNeighborCellOffset.template get<0>(index++) = cellIndex;
 	}
 }
 
