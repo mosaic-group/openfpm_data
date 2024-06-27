@@ -870,6 +870,33 @@ __global__ void calc_force_number_box(vector_pos pos, vector_ns sortToNonSort, C
 }
 
 template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
+__global__ void calc_force_number_box_symm(vector_pos pos, vector_ns sortToNonSort, CellList_type cellList, vector_n_type n_out, unsigned int start)
+{
+    int p = threadIdx.x + blockIdx.x * blockDim.x + start;
+
+    if (p >= pos.size()) return;
+
+    Point<3,float> xp = pos.template get<0>(p);
+
+    auto it = cellList.getNNIteratorBoxSymm(p, cellList.getCell(xp));
+
+    while (it.isNext())
+    {
+    	auto q = it.get_sort();
+
+		int s1 = sortToNonSort.template get<0>(q);
+		int s2 = p;
+
+		atomicAdd(&n_out.template get<0>(s1), 1);
+
+		if (s2 != s1)
+			atomicAdd(&n_out.template get<0>(s2), 1);
+
+    	++it;
+    }
+}
+
+template<typename vector_pos, typename vector_ns, typename CellList_type,typename vector_n_type>
 __global__ void calc_force_number_box_noato(vector_pos pos, vector_ns sortToNonSort, CellList_type cellList, vector_n_type n_out, unsigned int start)
 {
     int p = threadIdx.x + blockIdx.x * blockDim.x + start;
@@ -1138,6 +1165,90 @@ struct execute_cl_test<2>
 		auto ite = sortToNonSort.getGPUIterator();
 
 		CUDA_LAUNCH((calc_force_number_box<decltype(vPos.toKernel()),
+				          decltype(sortToNonSort.toKernel()),
+				          decltype(cellList2.toKernel()),
+				          decltype(n_out.toKernel())>),
+							   ite,
+							   vPos.toKernel(),
+							   sortToNonSort.toKernel(),
+							   cellList2.toKernel(),
+							   n_out.toKernel(),
+							   start);
+	}
+
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
+	static void calc_list(pl_type & vPos, sortToNonSort_type & sortToNonSort, cl2_type & cellList2, n_out_scan_type & n_out_scan, nn_list_type & nn_list)
+	{
+		auto ite = sortToNonSort.getGPUIterator();
+
+		CUDA_LAUNCH((calc_force_list_box<decltype(vPos.toKernel()),
+				          decltype(sortToNonSort.toKernel()),
+				          decltype(cellList2.toKernel()),
+				          decltype(nn_list.toKernel())>),
+							   ite,vPos.toKernel(),
+							   sortToNonSort.toKernel(),
+							   cellList2.toKernel(),
+							   n_out_scan.toKernel(),
+							   nn_list.toKernel());
+	}
+
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_scan_type, typename nn_list_type>
+	static void calc_list_partial(pl_type & vPos,
+		sortToNonSort_type & sortToNonSort,
+		cl2_type & cellList2,
+		n_out_scan_type & n_out_scan,
+		n_out_scan_type & n_out_scan_partial,
+		nn_list_type & nn_list)
+	{
+		auto ite = sortToNonSort.getGPUIterator();
+
+		CUDA_LAUNCH((calc_force_list_box_partial),ite,vPos.toKernel(),
+							   	   	   sortToNonSort.toKernel(),
+							   	   	   cellList2.toKernel(),
+							   	   	   n_out_scan.toKernel(),
+							   	   	   n_out_scan_partial.toKernel(),
+							   	   	   nn_list.toKernel());
+	}
+
+	template<typename NN_type>
+	static auto getNN(NN_type & nn, size_t cell) -> decltype(nn.getNNIteratorRadius(cell))
+	{
+		return nn.getNNIteratorRadius(cell);
+	}
+};
+
+template<>
+struct execute_cl_test<3>
+{
+	template<typename CellS, typename Cells_cpu_type, typename T>
+	static void set_radius(CellS & cellList2, Cells_cpu_type & cl_cpu, T & radius)
+	{
+		cellList2.setRadius(radius);
+		cl_cpu.setRadius(radius);
+	}
+
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_type>
+	static void calc_num_noato(pl_type & vPos, sortToNonSort_type & sortToNonSort, cl2_type & cellList2, n_out_type & n_out, unsigned int start)
+	{
+		auto ite = sortToNonSort.getGPUIterator();
+
+		CUDA_LAUNCH((calc_force_number_box_noato<decltype(vPos.toKernel()),
+				          decltype(sortToNonSort.toKernel()),
+				          decltype(cellList2.toKernel()),
+				          decltype(n_out.toKernel())>),
+							   ite,vPos.toKernel(),
+							   sortToNonSort.toKernel(),
+							   cellList2.toKernel(),
+							   n_out.toKernel(),
+							   start);
+	}
+
+	template<typename pl_type, typename sortToNonSort_type, typename cl2_type, typename n_out_type>
+	static void calc_num(pl_type & vPos, sortToNonSort_type & sortToNonSort, cl2_type & cellList2, n_out_type & n_out, unsigned int start)
+	{
+		auto ite = sortToNonSort.getGPUIterator();
+
+		CUDA_LAUNCH((calc_force_number_box_symm<decltype(vPos.toKernel()),
 				          decltype(sortToNonSort.toKernel()),
 				          decltype(cellList2.toKernel()),
 				          decltype(n_out.toKernel())>),
@@ -1609,6 +1720,24 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box)
 
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,2>(box2,1000,{8,8,8});
 	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,2>(box2,10000,{8,8,8});
+
+	std::cout << "End cell list GPU" << "\n";
+
+	// Test the cell list
+}
+
+BOOST_AUTO_TEST_CASE( CellList_gpu_use_calc_force_box_symm)
+{
+	std::cout << "Test cell list GPU" << "\n";
+
+	Box<3,float> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,float> box2({-0.3f,-0.3f,-0.3f},{1.0f,1.0f,1.0f});
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,3>(box,1000,{8,8,8});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,3>(box,10000,{8,8,8});
+
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,3>(box2,1000,{8,8,8});
+	Test_cell_gpu_force<3,float,CellList_gpu<3,float,CudaMemory,shift_only<3,float>>,3>(box2,10000,{8,8,8});
 
 	std::cout << "End cell list GPU" << "\n";
 
