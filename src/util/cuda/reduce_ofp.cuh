@@ -46,24 +46,24 @@ namespace openfpm
 
 		size_t temp_storage_bytes = 0;
 		hipcub::DeviceReduce::Reduce(NULL,
-			temp_storage_bytes,input, output, count, op, false);
+			temp_storage_bytes,input, output, count, op, 0);
 
 		auto & temporal = gpuContext.getTemporalCUB();
 		temporal.resize(temp_storage_bytes);
 
 		hipcub::DeviceReduce::Reduce(temporal.template getDeviceBuffer<0>(),
-			temp_storage_bytes,input, output, count, op, false);
+			temp_storage_bytes,input, output, count, op, 0);
 	#else
 
 		size_t temp_storage_bytes = 0;
 		cub::DeviceReduce::Reduce(NULL,
-			temp_storage_bytes, input, output, count, op, false);
+			temp_storage_bytes, input, output, count, op, 0);
 
 		auto & temporal = gpuContext.getTemporalCUB();
 		temporal.resize(temp_storage_bytes);
 
 		cub::DeviceReduce::Reduce(temporal.template getDeviceBuffer<0>(),
-			temp_storage_bytes, input, output, count, op, false);
+			temp_storage_bytes, input, output, count, op, 0);
 
 	#endif
 #endif
