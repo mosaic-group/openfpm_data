@@ -628,6 +628,8 @@ public:
 		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
 		sortedToSortedIndexNoGhost.swap(clg.sortedToSortedIndexNoGhost);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
+		boxNeighborCellOffset.swap(clg.boxNeighborCellOffset);
+		rcutNeighborCellOffset.swap(clg.rcutNeighborCellOffset);
 
 		unitCellP2.swap(clg.unitCellP2);
 		numCellDim.swap(clg.numCellDim);
@@ -657,6 +659,8 @@ public:
 		sortedToUnsortedIndex = clg.sortedToUnsortedIndex;
 		sortedToSortedIndexNoGhost = clg.sortedToSortedIndexNoGhost;
 		unsortedToSortedIndex = clg.unsortedToSortedIndex;
+		boxNeighborCellOffset = boxNeighborCellOffset;
+		rcutNeighborCellOffset = rcutNeighborCellOffset;
 
 		unitCellP2 = clg.unitCellP2;
 		numCellDim = clg.numCellDim;
@@ -679,6 +683,8 @@ public:
 		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
 		sortedToSortedIndexNoGhost.swap(clg.sortedToSortedIndexNoGhost);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
+		boxNeighborCellOffset.swap(boxNeighborCellOffset);
+		rcutNeighborCellOffset.swap(rcutNeighborCellOffset);
 
 		unitCellP2 = clg.unitCellP2;
 		numCellDim = clg.numCellDim;
