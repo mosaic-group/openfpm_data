@@ -631,6 +631,7 @@ public:
 		const vPos_type& pos,
 		size_t ghostMarker)
 	{
+		this->cellList = cellList;
 		Point<dim,T> spacing = cellList.getCellBox().getP2();
 
 		// Create with radius or not
