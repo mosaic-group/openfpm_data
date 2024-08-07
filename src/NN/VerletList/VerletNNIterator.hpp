@@ -76,6 +76,18 @@ public:
 	{
 		return ver.get_lin(ele_id);
 	}
+
+
+	/*! \brief Resets the iterator to the starting position
+	 *
+	 *
+	 */
+	inline void reset()
+	{
+		ele_id = start;
+	}
+
+
 };
 
 

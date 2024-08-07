@@ -1332,6 +1332,14 @@ public:
 		isInitSFC = false;
 	}
 
+	/*! \brief Clear one cell of the cell list
+	 *
+	 */
+	void clear(typename Mem_type::local_index_type cell_id)
+	{
+		Mem_type::clear(cell_id);
+	}
+
 	/*! \brief Litterary destroy the memory of the cell list, including the retained one
 	 *
 	 */

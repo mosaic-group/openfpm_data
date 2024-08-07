@@ -69,12 +69,13 @@ struct iteratePartNeighbor<false, false> {
 
 		while (it.isNext())
 		{
-			auto q = it.get();
+			size_t q = it.get();
 
 			Point<dim,T> xq = pos.template get<0>(q);
 
-			if (xp.distance2(xq) < r_cut2)
+			if (xp.distance2(xq) < r_cut2) {
 				verletList.addPart(p,q);
+			}
 
 			++it;
 		}
@@ -115,8 +116,9 @@ struct iteratePartNeighbor<false, true> {
 
 			Point<dim,T> xq = pos.template get<0>(q);
 
-			if (xp.distance2(xq) < r_cut2 && p != q)
+			if (xp.distance2(xq) < r_cut2 && p != q) {
 				verletList.addPart(p,q);
+			}
 			++it;
 		}
 	}
@@ -242,8 +244,6 @@ struct iteratePartNeighbor<true, true> {
 
 /*! \brief Class for Verlet list implementation
  *
- * * M = number of particles
- * * ele = element the structure is storing
  *
  * \tparam dim Dimensionality of the space
  * \tparam T type of the space float, double ...
@@ -443,6 +443,30 @@ public:
 		size_t ghostMarker,
 		CellListImpl & cellList)
 	{
+		fillNonSymmetricIterator<domainIterator_type>(it, pos, pos, r_cut, ghostMarker, cellList);
+	}
+
+	/*! \brief Fill Non-symmetric Verlet list from a given cell-list
+	 *
+	 * \param it domain iterator of particle ids
+	 * \param domainPos vector of particle positions of the domain vector
+	 * \param supportPos vector of particle positions of the support vector
+	 * \param r_cut cut-off radius to get the neighborhood particles
+	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and ghostMarker = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 * \param cellList Cell-list elements to use to construct the verlet list
+	 *
+	 */
+	template <typename domainIterator_type, typename vPos_type2>
+	inline void fillNonSymmetricIterator(
+		domainIterator_type& it,
+		const vPos_type2 & domainPos,
+		const vPos_type & supportPos,
+		T r_cut,
+		size_t ghostMarker,
+		CellListImpl & cellList)
+	{
 		size_t end = ghostMarker;
 
 		Mem_type::init_to_zero(slot,end);
@@ -450,12 +474,12 @@ public:
 		while (it.isNext())
 		{
 			typename Mem_type::local_index_type p = it.get();
-			Point<dim,T> xp = pos.template get<0>(p);
+			Point<dim,T> xp = domainPos.template get<0>(p);
 
 			// Get the neighborhood of the particle
 			auto NN = cellList.getNNIteratorBox(cellList.getCell(xp));
 
-			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, supportPos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -556,27 +580,27 @@ public:
 
 	/*! \brief Add a neighborhood particle to a particle
 	 *
-	 * \param part_id part id where to add
-	 * \param ele element to add
+	 * \param p part id where to add
+	 * \param q element to add
 	 *
 	 */
-	inline void addPart(size_t part_id, size_t ele)
+	inline void addPart(size_t p, size_t q)
 	{
-		Mem_type::addCell(part_id,ele);
+		Mem_type::addCell(p,q);
 	}
 
-	/*! \brief Replace the neighborhood particles for the particle id part_id with the given buffer
+	/*! \brief Replace the neighborhood particles for the particle id p with the given buffer
 	 *
-	 * \param part_id id of the particle
+	 * \param p id of the particle
 	 * \param buffer used to update the neighborhood
 	 *
 	 */
-	inline void replaceNeighbParts(size_t part_id, const openfpm::vector<size_t> &buffer)
+	inline void replaceNeighbParts(size_t p, const openfpm::vector<size_t> &buffer)
 	{
-		Mem_type::clear(part_id);
+		Mem_type::clear(p);
 		for (size_t i = 0; i < buffer.size(); i++)
 		{
-			Mem_type::addCell(part_id,buffer.get(i));
+			Mem_type::addCell(p,buffer.get(i));
 		}
 	}
 
@@ -641,6 +665,39 @@ public:
 			wr &= r_cut <= spacing.get(i);
 
 		fillNonSymmetricIterator(it,pos,r_cut,ghostMarker,cellList);
+	}
+
+	/*! Initialize the verlet list for Non-Symmetric case from an already filled cell-list
+	 *
+	 * \param cellList external Cell-list
+	 * \param r_cut cutoff-radius
+	 * \param it domain iterator of particle ids
+	 * \param domainPos vector of domain particle positions
+	 * \param supportPos vector of support particle positions
+	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and ghostMarker = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 *
+	 */
+	template <typename domainIterator_type>
+	void Initialize(
+		CellListImpl& cellList,
+		T r_cut,
+		domainIterator_type& it,
+		const vPos_type& domainPos,
+		const vPos_type& supportPos,
+		size_t ghostMarker)
+	{
+		this->cellList = cellList;
+		Point<dim,T> spacing = cellList.getCellBox().getP2();
+
+		// Create with radius or not
+		bool wr = true;
+
+		for (size_t i = 0 ; i < dim ; i++)
+			wr &= r_cut <= spacing.get(i);
+
+		fillNonSymmetricIterator(it,domainPos,supportPos,r_cut,ghostMarker,cellList);
 	}
 
 	/*! \brief Initialize the symmetric Verlet-list
@@ -885,27 +942,27 @@ public:
 
 	/*! \brief Return the number of neighborhood particles for the particle id
 	 *
-	 * \param part_id id of the particle
+	 * \param p id of the particle
 	 *
 	 * \return number of neighborhood particles for a particular particle id
 	 *
 	 */
-	inline size_t getNNPart(size_t  part_id) const
+	inline size_t getNNPart(size_t p) const
 	{
-		return Mem_type::getNelements(part_id);
+		return Mem_type::getNelements(p);
 	}
 
-	/*! \brief Get the neighborhood element j for the particle i
+	/*! \brief Get the neighborhood element q for the particle p
 	 *
-	 * \param i particle id
-	 * \param j neighborhood j
+	 * \param p particle id
+	 * \param q neighborhood j
 	 *
 	 * \return The element value
 	 *
 	 */
-	inline size_t get(size_t i, size_t j) const
+	inline size_t get(size_t p, size_t q) const
 	{
-		return Mem_type::get(i,j);
+		return Mem_type::get(p,q);
 	}
 
 	/*! \brief Swap the memory
@@ -933,15 +990,15 @@ public:
 	 *
 	 * It iterate across all the neighborhood particles of a selected particle
 	 *
-	 * \param part_id particle id
+	 * \param p particle id
 	 *
 	 * \return an interator across the neighborhood particles
 	 *
 	 */
 	inline VerletNNIterator<dim,VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl>>
-	getNNIterator(size_t part_id)
+	getNNIterator(size_t p)
 	{
-		VerletNNIterator<dim,VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl>> vln(part_id,*this);
+		VerletNNIterator<dim,VerletList<dim,T,opt,Mem_type,transform,vPos_type,CellListImpl>> vln(p,*this);
 
 		return vln;
 	}
@@ -956,41 +1013,41 @@ public:
 
 	/*! \brief Return the starting point of the neighborhood for the particle p
 	 *
-	 * \param part_id particle id
+	 * \param p particle id
 	 *
 	 * \return the index
 	 *
 	 */
 	inline const typename Mem_type::local_index_type &
-	getStart(typename Mem_type::local_index_type part_id)
+	getStart(typename Mem_type::local_index_type p)
 	{
-		return Mem_type::getStartId(part_id);
+		return Mem_type::getStartId(p);
 	}
 
 	/*! \brief Return the end point of the neighborhood for the particle p
 	 *
-	 * \param part_id particle id
+	 * \param p particle id
 	 *
 	 * \return the stop index
 	 *
 	 */
 	inline const typename Mem_type::local_index_type &
-	getStop(typename Mem_type::local_index_type part_id)
+	getStop(typename Mem_type::local_index_type p)
 	{
-		return Mem_type::getStopId(part_id);
+		return Mem_type::getStopId(p);
 	}
 
 	/*! \brief Return the neighborhood id
 	 *
-	 * \param part_id particle id
+	 * \param p particle id
 	 *
 	 * \return the neighborhood id
 	 *
 	 */
 	inline const typename Mem_type::local_index_type &
-	get_lin(const typename Mem_type::local_index_type * part_id)
+	get_lin(const typename Mem_type::local_index_type * p)
 	{
-		return Mem_type::get_lin(part_id);
+		return Mem_type::get_lin(p);
 	}
 
 	/*! \brief Get the internal cell-list used to construct the Verlet-list
@@ -1066,6 +1123,15 @@ public:
 	openfpm::vector<typename Mem_type::local_index_type> & getParticleSeq()
 	{
 		return domainParticlesCRS;
+	}
+
+	/*! \brief Clear support of one particle in the verlet list
+	 *
+	 * \param p id of particle to clear support
+	 */
+	void clear(typename Mem_type::local_index_type p)
+	{
+		Mem_type::clear(p);
 	}
 };
 
