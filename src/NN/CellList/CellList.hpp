@@ -1221,7 +1221,7 @@ public:
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	__attribute__((always_inline)) inline CellNNIteratorSymLocal<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)FULL>
+	__attribute__((always_inline)) inline CellNNIteratorSymLocal<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(int)FULL>
 	getNNIteratorBoxSymLocal(size_t cell, size_t p, const vector_pos_type & v)
 	{
 #ifdef SE_CLASS1

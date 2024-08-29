@@ -348,7 +348,7 @@ public:
 			// Get the neighborhood of the particle
 			auto NN = it.getNNIteratorCSR(pos);
 
-			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -384,7 +384,7 @@ public:
 			// Get the neighborhood of the particle
 			auto NN = cellList.getNNIteratorBoxSym(cellList.getCell(xp),p,pos);
 
-			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -419,7 +419,7 @@ public:
 			// Get the neighborhood of the particle
 			auto NN = cellList.getNNIteratorBox(cellList.getCell(xp));
 
-			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -479,7 +479,7 @@ public:
 			// Get the neighborhood of the particle
 			auto NN = cellList.getNNIteratorBox(cellList.getCell(xp));
 
-			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, supportPos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, supportPos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -522,7 +522,7 @@ public:
 			auto NN = pos.getIteratorTo(pos.size_local());
 			T r_cut = rCuts.get(p);
 
-			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -557,7 +557,7 @@ public:
 			// Get the neighborhood of the particle
 			auto NN = cellList.getNNIteratorRadius(cellList.getCell(xp),r_cut);
 
-			iteratePartNeighbor<opt&VL_NMAX_NEIGHBOR,opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
