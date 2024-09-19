@@ -278,6 +278,9 @@ protected:
 	//! Max number of Nieghbors. Only with opt |= VL_NMAX_NEIGHBOR
 	size_t neighborMaxNum=0;
 
+	//! Cut-off radius
+	T rCut;
+
 private:
 
 	//! decomposition counter
@@ -286,7 +289,7 @@ private:
 	//! Internal cell-list
 	CellListImpl cellList;
 
-
+public:
 	/*! \brief Fill the cell-list with data
 	 *
 	 * \param cellList Cell-list
@@ -308,9 +311,6 @@ private:
 
 		cellList.fill(vPos, vPropStub, ghostMarker);
 	}
-
-
-public:
 
 	/*! \brief Fill CRS Symmetric Verlet list from a given cell-list
 	 *
@@ -348,7 +348,7 @@ public:
 			// Get the neighborhood of the particle
 			auto NN = it.getNNIteratorCSR(pos);
 
-			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)(opt&VL_NMAX_NEIGHBOR),(bool)(opt&VL_SKIP_REF_PART)>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -384,7 +384,7 @@ public:
 			// Get the neighborhood of the particle
 			auto NN = cellList.getNNIteratorBoxSym(cellList.getCell(xp),p,pos);
 
-			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)(opt&VL_NMAX_NEIGHBOR),(bool)(opt&VL_SKIP_REF_PART)>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -419,7 +419,7 @@ public:
 			// Get the neighborhood of the particle
 			auto NN = cellList.getNNIteratorBox(cellList.getCell(xp));
 
-			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)(opt&VL_NMAX_NEIGHBOR),(bool)(opt&VL_SKIP_REF_PART)>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -479,7 +479,7 @@ public:
 			// Get the neighborhood of the particle
 			auto NN = cellList.getNNIteratorBox(cellList.getCell(xp));
 
-			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, supportPos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)(opt&VL_NMAX_NEIGHBOR),(bool)(opt&VL_SKIP_REF_PART)>{}(*this, NN, supportPos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -522,7 +522,7 @@ public:
 			auto NN = pos.getIteratorTo(pos.size_local());
 			T r_cut = rCuts.get(p);
 
-			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)(opt&VL_NMAX_NEIGHBOR),(bool)(opt&VL_SKIP_REF_PART)>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -557,7 +557,7 @@ public:
 			// Get the neighborhood of the particle
 			auto NN = cellList.getNNIteratorRadius(cellList.getCell(xp),r_cut);
 
-			iteratePartNeighbor<(bool)opt&VL_NMAX_NEIGHBOR,(bool)opt&VL_SKIP_REF_PART>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)(opt&VL_NMAX_NEIGHBOR),(bool)(opt&VL_SKIP_REF_PART)>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
 			++it;
 		}
 	}
@@ -620,6 +620,7 @@ public:
 		vPos_type & pos,
 		size_t ghostMarker)
 	{
+		this->rCut = r_cut;
 		// Number of divisions
 		size_t div[dim];
 
@@ -655,14 +656,8 @@ public:
 		const vPos_type& pos,
 		size_t ghostMarker)
 	{
+		this->rCut = r_cut;
 		this->cellList = cellList;
-		Point<dim,T> spacing = cellList.getCellBox().getP2();
-
-		// Create with radius or not
-		bool wr = true;
-
-		for (size_t i = 0 ; i < dim ; i++)
-			wr &= r_cut <= spacing.get(i);
 
 		fillNonSymmetricIterator(it,pos,r_cut,ghostMarker,cellList);
 	}
@@ -688,14 +683,8 @@ public:
 		const vPos_type& supportPos,
 		size_t ghostMarker)
 	{
+		this->rCut = r_cut;
 		this->cellList = cellList;
-		Point<dim,T> spacing = cellList.getCellBox().getP2();
-
-		// Create with radius or not
-		bool wr = true;
-
-		for (size_t i = 0 ; i < dim ; i++)
-			wr &= r_cut <= spacing.get(i);
 
 		fillNonSymmetricIterator(it,domainPos,supportPos,r_cut,ghostMarker,cellList);
 	}
@@ -720,6 +709,7 @@ public:
 		vPos_type & pos,
 		size_t ghostMarker)
 	{
+		this->rCut = r_cut;
 		// Padding
 		size_t pad = 0;
 
@@ -758,6 +748,7 @@ public:
 		vPos_type & pos,
 		size_t ghostMarker)
 	{
+		this->rCut = r_cut;
 		// Padding
 		size_t pad = 0;
 
@@ -1123,6 +1114,16 @@ public:
 	openfpm::vector<typename Mem_type::local_index_type> & getParticleSeq()
 	{
 		return domainParticlesCRS;
+	}
+
+	/*! \brief Return the cut-off radius of the Verlet list
+	 *
+	 * \return cut-off radius
+	 *
+	 */
+	T getRCut()
+	{
+		return rCut;
 	}
 
 	/*! \brief Clear support of one particle in the verlet list
