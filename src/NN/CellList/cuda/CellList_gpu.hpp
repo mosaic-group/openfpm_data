@@ -276,7 +276,7 @@ public:
 	 */
 	CellList_gpu(CellList_gpu<dim,T,Memory,transform_type> && clg)
 	{
-		this->operator=(clg);
+		this->operator=(std::move(clg));
 	}
 
 	/*! \brief default constructor
@@ -659,8 +659,8 @@ public:
 		sortedToUnsortedIndex = clg.sortedToUnsortedIndex;
 		sortedToSortedIndexNoGhost = clg.sortedToSortedIndexNoGhost;
 		unsortedToSortedIndex = clg.unsortedToSortedIndex;
-		boxNeighborCellOffset = boxNeighborCellOffset;
-		rcutNeighborCellOffset = rcutNeighborCellOffset;
+		boxNeighborCellOffset = clg.boxNeighborCellOffset;
+		rcutNeighborCellOffset = clg.rcutNeighborCellOffset;
 
 		unitCellP2 = clg.unitCellP2;
 		numCellDim = clg.numCellDim;
@@ -683,8 +683,8 @@ public:
 		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
 		sortedToSortedIndexNoGhost.swap(clg.sortedToSortedIndexNoGhost);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
-		boxNeighborCellOffset.swap(boxNeighborCellOffset);
-		rcutNeighborCellOffset.swap(rcutNeighborCellOffset);
+		boxNeighborCellOffset.swap(clg.boxNeighborCellOffset);
+		rcutNeighborCellOffset.swap(clg.rcutNeighborCellOffset);
 
 		unitCellP2 = clg.unitCellP2;
 		numCellDim = clg.numCellDim;
@@ -1027,7 +1027,7 @@ public:
 	 */
 	CellList_gpu(CellList_gpu<dim,T,Memory,transform_type> && clg)
 	{
-		this->operator=(clg);
+		this->operator=(std::move(clg));
 	}
 
 	/*! \brief default constructor

@@ -1618,13 +1618,6 @@ namespace openfpm
 			base.set(id,v.base,src);
 		}
 
-		template<typename key_type>
-		key_type getOriginKey(key_type vec_key)
-		{
-			return vec_key;
-		}
-
-
 		/*! \brief Assignment operator
 		 *
 		 * move semantic movement operator=
