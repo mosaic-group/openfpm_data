@@ -527,6 +527,53 @@ public:
 		}
 	}
 
+	/*! \brief Fill non-symmetric adaptive r-cut Verlet list from a list of cut-off radii
+	 *
+	 * \param it domain iterator of particle ids
+	 * \param domainPos vector of particle positions of the domain vector
+	 * \param supportPos vector of particle positions of the support vector
+	 * \param rCuts list of cut-off radii for every particle in pos
+	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
+	 * 			if we have 120 particles and ghostMarker = 100, the Verlet list will be constructed only for the first
+	 * 			100 particles
+	 *
+	 */
+	template <typename domainIterator_type, typename vPos_type2>
+	inline void fillNonSymmAdaptiveIterator(
+		domainIterator_type& it,
+		const vPos_type2 & domainPos,
+		const vPos_type & supportPos,
+		openfpm::vector<T> &rCuts,
+		size_t ghostMarker)
+	{
+		if (rCuts.size() != ghostMarker)
+		{
+			std::cerr << __FILE__ << ":" << __LINE__
+				<< " ERROR: when constructing adaptive cut-off Verlet list, pos.size_local() != rCuts.size(), ["
+				<< rCuts.size() << "!=" << domainPos.size_local() << "]" << std::endl;
+			std::runtime_error("Runtime adaptive cut-off Verlet list error");
+		}
+
+		size_t end = ghostMarker;
+
+		Mem_type::init_to_zero(slot,end);
+
+		// iterate the particles
+		while (it.isNext())
+		{
+			typename Mem_type::local_index_type p = it.get();
+			Point<dim,T> xp = domainPos.template get<0>(p);
+
+			// iterate the whole domain instead of neighborhood iteration
+			// no auxillary cell list is needed
+			auto NN = supportPos.getIteratorTo(supportPos.size_local());
+			T r_cut = rCuts.get(p);
+
+			iteratePartNeighbor<(bool)(opt&VL_NMAX_NEIGHBOR),(bool)(opt&VL_SKIP_REF_PART)>{}(*this, NN, supportPos, p, xp, r_cut, neighborMaxNum);
+			++it;
+		}
+	}
+
 	/*! \brief Fill Non-symmetric Verlet list from a given cell-list (Radius)
 	 *
 	 * \param pos vector of positions
