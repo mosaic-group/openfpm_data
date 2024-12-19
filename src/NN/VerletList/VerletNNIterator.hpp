@@ -1,16 +1,6 @@
-/*
- * VerletNNIterator.hpp
- *
- *  Created on: Aug 16, 2016
- *      Author: i-bird
- */
-
 #ifndef OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETNNITERATOR_HPP_
 #define OPENFPM_DATA_SRC_NN_VERLETLIST_VERLETNNITERATOR_HPP_
 
-#define VL_NON_SYMMETRIC 0
-#define VL_SYMMETRIC 1
-#define VL_CRS_SYMMETRIC 2
 
 /*! \brief Iterator for the neighborhood of the cell structures
  *
@@ -21,10 +11,9 @@
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
  * \tparam NNc_size neighborhood size
- * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Ver> class VerletNNIterator
+    template<unsigned int dim, typename Ver> class VerletNNIterator
 {
 	//! start index for the neighborhood
 	const typename Ver::Mem_type_type::local_index_type  * start;
@@ -87,6 +76,18 @@ public:
 	{
 		return ver.get_lin(ele_id);
 	}
+
+
+	/*! \brief Resets the iterator to the starting position
+	 *
+	 *
+	 */
+	inline void reset()
+	{
+		ele_id = start;
+	}
+
+
 };
 
 

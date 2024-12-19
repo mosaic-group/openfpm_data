@@ -8,8 +8,8 @@
 #ifndef OPENFPM_DATA_SRC_NN_CELLLIST_PARTICLEITCRS_CELLS_HPP_
 #define OPENFPM_DATA_SRC_NN_CELLLIST_PARTICLEITCRS_CELLS_HPP_
 
-#include "CellNNIterator.hpp"
-#include "CellList_util.hpp"
+#include "NN/CellList/CellNNIterator.hpp"
+#include "NN/CellList/CellList_util.hpp"
 #include "NN/CellList/NNc_array.hpp"
 
 /*! \brief sub-sub-domain

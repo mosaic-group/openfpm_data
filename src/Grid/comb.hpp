@@ -34,7 +34,7 @@ template<unsigned int dim>
 struct comb
 {
 	//! Array that store the combination
-	char c[dim];
+	signed char c[dim];
 
 	/*! \brief check if it is a valid combination
 	 *
@@ -105,7 +105,7 @@ struct comb
 	 * \return Result combination
 	 *
 	 */
-	inline comb<dim> operator&(char c_)
+	inline comb<dim> operator&(signed char c_)
 	{
 		comb<dim> ret;
 
@@ -246,7 +246,7 @@ struct comb
 	 *
 	 */
 
-	inline char operator[](int i) const
+	inline signed char operator[](int i) const
 	{
 		return c[i];
 	}
@@ -257,7 +257,7 @@ struct comb
 	 *
 	 */
 
-	inline char * getComb()
+	inline signed char * getComb()
 	{
 		return c;
 	}
@@ -268,7 +268,7 @@ struct comb
 	 *
 	 */
 
-	inline const char * getComb() const
+	inline const signed char * getComb() const
 	{
 		return c;
 	}
@@ -282,7 +282,7 @@ struct comb
 	 * \return value of the i index
 	 *
 	 */
-	inline char value(int i) const
+	inline signed char value(int i) const
 	{
 		return c[i];
 	}
@@ -314,10 +314,10 @@ struct comb
 	 * \param c list of numbers
 	 *
 	 */
-	comb(std::initializer_list<char> c)
+	comb(std::initializer_list<signed char> c)
 	{
 		size_t i = 0;
-	    for(char x : c)
+	    for(signed char x : c)
 	    {this->c[c.size() - i - 1] = x;i++;}
 	}
 
@@ -397,7 +397,7 @@ template<>
 struct comb<0>
 {
 	//! FIX
-	char c[0];
+	signed char c[0];
 
 	/*! \brief check if it is a valid combination
 	 *
@@ -467,7 +467,7 @@ struct comb<0>
 	 *
 	 */
 
-	inline char operator[](int i)
+	inline signed char operator[](int i)
 	{
 		return 0;
 	}
@@ -478,7 +478,7 @@ struct comb<0>
 	 *
 	 */
 
-	inline char * getComb()
+	inline signed char * getComb()
 	{
 		return c;
 	}
@@ -492,7 +492,7 @@ struct comb<0>
 	 * \return value of the i index
 	 *
 	 */
-	inline char value(int i) const
+	inline signed char value(int i) const
 	{
 		return c[i];
 	}

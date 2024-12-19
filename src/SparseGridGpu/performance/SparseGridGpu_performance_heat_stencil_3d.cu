@@ -42,7 +42,7 @@ void testStencilHeat3D_perf(unsigned int i, std::string base)
 
     typename SparseGridZ::grid_info blockGeometry(gridSize);
     SparseGridZ sparseGrid(blockGeometry);
-    mgpu::ofp_context_t ctx;
+    gpu::ofp_context_t gpuContext;
     sparseGrid.template setBackgroundValue<0>(0);
 
     unsigned long long numElements = gridEdgeSize*SparseGridZ::blockEdgeSize_
@@ -52,14 +52,14 @@ void testStencilHeat3D_perf(unsigned int i, std::string base)
     // Initialize the grid
     sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
     CUDA_LAUNCH_DIM3((insertConstantValue<0>),gridSize, blockSize,sparseGrid.toKernel(), 0);
-    sparseGrid.template flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+    sparseGrid.template flush < sRight_ < 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
     sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
     dim3 sourcePt(gridSize.x * SparseGridZ::blockEdgeSize_ / 2,
             gridSize.y * SparseGridZ::blockEdgeSize_ / 2,
             gridSize.z * SparseGridZ::blockEdgeSize_ / 2);
     insertOneValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), sourcePt, 100);
-    sparseGrid.template flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+    sparseGrid.template flush < sRight_ < 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
     sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 
@@ -166,7 +166,7 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMu
     size_t sz[3] = {spatialEdgeSize, spatialEdgeSize, spatialEdgeSize};
     typename SparseGridZ::grid_info blockGeometry(sz);
     SparseGridZ sparseGrid(blockGeometry);
-    mgpu::ofp_context_t ctx;
+    gpu::ofp_context_t gpuContext;
     sparseGrid.template setBackgroundValue<0>(0);
 
     ///// Insert sparse content, a set of concentric spheres /////
@@ -185,13 +185,13 @@ void testStencilHeat3DSparse_perf(unsigned int i, std::string base, float fillMu
                          gridSize, dim3(blockEdgeSize * blockEdgeSize * blockEdgeSize, 1, 1),
                          sparseGrid.toKernel(), start1, rBig, rSmall, 1);
         cudaDeviceSynchronize();
-        sparseGrid.template flush<smax_<0 >>(ctx, flush_type::FLUSH_ON_DEVICE);
+        sparseGrid.template flush<smax_<0 >>(gpuContext, flush_type::FLUSH_ON_DEVICE);
         cudaDeviceSynchronize();
     }
     ///// /////
 
     sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
-    sparseGrid.tagBoundaries(ctx);
+    sparseGrid.tagBoundaries(gpuContext);
 
     sparseGrid.template deviceToHost<0>(); // NECESSARY as count takes place on Host!
     auto existingElements = sparseGrid.countExistingElements();

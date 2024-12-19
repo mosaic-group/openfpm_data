@@ -9,55 +9,40 @@
 #ifndef OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTITERATOR_HPP_
 #define OPENFPM_DATA_SRC_NN_CELLLIST_CELLLISTITERATOR_HPP_
 
-template<typename T>
+template<typename CellList_type>
 class ParticleIt_CellP
 {
 private:
 
-	//! Cell lisy
-    T & NN;
+    CellList_type & cellList;
 
-	//! Cells counter
-	size_t cell_count;
-
-	//! Particles counter
-	long int p_count;
+	size_t cellIndexAct;
+	size_t partIndexAct;
 
 
 	/*! \brief Handles incrementing of cells and particles counters
 	 *
 	 */
-	inline void fp()
+	inline void selectValid()
 	{
-		++p_count;
+		++partIndexAct;
 
-		const auto & SFCkeys = NN.getCellSFC().getKeys();
+		const auto & SFCkeys = cellList.getCellSFCKeys();
 
-		if (p_count >= (long int)NN.getNelements(SFCkeys.get(cell_count)))
+		if (partIndexAct >= (long int)cellList.getNelements(SFCkeys.get(cellIndexAct)))
 		{
-			p_count = 0;
-			++cell_count;
+			partIndexAct = 0;
+			++cellIndexAct;
 
-			while (cell_count < SFCkeys.size() && NN.getNelements(SFCkeys.get(cell_count)) == 0)
-				++cell_count;
+			while (cellIndexAct < SFCkeys.size() && cellList.getNelements(SFCkeys.get(cellIndexAct)) == 0)
+				++cellIndexAct;
 		}
 	}
 
 public:
 
-	// Constructor
-	ParticleIt_CellP(T & NN)
-	:NN(NN)
-	{
-		reset();
-	}
-
-	// Destructor
-	~ParticleIt_CellP()
-	{
-	}
-
-
+	ParticleIt_CellP(CellList_type & cellList)
+	:cellList(cellList) { reset(); }
 
 	/*! \brief Get the next element
 	 *
@@ -66,11 +51,9 @@ public:
 	 */
 	inline ParticleIt_CellP & operator++()
 	{
-		fp();
-		while (isNext() && this->get() >= NN.get_gm())
-		{
-			fp();
-		}
+		selectValid();
+		while (isNext() && this->get() >= cellList.getGhostMarker())
+			selectValid();
 
 		return *this;
 	}
@@ -83,10 +66,8 @@ public:
 	 */
 	inline bool isNext()
 	{
-		if (cell_count >= NN.getCellSFC().getKeys().size())
-		{
+		if (cellIndexAct >= cellList.getCellSFCKeys().size())
 			return false;
-		}
 
 		return true;
 	}
@@ -100,8 +81,8 @@ public:
 	 */
 	inline size_t get()
 	{
-		auto cell_id = NN.getCellSFC().getKeys().get(cell_count);
-		auto p = NN.get(cell_id,p_count);
+		auto cellIndex = cellList.getCellSFCKeys().get(cellIndexAct);
+		auto p = cellList.get(cellIndex,partIndexAct);
 
 		return p;
 	}
@@ -111,8 +92,8 @@ public:
 	 */
 	void reset()
 	{
-		cell_count = 0;
-		p_count = -1;
+		cellIndexAct = 0;
+		partIndexAct = -1;
 
 		this->operator++();
 	}

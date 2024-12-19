@@ -8,7 +8,7 @@
 constexpr int BLOCK_SIZE_STENCIL = 128;
 
 #include "config.h"
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #include <cstdlib>
 #include <SparseGridGpu/BlockMapGpu.hpp>
 #include <Grid/iterators/grid_skin_iterator.hpp>
@@ -19,7 +19,7 @@ constexpr int BLOCK_SIZE_STENCIL = 128;
 #include "Grid/Geometry/grid_zmb.hpp"
 #include "util/stat/common_statistics.hpp"
 #include "Iterators/SparseGridGpu_iterator.hpp"
-#include "Space/SpaceBox.hpp"
+#include "Space/Shape/Box.hpp"
 
 #if defined(OPENFPM_DATA_ENABLE_IO_MODULE) || defined(PERFORMANCE_TEST)
 #include "VTKWriter/VTKWriter.hpp"
@@ -718,6 +718,8 @@ public:
 
     typedef sparse_grid_gpu_index<self> base_key;
 
+	typedef indexT indexT_;
+
     typedef decltype(std::declval<BMG>().toKernel().insertBlock(0)) insert_encap;
 
     /*! \brief return the size of the grid
@@ -768,10 +770,10 @@ public:
     }
 
     template<typename ... v_reduce>
-    void flush(mgpu::ofp_context_t &context, flush_type opt = FLUSH_ON_HOST)
+    void flush(gpu::ofp_context_t& gpuContext, flush_type opt = FLUSH_ON_HOST)
     {
         BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>
-                ::template flush<v_reduce ...>(context, opt);
+                ::template flush<v_reduce ...>(gpuContext, opt);
 
         findNN = false;
     }
@@ -1045,6 +1047,7 @@ private:
 
     }
 
+
     template <typename stencil, typename... Args>
     void applyStencilInPlaceNoShared(const Box<dim,int> & box, StencilMode & mode,Args... args)
     {
@@ -1072,26 +1075,26 @@ private:
     }
 
     template<typename ids_type>
-    void fill_chunks_boxes(openfpm::vector<SpaceBox<dim,double>> & chunks_box, ids_type & chunk_ids, Point<dim,double> & spacing, Point<dim,double> & offset)
+    void fill_chunks_boxes(openfpm::vector<Box<dim,double>> & chunks_box, ids_type & chunk_ids, Point<dim,double> & spacing, Point<dim,double> & offset)
     {
     	for (int i = 0 ; i < chunk_ids.size() ; i++)
     	{
-    		SpaceBox<dim,double> box;
+			Box<dim,double> box;
 
-    		auto c_pos = gridGeometry.InvLinId(chunk_ids.template get<0>(i)*blockSize);
+			auto c_pos = gridGeometry.InvLinId(chunk_ids.template get<0>(i)*blockSize);
 
-    		for (int j = 0 ; j < dim ; j++)
-    		{
-    			box.setLow(j,c_pos.get(j) * spacing[j] - 0.5*spacing[j] + offset.get(j)*spacing[j]);
-    			box.setHigh(j,(c_pos.get(j) + blockEdgeSize)*spacing[j] - 0.5*spacing[j] + offset.get(j)*spacing[j]);
-    		}
+			for (int j = 0 ; j < dim ; j++)
+			{
+				box.setLow(j,c_pos.get(j) * spacing[j] - 0.5*spacing[j] + offset.get(j)*spacing[j]);
+				box.setHigh(j,(c_pos.get(j) + blockEdgeSize)*spacing[j] - 0.5*spacing[j] + offset.get(j)*spacing[j]);
+			}
 
-    		chunks_box.add(box);
+			chunks_box.add(box);
     	}
     }
 
     template<typename MemType, unsigned int ... prp>
-    void preUnpack(ExtPreAlloc<MemType> * prAlloc_prp, mgpu::ofp_context_t & ctx, int opt)
+    void preUnpack(ExtPreAlloc<MemType> * prAlloc_prp, gpu::ofp_context_t& gpuContext, int opt)
     {
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{
@@ -1104,21 +1107,21 @@ private:
 			{
 				auto sub_it = this->getIterator(copySect.get(i).dst.getKP1(),copySect.get(i).dst.getKP2(),NO_ITERATOR_INIT);
 
-				copySect.get(i).grd->template addAndConvertPackedChunkToTmp<prp ...>(*prAlloc_prp,sub_it,ups,ctx);
+				copySect.get(i).grd->template addAndConvertPackedChunkToTmp<prp ...>(*prAlloc_prp,sub_it,ups,gpuContext);
 			}
 		}
     }
 
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase1(mgpu::ofp_context_t & ctx, int opt)
+	void removeCopyToFinalize_phase1(gpu::ofp_context_t& gpuContext, int opt)
 	{
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-		{removePoints(ctx);}
+		{removePoints(gpuContext);}
 	}
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase2(mgpu::ofp_context_t & ctx, int opt)
+	void removeCopyToFinalize_phase2(gpu::ofp_context_t& gpuContext, int opt)
 	{
 		// Pack information
 		Pack_stat sts;
@@ -1137,7 +1140,7 @@ private:
 				this->packRequest(sub_it,req);
 			}
 
-			this->template packCalculate<prp...>(req,ctx);
+			this->template packCalculate<prp...>(req,gpuContext);
 
 			mem.resize(req);
 
@@ -1163,14 +1166,14 @@ private:
 
 		this->template packFinalize<prp ...>(*prAlloc_prp,sts,opt,false);
 
-		preUnpack<CudaMemory,prp ...>(prAlloc_prp,ctx,opt);
+		preUnpack<CudaMemory,prp ...>(prAlloc_prp,gpuContext,opt);
 
 		prAlloc_prp->decRef();
 		delete prAlloc_prp;
 	}
 
 	template<unsigned int ... prp>
-	void removeCopyToFinalize_phase3(mgpu::ofp_context_t & ctx, int opt, bool is_unpack_remote)
+	void removeCopyToFinalize_phase3(gpu::ofp_context_t& gpuContext, int opt, bool is_unpack_remote)
 	{
 		ite_gpu<1> ite;
 
@@ -1192,7 +1195,7 @@ private:
 
 			int sz_b =  this->private_get_index_array().size();
 
-			this->template flush<sLeft_<prp>...>(ctx,flush_type::FLUSH_ON_DEVICE);
+			this->template flush<sLeft_<prp>...>(gpuContext,flush_type::FLUSH_ON_DEVICE);
 
 			// get the map of the new inserted elements
 
@@ -1239,6 +1242,8 @@ private:
 			boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(dpf);
 
 			ite.wthr.x = n_cnk_cp.get(i);
+			ite.wthr.y = 1;
+			ite.wthr.z = 1;
 
 			// calculate best number of threads
 			Box<dim,size_t> ub = box_cp.get(i);
@@ -1253,6 +1258,8 @@ private:
 				else
 				{ite.thr.x *= l;}
 			}
+			ite.thr.y = 1;
+			ite.thr.z = 1;
 
 			// copy to new (1 block for each packed chunk)
 			if (ite.nblocks() != 0 && ite.thr.x != 0)
@@ -1268,11 +1275,11 @@ private:
 																				 new_map.toKernel(),
 																				 data,
 																				 chunks.toKernel(),
-																				 n_cnk_cp.get(i),
-																				 n_shifts_cp.get(i),
-																				 n_pnt_cp.get(i),
-																				 i,
-																				 n_accu_cnk);
+																				 (unsigned int)n_cnk_cp.get(i),
+																				 (unsigned int)n_shifts_cp.get(i),
+																				 (unsigned int)n_pnt_cp.get(i),
+																				 (unsigned int)i,
+																				 (unsigned int)n_accu_cnk);
 			}
 
 			n_accu_cnk += n_cnk_cp.get(i)*n_shifts_cp.get(i);
@@ -1397,7 +1404,7 @@ private:
     	ite.thr.z = 1;
 
     	if (pack_subs.size() != 0)
-		{CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),indexBuffer.size()+1,pack_subs.size());}
+		{CUDA_LAUNCH(SparseGridGpuKernels::last_scan_point,ite,scan_ptr,tmp.toKernel(),(unsigned int)indexBuffer.size()+1,(unsigned int)pack_subs.size());}
     }
 
 
@@ -1414,7 +1421,7 @@ private:
 	void addAndConvertPackedChunkToTmp(ExtPreAlloc<S2> & mem,
 				SparseGridGpu_iterator_sub<dim,self> & sub_it,
 				Unpack_stat & ps,
-				mgpu::ofp_context_t &context)
+				gpu::ofp_context_t& gpuContext)
 	{
     	sparsegridgpu_pack_request<AggregateT,prp ...> spq;
     	boost::mpl::for_each_ref<boost::mpl::range_c<int,0,sizeof...(prp)>>(spq);
@@ -1546,7 +1553,7 @@ private:
 			case 1:
 				// Calculate for each chunk the indexes where they should go + active points
 				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,1,indexT>),ite,ids,
-															  n_cnk,
+															  (int)n_cnk,
 															  gridGeoPack,origPack_cnk,
 															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
@@ -1557,7 +1564,7 @@ private:
 			case 2:
 				// Calculate for each chunk the indexes where they should go + active points
 				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,2,indexT>),ite,ids,
-															  n_cnk,
+															  (int)n_cnk,
 															  gridGeoPack,origPack_cnk,
 															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
@@ -1568,7 +1575,7 @@ private:
 			case 4:
 				// Calculate for each chunk the indexes where they should go + active points
 				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,4,indexT>),ite,ids,
-															  n_cnk,
+															  (int)n_cnk,
 															  gridGeoPack,origPack_cnk,
 															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
@@ -1579,7 +1586,7 @@ private:
 			case 8:
 				// Calculate for each chunk the indexes where they should go + active points
 				CUDA_LAUNCH((SparseGridGpuKernels::convert_chunk_ids<dim,blockSize,blockEdgeSize,8,indexT>),ite,ids,
-															  n_cnk,
+															  (int)n_cnk,
 															  gridGeoPack,origPack_cnk,
 															  gridGeometry,origUnpack_cnk,
 															  tmp2.toKernel(),
@@ -1794,6 +1801,11 @@ public:
 	 */
 	void setMemory()
 	{}
+
+    auto insertBlockFlush(size_t block) -> decltype(BMG::insertBlockFlush(block))
+    {
+        return BMG::insertBlockFlush(block);
+    }
 
     /*! \brief Return the grid information object
      *
@@ -2011,7 +2023,7 @@ public:
 	 * \param grid_dw grid level down
 	 *
 	 */
-    void construct_link(self & grid_up, self & grid_dw, mgpu::ofp_context_t &context)
+    void construct_link(self & grid_up, self & grid_dw, gpu::ofp_context_t& gpuContext)
     {
 /*        // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -2035,7 +2047,7 @@ public:
     								blockSize>),ite,grid_up.toKernel(),this->toKernel(),output.toKernel());
 
 
-    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
+    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),gpuContext);
 
     	output.template deviceToHost<0>(output.size()-1,output.size()-1);
 
@@ -2095,10 +2107,10 @@ public:
 	 * \param grid_dw grid level down
 	 * \param db domain box
 	 * \param p_dw point offset when you go down
-	 * \param gpu context
+	 * \param gpuContext gpu context
 	 *
 	 */
-    void construct_link_dw(self & grid_dw, const Box<dim,int> & db_, Point<dim,int> p_dw, mgpu::ofp_context_t &context)
+    void construct_link_dw(self & grid_dw, const Box<dim,int> & db_, Point<dim,int> p_dw, gpu::ofp_context_t& gpuContext)
     {
     	Box<dim,int> db = db_;
 
@@ -2130,7 +2142,7 @@ public:
 
 
 
-    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
+    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),gpuContext);
 
     	output.template deviceToHost<0>(output.size()-1,output.size()-1);
         unsigned int padding_points = output.template get<0>(output.size()-1);
@@ -2156,7 +2168,7 @@ public:
     								blockSize>),
     								ite,pd_points.toKernel(),grid_dw.toKernel(),this->toKernel(),link_dw_scan.toKernel(),p_dw);
 
-    	openfpm::scan((unsigned int *)link_dw_scan.template getDeviceBuffer<0>(),link_dw_scan.size(),(unsigned int *)link_dw_scan.template getDeviceBuffer<0>(),context);
+    	openfpm::scan((unsigned int *)link_dw_scan.template getDeviceBuffer<0>(),link_dw_scan.size(),(unsigned int *)link_dw_scan.template getDeviceBuffer<0>(),gpuContext);
 
     	link_dw_scan.template deviceToHost<0>(link_dw_scan.size()-1,link_dw_scan.size()-1);
 
@@ -2176,7 +2188,7 @@ public:
 	 * \praram grid_up grid level up
 	 *
 	 */
-    void construct_link_up(self & grid_up,  const Box<dim,int> & db_, Point<dim,int> p_up, mgpu::ofp_context_t &context)
+    void construct_link_up(self & grid_up,  const Box<dim,int> & db_, Point<dim,int> p_up, gpu::ofp_context_t& gpuContext)
     {
     	Box<dim,int> db = db_;
 
@@ -2208,7 +2220,7 @@ public:
 
 
 
-    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),context);
+    	openfpm::scan((unsigned int *)output.template getDeviceBuffer<0>(),output.size(),(unsigned int *)output.template getDeviceBuffer<0>(),gpuContext);
 
     	output.template deviceToHost<0>(output.size()-1,output.size()-1);
         unsigned int padding_points = output.template get<0>(output.size()-1);
@@ -2234,7 +2246,7 @@ public:
     								blockSize>),
     								ite,pd_points.toKernel(),grid_up.toKernel(),this->toKernel(),link_up_scan.toKernel(),p_up);
 
-    	openfpm::scan((unsigned int *)link_up_scan.template getDeviceBuffer<0>(),link_up_scan.size(),(unsigned int *)link_up_scan.template getDeviceBuffer<0>(),context);
+    	openfpm::scan((unsigned int *)link_up_scan.template getDeviceBuffer<0>(),link_up_scan.size(),(unsigned int *)link_up_scan.template getDeviceBuffer<0>(),gpuContext);
 
     	link_up_scan.template deviceToHost<0>(link_up_scan.size()-1,link_up_scan.size()-1);
 
@@ -2276,7 +2288,7 @@ public:
 	}
 
     template<typename stencil_type = NNStar<dim>, typename checker_type = No_check>
-    void tagBoundaries(mgpu::ofp_context_t &context, checker_type chk = checker_type(), tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
+    void tagBoundaries(gpu::ofp_context_t& gpuContext, checker_type chk = checker_type(), tag_boundaries opt = tag_boundaries::NO_CALCULATE_EXISTING_POINTS)
     {
         // Here it is crucial to use "auto &" as the type, as we need to be sure to pass the reference to the actual buffers!
         auto & indexBuffer = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::blockMap.getIndexBuffer();
@@ -2363,7 +2375,7 @@ public:
         				 block_points.toKernel());
 
         	// than we scan
-        	openfpm::scan((indexT *)block_points.template getDeviceBuffer<0>(),block_points.size(),(indexT *)block_points.template getDeviceBuffer<0>(),context);
+        	openfpm::scan((indexT *)block_points.template getDeviceBuffer<0>(),block_points.size(),(indexT *)block_points.template getDeviceBuffer<0>(),gpuContext);
 
         	// Get the total number of points
         	block_points.template deviceToHost<0>(block_points.size()-1,block_points.size()-1);
@@ -2374,7 +2386,7 @@ public:
         	CUDA_LAUNCH((SparseGridGpuKernels::fill_e_points<BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::pMask>),ite,
         				 dataBuffer.toKernel(),
         				 block_points.toKernel(),
-        				 e_points.toKernel())
+        				 e_points.toKernel());
 
         }
 
@@ -2636,6 +2648,28 @@ public:
      *
      *
      */
+	template<unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_src3,
+	         unsigned int prop_dst1 , unsigned int prop_dst2, unsigned int prop_dst3,
+			 unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
+	void conv3_b(grid_key_dx<dim> start, grid_key_dx<dim> stop , lambda_f func, ArgsT ... args)
+	{
+		Box<dim,int> box;
+
+		for (int i = 0 ; i < dim ; i++)
+		{
+			box.setLow(i,start.get(i));
+			box.setHigh(i,stop.get(i));
+		}
+
+        constexpr unsigned int nLoop = UIntDivCeil<(IntPow<blockEdgeSize + 2, dim>::value), (blockSize)>::value;
+
+		applyStencils< SparseGridGpuKernels::stencil_func_conv3_b<dim,nLoop,prop_src1,prop_src2,prop_src3,prop_dst1,prop_dst2,prop_dst3,stencil_size> >(box,STENCIL_MODE_INPLACE,func, args ...);
+	}
+	
+    /*! \brief Apply a free type convolution using blocks
+     *
+     *
+     */
 	template<unsigned int prop_src1, unsigned int prop_src2, unsigned int prop_dst1 , unsigned int prop_dst2, unsigned int stencil_size, typename lambda_f, typename ... ArgsT >
 	void conv2(grid_key_dx<dim> start, grid_key_dx<dim> stop , lambda_f func, ArgsT ... args)
 	{
@@ -2757,12 +2791,37 @@ public:
 
 		typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
 
-		auto block_data = this->insertBlockFlush(block_id);
+		auto block_data = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insertBlockFlush(block_id);
 		block_data.template get<BMG::pMask>()[local_id] = 1;
 
 		return block_data.template get<p>()[local_id];
 	}
     
+	/*! \brief Insert the point on host side and flush directly
+ *
+ * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
+ *
+ * \param grid point where to insert
+ *
+ * \return a reference to the data to fill
+ *
+ *
+ */
+	template<typename CoordT>
+	auto insertBlockFlush(const grid_key_dx<dim,CoordT> &coord, indexT & local_id) -> decltype(BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insertBlockFlush(0))
+	{
+    	auto lin = gridGeometry.LinId(coord);
+    	indexT block_id = lin / blockSize;
+    	local_id = lin % blockSize;
+
+		typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
+
+		auto block_data = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insertBlockFlush(block_id);
+		block_data.template get<BMG::pMask>()[local_id] = 1;
+
+		return block_data;
+	}
+
     /*! \brief Insert the point on host side and flush directly
      *
      * First you have to move everything on host with deviceToHost, insertFlush and than move to GPU again
@@ -2783,7 +2842,7 @@ public:
 
     	typedef BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base> BMG;
 
-    	auto block_data = this->insertBlockFlush(block_id);
+    	auto block_data = BlockMapGpu<AggregateInternalT, threadBlockSize, indexT, layout_base>::insertBlockFlush(block_id);
     	block_data.template get<BMG::pMask>()[local_id] = 1;
 
     	return block_data.template get<p>()[local_id];
@@ -2833,10 +2892,10 @@ public:
 	//Functions to check if the packing object is complex
 	static bool pack()
 	{
-		return false;
+		return true;
 	}
 
-	//! Indicate that the vector has the function packRequest
+	//Functions to check if the packing object is complex
 	static bool packRequest()
 	{
 		return true;
@@ -2926,7 +2985,7 @@ public:
      *
      */
 	template<int ... prp> inline
-	void packRequest(size_t & req, mgpu::ofp_context_t &context) const
+	void packRequest(size_t & req, gpu::ofp_context_t& gpuContext) const
     {
     	ite_gpu<1> ite;
 
@@ -2949,7 +3008,7 @@ public:
     				 tmp.toKernel());
 
     	openfpm::scan((indexT *)tmp. template getDeviceBuffer<0>(),
-    						tmp.size(), (indexT *)tmp. template getDeviceBuffer<0>(), context);
+    						tmp.size(), (indexT *)tmp. template getDeviceBuffer<0>(), gpuContext);
 
     	tmp.template deviceToHost<0>(tmp.size()-1,tmp.size()-1);
 
@@ -3015,11 +3074,11 @@ public:
 	/*! \brief Calculate the size of the information to pack
 	 *
 	 * \param req output size (it does not reset the counter it accumulate)
-	 * \param context gpu contect
+	 * \param gpuContext gpu context
 	 *
 	 */
 	template<int ... prp> inline
-	void packCalculate(size_t & req, mgpu::ofp_context_t &context)
+	void packCalculate(size_t & req, gpu::ofp_context_t& gpuContext)
 	{
     	ite_gpu<1> ite;
 		pack_subs.template hostToDevice<0,1>();
@@ -3051,7 +3110,7 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 (unsigned int)indexBuffer.size() + 1);
 			}
 			else if (pack_subs.size() <= 64)
 			{
@@ -3066,7 +3125,7 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 (unsigned int)indexBuffer.size() + 1);
 			}
 			else if (pack_subs.size() <= 96)
 			{
@@ -3081,7 +3140,7 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 (unsigned int)indexBuffer.size() + 1);
 			}
 			else if (pack_subs.size() <= 128)
 			{
@@ -3096,7 +3155,7 @@ public:
 						 gridGeometry,
 						 dataBuffer.toKernel(),
 						 tmp.toKernel(),
-						 indexBuffer.size() + 1);
+						 (unsigned int)indexBuffer.size() + 1);
 			}
 			else
 			{
@@ -3124,10 +3183,10 @@ public:
     		tmp.template hostToDevice<1>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
 
     		openfpm::scan(((indexT *)tmp. template getDeviceBuffer<0>()) + i*(indexBuffer.size() + 1),
-    						indexBuffer.size() + 1, (indexT *)tmp. template getDeviceBuffer<0>() + i*(indexBuffer.size() + 1), context);
+    						indexBuffer.size() + 1, (indexT *)tmp. template getDeviceBuffer<0>() + i*(indexBuffer.size() + 1), gpuContext);
 
     		openfpm::scan(((unsigned int *)tmp. template getDeviceBuffer<1>()) + i*(indexBuffer.size() + 1),
-    						indexBuffer.size() + 1, (unsigned int *)tmp. template getDeviceBuffer<1>() + i*(indexBuffer.size() + 1), context);
+    						indexBuffer.size() + 1, (unsigned int *)tmp. template getDeviceBuffer<1>() + i*(indexBuffer.size() + 1), gpuContext);
 
     		tmp.template deviceToHost<0>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
     		tmp.template deviceToHost<1>((i+1)*(indexBuffer.size() + 1)-1,(i+1)*(indexBuffer.size() + 1)-1);
@@ -3149,7 +3208,7 @@ public:
     	scan_it.template hostToDevice<0>();
 
 		openfpm::scan((indexT *)scan_it. template getDeviceBuffer<0>(),
-								scan_it.size(), (indexT *)scan_it. template getDeviceBuffer<0>(), context);
+								scan_it.size(), (indexT *)scan_it. template getDeviceBuffer<0>(), gpuContext);
 	}
 
 	/*! \brief Return the mapping vector used to know where the data has been added
@@ -3252,24 +3311,24 @@ public:
 	 * In case we can guarantee that the chunks structure has not changed we can pass the option KEEP_GEOMETRY to make
 	 * this function faster
 	 *
-	 * \param ctx context
+	 * \param gpuContext gpu context
 	 * \param options
 	 *
 	 */
 	template<unsigned int ... prp>
-	void removeCopyToFinalize(mgpu::ofp_context_t & ctx, int opt)
+	void removeCopyToFinalize(gpu::ofp_context_t& gpuContext, int opt)
 	{
 		if ((opt & 0x3) == rem_copy_opt::PHASE1)
 		{
-			this->template removeCopyToFinalize_phase1<prp ...>(ctx,opt);
+			this->template removeCopyToFinalize_phase1<prp ...>(gpuContext,opt);
 		}
 		else if ((opt & 0x3) == rem_copy_opt::PHASE2)
 		{
-			this->template removeCopyToFinalize_phase2<prp ...>(ctx,opt);
+			this->template removeCopyToFinalize_phase2<prp ...>(gpuContext,opt);
 		}
 		else
 		{
-			this->template removeCopyToFinalize_phase3<prp ...>(ctx,opt,false);
+			this->template removeCopyToFinalize_phase3<prp ...>(gpuContext,opt,false);
 		}
 	}
 
@@ -3356,10 +3415,10 @@ public:
 	 *
 	 * \see
 	 *
-	 * \param context modern gpu context
+	 * \param gpuContext gpu context
 	 *
 	 */
-	void removePoints(mgpu::ofp_context_t& context)
+	void removePoints(gpu::ofp_context_t& gpuContext)
 	{
     	auto & indexBuffer = private_get_index_array();
     	auto & dataBuffer = private_get_data_array();
@@ -3386,7 +3445,7 @@ public:
 																  tmp.toKernel());
 
 				// scan
-				openfpm::scan((unsigned int *)tmp.template getDeviceBuffer<1>(),tmp.size(),(unsigned int *)tmp.template getDeviceBuffer<1>(),context);
+				openfpm::scan((unsigned int *)tmp.template getDeviceBuffer<1>(),tmp.size(),(unsigned int *)tmp.template getDeviceBuffer<1>(),gpuContext);
 
 				tmp.template deviceToHost<1>(tmp.size()-1,tmp.size()-1);
 
@@ -3434,12 +3493,12 @@ public:
 	 *
 	 */
 	template<unsigned int ... prp>
-	void removeAddUnpackFinalize(mgpu::ofp_context_t& context, int opt)
+	void removeAddUnpackFinalize(gpu::ofp_context_t& gpuContext, int opt)
 	{
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
-		{removePoints(context);}
+		{removePoints(gpuContext);}
 
-		removeCopyToFinalize_phase3<prp ...>(context,opt,true);
+		removeCopyToFinalize_phase3<prp ...>(gpuContext,opt,true);
 	}
 
 	/*! \brief Reset the queue to remove and copy section of grids
@@ -3518,12 +3577,13 @@ public:
 
 		result.allocate(sizeof(int));
 
+		if (pointers.size())
 		CUDA_LAUNCH_DIM3((SparseGridGpuKernels::unpack_headers<decltype(std::declval<self>().toKernel())>),1,pointers.size(),
 																											 pointers.toKernel(),
 																											 headers.toKernel(),
 																											 (int *)result.getDevicePointer(),
-																											 spq.point_size,
-																											 n_slot)
+																											 (unsigned int)spq.point_size,
+																											 n_slot);
 	}
 
 	/*! \brief unpack the sub-grid object
@@ -3541,14 +3601,14 @@ public:
 				header_type & headers,
 				int ih,
 				Unpack_stat & ps,
-				mgpu::ofp_context_t &context,
+				gpu::ofp_context_t& gpuContext,
 				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
 	{
 		////////////////////////////////////////////////////////////
 
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{
-			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,context);
+			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,gpuContext);
 
 			// readjust mem
 		}
@@ -3609,14 +3669,14 @@ public:
 	void unpack(ExtPreAlloc<S2> & mem,
 				SparseGridGpu_iterator_sub<dim,self> & sub_it,
 				Unpack_stat & ps,
-				mgpu::ofp_context_t &context,
+				gpu::ofp_context_t& gpuContext,
 				rem_copy_opt opt = rem_copy_opt::NONE_OPT)
 	{
 		////////////////////////////////////////////////////////////
 
 		if ((opt & rem_copy_opt::KEEP_GEOMETRY) == false)
 		{
-			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,context);
+			this->template addAndConvertPackedChunkToTmp<prp ...>(mem,sub_it,ps,gpuContext);
 
 			// readjust mem
 		}
@@ -3867,9 +3927,9 @@ public:
 	template<typename Tw = float> bool write_debug(const std::string & output, Point<dim,double> spacing, Point<dim,double> offset)
 	{
 		//! subdomains_X.vtk domain for the local processor (X) as union of sub-domain
-		VTKWriter<openfpm::vector<SpaceBox<dim, double>>, VECTOR_BOX> vtk_box1;
+		VTKWriter<openfpm::vector<Box<dim, double>>, VECTOR_BOX> vtk_box1;
 
-		openfpm::vector<SpaceBox<dim,double>> chunks_box;
+		openfpm::vector<Box<dim,double>> chunks_box;
 
 		auto & ids = private_get_index_array();
 

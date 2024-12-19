@@ -31,7 +31,7 @@ static bool packRequest()
  */
 static bool packMem()
 {
-       return true;
+	   return true;
 }
 
 //! Structures that do a nested packing, depending on the existence of 'pack()' function inside the object
@@ -150,20 +150,26 @@ struct pack_simple_cond<true, prp ...>
 		// Sending property object
 		typedef openfpm::vector<T,ExtPreAlloc<Memory2>,memory_traits_lin,openfpm::grow_policy_identity> dtype;
 
+		// Avoid that dest delete the memory
+		mem.incRef();
+
 		// Create an object over the preallocated memory (No allocation is produced)
-		dtype dest;
-		dest.setMemory(mem);
-		dest.resize(obj.size());
-	
-		auto obj_it = obj.getIterator();
-	
-		while (obj_it.isNext())
 		{
-			// Copy
-			dest.get(obj_it.get()) = obj.get(obj_it.get());
-	
-			++obj_it;
+			dtype dest;
+			dest.setMemory(mem);
+			dest.resize(obj.size());
+
+			auto obj_it = obj.getIterator();
+
+			while (obj_it.isNext()) {
+				// Copy
+				dest.get(obj_it.get()) = obj.get(obj_it.get());
+
+				++obj_it;
+			}
 		}
+
+		mem.decRef();
 	
 		// Update statistic
 		sts.incReq();

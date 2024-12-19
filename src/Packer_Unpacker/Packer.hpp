@@ -9,7 +9,7 @@
 #define SRC_PACKER_HPP_
 
 
-#include "util/cudify/cudify.hpp"
+#include "util/cuda_util.hpp"
 
 #include "util/object_util.hpp"
 //#include "Grid/util.hpp"

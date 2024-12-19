@@ -19,30 +19,30 @@ BOOST_AUTO_TEST_SUITE( CellDecomposer_gpu_test_suite )
 BOOST_AUTO_TEST_CASE( CellDecomposer_gpu_test_use )
 {
 	//! Spacing
-	openfpm::array<float,3,unsigned int> spacing_c = {0.1,0.1,0.1};
+	openfpm::array<float,3> spacing_c = {0.1,0.1,0.1};
 
 	//! \brief number of sub-divisions in each direction
-	openfpm::array<unsigned int,3,unsigned int> div_c = {10,10,10};
+	openfpm::array<unsigned int,3> div_c = {10,10,10};
 
 	//! \brief cell offset
-	openfpm::array<unsigned int,3,unsigned int> off = {2,2,2};
+	openfpm::array<unsigned int,3> off = {2,2,2};
 
 	Point<3,float> trans({0.0,0.0,0.0});
 
 	shift_only<3,float> t(Matrix<3,float>::identity(),trans);
 
-	CellDecomposer_gpu_ker<3,float,unsigned int, unsigned int,shift_only<3,float>> clk(spacing_c,div_c,off,t);
+	CellDecomposer_gpu_ker<3,float,unsigned int,shift_only<3,float>> clk(spacing_c,div_c,off,t);
 
 	openfpm::vector_gpu<aggregate<grid_key_dx<3,unsigned int>>> output(8);
 
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,0,Point<3,float>({0.2,0.2,0.2}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,1,Point<3,float>({0.1,0.2,0.3}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,2,Point<3,float>({0.25,0.55,0.45}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,3,Point<3,float>({0.15,0.15,0.95}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,4,Point<3,float>({1.05,1.05,1.05}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,5,Point<3,float>({1.15,1.15,1.15}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,6,Point<3,float>({-0.05,-0.05,-0.05}));
-	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,7,Point<3,float>({-0.15,-0.15,-0.15}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)0,Point<3,float>({0.2,0.2,0.2}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)1,Point<3,float>({0.1,0.2,0.3}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)2,Point<3,float>({0.25,0.55,0.45}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)3,Point<3,float>({0.15,0.15,0.95}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)4,Point<3,float>({1.05,1.05,1.05}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)5,Point<3,float>({1.15,1.15,1.15}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)6,Point<3,float>({-0.05,-0.05,-0.05}));
+	CUDA_LAUNCH_DIM3(check,1,1,output.toKernel(),clk,(unsigned int)7,Point<3,float>({-0.15,-0.15,-0.15}));
 
 	output.template deviceToHost<0>();
 

@@ -12,7 +12,7 @@
 #include "Point_test.hpp"
 #include "Grid/grid_util_test.hpp"
 #include "cuda_grid_unit_tests_func.cuh"
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #include "Grid/grid_test_utils.hpp"
 
 BOOST_AUTO_TEST_SUITE( grid_gpu_func_test )
@@ -44,13 +44,15 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 
 #else
 
-	BOOST_REQUIRE_EQUAL(gcf.thr.x,16ul);
-	BOOST_REQUIRE_EQUAL(gcf.thr.y,8ul);
-	BOOST_REQUIRE_EQUAL(gcf.thr.z,8ul);
+	if (default_kernel_wg_threads_ == 1024 ) {
+		BOOST_REQUIRE_EQUAL(gcf.thr.x,16ul);
+		BOOST_REQUIRE_EQUAL(gcf.thr.y,8ul);
+		BOOST_REQUIRE_EQUAL(gcf.thr.z,8ul);
 
-	BOOST_REQUIRE_EQUAL(gcf.wthr.x,4ul);
-	BOOST_REQUIRE_EQUAL(gcf.wthr.y,8ul);
-	BOOST_REQUIRE_EQUAL(gcf.wthr.z,8ul);
+		BOOST_REQUIRE_EQUAL(gcf.wthr.x,4ul);
+		BOOST_REQUIRE_EQUAL(gcf.wthr.y,8ul);
+		BOOST_REQUIRE_EQUAL(gcf.wthr.z,8ul);
+	}
 
 #endif
 
@@ -72,13 +74,15 @@ BOOST_AUTO_TEST_CASE (gpu_computation_func)
 
 #else
 
-	BOOST_REQUIRE_EQUAL(gcf2.thr.x,13ul);
-	BOOST_REQUIRE_EQUAL(gcf2.thr.y,8ul);
-	BOOST_REQUIRE_EQUAL(gcf2.thr.z,8ul);
+	if (default_kernel_wg_threads_ == 1024 ) {
+		BOOST_REQUIRE_EQUAL(gcf2.thr.x,13ul);
+		BOOST_REQUIRE_EQUAL(gcf2.thr.y,8ul);
+		BOOST_REQUIRE_EQUAL(gcf2.thr.z,8ul);
 
-	BOOST_REQUIRE_EQUAL(gcf2.wthr.x,1ul);
-	BOOST_REQUIRE_EQUAL(gcf2.wthr.y,2ul);
-	BOOST_REQUIRE_EQUAL(gcf2.wthr.z,2ul);
+		BOOST_REQUIRE_EQUAL(gcf2.wthr.x,1ul);
+		BOOST_REQUIRE_EQUAL(gcf2.wthr.y,2ul);
+		BOOST_REQUIRE_EQUAL(gcf2.wthr.z,2ul);
+	}
 
 #endif
 
@@ -149,6 +153,70 @@ BOOST_AUTO_TEST_CASE (gpu_computation)
 		auto key = it.get();
 
 		good &= c3.getGrid().LinId(key) == c3.template get<0>(key);
+
+		++it;
+	}
+
+	BOOST_REQUIRE_EQUAL(good,true);
+
+	}
+
+	#endif
+}
+
+BOOST_AUTO_TEST_CASE (gpu_computation_lambda)
+{
+	#ifdef CUDA_GPU
+
+	{
+	size_t sz[3] = {64,64,64};
+	grid_gpu<3, aggregate<float,float[2],float[2][2]> > c3(sz);
+
+	c3.setMemory();
+
+	// Assign
+
+	auto c3_k = c3.toKernel();
+
+	auto lamb = [c3_k] __device__ (dim3 & blockIdx, dim3 & threadIdx)
+	{
+		grid_key_dx<3,int> p({blockIdx.x * blockDim.x + threadIdx.x,
+			blockIdx.y * blockDim.y + threadIdx.y,
+			blockIdx.z * blockDim.z + threadIdx.z});
+
+		c3_k.template get<0>(p) = 5.0;
+
+		c3_k.template get<1>(p)[0] = 5.0;
+		c3_k.template get<1>(p)[1] = 5.0;
+	
+		c3_k.template get<2>(p)[0][0] = 5.0;
+		c3_k.template get<2>(p)[0][1] = 5.0;
+		c3_k.template get<2>(p)[1][0] = 5.0;
+		c3_k.template get<2>(p)[1][1] = 5.0;
+	};
+
+	auto ite = c3.getGPUIterator({0,0,0},{63,63,63});
+
+	CUDA_LAUNCH_LAMBDA(ite,lamb);
+
+	c3.deviceToHost<0,1,2>();
+
+	auto it = c3.getIterator();
+
+	bool good = true;
+	while(it.isNext())
+	{
+		auto key = it.get();
+
+		good &= c3.template get<0>(key) == 5.0;
+
+		good &= c3.template get<1>(key)[0] == 5.0;
+		good &= c3.template get<1>(key)[1] == 5.0;
+
+		good &= c3.template get<2>(key)[0][0] == 5.0;
+		good &= c3.template get<2>(key)[0][1] == 5.0;
+		good &= c3.template get<2>(key)[1][0] == 5.0;
+		good &= c3.template get<2>(key)[1][1] == 5.0;
 
 		++it;
 	}

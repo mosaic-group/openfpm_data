@@ -6,14 +6,10 @@
  */
 
 
-#define BOOST_GPU_ENABLED __host__ __device__
-#include "util/cuda_launch.hpp"
-
+#include "util/cuda_util.hpp"
 #include "config.h"
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
-
-#include "util/cuda_util.hpp"
 #include "Vector/map_vector.hpp"
 
 template<typename vector_vector_type, typename vector_out_type>
@@ -143,5 +139,6 @@ BOOST_AUTO_TEST_CASE ( test_vector_of_vector_gpu )
 		BOOST_REQUIRE_EQUAL(out_data.template get<1>(p)[2],vb_int_proc.template get<0>(id1).template get<1>(id2)[2] );
 	}
 }
+
 
 BOOST_AUTO_TEST_SUITE_END()

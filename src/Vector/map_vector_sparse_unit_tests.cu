@@ -34,8 +34,8 @@ BOOST_AUTO_TEST_CASE ( test_sparse_vector_use )
 	vs.template insert<0>(35) = 35;
 	vs.template insert<0>(28) = 28;
 
-	mgpu::ofp_context_t ctx;
-	vs.template flush<sadd_<0>>(ctx);
+	gpu::ofp_context_t gpuContext;
+	vs.template flush<sadd_<0>>(gpuContext);
 
 	BOOST_REQUIRE_EQUAL(vs.get<0>(5),5);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(54),54);
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE ( test_sparse_vector_use )
 	vs.template insert<0>(88) = 88;
 	vs.template insert<0>(823) = 823;
 
-	vs.template flush<sadd_<0>>(ctx);
+	vs.template flush<sadd_<0>>(gpuContext);
 
 	BOOST_REQUIRE_EQUAL(vs.get<0>(5),5);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(54),54);
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE ( test_sparse_vector_use )
 	vs.template insert<0>(94) = 940;
 	vs.template insert<0>(88) = 880;
 
-	vs.template flush<sadd_<0>>(ctx);
+	vs.template flush<sadd_<0>>(gpuContext);
 
 	BOOST_REQUIRE_EQUAL(vs.get<0>(45),495);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(94),1034);
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE ( test_sparse_vector_use )
 	vs.template insert<0>(45) = 1880;
 	vs.template insert<0>(1) = 2050;
 
-	vs.template flush<sadd_<0>>(ctx);
+	vs.template flush<sadd_<0>>(gpuContext);
 
 	BOOST_REQUIRE_EQUAL(vs.get<0>(101),1850);
 	BOOST_REQUIRE_EQUAL(vs.get<0>(45),5765);

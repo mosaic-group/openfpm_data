@@ -55,12 +55,15 @@ struct copy_switch_memory_c_no_cpy
 	template<typename T>
 	inline void operator()(T& t)
 	{
-		boost::fusion::at_c<T::value>(dst).disable_manage_memory();
+		auto &grid_layout = boost::fusion::at_c<T::value>(dst);
 
-		boost::fusion::at_c<T::value>(dst).mem = boost::fusion::at_c<T::value>(src).mem;
-
-		boost::fusion::at_c<T::value>(dst).mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
-		boost::fusion::at_c<T::value>(dst).switchToDevicePtr();
+		grid_layout.disable_manage_memory();
+		grid_layout.mem = boost::fusion::at_c<T::value>(src).mem;
+		grid_layout.mem_r.bind_ref(boost::fusion::at_c<T::value>(src).mem_r);
+#ifdef CUDA_GPU
+		if (grid_layout.mem)
+		{grid_layout.mem_r.set_pointer(((CudaMemory*)grid_layout.mem)->getDevicePointer());}
+#endif
 	}
 };
 
@@ -80,11 +83,16 @@ struct grid_gpu_ker_constructor_impl<false,T>
 {
 	template<typename ggk_type> static inline void construct(const ggk_type & cpy,ggk_type & this_)
 	{
-		this_.get_data_().disable_manage_memory();
-		this_.get_data_().mem = cpy.get_data_().mem;
+		auto &grid_layout = this_.get_data_();
 
-		this_.get_data_().mem_r.bind_ref(cpy.get_data_().mem_r);
-		this_.get_data_().switchToDevicePtr();
+		grid_layout.disable_manage_memory();
+		grid_layout.mem = cpy.get_data_().mem;
+		grid_layout.mem_r.bind_ref(cpy.get_data_().mem_r);
+
+#ifdef CUDA_GPU
+		if (grid_layout.mem)
+		{grid_layout.mem_r.set_pointer(((CudaMemory*)grid_layout.mem)->getDevicePointer());}
+#endif
 	}
 };
 
@@ -158,7 +166,7 @@ class grid_gpu_ker
 	typedef typename layout_base<T_>::type layout;
 
 	//! layout data
-	layout data_;
+	mutable layout data_;
 
 
 
@@ -264,14 +272,32 @@ public:
 	 * \return the const reference of the element
 	 *
 	 */
-	template <unsigned int p, typename ids_type, typename r_type=decltype(layout_base<T_>::template get_c<p>(data_,g1,grid_key_dx<dim>()))>
-	__device__ __host__ inline const r_type get(const grid_key_dx<dim,ids_type> & v1) const
+	template <unsigned int p, typename ids_type, typename r_type=decltype(layout_base<T_>::template get<p>(data_,g1,grid_key_dx<dim>()))>
+	__device__ __host__ inline r_type get_debug(const grid_key_dx<dim,ids_type> & v1) const
 	{
 #ifdef SE_CLASS1
 		if (check_bound(v1) == false)
 		{fill_grid_error_array_overflow<dim,p>(this->template getPointer<p>(),v1);}
 #endif
-		return layout_base<T_>::template get_c<p>(data_,g1,v1);
+
+		return layout_base<T_>::template get<p>(data_,g1,v1);
+	}
+
+	/*! \brief Get the const reference of the selected element
+	 *
+	 * \param v1 grid_key that identify the element in the grid
+	 *
+	 * \return the const reference of the element
+	 *
+	 */
+	template <unsigned int p, typename ids_type, typename r_type=decltype(layout_base<T_>::template get<p>(data_,g1,grid_key_dx<dim>()))>
+	__device__ __host__ inline r_type get(const grid_key_dx<dim,ids_type> & v1) const
+	{
+#ifdef SE_CLASS1
+		if (check_bound(v1) == false)
+		{fill_grid_error_array_overflow<dim,p>(this->template getPointer<p>(),v1);}
+#endif
+		return layout_base<T_>::template get<p>(data_,g1,v1);
 	}
 
 	/*! \brief Get the reference of the selected element

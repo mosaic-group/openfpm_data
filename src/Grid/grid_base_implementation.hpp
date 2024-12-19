@@ -12,7 +12,6 @@
 #include "util/cuda_util.hpp"
 #include "cuda/cuda_grid_gpu_funcs.cuh"
 #include "util/create_vmpl_sequence.hpp"
-#include "util/cuda_launch.hpp"
 #include "util/object_si_di.hpp"
 
 constexpr int DATA_ON_HOST = 32;
@@ -620,7 +619,7 @@ private:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(*this);
 
 #endif
 	}
@@ -705,8 +704,8 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
-		g.base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(g);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(*this);
+		g.base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(g);
 
 #endif
 
@@ -726,7 +725,7 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T,layout_base,linearizer_type>,dim,T_,S>::toKernel(*this);
 
 #endif
 
@@ -752,7 +751,7 @@ public:
 		{
 			auto key = it.get();
 
-			if (this->get_o(key) != this->get_o(key))
+			if (this->get_o(key) != g.get_o(key))
 				return false;
 
 			++it;
@@ -813,6 +812,7 @@ public:
 	{
 		return getGPUIterator_impl<dim>(g1,key1,key2,n_thr);
 	}
+
 #endif
 
 	/*! \brief Get the size if the grid in the direction i
@@ -850,7 +850,7 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(*this);
 
 #endif
 
@@ -893,7 +893,7 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(*this);
 
 #endif
 	}
@@ -922,7 +922,7 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(*this);
 
 #endif
 	}
@@ -1519,7 +1519,7 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(*this);
 
 #endif
 	}
@@ -1549,8 +1549,8 @@ public:
 
 #if defined(CUDIFY_USE_SEQUENTIAL) || defined(CUDIFY_USE_OPENMP)
 
-		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(*this);
-		grid.base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_>::toKernel(grid);
+		base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(*this);
+		grid.base_gpu = grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(grid);
 
 #endif
 	}
@@ -1889,7 +1889,7 @@ public:
 	 */
 	grid_gpu_ker<dim,T_,layout_base,linearizer_type> toKernel()
 	{
-		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
+		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(*this);
 	}
 
 	/*! \brief Convert the grid into a data-structure compatible for computing into GPU
@@ -1899,7 +1899,7 @@ public:
 	 */
 	const grid_gpu_ker<dim,T_,layout_base,linearizer_type> toKernel() const
 	{
-		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,dim,T_>::toKernel(*this);
+		return grid_toKernelImpl<is_layout_inte<layout_base<T_>>::value,grid_gpu_ker<dim,T_,layout_base,linearizer_type>,dim,T_,S>::toKernel(*this);
 	}
 
 #endif
@@ -1975,22 +1975,22 @@ public:
 	 *
 	 * \note this function exist to respect the interface to work as distributed
 	 *
-	 * \param ctx context
+	 * \param gpuContext gpu context
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeAddUnpackFinalize(const context_type & ctx, int opt)
+	void removeAddUnpackFinalize(const context_type& gpuContext, int opt)
 	{}
 
 	/*! \brief In this case it does nothing
 	 *
 	 * \note this function exist to respect the interface to work as distributed
 	 *
-	 * \param ctx context
+	 * \param gpuContext gpu context
 	 *
 	 */
 	template<unsigned int ... prp, typename context_type>
-	void removeCopyToFinalize(const context_type & ctx, int opt)
+	void removeCopyToFinalize(const context_type& gpuContext, int opt)
 	{}
 
 	/*! \brief It does nothing

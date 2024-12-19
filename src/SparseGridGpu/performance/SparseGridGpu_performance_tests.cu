@@ -56,7 +56,7 @@ void testStencilHeatGet_perf(unsigned int i, std::string base)
     dim3 blockSize(SparseGridZ::blockEdgeSize_,SparseGridZ::blockEdgeSize_);
     typename SparseGridZ::grid_info blockGeometry(gridSize);
     SparseGridZ sparseGrid(blockGeometry);
-    mgpu::ofp_context_t ctx;
+    gpu::ofp_context_t gpuContext;
     sparseGrid.template setBackgroundValue<0>(0);
 
     unsigned long long numElements = gridEdgeSize*SparseGridZ::blockEdgeSize_*gridEdgeSize*SparseGridZ::blockEdgeSize_;
@@ -64,12 +64,12 @@ void testStencilHeatGet_perf(unsigned int i, std::string base)
     // Initialize the grid
     sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
     CUDA_LAUNCH_DIM3((insertConstantValue<0>),gridSize, blockSize,sparseGrid.toKernel(), 0);
-    sparseGrid.template flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+    sparseGrid.template flush < sRight_ < 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
     sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
     dim3 sourcePt(gridSize.x * SparseGridZ::blockEdgeSize_ / 2, gridSize.y * SparseGridZ::blockEdgeSize_ / 2, 0);
     insertOneValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), sourcePt, 100);
-    sparseGrid.template flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+    sparseGrid.template flush < sRight_ < 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
     sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 
@@ -180,7 +180,7 @@ void testStencilSkeleton_perf(unsigned int i, std::string base)
     dim3 blockSize(SparseGridZ::blockEdgeSize_,SparseGridZ::blockEdgeSize_);
     typename SparseGridZ::grid_info blockGeometry(gridSize);
     SparseGridZ sparseGrid(blockGeometry);
-    mgpu::ofp_context_t ctx;
+    gpu::ofp_context_t gpuContext;
     sparseGrid.template setBackgroundValue<0>(0);
 
     unsigned long long numElements = gridEdgeSize*SparseGridZ::blockEdgeSize_*gridEdgeSize*SparseGridZ::blockEdgeSize_;
@@ -188,12 +188,12 @@ void testStencilSkeleton_perf(unsigned int i, std::string base)
     // Initialize the grid
     sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
     CUDA_LAUNCH_DIM3((insertConstantValue<0>),gridSize, blockSize,sparseGrid.toKernel(), 0);
-    sparseGrid.template flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+    sparseGrid.template flush < sRight_ < 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
     sparseGrid.setGPUInsertBuffer(gridSize, dim3(1));
     dim3 sourcePt(gridSize.x * SparseGridZ::blockEdgeSize_ / 2, gridSize.y * SparseGridZ::blockEdgeSize_ / 2, 0);
     insertOneValue<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), sourcePt, 100);
-    sparseGrid.template flush < sRight_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+    sparseGrid.template flush < sRight_ < 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 
     sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 

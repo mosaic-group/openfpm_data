@@ -2113,9 +2113,12 @@ template<typename sgrid> void Test_unpack_and_check(sgrid & grid, sgrid & grid2,
 
 	// now we unpack on another grid
 
-	int ctx = 0;
+
+	// the context in not used in SparseGrid
+	// kept for interface compatibility with SparseGridGpu
+	int gpuContext;
 	Unpack_stat usts;
-	grid2.template unpack<0>(mem,sub_it,usts,ctx,rem_copy_opt::NONE_OPT);
+	grid2.template unpack<0>(mem,sub_it,usts,gpuContext,rem_copy_opt::NONE_OPT);
 
 	bool match = true;
 	auto it = grid.getIterator();

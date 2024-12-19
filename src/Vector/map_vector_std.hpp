@@ -644,6 +644,16 @@ public:
 		base.swap(v.base);
 	}
 
+	//! Constructor from iterators
+	template< class InputIt >
+	vector(InputIt first, InputIt last)
+	{
+		while(first != last) {
+			add(*first);
+			++first;
+		}
+	}
+
 	//! destructor
 	~vector() noexcept
 	{
@@ -1002,6 +1012,18 @@ public:
 	 *
 	 */
 	inline T & get(size_t id)
+	{
+		return base_type::get(id);
+	}
+
+	/*! \brief Get an element of the vector
+	 *
+	 * \param id element to get
+	 *
+	 * \return the element reference
+	 *
+	 */
+	inline T & operator[](size_t id)
 	{
 		return base_type::get(id);
 	}

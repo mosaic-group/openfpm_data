@@ -9,10 +9,9 @@
 #define MEMFAST_HPP_
 
 #include "config.h"
-#include "Space/SpaceBox.hpp"
+#include "Space/Shape/Box.hpp"
 #include "util/mathutil.hpp"
 #include "Space/Shape/HyperCube.hpp"
-#include "NN/CellList/CellListIterator.hpp"
 #include <unordered_map>
 #include "util/common.hpp"
 #include "Vector/map_vector.hpp"
@@ -96,6 +95,9 @@ class Mem_fast
 	//! base that store the data
 	typedef typename openfpm::vector<aggregate<local_index>,Memory> base;
 
+	//! ghost marker for every cell (non-ghost particles < gm (ghost marker))
+	openfpm::vector<size_t> ghostMarkers;
+
 	//! elements that each cell store (each cell can store a number
 	//! of elements == slot )
 	base cl_base;
@@ -146,6 +148,7 @@ public:
 	 */
 	inline void destroy()
 	{
+		ghostMarkers.swap(openfpm::vector<size_t>());
 		cl_n.swap(openfpm::vector<aggregate<local_index>,Memory>());
 		cl_base.swap(base());
 	}
@@ -165,6 +168,9 @@ public:
 		cl_n.resize(tot_n_cell);
 		cl_n.template fill<0>(0);
 
+		ghostMarkers.resize(tot_n_cell);
+		ghostMarkers.fill(0);
+
 		// create the array that store the cell id
 
 		cl_base.resize(tot_n_cell * slot);
@@ -179,6 +185,7 @@ public:
 	{
 		slot = mem.slot;
 
+		ghostMarkers = mem.ghostMarkers;
 		cl_n = mem.cl_n;
 		cl_base = mem.cl_base;
 	}
@@ -203,8 +210,33 @@ public:
 	{
 		slot = mem.private_get_slot();
 
+		ghostMarkers = mem.getGhostMarkers();
 		cl_n = mem.private_get_cl_n();
 		cl_base = mem.private_get_cl_base();
+	}
+
+	/*! \brief Add ghost marker to the cell
+	 *
+	 * \param cell_id id of the cell
+	 * \param g_m ghost marker to add
+	 *
+	 */
+	inline void addCellGhostMarkers()
+	{
+		ghostMarkers.resize(cl_n.size());
+
+		for (int i = 0; i < cl_n.size(); ++i)
+		{
+			ghostMarkers.get(i) = cl_n.template get<0>(i);
+		}
+	}
+
+	/*! \brief Get ghost marker of the cell
+	 *
+	 */
+	inline size_t getGhostMarker(local_index cell_id) const
+	{
+		return ghostMarkers.get(cell_id);
 	}
 
 	/*! \brief Add an element to the cell
@@ -228,19 +260,6 @@ public:
 
 		cl_base.template get<0>(slot * cell_id + cl_n.template get<0>(cell_id)) = ele;
 		cl_n.template get<0>(cell_id)++;
-	}
-
-	/*! \brief Add an element to the cell
-	 *
-	 * \param cell_id id of the cell
-	 * \param ele element to add
-	 *
-	 */
-	inline void add(local_index cell_id, local_index ele)
-	{
-		// add the element to the cell
-
-		this->addCell(cell_id,ele);
 	}
 
 	/*! \brief Get an element in the cell
@@ -270,17 +289,21 @@ public:
 		return cl_base.template get<0>(cell * slot + ele);
 	}
 
-
 	/*! \brief Remove an element in the cell
-	 *
-	 * \param cell id of the cell
-	 * \param ele element id to remove
-	 *
-	 */
-	inline void remove(local_index cell, local_index ele)
+	*
+	* \param cell id of the cell
+	* \param ele element id to remove
+	*
+	*/
+	inline void remove(local_index cell_id, local_index ele)
 	{
-		cl_n.template get<0>(cell)--;
+		cl_n.template get<0>(cell_id)--;
+
+		// shift all remaining elements left
+		for (int i = ele+1; i < cl_n.template get<0>(cell_id); ++i)
+			cl_base.template get<0>(slot * cell_id + i-1) = cl_base.template get<0>(slot * cell_id + i);
 	}
+
 
 	/*! \brief Get the number of elements in the cell
 	 *
@@ -302,6 +325,7 @@ public:
 	 */
 	inline void swap(Mem_fast<Memory,local_index> & mem)
 	{
+		ghostMarkers.swap(mem.ghostMarkers);
 		cl_n.swap(mem.cl_n);
 		cl_base.swap(mem.cl_base);
 
@@ -319,11 +343,12 @@ public:
 	{
 		slot = mem.slot;
 
+		ghostMarkers.swap(mem.ghostMarkers);
 		cl_n.swap(mem.cl_n);
 		cl_base.swap(mem.cl_base);
 	}
 
-	/*! \brief Delete all the elements in the Cell-list
+	/*! \brief Delete all the elements in every cell
 	 *
 	 *
 	 *
@@ -331,7 +356,20 @@ public:
 	inline void clear()
 	{
 		for (size_t i = 0 ; i < cl_n.size() ; i++)
-		{cl_n.template get<0>(i) = 0;}
+		{
+			cl_n.template get<0>(i) = 0;
+			ghostMarkers.get(i) = 0;
+		}
+	}
+
+	/*! \brief Delete cell elements in Cell p
+	 *
+	 *
+	 *
+	 */
+	inline void clear(local_index cell_id)
+	{
+		cl_n.template get<0>(cell_id) = 0;
 	}
 
 	/*! \brief Get the first element of a cell (as reference)
@@ -344,6 +382,18 @@ public:
 	inline const local_index & getStartId(local_index cell_id) const
 	{
 		return cl_base.template get<0>(cell_id*slot);
+	}
+
+	/*! \brief Get the index of the first ghost element
+	 *
+	 * \param cell_id cell-id
+	 *
+	 * \return a reference to the first element
+	 *
+	 */
+	inline const local_index & getGhostId(local_index cell_id) const
+	{
+		return cl_base.template get<0>(cell_id*slot+ghostMarkers.get(cell_id));
 	}
 
 	/*! \brief Get the last element of a cell (as reference)
@@ -426,6 +476,16 @@ public:
 		return cl_n;
 	}
 
+	/*! \brief Return the private data-structure ghostMarkers
+	 *
+	 * \return ghostMarkers
+	 *
+	 */
+	const openfpm::vector<size_t> & getGhostMarkers() const
+	{
+		return ghostMarkers;
+	}
+
 	/*! \brief Return the private slot
 	 *
 	 * \return slot
@@ -444,6 +504,69 @@ public:
 	const base & private_get_cl_base() const
 	{
 		return cl_base;
+	}
+
+	/*! This Function to indicate the vector class has a packer function
+	 *
+	 * \return true vector has a pack function
+	 *
+	 */
+	static bool pack()
+	{
+		return true;
+	}
+
+	/*! This Function indicate that vector class has a packRequest function
+	 *
+	 * \return true vector has a packRequest function
+	 *
+	 */
+	static bool packRequest()
+	{
+		return true;
+	}
+
+	/*! \brief It calculate the number of byte required to serialize the object
+	 *
+	 * \tparam prp list of properties
+	 *
+	 * \param req reference to the total counter required to pack the information
+	 *
+	 */
+	template<int ... prp> inline void packRequest(size_t & req) const
+	{
+		Packer<local_index,HeapMemory>::packRequest(req);
+		cl_n.template packRequest<prp...>(req);
+		cl_base.template packRequest<prp...>(req);
+		ghostMarkers.template packRequest<prp...>(req);
+	}
+
+
+	/*! \brief pack a vector selecting the properties to pack
+	 *
+	 * \param mem preallocated memory where to pack the vector
+	 * \param sts pack-stat info
+	 *
+	 */
+	template<int ... prp> inline void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat & sts) const
+	{
+		Packer<local_index,HeapMemory>::pack(mem, slot, sts);
+		cl_n.template pack<prp...>(mem, sts);
+		cl_base.template pack<prp...>(mem, sts);
+		ghostMarkers.template pack<prp...>(mem, sts);
+	}
+
+	/*! \brief unpack a vector
+	 *
+	 * \param mem preallocated memory from where to unpack the vector
+	 * \param ps unpack-stat info
+	 */
+	template<int ... prp, typename MemType> inline void unpack(ExtPreAlloc<MemType> & mem, Unpack_stat & ps)
+	{
+		Unpacker<local_index,HeapMemory>::unpack(mem, slot, ps);
+		cl_n.template unpack<prp...>(mem, ps);
+		cl_base.template unpack<prp...>(mem, ps);
+		ghostMarkers.template unpack<prp...>(mem, ps);
 	}
 
 };

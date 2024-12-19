@@ -141,6 +141,11 @@ public:
         grid_smb<dim,blockEdgeSize,indexT>::swap(other);
     }
 
+    __host__ __device__ inline indexT getBlockEgdeSize() const
+    {
+        return blockEdgeSize;
+    }
+
     __host__ __device__ inline indexT size() const
     {
         return grid_smb<dim,blockEdgeSize,indexT>::size();

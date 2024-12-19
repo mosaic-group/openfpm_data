@@ -45,7 +45,7 @@ void testStencilHeatSparse_perf(unsigned int i, std::string base, float fillMult
     size_t sz[2] = {spatialEdgeSize, spatialEdgeSize};
     typename SparseGridZ::grid_info blockGeometry(sz);
     SparseGridZ sparseGrid(blockGeometry);
-    mgpu::ofp_context_t ctx;
+    gpu::ofp_context_t gpuContext;
     sparseGrid.template setBackgroundValue<0>(0);
 
     ///// Insert sparse content, a set of concentric spheres /////
@@ -65,13 +65,13 @@ void testStencilHeatSparse_perf(unsigned int i, std::string base, float fillMult
                          gridSize, dim3(blockEdgeSize * blockEdgeSize, 1, 1),
                          sparseGrid.toKernel(), start1, rBig, rSmall, 5);
         cudaDeviceSynchronize();
-        sparseGrid.template flush<smax_<0 >>(ctx, flush_type::FLUSH_ON_DEVICE);
+        sparseGrid.template flush<smax_<0 >>(gpuContext, flush_type::FLUSH_ON_DEVICE);
         cudaDeviceSynchronize();
     }
     ///// /////
 
     sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
-    sparseGrid.tagBoundaries(ctx);
+    sparseGrid.tagBoundaries(gpuContext);
 
     sparseGrid.template deviceToHost<0>(); // NECESSARY as count takes place on Host!
     auto existingElements = sparseGrid.countExistingElements();

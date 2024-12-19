@@ -3,7 +3,7 @@
 
 
 #include "config.h"
-#include "util/cuda_launch.hpp"
+#include "util/cuda_util.hpp"
 #include <boost/shared_array.hpp>
 #include <vector>
 #include <initializer_list>
@@ -108,14 +108,14 @@ struct ite_gpu
 	grid_key_dx<dim,int> start;
 	grid_key_dx<dim,int> stop;
 
-	size_t nblocks()
+	size_t nblocks() const
 	{
-		return wthr.x * wthr.y * wthr.z;
+		return wthr.x * ((wthr.y != 0)?wthr.y:1) * ((wthr.z != 0)?wthr.z:1);
 	}
 
-	size_t nthrs()
+	size_t nthrs() const
 	{
-		return thr.x * thr.y * thr.z;
+		return thr.x * ((thr.y != 0)?thr.y:1) * ((thr.z != 0)?thr.z:1);
 	}
 
 #endif
@@ -186,7 +186,7 @@ class grid_sm
 	 *
 	 */
 
-	inline void Initialize(const size_t sz)
+	__device__ __host__ inline void Initialize(const size_t sz)
 	{
 		//! Initialize the basic structure for each dimension
 		sz_s[0] = sz;
@@ -217,7 +217,7 @@ class grid_sm
 	 *
 	 */
 
-	inline void Initialize(const size_t (& sz)[N])
+	__device__ __host__ inline void Initialize(const size_t (& sz)[N])
 	{
 		//! Initialize the basic structure for each dimension
 		sz_s[0] = sz[0];
@@ -353,7 +353,27 @@ public:
 	 *
 	 */
 
-	template<typename S> inline grid_sm(const grid_sm<N,S> & g)
+	template<typename S>
+	__device__ __host__ inline grid_sm(const grid_sm<N,S> & g)
+	{
+		size_tot = g.size_tot;
+
+		for (size_t i = 0 ; i < N ; i++)
+		{
+			sz[i] = g.sz[i];
+			sz_s[i] = g.sz_s[i];
+		}
+	}
+
+	/*! \brief copy constructor
+	 *
+	 * \param g grid info
+	 *
+	 * construct a grid from another grid. As a copy constructor can't be template,
+	 * the one above won't work for const grid_sm<N,S> & g, where S=T
+	 *
+	 */
+	__device__ __host__ inline grid_sm(const grid_sm<N,T> & g)
 	{
 		size_tot = g.size_tot;
 
@@ -380,7 +400,7 @@ public:
 
 	// Static element to calculate total size
 
-	inline size_t totalSize(const size_t (& sz)[N])
+	__device__ __host__ inline size_t totalSize(const size_t (& sz)[N])
 	{
 		size_t tSz = 1;
 
@@ -415,7 +435,7 @@ public:
 	 *
 	 */
 
-	inline grid_sm(const size_t (& sz)[N])
+	__device__ __host__ inline grid_sm(const size_t (& sz)[N])
 	: size_tot(totalSize(sz))
 	{
 		Initialize(sz);
@@ -431,7 +451,7 @@ public:
 	 */
 
 	template<typename check=NoCheck, typename ids_type>
-	inline mem_id LinId(const grid_key_dx<N,ids_type> & gk, const char sum_id[N]) const
+	inline mem_id LinId(const grid_key_dx<N,ids_type> & gk, const signed char sum_id[N]) const
 	{
 		mem_id lid;
 
@@ -467,7 +487,7 @@ public:
 	 */
 
 	template<typename check=NoCheck,typename ids_type>
-	inline mem_id LinId(const grid_key_dx<N,ids_type> & gk, const char sum_id[N], const size_t (&bc)[N]) const
+	inline mem_id LinId(const grid_key_dx<N,ids_type> & gk, const signed char sum_id[N], const size_t (&bc)[N]) const
 	{
 		mem_id lid;
 
@@ -625,7 +645,7 @@ public:
 	}
 
 	//! Destructor
-	~grid_sm() {};
+	__device__ __host__ ~grid_sm() {};
 
 	/*! \brief Return the size of the grid
 	 *
@@ -713,7 +733,7 @@ public:
 	 *
 	 */
 
-	inline size_t size_s(unsigned int i) const
+	__device__ __host__ inline size_t size_s(unsigned int i) const
 	{
 		return sz_s[i];
 	}
@@ -737,9 +757,19 @@ public:
 	 * \return get the size of the grid as an array
 	 *
 	 */
-	inline const size_t (& getSize() const)[N]
+	__device__ __host__ inline const size_t (& getSize() const)[N]
 	{
 		return sz;
+	}
+
+	/*! \brief Returns the size of the grid in the passed array
+	 *
+	 * \return the size of the grid in the passed array
+	 *
+	 */
+	__device__ __host__ inline void getSize(size_t (&size) [N]) const
+	{
+		for (size_t i = 0; i < N; ++i) size[i] = sz[i];
 	}
 
 	/*! \brief Return a sub-grid iterator
@@ -789,6 +819,7 @@ public:
 		return getGPUIterator_impl<N>(*this,k1,k2,n_thr);
 	}
 
+
 #endif
 
 	/*! \brief swap the grid_sm informations
@@ -837,14 +868,48 @@ public:
 template<unsigned int dim, typename grid_sm_type, typename T>
 ite_gpu<dim> getGPUIterator_impl(const grid_sm_type & g1, const grid_key_dx<dim,T> & key1, const grid_key_dx<dim,T> & key2, const size_t n_thr)
 {
+	// Work to do
+	ite_gpu<dim> ig;
+
+	if (n_thr == static_cast<size_t>(-1)) {
+		ig.thr.x = 0xFFFFFFFF;
+		ig.thr.y = 0xFFFFFFFF;
+		ig.thr.z = 0xFFFFFFFF;
+
+		if (dim >= 1)
+			ig.wthr.x = key2.get(0) - key1.get(0) + 1;
+		else
+			ig.wthr.x = 0;
+
+		if (dim >= 2)
+			ig.wthr.y = key2.get(1) - key1.get(1) + 1;
+		else
+			ig.wthr.y = 0;
+
+		if (dim >= 3)
+		{
+			ig.wthr.z = 1;
+			for (size_t i = 2 ; i < dim ; i++)
+			{ig.wthr.z *= (key2.get(i) - key1.get(i) + 1);}
+		}
+		else
+			ig.wthr.z = 0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			ig.start.set_d(i,key1.get(i));
+			ig.stop.set_d(i,key2.get(i));
+		}
+
+		return ig;
+	
+	}
+
 	size_t tot_work = 1;
 	for (size_t i = 0 ; i < dim ; i++)
 	{tot_work *= key2.get(i) - key1.get(i) + 1;}
 
 	size_t n = (tot_work <= n_thr)?openfpm::math::round_big_2(tot_work):n_thr;
-
-	// Work to do
-	ite_gpu<dim> ig;
 
 	if (tot_work == 0)
 	{
@@ -855,6 +920,12 @@ ite_gpu<dim> getGPUIterator_impl(const grid_sm_type & g1, const grid_key_dx<dim,
 		ig.wthr.x = 0;
 		ig.wthr.y = 0;
 		ig.wthr.z = 0;
+
+		for (size_t i = 0 ; i < dim ; i++)
+		{
+			ig.start.set_d(i,key1.get(i));
+			ig.stop.set_d(i,key2.get(i));
+		}
 
 		return ig;
 	}

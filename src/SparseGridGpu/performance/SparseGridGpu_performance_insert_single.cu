@@ -43,7 +43,7 @@ void testInsertSingle(std::string testURI, unsigned int i)
 	dim3 blockSize(blockEdgeSize, blockEdgeSize);
 	grid_smb<dim, blockEdgeSize> blockGeometry(gridSize);
 	SparseGridGpu<dim, AggregateT, blockEdgeSize, chunkSize> sparseGrid(blockGeometry);
-	mgpu::ofp_context_t ctx;
+	gpu::ofp_context_t gpuContext;
 	sparseGrid.template setBackgroundValue<0>(0);
 
 	if (prePopulateGrid)
@@ -51,7 +51,7 @@ void testInsertSingle(std::string testURI, unsigned int i)
 		// Pre-populate grid
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSize);
 		insertValues2D<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), 0, 0);
-		sparseGrid.template flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+		sparseGrid.template flush < smax_ < 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 		cudaDeviceSynchronize();
 		///
 	}
@@ -61,7 +61,7 @@ void testInsertSingle(std::string testURI, unsigned int i)
 		auto offset = 0;
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSize);
 		insertValues2D<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), offset, offset);
-		sparseGrid.template flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+		sparseGrid.template flush < smax_ < 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 		cudaDeviceSynchronize();
 	}
 
@@ -79,7 +79,7 @@ void testInsertSingle(std::string testURI, unsigned int i)
 
 		sparseGrid.setGPUInsertBuffer(gridSize, blockSize);
 		insertValues2D<0> << < gridSize, blockSize >> > (sparseGrid.toKernel(), offset, offset);
-		sparseGrid.template flush < smax_ < 0 >> (ctx, flush_type::FLUSH_ON_DEVICE);
+		sparseGrid.template flush < smax_ < 0 >> (gpuContext, flush_type::FLUSH_ON_DEVICE);
 		cudaDeviceSynchronize();
 
 		ts.stop();

@@ -8,7 +8,6 @@
 #ifndef MAP_VECTOR_HPP
 #define MAP_VECTOR_HPP
 
-#include "util/cuda_launch.hpp"
 #include <iostream>
 #include <typeinfo>
 #include "util/common.hpp"
@@ -356,7 +355,7 @@ namespace openfpm
         *
         * \return the size
         *
-        */
+        */ //remove host device
         size_t size_local() const
         {
             return v_size;
@@ -1379,7 +1378,21 @@ namespace openfpm
 
 			return base.get_o(key);
 		}
-
+        /*! \brief Get an element of the vector
+         *
+         * Get an element of the vector
+         *
+         * \tparam p Property to get
+         * \param id Element to get
+         *
+         * \return the element value requested
+         *
+         */ //remove device host
+        template <unsigned int p>
+        inline auto getProp(const unsigned int & id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
+        {   //uncomment this
+            return this->template get<p>(id);
+        }
 		/*! \brief Get an element of the vector
 		 *
 		 * Get an element of the vector
@@ -1389,12 +1402,12 @@ namespace openfpm
 		 *
 		 * \return the element value requested
 		 *
-		 */
-
+		*///remove host device
 		template <unsigned int p,typename KeyType>
 		inline auto getProp(const KeyType & id) -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
-			return this->template get<p>(get_id<std::is_fundamental<KeyType>::value>::get(id));
+			// return this->template get<p>(get_id<std::is_fundamental<KeyType>::value>::get(id));
+            return this->template get<p>(id.getKey());
 		}
 
 		/*! \brief Get an element of the vector
@@ -1410,7 +1423,8 @@ namespace openfpm
 		template <unsigned int p, typename KeyType>
 		inline auto getProp(const KeyType & id) const -> decltype(base.template get<p>(grid_key_dx<1>(0)))
 		{
-			return this->template get<p>(get_id<std::is_fundamental<KeyType>::value>::get(id));
+			// return this->template get<p>(get_id<std::is_fundamental<KeyType>::value>::get(id));
+			return this->template get<p>(id.getKey());
 		}
 
 		/*! \brief Get an element of the vector
@@ -1625,13 +1639,6 @@ namespace openfpm
 			base.set(id,v.base,src);
 		}
 
-		template<typename key_type>
-		key_type getOriginKey(key_type vec_key)
-		{
-			return vec_key;
-		}
-
-
 		/*! \brief Assignment operator
 		 *
 		 * move semantic movement operator=
@@ -1668,8 +1675,9 @@ namespace openfpm
 		{
 			v_size = mv.v_size;
 			size_t rsz[1] = {v_size};
-			base.resize(rsz);
-
+			if(rsz[0]>base.size()) {
+                base.resize(rsz);
+            }
 			// copy the object on cpu
 			for (size_t i = 0 ; i < v_size ; i++ )
 			{
@@ -1950,6 +1958,7 @@ namespace openfpm
 			return base.getGPUIterator(start,stop_,n_thr);
 		}
 
+
 #endif
 
 		/*! \brief Get the vector elements iterator
@@ -2007,6 +2016,15 @@ namespace openfpm
 
 			return base.getGPUIterator(start,stop,n_thr);
 		}
+
+        /*! \brief Get a domain iterator for the GPU
+         *
+         *
+         */
+        ite_gpu<1> getDomainIteratorGPU(size_t n_thr = default_kernel_wg_threads_) const
+        {
+            return getGPUIterator(n_thr);
+        }
 
 #endif
 		/*! \brief Return the size of the message needed to pack this object
@@ -2357,6 +2375,7 @@ namespace openfpm
 
 	template <typename T> using vector_std = vector<T, HeapMemory, memory_traits_lin, openfpm::grow_policy_double, STD_VECTOR>;
 	template<typename T> using vector_gpu = openfpm::vector<T,CudaMemory,memory_traits_inte>;
+    template<typename T> using vector_soa = openfpm::vector<T,HeapMemory,memory_traits_inte>;
 	template<typename T> using vector_gpu_lin = openfpm::vector<T,CudaMemory,memory_traits_lin>;
 	template<typename T> using vector_gpu_single = openfpm::vector<T,CudaMemory,memory_traits_inte,openfpm::grow_policy_identity>;
 	template<typename T> using vector_custd = vector<T, CudaMemory, memory_traits_inte, openfpm::grow_policy_double, STD_VECTOR>;

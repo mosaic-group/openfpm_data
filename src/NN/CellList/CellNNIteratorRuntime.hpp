@@ -26,11 +26,10 @@
  *
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
- * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,unsigned int impl>
-class CellNNIterator<dim,Cell,RUNTIME,impl>
+template<unsigned int dim, typename Cell>
+class CellNNIterator<dim,Cell,RUNTIME>
 {
 protected:
 
@@ -151,11 +150,10 @@ public:
  * \tparam dim dimensionality of the space where the cell live
  * \tparam Cell cell type on which the iterator is working
  * \tparam NNc_size neighborhood size
- * \tparam impl implementation specific options NO_CHECK do not do check on access, SAFE do check on access
  *
  */
-template<unsigned int dim, typename Cell,typename vector_pos_type, unsigned int impl>
-class CellNNIteratorSym<dim,Cell,vector_pos_type,RUNTIME,impl> : public CellNNIterator<dim,Cell,RUNTIME,impl>
+template<unsigned int dim, typename Cell,typename vector_pos_type>
+class CellNNIteratorSym<dim,Cell,vector_pos_type,RUNTIME> : public CellNNIterator<dim,Cell,RUNTIME>
 {
 	//! index of the particle p
 	size_t p;
@@ -185,11 +183,11 @@ next:
 				this->start_id++;
 			}
 
-			CellNNIterator<dim,Cell,RUNTIME,impl>::selectValid();
+			CellNNIterator<dim,Cell,RUNTIME>::selectValid();
 		}
 		else
 		{
-			CellNNIterator<dim,Cell,RUNTIME,impl>::selectValid();
+			CellNNIterator<dim,Cell,RUNTIME>::selectValid();
 		}
 	}
 
@@ -211,7 +209,7 @@ public:
 							 size_t NNc_size,
 							 Cell & cl,
 							 const vector_pos_type & v)
-	:CellNNIterator<dim,Cell,RUNTIME,impl>(cell,NNc,NNc_size,cl),p(p),v(v)
+	:CellNNIterator<dim,Cell,RUNTIME>(cell,NNc,NNc_size,cl),p(p),v(v)
 	{
 		if (this->NNc_id >= this->NNc_size)
 			return;
@@ -225,7 +223,7 @@ public:
 	 * \return itself
 	 *
 	 */
-	__attribute__((always_inline)) inline CellNNIteratorSym<dim,Cell,vector_pos_type,RUNTIME,impl> & operator++()
+	__attribute__((always_inline)) inline CellNNIteratorSym<dim,Cell,vector_pos_type,RUNTIME> & operator++()
 	{
 		this->start_id++;
 

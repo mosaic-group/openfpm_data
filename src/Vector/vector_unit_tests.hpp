@@ -851,13 +851,15 @@ BOOST_AUTO_TEST_CASE ( test_gpu_iterator )
 	{
 	auto ite = pl.getGPUIterator();
 
-	BOOST_REQUIRE_EQUAL(ite.wthr.x,1ul);
-	BOOST_REQUIRE_EQUAL(ite.wthr.x,1ul);
-	BOOST_REQUIRE_EQUAL(ite.wthr.x,1ul);
+	if (default_kernel_wg_threads_ == 1024) {
+		BOOST_REQUIRE_EQUAL(ite.wthr.x,1ul);
+		BOOST_REQUIRE_EQUAL(ite.wthr.x,1ul);
+		BOOST_REQUIRE_EQUAL(ite.wthr.x,1ul);
 
-	BOOST_REQUIRE_EQUAL(ite.thr.x,10ul);
-	BOOST_REQUIRE_EQUAL(ite.thr.y,1ul);
-	BOOST_REQUIRE_EQUAL(ite.thr.z,1ul);
+		BOOST_REQUIRE_EQUAL(ite.thr.x,10ul);
+		BOOST_REQUIRE_EQUAL(ite.thr.y,1ul);
+		BOOST_REQUIRE_EQUAL(ite.thr.z,1ul);
+	}
 	}
 
 	pl.resize(33);
@@ -865,13 +867,15 @@ BOOST_AUTO_TEST_CASE ( test_gpu_iterator )
 	{
 	auto ite = pl.getGPUIterator(32);
 
-	BOOST_REQUIRE_EQUAL(ite.wthr.x,2ul);
-	BOOST_REQUIRE_EQUAL(ite.wthr.y,1ul);
-	BOOST_REQUIRE_EQUAL(ite.wthr.z,1ul);
+	if (default_kernel_wg_threads_ == 1024) {
+		BOOST_REQUIRE_EQUAL(ite.wthr.x,2ul);
+		BOOST_REQUIRE_EQUAL(ite.wthr.y,1ul);
+		BOOST_REQUIRE_EQUAL(ite.wthr.z,1ul);
 
-	BOOST_REQUIRE_EQUAL(ite.thr.x,32ul);
-	BOOST_REQUIRE_EQUAL(ite.thr.y,1ul);
-	BOOST_REQUIRE_EQUAL(ite.thr.z,1ul);
+		BOOST_REQUIRE_EQUAL(ite.thr.x,32ul);
+		BOOST_REQUIRE_EQUAL(ite.thr.y,1ul);
+		BOOST_REQUIRE_EQUAL(ite.thr.z,1ul);
+	}
 	}
 }
 

@@ -342,6 +342,11 @@ public:
     	return sz;
     }
 
+    __host__ __device__ inline indexT getBlockEgdeSize() const
+    {
+        return blockEdgeSize;
+    }
+
     __host__ __device__ inline indexT getBlockSize() const
     {
     	return blockSize;

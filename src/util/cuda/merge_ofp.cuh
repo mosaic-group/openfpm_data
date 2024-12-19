@@ -11,10 +11,9 @@
  #ifdef __NVCC__
  
  #include "Vector/map_vector.hpp"
- #include "util/cuda_launch.hpp"
+ #include "util/cuda_util.hpp"
  
- #if CUDART_VERSION >= 11000
-     #ifndef CUDA_ON_CPU 
+ #ifndef CUDA_ON_CPU
      // Here we have for sure CUDA >= 11
      #ifdef __HIP__
         #undef __CUDACC__
@@ -24,13 +23,10 @@
         #define __CUDACC__
         #define __CUDA__
      #else
-        #include "util/cuda/moderngpu/kernel_merge.hxx"
+        #include <thrust/merge.h>
+        #include <thrust/execution_policy.h>
      #endif
-     #endif
- #else
-    #include "util/cuda/moderngpu/kernel_merge.hxx"
  #endif
- #include "util/cuda/ofp_context.hxx"
  
 
  namespace openfpm
@@ -41,7 +37,7 @@
              typename comp_t, typename context_t>
     void merge(a_keys_it a_keys, a_vals_it a_vals, int a_count,
                b_keys_it b_keys, b_vals_it b_vals, int b_count,
-            c_keys_it c_keys, c_vals_it c_vals, comp_t comp, context_t& context) 
+            c_keys_it c_keys, c_vals_it c_vals, comp_t comp, context_t& gpuContext)
     {
  #ifdef CUDA_ON_CPU
  
@@ -98,7 +94,10 @@
 
         #else
 
-            mgpu::merge(a_keys,a_vals,a_count,b_keys,b_vals,b_count,c_keys,c_vals,comp,context);
+            thrust::merge_by_key(thrust::device, a_keys,a_keys + a_count, 
+                                                 b_keys,b_keys + b_count, 
+                                                 a_vals,b_vals,
+                                                 c_keys,c_vals,comp);
 
         #endif
 
@@ -109,4 +108,3 @@
  #endif /* __NVCC__ */
  
  #endif /* SCAN_OFP_HPP_ */
- 

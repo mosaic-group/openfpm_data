@@ -397,7 +397,7 @@ public:
 	 *
 	 */
 	template<typename a, typename ...T>
-	inline void set(a v, T...t)
+	__device__ __host__ inline void set(a v, T...t)
 	{
 #ifdef SE_CLASS1
 		if (sizeof...(t) != dim -1)

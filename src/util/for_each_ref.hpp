@@ -46,7 +46,7 @@ struct for_each_ref_impl
         , typename TransformFunc
         , typename F
         >
-    BOOST_GPU_ENABLED static void execute(
+    __host__ __device__ static void execute(
           Iterator*
         , LastIterator*
         , TransformFunc*
@@ -65,7 +65,7 @@ struct for_each_ref_impl<false>
         , typename TransformFunc
         , typename F
         >
-    BOOST_GPU_ENABLED static void execute(
+    __host__ __device__ static void execute(
           Iterator*
         , LastIterator*
         , TransformFunc*
@@ -144,7 +144,7 @@ template<
     , typename TransformOp
     , typename F
     >
-BOOST_GPU_ENABLED inline void for_each_ref(F & f, Sequence* = 0, TransformOp* = 0)
+__host__ __device__ inline void for_each_ref(F & f, Sequence* = 0, TransformOp* = 0)
 {
     BOOST_MPL_ASSERT(( is_sequence<Sequence> ));
 
@@ -159,7 +159,7 @@ template<
       typename Sequence
     , typename F
     >
-BOOST_GPU_ENABLED inline
+__host__ __device__ inline
 void for_each_ref(F & f, Sequence* = 0)
 {
     for_each_ref<Sequence, identity<> >(f);
