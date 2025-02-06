@@ -676,6 +676,7 @@ public:
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
 		opt = clg.opt;
+		boxNeighborNumber = clg.boxNeighborNumber;
 
 		return *this;
 	}
@@ -701,6 +702,7 @@ public:
 		ghostMarker = clg.ghostMarker;
 		nDecRefRedec = clg.nDecRefRedec;
 		opt = clg.opt;
+		boxNeighborNumber = clg.boxNeighborNumber;
 
 		return *this;
 	}
