@@ -728,4 +728,22 @@ struct rank_gen<T,true>
 	typedef boost::mpl::int_<1> type;
 };
 
+template<unsigned int dim, typename T>
+std::ostream& operator<<(std::ostream& os, const Point<dim, T>& p)
+{
+    for (unsigned int i = 0; i < dim; i++)
+    {
+        os << p.get(i);
+        if(i < dim - 1)
+            os << " ";
+    }
+    return os;
+}
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const Point<1, T>& p)
+{
+    os << p.get(0);
+    return os;
+}
+
 #endif
