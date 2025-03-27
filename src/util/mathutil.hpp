@@ -112,23 +112,31 @@ namespace openfpm
 			return (exponent == 0) ? 1 : (base * pow(base, exponent-1));
 		}
 
-        template<class T>
-        __host__ __device__ double intpowlog(const T x, unsigned const e)
-        {
-            if (e == 0) return 1.0;
-            if (e % 2 == 0)
-            {
-                double h = intpowlog(x, e / 2);
-                return h * h;
-            }
-            else
-            {
-                double h = intpowlog(x, e / 2);
-                return h * h * x;
-            }
-        }
 
+		/*! \brief It calculates the power function in loop
+		 *
+		 * # Example
+		 *
+		 * \tparam type of the pow expression
+		 *
+		 * \param base
+		 * \param exponent
+		 *
+		 */
+		template<class T>
+		__host__ __device__ double intpowlog(const T base, unsigned const exponent)
+		{
+			T out = 1, curpwr = base;
+			for(unsigned _e = exponent ; _e > 0; _e = _e >> 1)
+			{
+				if ((_e & 1) > 0)
+					out *= curpwr;
 
+				curpwr *= curpwr;
+			}
+
+			return out;
+		}
 
 		/* \brief Return the positive modulo of a number
 		 *
