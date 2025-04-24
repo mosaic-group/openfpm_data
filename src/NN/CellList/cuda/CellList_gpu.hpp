@@ -445,7 +445,8 @@ public:
 
 		else if (opt & CL_NON_SYMMETRIC) {
 
-			construct_dense(vPos,vPrp,gpuContext,ghostMarker,start,stop);
+			if (!(opt & CL_GPU_SKIP_CONSTRUCT_ON_STATIC_DOMAIN))
+				construct_dense(vPos,vPrp,gpuContext,ghostMarker,start,stop);
 
 			if (stop == (size_t)-1) stop = vPos.size();
 
@@ -1199,7 +1200,8 @@ public:
 		}
 
 		else if (opt & CL_NON_SYMMETRIC) {
-			construct_sparse(vPos,vPrp,gpuContext,ghostMarker, start, stop);
+			if (!(opt & CL_GPU_SKIP_CONSTRUCT_ON_STATIC_DOMAIN))
+				construct_sparse(vPos,vPrp,gpuContext,ghostMarker, start, stop);
 
 			if (stop == (size_t)-1) stop = vPos.size();
 
