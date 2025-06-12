@@ -302,7 +302,7 @@ public:
 	 * \param opt VL_SYMMETRIC or VL_NON_SYMMETRIC
 	 *
 	 */
-	void initCl(CellListImpl & cellList, vPos_type & vPos, size_t ghostMarker)
+	void initCl(CellListImpl & cellList, const vPos_type & vPos, size_t ghostMarker)
 	{
 		// CellList_gpu receives a property vector to potentially reorder it during cell list construction
 		// stub because of legacy naming
@@ -488,8 +488,9 @@ public:
 		}
 	}
 
-	/*! \brief Fill non-symmetric adaptive r-cut Verlet list from a list of cut-off radii
+	/*! \brief Initialize non-symmetric adaptive r-cut Verlet list from a list of cut-off radii
 	 *
+	 * \param box Domain where this Verlet list is to be created
 	 * \param pos vector of positions
 	 * \param rCuts list of cut-off radii for every particle in pos
 	 * \param ghostMarker Indicate form which particles to construct the verlet list. For example
@@ -497,9 +498,11 @@ public:
 	 * 			100 particles
 	 *
 	 */
-	inline void fillNonSymmAdaptive(
-		const vPos_type & pos,
+
+	inline void InitializeNonSymmAdaptive(
+		const Box<dim,T> & box,
 		openfpm::vector<T> &rCuts,
+		const vPos_type & pos,
 		size_t ghostMarker)
 	{
 		if (rCuts.size() != ghostMarker)
@@ -511,23 +514,41 @@ public:
 		}
 
 		this->rCuts = rCuts;
-		size_t end = ghostMarker;
+		float rCutMax = 0.0;
 
-		Mem_type::init_to_zero(slot,end);
+		// Assign rCutMax for Cell List as
+		// the largest cut-off radius from rCuts
+		for (size_t i = 0; i < ghostMarker; ++i)
+			if (rCuts.get(i) > rCutMax)
+				rCutMax = rCuts.get(i);
+
+		// Number of divisions
+		size_t div[dim];
+
+		Box<dim,T> bt = box;
+
+		// Calculate the divisions for the Cell-lists
+		cl_param_calculate(bt,div,rCutMax,Ghost<dim,T>(0.0));
+
+		// Initialize a cell-list
+		cellList.Initialize(bt,div);
+
+		initCl(cellList,pos,ghostMarker);
+
+		Mem_type::init_to_zero(slot,ghostMarker);
 
 		// iterate the particles
-		auto it = pos.getIteratorTo(end);
+		auto it = pos.getIteratorTo(ghostMarker);
 		while (it.isNext())
 		{
 			typename Mem_type::local_index_type p = it.get();
 			Point<dim,T> xp = pos.template get<0>(p);
 
-			// iterate the whole domain instead of neighborhood iteration
-			// no auxillary cell list is needed
-			auto NN = pos.getIteratorTo(pos.size_local());
-			T r_cut = rCuts.get(p);
+			// Get the neighborhood of the particle
+			auto boxIterator = cellList.getNNIteratorBox(cellList.getCell(xp));
 
-			iteratePartNeighbor<(bool)(opt&VL_NMAX_NEIGHBOR),(bool)(opt&VL_SKIP_REF_PART)>{}(*this, NN, pos, p, xp, r_cut, neighborMaxNum);
+			iteratePartNeighbor<(bool)(opt&VL_NMAX_NEIGHBOR),(bool)(opt&VL_SKIP_REF_PART)>{}(
+				*this, boxIterator, pos, p, xp, rCuts.get(p), neighborMaxNum);
 			++it;
 		}
 	}
