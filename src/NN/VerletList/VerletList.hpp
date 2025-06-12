@@ -281,6 +281,10 @@ protected:
 	//! Cut-off radius
 	T rCut;
 
+	//! Cut-off radius vector
+	// Not used by default unless filled with fillNonSymmAdaptive
+	openfpm::vector<T> rCuts;
+
 private:
 
 	//! decomposition counter
@@ -506,6 +510,7 @@ public:
 			std::runtime_error("Runtime adaptive cut-off Verlet list error");
 		}
 
+		this->rCuts = rCuts;
 		size_t end = ghostMarker;
 
 		Mem_type::init_to_zero(slot,end);
@@ -1171,6 +1176,18 @@ public:
 	T getRCut()
 	{
 		return rCut;
+	}
+
+	/*! \brief Return the cut-off radii for individual particles
+	 *
+	 * Avaiable only if filled with fillNonSymmAdaptive
+	 *
+	 * \return cut-off radius of particle p
+	 *
+	 */
+	T getRCuts(size_t p)
+	{
+		return rCuts.get(p);
 	}
 
 	/*! \brief Clear support of one particle in the verlet list
