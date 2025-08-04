@@ -318,7 +318,7 @@ template<int ... prp> inline void pack(ExtPreAlloc<HeapMemory> & mem, Pack_stat 
 	//if (has_aggregatePack<T,prp ... >::has_pack() == false)
 	{
 		//Call a packer
-		pack_simple_cond<sizeof...(prp) == 0,prp...>::template pack(*this,mem,sts);
+		pack_simple_cond<sizeof...(prp) == 0,prp...>::pack(*this,mem,sts);
 	}
 	//If at least one property has a "pack()" member
 	else

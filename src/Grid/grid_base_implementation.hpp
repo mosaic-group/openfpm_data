@@ -915,7 +915,7 @@ public:
 
 		bool skip_ini = skip_init<has_noPointers<T>::value,T>::skip_();
 
-		mem_setmemory<decltype(data_),S,layout_base<T>>::template setMemoryArray(*this,m,g1.size(),skip_ini);
+		mem_setmemory<decltype(data_),S,layout_base<T>>::setMemoryArray(*this,m,g1.size(),skip_ini);
 
 		is_mem_init = true;
 
@@ -1098,7 +1098,7 @@ public:
 		check_init();
 		check_bound(lin_id);
 #endif
-		return layout_base<T>::template get_lin_const(data_,g1,lin_id);
+		return layout_base<T>::get_lin_const(data_,g1,lin_id);
 	}
 
 
