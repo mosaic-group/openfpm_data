@@ -514,7 +514,7 @@ public:
 		}
 
 		this->rCuts = rCuts;
-		double rCutMax = 0.0;
+		T rCutMax = 0.0;
 
 		// Assign rCutMax for Cell List as
 		// the largest cut-off radius from rCuts
