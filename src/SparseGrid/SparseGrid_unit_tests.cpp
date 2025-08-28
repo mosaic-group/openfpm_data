@@ -2022,7 +2022,7 @@ template<typename sgrid> void Test_unpack_and_check_full_noprp(sgrid & grid)
 		sz[i] = 0;
 	}
 
-	grid.template packRequest(req2);
+	grid.packRequest(req2);
 	auto sub_it = grid.getIterator(zero,end);
 	grid.template packRequest<0,1>(sub_it,req3);
 
@@ -2046,7 +2046,7 @@ template<typename sgrid> void Test_unpack_and_check_full_noprp(sgrid & grid)
 	mem2.fill(0);
 	mem3.fill(0);
 
-	grid.template pack(mem2,sts2);
+	grid.pack(mem2,sts2);
 	grid.template pack<0,1>(mem3,sub_it,sts3);
 
 	BOOST_REQUIRE_EQUAL(mem2.size(),mem3.size());
@@ -2068,7 +2068,7 @@ template<typename sgrid> void Test_unpack_and_check_full_noprp(sgrid & grid)
 	Unpack_stat ps;
 	sgrid empty(sz);
 
-	empty.template unpack(mem2,ps);
+	empty.unpack(mem2,ps);
 
 	BOOST_REQUIRE_EQUAL(empty.getGrid().size(0),grid.getGrid().size(0));
 	BOOST_REQUIRE_EQUAL(empty.getGrid().size(1),grid.getGrid().size(1));

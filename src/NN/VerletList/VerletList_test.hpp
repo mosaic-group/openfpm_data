@@ -138,7 +138,7 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_s(Box<dim
 			innerBox.setHigh(i,1.0-r_cut);
 		}
 
-		vl1.Initialize(box,box,r_cut,pos,pos.size());
+		vl1.Initialize(box,r_cut,pos,pos.size());
 
 		// Check that the verlet is consistent
 		for (size_t i = 0 ; i < pos.size() ; i++)
@@ -207,14 +207,14 @@ template<unsigned int dim, typename T, typename VerS> void Verlet_list_s(Box<dim
 		//! [create verlet cell]
 
 		VerS vl1;
-		vl1.Initialize(cli,r_cut,pos,pos,pos.size());
+		vl1.Initialize(cli,r_cut,pos,pos.size());
 
 		//! [create verlet cell]
 
 		//! [create verlet]
 
 		VerS vl2;
-		vl2.Initialize(box,box,r_cut,pos,pos.size());
+		vl2.Initialize(box,r_cut,pos,pos.size());
 
 		//! [create verlet]
 
@@ -481,10 +481,10 @@ BOOST_AUTO_TEST_CASE( VerletList_use)
 
 	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
 	Box<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
-//	Verlet_list_s<3,double,VerletList<3,double,VL_NON_SYMMETRIC,FAST,shift<3,double>>>(box);
-//	Verlet_list_s<3,double,VerletList<3,double,VL_NON_SYMMETRIC,FAST,shift<3,double>> >(box2);
+	// Verlet_list_s<3,double,VerletList<3,double,VL_NON_SYMMETRIC,Mem_fast<>,shift<3,double>>>(box);
+	// Verlet_list_s<3,double,VerletList<3,double,VL_NON_SYMMETRIC,Mem_fast<>,shift<3,double>> >(box2);
 	Verlet_list_sM<3,double,VerletListM<3,double,2>>(box);
-//	Verlet_list_sM<3,double,CellListM<3,double,8>>(box2);
+	// Verlet_list_sM<3,double,CellListM<3,double,8>>(box2);
 
 	std::cout << "End verlet list" << "\n";
 

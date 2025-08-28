@@ -30,12 +30,12 @@
 namespace openfpm
 {
 	template<typename input_it, typename output_it, typename reduce_op>
-			void reduce(input_it input, int count, output_it output, reduce_op op, gpu::ofp_context_t& gpuContext)
+		void reduce(input_it input, int count, output_it output, reduce_op op, gpu::ofp_context_t& gpuContext)
 	{
 #ifdef CUDA_ON_CPU
 
-	output[0] = 0;
-	for (int i = 0 ; i < count ; i++)
+	output[0] = input[0];
+	for (int i = 1 ; i < count ; i++)
 	{
 		output[0] = op(output[0],input[i]);
 	}
@@ -46,24 +46,24 @@ namespace openfpm
 
 		size_t temp_storage_bytes = 0;
 		hipcub::DeviceReduce::Reduce(NULL,
-			temp_storage_bytes,input, output, count, op, 0);
+			temp_storage_bytes,input, output, count, op, op.reduceInitValue());
 
 		auto & temporal = gpuContext.getTemporalCUB();
 		temporal.resize(temp_storage_bytes);
 
 		hipcub::DeviceReduce::Reduce(temporal.template getDeviceBuffer<0>(),
-			temp_storage_bytes,input, output, count, op, 0);
+			temp_storage_bytes,input, output, count, op, op.reduceInitValue());
 	#else
 
 		size_t temp_storage_bytes = 0;
 		cub::DeviceReduce::Reduce(NULL,
-			temp_storage_bytes, input, output, count, op, 0);
+			temp_storage_bytes, input, output, count, op, op.reduceInitValue());
 
 		auto & temporal = gpuContext.getTemporalCUB();
 		temporal.resize(temp_storage_bytes);
 
 		cub::DeviceReduce::Reduce(temporal.template getDeviceBuffer<0>(),
-			temp_storage_bytes, input, output, count, op, 0);
+			temp_storage_bytes, input, output, count, op, op.reduceInitValue());
 
 	#endif
 #endif
