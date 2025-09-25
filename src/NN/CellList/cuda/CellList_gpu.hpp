@@ -61,6 +61,9 @@ private:
 	//! \brief Neighborhood cell linear ids (minus middle cell id) for in total (2*boxNeighborNumber+1)**dim cells
 	openfpm::vector_gpu<aggregate<int>> boxNeighborCellOffset;
 
+	//! \brief Symmetric neighborhood cell linear ids (minus middle cell id) for in total (2*boxNeighborNumber+1)**dim cells
+	openfpm::vector_gpu<aggregate<int>> boxNeighborCellOffsetSym;
+
 	//! /brief unit cell dimensions, given P1 = (0,0...)
 	openfpm::array<T,dim> unitCellP2;
 
@@ -107,8 +110,10 @@ private:
 	{
 
 		NNcalc_box(boxNeighborNumber,boxNeighborCellOffset,this->getGrid());
+		NNcalc_boxSym(boxNeighborNumber,boxNeighborCellOffsetSym,this->getGrid());
 
 		boxNeighborCellOffset.template hostToDevice<0>();
+		boxNeighborCellOffsetSym.template hostToDevice<0>();
 	}
 
 	/*! \brief Construct the ids of the particles domain in the sorted array
@@ -276,7 +281,7 @@ public:
 	 */
 	CellList_gpu(CellList_gpu<dim,T,Memory,transform_type> && clg)
 	{
-		this->operator=(clg);
+		this->operator=(std::move(clg));
 	}
 
 	/*! \brief default constructor
@@ -440,7 +445,8 @@ public:
 
 		else if (opt & CL_NON_SYMMETRIC) {
 
-			construct_dense(vPos,vPrp,gpuContext,ghostMarker,start,stop);
+			if (!(opt & CL_GPU_SKIP_CONSTRUCT_ON_STATIC_DOMAIN))
+				construct_dense(vPos,vPrp,gpuContext,ghostMarker,start,stop);
 
 			if (stop == (size_t)-1) stop = vPos.size();
 
@@ -481,6 +487,7 @@ public:
 			sortedToSortedIndexNoGhost.toKernel(),
 			rcutNeighborCellOffset.toKernel(),
 			boxNeighborCellOffset.toKernel(),
+			boxNeighborCellOffsetSym.toKernel(),
 			unitCellP2,
 			numCellDim,
 			cellPadDim,
@@ -629,6 +636,7 @@ public:
 		sortedToSortedIndexNoGhost.swap(clg.sortedToSortedIndexNoGhost);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
 		boxNeighborCellOffset.swap(clg.boxNeighborCellOffset);
+		boxNeighborCellOffsetSym.swap(clg.boxNeighborCellOffsetSym);
 		rcutNeighborCellOffset.swap(clg.rcutNeighborCellOffset);
 
 		unitCellP2.swap(clg.unitCellP2);
@@ -659,8 +667,9 @@ public:
 		sortedToUnsortedIndex = clg.sortedToUnsortedIndex;
 		sortedToSortedIndexNoGhost = clg.sortedToSortedIndexNoGhost;
 		unsortedToSortedIndex = clg.unsortedToSortedIndex;
-		boxNeighborCellOffset = boxNeighborCellOffset;
-		rcutNeighborCellOffset = rcutNeighborCellOffset;
+		boxNeighborCellOffset = clg.boxNeighborCellOffset;
+		boxNeighborCellOffsetSym= clg.boxNeighborCellOffsetSym;
+		rcutNeighborCellOffset = clg.rcutNeighborCellOffset;
 
 		unitCellP2 = clg.unitCellP2;
 		numCellDim = clg.numCellDim;
@@ -684,8 +693,9 @@ public:
 		sortedToUnsortedIndex.swap(clg.sortedToUnsortedIndex);
 		sortedToSortedIndexNoGhost.swap(clg.sortedToSortedIndexNoGhost);
 		unsortedToSortedIndex.swap(clg.unsortedToSortedIndex);
-		boxNeighborCellOffset.swap(boxNeighborCellOffset);
-		rcutNeighborCellOffset.swap(rcutNeighborCellOffset);
+		boxNeighborCellOffset.swap(clg.boxNeighborCellOffset);
+		boxNeighborCellOffsetSym.swap(clg.boxNeighborCellOffsetSym);
+		rcutNeighborCellOffset.swap(clg.rcutNeighborCellOffset);
 
 		unitCellP2 = clg.unitCellP2;
 		numCellDim = clg.numCellDim;
@@ -1029,7 +1039,7 @@ public:
 	 */
 	CellList_gpu(CellList_gpu<dim,T,Memory,transform_type> && clg)
 	{
-		this->operator=(clg);
+		this->operator=(std::move(clg));
 	}
 
 	/*! \brief default constructor
@@ -1190,7 +1200,8 @@ public:
 		}
 
 		else if (opt & CL_NON_SYMMETRIC) {
-			construct_sparse(vPos,vPrp,gpuContext,ghostMarker, start, stop);
+			if (!(opt & CL_GPU_SKIP_CONSTRUCT_ON_STATIC_DOMAIN))
+				construct_sparse(vPos,vPrp,gpuContext,ghostMarker, start, stop);
 
 			if (stop == (size_t)-1) stop = vPos.size();
 

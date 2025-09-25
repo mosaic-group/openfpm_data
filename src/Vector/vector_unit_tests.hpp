@@ -372,7 +372,7 @@ template <typename vector, template <typename> class layout_base> void test_vect
 
 	// add homogeneous
 
-	v1.template add(v2);
+	v1.add(v2);
 
 	for (size_t i = 0 ; i < FIRST_PUSH ; i++)
 	{

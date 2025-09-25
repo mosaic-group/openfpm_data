@@ -66,6 +66,7 @@ constexpr int CL_GPU_REORDER_POSITION = 64;
 constexpr int CL_GPU_REORDER_PROPERTY = 128;
 constexpr int CL_GPU_RESTORE_POSITION = 256;
 constexpr int CL_GPU_RESTORE_PROPERTY = 512;
+constexpr int CL_GPU_SKIP_CONSTRUCT_ON_STATIC_DOMAIN = 1024;
 constexpr int CL_GPU_REORDER = CL_GPU_REORDER_POSITION | CL_GPU_REORDER_PROPERTY | CL_GPU_RESTORE_POSITION | CL_GPU_RESTORE_PROPERTY;
 
 /*! \brief Calculate the the Neighborhood for symmetric interactions CSR scheme
@@ -407,6 +408,86 @@ void NNcalc_box(
 
 		if (cellIndex != 0)
 			boxNeighborCellOffset.template get<0>(index++) = cellIndex;
+
+		++boxCellGridIt;
+	}
+}
+
+/*! Calculate the symmetric neighborhood cells based on the box neighborhood.
+ *
+ * \note The function includes NNeighbor per dimension, as compared to NNCalc_rad
+ * \note where the number of adjacent layers of cells depends on grid dimensions
+ * \note and might vary for different dimentions
+ *
+ * \note To the calculated neighborhood cell you have to add the id of the central cell
+ *
+	\verbatim
+   +-----------------------+
+   |p |p |p |p |p |p |p |p |
+   +-----------------------+
+   |p |  |  |  |  |  |  |p |
+   +-----------------------+
+   |p |  |  |7 |8 |9 |  |p |
+   +-----------------------+
+   |p |  |  |  |0 |1 |  |p |
+   +-----------------------+
+   |p |9 |  |  |  |  |  |p |
+   +-----------------------+
+   |p |p |p |p |p |p |p |p |
+   +-----------------------+
+	\endverbatim
+ *
+ * The number indicate the cell id calculated
+ *
+ * 0,1,7,8,9
+ *
+ * The cell 0 has id = 22 in the big cell matrix, so to calculate the
+ * neighborhood cells you have to sum the id of the center cell
+ *
+ * 22,23,29,30,31
+ *
+ * Here NNeighbor = 1
+ *
+ * \param NNeighbor number of adjacent cell layers to be included
+ * \param boxNeighborCellOffset vector containing the neighborhood cells ids
+ *
+ */
+template<unsigned int dim, typename vector_type>
+void NNcalc_boxSym(
+	size_t NNeighbor,
+	vector_type & boxNeighborCellOffset,
+	const grid_sm<dim,void> & cellListGrid)
+{
+	grid_key_dx<dim> cellPosStart;
+	grid_key_dx<dim> cellPosStop;
+	grid_key_dx<dim> cellPosMiddle;
+
+	for (size_t i = 0 ; i < dim ; i++)
+	{
+		cellPosStart.set_d(i,0);
+		cellPosStop.set_d(i,2*NNeighbor);
+		cellPosMiddle.set_d(i,NNeighbor);
+	}
+
+	boxNeighborCellOffset.resize(0);
+
+	int cellIndexMiddle = cellListGrid.LinId(cellPosMiddle);
+	grid_key_dx_iterator_sub<dim> boxCellGridIt(cellListGrid, cellPosStart, cellPosStop);
+
+	size_t index = 0;
+
+	// start iteration with own cell
+	boxNeighborCellOffset.add();
+	boxNeighborCellOffset.template get<0>(index++) = 0;
+
+	while (boxCellGridIt.isNext())
+	{
+		int cellIndex = (int)cellListGrid.LinId(boxCellGridIt.get()) - cellIndexMiddle;
+
+		if (cellIndex > 0) {
+			boxNeighborCellOffset.add();
+			boxNeighborCellOffset.template get<0>(index++) = cellIndex;
+		}
 
 		++boxCellGridIt;
 	}
@@ -1221,7 +1302,7 @@ public:
 	 * \return An aiterator across the neighborhood particles
 	 *
 	 */
-	__attribute__((always_inline)) inline CellNNIteratorSymLocal<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(unsigned int)FULL>
+	__attribute__((always_inline)) inline CellNNIteratorSymLocal<dim,CellList<dim,T,Mem_type,transform,vector_pos_type>,vector_pos_type,(int)FULL>
 	getNNIteratorBoxSymLocal(size_t cell, size_t p, const vector_pos_type & v)
 	{
 #ifdef SE_CLASS1
@@ -1330,6 +1411,14 @@ public:
 	{
 		Mem_type::clear();
 		isInitSFC = false;
+	}
+
+	/*! \brief Clear one cell of the cell list
+	 *
+	 */
+	void clear(typename Mem_type::local_index_type cell_id)
+	{
+		Mem_type::clear(cell_id);
 	}
 
 	/*! \brief Litterary destroy the memory of the cell list, including the retained one

@@ -2055,13 +2055,52 @@ public:
 	 *
 	 */
 	template<typename orig, typename exp1, typename exp2, unsigned int op>
-	__device__ __host__  point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> & 
+	__device__ __host__ point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> &
 	operator=(const point_expression_op<orig,exp1,exp2,op> & p_exp)
 	{
 		p_exp.init();
 
 		for (size_t i = 0; i < nvals ; i++)
 		{d[i] = p_exp.value(i);}
+
+		return *this;
+	}
+
+	/*! \brief operator= for Point object
+	 *
+	 * \tparam dim Point dimension
+	 *
+	 * \param point expression
+	 *
+	 * \return a point expression
+	 *
+	 */
+	template<unsigned int dim>
+	__device__ __host__ point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> &
+	operator=(const Point<dim,T>& point)
+	{
+		for (size_t i = 0; i < nvals ; i++)
+		{d[i] = point.get(i);}
+
+		return *this;
+	}
+
+	/*! \brief operator= for Point object
+	 *
+	 * \tparam dim Point dimension
+	 * \tparam T2 Point type
+	 *
+	 * \param point expression
+	 *
+	 * \return a point expression
+	 *
+	 */
+	template<typename T2, unsigned int dim>
+	__device__ __host__ point_expression<openfpm::detail::multi_array::sub_array_openfpm<T,1,vmpl>> &
+	operator=(const Point<dim,T2>& point)
+	{
+		for (size_t i = 0; i < nvals ; i++)
+		{d[i] = point.get(i);}
 
 		return *this;
 	}

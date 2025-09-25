@@ -448,7 +448,7 @@ struct unpack_simple_cond<true, prp ...>
 		typedef object<typename object_creator<typename grid_base_impl<dim,T,S,layout_base,ord_type>::value_type::type,prp...>::type> prp_object;
 		typedef openfpm::vector<prp_object,PtrMemory, memory_traits_lin ,openfpm::grow_policy_identity> stype;
 
-		size_t size = stype::template calculateMem(sub_it.getVolume(),0);
+		size_t size = stype::calculateMem(sub_it.getVolume(),0);
 
 		// Create an object over the preallocated memory (No allocation is produced)
 		PtrMemory & ptr = *(new PtrMemory(mem.getPointerOffset(ps.getOffset()),size));

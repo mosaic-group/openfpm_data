@@ -102,8 +102,14 @@ struct aggregate_bfv
 template<typename ... list>
 struct aggregate
 {
+	//! internal type containing the data
 	typedef boost::fusion::vector<list... , SE3_ADD_PROP(sizeof...(list))> type;
+
+	//! real type the object store
 	typedef boost::fusion::vector<list... > type_real;
+
+	//! size of the variadic template argument list
+	static const int size = sizeof...(list);
 
 	typedef int yes_is_aggregate;
 
@@ -218,6 +224,9 @@ struct aggregate
 
 	//! real internal type containing the data
 	typedef boost::fusion::vector<list...> type_real;
+
+	//! size of the variadic template argument list
+	static const int size = sizeof...(list);
 
 	typedef int yes_is_aggregate;
 
