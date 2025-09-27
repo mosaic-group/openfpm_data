@@ -505,11 +505,11 @@ public:
 		const vPos_type & pos,
 		size_t ghostMarker)
 	{
-		if (rCuts.size() != ghostMarker)
+		if (rCuts.size() != pos.size())
 		{
 			std::cerr << __FILE__ << ":" << __LINE__
-				<< " ERROR: when constructing adaptive cut-off Verlet list, pos.size_local() != rCuts.size(), ["
-				<< rCuts.size() << "!=" << pos.size_local() << "]" << std::endl;
+				<< " ERROR: when constructing adaptive cut-off Verlet list, pos.size() != rCuts.size(), ["
+				<< rCuts.size() << "!=" << pos.size() << "]" << std::endl;
 			std::runtime_error("Runtime adaptive cut-off Verlet list error");
 		}
 
@@ -518,7 +518,7 @@ public:
 
 		// Assign rCutMax for Cell List as
 		// the largest cut-off radius from rCuts
-		for (size_t i = 0; i < ghostMarker; ++i)
+		for (size_t i = 0; i < rCuts.size(); ++i)
 			if (rCuts.get(i) > rCutMax)
 				rCutMax = rCuts.get(i);
 
