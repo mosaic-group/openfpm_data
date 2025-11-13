@@ -871,7 +871,7 @@ public:
 #ifdef SE_CLASS1
 		check_init();
 #endif
-		this->data = data;
+		this->data = data_c;
 		this->k = k;
 	}
 
