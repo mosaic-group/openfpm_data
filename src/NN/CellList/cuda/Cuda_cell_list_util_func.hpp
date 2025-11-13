@@ -415,6 +415,37 @@ __global__ void reorderParticlesPrp(
 	vectorOut.template set<prp ...>(keyOut,vectorIn,keyIn);
 }
 
+template <typename vector_type, typename vector_map_type>
+__global__ void reorderParticlesPosCoalWrite(
+	const vector_type vectorIn,
+	vector_type vectorOut,
+	const vector_map_type indexMap,
+	size_t start = 0)
+{
+	int keyWrite = start + threadIdx.x + blockIdx.x * blockDim.x;
+	if (keyWrite >= indexMap.size())	{return;}
+
+	unsigned int keyRead = indexMap.template get<0>(keyWrite);
+
+	vectorOut.set(keyWrite,vectorIn,keyRead);
+}
+
+template <typename vector_type, typename vector_map_type, unsigned int ... prp>
+__global__ void reorderParticlesPrpCoalWrite(
+	const vector_type vectorIn,
+	vector_type vectorOut,
+	vector_map_type indexMap,
+	size_t start = 0)
+{
+	int keyWrite = start + threadIdx.x + blockIdx.x * blockDim.x;
+	if (keyWrite >= indexMap.size())	{return;}
+
+	unsigned int keyRead = indexMap.template get<0>(keyWrite);
+
+	vectorOut.template set<prp ...>(keyWrite,vectorIn,keyRead);
+}
+
+
 template<typename vector_sort_index, typename vector_out_type>
 __global__ void mark_domain_particles(
 	vector_sort_index sortedToUnsortedIndex,

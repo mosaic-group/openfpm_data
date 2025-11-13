@@ -451,25 +451,25 @@ public:
 			if (stop == (size_t)-1) stop = vPos.size();
 
 			if (opt & CL_GPU_REORDER_POSITION) {
-				CUDA_LAUNCH((reorderParticlesPos),
+				CUDA_LAUNCH((reorderParticlesPosCoalWrite),
 					vPos.getGPUIteratorTo(stop-start,64),
 					vPos.toKernel(),
 					vPosReorder.toKernel(),
-					unsortedToSortedIndex.toKernel(),
+					sortedToUnsortedIndex.toKernel(),
 					start
 				);
 			}
 
 			if (opt & CL_GPU_REORDER_PROPERTY && sizeof...(prp)) {
 				CUDA_LAUNCH(
-					(reorderParticlesPrp<
+					(reorderParticlesPrpCoalWrite<
 						decltype(vPrp.toKernel()),
 						decltype(unsortedToSortedIndex.toKernel()),
 						prp...>),
 					vPrp.getGPUIteratorTo(stop-start,64),
 					vPrp.toKernel(),
 					vPrpReorder.toKernel(),
-					unsortedToSortedIndex.toKernel(),
+					sortedToUnsortedIndex.toKernel(),
 					start
 				);
 			}
@@ -736,25 +736,25 @@ public:
 		if (stop == (size_t)-1) stop = vPosReordered.size();
 
 		if (opt & CL_GPU_RESTORE_POSITION) {
-			CUDA_LAUNCH((reorderParticlesPos),
+			CUDA_LAUNCH((reorderParticlesPosCoalWrite),
 				vPosReordered.getGPUIteratorTo(stop-start,64),
 				vPosReordered.toKernel(),
 				vPos.toKernel(),
-				sortedToUnsortedIndex.toKernel(),
+				unsortedToSortedIndex.toKernel(),
 				start
 			);
 		}
 
 		if (opt & CL_GPU_RESTORE_PROPERTY && sizeof...(prp)) {
 			CUDA_LAUNCH(
-				(reorderParticlesPrp<
+				(reorderParticlesPrpCoalWrite<
 					decltype(vPrpReordered.toKernel()),
 					decltype(sortedToUnsortedIndex.toKernel()),
 					prp...>),
 				vPrpReordered.getGPUIteratorTo(stop-start,64),
 				vPrpReordered.toKernel(),
 				vPrp.toKernel(),
-				sortedToUnsortedIndex.toKernel(),
+				unsortedToSortedIndex.toKernel(),
 				start
 			);
 		}
@@ -1206,25 +1206,26 @@ public:
 			if (stop == (size_t)-1) stop = vPos.size();
 
 			if (opt & CL_GPU_REORDER_POSITION) {
-				CUDA_LAUNCH((reorderParticlesPos),
+				CUDA_LAUNCH((reorderParticlesPosCoalWrite),
 					vPos.getGPUIteratorTo(stop-start,64),
 					vPos.toKernel(),
 					vPosReorder.toKernel(),
-					unsortedToSortedIndex.toKernel(),
+					sortedToUnsortedIndex.toKernel(),
 					start
 				);
+				
 			}
 
 			if (opt & CL_GPU_REORDER_PROPERTY && sizeof...(prp)) {
 				CUDA_LAUNCH(
-					(reorderParticlesPrp<
+					(reorderParticlesPrpCoalWrite<
 						decltype(vPrp.toKernel()),
 						decltype(unsortedToSortedIndex.toKernel()),
 						prp...>),
 					vPrp.getGPUIteratorTo(stop-start,64),
 					vPrp.toKernel(),
 					vPrpReorder.toKernel(),
-					unsortedToSortedIndex.toKernel(),
+					sortedToUnsortedIndex.toKernel(),
 					start
 				);
 			}
@@ -1471,25 +1472,25 @@ public:
 		if (stop == (size_t)-1) stop = vPosReordered.size();
 
 		if (opt & CL_GPU_RESTORE_POSITION) {
-			CUDA_LAUNCH((reorderParticlesPos),
+			CUDA_LAUNCH((reorderParticlesPosCoalWrite),
 				vPosReordered.getGPUIteratorTo(stop-start,64),
 				vPosReordered.toKernel(),
 				vPos.toKernel(),
-				sortedToUnsortedIndex.toKernel(),
+				unsortedToSortedIndex.toKernel(),
 				start
 			);
 		}
 
 		if (opt & CL_GPU_RESTORE_PROPERTY && sizeof...(prp)) {
 			CUDA_LAUNCH(
-				(reorderParticlesPrp<
+				(reorderParticlesPrpCoalWrite<
 					decltype(vPrpReordered.toKernel()),
 					decltype(sortedToUnsortedIndex.toKernel()),
 					prp...>),
 				vPrpReordered.getGPUIteratorTo(stop-start,64),
 				vPrpReordered.toKernel(),
 				vPrp.toKernel(),
-				sortedToUnsortedIndex.toKernel(),
+				unsortedToSortedIndex.toKernel(),
 				start
 			);
 		}
