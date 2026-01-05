@@ -40,6 +40,8 @@
 #include "cuda/map_vector_cuda_ker.cuh"
 #include "map_vector_printers.hpp"
 
+#include <stdexcept>
+
 namespace openfpm
 {
 
@@ -276,6 +278,7 @@ namespace openfpm
 			if (id >= v_size)
 			{
 				std::cerr << "Error " << __FILE__ << ":" << __LINE__ << " overflow id: " << id << "\n";
+				throw std::invalid_argument( "stacktrace" );
 				ACTION_ON_ERROR(VECTOR_ERROR_OBJECT);
 			}
 		}

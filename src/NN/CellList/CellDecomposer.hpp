@@ -1154,6 +1154,7 @@ public:
 	/*! \brief Get the cell-id
 	 *
 	 * Convert the point coordinates into the cell id
+	 * Returns -1 if the point doesn't belong to the Cell List domain
 	 *
 	 * \param pos Point position
 	 *
@@ -1169,13 +1170,7 @@ public:
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (pos[0] < cellListSpaceBox.getLow(0) - off[0]*unitCellSpaceBox.getP2()[0] || pos[0] > cellListSpaceBox.getHigh(0) + off[0]*unitCellSpaceBox.getP2()[0])
-		{
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
-			ACTION_ON_ERROR(CELL_DECOMPOSER);
-		}
 #endif
-
 		size_t cell_id = ConvertToID(pos,0);
 
 		for (size_t s = 1 ; s < dim ; s++)
@@ -1183,6 +1178,7 @@ public:
 #ifdef SE_CLASS1
 			if (pos[s] < cellListSpaceBox.getLow(s) - off[s]*unitCellSpaceBox.getP2()[s] || pos[s] > cellListSpaceBox.getHigh(s) + off[s]*unitCellSpaceBox.getP2()[s])
 			{
+				return -1;
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
 			}
@@ -1196,13 +1192,14 @@ public:
 	/*! \brief Get the cell-id
 	 *
 	 * Convert the point coordinates into the cell id
+	 * Returns -1 if the point doesn't belong to the Cell List domain
 	 *
 	 * \param pos Point position
 	 *
 	 * \return the cell-id
 	 *
 	 */
-	inline size_t getCell(const Point<dim,T> & pos) const
+	inline int getCell(const Point<dim,T> & pos) const
 	{
 #ifdef SE_CLASS1
 		if (cellTotalCount == 0)
@@ -1211,13 +1208,7 @@ public:
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (pos.get(0) < cellListSpaceBox.getLow(0) - off[0]*unitCellSpaceBox.getP2()[0] || pos.get(0) > cellListSpaceBox.getHigh(0) + off[0]*unitCellSpaceBox.getP2()[0])
-		{
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
-			ACTION_ON_ERROR(CELL_DECOMPOSER);
-		}
 #endif
-
 		size_t cell_id = ConvertToID(pos,0);
 
 		for (size_t s = 1 ; s < dim ; s++)
@@ -1225,6 +1216,7 @@ public:
 #ifdef SE_CLASS1
 			if (pos.get(s) < cellListSpaceBox.getLow(s) - off[s]*unitCellSpaceBox.getP2()[s] || pos.get(s) > cellListSpaceBox.getHigh(s) + off[s]*unitCellSpaceBox.getP2()[s])
 			{
+				return -1;
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << pos.toPointString() << " is not inside the cell space";
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
 			}
@@ -1245,7 +1237,7 @@ public:
 	 * \return the cell-id
 	 *
 	 */
-	template<typename Mem> inline size_t getCell(const encapc<1,Point<dim,T>,Mem> & pos) const
+	template<typename Mem> inline int getCell(const encapc<1,Point<dim,T>,Mem> & pos) const
 	{
 
 #ifdef SE_CLASS1
@@ -1255,11 +1247,6 @@ public:
 			ACTION_ON_ERROR(CELL_DECOMPOSER);
 		}
 
-		if (pos.template get<0>()[0] < cellListSpaceBox.getLow(0) - off[0]*unitCellSpaceBox.getP2()[0] || pos.template get<0>()[0] > cellListSpaceBox.getHigh(0) + off[0]*unitCellSpaceBox.getP2()[0])
-		{
-			std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space " << cellListSpaceBox.toString() << std::endl;
-			ACTION_ON_ERROR(CELL_DECOMPOSER);
-		}
 #endif
 
 		size_t cell_id = ConvertToID_(pos,0);
@@ -1270,6 +1257,7 @@ public:
 
 			if (pos.template get<0>()[s] < cellListSpaceBox.getLow(s) - off[s]*unitCellSpaceBox.getP2()[s] || pos.template get<0>()[s] > cellListSpaceBox.getHigh(s) + off[s]*unitCellSpaceBox.getP2()[s])
 			{
+				return -1;
 				std::cerr << "Error: " << __FILE__ << ":" << __LINE__ << " point " << toPointString(pos) << " is not inside the cell space";
 				ACTION_ON_ERROR(CELL_DECOMPOSER);
 			}
