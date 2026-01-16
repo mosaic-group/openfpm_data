@@ -1174,7 +1174,8 @@ operator_name(double d, const Point<dim,T> & vb)\
 	return exp_sum;\
 }\
 \
-template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T, typename check=typename std::enable_if< !std::is_same<T,double>::value >::type >\
+template<typename orig, typename exp1 , typename exp2, unsigned int op1, typename T, typename check=typename   \
+std::enable_if< !std::is_same<T,double>::value && !std::is_same<T,float>::value >::type >\
 __device__ __host__ inline point_expression_op<orig,point_expression_op<orig,exp1,exp2,op1>,point_expression<T>,OP_ID>\
 operator_name(const point_expression_op<orig,exp1,exp2,op1> & va, T d)\
 {\
