@@ -787,9 +787,6 @@ struct DeviceRadixSort
 
 };
 
-/**
- * \example example_device_radix_sort.cu
- */
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

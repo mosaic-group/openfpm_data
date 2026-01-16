@@ -854,10 +854,6 @@ public:
 
 };
 
-/**
- * \example example_block_radix_sort.cu
- */
-
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
 

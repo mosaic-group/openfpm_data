@@ -724,9 +724,6 @@ struct DeviceReduce
 
 };
 
-/**
- * \example example_device_reduce.cu
- */
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

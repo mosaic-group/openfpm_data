@@ -357,11 +357,6 @@ struct DeviceSelect
 
 };
 
-/**
- * \example example_device_select_flagged.cu
- * \example example_device_select_if.cu
- * \example example_device_select_unique.cu
- */
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
