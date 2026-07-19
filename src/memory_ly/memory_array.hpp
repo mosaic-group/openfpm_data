@@ -70,13 +70,15 @@ class memory_array
 	 */
 	void initialize(void * ptr, size_t sz, bool init)
 	{
-		this->ptr = static_cast<T *>(ptr);
-
-
-		// Initialize the constructors
-
+		// A placement array-new is allowed to reserve an implementation-defined
+		// cookie before the first element.  Apple Clang does so for arrays of
+		// non-trivial OpenFPM objects.  Keep the pointer returned by new[] rather
+		// than assuming that it is identical to the raw allocation; the memory
+		// backends deliberately provide a small allocation guard for this cookie.
 		if (init == false)
-			new (ptr)T[sz];
+			this->ptr = new (ptr)T[sz];
+		else
+			this->ptr = static_cast<T *>(ptr);
 
 		this->sz = sz;
 	}

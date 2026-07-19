@@ -612,20 +612,20 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 
 	// vector of particles
 
-	openfpm::vector<Point<dim,double>,CudaMemory,memory_traits_inte> vPos;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> vPos;
 	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> vPrp;
 
 	// create 3 particles
 
-	Point<dim,double> p1({0.2,0.2,0.2});
-	Point<dim,double> p2({0.9,0.2,0.2});
-	Point<dim,double> p3({0.2,0.9,0.2});
-	Point<dim,double> p4({0.2,0.2,0.9});
-	Point<dim,double> p5({0.9,0.9,0.2});
-	Point<dim,double> p6({0.9,0.2,0.9});
-	Point<dim,double> p7({0.2,0.9,0.9});
-	Point<dim,double> p8({0.9,0.9,0.9});
-	Point<dim,double> p9({0.0,0.0,0.0});
+	Point<dim,T> p1({0.2,0.2,0.2});
+	Point<dim,T> p2({0.9,0.2,0.2});
+	Point<dim,T> p3({0.2,0.9,0.2});
+	Point<dim,T> p4({0.2,0.2,0.9});
+	Point<dim,T> p5({0.9,0.9,0.2});
+	Point<dim,T> p6({0.9,0.2,0.9});
+	Point<dim,T> p7({0.2,0.9,0.9});
+	Point<dim,T> p8({0.9,0.9,0.9});
+	Point<dim,T> p9({0.0,0.0,0.0});
 
 	vPos.add(p1);
 	vPos.add(p2);
@@ -665,7 +665,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 	vPos.template hostToDevice<0>();
 	vPrp.template hostToDevice<0,1,2>();
 
-	openfpm::vector<Point<dim,double>,CudaMemory,memory_traits_inte> vPosReorder(vPos.size());
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> vPosReorder(vPos.size());
 	openfpm::vector<aggregate<float,float[3],float[3][3]>,CudaMemory,memory_traits_inte> vPrpReorder(vPrp.size());
 
 	// create an gpu context
@@ -686,7 +686,7 @@ template<unsigned int dim, typename T, typename CellS> void Test_cell_gpu(Box<di
 
 	////// Correct order ////////////
 
-	openfpm::vector<Point<dim,double>,CudaMemory,memory_traits_inte> pl_correct;
+	openfpm::vector<Point<dim,T>,CudaMemory,memory_traits_inte> pl_correct;
 
 	pl_correct.add(p9);
 	pl_correct.add(p1);
@@ -756,10 +756,15 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use)
 {
 	std::cout << "Test cell list GPU" << "\n";
 
-	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	Box<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
+#ifdef CUDIFY_USE_METAL
+	using cell_scalar = float;
+#else
+	using cell_scalar = double;
+#endif
+	Box<3,cell_scalar> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,cell_scalar> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
 
-	Test_cell_gpu<3,double,CellList_gpu<3,double,CudaMemory>>(box);
+	Test_cell_gpu<3,cell_scalar,CellList_gpu<3,cell_scalar,CudaMemory>>(box);
 
 	std::cout << "End cell list GPU" << "\n";
 
@@ -770,10 +775,16 @@ BOOST_AUTO_TEST_CASE( CellList_gpu_use_sparse )
 {
 	std::cout << "Test cell list GPU sparse" << "\n";
 
-	Box<3,double> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-	Box<3,double> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
+#ifdef CUDIFY_USE_METAL
+	using cell_scalar = float;
+#else
+	using cell_scalar = double;
+#endif
+	Box<3,cell_scalar> box({0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+	Box<3,cell_scalar> box2({-1.0f,-1.0f,-1.0f},{1.0f,1.0f,1.0f});
 
-	Test_cell_gpu<3,double,CellList_gpu<3,double,CudaMemory,no_transform_only<3,double>,true>> (box);
+	Test_cell_gpu<3,cell_scalar,CellList_gpu<3,cell_scalar,CudaMemory,
+		no_transform_only<3,cell_scalar>,true>> (box);
 
 	std::cout << "End cell list GPU sparse" << "\n";
 
@@ -1996,4 +2007,3 @@ BOOST_AUTO_TEST_CASE( CellList_swap_test )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-

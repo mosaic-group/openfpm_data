@@ -75,10 +75,16 @@ struct for_each_ref_impl<false>
         typedef typename deref<Iterator>::type item;
         typedef typename apply1<TransformFunc,item>::type arg;
 
-        // dwa 2002/9/10 -- make sure not to invoke undefined behavior
-        // when we pass arg.
+        // SPIR-V HIP compilation cannot call Boost's host-only value_init/unwrap
+        // helpers. MPL iteration values are empty integral/type wrappers, so
+        // direct value initialization has the same semantics.
+#if defined(__HIP_DEVICE_COMPILE__) && defined(__HIP_PLATFORM_SPIRV__)
+        arg x{};
+        f(x);
+#else
         value_initialized<arg> x;
         aux::unwrap(f, 0)(boost::get(x));
+#endif
 
         typedef typename mpl::next<Iterator>::type iter;
         for_each_ref_impl<boost::is_same<iter,LastIterator>::value>

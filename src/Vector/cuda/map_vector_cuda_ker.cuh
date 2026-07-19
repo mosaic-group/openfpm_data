@@ -389,7 +389,7 @@ namespace openfpm
 
 		vector_gpu_ker(const vector_gpu_ker_ref<T,layout_base> & vref)
 		{
-			this->operator=(vref.vref);
+			this->operator=(*vref.vref);
 		}
 
 		/*! \brief implementation of the constructor
@@ -640,7 +640,7 @@ namespace openfpm
 		typedef typename apply_transform<layout_base,T>::type T_;
 
 		//! vector reference
-		vector_gpu_ker<T,layout_base> & vref;
+		vector_gpu_ker<T,layout_base> * vref = nullptr;
 
 	public:
 
@@ -656,7 +656,7 @@ namespace openfpm
 
 		__device__ __host__ unsigned int size() const
 		{
-			return vref.size();
+			return vref->size();
 		}
 
         __host__ __device__ size_t size_local() const
@@ -666,89 +666,97 @@ namespace openfpm
 
 		__device__ __host__ unsigned int capacity() const
 		{
-			return vref.capacity;
+			return vref->capacity();
 		}
 
 		template <unsigned int p>
-		__device__ __host__ inline auto get(unsigned int id) const -> decltype(vref.template get<p>(id))
+		__device__ __host__ inline auto get(unsigned int id) const -> decltype(vref->template get<p>(id))
 		{
-			return vref.template get<p>(id);
+			return vref->template get<p>(id);
 		}
 
-		__device__ __host__ inline auto get(unsigned int id) -> decltype(vref.get(id))
+		__device__ __host__ inline auto get(unsigned int id) -> decltype(vref->get(id))
 		{
-			return vref.get(id);
+			return vref->get(id);
 		}
 
-		inline __device__ __host__ auto get(unsigned int id) const -> decltype(vref.get(id))
+		inline __device__ __host__ auto get(unsigned int id) const -> decltype(vref->get(id))
 		{
-			return vref.get(id);
+			return vref->get(id);
 		}
 
-		inline __device__ __host__ auto get_o(unsigned int id) const -> decltype(vref.get_o(id))
+		inline __device__ __host__ auto get_o(unsigned int id) const -> decltype(vref->get_o(id))
 		{
-			return vref.get_o(id);
+			return vref->get_o(id);
 		}
 
-		inline __device__ __host__ auto get_o(unsigned int id) -> decltype(vref.get_o(id))
+		inline __device__ __host__ auto get_o(unsigned int id) -> decltype(vref->get_o(id))
 		{
-			return vref.get_o(id);
+			return vref->get_o(id);
 		}
 
-		inline auto last() const -> decltype(vref.last())
+		inline auto last() const -> decltype(vref->last())
 		{
-			return vref.last();
+			return vref->last();
 		}
 
 		template <unsigned int p>
-		__device__ __host__ inline auto get(unsigned int id) -> decltype(vref.template get<p>(id))
+		__device__ __host__ inline auto get(unsigned int id) -> decltype(vref->template get<p>(id))
 		{
-			return vref.template get<p>(id);
+			return vref->template get<p>(id);
 		}
 
-		inline auto last() -> decltype(vref.last())
+		inline auto last() -> decltype(vref->last())
 		{
-			return vref.last();
+			return vref->last();
 		}
+
+		vector_gpu_ker_ref() = default;
 
 		vector_gpu_ker_ref(vector_gpu_ker<T,layout_base> & vref)
-		:vref(vref)
+		:vref(&vref)
 		{}
+
+		vector_gpu_ker_ref & operator=(const vector_gpu_ker_ref & other)
+		{
+			vref = other.vref;
+			return *this;
+		}
 
 		__device__ void set(int id, const container & obj)
 		{
-			vref.set(id,obj);
+			vref->set(id,obj);
 		}
 
 		template<unsigned int p> __device__ __host__ void * getPointer()
 		{
-			return vref.template getPointer<p>();
+			return vref->template getPointer<p>();
 		}
 
 		template<unsigned int p> __device__ __host__ const void * getPointer() const
 		{
-			return vref.template getPointer<p>();
+			return vref->template getPointer<p>();
 		}
 
 		template <typename encap_S, unsigned int ...args> void set_o(unsigned int i, const encap_S & obj)
 		{
-			vref.set(i,obj);
+			vref->set(i,obj);
 		}
 
 		__device__ void set(unsigned int id, const vector_gpu_ker<T_,layout_base> & v, unsigned int src)
 		{
-			vref.set(id,v,src);
+			vref->set(id,v,src);
 		}
 
 		template<unsigned int ... prp>
 		__device__ void set(unsigned int id, const vector_gpu_ker<T_,layout_base> & v, unsigned int src)
 		{
-			vref.template set<prp ...>(id,v,src);
+			vref->template set<prp ...>(id,v,src);
 		}
 
 		__host__ ite_gpu<1> getGPUIterator(size_t n_thr = default_kernel_wg_threads_) const
 		{
-			return vref.getGPUIterator(n_thr);
+			return vref->getGPUIterator(n_thr);
 		}
 
 		/*! \brief Get an iterator for the GPU
@@ -757,40 +765,63 @@ namespace openfpm
 		 */
 		ite_gpu<1> getGPUIteratorTo(size_t stop, size_t n_thr = default_kernel_wg_threads_) const
 		{
-			return vref.getGPUItertatorTo(stop,n_thr);
+			return vref->getGPUItertatorTo(stop,n_thr);
+		}
+
+		ite_gpu<1> getDomainIteratorGPU(size_t n_thr = default_kernel_wg_threads_) const
+		{
+			return vref->getDomainIteratorGPU(n_thr);
+		}
+
+		template<unsigned int p>
+		__device__ __host__ auto getProp(unsigned int id) const
+			-> decltype(vref->template getProp<p>(id))
+		{
+			return vref->template getProp<p>(id);
+		}
+
+		void init() const
+		{
+			vref->init();
+		}
+
+		__host__ __device__ auto value(unsigned int p)
+			-> decltype(vref->value(p))
+		{
+			return vref->value(p);
 		}
 
         vector_gpu_ker<T,layout_base> & getVector()
         {
-         return *this;
+		 return *vref;
         }
 
         const vector_gpu_ker<T,layout_base> & getVector() const
         {
-            return *this;
+            return *vref;
         }
 
 		__host__ vector_gpu_ker_ref<T,layout_base> & operator=(const vector_gpu_ker<T,layout_base> & v)
 		{
-			vref.operator=(v);
-			return this;
+			if (vref != nullptr) {vref->operator=(v);}
+			return *this;
 		}
 
 		__device__ grid_gpu_ker<1,T_,layout_base, grid_sm<1,void>> & getBase()
 		{
-			return vref.getBase();
+			return vref->getBase();
 		}
 
 		pointer_check check_device_pointer(void * ptr)
 		{
-			return vref.check_device_pointer(ptr);
+			return vref->check_device_pointer(ptr);
 		}
 
-		void * internal_get_size_pointer()	{return &vref.internal_get_size_pointer();}
+		void * internal_get_size_pointer()	{return vref->internal_get_size_pointer();}
 
 		void print_size()
 		{
-			return vref.print_size();
+			return vref->print_size();
 		}
 	};
 

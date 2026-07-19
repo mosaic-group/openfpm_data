@@ -159,6 +159,19 @@ template<unsigned int dim ,typename T> class Point
 	    {get(i) = x;i++;}
 	}
 
+	/*! \brief Constructor from a homogeneous list with a convertible scalar type
+	 *
+	 * \param p1 initializer list
+	 *
+	 */
+	template<typename S, typename = typename std::enable_if<!std::is_same<S,T>::value>::type>
+	__device__ __host__ inline Point(std::initializer_list<S> p1)
+	{
+		size_t i = 0;
+	    for(S x : p1)
+	    {get(i) = static_cast<T>(x);i++;}
+	}
+
 	//! Default contructor
 	__device__ __host__  inline Point()
 	{}

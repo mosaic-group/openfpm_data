@@ -189,9 +189,16 @@ __global__ void test_sparse_get_test(vd_sparse_type vd_test, vector_out_type out
 
 BOOST_AUTO_TEST_SUITE( vector_cuda_sparse )
 
+#ifdef CUDIFY_USE_METAL
+using sparse_test_real = float;
+#else
+using sparse_test_real = double;
+#endif
+using sparse_test_properties = aggregate<size_t,float,sparse_test_real>;
+
 BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 {
-	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
+	openfpm::vector_sparse_gpu<sparse_test_properties> vs;
 
 	vs.template setBackground<0>(17);
 
@@ -217,7 +224,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 
 	vs.flush<sadd_<0>,smin_<1>,smax_<2> >(gpuContext,flush_type::FLUSH_ON_DEVICE);
 
-	openfpm::vector_gpu<aggregate<size_t,float,double>> output;
+	openfpm::vector_gpu<sparse_test_properties> output;
 
 	output.resize(1500);
 
@@ -260,7 +267,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu )
 
 BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 {
-	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
+	openfpm::vector_sparse_gpu<sparse_test_properties> vs;
 
 	vs.template setBackground<0>(17);
 
@@ -338,7 +345,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_incremental_add )
 
 BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 {
-	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
+	openfpm::vector_sparse_gpu<sparse_test_properties> vs;
 
 	vs.template setBackground<0>(0);
 
@@ -459,7 +466,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_get )
 
 BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_special_function )
 {
-	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
+	openfpm::vector_sparse_gpu<sparse_test_properties> vs;
 
 	vs.template setBackground<0>(17);
 
@@ -509,7 +516,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_special_function )
 
 //////////////////////////////// REMOVE test section
 
-void check_lines(openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> & vs,
+void check_lines(openfpm::vector_sparse_gpu<sparse_test_properties> & vs,
 		         bool s1,
 		         bool s2,
 		         bool s3,
@@ -591,7 +598,7 @@ void check_lines(openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> & vs
 
 BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 {
-	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
+	openfpm::vector_sparse_gpu<sparse_test_properties> vs;
 
 	vs.template setBackground<0>(17);
 
@@ -670,7 +677,7 @@ BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove )
 
 BOOST_AUTO_TEST_CASE( vector_sparse_cuda_gpu_remove_incremental )
 {
-	openfpm::vector_sparse_gpu<aggregate<size_t,float,double>> vs;
+	openfpm::vector_sparse_gpu<sparse_test_properties> vs;
 
 	vs.template setBackground<0>(17);
 

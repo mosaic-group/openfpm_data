@@ -8,11 +8,11 @@
 #ifndef MAP_VECTOR_SPARSE_CUDA_KERNELS_CUH_
 #define MAP_VECTOR_SPARSE_CUDA_KERNELS_CUH_
 
+#include <limits>
+
 #ifdef __NVCC__
 
 #include "config.h"
-
-#include <limits>
 
 #if CUDART_VERSION < 11000
 #include "util/cuda/cub_old/util_type.cuh"
@@ -26,17 +26,43 @@
 
 #endif
 
+template<typename...>
+struct sparse_reduction_make_void
+{
+	typedef void type;
+};
+
+template<typename... T>
+using sparse_reduction_void_t = typename sparse_reduction_make_void<T...>::type;
+
+template<typename T, typename = void>
+struct sparse_reduction_scalar
+{
+	typedef T type;
+};
+
+template<typename T>
+struct sparse_reduction_scalar<T,sparse_reduction_void_t<typename T::scalarType>>
+{
+	typedef typename T::scalarType type;
+};
+
 template<typename type_t>
 struct zero_t {
   __device__ __host__ type_t operator()() const {
-    return 0;
+    type_t value{};
+    value = 0;
+    return value;
   }
 };
 
 template<typename type_t>
 struct limit_max_t {
   __device__ __host__ type_t operator()() const {
-    return std::numeric_limits<type_t>::max();
+    type_t value{};
+    typedef typename sparse_reduction_scalar<type_t>::type scalar_type;
+    value = std::numeric_limits<scalar_type>::max();
+    return value;
   }
 };
 
@@ -142,6 +168,8 @@ __global__ void set_one_insert_buffer(vect_type vadd)
     vadd.template get<0>(p) = 1;
 }
 
+#endif
+
 template<typename type_t, unsigned int blockLength>
 struct plus_block_t   {
 	__device__ __host__ type_t operator()(type_t a, type_t b) const {
@@ -153,8 +181,6 @@ struct plus_block_t   {
     return res;
   }
 };
-
-#endif
 
 template<unsigned int prp, unsigned int blockLength>
 struct sadd_block_
@@ -214,21 +240,17 @@ struct smax_
 	{}
 };
 
-#ifdef __NVCC__
-
 template<typename type_t, unsigned int blockLength>
 struct maximum_block_t   {
   __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
-  		res[i] = max(a[i], b[i]);
+    res[i] = (a[i] < b[i]) ? b[i] : a[i];
   	}
     return res;
   }
 };
-
-#endif
 
 template<unsigned int prp, unsigned int blockLength>
 struct smax_block_
@@ -290,21 +312,17 @@ struct smin_
 	{}
 };
 
-#ifdef __NVCC__
-
 template<typename type_t, unsigned int blockLength>
 struct minimum_block_t   {
   __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
   	type_t res;
   	for (int i=0; i<blockLength; ++i)
   	{
-  		res[i] = min(a[i], b[i]);
+    res[i] = (b[i] < a[i]) ? b[i] : a[i];
   	}
     return res;
   }
 };
-
-#endif
 
 template<unsigned int prp, unsigned int blockLength>
 struct smin_block_
@@ -338,15 +356,14 @@ struct smin_block_
 	{}
 };
 
-
-#ifdef __NVCC__
-
 template<typename type_t>
 struct bitwiseOr_t   {
   __forceinline__ __device__ __host__ type_t operator()(type_t a, type_t b) const {
     return a|b;
   }
 };
+
+#ifdef __NVCC__
 
 template<unsigned int prp>
 struct sBitwiseOr_

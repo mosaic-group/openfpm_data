@@ -135,7 +135,8 @@ __global__ void insertBoundaryValuesHeat(SparseGridType sparseGrid)
 
     if (y == 0 || y == bDimY * gridDim.y - 1)
     {
-        value = 10.0 * x / (bDimX * gridDim.x - 1);
+        value = 10.0f * static_cast<float>(x) /
+            static_cast<float>(bDimX * gridDim.x - 1);
     }
 
     sparseGrid.template insert<p>(coord) = value;
@@ -180,7 +181,8 @@ struct LaplacianStencil
         const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
         const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
         ScalarT cur = enlargedBlock[linId];
-        ScalarT res = -2.0*dim*cur; // The central part of the stencil
+        ScalarT res = static_cast<ScalarT>(-2) *
+            static_cast<ScalarT>(dim) * cur; // The central part of the stencil
         for (int d=0; d<dim; ++d)
         {
             auto nPlusId = sparseGrid.getNeighbourLinIdInEnlargedBlock(coord, d, 1);
@@ -491,15 +493,15 @@ BOOST_AUTO_TEST_CASE(testStencilHeat)
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 	sparseGrid.tagBoundaries(gpuContext);
 
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0f ,gridSize.x * blockEdgeSize, 0.0f, 10.0f);
 
         // Now apply the laplacian operator
 	const unsigned int maxIter = 1000;
 //    const unsigned int maxIter = 100;
 	for (unsigned int iter=0; iter<maxIter; ++iter)
 	{
-		sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
-        sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.01);
+		sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1f);
+        sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.01f);
 	}
 
 	sparseGrid.template deviceToHost<0,1>();
@@ -540,7 +542,7 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_simplified)
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 	sparseGrid.tagBoundaries(gpuContext);
 
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0f ,gridSize.x * blockEdgeSize, 0.0f, 10.0f);
 
         // Now apply the laplacian operator
 	const unsigned int maxIter = 1000;
@@ -549,11 +551,11 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_simplified)
 	{
 		sparseGrid.conv_cross<0, 1, 1>({0,0},{16,16},[] __device__ (float & u, cross_stencil<2,float> & cs){
 			return u + (cs.xm[0] + cs.xp[0] +
-			       cs.xm[1] + cs.xp[1] - 4.0*u)*0.1;
+			       cs.xm[1] + cs.xp[1] - 4.0f*u)*0.1f;
 		});
         sparseGrid.conv_cross<1, 0, 1>({0,0},{16,16},[] __device__ (float & u, cross_stencil<2,float> & cs){
 			return u + (cs.xm[0] + cs.xp[0] +
-			       cs.xm[1] + cs.xp[1] - 4.0*u)*0.1;
+			       cs.xm[1] + cs.xp[1] - 4.0f*u)*0.1f;
         });
 	}
 
@@ -567,7 +569,7 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_simplified)
 	for (size_t i = 0; i < 64*4; i++)
 	{
 		auto coord = sparseGrid.getCoord(i);
-		float expectedValue = 10.0 * coord.get(0) / (gridSize.x * blockEdgeSize - 1);
+		float expectedValue = 10.0f * coord.get(0) / (gridSize.x * blockEdgeSize - 1);
 
 		match &= fabs(sparseGrid.template get<0>(coord) - expectedValue) < 1e-2;
 	}
@@ -598,8 +600,8 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified)
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 	sparseGrid.tagBoundaries(gpuContext);
 
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,1,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0f ,gridSize.x * blockEdgeSize, 0.0f, 10.0f);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,1,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0f ,gridSize.x * blockEdgeSize, 0.0f, 10.0f);
 
 	typedef typename GetCpBlockType<decltype(sparseGrid),0,1>::type CpBlockType;
 	
@@ -625,13 +627,13 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified)
 		sparseGrid.conv<0, 1, 1>({0,0},{16,16},[] __device__ (CpBlockType & u,int i, int j){
 			float c = u(i,j);
 			return c + (u(i-1,j) + u(i+1,j) +
-			                 u(i,j-1) + u(i,j+1) - 4.0*c)*0.1;
+			                 u(i,j-1) + u(i,j+1) - 4.0f*c)*0.1f;
 		});
 
         sparseGrid.conv<1, 0, 1>({0,0},{16,16},[] __device__ (CpBlockType & u,int i, int j){
 			float c = u(i,j);
 			return c + (u(i-1,j) + u(i+1,j) +
-			                 u(i,j-1) + u(i,j+1) - 4.0*c)*0.1;
+			                 u(i,j-1) + u(i,j+1) - 4.0f*c)*0.1f;
         });
 	}
 
@@ -676,10 +678,10 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified2)
 	sparseGrid.findNeighbours(); // Pre-compute the neighbours pos for each block!
 	sparseGrid.tagBoundaries(gpuContext);
 
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,1,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 5.0);
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,2,2>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 10.0);
-    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,3,3>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0 ,gridSize.x * blockEdgeSize, 0.0, 5.0);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0f ,gridSize.x * blockEdgeSize, 0.0f, 10.0f);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,1,1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0f ,gridSize.x * blockEdgeSize, 0.0f, 5.0f);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,2,2>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0f ,gridSize.x * blockEdgeSize, 0.0f, 10.0f);
+    sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,3,3>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,0.0f ,gridSize.x * blockEdgeSize, 0.0f, 5.0f);
 
     typedef typename GetCpBlockType<decltype(sparseGrid),0,1>::type CpBlockType;
 
@@ -706,20 +708,20 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified2)
 			float cu = u(i,j);
 			float cv = v(i,j);
 			u_out = cu + (u(i-1,j) + u(i+1,j) +
-			                 u(i,j-1) + u(i,j+1) - 4.0*cu)*0.1;
+			                 u(i,j-1) + u(i,j+1) - 4.0f*cu)*0.1f;
 
 			v_out = cv + (v(i-1,j) + v(i+1,j) +
-			                 v(i,j-1) + v(i,j+1) - 4.0*cv)*0.1;
+			                 v(i,j-1) + v(i,j+1) - 4.0f*cv)*0.1f;
 		});
 
         sparseGrid.conv2<2,3,0,1,1>({0,0},{16,16},[] __device__ (float & u_out, float & v_out ,CpBlockType & u, CpBlockType & v, int i, int j){
 			float cu = u(i,j);
 			float cv = v(i,j);
 			u_out = cu + (u(i-1,j) + u(i+1,j) +
-			                 u(i,j-1) + u(i,j+1) - 4.0*cu)*0.1;
+			                 u(i,j-1) + u(i,j+1) - 4.0f*cu)*0.1f;
 
 			v_out = cv + (v(i-1,j) + v(i+1,j) +
-			                 v(i,j-1) + v(i,j+1) - 4.0*cv)*0.1;
+			                 v(i,j-1) + v(i,j+1) - 4.0f*cv)*0.1f;
         });
 	}
 
@@ -766,7 +768,7 @@ BOOST_AUTO_TEST_CASE(testStencil_lap_no_cross_simplified_subset)
 	typedef typename GetCpBlockType<decltype(sparseGrid),0,1>::type CpBlockType;
 
 	sparseGrid.conv<0, 1, 1>({3,3},{11,11},[] __device__ (CpBlockType & u,int i, int j){
-		return 5.0;
+		return 5.0f;
 	});
 
 
@@ -921,7 +923,7 @@ struct Conv3x3x3
         {
             const auto coord = sparseGrid.getCoordInEnlargedBlock(offset);
             const auto linId = sparseGrid.getLinIdInEnlargedBlock(offset);
-            ScalarT tot = 0.0;
+            ScalarT tot = static_cast<ScalarT>(0);
             for (int i = 0; i < dim; ++i)
             {
                 for (int j = 0; j < dim; ++j)
@@ -977,7 +979,7 @@ struct Conv3x3x3_noshared
 
         if ((curMask & mask_sparse::EXIST) && !(curMask & mask_sparse::PADDING))
         {
-            ScalarT tot = 0.0;
+            ScalarT tot = static_cast<ScalarT>(0);
             for (int i = 0; i < dim; ++i)
             {
                 for (int j = 0; j < dim; ++j)
@@ -1989,7 +1991,7 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 	// Now apply some boundary conditions
 	sparseGrid.template applyStencils<BoundaryStencilSetXRescaled<dim,0,0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE,
 			192, 384,
-			0.0, 10.0);
+			0.0f, 10.0f);
 
 
 	// Now apply the laplacian operator
@@ -1999,9 +2001,9 @@ BOOST_AUTO_TEST_CASE(testSparseGridGpuOutput3DHeatStencil)
 	{
 		for (int innerIter=0; innerIter<10; ++innerIter)
 		{
-			sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
+			sparseGrid.applyStencils<HeatStencil<dim, 0, 1>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1f);
 
-			sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1);
+			sparseGrid.applyStencils<HeatStencil<dim, 1, 0>>(sparseGrid.getBox(),STENCIL_MODE_INPLACE, 0.1f);
 
 		}
 	}

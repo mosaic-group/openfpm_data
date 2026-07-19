@@ -13,6 +13,8 @@
 
 #include "util/cuda_util.hpp"
 #include "util/ofp_context.hpp"
+#include <algorithm>
+#include <vector>
 
 #if CUDART_VERSION >= 11000
 	// Here we have for sure CUDA >= 11
@@ -265,9 +267,25 @@ namespace openfpm
 	{
 #ifdef CUDA_ON_CPU
 
-	key_val_it<key_t,val_t> kv(keys_input,vals_input);
+	// libc++ rejects this file's proxy iterator as a random-access iterator.
+	// Materialize the pairs for the CPU backend; accelerator paths stay intact.
+	std::vector<key_val<key_t,val_t>> pairs;
+	pairs.reserve(static_cast<std::size_t>(count));
+	for (int i = 0; i < count; ++i)
+		pairs.emplace_back(keys_input[i],vals_input[i]);
 
-	std::sort(kv,kv+count,comp);
+	std::sort(pairs.begin(),pairs.end(),
+		[&comp](const key_val<key_t,val_t> & a,
+		        const key_val<key_t,val_t> & b)
+		{
+			return comp(a.key,b.key);
+		});
+
+	for (int i = 0; i < count; ++i)
+	{
+		keys_input[i] = pairs[static_cast<std::size_t>(i)].key;
+		vals_input[i] = pairs[static_cast<std::size_t>(i)].val;
+	}
 
 #else
 	#ifdef __HIP__

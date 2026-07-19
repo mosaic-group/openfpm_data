@@ -157,7 +157,24 @@ public:
     	cstart = cstop;
     }
 
-    #if defined(__NVCC__) && !defined(CUDA_ON_CPU)
+    #if defined(__NVCC__) && defined(CUDA_ON_CPU)
+
+    void startGPU()
+    {
+        start();
+    }
+
+    void stopGPU()
+    {
+        stop();
+    }
+
+    double getwctGPU()
+    {
+        return getwct() * 1000.0;
+    }
+
+    #elif defined(__NVCC__)
 
     void startGPU()
     {
@@ -200,5 +217,4 @@ public:
 };
 
 #endif
-
 

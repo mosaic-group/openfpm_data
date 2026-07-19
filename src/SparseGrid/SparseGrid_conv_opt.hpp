@@ -453,7 +453,7 @@ struct conv_impl<3>
 						long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
 						sumzp += s2;
 
-						if (Vc::Vector<prop_type>::Size == 2 || Vc::Vector<prop_type>::Size == 4 || Vc::Vector<prop_type>::Size == 8)
+						if (Vc::Vector<prop_type>::Size == 1 || Vc::Vector<prop_type>::Size == 2 || Vc::Vector<prop_type>::Size == 4 || Vc::Vector<prop_type>::Size == 8)
 						{
 							mxm.i = *(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[s2];
 							mxm.i = mxm.i << 8;
@@ -898,7 +898,7 @@ struct conv_impl<3>
 					for (int k = 0 ; k < sx::value ; k += Vc::Vector<prop_type>::Size)
 					{
 						// we do only id exist the point
-						if (*(int *)&mask.mask[s2] == 0) {s2 += Vc::Vector<prop_type>::Size; continue;}
+						if (*(typename data_il<Vc::Vector<prop_type>::Size>::type *)&mask.mask[s2] == 0) {s2 += Vc::Vector<prop_type>::Size; continue;}
 
 						data_il<4> mxm;
 						data_il<4> mxp;
@@ -928,7 +928,17 @@ struct conv_impl<3>
 
 						ids.s2 = s2;
 
-                        if (Vc::Vector<prop_type>::Size == 2)
+						if (Vc::Vector<prop_type>::Size == 1)
+						{
+							mxm.i = mxp.i = mym.i = myp.i = mzm.i = mzp.i = 0;
+							mxm.uc[0] = mask.mask[ids.sumdm[0]];
+							mxp.uc[0] = mask.mask[ids.sumdp[0]];
+							mym.uc[0] = mask.mask[ids.sumdm[1]];
+							myp.uc[0] = mask.mask[ids.sumdp[1]];
+							mzm.uc[0] = mask.mask[ids.sumdm[2]];
+							mzp.uc[0] = mask.mask[ids.sumdp[2]];
+						}
+						else if (Vc::Vector<prop_type>::Size == 2)
                         {
                             mxm.i = *(short int *)&mask.mask[s2];
                             mxm.i = mxm.i << 8;

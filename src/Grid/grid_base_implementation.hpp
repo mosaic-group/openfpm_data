@@ -36,7 +36,7 @@ struct skip_init<true,T>
 	}
 };
 
-#ifdef __NVCC__
+#if defined(__NVCC__) || defined(CUDIFY_USE_METAL)
 
 template<bool active>
 struct copy_ndim_grid_device_active_impl
@@ -554,7 +554,7 @@ private:
 
 	void resize_impl_device(const size_t (& sz)[dim],grid_base_impl<dim,T,S,layout_base,ord_type> & grid_new, unsigned int blockSize = 1)
 	{
-#if defined(CUDA_GPU) && defined(__NVCC__)
+#if defined(CUDA_GPU) && (defined(__NVCC__) || defined(CUDIFY_USE_METAL))
 
 			// Compile time-cheking that make sense to call a GPU kernel to copy.
 			

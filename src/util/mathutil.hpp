@@ -197,11 +197,11 @@ namespace openfpm
 		 * \return the bound number
 		 *
 		 */
-		template<typename T>
+		template<typename Position, typename T>
 		__device__ __host__ static inline
-		T periodic_l(const T & pos, const T & p2, const T & p1)
+		T periodic_l(const Position & pos, const T & p2, const T & p1)
 		{
-			T pos_tmp = pos;
+			T pos_tmp = static_cast<T>(pos);
 
 			if (pos >= p2)
 			{

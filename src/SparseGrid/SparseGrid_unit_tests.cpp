@@ -920,24 +920,8 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized)
 				for (int i = it.start_b(0) ; i < it.stop_b(0) ; i += Vc::double_v::Size)
 				{
 					Vc::Mask<double> cmp;
-
-                    if (Vc::double_v::Size == 2)
-                    {
-                            cmp[0] = mask[c] == true;
-                            cmp[1] = mask[c+1] ==  true;
-                    }
-                    else if (Vc::double_v::Size == 4)
-                    {
-                            cmp[0] = mask[c] == true;
-                            cmp[1] = mask[c+1] ==  true;
-                            cmp[2] = mask[c+2] == true;
-                            cmp[3] = mask[c+3] == true;
-                    }
-                    else
-                    {
-                            std::cout << "UNSUPPORTED" << std::endl;
-                            exit(1);
-                    }
+					for (int lane = 0; lane < Vc::double_v::Size; ++lane)
+						cmp[lane] = mask[c+lane] == true;
 
 
 					// we do only id exist the point
@@ -957,18 +941,8 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized)
 					                   ypd + ymd +
 					                   zpd + zmd - 6.0*cmd;
 
-                    if (Vc::double_v::Size == 2)
-                    {
-                            surround[0] = (mask_sum[c] == 7);
-                            surround[1] = (mask_sum[c+1] ==  7);
-                    }
-                    else if (Vc::double_v::Size == 4)
-                    {
-                            surround[0] = (mask_sum[c] == 7);
-                            surround[1] = (mask_sum[c+1] ==  7);
-                            surround[2] = (mask_sum[c+2] == 7);
-                            surround[3] = (mask_sum[c+3] == 7);
-                    }
+					for (int lane = 0; lane < Vc::double_v::Size; ++lane)
+						surround[lane] = mask_sum[c+lane] == 7;
 
 					Lap = Vc::iif(surround,Lap,six);
 
@@ -1126,7 +1100,12 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 					long int sumzp = (v == sz::value-1)?offset_jump[5] - (sz::value - 1)*sx::value*sy::value:sx::value*sy::value;
 					sumzp += s2;
 
-                    if (Vc::double_v::Size == 2)
+					if (Vc::double_v::Size == 1)
+					{
+						mxm.uc[0] = mask.mask[sumxm];
+						mxp.uc[0] = mask.mask[sumxp];
+					}
+					else if (Vc::double_v::Size == 2)
                     {
                     	mxm.uc[0] = mask.mask[sumxm];
                     	mxm.uc[1] = mask.mask[s2];
@@ -1146,11 +1125,10 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
                     	mxp.uc[2] = mask.mask[s2+3];
                     	mxp.uc[3] = mask.mask[sumxp];
                     }
-                    else
-                    {
-                    	std::cout << "UNSUPPORTED" << std::endl;
-                    	exit(1);
-                    }
+					else
+					{
+						BOOST_FAIL("Unsupported Vc vector width");
+					}
 
 					mym.i = *(int *)&mask.mask[sumym];
 					myp.i = *(int *)&mask.mask[sumyp];
@@ -1158,7 +1136,12 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 					mzm.i = *(int *)&mask.mask[sumzm];
 					mzp.i = *(int *)&mask.mask[sumzp];
 
-                    if (Vc::double_v::Size == 2)
+					if (Vc::double_v::Size == 1)
+					{
+						xm[0] = chunk.template get<0>()[sumxm];
+						xp[0] = chunk.template get<0>()[sumxp];
+					}
+					else if (Vc::double_v::Size == 2)
                     {
 						xm[0] = chunk.template get<0>()[sumxm];
 						xm[1] = cmd[0];
@@ -1191,18 +1174,8 @@ BOOST_AUTO_TEST_CASE( sparse_grid_fast_stencil_vectorized_block_skip)
 					data_il<Vc::double_v::Size> tot_m;
 					tot_m.i = mxm.i + mxp.i + mym.i + myp.i + mzm.i + mzp.i;
 
-                    if (Vc::double_v::Size == 2)
-                    {
-                    	surround[0] = (tot_m.uc[0] == 6);
-                    	surround[1] = (tot_m.uc[1] == 6);
-                    }
-                    else if (Vc::double_v::Size == 4)
-                    {
-                    	surround[0] = (tot_m.uc[0] == 6);
-                    	surround[1] = (tot_m.uc[1] == 6);
-                    	surround[2] = (tot_m.uc[2] == 6);
-                    	surround[3] = (tot_m.uc[3] == 6);
-                    }
+					for (int lane = 0; lane < Vc::double_v::Size; ++lane)
+						surround[lane] = tot_m.uc[lane] == 6;
 
 					Vc::double_v Lap = xp + xm +
 					                   yp + ym +
@@ -2435,4 +2408,3 @@ BOOST_AUTO_TEST_CASE( sparse_testing_clear )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-

@@ -20,17 +20,18 @@ class NN_gpu_it
 
 	inline __device__ void SelectValid()
 	{
-		while (neighborPartIndexStart == neighborPartIndexStop && isNext())
+		while (neighborPartIndexStart == neighborPartIndexStop)
 		{
-			this->nextCell();
+			++boxNeighborCellOffset_i;
+			if (boxNeighborCellOffset_i >= neighborCellOffset.size()) return;
 
-			if (isNext() == false) break;
-
-			if (cellPositionIndex+this->neighborCellIndexAct+1 >= numPartInCellPrefixSum.size() || cellPositionIndex+this->neighborCellIndexAct < 0)
-				continue;
-
-			neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct);
-			neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(cellPositionIndex+this->neighborCellIndexAct+1);
+			neighborCellIndexAct = neighborCellOffset.template get<0>(boxNeighborCellOffset_i);
+			int neighborCell = cellPositionIndex + neighborCellIndexAct;
+			if (neighborCell >= 0 && neighborCell + 1 < numPartInCellPrefixSum.size())
+			{
+				neighborPartIndexStart = numPartInCellPrefixSum.template get<0>(neighborCell);
+				neighborPartIndexStop = numPartInCellPrefixSum.template get<0>(neighborCell+1);
+			}
 		}
 	}
 

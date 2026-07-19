@@ -96,7 +96,8 @@ template<unsigned int dim ,typename T> class Sphere
 	 * \param radius
 	 *
 	 */
-	Sphere(Point<dim,double> & c, T radius)
+	template<typename S>
+	__device__ __host__ Sphere(const Point<dim,S> & c, T radius)
 	{
 		// Copy the center
 		for (int i = 0 ;  i < dim ; i++)

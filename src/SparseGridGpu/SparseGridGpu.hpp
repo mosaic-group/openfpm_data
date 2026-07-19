@@ -319,7 +319,7 @@ struct NNFull
 	template<typename sparseGrid_type, typename coord_type, typename Mask_type,unsigned int eb_size>
 	__device__ static inline bool isPadding(sparseGrid_type & sparseGrid, coord_type & coord, Mask_type (& enlargedBlock)[eb_size])
 	{
-		return NNfull_is_padding_impl<3>::template is_padding(sparseGrid,coord,enlargedBlock);
+		return NNfull_is_padding_impl<3>::is_padding(sparseGrid,coord,enlargedBlock);
 	}
 
 	/*! \brief given a coordinate writtel in local coordinate for a given it return the neighborhood chunk position and the offset

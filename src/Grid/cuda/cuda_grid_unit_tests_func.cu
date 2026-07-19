@@ -9,9 +9,9 @@ __global__ void grid_gradient_vector(grid_type1 g1, grid_type2 g2, ite_gpu<3> it
 {
 	GRID_ID_3(ite_gpu);
 
-	g2.template get<4>(key)[0] = (g1.template get<0>(key.move(0,1)) - g1.template get<0>(key.move(0,-1))) / 2.0;
-	g2.template get<4>(key)[1] = (g1.template get<0>(key.move(1,1)) - g1.template get<0>(key.move(1,-1))) / 2.0;
-	g2.template get<4>(key)[2] = (g1.template get<0>(key.move(2,1)) - g1.template get<0>(key.move(2,-1))) / 2.0;
+	g2.template get<4>(key)[0] = (g1.template get<0>(key.move(0,1)) - g1.template get<0>(key.move(0,-1))) / 2.0f;
+	g2.template get<4>(key)[1] = (g1.template get<0>(key.move(1,1)) - g1.template get<0>(key.move(1,-1))) / 2.0f;
+	g2.template get<4>(key)[2] = (g1.template get<0>(key.move(2,1)) - g1.template get<0>(key.move(2,-1))) / 2.0f;
 }
 
 template<typename grid_type>
@@ -19,9 +19,9 @@ __global__ void grid_fill_vector(grid_type g1,  ite_gpu<3> ite_gpu)
 {
 	GRID_ID_3(ite_gpu);
 
-	g1.template get<4>(key)[0] = 1.0;
-	g1.template get<4>(key)[1] = 2.0;
-	g1.template get<4>(key)[2] = 3.0;
+	g1.template get<4>(key)[0] = 1.0f;
+	g1.template get<4>(key)[1] = 2.0f;
+	g1.template get<4>(key)[2] = 3.0f;
 }
 
 template<typename grid_type>
@@ -29,9 +29,9 @@ __global__ void grid_fill_vector2(grid_type g1,  ite_gpu<3> ite_gpu)
 {
 	GRID_ID_3(ite_gpu);
 
-	g1.template get<4>(key)[0] = 1001.0;
-	g1.template get<4>(key)[1] = 1002.0;
-	g1.template get<4>(key)[2] = 1003.0;
+	g1.template get<4>(key)[0] = 1001.0f;
+	g1.template get<4>(key)[1] = 1002.0f;
+	g1.template get<4>(key)[2] = 1003.0f;
 }
 
 template<typename grid_type>
@@ -42,7 +42,7 @@ __global__ void compute_stencil_grid(grid_type g1, grid_type g2, ite_gpu<3> ite_
 	g2.template get<0>(key) = g1.template get<0>(key.move(0,1)) + g1.template get<0>(key.move(0,-1)) +
 			                  g1.template get<0>(key.move(1,1)) + g1.template get<0>(key.move(1,-1)) +
 							  g1.template get<0>(key.move(2,1)) + g1.template get<0>(key.move(2,-1)) -
-							  6.0*g1.template get<0>(key);
+							  6.0f*g1.template get<0>(key);
 }
 
 __global__ void compute_stencil(float * prp_0, float * prp_1, int sz, grid_key_dx<3> start, grid_key_dx<3> stop)
@@ -52,7 +52,7 @@ __global__ void compute_stencil(float * prp_0, float * prp_1, int sz, grid_key_d
 	prp_1[tz*sz*sz + ty*sz + tx] = prp_0[tz*sz*sz + ty*sz + tx + 1] + prp_0[tz*sz*sz + ty*sz + tx - 1] +
 									   prp_0[tz*sz*sz + (ty + 1)*sz + tx] + prp_0[tz*sz*sz + (ty - 1)*sz + tx] +
 									   prp_0[(tz + 1)*sz*sz + ty*sz + tx + 1] + prp_0[(tz - 1)*sz*sz + ty*sz + tx - 1] -
-									   6.0*prp_0[tz*sz*sz + ty*sz + tx];
+									   6.0f*prp_0[tz*sz*sz + ty*sz + tx];
 }
 
 __global__ void fill_one(float * prp_0,int sz)
@@ -145,4 +145,3 @@ void gpu_grid_gradient_vector(grid_gpu<3,Point_aggr_test> & g1, grid_gpu<3,Point
 
 	CUDA_LAUNCH_DIM3(grid_gradient_vector, gpu_it.wthr, gpu_it.thr ,g1.toKernel(),g2.toKernel(),gpu_it);
 }
-

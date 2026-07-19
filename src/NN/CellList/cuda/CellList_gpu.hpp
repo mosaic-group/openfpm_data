@@ -16,6 +16,11 @@
 #include "NN/CellList/CellList.hpp"
 #include "util/cuda/scan_ofp.cuh"
 
+#if __cplusplus >= 201703L
+#define OPENFPM_CELL_LIST_CONSTEXPR_IF if constexpr
+#else
+#define OPENFPM_CELL_LIST_CONSTEXPR_IF if
+#endif
 
 template<unsigned int dim,
 	typename T,
@@ -460,7 +465,8 @@ public:
 				);
 			}
 
-			if (opt & CL_GPU_REORDER_PROPERTY && sizeof...(prp)) {
+			OPENFPM_CELL_LIST_CONSTEXPR_IF (sizeof...(prp) != 0)
+			if (opt & CL_GPU_REORDER_PROPERTY) {
 				CUDA_LAUNCH(
 					(reorderParticlesPrp<
 						decltype(vPrp.toKernel()),
@@ -745,7 +751,8 @@ public:
 			);
 		}
 
-		if (opt & CL_GPU_RESTORE_PROPERTY && sizeof...(prp)) {
+		OPENFPM_CELL_LIST_CONSTEXPR_IF (sizeof...(prp) != 0)
+		if (opt & CL_GPU_RESTORE_PROPERTY) {
 			CUDA_LAUNCH(
 				(reorderParticlesPrp<
 					decltype(vPrpReordered.toKernel()),
@@ -1215,7 +1222,8 @@ public:
 				);
 			}
 
-			if (opt & CL_GPU_REORDER_PROPERTY && sizeof...(prp)) {
+			OPENFPM_CELL_LIST_CONSTEXPR_IF (sizeof...(prp) != 0)
+			if (opt & CL_GPU_REORDER_PROPERTY) {
 				CUDA_LAUNCH(
 					(reorderParticlesPrp<
 						decltype(vPrp.toKernel()),
@@ -1480,7 +1488,8 @@ public:
 			);
 		}
 
-		if (opt & CL_GPU_RESTORE_PROPERTY && sizeof...(prp)) {
+		OPENFPM_CELL_LIST_CONSTEXPR_IF (sizeof...(prp) != 0)
+		if (opt & CL_GPU_RESTORE_PROPERTY) {
 			CUDA_LAUNCH(
 				(reorderParticlesPrp<
 					decltype(vPrpReordered.toKernel()),
@@ -1528,6 +1537,8 @@ struct toKernel_transform<layout_base,T,4>
 		typename T::transform_type_,
 		T::is_sparse_::value> type;
 };
+
+#undef OPENFPM_CELL_LIST_CONSTEXPR_IF
 
 #endif
 

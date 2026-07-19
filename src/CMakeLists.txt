@@ -20,7 +20,7 @@ if (TEST_PERFORMANCE)
 endif ()
 
 
-if (NOT CUDA_ON_BACKEND STREQUAL "None")
+if (NOT CUDA_ON_BACKEND STREQUAL "NONE")
 	set(CUDA_SOURCES ${CUDA_SOURCES}
 	    Vector/map_vector_sparse_unit_tests.cu
             Vector/vector_gpu_unit_tests.cu
@@ -217,6 +217,54 @@ target_link_libraries(mem_map m)
 if (NOT APPLE)
     target_link_libraries(mem_map rt)
 endif ()
+
+# The Metal backend deliberately consumes the same HIP/CUDA translation units
+# as CUDA and HIP.  Compile both halves of every non-performance .cu source:
+# HIP clang emits the ordinary host-side Boost tests and kernel handles, while
+# openfpm_add_moltenvk_kernels lowers the instantiated device kernels to
+# embedded Vulkan SPIR-V for MoltenVK.  Keeping CUDA_SOURCES authoritative here
+# prevents a second Metal-only algorithm/test catalogue from drifting away from
+# the core implementation.
+if (CUDA_ON_BACKEND STREQUAL "METAL")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/cmake/OpenFPMMoltenVK.cmake")
+
+    set(_openfpm_data_metal_include_directories
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_devices/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../openfpm_io/src"
+        "${CMAKE_BINARY_DIR}/config"
+        ${VULKAN_INCLUDE_DIR}
+        ${LIBHILBERT_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
+        ${Vc_INCLUDE_DIR}
+        ${MPI_C_INCLUDE_DIRS}
+        ${MPI_CXX_INCLUDE_DIRS}
+        ${HDF5_INCLUDE_DIRS})
+    if (ALPAKA_ROOT)
+        list(APPEND _openfpm_data_metal_include_directories
+            "${ALPAKA_ROOT}/include")
+    endif()
+    list(REMOVE_DUPLICATES _openfpm_data_metal_include_directories)
+
+    foreach(_openfpm_data_cuda_source IN LISTS CUDA_SOURCES)
+        if (_openfpm_data_cuda_source MATCHES "\\.cu$")
+            openfpm_add_moltenvk_kernels(
+                TARGET mem_map
+                SOURCE "${_openfpm_data_cuda_source}"
+                HIP_CLANG "${OPENFPM_MOLTENVK_HIP_CLANG}"
+                LLVM_OPT "${OPENFPM_MOLTENVK_LLVM_OPT}"
+                LLVM_LINK "${OPENFPM_MOLTENVK_LLVM_LINK}"
+                CLSPV "${OPENFPM_MOLTENVK_CLSPV}"
+                SPIRV_VAL "${OPENFPM_MOLTENVK_SPIRV_VAL}"
+                ABI_TOOL "${OPENFPM_MOLTENVK_ABI_TOOL}"
+                CHIPSTAR_ROOT "${OPENFPM_CHIPSTAR_ROOT}"
+                CHIPSTAR_GENERATED_INCLUDE "${OPENFPM_CHIPSTAR_GENERATED_INCLUDE}"
+                COMPILE_DEFINITIONS CUDIFY_USE_METAL CUDA_GPU
+                    BOOST_ALLOW_DEPRECATED_HEADERS
+                INCLUDE_DIRECTORIES ${_openfpm_data_metal_include_directories})
+        endif()
+    endforeach()
+endif()
 
 install(FILES Grid/comb.hpp
         Grid/copy_grid_fast.hpp
@@ -486,4 +534,3 @@ install (FILES  SparseGridGpu/TemplateUtils/mathUtils.hpp
 	        SparseGridGpu/TemplateUtils/encap_shmem.hpp
 		DESTINATION openfpm_data/include/SparseGridGpu/TemplateUtils/ 
 		COMPONENT OpenFPM)
-

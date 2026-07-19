@@ -184,15 +184,15 @@ BOOST_AUTO_TEST_CASE (gpu_computation_lambda)
 			blockIdx.y * blockDim.y + threadIdx.y,
 			blockIdx.z * blockDim.z + threadIdx.z});
 
-		c3_k.template get<0>(p) = 5.0;
+		c3_k.template get<0>(p) = 5.0f;
 
-		c3_k.template get<1>(p)[0] = 5.0;
-		c3_k.template get<1>(p)[1] = 5.0;
+		c3_k.template get<1>(p)[0] = 5.0f;
+		c3_k.template get<1>(p)[1] = 5.0f;
 	
-		c3_k.template get<2>(p)[0][0] = 5.0;
-		c3_k.template get<2>(p)[0][1] = 5.0;
-		c3_k.template get<2>(p)[1][0] = 5.0;
-		c3_k.template get<2>(p)[1][1] = 5.0;
+		c3_k.template get<2>(p)[0][0] = 5.0f;
+		c3_k.template get<2>(p)[0][1] = 5.0f;
+		c3_k.template get<2>(p)[1][0] = 5.0f;
+		c3_k.template get<2>(p)[1][1] = 5.0f;
 	};
 
 	auto ite = c3.getGPUIterator({0,0,0},{63,63,63});
@@ -700,7 +700,7 @@ __global__ void test_se1_crash_gt2(grid_type gt1, grid_type gt2)
 	{
 		grid_key_dx<2> k({10000,12345});
 
-		gt1.template get<1>(k)[2] = 6.0;
+		gt1.template get<1>(k)[2] = 6.0f;
 	}
 }
 
@@ -709,7 +709,7 @@ __global__ void test_se1_crash_gt3(grid_type gt1, grid_type gt2)
 {
 	grid_key_dx<2> k({10000,12345});
 
-	gt1.template get<2>(k)[2][2] = 6.0;
+	gt1.template get<2>(k)[2][2] = 6.0f;
 }
 
 BOOST_AUTO_TEST_CASE (gpu_grid_test_se_class1)
